@@ -1,0 +1,24 @@
+# EcoRegistru — nomenclator coduri deșeuri (Lista Europeană a Deșeurilor / Decizia 2014/955/UE)
+# Format: code,name,hazardous
+#   code      = 6 cifre formatate "NN NN NN" (FĂRĂ asteriscul de periculozitate)
+#   name      = denumirea în română
+#   hazardous = true dacă în LED codul e marcat cu '*' (deșeu periculos), altfel false
+#
+# ====================================================================================
+# TODO(Onica): ÎNLOCUIEȘTE rândurile de mai jos cu LISTA OFICIALĂ COMPLETĂ a codurilor LED.
+#   - Sursă: Decizia 2014/955/UE / HG 856/2002, anexa 2 (Lista Europeană a Deșeurilor).
+#   - După înlocuire, seed-ul NU se re-rulează automat (V2 e deja aplicat). Ca să reîncarci:
+#       copiază V2__seed_waste_codes.java -> V3__reseed_waste_codes.java (Flyway rulează noua versiune),
+#       sau golește tabelul waste_codes și repornește pe o bază curată.
+#   - NU inventa coduri sau denumiri. Folosește exclusiv textul oficial.
+# ====================================================================================
+20 03 01,Deșeuri municipale amestecate,false
+15 01 01,Ambalaje de hârtie și carton,false
+15 01 02,Ambalaje de materiale plastice,false
+15 01 07,Ambalaje de sticlă,false
+20 01 01,Hârtie și carton,false
+20 01 39,Materiale plastice,false
+20 01 40,Metale,false
+17 04 05,Fier și oțel,false
+13 02 08,Alte uleiuri de motor de transmisie și de ungere,true
+16 06 01,Baterii cu plumb,true

@@ -1,0 +1,23 @@
+# Dev profile: runs out-of-the-box against a local Postgres named 'ecoregistru'.
+# Activate with: --spring.profiles.active=dev  (or SPRING_PROFILES_ACTIVE=dev)
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ecoregistru
+    username: eco
+    password: eco
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+app:
+  jwt:
+    # Dev-only Base64 secret so the app boots without extra setup. DO NOT use in prod.
+    secret: ZWNvcmVnaXN0cnUtZGV2LXNlY3JldC1rZXktbXVzdC1iZS1sb25nLWVub3VnaC1mb3ItaHMyNTYtYWxnb3JpdGht
+  # Seed a demo tenant + sample data on startup (dev only). See DevDataSeeder.
+  seed-demo-data: true
+
+logging:
+  level:
+    ro.ecoregistru: DEBUG
+    org.flywaydb: INFO
