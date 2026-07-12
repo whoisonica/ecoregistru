@@ -34,8 +34,15 @@ Cod, comentarii, commit-uri: engleză. Text UI: română (`frontend/src/lib/stri
 - ✅ **UI-1 / U2:** ecranul **Parteneri** — tabel + CRUD + badge expirare autorizație + dezactivare soft.
 - ✅ **EVID / E1 (backend):** motor de evidență — `EvidenceCalculator` agregă mișcările în linii
   lunare per (punct de lucru, cod) cu **stoc cumulativ**; `GET /api/v1/evidences`,
-  `POST /api/v1/evidences/regenerate?year=`. Test de corectitudine verde. *Fără UI încă (vine cu E3).*
-- 🔜 **Următorul:** E3 — ecranul **Evidențe** (aduce EVID în UI). Detalii în `docs/prompt-continuare.md`.
+  `POST /api/v1/evidences/regenerate?year=`. Test de corectitudine verde.
+- ✅ **EVID / E3 (frontend):** ecranul **Evidențe** (`/evidente`) — filtre an / lună / punct de lucru,
+  tabel cu totaluri pe operațiune + stoc cumulativ (roșu când e negativ), buton **Regenerează**
+  (gated pe rol), empty-state per an. Aduce EVID în UI. Type-check verde.
+- 🔜 **Următorul:** E2-generic — export „tabel generic" Excel (Apache POI) + PDF (OpenPDF) din evidență.
+  Apoi U4 (selector tenant). Detalii în `docs/prompt-continuare.md`.
+
+Set demo bogat (dev): 3 puncte de lucru, 5 parteneri, 34 de mișcări pe 6 luni (feb–iul 2026) cu stoc
+care se reportează lună-de-lună. Vezi și `docs/prezentare.html` — pagină de prezentare a produsului.
 
 Model de produs: Faza 1 = „pregătim, nu transmitem" — ținem evidența și generăm ce trebuie raportat
 (SIM/AFM), clientul încarcă în portalul oficial (portalurile n-au API public de transmitere de la terți).
