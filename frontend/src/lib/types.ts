@@ -116,3 +116,38 @@ export interface MovementFilters {
   workPointId?: string;
   wasteCodeId?: string;
 }
+
+// --- Monthly evidence (regenerable cache aggregated from movements) ---
+
+/** Mirrors backend MonthlyEvidenceResponse. All quantities are in KG. */
+export interface MonthlyEvidence {
+  id: string;
+  workPointId: string;
+  workPointName: string;
+  year: number;
+  month: number; // 1-12
+  wasteCodeId: string;
+  wasteCode: string;
+  wasteCodeName: string;
+  hazardous: boolean;
+  totalGenerated: number;
+  totalCollected: number;
+  totalHandedOver: number;
+  totalRecovered: number;
+  totalDisposed: number;
+  closingStock: number; // may be negative (hand-overs exceeding intake in a window)
+  generatedAt: string;
+}
+
+/** Mirrors backend EvidenceRegenerationResponse. */
+export interface EvidenceRegenerationResponse {
+  year: number;
+  linesGenerated: number;
+}
+
+/** Filters for the evidence list query; empty fields are omitted from the request. */
+export interface EvidenceFilters {
+  year: number; // required
+  month?: number; // 1-12
+  workPointId?: string;
+}

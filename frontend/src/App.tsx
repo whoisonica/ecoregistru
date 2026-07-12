@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { MovementsPage } from "@/pages/MovementsPage";
+import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
@@ -36,7 +37,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<AppShell><DashboardPage /></AppShell>} />
           <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
-          <Route path="/evidente" element={<AppShell><ComingSoon title="Evidențe" /></AppShell>} />
+          <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><ComingSoon title="Termene" /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><ComingSoon title="Dosar de control" /></AppShell>} />

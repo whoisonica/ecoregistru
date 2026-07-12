@@ -145,6 +145,51 @@ export const strings = {
     saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
   },
 
+  evidences: {
+    title: "Evidența gestiunii deșeurilor",
+    subtitle:
+      "Situația lunară pe puncte de lucru și coduri de deșeu, cu stoc cumulativ. Regenerată din mișcări.",
+    regenerate: "Regenerează",
+    regenerating: "Se regenerează...",
+    loadError: "Nu am putut încărca evidența.",
+    regenerateError: "Regenerarea a eșuat. Încearcă din nou.",
+    regenerated: "Evidență regenerată: {count} linii pentru {year}.",
+    // filters
+    filterYear: "An",
+    filterMonth: "Luna",
+    filterWorkPoint: "Punct de lucru",
+    allMonths: "Toate lunile",
+    allWorkPoints: "Toate",
+    // columns
+    colWorkPoint: "Punct de lucru",
+    colMonth: "Luna",
+    colWasteCode: "Cod deșeu",
+    colStock: "Stoc",
+    hazardous: "Periculos",
+    // empty state
+    empty: "Nu există linii de evidență pentru {year}.",
+    emptyHint: "Apasă „Regenerează” pentru a calcula evidența anului {year} din mișcări.",
+    // note about the cache being manually regenerated
+    staleNote:
+      "Evidența nu se actualizează singură. După ce adaugi sau ștergi mișcări, apasă „Regenerează”.",
+  },
+
+  // Romanian month names (index 0 = January), for display of the `month` field.
+  months: [
+    "Ianuarie",
+    "Februarie",
+    "Martie",
+    "Aprilie",
+    "Mai",
+    "Iunie",
+    "Iulie",
+    "August",
+    "Septembrie",
+    "Octombrie",
+    "Noiembrie",
+    "Decembrie",
+  ],
+
   // Romanian labels for backend enums (constants are English by convention).
   enums: {
     wasteOperation: {
