@@ -34,6 +34,8 @@ public enum ErrorMessageEnum {
     // --- Company ---
     COMPANY_NOT_FOUND("company.not.found", "Firma nu a fost găsită."),
     INVALID_CUI("company.cui.invalid", "CUI invalid. Introdu un cod fiscal valid (ex. RO12345678 sau 12345678)."),
+    COMPANY_CUI_ALREADY_EXISTS("company.cui.exists", "Există deja o firmă cu acest CUI."),
+    INVALID_INVITE_ROLE("invite.role.invalid", "Rol invalid pentru invitație. Alege Administrator, Operator sau Vizualizare."),
 
     // --- WorkPoint ---
     WORK_POINT_NOT_FOUND("work.point.not.found", "Punctul de lucru nu a fost găsit."),

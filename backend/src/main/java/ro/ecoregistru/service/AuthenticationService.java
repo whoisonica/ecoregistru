@@ -17,6 +17,7 @@ import ro.ecoregistru.controller.request.RegisterRequest;
 import ro.ecoregistru.controller.request.ResetPasswordRequest;
 import ro.ecoregistru.controller.response.AuthenticationResponse;
 import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.VerificationRecord;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.exception.BusinessException;
@@ -167,9 +168,50 @@ public class AuthenticationService {
 
         AppUser user = record.getUser();
         user.setPassword(passwordEncoder.encode(request.password()));
+        // Setting a password via the reset link also activates the account. This is what makes
+        // the platform-admin invite flow work: invited users start disabled and become usable
+        // once they pick their own password. (Harmless for already-enabled users.)
+        user.setEnabled(true);
         record.setConfirmed(true);
         appUserRepository.save(user);
         verificationRecordRepository.save(record);
+    }
+
+    /**
+     * Platform-admin invite: create a tenant user (disabled, with an unusable random password)
+     * and email them a reset link to set their own password. Reuses the RESET_PASSWORD flow —
+     * no separate invite mechanism. Email failures degrade gracefully (blocked on SMTP for now).
+     */
+    @Transactional(noRollbackFor = EmailException.class)
+    public AppUser inviteUser(Company company, String rawEmail, Role role, String firstName, String lastName) {
+        if (role == Role.PLATFORM_ADMIN) {
+            throw new BusinessException(INVALID_INVITE_ROLE);
+        }
+        String email = rawEmail.toLowerCase();
+        if (appUserRepository.existsByEmail(email)) {
+            throw new UnprocessableEntityException(ACCOUNT_ALREADY_EXISTS);
+        }
+
+        AppUser user = AppUser.builder()
+                .email(email)
+                .password(passwordEncoder.encode(newCode())) // random & unusable until the reset link is used
+                .role(role)
+                .company(company)
+                .firstName(firstName)
+                .lastName(lastName)
+                .enabled(false)
+                .createdAt(Instant.now())
+                .build();
+        appUserRepository.save(user);
+
+        String code = newCode();
+        saveRecord(user, code, RESET_PASSWORD);
+        try {
+            emailService.sendPasswordResetEmail(user, code);
+        } catch (EmailException e) {
+            log.error("Failed to send invite email to {}", user.getEmail(), e);
+        }
+        return user;
     }
 
     // --- helpers ---
