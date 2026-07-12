@@ -97,6 +97,17 @@ class WasteMovementValidationIT {
                 .andExpect(jsonPath("$.physicalState", is("LIQUID")));
     }
 
+    /**
+     * An unknown enum constant (Jackson can't bind it) is a malformed body: it must be a
+     * clean 400, not the generic 500 that would leak before the dedicated handler existed.
+     */
+    @Test
+    void unknownEnumConstantIsBadRequestNotServerError() throws Exception {
+        mockMvc.perform(postMovement("RECOVERED", "SOLID", "X9"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("request.malformed")));
+    }
+
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder postMovement(
             String operation, String physicalState, String operationCode) {
         String opCodeJson = operationCode == null ? "null" : "\"" + operationCode + "\"";

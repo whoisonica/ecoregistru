@@ -3,6 +3,7 @@ package ro.ecoregistru.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -81,6 +82,19 @@ public class AdviceController {
         errors.put(ERROR_MESSAGE, message.toString());
         errors.put(PARAMS, params);
         return errors;
+    }
+
+    /**
+     * Malformed request body: bad JSON, or an unknown enum constant (e.g. the frontend
+     * sends operationCode "X9"). Jackson raises this before validation runs, so without
+     * this handler it would fall through to the generic 500. Return 400 instead.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public Map<String, Object> handleUnreadable(HttpMessageNotReadableException e) {
+        log.warn("Malformed request body: {}", e.getMostSpecificCause().getMessage());
+        return envelope(BAD_REQUEST, "request.malformed",
+                "Cererea conține date invalide sau un cod necunoscut.");
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
