@@ -8,19 +8,8 @@ import { MovementsPage } from "@/pages/MovementsPage";
 import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
+import { AuditFilePage } from "@/pages/AuditFilePage";
 import { SettingsPage } from "@/pages/SettingsPage";
-
-/** Placeholder for sections built in later slices (B1+). */
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <div className="mt-6 rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-400">
-        În curând.
-      </div>
-    </div>
-  );
-}
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -41,7 +30,7 @@ export default function App() {
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
-          <Route path="/dosar-control" element={<AppShell><ComingSoon title="Dosar de control" /></AppShell>} />
+          <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
         </Routes>
       </BrowserRouter>

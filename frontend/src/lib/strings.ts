@@ -219,6 +219,21 @@ export const strings = {
     emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
   },
 
+  auditFile: {
+    title: "Dosar de control",
+    subtitle:
+      "Descarcă într-o singură arhivă tot ce ai nevoie la un control: evidența, autorizațiile partenerilor și documentele atașate.",
+    filterYear: "An",
+    download: "Descarcă dosarul (.zip)",
+    downloading: "Se pregătește arhiva...",
+    downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
+    contents: "Arhiva conține:",
+    contentEvidence: "Evidența gestiunii deșeurilor (Excel + PDF)",
+    contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
+    contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
+    note: "Notă: dosarul NU înlocuiește formularele oficiale (Anexa 1 / SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
+  },
+
   // Romanian month names (index 0 = January), for display of the `month` field.
   months: [
     "Ianuarie",
