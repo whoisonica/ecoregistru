@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+<div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+    <h2 style="color: #047857;">Termen de raportare care se apropie</h2>
+    <p>Bună ziua,</p>
+    <p>
+        Îți reamintim că ai un termen de raportare
+        <strong th:text="${whenText}">scadent în curând</strong>:
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Raportare</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${reportLabel}">Raportare</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Termen</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${dueDate}">01.01.2026</td>
+        </tr>
+    </table>
+    <p style="font-size: 13px; color: #6b7280;">
+        Pregătește evidența și documentele necesare din EcoRegistru și marchează termenul ca finalizat
+        după ce ai depus raportarea.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
+    <p style="font-size: 12px; color: #9ca3af;">EcoRegistru — evidența și raportarea gestiunii deșeurilor.</p>
+</div>
+</body>
+</html>
