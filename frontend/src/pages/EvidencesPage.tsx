@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
-import { useEvidences, useRegenerateEvidence } from "@/hooks/useEvidences";
+import {
+  downloadEvidenceExport,
+  useEvidences,
+  useRegenerateEvidence,
+} from "@/hooks/useEvidences";
 import type { EvidenceFilters } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -57,6 +61,7 @@ export function EvidencesPage() {
   const { data: evidences, isLoading, isError } = useEvidences(filters);
   const regenerateMut = useRegenerateEvidence();
   const { notify } = useToast();
+  const [exporting, setExporting] = useState<"xlsx" | "pdf" | null>(null);
 
   // Stable display order: work point, then month, then waste code.
   const rows = useMemo(() => {
@@ -81,6 +86,17 @@ export function EvidencesPage() {
     });
   }
 
+  async function handleExport(format: "xlsx" | "pdf") {
+    setExporting(format);
+    try {
+      await downloadEvidenceExport(filters, format);
+    } catch (err) {
+      notify(apiErrorMessage(err, t.exportError), "error");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -88,14 +104,33 @@ export function EvidencesPage() {
           <h1 className="text-2xl font-bold">{t.title}</h1>
           <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
         </div>
-        {canManage && (
-          <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
-            />
-            {regenerateMut.isPending ? t.regenerating : t.regenerate}
+        <div className="flex items-center gap-2">
+          {/* Export is read-only: available to every tenant member, viewer included. */}
+          <Button
+            variant="outline"
+            onClick={() => handleExport("xlsx")}
+            disabled={rows.length === 0 || exporting !== null}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {t.exportExcel}
           </Button>
-        )}
+          <Button
+            variant="outline"
+            onClick={() => handleExport("pdf")}
+            disabled={rows.length === 0 || exporting !== null}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {t.exportPdf}
+          </Button>
+          {canManage && (
+            <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+              />
+              {regenerateMut.isPending ? t.regenerating : t.regenerate}
+            </Button>
+          )}
+        </div>
       </div>
 
       {canManage && (

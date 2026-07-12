@@ -154,6 +154,11 @@ export const strings = {
     loadError: "Nu am putut încărca evidența.",
     regenerateError: "Regenerarea a eșuat. Încearcă din nou.",
     regenerated: "Evidență regenerată: {count} linii pentru {year}.",
+    // export
+    export: "Export",
+    exportExcel: "Export Excel",
+    exportPdf: "Export PDF",
+    exportError: "Exportul a eșuat. Încearcă din nou.",
     // filters
     filterYear: "An",
     filterMonth: "Luna",

@@ -34,3 +34,30 @@ export function useRegenerateEvidence() {
     onSuccess: () => qc.invalidateQueries({ queryKey: evidencesRoot }),
   });
 }
+
+/**
+ * Downloads the evidence export (generic, unofficial table) as an xlsx/pdf file. Not a query —
+ * it streams a blob and triggers a browser download, so it lives outside TanStack's cache.
+ * Uses the same filters as the list so the file matches what's on screen.
+ */
+export async function downloadEvidenceExport(
+  filters: EvidenceFilters,
+  format: "xlsx" | "pdf"
+): Promise<void> {
+  const params: Record<string, string | number> = { year: filters.year, format };
+  if (filters.month != null) params.month = filters.month;
+  if (filters.workPointId) params.workPointId = filters.workPointId;
+
+  const res = await api.get("/api/v1/evidences/export", { params, responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `evidenta-${filters.year}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
