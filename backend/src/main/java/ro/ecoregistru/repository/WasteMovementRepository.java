@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import ro.ecoregistru.entity.WasteMovement;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,4 +22,8 @@ public interface WasteMovementRepository
 
     /** Incremental fetch (?since=) support for delta sync. */
     List<WasteMovement> findAllByCompany_IdAndUpdatedAtGreaterThan(UUID companyId, Instant since);
+
+    /** All live movements for a tenant within a date range — the evidence engine's input. */
+    List<WasteMovement> findAllByCompany_IdAndDeletedFalseAndDateBetween(
+            UUID companyId, LocalDate from, LocalDate to);
 }
