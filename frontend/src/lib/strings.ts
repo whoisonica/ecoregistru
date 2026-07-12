@@ -6,6 +6,15 @@ export const strings = {
   appName: "EcoRegistru",
   tagline: "Evidența și raportarea gestiunii deșeurilor",
 
+  header: {
+    // Shown above the nav: the current company. For PLATFORM_ADMIN it's a tenant switcher.
+    currentCompany: "Firma curentă",
+    selectCompany: "Alege firma",
+    noCompanySelected: "Nicio firmă selectată",
+    platformAdmin: "Administrator platformă",
+    loadCompaniesError: "Nu am putut încărca firmele.",
+  },
+
   nav: {
     dashboard: "Panou",
     movements: "Mișcări",

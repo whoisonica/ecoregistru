@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   role: Role;
   tenantId: string | null;
+  tenantName: string | null;
 }
 
 interface AuthContextValue {
@@ -20,6 +21,7 @@ interface AuthResponse {
   token: string;
   role: Role;
   tenantId: string | null;
+  tenantName: string | null;
   email: string;
 }
 
@@ -43,7 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const { data } = await api.post<AuthResponse>("/api/v1/auth/login", { email, password });
     tokenStore.set(data.token);
-    const authUser: AuthUser = { email: data.email, role: data.role, tenantId: data.tenantId };
+    const authUser: AuthUser = {
+      email: data.email,
+      role: data.role,
+      tenantId: data.tenantId,
+      tenantName: data.tenantName,
+    };
     localStorage.setItem(USER_KEY, JSON.stringify(authUser));
     if (data.tenantId) {
       tenantStore.set(data.tenantId);
