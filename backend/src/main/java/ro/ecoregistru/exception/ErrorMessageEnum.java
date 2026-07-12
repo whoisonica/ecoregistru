@@ -54,6 +54,7 @@ public enum ErrorMessageEnum {
 
     // --- Evidence / deadlines ---
     EVIDENCE_NOT_FOUND("evidence.not.found", "Evidența nu a fost găsită."),
+    EXPORT_FORMAT_UNSUPPORTED("export.format.unsupported", "Format de export nesuportat. Alege „xlsx” sau „pdf”."),
     DEADLINE_NOT_FOUND("deadline.not.found", "Termenul nu a fost găsit.");
 
     private final String code;
