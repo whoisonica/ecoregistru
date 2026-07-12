@@ -4,6 +4,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { MovementsPage } from "@/pages/MovementsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 /** Placeholder for sections built in later slices (B1+). */
@@ -33,7 +34,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<AppShell><DashboardPage /></AppShell>} />
-          <Route path="/miscari" element={<AppShell><ComingSoon title="Mișcări" /></AppShell>} />
+          <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
           <Route path="/evidente" element={<AppShell><ComingSoon title="Evidențe" /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><ComingSoon title="Parteneri" /></AppShell>} />
           <Route path="/termene" element={<AppShell><ComingSoon title="Termene" /></AppShell>} />

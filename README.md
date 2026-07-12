@@ -16,17 +16,25 @@ Cod, comentarii, commit-uri: engleză. Text UI: română (`frontend/src/lib/stri
 
 ---
 
-## Stadiu: B0 — Fundația (gata)
+## Stadiu
 
-- ✅ Auth JWT (login, verificare email, resend, reset parolă) — portat din an earlier project
-- ✅ Multi-tenancy: `tenant_id` pe fiecare tabelă de domeniu + `TenantContext` +
-  `TenantFilter` (izolare la nivel de request; PLATFORM_ADMIN comută tenantul via `X-Tenant-Id`)
-- ✅ Roluri: `PLATFORM_ADMIN`, `ADMIN`, `OPERATOR`, `CLIENT_VIEWER`
-- ✅ Schema completă Faza 1 (Flyway) + seed nomenclator coduri deșeuri din CSV
-- ✅ Envelope de erori consistent, OpenAPI (springdoc), Cloudinary + email (skeleton)
-- ✅ Seed tenant demo (profil `dev`) + shell frontend cu login și layout cu sidebar
+- ✅ **B0 — Fundația:** auth JWT (login, verificare email, resend, reset parolă), multi-tenancy
+  (`company_id` pe fiecare tabelă + `TenantContext` + `TenantFilter`, izolare la nivel de request;
+  PLATFORM_ADMIN comută tenantul via `X-Tenant-Id`), roluri `PLATFORM_ADMIN`/`ADMIN`/`OPERATOR`/`CLIENT_VIEWER`,
+  schema completă Faza 1 (Flyway), seed nomenclator coduri din CSV, envelope de erori, OpenAPI, seed tenant demo.
+- ✅ **B1-core:** CRUD `WasteMovement` (+atașamente Cloudinary, idempotent, soft-delete, `?since=`),
+  `Partner` CRUD, `WorkPoint` CRUD, căutare `WasteCode`.
+- ✅ **Faza M:** stare fizică + cod operație R/D (validat) pe mișcări, flag obligație AFM pe firmă,
+  stoc cumulativ pe evidența lunară (Flyway `V3`).
+- ✅ **UI-1 / U0:** infra frontend (toast, primitive UI, hooks TanStack Query, tipuri) +
+  ecran **Setări / Puncte de lucru** (CRUD).
+- ✅ **UI-1 / U1:** ecranul **Mișcări** — tabel + filtre (lună / punct de lucru) + dialog de
+  adăugare rapidă/editare cu combobox de căutare coduri, validare R/D condiționată, atașamente
+  (drag-drop) și ștergere soft. Plus primitive noi (`select`, `date-input`, `combobox`, `file-dropzone`).
+- 🔜 **Următorul:** U2 — ecranul **Parteneri** (tabel + CRUD + badge expirare autorizație).
 
-Următorul pas: **B1 — CRUD WasteMovement (+atașamente) → motor evidențe + exporturi.**
+Model de produs: Faza 1 = „pregătim, nu transmitem" — ținem evidența și generăm ce trebuie raportat
+(SIM/AFM), clientul încarcă în portalul oficial (portalurile n-au API public de transmitere de la terți).
 
 ---
 
@@ -34,7 +42,7 @@ Următorul pas: **B1 — CRUD WasteMovement (+atașamente) → motor evidențe +
 
 - **Java 21** (Temurin OK)
 - **Node 20+**
-- **PostgreSQL 15+** care rulează local
+- **PostgreSQL 15+** care rulează local (dezvoltat pe Postgres 17)
 
 > Gradle nu trebuie instalat global — folosește wrapper-ul (`backend/gradlew`).
 
