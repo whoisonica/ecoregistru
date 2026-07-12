@@ -95,6 +95,28 @@ Codurile **R1–R13** (valorificare) și **D1–D15** (eliminare) provin din Dir
 5. SIM: ce câmpuri suplimentare cere chestionarul PRODDES (generatori) și COL/TRAT (colectori) dincolo de ce avem?
 6. Starea fizică — listă de valori standard folosite în fișă.
 7. Unități: legea preferă tone; noi avem KG/TONS — confirmăm conversia și unitatea de raportare.
+8. **Declarația la Fondul pentru mediu**: aplicația oficială „AFM – Declarații" acceptă date doar prin **restaurarea unui backup al bazei ei (Access `.mdb`)**, nu import XML/CSV din terți (vezi §5). Confirmăm: merită să generăm un `.mdb` compatibil, sau rămânem la o fișă-rezumat pe care o transcrie clientul/contabilul?
+9. **SIATD** (Ordin 701/2024): care dintre clienții noștri tipici intră efectiv sub obligație — sau e strict pentru operatori EPR (colectori/reciclatori/OIREP), nu pentru generatorii mici? (vezi §5)
+
+---
+
+## 5. Cercetare portaluri oficiale — SIATD / AFM-online / „AFM – Declarații" (2026-07-12) 🟡
+
+> **Concluzie de produs:** niciun portal oficial NU are API public / import machine-to-machine de la terți care să merite construit în Faza 1. **Confirmă modelul „pregătim, nu transmitem".** Detalii mai jos, cu surse la final.
+
+### A. SIATD — Sistemul Informatic de Asigurare a Trasabilității Deșeurilor (`siatd.afm.ro`)
+- **NU e** evidența generală HG 856/2002. E trasabilitatea **tranzacțiilor** cu deșeuri în sistemul **răspunderii extinse a producătorului (EPR)**, gestionat de AFM. ✅
+- **Ordin MMAP 701/2024** (în vigoare 10 apr. 2024) l-a **extins** de la doar ambalaje la: **ambalaje, anvelope, EEE, baterii/acumulatori portabili** (+ menționează deșeuri municipale). Bază: Legea 249/2015. ✅
+- **Cine e obligat:** operatori profesioniști din lanț — OIREP, colectare/brokeraj/salubritate/sortare/tratare, valorificare/reciclare, UAT-uri. **NU generatorii mici tipici** (clientul nostru de bază). ✅ (surse secundare confirmă explicit)
+- **Obligația:** validezi **coduri unice de tranzacție** la recepția deșeului, în **3/5/15 zile** (după tip). Acces doar cu **semnătură electronică calificată** (înrolare). ✅
+- **API / import terți:** **nedocumentat** pe sursele oficiale. 🟡 (absență de dovezi, nu dovadă de absență)
+- **Impact la noi:** în afara scopului de bază. Eventual modul opțional viitor „alerte de validare SIATD (3/5/15 zile)" **doar** pentru clienții din lanț EPR. NU în Faza 1.
+
+### B. Declarația la Fondul pentru mediu — „AFM – Declarații" + eTAX AFM-online (`online.afm.ro`)
+- E despre **contribuții la fondul de mediu** (ambalaje/EPR, anvelope, uleiuri, baterii, EEE, taxa la groapă), **NU** evidența deșeurilor. O datorează doar firmele cu obligații AFM (avem deja flagul `Company.afmObligation`). ✅
+- Flux: aplicație **desktop oficială „AFM – Declarații"** → date introduse **manual** SAU **restaurate dintr-un backup** al bazei ei → generează declarația → **semnare digitală** → încărcare prin **eTAX AFM-online** (Ordin 572/2019). ✅
+- **Formatul de import:** aplicația folosește o bază **Microsoft Access `.mdb`**; **nu** acceptă XML/CSV din programe terțe (spre deosebire de D394 la ANAF). Singura „poartă" = fișierul de **backup `.mdb`**. 🟡 (confirmat de surse secundare SAGA + existența instrucțiunilor oficiale de backup/restore; formatul exact `.mdb` de confirmat vizual în aplicație)
+- **Verdict:** a genera un `.mdb` compatibil = fragil + neoficial (schemă nepublicată, versionată) → **nu merită în Faza 1** și nu e miezul nostru. Pentru clienții cu obligație AFM facem: (a) **termenul** (25 a lunii) în TERMENE; (b) o **fișă-rezumat** de date pe care o transcrie clientul/contabilul. Nu import automat.
 
 ---
 
@@ -103,3 +125,4 @@ Codurile **R1–R13** (valorificare) și **D1–D15** (eliminare) provin din Dir
 - HG 856/2002 — [Portal Legislativ](https://legislatie.just.ro/Public/DetaliiDocumentAfis/38294) · [Lege5 + Anexa 1](https://lege5.ro/Gratuit/gm3tgnrw/anexa-nr-1-hotarare-856-2002)
 - SIM / ANPM — [raportare.anpm.ro](https://raportare.anpm.ro/) · [ghid registrul-deseurilor](https://registrul-deseurilor.ro/2025/08/07/anpm-a-deschis-sesiunea-de-raportare-pentru-2024-ce-trebuie-sa-stii-si-cum-te-ajuta-registrul-deseurilor/)
 - AFM — [Calendar fiscal AFM](https://www.afm.ro/taxe_calendar_fiscal.php) · [Instrucțiuni completare declarație](https://www.afm.ro/main/venituri/afm_declaratii-instructiuni.pdf) · [Lege5 instrucțiuni 11.12.2023](https://lege5.ro/gratuit/ge2dmmrvgayda/instructiunile-de-completare-a-formularului-declaratie-privind-obligatiile-la-fondul-pentru-mediu-din-11122023)
+- SIATD / AFM (cercetare §5, iulie 2026) — [Ordin 701/2024 – Portal Legislativ](https://legislatie.just.ro/Public/DetaliiDocument/281612) · [Instrucțiuni SIATD 2020 – Portal Legislativ](https://legislatie.just.ro/Public/DetaliiDocumentAfis/229538) · [Ordin 701/2024 PDF (ecologic.rec.ro)](https://ecologic.rec.ro/wp-content/uploads/2024/04/Ordin-MMAP-701-2024-Instructiuni-Aplicatia-SIATD.pdf) · [Ecologic – SIATD obligatoriu aproape tot domeniul](https://ecologic.rec.ro/siatd-ul-a-devenit-obligatoriu-pentru-aproape-tot-domeniul-gestionarii-deseurilor/) · [AFM – Legislație declarații/obligații](https://www.afm.ro/legislatie_acte_normative_declaratii_obligatii.php) · [Ordin 572/2019 PDF](https://www.afm.ro/main/venituri/ordin572-2019.pdf) · [AFM – Instrucțiuni backup bază de date (PDF)](https://www.afm.ro/main/venituri/instructiuni_backup.pdf)

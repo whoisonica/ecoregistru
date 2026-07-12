@@ -31,7 +31,11 @@ Cod, comentarii, commit-uri: engleză. Text UI: română (`frontend/src/lib/stri
 - ✅ **UI-1 / U1:** ecranul **Mișcări** — tabel + filtre (lună / punct de lucru) + dialog de
   adăugare rapidă/editare cu combobox de căutare coduri, validare R/D condiționată, atașamente
   (drag-drop) și ștergere soft. Plus primitive noi (`select`, `date-input`, `combobox`, `file-dropzone`).
-- 🔜 **Următorul:** U2 — ecranul **Parteneri** (tabel + CRUD + badge expirare autorizație).
+- ✅ **UI-1 / U2:** ecranul **Parteneri** — tabel + CRUD + badge expirare autorizație + dezactivare soft.
+- ✅ **EVID / E1 (backend):** motor de evidență — `EvidenceCalculator` agregă mișcările în linii
+  lunare per (punct de lucru, cod) cu **stoc cumulativ**; `GET /api/v1/evidences`,
+  `POST /api/v1/evidences/regenerate?year=`. Test de corectitudine verde. *Fără UI încă (vine cu E3).*
+- 🔜 **Următorul:** E3 — ecranul **Evidențe** (aduce EVID în UI). Detalii în `docs/prompt-continuare.md`.
 
 Model de produs: Faza 1 = „pregătim, nu transmitem" — ținem evidența și generăm ce trebuie raportat
 (SIM/AFM), clientul încarcă în portalul oficial (portalurile n-au API public de transmitere de la terți).
@@ -121,8 +125,10 @@ Pornește pe `http://localhost:5173` (proxy `/api` → `:8080`).
 
 ## Note reglementare (important)
 
-Formatul oficial al fișei de gestiune lunare și structurile SIM/AFM **nu sunt încă
-implementate** — sunt în spatele interfeței `EvidenceExporter` (vine în B1), cu o
-primă implementare „tabel generic" (Excel/PDF). Formatele oficiale rămân TODO până
-la confirmarea spec-ului. Nomenclatorul de coduri deșeuri e un placeholder cu 10
-rânduri — vezi TODO în `backend/src/main/resources/seed/waste_codes.csv`.
+Formatul oficial al fișei de gestiune lunare (Anexa 1 HG 856/2002) și structurile SIM/AFM
+**nu sunt încă implementate** — vor sta în spatele unui `EvidenceExporter`, cu o primă
+implementare „tabel generic" (Excel/PDF). Formatele oficiale rămân TODO până la confirmarea
+expertului. Cercetarea portalurilor oficiale (SIM/ANPM, AFM-online/„AFM – Declarații", SIATD)
+e în `docs/legislatie.md §5`: **niciunul nu are API public / import de terți** → modelul e
+„pregătim, nu transmitem". Nomenclatorul de coduri deșeuri e un placeholder cu 10 rânduri —
+vezi TODO în `backend/src/main/resources/seed/waste_codes.csv`.
