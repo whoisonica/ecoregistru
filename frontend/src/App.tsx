@@ -7,6 +7,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { MovementsPage } from "@/pages/MovementsPage";
 import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
+import { DeadlinesPage } from "@/pages/DeadlinesPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 /** Placeholder for sections built in later slices (B1+). */
@@ -39,7 +40,7 @@ export default function App() {
           <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
-          <Route path="/termene" element={<AppShell><ComingSoon title="Termene" /></AppShell>} />
+          <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><ComingSoon title="Dosar de control" /></AppShell>} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
         </Routes>

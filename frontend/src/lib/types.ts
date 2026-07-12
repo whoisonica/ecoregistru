@@ -163,3 +163,25 @@ export interface EvidenceFilters {
   month?: number; // 1-12
   workPointId?: string;
 }
+
+// --- Reporting deadlines (FAZA TERMENE) ---
+
+export type ReportType = "SIM_ANNUAL" | "AFM_MONTHLY" | "OTHER";
+
+export type DeadlineStatus = "UPCOMING" | "DONE" | "OVERDUE";
+
+/** Mirrors backend DeadlineResponse. `status` is the effective status (OVERDUE derived from due date). */
+export interface Deadline {
+  id: string;
+  reportType: ReportType;
+  dueDate: string; // yyyy-MM-dd
+  status: DeadlineStatus;
+  completedAt: string | null;
+  completionNote: string | null;
+}
+
+/** Mirrors backend DeadlineGenerationResponse. */
+export interface DeadlineGenerationResponse {
+  year: number;
+  generated: number;
+}

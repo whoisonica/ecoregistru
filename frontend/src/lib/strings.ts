@@ -188,6 +188,37 @@ export const strings = {
       "Evidența nu se actualizează singură. După ce adaugi sau ștergi mișcări, apasă „Regenerează”.",
   },
 
+  deadlines: {
+    title: "Termene de raportare",
+    subtitle:
+      "Calendarul obligațiilor de raportare pe firmă: SIM anual și, pentru firmele cu obligație, AFM lunar.",
+    generate: "Generează termenele",
+    generating: "Se generează...",
+    generated: "Termene generate: {count} noi pentru {year}.",
+    generateError: "Generarea termenelor a eșuat. Încearcă din nou.",
+    loadError: "Nu am putut încărca termenele.",
+    // filters
+    filterYear: "An",
+    // columns
+    colReportType: "Raportare",
+    colDueDate: "Termen",
+    colStatus: "Status",
+    colNote: "Notă",
+    // actions
+    markDone: "Marchează finalizat",
+    reopen: "Redeschide",
+    completed: "Termen marcat ca finalizat.",
+    reopened: "Termen redeschis.",
+    actionError: "Acțiunea a eșuat. Încearcă din nou.",
+    // complete dialog
+    completeTitle: "Marchează termenul ca finalizat",
+    noteLabel: "Notă (opțional)",
+    notePlaceholder: "ex. depus la ANPM pe 12.03, nr. înregistrare 1234",
+    // empty state
+    empty: "Niciun termen pentru {year}.",
+    emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
+  },
+
   // Romanian month names (index 0 = January), for display of the `month` field.
   months: [
     "Ianuarie",
@@ -229,6 +260,16 @@ export const strings = {
       COLLECTOR: "Colector",
       CARRIER: "Transportator",
       BOTH: "Colector și transportator",
+    },
+    reportType: {
+      SIM_ANNUAL: "SIM (anual) — ANPM",
+      AFM_MONTHLY: "AFM (lunar) — Fondul pentru Mediu",
+      OTHER: "Altă raportare",
+    },
+    deadlineStatus: {
+      UPCOMING: "De făcut",
+      DONE: "Finalizat",
+      OVERDUE: "Depășit",
     },
     // R/D recovery & disposal operation codes (Waste Framework Directive annexes).
     wasteOperationCode: {
