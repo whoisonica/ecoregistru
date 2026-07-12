@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { MovementsPage } from "@/pages/MovementsPage";
+import { PartnersPage } from "@/pages/PartnersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 /** Placeholder for sections built in later slices (B1+). */
@@ -36,7 +37,7 @@ export default function App() {
           <Route path="/" element={<AppShell><DashboardPage /></AppShell>} />
           <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
           <Route path="/evidente" element={<AppShell><ComingSoon title="Evidențe" /></AppShell>} />
-          <Route path="/parteneri" element={<AppShell><ComingSoon title="Parteneri" /></AppShell>} />
+          <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><ComingSoon title="Termene" /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><ComingSoon title="Dosar de control" /></AppShell>} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />

@@ -51,6 +51,14 @@ export interface Partner {
   expiringSoon: boolean;
 }
 
+export interface PartnerInput {
+  name: string;
+  cui?: string | null;
+  authorizationNumber?: string | null;
+  authorizationExpiry?: string | null; // yyyy-MM-dd
+  type: PartnerType;
+}
+
 // --- Attachments ---
 
 export interface Attachment {

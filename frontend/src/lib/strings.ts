@@ -112,6 +112,39 @@ export const strings = {
     },
   },
 
+  partners: {
+    title: "Parteneri",
+    subtitle: "Colectorii și transportatorii cărora le predai deșeuri.",
+    add: "Adaugă partener",
+    addTitle: "Adaugă partener",
+    editTitle: "Editează partenerul",
+    empty: "Niciun partener încă.",
+    loadError: "Nu am putut încărca partenerii.",
+    // columns
+    name: "Denumire",
+    cui: "CUI",
+    type: "Tip",
+    authorizationNumber: "Nr. autorizație",
+    authorizationExpiry: "Expirare autorizație",
+    // form placeholders
+    cuiPlaceholder: "ex. RO12345678",
+    authorizationNumberPlaceholder: "ex. 123/2024",
+    typePlaceholder: "Alege tipul",
+    // status / badges
+    active: "Activ",
+    inactive: "Inactiv",
+    noAuthorization: "—",
+    expired: "Expirată",
+    expiringSoon: "Expiră curând",
+    deactivate: "Dezactivează",
+    confirmDeactivate: "Sigur dezactivezi acest partener? Acțiunea nu poate fi anulată.",
+    // feedback
+    created: "Partener adăugat.",
+    updated: "Partener actualizat.",
+    deactivated: "Partener dezactivat.",
+    saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
+  },
+
   // Romanian labels for backend enums (constants are English by convention).
   enums: {
     wasteOperation: {
