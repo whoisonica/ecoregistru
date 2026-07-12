@@ -10,5 +10,6 @@ public record AuthenticationResponse(
         String token,
         Role role,
         UUID tenantId,
+        String tenantName,
         String email
 ) {}

@@ -206,6 +206,7 @@ public class AuthenticationService {
                 .token(token)
                 .role(user.getRole())
                 .tenantId(user.getCompany() != null ? user.getCompany().getId() : null)
+                .tenantName(user.getCompany() != null ? user.getCompany().getName() : null)
                 .email(user.getEmail())
                 .build();
     }
