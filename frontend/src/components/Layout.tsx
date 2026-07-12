@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   Building2,
+  type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useCompanies } from "@/hooks/useCompanies";
@@ -20,7 +21,14 @@ import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
-const navItems = [
+interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+}
+
+const navItems: NavItem[] = [
   { to: "/", label: strings.nav.dashboard, icon: LayoutDashboard, end: true },
   { to: "/miscari", label: strings.nav.movements, icon: Truck },
   { to: "/evidente", label: strings.nav.evidences, icon: FileSpreadsheet },
@@ -29,6 +37,9 @@ const navItems = [
   { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive },
   { to: "/setari", label: strings.nav.settings, icon: Settings },
 ];
+
+/** Nav item only PLATFORM_ADMIN sees: manage the client companies (tenants). */
+const clientsNavItem: NavItem = { to: "/clienti", label: strings.nav.clients, icon: Building2 };
 
 /**
  * Current-company block under the app name. Normal users see their company name (read-only).
@@ -97,6 +108,12 @@ export function Layout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  // Platform admin gets the "Clienți" entry, inserted just before Settings.
+  const items =
+    user?.role === "PLATFORM_ADMIN"
+      ? [...navItems.slice(0, -1), clientsNavItem, navItems[navItems.length - 1]]
+      : navItems;
+
   function handleLogout() {
     logout();
     navigate("/login");
@@ -113,7 +130,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <CompanyBlock />
         </div>
         <nav className="flex-1 space-y-1 px-3">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

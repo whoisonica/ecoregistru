@@ -23,6 +23,49 @@ export interface Company {
   cui: string;
   type: CompanyType;
   active: boolean;
+  // Extra fields are present on the platform-admin management endpoint; the tenant
+  // switcher only reads id/name, so they are optional for older callers.
+  afmObligation?: boolean;
+  environmentalAuthNumber?: string | null;
+  environmentalAuthExpiry?: string | null; // yyyy-MM-dd
+  address?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+}
+
+/** Create/update payload for a company (PLATFORM_ADMIN only). */
+export interface CompanyInput {
+  name: string;
+  cui: string;
+  type: CompanyType;
+  afmObligation: boolean;
+  environmentalAuthNumber?: string | null;
+  environmentalAuthExpiry?: string | null; // yyyy-MM-dd
+  address?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+}
+
+/** Tenant roles that can be invited (never PLATFORM_ADMIN). */
+export type InviteRole = "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
+
+export interface InviteUserInput {
+  email: string;
+  role: InviteRole;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
+/** Mirrors backend CompanyUserResponse. */
+export interface CompanyUser {
+  id: string;
+  email: string;
+  role: InviteRole;
+  firstName: string | null;
+  lastName: string | null;
+  enabled: boolean;
 }
 
 // --- Work points ---

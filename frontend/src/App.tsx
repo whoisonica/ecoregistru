@@ -9,6 +9,7 @@ import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
 import { AuditFilePage } from "@/pages/AuditFilePage";
+import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 function AppShell({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
+          <Route path="/clienti" element={<AppShell><ClientsPage /></AppShell>} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
         </Routes>
       </BrowserRouter>

@@ -22,6 +22,7 @@ export const strings = {
     partners: "Parteneri",
     deadlines: "Termene",
     auditFile: "Dosar de control",
+    clients: "Clienți",
     settings: "Setări",
     logout: "Deconectare",
   },
@@ -247,6 +248,56 @@ export const strings = {
     note: "Notă: dosarul NU înlocuiește formularele oficiale (Anexa 1 / SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
   },
 
+  clients: {
+    title: "Clienți",
+    subtitle:
+      "Firmele pentru care ții evidența. Creezi firme și inviți utilizatori care primesc pe email un link de setare a parolei.",
+    add: "Adaugă firmă",
+    addTitle: "Adaugă firmă",
+    editTitle: "Editează firma",
+    empty: "Nicio firmă încă.",
+    loadError: "Nu am putut încărca firmele.",
+    onlyPlatformAdmin: "Această secțiune este disponibilă doar administratorului platformei.",
+    // columns
+    name: "Denumire",
+    cui: "CUI",
+    type: "Tip",
+    afm: "Obligație AFM",
+    // form fields
+    namePlaceholder: "ex. Demo Reciclare SRL",
+    cuiPlaceholder: "ex. RO12345678",
+    afmLabel: "Firma are obligație de declarație AFM lunară",
+    environmentalAuthNumber: "Nr. autorizație de mediu",
+    environmentalAuthExpiry: "Expirare autorizație de mediu",
+    address: "Adresă",
+    contactName: "Persoană de contact",
+    contactEmail: "Email de contact",
+    contactPhone: "Telefon de contact",
+    // status / badges
+    active: "Activ",
+    inactive: "Inactiv",
+    afmYes: "Da",
+    afmNo: "Nu",
+    // feedback
+    created: "Firmă adăugată.",
+    updated: "Firmă actualizată.",
+    saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
+    // invite user
+    invite: "Invită utilizator",
+    inviteTitle: "Invită utilizator în firma {company}",
+    inviteEmail: "Email",
+    inviteEmailPlaceholder: "utilizator@firma.ro",
+    inviteRole: "Rol",
+    inviteFirstName: "Prenume",
+    inviteLastName: "Nume",
+    inviteSubmit: "Trimite invitația",
+    invited:
+      "Utilizator invitat. I-am trimis (dacă emailul e configurat) un link de setare a parolei.",
+    inviteError: "Invitația a eșuat. Verifică datele și încearcă din nou.",
+    inviteHint:
+      "Utilizatorul primește un email cu link de setare a parolei. Contul devine activ după ce își setează parola.",
+  },
+
   // Romanian month names (index 0 = January), for display of the `month` field.
   months: [
     "Ianuarie",
@@ -288,6 +339,16 @@ export const strings = {
       COLLECTOR: "Colector",
       CARRIER: "Transportator",
       BOTH: "Colector și transportator",
+    },
+    companyType: {
+      GENERATOR: "Generator",
+      COLLECTOR: "Colector",
+      BOTH: "Generator și colector",
+    },
+    inviteRole: {
+      ADMIN: "Administrator",
+      OPERATOR: "Operator",
+      CLIENT_VIEWER: "Vizualizare (read-only)",
     },
     reportType: {
       SIM_ANNUAL: "SIM (anual) — ANPM",
