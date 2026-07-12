@@ -39,8 +39,21 @@ export const strings = {
   dashboard: {
     title: "Panou de control",
     welcome: "Bine ai venit",
-    placeholder:
-      "Aici vor apărea termenele următoare, mișcările lunii curente și alertele de expirare a autorizațiilor.",
+    addMovement: "Adaugă mișcare",
+    // stat tiles
+    statMovements: "Mișcări luna aceasta",
+    statMovementsSub: "înregistrări în {month}",
+    statDeadlines: "Termene de făcut",
+    statDeadlinesSub: "din care {overdue} depășite",
+    statExpiring: "Autorizații care expiră",
+    statExpiringSub: "parteneri cu autorizația aproape expirată",
+    // sections
+    upcomingTitle: "Termene următoare",
+    upcomingEmpty: "Niciun termen deschis pentru anul curent.",
+    expiringTitle: "Autorizații care expiră curând",
+    expiringEmpty: "Nicio autorizație de partener aproape de expirare.",
+    viewAll: "Vezi toate",
+    loadError: "Nu am putut încărca datele panoului.",
   },
 
   movements: {
