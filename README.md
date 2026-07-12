@@ -44,8 +44,23 @@ Cod, comentarii, commit-uri: engleză. Text UI: română (`frontend/src/lib/stri
   membru al firmei (inclusiv `CLIENT_VIEWER`). În UI: butoane **Export Excel / Export PDF** pe ecranul
   Evidențe (vizibile tuturor, dezactivate când nu există linii). Test `EvidenceExportIT` verde.
   ⛔ Formatul oficial Anexa 1 rămâne blocat pe expert — vezi mai jos.
-- 🔜 **Următorul:** U4 — header cu firma curentă + selector de tenant (PLATFORM_ADMIN); necesită
-  endpoint nou `GET /api/v1/companies`. Detalii în `docs/prompt-continuare.md`.
+- ✅ **UI-1 / U4 (header + selector tenant):** firma curentă în header; `PLATFORM_ADMIN` comută tenantul
+  printr-un selector. Endpoint nou `GET /api/v1/companies` (doar PLATFORM_ADMIN) + `tenantName` în login.
+- ✅ **FAZA TERMENE (calendar + alerte):** ecran **Termene** (`/termene`) — auto-generare SIM anual
+  (15 martie) + AFM lunar (doar firme cu obligație AFM), marcare finalizat / redeschide; scheduler zilnic
+  cross-tenant cu alerte email **T-7 / T-1** (dedup pe firmă). ⚠️ Trimiterea reală de email = blocată pe SMTP
+  (cod complet, degradează grațios).
+- ✅ **FAZA DOSAR (dosar de control):** `GET /api/v1/audit-file?year=` → **ZIP** cu evidența (xlsx+pdf),
+  PDF autorizații parteneri și atașamentele mișcărilor; ecran **Dosar de control** (`/dosar-control`).
+- ✅ **FAZA DASH (panou):** ecranul `/` — stat tiles (mișcări luna curentă, termene deschise/depășite,
+  autorizații care expiră) + liste (termene următoare, autorizații aproape expirate).
+- ✅ **FAZA CLIENȚI (management firme + invitații):** `PLATFORM_ADMIN` creează/editează firme
+  (`POST`/`PUT /api/v1/companies`, CUI validat + unic) și **invită utilizatori** pe o firmă
+  (`POST /api/v1/companies/{id}/users` — user creat inactiv + email de setare parolă, refolosind fluxul
+  reset-parolă). Ecran **Clienți** (`/clienti`), vizibil doar pentru PLATFORM_ADMIN. `CompanyManagementIT` verde.
+- 🔜 **Următorul (de ales):** slice alerte expirare autorizație partener (<60 zile, necesită Flyway V4),
+  sau gestionarea userilor unei firme, sau FAZA DATE (nomenclator LED — blocat pe fișier). Detalii în
+  `docs/prompt-continuare.md`.
 
 Set demo bogat (dev): 3 puncte de lucru, 5 parteneri, 34 de mișcări pe 6 luni (feb–iul 2026) cu stoc
 care se reportează lună-de-lună. Vezi și `docs/prezentare.html` — pagină de prezentare a produsului.
@@ -133,6 +148,9 @@ Pornește pe `http://localhost:5173` (proxy `/api` → `:8080`).
    ```
    Răspunsul conține `token`, `role`, `tenantId`.
 4. Verifică datele seed în DB: `SELECT * FROM waste_movements;` (34 de mișcări demo, feb–iul 2026).
+5. Loghează-te cu `platform@ecoregistru.ro / Parola123` → apare în meniu ecranul **Clienți**
+   (doar pentru PLATFORM_ADMIN): creezi/editezi firme și inviți utilizatori. Selectorul de firmă din
+   header comută tenantul pentru toate ecranele.
 
 ---
 
