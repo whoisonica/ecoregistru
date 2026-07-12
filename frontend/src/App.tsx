@@ -4,6 +4,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { SettingsPage } from "@/pages/SettingsPage";
 
 /** Placeholder for sections built in later slices (B1+). */
 function ComingSoon({ title }: { title: string }) {
@@ -37,7 +38,7 @@ export default function App() {
           <Route path="/parteneri" element={<AppShell><ComingSoon title="Parteneri" /></AppShell>} />
           <Route path="/termene" element={<AppShell><ComingSoon title="Termene" /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><ComingSoon title="Dosar de control" /></AppShell>} />
-          <Route path="/setari" element={<AppShell><ComingSoon title="Setări" /></AppShell>} />
+          <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
