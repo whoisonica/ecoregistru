@@ -35,10 +35,10 @@ class ApplicationBootIT {
     void contextLoadsAndSeedApplied() {
         // Flyway V2 seeded the 10 placeholder waste codes from the CSV.
         assertThat(wasteCodeRepository.count()).isEqualTo(10);
-        // DevDataSeeder created the demo users and sample movements
-        // (incl. one RECOVERED movement with an R operation code, added in FAZA M).
+        // DevDataSeeder created the demo users and sample movements: the rich demo dataset
+        // spans Feb–Jul 2026 across three work points (see DevDataSeeder).
         assertThat(appUserRepository.existsByEmail("platform@ecoregistru.ro")).isTrue();
         assertThat(appUserRepository.existsByEmail("admin@demo.ro")).isTrue();
-        assertThat(wasteMovementRepository.count()).isEqualTo(5);
+        assertThat(wasteMovementRepository.count()).isEqualTo(34);
     }
 }
