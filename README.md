@@ -38,8 +38,14 @@ Cod, comentarii, commit-uri: engleză. Text UI: română (`frontend/src/lib/stri
 - ✅ **EVID / E3 (frontend):** ecranul **Evidențe** (`/evidente`) — filtre an / lună / punct de lucru,
   tabel cu totaluri pe operațiune + stoc cumulativ (roșu când e negativ), buton **Regenerează**
   (gated pe rol), empty-state per an. Aduce EVID în UI. Type-check verde.
-- 🔜 **Următorul:** E2-generic — export „tabel generic" Excel (Apache POI) + PDF (OpenPDF) din evidență.
-  Apoi U4 (selector tenant). Detalii în `docs/prompt-continuare.md`.
+- ✅ **EVID / E2-generic (export):** descărcare **„tabel generic" (rezumat neoficial)** din evidență —
+  `GET /api/v1/evidences/export?year=&month=&workPointId=&format=xlsx|pdf` (Apache POI pentru `.xlsx`,
+  OpenPDF pentru `.pdf`), cantități în KG, antet „rezumat generic (neoficial)". Citire pentru orice
+  membru al firmei (inclusiv `CLIENT_VIEWER`). În UI: butoane **Export Excel / Export PDF** pe ecranul
+  Evidențe (vizibile tuturor, dezactivate când nu există linii). Test `EvidenceExportIT` verde.
+  ⛔ Formatul oficial Anexa 1 rămâne blocat pe expert — vezi mai jos.
+- 🔜 **Următorul:** U4 — header cu firma curentă + selector de tenant (PLATFORM_ADMIN); necesită
+  endpoint nou `GET /api/v1/companies`. Detalii în `docs/prompt-continuare.md`.
 
 Set demo bogat (dev): 3 puncte de lucru, 5 parteneri, 34 de mișcări pe 6 luni (feb–iul 2026) cu stoc
 care se reportează lună-de-lună. Vezi și `docs/prezentare.html` — pagină de prezentare a produsului.
@@ -126,16 +132,16 @@ Pornește pe `http://localhost:5173` (proxy `/api` → `:8080`).
      -d '{"email":"admin@demo.ro","password":"Parola123"}'
    ```
    Răspunsul conține `token`, `role`, `tenantId`.
-4. Verifică datele seed în DB: `SELECT * FROM waste_movements;` (4 mișcări demo).
+4. Verifică datele seed în DB: `SELECT * FROM waste_movements;` (34 de mișcări demo, feb–iul 2026).
 
 ---
 
 ## Note reglementare (important)
 
-Formatul oficial al fișei de gestiune lunare (Anexa 1 HG 856/2002) și structurile SIM/AFM
-**nu sunt încă implementate** — vor sta în spatele unui `EvidenceExporter`, cu o primă
-implementare „tabel generic" (Excel/PDF). Formatele oficiale rămân TODO până la confirmarea
-expertului. Cercetarea portalurilor oficiale (SIM/ANPM, AFM-online/„AFM – Declarații", SIATD)
+Exportul „tabel generic" (Excel/PDF) e implementat (`GenericEvidenceExporter`, etichetat explicit
+ca **rezumat neoficial**). Formatul oficial al fișei de gestiune lunare (Anexa 1 HG 856/2002) și
+structurile SIM/AFM **nu sunt încă implementate** — rămân TODO până la confirmarea expertului
+(nu inventăm formate oficiale). Cercetarea portalurilor oficiale (SIM/ANPM, AFM-online/„AFM – Declarații", SIATD)
 e în `docs/legislatie.md §5`: **niciunul nu are API public / import de terți** → modelul e
 „pregătim, nu transmitem". Nomenclatorul de coduri deșeuri e un placeholder cu 10 rânduri —
 vezi TODO în `backend/src/main/resources/seed/waste_codes.csv`.
