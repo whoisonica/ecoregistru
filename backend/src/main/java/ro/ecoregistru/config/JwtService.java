@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * JWT issue/verify. Ported from an earlier project. Same token shape works for web and (future) mobile.
+ * JWT issue/verify. The same token shape works for web and (future) mobile clients.
  */
 @Service
 public class JwtService {

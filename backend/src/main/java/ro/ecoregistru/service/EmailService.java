@@ -21,7 +21,6 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.EMAIL_SEND_FAILED;
 
 /**
  * Sends transactional emails (Romanian). Templates live under resources/templates/mail/.
- * Ported concept from an earlier project's EmailService + TemplateService.
  */
 @Slf4j
 @Service

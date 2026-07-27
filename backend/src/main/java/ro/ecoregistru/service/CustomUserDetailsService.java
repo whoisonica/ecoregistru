@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import ro.ecoregistru.repository.AppUserRepository;
 
 /**
- * Single users table -> a single lookup by email (simpler than an earlier project's dual candidate/employer).
+ * Single users table -> a single lookup by email.
  */
 @Component
 @RequiredArgsConstructor

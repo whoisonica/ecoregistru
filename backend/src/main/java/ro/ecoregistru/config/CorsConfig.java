@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 /**
- * Permissive CORS for the SPA (and future mobile client). Ported from an earlier project.
+ * Permissive CORS for the SPA (and future mobile client).
  * Tighten Access-Control-Allow-Origin before opening the product publicly.
  */
 @Component

@@ -21,3 +21,14 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+# Config local Claude Code
+/.claude/
+
+# Note de lucru interne — rămân local, nu în repo-ul public
+/REUSE_MAP.md
+/docs/prompt-continuare.md
+/docs/plan-executie.md
+/docs/monetizare.md
+/docs/intrebari-specialist.md
+/docs/EcoRegistru-intrebari-specialist.pdf

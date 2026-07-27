@@ -34,7 +34,7 @@ dependencies {
 	// Migrations (Flyway managed by Spring Boot 3.2 -> Flyway 9.x). ddl-auto is OFF.
 	implementation 'org.flywaydb:flyway-core'
 
-	// JWT auth (ported from an earlier project)
+	// JWT auth
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
 	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'

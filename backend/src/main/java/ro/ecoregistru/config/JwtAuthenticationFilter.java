@@ -19,7 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Reads the Bearer token, validates it, and sets the authentication. Ported from an earlier project.
+ * Reads the Bearer token, validates it, and sets the authentication.
  */
 @Component
 @RequiredArgsConstructor

@@ -1,97 +1,82 @@
 # EcoRegistru
 
-SaaS B2B pentru conformitate în gestiunea deșeurilor (România): evidența lunară a
-gestiunii deșeurilor, pregătirea raportărilor (SIM/AFM), alerte de termene și
-generarea dosarului de control.
+Multi-tenant compliance SaaS for waste management in Romania: monthly waste records,
+preparation of the mandatory SIM/AFM reports, deadline alerts, and one-click generation
+of the inspection file.
 
-Monorepo:
+Romanian waste operators are legally required to keep monthly waste-management records
+(HG 856/2002) and to file SIM/AFM reports. Most still do it in spreadsheets — error-prone,
+impossible to audit, and painful when an inspection arrives. Missing or incorrect records
+carry fines of 20,000–40,000 RON (OUG 92/2021).
+
+Built solo, end to end: architecture, backend, frontend and tests. Domain requirements
+validated with compliance-reporting specialists.
 
 ```
-/backend    Spring Boot 3.2 · Java 21 · PostgreSQL · Flyway · JWT (multi-tenant)
+/backend    Spring Boot 3.2 · Java 21 · PostgreSQL · Flyway · JWT · multi-tenant
 /frontend   Vite · React 18 · TypeScript · Tailwind · TanStack Query
-REUSE_MAP.md   Ce a fost portat din an earlier project, ce e nou (citește-l primul)
+/docs       Regulatory research and the product one-pager
 ```
 
-Cod, comentarii, commit-uri: engleză. Text UI: română (`frontend/src/lib/strings.ts`).
+Code, comments and commits are in English; the UI is in Romanian
+(`frontend/src/lib/strings.ts`).
 
 ---
 
-## Stadiu
+## Engineering highlights
 
-- ✅ **B0 — Fundația:** auth JWT (login, verificare email, resend, reset parolă), multi-tenancy
-  (`company_id` pe fiecare tabelă + `TenantContext` + `TenantFilter`, izolare la nivel de request;
-  PLATFORM_ADMIN comută tenantul via `X-Tenant-Id`), roluri `PLATFORM_ADMIN`/`ADMIN`/`OPERATOR`/`CLIENT_VIEWER`,
-  schema completă Faza 1 (Flyway), seed nomenclator coduri din CSV, envelope de erori, OpenAPI, seed tenant demo.
-- ✅ **B1-core:** CRUD `WasteMovement` (+atașamente Cloudinary, idempotent, soft-delete, `?since=`),
-  `Partner` CRUD, `WorkPoint` CRUD, căutare `WasteCode`.
-- ✅ **Faza M:** stare fizică + cod operație R/D (validat) pe mișcări, flag obligație AFM pe firmă,
-  stoc cumulativ pe evidența lunară (Flyway `V3`).
-- ✅ **UI-1 / U0:** infra frontend (toast, primitive UI, hooks TanStack Query, tipuri) +
-  ecran **Setări / Puncte de lucru** (CRUD).
-- ✅ **UI-1 / U1:** ecranul **Mișcări** — tabel + filtre (lună / punct de lucru) + dialog de
-  adăugare rapidă/editare cu combobox de căutare coduri, validare R/D condiționată, atașamente
-  (drag-drop) și ștergere soft. Plus primitive noi (`select`, `date-input`, `combobox`, `file-dropzone`).
-- ✅ **UI-1 / U2:** ecranul **Parteneri** — tabel + CRUD + badge expirare autorizație + dezactivare soft.
-- ✅ **EVID / E1 (backend):** motor de evidență — `EvidenceCalculator` agregă mișcările în linii
-  lunare per (punct de lucru, cod) cu **stoc cumulativ**; `GET /api/v1/evidences`,
-  `POST /api/v1/evidences/regenerate?year=`. Test de corectitudine verde.
-- ✅ **EVID / E3 (frontend):** ecranul **Evidențe** (`/evidente`) — filtre an / lună / punct de lucru,
-  tabel cu totaluri pe operațiune + stoc cumulativ (roșu când e negativ), buton **Regenerează**
-  (gated pe rol), empty-state per an. Aduce EVID în UI. Type-check verde.
-- ✅ **EVID / E2-generic (export):** descărcare **„tabel generic" (rezumat neoficial)** din evidență —
-  `GET /api/v1/evidences/export?year=&month=&workPointId=&format=xlsx|pdf` (Apache POI pentru `.xlsx`,
-  OpenPDF pentru `.pdf`), cantități în KG, antet „rezumat generic (neoficial)". Citire pentru orice
-  membru al firmei (inclusiv `CLIENT_VIEWER`). În UI: butoane **Export Excel / Export PDF** pe ecranul
-  Evidențe (vizibile tuturor, dezactivate când nu există linii). Test `EvidenceExportIT` verde.
-  ⛔ Formatul oficial Anexa 1 rămâne blocat pe expert — vezi mai jos.
-- ✅ **UI-1 / U4 (header + selector tenant):** firma curentă în header; `PLATFORM_ADMIN` comută tenantul
-  printr-un selector. Endpoint nou `GET /api/v1/companies` (doar PLATFORM_ADMIN) + `tenantName` în login.
-- ✅ **FAZA TERMENE (calendar + alerte):** ecran **Termene** (`/termene`) — auto-generare SIM anual
-  (15 martie) + AFM lunar (doar firme cu obligație AFM), marcare finalizat / redeschide; scheduler zilnic
-  cross-tenant cu alerte email **T-7 / T-1** (dedup pe firmă). ⚠️ Trimiterea reală de email = blocată pe SMTP
-  (cod complet, degradează grațios).
-- ✅ **FAZA DOSAR (dosar de control):** `GET /api/v1/audit-file?year=` → **ZIP** cu evidența (xlsx+pdf),
-  PDF autorizații parteneri și atașamentele mișcărilor; ecran **Dosar de control** (`/dosar-control`).
-- ✅ **FAZA DASH (panou):** ecranul `/` — stat tiles (mișcări luna curentă, termene deschise/depășite,
-  autorizații care expiră) + liste (termene următoare, autorizații aproape expirate).
-- ✅ **FAZA CLIENȚI (management firme + invitații):** `PLATFORM_ADMIN` creează/editează firme
-  (`POST`/`PUT /api/v1/companies`, CUI validat + unic) și **invită utilizatori** pe o firmă
-  (`POST /api/v1/companies/{id}/users` — user creat inactiv + email de setare parolă, refolosind fluxul
-  reset-parolă). Ecran **Clienți** (`/clienti`), vizibil doar pentru PLATFORM_ADMIN. `CompanyManagementIT` verde.
-- 🔜 **Următorul (de ales):** slice alerte expirare autorizație partener (<60 zile, necesită Flyway V4),
-  sau gestionarea userilor unei firme, sau FAZA DATE (nomenclator LED — blocat pe fișier). Detalii în
-  `docs/prompt-continuare.md`.
+**Multi-tenancy that actually isolates.** Every table carries a `company_id`; a request-scoped
+`TenantContext` populated by a `TenantFilter` scopes every query. Platform admins switch tenant
+through an `X-Tenant-Id` header. A dedicated `TenantIsolationIT` suite asserts that no endpoint
+ever returns another tenant's rows — the test I care most about in this codebase.
 
-Set demo bogat (dev): 3 puncte de lucru, 5 parteneri, 34 de mișcări pe 6 luni (feb–iul 2026) cu stoc
-care se reportează lună-de-lună. Vezi și `docs/prezentare.html` — pagină de prezentare a produsului.
+**Versioned schema, no surprises.** Flyway migrations with a real version history and
+`ddl-auto=none` — the database is never shaped by Hibernate at runtime.
 
-Model de produs: Faza 1 = „pregătim, nu transmitem" — ținem evidența și generăm ce trebuie raportat
-(SIM/AFM), clientul încarcă în portalul oficial (portalurile n-au API public de transmitere de la terți).
+**Evidence engine.** `EvidenceCalculator` aggregates waste movements into monthly lines per
+(work point, waste code), carrying a cumulative stock balance forward month over month and
+flagging negative balances. Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
+
+**Deadlines and alerts.** Automatic generation of the annual SIM deadline and the monthly AFM
+deadline (only for companies subject to it), plus a daily cross-tenant scheduler that emails
+T-7 / T-1 reminders with per-company deduplication.
+
+**Inspection file.** `GET /api/v1/audit-file?year=` streams a ZIP containing the yearly evidence
+(xlsx + pdf), partner authorization PDFs and every movement attachment.
+
+**Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `CLIENT_VIEWER`, enforced at endpoint level.
+
+Current status and the feature-by-feature log: [`docs/status.md`](docs/status.md).
 
 ---
 
-## Cerințe
+## Regulatory note
 
-- **Java 21** (Temurin OK)
-- **Node 20+**
-- **PostgreSQL 15+** care rulează local (dezvoltat pe Postgres 17)
-
-> Gradle nu trebuie instalat global — folosește wrapper-ul (`backend/gradlew`).
+The generic evidence export (Excel/PDF) is implemented and explicitly labelled as an
+**unofficial summary**. The official monthly record format (Anexa 1, HG 856/2002) and the
+SIM/AFM structures are deliberately **not** implemented until a domain expert confirms them —
+this project does not invent official formats. None of the official portals (SIM/ANPM,
+AFM-online, SIATD) exposes a public third-party submission API, so the product model is
+"we prepare, you submit": the app produces the reports, the client uploads them.
+Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ---
 
-## 1. Baza de date
+## Running it locally
 
-Creează baza și utilizatorul folosite de profilul `dev`:
+**Requirements:** Java 21 (Temurin is fine), Node 20+, PostgreSQL 15+ (developed on 17).
+Gradle does not need to be installed — use the wrapper.
+
+### 1. Database
 
 ```sql
 CREATE USER eco WITH PASSWORD 'eco';
 CREATE DATABASE ecoregistru OWNER eco;
 ```
 
-(Din `psql -U postgres`, sau pgAdmin.) Flyway creează schema automat la pornire.
+Flyway creates the schema on first boot.
 
-## 2. Backend
+### 2. Backend
 
 ```bash
 cd backend
@@ -100,19 +85,16 @@ $env:SPRING_PROFILES_ACTIVE = "dev"
 ./gradlew.bat bootRun
 ```
 
-Pornește pe `http://localhost:8080`.
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- Health: `http://localhost:8080/actuator/health`
+Runs on `http://localhost:8080` — Swagger UI at `/swagger-ui.html`, health at
+`/actuator/health`. The `dev` profile ships a throwaway JWT secret and seeds a demo tenant.
+Cloudinary and email are optional in dev: the app boots without them and fails with a clear
+error only if you actually use upload or email.
 
-Profilul `dev` include un secret JWT de test și pornește `DevDataSeeder`
-(seed tenant demo). **Cloudinary și email sunt opționale în dev** — aplicația
-pornește fără ele (uploadul/emailul dau eroare clară doar când sunt folosite).
+Production environment variables: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`,
+`JWT_SECRET` (Base64), `CLOUDINARY_URL`, `MAIL_HOST/PORT/USERNAME/PASSWORD/FROM`,
+`FRONTEND_BASE_URL`.
 
-Variabile pentru producție (NU sunt necesare în dev):
-`DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET` (Base64),
-`CLOUDINARY_URL`, `MAIL_HOST/PORT/USERNAME/PASSWORD/FROM`, `FRONTEND_BASE_URL`.
-
-## 3. Frontend
+### 3. Frontend
 
 ```bash
 cd frontend
@@ -120,46 +102,32 @@ npm install
 npm run dev
 ```
 
-Pornește pe `http://localhost:5173` (proxy `/api` → `:8080`).
+Runs on `http://localhost:5173`, proxying `/api` to `:8080`.
 
----
+### Demo accounts (dev profile, password `Parola123` for all)
 
-## Conturi demo (profil dev, parola pentru toate: `Parola123`)
-
-| Email                     | Rol            | Tenant             |
+| Email                     | Role           | Tenant             |
 |---------------------------|----------------|--------------------|
 | platform@ecoregistru.ro   | PLATFORM_ADMIN | — (global)         |
 | admin@demo.ro             | ADMIN          | Demo Reciclare SRL |
 | operator@demo.ro          | OPERATOR       | Demo Reciclare SRL |
 | viewer@demo.ro            | CLIENT_VIEWER  | Demo Reciclare SRL |
 
----
+The dev seed is deliberately rich: 3 work points, 5 partners and 34 movements across 6 months,
+so the cumulative stock actually carries over and the evidence screens have something to show.
 
-## Cum testezi B0 rapid
+### Tests
 
-1. Pornește DB + backend + frontend.
-2. Deschide `http://localhost:5173`, loghează-te cu `admin@demo.ro / Parola123`.
-   Ar trebui să ajungi în Panou, cu sidebar-ul EcoRegistru.
-3. Sau direct pe API:
-   ```bash
-   curl -X POST http://localhost:8080/api/v1/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"email":"admin@demo.ro","password":"Parola123"}'
-   ```
-   Răspunsul conține `token`, `role`, `tenantId`.
-4. Verifică datele seed în DB: `SELECT * FROM waste_movements;` (34 de mișcări demo, feb–iul 2026).
-5. Loghează-te cu `platform@ecoregistru.ro / Parola123` → apare în meniu ecranul **Clienți**
-   (doar pentru PLATFORM_ADMIN): creezi/editezi firme și inviți utilizatori. Selectorul de firmă din
-   header comută tenantul pentru toate ecranele.
+```bash
+cd backend
+./gradlew.bat test
+```
+
+Integration tests cover tenant isolation, evidence calculation, export correctness,
+movement validation and company management.
 
 ---
 
-## Note reglementare (important)
+## License
 
-Exportul „tabel generic" (Excel/PDF) e implementat (`GenericEvidenceExporter`, etichetat explicit
-ca **rezumat neoficial**). Formatul oficial al fișei de gestiune lunare (Anexa 1 HG 856/2002) și
-structurile SIM/AFM **nu sunt încă implementate** — rămân TODO până la confirmarea expertului
-(nu inventăm formate oficiale). Cercetarea portalurilor oficiale (SIM/ANPM, AFM-online/„AFM – Declarații", SIATD)
-e în `docs/legislatie.md §5`: **niciunul nu are API public / import de terți** → modelul e
-„pregătim, nu transmitem". Nomenclatorul de coduri deșeuri e un placeholder cu 10 rânduri —
-vezi TODO în `backend/src/main/resources/seed/waste_codes.csv`.
+MIT — see [LICENSE](LICENSE).

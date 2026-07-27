@@ -20,7 +20,6 @@ import static ro.ecoregistru.exception.GlobalErrorMessages.*;
 
 /**
  * Consistent error envelope for the whole API: {error-type, error-code, error-message, params?}.
- * Ported from an earlier project's AdviceController.
  */
 @Slf4j
 @RestControllerAdvice
