@@ -176,11 +176,13 @@ public class DevDataSeeder implements CommandLineRunner {
         ms.add(mv(company, wpTurda, d(6, 11), metals, "220.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
         ms.add(mv(company, wpTurda, d(6, 24), metals, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, metalRecycler, "Aviz nr. 372", createdBy));
 
-        // ---- Mixed municipal (20 03 01) at Turda — landfill disposal (D1) ----
+        // ---- Mixed municipal (20 03 01) at Turda — disposal at a conforming landfill (D5) ----
+        // D5 (specially engineered landfill) rather than D1 (deposit onto land): municipal waste
+        // in RO goes to "depozite conforme" with sealed cells. Per specialist feedback, 2026-08-20.
         ms.add(mv(company, wpTurda, d(5, 3), mixed, "300.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpTurda, d(5, 28), mixed, "300.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D1, carrier, "Aviz nr. 355", createdBy));
+        ms.add(mv(company, wpTurda, d(5, 28), mixed, "300.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 355", createdBy));
         ms.add(mv(company, wpTurda, d(7, 4), mixed, "260.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpTurda, d(7, 18), mixed, "200.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D1, carrier, "Aviz nr. 388", createdBy));
+        ms.add(mv(company, wpTurda, d(7, 18), mixed, "200.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 388", createdBy));
 
         // ---- Glass (15 01 07) collected at the depot, then handed over ----
         ms.add(mv(company, wpDepozit, d(6, 2), glass, "500.000", WasteOperation.COLLECTED, PhysicalState.SOLID, null, carrier, "Recepție 15/06", createdBy));

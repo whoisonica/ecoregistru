@@ -5,10 +5,13 @@ spring:
   application:
     name: ecoregistru
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/ecoregistru}
+    # JDBC_DATABASE_* comes first because Heroku's Java buildpack derives it from the
+    # Postgres add-on in real JDBC form. The add-on's own DATABASE_URL is
+    # postgres://user:pass@host/db, which the driver cannot parse.
+    url: ${JDBC_DATABASE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/ecoregistru}}
     driver-class-name: org.postgresql.Driver
-    username: ${DATABASE_USERNAME:eco}
-    password: ${DATABASE_PASSWORD:eco}
+    username: ${JDBC_DATABASE_USERNAME:${DATABASE_USERNAME:eco}}
+    password: ${JDBC_DATABASE_PASSWORD:${DATABASE_PASSWORD:eco}}
   jpa:
     hibernate:
       # Schema is owned by Flyway. NEVER 'update' (quality bar).

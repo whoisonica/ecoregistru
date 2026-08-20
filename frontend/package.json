@@ -3,13 +3,18 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "start": "serve -s dist -l ${PORT:-4173}"
   },
   "dependencies": {
+    "serve": "^14.2.3",
     "@tanstack/react-query": "^5.51.1",
     "axios": "^1.7.2",
     "class-variance-authority": "^0.7.0",
