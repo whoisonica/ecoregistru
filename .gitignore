@@ -33,3 +33,17 @@ Thumbs.db
 /docs/intrebari-specialist.md
 /docs/EcoRegistru-intrebari-specialist.pdf
 /docs/raspunsuri-specialist.md
+
+# Build artefacts
+frontend/tsconfig.tsbuildinfo
+
+# Documente primite de la specialist — nu ale noastre de publicat.
+# PDF-ul HG 856 provine de pe lege6.ro (bază comercială) și are 4 erori de
+# transcriere confirmate; XLSX/ODS sunt șabloanele de lucru ale specialistei.
+documente oficiale/
+
+# Materiale de prezentare interne + binare generate din HTML-urile urmărite
+/docs/prezentare-specialist.html
+/docs/EcoRegistru-prezentare-specialist.pdf
+/docs/EcoRegistru-prezentare.pdf
+/docs/screenshots/

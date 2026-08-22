@@ -219,6 +219,27 @@
     .stake { grid-template-columns: 1fr; gap: 10px; text-align: left; }
     .step { grid-template-columns: 40px 1fr; gap: 14px; }
   }
+
+  /* ---- print / PDF ---- */
+  @page { margin: 13mm 12mm; }
+  @media print {
+    :root {
+      --paper: #ffffff; --card: #ffffff; --card-2: #fbfcf9; --ink: #14201a;
+      --ink-soft: #46564d; --ink-faint: #7b897f; --line: #e0e5db; --line-strong: #cdd4c8;
+      --brand: #0c6b49; --brand-strong: #0a5a3d; --brand-tint: #e4efe8;
+      --stake: #9a3d16; --stake-tint: #f4e7df; --shadow: none; --shadow-lg: none;
+    }
+    body { font-size: 12.5px; background: #fff; }
+    body::before { display: none; }
+    .toggle { display: none; }
+    .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
+    .hero { padding-top: 8px; }
+    .hero h1 { font-size: 2.3rem; }
+    section { padding: 26px 0; }
+    .card, .step, .stake, .pillar { break-inside: avoid; }
+    .example, .status { break-inside: avoid; }
+    .card:hover { transform: none; }
+  }
 </style>
 </head>
 <body>
@@ -336,7 +357,7 @@
       <div class="step">
         <div class="n">04</div>
         <div class="body">
-          <h3>Termene &amp; alerte <span class="tag soon">în lucru</span></h3>
+          <h3>Termene &amp; alerte <span class="tag">automat</span></h3>
           <p>Aplicația te anunță din timp: declarația AFM pe 25, raportarea SIM anuală, sau când expiră autorizația unui colector.</p>
         </div>
       </div>
@@ -350,7 +371,7 @@
       <div class="step">
         <div class="n">06</div>
         <div class="body">
-          <h3>Dosar de control <span class="tag soon">în lucru</span></h3>
+          <h3>Dosar de control <span class="tag">un click</span></h3>
           <p>Un singur fișier cu toată evidența pe interval, avizele scanate și autorizațiile partenerilor. Îl deschizi în fața inspectorului și ești acoperit.</p>
         </div>
       </div>
@@ -415,10 +436,14 @@
       <span class="pill done">Puncte de lucru</span>
       <span class="pill done">Motor de evidență + stoc</span>
       <span class="pill done">Ecran Evidențe</span>
-      <span class="pill next">Export Excel / PDF</span>
-      <span class="pill next">Termene &amp; alerte</span>
-      <span class="pill next">Dosar de control</span>
-      <span class="pill next">Panou de bord</span>
+      <span class="pill done">Export Excel / PDF</span>
+      <span class="pill done">Termene &amp; alerte</span>
+      <span class="pill done">Dosar de control</span>
+      <span class="pill done">Panou de bord</span>
+      <span class="pill done">Gestiune clienți &amp; invitații</span>
+      <span class="pill next">Fișa oficială Anexa 1 — după validarea specialistului</span>
+      <span class="pill next">Lista completă de coduri de deșeuri — după fișierul oficial</span>
+      <span class="pill next">Găzduire online pentru pilot</span>
     </div>
   </section>
 </main>
