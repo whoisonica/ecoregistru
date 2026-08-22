@@ -80,3 +80,10 @@ jar {
 		attributes('Main-Class': 'ro.ecoregistru.EcoRegistruApplication')
 	}
 }
+
+// Heroku's Gradle buildpack invokes `./gradlew stage`. Depend on bootJar rather
+// than build: the integration tests pull embedded-postgres-binaries-windows-amd64,
+// which cannot run on a Linux dyno, so `build` would fail during the slug compile.
+tasks.register('stage') {
+	dependsOn 'bootJar'
+}
