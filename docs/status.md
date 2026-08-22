@@ -43,7 +43,10 @@ rulează local și are testele verzi.
   (`POST /api/v1/companies/{id}/users` — user creat inactiv + email de setare parolă, refolosind fluxul
   reset-parolă). Ecran **Clienți** (`/clienti`), vizibil doar pentru PLATFORM_ADMIN. `CompanyManagementIT` verde.
 - ✅ **Deploy Heroku (2026-08-22, `0fd09ae`, branch `deploy/heroku-split`):** backend (`ecoregistru-api`)
-  și frontend (`ecoregistru-app`) rulează pe dyno Basic. **Neîmpins pe `origin/main`.**
+  și frontend (`ecoregistru-app`) rulează pe dyno Basic. Auto-deploy din **repo-urile split**
+  (`whoisonica/ecoregistru-backend` ← remote `newrepo`, `whoisonica/ecoregistru-frontend` ← `ferepo`);
+  push-ul pe `origin` (monorepo) **nu deployează nimic**. Ambele repo-uri au commit-uri proprii, deci
+  actualizarea lor se face cu `git subtree split` + **cherry-pick** peste capul remote-ului, niciodată force.
 - ✅ **ETAPA 0 — Documentare legislativă (2026-08-22):** verificare integrală pe surse primare
   (Portal Legislativ, EUR-Lex, sgglegis.gov.ro). Nou: `docs/surse-oficiale.md` (citate verbatim cu
   link + dată). Corectat `docs/legislatie.md` (6 corecții, inclusiv **formula stocului**, care era
@@ -58,6 +61,10 @@ rulează local și are testele verzi.
   ultima virgulă). Cele cinci validări rulează ca test (`WasteCodeSeedTest`): unicitate, format de
   6 cifre, capitol și subcapitol corecte pentru fiecare cod, plus **amprenta pe capitole**
   (842 coduri, 408 periculoase). `ApplicationBootIT` verifică reîncărcarea în DB. Suită verde.
+  **Livrat în producție pe 23.08.2026** (`ecoregistru-api` release v8): Flyway a aplicat `V4` pe baza
+  Heroku în 56 ms, aplicația a repornit curat, iar codurile se văd în combobox-ul de pe Mișcări.
+  Commit-uri: `53f5e8c` (seed), `4efff97` (docs), `491a241` (taskul Gradle `stage`, adus înapoi din
+  repo-ul de deploy — lipsea din monorepo și ar fi rupt primul subtree split proaspăt).
 
 ---
 
@@ -81,6 +88,13 @@ nu se salvează.
 | 9 | Borderou de achiziție la metale (OUG 31/2011) + regim GDPR pentru CNP | 8 | M |
 | 10 | Profil groapă (registru recepție HG 349 art. 15, raportare semestrială, alertă 12h) | 8 + cuantumul din anexa 2 | M |
 | 11 | Modul ambalaje (Ordin 794/2012 anexa 3, **în kg**) | 8 | M |
+
+**Restanțe mici (S, se pot lua oricând, nu blochează nimic):**
+
+- **Căutarea de coduri e sensibilă la diacritice.** `WasteCodeRepository.search` face
+  `lower(...) like`, iar denumirile din nomenclator au diacritice: cine tastează „deseuri" nu
+  găsește nimic. Cu 10 coduri nu conta; de la Etapa 1 încoace, cu 842, se vede. Reparație:
+  `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
 
 **Etapa 2 e cea critică.** `EvidenceCalculator` calculează azi stocul greșit: scade `handedOver`,
 `recovered` **și** `disposed`, deși fișa oficială (HG 856 Anexa 1, Cap. 1) nu are coloană de predare.
