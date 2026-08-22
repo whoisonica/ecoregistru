@@ -46,10 +46,12 @@ art. 48, for goods taken over from third parties — which HG 856/2002 art. 2 al
 Anexa 1 entirely. Every quantity that leaves the site carries its R/D operation code and its
 operator, because that is what chapters 3 and 4 of the form report.
 
-**Evidence engine.** `EvidenceCalculator` aggregates waste movements into monthly lines per
-(work point, waste code), carrying a cumulative stock balance forward month over month and
-flagging negative balances. Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
-⚠️ The stock formula is being corrected — see [`docs/status.md`](docs/status.md), Etapa 2b.
+**Evidence engine.** `EvidenceCalculator` aggregates the Anexa 1 movements into twelve monthly
+lines per (work point, waste code) per year, on the identity the form encodes —
+`stock = previous + generated − recovered − disposed` — carrying the balance across empty months and
+across years, and flagging negative balances. A handover is reported in the recovered or disposed
+column its R/D code implies, never as a column of its own; a quantity that left without a code is
+reported apart and marks the line incomplete. Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
 
 **Deadlines and alerts.** Automatic generation of the annual SIM deadline and the monthly AFM
 deadline (only for companies subject to it), plus a daily cross-tenant scheduler that emails

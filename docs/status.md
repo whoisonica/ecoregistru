@@ -83,6 +83,43 @@ rulează local și are testele verzi.
   ⚠️ **O restanță de clasificare pe care nicio migrare nu o poate ghici** (predările de marfă
   preluată) și **o întrebare deschisă** către specialistă (ce cod se trece la predarea către un
   colector) — detalii mai jos.
+- ✅ **ETAPA 2b–2d — Formula de stoc a Anexei 1 (2026-08-23):** `EvidenceCalculator` calculează
+  acum identitatea pe care o cere fișa, nu una inventată:
+  `stoc = stoc_anterior + generat − valorificat − eliminat − ieșiri neclasificate`. Ce s-a schimbat,
+  punct cu punct:
+  - **intră doar registrul `ANEXA_1`.** Marfa preluată de la terți nu mai ridică stocul propriu
+    (HG 856 art. 2 alin. (1)); `totalCollected` iese din răspuns, din export și din ecran.
+  - **predarea nu mai e o coloană separată.** Fișa n-are „predat", deci fiecare predare aterizează în
+    „valorificată" sau „eliminată final" după familia codului R/D al destinatarului. Cantitatea
+    predată rămâne ca **memo** („din care predat"), niciodată ca termen al stocului — o ieșire
+    fizică, o singură scădere.
+  - **12 rânduri pe an**, chiar și în lunile fără mișcări: formularul e un tabel de 12 rânduri și
+    stocul trebuie să se citească pe fiecare linie.
+  - **perechile cu stoc reportat și zero mișcări nu mai dispar** din raport: December-ul anului
+    anterior le ține în viață.
+  - **regenerarea cascadează.** Stocul e cumulativ între ani, deci o corecție pe 2025 reconstruiește
+    și 2026 (`cascadedYears` în răspuns, mesaj dedicat în UI). Înainte, anii următori rămâneau greșiți.
+  - **ieșirile fără cod R/D** (predările vechi) se scad din stoc, dar nu intră în nicio coloană
+    oficială: `totalUnclassifiedOut` + `incomplete` pe linie. Nu se ghicește o operațiune ca să se
+    închidă fișa.
+  - **predările suspecte de marfă preluată** (aceeași pereche punct-de-lucru/cod are și activitate
+    art. 48) se marchează `resaleSuspected` — semnal, nu rescriere; Etapa 8 le mută.
+  Migrarea **`V6`** e aditivă (`total_unclassified_out`, `resale_suspected`, default pe
+  `total_collected`) și **golește cache-ul** `monthly_evidences`: liniile vechi arătau o Anexă 1 pe
+  care legea n-o recunoaște, iar tabela e prin contract regenerabilă din mișcări.
+  Suită verde: **73 de teste** (63 înainte), din care `EvidenceCalculatorIT` rescris (8 teste) și
+  `Anexa1FormConformanceIT` nou (5 teste, Etapa 2c). Verificat și pe Postgres-ul de dev: `V6` aplicată
+  în 30 ms, regenerarea a produs 84 de linii pentru 2026, cu 13 linii `incomplete` (exact predările
+  vechi fără cod) și 1 linie `resaleSuspected` — sticla predată din marfă preluată, care iese acum
+  cu stoc negativ vizibil în loc să fie compensată tăcut din deșeul propriu.
+  ⚠️ **Șablonul specialistei e gol.** `documente oficiale/RAPORTARE DESEURI GENERATE.xlsx` (foile
+  `20 03 01`, `20 01 01`, `15 01 02`) nu conține nicio cifră — toate celulele de cantitate sunt
+  goale și fiecare TOTAL AN e 0. Deci Etapa 2c n-a putut „reproduce cifrele"; ce **poartă** fișierul
+  sunt formulele ei, și pe alea le fixează testul: `C26=SUM(C14:C25)` (TOTAL AN = suma celor 12
+  rânduri), `F26=C26-D26` (stoc = generat − tratat) și linia de antet „Stoc: 0 kg". Două observații
+  colaterale: coloana `Secția` din cap. 2 e **constantă pe 12 luni** („birouri", „productie") — exact
+  ipoteza de profil implicit a Etapei 3 —, iar antetul cap. 3/4 al șablonului încă trimite la
+  **Legea 211/2011**, abrogată de OUG 92/2021. Fișierul e gitignored, deci niciun test nu-l citește.
 
 ---
 
@@ -96,7 +133,7 @@ nu se salvează.
 |---|---|---|---|
 | 0 | ✅ Documentare legislativă (inclusiv runda „depozite", 22.08) | — | **GATA** |
 | 1 | ✅ **Nomenclator LED** — 842 coduri din Decizia 2014/955/UE | — | **GATA** |
-| 2 | 🔴 **Model: operațiuni + stoc + cele trei evidențe** — reparația critică | 1 | M–L |
+| 2 | ✅ **Model: operațiuni + stoc + cele trei evidențe** — reparația critică | 1 | **GATA** |
 | 3 | Cap. 2 ca profil (5 nomenclatoare + `Secția`) | 2 | M |
 | 4 | **Export oficial Anexa 1** (4 capitole) | 1, 2, 3 | L |
 | 5 | Centralizator anual + conversie kg→tone (art. 48) | 4 | S |
@@ -114,16 +151,18 @@ nu se salvează.
   găsește nimic. Cu 10 coduri nu conta; de la Etapa 1 încoace, cu 842, se vede. Reparație:
   `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
 
-**Etapa 2 e în lucru: 2a e livrat, 2b–2d urmează.**
+**Etapa 2 e livrată integral (2a–2d, 23.08.2026).** Următoarea migrare liberă e **`V7`**
+(`V5` = seam-ul de registru, `V6` = modelul de stoc).
 
-- **2b — `EvidenceCalculator`:** formula `stoc_anterior + generat − valorificat − eliminat`, plus
-  cele trei găuri (lunile goale, grupurile cu stoc reportat și zero mișcări, cascada regenerării).
-  Migrarea de acolo e **`V6`** — `V5` e ocupată de seam.
-- **2c — testul de referință** pe foaia `20 03 01` a șablonului specialistei. Cifrele se transcriu
-  în test ca fixture: `documente oficiale/` e gitignored, deci un test care citește fișierul ar trece
-  local și ar pica în repo-ul de deploy.
-- **2d — consecințele pe suprafață:** `totalCollected` iese din Anexa 1, exportul generic și ecranul
-  Evidențe îl urmează.
+**Ce a rămas deschis după Etapa 2, în ordinea în care doare:**
+
+- 🟠 **Codul de operațiune la predarea către un colector** (întrebarea 3 din
+  `intrebari-specialist.md`) — nerezolvat, și acum se **vede**: cele 13 predări vechi fără cod sunt
+  marcate `incomplete` și nu intră în nicio coloană. Codul nu propune niciun implicit.
+- 🟠 **Predările de marfă preluată sunt semnalate, nu mutate.** `resaleSuspected` arată liniile
+  suspecte (stoc negativ pe pereche, la demo); mutarea reală e Etapa 8, într-o singură migrare.
+- 🟡 **`total_collected` a rămas în schemă**, cu default 0 și nescris de motor. Se șterge tot în
+  Etapa 8, împreună cu mișcările `COLLECTED` pe care le descria.
 
 **Ce a rămas neclasificat după `V5`, și de ce nu ghicim:**
 
@@ -141,12 +180,11 @@ nu se salvează.
    pe care migrarea din Etapa 8 le mută. Până atunci, 2b le semnalează (o predare în `ANEXA_1` la o
    pereche punct-de-lucru/cod care are și preluări e suspectă) — semnalează, nu rescrie.
 
-**Etapa 2 e cea critică.** `EvidenceCalculator` calculează azi stocul greșit: scade `handedOver`,
-`recovered` **și** `disposed`, deși fișa oficială (HG 856 Anexa 1, Cap. 1) nu are coloană de predare.
-În plus, `COLLECTED` e adunat în aceeași linie cu `GENERATED`, ceea ce **art. 2(1) din HG 856
-interzice** — marfa preluată de la terți nu intră în Anexa 1. Detalii: `surse-oficiale.md` §1.1 și
-`legislatie.md` §3. Etapa 2 nu doar șterge `COLLECTED`, ci îl **mută**: modelul trebuie să separe
-cele **trei** evidențe (Anexa 1 · registrul art. 48 · registrul de recepție al depozitului).
+**Etapa 2 era cea critică; e închisă.** `EvidenceCalculator` scădea `handedOver` **peste**
+`recovered`/`disposed` și aduna `COLLECTED` în aceeași linie cu `GENERATED` — două lucruri pe care
+fișa oficială (HG 856 Anexa 1, cap. 1) și art. 2(1) le exclud. Ambele sunt reparate, cu testele care
+le țin așa. Detalii: `surse-oficiale.md` §1.1–1.2. Din cele trei evidențe, două sunt separate în cod
+(Anexa 1 · registrul art. 48); registrul de recepție al depozitului rămâne pentru Etapa 8.
 
 **Etapa 7 e o corectitudine, nu o funcționalitate nouă.** Azi generăm un termen AFM **lunar pe 25**
 pentru orice firmă cu `afmObligation = true`. Dar OUG 196/2005 art. 11 are trei cadențe, iar o firmă
