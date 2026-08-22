@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
+
+import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +34,9 @@ class ApplicationBootIT {
     @Autowired
     WasteMovementRepository wasteMovementRepository;
 
+    @Autowired
+    CompanyRepository companyRepository;
+
     @Test
     void contextLoadsAndSeedApplied() {
         // Flyway V4 reloaded the full European List of Waste over V2's 10 placeholders.
@@ -45,9 +51,14 @@ class ApplicationBootIT {
                     assertThat(code.isHazardous()).isTrue();
                 });
         // DevDataSeeder created the demo users and sample movements: the rich demo dataset
-        // spans Feb–Jul 2026 across three work points (see DevDataSeeder).
+        // spans Feb–Jul 2026 across three work points (see DevDataSeeder). Scoped to the demo
+        // tenant on purpose: the embedded database is shared with the other test classes, whose
+        // fixtures would otherwise make this count depend on the order they run in.
         assertThat(appUserRepository.existsByEmail("platform@ecoregistru.ro")).isTrue();
         assertThat(appUserRepository.existsByEmail("admin@demo.ro")).isTrue();
-        assertThat(wasteMovementRepository.count()).isEqualTo(34);
+        UUID demoTenantId = companyRepository.findAll().stream()
+                .filter(c -> "Demo Reciclare SRL".equals(c.getName()))
+                .findFirst().orElseThrow().getId();
+        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(34);
     }
 }

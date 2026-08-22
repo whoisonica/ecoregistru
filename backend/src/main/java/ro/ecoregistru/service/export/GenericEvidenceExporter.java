@@ -34,10 +34,14 @@ import java.util.List;
 public class GenericEvidenceExporter {
 
     private static final String TITLE = "Evidența gestiunii deșeurilor — rezumat generic (neoficial)";
+    // Column order follows Anexa 1 cap. 1 — generated, of which recovered / disposed, in stock —
+    // even though the table itself is unofficial. "din care predat" is a memo inside the two
+    // treatment columns, and "neclasificat" is what left with no operation code, hence outside
+    // both. Goods taken over from third parties are not here at all: they are the art. 48 register.
     private static final String[] COLUMNS = {
             "Punct de lucru", "Luna", "Cod", "Denumire", "Periculos",
-            "Generat (kg)", "Colectat (kg)", "Predat (kg)", "Valorificat (kg)",
-            "Eliminat (kg)", "Stoc (kg)"
+            "Generat (kg)", "Valorificat (kg)", "Eliminat (kg)", "din care predat (kg)",
+            "Neclasificat (kg)", "Stoc (kg)"
     };
     private static final String[] MONTHS_RO = {
             "Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie",
@@ -108,10 +112,10 @@ public class GenericEvidenceExporter {
                 cell(row, 3, e.wasteCodeName(), null);
                 cell(row, 4, e.hazardous() ? "Da" : "Nu", null);
                 numberCell(row, 5, kg(e.totalGenerated()), numberStyle);
-                numberCell(row, 6, kg(e.totalCollected()), numberStyle);
-                numberCell(row, 7, kg(e.totalHandedOver()), numberStyle);
-                numberCell(row, 8, kg(e.totalRecovered()), numberStyle);
-                numberCell(row, 9, kg(e.totalDisposed()), numberStyle);
+                numberCell(row, 6, kg(e.totalRecovered()), numberStyle);
+                numberCell(row, 7, kg(e.totalDisposed()), numberStyle);
+                numberCell(row, 8, kg(e.totalHandedOver()), numberStyle);
+                numberCell(row, 9, kg(e.totalUnclassifiedOut()), numberStyle);
                 numberCell(row, 10, kg(e.closingStock()), numberStyle);
             }
 
@@ -179,10 +183,10 @@ public class GenericEvidenceExporter {
                 textCell(table, e.wasteCodeName(), bodyFont, Element.ALIGN_LEFT);
                 textCell(table, e.hazardous() ? "Da" : "Nu", bodyFont, Element.ALIGN_CENTER);
                 numCell(table, kg(e.totalGenerated()), bodyFont);
-                numCell(table, kg(e.totalCollected()), bodyFont);
-                numCell(table, kg(e.totalHandedOver()), bodyFont);
                 numCell(table, kg(e.totalRecovered()), bodyFont);
                 numCell(table, kg(e.totalDisposed()), bodyFont);
+                numCell(table, kg(e.totalHandedOver()), bodyFont);
+                numCell(table, kg(e.totalUnclassifiedOut()), bodyFont);
                 numCell(table, kg(e.closingStock()), bodyFont);
             }
 

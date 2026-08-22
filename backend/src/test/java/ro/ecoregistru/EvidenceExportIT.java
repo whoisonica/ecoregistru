@@ -132,7 +132,8 @@ class EvidenceExportIT {
     @Test
     void exportIsTenantScoped() throws Exception {
         // A second tenant with a single movement in 2026. Its export must contain only its own
-        // line, never the demo tenant's — proving scoping holds through the export path too.
+        // fişă — twelve rows, one per month, as Anexa 1 requires — and never the demo tenant's,
+        // proving scoping holds through the export path too.
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         Company other = companyRepository.save(Company.builder()
                 .name("Other Tenant SRL").cui("ROX" + suffix).type(CompanyType.GENERATOR)
@@ -150,7 +151,7 @@ class EvidenceExportIT {
 
         String otherToken = jwtService.generateToken(otherUser);
         regenerate(adminToken, 2026);   // demo tenant: many lines
-        regenerate(otherToken, 2026);   // other tenant: exactly one line
+        regenerate(otherToken, 2026);   // other tenant: one pair, hence twelve monthly rows
 
         MockHttpServletResponse res = mockMvc.perform(get("/api/v1/evidences/export")
                         .param("year", "2026").param("format", "xlsx")
@@ -161,7 +162,7 @@ class EvidenceExportIT {
         List<String> workPointNames = new ArrayList<>();
         try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(res.getContentAsByteArray()))) {
             Sheet sheet = wb.getSheetAt(0);
-            assertThat(dataRowCount(sheet)).isEqualTo(1);
+            assertThat(dataRowCount(sheet)).isEqualTo(12);
             for (int r = FIRST_DATA_ROW; r <= sheet.getLastRowNum(); r++) {
                 Row row = sheet.getRow(r);
                 if (row != null && row.getCell(0) != null) {

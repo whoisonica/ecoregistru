@@ -7,11 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.response.EvidenceRegenerationResponse;
 import ro.ecoregistru.controller.response.MonthlyEvidenceResponse;
+import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.MonthlyEvidence;
 import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.Unit;
+import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.MonthlyEvidenceRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -22,18 +24,38 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * The evidence engine (FAZA EVID / E1). Movements are the source of truth; this recomputes the
- * cached {@link MonthlyEvidence} lines for a whole year in one pass so cumulative stock is
- * well-defined. Stock model (from MonthlyEvidence's contract):
- * closingStock = previous closingStock + generated + collected − handedOver − recovered − disposed.
- * Quantities are normalised to KG. Everything is tenant-scoped via {@link TenantContext}.
+ * The evidence engine (FAZA EVID): rebuilds the cached {@link MonthlyEvidence} lines of Anexa 1
+ * from the movements, which are the source of truth.
+ *
+ * <p><b>What it aggregates.</b> Only movements of the {@code ANEXA_1} register. HG 856/2002
+ * art. 2 alin. (1) keeps the fişa to <em>"deşeurile generate în cadrul activităţilor proprii"</em>,
+ * so goods taken over from third parties never reach it — they belong to the art. 48 register.
+ *
+ * <p><b>The stock identity.</b> Anexa 1 cap. 1 has the columns
+ * <em>Generate | din care: valorificată | eliminată final | rămasă în stoc</em> and no "handed
+ * over" one, so
+ * <pre>stock = previous stock + generated − recovered − disposed − unclassified out</pre>
+ * A handover is reported under "valorificată" or "eliminată final" following the R/D family of the
+ * operation its recipient performs; it is a description of the same physical exit, never a second
+ * one. Handovers left over from before the code was mandatory have no family: they leave the stock
+ * but enter no official column, and the line is marked incomplete rather than closed over a guess.
+ *
+ * <p><b>Shape.</b> A (work point, code) that is live in a year gets all 12 months, activity or
+ * not — the form is a 12-row table and a month with no movements still has to show its stock. A
+ * pair whose stock carried over from December of the previous year is live even with no movements
+ * at all, so it cannot silently vanish from the report.
+ *
+ * <p>Quantities are normalised to KG. Everything is tenant-scoped via {@link TenantContext}.
  */
 @Service
 @RequiredArgsConstructor
@@ -49,26 +71,49 @@ public class EvidenceCalculator {
     /** Groups movements by the (work point, waste code) an evidence line is scoped to. */
     private record GroupKey(UUID workPointId, UUID wasteCodeId) {}
 
+    /** A pair that carried stock into the year, with the entities needed to write its lines. */
+    private record CarriedOver(WorkPoint workPoint, WasteCode wasteCode, BigDecimal openingStock) {}
+
     /**
-     * Recomputes every evidence line for the tenant and the given year from its movements.
-     * Opening stock for January carries over from the previous December's closing stock
-     * (if that year was already generated), otherwise starts at zero.
+     * Recomputes the tenant's evidence for the given year from its movements, then for every later
+     * year up to the last one cached. Stock is cumulative across years, so regenerating 2025 after
+     * a correction leaves 2026 wrong unless it is rebuilt too — the cascade is what makes a
+     * back-dated fix land everywhere it is visible.
      */
     @Transactional
     public EvidenceRegenerationResponse regenerateYear(int year) {
         UUID tenantId = TenantContext.require();
 
+        int lines = regenerateSingleYear(tenantId, year);
+
+        Integer lastCachedYear = evidenceRepository.findMaxYear(tenantId);
+        List<Integer> cascaded = new ArrayList<>();
+        if (lastCachedYear != null) {
+            // Walk the whole range, gaps included: a year with no cached lines still has to be
+            // rebuilt, otherwise it stays the hole that stops the stock from reaching the years
+            // after it.
+            for (int later = year + 1; later <= lastCachedYear; later++) {
+                lines += regenerateSingleYear(tenantId, later);
+                cascaded.add(later);
+            }
+        }
+        return new EvidenceRegenerationResponse(year, lines, cascaded);
+    }
+
+    /** Rebuilds one year in isolation; returns how many lines it wrote. */
+    private int regenerateSingleYear(UUID tenantId, int year) {
         List<WasteMovement> movements = movementRepository
                 .findAllByCompany_IdAndDeletedFalseAndDateBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
 
-        // Opening balance per group = previous year's December closing stock.
-        Map<GroupKey, BigDecimal> openingStock = new HashMap<>();
+        // Opening balance per group = previous year's December closing stock. A pair carrying
+        // stock is live this year even with no movements, so it also seeds the group set below.
+        Map<GroupKey, CarriedOver> carried = new LinkedHashMap<>();
         for (MonthlyEvidence prev : evidenceRepository.findByCompany_IdAndYear(tenantId, year - 1)) {
-            if (prev.getMonth() == 12) {
-                openingStock.put(
+            if (prev.getMonth() == 12 && prev.getClosingStock().signum() != 0) {
+                carried.put(
                         new GroupKey(prev.getWorkPoint().getId(), prev.getWasteCode().getId()),
-                        prev.getClosingStock());
+                        new CarriedOver(prev.getWorkPoint(), prev.getWasteCode(), prev.getClosingStock()));
             }
         }
 
@@ -78,31 +123,43 @@ public class EvidenceCalculator {
         evidenceRepository.flush();
 
         Map<GroupKey, List<WasteMovement>> byGroup = movements.stream()
+                .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
                 .collect(Collectors.groupingBy(
                         m -> new GroupKey(m.getWorkPoint().getId(), m.getWasteCode().getId())));
 
+        // Pairs that also traded third-party goods this year. Not aggregated — a handover of own
+        // waste and a handover passing collected goods on look identical, so the line is flagged
+        // for review instead of being reclassified behind the user's back.
+        Set<GroupKey> tradedGroups = movements.stream()
+                .filter(m -> m.getRegister() == WasteRegister.ART_48)
+                .map(m -> new GroupKey(m.getWorkPoint().getId(), m.getWasteCode().getId()))
+                .collect(Collectors.toCollection(HashSet::new));
+
+        Set<GroupKey> groups = new LinkedHashSet<>(byGroup.keySet());
+        groups.addAll(carried.keySet());
+
         Instant now = Instant.now();
-        var company = companyRepository.getReferenceById(tenantId);
+        Company company = companyRepository.getReferenceById(tenantId);
         List<MonthlyEvidence> lines = new ArrayList<>();
 
-        for (List<WasteMovement> group : byGroup.values()) {
-            WorkPoint workPoint = group.get(0).getWorkPoint();
-            WasteCode wasteCode = group.get(0).getWasteCode();
-            GroupKey key = new GroupKey(workPoint.getId(), wasteCode.getId());
+        for (GroupKey key : groups) {
+            List<WasteMovement> group = byGroup.getOrDefault(key, List.of());
+            CarriedOver from = carried.get(key);
+            WorkPoint workPoint = group.isEmpty() ? from.workPoint() : group.get(0).getWorkPoint();
+            WasteCode wasteCode = group.isEmpty() ? from.wasteCode() : group.get(0).getWasteCode();
+            boolean traded = tradedGroups.contains(key);
 
             Map<Integer, List<WasteMovement>> byMonth = group.stream()
                     .collect(Collectors.groupingBy(m -> m.getDate().getMonthValue()));
 
-            BigDecimal running = openingStock.getOrDefault(key, BigDecimal.ZERO);
+            BigDecimal running = from == null ? BigDecimal.ZERO : from.openingStock();
             for (int month = 1; month <= 12; month++) {
-                List<WasteMovement> monthMovements = byMonth.get(month);
-                if (monthMovements == null) {
-                    continue; // no activity: stock carries forward untouched
-                }
-                Totals totals = sum(monthMovements);
+                Totals totals = sum(byMonth.getOrDefault(month, List.of()));
                 running = running
-                        .add(totals.generated).add(totals.collected)
-                        .subtract(totals.handedOver).subtract(totals.recovered).subtract(totals.disposed);
+                        .add(totals.generated)
+                        .subtract(totals.recovered)
+                        .subtract(totals.disposed)
+                        .subtract(totals.unclassifiedOut);
 
                 lines.add(MonthlyEvidence.builder()
                         .company(company)
@@ -111,10 +168,11 @@ public class EvidenceCalculator {
                         .month(month)
                         .wasteCode(wasteCode)
                         .totalGenerated(totals.generated)
-                        .totalCollected(totals.collected)
-                        .totalHandedOver(totals.handedOver)
                         .totalRecovered(totals.recovered)
                         .totalDisposed(totals.disposed)
+                        .totalHandedOver(totals.handedOver)
+                        .totalUnclassifiedOut(totals.unclassifiedOut)
+                        .resaleSuspected(traded && totals.handedOver.signum() > 0)
                         .closingStock(running)
                         .generatedAt(now)
                         .build());
@@ -122,7 +180,7 @@ public class EvidenceCalculator {
         }
 
         evidenceRepository.saveAll(lines);
-        return new EvidenceRegenerationResponse(year, lines.size());
+        return lines.size();
     }
 
     @Transactional(readOnly = true)
@@ -133,22 +191,37 @@ public class EvidenceCalculator {
                 .filter(e -> workPointId == null || e.getWorkPoint().getId().equals(workPointId))
                 .sorted(Comparator
                         .comparing((MonthlyEvidence e) -> e.getWorkPoint().getName())
-                        .thenComparing(MonthlyEvidence::getMonth)
-                        .thenComparing(e -> e.getWasteCode().getCode()))
+                        .thenComparing(e -> e.getWasteCode().getCode())
+                        .thenComparing(MonthlyEvidence::getMonth))
                 .map(this::toResponse)
                 .toList();
     }
 
+    /**
+     * Adds up one month of Anexa 1 movements. A handover lands in the column its recipient's
+     * operation implies; without a code it lands in none, and is reported separately.
+     */
     private Totals sum(List<WasteMovement> movements) {
         Totals t = new Totals();
         for (WasteMovement m : movements) {
             BigDecimal kg = toKg(m.getQuantity(), m.getUnit());
             switch (m.getOperation()) {
                 case GENERATED -> t.generated = t.generated.add(kg);
-                case COLLECTED -> t.collected = t.collected.add(kg);
-                case HANDED_OVER -> t.handedOver = t.handedOver.add(kg);
                 case RECOVERED -> t.recovered = t.recovered.add(kg);
                 case DISPOSED -> t.disposed = t.disposed.add(kg);
+                case HANDED_OVER -> {
+                    t.handedOver = t.handedOver.add(kg); // memo: "din care predat"
+                    var code = m.getOperationCode();
+                    if (code == null) {
+                        t.unclassifiedOut = t.unclassifiedOut.add(kg);
+                    } else if (code.isRecovery()) {
+                        t.recovered = t.recovered.add(kg);
+                    } else {
+                        t.disposed = t.disposed.add(kg);
+                    }
+                }
+                // Takeovers are art. 48 and are filtered out before this point (HG 856 art. 2(1)).
+                case COLLECTED -> { }
             }
         }
         return t;
@@ -170,20 +243,23 @@ public class EvidenceCalculator {
                 e.getWasteCode().getName(),
                 e.getWasteCode().isHazardous(),
                 e.getTotalGenerated(),
-                e.getTotalCollected(),
-                e.getTotalHandedOver(),
                 e.getTotalRecovered(),
                 e.getTotalDisposed(),
+                e.getTotalHandedOver(),
+                e.getTotalUnclassifiedOut(),
+                e.getTotalUnclassifiedOut().signum() > 0,
+                e.isResaleSuspected(),
                 e.getClosingStock(),
                 e.getGeneratedAt());
     }
 
-    /** Mutable accumulator for one month's operation totals (KG). */
+    /** Mutable accumulator for one month's Anexa 1 totals (KG). */
     private static final class Totals {
         BigDecimal generated = BigDecimal.ZERO;
-        BigDecimal collected = BigDecimal.ZERO;
-        BigDecimal handedOver = BigDecimal.ZERO;
         BigDecimal recovered = BigDecimal.ZERO;
         BigDecimal disposed = BigDecimal.ZERO;
+        /** Subset of recovered + disposed: how much left as a handover. Not a stock term. */
+        BigDecimal handedOver = BigDecimal.ZERO;
+        BigDecimal unclassifiedOut = BigDecimal.ZERO;
     }
 }
