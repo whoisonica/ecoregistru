@@ -1,24 +1,1015 @@
-# EcoRegistru — nomenclator coduri deșeuri (Lista Europeană a Deșeurilor / Decizia 2014/955/UE)
+# EcoRegistru — nomenclator coduri deșeuri (Lista Europeană a Deșeurilor)
+#
+# Sursă: Decizia 2014/955/UE (versiunea RO), EUR-Lex CELEX 32014D0955
+#   https://eur-lex.europa.eu/legal-content/RO/TXT/HTML/?uri=CELEX:32014D0955
+#   accesat: 22.08.2026. Se aplică de la 1 iunie 2015; înlocuiește lista din
+#   Decizia 2000/532/CE. NU se folosește anexa 2 la HG 856/2002 (versiunea 2002/2007,
+#   iar copiile în circulație au erori de transcriere — vezi docs/surse-oficiale.md).
+#   Amprentă: 842 coduri, din care 408 periculoase.
+#
+# GENERAT — nu edita manual. Regenerare: python scripts/generate_waste_codes.py
+# Validat de script și de testul WasteCodeSeedTest (unicitate, format, capitol,
+# subcapitol, amprenta pe capitole).
+#
 # Format: code,name,hazardous
 #   code      = 6 cifre formatate "NN NN NN" (FĂRĂ asteriscul de periculozitate)
-#   name      = denumirea în română
+#   name      = denumirea oficială în română, verbatim; poate conține virgule, deci
+#               la citire: codul e până la prima virgulă, hazardous după ultima
 #   hazardous = true dacă în LED codul e marcat cu '*' (deșeu periculos), altfel false
 #
-# ====================================================================================
-# TODO(Onica): ÎNLOCUIEȘTE rândurile de mai jos cu LISTA OFICIALĂ COMPLETĂ a codurilor LED.
-#   - Sursă: Decizia 2014/955/UE / HG 856/2002, anexa 2 (Lista Europeană a Deșeurilor).
-#   - După înlocuire, seed-ul NU se re-rulează automat (V2 e deja aplicat). Ca să reîncarci:
-#       copiază V2__seed_waste_codes.java -> V3__reseed_waste_codes.java (Flyway rulează noua versiune),
-#       sau golește tabelul waste_codes și repornește pe o bază curată.
-#   - NU inventa coduri sau denumiri. Folosește exclusiv textul oficial.
-# ====================================================================================
-20 03 01,Deșeuri municipale amestecate,false
-15 01 01,Ambalaje de hârtie și carton,false
-15 01 02,Ambalaje de materiale plastice,false
-15 01 07,Ambalaje de sticlă,false
-20 01 01,Hârtie și carton,false
+# Titlurile de capitol (# ==) și de subcapitol (# --)
+# păstrează structura listei oficiale: fiecare cod trebuie să stea sub capitolul și
+# subcapitolul date de propriile lui cifre. Sunt comentarii — seed-ul le ignoră.
+
+# == 01 DEȘEURI REZULTATE DIN EXPLORAREA ȘI EXPLOATAREA MINELOR ȘI CARIERELOR, PRECUM ȘI DIN TRATAREA FIZICĂ ȘI CHIMICĂ A MINERALELOR
+# -- 01 01 deșeuri din extracția mineralelor
+01 01 01,deșeuri rezultate din extracția minereurilor metalifere,false
+01 01 02,deșeuri rezultate din extracția minereurilor nemetalifere,false
+# -- 01 03 deșeuri rezultate din prelucrarea fizică și chimică a mineralelor metalifere
+01 03 04,reziduuri acide rezultate din procesarea minereurilor cu sulfuri,true
+01 03 05,alte reziduuri cu conținut de substanțe periculoase,true
+01 03 06,reziduuri, altele decât cele specificate la 01 03 04 și 01 03 05,false
+01 03 07,alte deșeuri care conțin substanțe periculoase, rezultate din procesarea fizică și chimică a minereurilor metalifere,true
+01 03 08,deșeuri sub formă de praf și pulberi, altele decât cele specificate la 01 03 07,false
+01 03 09,nămoluri roșii rezultate din producerea aluminei, altele decât deșeurile menționate la 01 03 10,false
+01 03 10,nămoluri roșii rezultate din producerea aluminei, care conțin substanțe periculoase, altele decât deșeurile menționate la 01 03 07,true
+01 03 99,deșeuri nespecificate,false
+# -- 01 04 deșeuri rezultate din prelucrarea fizică și chimică a mineralelor nemetalifere
+01 04 07,deșeuri cu conținut de substanțe periculoase rezultate din procesarea fizică și chimică a mineralelor nemetalifere,true
+01 04 08,deșeuri de pietriș și spărturi de piatră, altele decât cele menționate la 01 04 07,false
+01 04 09,deșeuri de nisip și argilă,false
+01 04 10,deșeuri sub formă de praf și pulberi, altele decât cele menționate la 01 04 07,false
+01 04 11,deșeuri rezultate din prelucrarea potasei și a sărurilor minerale, altele decât cele menționate la 01 04 07,false
+01 04 12,reziduuri și alte deșeuri rezultate din spălarea și purificarea mineralelor, altele decât cele specificate la 01 04 07 și 01 04 11,false
+01 04 13,deșeuri de la tăierea și șlefuirea pietrei, altele decât cele specificate la 01 04 07,false
+01 04 99,deșeuri nespecificate,false
+# -- 01 05 nămoluri de foraj și alte deșeuri de foraj
+01 05 04,nămoluri și deșeuri de foraj pe bază de apă dulce,false
+01 05 05,deșeuri și nămoluri de foraj cu conținut de ulei,true
+01 05 06,nămoluri de foraj și alte deșeuri de foraj cu conținut de substanțe periculoase,true
+01 05 07,nămoluri de foraj și deșeuri cu conținut de baritină, altele decât cele specificate la 01 05 05 și 01 05 06,false
+01 05 08,nămoluri de foraj și deșeuri cu conținut de cloruri, altele decât cele specificate la 01 05 05 și 01 05 06,false
+01 05 99,deșeuri nespecificate,false
+
+# == 02 DEȘEURI PROVENITE DIN AGRICULTURĂ, HORTICULTURĂ, ACVACULTURĂ, SILVICULTURĂ, VÂNĂTOARE ȘI PESCUIT, PRECUM ȘI DIN PREPARAREA ȘI PRELUCRAREA ALIMENTELOR
+# -- 02 01 deșeuri provenite din agricultură, horticultură, acvacultură, silvicultură, vânătoare și pescuit
+02 01 01,nămoluri de la spălare și curățare,false
+02 01 02,deșeuri de țesuturi animale,false
+02 01 03,deșeuri de țesuturi vegetale,false
+02 01 04,deșeuri de materiale plastice (cu excepția ambalajelor),false
+02 01 06,materii fecale, urină și gunoi de grajd de la animale (inclusiv resturi de paie), efluente, colectate separat și tratate în afara incintei,false
+02 01 07,deșeuri din exploatarea forestieră,false
+02 01 08,deșeuri agrochimice cu conținut de substanțe periculoase,true
+02 01 09,deșeuri agrochimice, altele decât cele specificate la 02 01 08,false
+02 01 10,deșeuri de metal,false
+02 01 99,deșeuri nespecificate,false
+# -- 02 02 deșeuri rezultate din prepararea și prelucrarea cărnii, a peștelui și a altor alimente de origine animală
+02 02 01,nămoluri de la spălare și curățare,false
+02 02 02,deșeuri de țesuturi animale,false
+02 02 03,materii care sunt improprii pentru consum ori procesare,false
+02 02 04,nămoluri de la epurarea efluenților în incintă,false
+02 02 99,deșeuri nespecificate,false
+# -- 02 03 deșeuri din prepararea și prelucrarea fructelor, legumelor, cerealelor, uleiurilor alimentare, a pudrei de cacao, a cafelei, ceaiului și tutunului; producția de conserve; producția de drojdii și extracte de drojdii, prepararea și fermentarea melaselor
+02 03 01,nămoluri de la spălare, curățare, decojire, centrifugare și separare,false
+02 03 02,deșeuri de agenți de conservare,false
+02 03 03,deșeuri de la extracția cu solvenți,false
+02 03 04,materii care sunt improprii pentru consum ori procesare,false
+02 03 05,nămoluri de la epurarea efluenților în incintă,false
+02 03 99,deșeuri nespecificate,false
+# -- 02 04 deșeuri rezultate din prelucrarea zahărului
+02 04 01,pământ rezultat din curățarea și spălarea sfeclei de zahăr,false
+02 04 02,carbonat de calciu fără altă specificație,false
+02 04 03,nămoluri de la epurarea efluenților în incintă,false
+02 04 99,deșeuri nespecificate,false
+# -- 02 05 deșeuri provenite din industria produselor lactate
+02 05 01,materii care sunt improprii pentru consum ori procesare,false
+02 05 02,nămoluri de la epurarea efluenților în incintă,false
+02 05 99,deșeuri nespecificate,false
+# -- 02 06 deșeuri provenite din industria de panificație, patiserie și cofetărie
+02 06 01,materii care sunt improprii pentru consum ori procesare,false
+02 06 02,deșeuri de agenți de conservare,false
+02 06 03,nămoluri de la epurarea efluenților în incintă,false
+02 06 99,deșeuri nespecificate,false
+# -- 02 07 deșeuri rezultate din producția de băuturi alcoolice și nealcoolice (cu excepția cafelei, a ceaiului și a pudrei de cacao)
+02 07 01,deșeuri de la spălarea, curățarea și prelucrarea mecanică a materiei prime,false
+02 07 02,deșeuri de la distilarea băuturilor alcoolice,false
+02 07 03,deșeuri de la tratamente chimice,false
+02 07 04,materii care sunt improprii pentru consum ori procesare,false
+02 07 05,nămoluri de la epurarea efluenților în incintă,false
+02 07 99,deșeuri nespecificate,false
+
+# == 03 DEȘEURI REZULTATE DIN PRELUCRAREA LEMNULUI ȘI FABRICAREA DE PANOURI ȘI MOBILĂ, CELULOZĂ, HÂRTIE ȘI CARTON
+# -- 03 01 deșeuri rezultate din prelucrarea lemnului și din fabricarea panourilor și a mobilei
+03 01 01,deșeuri de scoarță și de plută,false
+03 01 04,rumeguș, așchii, resturi, lemn, plăci din așchii de lemn și furnir cu conținut de substanțe periculoase,true
+03 01 05,rumeguș, talaș, așchii, resturi de placă aglomerată din lemn și furnir, altele decât cele specificate la 03 01 04,false
+03 01 99,deșeuri nespecificate,false
+# -- 03 02 deșeuri rezultate din produsele de protecție a lemnului
+03 02 01,agenți de conservare organici nehalogenați pentru lemn,true
+03 02 02,agenți de conservare organoclorurați pentru lemn,true
+03 02 03,agenți de conservare organometalici pentru lemn,true
+03 02 04,agenți de conservare anorganici pentru lemn,true
+03 02 05,alți agenți de conservare pentru lemn cu conținut de substanțe periculoase,true
+03 02 99,alți agenți de conservare pentru lemn nespecificați,false
+# -- 03 03 deșeuri rezultate din fabricarea și prelucrarea hârtiei, a cartonului și a pastei de hârtie
+03 03 01,deșeuri de scoarță și de lemn,false
+03 03 02,nămoluri de leșie verde (de la recuperarea soluțiilor de fierbere),false
+03 03 05,nămoluri de la eliminarea cernelii din procesul de reciclare a hârtiei,false
+03 03 07,deșeuri mecanice de la fierberea hârtiei și cartonului reciclate,false
+03 03 08,deșeuri de la sortarea hârtiei și cartonului destinate reciclării,false
+03 03 09,deșeuri de nămol de caustificare,false
+03 03 10,rebuturi de fibre, nămoluri de fibre, materiale de etanșare și de acoperire rezultate din separare mecanică,false
+03 03 11,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 03 03 10,false
+03 03 99,deșeuri nespecificate,false
+
+# == 04 DEȘEURI PROVENITE DIN INDUSTRIA PIELĂRIEI, A BLĂNĂRIEI ȘI DIN INDUSTRIA TEXTILĂ
+# -- 04 01 deșeuri provenite din industria pielăriei și a blănăriei
+04 01 01,deșeuri de la șeruire,false
+04 01 02,deșeuri de la cenușărit,false
+04 01 03,deșeuri de la degresare cu conținut de solvenți fără fază lichidă,true
+04 01 04,flotă de tăbăcire cu conținut de crom,false
+04 01 05,flotă de tăbăcire fără crom,false
+04 01 06,nămoluri, în special de la epurarea efluenților în incintă cu conținut de crom,false
+04 01 07,nămoluri, în special de la epurarea efluenților în incintă fără crom,false
+04 01 08,deșeuri de piele tăbăcită (ștuțuri, răzături, tăieturi, praf de lustruit) cu conținut de crom,false
+04 01 09,deșeuri de la apretare și finisare,false
+04 01 99,deșeuri nespecificate,false
+# -- 04 02 deșeuri din industria textilă
+04 02 09,deșeuri de la materialele compozite (textile impregnate, elastomeri, plastomeri),false
+04 02 10,materii organice provenite din produse naturale (de exemplu, grăsime, ceară),false
+04 02 14,deșeuri de la finisare, cu conținut de solvenți organici,true
+04 02 15,deșeuri de la finisare, altele decât cele specificate la 04 02 14,false
+04 02 16,coloranți și pigmenți cu conținut de substanțe periculoase,true
+04 02 17,coloranți și pigmenți, alții decât cei specificați la 04 02 16,false
+04 02 19,nămoluri de la epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+04 02 20,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 04 02 19,false
+04 02 21,deșeuri de fibre textile neprocesate,false
+04 02 22,deșeuri de fibre textile procesate,false
+04 02 99,deșeuri nespecificate,false
+
+# == 05 DEȘEURI REZULTATE DIN RAFINAREA PETROLULUI, PURIFICAREA GAZULUI NATURAL ȘI TRATAREA PIROLITICĂ A CĂRBUNELUI
+# -- 05 01 deșeuri rezultate din rafinarea petrolului
+05 01 02,nămoluri rezultate din desalinizare,true
+05 01 03,nămoluri provenite din rezervor,true
+05 01 04,nămoluri acide alchilice,true
+05 01 05,scurgeri de petrol,true
+05 01 06,nămoluri conținând hidrocarburi, provenite de la operațiunile de întreținere a instalațiilor și echipamentelor,true
+05 01 07,gudroane acide,true
+05 01 08,alte gudroane,true
+05 01 09,nămoluri de la epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+05 01 10,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 05 01 09,false
+05 01 11,deșeuri de la spălarea combustibililor cu baze,true
+05 01 12,acizi cu conținut de uleiuri,true
+05 01 13,nămoluri de la apa de alimentare a cazanului,false
+05 01 14,deșeuri de la coloanele de răcire,false
+05 01 15,argile de filtrare uzate,true
+05 01 16,deșeuri cu conținut de sulf de la desulfurarea petrolului,false
+05 01 17,Bitum,false
+05 01 99,deșeuri nespecificate,false
+# -- 05 06 deșeuri care provin de la tratarea pirolitică a cărbunelui
+05 06 01,gudroane acide,true
+05 06 03,alte gudroane,true
+05 06 04,deșeuri de la coloanele de răcire,false
+05 06 99,deșeuri nespecificate,false
+# -- 05 07 deșeuri provenite din purificarea și transportul gazului natural
+05 07 01,deșeuri cu conținut de mercur,true
+05 07 02,deșeuri cu conținut de sulf,false
+05 07 99,deșeuri nespecificate,false
+
+# == 06 DEȘEURI REZULTATE DIN PROCESELE CHIMIEI ANORGANICE
+# -- 06 01 deșeuri provenite de la fabricarea, formularea, distribuirea și utilizarea (FFDU) acizilor
+06 01 01,acid sulfuric și acid sulfuros,true
+06 01 02,acid clorhidric,true
+06 01 03,acid fluorhidric,true
+06 01 04,acid fosforic și acid fosforos,true
+06 01 05,acid azotic și acid azotos,true
+06 01 06,alți acizi,true
+06 01 99,deșeuri nespecificate,false
+# -- 06 02 deșeuri care provin de la fabricarea, formularea, distribuirea și utilizarea (FFDU) bazelor
+06 02 01,hidroxid de calciu,true
+06 02 03,hidroxid de amoniu,true
+06 02 04,hidroxid de sodiu și de potasiu,true
+06 02 05,alte baze,true
+06 02 99,deșeuri nespecificate,false
+# -- 06 03 deșeuri care provin de la FFDU a sărurilor și a soluțiilor acestora și a oxizilor metalici
+06 03 11,săruri solide și soluții cu conținut de cianuri,true
+06 03 13,săruri solide și soluții cu conținut de metale grele,true
+06 03 14,săruri solide și soluții, altele decât cele specificate la 06 03 11 și 06 03 13,false
+06 03 15,oxizi metalici cu conținut de metale grele,true
+06 03 16,oxizi metalici, alții decât cei specificați la 06 03 15,false
+06 03 99,deșeuri nespecificate,false
+# -- 06 04 deșeuri cu conținut de metale, altele decât cele menționate la 06 03
+06 04 03,deșeuri cu conținut de arsen,true
+06 04 04,deșeuri cu conținut de mercur,true
+06 04 05,deșeuri cu conținut de alte metale grele,true
+06 04 99,deșeuri nespecificate,false
+# -- 06 05 nămoluri de la epurarea efluenților în incintă
+06 05 02,nămoluri de la epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+06 05 03,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 06 05 02,false
+# -- 06 06 deșeuri provenite din FFDU a produselor chimice cu conținut de sulf, din procesele chimice cu sulf și din procesele de desulfurare
+06 06 02,deșeuri cu conținut de sulfuri periculoase,true
+06 06 03,deșeuri cu conținut de sulfuri, altele decât cele specificate la 06 06 02,false
+06 06 99,deșeuri nespecificate,false
+# -- 06 07 deșeuri provenite de la FFDU a halogenilor și din procese chimice cu halogeni
+06 07 01,deșeuri cu conținut de azbest de la electroliză,true
+06 07 02,cărbune activ de la producerea clorului,true
+06 07 03,nămol de sulfat de bariu cu conținut de mercur,true
+06 07 04,soluții și acizi, de exemplu acid de contact,true
+06 07 99,deșeuri nespecificate,false
+# -- 06 08 deșeuri provenite de la FFDU a siliciului și a derivaților siliciului
+06 08 02,deșeuri cu conținut de clorosilani periculoși,true
+06 08 99,deșeuri nespecificate,false
+# -- 06 09 deșeuri provenite de la FFDU a produselor chimice conținând fosfor și din procesele chimice cu fosfor
+06 09 02,zgură fosforoasă,false
+06 09 03,deșeuri de reacții pe bază de calciu care conțin sau sunt contaminate cu substanțe periculoase,true
+06 09 04,deșeuri de reacții pe bază de calciu, altele decât cele specificate la 06 09 03,false
+06 09 99,deșeuri nespecificate,false
+# -- 06 10 deșeuri provenite de la FFDU a produselor chimice cu conținut de azot, din procese chimice cu azot și din producția de îngrășăminte
+06 10 02,deșeuri cu conținut de substanțe periculoase,true
+06 10 99,deșeuri nespecificate,false
+# -- 06 11 deșeuri provenite din fabricarea pigmenților anorganici și a opacizanților
+06 11 01,deșeuri de reacții pe bază de calciu de la producerea bioxidului de titan,false
+06 11 99,deșeuri nespecificate,false
+# -- 06 13 deșeuri din procese chimice anorganice nespecificate în altă parte
+06 13 01,produse fitosanitare anorganice, agenți de conservare a lemnului și alte biocide,true
+06 13 02,cărbune activ uzat (cu excepția 06 07 02),true
+06 13 03,negru de fum,false
+06 13 04,deșeuri de la procesele cu azbest,true
+06 13 05,Funingine,true
+06 13 99,deșeuri nespecificate,false
+
+# == 07 DEȘEURI DIN PROCESELE CHIMICE ORGANICE
+# -- 07 01 deșeuri provenite de la fabricarea, formularea, distribuirea și utilizarea (FFDU) produselor organice de bază
+07 01 01,lichide apoase de spălare și soluții-mamă,true
+07 01 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 01 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 01 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 01 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 01 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 01 10,alte turte de filtrare și absorbanți uzați,true
+07 01 11,nămoluri de la epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 01 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 01 11,false
+07 01 99,deșeuri nespecificate,false
+# -- 07 02 deșeuri care provin de la FFDU a materialelor plastice, a cauciucului și a fibrelor sintetice
+07 02 01,lichide apoase de spălare și soluții-mamă,true
+07 02 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 02 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 02 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 02 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 02 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 02 10,alte turte de filtrare și absorbanți uzați,true
+07 02 11,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 02 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 02 11,false
+07 02 13,deșeuri de materiale plastice,false
+07 02 14,deșeuri de aditivi cu conținut de substanțe periculoase,true
+07 02 15,deșeuri de aditivi, altele decât cele specificate la 07 02 14,false
+07 02 16,deșeuri cu conținut de siliconi periculoși,true
+07 02 17,deșeuri cu conținut de siliconi, altele decât cele specificate la 07 02 16,false
+07 02 99,deșeuri nespecificate,false
+# -- 07 03 deșeuri care provin de la FFDU a vopselelor și pigmenților organici (cu excepția secțiunii 06 11)
+07 03 01,lichide apoase de spălare și soluții-mamă,true
+07 03 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 03 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 03 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 03 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 03 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 03 10,alte turte de filtrare și absorbanți uzați,true
+07 03 11,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 03 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 03 11,false
+07 03 99,deșeuri nespecificate,false
+# -- 07 04 deșeuri care provin de la FFDU a produselor fitosanitare organice (cu excepția rubricilor 02 01 08 și 02 01 09), a conservanților pentru lemn (cu excepția secțiunii 03 02) și a altor biocide
+07 04 01,lichide apoase de spălare și soluții-mamă,true
+07 04 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 04 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 04 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 04 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 04 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 04 10,alte turte de filtrare și absorbanți uzați,true
+07 04 11,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 04 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 04 11,false
+07 04 13,deșeuri solide cu conținut de substanțe periculoase,true
+07 04 99,deșeuri nespecificate,false
+# -- 07 05 deșeuri care provin de la FFDU a produselor farmaceutice
+07 05 01,lichide apoase de spălare și soluții-mamă,true
+07 05 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 05 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 05 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 05 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 05 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 05 10,alte turte de filtrare și absorbanți uzați,true
+07 05 11,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 05 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 05 11,false
+07 05 13,deșeuri solide cu conținut de substanțe periculoase,true
+07 05 14,deșeuri solide, altele decât cele specificate la 07 05 13,false
+07 05 99,deșeuri nespecificate,false
+# -- 07 06 deșeuri care provin de la FFDU a grăsimilor, săpunurilor, detergenților, dezinfectanților și cosmeticelor
+07 06 01,lichide apoase de spălare și soluții-mamă,true
+07 06 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 06 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 06 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 06 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 06 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 06 10,alte turte de filtrare și absorbanți uzați,true
+07 06 11,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 06 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 06 11,false
+07 06 99,deșeuri nespecificate,false
+# -- 07 07 deșeuri care provin de la FFDU a produselor chimice rezultate din chimia fină și a produselor chimice nespecificate în altă parte
+07 07 01,lichide apoase de spălare și soluții-mamă,true
+07 07 03,solvenți, soluții de spălare și soluții-mamă organice halogenate,true
+07 07 04,alți solvenți, soluții de spălare și soluții-mamă organice,true
+07 07 07,reziduuri halogenate din blazul coloanelor de distilare și reacție,true
+07 07 08,alte reziduuri din blazul coloanelor de distilare și reacție,true
+07 07 09,turte de filtrare halogenate și absorbanți uzați halogenați,true
+07 07 10,alte turte de filtrare și absorbanți uzați,true
+07 07 11,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+07 07 12,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 07 07 11,false
+07 07 99,deșeuri nespecificate,false
+
+# == 08 DEȘEURI PROVENIND DE LA FABRICAREA, FORMULAREA, DISTRIBUȚIA ȘI UTILIZAREA (FFDU) PRODUSELOR DE ACOPERIRE (VOPSELURI, LACURI ȘI EMAILURI VITRIFIATE), ADEZIVILOR, MASTICURILOR ȘI CERNELURILOR TIPOGRAFICE
+# -- 08 01 deșeuri care provin de la FFDU și din decaparea vopselelor și a lacurilor
+08 01 11,deșeuri de vopsele și lacuri cu conținut de solvenți organici sau alte substanțe periculoase,true
+08 01 12,deșeuri de vopsele și lacuri, altele decât cele specificate la 08 01 11,false
+08 01 13,nămoluri care provin din vopsele sau lacuri Cu conținut de solvenți organici sau alte substanțe periculoase,true
+08 01 14,nămoluri de la vopsele sau lacuri, altele decât cele specificate la 08 01 13,false
+08 01 15,nămoluri apoase cu conținut de vopsele sau lacuri care conțin solvenți organici sau alte substanțe periculoase,true
+08 01 16,nămoluri apoase cu conținut de vopsele sau lacuri, altele decât cele specificate la 08 01 15,false
+08 01 17,deșeuri care provin din decaparea vopselelor sau lacurilor cu conținut de solvenți organici sau alte substanțe periculoase,true
+08 01 18,deșeuri de la îndepărtarea vopselelor sau lacurilor, altele decât cele specificate la 08 01 17,false
+08 01 19,suspensii apoase cu conținut de vopsele sau lacuri care conțin solvenți organici sau alte substanțe periculoase,true
+08 01 20,suspensii apoase cu conținut de lacuri sau vopsele, altele decât cele specificate la 08 01 19,false
+08 01 21,deșeuri de la îndepărtarea vopselelor și lacurilor,true
+08 01 99,deșeuri nespecificate,false
+# -- 08 02 deșeuri care provin de la FFDU a altor produse de acoperire (inclusiv materiale ceramice)
+08 02 01,deșeuri de pulberi de acoperire,false
+08 02 02,nămoluri apoase cu conținut de materiale ceramice,false
+08 02 03,suspensii apoase cu conținut de materiale ceramice,false
+08 02 99,deșeuri nespecificate,false
+# -- 08 03 deșeuri care provin de la FFDU a cernelurilor tipografice
+08 03 07,nămoluri apoase cu conținut de cerneluri,false
+08 03 08,deșeuri lichide apoase cu conținut de cerneluri,false
+08 03 12,deșeuri de cerneluri cu conținut de substanțe periculoase,true
+08 03 13,deșeuri de cerneluri, altele decât cele specificate la 08 03 12,false
+08 03 14,nămoluri de cerneluri cu conținut de substanțe periculoase,true
+08 03 15,nămoluri de cerneluri, altele decât cele specificate la 08 03 14,false
+08 03 16,deșeuri de soluții de gravare,true
+08 03 17,deșeuri de tonere de imprimare cu conținut de substanțe periculoase,true
+08 03 18,deșeuri de tonere de imprimante, altele decât cele specificate la 08 03 17,false
+08 03 19,ulei de dispersie,true
+08 03 99,deșeuri nespecificate,false
+# -- 08 04 deșeuri care provin de la FFDU a adezivilor și chiturilor (inclusiv a produselor de impermeabilizare)
+08 04 09,deșeuri de adezivi și de masticuri care conțin solvenți organici sau alte substanțe periculoase,true
+08 04 10,deșeuri de adezivi și cleiuri, altele decât cele specificate la 08 04 09,false
+08 04 11,nămoluri de adezivi și masticuri care conțin solvenți organici sau alte substanțe periculoase,true
+08 04 12,nămoluri de adezivi și cleiuri, altele decât cele specificate la 08 04 11,false
+08 04 13,nămoluri apoase cu conținut de adezivi sau masticuri care conțin solvenți organici sau alte substanțe periculoase,true
+08 04 14,nămoluri apoase cu conținut de adezivi și cleiuri, altele decât cele specificate la 08 04 13,false
+08 04 15,deșeuri lichide apoase cu conținut de adezivi și cleiuri care conțin solvenți organici sau alte substanțe periculoase,true
+08 04 16,deșeuri lichide apoase cu conținut de adezivi și cleiuri, altele decât cele specificate la 08 04 15,false
+08 04 17,ulei de colofoniu,true
+08 04 99,deșeuri nespecificate,false
+# -- 08 05 deșeuri nespecificate în altă parte în capitolul 08
+08 05 01,deșeuri de izocianați,true
+
+# == 09 DEȘEURI PROVENIND DIN INDUSTRIA FOTOGRAFICĂ
+# -- 09 01 deșeuri din industria fotografică
+09 01 01,developanți pe bază de apă și soluții de activare,true
+09 01 02,soluții de developare pe bază de apă pentru plăcile offset,true
+09 01 03,soluții de developare pe bază de solvenți,true
+09 01 04,soluții de fixare,true
+09 01 05,soluții de albire și soluții de albire fixatoare,true
+09 01 06,deșeuri cu conținut de argint de la tratarea în incintă a deșeurilor fotografice,true
+09 01 07,film și hârtie fotografică cu conținut de argint sau compuși de argint,false
+09 01 08,film și hârtie fotografică fără argint sau compuși de argint,false
+09 01 10,aparate fotografice de unică folosință fără baterii,false
+09 01 11,aparate fotografice de unică folosință cu baterii, incluse la 16 06 01, 16 06 02 sau 16 06 03,true
+09 01 12,aparate fotografice de unică folosință cu baterii, altele decât cele specificate la 09 01 11,false
+09 01 13,deșeuri apoase lichide de la recuperarea în incintă a argintului, altele decât cele specificate la 09 01 06,true
+09 01 99,deșeuri nespecificate,false
+
+# == 10 DEȘEURI PROVENITE DIN PROCESELE TERMICE
+# -- 10 01 deșeuri provenite din centrale electrice și alte instalații de combustie (cu excepția capitolului 19)
+10 01 01,cenușă de vatră, zgură și praf de cazan (exclusiv praful de cazan specificat la 10 01 04),false
+10 01 02,cenușă zburătoare de la arderea cărbunelui,false
+10 01 03,cenușă zburătoare de la arderea turbei și a lemnului netratat,false
+10 01 04,cenuși zburătoare și praf de cazan de hidrocarburi,true
+10 01 05,deșeuri solide pe bază de calciu de la desulfurarea gazelor de ardere,false
+10 01 07,nămoluri pe bază de calciu de la desulfurarea gazelor de ardere,false
+10 01 09,acid sulfuric,true
+10 01 13,cenușă zburătoare de la hidrocarburile emulsionate utilizate drept combustibil,true
+10 01 14,cenușă de vatră, zgură și praf de cazan de la coincinerare cu conținut de substanțe periculoase,true
+10 01 15,cenușă de vatră, zgură și praf de cazan de la coincinerare, altele decât cele specificate la 10 01 14,false
+10 01 16,cenușă zburătoare de la coincinerare cu conținut de substanțe periculoase,true
+10 01 17,cenușă zburătoare de la coincinerare, alta decât cea specificată la 10 01 16,false
+10 01 18,deșeuri de la spălarea gazelor care conțin substanțe periculoase,true
+10 01 19,deșeuri de la spălarea gazelor, altele decât cele specificate la 10 01 05, 10 01 07 și 10 01 18,false
+10 01 20,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+10 01 21,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 10 01 20,false
+10 01 22,nămoluri apoase provenite din spălarea cazanelor de ardere, cu conținut de substanțe periculoase,true
+10 01 23,nămoluri apoase de la spălarea cazanului de ardere, altele decât cele specificate la 10 01 22,false
+10 01 24,nisipuri de la paturile fluidizate,false
+10 01 25,deșeuri de la depozitarea combustibilului și de la pregătirea cărbunelui de ardere pentru instalațiile termice,false
+10 01 26,deșeuri de la epurarea apelor de răcire,false
+10 01 99,deșeuri nespecificate,false
+# -- 10 02 deșeuri provenite din industria fierului și oțelului
+10 02 01,deșeuri de la procesarea zgurii,false
+10 02 02,zgură neprocesată,false
+10 02 07,deșeuri solide rezultate din epurarea gazelor cu conținut de substanțe periculoase,true
+10 02 08,deșeuri solide de la epurarea gazelor, altele decât cele specificate la 10 02 07,false
+10 02 10,cruste de țunder,false
+10 02 11,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 02 12,deșeuri de la epurarea apelor de răcire, altele decât cele specificate la 10 02 11,false
+10 02 13,nămoluri și turte de filtrare de la epurarea gazelor cu conținut de substanțe periculoase,true
+10 02 14,nămoluri și turte de filtrare de la epurarea gazelor, altele decât cele specificate la 10 02 13,false
+10 02 15,alte nămoluri și turte de filtrare,false
+10 02 99,deșeuri nespecificate,false
+# -- 10 03 deșeuri din pirometalurgia aluminiului
+10 03 02,resturi de anozi,false
+10 03 04,zguri de la topirea primară,true
+10 03 05,deșeuri de alumină,false
+10 03 08,zguri saline de la topirea secundară,true
+10 03 09,scorii negre de la topirea secundară,true
+10 03 15,cruste care sunt inflamabile sau emit, în contact cu apa, gaze inflamabile în cantități periculoase,true
+10 03 16,cruste, altele decât cele specificate la 10 03 15,false
+10 03 17,deșeuri cu conținut de gudroane de la producerea anozilor,true
+10 03 18,deșeuri cu conținut de carbon de la producerea anozilor, altele decât cele specificate la 10 03 17,false
+10 03 19,praf din gazele de ardere cu conținut de substanțe periculoase,true
+10 03 20,praf din gaze de ardere, altul decât cel specificat la 10 03 19,false
+10 03 21,alte particule și praf (inclusiv praf de la morile cu bile) cu conținut de substanțe periculoase,true
+10 03 22,alte particule și praf (inclusiv praful de la morile cu bile), altele decât cele specificate la 10 03 21,false
+10 03 23,deșeuri solide rezultate din epurarea gazelor cu conținut de substanțe periculoase,true
+10 03 24,deșeuri solide de la epurarea gazelor, altele decât cele specificate la 10 03 23,false
+10 03 25,nămoluri și turte de filtrare de la epurarea gazelor cu conținut de substanțe periculoase,true
+10 03 26,nămoluri și turte de filtrare de la epurarea gazelor, altele decât cele specificate la 10 03 25,false
+10 03 27,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 03 28,deșeuri de la epurarea apei de răcire, altele decât cele specificate la 10 03 27,false
+10 03 29,deșeuri de la epurarea zgurilor saline și a scoriilor negre, cu conținut de substanțe periculoase,true
+10 03 30,deșeuri de la epurarea zgurilor saline și a scoriilor negre, altele decât cele specificate la 10 03 29,false
+10 03 99,deșeuri nespecificate,false
+# -- 10 04 deșeuri din pirometalurgia plumbului
+10 04 01,zguri de la topirea primară și secundară,true
+10 04 02,scorii și cruste de la topirea primară și secundară,true
+10 04 03,arseniat de calciu,true
+10 04 04,praf din gazele de ardere,true
+10 04 05,alte particule și praf,true
+10 04 06,deșeuri solide de la epurarea gazelor,true
+10 04 07,nămoluri și turte de filtrare de la epurarea gazelor,true
+10 04 09,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 04 10,deșeuri de la epurarea apelor de răcire, altele decât cele specificate la 10 04 09,false
+10 04 99,deșeuri nespecificate,false
+# -- 10 05 deșeuri din pirometalurgia zincului
+10 05 01,zguri de la topirea primară și secundară,false
+10 05 03,praf din gazele de ardere,true
+10 05 04,alte particule și praf,false
+10 05 05,deșeuri solide de la epurarea gazelor,true
+10 05 06,nămoluri și turte de filtrare de la epurarea gazelor,true
+10 05 08,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 05 09,deșeuri de la epurarea apelor de răcire, altele decât cele specificate la 10 05 08,false
+10 05 10,scorii și cruste care sunt inflamabile sau emit, în contact cu apa, gaze inflamabile în cantități periculoase,true
+10 05 11,scorii și cruste, altele decât cele specificate la 10 05 10,false
+10 05 99,deșeuri nespecificate,false
+# -- 10 06 deșeuri din pirometalurgia cuprului
+10 06 01,zguri de la topirea primară și secundară,false
+10 06 02,scorii și cruste de la topirea primară și secundară,false
+10 06 03,praf din gazele de ardere,true
+10 06 04,alte particule și praf,false
+10 06 06,deșeuri solide de la epurarea gazelor,true
+10 06 07,nămoluri și turte de filtrare de la epurarea gazelor,true
+10 06 09,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 06 10,deșeuri de la epurarea apelor de răcire, altele decât cele specificate la 10 06 09,false
+10 06 99,deșeuri nespecificate,false
+# -- 10 07 deșeuri din pirometalurgia argintului, aurului și a platinei
+10 07 01,zguri de la topirea primară și secundară,false
+10 07 02,scorii și cruste de la topirea primară și secundară,false
+10 07 03,deșeuri solide de la epurarea gazelor,false
+10 07 04,alte particule și praf,false
+10 07 05,nămoluri și turte de filtrare de la epurarea gazelor,false
+10 07 07,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 07 08,deșeuri de la epurarea apelor de răcire, altele decât cele specificate la 10 07 07,false
+10 07 99,deșeuri nespecificate,false
+# -- 10 08 deșeuri din pirometalurgia altor metale neferoase
+10 08 04,particule și praf,false
+10 08 08,zgură salină de la topirea primară și secundară,true
+10 08 09,alte zguri,false
+10 08 10,scorii și cruste care sunt inflamabile sau emit, în contact cu apa, gaze inflamabile în cantități periculoase,true
+10 08 11,scorii și cruste, altele decât cele specificate la 10 08 10,false
+10 08 12,deșeuri cu conținut de gudroane de la producerea anozilor,true
+10 08 13,deșeuri cu conținut de carbon de la producerea anozilor, altele decât cele specificate la 10 08 12,false
+10 08 14,resturi de anozi,false
+10 08 15,praf din gazele de ardere cu conținut de substanțe periculoase,true
+10 08 16,praf din gazele de ardere, altul decât cel specificat la 10 03 15,false
+10 08 17,nămoluri și turte de filtrare de la epurarea gazelor de ardere cu conținut de substanțe periculoase,true
+10 08 18,nămoluri și turte de filtrare de la epurarea gazelor de ardere, altele decât cele specificate la 10 08 17,false
+10 08 19,deșeuri de la epurarea apei de răcire cu conținut de ulei,true
+10 08 20,deșeuri de la epurarea apelor de răcire, altele decât cele specificate la 10 08 19,false
+10 08 99,deșeuri nespecificate,false
+# -- 10 09 deșeuri din turnarea metalelor feroase
+10 09 03,zgură de topitorie,false
+10 09 05,miezuri și forme de turnare care nu au fost folosite la turnare cu conținut de substanțe periculoase,true
+10 09 06,miezuri și forme de turnare care nu au fost folosite la turnare, altele decât cele specificate la 10 09 05,false
+10 09 07,miezuri și forme de turnare care au fost folosite la turnare cu conținut de substanțe periculoase,true
+10 09 08,miezuri și forme de turnare care au fost folosite la turnare, altele decât cele specificate la 10 09 07,false
+10 09 09,praf din gazele de ardere cu conținut de substanțe periculoase,true
+10 09 10,praf din gazele de ardere, altul decât cel specificat la 10 09 09,false
+10 09 11,alte reziduuri cu conținut de substanțe periculoase,true
+10 09 12,alte particule decât cele specificate la 10 09 11,false
+10 09 13,deșeuri de lianți cu conținut de substanțe periculoase,true
+10 09 14,deșeuri de lianți, altele decât cele specificate la 10 09 13,false
+10 09 15,deșeuri de agenți pentru detectarea fisurilor, cu conținut de substanțe periculoase,true
+10 09 16,deșeuri de agenți pentru detectarea fisurilor, altele decât cele specificate la 10 09 15,false
+10 09 99,deșeuri nespecificate,false
+# -- 10 10 deșeuri din turnarea metalelor neferoase
+10 10 03,zgură de topitorie,false
+10 10 05,miezuri și forme de turnare care nu au fost folosite la turnare cu conținut de substanțe periculoase,true
+10 10 06,miezuri și forme de turnare care nu au fost folosite la turnare, altele decât cele specificate la 10 10 05,false
+10 10 07,miezuri și forme de turnare care au fost folosite la turnare cu conținut de substanțe periculoase,true
+10 10 08,miezuri și forme de turnare care au fost folosite la turnare, altele decât cele menționate la rubrica 10 10 07,false
+10 10 09,praf din gazele de ardere cu conținut de substanțe periculoase,true
+10 10 10,praf din gazele de ardere, altul decât cel specificat la 10 10 09,false
+10 10 11,alte reziduuri cu conținut de substanțe periculoase,true
+10 10 12,alte particule decât cele specificate la 10 10 11,false
+10 10 13,deșeuri de lianți cu conținut de substanțe periculoase,true
+10 10 14,deșeuri de lianți, altele decât cele specificate la 10 10 13,false
+10 10 15,deșeuri de agenți pentru detectarea fisurilor, cu conținut de substanțe periculoase,true
+10 10 16,deșeuri de agenți pentru detectarea fisurilor, altele decât cele specificate la 10 10 15,false
+10 10 99,deșeuri nespecificate,false
+# -- 10 11 deșeuri de la fabricarea sticlei și a produselor din sticlă
+10 11 03,deșeuri din fibre de sticlă,false
+10 11 05,particule și praf,false
+10 11 09,deșeuri de la prepararea amestecurilor, anterior procesării termice, cu conținut de substanțe periculoase,true
+10 11 10,deșeuri de la prepararea amestecurilor, anterior procesării termice, altele decât cele menționate la rubrica 10 11 09,false
+10 11 11,deșeuri de sticlă sub formă de particule fine și pudră de sticlă cu conținut de metale grele (de exemplu, de la tuburile catodice),true
+10 11 12,deșeuri de sticlă, altele decât cele specificate la 10 11 11,false
+10 11 13,nămoluri de la șlefuirea și polizarea sticlei cu conținut de substanțe periculoase,true
+10 11 14,nămoluri de la șlefuirea și polizarea sticlei, altele decât cele specificate la 10 11 13,false
+10 11 15,deșeuri solide de la epurarea gazelor de ardere, cu conținut de substanțe periculoase,true
+10 11 16,deșeuri solide de la epurarea gazelor de ardere, altele decât cele specificate la 10 11 15,false
+10 11 17,nămoluri și turte de filtrare de la epurarea gazelor de ardere cu conținut de substanțe periculoase,true
+10 11 18,nămoluri și turte de filtrare de la epurarea gazelor de ardere, altele decât cele specificate la 10 11 17,false
+10 11 19,deșeuri solide de la epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+10 11 20,deșeuri solide de la epurarea efluenților în incintă, altele decât cele specificate la 10 11 19,false
+10 11 99,deșeuri nespecificate,false
+# -- 10 12 deșeuri de la fabricarea produselor de ceramică, a cărămizilor, a țiglelor și a materialelor de construcții
+10 12 01,deșeuri de la prepararea amestecurilor, anterior procesării termice,false
+10 12 03,particule și praf,false
+10 12 05,nămoluri și turte de filtrare de la epurarea gazelor,false
+10 12 06,forme declasate,false
+10 12 08,deșeuri ceramice, de cărămizi, țigle și materiale de construcție (după procesarea termică),false
+10 12 09,deșeuri solide rezultate din epurarea gazelor, cu conținut de substanțe periculoase,true
+10 12 10,deșeuri solide de la epurarea gazelor, altele decât cele specificate la 10 12 09,false
+10 12 11,deșeuri de la smălțuire cu conținut de metale grele,true
+10 12 12,deșeuri de la smălțuire, altele decât cele specificate la 10 12 11,false
+10 12 13,nămoluri de la epurarea efluenților în incintă,false
+10 12 99,deșeuri nespecificate,false
+# -- 10 13 deșeuri de la fabricarea cimentului, a varului și ghipsului și a articolelor și produselor derivate
+10 13 01,deșeuri de la prepararea amestecurilor, anterior procesării termice,false
+10 13 04,deșeuri de la calcinarea și hidratarea varului,false
+10 13 06,particule și praf (cu excepția 10 13 12 și 10 13 13),false
+10 13 07,nămoluri și turte de filtrare de la epurarea gazelor,false
+10 13 09,deșeuri de la fabricarea azbocimenturilor, cu conținut de azbest,true
+10 13 10,deșeuri de la producerea azbocimenturilor, altele decât cele specificate la 10 13 09,false
+10 13 11,deșeuri de materiale compozite pe bază de ciment, altele decât cele specificate la 10 13 09 și 10 13 10,false
+10 13 12,deșeuri solide rezultate din epurarea gazelor, cu conținut de substanțe periculoase,true
+10 13 13,deșeuri solide de la epurarea gazelor, altele decât cele specificate la 10 13 12,false
+10 13 14,deșeuri de beton și nămoluri cu beton,false
+10 13 99,deșeuri nespecificate,false
+# -- 10 14 deșeuri din crematorii
+10 14 01,deșeuri de la spălarea gazelor cu conținut de mercur,true
+
+# == 11 DEȘEURI REZULTATE DIN TRATAREA CHIMICĂ A SUPRAFEȚELOR ȘI DIN ACOPERIRI ALE METALELOR ȘI ALE ALTOR MATERIALE; HIDROMETALURGIA NEFEROASĂ
+# -- 11 01 deșeuri provenite din tratarea chimică a suprafețelor și din acoperirea metalelor și a altor materiale (de exemplu, procese galvanice, de zincare, de decapare, de gravare, de fosfatare, de degresare alcalină și de fabricare a anozilor)
+11 01 05,acizi de decapare,true
+11 01 06,acizi nespecificați,true
+11 01 07,baze de decapare,true
+11 01 08,nămoluri cu conținut de fosfați,true
+11 01 09,nămoluri și turte de filtrare cu conținut de substanțe periculoase,true
+11 01 10,nămoluri și turte de filtrare, altele decât cele specificate la 11 01 09,false
+11 01 11,lichide apoase de clătire cu conținut de substanțe periculoase,true
+11 01 12,lichide apoase de clătire, altele decât cele specificate la 11 01 11,false
+11 01 13,deșeuri de degresare cu conținut de substanțe periculoase,true
+11 01 14,deșeuri de degresare, altele decât cele specificate la 11 01 13,false
+11 01 15,eluați și nămoluri de la sisteme de membrane sau de la schimbători de ioni, cu conținut de substanțe periculoase,true
+11 01 16,rășini schimbătoare de ioni saturate sau uzate,true
+11 01 98,alte deșeuri cu conținut de substanțe periculoase,true
+11 01 99,deșeuri nespecificate,false
+# -- 11 02 deșeuri provenite din procesele hidrometalurgice ale metalelor neferoase
+11 02 02,nămoluri provenite din hidrometalurgia zincului (inclusiv jarosit și goethit),true
+11 02 03,deșeuri de la producerea anozilor pentru procesele de electroliză în soluție,false
+11 02 05,deșeuri provenite din procesele de hidrometalurgie a cuprului, cu conținut de substanțe periculoase,true
+11 02 06,deșeuri de la procesele de hidrometalurgie a cuprului, altele decât cele specificate la 11 02 05,false
+11 02 07,alte deșeuri cu conținut de substanțe periculoase,true
+11 02 99,deșeuri nespecificate,false
+# -- 11 03 nămoluri și solide provenite din procesele de călire
+11 03 01,deșeuri cu conținut de cianuri,true
+11 03 02,alte deșeuri,true
+# -- 11 05 deșeuri provenite din procesele de galvanizare la cald
+11 05 01,zinc dur,false
+11 05 02,cenușă de zinc,false
+11 05 03,deșeuri solide de la epurarea gazelor,true
+11 05 04,baie uzată,true
+11 05 99,deșeuri nespecificate,false
+
+# == 12 DEȘEURI PROVENITE DE LA MODELAREA ȘI TRATAREA FIZICĂ ȘI MECANICĂ DE SUPRAFAȚĂ A METALELOR ȘI A MATERIALELOR PLASTICE
+# -- 12 01 deșeuri provenite de la modelarea și tratarea mecanică și fizică de suprafață a metalelor și a materialelor plastice
+12 01 01,pilitură și șpan feros,false
+12 01 02,praf și suspensii de metale feroase,false
+12 01 03,pilitură și șpan neferos,false
+12 01 04,praf și suspensii de metale neferoase,false
+12 01 05,pilitură și șpan de materiale plastice,false
+12 01 06,uleiuri minerale de ungere uzate cu conținut de halogeni (cu excepția emulsiilor și soluțiilor),true
+12 01 07,uleiuri minerale de ungere uzate fără halogeni (cu excepția emulsiilor și soluțiilor),true
+12 01 08,emulsii și soluții de ungere uzate cu conținut de halogeni,true
+12 01 09,emulsii și soluții de ungere uzate fără halogeni,true
+12 01 10,uleiuri sintetice de ungere uzate,true
+12 01 12,ceruri și grăsimi uzate,true
+12 01 13,deșeuri de la sudură,false
+12 01 14,nămoluri de la mașini-unelte, cu conținut de substanțe periculoase,true
+12 01 15,nămoluri de la mașini-unelte, altele decât cele specificate la 12 01 14,false
+12 01 16,deșeuri de material de sablare, cu conținut de substanțe periculoase,true
+12 01 17,deșeuri de material de sablare, altele decât cele specificate la 12 01 16,false
+12 01 18,nămoluri metalice (de la mărunțire, honuire și lepuire) cu conținut de ulei,true
+12 01 19,uleiuri de ungere ușor biodegradabile,true
+12 01 20,piese de polizare uzate, mărunțite, precum și materiale de polizare mărunțite, cu conținut de substanțe periculoase,true
+12 01 21,piese de polizare uzate și materiale de polizare, altele decât cele specificate la 12 01 20,false
+12 01 99,deșeuri nespecificate,false
+# -- 12 03 deșeuri provenite din degresarea cu apă și cu abur (cu excepția celor din capitolul 11)
+12 03 01,lichide apoase de spălare,true
+12 03 02,deșeuri de la degresarea cu abur,true
+
+# == 13 ULEIURI ȘI COMBUSTIBILI LICHIZI UZAȚI (cu excepția uleiurilor comestibile și a celor menționate la capitolele 05, 12 și 19)
+# -- 13 01 uleiuri hidraulice uzate
+13 01 01,uleiuri hidraulice cu conținut de PCB,true
+13 01 04,emulsii clorurate,true
+13 01 05,emulsii neclorurate,true
+13 01 09,uleiuri hidraulice minerale clorurate,true
+13 01 10,uleiuri hidraulice minerale neclorurate,true
+13 01 11,uleiuri hidraulice sintetice,true
+13 01 12,uleiuri hidraulice ușor biodegradabile,true
+13 01 13,alte uleiuri hidraulice,true
+# -- 13 02 uleiuri uzate de motor, de transmisie și de ungere
+13 02 04,uleiuri minerale clorurate de motor, de transmisie și de ungere,true
+13 02 05,uleiuri minerale neclorurate de motor, de transmisie și de ungere,true
+13 02 06,uleiuri sintetice de motor, de transmisie și de ungere,true
+13 02 07,uleiuri de motor, de transmisie și de ungere ușor biodegradabile,true
+13 02 08,alte uleiuri de motor, de transmisie și de ungere,true
+# -- 13 03 uleiuri izolante și de transmitere a căldurii uzate
+13 03 01,uleiuri izolante și de transmitere a căldurii cu conținut de PCB,true
+13 03 06,uleiuri minerale clorurate izolante și de transmitere a căldurii, altele decât cele specificate la 13 03 01,true
+13 03 07,uleiuri minerale neclorurate izolante și de transmitere a căldurii,true
+13 03 08,uleiuri sintetice izolante și de transmitere a căldurii,true
+13 03 09,uleiuri izolante și de transmitere a căldurii ușor biodegradabile,true
+13 03 10,alte uleiuri izolante și de transmitere a căldurii,true
+# -- 13 04 uleiuri de santină
+13 04 01,uleiuri de santină din navigația pe apele interioare,true
+13 04 02,uleiuri de santină din colectoarele de debarcader,true
+13 04 03,uleiuri de santină din alte tipuri de navigație,true
+# -- 13 05 conținutul separatoarelor apă/ulei
+13 05 01,solide din paturile de nisip și separatoarele ulei/apă,true
+13 05 02,nămoluri de la separatoarele ulei/apă,true
+13 05 03,nămoluri de intercepție,true
+13 05 06,ulei de la separatoarele ulei/apă,true
+13 05 07,ape uleioase de la separatoarele ulei/apă,true
+13 05 08,amestecuri de deșeuri de la paturile de nisip și separatoarele ulei/apă,true
+# -- 13 07 combustibili lichizi uzați
+13 07 01,ulei combustibil și combustibil diesel,true
+13 07 02,Benzină,true
+13 07 03,alți combustibili (inclusiv amestecuri),true
+# -- 13 08 uleiuri uzate, nespecificate în altă parte
+13 08 01,nămoluri sau emulsii de la desalinizare,true
+13 08 02,alte emulsii,true
+13 08 99,deșeuri nespecificate,true
+
+# == 14 DEȘEURI DE SOLVENȚI ORGANICI, AGENȚI DE RĂCIRE ȘI AGENȚI DE PROPULSARE (cu excepția capitolelor 07 și 08)
+# -- 14 06 deșeuri de solvenți organici, agenți de răcire și agenți de propulsare pentru formarea spumei și a aerosolilor
+14 06 01,clorofluorocarburi, HCFC, HFC,true
+14 06 02,alți solvenți și amestecuri de solvenți halogenați,true
+14 06 03,alți solvenți și amestecuri de solvenți,true
+14 06 04,nămoluri sau deșeuri solide cu conținut de solvenți halogenați,true
+14 06 05,nămoluri sau deșeuri solide conținând alți solvenți,true
+
+# == 15 AMBALAJE ȘI DEȘEURI DE AMBALAJE; MATERIALE ABSORBANTE, MATERIALE DE LUSTRUIRE, MATERIALE FILTRANTE ȘI ÎMBRĂCĂMINTE DE PROTECȚIE, NESPECIFICATE ÎN ALTĂ PARTE
+# -- 15 01 ambalaje și deșeuri de ambalaje (inclusiv deșeuri municipale de ambalaje colectate separat)
+15 01 01,ambalaje de hârtie și carton,false
+15 01 02,ambalaje de materiale plastice,false
+15 01 03,ambalaje de lemn,false
+15 01 04,ambalaje metalice,false
+15 01 05,ambalaje de materiale compozite,false
+15 01 06,ambalaje amestecate,false
+15 01 07,ambalaje de sticlă,false
+15 01 09,ambalaje din materiale textile,false
+15 01 10,ambalaje care conțin reziduuri de substanțe periculoase sau sunt contaminate cu substanțe periculoase,true
+15 01 11,ambalaje metalice care conțin o matriță poroasă solidă formată din materiale periculoase (de exemplu, azbest), inclusiv containere goale pentru stocarea sub presiune,true
+# -- 15 02 absorbanți, materiale filtrante, materiale de lustruire și îmbrăcăminte de protecție
+15 02 02,absorbanți, materiale filtrante (inclusiv filtre de ulei nespecificate în altă parte), materiale de lustruire și îmbrăcăminte de protecție contaminate cu substanțe periculoase,true
+15 02 03,absorbanți, materiale filtrante, materiale de lustruire și îmbrăcăminte de protecție, altele decât cele specificate la 15 02 02,false
+
+# == 16 DEȘEURI NESPECIFICATE ÎN ALTĂ PARTE ÎN LISTĂ
+# -- 16 01 vehicule scoase din uz de la diverse mijloace de transport (inclusiv mașini de teren) și deșeuri de la dezmembrarea vehiculelor casate și de la întreținerea vehiculelor (cu excepția celor de la capitolele 13, 14 și secțiunile 16 06 și 16 08)
+16 01 03,anvelope scoase din uz,false
+16 01 04,vehicule scoase din uz,true
+16 01 06,vehicule scoase din uz fără lichide sau alte componente periculoase,false
+16 01 07,filtre de ulei,true
+16 01 08,componente cu conținut de mercur,true
+16 01 09,componente cu conținut de PCB,true
+16 01 10,componente explozive (de exemplu, airbaguri),true
+16 01 11,plăcuțe de frână cu conținut de azbest,true
+16 01 12,plăcuțe de frână, altele decât cele specificate la 16 01 11,false
+16 01 13,lichide de frână,true
+16 01 14,fluide antigel cu conținut de substanțe periculoase,true
+16 01 15,lichide antigel, altele decât cele specificate la 16 01 14,false
+16 01 16,rezervoare pentru gaz lichefiat,false
+16 01 17,metale feroase,false
+16 01 18,metale neferoase,false
+16 01 19,Materiale plastice,false
+16 01 20,Sticlă,false
+16 01 21,componente periculoase, altele decât cele specificate la 16 01 07-16 01 11, 16 01 13 și 16 01 14,true
+16 01 22,alte componente nespecificate,false
+16 01 99,deșeuri nespecificate,false
+# -- 16 02 deșeuri din echipamente electrice și electronice
+16 02 09,transformatoare și condensatoare cu conținut de PCB,true
+16 02 10,echipamente casate cu conținut de PCB sau contaminate cu PCB, altele decât cele specificate la 16 02 09,true
+16 02 11,echipamente casate cu conținut de clorofluorocarburi, HCFC și HFC,true
+16 02 12,echipamente casate cu conținut de azbest liber,true
+16 02 13,echipamente casate cu conținut de componente periculoase (3), altele decât cele specificate la 16 02 09-16 02 12,true
+16 02 14,echipamente casate, altele decât cele specificate la 16 02 09-16 02 13,false
+16 02 15,componente periculoase demontate din echipamente casate,true
+16 02 16,componente demontate din echipamente casate, altele decât cele specificate la 16 02 15,false
+# -- 16 03 loturi declasate și produse nefolosite
+16 03 03,deșeuri anorganice cu conținut de substanțe periculoase,true
+16 03 04,deșeuri anorganice, altele decât cele specificate la 16 03 03,false
+16 03 05,deșeuri organice cu conținut de substanțe periculoase,true
+16 03 06,deșeuri organice, altele decât cele specificate la 16 03 05,false
+16 03 07,mercur metalic,true
+# -- 16 04 deșeuri de explozivi
+16 04 01,deșeuri de muniție,true
+16 04 02,deșeuri de artificii,true
+16 04 03,alte deșeuri de explozivi,true
+# -- 16 05 butelii de gaze sub presiune și produse chimice expirate
+16 05 04,butelii de gaze sub presiune (inclusiv haloni), cu conținut de substanțe periculoase,true
+16 05 05,butelii de gaze sub presiune cu conținut de alte substanțe decât cele specificate la 16 05 04,false
+16 05 06,substanțe chimice de laborator constând din substanțe periculoase sau conținând substanțe periculoase, inclusiv amestecurile de substanțe chimice de laborator,true
+16 05 07,substanțe chimice anorganice de laborator expirate, constând din sau conținând substanțe periculoase,true
+16 05 08,substanțe chimice organice de laborator expirate, constând din sau conținând substanțe periculoase,true
+16 05 09,substanțe chimice expirate, altele decât cele specificate la 16 05 06, 16 05 07 sau 16 05 08,false
+# -- 16 06 baterii și acumulatori
+16 06 01,baterii cu plumb,true
+16 06 02,baterii cu Ni-Cd,true
+16 06 03,baterii cu conținut de mercur,true
+16 06 04,baterii alcaline (cu excepția 16 06 03),false
+16 06 05,alte baterii și acumulatoare,false
+16 06 06,electroliți colectați separat din baterii și acumulatoare,true
+# -- 16 07 deșeuri provenite de la curățarea cisternelor și butoaielor de depozitare și transport (cu excepția capitolelor 05 și 13)
+16 07 08,deșeuri cu conținut de țiței,true
+16 07 09,deșeuri cu conținut de alte substanțe periculoase,true
+16 07 99,deșeuri nespecificate,false
+# -- 16 08 catalizatori uzați
+16 08 01,catalizatori uzați cu conținut de aur, argint, reniu, rodiu, paladiu, iridiu sau platină (cu excepția 16 08 07),false
+16 08 02,catalizatori uzați cu conținut de metale tranziționale periculoase ori compuși ai metalelor tranziționale periculoase,true
+16 08 03,catalizatori uzați cu conținut de metale tranziționale sau compuși ai metalelor tranziționale, nespecificați,false
+16 08 04,catalizatori uzați de la cracare catalitică (cu excepția 16 08 07),false
+16 08 05,catalizatori uzați cu conținut de acid fosforic,true
+16 08 06,lichide uzate folosite drept catalizatori,true
+16 08 07,catalizatori uzați contaminați cu substanțe periculoase,true
+# -- 16 09 substanțe oxidante
+16 09 01,permanganați, de exemplu permanganat de potasiu,true
+16 09 02,cromați, de exemplu cromat de potasiu, bicromat de potasiu sau de sodiu,true
+16 09 03,peroxizi, de exemplu peroxidul de hidrogen,true
+16 09 04,alte substanțe oxidante nespecificate,true
+# -- 16 10 deșeuri lichide apoase care urmează să fie tratate ex situ
+16 10 01,deșeuri lichide apoase cu conținut de substanțe periculoase,true
+16 10 02,deșeuri lichide apoase, altele decât cele specificate la 16 10 01,false
+16 10 03,concentrate apoase cu conținut de substanțe periculoase,true
+16 10 04,concentrate apoase, altele decât cele specificate la 16 10 03,false
+# -- 16 11 deșeuri din materiale de căptușire și refractare
+16 11 01,materiale de căptușire și refractare pe bază de carbon rezultate din procesele metalurgice, cu conținut de substanțe periculoase,true
+16 11 02,materiale de căptușire și refractare pe bază de carbon din procesele metalurgice, altele decât cele specificate la 16 11 01,false
+16 11 03,alte materiale de căptușire și refractare rezultate din procesele metalurgice, cu conținut de substanțe periculoase,true
+16 11 04,alte materiale de căptușire și refractare din procesele metalurgice, altele decât cele specificate la 16 11 03,false
+16 11 05,materiale de căptușire și refractare provenite din procesele nemetalurgice, cu conținut de substanțe periculoase,true
+16 11 06,materiale de căptușire și refractare din procesele nemetalurgice, altele decât cele specificate la 16 11 05,false
+
+# == 17 DEȘEURI DIN CONSTRUCȚII ȘI DEMOLĂRI (INCLUSIV PĂMÂNT EXCAVAT DIN SITURI CONTAMINATE)
+# -- 17 01 beton, cărămizi, țigle și materiale ceramice
+17 01 01,Beton,false
+17 01 02,Cărămizi,false
+17 01 03,țigle și produse ceramice,false
+17 01 06,amestecuri de beton, cărămizi, țigle sau materiale ceramice cu conținut de substanțe periculoase sau fracții separate din acestea,true
+17 01 07,amestecuri de beton, cărămizi, țigle și produse ceramice, altele decât cele specificate la 17 01 06,false
+# -- 17 02 lemn, sticlă și materiale plastice
+17 02 01,Lemn,false
+17 02 02,Sticlă,false
+17 02 03,Materiale plastice,false
+17 02 04,sticlă, materiale plastice și lemn cu conținut de sau contaminate cu substanțe periculoase,true
+# -- 17 03 amestecuri bituminoase, gudron de huilă și produse gudronate
+17 03 01,asfalturi cu conținut de gudron de huilă,true
+17 03 02,asfalturi, altele decât cele specificate la 17 03 01,false
+17 03 03,gudron de huilă și produse gudronate,true
+# -- 17 04 metale (inclusiv aliajele lor)
+17 04 01,cupru, bronz, alamă,false
+17 04 02,Aluminiu,false
+17 04 03,Plumb,false
+17 04 04,Zinc,false
+17 04 05,fier și oțel,false
+17 04 06,Staniu,false
+17 04 07,amestecuri metalice,false
+17 04 09,deșeuri metalice contaminate cu substanțe periculoase,true
+17 04 10,cabluri cu conținut de ulei, gudron și alte substanțe periculoase,true
+17 04 11,cabluri, altele decât cele specificate la 17 04 10,false
+# -- 17 05 pământ (inclusiv pământ excavat din situri contaminate), pietriș și nămoluri de dragare
+17 05 03,pământ și pietre cu conținut de substanțe periculoase,true
+17 05 04,pământ și pietre, altele decât cele specificate la 17 05 03,false
+17 05 05,nămoluri de la dragare cu conținut de substanțe periculoase,true
+17 05 06,nămoluri de la dragare, altele decât cele specificate la 17 05 05,false
+17 05 07,resturi de balast cu conținut de substanțe periculoase,true
+17 05 08,resturi de balast, altele decât cele specificate la 17 05 07,false
+# -- 17 06 materiale izolante și materiale de construcții cu conținut de azbest
+17 06 01,materiale izolante cu conținut de azbest,true
+17 06 03,alte materiale izolante constând din sau cu conținut de substanțe periculoase,true
+17 06 04,materiale izolante, altele decât cele specificate la 17 06 01 și 17 06 03,false
+17 06 05,materiale de construcție cu conținut de azbest,true
+# -- 17 08 materiale de construcții pe bază de ghips
+17 08 01,materiale de construcții pe bază de ghips, contaminate cu substanțe periculoase,true
+17 08 02,materiale de construcții pe bază de gips, altele decât cele specificate la 17 08 01,false
+# -- 17 09 alte deșeuri de la construcții și demolări
+17 09 01,deșeuri de la construcții și demolări cu conținut de mercur,true
+17 09 02,deșeuri de la construcții și demolări cu conținut de PCB (de exemplu, masticuri cu conținut de PCB, dușumele pe bază de rășini cu conținut de PCB, elemente cu cleiuri de glazură cu conținut de PCB, condensatori cu conținut de PCB),true
+17 09 03,alte deșeuri de la construcții și demolări (inclusiv amestecuri de deșeuri) cu conținut de substanțe periculoase,true
+17 09 04,deșeuri amestecate de la construcții și demolări, altele decât cele specificate la 17 09 01, 17 09 02 și 17 09 03,false
+
+# == 18 DEȘEURI PROVENITE DIN ACTIVITĂȚI DE ASISTENȚĂ MEDICALĂ SAU VETERINARĂ ȘI/SAU DIN CERCETĂRI CONEXE (cu excepția deșeurilor de la prepararea hranei în bucătării sau restaurante, care nu provin direct din activitățile de asistență medicală)
+# -- 18 01 deșeuri provenite din maternități, de diagnostic, tratament sau prevenire a bolilor la om
+18 01 01,obiecte ascuțite (cu excepția 18 01 03),false
+18 01 02,fragmente și organe umane, inclusiv recipiente de sânge și sânge conservat (cu excepția 18 01 03),false
+18 01 03,deșeuri a căror colectare și eliminare fac obiectul unor măsuri speciale privind prevenirea infecțiilor,true
+18 01 04,deșeuri a căror colectare și eliminare nu fac obiectul unor măsuri speciale privind prevenirea infecțiilor (de exemplu, îmbrăcăminte, mulaje de ghips, lenjerie, îmbrăcăminte de unică folosință, scutece),false
+18 01 06,chimicale constând din sau conținând substanțe periculoase,true
+18 01 07,chimicale, altele decât cele specificate la 18 01 06,false
+18 01 08,medicamente citotoxice și citostatice,true
+18 01 09,medicamente, altele decât cele specificate la 18 01 08,false
+18 01 10,deșeuri de amalgam de la tratamentele stomatologice,true
+# -- 18 02 deșeuri provenite din cercetarea, diagnosticarea, tratamentul sau prevenirea bolilor la animale
+18 02 01,obiecte ascuțite (cu excepția 18 02 02),false
+18 02 02,deșeuri a căror colectare și eliminare fac obiectul unor măsuri speciale privind prevenirea infecțiilor,true
+18 02 03,deșeuri a căror colectare și eliminare nu fac obiectul unor măsuri speciale privind prevenirea infecțiilor,false
+18 02 05,chimicale constând din sau conținând substanțe periculoase,true
+18 02 06,chimicale, altele decât cele specificate la 18 02 05,false
+18 02 07,medicamente citotoxice și citostatice,true
+18 02 08,medicamente, altele decât cele specificate la 18 02 07,false
+
+# == 19 DEȘEURI PROVENITE DE LA INSTALAȚII DE TRATARE A REZIDUURILOR, DE LA STAȚIILE EX-SITU DE EPURARE A APELOR REZIDUALE ȘI DE LA PREPARAREA APEI PENTRU CONSUMUL UMAN ȘI A APEI PENTRU UZ INDUSTRIAL
+# -- 19 01 deșeuri de la incinerarea sau piroliza deșeurilor
+19 01 02,materiale feroase din cenușile de ardere,false
+19 01 05,turte de filtrare de la epurarea gazelor,true
+19 01 06,deșeuri lichide apoase de la epurarea gazelor și alte deșeuri lichide apoase,true
+19 01 07,deșeuri solide de la epurarea gazelor,true
+19 01 10,cărbune activ uzat de la epurarea gazelor de ardere,true
+19 01 11,cenușă de vatră și zgură cu conținut de substanțe periculoase,true
+19 01 12,cenușă de vatră și zgură, alta decât cea specificată la 19 01 11,false
+19 01 13,cenuși zburătoare cu conținut de substanțe periculoase,true
+19 01 14,cenușă zburătoare, alta decât cea specificată la 19 01 13,false
+19 01 15,praf de cazan cu conținut de substanțe periculoase,true
+19 01 16,praf de cazan, altul decât cel specificat la 19 01 15,false
+19 01 17,deșeuri de piroliză cu conținut de substanțe periculoase,true
+19 01 18,deșeuri de piroliză, altele decât cele specificate la 19 01 17,false
+19 01 19,nisipuri de la paturile fluidizate,false
+19 01 99,deșeuri nespecificate,false
+# -- 19 02 deșeuri provenite din tratamentele fizico–chimice ale deșeurilor (în special decromatare, decianurare, neutralizare)
+19 02 03,deșeuri preamestecate conținând numai deșeuri nepericuloase,false
+19 02 04,deșeuri preamestecate conținând cel puțin un deșeu periculos,true
+19 02 05,nămoluri rezultate din tratarea fizico-chimică, cu conținut de substanțe periculoase,true
+19 02 06,nămoluri de la tratarea fizico-chimică, altele decât cele specificate la 19 02 05,false
+19 02 07,ulei și concentrate de la separare,true
+19 02 08,deșeuri lichide combustibile cu conținut de substanțe periculoase,true
+19 02 09,deșeuri solide combustibile cu conținut de substanțe periculoase,true
+19 02 10,deșeuri combustibile, altele decât cele specificate la 19 02 08 și 19 02 09,false
+19 02 11,alte deșeuri cu conținut de substanțe periculoase,true
+19 02 99,deșeuri nespecificate,false
+# -- 19 03 deșeuri stabilizate/solidificate
+19 03 04,deșeuri marcate ca periculoase, parțial stabilizate, altele decât cele menționate la 19 03 08,true
+19 03 05,deșeuri stabilizate, altele decât cele specificate la 19 03 04,false
+19 03 06,deșeuri încadrate ca periculoase, solidificate,true
+19 03 07,deșeuri solidificate, altele decât cele specificate la 19 03 06,false
+19 03 08,mercur parțial stabilizat,true
+# -- 19 04 deșeuri vitrificate și deșeuri provenite din vitrificare
+19 04 01,deșeuri vitrificate,false
+19 04 02,cenușă zburătoare și alte deșeuri de la epurarea gazelor de ardere,true
+19 04 03,fază solidă nevitrificată,true
+19 04 04,deșeuri lichide apoase de la vitrificarea deșeurilor,false
+# -- 19 05 deșeuri de la tratarea aerobă a deșeurilor solide
+19 05 01,fracția necompostată din deșeurile municipale și similare,false
+19 05 02,fracția necompostată din deșeurile animale și vegetale,false
+19 05 03,compost fără specificarea provenienței,false
+19 05 99,deșeuri nespecificate,false
+# -- 19 06 deșeuri de la tratarea anaerobă a deșeurilor
+19 06 03,faza lichidă de la epurarea anaerobă a deșeurilor municipale,false
+19 06 04,faza fermentată de la epurarea anaerobă a deșeurilor municipale,false
+19 06 05,faza lichidă de la epurarea anaerobă a deșeurilor animale și vegetale,false
+19 06 06,faza fermentată de la epurarea anaerobă a deșeurilor animale și vegetale,false
+19 06 99,deșeuri nespecificate,false
+# -- 19 07 levigate din depozitele de deșeuri
+19 07 02,levigate din depozitele de deșeuri cu conținut de substanțe periculoase,true
+19 07 03,levigate din depozite de deșeuri, altele decât cele specificate la 19 07 02,false
+# -- 19 08 deșeuri de la instalațiile de epurare a apelor reziduale, nespecificate în altă parte
+19 08 01,Reziduuri de cernere,false
+19 08 02,deșeuri de la deznisipatoare,false
+19 08 05,nămoluri de la epurarea apelor uzate orășenești,false
+19 08 06,rășini schimbătoare de ioni saturate sau uzate,true
+19 08 07,soluții și nămoluri de la regenerarea schimbătorilor de ioni,true
+19 08 08,deșeuri de la sistemele cu membrană cu conținut de metale grele,true
+19 08 09,amestec de grăsimi și uleiuri de la separarea amestecurilor ulei/apă conținând numai uleiuri și grăsimi comestibile,false
+19 08 10,amestecuri de grăsimi și uleiuri de la separarea ulei/apă, altele decât cele specificate la 19 08 09,true
+19 08 11,nămoluri cu conținut de substanțe periculoase rezultate din epurarea biologică a apelor reziduale industriale,true
+19 08 12,nămoluri rezultate din epurarea biologică a apelor reziduale industriale, altele decât cele specificate la 19 08 11,false
+19 08 13,nămoluri cu conținut de substanțe periculoase rezultate din alte procedee de epurare a apelor reziduale industriale,true
+19 08 14,nămoluri de la alte procedee de epurare a apelor reziduale industriale, altele decât cele specificate la 19 08 13,false
+19 08 99,deșeuri nespecificate,false
+# -- 19 09 deșeuri provenite din prepararea apei pentru consumul uman sau a apei de uz industrial
+19 09 01,deșeuri solide de primă filtrare și de declorurare,false
+19 09 02,nămoluri de la limpezirea apei,false
+19 09 03,nămoluri de la decarbonatare,false
+19 09 04,cărbune activ uzat,false
+19 09 05,rășini schimbătoare de ioni saturate sau uzate,false
+19 09 06,soluții și nămoluri de la regenerarea schimbătorilor de ioni,false
+19 09 99,deșeuri nespecificate,false
+# -- 19 10 deșeuri provenite din sfărâmarea deșeurilor cu conținut de metale
+19 10 01,deșeuri de fier și oțel,false
+19 10 02,deșeuri neferoase,false
+19 10 03,fracții de șpan ușor și praf cu conținut de substanțe periculoase,true
+19 10 04,fracții de șpan ușor și praf, altele decât cele specificate la 19 10 03,false
+19 10 05,alte fracții cu conținut de substanțe periculoase,true
+19 10 06,alte fracții decât cele specificate la 19 10 05,false
+# -- 19 11 deșeuri de la regenerarea hidrocarburilor
+19 11 01,argile de filtrare uzate,true
+19 11 02,gudroane acide,true
+19 11 03,deșeuri lichide apoase,true
+19 11 04,deșeuri de la spălarea combustibililor cu baze,true
+19 11 05,nămoluri rezultate din epurarea efluenților în incintă, cu conținut de substanțe periculoase,true
+19 11 06,nămoluri de la epurarea efluenților în incintă, altele decât cele specificate la 19 11 05,false
+19 11 07,deșeuri de la spălarea gazelor de ardere,true
+19 11 99,deșeuri nespecificate,false
+# -- 19 12 deșeuri provenite din tratarea mecanică a deșeurilor (de exemplu, sortare, sfărâmare, compactare, peletizare), nespecificate în altă parte
+19 12 01,hârtie și carton,false
+19 12 02,metale feroase,false
+19 12 03,metale neferoase,false
+19 12 04,materiale plastice și de cauciuc,false
+19 12 05,Sticlă,false
+19 12 06,deșeuri din lemn cu conținut de substanțe periculoase,true
+19 12 07,lemn, altul decât cel specificat la 19 12 06,false
+19 12 08,Materiale textile,false
+19 12 09,minerale (de exemplu nisip, pietre),false
+19 12 10,deșeuri combustibile (combustibili derivați din rebuturi),false
+19 12 11,alte deșeuri (inclusiv amestecuri de materiale) rezultate din tratarea mecanică a deșeurilor cu conținut de substanțe periculoase,true
+19 12 12,alte deșeuri (inclusiv amestecuri de materiale) de la tratarea mecanică a deșeurilor, altele decât cele specificate la 19 12 11,false
+# -- 19 13 deșeuri provenite de la decontaminarea solurilor și a apelor subterane
+19 13 01,deșeuri solide rezultate în urma remedierii solului, cu conținut de substanțe periculoase,true
+19 13 02,deșeuri solide de la remedierea solului, altele decât cele specificate la 19 13 01,false
+19 13 03,nămoluri rezultate în urma decontaminării solului, cu conținut de substanțe periculoase,true
+19 13 04,nămoluri de la remedierea solului, altele decât cele specificate la 19 13 03,false
+19 13 05,nămoluri rezultate din remedierea apelor subterane, cu conținut de substanțe periculoase,true
+19 13 06,nămoluri de la remedierea apelor subterane, altele decât cele specificate la 19 13 05,false
+19 13 07,deșeuri lichide apoase și concentrate apoase provenite de la decontaminarea apelor subterane, cu conținut de substanțe periculoase,true
+19 13 08,deșeuri lichide apoase și concentrate apoase de la remedierea apelor subterane, altele decât cele specificate la 19 13 07,false
+
+# == 20 DEȘEURI MUNICIPALE (DEȘEURI MENAJERE ȘI DEȘEURI ASIMILABILE, PROVENITE DIN COMERȚ, INDUSTRIE ȘI INSTITUȚII), INCLUSIV FRACȚIUNI COLECTATE SEPARAT
+# -- 20 01 fracțiuni colectate separat (cu excepția celor de la secțiunea 15 01)
+20 01 01,hârtie și carton,false
+20 01 02,Sticlă,false
+20 01 08,deșeuri biodegradabile de la bucătării și cantine,false
+20 01 10,Îmbrăcăminte,false
+20 01 11,Materiale textile,false
+20 01 13,Solvenți,true
+20 01 14,Acizi,true
+20 01 15,Alcali,true
+20 01 17,Substanțe chimice fotografice,true
+20 01 19,Pesticide,true
+20 01 21,tuburi fluorescente și alte deșeuri cu conținut de mercur,true
+20 01 23,echipamente casate cu conținut de clorofluorocarburi,true
+20 01 25,uleiuri și grăsimi comestibile,false
+20 01 26,uleiuri și grăsimi, altele decât cele specificate la 20 01 25,true
+20 01 27,vopsele, cerneluri, adezivi și rășini cu conținut de substanțe periculoase,true
+20 01 28,vopsele, cerneluri, adezivi și rășini, altele decât cele specificate la 20 01 27,false
+20 01 29,detergenți cu conținut de substanțe periculoase,true
+20 01 30,detergenți, alții decât cei specificați la 20 01 29,false
+20 01 31,medicamente citotoxice și citostatice,true
+20 01 32,medicamente, altele decât cele specificate la 20 01 31,false
+20 01 33,baterii și acumulatoare incluse la 16 06 01, 16 06 02 sau 16 06 03 și baterii și acumulatoare nesortate conținând aceste baterii,true
+20 01 34,baterii și acumulatoare, altele decât cele specificate la 20 01 33,false
+20 01 35,echipamente electrice și electronice casate, altele decât cele menționate la 20 01 21 și 20 01 23, cu conținut de componente periculoase (3),true
+20 01 36,echipamente electrice și electronice casate, altele decât cele specificate la 20 01 21, 20 01 23 și 20 01 35,false
+20 01 37,deșeuri din lemn cu conținut de substanțe periculoase,true
+20 01 38,lemn, altul decât cel specificat la 20 01 37,false
 20 01 39,Materiale plastice,false
 20 01 40,Metale,false
-17 04 05,Fier și oțel,false
-13 02 08,Alte uleiuri de motor de transmisie și de ungere,true
-16 06 01,Baterii cu plumb,true
+20 01 41,deșeuri de la curățatul coșurilor,false
+20 01 99,alte fracții nespecificate,false
+# -- 20 02 deșeuri din grădini și parcuri (inclusiv deșeurile din cimitire)
+20 02 01,deșeuri biodegradabile,false
+20 02 02,pământ și pietre,false
+20 02 03,alte deșeuri nebiodegradabile,false
+# -- 20 03 alte deșeuri municipale
+20 03 01,deșeuri municipale amestecate,false
+20 03 02,deșeuri din piețe,false
+20 03 03,reziduuri stradale,false
+20 03 04,nămolul din fosele septice,false
+20 03 06,deșeuri de la curățarea canalizării,false
+20 03 07,deșeuri voluminoase,false
+20 03 99,alte deșeuri municipale nespecificate,false
