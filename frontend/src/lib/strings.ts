@@ -92,6 +92,8 @@ export const strings = {
     physicalState: "Stare fizică",
     physicalStatePlaceholder: "— fără —",
     operationCode: "Cod operațiune (R/D)",
+    handoverCodeHint:
+      "Operațiunea pe care o face partenerul. Fișa Anexa 1 nu are coloană de „predare”: cantitatea se raportează la „valorificată” (cod R) sau la „eliminată final” (cod D), iar capitolele 3 și 4 cer operațiunea și operatorul.",
     partner: "Partener",
     partnerPlaceholder: "Alege un partener",
     documentReference: "Referință document",
@@ -103,6 +105,8 @@ export const strings = {
     partnerRequired: "Partenerul este obligatoriu la predare.",
     recoveryCodeRequired: "Alege un cod de valorificare (R) pentru valorificare.",
     disposalCodeRequired: "Alege un cod de eliminare (D) pentru eliminare.",
+    handoverCodeRequired:
+      "Alege operațiunea pe care o face partenerul: un cod R (valorificare) sau D (eliminare).",
     created: "Mișcare adăugată.",
     updated: "Mișcare actualizată.",
     deleted: "Mișcare ștearsă.",
@@ -322,6 +326,15 @@ export const strings = {
       HANDED_OVER: "Predare",
       RECOVERED: "Valorificare",
       DISPOSED: "Eliminare",
+    },
+    wasteRegister: {
+      ANEXA_1: "Anexa 1 — deșeu propriu",
+      ART_48: "Registru cronologic — preluat de la terți",
+    },
+    // HG 856/2002, anexa nr. 1, cap. 2, nota 3, verbatim.
+    treatmentPurpose: {
+      V: "V — pentru valorificare",
+      E: "E — în vederea eliminării",
     },
     physicalState: {
       SOLID: "Solid",

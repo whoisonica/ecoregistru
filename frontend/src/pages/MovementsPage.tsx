@@ -45,8 +45,9 @@ const OPERATIONS: WasteOperation[] = [
   "RECOVERED",
   "DISPOSED",
 ];
-const R_CODES = Object.keys(e.wasteOperationCode).filter((c) => c.startsWith("R")) as WasteOperationCode[];
-const D_CODES = Object.keys(e.wasteOperationCode).filter((c) => c.startsWith("D")) as WasteOperationCode[];
+const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
+const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
+const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -324,8 +325,13 @@ function MovementFormDialog({
   }));
 
   const requiresPartner = operation === "HANDED_OVER";
-  const requiresCode = operation === "RECOVERED" || operation === "DISPOSED";
-  const codeOptions = operation === "RECOVERED" ? R_CODES : operation === "DISPOSED" ? D_CODES : [];
+  // Every movement that takes waste off the site names its operation: Anexa 1 cap. 3 and cap. 4
+  // report the quantity next to "Operaţia de valorificare"/"de eliminare" and the operator doing
+  // it. A handover takes either family — what happens to the waste is the partner's operation.
+  const isHandover = operation === "HANDED_OVER";
+  const requiresCode = isHandover || operation === "RECOVERED" || operation === "DISPOSED";
+  const codeOptions =
+    operation === "RECOVERED" ? R_CODES : operation === "DISPOSED" ? D_CODES : ALL_CODES;
 
   const isSaving =
     createMut.isPending || updateMut.isPending || addAttachmentMut.isPending;
@@ -341,6 +347,7 @@ function MovementFormDialog({
       return t.recoveryCodeRequired;
     if (operation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
       return t.disposalCodeRequired;
+    if (isHandover && !operationCode) return t.handoverCodeRequired;
     return null;
   }
 
@@ -508,7 +515,10 @@ function MovementFormDialog({
 
         {requiresCode && (
           <div>
-            <Label htmlFor="mv-code-rd">{t.operationCode}</Label>
+            <Label htmlFor="mv-code-rd">
+              {t.operationCode}
+              <span className="text-red-600"> *</span>
+            </Label>
             <Select
               id="mv-code-rd"
               value={operationCode}
@@ -521,6 +531,7 @@ function MovementFormDialog({
                 </option>
               ))}
             </Select>
+            {isHandover && <p className="mt-1 text-xs text-gray-500">{t.handoverCodeHint}</p>}
           </div>
         )}
 

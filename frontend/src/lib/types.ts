@@ -5,6 +5,20 @@
 
 export type WasteOperation = "GENERATED" | "COLLECTED" | "HANDED_OVER" | "RECOVERED" | "DISPOSED";
 
+/**
+ * Which legal register a quantity belongs to. ANEXA_1 = waste generated in the company's own
+ * activity; ART_48 = goods taken over from third parties, which HG 856/2002 art. 2 alin. (1)
+ * keeps out of Anexa 1 and OUG 92/2021 art. 48 sends to a separate chronological register.
+ */
+export type WasteRegister = "ANEXA_1" | "ART_48";
+
+/**
+ * "Scopul" V/E — HG 856/2002 anexa nr. 1, cap. 2, nota 3. Derived from the R/D operation code,
+ * never entered: it says which cap. 1 column the quantity feeds, "valorificată" (V) or
+ * "eliminată final" (E). There is no "handed over" column on the form.
+ */
+export type TreatmentPurpose = "V" | "E";
+
 export type Unit = "KG" | "TONS";
 
 export type PhysicalState = "SOLID" | "LIQUID" | "SLUDGE" | "PASTY" | "POWDER" | "GASEOUS";
@@ -137,6 +151,9 @@ export interface WasteMovement {
   quantity: number;
   unit: Unit;
   operation: WasteOperation;
+  register: WasteRegister;
+  /** Derived server-side from operationCode; read-only. */
+  treatmentPurpose: TreatmentPurpose | null;
   physicalState: PhysicalState | null;
   operationCode: WasteOperationCode | null;
   partnerId: string | null;
@@ -157,7 +174,10 @@ export interface WasteMovementInput {
   quantity: number;
   unit: Unit;
   operation: WasteOperation;
+  /** Optional: the backend derives it from the operation unless the goods are third-party. */
+  register?: WasteRegister | null;
   physicalState?: PhysicalState | null;
+  /** Required for HANDED_OVER, RECOVERED and DISPOSED; rejected on the other operations. */
   operationCode?: WasteOperationCode | null;
   partnerId?: string | null;
   documentReference?: string | null;
