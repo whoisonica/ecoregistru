@@ -49,6 +49,15 @@ rulează local și are testele verzi.
   link + dată). Corectat `docs/legislatie.md` (6 corecții, inclusiv **formula stocului**, care era
   greșită și în doc, și în cod). Actualizat jurnalul de răspunsuri + documentul trimis specialistei.
   **8 din 9 blocante 🔴 închise.** Zero cod atins.
+- ✅ **ETAPA 1 — Nomenclator LED (2026-08-22):** cele **842 de coduri** ale Listei Europene a
+  Deșeurilor, extrase din Decizia 2014/955/UE (EUR-Lex, versiunea RO) de un script comis în repo
+  (`scripts/generate_waste_codes.py`), nu copiate de mână. Seed-ul
+  `backend/src/main/resources/seed/waste_codes.csv` păstrează titlurile de capitol și subcapitol ca
+  structură, iar `V4__reseed_waste_codes` îl reîncarcă peste cele 10 coduri-paravan ale lui `V2`
+  (`ON CONFLICT DO UPDATE`; denumirile oficiale conțin virgule, deci linia se taie la prima și la
+  ultima virgulă). Cele cinci validări rulează ca test (`WasteCodeSeedTest`): unicitate, format de
+  6 cifre, capitol și subcapitol corecte pentru fiecare cod, plus **amprenta pe capitole**
+  (842 coduri, 408 periculoase). `ApplicationBootIT` verifică reîncărcarea în DB. Suită verde.
 
 ---
 
@@ -61,7 +70,7 @@ nu se salvează.
 | # | Etapă | Depinde de | Mărime |
 |---|---|---|---|
 | 0 | ✅ Documentare legislativă (inclusiv runda „depozite", 22.08) | — | **GATA** |
-| 1 | 🔜 **Nomenclator LED** — 842 coduri din Decizia 2014/955/UE | — | S |
+| 1 | ✅ **Nomenclator LED** — 842 coduri din Decizia 2014/955/UE | — | **GATA** |
 | 2 | 🔴 **Model: operațiuni + stoc + cele trei evidențe** — reparația critică | 1 | M–L |
 | 3 | Cap. 2 ca profil (5 nomenclatoare + `Secția`) | 2 | M |
 | 4 | **Export oficial Anexa 1** (4 capitole) | 1, 2, 3 | L |

@@ -277,6 +277,13 @@ Distribuția pe capitole — folosită ca amprentă de regresie la orice reînc�
 11:27  12:23  13:34  14:5   15:12  16:72  17:38  18:16  19:99  20:40
 ```
 
+**În cod (din 22.08.2026, Etapa 1):** nomenclatorul se regenerează cu
+`python scripts/generate_waste_codes.py`, care descarcă HTML-ul de mai sus, îl parsează și refuză
+să scrie dacă amprenta nu se reproduce exact. Rezultatul e
+`backend/src/main/resources/seed/waste_codes.csv` (cu titlurile de capitol și subcapitol păstrate ca
+structură), încărcat de migrarea `V4__reseed_waste_codes`. Cele cinci validări de mai sus rulează și
+ca test Java — `WasteCodeSeedTest` — nu doar în script.
+
 ### 3.2 De ce lista 2014 și nu Anexa 2 din HG 856/2002
 
 Anexa 2 la HG 856/2002 e versiunea 2002/2007, netranspusă după Decizia 2014/955/UE. Argumentul

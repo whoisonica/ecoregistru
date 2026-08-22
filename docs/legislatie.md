@@ -95,7 +95,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 
 | Entitate actuală | Acoperă | LIPSEȘTE / de adăugat | Prioritate |
 |---|---|---|---|
-| `WasteCode` (cod, nume, periculos) | nomenclatorul ✅ | **încărcarea listei 2014/955/UE (842 coduri)** peste cele 10 placeholder | 🔴 mare |
+| `WasteCode` (cod, nume, periculos) | nomenclatorul ✅ + **lista 2014/955/UE completă (842 coduri)**, încărcată 22.08.2026 (Etapa 1) ✅ | — | ✅ închis |
 | `WasteMovement.operation` (GENERATED/COLLECTED/HANDED_OVER/RECOVERED/DISPOSED) | GENERATED / RECOVERED / DISPOSED ✅ | 🔴 **`COLLECTED` nu are ce căuta în Anexa 1** (art. 2(1)) și **`HANDED_OVER` nu e coloană pe fișă** — ambele se scad azi din stoc, deci dubla scădere. Predarea are nevoie de un **scop (V/E)**, exact câmpul „Scopul" din Cap. 2 | 🔴 critic |
 | `WasteMovement` — Cap. 2 | — | **lipsesc integral**: `Secția` + cele **cinci nomenclatoare** (tip stocare, mod tratare, scop, mijloc transport, destinație). În date reale sunt constante pe 12 luni → se modelează ca **profil implicit per (punct de lucru, cod)**, cu override pe lună | mare |
 | `Partner` (colector/transportator + autorizație) | operatorul din Cap. 3/4 ✅ | rol precis (valorificator vs. eliminator vs. transportator) | medie |

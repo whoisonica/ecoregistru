@@ -33,6 +33,13 @@ ever returns another tenant's rows — the test I care most about in this codeba
 **Versioned schema, no surprises.** Flyway migrations with a real version history and
 `ddl-auto=none` — the database is never shaped by Hibernate at runtime.
 
+**A nomenclator generated from the primary source.** The 842 codes of the European List of Waste
+(Commission Decision 2014/955/EU) are not hand-copied: `scripts/generate_waste_codes.py` parses the
+Official Journal HTML on EUR-Lex and refuses to write the seed unless the structural checks pass —
+unique codes, six-digit format, every code sitting under the chapter and subchapter its own digits
+claim, and a per-chapter fingerprint. The same five checks run as a Java test, so a hand-edited or
+half-downloaded list fails the build rather than a customer's records.
+
 **Evidence engine.** `EvidenceCalculator` aggregates waste movements into monthly lines per
 (work point, waste code), carrying a cumulative stock balance forward month over month and
 flagging negative balances. Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
