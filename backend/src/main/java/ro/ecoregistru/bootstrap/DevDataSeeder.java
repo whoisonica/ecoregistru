@@ -119,8 +119,9 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     /**
-     * Sample movements across Feb–Jul 2026. Designed so the evidence engine shows
-     * meaningful cumulative stock (e.g. paper "20 01 01" at Cluj: 40→30→50→50→30→50.5).
+     * Sample movements across Feb–Jul 2026. Designed so the evidence engine shows meaningful
+     * cumulative stock (e.g. paper "20 01 01" at Cluj: 40→30→50→50→30→50.5), and so the depot's
+     * glass shows the traded-goods flow that must stay out of Anexa 1.
      */
     private void seedMovements(Company company, UUID createdBy,
                                WorkPoint wpCluj, WorkPoint wpTurda, WorkPoint wpDepozit,
@@ -140,41 +141,48 @@ public class DevDataSeeder implements CommandLineRunner {
 
         List<WasteMovement> ms = new ArrayList<>();
 
+        // On a handover the R/D code is the operation the RECIPIENT performs — that is what cap. 3
+        // and cap. 4 of Anexa 1 report, next to the operator's name. Handovers to a plain collector
+        // are R13 ("stocarea deşeurilor înaintea oricărei operaţiuni R1-R12"): the collector holds
+        // the waste until someone else recovers it. Handovers straight to a recycler carry that
+        // recycler's own operation. See docs/intrebari-specialist.md — whether ANPM expects R13 or
+        // the final operation in this common case is the one open question here.
+
         // ---- Paper (20 01 01) at Cluj — the carry-over showcase ----
         // Feb: +100 -60 = 40
         ms.add(mv(company, wpCluj, d(2, 3), paper, "100.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, "Generat intern", createdBy));
-        ms.add(mv(company, wpCluj, d(2, 20), paper, "60.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 201", createdBy));
+        ms.add(mv(company, wpCluj, d(2, 20), paper, "60.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 201", createdBy));
         // Mar: +80 -90 = 30
         ms.add(mv(company, wpCluj, d(3, 5), paper, "80.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpCluj, d(3, 22), paper, "90.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 214", createdBy));
+        ms.add(mv(company, wpCluj, d(3, 22), paper, "90.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 214", createdBy));
         // Apr: +120 -100 = 50
         ms.add(mv(company, wpCluj, d(4, 4), paper, "120.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpCluj, d(4, 25), paper, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 233", createdBy));
+        ms.add(mv(company, wpCluj, d(4, 25), paper, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 233", createdBy));
         // May: +90 -90 = 50
         ms.add(mv(company, wpCluj, d(5, 6), paper, "90.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpCluj, d(5, 24), paper, "90.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 251", createdBy));
+        ms.add(mv(company, wpCluj, d(5, 24), paper, "90.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 251", createdBy));
         // Jun: +110 -130 = 30
         ms.add(mv(company, wpCluj, d(6, 7), paper, "110.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpCluj, d(6, 26), paper, "130.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 268", createdBy));
+        ms.add(mv(company, wpCluj, d(6, 26), paper, "130.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 268", createdBy));
         // Jul: +120.5 -100 = 50.5
         ms.add(mv(company, wpCluj, d(7, 5), paper, "120.500", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, "Generat intern", createdBy));
-        ms.add(mv(company, wpCluj, d(7, 11), paper, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 285", createdBy));
+        ms.add(mv(company, wpCluj, d(7, 11), paper, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 285", createdBy));
 
         // ---- Plastic (15 01 02) at Cluj — generation + internal recovery (R3) ----
         ms.add(mv(company, wpCluj, d(2, 8), plastic, "50.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
         ms.add(mv(company, wpCluj, d(2, 18), plastic, "20.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, null, "Valorificare internă", createdBy));
         ms.add(mv(company, wpCluj, d(4, 10), plastic, "60.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpCluj, d(4, 19), plastic, "30.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, ecoValor, "Aviz nr. 240", createdBy));
+        ms.add(mv(company, wpCluj, d(4, 19), plastic, "30.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor, "Aviz nr. 240", createdBy));
         ms.add(mv(company, wpCluj, d(7, 8), plastic, "80.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
         ms.add(mv(company, wpCluj, d(7, 16), plastic, "30.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, null, "Valorificare internă", createdBy));
 
         // ---- Metals (20 01 40) at Turda — handed to the metal recycler ----
         ms.add(mv(company, wpTurda, d(3, 9), metals, "200.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpTurda, d(3, 21), metals, "150.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, metalRecycler, "Aviz nr. 310", createdBy));
+        ms.add(mv(company, wpTurda, d(3, 21), metals, "150.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 310", createdBy));
         ms.add(mv(company, wpTurda, d(4, 12), metals, "180.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpTurda, d(4, 27), metals, "180.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, metalRecycler, "Aviz nr. 341", createdBy));
+        ms.add(mv(company, wpTurda, d(4, 27), metals, "180.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 341", createdBy));
         ms.add(mv(company, wpTurda, d(6, 11), metals, "220.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpTurda, d(6, 24), metals, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, metalRecycler, "Aviz nr. 372", createdBy));
+        ms.add(mv(company, wpTurda, d(6, 24), metals, "100.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 372", createdBy));
 
         // ---- Mixed municipal (20 03 01) at Turda — disposal at a conforming landfill (D5) ----
         // D5 (specially engineered landfill) rather than D1 (deposit onto land): municipal waste
@@ -184,17 +192,24 @@ public class DevDataSeeder implements CommandLineRunner {
         ms.add(mv(company, wpTurda, d(7, 4), mixed, "260.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
         ms.add(mv(company, wpTurda, d(7, 18), mixed, "200.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 388", createdBy));
 
-        // ---- Glass (15 01 07) collected at the depot, then handed over ----
+        // ---- Glass (15 01 07) taken over at the depot, then passed on ----
+        // The traded-goods flow, and the reason the register discriminator exists. Neither leg
+        // belongs on Anexa 1: HG 856/2002 art. 2 alin. (1) keeps third-party goods out of it, so
+        // both sit in the art. 48 chronological register. The takeover is classified by its
+        // operation; the hand-on is not — passing on collected glass looks exactly like handing
+        // over own glass, so it has to be said out loud.
         ms.add(mv(company, wpDepozit, d(6, 2), glass, "500.000", WasteOperation.COLLECTED, PhysicalState.SOLID, null, carrier, "Recepție 15/06", createdBy));
-        ms.add(mv(company, wpDepozit, d(6, 20), glass, "450.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, ecoValor, "Aviz nr. 366", createdBy));
+        WasteMovement glassPassedOn = mv(company, wpDepozit, d(6, 20), glass, "450.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R5, ecoValor, "Aviz nr. 366", createdBy);
+        glassPassedOn.setRegister(WasteRegister.ART_48);
+        ms.add(glassPassedOn);
 
         // ---- Hazardous: waste oils (13 02 08) at Cluj ----
         ms.add(mv(company, wpCluj, d(4, 15), oil, "15.000", WasteOperation.GENERATED, PhysicalState.LIQUID, null, null, "Schimb ulei utilaje", createdBy));
-        ms.add(mv(company, wpCluj, d(4, 23), oil, "15.000", WasteOperation.HANDED_OVER, PhysicalState.LIQUID, null, collector, "Aviz nr. 238", createdBy));
+        ms.add(mv(company, wpCluj, d(4, 23), oil, "15.000", WasteOperation.HANDED_OVER, PhysicalState.LIQUID, WasteOperationCode.R13, collector, "Aviz nr. 238", createdBy));
 
         // ---- Hazardous: lead batteries (16 06 01) at the depot ----
         ms.add(mv(company, wpDepozit, d(5, 14), battery, "8.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
-        ms.add(mv(company, wpDepozit, d(5, 29), battery, "8.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, null, collector, "Aviz nr. 359", createdBy));
+        ms.add(mv(company, wpDepozit, d(5, 29), battery, "8.000", WasteOperation.HANDED_OVER, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 359", createdBy));
 
         wasteMovementRepository.saveAll(ms);
         log.info("Seeded {} sample movements.", ms.size());
@@ -207,7 +222,8 @@ public class DevDataSeeder implements CommandLineRunner {
 
     private WasteMovement mv(Company company, WorkPoint wp, LocalDate date, WasteCode code,
                              String qty, WasteOperation op, PhysicalState physicalState,
-                             WasteOperationCode operationCode, Partner partner, String docRef, UUID createdBy) {
+                             WasteOperationCode operationCode, Partner partner, String docRef,
+                             UUID createdBy) {
         return WasteMovement.builder()
                 .company(company)
                 .workPoint(wp)

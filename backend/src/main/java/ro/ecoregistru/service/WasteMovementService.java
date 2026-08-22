@@ -13,6 +13,7 @@ import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.WasteOperation;
+import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.mapper.WasteMovementMapper;
@@ -59,19 +60,22 @@ public class WasteMovementService {
             }
         }
 
+        Company company = requireCompany(tenantId);
         WorkPoint workPoint = requireWorkPoint(request.workPointId(), tenantId);
         WasteCode wasteCode = requireWasteCode(request.wasteCodeId());
         Partner partner = resolvePartner(request, tenantId);
         validateOperationCode(request);
+        WasteRegister register = resolveRegister(request, company);
 
         WasteMovement movement = WasteMovement.builder()
-                .company(companyRepository.getReferenceById(tenantId))
+                .company(company)
                 .workPoint(workPoint)
                 .date(request.date())
                 .wasteCode(wasteCode)
                 .quantity(request.quantity())
                 .unit(request.unit())
                 .operation(request.operation())
+                .register(register)
                 .physicalState(request.physicalState())
                 .operationCode(request.operationCode())
                 .partner(partner)
@@ -91,10 +95,12 @@ public class WasteMovementService {
         UUID tenantId = TenantContext.require();
         WasteMovement movement = requireMovement(id, tenantId);
 
+        Company company = requireCompany(tenantId);
         WorkPoint workPoint = requireWorkPoint(request.workPointId(), tenantId);
         WasteCode wasteCode = requireWasteCode(request.wasteCodeId());
         Partner partner = resolvePartner(request, tenantId);
         validateOperationCode(request);
+        WasteRegister register = resolveRegister(request, company);
 
         movement.setWorkPoint(workPoint);
         movement.setDate(request.date());
@@ -102,6 +108,7 @@ public class WasteMovementService {
         movement.setQuantity(request.quantity());
         movement.setUnit(request.unit());
         movement.setOperation(request.operation());
+        movement.setRegister(register);
         movement.setPhysicalState(request.physicalState());
         movement.setOperationCode(request.operationCode());
         movement.setPartner(partner);
@@ -198,6 +205,11 @@ public class WasteMovementService {
 
     // --- helpers ---
 
+    private Company requireCompany(UUID tenantId) {
+        return companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(TENANT_NOT_FOUND));
+    }
+
     private WasteMovement requireMovement(UUID id, UUID tenantId) {
         return movementRepository.findByIdAndCompany_IdAndDeletedFalse(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(MOVEMENT_NOT_FOUND));
@@ -225,8 +237,14 @@ public class WasteMovementService {
     }
 
     /**
-     * Enforces the R/D operation code rule: an R code is required for RECOVERED, a D code for
-     * DISPOSED, and no code is allowed for any other operation (so the Anexa 1 chapters stay clean).
+     * Enforces the R/D operation code rule. Every movement that takes waste off the site carries
+     * one, because Anexa 1 cap. 3 and cap. 4 report the quantity together with "Operaţia de
+     * valorificare"/"de eliminare" and the operator performing it — a quantity cannot be placed on
+     * those chapters without its code (docs/surse-oficiale.md §1.2).
+     *
+     * <p>The family is pinned where the operation already names it: an R code for RECOVERED, a D
+     * code for DISPOSED. A handover takes either, because what happens to the waste is decided by
+     * the partner receiving it. GENERATED and COLLECTED take none — nothing has happened yet.
      */
     private void validateOperationCode(WasteMovementRequest request) {
         var code = request.operationCode();
@@ -241,11 +259,41 @@ public class WasteMovementService {
                     throw new BusinessException(OPERATION_CODE_REQUIRED_DISPOSAL);
                 }
             }
+            case HANDED_OVER -> {
+                if (code == null) {
+                    throw new BusinessException(OPERATION_CODE_REQUIRED_HANDOVER);
+                }
+            }
             default -> {
                 if (code != null) {
                     throw new BusinessException(OPERATION_CODE_NOT_ALLOWED);
                 }
             }
         }
+    }
+
+    /**
+     * Decides which legal register the quantity lands in. The caller may say, because one case is
+     * genuinely ambiguous — handing over, recovering or disposing of goods taken from third parties
+     * belongs to the art. 48 register, not to Anexa 1 — but the two ends are fixed by law and are
+     * enforced rather than trusted: waste generated in the company's own activity is always Anexa 1
+     * (art. 1 alin. (1) HG 856/2002), and a takeover is never Anexa 1 (art. 2 alin. (1)).
+     */
+    private WasteRegister resolveRegister(WasteMovementRequest request, Company company) {
+        boolean takeover = request.operation() == WasteOperation.COLLECTED;
+        WasteRegister register = request.register() != null
+                ? request.register()
+                : (takeover ? WasteRegister.ART_48 : WasteRegister.ANEXA_1);
+
+        if (takeover && register != WasteRegister.ART_48) {
+            throw new BusinessException(REGISTER_INVALID_FOR_OPERATION);
+        }
+        if (request.operation() == WasteOperation.GENERATED && register != WasteRegister.ANEXA_1) {
+            throw new BusinessException(REGISTER_INVALID_FOR_OPERATION);
+        }
+        if (register == WasteRegister.ART_48 && !company.getType().keepsArt48Register()) {
+            throw new BusinessException(ART48_REGISTER_NOT_ENABLED);
+        }
+        return register;
     }
 }

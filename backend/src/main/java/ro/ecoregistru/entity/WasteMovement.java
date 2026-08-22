@@ -9,6 +9,7 @@ import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteOperationCode;
+import ro.ecoregistru.enums.WasteRegister;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -62,12 +63,34 @@ public class WasteMovement {
     @Column(nullable = false)
     WasteOperation operation;
 
+    /**
+     * Which legal register this quantity belongs to. Most of the time the operation decides
+     * (COLLECTED is always the art. 48 register, everything else defaults to Anexa 1), which is
+     * why {@link #applyDefaultRegister()} fills it in. It is stored explicitly because there is one
+     * case the operation cannot decide: handing over, recovering or disposing of goods taken from
+     * third parties stays in the art. 48 register and must never reach Anexa 1
+     * (HG 856/2002 art. 2 alin. (1) — docs/surse-oficiale.md §1.1).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    WasteRegister register;
+
     /** Physical state of the waste (Anexa 1 identification field). Nullable — captured when known. */
     @Enumerated(EnumType.STRING)
     @Column(name = "physical_state")
     PhysicalState physicalState;
 
-    /** R1–R13 (recovery) / D1–D15 (disposal). Required for RECOVERED / DISPOSED, null otherwise. */
+    /**
+     * R1–R13 (recovery) / D1–D15 (disposal): the operation this quantity undergoes, and — through
+     * {@link WasteOperationCode#treatmentPurpose()} — the Anexa 1 cap. 1 column it lands in.
+     * Required for every movement that takes waste off the site (HANDED_OVER, RECOVERED, DISPOSED),
+     * because cap. 3 and cap. 4 report the quantity together with its operation and its operator.
+     * On HANDED_OVER the operation is the one the {@link #partner} performs; on the other two it is
+     * the one this company performs itself. Null for GENERATED and COLLECTED.
+     *
+     * <p>Nullable in the schema: movements recorded before the rule existed cannot be classified
+     * retroactively, and guessing would put a made-up figure on an official form.
+     */
     @Enumerated(EnumType.STRING)
     @Column(name = "operation_code", length = 10)
     WasteOperationCode operationCode;
@@ -112,4 +135,19 @@ public class WasteMovement {
 
     @Version
     Long version;
+
+    /**
+     * Fills in the register the operation implies, so a movement written straight through the
+     * repository — the dev seeder, a test fixture — cannot land without one. Never overrides an
+     * explicit choice; the service validates that the two agree.
+     */
+    @PrePersist
+    @PreUpdate
+    void applyDefaultRegister() {
+        if (register == null) {
+            register = operation == WasteOperation.COLLECTED
+                    ? WasteRegister.ART_48
+                    : WasteRegister.ANEXA_1;
+        }
+    }
 }

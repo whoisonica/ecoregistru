@@ -1,9 +1,12 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PhysicalState;
+import ro.ecoregistru.enums.TreatmentPurpose;
 import ro.ecoregistru.enums.Unit;
+
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteOperationCode;
+import ro.ecoregistru.enums.WasteRegister;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -23,6 +26,9 @@ public record WasteMovementResponse(
         BigDecimal quantity,
         Unit unit,
         WasteOperation operation,
+        WasteRegister register,
+        /** Derived from operationCode, never stored: which Anexa 1 cap. 1 column the quantity feeds. */
+        TreatmentPurpose treatmentPurpose,
         PhysicalState physicalState,
         WasteOperationCode operationCode,
         UUID partnerId,

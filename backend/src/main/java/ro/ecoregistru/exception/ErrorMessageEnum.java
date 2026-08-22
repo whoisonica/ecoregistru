@@ -52,7 +52,10 @@ public enum ErrorMessageEnum {
     INVALID_QUANTITY("movement.quantity.invalid", "Cantitatea trebuie să fie mai mare decât zero."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
-    OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se aplică doar la valorificare sau eliminare."),
+    OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la predare, valorificare sau eliminare."),
+    OPERATION_CODE_REQUIRED_HANDOVER("movement.operation.code.handover", "Predarea deșeului necesită operațiunea pe care o face partenerul: un cod R (valorificare) sau D (eliminare)."),
+    REGISTER_INVALID_FOR_OPERATION("movement.register.invalid", "Registrul nu se potrivește cu operațiunea: deșeul generat intră în Anexa 1, iar preluarea de la terți în registrul cronologic."),
+    ART48_REGISTER_NOT_ENABLED("movement.register.art48.disabled", "Firma e înregistrată doar ca generator. Preluarea de deșeuri de la terți cere tipul „Colector” sau „Ambele”."),
 
     // --- Evidence / deadlines ---
     EVIDENCE_NOT_FOUND("evidence.not.found", "Evidența nu a fost găsită."),

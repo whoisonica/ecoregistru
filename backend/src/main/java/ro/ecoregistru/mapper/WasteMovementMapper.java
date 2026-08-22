@@ -30,6 +30,8 @@ public class WasteMovementMapper {
                 m.getQuantity(),
                 m.getUnit(),
                 m.getOperation(),
+                m.getRegister(),
+                m.getOperationCode() != null ? m.getOperationCode().treatmentPurpose() : null,
                 m.getPhysicalState(),
                 m.getOperationCode(),
                 partner != null ? partner.getId() : null,

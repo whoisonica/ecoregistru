@@ -51,8 +51,10 @@ class EvidenceCalculatorIT {
     @BeforeEach
     void setUp() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
+        // BOTH, not GENERATOR: the fixture records a COLLECTED takeover, and only a company that
+        // actually takes waste over keeps an art. 48 register.
         Company company = companyRepository.save(Company.builder()
-                .name("Evidence Co SRL").cui("ROE" + suffix).type(CompanyType.GENERATOR)
+                .name("Evidence Co SRL").cui("ROE" + suffix).type(CompanyType.BOTH)
                 .active(true).createdAt(Instant.now()).build());
         tenantId = company.getId();
         AppUser user = appUserRepository.save(AppUser.builder()
