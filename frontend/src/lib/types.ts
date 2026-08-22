@@ -194,7 +194,11 @@ export interface MovementFilters {
 
 // --- Monthly evidence (regenerable cache aggregated from movements) ---
 
-/** Mirrors backend MonthlyEvidenceResponse. All quantities are in KG. */
+/**
+ * Mirrors backend MonthlyEvidenceResponse — one line of Anexa 1 (HG 856/2002), in the order the
+ * form reads. All quantities are in KG. Goods taken over from third parties are not here: they
+ * belong to the art. 48 register (art. 2 alin. (1)).
+ */
 export interface MonthlyEvidence {
   id: string;
   workPointId: string;
@@ -206,18 +210,27 @@ export interface MonthlyEvidence {
   wasteCodeName: string;
   hazardous: boolean;
   totalGenerated: number;
-  totalCollected: number;
-  totalHandedOver: number;
   totalRecovered: number;
   totalDisposed: number;
-  closingStock: number; // may be negative (hand-overs exceeding intake in a window)
+  /** Memo: the part of recovered + disposed that left as a handover. Already counted in those. */
+  totalHandedOver: number;
+  /** Left the site with no operation code, so it is in neither official column. */
+  totalUnclassifiedOut: number;
+  /** True when totalUnclassifiedOut > 0: the line cannot be reported as it stands. */
+  incomplete: boolean;
+  /** These handovers may be passing on third-party goods; for review, not for reporting. */
+  resaleSuspected: boolean;
+  closingStock: number; // may be negative (exits exceeding intake in a window)
   generatedAt: string;
 }
 
 /** Mirrors backend EvidenceRegenerationResponse. */
 export interface EvidenceRegenerationResponse {
   year: number;
+  /** Lines written for the requested year and the cascaded ones together. */
   linesGenerated: number;
+  /** Later years rebuilt as well, because stock carries across years. */
+  cascadedYears: number[];
 }
 
 /** Filters for the evidence list query; empty fields are omitted from the request. */

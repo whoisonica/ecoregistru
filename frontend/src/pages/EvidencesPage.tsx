@@ -18,7 +18,6 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.evidences;
-const op = strings.enums.wasteOperation;
 
 /** Quantities from the backend are in KG; format with the Romanian locale. */
 const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
@@ -77,9 +76,12 @@ export function EvidencesPage() {
     regenerateMut.mutate(year, {
       onSuccess: (res) =>
         notify(
-          t.regenerated
+          // Stock carries across years, so a regeneration rebuilds the later ones too — say so,
+          // otherwise the line count looks wrong for the year that was asked for.
+          (res.cascadedYears.length > 0 ? t.regeneratedCascade : t.regenerated)
             .replace("{count}", String(res.linesGenerated))
-            .replace("{year}", String(res.year)),
+            .replace("{year}", String(res.year))
+            .replace("{years}", res.cascadedYears.join(", ")),
           "success"
         ),
       onError: (err) => notify(apiErrorMessage(err, t.regenerateError), "error"),
@@ -213,11 +215,11 @@ export function EvidencesPage() {
                   <TH>{t.colWorkPoint}</TH>
                   <TH>{t.colMonth}</TH>
                   <TH>{t.colWasteCode}</TH>
-                  <TH className="text-right">{op.GENERATED}</TH>
-                  <TH className="text-right">{op.COLLECTED}</TH>
-                  <TH className="text-right">{op.HANDED_OVER}</TH>
-                  <TH className="text-right">{op.RECOVERED}</TH>
-                  <TH className="text-right">{op.DISPOSED}</TH>
+                  <TH className="text-right">{t.colGenerated}</TH>
+                  <TH className="text-right">{t.colRecovered}</TH>
+                  <TH className="text-right">{t.colDisposed}</TH>
+                  <TH className="text-right text-gray-400">{t.colHandedOver}</TH>
+                  <TH className="text-right">{t.colUnclassified}</TH>
                   <TH className="text-right">{t.colStock}</TH>
                 </TR>
               </THead>
@@ -233,15 +235,33 @@ export function EvidencesPage() {
                           {t.hazardous}
                         </Badge>
                       )}
+                      {r.incomplete && (
+                        <Badge variant="warning" className="ml-2" title={t.incompleteHint}>
+                          {t.incomplete}
+                        </Badge>
+                      )}
+                      {r.resaleSuspected && (
+                        <Badge variant="warning" className="ml-2" title={t.resaleSuspectedHint}>
+                          {t.resaleSuspected}
+                        </Badge>
+                      )}
                       <span className="block max-w-xs truncate text-xs text-gray-400">
                         {r.wasteCodeName}
                       </span>
                     </TD>
                     <TD className="text-right">{kg(r.totalGenerated)}</TD>
-                    <TD className="text-right">{kg(r.totalCollected)}</TD>
-                    <TD className="text-right">{kg(r.totalHandedOver)}</TD>
                     <TD className="text-right">{kg(r.totalRecovered)}</TD>
                     <TD className="text-right">{kg(r.totalDisposed)}</TD>
+                    {/* Memo column: already inside recovered + disposed, never added to them. */}
+                    <TD className="text-right text-gray-400">{kg(r.totalHandedOver)}</TD>
+                    <TD
+                      className={`text-right ${
+                        r.incomplete ? "font-medium text-amber-700" : "text-gray-400"
+                      }`}
+                      title={r.incomplete ? t.incompleteHint : undefined}
+                    >
+                      {kg(r.totalUnclassifiedOut)}
+                    </TD>
                     <TD
                       className={`text-right font-medium ${
                         r.closingStock < 0 ? "text-red-600" : "text-gray-900"

@@ -192,12 +192,27 @@ export const strings = {
     filterWorkPoint: "Punct de lucru",
     allMonths: "Toate lunile",
     allWorkPoints: "Toate",
-    // columns
+    // columns — Anexa 1, cap. 1: "Generate | din care: valorificată | eliminată final |
+    // rămasă în stoc". Fișa nu are coloană de predare, deci predarea apare în „Valorificat" sau
+    // „Eliminat", după codul R/D al operațiunii făcute de destinatar.
     colWorkPoint: "Punct de lucru",
     colMonth: "Luna",
     colWasteCode: "Cod deșeu",
+    colGenerated: "Generat",
+    colRecovered: "Valorificat",
+    colDisposed: "Eliminat",
+    colHandedOver: "din care predat",
+    colUnclassified: "Neclasificat",
     colStock: "Stoc",
     hazardous: "Periculos",
+    // line warnings
+    incomplete: "Incomplet",
+    incompleteHint:
+      "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
+    resaleSuspected: "De verificat",
+    resaleSuspectedHint:
+      "La acest punct de lucru și cod există și deșeu preluat de la terți. Dacă predarea dă mai departe marfă preluată, ea nu aparține Anexei 1, ci registrului cronologic (art. 48).",
+    regeneratedCascade: "Evidență regenerată: {count} linii pentru {year} (și anii {years}).",
     // empty state
     empty: "Nu există linii de evidență pentru {year}.",
     emptyHint: "Apasă „Regenerează” pentru a calcula evidența anului {year} din mișcări.",
