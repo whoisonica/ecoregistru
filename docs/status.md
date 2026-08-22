@@ -65,6 +65,24 @@ rulează local și are testele verzi.
   Heroku în 56 ms, aplicația a repornit curat, iar codurile se văd în combobox-ul de pe Mișcări.
   Commit-uri: `53f5e8c` (seed), `4efff97` (docs), `491a241` (taskul Gradle `stage`, adus înapoi din
   repo-ul de deploy — lipsea din monorepo și ar fi rupt primul subtree split proaspăt).
+- ✅ **ETAPA 2a — Seam-ul de registru (2026-08-23):** cele două evidențe care azi împart o tabelă
+  au fost separate logic, fără să se șteargă sau să se mute vreo linie. `WasteMovement` primește
+  `register` (`ANEXA_1` / `ART_48`). Trei reguli, validate în service și acoperite de test: preluarea
+  de la terți nu ajunge niciodată în Anexa 1 (art. 2 alin. (1)), deșeul propriu nu iese niciodată din
+  ea (art. 1 alin. (1)), iar **orice ieșire de pe amplasament poartă un cod R/D** — fișa nu are
+  coloană „predare", iar cap. 3 și 4 raportează cantitatea alături de „Operaţia de valorificare"/„de
+  eliminare" și de operatorul care o face. Litera V/E din cap. 2 nota 3 se **derivă** din cod
+  (`WasteOperationCode.treatmentPurpose()`), nu se stochează. `CompanyType` a devenit
+  comutator real (`keepsArt48Register()`): o firmă doar-generator nu poate scrie în registrul art. 48.
+  Entitățile `Reception` / `Delivery` există ca schemă (recepția = document primar, cu preț pentru
+  contribuția AFM de 2%), **fără ecrane** — alea sunt Etapa 8, când se mută și mișcările `COLLECTED`,
+  o singură dată. Migrarea **`V5`** e aditivă: nimic șters, backfill `COLLECTED → ART_48`, iar o firmă
+  marcată „generator" care avea deja preluări e lărgită la `BOTH` ca să nu-i blocheze liniile.
+  Verificată prin rulare într-o tranzacție cu rollback pe baza de dev, pe 35 de mișcări reale.
+  Suită verde (63 de teste; `RegisterSeamIT` 9/9).
+  ⚠️ **O restanță de clasificare pe care nicio migrare nu o poate ghici** (predările de marfă
+  preluată) și **o întrebare deschisă** către specialistă (ce cod se trece la predarea către un
+  colector) — detalii mai jos.
 
 ---
 
@@ -95,6 +113,33 @@ nu se salvează.
   `lower(...) like`, iar denumirile din nomenclator au diacritice: cine tastează „deseuri" nu
   găsește nimic. Cu 10 coduri nu conta; de la Etapa 1 încoace, cu 842, se vede. Reparație:
   `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
+
+**Etapa 2 e în lucru: 2a e livrat, 2b–2d urmează.**
+
+- **2b — `EvidenceCalculator`:** formula `stoc_anterior + generat − valorificat − eliminat`, plus
+  cele trei găuri (lunile goale, grupurile cu stoc reportat și zero mișcări, cascada regenerării).
+  Migrarea de acolo e **`V6`** — `V5` e ocupată de seam.
+- **2c — testul de referință** pe foaia `20 03 01` a șablonului specialistei. Cifrele se transcriu
+  în test ca fixture: `documente oficiale/` e gitignored, deci un test care citește fișierul ar trece
+  local și ar pica în repo-ul de deploy.
+- **2d — consecințele pe suprafață:** `totalCollected` iese din Anexa 1, exportul generic și ecranul
+  Evidențe îl urmează.
+
+**Ce a rămas neclasificat după `V5`, și de ce nu ghicim:**
+
+1. **Ieșirile vechi n-au cod R/D.** Pe baza de dev sunt 13 predări fără cod — nu pot fi clasificate
+   retroactiv, fiindcă a inventa o operațiune ar pune o cifră născocită pe un formular oficial.
+   Contractul pentru 2b: cantitatea **se scade din stoc** (a plecat fizic), dar nu intră în niciuna
+   dintre cele două coloane oficiale, iar linia se marchează **incompletă**. Astfel Anexa 1 nu „se
+   închide" tăcut pe date lipsă — se vede că e ceva de completat. Editarea unei astfel de mișcări
+   cere de-acum codul, deci completarea se face natural, prin ecranul care există.
+2. **Predările de marfă preluată au rămas în `ANEXA_1`.** Backfill-ul poate clasifica preluarea în
+   sine (`COLLECTED`), dar o predare care dă mai departe marfă colectată arată identic cu predarea
+   de deșeu propriu. Nu există selector de registru în UI, și **nici nu se adaugă unul acum**: după
+   Etapa 8, fluxul art. 48 se înregistrează ca `Reception`/`Delivery`, iar `waste_movements` rămâne
+   Anexa 1 curat. `register = ART_48` pe o mișcare e o stare **tranzitorie**, pentru liniile vechi,
+   pe care migrarea din Etapa 8 le mută. Până atunci, 2b le semnalează (o predare în `ANEXA_1` la o
+   pereche punct-de-lucru/cod care are și preluări e suspectă) — semnalează, nu rescrie.
 
 **Etapa 2 e cea critică.** `EvidenceCalculator` calculează azi stocul greșit: scade `handedOver`,
 `recovered` **și** `disposed`, deși fișa oficială (HG 856 Anexa 1, Cap. 1) nu are coloană de predare.

@@ -10,8 +10,9 @@
 > textul de lege, cu link la sursa primară și data accesării. Documentul de față rămâne harta și
 > analiza de gap; când cele două se contrazic, `surse-oficiale.md` are dreptate.
 >
-> Ultima actualizare: 2026-08-22 (verificare integrală pe surse primare: Portal Legislativ, EUR-Lex,
-> sgglegis.gov.ro). Cercetarea anterioară, din 2026-07-11, era făcută pe surse secundare — o parte
+> Ultima actualizare: 2026-08-23 (gap analysis reîmprospătat după Etapa 2a — seam-ul de registru).
+> Verificarea legislativă integrală pe surse primare (Portal Legislativ, EUR-Lex, sgglegis.gov.ro)
+> e din 2026-08-22. Cercetarea anterioară, din 2026-07-11, era făcută pe surse secundare — o parte
 > din afirmațiile ei au fost corectate mai jos.
 
 ---
@@ -68,7 +69,9 @@
 > 1. **Cap. 1 NU are coloană de „predare".** Coloanele sunt exact `Generate | valorificată |
 >    eliminată final | rămasă în stoc`. Predarea la un colector se raportează ca valorificare sau
 >    eliminare, cu operatorul în Cap. 3 / Cap. 4. Deci `stoc = stoc_anterior + generat − valorificat
->    − eliminat` — fără termen separat pentru predare.
+>    − eliminat` — fără termen separat pentru predare. **Coloana o dă codul R/D**, nu un câmp
+>    separat: Cap. 3 și Cap. 4 cer și „Operaţia de valorificare"/„de eliminare", și agentul economic
+>    care o efectuează, deci orice ieșire poartă un cod (vezi §3 și `surse-oficiale.md` §1.2).
 > 2. **„Starea fizică" și „Unitatea de măsură" sunt câmpuri libere** în act, fără listă închisă.
 > 3. **Referința R/D din facsimil e abrogată** (Legea 426/2001). Referința corectă în export:
 >    **OUG 92/2021, anexa nr. 3 (valorificare) și anexa nr. 7 (eliminare)**.
@@ -96,21 +99,22 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | Entitate actuală | Acoperă | LIPSEȘTE / de adăugat | Prioritate |
 |---|---|---|---|
 | `WasteCode` (cod, nume, periculos) | nomenclatorul ✅ + **lista 2014/955/UE completă (842 coduri)**, încărcată 22.08.2026 (Etapa 1) ✅ | — | ✅ închis |
-| `WasteMovement.operation` (GENERATED/COLLECTED/HANDED_OVER/RECOVERED/DISPOSED) | GENERATED / RECOVERED / DISPOSED ✅ | 🔴 **`COLLECTED` nu are ce căuta în Anexa 1** (art. 2(1)) și **`HANDED_OVER` nu e coloană pe fișă** — ambele se scad azi din stoc, deci dubla scădere. Predarea are nevoie de un **scop (V/E)**, exact câmpul „Scopul" din Cap. 2 | 🔴 critic |
+| `WasteMovement.operation` + `register` + `operationCode` | ✅ **Etapa 2a (23.08.2026):** `register` (`ANEXA_1`/`ART_48`) scoate preluarea din Anexa 1 (art. 2(1)); `operationCode` e obligatoriu la **orice ieșire**, inclusiv la predare, fiindcă Cap. 3/4 cer operaţia + operatorul; litera V/E se derivă din cod | 🟠 ieșirile vechi n-au cod și nu pot fi clasificate retroactiv → 2b le marchează incomplete, nu le ghicește. 🟠 ce cod se trece la predarea către un colector (R13 vs. operaţiunea finală) e întrebare deschisă | ✅ model închis |
 | `WasteMovement` — Cap. 2 | — | **lipsesc integral**: `Secția` + cele **cinci nomenclatoare** (tip stocare, mod tratare, scop, mijloc transport, destinație). În date reale sunt constante pe 12 luni → se modelează ca **profil implicit per (punct de lucru, cod)**, cu override pe lună | mare |
 | `Partner` (colector/transportator + autorizație) | operatorul din Cap. 3/4 ✅ | rol precis (valorificator vs. eliminator vs. transportator) | medie |
-| `MonthlyEvidence` (totaluri/operație pe lună) | agregarea lunară + stoc ✅ | 🔴 formula greșită (vezi rândul de mai sus); **12 rânduri indiferent de mișcări**; grupurile cu stoc dar fără mișcări în an dispar din raport; regenerarea nu invalidează anii următori | 🔴 critic |
-| `Company` (CUI, tip, autorizație) | identificarea agentului ✅ | CAEN, date suplimentare cerute de SIM (🟡 de văzut chestionarul) | medie |
+| `MonthlyEvidence` (totaluri/operație pe lună) | agregarea lunară + stoc ✅ | 🔴 **formula e încă greșită în cod** (adună `collected`, scade `handedOver` peste `recovered`/`disposed`); **12 rânduri indiferent de mișcări**; grupurile cu stoc dar fără mișcări în an dispar din raport; regenerarea nu invalidează anii următori. Modelul de sub ea e acum corect — rămâne calculatorul | 🔴 critic — **Etapa 2b, următoarea** |
+| `Company` (CUI, tip, autorizație) | identificarea agentului ✅; `CompanyType` e de la Etapa 2a **comutator funcțional** (`keepsArt48Register()`) — o firmă doar-generator nu poate scrie în registrul art. 48 | CAEN, date suplimentare cerute de SIM (🟡 de văzut chestionarul); `afmObligation` boolean → **set de contribuții cu trei cadențe** (Etapa 7) | medie |
 | `ReportingDeadline` (AFM lunar auto pe 25) | calendarul ✅ | termen SIM anual **15 martie** (acum știm că e termen legal, art. 48(1)) | mare |
-| — (nu există) | — | **`Reception` / `Delivery`** — marfa tranzacționată de un colector. Flux separat de `WasteMovement`, alimentează raportarea de colector, **NU** Anexa 1. Câmpurile viitoare sunt deja cunoscute din TRACE-DM art. 5 | după decizia de produs |
+| `Reception` / `Delivery` | ✅ **schemă + entități (Etapa 2a)** — marfa tranzacționată, flux separat de `WasteMovement`, alimentează registrul art. 48, **NU** Anexa 1. Recepția e documentul primar (are și prețul, pentru contribuția AFM de 2%) | ecrane, servicii, controllere — **Etapa 8**; mișcările `COLLECTED` vechi se mută fizic acolo atunci, o singură dată | mare |
 | — (nu există) | — | **conversia kg → tone** pentru raportarea art. 48; un singur loc în cod | medie |
 
 ### Insight-uri strategice
 1. **Amenda: corectăm în tot materialul de vânzare la 20.000–40.000 lei** (per OUG 92/2021).
 2. **AFM nu e pentru toți.** Termenul AFM lunar NU trebuie auto-generat pentru orice tenant — îl activăm doar dacă firma are obligații AFM (ambalaje/groapă/etc.). Altfel speriem/inducem în eroare clienți fără obligație. → `Company` primește un flag `hasAfmObligation` (sau un set de obligații AFM).
 3. **Motorul de evidență trebuie să calculeze STOC**, nu doar totaluri. ⚠️ **CORECTAT 22.08.2026** — formula scrisă aici înainte (`+ generat − valorificat − eliminat − predat`) era **greșită** și e implementată greșit și în `EvidenceCalculator`. Cap. 1 nu are coloană de predare, deci predarea nu e un termen separat: **`stoc = stoc_anterior + generat − valorificat − eliminat`**. Predarea la un colector intră în „valorificat" sau „eliminat", după scop. Ce e acum în cod scade și `handedOver`, și `recovered`, și `disposed` — dublă scădere.
-4. **Codurile R/D și starea fizică** trebuie capturate la nivel de mișcare (valorificare/eliminare), altfel fișa oficială nu se poate genera corect. Le adăugăm la model ACUM (ieftin), chiar dacă exportul oficial vine mai târziu.
+4. **Codurile R/D și starea fizică** trebuie capturate la nivel de mișcare, altfel fișa oficială nu se poate genera corect. ⚠️ **EXTINS 23.08.2026:** codul R/D nu e cerut doar la valorificare/eliminare cu mijloace proprii, ci la **orice cantitate care iese de pe amplasament** — Cap. 3 și Cap. 4 raportează cantitatea alături de „Operaţia" **și** de „Agentul economic care efectuează operaţia". Un câmp de scop V/E ar fi fost strict mai puțină informație decât cere formularul; litera se derivă din cod (`WasteOperationCode.treatmentPurpose()`).
 5. **SIM = anual, per chestionar pe tip de operator.** Tipul firmei (GENERATOR/COLLECTOR/BOTH) determină chestionarul (PRODDES vs COL/TRAT). Deci `CompanyType` e relevant direct pentru raportare.
+6. **Sunt trei evidențe, nu două.** Anexa 1 (deșeu propriu) · registrul cronologic art. 48 (marfa tranzacționată) · registrul de recepție al depozitului (HG 349/2005 art. 15(1) lit. d). Primele două sunt separate în model de la Etapa 2a prin `WasteMovement.register`; a treia vine cu profilul de groapă (Etapa 10).
 
 ---
 
@@ -136,7 +140,9 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 3. ✅ **ÎNCHIS 22.08.2026 — Unitatea din Anexa 3 la Ordinul 794/2012 este `[kilograme]`**, la toate cele cinci anexe, verificat pe textul oficial. Fișierul în tone al specialistei e șablon modificat local. Modulul de ambalaje nu mai e blocat. *(Rămâne de întrebat, ca politețe operațională: APM-ul județean îi acceptă în practică varianta în tone?)*
 4. 🟡 Care clienți tipici au **efectiv** obligație AFM lunară și pe ce contribuții.
 5. 🟠 **D5 vs. D1** la menajer — judecată de încadrare, nu fapt. Nu se propune ca valoare implicită fără confirmare.
-6. ⚪ AFM: merită generat un `.mdb` compatibil sau rămânem la fișa-rezumat? (vezi §5 — verdictul nostru e „fișă-rezumat")
+6. 🟠 **NOU 23.08.2026 — ce cod de operațiune se trece la predarea către un colector?** Cap. 3 cere „Operaţia de valorificare" și „Agentul economic care efectuează operaţia". Când firma predă unui colector care doar stochează și duce mai departe: **R13** („stocarea înaintea oricărei operaţiuni R1-R12") sau **operaţiunea finală** făcută de altcineva, pe care clientul deseori n-o știe? Și cine e agentul economic din rubrică — colectorul sau reciclatorul final? **Blochează exportul oficial (Etapa 4).** Întrebarea 3 din `intrebari-specialist.md`. În cod: se cere codul, nu se propune niciun implicit; în datele demo e R13, marcat explicit ca alegerea noastră.
+7. 🟡 **NOU 23.08.2026 — cum arată în realitate Anexa 1 a unui centru de colectare?** Din art. 2(1) ar trebui să fie surprinzător de mică (doar deșeul propriu, ex. refuzul de la sortare), cu tot volumul de marfă în evidența art. 48. Confirmarea ghidează Etapa 8. Întrebarea 4 din `intrebari-specialist.md`.
+8. ⚪ AFM: merită generat un `.mdb` compatibil sau rămânem la fișa-rezumat? (vezi §5 — verdictul nostru e „fișă-rezumat")
 
 ---
 

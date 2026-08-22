@@ -9,6 +9,7 @@
 > anexa de la final pentru de ce contează asta concret.
 >
 > Ultima verificare: **22.08.2026**, integral pe surse primare.
+> Completat pe **23.08.2026** cu consecința pe model a coloanelor din cap. 3 și 4 (§1.2).
 
 ---
 
@@ -137,6 +138,19 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 |---|---|---|---|---|
 
 12 rânduri + **TOTAL AN**.
+
+> **Consecință pe modelul de date.** Cap. 3 și cap. 4 nu cer doar cantitatea: cer și *operaţia*
+> (un cod din anexa nr. 3, respectiv nr. 7 la OUG 92/2021) și *agentul economic care o efectuează*.
+> Deci **orice cantitate care iese de pe amplasament poartă un cod R/D**, inclusiv una predată unui
+> colector — altfel rândul din cap. 3/4 nu se poate completa. Codul decide și coloana din cap. 1:
+> R → „valorificată", D → „eliminată final". Litera V/E de la cap. 2 nota 3 se **derivă** din el; a o
+> cere separat ar fi strict mai puțină informație decât cere formularul.
+>
+> ⚠️ **Ce nu tranșează sursa:** ce cod se trece când predarea se face către un colector care doar
+> stochează și duce mai departe — R13 („stocarea înaintea oricărei operaţiuni R1-R12"), sau
+> operaţiunea finală făcută de altcineva? Și cine e „agentul economic care efectuează operaţia":
+> colectorul, sau reciclatorul final? Întrebare deschisă către specialistă
+> (`docs/intrebari-specialist.md` §3). În cod: se cere codul, nu se propune niciunul implicit.
 
 > **Referința legală din facsimil e depășită.** Actul spune „conform Anexei IIB din legea 426/2001"
 > (Cap. 3) și „conform Anexei IIA din Legea 426/2001" (Cap. 4). Legea 426/2001 e abrogată. Șablonul

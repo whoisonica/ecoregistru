@@ -40,9 +40,16 @@ unique codes, six-digit format, every code sitting under the chapter and subchap
 claim, and a per-chapter fingerprint. The same five checks run as a Java test, so a hand-edited or
 half-downloaded list fails the build rather than a customer's records.
 
+**Two registers, kept apart.** A movement records which legal evidence it belongs to: Anexa 1, for
+waste the company generated in its own activity, or the chronological register of OUG 92/2021
+art. 48, for goods taken over from third parties — which HG 856/2002 art. 2 alin. (1) keeps out of
+Anexa 1 entirely. Every quantity that leaves the site carries its R/D operation code and its
+operator, because that is what chapters 3 and 4 of the form report.
+
 **Evidence engine.** `EvidenceCalculator` aggregates waste movements into monthly lines per
 (work point, waste code), carrying a cumulative stock balance forward month over month and
 flagging negative balances. Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
+⚠️ The stock formula is being corrected — see [`docs/status.md`](docs/status.md), Etapa 2b.
 
 **Deadlines and alerts.** Automatic generation of the annual SIM deadline and the monthly AFM
 deadline (only for companies subject to it), plus a daily cross-tenant scheduler that emails
@@ -62,7 +69,10 @@ Current status and the feature-by-feature log: [`docs/status.md`](docs/status.md
 The generic evidence export (Excel/PDF) is implemented and explicitly labelled as an
 **unofficial summary**. The official monthly record format (Anexa 1, HG 856/2002) and the
 SIM/AFM structures are deliberately **not** implemented until a domain expert confirms them —
-this project does not invent official formats. None of the official portals (SIM/ANPM,
+this project does not invent official formats. Where the law is quoted, it is quoted verbatim with
+a link to the primary source and the date it was read:
+[`docs/surse-oficiale.md`](docs/surse-oficiale.md). Where the text does not settle a question, the
+question is written down and asked rather than guessed, and no default is offered in the form. None of the official portals (SIM/ANPM,
 AFM-online, SIATD) exposes a public third-party submission API, so the product model is
 "we prepare, you submit": the app produces the reports, the client uploads them.
 Research: [`docs/legislatie.md`](docs/legislatie.md).
@@ -122,6 +132,8 @@ Runs on `http://localhost:5173`, proxying `/api` to `:8080`.
 
 The dev seed is deliberately rich: 3 work points, 5 partners and 34 movements across 6 months,
 so the cumulative stock actually carries over and the evidence screens have something to show.
+It also contains the traded-goods flow — glass taken over at the depot and passed on — which must
+stay out of Anexa 1 and is the reason movements carry a register at all.
 
 ### Tests
 
