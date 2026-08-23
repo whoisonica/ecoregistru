@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { FolderArchive, Download, FileSpreadsheet, ShieldCheck, Paperclip } from "lucide-react";
+import {
+  FolderArchive,
+  Download,
+  FileSpreadsheet,
+  FileCheck2,
+  ShieldCheck,
+  Paperclip,
+} from "lucide-react";
 import { downloadAuditFile } from "@/hooks/useAuditFile";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -67,6 +74,10 @@ export function AuditFilePage() {
         <div className="mt-6 border-t border-gray-100 pt-4">
           <p className="text-sm font-medium text-gray-700">{t.contents}</p>
           <ul className="mt-3 space-y-2 text-sm text-gray-600">
+            <li className="flex items-start gap-2">
+              <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+              <span className="font-medium text-gray-800">{t.contentAnexa1}</span>
+            </li>
             <li className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4 text-brand" />
               {t.contentEvidence}

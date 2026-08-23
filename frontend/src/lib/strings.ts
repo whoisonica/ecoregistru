@@ -95,6 +95,9 @@ export const strings = {
     awaitingWeighing: "De cântărit",
     awaitingWeighingHint:
       "Deșeul a plecat, dar cantitatea nu e încă știută. Completeaz-o când primești cântarul de la destinatar.",
+    missingCode: "Fără cod R/D",
+    missingCodeHint:
+      "Ieșire înregistrată înainte ca aplicația să ceară codul de operațiune. Cantitatea a plecat din stoc, dar nu intră nici la „Valorificat”, nici la „Eliminat”. Deschide mișcarea și alege codul.",
     volumeM3: "Volum (mc)",
     volumeM3Hint: "Singura măsură pe care o ai fără cântar. Nu ține loc de kilograme în Anexa 1.",
     operation: "Operațiune",
@@ -298,15 +301,14 @@ export const strings = {
     emptyHandovers: "Nicio predare pentru filtrele alese.",
     handoversLoadError: "Nu am putut încărca predările.",
     ownSite: "pe amplasament propriu",
-    incomplete: "Incomplet",
-    incompleteHint:
+    // Roșu, nu galben: o ieșire fără cod R/D nu e o rubrică de completat cândva, e o cantitate
+    // care lipsește din Anexa 1. Se cere la orice ieșire nouă, deci rândurile astea sunt vechi.
+    missingCode: "Fără cod R/D",
+    missingCodeHint:
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
     awaitingWeighing: "De cântărit",
     awaitingWeighingHint:
       "O ieșire din luna asta așteaptă cântarul destinatarului, deci totalurile sunt provizorii.",
-    resaleSuspected: "De verificat",
-    resaleSuspectedHint:
-      "La acest punct de lucru și cod există și deșeu preluat de la terți. Dacă predarea dă mai departe marfă preluată, ea nu aparține Anexei 1, ci registrului cronologic (art. 48).",
     regeneratedCascade: "Evidență regenerată: {count} linii pentru {year} (și anii {years}).",
     // empty state
     empty: "Nu există linii de evidență pentru {year}.",
@@ -356,10 +358,12 @@ export const strings = {
     downloading: "Se pregătește arhiva...",
     downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
     contents: "Arhiva conține:",
-    contentEvidence: "Evidența gestiunii deșeurilor (Excel + PDF)",
+    contentAnexa1:
+      "Evidența gestiunii deșeurilor generate — fișa Anexa 1 (HG 856/2002): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
+    contentEvidence: "Același an ca tabel de lucru (Excel + PDF)",
     contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
     contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
-    note: "Notă: dosarul NU înlocuiește formularele oficiale (Anexa 1 / SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
+    note: "Notă: în afară de fișa Anexa 1, dosarul NU înlocuiește formularele oficiale (SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
   },
 
   clients: {
@@ -536,13 +540,29 @@ export const strings = {
       COLLECTOR: "Colector",
       BOTH: "Generator și colector",
     },
+    // „Ce tip de generator", din meeting-ul cu specialista (23.08.2026). Trioul e clasificarea din
+    // Legea 249/2015, anexa nr. 1: „producătorii de ambalaje şi produse ambalate, importatorii,
+    // comercianţii, distribuitorii".
+    marketRole: {
+      PRODUCER: "Producător",
+      IMPORTER: "Importator",
+      TRADER: "Comerciant",
+    },
+    marketRoleHint: {
+      PRODUCER: "Fabric sau ambalez eu produsele pe care le vând în România.",
+      IMPORTER: "Aduc în țară produse ambalate și le vând în România.",
+      TRADER: "Vând marfă ambalată de altcineva — nu eu am pus ambalajul pe piață.",
+    },
     inviteRole: {
       ADMIN: "Administrator",
       OPERATOR: "Operator",
       CLIENT_VIEWER: "Vizualizare (read-only)",
     },
     reportType: {
-      SIM_ANNUAL: "SIM (anual) — ANPM",
+      // Ce se depune pe 15 martie e chiar evidența — fișa Anexa 1 din HG 856/2002 —, încărcată
+      // în sistemul pus la dispoziție de APM (OUG 92/2021 art. 48 alin. (1)). „Raportarea SIM"
+      // numea canalul și lăsa clientul să ghicească ce are de pregătit.
+      SIM_ANNUAL: "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)",
       AFM_MONTHLY: "AFM (lunar) — Fondul pentru Mediu",
       OTHER: "Altă raportare",
     },
@@ -616,6 +636,10 @@ export const strings = {
     transportLicenseNumber: "Licență de transport mărfuri",
     transportLicenseExpiry: "Expiră licența",
     transportHint: "Se completează doar dacă preluați deșeuri de la terți.",
+    sectionMarketRole: "Tipul de generator",
+    marketRoles: "Ce e firma dumneavoastră pentru marfa pe care o vinde?",
+    marketRolesHint:
+      "Bifează tot ce se potrivește; o firmă poate fi și producător, și importator. Din răspuns știm dacă aveți și obligația de raportare a ambalajelor. Evidența deșeurilor se ține oricum.",
     operationCodes: "Ce se întâmplă cu deșeul",
     operationCodesHint:
       "Bifează operațiunile pe care le folosiți. Doar acestea vor apărea în aplicație — poți lăsa necompletat dacă nu știi.",
@@ -641,6 +665,7 @@ export const strings = {
     adminLoadError: "Nu am putut încărca cererile.",
     colCompany: "Firma",
     colType: "Tip",
+    colMarketRole: "Tip generator",
     colContact: "Contact",
     colWaste: "Deșeuri",
     colDate: "Trimisă",
@@ -662,6 +687,11 @@ export const strings = {
     title: "Profilul firmei",
     subtitle:
       "Răspunsurile din formularul completat de client. Din ele se decide ce vede omul în aplicație — dacă nu completezi nimic, se oferă tot.",
+    marketRoles: "Tip de generator",
+    marketRolesHint:
+      "Ce e firma pe piață pentru marfa pe care o vinde. Decide dacă depune declarația de ambalaje (Ordinul 794/2012). Fișa Anexa 1 se ține oricum, de oricine generează deșeu.",
+    marketRolesTraderOnly:
+      "Comerciant: nu introduce el ambalaj pe piață, deci nu depune declarația de ambalaje. Fișa Anexa 1 rămâne obligatorie.",
     operationCodes: "Operațiuni de valorificare / eliminare",
     operationCodesHint:
       "Ce se întâmplă cu deșeul. Doar acestea apar la mișcări, după operațiune.",

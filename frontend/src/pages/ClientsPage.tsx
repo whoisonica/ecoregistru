@@ -116,6 +116,7 @@ export function ClientsPage() {
     setAnexa3Series(c.anexa3Series ?? "");
     setProfile({
       authorizedOperationCodes: c.authorizedOperationCodes ?? [],
+      marketRoles: c.marketRoles ?? [],
       authorizedWasteCodes: c.authorizedWasteCodes ?? [],
       transportMeans: c.transportMeans ?? "",
       transportLicenseNumber: c.transportLicenseNumber ?? "",
@@ -149,6 +150,7 @@ export function ClientsPage() {
       tradeRegisterNumber: tradeRegisterNumber.trim() || null,
       anexa3Series: anexa3Series.trim() || null,
       authorizedOperationCodes: profile.authorizedOperationCodes,
+      marketRoles: profile.marketRoles,
       authorizedWasteCodeIds: profile.authorizedWasteCodes.map((w) => w.id),
       transportMeans: profile.transportMeans.trim() || null,
       transportLicenseNumber: profile.transportLicenseNumber.trim() || null,

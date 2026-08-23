@@ -2,6 +2,7 @@ package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.AccountRequestStatus;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.Instant;
@@ -26,6 +27,7 @@ public record AccountRequestResponse(
         String transportMeans,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
+        Set<MarketRole> marketRoles,
         Set<WasteOperationCode> operationCodes,
         String wasteCodesText,
         String notes,

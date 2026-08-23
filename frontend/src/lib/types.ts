@@ -74,6 +74,19 @@ export type WasteOperationCode =
 
 export type CompanyType = "GENERATOR" | "COLLECTOR" | "BOTH";
 
+/**
+ * „Ce tip de generator" — ce e firma pe piață pentru marfa pe care o vinde. Trioul e din actul de
+ * ambalaje: Legea 249/2015, anexa nr. 1, îi enumeră împreună — producătorii de ambalaje și produse
+ * ambalate, importatorii, comercianții, distribuitorii.
+ *
+ * Decide **declarația de ambalaje** (Ordinul 794/2012, anexa 1) și contribuția pe ambalaje la AFM:
+ * comerciantul vinde marfă ambalată de altcineva, deci nu el a pus ambalajul pe piață.
+ *
+ * NU decide fișa de evidență a gestiunii deșeurilor (HG 856/2002, anexa 1 — alt document cu
+ * același nume), pe care o ține oricine generează deșeu, art. 1 alin. (1).
+ */
+export type MarketRole = "PRODUCER" | "IMPORTER" | "TRADER";
+
 export interface Company {
   id: string;
   name: string;
@@ -93,6 +106,8 @@ export interface Company {
   // --- The account profile: the answers support transcribed from the intake form. ---
   /** Empty means "not answered yet": the screens then offer everything, not nothing. */
   authorizedOperationCodes?: WasteOperationCode[];
+  /** Producător / importator / comerciant. Gol = întrebarea nu are încă răspuns. */
+  marketRoles?: MarketRole[];
   authorizedWasteCodes?: WasteCode[];
   /** Asked of a collector only. */
   transportMeans?: string | null;
@@ -116,6 +131,7 @@ export interface CompanyInput {
   contactEmail?: string | null;
   contactPhone?: string | null;
   authorizedOperationCodes?: WasteOperationCode[];
+  marketRoles?: MarketRole[];
   /** Sent as ids; the backend resolves them against the nomenclator. */
   authorizedWasteCodeIds?: string[];
   transportMeans?: string | null;
@@ -149,6 +165,8 @@ export interface AccountRequestInput {
   transportMeans?: string | null;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
+  /** Producător / importator / comerciant; gol e un răspuns valid („nu știu"). */
+  marketRoles?: MarketRole[];
   operationCodes?: WasteOperationCode[];
   /** Free text: the nomenclator is behind auth, and "carton, folie" beats a guessed code. */
   wasteCodesText?: string | null;
@@ -410,8 +428,6 @@ export interface MonthlyEvidence {
   totalUnclassifiedOut: number;
   /** True when totalUnclassifiedOut > 0: the line cannot be reported as it stands. */
   incomplete: boolean;
-  /** These handovers may be passing on third-party goods; for review, not for reporting. */
-  resaleSuspected: boolean;
   /** An exit this month is still waiting for the recipient's weighbridge. */
   awaitingWeighing: boolean;
   closingStock: number; // may be negative (exits exceeding intake in a window)

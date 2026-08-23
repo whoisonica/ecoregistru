@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import type { CompanyType, WasteCode, WasteOperationCode } from "@/lib/types";
+import type { CompanyType, MarketRole, WasteCode, WasteOperationCode } from "@/lib/types";
 import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import { strings } from "@/lib/strings";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,69 @@ import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 const t = strings.companyProfile;
 const codeLabels = strings.enums.wasteOperationCode;
 
+const marketRoleLabels = strings.enums.marketRole;
+const marketRoleHints = strings.enums.marketRoleHint;
+export const MARKET_ROLES: MarketRole[] = ["PRODUCER", "IMPORTER", "TRADER"];
+
 const ALL_CODES = Object.keys(codeLabels) as WasteOperationCode[];
 const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
+
+/**
+ * „Ce tip de generator": producător / importator / comerciant, bifabile împreună — o firmă poate
+ * fi și una, și alta. Nimic bifat înseamnă „nu s-a răspuns", nu „niciuna".
+ */
+export function MarketRolePicker({
+  value,
+  onChange,
+  label,
+  hint,
+}: {
+  value: MarketRole[];
+  onChange: (next: MarketRole[]) => void;
+  label: string;
+  hint: string;
+}) {
+  const toggle = (role: MarketRole) =>
+    onChange(value.includes(role) ? value.filter((r) => r !== role) : [...value, role]);
+
+  // Bifat doar „Comerciant" e singurul răspuns din care decurge ceva vizibil: nu depune
+  // declarația de ambalaje. Se spune pe loc, ca omul să vadă că răspunsul a fost înțeles.
+  const traderOnly = value.length > 0 && value.every((r) => r === "TRADER");
+
+  return (
+    <div>
+      <span className="block text-sm font-medium text-gray-700">{label}</span>
+      <p className="text-xs text-gray-500">{hint}</p>
+      <div className="mt-2 space-y-2 rounded-md border border-gray-200 p-3">
+        {MARKET_ROLES.map((role) => (
+          <label key={role} className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              checked={value.includes(role)}
+              onChange={() => toggle(role)}
+            />
+            <span>
+              <span className="font-medium text-gray-800">{marketRoleLabels[role]}</span>
+              <span className="block text-xs text-gray-500">{marketRoleHints[role]}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {traderOnly && (
+        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {strings.companyProfile.marketRolesTraderOnly}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export interface CompanyProfileValue {
   authorizedOperationCodes: WasteOperationCode[];
+  marketRoles: MarketRole[];
   authorizedWasteCodes: WasteCode[];
   transportMeans: string;
   transportLicenseNumber: string;
@@ -26,6 +83,7 @@ export interface CompanyProfileValue {
 
 export const emptyCompanyProfile: CompanyProfileValue = {
   authorizedOperationCodes: [],
+  marketRoles: [],
   authorizedWasteCodes: [],
   transportMeans: "",
   transportLicenseNumber: "",
@@ -123,6 +181,13 @@ export function CompanyProfileFields({
         <h3 className="text-sm font-semibold text-gray-900">{t.title}</h3>
         <p className="mt-1 text-xs text-gray-500">{t.subtitle}</p>
       </div>
+
+      <MarketRolePicker
+        value={value.marketRoles}
+        onChange={(marketRoles) => patch({ marketRoles })}
+        label={t.marketRoles}
+        hint={t.marketRolesHint}
+      />
 
       <div>
         <span className="block text-sm font-medium text-gray-700">{t.operationCodes}</span>

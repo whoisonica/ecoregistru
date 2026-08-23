@@ -104,6 +104,8 @@ rulează local și are testele verzi.
     închidă fișa.
   - **predările suspecte de marfă preluată** (aceeași pereche punct-de-lucru/cod are și activitate
     art. 48) se marchează `resaleSuspected` — semnal, nu rescriere; Etapa 8 le mută.
+    ⚠️ *Scos pe 24.08.2026 (G8), cu tot cu coloană: specialista a închis subiectul preluării de la
+    terți pentru modulul de generatori. Separarea registrelor rămâne.*
   Migrarea **`V6`** e aditivă (`total_unclassified_out`, `resale_suspected`, default pe
   `total_collected`) și **golește cache-ul** `monthly_evidences`: liniile vechi arătau o Anexă 1 pe
   care legea n-o recunoaște, iar tabela e prin contract regenerabilă din mișcări.
@@ -305,7 +307,166 @@ rulează local și are testele verzi.
   Fișierele rămân gitignored (sunt ale clientului), deci testele nu le citesc; ce s-a extras din ele
   a intrat în cod ca regulă comentată, cu numărul de fișiere care o susțin.
 
+- 📎 **Runda veche de întrebări (1–5) a primit răspuns (2026-08-24).** Detalii în
+  `docs/raspunsuri-specialist.md`, R19–R26. **Zero cod atins** — toate cinci confirmă ce face deja
+  aplicația. Pe scurt:
+  - **Întrebarea 3 e închisă:** „la înregistrare, codurile alese de client". Nu există regulă de
+    codat la predarea către un colector — alege omul care înregistrează. Cerem codul R/D și nu
+    propunem niciun implicit, exact ce face `WasteMovementService` azi. Cele 13 predări vechi fără
+    cod rămân `incomplete`, nu se migrează.
+  - **Întrebarea 4 e închisă:** „evidența pentru colector" — colectorul ține registrul cronologic
+    art. 48 pentru marfa care trece prin el, nu o fișă per cod preluat. Confirmă seam-ul din
+    Etapa 2a, iar `GENERATED` rămâne disponibil la toate tipurile de cont, pentru deșeul propriu.
+  - **Întrebarea 2 e închisă:** ambalajele se raportează în **kilograme**. Foaia scrie literal
+    `[kilograme]`. Fișierul în tone e șablon modificat local.
+  - **Întrebarea 1 coboară la 🟡:** SIM se completează din documentele pe care le ținem deja, deci
+    nu lipsește niciun câmp din model; rămâne nevăzut doar layoutul.
+  - **Obligația AFM** (întrebarea B, fără răspuns din 22.08): **doar producătorii/importatorii de
+    ambalaje.** Restrânge Etapa 7 — un generator obișnuit nu primește niciun termen AFM.
+  - ⚠️ **Omonimie nouă, a treia:** „Anexa 1" înseamnă **două documente**. Fișa de gestiune
+    (HG 856/2002 anexa 1, patru capitole × 12 luni, o pagină per cod — ce tipărește G5) și
+    declarația de ambalaje (Ordinul 794/2012 anexa 1, „Producători şi importatori de ambalaje de
+    desfacere, **de produse ambalate**, supraambalatori" — adică oricine pune pe piață marfă
+    ambalată, nu fabricanții de ambalaje; tabele pe materiale — modulul de ambalaje, nescris).
+    Fraza „Anexa 1 e strict pentru
+    producători/importatori" e despre a doua. Că nu e despre prima se vede pe foile fișierelor
+    primite: `20 01 01`, `20 03 01`, `19 12 12`, `20 01 36` — patru coduri care nu sunt ambalaje,
+    fiecare cu fișa lui.
+
 ---
+
+
+---
+
+## G7 — Dosarul de control pe structura Andreei, și „ce tip de generator" (24.08.2026)
+
+Din schițele meeting-ului, pagina 4, propoziție cu propoziție. E singura pagină din cele șapte care
+cerea patru lucruri deodată, iar trei dintre ele s-au dovedit una singură.
+
+### 1. „Când dă print la dosar control să respecte structura de 4 tabele pe care o am de la Andreea (la generator) + Anexa 1 trebuie să arate ca tabelul de la Andreea"
+
+Dosarul conține de-acum **`anexa1-<an>.pdf`** — fișa oficială, cele patru capitole, o pagină per cod
+de deșeu, exact ce tipărea deja ecranul Evidențe. Arhiva o pune **prima**, iar `README.txt` din ea o
+numește ca document reglementat și îi scrie termenul. Restul pachetului (xlsx/pdf de lucru,
+autorizațiile partenerilor, atașamentele) rămâne neschimbat, dar nota de subsol s-a corectat: nu mai
+scrie că dosarul „NU înlocuiește Anexa 1", fiindcă acum chiar o conține.
+
+„Cele 4 tabele" **sunt capitolele fișei**, nu patru exemplare de Anexa 3 — confuzia din 23.08, care
+a costat o felie revertită. Pagina 4 o spune singură: „+ Anexa 1", în aceeași casetă.
+
+### 2. Titlul documentului: „Evidenţa gestiunii deşeurilor generate «an»"
+
+Se tipărește centrat, deasupra antetului de identificare. **Cu anul, nu cu luna** — întrebarea era
+deschisă („Luna_An sau pe tot anul?") și au răspuns fișierele: șase din cele primite scriu exact
+`Evidenta gestiunii deseurilor generate 2022` / `2023` / `2024` (Cluj și Timișoara), iar șablonul gol
+îl lasă `20..`. Sub titlu, foaia are 12 rânduri și un TOTAL AN, iar rubrica din antet e „Anul", nu
+„Luna". Verificat pe PDF-ul randat, nu doar în cod: fișa încape în continuare pe o singură pagină.
+
+### 3. „Astea se calculează din ieșiri"
+
+Confirmat, era deja așa: coloanele „valorificată" și „eliminată final" din cap. 1 vin din mișcările
+de ieșire, după codul R/D, iar cap. 3 și 4 le repetă cu operația și operatorul. Nimic de schimbat.
+
+### 4. „Anexa 1 termen 15 martie"
+
+Există deja un termen pe 15 martie, generat pentru toate firmele, cu temei legal scris
+(OUG 92/2021 art. 48 alin. (1)). Ce s-a schimbat e **cum se citește**: se numea „Raportarea SIM
+(anual) — ANPM", adică numea canalul, și clientul rămânea să ghicească ce are de pregătit. Acum se
+numește **„Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)"**, în ecran și în
+email. Nu s-a adăugat un al doilea termen pe aceeași zi: e o singură depunere.
+
+### 5. „Ce tip generator (imp/prod/comercial) — comercialul nu are deșeuri proprii"
+
+Întrebare nouă în chestionar și pe firmă: **`MarketRole`** = `PRODUCER` / `IMPORTER` / `TRADER`,
+bifabile împreună (o firmă poate fi și producător, și importator). Migrarea `V13`, două tabele de
+legătură cu aceeași formă ca restul profilului, ca aprobarea unei cereri să rămână o copiere.
+
+**Cum se cheamă de fapt „comercial".** Legea 249/2015, anexa nr. 1, enumeră trioul verbatim:
+„furnizorii de materiale de ambalare, producătorii de ambalaje şi produse ambalate, **importatorii,
+comercianţii, distribuitorii**". Deci termenul e **comerciant**. Citatul, cu link și dată, în
+`surse-oficiale.md` §11.
+
+**Ce decide bifa — și, mai important, ce nu decide.** Decide declarația de ambalaje (Ordinul
+794/2012, anexa 1, termen 25 februarie) și contribuția pe ambalaje la AFM: comerciantul vinde marfă
+ambalată de altcineva, deci nu el a pus ambalajul pe piață. **Nu** decide fișa de gestiune din
+HG 856/2002 — alt document cu același nume —, pe care o ține oricine generează deșeu, art. 1
+alin. (1). Un comerciant cu tomberon de carton în curte o ține ca oricine altcineva. Există un test
+care ține regula asta pe loc (`aTraderStillKeepsTheSheet`), scris tocmai ca să nu „ajute" cineva mai
+târziu ascunzând fișa.
+
+Unde se vede răspunsul: în formularul public de cerere de cont, în profilul firmei de la **Clienți**,
+în lista de cereri pe care o citește suportul, și în `README.txt` din dosarul de control, care scrie
+ce decurge din el. Nebifat înseamnă „nu s-a răspuns", nu „niciuna" — nimic nu se restrânge.
+
+**Ce se închide cu asta:** întrebarea **K** (despre care „Anexa 1" vorbea specialista — despre cea
+de ambalaje) și partea de model a întrebării **M** (calitatea de producător/importator nu se
+întreba nicăieri; acum se întreabă). Rămâne deschisă întrebarea **L**, deci Etapa 7 rămâne blocată:
+nu am legat încă bifa de generarea termenului AFM, fiindcă nu știm dacă răspunsul acoperă și
+celelalte două contribuții, iar a stinge o alertă pe o presupunere e mai rău decât a lăsa una
+zgomotoasă.
+
+### Ce rămâne interpretarea noastră, şi e trimis la validare
+
+Toată felia s-a construit dintr-o pagină de notițe scrise de mână. Trei locuri unde am **ales**, nu
+am citit — runda 3 de întrebări, `intrebari-specialist.md`:
+
+| # | Ce am presupus | Ce se strică dacă greșim |
+|---|---|---|
+| **O** 🔴 | „Comercial nu are deșeuri proprii" e despre **ambalaje**; fișa HG 856 rămâne obligatorie și pentru un comerciant | arătăm un ecran și tipărim un formular unui client care nu-l datorează |
+| **P** 🟡 | Titlul se pune pe **fiecare fișă**. În fișierele ei stă pe foaia de centralizare, iar foile per cod încep direct cu „Agentul economic:" | abatere de la un model pe care autoritatea l-a acceptat; se mută într-o linie |
+| **Q** 🟠 | 15 martie e **o singură** depunere (fișa = ce se încarcă în SIM), deci un singur termen | dacă sunt două obligații distincte, clientul vede un termen în loc de două și nu le poate bifa separat |
+
+Ce **nu** e presupunere, fiindcă e citit din fișierele primite sau din textul actelor: textul exact al
+titlului și faptul că poartă anul (șase fișiere), termenul de 15 martie (OUG 92/2021 art. 48(1)), și
+numele oficial „comerciant" (Legea 249/2015, anexa nr. 1).
+
+**Migrare:** `V13`. **Suită: 107 teste verzi** (103 înainte).
+
+## G8 — Ieșirea fără cod R/D e roșie, iar „de verificat" dispare (24.08.2026)
+
+Două cereri dintr-o propoziție, amândouă despre ce se vede pe ecran când datele nu sunt complete.
+
+### 1. Ieșirile vechi fără cod R/D — cu roșu
+
+Cele 13 predări dinaintea codului obligatoriu erau marcate **galben**, „Incomplet", alături de
+„De cântărit". Dar cele două stări nu sunt la fel de grave: o cantitate care așteaptă cântarul
+destinatarului e **normală** (decizia 5 — magazinul n-are cântar, colectorul cântărește la
+descărcare), pe când o cantitate ieșită fără cod R/D e **greșită**: a plecat din stoc și nu intră
+nici la „Valorificat", nici la „Eliminat", deci Anexa 1 nu se poate depune cu ea așa.
+
+Roșu deci pentru a doua, galben rămâne pentru prima, în toate cele trei locuri unde apărea:
+
+| Ecran | Înainte | Acum |
+|---|---|---|
+| **Evidențe → Anexa 1 lunar** | badge galben „Incomplet" + coloana `text-amber-700` | badge roșu **„Fără cod R/D"** + coloana `text-red-600` |
+| **Evidențe → Predări** | badge galben „Incomplet" în coloana Operațiune | badge roșu „Fără cod R/D" |
+| **Mișcări** | textul „Ieșire neclasificată", gri ca oricare altul | badge roșu în locul lui; caseta din formularul de editare, roșie |
+
+**Badge-ul nu mai atârnă de `incomplete`, ci de `totalUnclassifiedOut > 0`.** Câmpul `incomplete` din
+răspuns e `unclassifiedOut > 0 || awaitingWeighing` — adevărat și pentru o linie care doar așteaptă
+cântarul. Legat de el, badge-ul roșu ar fi mințit pe jumătate din cazuri. Backend-ul rămâne
+neschimbat: `incomplete` înseamnă în continuare „linia nu se poate raporta ca atare", ceea ce e
+corect pentru amândouă stările.
+
+### 2. `resaleSuspected` — scos, cu tot cu coloană
+
+Semnalul „De verificat" marca liniile unde aceeași pereche punct-de-lucru/cod avea și activitate
+art. 48: o predare de deșeu propriu și una care dă mai departe marfă preluată arată identic, deci
+linia era semnalată în loc să fie reclasificată.
+
+Răspunsul specialistei (întrebarea 4, 23.08): **„nu e interesată de preluare de la terți (pentru
+modulul generat)".** Iar în cod steagul era oricum inert pentru publicul modulului: un generator pur
+nu poate înregistra `COLLECTED` — `CompanyType.allowedOperations()` nu i-o oferă —, deci n-avea cum
+să aibă linii art. 48 pe care să le compare. Rămânea o promisiune de verificare pe care nimeni n-o
+cerea.
+
+**Ce NU s-a atins: separarea celor două registre.** Marfa preluată de la terți rămâne în afara
+Anexei 1 (HG 856/2002 art. 2 alin. (1)) — filtrul `register = ANEXA_1` din `EvidenceCalculator` e pe
+loc, iar testul care îl ține s-a păstrat, redus la invariantul care contează
+(`EvidenceCalculatorIT.takeoverStaysOutOfAnexa1`). S-a pierdut avertismentul, nu regula.
+
+**Migrare:** `V14` (`DROP COLUMN resale_suspected`; următoarea liberă e `V15`).
+**Suită: 107 teste verzi**, aceleași — nu s-a adăugat comportament, s-a scos unul.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
@@ -383,11 +544,20 @@ după ce au fost introduse datele”, „10 kg (se cântărește la descărcare)
   dar e o abatere de la model pe un formular oficial și **e decizia specialistei**, nu a noastră.
 - ✅ **„D5 peste tot; nu ar trebui să mai fie D1”** — deja aplicat (datele demo și
   `docs/legislatie.md` foloseau D5 din 20.08).
-- ✅ **„nu e interesată de preluare de la terți (pentru modulul generat)”** — deja: un cont de tip
-  generator nu primește deloc operațiunea de preluare.
 - 📎 **„Anexa 1 e strict pentru generatorii de deșeuri de ambalaj (producători/importatori)”** și
   **„SIM se bazează pe documentele pe care le avem”** — încadrează modulul de ambalaje, care rămâne
   după modulul de generatori.
+  ⚠️ **Atenție, e o altă „Anexa 1”.** Lămurit pe 24.08 (R19): fraza se referă la **anexa 1 la
+  Ordinul 794/2012**, al cărei titlu trebuie citit până la capăt — „Producători şi importatori de
+  ambalaje de desfacere, **de produse ambalate**, supraambalatori de produse ambalate”. Nu e despre
+  fabricanții de ambalaje, ci despre **oricine pune pe piață marfă ambalată**, deci despre o
+  populație largă. Documentul are tabele pe materiale (PET, hârtie, aluminiu), în kg.
+  **Nu** e fișa de gestiune din **HG 856/2002 anexa 1**, cea cu patru capitole × 12 luni pe care o
+  generează G5. Dovada e în `documente oficiale/`: `RAPORTARE AMBALAJE _anexa 1.xlsx` și
+  `RAPORTARE AMBALAJE 2021_anexa 1_ HRR.xlsx` încep cu exact titlul ăla. Deci fraza **nu restrânge**
+  fișa Anexa 1 la ambalaje — foile fișierelor completate sunt pe `20 01 01`, `20 03 01`, `19 12 12`,
+  `20 01 36`, iar HG 856 art. 1 alin. (1) obligă orice generator. Nimic de schimbat în cod; totul de
+  reținut înainte de a schimba ceva.
 
 Fișierul rămâne **negitignored local, dar necommis**: e o notiță internă scrisă de mână, iar repo-ul
 e public.
@@ -405,14 +575,20 @@ după ce generatorul e complet. Ce urmează imediat, în ordine:
 | G4 | ✅ Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | **GATA** |
 | G5 | ✅ **Fișa oficială Anexa 1** — antet + cele 4 capitole, o pagină per cod | G4 | **GATA** |
 | G6 | **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc | G5 | M |
+| G7 | ✅ **Dosarul de control pe structura Andreei** — fișa Anexa 1 în arhivă · titlul „Evidenţa gestiunii deşeurilor generate «an»" · termenul de 15 martie numit după document · întrebarea „ce tip de generator" | G5 | **GATA** |
 
 **Ce a rămas deschis după Etapa 2, în ordinea în care doare:**
 
-- 🟠 **Codul de operațiune la predarea către un colector** (întrebarea 3 din
-  `intrebari-specialist.md`) — nerezolvat, și acum se **vede**: cele 13 predări vechi fără cod sunt
-  marcate `incomplete` și nu intră în nicio coloană. Codul nu propune niciun implicit.
-- 🟠 **Predările de marfă preluată sunt semnalate, nu mutate.** `resaleSuspected` arată liniile
-  suspecte (stoc negativ pe pereche, la demo); mutarea reală e Etapa 8, într-o singură migrare.
+- ✅ **Codul de operațiune la predarea către un colector** (întrebarea 3) — **închisă pe 24.08**
+  (R23): „la înregistrare, codurile alese de client". Nu există regulă de codat; alege omul care
+  înregistrează mișcarea, iar aplicația i-o cere. Comportamentul de azi e deci confirmat, nu
+  schimbat. Cele 13 predări vechi fără cod **rămân** `incomplete` — nu se migrează, fiindcă nu
+  există regulă din care să le derivăm.
+  🟠 Jumătatea a doua a întrebării rămâne deschisă (**întrebarea C**): cine se scrie la „agentul
+  economic care efectuează operaţia" — colectorul căruia i-am predat, sau reciclatorul final.
+- ✅ **Predările de marfă preluată nu se mai semnalează** — `resaleSuspected` scos pe 24.08 (G8,
+  migrarea `V14`): preluarea de la terți nu interesează modulul de generatori. Mutarea reală a
+  fluxului art. 48 în `Reception`/`Delivery` rămâne Etapa 8, ca înainte.
 - 🟡 **`total_collected` a rămas în schemă**, cu default 0 și nescris de motor. Se șterge tot în
   Etapa 8, împreună cu mișcările `COLLECTED` pe care le descria.
 
@@ -424,13 +600,17 @@ după ce generatorul e complet. Ce urmează imediat, în ordine:
    dintre cele două coloane oficiale, iar linia se marchează **incompletă**. Astfel Anexa 1 nu „se
    închide" tăcut pe date lipsă — se vede că e ceva de completat. Editarea unei astfel de mișcări
    cere de-acum codul, deci completarea se face natural, prin ecranul care există.
-2. **Predările de marfă preluată au rămas în `ANEXA_1`.** Backfill-ul poate clasifica preluarea în
-   sine (`COLLECTED`), dar o predare care dă mai departe marfă colectată arată identic cu predarea
-   de deșeu propriu. Nu există selector de registru în UI, și **nici nu se adaugă unul acum**: după
-   Etapa 8, fluxul art. 48 se înregistrează ca `Reception`/`Delivery`, iar `waste_movements` rămâne
-   Anexa 1 curat. `register = ART_48` pe o mișcare e o stare **tranzitorie**, pentru liniile vechi,
-   pe care migrarea din Etapa 8 le mută. Până atunci, 2b le semnalează (o predare în `ANEXA_1` la o
-   pereche punct-de-lucru/cod care are și preluări e suspectă) — semnalează, nu rescrie.
+   **De pe 24.08 (G8) se vede cu roșu**, badge „Fără cod R/D", nu cu galben: nu e o rubrică de
+   completat cândva, e o cantitate care lipsește din declarație.
+2. **Predările de marfă preluată au rămas în `ANEXA_1`, și rămân netulburate.** Backfill-ul poate
+   clasifica preluarea în sine (`COLLECTED`), dar o predare care dă mai departe marfă colectată
+   arată identic cu predarea de deșeu propriu. Nu există selector de registru în UI, și **nici nu se
+   adaugă unul**: după Etapa 8, fluxul art. 48 se înregistrează ca `Reception`/`Delivery`, iar
+   `waste_movements` rămâne Anexa 1 curat. `register = ART_48` pe o mișcare e o stare
+   **tranzitorie**, pentru liniile vechi, pe care migrarea din Etapa 8 le mută.
+   **Semnalul `resaleSuspected` s-a scos pe 24.08 (G8, `V14`)** — preluarea de la terți nu
+   interesează modulul de generatori, iar un generator pur nici nu poate înregistra `COLLECTED`.
+   Separarea registrelor rămâne: art. 2 alin. (1) e în continuare în filtrul motorului, cu testul lui.
 
 **Etapa 2 era cea critică; e închisă.** `EvidenceCalculator` scădea `handedOver` **peste**
 `recovered`/`disposed` și aduna `COLLECTED` în aceeași linie cu `GENERATED` — două lucruri pe care
@@ -444,6 +624,15 @@ care datorează doar contribuția anuală la ambalaje primește de la noi **11 a
 E singurul element din listă care produce output incorect pentru clienții existenți, nu doar lipsă
 de funcționalitate — de asta nu depinde de nimic și poate fi luată oricând, chiar înaintea Etapei 2
 dacă apare un client afectat.
+
+**Răspunsul din 24.08 o restrânge și mai mult** (R25): „obligația AFM, doar generatorii de deșeuri de
+ambalaj — producători/importatorii". Pentru un cont de tip generator, obligația se condiționează deci
+de calitatea de producător/importator — cine pune pe piață produse ambalate —, iar un generator obișnuit **nu primește niciun
+termen AFM**. Celelalte două contribuții rămân valabile la tipurile de cont fără ecrane: cei 2%
+reținuți la sursă de un centru de colectare (lunar, art. 9(1) lit. a) și contribuția pentru economia
+circulară a depozitelor (trimestrial). Deci `afmObligation` devine un **set** de contribuții datorate,
+fiecare cu ritmul ei, și **niciuna nu se presupune** — exact tratamentul dat rolului de partener în
+`V7` și codului R/D în `V5`.
 
 ## Decizie de produs (22.08.2026) — aplicația servește și depozitele
 
@@ -510,9 +699,12 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
 
 ## Blocaje rămase
 
-- 🔴 **Capturi din chestionarele SIM** (PRODDES / COL-TRAT) — în spatele login-ului pe
-  `raportare.anpm.ro`, neobtenabile din documente publice. Singura întrebare care mai are rost să fie
-  pusă specialistei.
+- 🟡 **Layoutul chestionarelor SIM** (PRODDES / COL-TRAT) — în spatele login-ului pe
+  `raportare.anpm.ro`, neobtenabile din documente publice. **Coborât de la 🔴 pe 24.08** (R20):
+  specialista confirmă că „SIM se bazează pe documentele pe care le avem" — Anexa 1 pentru
+  producător/importator, evidența pentru colector. Deci **nu lipsește niciun câmp din model** și
+  niciun client nu va trebui să completeze retroactiv un an; rămâne nevăzută doar forma ecranului,
+  de care are nevoie exportul SIM, felie de oricum mult mai târzie.
 - 🟠 **Cuantumul contribuției pentru economia circulară** (OUG 196/2005, anexa nr. 2) — Portalul
   Legislativ trunchiază anexele pe versiunile consolidate. Blochează doar profilul de groapă.
 - 🟠 **Termenul de păstrare al borderoului de achiziție** — nu e în OUG 31/2011; intră sub Legea

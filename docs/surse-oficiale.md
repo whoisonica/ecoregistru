@@ -435,6 +435,25 @@ Actul din care provin cele două fișiere primite de la specialistă:
 
 **Termen: 25 februarie** al fiecărui an, pentru anul precedent. Se depune la APM judeţeană / ANPM.
 
+> ⚠️ **Anexa 1 de aici NU e Anexa 1 din HG 856/2002.** Două documente, același nume, iar confuzia
+> dintre ele e cea mai ieftină cale de a strica modulul de generatori:
+>
+> | | Fișa de gestiune | Declarația de ambalaje |
+> |---|---|---|
+> | Act | HG 856/2002, anexa 1 (§1 de mai sus) | **Ordinul 794/2012, anexa 1** (aici) |
+> | Cine o ține | orice generator, per cod de deșeu | cine pune pe piață marfă ambalată |
+> | Formă | 4 capitole × 12 luni, o pagină per cod | tabele pe materiale, în kg |
+> | În aplicație | G5, livrat | modulul de ambalaje, nescris |
+>
+> Titlul de mai sus se citește **până la capăt**: nu „producători şi importatori *de ambalaje*", ci
+> „*de ambalaje de desfacere, de produse ambalate*, supraambalatori de produse ambalate". Deci nu
+> fabricanții de ambalaje — **oricine pune pe piață produse ambalate**, punând astfel și ambalajul.
+> Categorie largă. Specialista a formulat-o pe 24.08 ca „Anexa 1 e strict pentru generatorii de
+> deșeuri de ambalaj, producători/importatorii" — despre **acest** document vorbește (R19).
+>
+> Aceeași omonimie la „Anexa 3": HG 1061/2008 (dovada predării, generată de aplicație) vs. anexa 3
+> de mai sus (raportarea anuală a colectorilor de ambalaje).
+
 > ✅ **REZOLVAT 22.08.2026 — unitatea este KILOGRAME.** Textul oficial al ordinului tipărește
 > `[kilograme]` în antetul tabelului, **la toate cele cinci anexe** (1, 2A, 2B, 3, 4), fără excepție.
 > Verificat pe Portalul Legislativ, atât pe `DetaliiDocument/135672`, cât și pe
@@ -652,6 +671,56 @@ Alte litere relevante: **d)** 2 lei/kg la ambalaje (ținte nerealizate); **i)** 
 > datorează firma: lunar (inclusiv contribuția de 2% a colectorului), trimestrial (economia circulară
 > — depozitele), anual pe 25 ianuarie (ambalaje, anvelope, UAT). Flagul boolean `afmObligation` e prea
 > sărac: are nevoie să devină un **set de contribuții datorate**, fiecare cu cadența ei.
+
+> **Ce a spus specialista pe 24.08 (R25), și ce rămâne de lămurit.** Întrebată cine are obligație
+> AFM, a răspuns: *„doar generatorii de deșeuri de ambalaj — producători/importatorii"*. Adică
+> **cine pune pe piață marfă ambalată**, nu fabricanții de ambalaje.
+>
+> Asta se potrivește peste **lit. d)**, contribuția pe ambalaje, care e **anuală** (alin. (2)) — și
+> confirmă că termenul lunar generat azi pentru un generator obișnuit e greșit. Ce **nu** spune
+> răspunsul e dacă acoperă și celelalte două cadențe, care aparțin unor tipuri de client fără ecrane
+> încă: cei **2%** ai colectorului (lit. a, lunar, §10.1) și **economia circulară** a gropilor
+> (lit. c, trimestrial, §10.2). Formularea ei vine din contextul modulului de generatori, unde
+> singura relevantă e cea pe ambalaje.
+>
+> Deci documentarea de aici **nu se modifică** pe baza răspunsului: rămâne cu trei cadențe, iar
+> răspunsul restrânge doar cazul generatorului. Reconfirmarea e **întrebarea L** din
+> `intrebari-specialist.md`; de ea atârnă forma Etapei 7.
+
+---
+
+## 11. Legea 249/2015 — cine e „producător", „importator" și „comerciant" de ambalaje
+
+Sursă: [legislatie.just.ro/Public/DetaliiDocumentAfis/179664](https://legislatie.just.ro/Public/DetaliiDocumentAfis/179664)
+(text consolidat), accesat **24.08.2026**.
+
+Actul-cadru pentru ambalaje. Contează aici pentru un singur lucru: **definește trioul** pe care
+specialista îl numește „ce tip de generator" — producător / importator / comercial.
+
+**Anexa nr. 1, „Semnificaţia termenilor specifici":**
+
+> operatori economici - referitor la ambalaje, înseamnă furnizorii de materiale de ambalare,
+> producătorii de ambalaje şi produse ambalate, **importatorii, comercianţii, distribuitorii**,
+> autorităţile publice şi organizaţiile neguvernamentale
+
+**Art. 17 alin. (1)** — cine raportează:
+
+> Operatorii economici care îşi îndeplinesc responsabilităţile potrivit prevederilor art. 16
+> alin. (2) lit. a) [...] au obligaţia să furnizeze anual Ministerului Mediului, Apelor şi Pădurilor
+> informaţii privind gestionarea ambalajelor şi a deşeurilor de ambalaje.
+
+> **Consecința pe model (24.08.2026).** Trioul e o proprietate a firmei, nu a deșeului, și decide
+> **un singur lucru**: dacă firma depune declarația de ambalaje (§5 de mai sus — Ordinul 794/2012,
+> anexa 1, termen 25 februarie) și dacă datorează contribuția pe ambalaje la AFM (§10, art. 9(1)
+> lit. d). Un **comerciant** vinde marfă ambalată de altcineva: nu el a introdus ambalajul pe piață.
+>
+> Ce **nu** decide: fișa de evidență a gestiunii deșeurilor (§1 — HG 856/2002, anexa 1). Aceea se
+> ține de oricine generează deșeu, art. 1 alin. (1), oricare ar fi rolul lui comercial. Un
+> comerciant cu un tomberon de carton în curte o ține exact ca oricine altcineva.
+>
+> În cod: `MarketRole` (`PRODUCER` / `IMPORTER` / `TRADER`), set pe `Company` și pe
+> `AccountRequest`, migrarea `V13`. Set gol = întrebarea n-a primit răspuns, deci nu se
+> concluzionează nimic — aceeași regulă ca la restul profilului.
 
 ---
 

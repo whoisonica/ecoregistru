@@ -1,6 +1,7 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.LocalDate;
@@ -33,6 +34,8 @@ public record CompanyResponse(
         // --- the account profile ---
         /** Empty means the intake form has not been answered: nothing is narrowed. */
         Set<WasteOperationCode> authorizedOperationCodes,
+        /** Producător / importator / comerciant; empty means the question has no answer yet. */
+        Set<MarketRole> marketRoles,
         List<WasteCodeResponse> authorizedWasteCodes,
         String transportMeans,
         String transportLicenseNumber,

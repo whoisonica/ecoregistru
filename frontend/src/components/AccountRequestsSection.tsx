@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/toast";
 
 const t = strings.accountRequest;
 const typeLabels = strings.enums.companyType;
+const marketRoleLabels = strings.enums.marketRole;
 
 function StatusBadge({ request }: { request: AccountRequest }) {
   if (request.status === "APPROVED") return <Badge variant="success">{t.status.APPROVED}</Badge>;
@@ -101,7 +102,14 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                       </span>
                     )}
                   </TD>
-                  <TD>{typeLabels[r.companyType]}</TD>
+                  <TD>
+                    {typeLabels[r.companyType]}
+                    {(r.marketRoles ?? []).length > 0 && (
+                      <span className="block text-xs text-gray-500">
+                        {(r.marketRoles ?? []).map((m) => marketRoleLabels[m]).join(", ")}
+                      </span>
+                    )}
+                  </TD>
                   <TD>
                     <span className="block text-gray-700">{r.contactEmail}</span>
                     {r.contactName && (

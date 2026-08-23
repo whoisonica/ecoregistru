@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.LocalDate;
@@ -36,6 +37,12 @@ public record AccountRequestSubmission(
         String transportMeans,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
+
+        /**
+         * Producător / importator / comerciant — what the business is on the market for the goods
+         * it sells. Optional: an empty answer is "not answered", and nothing is concluded from it.
+         */
+        Set<MarketRole> marketRoles,
 
         Set<WasteOperationCode> operationCodes,
         String wasteCodesText,

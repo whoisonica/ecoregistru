@@ -32,7 +32,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
  * Deadline rules (docs/legislatie.md §1, high confidence):
  *  - AFM_MONTHLY — the 25th of each month, covering the previous month. Generated ONLY for
  *    companies with {@code afmObligation}; AFM is not universal, so we never falsely alarm.
- *  - SIM_ANNUAL — 15 March, for the previous calendar year's data. Generated for every company.
+ *  - SIM_ANNUAL — 15 March, for the previous calendar year's data. Generated for every company:
+ *    this is the Anexa 1 evidence being filed, and art. 1 alin. (1) HG 856/2002 binds anyone who
+ *    generates waste. See {@link ReportType#SIM_ANNUAL} for why there is no separate Anexa 1 type.
  *
  * Generation is additive and idempotent (unique on company+type+due_date): it never deletes,
  * so completion state and warning flags survive a re-run. Effective status (OVERDUE) is derived

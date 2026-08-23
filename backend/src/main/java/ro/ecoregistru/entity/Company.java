@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.Instant;
@@ -73,6 +74,22 @@ public class Company {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     Set<WasteOperationCode> authorizedOperationCodes = new LinkedHashSet<>();
+
+    /**
+     * What this company is on the market for the goods it sells — producător, importator,
+     * comerciant. It decides the packaging declaration (Ordinul 794/2012 anexa 1) and the AFM
+     * packaging contribution, and nothing else; the Anexa 1 of HG 856/2002 is a different document
+     * that every generator keeps whatever it sells. See {@link MarketRole}.
+     *
+     * <p>Empty means the question has not been answered, so nothing follows from it.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "company_market_roles",
+            joinColumns = @JoinColumn(name = "company_id"))
+    @Column(name = "market_role", length = 20, nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    Set<MarketRole> marketRoles = new LinkedHashSet<>();
 
     /**
      * The waste codes the environmental authorization covers — "ce generez" for a generator,

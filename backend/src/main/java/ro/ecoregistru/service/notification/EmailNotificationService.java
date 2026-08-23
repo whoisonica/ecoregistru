@@ -51,9 +51,15 @@ public class EmailNotificationService implements NotificationService {
         return "scadent în " + daysUntil + " zile";
     }
 
+    /**
+     * What the client is actually being reminded of. SIM_ANNUAL is named after the document, not
+     * the portal: what gets filed by 15 March is the evidence itself — the Anexa 1 sheets of
+     * HG 856/2002 — uploaded into the system APM provides (OUG 92/2021 art. 48 alin. (1)).
+     * "Raportarea SIM" named the channel and left the client guessing what to prepare.
+     */
     private String label(ReportType type) {
         return switch (type) {
-            case SIM_ANNUAL -> "Raportarea SIM (anuală) — ANPM";
+            case SIM_ANNUAL -> "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)";
             case AFM_MONTHLY -> "Declarația AFM (lunară) — Fondul pentru Mediu";
             case OTHER -> "Raportare";
         };

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.LocalDate;
@@ -32,6 +33,11 @@ public record CompanyRequest(
 
         /** The R/D operations this account works with; narrows the movement form. */
         Set<WasteOperationCode> authorizedOperationCodes,
+        /**
+         * Producător / importator / comerciant. Decides the packaging declaration and the AFM
+         * packaging contribution — never the fişa de gestiune, which every generator keeps.
+         */
+        Set<MarketRole> marketRoles,
         /** The waste codes its authorization covers; narrows the code picker. */
         Set<UUID> authorizedWasteCodeIds,
         /** Asked of a collector: what it transports with, and its goods-transport licence. */

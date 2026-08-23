@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useSubmitAccountRequest } from "@/hooks/useAccountRequests";
-import type { AccountRequestInput, CompanyType, WasteOperationCode } from "@/lib/types";
+import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/ui/date-input";
+import { MarketRolePicker } from "@/components/CompanyProfileFields";
 
 const t = strings.accountRequest;
 const typeLabels = strings.enums.companyType;
@@ -57,6 +58,7 @@ export function AccountRequestPage() {
   const [transportMeans, setTransportMeans] = useState("");
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
   const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
+  const [marketRoles, setMarketRoles] = useState<MarketRole[]>([]);
   const [operationCodes, setOperationCodes] = useState<WasteOperationCode[]>([]);
   const [wasteCodesText, setWasteCodesText] = useState("");
   const [notes, setNotes] = useState("");
@@ -94,6 +96,7 @@ export function AccountRequestPage() {
       transportMeans: asksTransport ? transportMeans.trim() || null : null,
       transportLicenseNumber: asksTransport ? transportLicenseNumber.trim() || null : null,
       transportLicenseExpiry: asksTransport ? transportLicenseExpiry || null : null,
+      marketRoles,
       operationCodes,
       wasteCodesText: wasteCodesText.trim() || null,
       notes: notes.trim() || null,
@@ -279,6 +282,15 @@ export function AccountRequestPage() {
             </div>
           </Section>
         )}
+
+        <Section title={t.sectionMarketRole}>
+          <MarketRolePicker
+            value={marketRoles}
+            onChange={setMarketRoles}
+            label={t.marketRoles}
+            hint={t.marketRolesHint}
+          />
+        </Section>
 
         <Section title={t.sectionWaste}>
           <div>

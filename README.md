@@ -94,15 +94,29 @@ The application is built around what a waste generator actually has to do, in th
 ## Regulatory note
 
 The generic evidence export (Excel/PDF) is implemented and explicitly labelled as an
-**unofficial summary**. The official monthly record format (Anexa 1, HG 856/2002) and the
-SIM/AFM structures are deliberately **not** implemented until a domain expert confirms them —
-this project does not invent official formats. Where the law is quoted, it is quoted verbatim with
-a link to the primary source and the date it was read:
-[`docs/surse-oficiale.md`](docs/surse-oficiale.md). Where the text does not settle a question, the
-question is written down and asked rather than guessed, and no default is offered in the form. None of the official portals (SIM/ANPM,
-AFM-online, SIATD) exposes a public third-party submission API, so the product model is
-"we prepare, you submit": the app produces the reports, the client uploads them.
-Research: [`docs/legislatie.md`](docs/legislatie.md).
+**unofficial summary**. The official record — the **Anexa 1 form of HG 856/2002**, header plus the
+four chapters, one page per waste code — is now generated too, but only because the specialist sent
+ten completed sheets to check it against; it was deliberately withheld until then, and this project
+still does not invent official formats. The **SIM/AFM structures remain unimplemented**: the SIM
+questionnaires (PRODDES, COL-TRAT) sit behind a login and nobody has shown us one.
+
+Careful with the name **"Anexa 1"** — it denotes two unrelated documents, and confusing them is the
+easiest way to break this codebase:
+
+| | What the app prints | What it does not |
+|---|---|---|
+| **HG 856/2002, anexa 1** | the waste-management record: four chapters × twelve months, one page per waste code | — |
+| **Ordinul 794/2012, anexa 1** | — | the packaging declaration: "producers and importers of sales packaging, **of packaged goods**, over-packagers", i.e. anyone putting packaged goods on the market. Tables by material, in kg. Belongs to the packaging module, which is not built |
+
+"Anexa 3" is likewise two documents: HG 1061/2008 (the handover form the app prints) and
+Ordinul 794/2012 anexa 3 (the annual packaging report of collectors and traders).
+
+Where the law is quoted, it is quoted verbatim with a link to the primary source and the date it was
+read: [`docs/surse-oficiale.md`](docs/surse-oficiale.md). Where the text does not settle a question,
+the question is written down and asked rather than guessed, and no default is offered in the form.
+None of the official portals (SIM/ANPM, AFM-online, SIATD) exposes a public third-party submission
+API, so the product model is "we prepare, you submit": the app produces the reports, the client
+uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ---
 
@@ -170,6 +184,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | What | Where | What to look for |
 |---|---|---|
 | Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not |
+| Type of generator | `/cerere-cont` → "Tipul de generator" | Producător / importator / comerciant. Tick only "Comerciant" and the form says what follows: no packaging declaration, but the Anexa 1 sheet stays |
 | Requests inbox | **Clienți**, below the company list | "Creează contul" turns a request into a company with its profile and work point |
 | Account profile | **Clienți** → edit a company | R/D codes, the waste codes of the authorization, transport details for a collector |
 | Partner roles | **Parteneri** | Green = client, amber = supplier, grey = "rol nestabilit"; filter by role |
@@ -180,7 +195,9 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Anexa 3 | **Mișcări** or **Evidențe** → row action | A 4-page PDF, one page per copy, the fourth marked as the file copy |
 | Handover register | **Evidențe** (default view) | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending |
 | Monthly Anexa 1 | **Evidențe** → "Anexa 1 — lunar" | The running stock, which is the only figure the register cannot show |
-| **The Anexa 1 form** | **Evidențe** → "Fișa Anexa 1" | A PDF, one page per waste code: header plus the four chapters, twelve rows and a TOTAL AN each |
+| **The Anexa 1 form** | **Evidențe** → "Fișa Anexa 1" | A PDF titled "Evidenţa gestiunii deşeurilor generate «year»", one page per waste code: header plus the four chapters, twelve rows and a TOTAL AN each |
+| Control dossier | **Dosar de control** → download | The ZIP opens with `anexa1-«year».pdf` — the same four-chapter sheet — and its `README.txt` names the 15 March deadline |
+| The 15 March deadline | **Termene** | Reads "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)": the document, not the portal |
 
 ### Tests
 

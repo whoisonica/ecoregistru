@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ro.ecoregistru.enums.AccountRequestStatus;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.Instant;
@@ -93,6 +94,21 @@ public class AccountRequest {
 
     @Column(name = "transport_license_expiry")
     LocalDate transportLicenseExpiry;
+
+    // --- What the company is on the market for the goods it sells ---
+
+    /**
+     * Producător / importator / comerciant. Decides the packaging declaration (Ordinul 794/2012
+     * anexa 1) and the AFM packaging contribution — not the fişa de gestiune of HG 856/2002, which
+     * every generator keeps. Empty means unanswered. See {@link MarketRole}.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "account_request_market_roles",
+            joinColumns = @JoinColumn(name = "account_request_id"))
+    @Column(name = "market_role", length = 20, nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    Set<MarketRole> marketRoles = new LinkedHashSet<>();
 
     // --- What happens to the waste ---
 

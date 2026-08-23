@@ -69,6 +69,9 @@ public class AccountRequestService {
                 .transportMeans(blankToNull(submission.transportMeans()))
                 .transportLicenseNumber(blankToNull(submission.transportLicenseNumber()))
                 .transportLicenseExpiry(submission.transportLicenseExpiry())
+                .marketRoles(submission.marketRoles() == null
+                        ? new LinkedHashSet<>()
+                        : new LinkedHashSet<>(submission.marketRoles()))
                 .operationCodes(submission.operationCodes() == null
                         ? new LinkedHashSet<>()
                         : new LinkedHashSet<>(submission.operationCodes()))
@@ -110,6 +113,7 @@ public class AccountRequestService {
                 request.getContactEmail(),
                 request.getContactPhone(),
                 request.getOperationCodes(),
+                request.getMarketRoles(), // producător / importator / comerciant, as answered
                 Set.of(), // the free-text waste codes are mapped by hand; nothing is guessed here
                 request.getTransportMeans(),
                 request.getTransportLicenseNumber(),
@@ -172,6 +176,7 @@ public class AccountRequestService {
                 r.getContactName(), r.getContactEmail(), r.getContactPhone(),
                 r.getEnvironmentalAuthNumber(), r.getEnvironmentalAuthExpiry(),
                 r.getTransportMeans(), r.getTransportLicenseNumber(), r.getTransportLicenseExpiry(),
+                new LinkedHashSet<>(r.getMarketRoles()),
                 new LinkedHashSet<>(r.getOperationCodes()), r.getWasteCodesText(), r.getNotes(),
                 r.getStatus(),
                 r.getCreatedCompany() != null ? r.getCreatedCompany().getId() : null,

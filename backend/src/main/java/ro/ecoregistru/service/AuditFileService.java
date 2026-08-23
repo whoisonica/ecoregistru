@@ -20,12 +20,14 @@ import ro.ecoregistru.entity.Attachment;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.export.Anexa1FormGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.GenericEvidenceExporter;
 
@@ -36,28 +38,35 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static java.util.stream.Collectors.joining;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 
 /**
  * Builds the "dosar de control" (audit file) for a tenant and year as a single ZIP:
  *   - README.txt describing the contents and generation date,
+ *   - the official Anexa 1 sheets (HG 856/2002): four chapters per waste code, one page each,
  *   - the generic evidence summary in both xlsx and pdf,
  *   - a PDF summary of partner authorizations (with expiry status),
  *   - atasamente/index.txt listing every movement attachment, and the attachment files
  *     themselves (downloaded best-effort from Cloudinary; a failed download stays referenced
  *     in the index so the dossier is still complete).
  *
- * Tenant-scoped throughout via {@link TenantContext#require()}. Not the official control format
- * (that is blocked on the expert) — a practical, human-readable bundle for inspections.
+ * Tenant-scoped throughout via {@link TenantContext#require()}. The dossier is not itself a
+ * regulated format, but since 24.08.2026 it carries one document that is: the specialist asked
+ * that printing it respect the four-table-per-waste-code structure of her own sheets, which is
+ * exactly what {@link Anexa1FormGenerator} draws. The rest of the bundle stays a practical,
+ * human-readable working pack around that sheet.
  */
 @Slf4j
 @Service
@@ -71,6 +80,7 @@ public class AuditFileService {
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
+    Anexa1FormGenerator anexa1FormGenerator;
     PartnerRepository partnerRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
@@ -90,7 +100,11 @@ public class AuditFileService {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream();
              ZipOutputStream zip = new ZipOutputStream(out)) {
 
-            writeEntry(zip, "README.txt", readme(company.getName(), year).getBytes());
+            writeEntry(zip, "README.txt", readme(company, year).getBytes(StandardCharsets.UTF_8));
+            // The regulated document of the bundle, and the reason the dossier gets printed at
+            // all: one page per waste code, carrying the four chapters of the form.
+            writeEntry(zip, "anexa1-" + year + ".pdf",
+                    anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
             writeEntry(zip, "evidenta-" + year + ".xlsx",
                     evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence));
             writeEntry(zip, "evidenta-" + year + ".pdf",
@@ -147,7 +161,7 @@ public class AuditFileService {
             index.append("Total: ").append(n).append(" atașamente, ")
                     .append(downloaded).append(" incluse în arhivă.\n");
         }
-        writeEntry(zip, "atasamente/index.txt", index.toString().getBytes());
+        writeEntry(zip, "atasamente/index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /** Best-effort binary download; returns null on any failure so the build never breaks. */
@@ -242,16 +256,56 @@ public class AuditFileService {
 
     // --- helpers ---
 
-    private String readme(String companyName, int year) {
-        return "DOSAR DE CONTROL — " + companyName + "\n"
+    /**
+     * The cover note. It names the Anexa 1 sheet first because that is the regulated document of
+     * the bundle, and it prints its filing deadline: 15 March of the following year, a legal term
+     * (OUG 92/2021 art. 48 alin. (1)), not an ANPM custom.
+     */
+    private String readme(Company company, int year) {
+        return "DOSAR DE CONTROL — " + company.getName() + "\n"
                 + "Anul de raportare: " + year + "\n"
                 + "Generat: " + LocalDate.now().format(DATE) + "\n\n"
                 + "Conținut:\n"
-                + "  - evidenta-" + year + ".xlsx / .pdf : evidența gestiunii deșeurilor (rezumat generic, neoficial)\n"
+                + "  - anexa1-" + year + ".pdf            : Evidența gestiunii deșeurilor generate " + year + "\n"
+                + "                                        (HG 856/2002, anexa 1) — fișa oficială, cu cele patru\n"
+                + "                                        capitole, o pagină per cod de deșeu.\n"
+                + "                                        Termen de depunere: 15 martie " + (year + 1) + ".\n"
+                + "  - evidenta-" + year + ".xlsx / .pdf : același an ca tabel de lucru (rezumat neoficial)\n"
                 + "  - autorizatii-parteneri.pdf         : autorizațiile partenerilor și statusul lor\n"
                 + "  - atasamente/                       : documentele justificative atașate mișcărilor (+ index.txt)\n\n"
-                + "Notă: acest dosar NU înlocuiește formularele oficiale de raportare (Anexa 1 / SIM / AFM);\n"
-                + "este un pachet de lucru pentru pregătirea și prezentarea evidenței la control.\n";
+                + marketRoleNote(company)
+                + "Notă: în afară de fișa Anexa 1 de mai sus, dosarul NU înlocuiește formularele oficiale de\n"
+                + "raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n";
+    }
+
+    /**
+     * What the account answered to "ce tip de generator" — producător, importator or comerciant —
+     * and the one thing that follows from it. Only the packaging declaration does: the sheet above
+     * is kept by anyone who generates waste (HG 856/2002 art. 1 alin. (1)), whatever it sells.
+     *
+     * <p>An unanswered profile prints nothing at all rather than a guess in either direction.
+     */
+    private String marketRoleNote(Company company) {
+        Set<MarketRole> roles = company.getMarketRoles();
+        if (!MarketRole.answered(roles)) {
+            return "";
+        }
+        String named = roles.stream().map(AuditFileService::marketRole).collect(joining(", "));
+        return "Tipul de generator declarat: " + named + ".\n"
+                + (MarketRole.putsPackagingOnMarket(roles)
+                ? "  -> pune produse ambalate pe piață, deci depune și declarația de ambalaje\n"
+                + "     (Ordinul 794/2012, anexa 1), termen 25 februarie.\n"
+                : "  -> comerciant: vinde marfă ambalată de altcineva, deci NU depune declarația de\n"
+                + "     ambalaje (Ordinul 794/2012, anexa 1). Fișa Anexa 1 de mai sus rămâne obligatorie.\n")
+                + "\n";
+    }
+
+    private static String marketRole(MarketRole role) {
+        return switch (role) {
+            case PRODUCER -> "producător";
+            case IMPORTER -> "importator";
+            case TRADER -> "comerciant";
+        };
     }
 
     private String partnerType(PartnerType type) {

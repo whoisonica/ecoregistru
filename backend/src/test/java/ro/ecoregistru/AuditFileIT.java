@@ -19,6 +19,7 @@ import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -77,10 +78,43 @@ class AuditFileIT {
         List<String> entries = zipEntryNames(res.getContentAsByteArray());
         assertThat(entries).contains(
                 "README.txt",
+                // The regulated document: four chapters per waste code, asked for by the
+                // specialist on 23.08.2026 ("când dă print la dosar control să respecte
+                // structura de 4 tabele pe care o am de la Andreea").
+                "anexa1-2026.pdf",
                 "evidenta-2026.xlsx",
                 "evidenta-2026.pdf",
                 "autorizatii-parteneri.pdf",
                 "atasamente/index.txt");
+    }
+
+    @Test
+    void theAnexa1SheetInTheDossierIsARealPdf() throws Exception {
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        byte[] pdf = readEntryBytes(zip, "anexa1-2026.pdf");
+        assertThat(pdf).isNotEmpty();
+        assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
+    }
+
+    @Test
+    void theReadmeNamesTheSheetAndItsDeadline() throws Exception {
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+        assertThat(readme)
+                .contains("Evidența gestiunii deșeurilor generate 2026")
+                .contains("HG 856/2002, anexa 1")
+                // 15 March of the FOLLOWING year — the term of OUG 92/2021 art. 48 alin. (1).
+                .contains("Termen de depunere: 15 martie 2027");
     }
 
     @Test

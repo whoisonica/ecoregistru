@@ -50,6 +50,7 @@
 - 🟢 **Un colector datorează AFM lunar prin definiție:** art. 9(1) lit. a) — contribuția de **2% din veniturile din vânzarea deșeurilor**, **reținută la sursă de operatorul care colectează/valorifică**. Nu depinde de ambalaje. Vezi `surse-oficiale.md` §10.1.
 - **IMPORTANT — nuanță strategică:** declarația AFM NU e despre evidența deșeurilor în sine, ci despre **contribuții la fondul de mediu**: ambalaje (răspundere extinsă a producătorului/EPR), anvelope, uleiuri, baterii/acumulatori, EEE, substanțe periculoase, taxa pentru deșeuri încredințate spre eliminare la groapă, emisii etc.
 - **Deci NU orice client are obligație AFM lunară.** Depinde de activitate (dacă introduce pe piață ambalaje/produse, dacă duce la groapă etc.). Instrucțiuni oficiale de completare: OMM/AFM din 11.12.2023 (🟡 de citit integral cu expertul).
+- ✅ **CONFIRMAT 24.08.2026 de specialistă:** „obligația AFM, doar generatorii de deșeuri de ambalaj — producători/importatorii". Adică **cine pune pe piață marfă ambalată**, nu fabricanții de ambalaje. Un generator obișnuit nu primește niciun termen AFM. 🟠 Rămâne de confirmat dacă răspunsul acoperă și celelalte două contribuții (2% la sursă, economie circulară) sau doar pe cea de ambalaje — întrebarea L. Și 🟠 calitatea asta **nu se întreabă nicăieri** azi în aplicație — întrebarea M.
 - Amendă/penalități AFM: până la 250.000 lei + penalități zilnice la plată. 🟡
 
 ### E. Pe radar, ÎN AFARA Fazei 1 (de notat, nu de construit acum)
@@ -99,7 +100,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | Entitate actuală | Acoperă | LIPSEȘTE / de adăugat | Prioritate |
 |---|---|---|---|
 | `WasteCode` (cod, nume, periculos) | nomenclatorul ✅ + **lista 2014/955/UE completă (842 coduri)**, încărcată 22.08.2026 (Etapa 1) ✅ | — | ✅ închis |
-| `WasteMovement.operation` + `register` + `operationCode` | ✅ **Etapa 2a (23.08.2026):** `register` (`ANEXA_1`/`ART_48`) scoate preluarea din Anexa 1 (art. 2(1)); `operationCode` e obligatoriu la **orice ieșire**, fiindcă Cap. 3/4 cer operaţia + operatorul. ✅ **Etapa G1 (23.08.2026):** „predare” nu mai e operațiune — predarea e o valorificare/eliminare **făcută de partenerul numit**; litera „Scopul” se derivă din cod și e **doar `V`** (pe cele 10 Anexe 1 completate primite, fișele de eliminare au liniuță, nu `E`) | 🟠 ieșirile vechi n-au cod și nu pot fi clasificate retroactiv → 2b le marchează incomplete, nu le ghicește. 🟠 ce cod se trece la predarea către un colector (R13 vs. operaţiunea finală) e întrebare deschisă | ✅ model închis |
+| `WasteMovement.operation` + `register` + `operationCode` | ✅ **Etapa 2a (23.08.2026):** `register` (`ANEXA_1`/`ART_48`) scoate preluarea din Anexa 1 (art. 2(1)); `operationCode` e obligatoriu la **orice ieșire**, fiindcă Cap. 3/4 cer operaţia + operatorul. ✅ **Etapa G1 (23.08.2026):** „predare” nu mai e operațiune — predarea e o valorificare/eliminare **făcută de partenerul numit**; litera „Scopul” se derivă din cod și e **doar `V`** (pe cele 10 Anexe 1 completate primite, fișele de eliminare au liniuță, nu `E`) | 🟠 ieșirile vechi n-au cod și nu pot fi clasificate retroactiv → 2b le marchează incomplete, nu le ghicește. ✅ **închis 24.08:** ce cod se trece la predarea către un colector îl **alege clientul la înregistrare** — nu există implicit de codat; 🟠 rămâne doar cine e „agentul economic" din rubrică (colector vs. reciclator final) | ✅ model închis |
 | `WasteMovement` — Cap. 2 | — | **lipsesc integral**: `Secția` + cele **cinci nomenclatoare** (tip stocare, mod tratare, scop, mijloc transport, destinație). În date reale sunt constante pe 12 luni → se modelează ca **profil implicit per (punct de lucru, cod)**, cu override pe lună | mare |
 | `Partner` (colector/transportator + autorizație) | operatorul din Cap. 3/4 ✅ | rol precis (valorificator vs. eliminator vs. transportator) | medie |
 | `MonthlyEvidence` (totaluri/operație pe lună) | agregarea lunară + stoc ✅ | 🔴 **formula e încă greșită în cod** (adună `collected`, scade `handedOver` peste `recovered`/`disposed`); **12 rânduri indiferent de mișcări**; grupurile cu stoc dar fără mișcări în an dispar din raport; regenerarea nu invalidează anii următori. Modelul de sub ea e acum corect — rămâne calculatorul | 🔴 critic — **Etapa 2b, următoarea** |
@@ -133,16 +134,46 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | — | Care listă de coduri | **Decizia 2014/955/UE**, 842 coduri | `surse-oficiale.md` §3 |
 | — | Termenul SIM | 15 martie, **termen legal** | OUG 92/2021 art. 48(1) |
 
-**Rămân deschise:**
+**Rămân deschise** *(actualizat 24.08.2026, după runda de răspunsuri R19–R26)*:
 
 1. 🟡 Legea 211/2011 vs. OUG 92/2021 — ce mai e relevant pentru clienții tipici. *(Practic irelevantă acum: referințele care contau s-au mutat pe OUG 92/2021.)*
-2. 🔴 **Capturile din SIM** — cum arată efectiv chestionarele PRODDES (generatori) și COL/TRAT (colectori). Sunt în spatele unui login; **niciun document public nu le poate da**. Singura întrebare care mai are rost să fie pusă specialistei.
-3. ✅ **ÎNCHIS 22.08.2026 — Unitatea din Anexa 3 la Ordinul 794/2012 este `[kilograme]`**, la toate cele cinci anexe, verificat pe textul oficial. Fișierul în tone al specialistei e șablon modificat local. Modulul de ambalaje nu mai e blocat. *(Rămâne de întrebat, ca politețe operațională: APM-ul județean îi acceptă în practică varianta în tone?)*
-4. 🟡 Care clienți tipici au **efectiv** obligație AFM lunară și pe ce contribuții.
-5. 🟠 **D5 vs. D1** la menajer — judecată de încadrare, nu fapt. Nu se propune ca valoare implicită fără confirmare.
-6. 🟠 **NOU 23.08.2026 — ce cod de operațiune se trece la predarea către un colector?** Cap. 3 cere „Operaţia de valorificare" și „Agentul economic care efectuează operaţia". Când firma predă unui colector care doar stochează și duce mai departe: **R13** („stocarea înaintea oricărei operaţiuni R1-R12") sau **operaţiunea finală** făcută de altcineva, pe care clientul deseori n-o știe? Și cine e agentul economic din rubrică — colectorul sau reciclatorul final? **Blochează exportul oficial (Etapa 4).** Întrebarea 3 din `intrebari-specialist.md`. În cod: se cere codul, nu se propune niciun implicit; în datele demo e R13, marcat explicit ca alegerea noastră.
-7. 🟡 **NOU 23.08.2026 — cum arată în realitate Anexa 1 a unui centru de colectare?** Din art. 2(1) ar trebui să fie surprinzător de mică (doar deșeul propriu, ex. refuzul de la sortare), cu tot volumul de marfă în evidența art. 48. Confirmarea ghidează Etapa 8. Întrebarea 4 din `intrebari-specialist.md`.
+2. 🟡 **Layoutul chestionarelor SIM** — PRODDES (generatori) și COL/TRAT (colectori), în spatele unui login. **Coborât de la 🔴 pe 24.08:** specialista confirmă că „SIM se bazează pe documentele pe care le avem" — Anexa 1 pentru producător/importator, evidența pentru colector. Deci **niciun câmp nu lipsește din model** și niciun client nu va trebui să completeze retroactiv; rămâne nevăzută doar forma ecranului, de care are nevoie exportul SIM.
+3. ✅ **ÎNCHIS 22.08.2026 — Unitatea din Anexa 3 la Ordinul 794/2012 este `[kilograme]`**, la toate cele cinci anexe, verificat pe textul oficial. **Reconfirmat de specialistă pe 24.08:** „kilograme". Fișierul în tone e șablon modificat local. Modulul de ambalaje nu mai e blocat pe unitate.
+4. 🟠 **AFM — răspuns parțial pe 24.08:** „doar generatorii de deșeuri de ambalaj, producători/importatorii". Deci un generator obișnuit **nu primește niciun termen AFM**, iar cel lunar generat azi pentru orice firmă cu flagul pornit e greșit. **Ce rămâne de confirmat** (întrebarea L): răspunsul acoperă doar contribuția pe ambalaje (art. 9(1) lit. d), iar cei **2% reținuți la sursă** de un colector (lit. a, lunar) și **economia circulară** a gropilor (lit. c, trimestrial) rămân valabile? De asta atârnă forma Etapei 7. **Și o consecință practică** (întrebarea M): calitatea de producător/importator **nu e întrebată nicăieri** azi — nici în formularul de cerere, nici pe firmă.
+5. 🟠 **D5 vs. D1** la menajer — judecată de încadrare, nu fapt. Confirmat de trei ori de specialistă (20.08, 23.08, 24.08); aplicat în datele demo, nu în validări.
+6. ✅ **ÎNCHIS 24.08.2026 — ce cod de operațiune se trece la predarea către un colector.** Răspunsul: „**la înregistrare, codurile alese de client**". Nu există regulă de codat — nici R13 implicit, nici operațiunea finală dedusă din material. Exact ce face codul azi: se cere codul R/D la orice ieșire, fără implicit. Cele 13 predări vechi fără cod **nu se migrează**; rămân `UNCLASSIFIED_OUT` / `incomplete` până le completează clientul. 🟠 **Jumătatea a doua rămâne deschisă** (întrebarea C): cine se scrie la „agentul economic care efectuează operaţia" — colectorul căruia i-am predat sau reciclatorul final? Momentan scriem partenerul de pe Anexa 3.
+7. ✅ **ÎNCHIS 24.08.2026 — Anexa 1 a unui centru de colectare.** Răspunsul: „**evidența pentru colector**" — colectorul ține registrul cronologic art. 48 pentru marfa care trece prin el, nu o fișă de gestiune per cod preluat. Confirmă seam-ul din Etapa 2a. Nuanța păstrată: tot ține o fișă Anexa 1, mică, pentru deșeul din activitatea proprie (refuzul de la sortare) — de aceea `GENERATED` rămâne disponibil la toate tipurile de cont.
 8. ⚪ AFM: merită generat un `.mdb` compatibil sau rămânem la fișa-rezumat? (vezi §5 — verdictul nostru e „fișă-rezumat")
+9. ✅ **ÎNCHISĂ 24.08.2026 — despre care „Anexa 1" vorbește specialista.** Răspunsul: despre
+   **anexa 1 la Ordinul 794/2012** (declarația de ambalaje), nu despre fișa de gestiune din HG 856.
+   Ce a lămurit-o e clasificarea pe care o cerea în aceeași frază — „ce tip generator: importator /
+   producător / comercial" —, care e literalmente trioul din **Legea 249/2015, anexa nr. 1**:
+   „producătorii de ambalaje şi produse ambalate, **importatorii, comercianţii, distribuitorii**".
+   E o clasificare de ambalaje, deci fraza e despre documentul de ambalaje. **Fișa de gestiune nu se
+   restrânge**: art. 1 alin. (1) HG 856/2002 o cere oricui generează deșeu, comerciant inclusiv.
+   În cod: `MarketRole`, migrarea `V13`. Sursa: `surse-oficiale.md` §11. *(Textul de mai jos e
+   întrebarea așa cum a fost pusă; se păstrează fiindcă explică de ce nu era evident.)*
+
+   ~~🔴 NOU 24.08.2026 — despre care „Anexa 1" vorbește specialista~~ când spune „e strict pentru generatorii de deșeuri de ambalaj, producători/importatorii"? Vezi caseta de mai jos. Nu blochează cod; decide cui spunem că are nevoie de aplicație. Întrebarea K din `intrebari-specialist.md`.
+
+---
+
+### ⚠️ „Anexa 1" înseamnă două documente diferite
+
+Confuzia asta e cea mai ieftină cale de a strica modulul de generatori, deci se scrie o dată, aici:
+
+| | Fișa de gestiune | Declarația de ambalaje |
+|---|---|---|
+| Act | **HG 856/2002, anexa 1** | **Ordinul 794/2012, anexa 1** |
+| Titlu | „Evidenţa gestiunii deşeurilor" | „Producători şi importatori de ambalaje de desfacere, **de produse ambalate**, supraambalatori de produse ambalate" |
+| Cine o ține | orice generator, per cod de deșeu (art. 1 alin. (1)) | cine **pune pe piaţă marfă ambalată** — deci pune și ambalajul, adică generează deșeu de ambalaj în piață |
+| Formă | 4 capitole × 12 luni, o pagină per cod | tabele pe materiale (PET, hârtie, aluminiu, oțel, lemn, sticlă), în kg |
+| În aplicație | **G5, livrat** | modulul de ambalaje, **nescris** (Etapa 11) |
+
+Titlul celui de-al doilea se citește **până la capăt**: nu „producători şi importatori *de ambalaje*", ci „*de ambalaje de desfacere, de produse ambalate*". Nu fabricanții de ambalaje — **oricine pune pe piață produse ambalate**. Categorie largă, nu de nișă.
+
+Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi) vs. Ordinul 794/2012 anexa 3 (raportarea anuală a colectorilor și comercianților de ambalaje).
+
 
 ---
 

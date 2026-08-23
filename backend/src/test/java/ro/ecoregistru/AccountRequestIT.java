@@ -105,6 +105,9 @@ class AccountRequestIT {
                 .andExpect(jsonPath("$.type", is("COLLECTOR")))
                 // the profile travels, so the new account opens already narrowed
                 .andExpect(jsonPath("$.authorizedOperationCodes", hasItem("R3")))
+                // "ce tip de generator" travels too: it decides the packaging declaration, and
+                // asking the client twice is how the two answers end up different.
+                .andExpect(jsonPath("$.marketRoles", hasItem("TRADER")))
                 .andExpect(jsonPath("$.transportLicenseNumber", is("LTM-777")));
 
         AccountRequest handled = accountRequestRepository.findById(request.getId()).orElseThrow();
@@ -165,6 +168,7 @@ class AccountRequestIT {
                   "environmentalAuthNumber": "AM-2026-14",
                   "transportMeans": "Autoutilitară 3,5 t",
                   "transportLicenseNumber": "LTM-777",
+                  "marketRoles": ["TRADER"],
                   "operationCodes": ["R3", "R13"],
                   "wasteCodesText": "carton, folie de plastic",
                   "notes": "Colectăm de la trei magazine."
