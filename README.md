@@ -162,6 +162,25 @@ so the cumulative stock actually carries over and the evidence screens have some
 It also contains the traded-goods flow — glass taken over at the depot and passed on — which must
 stay out of Anexa 1 and is the reason movements carry a register at all.
 
+### Seeing it in the UI
+
+Log in as `admin@demo.ro`. The demo tenant is type BOTH and has a profile answered (R3, R4, R5,
+R13, D5), so the narrowing is visible rather than theoretical.
+
+| What | Where | What to look for |
+|---|---|---|
+| Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not |
+| Requests inbox | **Clienți**, below the company list | "Creează contul" turns a request into a company with its profile and work point |
+| Account profile | **Clienți** → edit a company | R/D codes, the waste codes of the authorization, transport details for a collector |
+| Partner roles | **Parteneri** | Green = client, amber = supplier, grey = "rol nestabilit"; filter by role |
+| Internal generators | **Setări**, under work points | The "Secţia" of Anexa 1 cap. 2 — birouri, producţie |
+| Narrowed operations | **Mișcări** → add | No "Predare" in the list; the R/D codes are the five in the profile, not all 28 |
+| Weighed at unloading | **Mișcări** → add, tick the box | The quantity field greys out and the movement saves without one |
+| Chapter 2 | **Mișcări** → add | Storage type, treatment method, transport means and destination, under the waste code |
+| Anexa 3 | **Mișcări** or **Evidențe** → row action | A 4-page PDF, one page per copy, the fourth marked as the file copy |
+| Handover register | **Evidențe** (default view) | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending |
+| Monthly Anexa 1 | **Evidențe** → "Anexa 1 — lunar" | The running stock, which is the only figure the register cannot show |
+
 ### Tests
 
 ```bash

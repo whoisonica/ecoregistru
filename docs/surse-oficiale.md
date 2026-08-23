@@ -160,6 +160,28 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 
 ---
 
+### 1.3 Ce spune practica peste ce spune actul (corpus de 10 fişe completate, 23.08.2026)
+
+Actul reproduce formularul; **cum se completează** l-am citit din zece Anexe 1 completate cu cifre
+reale, primite de la specialistă (Cluj, Timişoara, Bragadiru, Oradea — 2022–2024, plus Cluj 2025 ca
+PDF). Fişierele sunt gitignored, deci **niciun test nu le poate citi**: regula extrasă din ele se
+scrie în cod ca un comentariu care spune pe câte fişiere se sprijină.
+
+1. **Litera „E” din cap. 2 nota 3 nu se mai scrie.** Nota defineşte `V - pentru valorificare` şi
+   `E - în vederea eliminării`, dar pe cele zece fişe `E` apare **o singură dată** (Cluj 2022, codul
+   19 12 12) şi acelaşi client a pus liniuţă în 2023 şi 2024. Pe toate fişele de valorificare scrie
+   `V` pe toate cele 12 rânduri; pe cele de eliminare, liniuţă. Ce identifică eliminarea e **codul D
+   din cap. 4**, lângă operator. → `TreatmentPurpose` are un singur membru.
+2. **Coloana „Secţia” din cap. 2 e constantă pe cele 12 luni** ale unei foi („birouri”, „productie”).
+   E o proprietate a sursei, nu a lunii. → entitatea `InternalGenerator`, sub punctul de lucru.
+3. **Fişa are exact 12 rânduri per capitol, plus TOTAL AN**, chiar şi în lunile fără mişcări.
+4. **Antetul cap. 3 şi 4 trimite încă la Legea 211/2011**, abrogată de OUG 92/2021. Numerele anexelor
+   sunt identice în noul act (3 = valorificare, 2 = eliminare), deci corectura ar fi doar numele
+   actului — 🟠 **decizie deschisă**, e a specialistei.
+5. **Unitatea e kg** pe toate fişele, şi antetul o declară explicit („Unitatea de măsură: kg”).
+
+---
+
 ## 2. OUG 92/2021 privind regimul deșeurilor — legea-cadru
 
 Sursă: [legislatie.just.ro/Public/DetaliiDocument/245846](https://legislatie.just.ro/Public/DetaliiDocument/245846);
@@ -346,8 +368,50 @@ Date privind punctul de lucru | Observaţii | Semnătura: încărcare, descărca
 **Art. 20 alin. (2):** formularul se completează de expeditor în **3 exemplare** — unul rămâne la
 expeditor, unul la transportator, unul se transmite destinatarului prin transportator.
 
-> Se suprapune aproape complet cu ce ține deja `WasteMovement`. Ăsta e conținutul pe care ar trebui
-> să-l structureze `documentReference`, azi text liber.
+> ✅ **Structurat pe 23.08.2026 (Etapa G3).** Observația de mai sus s-a rezolvat: rubricile
+> formularului sunt acum câmpuri pe `WasteMovement` (`unloadDate`, `transportPartner`, `driverName`,
+> `driverIdentification`, `vehicleRegistration`, `transportDestinations`, `anexa3Series` +
+> `anexa3Number`, `volumeM3`), iar `Anexa3FormGenerator` tipărește documentul.
+> `documentReference` a rămas ce era de fapt: numărul avizului, care merge în coloana „Observaţii”.
+
+**Rubricile exacte, citite din două modele completate** (`documente oficiale/ANEXA 3 model_CARTON.docx`
+și `Anexa 3_model.pdf`, seria HMB 180) — actul reproduce formularul în facsimil, iar modelele arată
+cum se completează în practică:
+
+```
+Serie şi număr
+┌ Date de identificare transportator: denumire, adresă, CIF, Reg. Com.
+├ Date de identificare delegat şi nr. de înmatriculare mijloc de transport
+├ Licenţa de transport mărfuri nepericuloase nr.
+└ Data la care expiră licenţa · Semnătura
+Data: Încărcare | Descărcare
+Caracteristici deşeuri: categorii/cod · Descriere · Destinat: colectării |_| stocării temporare |_|
+                                                       tratării |_| valorificării |_| eliminării |_|
+Cantitate: kg (sau tone) · mc
+┌ ÎNCĂRCAREA — date de identificare expeditor (+ autorizaţie de mediu, expirare, semnătură+ştampilă)
+└ DESCĂRCAREA — date de identificare destinatar (+ autorizaţie de mediu, expirare, semnătură+ştampilă)
+Observaţii: aviz
+*) Se va completa numai în cazul în care încărcarea/descărcarea are loc la un punct de lucru care
+   nu reprezintă sediul social.
+```
+
+**Trei lucruri pe care le-au lămurit modelele completate, nu actul:**
+
+1. **Cantitatea e scrisă de mână.** Pe modelul HMB 180 apare „1,02”, completat ulterior — expeditorul
+   n-avea cântar. De aici steagul `weighedAtUnloading`: rubrica se tipărește goală și se completează
+   la descărcare, de destinatar.
+2. **„Destinat:” admite mai multe bife.** Pe același model sunt bifate două: *Colectării* și
+   *Valorificării*. De aceea e un set, nu o alegere unică.
+3. **Destinatarul e scris cu punctul de lucru, nu cu sediul** („P.L. ILFOV, Şos. de Centura nr. 2-8,
+   Bragadiru”). De aceea partenerul are două adrese.
+
+🟠 **Actul cere 3 exemplare; noi tipărim 4.** Art. 20 alin. (2) enumeră trei: unul rămâne la
+expeditor, unul la transportator, unul ajunge la destinatar prin transportator. Specialista a cerut
+**patru**, iar diferenţa e al patrulea exemplar — **copia de arhivă a expeditorului**, cea care
+rămâne la dosar după ce exemplarul „expeditor” pleacă semnat cu marfa. Nu e o cerinţă legală, e o
+practică de evidenţă, iar formularul generat o spune pe faţă: fiecare exemplar e etichetat, iar al
+patrulea scrie explicit că e în plus faţă de cele trei din act. Actul nu interzice copii
+suplimentare — cere ca trei să existe şi să ajungă unde trebuie.
 
 ---
 

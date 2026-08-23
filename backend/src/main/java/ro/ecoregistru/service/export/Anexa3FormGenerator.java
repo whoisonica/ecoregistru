@@ -35,6 +35,9 @@ import java.util.List;
  * two dates next to them, the waste and the "Destinat:" ticks in the middle, the quantity, then
  * the loading and unloading parties on the right, and the observations column last.
  *
+ * <p>Printed in <b>four copies</b>, one per page, each labelled with its addressee. The act asks
+ * for three (art. 20 alin. (2)); the fourth is the sender's own file copy and says so on the page.
+ *
  * <p>Two things the model taught us and this generator keeps:
  *
  * <ul>
@@ -64,6 +67,21 @@ public class Anexa3FormGenerator {
     private static final String WEIGHED_AT_UNLOADING =
             "Se cântăreşte la descărcare, de destinatar.";
 
+    /**
+     * Who each printed copy is for. HG 1061/2008 art. 20 alin. (2) requires three — one stays with
+     * the sender, one with the carrier, one reaches the recipient through the carrier. The fourth
+     * is the specialist's request, not the act's: the sender's own file copy, because the copy
+     * labelled "expeditor" leaves signed with the load and the dossier is left with nothing. The
+     * act requires that three exist and reach the right hands; it does not forbid a fourth.
+     */
+    private static final String[] COPIES = {
+            "expeditor", "transportator", "destinatar", "copie de arhivă (expeditor)"
+    };
+
+    private static final String EXTRA_COPY_NOTE =
+            "Exemplarul 4 este copia de arhivă a expeditorului. HG 1061/2008 art. 20 alin. (2) cere "
+                    + "3 exemplare — expeditor, transportator, destinatar.";
+
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final Font title;
@@ -86,41 +104,66 @@ public class Anexa3FormGenerator {
             PdfWriter.getInstance(doc, out);
             doc.open();
 
-            Paragraph head = new Paragraph(cp1250(TITLE), title);
-            doc.add(head);
-            Paragraph basis = new Paragraph(cp1250(LEGAL_BASIS), body);
-            basis.setSpacingAfter(6f);
-            doc.add(basis);
-
-            PdfPTable series = new PdfPTable(1);
-            series.setWidthPercentage(100);
-            Paragraph seriesLine = new Paragraph();
-            seriesLine.add(text("Serie şi număr: " + seriesAndNumber(movement), label));
-            PdfPCell seriesCell = new PdfPCell();
-            seriesCell.addElement(seriesLine);
-            seriesCell.setPadding(4f);
-            series.addCell(seriesCell);
-            doc.add(series);
-
-            PdfPTable table = new PdfPTable(6);
-            table.setWidthPercentage(100);
-            table.setWidths(new float[]{16, 11, 21, 13, 30, 9});
-            table.addCell(column(carrierColumn(movement, sender)));
-            table.addCell(column(dateColumn(movement)));
-            table.addCell(column(wasteColumn(movement)));
-            table.addCell(column(quantityColumn(movement)));
-            table.addCell(column(partiesColumn(movement, sender)));
-            table.addCell(column(observationsColumn(movement)));
-            doc.add(table);
-
-            Paragraph foot = new Paragraph(cp1250(FOOTNOTE), small);
-            foot.setSpacingBefore(4f);
-            doc.add(foot);
+            for (int copy = 0; copy < COPIES.length; copy++) {
+                if (copy > 0) {
+                    doc.newPage();
+                }
+                addCopy(doc, movement, sender, copy);
+            }
 
             doc.close();
             return out.toByteArray();
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to build the Anexa 3 transport form", ex);
+        }
+    }
+
+    /** One printed copy of the form: identical content, different addressee on the label. */
+    private void addCopy(Document doc, WasteMovement movement, Company sender, int copy) {
+        Paragraph head = new Paragraph(cp1250(TITLE), title);
+        doc.add(head);
+        Paragraph basis = new Paragraph(cp1250(LEGAL_BASIS), body);
+        doc.add(basis);
+
+        Paragraph which = new Paragraph(
+                cp1250("Exemplarul " + (copy + 1) + " din " + COPIES.length + " — " + COPIES[copy]),
+                label);
+        which.setSpacingAfter(6f);
+        doc.add(which);
+
+        PdfPTable series = new PdfPTable(1);
+        series.setWidthPercentage(100);
+        Paragraph seriesLine = new Paragraph();
+        seriesLine.add(text("Serie şi număr: " + seriesAndNumber(movement), label));
+        PdfPCell seriesCell = new PdfPCell();
+        seriesCell.addElement(seriesLine);
+        seriesCell.setPadding(4f);
+        series.addCell(seriesCell);
+        doc.add(series);
+
+        PdfPTable table = new PdfPTable(6);
+        try {
+            table.setWidths(new float[]{16, 11, 21, 13, 30, 9});
+        } catch (DocumentException ex) {
+            throw new IllegalStateException("Bad column widths for the Anexa 3 table", ex);
+        }
+        table.setWidthPercentage(100);
+        table.addCell(column(carrierColumn(movement, sender)));
+        table.addCell(column(dateColumn(movement)));
+        table.addCell(column(wasteColumn(movement)));
+        table.addCell(column(quantityColumn(movement)));
+        table.addCell(column(partiesColumn(movement, sender)));
+        table.addCell(column(observationsColumn(movement)));
+        doc.add(table);
+
+        Paragraph foot = new Paragraph(cp1250(FOOTNOTE), small);
+        foot.setSpacingBefore(4f);
+        doc.add(foot);
+
+        // The fourth copy is ours, not the law's: say so on the page rather than leaving whoever
+        // files it to wonder which of the three it is.
+        if (copy == COPIES.length - 1) {
+            doc.add(new Paragraph(cp1250(EXTRA_COPY_NOTE), small));
         }
     }
 
