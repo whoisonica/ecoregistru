@@ -148,16 +148,16 @@ class EvidenceCalculatorIT {
     }
 
     @Test
-    void takeoverStaysOutOfAnexa1AndFlagsTheHandoversForReview() {
+    void takeoverStaysOutOfAnexa1() {
         evidenceCalculator.regenerateYear(2025);
         Map<Integer, MonthlyEvidenceResponse> byMonth = byMonth(2025);
 
-        // The 500 kg taken over in January is art. 48: it neither raises the stock nor appears here.
+        // The 500 kg taken over in January is art. 48: it neither raises the stock nor appears
+        // here. That separation is the rule (HG 856/2002 art. 2 alin. (1)); the "for review" flag
+        // that once rode along with it is gone — the generator module does not follow takeovers.
         assertStock(byMonth.get(1), "2000");
-        // ...but the pair now trades third-party goods, so its handovers are flagged for review.
-        assertThat(byMonth.get(2).resaleSuspected()).isTrue();
-        assertThat(byMonth.get(3).resaleSuspected()).isFalse(); // disposed on our own site
-        assertThat(byMonth.get(1).resaleSuspected()).isFalse();
+        assertThat(byMonth.get(1).totalGenerated()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("2000"));
     }
 
     @Test

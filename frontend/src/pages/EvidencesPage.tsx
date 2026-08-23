@@ -291,19 +291,14 @@ export function EvidencesPage() {
                           {t.hazardous}
                         </Badge>
                       )}
-                      {r.incomplete && (
-                        <Badge variant="warning" className="ml-2" title={t.incompleteHint}>
-                          {t.incomplete}
+                      {r.totalUnclassifiedOut > 0 && (
+                        <Badge variant="danger" className="ml-2" title={t.missingCodeHint}>
+                          {t.missingCode}
                         </Badge>
                       )}
                       {r.awaitingWeighing && (
                         <Badge variant="warning" className="ml-2" title={t.awaitingWeighingHint}>
                           {t.awaitingWeighing}
-                        </Badge>
-                      )}
-                      {r.resaleSuspected && (
-                        <Badge variant="warning" className="ml-2" title={t.resaleSuspectedHint}>
-                          {t.resaleSuspected}
                         </Badge>
                       )}
                       <span className="block max-w-xs truncate text-xs text-gray-400">
@@ -315,9 +310,9 @@ export function EvidencesPage() {
                     <TD className="text-right">{kg(r.totalDisposed)}</TD>
                     <TD
                       className={`text-right ${
-                        r.incomplete ? "font-medium text-amber-700" : "text-gray-400"
+                        r.totalUnclassifiedOut > 0 ? "font-medium text-red-600" : "text-gray-400"
                       }`}
-                      title={r.incomplete ? t.incompleteHint : undefined}
+                      title={r.totalUnclassifiedOut > 0 ? t.missingCodeHint : undefined}
                     >
                       {kg(r.totalUnclassifiedOut)}
                     </TD>

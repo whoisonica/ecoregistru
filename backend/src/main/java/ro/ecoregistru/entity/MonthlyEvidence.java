@@ -80,14 +80,6 @@ public class MonthlyEvidence {
     BigDecimal totalUnclassifiedOut;
 
     /**
-     * Set when this line's handovers may be passing on third-party goods (the same work point and
-     * code also has art. 48 activity this year). A warning for the user, not a reclassification:
-     * Etapa 8 moves that flow to receptions/deliveries.
-     */
-    @Column(name = "resale_suspected", nullable = false)
-    boolean resaleSuspected;
-
-    /**
      * At least one exit this month is still waiting for the recipient's weighbridge, so the totals
      * are provisional and the line cannot be reported as it stands.
      */

@@ -102,8 +102,8 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                       <span className="ml-1 text-gray-500">{mv.operationCode}</span>
                     </>
                   ) : (
-                    <Badge variant="warning" title={t.incompleteHint}>
-                      {t.incomplete}
+                    <Badge variant="danger" title={t.missingCodeHint}>
+                      {t.missingCode}
                     </Badge>
                   )}
                 </TD>

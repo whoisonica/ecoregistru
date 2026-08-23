@@ -30,8 +30,6 @@ public record MonthlyEvidenceResponse(
         BigDecimal totalUnclassifiedOut,
         /** Quantity left the site with no operation code: the line cannot be reported as it is. */
         boolean incomplete,
-        /** The handovers here may be passing on third-party goods; for review, not for reporting. */
-        boolean resaleSuspected,
         /** An exit this month is still waiting for the recipient's weighbridge. */
         boolean awaitingWeighing,
         BigDecimal closingStock,

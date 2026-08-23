@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -129,14 +128,6 @@ public class EvidenceCalculator {
                 .collect(Collectors.groupingBy(
                         m -> new GroupKey(m.getWorkPoint().getId(), m.getWasteCode().getId())));
 
-        // Pairs that also traded third-party goods this year. Not aggregated — a handover of own
-        // waste and a handover passing collected goods on look identical, so the line is flagged
-        // for review instead of being reclassified behind the user's back.
-        Set<GroupKey> tradedGroups = movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ART_48)
-                .map(m -> new GroupKey(m.getWorkPoint().getId(), m.getWasteCode().getId()))
-                .collect(Collectors.toCollection(HashSet::new));
-
         Set<GroupKey> groups = new LinkedHashSet<>(byGroup.keySet());
         groups.addAll(carried.keySet());
 
@@ -149,7 +140,6 @@ public class EvidenceCalculator {
             CarriedOver from = carried.get(key);
             WorkPoint workPoint = group.isEmpty() ? from.workPoint() : group.get(0).getWorkPoint();
             WasteCode wasteCode = group.isEmpty() ? from.wasteCode() : group.get(0).getWasteCode();
-            boolean traded = tradedGroups.contains(key);
 
             Map<Integer, List<WasteMovement>> byMonth = group.stream()
                     .collect(Collectors.groupingBy(m -> m.getDate().getMonthValue()));
@@ -174,7 +164,6 @@ public class EvidenceCalculator {
                         .totalDisposed(totals.disposed)
                         .totalHandedOver(totals.handedOver)
                         .totalUnclassifiedOut(totals.unclassifiedOut)
-                        .resaleSuspected(traded && totals.handedOver.signum() > 0)
                         .awaitingWeighing(totals.awaitingWeighing)
                         .closingStock(running)
                         .generatedAt(now)
@@ -280,7 +269,6 @@ public class EvidenceCalculator {
                 e.getTotalHandedOver(),
                 e.getTotalUnclassifiedOut(),
                 e.getTotalUnclassifiedOut().signum() > 0 || e.isAwaitingWeighing(),
-                e.isResaleSuspected(),
                 e.isAwaitingWeighing(),
                 e.getClosingStock(),
                 e.getGeneratedAt());

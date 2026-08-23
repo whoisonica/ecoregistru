@@ -159,7 +159,6 @@ class Anexa1FormConformanceIT {
         assertThat(march.totalHandedOver()).usingComparator(BigDecimal::compareTo).isEqualTo(new BigDecimal("250"));
         assertThat(march.totalDisposed()).usingComparator(BigDecimal::compareTo).isEqualTo(BigDecimal.ZERO);
         assertThat(march.incomplete()).isFalse();
-        assertThat(march.resaleSuspected()).isFalse();
     }
 
     @Test
