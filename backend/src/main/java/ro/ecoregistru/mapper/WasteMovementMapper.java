@@ -40,6 +40,8 @@ public class WasteMovementMapper {
                 m.getPhysicalState(),
                 m.getStorageType(),
                 m.getTreatmentMethod(),
+                m.getTransportMeans(),
+                m.getWasteDestination(),
                 m.getOperationCode(),
                 partner != null ? partner.getId() : null,
                 partner != null ? partner.getName() : null,

@@ -17,6 +17,8 @@ import {
 import type {
   CompanyType,
   TransportDestination,
+  TransportMeans,
+  WasteDestination,
   MovementFilters,
   PhysicalState,
   StorageType,
@@ -372,6 +374,12 @@ function MovementFormDialog({
   const [treatmentMethod, setTreatmentMethod] = useState<TreatmentMethod | "">(
     editing?.treatmentMethod ?? ""
   );
+  const [transportMeans, setTransportMeans] = useState<TransportMeans | "">(
+    editing?.transportMeans ?? ""
+  );
+  const [wasteDestination, setWasteDestination] = useState<WasteDestination | "">(
+    editing?.wasteDestination ?? ""
+  );
   const [partnerId, setPartnerId] = useState(editing?.partnerId ?? "");
   const [internalGeneratorId, setInternalGeneratorId] = useState(
     editing?.internalGeneratorId ?? ""
@@ -480,6 +488,8 @@ function MovementFormDialog({
       physicalState: physicalState || null,
       storageType: storageType || null,
       treatmentMethod: treatmentMethod || null,
+      transportMeans: transportMeans || null,
+      wasteDestination: wasteDestination || null,
       // Backend rejects operationCode on non-R/D operations, so only send it when relevant.
       operationCode: requiresCode ? (operationCode as WasteOperationCode) : null,
       partnerId: partnerId || null,
@@ -733,6 +743,39 @@ function MovementFormDialog({
             >
               <option value="">{t.nomenclatorPlaceholder}</option>
               {Object.entries(e.treatmentMethod).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="mv-transport-means">{t.transportMeans}</Label>
+            <Select
+              id="mv-transport-means"
+              value={transportMeans}
+              onChange={(ev) => setTransportMeans(ev.target.value as typeof transportMeans)}
+            >
+              <option value="">{t.nomenclatorPlaceholder}</option>
+              {Object.entries(e.transportMeans).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="mv-destination">{t.wasteDestination}</Label>
+            <Select
+              id="mv-destination"
+              value={wasteDestination}
+              onChange={(ev) => setWasteDestination(ev.target.value as typeof wasteDestination)}
+            >
+              <option value="">{t.nomenclatorPlaceholder}</option>
+              {Object.entries(e.wasteDestination).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>

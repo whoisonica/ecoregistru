@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TransportDestination;
+import ro.ecoregistru.enums.TransportMeans;
+import ro.ecoregistru.enums.WasteDestination;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
@@ -39,6 +41,8 @@ public record WasteMovementRequest(
         PhysicalState physicalState,
         StorageType storageType,
         TreatmentMethod treatmentMethod,
+        TransportMeans transportMeans,
+        WasteDestination wasteDestination,
         WasteOperationCode operationCode,
         UUID partnerId,
         UUID internalGeneratorId,

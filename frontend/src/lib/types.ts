@@ -46,6 +46,15 @@ export type StorageType =
  */
 export type TreatmentMethod = "TM" | "TC" | "TMC" | "TB" | "TT" | "D" | "A";
 
+/** Anexa 1 cap. 2, nota 4 — how the waste travelled. */
+export type TransportMeans = "AS" | "AN" | "H" | "CF" | "A";
+
+/**
+ * Anexa 1 cap. 2, nota 5 — where it ends up. Not the same as TransportDestination, which is the
+ * "Destinat:" box of Anexa 3: that one takes several ticks, this one exactly one value.
+ */
+export type WasteDestination = "DO" | "HP" | "HC" | "I" | "Vr" | "P" | "Ve" | "A";
+
 /**
  * The "Destinat:" ticks of Anexa 3 la HG 1061/2008. More than one is normal — the filled model
  * has an X on both "Colectării" and "Valorificării".
@@ -303,6 +312,10 @@ export interface WasteMovement {
   storageType: StorageType | null;
   /** Anexa 1 cap. 2 "Tratare: Modul". */
   treatmentMethod: TreatmentMethod | null;
+  /** Anexa 1 cap. 2 "Transport: Mijlocul". */
+  transportMeans: TransportMeans | null;
+  /** Anexa 1 cap. 2 "Transport: Destinaţia". */
+  wasteDestination: WasteDestination | null;
   operationCode: WasteOperationCode | null;
   /** Who performed the operation, when it was not us. Null = on our own site. */
   partnerId: string | null;
@@ -345,6 +358,8 @@ export interface WasteMovementInput {
   physicalState?: PhysicalState | null;
   storageType?: StorageType | null;
   treatmentMethod?: TreatmentMethod | null;
+  transportMeans?: TransportMeans | null;
+  wasteDestination?: WasteDestination | null;
   /** Required for RECOVERED and DISPOSED; rejected on the other operations. */
   operationCode?: WasteOperationCode | null;
   /** Optional everywhere: names the operator when the operation was not performed by us. */

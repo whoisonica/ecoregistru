@@ -185,3 +185,21 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 - SIM / ANPM — [raportare.anpm.ro](https://raportare.anpm.ro/) · [ghid registrul-deseurilor](https://registrul-deseurilor.ro/2025/08/07/anpm-a-deschis-sesiunea-de-raportare-pentru-2024-ce-trebuie-sa-stii-si-cum-te-ajuta-registrul-deseurilor/)
 - AFM — [Calendar fiscal AFM](https://www.afm.ro/taxe_calendar_fiscal.php) · [Instrucțiuni completare declarație](https://www.afm.ro/main/venituri/afm_declaratii-instructiuni.pdf) · [Lege5 instrucțiuni 11.12.2023](https://lege5.ro/gratuit/ge2dmmrvgayda/instructiunile-de-completare-a-formularului-declaratie-privind-obligatiile-la-fondul-pentru-mediu-din-11122023)
 - SIATD / AFM (cercetare §5, iulie 2026) — [Ordin 701/2024 – Portal Legislativ](https://legislatie.just.ro/Public/DetaliiDocument/281612) · [Instrucțiuni SIATD 2020 – Portal Legislativ](https://legislatie.just.ro/Public/DetaliiDocumentAfis/229538) · [Ordin 701/2024 PDF (ecologic.rec.ro)](https://ecologic.rec.ro/wp-content/uploads/2024/04/Ordin-MMAP-701-2024-Instructiuni-Aplicatia-SIATD.pdf) · [Ecologic – SIATD obligatoriu aproape tot domeniul](https://ecologic.rec.ro/siatd-ul-a-devenit-obligatoriu-pentru-aproape-tot-domeniul-gestionarii-deseurilor/) · [AFM – Legislație declarații/obligații](https://www.afm.ro/legislatie_acte_normative_declaratii_obligatii.php) · [Ordin 572/2019 PDF](https://www.afm.ro/main/venituri/ordin572-2019.pdf) · [AFM – Instrucțiuni backup bază de date (PDF)](https://www.afm.ro/main/venituri/instructiuni_backup.pdf)
+
+---
+
+## Ce s-a implementat din toate astea (23.08.2026, etapele G1–G4)
+
+| Cerință legală | Unde e în cod | Stare |
+|---|---|---|
+| Anexa 1 cap. 1 — patru coloane de cantitate, fără „predare” | `WasteOperation` (fără `HANDED_OVER`), `EvidenceCalculator` | ✅ |
+| Anexa 1 cap. 2 — „Secţia” | `InternalGenerator`, sub punctul de lucru | ✅ |
+| Anexa 1 cap. 2 — Stocare (Tipul) și Tratare (Modul) | `StorageType`, `TreatmentMethod`, nota 1 și 2 verbatim | ✅ |
+| Anexa 1 cap. 2 — Scopul (V/E) | `TreatmentPurpose`, derivat din codul R/D; **doar `V`** se scrie | ✅ |
+| Anexa 1 cap. 2 — Transport (Mijlocul, Destinaţia) | `TransportMeans`, `WasteDestination`, nota 4 și 5 verbatim | ✅ |
+| Anexa 1 cap. 3 și 4 — cantitate + operaţie + operator | `operationCode` + `partner` pe mişcare | ✅ |
+| **Fişa oficială Anexa 1 tipărită** (antet + cele 4 capitole) | — | 🔜 G5 |
+| Anexa 3 la HG 1061/2008 — formularul de transport | `Anexa3FormGenerator` | ✅ |
+| Cantitate necunoscută la predare (cântărire la destinatar) | `weighedAtUnloading`, cantitate nullable, linie provizorie | ✅ |
+| Registrul art. 48 OUG 92/2021 | `Reception` / `Delivery` — schemă, fără ecrane | 🔜 Etapa 8 |
+| Declaraţia anuală (foaia „raportare deseuri generate”) | — | 🔜 G6 |

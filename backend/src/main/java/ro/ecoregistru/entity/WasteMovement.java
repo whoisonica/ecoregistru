@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.TransportDestination;
+import ro.ecoregistru.enums.TransportMeans;
+import ro.ecoregistru.enums.WasteDestination;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.Unit;
@@ -124,6 +126,20 @@ public class WasteMovement {
     @Enumerated(EnumType.STRING)
     @Column(name = "treatment_method", length = 10)
     TreatmentMethod treatmentMethod;
+
+    /** Anexa 1 cap. 2, "Transport: Mijlocul" — how the waste travelled (nota 4). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transport_means", length = 10)
+    TransportMeans transportMeans;
+
+    /**
+     * Anexa 1 cap. 2, "Transport: Destinaţia" — where it ends up (nota 5). Distinct from
+     * {@link #transportDestinations}, which is the "Destinat:" box of Anexa 3: that one says what
+     * a transport is for and takes several ticks, this one takes exactly one value.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "waste_destination", length = 10)
+    WasteDestination wasteDestination;
 
     /**
      * R1–R13 (recovery) / D1–D15 (disposal): the operation this quantity undergoes, and — through

@@ -263,6 +263,16 @@ rulează local și are testele verzi.
     adresa punctului de lucru.
   Migrarea **`V11`**. Suită verde: **99 de teste**.
 
+- ✅ **ETAPA G4 — ultimele două nomenclatoare din cap. 2 (2026-08-23):** „Transport: Mijlocul”
+  (nota 4 — AS/AN/H/CF/A) și „Transport: Destinaţia” (nota 5 — DO/HP/HC/I/Vr/P/Ve/A), verbatim din
+  formular, pe mișcare și în ecran, lângă stocare și tratare. Cu ele, **capitolul 2 al Anexei 1 are
+  toate coloanele**; până acum jumătate s-ar fi tipărit goale. Migrarea **`V12`**, aditivă.
+  ⚠️ **Omonimie de evitat:** `waste_movement_transport_destinations` (`V10`) e caseta „Destinat:” de
+  pe **Anexa 3** — ce se face cu transportul acela, cu mai multe bife posibile. `waste_destination`
+  (`V12`) e „Destinaţia” din **cap. 2 al Anexei 1** — unde ajunge deșeul, o singură valoare. Două
+  rubrici din două formulare diferite, de aceea sunt două coloane și două enum-uri
+  (`TransportDestination` vs. `WasteDestination`).
+
 - 📎 **Exemplele completate au sosit (2026-08-23).** `documente oficiale/` are acum **zece Anexe 1
   cu cifre reale** (Cluj 2022–2024, Timișoara 2022–2024, Bragadiru 2022–2024, Oradea 2022–2024) și
   modelul **Anexa 3 — dovada predării** (formularul de încărcare-descărcare deșeuri nepericuloase,
@@ -305,9 +315,9 @@ nu se salvează.
   `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
 
 **Etapa 2 e livrată integral (2a–2d, 23.08.2026); G1, G2 și G3 sunt livrate peste ea.** Următoarea
-migrare liberă e **`V12`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
+migrare liberă e **`V13`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
 generatori, `V8` = profilul de cont, `V9` = cererile de cont, `V10` = Anexa 3, `V11` = tipul de
-partener).
+partener, `V12` = transportul din cap. 2).
 
 ### Schițele de la meeting (docs, 23.08.2026) — ce confirmă și ce deschide
 
@@ -333,9 +343,23 @@ după ce au fost introduse datele”, „10 kg (se cântărește la descărcare)
   ochiul n-o poate reface din rânduri și exact cea în jurul căreia e construită fișa. Predările fără
   cod R/D (liniile vechi) apar în registru marcate „Incomplet”, iar cele necântărite cu „De
   cântărit”.
-- 🟡 **„Când dă print la dosar control să respecte structura de la tabelele pe care le am de la
-  Andreea !!! (la generator) + Anexa 1”** — asta e G5 (exportul oficial), unde corpusul de zece
-  fișiere completate e referința.
+- 🔜 **„Când dă print la dosar control să respecte structura de la tabelele pe care le am de la
+  Andreea !!! (la generator) + Anexa 1”** — **asta e G5, felia următoare**, și acum se știe exact ce
+  înseamnă. „4 tabele ca în exemple” (mesajul din 23.08) nu erau patru exemplare pe pagină, ci
+  **cele patru capitole ale fișei Anexa 1**, arătate în
+  `raportare deseuri generate_Bragadiru 2024.xlsx` și în
+  `deseuri generate_Cluj_2025_Iuhos Lorena.pdf`: antet (agent economic · an · tip și cod deșeu ·
+  stare fizică · u.m. · stoc), apoi **1. GENERAREA** · **2. STOCAREA PROVIZORIE, TRATAREA ŞI
+  TRANSPORTUL** · **3. VALORIFICAREA** · **4. ELIMINAREA**, fiecare cu 12 rânduri și TOTAL AN, tot
+  pe o singură pagină, câte una per cod de deșeu.
+  Ce alimentează fiecare capitol: **cap. 1** din motorul de evidență (are deja generat/valorificat/
+  eliminat/stoc), **cap. 2** din secție + stocare + tratare + transport (complet de la G4),
+  **cap. 3 și 4** din mișcările de ieșire, cu codul R/D și numele partenerului. Ce rămâne de decis:
+  ce se tipărește într-o lună cu mai multe predări diferite — fișa are exact 12 rânduri, iar
+  propunerea e să se listeze valorile distincte („R3, R13”), nu să se aleagă una.
+  ⚠️ **Antetul cap. 3/4 din exemple trimite la Legea 211/2011, abrogată de OUG 92/2021.** Numerele
+  anexelor sunt aceleași (3 = valorificare, 2 = eliminare), deci corectura e doar numele actului —
+  dar e o abatere de la model pe un formular oficial și **e decizia specialistei**, nu a noastră.
 - ✅ **„D5 peste tot; nu ar trebui să mai fie D1”** — deja aplicat (datele demo și
   `docs/legislatie.md` foloseau D5 din 20.08).
 - ✅ **„nu e interesată de preluare de la terți (pentru modulul generat)”** — deja: un cont de tip
@@ -357,8 +381,8 @@ după ce generatorul e complet. Ce urmează imediat, în ordine:
 | G1 | ✅ Registru închis · rol comercial de partener · generator intern · operațiuni pe tip de cont | 2 | **GATA** |
 | G2 | ✅ Formular de cerere de cont · profil de firmă · cap. 2 (stocare/tratare) sub codul de deșeu | G1 | **GATA** |
 | G3 | ✅ **Anexa 3 — dovada predării**, generată din mișcare · cantitate cântărită la descărcare | G2 | **GATA** |
-| G4 | Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | S |
-| G5 | **Export oficial Anexa 1** (4 capitole), verificat pe cele 10 fișiere completate | G4 | L |
+| G4 | ✅ Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | **GATA** |
+| G5 | 🔜 **Fișa oficială Anexa 1** — antet + cele 4 capitole, o pagină per cod, ca în exemplele completate | G4 | L |
 | G6 | **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc | G5 | M |
 
 **Ce a rămas deschis după Etapa 2, în ordinea în care doare:**

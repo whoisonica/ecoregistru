@@ -3,6 +3,8 @@ package ro.ecoregistru.controller.response;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TransportDestination;
+import ro.ecoregistru.enums.TransportMeans;
+import ro.ecoregistru.enums.WasteDestination;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.TreatmentPurpose;
 import ro.ecoregistru.enums.Unit;
@@ -41,6 +43,10 @@ public record WasteMovementResponse(
         StorageType storageType,
         /** Anexa 1 cap. 2 "Tratare: Modul". */
         TreatmentMethod treatmentMethod,
+        /** Anexa 1 cap. 2 "Transport: Mijlocul". */
+        TransportMeans transportMeans,
+        /** Anexa 1 cap. 2 "Transport: Destinaţia". */
+        WasteDestination wasteDestination,
         WasteOperationCode operationCode,
         UUID partnerId,
         String partnerName,

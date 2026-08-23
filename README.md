@@ -66,6 +66,31 @@ Current status and the feature-by-feature log: [`docs/status.md`](docs/status.md
 
 ---
 
+## The generator module
+
+The application is built around what a waste generator actually has to do, in the order it happens.
+
+- **Closed register.** There is no self-registration. A prospective client fills in a public intake
+  form; support reads the answers and creates the company from them. The answers become the account
+  profile, and the profile decides what the screens offer — the R/D operations this business works
+  with, the waste codes on its authorization, and the transport details only a collector is asked
+  for. An unanswered profile narrows nothing.
+- **Two axes on a partner.** What they are — generator or collector — and which way the invoice
+  travels — client (we hand waste over and we invoice them) or supplier (they do the work and they
+  invoice us). One partner is routinely both, so the commercial role is two flags, not an enum.
+  Hauling is neither: it is a rubric of one particular transport, on the movement.
+- **Three location levels.** Company address, work point address, and the internal generator — the
+  section inside the work point that produced the waste, which is what Anexa 1 cap. 2 prints under
+  "Secţia".
+- **No "handover" operation.** HG 856/2002 anexa nr. 1 cap. 1 has no such column, and cap. 3 / 4
+  report a quantity together with its R/D operation *and* the operator who performed it. Handing
+  waste to a recycler is therefore a recovery performed by that partner.
+- **Anexa 3 la HG 1061/2008** — the transport form — is generated from a recorded movement, rubric
+  by rubric after the filled models. A load the recipient will weigh is recorded with **no
+  quantity**: the cell prints empty, exactly as it reaches the depot on paper, and the monthly
+  evidence line is reported provisional until the weight comes back. Neither zero nor an estimate
+  stands in for a measurement.
+
 ## Regulatory note
 
 The generic evidence export (Excel/PDF) is implemented and explicitly labelled as an

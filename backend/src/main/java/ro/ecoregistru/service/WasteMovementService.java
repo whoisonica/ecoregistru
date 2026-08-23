@@ -88,6 +88,8 @@ public class WasteMovementService {
                 .physicalState(request.physicalState())
                 .storageType(request.storageType())
                 .treatmentMethod(request.treatmentMethod())
+                .transportMeans(request.transportMeans())
+                .wasteDestination(request.wasteDestination())
                 .operationCode(request.operationCode())
                 .partner(partner)
                 .internalGenerator(internalGenerator)
@@ -139,6 +141,8 @@ public class WasteMovementService {
         movement.setPhysicalState(request.physicalState());
         movement.setStorageType(request.storageType());
         movement.setTreatmentMethod(request.treatmentMethod());
+        movement.setTransportMeans(request.transportMeans());
+        movement.setWasteDestination(request.wasteDestination());
         movement.setOperationCode(request.operationCode());
         movement.setPartner(partner);
         movement.setInternalGenerator(internalGenerator);

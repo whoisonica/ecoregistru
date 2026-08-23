@@ -100,7 +100,9 @@ export const strings = {
     operation: "Operațiune",
     physicalState: "Stare fizică",
     physicalStatePlaceholder: "— fără —",
-    storageAndTreatment: "Stocare și tratare (cap. 2)",
+    storageAndTreatment: "Stocare, tratare și transport (cap. 2)",
+    transportMeans: "Transport — mijlocul",
+    wasteDestination: "Transport — destinația",
     storageType: "Stocare — tipul",
     treatmentMethod: "Tratare — ce se face",
     nomenclatorPlaceholder: "— fără —",
@@ -477,6 +479,26 @@ export const strings = {
       TB: "TB — Tratare biochimică",
       TT: "TT — Tratare termică",
       D: "D — Deshidratare",
+      A: "A — Altele",
+    },
+    // HG 856/2002, anexa nr. 1, cap. 2, nota 4 — mijlocul de transport.
+    transportMeans: {
+      AS: "AS — Autospeciale",
+      AN: "AN — Auto nespecial",
+      H: "H — Transport hidraulic",
+      CF: "CF — Cale ferată",
+      A: "A — Altele",
+    },
+    // HG 856/2002, anexa nr. 1, cap. 2, nota 5 — destinația deșeului. Alta decât caseta
+    // „Destinat:” de pe Anexa 3: aici e o singură valoare.
+    wasteDestination: {
+      DO: "DO — Depozitul de gunoi al orașului/comunei",
+      HP: "HP — Haldă proprie",
+      HC: "HC — Haldă industrială comună",
+      I: "I — Incinerare în scopul eliminării",
+      Vr: "Vr — Valorificare prin agenți economici autorizați",
+      P: "P — Utilizare în propria întreprindere",
+      Ve: "Ve — Valorificare energetică prin agenți autorizați",
       A: "A — Altele",
     },
     // Anexa 3 la HG 1061/2008, caseta „Destinat:”. Se pot bifa mai multe.
