@@ -180,6 +180,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Anexa 3 | **Mișcări** or **Evidențe** → row action | A 4-page PDF, one page per copy, the fourth marked as the file copy |
 | Handover register | **Evidențe** (default view) | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending |
 | Monthly Anexa 1 | **Evidențe** → "Anexa 1 — lunar" | The running stock, which is the only figure the register cannot show |
+| **The Anexa 1 form** | **Evidențe** → "Fișa Anexa 1" | A PDF, one page per waste code: header plus the four chapters, twelve rows and a TOTAL AN each |
 
 ### Tests
 

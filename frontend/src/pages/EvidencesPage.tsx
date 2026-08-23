@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, FileText, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import {
+  downloadAnexa1Form,
   downloadEvidenceExport,
   useEvidences,
   useRegenerateEvidence,
@@ -103,6 +104,17 @@ export function EvidencesPage() {
     });
   }
 
+  async function handleAnexa1() {
+    setExporting("pdf");
+    try {
+      await downloadAnexa1Form(filters);
+    } catch (err) {
+      notify(apiErrorMessage(err, t.anexa1Error), "error");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   async function handleExport(format: "xlsx" | "pdf") {
     setExporting(format);
     try {
@@ -122,6 +134,15 @@ export function EvidencesPage() {
           <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* The official form first: it is the one the client actually files. */}
+          <Button
+            onClick={handleAnexa1}
+            disabled={rows.length === 0 || exporting !== null}
+            title={t.anexa1Hint}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {t.anexa1}
+          </Button>
           {/* Export is read-only: available to every tenant member, viewer included. */}
           <Button
             variant="outline"

@@ -38,6 +38,7 @@ public class EvidenceController {
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
+    ro.ecoregistru.service.export.Anexa1FormGenerator anexa1FormGenerator;
     CompanyRepository companyRepository;
 
     @GetMapping
@@ -59,6 +60,24 @@ public class EvidenceController {
      * Read-only: any authenticated tenant member, including CLIENT_VIEWER. Exports exactly
      * what the last regeneration cached (no recompute); an empty cache yields a header-only file.
      */
+    /**
+     * The Anexa 1 form itself (HG 856/2002) — one page per waste code per work point, with the
+     * identification header and the four chapters. This is the document the client files; the
+     * "export" below is an unofficial working summary and stays separate on purpose.
+     */
+    @GetMapping("/anexa1")
+    public ResponseEntity<byte[]> anexa1(@RequestParam int year,
+                                         @RequestParam(required = false) UUID workPointId) {
+        byte[] body = anexa1FormGenerator.render(evidenceCalculator.anexa1(year, workPointId));
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("anexa1-" + year + ".pdf")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
     @GetMapping("/export")
     public ResponseEntity<byte[]> export(
             @RequestParam int year,

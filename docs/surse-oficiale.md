@@ -405,13 +405,17 @@ Observaţii: aviz
 3. **Destinatarul e scris cu punctul de lucru, nu cu sediul** („P.L. ILFOV, Şos. de Centura nr. 2-8,
    Bragadiru”). De aceea partenerul are două adrese.
 
-🟠 **Actul cere 3 exemplare; noi tipărim 4.** Art. 20 alin. (2) enumeră trei: unul rămâne la
-expeditor, unul la transportator, unul ajunge la destinatar prin transportator. Specialista a cerut
-**patru**, iar diferenţa e al patrulea exemplar — **copia de arhivă a expeditorului**, cea care
-rămâne la dosar după ce exemplarul „expeditor” pleacă semnat cu marfa. Nu e o cerinţă legală, e o
-practică de evidenţă, iar formularul generat o spune pe faţă: fiecare exemplar e etichetat, iar al
-patrulea scrie explicit că e în plus faţă de cele trei din act. Actul nu interzice copii
-suplimentare — cere ca trei să existe şi să ajungă unde trebuie.
+**Art. 20 alin. (2): formularul se completează de expeditor în 3 exemplare** — unul rămâne la
+expeditor, unul la transportator, unul ajunge la destinatar prin transportator. Generatorul produce
+**un** formular; cele trei exemplare se obţin tipărind documentul de trei ori, fiindcă sunt copii
+identice care se semnează separat, nu variante diferite ale aceluiaşi document.
+
+⚠️ **A nu se confunda cu „cele 4 tabele”.** Sunt două documente diferite, iar confuzia s-a şi
+produs pe 23.08:
+- **Anexa 3 la HG 1061/2008** = formularul de transport de aici, un tabel, per transport. Modele:
+  `documente oficiale/Anexa 3_model.pdf` şi `ANEXA 3 model_CARTON.docx`.
+- **„Cele 4 tabele”** = cele patru capitole ale fişei **Anexa 1 la HG 856/2002**, per cod de deşeu
+  şi per an. Model: `documente oficiale/deseuri generate_Cluj_2025_Iuhos Lorena.pdf`.
 
 ---
 

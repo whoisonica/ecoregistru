@@ -40,6 +40,29 @@ export function useRegenerateEvidence() {
  * it streams a blob and triggers a browser download, so it lives outside TanStack's cache.
  * Uses the same filters as the list so the file matches what's on screen.
  */
+/**
+ * The Anexa 1 form itself — the document the client files, one page per waste code per work point.
+ * Separate from the "export" below, which is an unofficial working summary and says so on its own
+ * header; mixing the two into one button is how somebody ends up filing the wrong paper.
+ */
+export async function downloadAnexa1Form(filters: EvidenceFilters): Promise<void> {
+  const params: Record<string, string | number> = { year: filters.year };
+  if (filters.workPointId) params.workPointId = filters.workPointId;
+
+  const res = await api.get("/api/v1/evidences/anexa1", { params, responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `anexa1-${filters.year}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export async function downloadEvidenceExport(
   filters: EvidenceFilters,
   format: "xlsx" | "pdf"

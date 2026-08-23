@@ -18,6 +18,7 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.MonthlyEvidenceRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.export.Anexa1Sheet;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -67,6 +68,7 @@ public class EvidenceCalculator {
     MonthlyEvidenceRepository evidenceRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
+    ro.ecoregistru.service.export.Anexa1SheetBuilder anexa1SheetBuilder;
 
     /** Groups movements by the (work point, waste code) an evidence line is scoped to. */
     private record GroupKey(UUID workPointId, UUID wasteCodeId) {}
@@ -182,6 +184,23 @@ public class EvidenceCalculator {
 
         evidenceRepository.saveAll(lines);
         return lines.size();
+    }
+
+    /**
+     * The Anexa 1 sheets for a year: one per (work point, waste code), in the shape the form
+     * prints. Chapter 1 comes from the cached monthly lines — the stock identity has one
+     * implementation and it is the one above — while chapters 2 to 4 need attributes the cache
+     * does not carry, so they are read from the movements themselves.
+     */
+    @Transactional(readOnly = true)
+    public List<Anexa1Sheet> anexa1(int year, UUID workPointId) {
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.getReferenceById(tenantId);
+        List<MonthlyEvidenceResponse> lines = list(year, null, workPointId);
+        List<WasteMovement> movements = movementRepository
+                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+        return anexa1SheetBuilder.build(company, year, lines, movements);
     }
 
     @Transactional(readOnly = true)

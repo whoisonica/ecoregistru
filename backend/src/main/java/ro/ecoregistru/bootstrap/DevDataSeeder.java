@@ -269,6 +269,13 @@ public class DevDataSeeder implements CommandLineRunner {
                 .unit(Unit.KG)
                 .operation(op)
                 .physicalState(physicalState)
+                // Cap. 2 of Anexa 1, filled the way the model fills it: stored in plastic
+                // containers, hauled by ordinary vehicle, recovery going to an authorised operator
+                // and disposal to the municipal landfill.
+                .storageType(StorageType.RP)
+                .transportMeans(operationCode == null ? null : TransportMeans.AN)
+                .wasteDestination(operationCode == null ? null
+                        : operationCode.isRecovery() ? WasteDestination.Vr : WasteDestination.DO)
                 .operationCode(operationCode)
                 .partner(partner)
                 .documentReference(docRef)

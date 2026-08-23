@@ -258,6 +258,10 @@ export const strings = {
     regenerated: "Evidență regenerată: {count} linii pentru {year}.",
     // export
     export: "Export",
+    anexa1: "Fișa Anexa 1",
+    anexa1Hint:
+      "Formularul oficial (HG 856/2002): antet + cele 4 capitole, o pagină per cod de deșeu.",
+    anexa1Error: "Fișa nu a putut fi generată.",
     exportExcel: "Export Excel",
     exportPdf: "Export PDF",
     exportError: "Exportul a eșuat. Încearcă din nou.",

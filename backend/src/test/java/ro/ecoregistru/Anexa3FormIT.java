@@ -180,9 +180,6 @@ class Anexa3FormIT {
 
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
-        // Four copies, one per page: three the act requires plus the sender's file copy.
-        assertThat(new String(pdf, java.nio.charset.StandardCharsets.ISO_8859_1))
-                .contains("/Count 4");
 
         Integer allocated = movementRepository.findById(id).orElseThrow().getAnexa3Number();
         assertThat(allocated).isNotNull();

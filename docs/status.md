@@ -273,6 +273,27 @@ rulează local și are testele verzi.
   rubrici din două formulare diferite, de aceea sunt două coloane și două enum-uri
   (`TransportDestination` vs. `WasteDestination`).
 
+- ✅ **ETAPA G5 — fişa oficială Anexa 1 (2026-08-24):** documentul spre care lucra tot modulul.
+  `GET /api/v1/evidences/anexa1?year=&workPointId=` întoarce un PDF cu **o pagină per cod de deşeu**
+  (pe punct de lucru, fiindcă evidenţa se ţine pe punct de lucru): antet de identificare, apoi
+  **cele patru capitole**, fiecare cu 12 rânduri şi TOTAL AN, plus cele cinci note verbatim.
+  Buton **„Fişa Anexa 1”** în ecranul Evidenţe.
+  - **Cap. 1 vine din motorul de evidenţă**, nu recalculat: identitatea stocului are o singură
+    implementare şi aia rămâne. Cap. 2–4 se citesc din mişcări, fiindcă au nevoie de atribute pe
+    care cache-ul lunar nu le poartă (secţia, recipientul, tratarea, operaţia, operatorul).
+  - **Cap. 2 numără la „Tratare” doar ce am făcut noi**, pe amplasamentul propriu. O valorificare
+    făcută de partener se tratează la el, deci apare în cap. 3 — exact cum arată modelul completat,
+    cu 0.000 la tratare şi cantitatea întreagă la valorificare.
+  - **O lună cu mai multe predări diferite** listează valorile distincte („R3, R13”; două nume de
+    operator). Fişa are exact 12 rânduri; a alege una şi a le pierde pe celelalte ar pune pe un
+    formular oficial o cifră pe care n-a înregistrat-o nimeni.
+  - ⚠️ **O abatere deliberată de la modele:** ele scriu „conform Anexei 3 / Anexei 2 din Legea
+    211/2011”, act **abrogat** de OUG 92/2021. Anexele noului act au aceleaşi numere şi aceleaşi
+    liste de operaţiuni, deci referinţa e actualizată, nu reprodusă — un act abrogat tipărit pe un
+    formular depus la autoritate e exact genul de detaliu pe care îl vede un control.
+    🟠 **De confirmat cu specialista.**
+  Suită verde: **103 teste** (99 înainte), din care `Anexa1FormIT` nou.
+
 - 📎 **Exemplele completate au sosit (2026-08-23).** `documente oficiale/` are acum **zece Anexe 1
   cu cifre reale** (Cluj 2022–2024, Timișoara 2022–2024, Bragadiru 2022–2024, Oradea 2022–2024) și
   modelul **Anexa 3 — dovada predării** (formularul de încărcare-descărcare deșeuri nepericuloase,
@@ -382,7 +403,7 @@ după ce generatorul e complet. Ce urmează imediat, în ordine:
 | G2 | ✅ Formular de cerere de cont · profil de firmă · cap. 2 (stocare/tratare) sub codul de deșeu | G1 | **GATA** |
 | G3 | ✅ **Anexa 3 — dovada predării**, generată din mișcare · cantitate cântărită la descărcare | G2 | **GATA** |
 | G4 | ✅ Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | **GATA** |
-| G5 | 🔜 **Fișa oficială Anexa 1** — antet + cele 4 capitole, o pagină per cod, ca în exemplele completate | G4 | L |
+| G5 | ✅ **Fișa oficială Anexa 1** — antet + cele 4 capitole, o pagină per cod | G4 | **GATA** |
 | G6 | **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc | G5 | M |
 
 **Ce a rămas deschis după Etapa 2, în ordinea în care doare:**
