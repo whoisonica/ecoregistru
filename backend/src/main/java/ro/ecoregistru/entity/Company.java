@@ -47,6 +47,11 @@ public class Company {
     LocalDate environmentalAuthExpiry;
 
     String address;
+
+    /** "Date de identificare expeditor" on Anexa 3 prints it next to the CUI. */
+    @Column(name = "trade_register_number", length = 50)
+    String tradeRegisterNumber;
+
     String contactName;
     String contactEmail;
     String contactPhone;
@@ -94,6 +99,14 @@ public class Company {
 
     @Column(name = "transport_license_expiry")
     LocalDate transportLicenseExpiry;
+
+    /**
+     * The series printed on this company's Anexa 3 forms. Many companies buy pre-printed pads with
+     * their own series ("HMB" on the filled model), so it is theirs to set; the number after it is
+     * allocated by us, increasing per company.
+     */
+    @Column(name = "anexa3_series", length = 20)
+    String anexa3Series;
 
     @Column(nullable = false)
     boolean active;

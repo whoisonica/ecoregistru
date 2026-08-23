@@ -53,6 +53,24 @@ public class Partner {
     /** Authorization number (nr. autorizație). */
     String authorizationNumber;
 
+    /**
+     * Printed by Anexa 3 la HG 1061/2008 under "Date de identificare destinatar" and, when this
+     * partner does the hauling, under "Date de identificare transportator": the form asks for an
+     * address and a trade-register number next to the CUI.
+     */
+    @Column(length = 500)
+    String address;
+
+    @Column(name = "trade_register_number", length = 50)
+    String tradeRegisterNumber;
+
+    /** "Licenţa de transport mărfuri nepericuloase nr." + its expiry, for the carrier column. */
+    @Column(name = "transport_license_number")
+    String transportLicenseNumber;
+
+    @Column(name = "transport_license_expiry")
+    LocalDate transportLicenseExpiry;
+
     /** Authorization expiry date; alert when within 60 days. */
     LocalDate authorizationExpiry;
 

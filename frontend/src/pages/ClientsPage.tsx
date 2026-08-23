@@ -55,6 +55,8 @@ export function ClientsPage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
+  const [anexa3Series, setAnexa3Series] = useState("");
   // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
   const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
   const [formError, setFormError] = useState<false | "name" | "cui">(false);
@@ -92,6 +94,8 @@ export function ClientsPage() {
     setContactEmail("");
     setContactPhone("");
     setFormError(false);
+    setTradeRegisterNumber("");
+    setAnexa3Series("");
     setProfile(emptyCompanyProfile);
     setDialogOpen(true);
   }
@@ -108,6 +112,8 @@ export function ClientsPage() {
     setContactName(c.contactName ?? "");
     setContactEmail(c.contactEmail ?? "");
     setContactPhone(c.contactPhone ?? "");
+    setTradeRegisterNumber(c.tradeRegisterNumber ?? "");
+    setAnexa3Series(c.anexa3Series ?? "");
     setProfile({
       authorizedOperationCodes: c.authorizedOperationCodes ?? [],
       authorizedWasteCodes: c.authorizedWasteCodes ?? [],
@@ -140,6 +146,8 @@ export function ClientsPage() {
       contactName: contactName.trim() || null,
       contactEmail: contactEmail.trim() || null,
       contactPhone: contactPhone.trim() || null,
+      tradeRegisterNumber: tradeRegisterNumber.trim() || null,
+      anexa3Series: anexa3Series.trim() || null,
       authorizedOperationCodes: profile.authorizedOperationCodes,
       authorizedWasteCodeIds: profile.authorizedWasteCodes.map((w) => w.id),
       transportMeans: profile.transportMeans.trim() || null,
@@ -380,6 +388,28 @@ export function ClientsPage() {
               />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="c-reg">{strings.partners.tradeRegisterNumber}</Label>
+              <Input
+                id="c-reg"
+                value={tradeRegisterNumber}
+                onChange={(e) => setTradeRegisterNumber(e.target.value)}
+                placeholder={strings.partners.tradeRegisterNumberPlaceholder}
+              />
+            </div>
+            <div>
+              <Label htmlFor="c-anexa3-series">{t.anexa3Series}</Label>
+              <Input
+                id="c-anexa3-series"
+                value={anexa3Series}
+                onChange={(e) => setAnexa3Series(e.target.value)}
+                placeholder={t.anexa3SeriesPlaceholder}
+              />
+              <p className="mt-1 text-xs text-gray-500">{t.anexa3SeriesHint}</p>
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="c-contact-email">{t.contactEmail}</Label>
             <Input

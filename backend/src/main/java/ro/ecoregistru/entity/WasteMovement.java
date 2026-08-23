@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import ro.ecoregistru.enums.PhysicalState;
+import ro.ecoregistru.enums.TransportDestination;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.Unit;
@@ -17,7 +18,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -54,8 +57,31 @@ public class WasteMovement {
     @JoinColumn(name = "waste_code_id", nullable = false)
     WasteCode wasteCode;
 
-    @Column(nullable = false, precision = 14, scale = 3)
+    /**
+     * How much left, in {@link #unit}. Null only when {@link #weighedAtUnloading} is set: a corner
+     * shop has no weighbridge, so the collector weighs the load at the depot and the figure comes
+     * back afterwards. The filled Anexa 3 model works exactly this way — its quantity is written in
+     * by hand after weighing — and zero or an estimate would be a made-up number on an official
+     * form and in the Anexa 1 stock.
+     */
+    @Column(precision = 14, scale = 3)
     BigDecimal quantity;
+
+    /**
+     * The load is weighed by the recipient at unloading, so the quantity is not known yet. The
+     * movement is recorded, the transport form prints with the quantity cell empty, and the
+     * monthly evidence line is reported incomplete until someone fills the weight in.
+     */
+    @Column(name = "weighed_at_unloading", nullable = false)
+    boolean weighedAtUnloading;
+
+    /**
+     * Volume in cubic metres — the only measure available to whoever has no scale, and a rubric
+     * the form itself carries ("17 mc" on the filled model). Never a substitute for the weight:
+     * Anexa 1 is kept in kilograms.
+     */
+    @Column(name = "volume_m3", precision = 12, scale = 3)
+    BigDecimal volumeM3;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -132,6 +158,52 @@ public class WasteMovement {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "internal_generator_id")
     InternalGenerator internalGenerator;
+
+    // --- Anexa 3 la HG 1061/2008: the transport form printed from this movement ---
+
+    /** "Data descărcării". {@link #date} is the loading date the form asks for above it. */
+    @Column(name = "unload_date")
+    LocalDate unloadDate;
+
+    /**
+     * Who hauls the waste. Often the recipient itself, sometimes a separate carrier; null means
+     * we transport it ourselves, and the form then prints our own details in that column.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transport_partner_id")
+    Partner transportPartner;
+
+    /** "Date de identificare delegat şi nr. de înmatriculare mijloc de transport". */
+    @Column(name = "driver_name")
+    String driverName;
+
+    /**
+     * How the driver is identified on the paper — an ID series and number, or a CNP. One free-text
+     * rubric rather than a CNP column on purpose: a structured CNP would pull in the GDPR regime
+     * that OUG 31/2011 imposes on the borderou de achiziţie (Etapa 9), and nothing here needs the
+     * number as data.
+     */
+    @Column(name = "driver_identification", length = 100)
+    String driverIdentification;
+
+    @Column(name = "vehicle_registration", length = 50)
+    String vehicleRegistration;
+
+    /** The "Destinat:" ticks. More than one is normal — see {@link TransportDestination}. */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "waste_movement_transport_destinations",
+            joinColumns = @JoinColumn(name = "waste_movement_id"))
+    @Column(name = "destination", length = 30, nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    Set<TransportDestination> transportDestinations = new LinkedHashSet<>();
+
+    /** Allocated on the first generation and kept, so a reprint is the same document. */
+    @Column(name = "anexa3_series", length = 20)
+    String anexa3Series;
+
+    @Column(name = "anexa3_number")
+    Integer anexa3Number;
 
     /** Free text, e.g. aviz nr. */
     String documentReference;

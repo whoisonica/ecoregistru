@@ -18,5 +18,11 @@ public record PartnerRequest(
         LocalDate authorizationExpiry,
         @NotNull PartnerType type,
         boolean client,
-        boolean supplier
+        boolean supplier,
+
+        // --- What Anexa 3 prints about them, as recipient or as carrier ---
+        String address,
+        String tradeRegisterNumber,
+        String transportLicenseNumber,
+        LocalDate transportLicenseExpiry
 ) {}

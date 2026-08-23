@@ -89,6 +89,14 @@ export const strings = {
     wasteCodeSearch: "Caută după cod sau denumire…",
     quantity: "Cantitate",
     unit: "Unitate",
+    weighedAtUnloading: "Se cântărește la descărcare",
+    weighedAtUnloadingHint:
+      "Bifează dacă nu ai cântar și cantitatea o stabilește destinatarul la descărcare. Mișcarea se salvează fără cantitate, iar formularul de transport se tipărește cu rubrica goală — se completează pe loc, după cântărire.",
+    awaitingWeighing: "De cântărit",
+    awaitingWeighingHint:
+      "Deșeul a plecat, dar cantitatea nu e încă știută. Completeaz-o când primești cântarul de la destinatar.",
+    volumeM3: "Volum (mc)",
+    volumeM3Hint: "Singura măsură pe care o ai fără cântar. Nu ține loc de kilograme în Anexa 1.",
     operation: "Operațiune",
     physicalState: "Stare fizică",
     physicalStatePlaceholder: "— fără —",
@@ -111,7 +119,24 @@ export const strings = {
     notes: "Note",
     attachments: "Atașamente",
     hazardous: "Periculos",
+    // Anexa 3 — dovada predării
+    anexa3Section: "Anexa 3 — dovada predării",
+    anexa3SectionHint:
+      "Formularul de încărcare-descărcare deșeuri nepericuloase (HG 1061/2008), tipărit din această mișcare. Completează ce apare pe hârtie.",
+    anexa3Download: "Anexa 3",
+    anexa3Downloading: "Se generează...",
+    anexa3Error: "Formularul nu a putut fi generat.",
+    unloadDate: "Data descărcării",
+    transportPartner: "Transportator",
+    transportPartnerPlaceholder: "— transportăm noi —",
+    driverName: "Delegat (șofer)",
+    driverIdentification: "Act de identitate",
+    driverIdentificationPlaceholder: "ex. serie și nr. CI",
+    vehicleRegistration: "Nr. înmatriculare",
+    transportDestinations: "Destinat:",
+    transportDestinationsHint: "Se pot bifa mai multe, ca pe formular.",
     // validation / feedback
+    weighingNeedsPartner: "Cântărirea la descărcare o face destinatarul: alege partenerul care preia deșeul.",
     recoveryCodeRequired: "Alege un cod de valorificare (R) pentru valorificare.",
     disposalCodeRequired: "Alege un cod de eliminare (D) pentru eliminare.",
     legacyExitHint:
@@ -191,6 +216,13 @@ export const strings = {
     filterRole: "Rol",
     filterRoleAll: "Toate rolurile",
     roleRequired: "Alege cel puțin un rol: client, furnizor sau ambele.",
+    address: "Adresă",
+    tradeRegisterNumber: "Nr. Registrul Comerțului",
+    tradeRegisterNumberPlaceholder: "ex. J12/1351/2011",
+    transportLicenseNumber: "Licență de transport mărfuri",
+    transportLicenseExpiry: "Expiră licența",
+    anexa3Hint:
+      "Datele astea se tipăresc pe Anexa 3 când îi predai deșeu sau când el face transportul.",
     // form placeholders
     cuiPlaceholder: "ex. RO12345678",
     authorizationNumberPlaceholder: "ex. 123/2024",
@@ -247,6 +279,9 @@ export const strings = {
     incomplete: "Incomplet",
     incompleteHint:
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
+    awaitingWeighing: "De cântărit",
+    awaitingWeighingHint:
+      "O ieșire din luna asta așteaptă cântarul destinatarului, deci totalurile sunt provizorii.",
     resaleSuspected: "De verificat",
     resaleSuspectedHint:
       "La acest punct de lucru și cod există și deșeu preluat de la terți. Dacă predarea dă mai departe marfă preluată, ea nu aparține Anexei 1, ci registrului cronologic (art. 48).",
@@ -330,6 +365,9 @@ export const strings = {
     contactName: "Persoană de contact",
     contactEmail: "Email de contact",
     contactPhone: "Telefon de contact",
+    anexa3Series: "Serie formulare Anexa 3",
+    anexa3SeriesPlaceholder: "ex. HMB",
+    anexa3SeriesHint: "Apare pe formularele de transport; numărul îl alocăm noi, crescător.",
     // status / badges
     active: "Activ",
     inactive: "Inactiv",
@@ -424,6 +462,14 @@ export const strings = {
       TT: "TT — Tratare termică",
       D: "D — Deshidratare",
       A: "A — Altele",
+    },
+    // Anexa 3 la HG 1061/2008, caseta „Destinat:”. Se pot bifa mai multe.
+    transportDestination: {
+      COLECTARE: "Colectării",
+      STOCARE_TEMPORARA: "Stocării temporare",
+      TRATARE: "Tratării",
+      VALORIFICARE: "Valorificării",
+      ELIMINARE: "Eliminării",
     },
     physicalState: {
       SOLID: "Solid",

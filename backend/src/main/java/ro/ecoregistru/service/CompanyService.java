@@ -140,6 +140,8 @@ public class CompanyService {
                     wasteCodeRepository.findAllById(request.authorizedWasteCodeIds()));
             company.setAuthorizedWasteCodes(codes);
         }
+        company.setTradeRegisterNumber(blankToNull(request.tradeRegisterNumber()));
+        company.setAnexa3Series(blankToNull(request.anexa3Series()));
         company.setTransportMeans(blankToNull(request.transportMeans()));
         company.setTransportLicenseNumber(blankToNull(request.transportLicenseNumber()));
         company.setTransportLicenseExpiry(request.transportLicenseExpiry());
@@ -172,6 +174,7 @@ public class CompanyService {
                         .sorted(Comparator.comparing(WasteCode::getCode))
                         .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous()))
                         .toList(),
-                c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry());
+                c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry(),
+                c.getTradeRegisterNumber(), c.getAnexa3Series());
     }
 }

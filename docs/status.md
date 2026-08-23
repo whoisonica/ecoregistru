@@ -217,6 +217,36 @@ rulează local și are testele verzi.
   Suită verde: **92 de teste** (84 după G1), din care `AccountRequestIT` nou (4 teste) și patru
   teste noi în `GeneratorModuleIT` pentru restrângerea după profil. Frontend-ul compilează.
 
+- ✅ **ETAPA G3 — Anexa 3, dovada predării (2026-08-23):** după ce mișcarea e înregistrată, se
+  generează **formularul de încărcare-descărcare deșeuri nepericuloase** (Anexa 3 la HG 1061/2008)
+  ca PDF, din `GET /api/v1/movements/{id}/anexa3`. Layoutul urmează rubrică cu rubrică modelul
+  completat primit de la specialistă (seria HMB 180): transportatorul și delegatul în stânga, cele
+  două date lângă, deșeul și bifele „Destinat:” la mijloc, cantitatea, apoi expeditorul și
+  destinatarul în dreapta, observațiile la final.
+  - **Cantitatea poate lipsi, declarat.** Pe modelul primit cifra — „1,02” — e **scrisă de mână**,
+    după cântărire. Un magazin de cartier n-are cântar: predă deșeul, iar colectorul îl cântărește
+    la depozit. Bifa **„Se cântărește la descărcare”** face câmpul de cantitate inactiv (gri),
+    mișcarea se salvează fără cantitate, iar formularul se tipărește cu rubrica goală și o linie
+    care spune de ce. **Nici zero, nici estimare** — ar fi o cifră inventată și pe un document
+    legal, și în stocul din Anexa 1. Bifa cere un destinatar: cineva trebuie să facă cântărirea.
+  - **Linia lunară devine provizorie**, nu tăcută: `awaitingWeighing` marchează luna în care o
+    ieșire încă așteaptă cântarul, iar `incomplete` o include. Se completează editând mișcarea când
+    vine cântarul.
+  - **Volumul în mc** e singura măsură a celui fără cântar, și e o rubrică pe care formularul o are
+    („17 mc” pe model). Nu ține loc de kilograme: Anexa 1 se ține în kg.
+  - **Două refuzuri, ambele legale.** Titlul formularului spune *nepericuloase*, deci un cod
+    periculos e refuzat cu mesajul care trimite la formularul de expediție din anexa 2 (neimplementat),
+    nu tipărit pe documentul greșit. Și formularul descrie o predare, deci cere un destinatar.
+  - **„Destinat:” e multiplu**, nu unic: pe model sunt bifate două, „Colectării” și „Valorificării”.
+  - **Seria și numărul** se alocă la prima generare și se păstrează, deci retipărirea dă același
+    document (index unic pe firmă). Seria e configurabilă — multe firme au carnete pre-tipărite cu
+    seria lor.
+  - **Diacriticele** se randează prin **Cp1250**: Cp1252 n-are ă/ş/ţ și le-ar fi șters de pe un
+    formular oficial. Formele cu virgulă se pliază pe cele cu sedilă, care sunt și cele folosite de
+    textul legal.
+  Migrarea **`V10`** e aditivă, cu o singură relaxare: `waste_movements.quantity` devine nullable.
+  Suită verde: **99 de teste** (92 după G2), din care `Anexa3FormIT` nou (7 teste).
+
 - 📎 **Exemplele completate au sosit (2026-08-23).** `documente oficiale/` are acum **zece Anexe 1
   cu cifre reale** (Cluj 2022–2024, Timișoara 2022–2024, Bragadiru 2022–2024, Oradea 2022–2024) și
   modelul **Anexa 3 — dovada predării** (formularul de încărcare-descărcare deșeuri nepericuloase,
@@ -258,9 +288,39 @@ nu se salvează.
   găsește nimic. Cu 10 coduri nu conta; de la Etapa 1 încoace, cu 842, se vede. Reparație:
   `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
 
-**Etapa 2 e livrată integral (2a–2d, 23.08.2026); G1 și G2 sunt livrate peste ea.** Următoarea
-migrare liberă e **`V10`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
-generatori, `V8` = profilul de cont, `V9` = cererile de cont).
+**Etapa 2 e livrată integral (2a–2d, 23.08.2026); G1, G2 și G3 sunt livrate peste ea.** Următoarea
+migrare liberă e **`V11`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
+generatori, `V8` = profilul de cont, `V9` = cererile de cont, `V10` = Anexa 3).
+
+### Schițele de la meeting (docs, 23.08.2026) — ce confirmă și ce deschide
+
+Notițele de mână ale specialistei, șapte pagini. Confirmă G1–G3 aproape punct cu punct
+(„fără predare”, „doar ce are el nevoie de tipul lui de business”, „sub cod deșeu ⟹ stocare /
+tratare”, „după operațiune R1, R2 în funcție de ce s-a ales mai sus”, „Anexa 3 transport … la final
+după ce au fost introduse datele”, „10 kg (se cântărește la descărcare)”). Ce **nu** e încă făcut:
+
+- 🟠 **„La parteneri ⟹ fără transportator”**, cu săgeată spre „generator/colector”. Citit literal,
+  `PartnerType` ar trebui să nu mai fie `COLLECTOR / CARRIER / BOTH`, ci **generator / colector** —
+  transportatorul nu e un tip de partener, ci o rubrică pe mișcare (unde G3 tocmai l-a pus). Ar
+  cere o migrare pe un enum cu date existente, deci **nu s-a ghicit**: de confirmat.
+- 🟠 **„Evidență – Tabel: scot generat / adaug cantitate, data când s-o predat; la valorificare să
+  apară partenerul și cod V/R/D. Și atât.”** Schimbă coloanele ecranului de Evidențe. „Scot generat”
+  intră însă în tensiune cu cap. 1 din Anexa 1, care **are** coloana „Generate”, deci nu e clar dacă
+  e vorba de ecran sau de formular. De confirmat.
+- 🟡 **„Când dă print la dosar control să respecte structura de la tabelele pe care le am de la
+  Andreea !!! (la generator) + Anexa 1”** — asta e G5 (exportul oficial), unde corpusul de zece
+  fișiere completate e referința.
+- ✅ **„D5 peste tot; nu ar trebui să mai fie D1”** — deja aplicat (datele demo și
+  `docs/legislatie.md` foloseau D5 din 20.08).
+- ✅ **„nu e interesată de preluare de la terți (pentru modulul generat)”** — deja: un cont de tip
+  generator nu primește deloc operațiunea de preluare.
+- 📎 **„Anexa 1 e strict pentru generatorii de deșeuri de ambalaj (producători/importatori)”** și
+  **„SIM se bazează pe documentele pe care le avem”** — încadrează modulul de ambalaje, care rămâne
+  după modulul de generatori.
+
+Fișierul rămâne **negitignored local, dar necommis**: e o notiță internă scrisă de mână, iar repo-ul
+e public.
+
 
 **Ordinea s-a schimbat la meeting-ul din 23.08.2026:** se construiește întâi **modulul de
 generatori**, cap-coadă. Etapele 8–11 (depozit, borderou, groapă, ambalaje) rămân în listă, dar
@@ -270,7 +330,7 @@ după ce generatorul e complet. Ce urmează imediat, în ordine:
 |---|---|---|---|
 | G1 | ✅ Registru închis · rol comercial de partener · generator intern · operațiuni pe tip de cont | 2 | **GATA** |
 | G2 | ✅ Formular de cerere de cont · profil de firmă · cap. 2 (stocare/tratare) sub codul de deșeu | G1 | **GATA** |
-| G3 | **Anexa 3 — dovada predării**: formularul HG 1061/2008 ca document al predării, generat din mișcare | G2 | M |
+| G3 | ✅ **Anexa 3 — dovada predării**, generată din mișcare · cantitate cântărită la descărcare | G2 | **GATA** |
 | G4 | Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | S |
 | G5 | **Export oficial Anexa 1** (4 capitole), verificat pe cele 10 fișiere completate | G4 | L |
 | G6 | **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc | G5 | M |

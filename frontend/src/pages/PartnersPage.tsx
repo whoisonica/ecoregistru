@@ -65,6 +65,10 @@ export function PartnersPage() {
   const [type, setType] = useState<PartnerType>("COLLECTOR");
   const [isClient, setIsClient] = useState(false);
   const [isSupplier, setIsSupplier] = useState(true);
+  const [address, setAddress] = useState("");
+  const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
+  const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
+  const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
   const [nameError, setNameError] = useState(false);
   const [roleError, setRoleError] = useState(false);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
@@ -87,6 +91,10 @@ export function PartnersPage() {
     setType("COLLECTOR");
     setIsClient(false);
     setIsSupplier(true);
+    setAddress("");
+    setTradeRegisterNumber("");
+    setTransportLicenseNumber("");
+    setTransportLicenseExpiry("");
     setNameError(false);
     setRoleError(false);
     setDialogOpen(true);
@@ -101,6 +109,10 @@ export function PartnersPage() {
     setType(p.type);
     setIsClient(p.client);
     setIsSupplier(p.supplier);
+    setAddress(p.address ?? "");
+    setTradeRegisterNumber(p.tradeRegisterNumber ?? "");
+    setTransportLicenseNumber(p.transportLicenseNumber ?? "");
+    setTransportLicenseExpiry(p.transportLicenseExpiry ?? "");
     setNameError(false);
     setRoleError(false);
     setDialogOpen(true);
@@ -125,6 +137,10 @@ export function PartnersPage() {
       type,
       client: isClient,
       supplier: isSupplier,
+      address: address.trim() || null,
+      tradeRegisterNumber: tradeRegisterNumber.trim() || null,
+      transportLicenseNumber: transportLicenseNumber.trim() || null,
+      transportLicenseExpiry: transportLicenseExpiry || null,
     };
     try {
       if (editing) {
@@ -357,6 +373,41 @@ export function PartnersPage() {
               value={authorizationExpiry}
               onChange={(e) => setAuthorizationExpiry(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-4 border-t border-gray-200 pt-4">
+            <p className="text-xs text-gray-500">{t.anexa3Hint}</p>
+            <div>
+              <Label htmlFor="p-address">{t.address}</Label>
+              <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="p-reg">{t.tradeRegisterNumber}</Label>
+              <Input
+                id="p-reg"
+                value={tradeRegisterNumber}
+                onChange={(e) => setTradeRegisterNumber(e.target.value)}
+                placeholder={t.tradeRegisterNumberPlaceholder}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
+                <Input
+                  id="p-licence"
+                  value={transportLicenseNumber}
+                  onChange={(e) => setTransportLicenseNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="p-licence-expiry">{t.transportLicenseExpiry}</Label>
+                <DateInput
+                  id="p-licence-expiry"
+                  value={transportLicenseExpiry}
+                  onChange={(e) => setTransportLicenseExpiry(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </form>
       </Dialog>

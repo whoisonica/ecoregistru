@@ -46,6 +46,7 @@ public class WasteMovementService {
     InternalGeneratorRepository internalGeneratorRepository;
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
+    ro.ecoregistru.service.export.Anexa3FormGenerator anexa3FormGenerator;
     WasteMovementMapper mapper;
 
     @Transactional
@@ -69,6 +70,8 @@ public class WasteMovementService {
         validateOperation(request, company);
         validateOperationCode(request);
         validateAgainstProfile(request, company);
+        validateQuantity(request);
+        Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
 
         WasteMovement movement = WasteMovement.builder()
@@ -77,6 +80,8 @@ public class WasteMovementService {
                 .date(request.date())
                 .wasteCode(wasteCode)
                 .quantity(request.quantity())
+                .weighedAtUnloading(request.weighedAtUnloading())
+                .volumeM3(request.volumeM3())
                 .unit(request.unit())
                 .operation(request.operation())
                 .register(register)
@@ -86,6 +91,14 @@ public class WasteMovementService {
                 .operationCode(request.operationCode())
                 .partner(partner)
                 .internalGenerator(internalGenerator)
+                .unloadDate(request.unloadDate())
+                .transportPartner(carrier)
+                .driverName(request.driverName())
+                .driverIdentification(request.driverIdentification())
+                .vehicleRegistration(request.vehicleRegistration())
+                .transportDestinations(request.transportDestinations() == null
+                        ? new java.util.LinkedHashSet<>()
+                        : new java.util.LinkedHashSet<>(request.transportDestinations()))
                 .documentReference(request.documentReference())
                 .notes(request.notes())
                 .clientGeneratedId(request.clientGeneratedId())
@@ -110,12 +123,16 @@ public class WasteMovementService {
         validateOperation(request, company);
         validateOperationCode(request);
         validateAgainstProfile(request, company);
+        validateQuantity(request);
+        Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
 
         movement.setWorkPoint(workPoint);
         movement.setDate(request.date());
         movement.setWasteCode(wasteCode);
         movement.setQuantity(request.quantity());
+        movement.setWeighedAtUnloading(request.weighedAtUnloading());
+        movement.setVolumeM3(request.volumeM3());
         movement.setUnit(request.unit());
         movement.setOperation(request.operation());
         movement.setRegister(register);
@@ -125,6 +142,14 @@ public class WasteMovementService {
         movement.setOperationCode(request.operationCode());
         movement.setPartner(partner);
         movement.setInternalGenerator(internalGenerator);
+        movement.setUnloadDate(request.unloadDate());
+        movement.setTransportPartner(carrier);
+        movement.setDriverName(request.driverName());
+        movement.setDriverIdentification(request.driverIdentification());
+        movement.setVehicleRegistration(request.vehicleRegistration());
+        movement.setTransportDestinations(request.transportDestinations() == null
+                ? new java.util.LinkedHashSet<>()
+                : new java.util.LinkedHashSet<>(request.transportDestinations()));
         movement.setDocumentReference(request.documentReference());
         movement.setNotes(request.notes());
 
@@ -216,6 +241,36 @@ public class WasteMovementService {
         attachmentRepository.delete(attachment);
     }
 
+    /**
+     * Renders Anexa 3 la HG 1061/2008 for a movement that is already recorded, allocating the
+     * form's number the first time so a reprint stays the same document.
+     *
+     * <p>Two refusals, both legal rather than technical. The form covers a handover — it names an
+     * expeditor and a destinatar — so a movement with no partner has nobody to print on the right
+     * half. And its title says <em>nepericuloase</em>: a hazardous code belongs on the expedition
+     * form of anexa 2, which is a different document we do not produce yet, so we say that instead
+     * of printing the wrong one.
+     */
+    @Transactional
+    public byte[] renderAnexa3(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WasteMovement movement = requireMovement(id, tenantId);
+        Company company = requireCompany(tenantId);
+
+        if (!movement.getOperation().isExit() || movement.getPartner() == null) {
+            throw new BusinessException(ANEXA3_REQUIRES_HANDOVER);
+        }
+        if (movement.getWasteCode().isHazardous()) {
+            throw new BusinessException(ANEXA3_HAZARDOUS_NOT_ALLOWED);
+        }
+        if (movement.getAnexa3Number() == null) {
+            Integer max = movementRepository.findMaxAnexa3Number(tenantId);
+            movement.setAnexa3Number(max == null ? 1 : max + 1);
+            movement.setAnexa3Series(company.getAnexa3Series());
+        }
+        return anexa3FormGenerator.render(movement, company);
+    }
+
     // --- helpers ---
 
     private Company requireCompany(UUID tenantId) {
@@ -248,6 +303,37 @@ public class WasteMovementService {
             return null;
         }
         return partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
+    }
+
+    /**
+     * The quantity is required, unless the recipient is the one who weighs the load.
+     *
+     * <p>A shop that hands its cardboard to a collector has no weighbridge: the collector weighs it
+     * at the depot and the figure comes back afterwards. The filled Anexa 3 model works exactly
+     * that way — the quantity on it is written in by hand. Recording a zero, or an estimate, would
+     * put a made-up number both on an official transport form and in the Anexa 1 stock, so the
+     * quantity simply stays empty and the evidence line says it is provisional.
+     */
+    private void validateQuantity(WasteMovementRequest request) {
+        if (request.weighedAtUnloading()) {
+            // Somebody has to do the weighing, and it is the party taking the waste over.
+            if (request.partnerId() == null) {
+                throw new BusinessException(WEIGHING_NEEDS_RECIPIENT);
+            }
+            return;
+        }
+        if (request.quantity() == null) {
+            throw new BusinessException(QUANTITY_REQUIRED);
+        }
+    }
+
+    /** The carrier named on the transport form; null means we haul it ourselves. */
+    private Partner resolveCarrier(WasteMovementRequest request, UUID tenantId) {
+        if (request.transportPartnerId() == null) {
+            return null;
+        }
+        return partnerRepository.findByIdAndCompany_Id(request.transportPartnerId(), tenantId)
                 .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
     }
 

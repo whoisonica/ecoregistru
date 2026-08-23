@@ -240,6 +240,11 @@ export function EvidencesPage() {
                           {t.incomplete}
                         </Badge>
                       )}
+                      {r.awaitingWeighing && (
+                        <Badge variant="warning" className="ml-2" title={t.awaitingWeighingHint}>
+                          {t.awaitingWeighing}
+                        </Badge>
+                      )}
                       {r.resaleSuspected && (
                         <Badge variant="warning" className="ml-2" title={t.resaleSuspectedHint}>
                           {t.resaleSuspected}

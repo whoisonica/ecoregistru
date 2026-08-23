@@ -18,5 +18,11 @@ public record PartnerResponse(
         boolean supplier,
         boolean active,
         /** True when the authorization expires within 60 days (drives the UI badge). */
-        boolean expiringSoon
+        boolean expiringSoon,
+
+        // --- What Anexa 3 prints about them ---
+        String address,
+        String tradeRegisterNumber,
+        String transportLicenseNumber,
+        LocalDate transportLicenseExpiry
 ) {}

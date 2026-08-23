@@ -173,6 +173,7 @@ public class EvidenceCalculator {
                         .totalHandedOver(totals.handedOver)
                         .totalUnclassifiedOut(totals.unclassifiedOut)
                         .resaleSuspected(traded && totals.handedOver.signum() > 0)
+                        .awaitingWeighing(totals.awaitingWeighing)
                         .closingStock(running)
                         .generatedAt(now)
                         .build());
@@ -209,6 +210,13 @@ public class EvidenceCalculator {
     private Totals sum(List<WasteMovement> movements) {
         Totals t = new Totals();
         for (WasteMovement m : movements) {
+            // Waiting for the recipient's weighbridge: it left, but with how much is not known
+            // yet. Nothing is added to any column — a guess here would land on an official form —
+            // and the line is marked provisional instead.
+            if (m.getQuantity() == null) {
+                t.awaitingWeighing = true;
+                continue;
+            }
             BigDecimal kg = toKg(m.getQuantity(), m.getUnit());
             switch (m.getOperation()) {
                 case GENERATED -> t.generated = t.generated.add(kg);
@@ -252,8 +260,9 @@ public class EvidenceCalculator {
                 e.getTotalDisposed(),
                 e.getTotalHandedOver(),
                 e.getTotalUnclassifiedOut(),
-                e.getTotalUnclassifiedOut().signum() > 0,
+                e.getTotalUnclassifiedOut().signum() > 0 || e.isAwaitingWeighing(),
                 e.isResaleSuspected(),
+                e.isAwaitingWeighing(),
                 e.getClosingStock(),
                 e.getGeneratedAt());
     }
@@ -266,5 +275,7 @@ public class EvidenceCalculator {
         /** Subset of recovered + disposed: how much left as a handover. Not a stock term. */
         BigDecimal handedOver = BigDecimal.ZERO;
         BigDecimal unclassifiedOut = BigDecimal.ZERO;
+        /** At least one exit is still waiting for the recipient to weigh it. */
+        boolean awaitingWeighing = false;
     }
 }

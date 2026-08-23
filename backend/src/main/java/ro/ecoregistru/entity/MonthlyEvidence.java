@@ -88,6 +88,13 @@ public class MonthlyEvidence {
     boolean resaleSuspected;
 
     /**
+     * At least one exit this month is still waiting for the recipient's weighbridge, so the totals
+     * are provisional and the line cannot be reported as it stands.
+     */
+    @Column(name = "awaiting_weighing", nullable = false)
+    boolean awaitingWeighing;
+
+    /**
      * Cumulative closing stock at the end of this month — the "rămasă în stoc" column of
      * HG 856/2002 anexa nr. 1, cap. 1:
      * closingStock = previous month closingStock + generated − recovered − disposed − unclassifiedOut.

@@ -15,6 +15,7 @@ public class WasteMovementMapper {
 
     public WasteMovementResponse toResponse(WasteMovement m) {
         Partner partner = m.getPartner();
+        Partner carrier = m.getTransportPartner();
         InternalGenerator section = m.getInternalGenerator();
         List<AttachmentResponse> attachments = m.getAttachments().stream()
                 .map(this::toAttachmentResponse)
@@ -30,6 +31,8 @@ public class WasteMovementMapper {
                 m.getWasteCode().getName(),
                 m.getWasteCode().isHazardous(),
                 m.getQuantity(),
+                m.isWeighedAtUnloading(),
+                m.getVolumeM3(),
                 m.getUnit(),
                 m.getOperation(),
                 m.getRegister(),
@@ -46,6 +49,15 @@ public class WasteMovementMapper {
                 m.getNotes(),
                 attachments,
                 m.getClientGeneratedId(),
+                m.getUnloadDate(),
+                carrier != null ? carrier.getId() : null,
+                carrier != null ? carrier.getName() : null,
+                m.getDriverName(),
+                m.getDriverIdentification(),
+                m.getVehicleRegistration(),
+                new java.util.LinkedHashSet<>(m.getTransportDestinations()),
+                m.getAnexa3Series(),
+                m.getAnexa3Number(),
                 m.getCreatedAt(),
                 m.getUpdatedAt()
         );

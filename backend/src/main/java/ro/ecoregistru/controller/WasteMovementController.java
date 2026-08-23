@@ -4,6 +4,9 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -53,6 +56,23 @@ public class WasteMovementController {
     @PreAuthorize(CAN_WRITE)
     public WasteMovementResponse update(@PathVariable UUID id, @RequestBody @Valid WasteMovementRequest request) {
         return movementService.update(id, request);
+    }
+
+    /**
+     * Anexa 3 la HG 1061/2008, the transport form, as a PDF. Gated to writers because generating
+     * it allocates the form's number — a reprint then returns the same document.
+     */
+    @GetMapping("/{id}/anexa3")
+    @PreAuthorize(CAN_WRITE)
+    public ResponseEntity<byte[]> anexa3(@PathVariable UUID id) {
+        byte[] body = movementService.renderAnexa3(id);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("anexa3-" + id + ".pdf")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
     }
 
     @DeleteMapping("/{id}")

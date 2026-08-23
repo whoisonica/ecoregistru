@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { Plus, Pencil, Trash2, Paperclip } from "lucide-react";
+import { Plus, Pencil, Trash2, Paperclip, FileText } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
@@ -16,6 +16,7 @@ import {
 } from "@/hooks/useMovements";
 import type {
   CompanyType,
+  TransportDestination,
   MovementFilters,
   PhysicalState,
   StorageType,
@@ -40,6 +41,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
+import { api } from "@/lib/api";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -101,6 +103,33 @@ export function MovementsPage() {
   const [editing, setEditing] = useState<WasteMovement | null>(null);
 
   const hasFilters = Boolean(monthFilter || workPointFilter);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  /**
+   * Anexa 3 is the form for NON-hazardous waste — its own title says so — and it describes a
+   * handover, so it needs a recipient. The backend refuses the other cases; the button simply does
+   * not offer them.
+   */
+  function canPrintAnexa3For(m: WasteMovement) {
+    return !m.hazardous && m.partnerId != null && (m.operation === "RECOVERED" || m.operation === "DISPOSED");
+  }
+
+  async function downloadAnexa3(m: WasteMovement) {
+    setDownloadingId(m.id);
+    try {
+      const res = await api.get(`/api/v1/movements/${m.id}/anexa3`, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data as Blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `anexa3-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      notify(apiErrorMessage(err, t.anexa3Error), "error");
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   function openCreate() {
     setEditing(null);
@@ -240,7 +269,15 @@ export function MovementsPage() {
                     )}
                   </TD>
                   <TD className="whitespace-nowrap text-right">
-                    {m.quantity} {e.unit[m.unit]}
+                    {m.quantity != null ? (
+                      <>
+                        {m.quantity} {e.unit[m.unit]}
+                      </>
+                    ) : (
+                      <Badge variant="warning" title={t.awaitingWeighingHint}>
+                        {t.awaitingWeighing}
+                      </Badge>
+                    )}
                   </TD>
                   <TD>{m.partnerName || "—"}</TD>
                   <TD>{m.internalGeneratorName || "—"}</TD>
@@ -258,6 +295,17 @@ export function MovementsPage() {
                   {canWrite && (
                     <TD className="text-right">
                       <div className="flex justify-end gap-1">
+                        {canPrintAnexa3For(m) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={downloadingId === m.id}
+                            onClick={() => downloadAnexa3(m)}
+                          >
+                            <FileText className="mr-1 h-3.5 w-3.5" />
+                            {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
                           <Pencil className="mr-1 h-3.5 w-3.5" />
                           {strings.common.edit}
@@ -320,11 +368,24 @@ function MovementFormDialog({
   const [date, setDate] = useState(editing?.date ?? todayIso());
   const [wasteCode, setWasteCode] = useState<ComboboxItem | null>(
     editing
-      ? { id: editing.wasteCodeId, label: `${editing.wasteCode} — ${editing.wasteCodeName}` }
+      ? {
+          id: editing.wasteCodeId,
+          label: `${editing.wasteCode} — ${editing.wasteCodeName}`,
+          // Same marker the search results carry, so "is this hazardous?" has one answer here.
+          sublabel: editing.hazardous ? t.hazardous : undefined,
+        }
       : null
   );
   const [codeQuery, setCodeQuery] = useState("");
-  const [quantity, setQuantity] = useState(editing ? String(editing.quantity) : "");
+  const [quantity, setQuantity] = useState(
+    editing?.quantity != null ? String(editing.quantity) : ""
+  );
+  const [weighedAtUnloading, setWeighedAtUnloading] = useState(
+    editing?.weighedAtUnloading ?? false
+  );
+  const [volumeM3, setVolumeM3] = useState(
+    editing?.volumeM3 != null ? String(editing.volumeM3) : ""
+  );
   const [unit, setUnit] = useState(editing?.unit ?? "KG");
   const [operation, setOperation] = useState<WasteOperation>(editing?.operation ?? "GENERATED");
   const [physicalState, setPhysicalState] = useState<PhysicalState | "">(
@@ -342,6 +403,18 @@ function MovementFormDialog({
     editing?.internalGeneratorId ?? ""
   );
   const [documentReference, setDocumentReference] = useState(editing?.documentReference ?? "");
+  const [unloadDate, setUnloadDate] = useState(editing?.unloadDate ?? "");
+  const [transportPartnerId, setTransportPartnerId] = useState(editing?.transportPartnerId ?? "");
+  const [driverName, setDriverName] = useState(editing?.driverName ?? "");
+  const [driverIdentification, setDriverIdentification] = useState(
+    editing?.driverIdentification ?? ""
+  );
+  const [vehicleRegistration, setVehicleRegistration] = useState(
+    editing?.vehicleRegistration ?? ""
+  );
+  const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>(
+    editing?.transportDestinations ?? []
+  );
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -381,6 +454,13 @@ function MovementFormDialog({
   // profile means the intake form has not been answered yet, and then everything stays on offer.
   // The code being edited is always kept: a movement recorded before the profile existed has to
   // remain saveable without silently losing its operation.
+  // Same rule as the list button: the form covers a non-hazardous handover. The combobox marks a
+  // hazardous code with its sublabel, so that is where the answer comes from.
+  const canPrintAnexa3 =
+    (operation === "RECOVERED" || operation === "DISPOSED") &&
+    Boolean(partnerId) &&
+    wasteCode?.sublabel !== t.hazardous;
+
   const profileCodes = company?.authorizedOperationCodes ?? [];
   const codeOptions =
     profileCodes.length === 0
@@ -394,8 +474,16 @@ function MovementFormDialog({
     if (!workPointId) return strings.common.requiredField;
     if (!date) return strings.common.requiredField;
     if (!wasteCode) return t.wasteCodePlaceholder;
-    const qty = Number(quantity);
-    if (!quantity || Number.isNaN(qty) || qty <= 0) return t.quantity + ": " + strings.common.requiredField;
+    // The recipient's weighbridge decides the figure, so the field is left empty on purpose —
+    // exactly how the paper form reaches the depot.
+    if (!weighedAtUnloading) {
+      const qty = Number(quantity);
+      if (!quantity || Number.isNaN(qty) || qty <= 0) {
+        return t.quantity + ": " + strings.common.requiredField;
+      }
+    } else if (!partnerId) {
+      return t.weighingNeedsPartner;
+    }
     if (operation === "RECOVERED" && (!operationCode || !operationCode.startsWith("R")))
       return t.recoveryCodeRequired;
     if (operation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
@@ -410,7 +498,9 @@ function MovementFormDialog({
       workPointId,
       date,
       wasteCodeId: wasteCode!.id,
-      quantity: Number(quantity),
+      quantity: weighedAtUnloading ? null : Number(quantity),
+      weighedAtUnloading,
+      volumeM3: volumeM3 ? Number(volumeM3) : null,
       unit,
       operation,
       physicalState: physicalState || null,
@@ -422,6 +512,12 @@ function MovementFormDialog({
       internalGeneratorId: internalGeneratorId || null,
       documentReference: documentReference.trim() || null,
       notes: notes.trim() || null,
+      unloadDate: unloadDate || null,
+      transportPartnerId: transportPartnerId || null,
+      driverName: driverName.trim() || null,
+      driverIdentification: driverIdentification.trim() || null,
+      vehicleRegistration: vehicleRegistration.trim() || null,
+      transportDestinations,
     };
   }
 
@@ -528,8 +624,10 @@ function MovementFormDialog({
               type="number"
               step="any"
               min="0"
-              value={quantity}
+              value={weighedAtUnloading ? "" : quantity}
               onChange={(ev) => setQuantity(ev.target.value)}
+              disabled={weighedAtUnloading}
+              className={weighedAtUnloading ? "bg-gray-100 text-gray-400" : undefined}
             />
           </div>
           <div>
@@ -539,6 +637,35 @@ function MovementFormDialog({
               <option value="TONS">{e.unit.TONS}</option>
             </Select>
           </div>
+        </div>
+
+        <div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              checked={weighedAtUnloading}
+              onChange={(ev) => setWeighedAtUnloading(ev.target.checked)}
+            />
+            <span>
+              <span className="font-medium text-gray-800">{t.weighedAtUnloading}</span>
+              <span className="block text-xs text-gray-500">{t.weighedAtUnloadingHint}</span>
+            </span>
+          </label>
+          {weighedAtUnloading && (
+            <div className="mt-3">
+              <Label htmlFor="mv-volume">{t.volumeM3}</Label>
+              <Input
+                id="mv-volume"
+                type="number"
+                step="any"
+                min="0"
+                value={volumeM3}
+                onChange={(ev) => setVolumeM3(ev.target.value)}
+              />
+              <p className="mt-1 text-xs text-gray-500">{t.volumeM3Hint}</p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -671,6 +798,92 @@ function MovementFormDialog({
           </Select>
           <p className="mt-1 text-xs text-gray-500">{t.partnerHint}</p>
         </div>
+
+        {canPrintAnexa3 && (
+          <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+            <div>
+              <span className="text-sm font-semibold text-gray-800">{t.anexa3Section}</span>
+              <p className="text-xs text-gray-500">{t.anexa3SectionHint}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="mv-unload">{t.unloadDate}</Label>
+                <DateInput
+                  id="mv-unload"
+                  value={unloadDate}
+                  onChange={(ev) => setUnloadDate(ev.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="mv-carrier">{t.transportPartner}</Label>
+                <Select
+                  id="mv-carrier"
+                  value={transportPartnerId}
+                  onChange={(ev) => setTransportPartnerId(ev.target.value)}
+                >
+                  <option value="">{t.transportPartnerPlaceholder}</option>
+                  {(partners ?? [])
+                    .filter((p) => p.active)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="mv-driver">{t.driverName}</Label>
+                <Input
+                  id="mv-driver"
+                  value={driverName}
+                  onChange={(ev) => setDriverName(ev.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="mv-driver-id">{t.driverIdentification}</Label>
+                <Input
+                  id="mv-driver-id"
+                  value={driverIdentification}
+                  onChange={(ev) => setDriverIdentification(ev.target.value)}
+                  placeholder={t.driverIdentificationPlaceholder}
+                />
+              </div>
+              <div>
+                <Label htmlFor="mv-plate">{t.vehicleRegistration}</Label>
+                <Input
+                  id="mv-plate"
+                  value={vehicleRegistration}
+                  onChange={(ev) => setVehicleRegistration(ev.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <span className="block text-sm font-medium text-gray-700">
+                {t.transportDestinations}
+              </span>
+              <p className="text-xs text-gray-500">{t.transportDestinationsHint}</p>
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                {(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => (
+                  <label key={d} className="flex items-center gap-1.5 text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300"
+                      checked={transportDestinations.includes(d)}
+                      onChange={() =>
+                        setTransportDestinations((prev) =>
+                          prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
+                        )
+                      }
+                    />
+                    {e.transportDestination[d]}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <Label htmlFor="mv-doc">{t.documentReference}</Label>

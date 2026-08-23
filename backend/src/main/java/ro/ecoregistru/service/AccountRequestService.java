@@ -113,7 +113,9 @@ public class AccountRequestService {
                 Set.of(), // the free-text waste codes are mapped by hand; nothing is guessed here
                 request.getTransportMeans(),
                 request.getTransportLicenseNumber(),
-                request.getTransportLicenseExpiry()));
+                request.getTransportLicenseExpiry(),
+                null,   // trade register number: not asked on the intake form
+                null)); // Anexa 3 series: set later, when the client has a form pad
 
         Company company = companyRepository.getReferenceById(created.id());
         if (request.getWorkPointName() != null || request.getWorkPointAddress() != null) {

@@ -37,5 +37,9 @@ public record CompanyRequest(
         /** Asked of a collector: what it transports with, and its goods-transport licence. */
         String transportMeans,
         String transportLicenseNumber,
-        LocalDate transportLicenseExpiry
+        LocalDate transportLicenseExpiry,
+
+        /** Printed by Anexa 3 next to the CUI, and the series of this company's forms. */
+        String tradeRegisterNumber,
+        String anexa3Series
 ) {}

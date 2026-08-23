@@ -32,6 +32,8 @@ public record MonthlyEvidenceResponse(
         boolean incomplete,
         /** The handovers here may be passing on third-party goods; for review, not for reporting. */
         boolean resaleSuspected,
+        /** An exit this month is still waiting for the recipient's weighbridge. */
+        boolean awaitingWeighing,
         BigDecimal closingStock,
         Instant generatedAt
 ) {}

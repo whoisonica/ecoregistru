@@ -4,6 +4,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
+import ro.ecoregistru.enums.TransportDestination;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
@@ -12,6 +13,7 @@ import ro.ecoregistru.enums.WasteRegister;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -27,7 +29,10 @@ public record WasteMovementRequest(
         @NotNull UUID workPointId,
         @NotNull LocalDate date,
         @NotNull UUID wasteCodeId,
-        @NotNull @DecimalMin(value = "0.0", inclusive = false) BigDecimal quantity,
+        /** Required unless weighedAtUnloading is set: the recipient weighs the load. */
+        @DecimalMin(value = "0.0", inclusive = false) BigDecimal quantity,
+        boolean weighedAtUnloading,
+        @DecimalMin(value = "0.0", inclusive = false) BigDecimal volumeM3,
         @NotNull Unit unit,
         @NotNull WasteOperation operation,
         WasteRegister register,
@@ -38,5 +43,13 @@ public record WasteMovementRequest(
         UUID partnerId,
         UUID internalGeneratorId,
         String documentReference,
-        String notes
+        String notes,
+
+        // --- Anexa 3 la HG 1061/2008: filled in when the transport form is going to be printed ---
+        LocalDate unloadDate,
+        UUID transportPartnerId,
+        String driverName,
+        String driverIdentification,
+        String vehicleRegistration,
+        Set<TransportDestination> transportDestinations
 ) {}

@@ -53,6 +53,10 @@ public class PartnerService {
                 .type(request.type())
                 .client(request.client())
                 .supplier(request.supplier())
+                .address(request.address())
+                .tradeRegisterNumber(request.tradeRegisterNumber())
+                .transportLicenseNumber(request.transportLicenseNumber())
+                .transportLicenseExpiry(request.transportLicenseExpiry())
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
@@ -71,6 +75,10 @@ public class PartnerService {
         partner.setType(request.type());
         partner.setClient(request.client());
         partner.setSupplier(request.supplier());
+        partner.setAddress(request.address());
+        partner.setTradeRegisterNumber(request.tradeRegisterNumber());
+        partner.setTransportLicenseNumber(request.transportLicenseNumber());
+        partner.setTransportLicenseExpiry(request.transportLicenseExpiry());
         return toResponse(partner);
     }
 
@@ -103,6 +111,8 @@ public class PartnerService {
         return new PartnerResponse(
                 p.getId(), p.getName(), p.getCui(), p.getAuthorizationNumber(),
                 p.getAuthorizationExpiry(), p.getType(), p.isClient(), p.isSupplier(),
-                p.isActive(), expiringSoon);
+                p.isActive(), expiringSoon,
+                p.getAddress(), p.getTradeRegisterNumber(),
+                p.getTransportLicenseNumber(), p.getTransportLicenseExpiry());
     }
 }

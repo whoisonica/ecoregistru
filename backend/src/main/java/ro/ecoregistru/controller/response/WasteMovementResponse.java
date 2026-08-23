@@ -2,6 +2,7 @@ package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
+import ro.ecoregistru.enums.TransportDestination;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.TreatmentPurpose;
 import ro.ecoregistru.enums.Unit;
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public record WasteMovementResponse(
@@ -25,7 +27,10 @@ public record WasteMovementResponse(
         String wasteCode,
         String wasteCodeName,
         boolean hazardous,
+        /** Null while the recipient has not weighed the load yet. */
         BigDecimal quantity,
+        boolean weighedAtUnloading,
+        BigDecimal volumeM3,
         Unit unit,
         WasteOperation operation,
         WasteRegister register,
@@ -46,6 +51,19 @@ public record WasteMovementResponse(
         String notes,
         List<AttachmentResponse> attachments,
         UUID clientGeneratedId,
+
+        // --- Anexa 3 ---
+        LocalDate unloadDate,
+        UUID transportPartnerId,
+        String transportPartnerName,
+        String driverName,
+        String driverIdentification,
+        String vehicleRegistration,
+        Set<TransportDestination> transportDestinations,
+        /** Set once the form has been generated; a reprint keeps the same series and number. */
+        String anexa3Series,
+        Integer anexa3Number,
+
         Instant createdAt,
         Instant updatedAt
 ) {}

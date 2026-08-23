@@ -36,5 +36,7 @@ public record CompanyResponse(
         List<WasteCodeResponse> authorizedWasteCodes,
         String transportMeans,
         String transportLicenseNumber,
-        LocalDate transportLicenseExpiry
+        LocalDate transportLicenseExpiry,
+        String tradeRegisterNumber,
+        String anexa3Series
 ) {}

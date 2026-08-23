@@ -46,6 +46,17 @@ export type StorageType =
  */
 export type TreatmentMethod = "TM" | "TC" | "TMC" | "TB" | "TT" | "D" | "A";
 
+/**
+ * The "Destinat:" ticks of Anexa 3 la HG 1061/2008. More than one is normal — the filled model
+ * has an X on both "Colectării" and "Valorificării".
+ */
+export type TransportDestination =
+  | "COLECTARE"
+  | "STOCARE_TEMPORARA"
+  | "TRATARE"
+  | "VALORIFICARE"
+  | "ELIMINARE";
+
 export type WasteOperationCode =
   | "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "R12" | "R13"
   | "D1" | "D2" | "D3" | "D4" | "D5" | "D6" | "D7" | "D8" | "D9" | "D10" | "D11" | "D12" | "D13" | "D14" | "D15";
@@ -78,6 +89,9 @@ export interface Company {
   transportMeans?: string | null;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
+  /** Printed by Anexa 3 next to the CUI, and the series of this company's forms. */
+  tradeRegisterNumber?: string | null;
+  anexa3Series?: string | null;
 }
 
 /** Create/update payload for a company (PLATFORM_ADMIN only). */
@@ -98,6 +112,8 @@ export interface CompanyInput {
   transportMeans?: string | null;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
+  tradeRegisterNumber?: string | null;
+  anexa3Series?: string | null;
 }
 
 // --- Account requests (the intake form) ---
@@ -216,6 +232,11 @@ export interface Partner {
   authorizationExpiry: string | null; // yyyy-MM-dd
   /** What they are authorised to do with waste. */
   type: PartnerType;
+  // --- What Anexa 3 prints about them, as recipient or as carrier ---
+  address: string | null;
+  tradeRegisterNumber: string | null;
+  transportLicenseNumber: string | null;
+  transportLicenseExpiry: string | null; // yyyy-MM-dd
   /** We hand waste over to them and we invoice them. */
   client: boolean;
   /** They perform the service and they invoice us. */
@@ -233,6 +254,10 @@ export interface PartnerInput {
   /** At least one of the two is required; the backend rejects a partner with no role. */
   client: boolean;
   supplier: boolean;
+  address?: string | null;
+  tradeRegisterNumber?: string | null;
+  transportLicenseNumber?: string | null;
+  transportLicenseExpiry?: string | null; // yyyy-MM-dd
 }
 
 // --- Attachments ---
@@ -255,7 +280,11 @@ export interface WasteMovement {
   wasteCode: string;
   wasteCodeName: string;
   hazardous: boolean;
-  quantity: number;
+  /** Null while the recipient has not weighed the load yet. */
+  quantity: number | null;
+  /** The recipient weighs at unloading, so the quantity comes back afterwards. */
+  weighedAtUnloading: boolean;
+  volumeM3: number | null;
   unit: Unit;
   operation: WasteOperation;
   register: WasteRegister;
@@ -277,6 +306,17 @@ export interface WasteMovement {
   notes: string | null;
   attachments: Attachment[];
   clientGeneratedId: string | null;
+  // --- Anexa 3 la HG 1061/2008 ---
+  unloadDate: string | null; // yyyy-MM-dd
+  transportPartnerId: string | null;
+  transportPartnerName: string | null;
+  driverName: string | null;
+  driverIdentification: string | null;
+  vehicleRegistration: string | null;
+  transportDestinations: TransportDestination[];
+  /** Set once the form has been generated; a reprint keeps the same series and number. */
+  anexa3Series: string | null;
+  anexa3Number: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -286,7 +326,10 @@ export interface WasteMovementInput {
   workPointId: string;
   date: string; // yyyy-MM-dd
   wasteCodeId: string;
-  quantity: number;
+  /** Omit when weighedAtUnloading is set: the recipient supplies it later. */
+  quantity?: number | null;
+  weighedAtUnloading?: boolean;
+  volumeM3?: number | null;
   unit: Unit;
   operation: WasteOperation;
   /** Optional: the backend derives it from the operation unless the goods are third-party. */
@@ -301,6 +344,13 @@ export interface WasteMovementInput {
   internalGeneratorId?: string | null;
   documentReference?: string | null;
   notes?: string | null;
+  // --- Anexa 3 ---
+  unloadDate?: string | null; // yyyy-MM-dd
+  transportPartnerId?: string | null;
+  driverName?: string | null;
+  driverIdentification?: string | null;
+  vehicleRegistration?: string | null;
+  transportDestinations?: TransportDestination[];
 }
 
 /** Filters for the movements list query; empty fields are omitted from the request. */
@@ -339,6 +389,8 @@ export interface MonthlyEvidence {
   incomplete: boolean;
   /** These handovers may be passing on third-party goods; for review, not for reporting. */
   resaleSuspected: boolean;
+  /** An exit this month is still waiting for the recipient's weighbridge. */
+  awaitingWeighing: boolean;
   closingStock: number; // may be negative (exits exceeding intake in a window)
   generatedAt: string;
 }
