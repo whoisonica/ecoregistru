@@ -37,6 +37,41 @@ export const strings = {
     genericError: "Autentificare eșuată. Verifică datele și încearcă din nou.",
   },
 
+  // Unde aterizează linkul din mail — și din invitație, fiindcă o invitație e tot o resetare:
+  // contul se creează dezactivat, iar alegerea parolei e ce îl activează.
+  resetPassword: {
+    title: "Alege-ți parola",
+    subtitle:
+      "Dacă ai fost invitat în EcoRegistru, parola pe care o pui acum îți activează contul.",
+    password: "Parolă nouă",
+    confirmPassword: "Confirmă parola",
+    rules: "Minim 8 caractere, cu literă mare, literă mică și cifră.",
+    submit: "Salvează parola",
+    saving: "Se salvează...",
+    mismatch: "Parolele nu coincid.",
+    done: "Parola a fost salvată și contul e activ. Te poți autentifica.",
+    toLogin: "Mergi la autentificare",
+    missingCode:
+      "Linkul e incomplet — îi lipsește codul. Copiază-l din email întreg, sau cere unul nou.",
+    requestNew: "Cere un link nou",
+    genericError: "Nu am putut salva parola. Linkul poate fi expirat — cere unul nou.",
+  },
+
+  forgotPassword: {
+    title: "Ai uitat parola?",
+    subtitle:
+      "Scrie adresa de email a contului și îți trimitem un link de resetare. Linkul e valabil 30 de minute.",
+    email: "Email",
+    submit: "Trimite linkul",
+    sending: "Se trimite...",
+    // Același mesaj și când adresa n-are cont: backend-ul nu spune cine e înregistrat, iar
+    // ecranul n-are voie să spună în locul lui.
+    sent: "Dacă adresa are un cont, linkul de resetare e pe drum.",
+    sentHint: "Verifică și în Spam. Linkul expiră în 30 de minute.",
+    backToLogin: "Înapoi la autentificare",
+    genericError: "Nu am putut trimite linkul. Încearcă din nou.",
+  },
+
   dashboard: {
     title: "Panou de control",
     welcome: "Bine ai venit",
