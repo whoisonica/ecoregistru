@@ -198,8 +198,13 @@ public class EvidenceCalculator {
     }
 
     /**
-     * Adds up one month of Anexa 1 movements. A handover lands in the column its recipient's
-     * operation implies; without a code it lands in none, and is reported separately.
+     * Adds up one month of Anexa 1 movements.
+     *
+     * <p>An exit lands in the column its R/D code implies — "valorificata" or "eliminata final" —
+     * whoever performed it. Handing waste to a recycler is a RECOVERED with a partner named, so it
+     * is counted once, in the column the form has, and only remembered separately as the memo
+     * "din care predat". UNCLASSIFIED_OUT is the legacy state: the quantity left the site, so it
+     * leaves the stock, but it enters no official column and marks the line incomplete.
      */
     private Totals sum(List<WasteMovement> movements) {
         Totals t = new Totals();
@@ -207,19 +212,19 @@ public class EvidenceCalculator {
             BigDecimal kg = toKg(m.getQuantity(), m.getUnit());
             switch (m.getOperation()) {
                 case GENERATED -> t.generated = t.generated.add(kg);
-                case RECOVERED -> t.recovered = t.recovered.add(kg);
-                case DISPOSED -> t.disposed = t.disposed.add(kg);
-                case HANDED_OVER -> {
-                    t.handedOver = t.handedOver.add(kg); // memo: "din care predat"
-                    var code = m.getOperationCode();
-                    if (code == null) {
-                        t.unclassifiedOut = t.unclassifiedOut.add(kg);
-                    } else if (code.isRecovery()) {
-                        t.recovered = t.recovered.add(kg);
-                    } else {
-                        t.disposed = t.disposed.add(kg);
+                case RECOVERED -> {
+                    t.recovered = t.recovered.add(kg);
+                    if (m.getPartner() != null) {
+                        t.handedOver = t.handedOver.add(kg); // memo: "din care predat"
                     }
                 }
+                case DISPOSED -> {
+                    t.disposed = t.disposed.add(kg);
+                    if (m.getPartner() != null) {
+                        t.handedOver = t.handedOver.add(kg); // memo: "din care predat"
+                    }
+                }
+                case UNCLASSIFIED_OUT -> t.unclassifiedOut = t.unclassifiedOut.add(kg);
                 // Takeovers are art. 48 and are filtered out before this point (HG 856 art. 2(1)).
                 case COLLECTED -> { }
             }

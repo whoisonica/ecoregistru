@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.controller.request.LoginRequest;
-import ro.ecoregistru.controller.request.RegisterRequest;
 import ro.ecoregistru.controller.request.ResetPasswordRequest;
 import ro.ecoregistru.controller.response.AuthenticationResponse;
 import ro.ecoregistru.entity.AppUser;
@@ -50,42 +49,7 @@ public class AuthenticationService {
     final AppUserRepository appUserRepository;
     final VerificationRecordRepository verificationRecordRepository;
 
-    /** Invite-only for now: self-registration is disabled unless explicitly enabled.
-     *  Not final: @Value field, must stay out of the generated constructor. */
-    @Value("${app.registration-enabled:false}")
-    boolean registrationEnabled;
-
     private static final int CODE_TTL_MINUTES = 30;
-
-    @Transactional(noRollbackFor = EmailException.class)
-    public AuthenticationResponse register(RegisterRequest request) {
-        if (!registrationEnabled) {
-            throw new BusinessException(REGISTRATION_DISABLED);
-        }
-        if (!request.password().equals(request.confirmPassword())) {
-            throw new BusinessException(PASSWORDS_NOT_MATCH);
-        }
-        validatePasswordStrength(request.password());
-
-        String email = request.email().toLowerCase();
-        if (appUserRepository.existsByEmail(email)) {
-            throw new UnprocessableEntityException(ACCOUNT_ALREADY_EXISTS);
-        }
-
-        AppUser user = AppUser.builder()
-                .email(email)
-                .password(passwordEncoder.encode(request.password()))
-                .role(Role.OPERATOR)
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .enabled(false)
-                .createdAt(Instant.now())
-                .build();
-        appUserRepository.save(user);
-
-        sendVerificationEmail(user);
-        return AuthenticationResponse.builder().build();
-    }
 
     @Transactional
     public AuthenticationResponse verifyEmail(String code) {

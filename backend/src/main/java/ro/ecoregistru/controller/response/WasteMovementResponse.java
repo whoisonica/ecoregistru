@@ -1,6 +1,8 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PhysicalState;
+import ro.ecoregistru.enums.StorageType;
+import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.TreatmentPurpose;
 import ro.ecoregistru.enums.Unit;
 
@@ -30,9 +32,16 @@ public record WasteMovementResponse(
         /** Derived from operationCode, never stored: which Anexa 1 cap. 1 column the quantity feeds. */
         TreatmentPurpose treatmentPurpose,
         PhysicalState physicalState,
+        /** Anexa 1 cap. 2 "Stocare: Tipul". */
+        StorageType storageType,
+        /** Anexa 1 cap. 2 "Tratare: Modul". */
+        TreatmentMethod treatmentMethod,
         WasteOperationCode operationCode,
         UUID partnerId,
         String partnerName,
+        UUID internalGeneratorId,
+        /** Printed as "Secţia" in Anexa 1 cap. 2; null when the movement predates the notion. */
+        String internalGeneratorName,
         String documentReference,
         String notes,
         List<AttachmentResponse> attachments,

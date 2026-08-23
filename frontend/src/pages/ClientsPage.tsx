@@ -8,6 +8,12 @@ import {
   useInviteUser,
 } from "@/hooks/useCompanies";
 import type { Company, CompanyInput, CompanyType, InviteRole, InviteUserInput } from "@/lib/types";
+import {
+  CompanyProfileFields,
+  emptyCompanyProfile,
+  type CompanyProfileValue,
+} from "@/components/CompanyProfileFields";
+import { AccountRequestsSection } from "@/components/AccountRequestsSection";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -49,6 +55,8 @@ export function ClientsPage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
+  const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
   const [formError, setFormError] = useState<false | "name" | "cui">(false);
 
   // --- invite-user dialog ---
@@ -84,6 +92,7 @@ export function ClientsPage() {
     setContactEmail("");
     setContactPhone("");
     setFormError(false);
+    setProfile(emptyCompanyProfile);
     setDialogOpen(true);
   }
 
@@ -99,6 +108,13 @@ export function ClientsPage() {
     setContactName(c.contactName ?? "");
     setContactEmail(c.contactEmail ?? "");
     setContactPhone(c.contactPhone ?? "");
+    setProfile({
+      authorizedOperationCodes: c.authorizedOperationCodes ?? [],
+      authorizedWasteCodes: c.authorizedWasteCodes ?? [],
+      transportMeans: c.transportMeans ?? "",
+      transportLicenseNumber: c.transportLicenseNumber ?? "",
+      transportLicenseExpiry: c.transportLicenseExpiry ?? "",
+    });
     setFormError(false);
     setDialogOpen(true);
   }
@@ -124,6 +140,11 @@ export function ClientsPage() {
       contactName: contactName.trim() || null,
       contactEmail: contactEmail.trim() || null,
       contactPhone: contactPhone.trim() || null,
+      authorizedOperationCodes: profile.authorizedOperationCodes,
+      authorizedWasteCodeIds: profile.authorizedWasteCodes.map((w) => w.id),
+      transportMeans: profile.transportMeans.trim() || null,
+      transportLicenseNumber: profile.transportLicenseNumber.trim() || null,
+      transportLicenseExpiry: profile.transportLicenseExpiry || null,
     };
     try {
       if (editing) {
@@ -368,6 +389,8 @@ export function ClientsPage() {
               onChange={(e) => setContactEmail(e.target.value)}
             />
           </div>
+
+          <CompanyProfileFields value={profile} onChange={setProfile} companyType={type} />
         </form>
       </Dialog>
 
@@ -440,6 +463,8 @@ export function ClientsPage() {
           </div>
         </form>
       </Dialog>
+
+      <AccountRequestsSection enabled={isPlatformAdmin} />
     </div>
   );
 }

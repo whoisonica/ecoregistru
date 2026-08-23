@@ -18,6 +18,21 @@ export function useCompanies(enabled: boolean) {
   });
 }
 
+/**
+ * The tenant the session is scoped to, readable by any member. Every screen that has to know what
+ * kind of company this is reads it here — the movement form offers the operations the type allows.
+ * The tenant switcher clears the whole query cache, so no tenant id belongs in the key.
+ */
+export const currentCompanyKey = ["company", "current"] as const;
+
+export function useCurrentCompany() {
+  return useQuery({
+    queryKey: currentCompanyKey,
+    queryFn: async () => (await api.get<Company>("/api/v1/companies/current")).data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCreateCompany() {
   const qc = useQueryClient();
   return useMutation({

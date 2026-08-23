@@ -3,6 +3,8 @@ import { Plus, Pencil, Trash2, Paperclip } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
+import { useCurrentCompany } from "@/hooks/useCompanies";
+import { useInternalGenerators } from "@/hooks/useInternalGenerators";
 import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import {
   useMovements,
@@ -13,8 +15,11 @@ import {
   useDeleteAttachment,
 } from "@/hooks/useMovements";
 import type {
+  CompanyType,
   MovementFilters,
   PhysicalState,
+  StorageType,
+  TreatmentMethod,
   WasteMovement,
   WasteMovementInput,
   WasteOperation,
@@ -34,17 +39,21 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
 
 const t = strings.movements;
 const e = strings.enums;
 
-const OPERATIONS: WasteOperation[] = [
-  "GENERATED",
-  "COLLECTED",
-  "HANDED_OVER",
-  "RECOVERED",
-  "DISPOSED",
-];
+/**
+ * Which operations the account may record, by company type — the same rule the backend enforces
+ * through CompanyType.allowedOperations(). A plain generator has no art. 48 register, so it never
+ * takes waste over; a collector keeps Anexa 1 too (art. 2 alin. (1)), so it never loses GENERATED.
+ * UNCLASSIFIED_OUT is in no list: it is the state of legacy rows, written by a migration.
+ */
+function operationsFor(type: CompanyType | undefined): WasteOperation[] {
+  const own: WasteOperation[] = ["GENERATED", "RECOVERED", "DISPOSED"];
+  return type && type !== "GENERATOR" ? ["GENERATED", "COLLECTED", "RECOVERED", "DISPOSED"] : own;
+}
 const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
 const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
@@ -186,6 +195,7 @@ export function MovementsPage() {
                 <TH>{t.colOperation}</TH>
                 <TH className="text-right">{t.colQuantity}</TH>
                 <TH>{t.colPartner}</TH>
+                <TH>{t.colInternalGenerator}</TH>
                 <TH>{t.colWorkPoint}</TH>
                 <TH className="text-center">{t.colAttachments}</TH>
                 {canWrite && <TH className="text-right">{strings.common.actions}</TH>}
@@ -194,7 +204,7 @@ export function MovementsPage() {
             <TBody>
               {(movements ?? []).length === 0 && (
                 <TR>
-                  <TD colSpan={canWrite ? 8 : 7} className="text-center text-gray-400">
+                  <TD colSpan={canWrite ? 9 : 8} className="text-center text-gray-400">
                     {t.empty}
                   </TD>
                 </TR>
@@ -212,6 +222,16 @@ export function MovementsPage() {
                     <span className="block max-w-xs truncate text-xs text-gray-400">
                       {m.wasteCodeName}
                     </span>
+                    {(m.storageType || m.treatmentMethod) && (
+                      <span className="mt-0.5 block text-xs text-gray-500">
+                        {[
+                          m.storageType && e.storageType[m.storageType],
+                          m.treatmentMethod && e.treatmentMethod[m.treatmentMethod],
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
                   </TD>
                   <TD>
                     {e.wasteOperation[m.operation]}
@@ -223,6 +243,7 @@ export function MovementsPage() {
                     {m.quantity} {e.unit[m.unit]}
                   </TD>
                   <TD>{m.partnerName || "—"}</TD>
+                  <TD>{m.internalGeneratorName || "—"}</TD>
                   <TD>{m.workPointName}</TD>
                   <TD className="text-center">
                     {m.attachments.length > 0 ? (
@@ -293,6 +314,7 @@ function MovementFormDialog({
   const addAttachmentMut = useAddAttachment();
   const deleteAttachmentMut = useDeleteAttachment();
   const { data: partners } = usePartners();
+  const { data: company } = useCurrentCompany();
 
   const [workPointId, setWorkPointId] = useState(editing?.workPointId ?? defaultWorkPointId ?? "");
   const [date, setDate] = useState(editing?.date ?? todayIso());
@@ -311,27 +333,59 @@ function MovementFormDialog({
   const [operationCode, setOperationCode] = useState<WasteOperationCode | "">(
     editing?.operationCode ?? ""
   );
+  const [storageType, setStorageType] = useState<StorageType | "">(editing?.storageType ?? "");
+  const [treatmentMethod, setTreatmentMethod] = useState<TreatmentMethod | "">(
+    editing?.treatmentMethod ?? ""
+  );
   const [partnerId, setPartnerId] = useState(editing?.partnerId ?? "");
+  const [internalGeneratorId, setInternalGeneratorId] = useState(
+    editing?.internalGeneratorId ?? ""
+  );
   const [documentReference, setDocumentReference] = useState(editing?.documentReference ?? "");
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const codeSearch = useWasteCodeSearch(codeQuery);
-  const codeItems: ComboboxItem[] = (codeSearch.data ?? []).map((w) => ({
+
+  // The waste codes on the account's authorization. With a profile answered, the picker opens on
+  // those four or five instead of on the 842 of the European List, and typing still searches the
+  // whole nomenclator — a code that turns up once a year must stay reachable.
+  const profileWasteCodes = company?.authorizedWasteCodes ?? [];
+  const searchResults = codeSearch.data ?? [];
+  const shownCodes =
+    profileWasteCodes.length > 0 && !codeQuery.trim() ? profileWasteCodes : searchResults;
+  const codeItems: ComboboxItem[] = shownCodes.map((w) => ({
     id: w.id,
     label: `${w.code} — ${w.name}`,
     sublabel: w.hazardous ? t.hazardous : undefined,
   }));
 
-  const requiresPartner = operation === "HANDED_OVER";
+  // Sections belong to a work point, so the list follows the work point chosen above; changing
+  // it clears a section that would no longer belong.
+  const { data: sections } = useInternalGenerators(workPointId || undefined);
+  const activeSections = (sections ?? []).filter((g) => g.active);
+
+  const operations = operationsFor(company?.type);
+  // A legacy row is the one case the form shows an operation nobody may choose: it has to be
+  // editable, and editing it is exactly how it gets completed.
+  const isLegacyExit = operation === "UNCLASSIFIED_OUT";
   // Every movement that takes waste off the site names its operation: Anexa 1 cap. 3 and cap. 4
   // report the quantity next to "Operaţia de valorificare"/"de eliminare" and the operator doing
-  // it. A handover takes either family — what happens to the waste is the partner's operation.
-  const isHandover = operation === "HANDED_OVER";
-  const requiresCode = isHandover || operation === "RECOVERED" || operation === "DISPOSED";
-  const codeOptions =
+  // it — the partner, when it is not us.
+  const requiresCode = operation === "RECOVERED" || operation === "DISPOSED";
+  const familyCodes =
     operation === "RECOVERED" ? R_CODES : operation === "DISPOSED" ? D_CODES : ALL_CODES;
+  // The account profile narrows the list to the operations this client actually works with, so a
+  // joinery that hands cardboard to a recycler never scrolls past D7 "evacuare în mări". An empty
+  // profile means the intake form has not been answered yet, and then everything stays on offer.
+  // The code being edited is always kept: a movement recorded before the profile existed has to
+  // remain saveable without silently losing its operation.
+  const profileCodes = company?.authorizedOperationCodes ?? [];
+  const codeOptions =
+    profileCodes.length === 0
+      ? familyCodes
+      : familyCodes.filter((c) => profileCodes.includes(c) || c === editing?.operationCode);
 
   const isSaving =
     createMut.isPending || updateMut.isPending || addAttachmentMut.isPending;
@@ -342,12 +396,11 @@ function MovementFormDialog({
     if (!wasteCode) return t.wasteCodePlaceholder;
     const qty = Number(quantity);
     if (!quantity || Number.isNaN(qty) || qty <= 0) return t.quantity + ": " + strings.common.requiredField;
-    if (requiresPartner && !partnerId) return t.partnerRequired;
     if (operation === "RECOVERED" && (!operationCode || !operationCode.startsWith("R")))
       return t.recoveryCodeRequired;
     if (operation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
       return t.disposalCodeRequired;
-    if (isHandover && !operationCode) return t.handoverCodeRequired;
+    if (isLegacyExit) return t.legacyExitHint;
     return null;
   }
 
@@ -361,9 +414,12 @@ function MovementFormDialog({
       unit,
       operation,
       physicalState: physicalState || null,
+      storageType: storageType || null,
+      treatmentMethod: treatmentMethod || null,
       // Backend rejects operationCode on non-R/D operations, so only send it when relevant.
       operationCode: requiresCode ? (operationCode as WasteOperationCode) : null,
       partnerId: partnerId || null,
+      internalGeneratorId: internalGeneratorId || null,
       documentReference: documentReference.trim() || null,
       notes: notes.trim() || null,
     };
@@ -429,7 +485,14 @@ function MovementFormDialog({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="mv-wp">{t.filterWorkPoint}</Label>
-            <Select id="mv-wp" value={workPointId} onChange={(ev) => setWorkPointId(ev.target.value)}>
+            <Select
+              id="mv-wp"
+              value={workPointId}
+              onChange={(ev) => {
+                setWorkPointId(ev.target.value);
+                setInternalGeneratorId(""); // sections belong to one work point
+              }}
+            >
               {workPoints.map((w) => (
                 <option key={w.id} value={w.id}>
                   {w.name}
@@ -489,11 +552,14 @@ function MovementFormDialog({
                 setOperationCode(""); // reset — options depend on operation
               }}
             >
-              {OPERATIONS.map((op) => (
+              {operations.map((op) => (
                 <option key={op} value={op}>
                   {e.wasteOperation[op]}
                 </option>
               ))}
+              {isLegacyExit && (
+                <option value="UNCLASSIFIED_OUT">{e.wasteOperation.UNCLASSIFIED_OUT}</option>
+              )}
             </Select>
           </div>
           <div>
@@ -531,25 +597,79 @@ function MovementFormDialog({
                 </option>
               ))}
             </Select>
-            {isHandover && <p className="mt-1 text-xs text-gray-500">{t.handoverCodeHint}</p>}
+            <p className="mt-1 text-xs text-gray-500">{t.operationCodeHint}</p>
           </div>
         )}
 
+        {isLegacyExit && (
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            {t.legacyExitHint}
+          </p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="mv-storage">{t.storageType}</Label>
+            <Select
+              id="mv-storage"
+              value={storageType}
+              onChange={(ev) => setStorageType(ev.target.value as typeof storageType)}
+            >
+              <option value="">{t.nomenclatorPlaceholder}</option>
+              {Object.entries(e.storageType).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="mv-treatment">{t.treatmentMethod}</Label>
+            <Select
+              id="mv-treatment"
+              value={treatmentMethod}
+              onChange={(ev) => setTreatmentMethod(ev.target.value as typeof treatmentMethod)}
+            >
+              <option value="">{t.nomenclatorPlaceholder}</option>
+              {Object.entries(e.treatmentMethod).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+
         <div>
-          <Label htmlFor="mv-partner">
-            {t.partner}
-            {requiresPartner && <span className="text-red-600"> *</span>}
-          </Label>
+          <Label htmlFor="mv-section">{t.internalGenerator}</Label>
+          <Select
+            id="mv-section"
+            value={internalGeneratorId}
+            onChange={(ev) => setInternalGeneratorId(ev.target.value)}
+          >
+            <option value="">{t.internalGeneratorPlaceholder}</option>
+            {activeSections.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-gray-500">{t.internalGeneratorHint}</p>
+        </div>
+
+        <div>
+          <Label htmlFor="mv-partner">{t.partner}</Label>
           <Select id="mv-partner" value={partnerId} onChange={(ev) => setPartnerId(ev.target.value)}>
             <option value="">{t.partnerPlaceholder}</option>
             {(partners ?? [])
               .filter((p) => p.active)
               .map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} ({e.partnerType[p.type]})
+                  {p.name} ({partnerRoleLabel(p)})
                 </option>
               ))}
           </Select>
+          <p className="mt-1 text-xs text-gray-500">{t.partnerHint}</p>
         </div>
 
         <div>

@@ -98,37 +98,66 @@ class RegisterSeamIT {
                 .build()).getId();
     }
 
-    // ---------- The operation behind a handover ----------
+    // ---------- Handing waste over is an R/D operation performed by a partner ----------
+
+    /**
+     * "Predare" is not an operation. Anexa 1 cap. 1 has no such column, and cap. 3 / cap. 4 report
+     * a quantity with its R/D operation AND the operator who performed it — so the partner says it
+     * was handed over, and the code says what happens to it. The enum constant no longer exists,
+     * and a client still sending it gets a 400 rather than a movement in a column the form lacks.
+     */
+    @Test
+    void handedOverIsNoLongerAnOperation() throws Exception {
+        mockMvc.perform(movement(collectorToken, workPointId,
+                        "  \"operation\": \"HANDED_OVER\", \"partnerId\": \"" + partnerId
+                                + "\", \"operationCode\": \"R13\""))
+                .andExpect(status().isBadRequest());
+    }
 
     @Test
-    void handoverWithoutAnOperationCodeIsRejected() throws Exception {
+    void anExitWithoutAnOperationCodeIsRejected() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"HANDED_OVER\", \"partnerId\": \"" + partnerId + "\""))
+                        "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId + "\""))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['error-code']", is("movement.operation.code.handover")));
+                .andExpect(jsonPath("$['error-code']", is("movement.operation.code.recovery")));
     }
 
     /** The ordinary case: own waste handed to a collector who stores it pending recovery. */
     @Test
-    void handoverForRecoveryLandsInTheValorificataColumn() throws Exception {
+    void recoveryByAPartnerLandsInTheValorificataColumn() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"HANDED_OVER\", \"partnerId\": \"" + partnerId
+                        "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"R13\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.register", is("ANEXA_1")))
+                .andExpect(jsonPath("$.partnerId", is(partnerId.toString())))
                 .andExpect(jsonPath("$.operationCode", is("R13")))
                 .andExpect(jsonPath("$.treatmentPurpose", is("V")));
     }
 
-    /** A handover takes either family: what happens to the waste is the recipient's operation. */
+    /**
+     * The same exit to a landfill: the partner is the operator, the code says it is disposal, and
+     * the "Scopul" letter stays empty. The note of cap. 2 does define an E, but no filled Anexa 1
+     * we hold writes it — the D code in cap. 4 is what identifies a disposal. See
+     * {@link ro.ecoregistru.enums.TreatmentPurpose}.
+     */
     @Test
-    void handoverForDisposalLandsInTheEliminataColumn() throws Exception {
+    void disposalByAPartnerCarriesItsDCodeAndNoScopulLetter() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"HANDED_OVER\", \"partnerId\": \"" + partnerId
+                        "  \"operation\": \"DISPOSED\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"D5\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operationCode", is("D5")))
-                .andExpect(jsonPath("$.treatmentPurpose", is("E")));
+                .andExpect(jsonPath("$.treatmentPurpose", is(nullValue())));
+    }
+
+    /** Nothing requires a partner: an operation with none was performed on our own site. */
+    @Test
+    void recoveryOnOurOwnSiteNeedsNoPartner() throws Exception {
+        mockMvc.perform(movement(collectorToken, workPointId,
+                        "  \"operation\": \"RECOVERED\", \"operationCode\": \"R3\""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.partnerId", is(nullValue())));
     }
 
     // ---------- Which register the quantity lands in ----------
@@ -159,7 +188,7 @@ class RegisterSeamIT {
     @Test
     void passingOnCollectedGoodsStaysOutOfAnexa1() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"HANDED_OVER\", \"partnerId\": \"" + partnerId
+                        "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"R13\", \"register\": \"ART_48\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.register", is("ART_48")));

@@ -19,10 +19,15 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 
 const t = strings.partners;
 const typeLabels = strings.enums.partnerType;
+const roleLabels = strings.enums.partnerRole;
 const PARTNER_TYPES: PartnerType[] = ["COLLECTOR", "CARRIER", "BOTH"];
+
+/** Filter values for the commercial role. "none" surfaces the partners still to be classified. */
+type RoleFilter = "" | "client" | "supplier" | "none";
 
 /** Formats an authorization expiry as a status badge, mirroring backend `expiringSoon`. */
 function ExpiryBadge({ partner }: { partner: Partner }) {
@@ -58,7 +63,18 @@ export function PartnersPage() {
   const [authorizationNumber, setAuthorizationNumber] = useState("");
   const [authorizationExpiry, setAuthorizationExpiry] = useState("");
   const [type, setType] = useState<PartnerType>("COLLECTOR");
+  const [isClient, setIsClient] = useState(false);
+  const [isSupplier, setIsSupplier] = useState(true);
   const [nameError, setNameError] = useState(false);
+  const [roleError, setRoleError] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
+
+  const visiblePartners = (partners ?? []).filter((p) => {
+    if (roleFilter === "client") return p.client;
+    if (roleFilter === "supplier") return p.supplier;
+    if (roleFilter === "none") return !p.client && !p.supplier;
+    return true;
+  });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -69,7 +85,10 @@ export function PartnersPage() {
     setAuthorizationNumber("");
     setAuthorizationExpiry("");
     setType("COLLECTOR");
+    setIsClient(false);
+    setIsSupplier(true);
     setNameError(false);
+    setRoleError(false);
     setDialogOpen(true);
   }
 
@@ -80,7 +99,10 @@ export function PartnersPage() {
     setAuthorizationNumber(p.authorizationNumber ?? "");
     setAuthorizationExpiry(p.authorizationExpiry ?? "");
     setType(p.type);
+    setIsClient(p.client);
+    setIsSupplier(p.supplier);
     setNameError(false);
+    setRoleError(false);
     setDialogOpen(true);
   }
 
@@ -90,12 +112,19 @@ export function PartnersPage() {
       setNameError(true);
       return;
     }
+    // Mirrors the backend rule: a row the screen colours by role cannot have none.
+    if (!isClient && !isSupplier) {
+      setRoleError(true);
+      return;
+    }
     const input: PartnerInput = {
       name: name.trim(),
       cui: cui.trim() || null,
       authorizationNumber: authorizationNumber.trim() || null,
       authorizationExpiry: authorizationExpiry || null,
       type,
+      client: isClient,
+      supplier: isSupplier,
     };
     try {
       if (editing) {
@@ -134,7 +163,24 @@ export function PartnersPage() {
         )}
       </div>
 
-      <section className="mt-6">
+      <div className="mt-6 flex flex-wrap items-end gap-3">
+        <div>
+          <Label htmlFor="filter-role">{t.filterRole}</Label>
+          <Select
+            id="filter-role"
+            value={roleFilter}
+            onChange={(ev) => setRoleFilter(ev.target.value as RoleFilter)}
+            className="w-56"
+          >
+            <option value="">{t.filterRoleAll}</option>
+            <option value="client">{roleLabels.client}</option>
+            <option value="supplier">{roleLabels.supplier}</option>
+            <option value="none">{roleLabels.none}</option>
+          </Select>
+        </div>
+      </div>
+
+      <section className="mt-4">
         {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
@@ -144,6 +190,7 @@ export function PartnersPage() {
               <TR>
                 <TH>{t.name}</TH>
                 <TH>{t.cui}</TH>
+                <TH>{t.role}</TH>
                 <TH>{t.type}</TH>
                 <TH>{t.authorizationNumber}</TH>
                 <TH>{t.authorizationExpiry}</TH>
@@ -152,17 +199,20 @@ export function PartnersPage() {
               </TR>
             </THead>
             <TBody>
-              {(partners ?? []).length === 0 && (
+              {visiblePartners.length === 0 && (
                 <TR>
-                  <TD colSpan={canManage ? 7 : 6} className="text-center text-gray-400">
+                  <TD colSpan={canManage ? 8 : 7} className="text-center text-gray-400">
                     {t.empty}
                   </TD>
                 </TR>
               )}
-              {(partners ?? []).map((p) => (
+              {visiblePartners.map((p) => (
                 <TR key={p.id}>
                   <TD className="font-medium text-gray-900">{p.name}</TD>
                   <TD>{p.cui || "—"}</TD>
+                  <TD>
+                    <PartnerRoleBadge partner={p} />
+                  </TD>
                   <TD>{typeLabels[p.type]}</TD>
                   <TD>{p.authorizationNumber || "—"}</TD>
                   <TD>
@@ -231,6 +281,42 @@ export function PartnersPage() {
               autoFocus
             />
             {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+          </div>
+          <div>
+            <span className="block text-sm font-medium text-gray-700">{t.role}</span>
+            <div className="mt-2 space-y-2">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600"
+                  checked={isClient}
+                  onChange={(ev) => {
+                    setIsClient(ev.target.checked);
+                    if (roleError) setRoleError(false);
+                  }}
+                />
+                <span>
+                  <span className="font-medium text-emerald-800">{roleLabels.client}</span>
+                  <span className="block text-xs text-gray-500">{roleLabels.clientHint}</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600"
+                  checked={isSupplier}
+                  onChange={(ev) => {
+                    setIsSupplier(ev.target.checked);
+                    if (roleError) setRoleError(false);
+                  }}
+                />
+                <span>
+                  <span className="font-medium text-amber-800">{roleLabels.supplier}</span>
+                  <span className="block text-xs text-gray-500">{roleLabels.supplierHint}</span>
+                </span>
+              </label>
+            </div>
+            {roleError && <p className="mt-1 text-xs text-red-600">{t.roleRequired}</p>}
           </div>
           <div>
             <Label htmlFor="p-type">{t.type}</Label>

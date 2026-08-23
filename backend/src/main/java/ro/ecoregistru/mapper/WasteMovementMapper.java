@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.Attachment;
+import ro.ecoregistru.entity.InternalGenerator;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
 
@@ -14,6 +15,7 @@ public class WasteMovementMapper {
 
     public WasteMovementResponse toResponse(WasteMovement m) {
         Partner partner = m.getPartner();
+        InternalGenerator section = m.getInternalGenerator();
         List<AttachmentResponse> attachments = m.getAttachments().stream()
                 .map(this::toAttachmentResponse)
                 .toList();
@@ -33,9 +35,13 @@ public class WasteMovementMapper {
                 m.getRegister(),
                 m.getOperationCode() != null ? m.getOperationCode().treatmentPurpose() : null,
                 m.getPhysicalState(),
+                m.getStorageType(),
+                m.getTreatmentMethod(),
                 m.getOperationCode(),
                 partner != null ? partner.getId() : null,
                 partner != null ? partner.getName() : null,
+                section != null ? section.getId() : null,
+                section != null ? section.getName() : null,
                 m.getDocumentReference(),
                 m.getNotes(),
                 attachments,

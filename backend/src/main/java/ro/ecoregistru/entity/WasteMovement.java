@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import ro.ecoregistru.enums.PhysicalState;
+import ro.ecoregistru.enums.StorageType;
+import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteOperationCode;
@@ -81,12 +83,30 @@ public class WasteMovement {
     PhysicalState physicalState;
 
     /**
+     * Anexa 1 cap. 2, "Stocare: Tipul" — what the waste sits in until it leaves. Nullable:
+     * movements recorded before this slice have none, and the export leaves the cell empty rather
+     * than inventing a container.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "storage_type", length = 10)
+    StorageType storageType;
+
+    /**
+     * Anexa 1 cap. 2, "Tratare: Modul" — what is done to the waste on site. The third column of
+     * that chapter, "Scopul", is not stored: it follows from {@link #operationCode}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "treatment_method", length = 10)
+    TreatmentMethod treatmentMethod;
+
+    /**
      * R1–R13 (recovery) / D1–D15 (disposal): the operation this quantity undergoes, and — through
      * {@link WasteOperationCode#treatmentPurpose()} — the Anexa 1 cap. 1 column it lands in.
-     * Required for every movement that takes waste off the site (HANDED_OVER, RECOVERED, DISPOSED),
-     * because cap. 3 and cap. 4 report the quantity together with its operation and its operator.
-     * On HANDED_OVER the operation is the one the {@link #partner} performs; on the other two it is
-     * the one this company performs itself. Null for GENERATED and COLLECTED.
+     * Required for every movement that takes waste off the site (RECOVERED, DISPOSED), because
+     * cap. 3 and cap. 4 report the quantity together with its operation and its operator. When a
+     * {@link #partner} is named, this is the operation that partner performs — handing waste to a
+     * recycler is a RECOVERED performed by them, not an operation of its own. Null for GENERATED
+     * and COLLECTED.
      *
      * <p>Nullable in the schema: movements recorded before the rule existed cannot be classified
      * retroactively, and guessing would put a made-up figure on an official form.
@@ -95,10 +115,23 @@ public class WasteMovement {
     @Column(name = "operation_code", length = 10)
     WasteOperationCode operationCode;
 
-    /** Required only for HANDED_OVER. */
+    /**
+     * Who performed the operation, when it was not this company: the recycler the waste was handed
+     * to, the landfill that took it. This is "agentul economic care efectuează operaţia" of Anexa 1
+     * cap. 3 / cap. 4. Null means the company did it on its own site.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "partner_id")
     Partner partner;
+
+    /**
+     * Which internal generator (section) the waste came from — printed as "Secţia" in Anexa 1
+     * cap. 2. Nullable: movements recorded before the notion existed have none, and the export
+     * leaves the cell empty rather than inventing a section.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "internal_generator_id")
+    InternalGenerator internalGenerator;
 
     /** Free text, e.g. aviz nr. */
     String documentReference;

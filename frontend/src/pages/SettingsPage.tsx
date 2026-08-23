@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 
 const t = strings.settings.workPoints;
 
@@ -161,6 +162,8 @@ export function SettingsPage() {
           </Table>
         )}
       </section>
+
+      <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
 
       <Dialog
         open={dialogOpen}

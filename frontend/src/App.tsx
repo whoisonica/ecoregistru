@@ -3,6 +3,7 @@ import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
+import { AccountRequestPage } from "@/pages/AccountRequestPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { MovementsPage } from "@/pages/MovementsPage";
 import { EvidencesPage } from "@/pages/EvidencesPage";
@@ -26,6 +27,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          {/* Public, and deliberately so: the register is closed, so the intake form is the
+              only way in. It creates a request, not an account. */}
+          <Route path="/cerere-cont" element={<AccountRequestPage />} />
           <Route path="/" element={<AppShell><DashboardPage /></AppShell>} />
           <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />

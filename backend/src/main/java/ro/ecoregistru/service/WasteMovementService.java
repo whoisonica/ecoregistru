@@ -43,6 +43,7 @@ public class WasteMovementService {
     WorkPointRepository workPointRepository;
     WasteCodeRepository wasteCodeRepository;
     PartnerRepository partnerRepository;
+    InternalGeneratorRepository internalGeneratorRepository;
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
     WasteMovementMapper mapper;
@@ -64,7 +65,10 @@ public class WasteMovementService {
         WorkPoint workPoint = requireWorkPoint(request.workPointId(), tenantId);
         WasteCode wasteCode = requireWasteCode(request.wasteCodeId());
         Partner partner = resolvePartner(request, tenantId);
+        InternalGenerator internalGenerator = resolveInternalGenerator(request, tenantId, workPoint);
+        validateOperation(request, company);
         validateOperationCode(request);
+        validateAgainstProfile(request, company);
         WasteRegister register = resolveRegister(request, company);
 
         WasteMovement movement = WasteMovement.builder()
@@ -77,8 +81,11 @@ public class WasteMovementService {
                 .operation(request.operation())
                 .register(register)
                 .physicalState(request.physicalState())
+                .storageType(request.storageType())
+                .treatmentMethod(request.treatmentMethod())
                 .operationCode(request.operationCode())
                 .partner(partner)
+                .internalGenerator(internalGenerator)
                 .documentReference(request.documentReference())
                 .notes(request.notes())
                 .clientGeneratedId(request.clientGeneratedId())
@@ -99,7 +106,10 @@ public class WasteMovementService {
         WorkPoint workPoint = requireWorkPoint(request.workPointId(), tenantId);
         WasteCode wasteCode = requireWasteCode(request.wasteCodeId());
         Partner partner = resolvePartner(request, tenantId);
+        InternalGenerator internalGenerator = resolveInternalGenerator(request, tenantId, workPoint);
+        validateOperation(request, company);
         validateOperationCode(request);
+        validateAgainstProfile(request, company);
         WasteRegister register = resolveRegister(request, company);
 
         movement.setWorkPoint(workPoint);
@@ -110,8 +120,11 @@ public class WasteMovementService {
         movement.setOperation(request.operation());
         movement.setRegister(register);
         movement.setPhysicalState(request.physicalState());
+        movement.setStorageType(request.storageType());
+        movement.setTreatmentMethod(request.treatmentMethod());
         movement.setOperationCode(request.operationCode());
         movement.setPartner(partner);
+        movement.setInternalGenerator(internalGenerator);
         movement.setDocumentReference(request.documentReference());
         movement.setNotes(request.notes());
 
@@ -225,10 +238,12 @@ public class WasteMovementService {
                 .orElseThrow(() -> new NotFoundException(WASTE_CODE_NOT_FOUND));
     }
 
+    /**
+     * The partner is optional on every operation: it names "agentul economic care efectueaza
+     * operatia" of Anexa 1 cap. 3 / cap. 4 when that is not this company. Handing waste over is a
+     * RECOVERED or DISPOSED with a partner named, which is why nothing requires one any more.
+     */
     private Partner resolvePartner(WasteMovementRequest request, UUID tenantId) {
-        if (request.operation() == WasteOperation.HANDED_OVER && request.partnerId() == null) {
-            throw new BusinessException(PARTNER_REQUIRED_FOR_HANDOVER);
-        }
         if (request.partnerId() == null) {
             return null;
         }
@@ -237,14 +252,54 @@ public class WasteMovementService {
     }
 
     /**
+     * Resolves the section the waste came from, and refuses one belonging to another work point:
+     * "Sectia" is printed on the Anexa 1 sheet of a work point, so a section from elsewhere would
+     * put a source on the form that never produced the waste.
+     */
+    private InternalGenerator resolveInternalGenerator(WasteMovementRequest request, UUID tenantId,
+                                                       WorkPoint workPoint) {
+        if (request.internalGeneratorId() == null) {
+            return null;
+        }
+        InternalGenerator generator = internalGeneratorRepository
+                .findByIdAndCompany_Id(request.internalGeneratorId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(INTERNAL_GENERATOR_NOT_FOUND));
+        if (!generator.getWorkPoint().getId().equals(workPoint.getId())) {
+            throw new BusinessException(INTERNAL_GENERATOR_WRONG_WORK_POINT);
+        }
+        return generator;
+    }
+
+    /**
+     * Keeps the operation within what this kind of company may record. The screen already offers
+     * only those, so this is the server-side half of the same rule: a generator has no art. 48
+     * register and therefore no takeovers to record, and UNCLASSIFIED_OUT is a migration state
+     * rather than a choice.
+     */
+    private void validateOperation(WasteMovementRequest request, Company company) {
+        WasteOperation operation = request.operation();
+        if (!operation.isSelectable()) {
+            throw new BusinessException(OPERATION_NOT_SELECTABLE);
+        }
+        if (!company.getType().allowedOperations().contains(operation)) {
+            // COLLECTED is the only type-gated operation today, and there is already a message
+            // that names the fix ("switch the company to Colector or Ambele"). Prefer it; the
+            // generic one is here for whatever the set gains later.
+            throw new BusinessException(operation == WasteOperation.COLLECTED
+                    ? ART48_REGISTER_NOT_ENABLED
+                    : OPERATION_NOT_ALLOWED_FOR_COMPANY_TYPE);
+        }
+    }
+
+    /**
      * Enforces the R/D operation code rule. Every movement that takes waste off the site carries
      * one, because Anexa 1 cap. 3 and cap. 4 report the quantity together with "Operaţia de
      * valorificare"/"de eliminare" and the operator performing it — a quantity cannot be placed on
      * those chapters without its code (docs/surse-oficiale.md §1.2).
      *
-     * <p>The family is pinned where the operation already names it: an R code for RECOVERED, a D
-     * code for DISPOSED. A handover takes either, because what happens to the waste is decided by
-     * the partner receiving it. GENERATED and COLLECTED take none — nothing has happened yet.
+     * <p>The family is pinned by the operation: an R code for RECOVERED, a D code for DISPOSED —
+     * including when a partner performs it, which is how a handover is recorded. GENERATED and
+     * COLLECTED take none: nothing has happened to the waste yet.
      */
     private void validateOperationCode(WasteMovementRequest request) {
         var code = request.operationCode();
@@ -259,16 +314,29 @@ public class WasteMovementService {
                     throw new BusinessException(OPERATION_CODE_REQUIRED_DISPOSAL);
                 }
             }
-            case HANDED_OVER -> {
-                if (code == null) {
-                    throw new BusinessException(OPERATION_CODE_REQUIRED_HANDOVER);
-                }
-            }
             default -> {
                 if (code != null) {
                     throw new BusinessException(OPERATION_CODE_NOT_ALLOWED);
                 }
             }
+        }
+    }
+
+    /**
+     * Keeps the R/D code within the operations this account said it works with, on its intake
+     * form. The screen offers only those, so this is the server-side half of the same rule.
+     *
+     * <p>An empty profile means the form has not been answered, not that nothing is allowed:
+     * every account that existed before the profile did has one, and refusing their movements
+     * would break accounts that are working today.
+     */
+    private void validateAgainstProfile(WasteMovementRequest request, Company company) {
+        var allowed = company.getAuthorizedOperationCodes();
+        if (request.operationCode() == null || allowed == null || allowed.isEmpty()) {
+            return;
+        }
+        if (!allowed.contains(request.operationCode())) {
+            throw new BusinessException(OPERATION_CODE_NOT_IN_PROFILE);
         }
     }
 

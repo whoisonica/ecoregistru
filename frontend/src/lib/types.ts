@@ -3,7 +3,19 @@
  * (constants are English; Romanian labels live in strings.ts `enums`).
  */
 
-export type WasteOperation = "GENERATED" | "COLLECTED" | "HANDED_OVER" | "RECOVERED" | "DISPOSED";
+/**
+ * There is no "handed over": HG 856/2002 anexa nr. 1 cap. 1 has no such column, and cap. 3 / cap. 4
+ * report a quantity together with its R/D operation AND the operator who performed it. Handing
+ * waste to a recycler is a RECOVERED with a partner named; to a landfill, a DISPOSED with one.
+ * UNCLASSIFIED_OUT is never offered — it is the state of rows written before the R/D code was
+ * required, which leave the stock but enter no official column.
+ */
+export type WasteOperation =
+  | "GENERATED"
+  | "COLLECTED"
+  | "RECOVERED"
+  | "DISPOSED"
+  | "UNCLASSIFIED_OUT";
 
 /**
  * Which legal register a quantity belongs to. ANEXA_1 = waste generated in the company's own
@@ -13,15 +25,26 @@ export type WasteOperation = "GENERATED" | "COLLECTED" | "HANDED_OVER" | "RECOVE
 export type WasteRegister = "ANEXA_1" | "ART_48";
 
 /**
- * "Scopul" V/E — HG 856/2002 anexa nr. 1, cap. 2, nota 3. Derived from the R/D operation code,
- * never entered: it says which cap. 1 column the quantity feeds, "valorificată" (V) or
- * "eliminată final" (E). There is no "handed over" column on the form.
+ * "Scopul" — HG 856/2002 anexa nr. 1, cap. 2, nota 3. Derived from the R/D operation code, never
+ * entered. Only V is written: every filled Anexa 1 we hold puts "V" on recovery sheets and a dash
+ * on disposal sheets, so a disposal is null here and the cell prints empty. What identifies it is
+ * its D code in cap. 4, next to the operator.
  */
-export type TreatmentPurpose = "V" | "E";
+export type TreatmentPurpose = "V";
 
 export type Unit = "KG" | "TONS";
 
 export type PhysicalState = "SOLID" | "LIQUID" | "SLUDGE" | "PASTY" | "POWDER" | "GASEOUS";
+
+/** Anexa 1 cap. 2, nota 1 — what the waste sits in until it leaves. */
+export type StorageType =
+  | "RM" | "RP" | "BZ" | "CT" | "CF" | "S" | "PD" | "VN" | "VA" | "RL" | "A";
+
+/**
+ * Anexa 1 cap. 2, nota 2 — what is done to the waste on site. "D" here is deshidratare, not a
+ * disposal code: the abbreviation collision is the form's, and the two live in different columns.
+ */
+export type TreatmentMethod = "TM" | "TC" | "TMC" | "TB" | "TT" | "D" | "A";
 
 export type WasteOperationCode =
   | "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "R12" | "R13"
@@ -46,6 +69,15 @@ export interface Company {
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
+
+  // --- The account profile: the answers support transcribed from the intake form. ---
+  /** Empty means "not answered yet": the screens then offer everything, not nothing. */
+  authorizedOperationCodes?: WasteOperationCode[];
+  authorizedWasteCodes?: WasteCode[];
+  /** Asked of a collector only. */
+  transportMeans?: string | null;
+  transportLicenseNumber?: string | null;
+  transportLicenseExpiry?: string | null; // yyyy-MM-dd
 }
 
 /** Create/update payload for a company (PLATFORM_ADMIN only). */
@@ -60,6 +92,51 @@ export interface CompanyInput {
   contactName?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
+  authorizedOperationCodes?: WasteOperationCode[];
+  /** Sent as ids; the backend resolves them against the nomenclator. */
+  authorizedWasteCodeIds?: string[];
+  transportMeans?: string | null;
+  transportLicenseNumber?: string | null;
+  transportLicenseExpiry?: string | null; // yyyy-MM-dd
+}
+
+// --- Account requests (the intake form) ---
+
+export type AccountRequestStatus = "NEW" | "APPROVED" | "REJECTED";
+
+/**
+ * What a prospective client answers before an account exists. EcoRegistru is a closed register:
+ * this is the only way in, and submitting it creates a request, never a login.
+ */
+export interface AccountRequestInput {
+  companyName: string;
+  cui: string;
+  companyType: CompanyType;
+  companyAddress?: string | null;
+  workPointName?: string | null;
+  workPointAddress?: string | null;
+  contactName?: string | null;
+  contactEmail: string;
+  contactPhone?: string | null;
+  environmentalAuthNumber?: string | null;
+  environmentalAuthExpiry?: string | null; // yyyy-MM-dd
+  /** Asked only of a collector. */
+  transportMeans?: string | null;
+  transportLicenseNumber?: string | null;
+  transportLicenseExpiry?: string | null; // yyyy-MM-dd
+  operationCodes?: WasteOperationCode[];
+  /** Free text: the nomenclator is behind auth, and "carton, folie" beats a guessed code. */
+  wasteCodesText?: string | null;
+  notes?: string | null;
+}
+
+/** A submitted request, as PLATFORM_ADMIN reads it. */
+export interface AccountRequest extends AccountRequestInput {
+  id: string;
+  status: AccountRequestStatus;
+  createdCompanyId: string | null;
+  handledAt: string | null;
+  createdAt: string;
 }
 
 /** Tenant roles that can be invited (never PLATFORM_ADMIN). */
@@ -96,6 +173,28 @@ export interface WorkPointInput {
   address?: string | null;
 }
 
+// --- Internal generators (Anexa 1 cap. 2 "Secţia") ---
+
+/**
+ * The source inside a work point that produced the waste: the offices, the production hall, the
+ * canteen. The third location level, and the only one without an address of its own — it sits
+ * inside the work point's.
+ */
+export interface InternalGenerator {
+  id: string;
+  workPointId: string;
+  workPointName: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+}
+
+export interface InternalGeneratorInput {
+  workPointId: string;
+  name: string;
+  description?: string | null;
+}
+
 // --- Waste codes (global nomenclator) ---
 
 export interface WasteCode {
@@ -115,7 +214,12 @@ export interface Partner {
   cui: string | null;
   authorizationNumber: string | null;
   authorizationExpiry: string | null; // yyyy-MM-dd
+  /** What they are authorised to do with waste. */
   type: PartnerType;
+  /** We hand waste over to them and we invoice them. */
+  client: boolean;
+  /** They perform the service and they invoice us. */
+  supplier: boolean;
   active: boolean;
   expiringSoon: boolean;
 }
@@ -126,6 +230,9 @@ export interface PartnerInput {
   authorizationNumber?: string | null;
   authorizationExpiry?: string | null; // yyyy-MM-dd
   type: PartnerType;
+  /** At least one of the two is required; the backend rejects a partner with no role. */
+  client: boolean;
+  supplier: boolean;
 }
 
 // --- Attachments ---
@@ -155,9 +262,17 @@ export interface WasteMovement {
   /** Derived server-side from operationCode; read-only. */
   treatmentPurpose: TreatmentPurpose | null;
   physicalState: PhysicalState | null;
+  /** Anexa 1 cap. 2 "Stocare: Tipul". */
+  storageType: StorageType | null;
+  /** Anexa 1 cap. 2 "Tratare: Modul". */
+  treatmentMethod: TreatmentMethod | null;
   operationCode: WasteOperationCode | null;
+  /** Who performed the operation, when it was not us. Null = on our own site. */
   partnerId: string | null;
   partnerName: string | null;
+  /** The section it came from — "Secţia" of Anexa 1 cap. 2. */
+  internalGeneratorId: string | null;
+  internalGeneratorName: string | null;
   documentReference: string | null;
   notes: string | null;
   attachments: Attachment[];
@@ -177,9 +292,13 @@ export interface WasteMovementInput {
   /** Optional: the backend derives it from the operation unless the goods are third-party. */
   register?: WasteRegister | null;
   physicalState?: PhysicalState | null;
-  /** Required for HANDED_OVER, RECOVERED and DISPOSED; rejected on the other operations. */
+  storageType?: StorageType | null;
+  treatmentMethod?: TreatmentMethod | null;
+  /** Required for RECOVERED and DISPOSED; rejected on the other operations. */
   operationCode?: WasteOperationCode | null;
+  /** Optional everywhere: names the operator when the operation was not performed by us. */
   partnerId?: string | null;
+  internalGeneratorId?: string | null;
   documentReference?: string | null;
   notes?: string | null;
 }
@@ -212,7 +331,7 @@ export interface MonthlyEvidence {
   totalGenerated: number;
   totalRecovered: number;
   totalDisposed: number;
-  /** Memo: the part of recovered + disposed that left as a handover. Already counted in those. */
+  /** Memo: the part of recovered + disposed a partner performed. Already counted in those. */
   totalHandedOver: number;
   /** Left the site with no operation code, so it is in neither official column. */
   totalUnclassifiedOut: number;

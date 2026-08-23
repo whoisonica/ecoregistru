@@ -85,7 +85,7 @@ class Anexa1FormConformanceIT {
         code = wasteCodeRepository.findByCode("20 03 01").orElseThrow();
         recycler = partnerRepository.save(Partner.builder()
                 .company(company).name("Reciclator SRL").cui("RO" + suffix)
-                .type(PartnerType.COLLECTOR).active(true).createdAt(Instant.now()).build());
+                .type(PartnerType.COLLECTOR).client(true).active(true).createdAt(Instant.now()).build());
 
         // The year as an office would live it: 100 kg generated every month, handed over for
         // recycling at the end of each quarter, plus one lot sent to a landfill in July.
@@ -94,7 +94,7 @@ class Anexa1FormConformanceIT {
         }
         for (int quarterEnd : new int[]{3, 6, 9, 12}) {
             save(LocalDate.of(YEAR, quarterEnd, 28), "250.000",
-                    WasteOperation.HANDED_OVER, WasteOperationCode.R3, recycler);
+                    WasteOperation.RECOVERED, WasteOperationCode.R3, recycler);
         }
         save(LocalDate.of(YEAR, 7, 20), "50.000", WasteOperation.DISPOSED, WasteOperationCode.D5, null);
 

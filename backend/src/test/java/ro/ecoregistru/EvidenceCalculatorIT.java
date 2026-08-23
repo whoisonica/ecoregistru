@@ -69,21 +69,21 @@ class EvidenceCalculatorIT {
         code = wasteCodeRepository.findAll().get(0);
         collector = partnerRepository.save(Partner.builder()
                 .company(company).name("Colector SRL").cui("RO" + suffix)
-                .type(PartnerType.COLLECTOR).active(true).createdAt(Instant.now()).build());
+                .type(PartnerType.COLLECTOR).supplier(true).active(true).createdAt(Instant.now()).build());
 
         // Year 2025, one (work point, code) pair. Running stock in KG, Anexa 1 cap. 1:
         //   stock = previous + generated − recovered − disposed − unclassified out
         //  Jan: +2000 generated (2 TONS)                        -> 2000
         //       +500 collected from a third party (art. 48)     -> not in Anexa 1 at all
-        //  Feb: -1000 handed over, R3 => "valorificată"         -> 1000
+        //  Feb: -1000 recovered by the collector, R3            -> 1000, memo "din care predat"
         //  Mar: -200 disposed by the company itself, D5         ->  800
-        //  Apr: -300 handed over with no code (legacy row)      ->  500, line incomplete
+        //  Apr: -300 out with no code at all (legacy row)       ->  500, line incomplete
         //  Dec: +100 generated                                  ->  600
         save(LocalDate.of(2025, 1, 10), "2.000", Unit.TONS, WasteOperation.GENERATED, null, null);
         save(LocalDate.of(2025, 1, 20), "500.000", Unit.KG, WasteOperation.COLLECTED, null, null);
-        save(LocalDate.of(2025, 2, 5), "1.000", Unit.TONS, WasteOperation.HANDED_OVER, WasteOperationCode.R3, collector);
+        save(LocalDate.of(2025, 2, 5), "1.000", Unit.TONS, WasteOperation.RECOVERED, WasteOperationCode.R3, collector);
         save(LocalDate.of(2025, 3, 8), "200.000", Unit.KG, WasteOperation.DISPOSED, WasteOperationCode.D5, null);
-        save(LocalDate.of(2025, 4, 8), "300.000", Unit.KG, WasteOperation.HANDED_OVER, null, collector);
+        save(LocalDate.of(2025, 4, 8), "300.000", Unit.KG, WasteOperation.UNCLASSIFIED_OUT, null, collector);
         save(LocalDate.of(2025, 12, 15), "100.000", Unit.KG, WasteOperation.GENERATED, null, null);
 
         TenantContext.set(tenantId);
@@ -116,12 +116,13 @@ class EvidenceCalculatorIT {
     }
 
     @Test
-    void handoverLandsInTheColumnItsOperationCodeImplies() {
+    void anExitLandsInTheColumnItsOperationCodeImplies() {
         evidenceCalculator.regenerateYear(2025);
         Map<Integer, MonthlyEvidenceResponse> byMonth = byMonth(2025);
 
-        // R3 handover: reported as "valorificată", with the quantity shown again as a memo — the
-        // fișa has no "predat" column, and one physical exit must not be counted twice.
+        // R3 performed by the collector: reported as "valorificată", with the quantity shown
+        // again as the memo "din care predat" — the fișa has no "predat" column, and one physical
+        // exit must not be counted twice.
         MonthlyEvidenceResponse feb = byMonth.get(2);
         assertThat(feb.totalRecovered()).usingComparator(BigDecimal::compareTo).isEqualTo(new BigDecimal("1000"));
         assertThat(feb.totalDisposed()).usingComparator(BigDecimal::compareTo).isEqualTo(BigDecimal.ZERO);
@@ -135,7 +136,7 @@ class EvidenceCalculatorIT {
     }
 
     @Test
-    void handoverWithoutAnOperationCodeLeavesStockButNoOfficialColumn() {
+    void anExitWithoutAnOperationCodeLeavesStockButNoOfficialColumn() {
         evidenceCalculator.regenerateYear(2025);
         MonthlyEvidenceResponse apr = byMonth(2025).get(4);
 
@@ -155,14 +156,14 @@ class EvidenceCalculatorIT {
         assertStock(byMonth.get(1), "2000");
         // ...but the pair now trades third-party goods, so its handovers are flagged for review.
         assertThat(byMonth.get(2).resaleSuspected()).isTrue();
-        assertThat(byMonth.get(3).resaleSuspected()).isFalse(); // own disposal, not a handover
+        assertThat(byMonth.get(3).resaleSuspected()).isFalse(); // disposed on our own site
         assertThat(byMonth.get(1).resaleSuspected()).isFalse();
     }
 
     @Test
     void januaryOpeningStockCarriesFromPreviousDecember() {
         evidenceCalculator.regenerateYear(2025); // establishes Dec 2025 closing = 600
-        save(LocalDate.of(2026, 1, 9), "100.000", Unit.KG, WasteOperation.HANDED_OVER, WasteOperationCode.R3, collector);
+        save(LocalDate.of(2026, 1, 9), "100.000", Unit.KG, WasteOperation.RECOVERED, WasteOperationCode.R3, collector);
 
         var result = evidenceCalculator.regenerateYear(2026);
         assertThat(result.linesGenerated()).isEqualTo(12);

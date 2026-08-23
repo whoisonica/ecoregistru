@@ -19,7 +19,6 @@ public enum ErrorMessageEnum {
     INVALID_VERIFICATION_CODE("verification.code.invalid", "Codul de verificare este invalid."),
     VERIFICATION_CODE_EXPIRED("verification.code.expired", "Codul de verificare a expirat. Solicită unul nou."),
     VERIFICATION_RECORD_NOT_FOUND("verification.record.not.found", "Cod de verificare inexistent."),
-    REGISTRATION_DISABLED("registration.disabled", "Înregistrarea liberă este dezactivată. Conturile sunt create de administrator."),
     USER_NOT_FOUND("user.not.found", "Utilizator inexistent."),
 
     // --- Email ---
@@ -30,6 +29,10 @@ public enum ErrorMessageEnum {
     TENANT_NOT_FOUND("tenant.not.found", "Firma (tenant) nu a fost găsită."),
     TENANT_REQUIRED("tenant.required", "Operațiunea necesită o firmă selectată."),
     ACCESS_DENIED("access.denied", "Nu ai acces la această resursă."),
+
+    // --- Account requests (intake form) ---
+    ACCOUNT_REQUEST_NOT_FOUND("account.request.not.found", "Cererea de cont nu a fost găsită."),
+    ACCOUNT_REQUEST_ALREADY_HANDLED("account.request.already.handled", "Cererea a fost deja rezolvată."),
 
     // --- Company ---
     COMPANY_NOT_FOUND("company.not.found", "Firma nu a fost găsită."),
@@ -42,18 +45,26 @@ public enum ErrorMessageEnum {
 
     // --- Partner ---
     PARTNER_NOT_FOUND("partner.not.found", "Partenerul nu a fost găsit."),
+    PARTNER_ROLE_REQUIRED("partner.role.required", "Alege rolul partenerului: client (îi predai deșeu și îi facturezi tu), furnizor (îți prestează serviciul și îți facturează el) sau ambele."),
+
+    // --- Internal generator (Anexa 1 cap. 2 "Secţia") ---
+    INTERNAL_GENERATOR_NOT_FOUND("internal.generator.not.found", "Generatorul intern nu a fost găsit."),
+    INTERNAL_GENERATOR_NAME_TAKEN("internal.generator.name.taken", "Există deja un generator intern cu acest nume în punctul de lucru."),
+    INTERNAL_GENERATOR_WORK_POINT_IMMUTABLE("internal.generator.work.point.immutable", "Generatorul intern nu poate fi mutat în alt punct de lucru. Dezactivează-l aici și adaugă-l acolo."),
+    INTERNAL_GENERATOR_WRONG_WORK_POINT("internal.generator.wrong.work.point", "Generatorul intern ales aparține altui punct de lucru."),
 
     // --- WasteCode ---
     WASTE_CODE_NOT_FOUND("waste.code.not.found", "Codul de deșeu nu a fost găsit."),
 
     // --- WasteMovement ---
     MOVEMENT_NOT_FOUND("movement.not.found", "Înregistrarea de deșeu nu a fost găsită."),
-    PARTNER_REQUIRED_FOR_HANDOVER("movement.partner.required", "Predarea deșeului necesită selectarea unui partener (colector/transportator)."),
     INVALID_QUANTITY("movement.quantity.invalid", "Cantitatea trebuie să fie mai mare decât zero."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
-    OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la predare, valorificare sau eliminare."),
-    OPERATION_CODE_REQUIRED_HANDOVER("movement.operation.code.handover", "Predarea deșeului necesită operațiunea pe care o face partenerul: un cod R (valorificare) sau D (eliminare)."),
+    OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),
+    OPERATION_NOT_ALLOWED_FOR_COMPANY_TYPE("movement.operation.not.allowed", "Operațiunea nu este disponibilă pentru tipul firmei."),
+    OPERATION_CODE_NOT_IN_PROFILE("movement.operation.code.not.in.profile", "Codul de operație nu e printre cele declarate de firmă. Completează profilul firmei dacă a apărut o operațiune nouă."),
+    OPERATION_NOT_SELECTABLE("movement.operation.not.selectable", "„Ieșire neclasificată” nu se poate alege: e starea liniilor vechi, fără cod R/D. Alege valorificare sau eliminare și codul operației."),
     REGISTER_INVALID_FOR_OPERATION("movement.register.invalid", "Registrul nu se potrivește cu operațiunea: deșeul generat intră în Anexa 1, iar preluarea de la terți în registrul cronologic."),
     ART48_REGISTER_NOT_ENABLED("movement.register.art48.disabled", "Firma e înregistrată doar ca generator. Preluarea de deșeuri de la terți cere tipul „Colector” sau „Ambele”."),
 

@@ -14,10 +14,16 @@ import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
+import ro.ecoregistru.controller.response.WasteCodeResponse;
+import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.WasteCodeRepository;
+import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -40,6 +46,7 @@ public class CompanyService {
     private static final Pattern CUI_PATTERN = Pattern.compile("^(RO)?\\d{2,10}$");
 
     CompanyRepository companyRepository;
+    WasteCodeRepository wasteCodeRepository;
     AuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
@@ -48,6 +55,15 @@ public class CompanyService {
                 .sorted(Comparator.comparing(Company::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /** The tenant the request is scoped to. Readable by any member, unlike the rest here. */
+    @Transactional(readOnly = true)
+    public CompanyResponse current() {
+        UUID tenantId = TenantContext.require();
+        return companyRepository.findById(tenantId)
+                .map(this::toResponse)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
     }
 
     @Transactional
@@ -107,6 +123,26 @@ public class CompanyService {
         company.setContactName(blankToNull(request.contactName()));
         company.setContactEmail(blankToNull(request.contactEmail()));
         company.setContactPhone(blankToNull(request.contactPhone()));
+        applyProfile(company, request);
+    }
+
+    /**
+     * The answers from the intake form. Null is left alone rather than treated as "clear": an
+     * older client of this API that does not know about the profile must not wipe it by omission.
+     * An explicitly empty set does clear it — that is someone choosing "no restriction".
+     */
+    private void applyProfile(Company company, CompanyRequest request) {
+        if (request.authorizedOperationCodes() != null) {
+            company.setAuthorizedOperationCodes(new LinkedHashSet<>(request.authorizedOperationCodes()));
+        }
+        if (request.authorizedWasteCodeIds() != null) {
+            Set<WasteCode> codes = new LinkedHashSet<>(
+                    wasteCodeRepository.findAllById(request.authorizedWasteCodeIds()));
+            company.setAuthorizedWasteCodes(codes);
+        }
+        company.setTransportMeans(blankToNull(request.transportMeans()));
+        company.setTransportLicenseNumber(blankToNull(request.transportLicenseNumber()));
+        company.setTransportLicenseExpiry(request.transportLicenseExpiry());
     }
 
     /** Normalizes a CUI to upper-case, no spaces, and validates its shape. */
@@ -130,6 +166,12 @@ public class CompanyService {
         return new CompanyResponse(
                 c.getId(), c.getName(), c.getCui(), c.getType(), c.isActive(), c.isAfmObligation(),
                 c.getEnvironmentalAuthNumber(), c.getEnvironmentalAuthExpiry(), c.getAddress(),
-                c.getContactName(), c.getContactEmail(), c.getContactPhone());
+                c.getContactName(), c.getContactEmail(), c.getContactPhone(),
+                new LinkedHashSet<>(c.getAuthorizedOperationCodes()),
+                c.getAuthorizedWasteCodes().stream()
+                        .sorted(Comparator.comparing(WasteCode::getCode))
+                        .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous()))
+                        .toList(),
+                c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry());
     }
 }

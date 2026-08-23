@@ -12,6 +12,10 @@ public record PartnerResponse(
         String authorizationNumber,
         LocalDate authorizationExpiry,
         PartnerType type,
+        /** We hand waste over to them and we invoice them. */
+        boolean client,
+        /** They perform the service and they invoice us. */
+        boolean supplier,
         boolean active,
         /** True when the authorization expires within 60 days (drives the UI badge). */
         boolean expiringSoon

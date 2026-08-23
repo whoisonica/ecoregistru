@@ -38,6 +38,16 @@ public class CompanyController {
         return companyService.listAll();
     }
 
+    /**
+     * The current tenant's own profile - the one endpoint here that is not platform-only, because
+     * every screen needs it: the movement form offers the operations this kind of company may
+     * record (CompanyType.allowedOperations()), and only the company itself knows its type.
+     */
+    @GetMapping("/current")
+    public CompanyResponse current() {
+        return companyService.current();
+    }
+
     @PostMapping
     @PreAuthorize(PLATFORM_ONLY)
     public ResponseEntity<CompanyResponse> create(@RequestBody @Valid CompanyRequest request) {

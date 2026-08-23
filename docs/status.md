@@ -121,6 +121,113 @@ rulează local și are testele verzi.
   ipoteza de profil implicit a Etapei 3 —, iar antetul cap. 3/4 al șablonului încă trimite la
   **Legea 211/2011**, abrogată de OUG 92/2021. Fișierul e gitignored, deci niciun test nu-l citește.
 
+- ✅ **ETAPA G1 — fundația modulului de generatori (2026-08-23, după meeting-ul de 2 ore cu
+  specialista):** s-a decis ca **modulul de generatori** să fie construit primul, „de la început”:
+  cont → firmă cu adresă → puncte de lucru → generatori interni → parteneri → mișcări. Ce s-a
+  schimbat efectiv, punct cu punct:
+  - **Registru închis.** `POST /api/v1/auth/register` **a fost șters**, împreună cu
+    `RegisterRequest` și flagul `app.registration-enabled`. Nu mai există înregistrare liberă nici
+    măcar dezactivată: un cont există fiindcă supportul a creat firma și a invitat utilizatorul, pe
+    baza formularului completat de client (`POST /api/v1/companies` +
+    `POST /api/v1/companies/{id}/users`, ambele PLATFORM_ADMIN). Un endpoint dezactivat ar fi rămas
+    la un flag distanță de a fi deschis.
+  - **Partenerii au un rol comercial**, separat de ce sunt autorizați să facă (`PartnerType`):
+    **client** (îi predai deșeu și îi facturezi tu) și **furnizor** (îți prestează serviciul și îți
+    facturează el). Două flaguri, nu un enum, fiindcă **același partener e des amândouă** — îi vinzi
+    cartonul și cumperi de la el ridicarea menajerului. Serviciul refuză un partener fără niciun rol.
+    **`V7` nu ghicește** rolul partenerilor existenți: direcția facturii nu se poate deduce din nimic
+    din ce stocăm, deci rămân „rol nestabilit”, iar editarea îi completează — exact tratamentul pe
+    care `V5` l-a dat predărilor fără cod R/D.
+  - **Culorile cerute la meeting:** verde = client (banii intră), chihlimbar = furnizor (banii ies),
+    gri = rol nestabilit. Un chip per rol, deci „ambele” se citește ca ambele, nu ca o a treia
+    categorie. Plus filtru pe rol în ecranul Parteneri, inclusiv pe „rol nestabilit”.
+  - **Generator intern** — al treilea nivel de locație, sub punctul de lucru: birouri, producție,
+    cantină. Singurul fără adresă proprie (stă în adresa punctului de lucru), fiindcă e exact ce
+    tipărește **cap. 2 din Anexa 1 în coloana „Secţia”**. Confirmat de toate fișierele completate
+    primite: valoarea e **constantă pe cele 12 luni** ale unei foi. Entitate + CRUD + ecran în
+    Setări; mișcarea poartă opțional secția din care a venit deșeul, și refuză o secție a altui
+    punct de lucru. Nu se poate muta între puncte de lucru: ar rescrie coloana „Secţia” de pe fișele
+    deja tipărite.
+  - **„Predare” nu mai e operațiune.** `WasteOperation.HANDED_OVER` **a dispărut**. Anexa 1 cap. 1
+    are patru coloane de cantitate și niciuna nu e „predat”, iar cap. 3 / cap. 4 raportează
+    cantitatea împreună cu operaţia R/D **și** cu „agentul economic care efectuează operaţia”. Deci
+    predarea la un reciclator e o **valorificare făcută de partenerul acela**, iar predarea la o
+    groapă o **eliminare făcută de el**: partenerul spune că a fost predare, codul spune ce se
+    întâmplă cu deșeul. Partenerul devine opțional peste tot (gol = ai făcut-o tu, pe amplasament).
+    `V7` convertește după codul R/D, deci nu ghicește nimic: cod R → `RECOVERED`, cod D → `DISPOSED`.
+  - **Rândurile vechi fără cod R/D** nu pot fi clasificate retroactiv, deci primesc o stare proprie,
+    `UNCLASSIFIED_OUT` („ieșire neclasificată”) — exact ce raporta deja `V6`: cantitatea iese din
+    stoc, nu intră în nicio coloană oficială, iar linia e `incomplete`. **Nu se poate alege** din
+    formular; apare doar la editarea unei linii vechi, cu explicația a ce trebuie completat.
+  - **Operațiunile disponibile depind de tipul contului** (`CompanyType.allowedOperations()`), și
+    în ecran, și în service. Singura care variază e **preluarea de la terți**: un generator pur nu
+    are registru art. 48, deci n-are ce prelua. `GENERATED` rămâne la toate tipurile, deliberat —
+    art. 2 alin. (1) obligă și un colector să țină Anexa 1 pentru deșeul din activitatea proprie
+    (refuzul de la sortare inclusiv). Ecranul află tipul firmei din endpointul nou
+    `GET /api/v1/companies/current`, primul din `CompanyController` care nu e platform-only.
+  - **Litera „E” din cap. 2 nota 3 nu se mai scrie.** Nota definește `V - pentru valorificare` și
+    `E - în vederea eliminării`, dar practica a renunțat la a doua, iar cele **zece Anexe 1
+    completate** primite o confirmă aproape unanim: pe toate fișele de valorificare (Cluj,
+    Timișoara, Bragadiru, Oradea) scrie `V` pe toate cele 12 rânduri, iar pe fișele de eliminare
+    (20 03 01, 19 12 12) scrie liniuță. `E` apare **o singură dată în tot corpusul** — Cluj 2022,
+    codul 19 12 12 — iar același client a pus liniuță în 2023 și 2024. Deci `TreatmentPurpose` are
+    un singur membru, iar `WasteOperationCode.treatmentPurpose()` întoarce `null` pentru familia D:
+    celula rămâne goală, exact ca pe formularele completate. Eliminarea e identificată de codul D
+    din cap. 4, lângă operator.
+  Migrarea **`V7`** e aditivă (roluri de partener, tabela `internal_generators`,
+  `waste_movements.internal_generator_id`), plus conversia predărilor și golirea cache-ului
+  `monthly_evidences` — memo-ul „din care predat” înseamnă acum „partea din valorificat + eliminat
+  pe care a făcut-o un partener”, cu care nicio linie veche nu fusese calculată.
+  Suită verde: **84 de teste** (73 înainte), din care `GeneratorModuleIT` nou (8 teste) și
+  `RegisterSeamIT` rescris pe modelul fără predare. Frontend-ul compilează.
+
+- ✅ **ETAPA G2 — profilul de cont și formularul din care se naște (2026-08-23):** clientul
+  completează un formular cu întrebări punctuale, supportul creează contul din el, iar de-atunci
+  ecranele oferă **doar ce îi trebuie tipului lui de activitate**. Trei piese:
+  - **Formularul de cerere** (`/cerere-cont`, public) — singura scriere publică din aplicație și
+    singura intrare într-un registru închis. Creează o **cerere**, niciodată un cont: fără user,
+    fără sesiune, și nu întoarce nimic despre ce a scris, ca să nu poată fi folosit ca sondă pentru
+    firmele existente. Doar patru câmpuri sunt obligatorii — denumire, CUI, tipul activității și un
+    email de răspuns — fiindcă un formular care refuză să fie trimis e un formular pe care nu-l
+    trimite nimeni. Întrebările sunt fix profilul firmei, în ordinea în care un client le poate
+    răspunde: cine ești → unde lucrezi (adresă sediu **și** adresă punct de lucru, separat, fiindcă
+    evidența se ține pe punct de lucru) → pe cine sunăm → autorizația → *doar dacă preiei de la
+    terți:* cu ce transporți + licența → ce se întâmplă cu deșeul.
+  - **Aprobarea** (`POST /api/v1/account-requests/{id}/approve`, PLATFORM_ADMIN) copiază
+    răspunsurile pe o firmă reală, profil inclus, și creează punctul de lucru pe care l-a numit
+    formularul. **Nu invită pe nimeni**: crearea contului și darea accesului rămân două acte
+    separate. Cererea nu se șterge niciodată — e urma de hârtie din spatele profilului, adică
+    răspunsul la „de ce vede clientul ăsta doar cinci coduri?”. Lista cererilor apare în ecranul
+    **Clienți**, sub firme.
+  - **Profilul restrânge ce se vede.** `Company` primește operațiunile R/D declarate, codurile de
+    deșeu din autorizație și, pentru colectori, cu ce transportă + licența de transport mărfuri
+    (aceleași câmpuri pe care le tipărește Anexa 3 pe partea transportatorului). Ecranul de mișcări
+    oferă doar codurile din profil, iar serviciul le și impune. **Profil gol = fără restricție**,
+    deliberat: conturile existente n-au completat formularul, iar a restrânge pe un răspuns gol
+    le-ar ascunde opțiuni pe care le folosesc azi. Codul mișcării editate rămâne mereu în listă, ca
+    o linie veche să nu-și piardă tăcut operațiunea la salvare.
+  - **Cap. 2 al Anexei 1 apare sub codul de deșeu**, cum s-a cerut: **Stocare — tipul** (nota 1: RM,
+    RP, BZ, CT, CF, S, PD, VN, VA, RL, A) și **Tratare — ce se face** (nota 2: TM, TC, TMC, TB, TT,
+    D, A), ambele verbatim din formular, ambele opționale. A treia coloană a capitolului, „Scopul”,
+    **nu se stochează**: se derivă din codul R/D și e doar `V`. Atenție la coliziunea de abreviere
+    pe care o face chiar formularul: `D` din nota 2 e **deshidratare**, nu un cod de eliminare — de
+    aceea sunt tipuri diferite (`TreatmentMethod` vs. `WasteOperationCode`).
+  Migrări: **`V8`** (profilul firmei + cele două nomenclatoare pe mișcare) și **`V9`**
+  (`account_requests` + codurile declarate). Ambele aditive.
+  Suită verde: **92 de teste** (84 după G1), din care `AccountRequestIT` nou (4 teste) și patru
+  teste noi în `GeneratorModuleIT` pentru restrângerea după profil. Frontend-ul compilează.
+
+- 📎 **Exemplele completate au sosit (2026-08-23).** `documente oficiale/` are acum **zece Anexe 1
+  cu cifre reale** (Cluj 2022–2024, Timișoara 2022–2024, Bragadiru 2022–2024, Oradea 2022–2024) și
+  modelul **Anexa 3 — dovada predării** (formularul de încărcare-descărcare deșeuri nepericuloase,
+  HG 1061/2008: expeditor, destinatar, cod deșeu, cantitate în kg, aviz, șofer, nr. auto,
+  autorizație de mediu, bifa colectare/stocare/tratare/valorificare/eliminare). Asta **închide
+  restanța „șablonul specialistei e gol”** din Etapa 2c: acum există cifre de reprodus, nu doar
+  formule. Fiecare fișier poartă și foaia `raportare deseuri generate` — **declarația anuală**: un
+  rând per cod, cu `stoc iniţial → generat → valorificat → eliminat → stoc final` plus prin cine.
+  Fișierele rămân gitignored (sunt ale clientului), deci testele nu le citesc; ce s-a extras din ele
+  a intrat în cod ca regulă comentată, cu numărul de fișiere care o susțin.
+
 ---
 
 ## Ce urmează — plan revizuit (22.08.2026)
@@ -151,8 +258,22 @@ nu se salvează.
   găsește nimic. Cu 10 coduri nu conta; de la Etapa 1 încoace, cu 842, se vede. Reparație:
   `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
 
-**Etapa 2 e livrată integral (2a–2d, 23.08.2026).** Următoarea migrare liberă e **`V7`**
-(`V5` = seam-ul de registru, `V6` = modelul de stoc).
+**Etapa 2 e livrată integral (2a–2d, 23.08.2026); G1 și G2 sunt livrate peste ea.** Următoarea
+migrare liberă e **`V10`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
+generatori, `V8` = profilul de cont, `V9` = cererile de cont).
+
+**Ordinea s-a schimbat la meeting-ul din 23.08.2026:** se construiește întâi **modulul de
+generatori**, cap-coadă. Etapele 8–11 (depozit, borderou, groapă, ambalaje) rămân în listă, dar
+după ce generatorul e complet. Ce urmează imediat, în ordine:
+
+| # | Felie | Depinde de | Mărime |
+|---|---|---|---|
+| G1 | ✅ Registru închis · rol comercial de partener · generator intern · operațiuni pe tip de cont | 2 | **GATA** |
+| G2 | ✅ Formular de cerere de cont · profil de firmă · cap. 2 (stocare/tratare) sub codul de deșeu | G1 | **GATA** |
+| G3 | **Anexa 3 — dovada predării**: formularul HG 1061/2008 ca document al predării, generat din mișcare | G2 | M |
+| G4 | Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | S |
+| G5 | **Export oficial Anexa 1** (4 capitole), verificat pe cele 10 fișiere completate | G4 | L |
+| G6 | **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc | G5 | M |
 
 **Ce a rămas deschis după Etapa 2, în ordinea în care doare:**
 

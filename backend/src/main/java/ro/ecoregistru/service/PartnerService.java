@@ -18,7 +18,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import ro.ecoregistru.exception.BusinessException;
+
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_ROLE_REQUIRED;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +43,7 @@ public class PartnerService {
     @Transactional
     public PartnerResponse create(PartnerRequest request) {
         UUID tenantId = TenantContext.require();
+        requireCommercialRole(request);
         Partner partner = Partner.builder()
                 .company(companyRepository.getReferenceById(tenantId))
                 .name(request.name())
@@ -47,6 +51,8 @@ public class PartnerService {
                 .authorizationNumber(request.authorizationNumber())
                 .authorizationExpiry(request.authorizationExpiry())
                 .type(request.type())
+                .client(request.client())
+                .supplier(request.supplier())
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
@@ -57,17 +63,32 @@ public class PartnerService {
     @Transactional
     public PartnerResponse update(UUID id, PartnerRequest request) {
         Partner partner = require(id);
+        requireCommercialRole(request);
         partner.setName(request.name());
         partner.setCui(request.cui());
         partner.setAuthorizationNumber(request.authorizationNumber());
         partner.setAuthorizationExpiry(request.authorizationExpiry());
         partner.setType(request.type());
+        partner.setClient(request.client());
+        partner.setSupplier(request.supplier());
         return toResponse(partner);
     }
 
     @Transactional
     public void deactivate(UUID id) {
         require(id).setActive(false);
+    }
+
+    /**
+     * A partner with neither role cannot be saved. Partners created before the split have none —
+     * which way the money flows is not derivable from anything stored, so V7 did not guess — and
+     * this is what makes editing one complete it, the same way V5 made editing a handover supply
+     * its R/D code.
+     */
+    private void requireCommercialRole(PartnerRequest request) {
+        if (!request.client() && !request.supplier()) {
+            throw new BusinessException(PARTNER_ROLE_REQUIRED);
+        }
     }
 
     private Partner require(UUID id) {
@@ -81,6 +102,7 @@ public class PartnerService {
                 && !p.getAuthorizationExpiry().isAfter(LocalDate.now().plusDays(EXPIRY_WARNING_DAYS));
         return new PartnerResponse(
                 p.getId(), p.getName(), p.getCui(), p.getAuthorizationNumber(),
-                p.getAuthorizationExpiry(), p.getType(), p.isActive(), expiringSoon);
+                p.getAuthorizationExpiry(), p.getType(), p.isClient(), p.isSupplier(),
+                p.isActive(), expiringSoon);
     }
 }

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +62,12 @@ export function LoginPage() {
             {loading ? strings.login.loading : strings.login.submit}
           </Button>
         </form>
+        {/* The register is closed: there is no sign-up, only a request support acts on. */}
+        <p className="mt-4 text-center text-sm">
+          <Link to="/cerere-cont" className="text-blue-600 hover:underline">
+            {strings.accountRequest.linkFromLogin}
+          </Link>
+        </p>
       </div>
     </div>
   );
