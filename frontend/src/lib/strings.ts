@@ -276,6 +276,19 @@ export const strings = {
     colStock: "Stoc",
     hazardous: "Periculos",
     // line warnings
+    // Cele două vederi ale tabului. Implicit e registrul de predări, cerut la meeting; vederea
+    // lunară rămâne fiindcă poartă stocul cumulativ, singura cifră pe care ochiul n-o reface și
+    // exact ce cere fișa Anexa 1.
+    viewHandovers: "Predări",
+    viewMonthly: "Anexa 1 — lunar",
+    handoversSubtitle:
+      "Ce a plecat de pe amplasament: cantitatea, data predării, cine a primit și sub ce cod. Din rândul de aici tipărești Anexa 3.",
+    colHandoverDate: "Data predării",
+    colOperationCode: "Operațiune",
+    colPartnerName: "Partener",
+    emptyHandovers: "Nicio predare pentru filtrele alese.",
+    handoversLoadError: "Nu am putut încărca predările.",
+    ownSite: "pe amplasament propriu",
     incomplete: "Incomplet",
     incompleteHint:
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",

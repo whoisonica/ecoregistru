@@ -303,10 +303,15 @@ după ce au fost introduse datele”, „10 kg (se cântărește la descărcare)
   `PartnerType` ar trebui să nu mai fie `COLLECTOR / CARRIER / BOTH`, ci **generator / colector** —
   transportatorul nu e un tip de partener, ci o rubrică pe mișcare (unde G3 tocmai l-a pus). Ar
   cere o migrare pe un enum cu date existente, deci **nu s-a ghicit**: de confirmat.
-- 🟠 **„Evidență – Tabel: scot generat / adaug cantitate, data când s-o predat; la valorificare să
-  apară partenerul și cod V/R/D. Și atât.”** Schimbă coloanele ecranului de Evidențe. „Scot generat”
-  intră însă în tensiune cu cap. 1 din Anexa 1, care **are** coloana „Generate”, deci nu e clar dacă
-  e vorba de ecran sau de formular. De confirmat.
+- ✅ **„Evidență – Tabel: scot generat / adaug cantitate, data când s-o predat; la valorificare să
+  apară partenerul și cod V/R/D. Și atât.”** Confirmat că e vorba de **ecran**, nu de formular.
+  Tabul **Evidențe** are de-acum două vederi, cu aceleași filtre: **„Predări”** (implicită) e
+  registrul cerut — data predării, cod deșeu, cantitate, operațiune (litera + codul R/D), partener,
+  punct de lucru — și e rândul din care se tipărește Anexa 3; **„Anexa 1 — lunar”** e agregatul de
+  până acum. Vederea lunară **rămâne** fiindcă poartă **stocul cumulativ**, singura cifră pe care
+  ochiul n-o poate reface din rânduri și exact cea în jurul căreia e construită fișa. Predările fără
+  cod R/D (liniile vechi) apar în registru marcate „Incomplet”, iar cele necântărite cu „De
+  cântărit”.
 - 🟡 **„Când dă print la dosar control să respecte structura de la tabelele pe care le am de la
   Andreea !!! (la generator) + Anexa 1”** — asta e G5 (exportul oficial), unde corpusul de zece
   fișiere completate e referința.

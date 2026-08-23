@@ -7,7 +7,8 @@ import {
   useEvidences,
   useRegenerateEvidence,
 } from "@/hooks/useEvidences";
-import type { EvidenceFilters } from "@/lib/types";
+import type { EvidenceFilters, MovementFilters } from "@/lib/types";
+import { HandoverRegister } from "@/components/HandoverRegister";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,20 @@ export function EvidencesPage() {
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(""); // "" = all months
   const [workPointId, setWorkPointId] = useState(""); // "" = all work points
+  /**
+   * Two views of the same period. "Predări" is the default because it is what the meeting asked
+   * the tab to show — quantity, handover date, partner, R/D code, and that is it. The monthly
+   * Anexa 1 aggregate stays one click away: the running stock is the one figure that cannot be
+   * reconstructed by reading the rows, and it is the one the form is built around.
+   */
+  const [view, setView] = useState<"handovers" | "monthly">("handovers");
+
+  const movementFilters: MovementFilters = useMemo(() => {
+    const f: MovementFilters = { year };
+    if (month) f.month = Number(month);
+    if (workPointId) f.workPointId = workPointId;
+    return f;
+  }, [year, month, workPointId]);
 
   const filters: EvidenceFilters = useMemo(() => {
     const f: EvidenceFilters = { year };
@@ -142,7 +157,24 @@ export function EvidencesPage() {
       )}
 
       {/* Filters */}
-      <div className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="mt-6 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+        {(["handovers", "monthly"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setView(v)}
+            className={
+              view === v
+                ? "rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm"
+                : "rounded-md px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+            }
+          >
+            {v === "handovers" ? t.viewHandovers : t.viewMonthly}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-end gap-3">
         <div>
           <Label htmlFor="ev-year">{t.filterYear}</Label>
           <Select
@@ -193,6 +225,10 @@ export function EvidencesPage() {
       </div>
 
       <section className="mt-4">
+        {view === "handovers" && <HandoverRegister filters={movementFilters} />}
+
+        {view === "monthly" && (
+          <>
         {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
@@ -279,6 +315,8 @@ export function EvidencesPage() {
               </TBody>
             </Table>
           </div>
+        )}
+          </>
         )}
       </section>
     </div>

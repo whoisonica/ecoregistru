@@ -41,7 +41,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
-import { api } from "@/lib/api";
+import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -103,33 +103,7 @@ export function MovementsPage() {
   const [editing, setEditing] = useState<WasteMovement | null>(null);
 
   const hasFilters = Boolean(monthFilter || workPointFilter);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-
-  /**
-   * Anexa 3 is the form for NON-hazardous waste — its own title says so — and it describes a
-   * handover, so it needs a recipient. The backend refuses the other cases; the button simply does
-   * not offer them.
-   */
-  function canPrintAnexa3For(m: WasteMovement) {
-    return !m.hazardous && m.partnerId != null && (m.operation === "RECOVERED" || m.operation === "DISPOSED");
-  }
-
-  async function downloadAnexa3(m: WasteMovement) {
-    setDownloadingId(m.id);
-    try {
-      const res = await api.get(`/api/v1/movements/${m.id}/anexa3`, { responseType: "blob" });
-      const url = URL.createObjectURL(res.data as Blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `anexa3-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      notify(apiErrorMessage(err, t.anexa3Error), "error");
-    } finally {
-      setDownloadingId(null);
-    }
-  }
+  const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
 
   function openCreate() {
     setEditing(null);
@@ -295,7 +269,7 @@ export function MovementsPage() {
                   {canWrite && (
                     <TD className="text-right">
                       <div className="flex justify-end gap-1">
-                        {canPrintAnexa3For(m) && (
+                        {canPrintAnexa3(m) && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -456,7 +430,7 @@ function MovementFormDialog({
   // remain saveable without silently losing its operation.
   // Same rule as the list button: the form covers a non-hazardous handover. The combobox marks a
   // hazardous code with its sublabel, so that is where the answer comes from.
-  const canPrintAnexa3 =
+  const showAnexa3Section =
     (operation === "RECOVERED" || operation === "DISPOSED") &&
     Boolean(partnerId) &&
     wasteCode?.sublabel !== t.hazardous;
@@ -799,7 +773,7 @@ function MovementFormDialog({
           <p className="mt-1 text-xs text-gray-500">{t.partnerHint}</p>
         </div>
 
-        {canPrintAnexa3 && (
+        {showAnexa3Section && (
           <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3">
             <div>
               <span className="text-sm font-semibold text-gray-800">{t.anexa3Section}</span>
