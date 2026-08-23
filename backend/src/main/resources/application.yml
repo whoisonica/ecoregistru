@@ -40,8 +40,19 @@ spring:
       mail:
         smtp:
           auth: true
-        starttls:
-          enabled: true
+          starttls:
+            # JavaMail reads 'enable', not 'enabled', and it has to sit under smtp — the old
+            # spelling produced mail.starttls.enabled, a property nothing reads, so port 587
+            # stayed in the clear and every provider refused to authenticate on it.
+            enable: true
+            # Fail loudly if the server will not upgrade, instead of falling back to plaintext
+            # and sending a password over an open connection.
+            required: true
+          # A hung SMTP connection otherwise holds a request thread until the socket gives up,
+          # well past Heroku's 30s router timeout. An invite is worth 10 seconds, not a worker.
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
 
 app:
   # Base URL used in email links (verification, reset).
