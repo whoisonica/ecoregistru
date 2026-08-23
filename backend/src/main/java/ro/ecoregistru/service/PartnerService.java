@@ -54,6 +54,7 @@ public class PartnerService {
                 .client(request.client())
                 .supplier(request.supplier())
                 .address(request.address())
+                .workPointAddress(request.workPointAddress())
                 .tradeRegisterNumber(request.tradeRegisterNumber())
                 .transportLicenseNumber(request.transportLicenseNumber())
                 .transportLicenseExpiry(request.transportLicenseExpiry())
@@ -76,6 +77,7 @@ public class PartnerService {
         partner.setClient(request.client());
         partner.setSupplier(request.supplier());
         partner.setAddress(request.address());
+        partner.setWorkPointAddress(request.workPointAddress());
         partner.setTradeRegisterNumber(request.tradeRegisterNumber());
         partner.setTransportLicenseNumber(request.transportLicenseNumber());
         partner.setTransportLicenseExpiry(request.transportLicenseExpiry());
@@ -112,7 +114,7 @@ public class PartnerService {
                 p.getId(), p.getName(), p.getCui(), p.getAuthorizationNumber(),
                 p.getAuthorizationExpiry(), p.getType(), p.isClient(), p.isSupplier(),
                 p.isActive(), expiringSoon,
-                p.getAddress(), p.getTradeRegisterNumber(),
+                p.getAddress(), p.getWorkPointAddress(), p.getTradeRegisterNumber(),
                 p.getTransportLicenseNumber(), p.getTransportLicenseExpiry());
     }
 }

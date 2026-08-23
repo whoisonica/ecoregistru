@@ -35,12 +35,15 @@ public class GenericEvidenceExporter {
 
     private static final String TITLE = "Evidența gestiunii deșeurilor — rezumat generic (neoficial)";
     // Column order follows Anexa 1 cap. 1 — generated, of which recovered / disposed, in stock —
-    // even though the table itself is unofficial. "din care predat" is a memo inside the two
-    // treatment columns, and "neclasificat" is what left with no operation code, hence outside
-    // both. Goods taken over from third parties are not here at all: they are the art. 48 register.
+    // even though the table itself is unofficial. There is no "predare" column, and not only
+    // because the form has none: it was a memo inside the two treatment columns, i.e. the same
+    // kilograms shown twice, and a reader cannot tell that by looking. Who performed the operation
+    // is on the movement, in the handover register. "Neclasificat" is what left with no operation
+    // code, hence outside both columns. Goods taken over from third parties are not here at all:
+    // they are the art. 48 register.
     private static final String[] COLUMNS = {
             "Punct de lucru", "Luna", "Cod", "Denumire", "Periculos",
-            "Generat (kg)", "Valorificat (kg)", "Eliminat (kg)", "din care predat (kg)",
+            "Generat (kg)", "Valorificat (kg)", "Eliminat (kg)",
             "Neclasificat (kg)", "Stoc (kg)"
     };
     private static final String[] MONTHS_RO = {
@@ -114,9 +117,8 @@ public class GenericEvidenceExporter {
                 numberCell(row, 5, kg(e.totalGenerated()), numberStyle);
                 numberCell(row, 6, kg(e.totalRecovered()), numberStyle);
                 numberCell(row, 7, kg(e.totalDisposed()), numberStyle);
-                numberCell(row, 8, kg(e.totalHandedOver()), numberStyle);
-                numberCell(row, 9, kg(e.totalUnclassifiedOut()), numberStyle);
-                numberCell(row, 10, kg(e.closingStock()), numberStyle);
+                numberCell(row, 8, kg(e.totalUnclassifiedOut()), numberStyle);
+                numberCell(row, 9, kg(e.closingStock()), numberStyle);
             }
 
             for (int c = 0; c < COLUMNS.length; c++) {
@@ -164,7 +166,7 @@ public class GenericEvidenceExporter {
 
             PdfPTable table = new PdfPTable(COLUMNS.length);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{16, 9, 8, 22, 8, 10, 10, 10, 11, 10, 10});
+            table.setWidths(new float[]{18, 10, 8, 24, 8, 10, 10, 10, 11, 11});
 
             Font headFont = new Font(Font.HELVETICA, 8, Font.BOLD);
             Font bodyFont = new Font(Font.HELVETICA, 8, Font.NORMAL);
@@ -185,7 +187,6 @@ public class GenericEvidenceExporter {
                 numCell(table, kg(e.totalGenerated()), bodyFont);
                 numCell(table, kg(e.totalRecovered()), bodyFont);
                 numCell(table, kg(e.totalDisposed()), bodyFont);
-                numCell(table, kg(e.totalHandedOver()), bodyFont);
                 numCell(table, kg(e.totalUnclassifiedOut()), bodyFont);
                 numCell(table, kg(e.closingStock()), bodyFont);
             }

@@ -248,7 +248,7 @@ public class AuditFileService {
                 + "Generat: " + LocalDate.now().format(DATE) + "\n\n"
                 + "Conținut:\n"
                 + "  - evidenta-" + year + ".xlsx / .pdf : evidența gestiunii deșeurilor (rezumat generic, neoficial)\n"
-                + "  - autorizatii-parteneri.pdf         : autorizațiile colectorilor/transportatorilor și statusul lor\n"
+                + "  - autorizatii-parteneri.pdf         : autorizațiile partenerilor și statusul lor\n"
                 + "  - atasamente/                       : documentele justificative atașate mișcărilor (+ index.txt)\n\n"
                 + "Notă: acest dosar NU înlocuiește formularele oficiale de raportare (Anexa 1 / SIM / AFM);\n"
                 + "este un pachet de lucru pentru pregătirea și prezentarea evidenței la control.\n";
@@ -257,8 +257,7 @@ public class AuditFileService {
     private String partnerType(PartnerType type) {
         return switch (type) {
             case COLLECTOR -> "Colector";
-            case CARRIER -> "Transportator";
-            case BOTH -> "Colector și transportator";
+            case GENERATOR -> "Generator";
         };
     }
 

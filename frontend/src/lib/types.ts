@@ -222,7 +222,12 @@ export interface WasteCode {
 
 // --- Partners ---
 
-export type PartnerType = "COLLECTOR" | "CARRIER" | "BOTH";
+/**
+ * What a partner is in relation to the waste. No CARRIER: hauling is a rubric of one transport,
+ * not a category of partner, and it lives on the movement (transportPartnerId) where Anexa 3 asks
+ * for it. Which way the invoice travels is the separate client/supplier pair.
+ */
+export type PartnerType = "GENERATOR" | "COLLECTOR";
 
 export interface Partner {
   id: string;
@@ -234,6 +239,8 @@ export interface Partner {
   type: PartnerType;
   // --- What Anexa 3 prints about them, as recipient or as carrier ---
   address: string | null;
+  /** Where the waste is actually unloaded, when that is not the registered office. */
+  workPointAddress: string | null;
   tradeRegisterNumber: string | null;
   transportLicenseNumber: string | null;
   transportLicenseExpiry: string | null; // yyyy-MM-dd
@@ -255,6 +262,7 @@ export interface PartnerInput {
   client: boolean;
   supplier: boolean;
   address?: string | null;
+  workPointAddress?: string | null;
   tradeRegisterNumber?: string | null;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd

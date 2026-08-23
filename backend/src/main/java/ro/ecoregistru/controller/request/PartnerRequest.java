@@ -22,6 +22,7 @@ public record PartnerRequest(
 
         // --- What Anexa 3 prints about them, as recipient or as carrier ---
         String address,
+        String workPointAddress,
         String tradeRegisterNumber,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry

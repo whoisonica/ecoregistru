@@ -24,7 +24,7 @@ import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 const t = strings.partners;
 const typeLabels = strings.enums.partnerType;
 const roleLabels = strings.enums.partnerRole;
-const PARTNER_TYPES: PartnerType[] = ["COLLECTOR", "CARRIER", "BOTH"];
+const PARTNER_TYPES: PartnerType[] = ["COLLECTOR", "GENERATOR"];
 
 /** Filter values for the commercial role. "none" surfaces the partners still to be classified. */
 type RoleFilter = "" | "client" | "supplier" | "none";
@@ -66,6 +66,7 @@ export function PartnersPage() {
   const [isClient, setIsClient] = useState(false);
   const [isSupplier, setIsSupplier] = useState(true);
   const [address, setAddress] = useState("");
+  const [workPointAddress, setWorkPointAddress] = useState("");
   const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
   const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
@@ -92,6 +93,7 @@ export function PartnersPage() {
     setIsClient(false);
     setIsSupplier(true);
     setAddress("");
+    setWorkPointAddress("");
     setTradeRegisterNumber("");
     setTransportLicenseNumber("");
     setTransportLicenseExpiry("");
@@ -110,6 +112,7 @@ export function PartnersPage() {
     setIsClient(p.client);
     setIsSupplier(p.supplier);
     setAddress(p.address ?? "");
+    setWorkPointAddress(p.workPointAddress ?? "");
     setTradeRegisterNumber(p.tradeRegisterNumber ?? "");
     setTransportLicenseNumber(p.transportLicenseNumber ?? "");
     setTransportLicenseExpiry(p.transportLicenseExpiry ?? "");
@@ -138,6 +141,7 @@ export function PartnersPage() {
       client: isClient,
       supplier: isSupplier,
       address: address.trim() || null,
+      workPointAddress: workPointAddress.trim() || null,
       tradeRegisterNumber: tradeRegisterNumber.trim() || null,
       transportLicenseNumber: transportLicenseNumber.trim() || null,
       transportLicenseExpiry: transportLicenseExpiry || null,
@@ -380,6 +384,15 @@ export function PartnersPage() {
             <div>
               <Label htmlFor="p-address">{t.address}</Label>
               <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="p-wp-address">{t.workPointAddress}</Label>
+              <Input
+                id="p-wp-address"
+                value={workPointAddress}
+                onChange={(e) => setWorkPointAddress(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-gray-500">{t.workPointAddressHint}</p>
             </div>
             <div>
               <Label htmlFor="p-reg">{t.tradeRegisterNumber}</Label>

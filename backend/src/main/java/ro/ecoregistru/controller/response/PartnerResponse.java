@@ -22,6 +22,7 @@ public record PartnerResponse(
 
         // --- What Anexa 3 prints about them ---
         String address,
+        String workPointAddress,
         String tradeRegisterNumber,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry

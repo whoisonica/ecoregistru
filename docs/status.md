@@ -247,6 +247,22 @@ rulează local și are testele verzi.
   Migrarea **`V10`** e aditivă, cu o singură relaxare: `waste_movements.quantity` devine nullable.
   Suită verde: **99 de teste** (92 după G2), din care `Anexa3FormIT` nou (7 teste).
 
+- ✅ **G3b — foaia 1 și 2 din schițe, închise (2026-08-23):** patru lucruri, toate din notițe.
+  - **Adresele erau deja acolo:** adresa firmei se editează în *Clienți*, adresa punctului de lucru
+    în *Setări*, iar formularul de cerere le cere pe amândouă separat — evidența se ține pe punct
+    de lucru, nu pe firmă, iar cele două adrese sunt des diferite.
+  - **Anexa 3 se tipărește acum cu casetele separate**, ca în modele: fiecare rubrică în chenarul
+    ei — patru pe coloana transportatorului (transportator · delegat + nr. auto · licență · data
+    expirării + semnătura), cinci pe coloana părților, două pe date. Înainte erau șase coloane cu
+    text îngrămădit; acum pagina se citește și se semnează rubrică cu rubrică, ca originalul.
+  - **„Predare” a ieșit și din evidență.** Coloana memo „din care predat” a dispărut de pe ecran și
+    din exportul generic. Nu doar fiindcă fișa n-o are: erau **aceleași kilograme afișate a doua
+    oară**, în interiorul coloanelor de valorificat/eliminat, iar cine citea tabelul n-avea cum
+    să-și dea seama. Cine a făcut operațiunea se vede în registrul de predări, pe mișcare.
+  - **Transportatorul a ieșit dintre tipurile de partener** (vezi mai jos), iar partenerul a primit
+    adresa punctului de lucru.
+  Migrarea **`V11`**. Suită verde: **99 de teste**.
+
 - 📎 **Exemplele completate au sosit (2026-08-23).** `documente oficiale/` are acum **zece Anexe 1
   cu cifre reale** (Cluj 2022–2024, Timișoara 2022–2024, Bragadiru 2022–2024, Oradea 2022–2024) și
   modelul **Anexa 3 — dovada predării** (formularul de încărcare-descărcare deșeuri nepericuloase,
@@ -289,8 +305,9 @@ nu se salvează.
   `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
 
 **Etapa 2 e livrată integral (2a–2d, 23.08.2026); G1, G2 și G3 sunt livrate peste ea.** Următoarea
-migrare liberă e **`V11`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
-generatori, `V8` = profilul de cont, `V9` = cererile de cont, `V10` = Anexa 3).
+migrare liberă e **`V12`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
+generatori, `V8` = profilul de cont, `V9` = cererile de cont, `V10` = Anexa 3, `V11` = tipul de
+partener).
 
 ### Schițele de la meeting (docs, 23.08.2026) — ce confirmă și ce deschide
 
@@ -299,10 +316,14 @@ Notițele de mână ale specialistei, șapte pagini. Confirmă G1–G3 aproape p
 tratare”, „după operațiune R1, R2 în funcție de ce s-a ales mai sus”, „Anexa 3 transport … la final
 după ce au fost introduse datele”, „10 kg (se cântărește la descărcare)”). Ce **nu** e încă făcut:
 
-- 🟠 **„La parteneri ⟹ fără transportator”**, cu săgeată spre „generator/colector”. Citit literal,
-  `PartnerType` ar trebui să nu mai fie `COLLECTOR / CARRIER / BOTH`, ci **generator / colector** —
-  transportatorul nu e un tip de partener, ci o rubrică pe mișcare (unde G3 tocmai l-a pus). Ar
-  cere o migrare pe un enum cu date existente, deci **nu s-a ghicit**: de confirmat.
+- ✅ **„La parteneri ⟹ fără transportator”** — confirmat. `PartnerType` e de-acum
+  **`GENERATOR` / `COLLECTOR`**, atât. Transportatorul nu e o categorie de partener, ci o rubrică a
+  unui transport anume, iar `V10` îl pusese deja acolo unde îi e locul: pe mișcare
+  (`transport_partner_id`), lângă șofer și numărul de înmatriculare, cum cere Anexa 3. `V11` pliază
+  `CARRIER` și `BOTH` pe `COLLECTOR` — amândouă descriau un operator care mișcă sau preia deșeu,
+  niciunul un generator, deci nu se pierde nimic. Partenerul primește și **adresa punctului de
+  lucru**, separat de sediu: pe modelul completat destinatarul e scris cu „P.L. ILFOV, Șos. de
+  Centura nr. 2-8”, nu cu sediul social. Autorizația de mediu (număr + expirare) o avea deja.
 - ✅ **„Evidență – Tabel: scot generat / adaug cantitate, data când s-o predat; la valorificare să
   apară partenerul și cod V/R/D. Și atât.”** Confirmat că e vorba de **ecran**, nu de formular.
   Tabul **Evidențe** are de-acum două vederi, cu aceleași filtre: **„Predări”** (implicită) e

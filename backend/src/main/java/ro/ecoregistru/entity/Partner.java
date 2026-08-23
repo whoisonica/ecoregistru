@@ -61,6 +61,14 @@ public class Partner {
     @Column(length = 500)
     String address;
 
+    /**
+     * Where the waste is actually unloaded, when that is not the registered office. The filled
+     * Anexa 3 model writes the recipient as "P.L. ILFOV, Şos. de Centura nr. 2-8, Bragadiru" —
+     * a work point, not a head office — so the form needs both addresses.
+     */
+    @Column(name = "work_point_address", length = 500)
+    String workPointAddress;
+
     @Column(name = "trade_register_number", length = 50)
     String tradeRegisterNumber;
 

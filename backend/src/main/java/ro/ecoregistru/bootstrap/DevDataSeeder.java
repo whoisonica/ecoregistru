@@ -110,13 +110,13 @@ public class DevDataSeeder implements CommandLineRunner {
                 "AUT-2024-555", LocalDate.now().plusDays(45), PartnerType.COLLECTOR,
                 false, true)); // within 60 days -> alert
         Partner carrier = partnerRepository.save(partner(company, "Transport Deșeuri SRL", "RO11223344",
-                "AUT-2023-100", LocalDate.now().plusMonths(10), PartnerType.CARRIER, false, true));
+                "AUT-2023-100", LocalDate.now().plusMonths(10), PartnerType.COLLECTOR, false, true));
         Partner metalRecycler = partnerRepository.save(partner(company, "Reciclare Metale SRL", "RO55667788",
                 "AUT-2024-777", LocalDate.now().plusYears(2), PartnerType.COLLECTOR, true, false));
         Partner ecoValor = partnerRepository.save(partner(company, "Eco Valorificare SA", "RO99887766",
-                "AUT-2025-012", LocalDate.now().plusMonths(6), PartnerType.BOTH, true, true));
+                "AUT-2025-012", LocalDate.now().plusMonths(6), PartnerType.COLLECTOR, true, true));
         partnerRepository.save(partner(company, "Salubritate Municipală SA", "RO33445566",
-                "AUT-2022-042", LocalDate.now().minusDays(30), PartnerType.CARRIER,
+                "AUT-2022-042", LocalDate.now().minusDays(30), PartnerType.COLLECTOR,
                 false, true)); // expired -> red badge
 
         // --- Internal generators (Anexa 1 cap. 2 "Secţia") ---

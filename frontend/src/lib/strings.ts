@@ -216,7 +216,10 @@ export const strings = {
     filterRole: "Rol",
     filterRoleAll: "Toate rolurile",
     roleRequired: "Alege cel puțin un rol: client, furnizor sau ambele.",
-    address: "Adresă",
+    address: "Adresa sediului social",
+    workPointAddress: "Adresa punctului de lucru",
+    workPointAddressHint:
+      "Unde se descarcă efectiv deșeul, dacă e altundeva decât sediul. Asta se tipărește pe Anexa 3.",
     tradeRegisterNumber: "Nr. Registrul Comerțului",
     tradeRegisterNumberPlaceholder: "ex. J12/1351/2011",
     transportLicenseNumber: "Licență de transport mărfuri",
@@ -496,10 +499,11 @@ export const strings = {
       KG: "kg",
       TONS: "tone",
     },
+    // Ce este partenerul in raport cu deseul. Transportatorul nu mai e o categorie: e o rubrica a
+    // transportului, pe miscare.
     partnerType: {
+      GENERATOR: "Generator",
       COLLECTOR: "Colector",
-      CARRIER: "Transportator",
-      BOTH: "Colector și transportator",
     },
     companyType: {
       GENERATOR: "Generator",

@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Renders Anexa 3 la HG 1061/2008 — <em>formularul de încărcare-descărcare deşeuri
@@ -104,12 +105,12 @@ public class Anexa3FormGenerator {
             PdfPTable table = new PdfPTable(6);
             table.setWidthPercentage(100);
             table.setWidths(new float[]{16, 11, 21, 13, 30, 9});
-            table.addCell(cell(carrierColumn(movement, sender)));
-            table.addCell(cell(dateColumn(movement)));
-            table.addCell(cell(wasteColumn(movement)));
-            table.addCell(cell(quantityColumn(movement)));
-            table.addCell(cell(partiesColumn(movement, sender)));
-            table.addCell(cell(observationsColumn(movement)));
+            table.addCell(column(carrierColumn(movement, sender)));
+            table.addCell(column(dateColumn(movement)));
+            table.addCell(column(wasteColumn(movement)));
+            table.addCell(column(quantityColumn(movement)));
+            table.addCell(column(partiesColumn(movement, sender)));
+            table.addCell(column(observationsColumn(movement)));
             doc.add(table);
 
             Paragraph foot = new Paragraph(cp1250(FOOTNOTE), small);
@@ -129,133 +130,127 @@ public class Anexa3FormGenerator {
      * "Date de identificare transportator" plus the delegate and the goods-transport licence. With
      * no carrier named we haul it ourselves, and the form prints our own details there.
      */
-    private Paragraph carrierColumn(WasteMovement m, Company sender) {
-        Paragraph p = new Paragraph();
-        p.add(text("Date de identificare transportator", label));
+    private List<Paragraph> carrierColumn(WasteMovement m, Company sender) {
         Partner carrier = m.getTransportPartner();
-        if (carrier != null) {
-            addLines(p, carrier.getName(), carrier.getAddress(),
-                    prefixed("CUI: ", carrier.getCui()),
-                    prefixed("Reg. Com. ", carrier.getTradeRegisterNumber()));
-        } else {
-            addLines(p, sender.getName(), sender.getAddress(),
-                    prefixed("CUI: ", sender.getCui()),
-                    prefixed("Reg. Com. ", sender.getTradeRegisterNumber()));
-        }
+        String name = carrier != null ? carrier.getName() : sender.getName();
+        String address = carrier != null ? carrier.getAddress() : sender.getAddress();
+        String cui = carrier != null ? carrier.getCui() : sender.getCui();
+        String reg = carrier != null
+                ? carrier.getTradeRegisterNumber() : sender.getTradeRegisterNumber();
+        String licence = carrier != null
+                ? carrier.getTransportLicenseNumber() : sender.getTransportLicenseNumber();
+        LocalDate licenceExpiry = carrier != null
+                ? carrier.getTransportLicenseExpiry() : sender.getTransportLicenseExpiry();
 
-        p.add(gap());
-        p.add(text("Date de identificare delegat şi nr. de înmatriculare mijloc de transport:", label));
-        addLines(p, m.getDriverName(), m.getDriverIdentification(), m.getVehicleRegistration());
+        Paragraph who = block("Date de identificare transportator");
+        addLines(who, name, address, prefixed("CUI: ", cui), prefixed("Reg. Com. ", reg));
 
-        p.add(gap());
-        p.add(text("Licenţa de transport mărfuri nepericuloase nr.", label));
-        addLines(p, carrier != null ? carrier.getTransportLicenseNumber()
-                : sender.getTransportLicenseNumber());
-        p.add(text("Data la care expiră licenţa", label));
-        addLines(p, date(carrier != null ? carrier.getTransportLicenseExpiry()
-                : sender.getTransportLicenseExpiry()));
+        Paragraph delegate =
+                block("Date de identificare delegat şi nr. de înmatriculare mijloc de transport:");
+        addLines(delegate, m.getDriverName(), m.getDriverIdentification(),
+                m.getVehicleRegistration());
 
-        p.add(gap());
-        p.add(text("Semnătura", label));
-        return p;
+        Paragraph licenceBox = block("Licenţa de transport mărfuri nepericuloase nr.");
+        addLines(licenceBox, licence);
+
+        Paragraph expiry = block("Data la care expiră licenţa de transport mărfuri nepericuloase");
+        addLines(expiry, date(licenceExpiry));
+        expiry.add(gap());
+        expiry.add(text("Semnătura", label));
+
+        return List.of(who, delegate, licenceBox, expiry);
     }
 
-    private Paragraph dateColumn(WasteMovement m) {
-        Paragraph p = new Paragraph();
-        p.add(text("Data", label));
-        p.add(gap());
-        p.add(text("Încărcare", label));
-        addLines(p, date(m.getDate()));
-        p.add(gap());
-        p.add(text("Descărcare", label));
-        addLines(p, date(m.getUnloadDate()));
-        return p;
+    private List<Paragraph> dateColumn(WasteMovement m) {
+        Paragraph loading = block("Data\nÎncărcare");
+        addLines(loading, date(m.getDate()));
+
+        Paragraph unloading = block("Data\nDescărcare");
+        addLines(unloading, date(m.getUnloadDate()));
+
+        return List.of(loading, unloading);
     }
 
     /** "Caracteristici deşeuri: Categorii deşeuri/cod", the free description, and "Destinat:". */
-    private Paragraph wasteColumn(WasteMovement m) {
-        Paragraph p = new Paragraph();
-        p.add(text("Caracteristici deşeuri: Categorii deşeuri/cod", label));
-        addLines(p, m.getWasteCode().getName(), "cod " + m.getWasteCode().getCode());
+    private List<Paragraph> wasteColumn(WasteMovement m) {
+        Paragraph waste = block("Caracteristici deşeuri: Categorii deşeuri/cod");
+        addLines(waste, m.getWasteCode().getName(), "cod " + m.getWasteCode().getCode());
 
-        if (m.getNotes() != null && !m.getNotes().isBlank()) {
-            p.add(gap());
-            p.add(text("Descriere", label));
-            addLines(p, m.getNotes());
-        }
+        Paragraph description = block("Descriere");
+        addLines(description, m.getNotes());
 
-        p.add(gap());
-        p.add(text("Destinat:", label));
+        Paragraph destination = block("Destinat:");
         for (TransportDestination d : TransportDestination.values()) {
             boolean ticked = m.getTransportDestinations().contains(d);
-            p.add(text(d.getOfficialLabel() + "   [" + (ticked ? "X" : " ") + "]", body));
+            destination.add(text(d.getOfficialLabel() + "   [" + (ticked ? "X" : " ") + "]", body));
         }
-        return p;
+
+        return List.of(waste, description, destination);
     }
 
     /**
      * "Cantitate". Empty on purpose when the recipient does the weighing — that is how the filled
      * model reached us, with the figure written in afterwards by hand.
      */
-    private Paragraph quantityColumn(WasteMovement m) {
-        Paragraph p = new Paragraph();
-        p.add(text("Cantitate", label));
-        p.add(gap());
+    private List<Paragraph> quantityColumn(WasteMovement m) {
+        Paragraph weight = block("Cantitate\n" + unitLabel(m));
         BigDecimal quantity = m.getQuantity();
         if (quantity != null) {
-            p.add(text(plain(quantity) + " " + unitLabel(m), body));
+            weight.add(text(plain(quantity), body));
         } else {
             // The line stays blank so it can be filled in on the spot; the note says why.
-            p.add(text("_______ " + unitLabel(m), body));
-            p.add(text(WEIGHED_AT_UNLOADING, small));
+            weight.add(text("_______", body));
+            weight.add(text(WEIGHED_AT_UNLOADING, small));
         }
-        if (m.getVolumeM3() != null) {
-            p.add(gap());
-            p.add(text(plain(m.getVolumeM3()) + " mc", body));
-        }
-        return p;
+
+        Paragraph volume = block("mc");
+        addLines(volume, m.getVolumeM3() == null ? null : plain(m.getVolumeM3()));
+
+        return List.of(weight, volume);
     }
 
     /** "Date privind punctul de lucru *) unde se efectuează": ÎNCĂRCAREA, then DESCĂRCAREA. */
-    private Paragraph partiesColumn(WasteMovement m, Company sender) {
-        Paragraph p = new Paragraph();
-        p.add(text("Date privind punctul de lucru *) unde se efectuează", label));
+    private List<Paragraph> partiesColumn(WasteMovement m, Company sender) {
+        Paragraph header = block("Date privind punctul de lucru *) unde se efectuează");
 
-        p.add(gap());
-        p.add(text("ÎNCĂRCAREA — date de identificare expeditor:", label));
-        addLines(p, sender.getName(),
+        Paragraph loading = block("ÎNCĂRCAREA\nDate de identificare expeditor:");
+        addLines(loading, sender.getName(),
                 joinNonBlank(sender.getCui(), sender.getTradeRegisterNumber()),
                 workPointAddress(m, sender));
-        p.add(text("Autorizaţie de mediu nr.", label));
-        addLines(p, sender.getEnvironmentalAuthNumber());
-        p.add(text("Data la care expiră autorizaţia", label));
-        addLines(p, date(sender.getEnvironmentalAuthExpiry()));
-        p.add(text("Semnătura şi ştampila", label));
 
-        p.add(gap());
-        p.add(text("DESCĂRCAREA — date de identificare destinatar:", label));
+        Paragraph senderAuth = block("Autorizaţie de mediu nr.");
+        addLines(senderAuth, sender.getEnvironmentalAuthNumber());
+        senderAuth.add(text("Data la care expiră autorizaţia", label));
+        addLines(senderAuth, date(sender.getEnvironmentalAuthExpiry()));
+        senderAuth.add(text("Semnătura şi ştampila", label));
+
+        Paragraph unloading = block("DESCĂRCAREA\nDate de identificare destinatar:");
         Partner recipient = m.getPartner();
         if (recipient != null) {
-            addLines(p, recipient.getName(),
+            addLines(unloading, recipient.getName(),
                     joinNonBlank(recipient.getCui(), recipient.getTradeRegisterNumber()),
-                    recipient.getAddress());
-            p.add(text("Autorizaţie de mediu nr.", label));
-            addLines(p, recipient.getAuthorizationNumber());
-            p.add(text("Data la care expiră autorizaţia", label));
-            addLines(p, date(recipient.getAuthorizationExpiry()));
+                    // The unloading actually happens at their work point when they have one;
+                    // the model writes "P.L. ILFOV, Sos. de Centura nr. 2-8" there, not the office.
+                    firstNonBlank(recipient.getWorkPointAddress(), recipient.getAddress()));
         }
-        p.add(text("Semnătura şi ştampila", label));
-        return p;
+
+        Paragraph recipientAuth = block("Autorizaţie de mediu nr.");
+        if (recipient != null) {
+            addLines(recipientAuth, recipient.getAuthorizationNumber());
+            recipientAuth.add(text("Data la care expiră autorizaţia", label));
+            addLines(recipientAuth, date(recipient.getAuthorizationExpiry()));
+        }
+        recipientAuth.add(text("Semnătura şi ştampila", label));
+
+        return List.of(header, loading, senderAuth, unloading, recipientAuth);
     }
 
-    private Paragraph observationsColumn(WasteMovement m) {
-        Paragraph p = new Paragraph();
-        p.add(text("Obs", label));
-        p.add(gap());
+    private List<Paragraph> observationsColumn(WasteMovement m) {
         // The reference is printed as the client wrote it; the model's own cell just says
         // "aviz 1406/11.01", so a separate "aviz" label above it would only repeat the word.
+        Paragraph p = block("Obs");
         addLines(p, m.getDocumentReference());
-        return p;
+        return List.of(p);
     }
 
     // --- helpers ---
@@ -290,6 +285,15 @@ public class Anexa3FormGenerator {
         return value == null ? null : value.format(DATE);
     }
 
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private String prefixed(String prefix, String value) {
         return value == null || value.isBlank() ? null : prefix + value;
     }
@@ -317,12 +321,34 @@ public class Anexa3FormGenerator {
         return new Phrase("\n", small);
     }
 
-    private PdfPCell cell(Paragraph content) {
-        PdfPCell cell = new PdfPCell();
-        cell.addElement(content);
-        cell.setPadding(4f);
-        cell.setVerticalAlignment(Element.ALIGN_TOP);
-        cell.setMinimumHeight(320f);
+    /** A titled block: the rubric name in bold, then whatever is written under it. */
+    private Paragraph block(String title) {
+        Paragraph p = new Paragraph();
+        p.add(text(title, label));
+        return p;
+    }
+
+    /**
+     * One column of the form, as the models draw it: a stack of separately bordered rubrics rather
+     * than one tall cell with everything in it. The nested table is what gives each rubric its own
+     * box — four of them down the carrier column, five down the parties column — so the printed
+     * page can be read and signed rubric by rubric like the paper original.
+     */
+    private PdfPCell column(List<Paragraph> blocks) {
+        PdfPTable nested = new PdfPTable(1);
+        nested.setWidthPercentage(100);
+        for (Paragraph b : blocks) {
+            PdfPCell box = new PdfPCell();
+            box.addElement(b);
+            box.setPadding(4f);
+            box.setVerticalAlignment(Element.ALIGN_TOP);
+            box.setMinimumHeight(56f);
+            nested.addCell(box);
+        }
+        PdfPCell cell = new PdfPCell(nested);
+        cell.setPadding(0f);
+        cell.setBorderWidth(0.8f);
+        cell.setMinimumHeight(340f);
         return cell;
     }
 

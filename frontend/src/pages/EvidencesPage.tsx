@@ -254,7 +254,6 @@ export function EvidencesPage() {
                   <TH className="text-right">{t.colGenerated}</TH>
                   <TH className="text-right">{t.colRecovered}</TH>
                   <TH className="text-right">{t.colDisposed}</TH>
-                  <TH className="text-right text-gray-400">{t.colHandedOver}</TH>
                   <TH className="text-right">{t.colUnclassified}</TH>
                   <TH className="text-right">{t.colStock}</TH>
                 </TR>
@@ -293,8 +292,6 @@ export function EvidencesPage() {
                     <TD className="text-right">{kg(r.totalGenerated)}</TD>
                     <TD className="text-right">{kg(r.totalRecovered)}</TD>
                     <TD className="text-right">{kg(r.totalDisposed)}</TD>
-                    {/* Memo column: already inside recovered + disposed, never added to them. */}
-                    <TD className="text-right text-gray-400">{kg(r.totalHandedOver)}</TD>
                     <TD
                       className={`text-right ${
                         r.incomplete ? "font-medium text-amber-700" : "text-gray-400"
