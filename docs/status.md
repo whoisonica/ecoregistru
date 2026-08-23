@@ -500,11 +500,14 @@ cu SMTP funcțional, invitatul ajungea pe o pagină albă și nu putea intra nic
 `serve -s dist` are fallback de SPA, deci linkurile adânci din mail se încarcă direct — verificat pe
 dyno, nu presupus.
 
-**3. Config de mail în producție.** `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587` setate pe
-`ecoregistru-api`. Restul (`MAIL_USERNAME`, `MAIL_PASSWORD` = App Password de Google,
-`MAIL_FROM` = **aceeași** adresă) se pun din dashboard, ca parola să nu treacă prin nicio consolă.
-`MAIL_FROM` trebuie să fie identic cu `MAIL_USERNAME`: Gmail rescrie un From pe care nu-l
-controlezi, iar `contact@ecoregistru.ro` n-are încă domeniul în mână.
+**3. Config de mail în producție — pornit.** Gmail cu App Password, pe `ecoregistru-api`:
+`MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587`, `MAIL_USERNAME` = `MAIL_FROM` = adresa de Gmail.
+Cele două trebuie să fie **identice**: Gmail rescrie un From pe care nu-l controlezi, iar
+`contact@ecoregistru.ro` n-are încă domeniul în mână. App Password-ul nu expiră — se revocă manual.
+
+**Verificat pe dyno**, nu presupus: `POST /auth/request-reset-password` → `EmailService : Sent
+'mail/forgot_password' email to ...` în log, mailul ajuns. Când vine domeniul, mutarea pe Zoho e
+doar schimbarea celor trei variabile; default-ul din `application.yml` e deja `smtp.zoho.eu`.
 
 Rămas deschis: **`/verifica-email`** e la fel de fără rută, dar fluxul lui e orfan — se declanșează
 doar prin `POST /auth/resend-verification-email`, pe care niciun ecran nu-l apasă, iar conturile
@@ -751,9 +754,13 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
   Legislativ trunchiază anexele pe versiunile consolidate. Blochează doar profilul de groapă.
 - 🟠 **Termenul de păstrare al borderoului de achiziție** — nu e în OUG 31/2011; intră sub Legea
   contabilității, de verificat separat.
-- ✅ **SMTP** — deblocat pe 24.08: STARTTLS reparat, `MAIL_HOST`/`MAIL_PORT` setate pe dyno,
-  paginile de resetare/invitație construite. Rămân de pus `MAIL_USERNAME` / `MAIL_PASSWORD` /
-  `MAIL_FROM` (App Password de Gmail), din dashboard.
+- ✅ **SMTP** — deblocat pe 24.08 și **confirmat pe producție**: STARTTLS reparat, credențiale
+  Gmail pe dyno, paginile de resetare/invitație construite, mail chiar livrat.
+- 🔴 **Conturile de demo sunt în baza de producție.** `platform@ecoregistru.ro` și `admin@demo.ro`
+  răspund la `request-reset-password` pe dyno-ul de producție, deşi `DevDataSeeder` e `@Profile("dev")`
+  şi `SPRING_PROFILES_ACTIVE` e gol — au ajuns acolo altfel. Cât timp mailul nu pleca era inofensiv;
+  de pe 24.08 nu mai e: **`demo.ro` nu e domeniul nostru**, deci cine îl controlează poate cere o
+  resetare și intra în producție ca ADMIN pe tenantul demo. De șters sau dezactivat.
 - 🟡 Cloudinary (upload real) — `CLOUDINARY_URL` nesetat pe `ecoregistru-api`, deci atașamentele
   de pe mișcări nu urcă în producție.
 
