@@ -73,9 +73,12 @@ class CompaniesControllerIT {
     }
 
     @Test
-    void unauthenticatedIsForbidden() throws Exception {
+    void unauthenticatedIsRejectedWith401() throws Exception {
+        // No credentials is 401, not 403 — see RestAuthenticationEntryPoint. The frontend sends
+        // the user to /login on a 401 and leaves them alone on a 403.
         mockMvc.perform(get("/api/v1/companies"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$['error-code']", is("session.expired")));
     }
 
     private void expectForbidden(String token) throws Exception {

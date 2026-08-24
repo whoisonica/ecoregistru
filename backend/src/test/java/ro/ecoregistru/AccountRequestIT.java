@@ -81,8 +81,10 @@ class AccountRequestIT {
         mockMvc.perform(submission("Discreta SRL", "RO" + digits(), "GENERATOR"))
                 .andExpect(status().isAccepted());
 
+        // Anonymous is 401 (no session at all); a logged-in client user is 403 (a session, but
+        // not this door). The two are different answers to different questions.
         mockMvc.perform(get("/api/v1/account-requests"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/v1/account-requests")
                         .header("Authorization", "Bearer " + tenantToken))
                 .andExpect(status().isForbidden());

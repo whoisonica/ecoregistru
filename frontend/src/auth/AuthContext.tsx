@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { api, tokenStore, tenantStore } from "@/lib/api";
+import { api, tokenStore, tenantStore, userStore, clearSession } from "@/lib/api";
 
 export type Role = "PLATFORM_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
 
@@ -27,15 +27,13 @@ interface AuthResponse {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const USER_KEY = "eco_user";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = tokenStore.get();
-    const stored = localStorage.getItem(USER_KEY);
+    const stored = userStore.get();
     if (token && stored) {
       setUser(JSON.parse(stored) as AuthUser);
     }
@@ -51,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tenantId: data.tenantId,
       tenantName: data.tenantName,
     };
-    localStorage.setItem(USER_KEY, JSON.stringify(authUser));
+    userStore.set(JSON.stringify(authUser));
     if (data.tenantId) {
       tenantStore.set(data.tenantId);
     }
@@ -59,9 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
-    tokenStore.clear();
-    tenantStore.clear();
-    localStorage.removeItem(USER_KEY);
+    clearSession();
     setUser(null);
   }
 

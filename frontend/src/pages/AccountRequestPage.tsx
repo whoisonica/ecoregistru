@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useSubmitAccountRequest } from "@/hooks/useAccountRequests";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -68,6 +69,92 @@ export function AccountRequestPage() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
+  // Six sections is a lot to retype. The draft lives in the browser only — nothing is sent until
+  // the form is submitted — and it is dropped the moment the request goes through.
+  const draftValues = useMemo(
+    () => ({
+      companyName, cui, companyType, companyAddress,
+      workPointName, workPointAddress,
+      contactName, contactEmail, contactPhone, contactRole, caenCode,
+      authNumber, authExpiry,
+      transportMeans, transportLicenseNumber, transportLicenseExpiry,
+      marketRoles, operationCodes, wasteCodesText, notes,
+    }),
+    [
+      companyName, cui, companyType, companyAddress,
+      workPointName, workPointAddress,
+      contactName, contactEmail, contactPhone, contactRole, caenCode,
+      authNumber, authExpiry,
+      transportMeans, transportLicenseNumber, transportLicenseExpiry,
+      marketRoles, operationCodes, wasteCodesText, notes,
+    ]
+  );
+
+  const draft = useFormDraft(
+    "eco_draft_account_request",
+    draftValues,
+    (v) => {
+      setCompanyName(v.companyName);
+      setCui(v.cui);
+      setCompanyType(v.companyType);
+      setCompanyAddress(v.companyAddress);
+      setWorkPointName(v.workPointName);
+      setWorkPointAddress(v.workPointAddress);
+      setContactName(v.contactName);
+      setContactEmail(v.contactEmail);
+      setContactPhone(v.contactPhone);
+      setContactRole(v.contactRole);
+      setCaenCode(v.caenCode);
+      setAuthNumber(v.authNumber);
+      setAuthExpiry(v.authExpiry);
+      setTransportMeans(v.transportMeans);
+      setTransportLicenseNumber(v.transportLicenseNumber);
+      setTransportLicenseExpiry(v.transportLicenseExpiry);
+      setMarketRoles(v.marketRoles);
+      setOperationCodes(v.operationCodes);
+      setWasteCodesText(v.wasteCodesText);
+      setNotes(v.notes);
+    },
+    // "Nothing worth keeping": every field back to how the form opens. GENERATOR is the
+    // preselected type, so it does not count as an answer on its own.
+    (v) =>
+      v.companyType === "GENERATOR" &&
+      v.marketRoles.length === 0 &&
+      v.operationCodes.length === 0 &&
+      [
+        v.companyName, v.cui, v.companyAddress,
+        v.workPointName, v.workPointAddress,
+        v.contactName, v.contactEmail, v.contactPhone, v.contactRole, v.caenCode,
+        v.authNumber, v.authExpiry,
+        v.transportMeans, v.transportLicenseNumber, v.transportLicenseExpiry,
+        v.wasteCodesText, v.notes,
+      ].every((field) => field === "")
+  );
+
+  function discardDraft() {
+    draft.discard();
+    setCompanyName("");
+    setCui("");
+    setCompanyType("GENERATOR");
+    setCompanyAddress("");
+    setWorkPointName("");
+    setWorkPointAddress("");
+    setContactName("");
+    setContactEmail("");
+    setContactPhone("");
+    setContactRole("");
+    setCaenCode("");
+    setAuthNumber("");
+    setAuthExpiry("");
+    setTransportMeans("");
+    setTransportLicenseNumber("");
+    setTransportLicenseExpiry("");
+    setMarketRoles([]);
+    setOperationCodes([]);
+    setWasteCodesText("");
+    setNotes("");
+  }
+
   // Only a business that takes waste from third parties has transport to declare.
   const asksTransport = companyType !== "GENERATOR";
 
@@ -108,6 +195,7 @@ export function AccountRequestPage() {
     };
     try {
       await submitMut.mutateAsync(input);
+      draft.discard();
       setSent(true);
     } catch (err) {
       setError(apiErrorMessage(err, t.submitError));
@@ -133,6 +221,18 @@ export function AccountRequestPage() {
       <p className="mt-2 text-sm text-gray-600">{t.subtitle}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        {draft.restored && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+            <span>{t.draftRestored}</span>
+            <button
+              type="button"
+              onClick={discardDraft}
+              className="shrink-0 font-medium underline hover:no-underline"
+            >
+              {t.draftDiscard}
+            </button>
+          </div>
+        )}
         {error && (
           <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}

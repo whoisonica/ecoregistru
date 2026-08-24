@@ -35,6 +35,10 @@ export const strings = {
     loading: "Se autentifică...",
     forgotPassword: "Ai uitat parola?",
     genericError: "Autentificare eșuată. Verifică datele și încearcă din nou.",
+    // Arătat o singură dată, după ce un 401 pe o cerere autentificată a închis sesiunea. Până pe
+    // 24.08 utilizatorul ateriza aici fără niciun cuvânt și credea că s-a stricat aplicația.
+    sessionExpired:
+      "Sesiunea a expirat, din motive de siguranță. Autentifică-te din nou ca să continui.",
   },
 
   // Unde aterizează linkul din mail — și din invitație, fiindcă o invitație e tot o resetare:
@@ -393,6 +397,15 @@ export const strings = {
     subtitle:
       "Descarcă într-o singură arhivă tot ce ai nevoie la un control: evidența, autorizațiile partenerilor și documentele atașate.",
     filterYear: "An",
+    // Perioada acoperită. Trei ani e termenul de păstrare din OUG 92/2021 art. 48 alin. (5) —
+    // exact cât poate cere un control —, dar implicit rămâne un an: cel mai des se descarcă
+    // pentru anul care se depune.
+    filterYears: "Perioada",
+    yearsOne: "Doar anul ales",
+    yearsTwo: "Ultimii 2 ani",
+    yearsThree: "Ultimii 3 ani (cât cere un control)",
+    yearsHint:
+      "Evidența se păstrează cel puțin 3 ani (OUG 92/2021, art. 48). La control se poate cere toată perioada, nu doar anul curent.",
     download: "Descarcă dosarul (.zip)",
     downloading: "Se pregătește arhiva...",
     downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
@@ -652,6 +665,11 @@ export const strings = {
   },
 
   accountRequest: {
+    // Formularul are șase secțiuni, deci se salvează singur în browser cât îl completezi. Restaurarea
+    // se anunță, nu se face pe furiș: altfel omul nu știe de ce vede date pe care nu le-a tastat acum.
+    draftRestored:
+      "Am păstrat ce completaseși și am pus la loc în formular. Verifică datele înainte de trimitere.",
+    draftDiscard: "Șterge și începe de la zero",
     // Public page
     title: "Cerere de cont EcoRegistru",
     subtitle:

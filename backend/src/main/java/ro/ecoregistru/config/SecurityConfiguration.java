@@ -26,6 +26,7 @@ public class SecurityConfiguration {
 
     final AuthenticationProvider authenticationProvider;
     final JwtAuthenticationFilter jwtAuthenticationFilter;
+    final RestAuthenticationEntryPoint authenticationEntryPoint;
 
     /** Publicly reachable endpoints (no auth). Everything else requires a valid token. */
     private static final String[] WHITELIST = {
@@ -47,6 +48,10 @@ public class SecurityConfiguration {
                         // requests stays PLATFORM_ADMIN.
                         .requestMatchers(HttpMethod.POST, "/api/v1/account-requests").permitAll()
                         .anyRequest().authenticated())
+                // 401 for "no valid session", not the default 403. The frontend needs to tell an
+                // expired session (send the user to /login, say why) from a forbidden action
+                // (leave them where they are). Access denied for an authenticated user stays 403.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

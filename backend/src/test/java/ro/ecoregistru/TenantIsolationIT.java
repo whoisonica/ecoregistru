@@ -109,6 +109,8 @@ class TenantIsolationIT {
 
     @Test
     void unauthenticatedRequestIsRejected() throws Exception {
-        mockMvc.perform(get("/api/v1/movements")).andExpect(status().isForbidden());
+        // 401, not 403: no credentials at all. 403 is for an authenticated user reaching past
+        // their role — the two mean different things to the client.
+        mockMvc.perform(get("/api/v1/movements")).andExpect(status().isUnauthorized());
     }
 }

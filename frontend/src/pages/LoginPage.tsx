@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { strings } from "@/lib/strings";
-import { apiErrorMessage } from "@/lib/api";
+import { apiErrorMessage, LOGIN_EXPIRED_PARAM } from "@/lib/api";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -13,6 +13,10 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Set by the 401 interceptor when it had to end a session. Navigating away drops it, so the
+  // message never outlives the eviction that caused it.
+  const [searchParams] = useSearchParams();
+  const expired = searchParams.get(LOGIN_EXPIRED_PARAM) === "1";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,6 +40,11 @@ export function LoginPage() {
           <div className="text-sm text-gray-500">{strings.tagline}</div>
         </div>
         <h1 className="mb-4 text-lg font-semibold">{strings.login.title}</h1>
+        {expired && (
+          <div className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {strings.login.sessionExpired}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">{strings.login.email}</label>
