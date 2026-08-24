@@ -118,31 +118,34 @@ public class Anexa1SheetBuilder {
         List<WasteMovement> disposals = monthly.stream()
                 .filter(m -> m.getOperation() == WasteOperation.DISPOSED).toList();
 
-        // Cap. 2 is about what happened ON the site, and both its "Cant." columns carry the
-        // month's quantity — what was stored is what the month produced, confirmed on 336 filled
-        // months where "Stocare: Cant." equals the generated quantity and never the remaining
-        // stock, even on a sheet carrying 50 tonnes of it.
+        // Cap. 2 is about what happened ON the site, and its two "Cant." columns answer two
+        // different questions.
         //
-        // ⚠️ The second column, "Tratare: Cant.", used to print only what this company treated
-        // itself, which for a client who just hands the waste over is zero. It carries the same
-        // figure as the first carry the month's quantity, and that is a change of
-        // 25.08.2026 asked for on her own printed sheets: "stocarea trebuie să apară şi la
-        // cantitatea 1 şi la cantitatea 2". Her corpus agrees — all 336 filled months have both.
+        // "Stocare: Cant." is what the month produced — confirmed on 336 filled months, where it
+        // equals the generated quantity and never the remaining stock, even on a sheet carrying
+        // 50 tonnes of it. It used to come out 0 for a client who records only handovers, but that
+        // was the generation bug, not this column: with generation implied from the exits it now
+        // carries the real figure.
         //
-        // It sits uneasily beside answer U from the day before, where she confirmed 0 in "Tratare:
-        // Cant." for a client who only hands the waste over. Her latest word, given while looking
-        // at real output, wins; the tension is written down as question V rather than resolved by
-        // us. Whatever the answer, this is one line.
-        BigDecimal quantityOnSite = line.totalGenerated();
+        // "Tratare: Cant." is only what this company did itself. A recovery performed by a partner
+        // is treated at their place and belongs in cap. 3, so a client who just hands the cardboard
+        // over treats nothing and the column reads 0 — answer U, 24.08.2026, and confirmed again
+        // on 25.08 when she saw a figure there and asked why. Printing the quantity would claim an
+        // operation that never happened.
+        BigDecimal storedQuantity = line.totalGenerated();
+        BigDecimal treatedHere = monthly.stream()
+                .filter(m -> m.getOperation().isExit() && m.getPartner() == null)
+                .map(this::kg)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new Anexa1Sheet.Anexa1MonthRow(
                 line.month(),
                 line.totalGenerated(), line.totalRecovered(), line.totalDisposed(),
                 line.closingStock(),
                 section(monthly, sections),
-                quantityOnSite,
+                storedQuantity,
                 distinct(monthly, m -> name(m.getStorageType())),
-                quantityOnSite,
+                treatedHere,
                 distinct(monthly, m -> name(m.getTreatmentMethod())),
                 distinct(monthly, m -> m.getOperationCode() == null
                         ? null : name(m.getOperationCode().treatmentPurpose())),

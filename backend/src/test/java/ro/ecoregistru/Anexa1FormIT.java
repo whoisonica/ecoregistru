@@ -93,16 +93,15 @@ class Anexa1FormIT {
     }
 
     /**
-     * Both "Cant." columns of chapter 2 carry the month's quantity.
+     * The two "Cant." columns of chapter 2 answer two different questions, and only the first is
+     * about the month's quantity.
      *
-     * <p>Changed on 25.08.2026, on the specialist's own printed sheets: "stocarea trebuie sa apara
-     * si la cantitatea 1 si la cantitatea 2". Her corpus reads the same — all 336 filled months
-     * have a figure in both. It does sit against answer U of the day before, where she confirmed
-     * 0 in "Tratare: Cant." for a client who only hands the waste over; her latest word, given
-     * while looking at real output, is what this pins, and the tension is question V.
+     * <p>"Stocare: Cant." is what the month produced. "Tratare: Cant." is only what this company
+     * did itself, so a recovery performed by a partner leaves it at 0 — answer U of 24.08.2026,
+     * and confirmed again on 25.08 when a figure appeared there and she asked why.
      */
     @Test
-    void chapterTwoCarriesTheMonthQuantityInBothColumns() {
+    void chapterTwoSeparatesWhatWeStoredFromWhatWeTreated() {
         Anexa1Sheet paper = sheets().stream()
                 .filter(s -> s.wasteCode().equals("20 01 01"))
                 .findFirst()
@@ -114,8 +113,9 @@ class Anexa1FormIT {
                 .isEqualTo(new BigDecimal("60.000"));
         assertThat(february.storedQuantity()).usingComparator(BigDecimal::compareTo)
                 .isEqualTo(february.generated());
+        // The collector did the recovering, so nothing was treated on our site.
         assertThat(february.treatedQuantity()).usingComparator(BigDecimal::compareTo)
-                .isEqualTo(february.generated());
+                .isEqualTo(BigDecimal.ZERO);
         assertThat(february.recoveries()).singleElement()
                 .satisfies(h -> assertThat(h.operator()).isNotBlank());
     }

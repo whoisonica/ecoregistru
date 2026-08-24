@@ -1289,16 +1289,25 @@ oricând cât din „Generate" a scris omul şi cât a rezultat din predări. Ca
 TOTAL AN la fel. Declaraţia anuală: Generat 100 / Valorificat 100 / **Stoc 0.000**, cu operatorul şi codul R
 la „Valorificat prin". Verificate pe PDF randat, pe datele ei reconstruite.
 
-### 2. „Stocarea trebuie să apară şi la cantitatea 1 şi la cantitatea 2"
+### 2. Cele două coloane „Cant." din cap. 2 — şi o corectură a noastră în aceeaşi zi
 
-Ambele coloane „Cant." din cap. 2 poartă acum cantitatea lunii. Prima o purta şi înainte (= ce s-a
-generat), dar ieşea 0 din aceeaşi cauză ca mai sus; a doua tipărea doar ce trata firma cu mijloace
-proprii, adică 0 la o simplă predare.
+Cerinţa a venit aşa: „stocarea trebuie să apară şi la cantitatea 1 şi la cantitatea 2". Am citit-o
+ca „aceeaşi cifră în ambele coloane" şi am pus cantitatea lunii şi la „Tratare: Cant.". Câteva
+minute mai târziu, uitându-se la rezultat: **„de ce ai la tratare cantitatea 2 ceva?"** — deci nu
+aia era.
 
-⚠️ **Asta contrazice răspunsul U** din 24.08, unde confirmase 0 la „Tratare: Cant." pentru un client
-care doar predă. Am aplicat ce a spus ultima dată, uitându-se la hârtia ei, şi fiindcă tot corpusul
-ei arată la fel (336 din 336 de luni au cifră în ambele) — dar tensiunea nu se rezolvă de noi: e
-**întrebarea V**. Într-un sens sau în altul, e o linie de cod.
+Aşa că regula rămâne cea din **răspunsul U** (24.08), iar cele două coloane răspund la două
+întrebări diferite:
+
+- **„Stocare: Cant." = ce a produs luna.** Ieşea 0 în contul ei, dar din cauza generării, nu a
+  coloanei: odată ce generarea se deduce din ieşiri, coloana poartă cifra reală. Asta era, de fapt,
+  toată cererea.
+- **„Tratare: Cant." = doar ce a tratat firma cu mijloace proprii.** O valorificare făcută de
+  partener se tratează la el şi apare în cap. 3, deci un client care doar predă cartonul are aici
+  **0**. A tipări cantitatea ar declara o operaţiune care n-a avut loc.
+
+Lecţia, notată fiindcă a costat un drum dus-întors: o cerinţă formulată pe rezultat („nu apare
+nimic") nu spune de la sine **care** e cauza. Ce lipsea era generarea; coloana a doua era corectă.
 
 ### 3. Secţia: „Birouri + producţie", predefinit
 
