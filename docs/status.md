@@ -897,6 +897,13 @@ mai e „kg sau tone", ci „contează la control că scrie kg lângă cifră?".
 
 ## Corpusul citit rând cu rând — trei întrebări închise fără specialistă (24.08.2026)
 
+> **Unde stau întrebările, de pe 24.08.2026 seara:** în documentul Word
+> `docs/EcoRegistru - intrebari specialist 24.08.2026.docx`, ţinut şi pe Desktop. Fişierele
+> `docs/intrebari-specialist.md` şi `docs/raspunsuri-specialist.md` au fost **şterse deliberat**
+> de utilizator: markdown-ul nu se deschidea uşor la client, iar două surse pentru aceeaşi listă
+> se dezacordau. Ce era esenţial din jurnalul de răspunsuri e rezumat mai jos şi în secţiunile
+> zilei; restul a fost provenienţă.
+
 Întrebarea utilizatorului a fost bună: dacă citim tot ce e în `documente oficiale/` riguros, nu
 găsim singuri o parte din răspunsuri? Ba da. Nouă fişiere, 33 de foi, **336 de luni completate**,
 citite rubrică cu rubrică, cu întrebările deschise în mână.
@@ -916,10 +923,13 @@ acum `-450.000` pe TOTAL AN, exact valoarea din decembrie.
 
 ### Trei lucruri pe care nu le căutam
 
-1. **`D5` nu apare nicăieri în corpus.** Se folosesc `D1` (Bragadiru, refuz de sortare, către
-   SALSERV Ecosistem) şi `D15` (Timişoara, menajer, către Retim). Îndrumarea primită — „D5 peste
-   tot" — pare să fie o **corectare** a practicii, nu o descriere a ei. Devine întrebarea **V**.
-2. **`R13` nu apare nicăieri; corpusul foloseşte `R12`** pentru marfa care pleacă la un
+1. ~~**`D5` nu apare nicăieri în corpus.**~~ ✅ **Închis în aceeaşi seară:** „D5 este codul bun
+   100%". Ce e în corpus — `D1` la Bragadiru, `D15` la Timişoara — e practică veche, corectată,
+   nu o regulă concurentă. Nimic de schimbat în cod: aplicaţia nu propune niciun cod de
+   eliminare, iar `D5` e ce folosim în datele de exemplu de pe 20.08. Un client cu fişe vechi pe
+   `D1` n-are de corectat retroactiv nimic — sunt documente deja depuse; codul se schimbă de la
+   înregistrările noi înainte.
+2. **`R13` nu apare nicăieri; corpusul foloseşte `R12`** — şi asta **rămâne deschis**: confirmarea lui `D5` priveşte eliminarea, nu valorificarea.
    intermediar. Noi pusesem R13 în datele de exemplu, marcat explicit ca alegerea noastră —
    alegerea nu se potriveşte cu practica lor.
 3. **⚠️ Un comentariu din codul nostru era fals.** `Anexa1SheetBuilder` scria că modelele completate
