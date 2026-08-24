@@ -28,16 +28,13 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.login(request));
     }
 
-    @PostMapping("/verify-email")
-    public ResponseEntity<AuthenticationResponse> verifyEmail(@RequestBody @Valid VerifyEmailRequest request) {
-        return ResponseEntity.ok(authenticationService.verifyEmail(request.code()));
-    }
-
-    @PostMapping("/resend-verification-email")
-    public ResponseEntity<Void> resendVerification(@RequestBody @Valid ResendVerificationRequest request) {
-        authenticationService.resendVerificationEmail(request.email());
-        return ResponseEntity.ok().build();
-    }
+    // No /verify-email either, and for the same reason. It came from the template this project
+    // started from, where a user registered themselves and then confirmed an address. Here an
+    // account is created disabled by an invite, and picking a password through /reset-password is
+    // what enables it — so the confirmation step had nothing left to confirm: no screen triggered
+    // it, and the link it mailed pointed at /verifica-email, a route the frontend never had.
+    // Removed on 24.08.2026 together with resend-verification-email; /parola-uitata covers a
+    // disabled user too, so nothing lost a way in.
 
     @PostMapping("/request-reset-password")
     public ResponseEntity<Void> requestResetPassword(@RequestBody @Valid RequestResetPasswordRequest request) {

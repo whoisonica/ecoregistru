@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ro.ecoregistru.controller.response.WasteCodeResponse;
 import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.repository.WasteCodeRepository;
+import ro.ecoregistru.util.Diacritics;
 
 import java.util.List;
 
@@ -32,7 +33,9 @@ public class WasteCodeController {
     public List<WasteCodeResponse> list(@RequestParam(required = false) String q) {
         List<WasteCode> codes = (q == null || q.isBlank())
                 ? wasteCodeRepository.findAllByOrderByCodeAsc(Limit.of(MAX_RESULTS))
-                : wasteCodeRepository.search(q.trim(), Limit.of(MAX_RESULTS));
+                // Folded here, folded in the column: "deseuri", "deșeuri" and "DEŞEURI" are the
+                // same search.
+                : wasteCodeRepository.search(Diacritics.fold(q.trim()), Limit.of(MAX_RESULTS));
         return codes.stream()
                 .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous()))
                 .toList();

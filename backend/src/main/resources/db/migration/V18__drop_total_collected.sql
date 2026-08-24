@@ -1,0 +1,21 @@
+-- `total_collected` iese din cache-ul Anexei 1.
+--
+-- Coloana a rămas din schema inițială, când o singură tabelă ținea amândouă evidențele. De la V6
+-- motorul n-o mai scrie: marfa preluată de la terți nu intră în Anexa 1 (HG 856/2002, art. 2
+-- alin. (1)), iar `EvidenceCalculator` filtrează pe `register = ANEXA_1`. V6 a lăsat-o deliberat
+-- pe loc, cu default 0, ca migrarea să rămână aditivă, și a scris în comentariu că o scoate
+-- Etapa 8. O scoatem acum, fiindcă între timp s-a văzut că nu mai are nici cine s-o citească:
+-- entitatea `MonthlyEvidence` n-o mapează, deci de la V6 încoace fiecare rând a primit 0 din
+-- default și nimeni nu s-a uitat la el.
+--
+-- Precedentul e `V14__drop_resale_suspected`: se scoate ce a devenit inert, nu ce e doar tăcut.
+--
+-- Ce NU se scoate: `total_handed_over`. Aceea **e** scrisă (`EvidenceCalculator`), e memo-ul
+-- „din care predat" din răspunsul API și are teste care o fixează — a fost scoasă din ecran și
+-- din export la G3b, nu din model. Documentația internă le enumera pe amândouă ca „rămase în
+-- schemă nescrise"; era adevărat doar despre asta de aici.
+--
+-- Când Etapa 8 aduce mișcările `COLLECTED`, agregatul lor lunar aparține registrului art. 48 —
+-- alt document, alt destinatar, deci altă tabelă. Nu se întoarce aici.
+
+ALTER TABLE monthly_evidences DROP COLUMN total_collected;

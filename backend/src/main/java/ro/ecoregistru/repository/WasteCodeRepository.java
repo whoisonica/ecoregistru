@@ -17,10 +17,15 @@ public interface WasteCodeRepository extends JpaRepository<WasteCode, UUID> {
 
     List<WasteCode> findAllByOrderByCodeAsc(Limit limit);
 
+    /**
+     * @param q the search text already folded with {@link ro.ecoregistru.util.Diacritics#fold},
+     *          because {@code searchText} holds the folded form of code and name (V17). Passing
+     *          raw user input here would silently stop matching the moment someone types a
+     *          diacritic.
+     */
     @Query("""
             select w from WasteCode w
-            where lower(w.code) like lower(concat('%', :q, '%'))
-               or lower(w.name) like lower(concat('%', :q, '%'))
+            where w.searchText like concat('%', :q, '%')
             order by w.code
             """)
     List<WasteCode> search(@Param("q") String q, Limit limit);

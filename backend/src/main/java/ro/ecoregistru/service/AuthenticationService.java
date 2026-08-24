@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static ro.ecoregistru.enums.VerificationRecordType.RESET_PASSWORD;
-import static ro.ecoregistru.enums.VerificationRecordType.VERIFY_ACCOUNT;
 import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 
 @Slf4j
@@ -50,37 +49,6 @@ public class AuthenticationService {
     final VerificationRecordRepository verificationRecordRepository;
 
     private static final int CODE_TTL_MINUTES = 30;
-
-    @Transactional
-    public AuthenticationResponse verifyEmail(String code) {
-        VerificationRecord record = verificationRecordRepository
-                .findByCodeAndVerificationRecordType(code, VERIFY_ACCOUNT)
-                .orElseThrow(() -> new NotFoundException(VERIFICATION_RECORD_NOT_FOUND));
-
-        if (!record.isValid()) {
-            throw new UnprocessableEntityException(INVALID_VERIFICATION_CODE);
-        }
-
-        AppUser user = record.getUser();
-        user.setEnabled(true);
-        record.setConfirmed(true);
-        appUserRepository.save(user);
-        verificationRecordRepository.save(record);
-
-        return buildAuthResponse(user);
-    }
-
-    @Transactional(noRollbackFor = EmailException.class)
-    public void resendVerificationEmail(String email) {
-        AppUser user = appUserRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND));
-        if (user.isEnabled()) {
-            throw new UnprocessableEntityException(ACCOUNT_ALREADY_VERIFIED);
-        }
-        verificationRecordRepository
-                .deleteByUserAndVerificationRecordTypeAndConfirmedFalse(user, VERIFY_ACCOUNT);
-        sendVerificationEmail(user);
-    }
 
     public AuthenticationResponse login(LoginRequest request) {
         AppUser user = appUserRepository.findByEmail(request.email().toLowerCase())
@@ -179,16 +147,6 @@ public class AuthenticationService {
     }
 
     // --- helpers ---
-
-    private void sendVerificationEmail(AppUser user) {
-        String code = newCode();
-        saveRecord(user, code, VERIFY_ACCOUNT);
-        try {
-            emailService.sendVerificationEmail(user, code);
-        } catch (EmailException e) {
-            log.error("Failed to send verification email to {}", user.getEmail(), e);
-        }
-    }
 
     private void saveRecord(AppUser user, String code, ro.ecoregistru.enums.VerificationRecordType type) {
         verificationRecordRepository.save(VerificationRecord.builder()

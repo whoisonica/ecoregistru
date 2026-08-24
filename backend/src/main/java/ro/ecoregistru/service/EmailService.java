@@ -39,13 +39,6 @@ public class EmailService {
     @Value("${app.frontend-base-url}")
     String frontendBaseUrl;
 
-    public void sendVerificationEmail(AppUser user, String code) {
-        Context ctx = new Context(Locale.of("ro"));
-        ctx.setVariable("firstName", user.getFirstName() != null ? user.getFirstName() : "");
-        ctx.setVariable("verifyUrl", frontendBaseUrl + "/verifica-email?code=" + code);
-        send(user.getEmail(), "Confirmă-ți adresa de email — EcoRegistru", "mail/verify_email", ctx);
-    }
-
     public void sendPasswordResetEmail(AppUser user, String code) {
         Context ctx = new Context(Locale.of("ro"));
         ctx.setVariable("firstName", user.getFirstName() != null ? user.getFirstName() : "");

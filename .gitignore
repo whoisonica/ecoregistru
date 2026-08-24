@@ -36,6 +36,10 @@ Thumbs.db
 
 # Build artefacts
 frontend/tsconfig.tsbuildinfo
+# Artefact de build al TypeScript, ca cel de deasupra. A fost tracked pana pe 24.08.2026 si dadea
+# conflict modify/delete la fiecare cherry-pick catre repo-ul de frontend (unde e sters), la
+# fiecare deploy.
+frontend/tsconfig.node.tsbuildinfo
 
 # Documente primite de la specialist — nu ale noastre de publicat.
 # PDF-ul HG 856 provine de pe lege6.ro (bază comercială) și are 4 erori de
