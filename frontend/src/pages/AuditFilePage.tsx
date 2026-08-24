@@ -25,13 +25,14 @@ function yearOptions(): number[] {
 
 export function AuditFilePage() {
   const [year, setYear] = useState(() => new Date().getFullYear());
+  const [years, setYears] = useState(1);
   const [downloading, setDownloading] = useState(false);
   const { notify } = useToast();
 
   async function handleDownload() {
     setDownloading(true);
     try {
-      await downloadAuditFile(year);
+      await downloadAuditFile(year, years);
     } catch (err) {
       notify(apiErrorMessage(err, t.downloadError), "error");
     } finally {
@@ -45,7 +46,7 @@ export function AuditFilePage() {
       <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
 
       <div className="mt-6 max-w-xl rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
             <Select
@@ -61,7 +62,20 @@ export function AuditFilePage() {
               ))}
             </Select>
           </div>
-          <Button onClick={handleDownload} disabled={downloading}>
+          <div>
+            <Label htmlFor="af-years">{t.filterYears}</Label>
+            <Select
+              id="af-years"
+              value={String(years)}
+              onChange={(ev) => setYears(Number(ev.target.value))}
+              className="w-64"
+            >
+              <option value="1">{t.yearsOne}</option>
+              <option value="2">{t.yearsTwo}</option>
+              <option value="3">{t.yearsThree}</option>
+            </Select>
+          </div>
+          <Button onClick={handleDownload} disabled={downloading} className="shrink-0 whitespace-nowrap">
             {downloading ? (
               <FolderArchive className="mr-2 h-4 w-4 animate-pulse" />
             ) : (
@@ -70,6 +84,8 @@ export function AuditFilePage() {
             {downloading ? t.downloading : t.download}
           </Button>
         </div>
+
+        <p className="mt-2 text-xs text-gray-500">{t.yearsHint}</p>
 
         <div className="mt-6 border-t border-gray-100 pt-4">
           <p className="text-sm font-medium text-gray-700">{t.contents}</p>

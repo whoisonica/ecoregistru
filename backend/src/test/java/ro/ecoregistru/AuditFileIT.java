@@ -117,6 +117,81 @@ class AuditFileIT {
                 .contains("Termen de depunere: 15 martie 2027");
     }
 
+    // --- Etapa 6: the dossier sized to the retention period ---
+
+    /**
+     * OUG 92/2021 art. 48 alin. (5) keeps the evidence "cel putin 3 ani", so a dossier may reach
+     * three years back. Several years cannot share the flat layout - the file names repeat - so
+     * each year gets its own folder, and the archive is named after the range.
+     */
+    @Test
+    void threeYearsAreFoldered_oneYearStaysFlat() throws Exception {
+        MockHttpServletResponse res = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .param("years", "3")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("dosar-control-2024-2026.zip")))
+                .andReturn().getResponse();
+
+        List<String> entries = zipEntryNames(res.getContentAsByteArray());
+        assertThat(entries).contains(
+                "README.txt",
+                "2024/anexa1-2024.pdf",
+                "2025/anexa1-2025.pdf",
+                "2026/anexa1-2026.pdf",
+                "2026/declaratie-anuala-2026.pdf",
+                "2026/evidenta-2026.xlsx",
+                "2026/atasamente/index.txt",
+                // One snapshot for the whole dossier: the status is read against today, not
+                // against a reporting year.
+                "autorizatii-parteneri.pdf");
+        assertThat(entries).doesNotContain("anexa1-2026.pdf");
+    }
+
+    @Test
+    void theReadmeOfAMultiYearDossierNamesTheRetentionRule() throws Exception {
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .param("years", "3")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+        assertThat(readme)
+                .contains("Anii de raportare: 2024\u20132026")
+                .contains("OUG 92/2021, art. 48")
+                .contains("Termen de depunere: 15 martie 2027");
+    }
+
+    /**
+     * A year nobody regenerated prints blank sheets. The dossier says so rather than handing over
+     * an empty official form that looks like lost data - the demo tenant has no 2024 evidence.
+     */
+    @Test
+    void aYearWithoutEvidenceLinesIsCalledOutInTheReadme() throws Exception {
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .param("years", "3")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+        assertThat(readme).contains("nu exist\u0103 nicio linie de eviden\u021b\u0103 calculat\u0103");
+    }
+
+    @Test
+    void moreThanThreeYearsIsRefused() throws Exception {
+        mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .param("years", "4")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest());
+    }
+
     @Test
     void viewerMayDownloadBecauseItIsReadOnly() throws Exception {
         mockMvc.perform(get("/api/v1/audit-file")

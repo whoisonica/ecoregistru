@@ -26,11 +26,21 @@ public class AuditFileController {
 
     AuditFileService auditFileService;
 
+    /**
+     * @param year  the last reporting year in the dossier
+     * @param years how many consecutive years back to include, 1..3. Three is the retention
+     *              period an inspection may ask for (OUG 92/2021, art. 48 alin. (5)); the default
+     *              stays 1, because most downloads are for the year being filed.
+     */
     @GetMapping
-    public ResponseEntity<byte[]> download(@RequestParam int year) {
-        byte[] body = auditFileService.build(year);
+    public ResponseEntity<byte[]> download(@RequestParam int year,
+                                           @RequestParam(defaultValue = "1") int years) {
+        byte[] body = auditFileService.build(year, years);
+        String name = years == 1
+                ? "dosar-control-" + year + ".zip"
+                : "dosar-control-" + (year - years + 1) + "-" + year + ".zip";
         ContentDisposition disposition = ContentDisposition.attachment()
-                .filename("dosar-control-" + year + ".zip")
+                .filename(name)
                 .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))

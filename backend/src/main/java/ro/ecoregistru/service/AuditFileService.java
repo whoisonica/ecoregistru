@@ -22,6 +22,7 @@ import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.PartnerType;
+import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
@@ -44,13 +45,16 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static java.util.stream.Collectors.joining;
+import static ro.ecoregistru.exception.ErrorMessageEnum.AUDIT_FILE_YEARS_UNSUPPORTED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 
 /**
@@ -79,6 +83,15 @@ public class AuditFileService {
     private static final java.time.format.DateTimeFormatter DATE =
             java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final int ATTACHMENT_TIMEOUT_SECONDS = 15;
+    /**
+     * How far back a dossier may reach. OUG 92/2021 art. 48 alin. (5): the operator keeps the
+     * waste-management evidence "cel putin 3 ani" (12 months for transporters). Three years is
+     * what an inspection can ask for, so three is what the archive offers - promising more would
+     * promise years the application may not have kept at all.
+     */
+    private static final int MAX_YEARS = 3;
+    /** Width of the file-name column in README.txt, wide enough for "2026/declaratie-anuala-2026.pdf". */
+    private static final int NAME_COLUMN = 31;
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
@@ -88,38 +101,53 @@ public class AuditFileService {
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
 
-    @Transactional(readOnly = true)
+    /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
     public byte[] build(int year) {
+        return build(year, 1);
+    }
+
+    /**
+     * The dossier for {@code years} consecutive years ending in {@code year} - so
+     * {@code build(2026, 3)} covers 2024, 2025 and 2026, the retention window of OUG 92/2021
+     * art. 48 alin. (5).
+     *
+     * <p>One year keeps the flat layout; more than one puts each year in its own folder, because
+     * the file names inside repeat. The partner authorizations stay at the root either way: their
+     * status ("expira in 30 de zile") is read against today, not against a reporting year, so a
+     * copy per year would be the same page three times, carrying a date that fits none of them.
+     */
+    @Transactional(readOnly = true)
+    public byte[] build(int year, int years) {
+        if (years < 1 || years > MAX_YEARS) {
+            throw new BadRequestException(AUDIT_FILE_YEARS_UNSUPPORTED);
+        }
         UUID tenantId = TenantContext.require();
         Company company = companyRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
 
-        List<MonthlyEvidenceResponse> evidence = evidenceCalculator.list(year, null, null);
         List<Partner> partners = partnerRepository.findAllByCompany_Id(tenantId);
-        List<WasteMovement> movements = movementRepository
-                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
-                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+        int firstYear = year - years + 1;
+
+        // Read once, used twice: the README says how many evidence lines each year actually has,
+        // and the exports print them. A year with none is a year nobody regenerated, and the
+        // dossier says so instead of shipping an empty sheet that looks like lost data.
+        Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear = new LinkedHashMap<>();
+        for (int y = firstYear; y <= year; y++) {
+            evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
+        }
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream();
              ZipOutputStream zip = new ZipOutputStream(out)) {
 
-            writeEntry(zip, "README.txt", readme(company, year).getBytes(StandardCharsets.UTF_8));
-            // The regulated document of the bundle, and the reason the dossier gets printed at
-            // all: one page per waste code, carrying the four chapters of the form.
-            writeEntry(zip, "anexa1-" + year + ".pdf",
-                    anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
-            // The summary page that goes in front of those sheets: same figures, folded to the
-            // year, which is what the authority reads before it opens the twelve-row detail.
-            writeEntry(zip, "declaratie-anuala-" + year + ".pdf",
-                    annualDeclarationGenerator.render(
-                            evidenceCalculator.annualDeclaration(year, null)));
-            writeEntry(zip, "evidenta-" + year + ".xlsx",
-                    evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence));
-            writeEntry(zip, "evidenta-" + year + ".pdf",
-                    evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence));
-            writeEntry(zip, "autorizatii-parteneri.pdf", partnerAuthorizationsPdf(company.getName(), partners));
-
-            writeAttachments(zip, movements);
+            writeEntry(zip, "README.txt",
+                    readme(company, firstYear, year, evidenceByYear).getBytes(StandardCharsets.UTF_8));
+            for (int y = firstYear; y <= year; y++) {
+                // A single year stays where it always was; several would collide on the file
+                // names, so each gets a folder named after it.
+                writeYear(zip, years == 1 ? "" : y + "/", company, tenantId, y, evidenceByYear.get(y));
+            }
+            writeEntry(zip, "autorizatii-parteneri.pdf",
+                    partnerAuthorizationsPdf(company.getName(), partners));
 
             zip.finish();
             return out.toByteArray();
@@ -128,9 +156,34 @@ public class AuditFileService {
         }
     }
 
+    /** Everything that belongs to one reporting year, written under {@code prefix}. */
+    private void writeYear(ZipOutputStream zip, String prefix, Company company, UUID tenantId,
+                           int year, List<MonthlyEvidenceResponse> evidence) throws IOException {
+        List<WasteMovement> movements = movementRepository
+                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+
+        // The regulated document of the bundle, and the reason the dossier gets printed at
+        // all: one page per waste code, carrying the four chapters of the form.
+        writeEntry(zip, prefix + "anexa1-" + year + ".pdf",
+                anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
+        // The summary page that goes in front of those sheets: same figures, folded to the
+        // year, which is what the authority reads before it opens the twelve-row detail.
+        writeEntry(zip, prefix + "declaratie-anuala-" + year + ".pdf",
+                annualDeclarationGenerator.render(
+                        evidenceCalculator.annualDeclaration(year, null)));
+        writeEntry(zip, prefix + "evidenta-" + year + ".xlsx",
+                evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence));
+        writeEntry(zip, prefix + "evidenta-" + year + ".pdf",
+                evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence));
+
+        writeAttachments(zip, prefix, movements);
+    }
+
     // --- attachments ---
 
-    private void writeAttachments(ZipOutputStream zip, List<WasteMovement> movements) throws IOException {
+    private void writeAttachments(ZipOutputStream zip, String prefix, List<WasteMovement> movements)
+            throws IOException {
         StringBuilder index = new StringBuilder();
         index.append("Atașamente ale mișcărilor de deșeuri\n");
         index.append("=====================================\n\n");
@@ -146,7 +199,7 @@ public class AuditFileService {
                 n++;
                 String label = m.getDate().format(DATE) + " · " + m.getWasteCode().getCode()
                         + " · " + safe(m.getDocumentReference());
-                String entryName = "atasamente/" + n + "-" + fileName(a);
+                String entryName = prefix + "atasamente/" + n + "-" + fileName(a);
                 index.append(n).append(". ").append(label).append("\n")
                         .append("   fișier: ").append(fileName(a)).append("\n")
                         .append("   URL:    ").append(a.getUrl()).append("\n");
@@ -169,7 +222,7 @@ public class AuditFileService {
             index.append("Total: ").append(n).append(" atașamente, ")
                     .append(downloaded).append(" incluse în arhivă.\n");
         }
-        writeEntry(zip, "atasamente/index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
+        writeEntry(zip, prefix + "atasamente/index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /** Best-effort binary download; returns null on any failure so the build never breaks. */
@@ -268,25 +321,94 @@ public class AuditFileService {
      * The cover note. It names the Anexa 1 sheet first because that is the regulated document of
      * the bundle, and it prints its filing deadline: 15 March of the following year, a legal term
      * (OUG 92/2021 art. 48 alin. (1)), not an ANPM custom.
+     *
+     * <p>A dossier covering several years repeats the content block once per year, under the
+     * folder that holds it, and says up front why three is the number that matters.
      */
-    private String readme(Company company, int year) {
-        return "DOSAR DE CONTROL — " + company.getName() + "\n"
-                + "Anul de raportare: " + year + "\n"
-                + "Generat: " + LocalDate.now().format(DATE) + "\n\n"
-                + "Conținut:\n"
-                + "  - anexa1-" + year + ".pdf            : Evidența gestiunii deșeurilor generate " + year + "\n"
-                + "                                        (HG 856/2002, anexa 1) — fișa oficială, cu cele patru\n"
-                + "                                        capitole, o pagină per cod de deșeu.\n"
-                + "                                        Termen de depunere: 15 martie " + (year + 1) + ".\n"
-                + "  - declaratie-anuala-" + year + ".pdf : centralizatorul anual — un rând per cod de deșeu,\n"
-                + "                                        cu stoc inițial, generat, valorificat, eliminat,\n"
-                + "                                        stoc final și prin cine. O pagină per punct de lucru.\n"
-                + "  - evidenta-" + year + ".xlsx / .pdf : același an ca tabel de lucru (rezumat neoficial)\n"
-                + "  - autorizatii-parteneri.pdf         : autorizațiile partenerilor și statusul lor\n"
-                + "  - atasamente/                       : documentele justificative atașate mișcărilor (+ index.txt)\n\n"
-                + marketRoleNote(company)
-                + "Notă: în afară de fișa Anexa 1 de mai sus, dosarul NU înlocuiește formularele oficiale de\n"
-                + "raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n";
+    private String readme(Company company, int firstYear, int lastYear,
+                          Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+        boolean single = firstYear == lastYear;
+        StringBuilder sb = new StringBuilder();
+        sb.append("DOSAR DE CONTROL — ").append(company.getName()).append("\n");
+        if (single) {
+            sb.append("Anul de raportare: ").append(lastYear).append("\n");
+        } else {
+            sb.append("Anii de raportare: ").append(firstYear).append("–").append(lastYear)
+                    .append(" (").append(lastYear - firstYear + 1).append(" ani)\n")
+                    .append("Termenul de păstrare a evidenței: cel puțin 3 ani — OUG 92/2021, art. 48\n")
+                    .append("alin. (5). Pentru transportatori, cel puțin 12 luni.\n");
+        }
+        sb.append("Generat: ").append(LocalDate.now().format(DATE)).append("\n\n");
+
+        for (int year = firstYear; year <= lastYear; year++) {
+            String prefix = single ? "" : year + "/";
+            if (!single) {
+                sb.append("== ").append(year).append(" ").append("=".repeat(60)).append("\n");
+            }
+            sb.append("Conținut:\n")
+                    .append(entry(prefix + "anexa1-" + year + ".pdf",
+                            "Evidența gestiunii deșeurilor generate " + year,
+                            "(HG 856/2002, anexa 1) — fișa oficială, cu cele patru",
+                            "capitole, o pagină per cod de deșeu.",
+                            "Termen de depunere: 15 martie " + (year + 1) + "."))
+                    .append(entry(prefix + "declaratie-anuala-" + year + ".pdf",
+                            "centralizatorul anual — un rând per cod de deșeu,",
+                            "cu stoc inițial, generat, valorificat, eliminat,",
+                            "stoc final și prin cine. O pagină per punct de lucru."))
+                    .append(entry(prefix + "evidenta-" + year + ".xlsx / .pdf",
+                            "același an ca tabel de lucru (rezumat neoficial)"));
+            if (single) {
+                sb.append(entry("autorizatii-parteneri.pdf",
+                        "autorizațiile partenerilor și statusul lor"));
+            }
+            sb.append(entry(prefix + "atasamente/",
+                    "documentele justificative atașate mișcărilor (+ index.txt)"));
+            sb.append(evidenceNote(year, evidenceByYear.get(year)));
+            sb.append("\n");
+        }
+
+        if (!single) {
+            sb.append("La rădăcina arhivei, o singură dată:\n")
+                    .append(entry("autorizatii-parteneri.pdf",
+                            "autorizațiile partenerilor și statusul lor",
+                            "(status citit la data generării, nu pe an)"))
+                    .append("\n");
+        }
+
+        sb.append(marketRoleNote(company))
+                .append("Notă: în afară de fișa Anexa 1 de mai sus, dosarul NU înlocuiește formularele oficiale de\n")
+                .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
+        return sb.toString();
+    }
+
+    /**
+     * One "  - name : description" line, plus its continuation lines under the description.
+     * The name column is padded to a fixed width so the colons line up whether the file sits at
+     * the root or inside a year folder - the README is read at an inspection, on paper.
+     */
+    private static String entry(String name, String... lines) {
+        String padded = name.length() < NAME_COLUMN
+                ? name + " ".repeat(NAME_COLUMN - name.length())
+                : name;
+        StringBuilder sb = new StringBuilder("  - ").append(padded).append(" : ").append(lines[0]).append("\n");
+        String indent = " ".repeat(4 + NAME_COLUMN + 3);
+        for (int i = 1; i < lines.length; i++) {
+            sb.append(indent).append(lines[i]).append("\n");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * A year with no evidence lines is not an empty year - it is a year nobody regenerated, and
+     * the sheets for it come out blank. Saying so beats handing over a blank official form.
+     */
+    private String evidenceNote(int year, List<MonthlyEvidenceResponse> evidence) {
+        if (evidence != null && !evidence.isEmpty()) {
+            return "";
+        }
+        return "\n  ATENȚIE: pentru " + year + " nu există nicio linie de evidență calculată, deci fișele de\n"
+                + "  mai sus ies goale. Dacă anul are mișcări înregistrate, deschide Evidențe, alege anul\n"
+                + "  " + year + " și apasă „Regenerează”, apoi descarcă dosarul din nou.\n";
     }
 
     /**

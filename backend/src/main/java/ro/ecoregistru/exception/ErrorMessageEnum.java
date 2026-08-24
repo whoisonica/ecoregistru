@@ -77,6 +77,8 @@ public enum ErrorMessageEnum {
     // --- Evidence / deadlines ---
     EVIDENCE_NOT_FOUND("evidence.not.found", "Evidența nu a fost găsită."),
     EXPORT_FORMAT_UNSUPPORTED("export.format.unsupported", "Format de export nesuportat. Alege „xlsx” sau „pdf”."),
+    AUDIT_FILE_YEARS_UNSUPPORTED("audit.file.years.unsupported",
+            "Dosarul se poate genera pentru cel mult 3 ani — termenul de păstrare a evidenței (OUG 92/2021, art. 48). Alege 1, 2 sau 3 ani."),
     DEADLINE_NOT_FOUND("deadline.not.found", "Termenul nu a fost găsit.");
 
     private final String code;
