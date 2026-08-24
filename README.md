@@ -190,9 +190,11 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Partner roles | **Parteneri** | Green = client, amber = supplier, grey = "rol nestabilit"; filter by role |
 | Internal generators | **Setări**, under work points | The "Secţia" of Anexa 1 cap. 2 — birouri, producţie |
 | Narrowed operations | **Mișcări** → add | No "Predare" in the list; the R/D codes are the five in the profile, not all 28 |
-| Weighed at unloading | **Mișcări** → add, tick the box | The quantity field greys out and the movement saves without one |
+| Weighed at unloading | **Mișcări** → add, tick the box | "Cantitate" is replaced by "Volum (mc)" — the only measure you have without a scale — and the movement saves with no weight at all |
 | Chapter 2 | **Mișcări** → add | Storage type, treatment method, transport means and destination, under the waste code |
-| Anexa 3 | **Mișcări** or **Evidențe** → row action | A 4-page PDF, one page per copy, the fourth marked as the file copy |
+| Anexa 3 | **Mișcări** or **Evidențe** → row action | One form per PDF; art. 20 alin. (2) asks for three copies, which is printing it three times. The "Destinat:" box carries an X only where the movement was ticked — nothing is derived from the R/D code |
+| Exit with no R/D code | **Mișcări**, or **Evidențe** → "Anexa 1 — lunar" | A red **"Fără cod R/D"** badge, not the amber one: the quantity left the site and reaches neither official column, so the sheet cannot be filed as it stands. Amber "De cântărit" is a legitimate wait; red is a gap |
+| Setting a password | `/reseteaza-parola?code=…` — from the invite mail | The page an invited client lands on. Choosing a password is what enables the account; `/parola-uitata` issues a fresh link when the 30-minute code has expired |
 | Handover register | **Evidențe** (default view) | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending |
 | Monthly Anexa 1 | **Evidențe** → "Anexa 1 — lunar" | The running stock, which is the only figure the register cannot show |
 | **The Anexa 1 form** | **Evidențe** → "Fișa Anexa 1" | A PDF titled "Evidenţa gestiunii deşeurilor generate «year»", one page per waste code: header plus the four chapters, twelve rows and a TOTAL AN each |

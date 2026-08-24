@@ -513,6 +513,55 @@ Rămas deschis: **`/verifica-email`** e la fel de fără rută, dar fluxul lui e
 doar prin `POST /auth/resend-verification-email`, pe care niciun ecran nu-l apasă, iar conturile
 invitate se activează prin resetare. De construit când există un motiv, nu acum.
 
+## Probă de acceptanță cap-coadă, pe producție (24.08.2026)
+
+Prima parcurgere completă a fluxului de generator pe dyno-ul de producție, nu pe date de dev.
+Firma de probă: **Ardeal Reciclare SRL** (CUI RO41982307), tip „Generator și colector”, cu punct de
+lucru la Florești, o secție, doi parteneri și **șase mișcări** în august 2026. Rezultatul e strâns
+într-un document cu capturi — `docs/EcoRegistru-de-la-cerere-la-dosar.pdf`, 30 de pagini, netracked.
+
+⚠️ **Datele astea sunt în baza de producție și rămân acolo.** O sesiune viitoare care se uită la
+`companies` va găsi Ardeal Reciclare lângă conturile de demo — e firmă de test, nu client.
+
+### Ce s-a confirmat că merge
+
+| Verificare | Rezultat |
+|---|---|
+| Formularul public creează o cerere, nu un cont | ✅ |
+| Profilul trece din cerere în firmă, punctul de lucru se creează singur | ✅ |
+| Invitația pleacă pe email și activează contul | ✅ mail livrat, confirmat în log |
+| Rolul comercial acceptă client + furnizor deodată | ✅ |
+| Orice ieșire cere cod R/D, fără implicit | ✅ |
+| Mișcarea fără cântar rămâne provizorie („De cântărit”) | ✅ volumul înlocuiește cantitatea |
+| Anexa 3 se tipărește din mișcare, cu `X` unde s-a bifat | ✅ |
+| **Preluarea de la terți NU intră în Anexa 1** | ✅ `15 01 01` arată 400 generat, nu 600 |
+| Stocul cumulativ | ✅ 400 − 300 = 100 kg carton; 150 − 150 = 0 menajer |
+| Un singur termen pe 15 martie, numit după document | ✅ |
+| Dosarul de control conține fișa Anexa 1 | ✅ |
+
+Verificarea din mijloc e cea care contează: cele 200 kg preluate de la un generator terț pe 18 august
+n-au urcat stocul din fișă. Art. 2 alin. (1) e respectat pe date reale, nu doar în teste.
+
+### Ce a ieșit prost — de reparat
+
+1. 🟠 **Sesiunea expiră fără niciun mesaj.** În mijlocul probei am fost aruncat la `/login`, cu
+   formularul completat pierdut. Nu există notificare de expirare, deci arată ca o deconectare
+   inexplicabilă. Pe cererea de cont, care are șase secțiuni, înseamnă muncă refăcută de la zero.
+2. 🟡 **Selectorul „Generator intern (Secția)” nu apare la prima deschidere** a formularului de
+   mișcare, imediat după ce secția tocmai a fost creată în Setări. Prima mișcare s-a salvat fără
+   secție. La a doua deschidere e acolo. E cache-ul listei, nu pierdere de date.
+3. 🟡 **Caseta „Destinat:” de pe Anexa 3 se uită ușor.** Două din trei Anexe 3 tipărite au ieșit cu
+   toate cele cinci căsuțe goale, deși codul `D5`, respectiv `R13`, era completat alături. Codul
+   pune `X` doar unde s-a bifat — nu deduce nimic. Propunerea, **blocată pe specialistă**
+   (întrebarea R): prebifare din familia codului (`R` → Valorificării, `D` → Eliminării), editabilă.
+   Necunoscuta e `R13` — stocare temporară, valorificare, sau amândouă.
+
+### Ce nu s-a putut acoperi
+
+Declarația anuală (G6), cele trei cadențe AFM (Etapa 7), modulul de depozit (Etapele 8–11) și
+confirmarea de email — `/verifica-email` n-are rută, iar fluxul lui e orfan: niciun ecran nu-l
+declanșează, iar conturile invitate se activează prin alegerea parolei.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
