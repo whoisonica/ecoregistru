@@ -625,6 +625,14 @@ cod e semnalată, nu absorbită.
 Corpusul e gitignored, deci niciun test nu-l citeşte: regula extrasă din el e scrisă ca fixture, cu
 numărul de fişiere care o sprijină notat în comentariu.
 
+⚠️ **Pe câte fişiere se sprijină, exact.** Toate afirmaţiile de mai sus („nouă fişiere", „niciun
+model n-are rând TOTAL", „două layouturi") sunt verificate pe cele **nouă `.xlsx` + şablonul gol**.
+Cele **trei fişiere Oradea (2022–2024) sunt `.xls` vechi şi NU au fost citite**: pe maşina asta nu e
+instalat `xlrd`, iar `openpyxl` nu deschide formatul. Deci sunt trei fişiere din corpus pe care
+nimeni nu s-a uitat la felia asta. Dacă vreunul are rând de total sau un al treilea layout, concluzia
+se schimbă — de-aia întrebarea **T** către specialistă întreabă direct, în loc să se sprijine doar pe
+absenţă. Cine reia subiectul: `pip install xlrd` şi o verificare de zece minute închide golul.
+
 **Unde se vede:** **Evidenţe → „Declaraţia anuală"**, şi în arhiva din **Dosar de control**
 (`declaratie-anuala-«an».pdf`, imediat după fişa Anexa 1). Verificat pe PDF randat, nu doar pe
 aserţiuni — aşa au ieşit la iveală rândul TOTAL şi steluţa.
@@ -656,20 +664,44 @@ un total?
 **Migrări:** `V15` (declaraţia) + `V16` (cererea de cont). Următoarea liberă e **`V17`**.
 **Suită: 117 teste verzi** (107 înainte).
 
+### Livrat în producţie pe 24.08.2026, ora 16:13
+
+`ecoregistru-api` **v21** (`aef7651`) · `ecoregistru-app` **v15** (`e6ecb68`). Cherry-pick curat pe
+ambele repo-uri split, fără `--force`; conflictul cunoscut cu `tsconfig.node.tsbuildinfo` n-a apărut
+(commit-ul nu atinge fişierul). Flyway a aplicat `V15` şi `V16` pe baza Heroku în **23 ms**, iar
+aplicaţia a pornit în 8,4 s, fără erori.
+
+**Probă pe dyno, nu presupunere:** login şi
+`GET /api/v1/evidences/declaratie-anuala?year=2026` → `200 application/pdf`, **3 pagini** (cele trei
+puncte de lucru ale tenantului demo). Două lucruri de pe hârtia aceea confirmă regulile pe date
+reale, nu doar în teste:
+
+- **„Cod CAEN:" e gol.** Firma demo n-a răspuns niciodată la întrebare, deci rubrica rămâne goală
+  în loc să fie completată cu ceva plauzibil.
+- **Două rânduri poartă `(*)`:** `15 01 07` cu stoc **−450 kg** şi `16 06 01` cu 0. Sunt predările
+  vechi, dinainte ca aplicaţia să ceară codul R/D — cantitatea a plecat din stoc şi nu intră în
+  nicio coloană oficială. Restanţa de clasificare din Etapa 2, acum **vizibilă pe formular**.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
 construit, deși e singurul pe care îl vede clientul: nimic construit peste o formulă de stoc greșită
 nu se salvează.
 
+> ⚠️ **Tabelul ăsta e de pe 22.08 şi a fost depăşit de feliile G.** Etapele 3, 4 şi 5 s-au livrat
+> sub alte nume (G2+G4, G5, G6) după meeting-ul din 23.08. **Sursa de adevăr pentru ce urmează e
+> tabelul G de mai jos** plus lista din `plan-executie.md`; ăsta rămâne ca să se vadă de unde am
+> plecat. Ce a mai rămas nelivrat din el: **6** (dosar pe 3 ani), **7** (cadenţele AFM) şi
+> **8–11** (modulul de depozit).
+
 | # | Etapă | Depinde de | Mărime |
 |---|---|---|---|
 | 0 | ✅ Documentare legislativă (inclusiv runda „depozite", 22.08) | — | **GATA** |
 | 1 | ✅ **Nomenclator LED** — 842 coduri din Decizia 2014/955/UE | — | **GATA** |
 | 2 | ✅ **Model: operațiuni + stoc + cele trei evidențe** — reparația critică | 1 | **GATA** |
-| 3 | Cap. 2 ca profil (5 nomenclatoare + `Secția`) | 2 | M |
-| 4 | **Export oficial Anexa 1** (4 capitole) | 1, 2, 3 | L |
-| 5 | Centralizator anual + conversie kg→tone (art. 48) | 4 | S |
+| 3 | ✅ Cap. 2 ca profil (5 nomenclatoare + `Secția`) — *livrat ca G2 + G4* | 2 | **GATA** |
+| 4 | ✅ **Export oficial Anexa 1** (4 capitole) — *livrat ca G5* | 1, 2, 3 | **GATA** |
+| 5 | ✅ **Centralizator anual** — *livrat ca G6*. 🔜 Conversia kg→tone rămâne, dar e a registrului art. 48 (Etapa 8), nu a centralizatorului: fişa şi declaraţia sunt în kg | 4 | **GATA** (partea de centralizator) |
 | 6 | Dosar de control dimensionat la 3 ani | 4 | S |
 | 7 | 🟠 **Obligațiile AFM ca set de contribuții + trei cadențe** — reparație în Termene | — | M |
 | 8 | **Modul depozit — ecrane** (Recepții/Livrări, registru art. 48, formulare HG 1061, ceas SIATD) | 2 | L |
