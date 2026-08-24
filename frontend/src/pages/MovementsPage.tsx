@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { Plus, Pencil, Trash2, Paperclip, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Paperclip, FileText, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
@@ -11,11 +11,13 @@ import {
   useCreateMovement,
   useUpdateMovement,
   useDeleteMovement,
+  useRecordWeight,
   useAddAttachment,
   useDeleteAttachment,
 } from "@/hooks/useMovements";
 import type {
   CompanyType,
+  PartnerType,
   TransportDestination,
   TransportMeans,
   WasteDestination,
@@ -23,6 +25,7 @@ import type {
   PhysicalState,
   StorageType,
   TreatmentMethod,
+  Unit,
   WasteMovement,
   WasteMovementInput,
   WasteOperation,
@@ -61,6 +64,34 @@ function operationsFor(type: CompanyType | undefined): WasteOperation[] {
 const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
 const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
+
+/**
+ * Ce se bifează la "Destinat:" pe Anexa 3, după ce este destinatarul.
+ *
+ * <p>Răspunsul specialistei din 24.08.2026 (A3.1), verbatim: „când pleacă la colector se pot bifa
+ * valorificării şi colectării, dacă se poate valorifica. Iar când pleacă la valorificator, doar
+ * valorificării."
+ *
+ * <p><b>De ce după partener și nu după codul R/D.</b> Prima variantă a feliei prebifa din familia
+ * codului — R la valorificare, D la eliminare — și era greșită: pe Anexa 3 primită de la Hamburger
+ * Recycling, marfa pleacă la un colector sub codul 15 01 01 și caseta pretipărită e „colectării".
+ * Caseta spune ce face destinatarul cu marfa, nu ce cod a ales expeditorul. De asta a fost nevoie
+ * de tipul de partener „Valorificator": codul nu poate face diferența.
+ *
+ * <p>Eliminarea nu se prebifează: n-am întrebat-o și nu se ghicește pe un formular oficial. La un
+ * generator, caseta rămâne goală până o bifează omul.
+ *
+ * @returns casetele sugerate, sau o listă goală când nu avem ce sugera
+ */
+function suggestedDestinations(
+  partnerType: PartnerType | undefined,
+  operation: WasteOperation
+): TransportDestination[] {
+  if (operation !== "RECOVERED") return [];
+  if (partnerType === "COLLECTOR") return ["COLECTARE", "VALORIFICARE"];
+  if (partnerType === "RECOVERER") return ["VALORIFICARE"];
+  return [];
+}
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -103,6 +134,8 @@ export function MovementsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<WasteMovement | null>(null);
+  // Mișcarea căreia i-a venit cântarul de la destinatar; null = dialogul e închis.
+  const [weighing, setWeighing] = useState<WasteMovement | null>(null);
 
   const hasFilters = Boolean(monthFilter || workPointFilter);
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
@@ -282,6 +315,12 @@ export function MovementsPage() {
                   {canWrite && (
                     <TD className="text-right">
                       <div className="flex justify-end gap-1">
+                        {m.quantity == null && (
+                          <Button variant="ghost" size="sm" onClick={() => setWeighing(m)}>
+                            <Scale className="mr-1 h-3.5 w-3.5" />
+                            {t.recordWeight}
+                          </Button>
+                        )}
                         {canPrintAnexa3(m) && (
                           <Button
                             variant="ghost"
@@ -316,6 +355,10 @@ export function MovementsPage() {
         )}
       </section>
 
+      {weighing && (
+        <RecordWeightDialog movement={weighing} onClose={() => setWeighing(null)} />
+      )}
+
       {dialogOpen && (
         <MovementFormDialog
           editing={editing}
@@ -325,6 +368,95 @@ export function MovementsPage() {
         />
       )}
     </div>
+  );
+}
+
+// --- "A venit cântarul" ------------------------------------------------------
+
+/**
+ * Fills in the weight the recipient sent back, and nothing else.
+ *
+ * <p>Asked for on 24.08.2026: the movement form greys the quantity out while "se cântărește la
+ * descărcare" is ticked, so the only way to add the figure later was to untick the box — which
+ * threw away the fact that the recipient did the weighing. One field, one call, and the monthly
+ * line stops being provisional.
+ */
+function RecordWeightDialog({
+  movement,
+  onClose,
+}: {
+  movement: WasteMovement;
+  onClose: () => void;
+}) {
+  const { notify } = useToast();
+  const recordMut = useRecordWeight();
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState<Unit>(movement.unit);
+
+  function submit(ev: FormEvent) {
+    ev.preventDefault();
+    const value = Number(quantity);
+    if (!Number.isFinite(value) || value <= 0) {
+      notify(t.recordWeightError, "error");
+      return;
+    }
+    recordMut.mutate(
+      { id: movement.id, quantity: value, unit },
+      {
+        onSuccess: () => {
+          notify(t.recordWeightSaved, "success");
+          onClose();
+        },
+        onError: (err) => notify(apiErrorMessage(err, t.recordWeightError), "error"),
+      }
+    );
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={t.recordWeightTitle}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            {strings.common.cancel}
+          </Button>
+          <Button type="submit" form="weight-form" disabled={recordMut.isPending}>
+            {recordMut.isPending ? strings.common.saving : strings.common.save}
+          </Button>
+        </>
+      }
+    >
+      <form id="weight-form" onSubmit={submit} className="space-y-3">
+        <p className="text-sm text-gray-600">
+          {movement.wasteCode} — {movement.wasteCodeName}
+          {movement.partnerName ? `, ${movement.partnerName}` : ""}, {formatDate(movement.date)}
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="wg-qty">{t.quantity}</Label>
+            <Input
+              id="wg-qty"
+              type="number"
+              step="0.001"
+              min="0"
+              autoFocus
+              value={quantity}
+              onChange={(ev) => setQuantity(ev.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="wg-unit">{t.unit}</Label>
+            <Select id="wg-unit" value={unit} onChange={(ev) => setUnit(ev.target.value as Unit)}>
+              <option value="KG">{e.unit.KG}</option>
+              <option value="TONS">{e.unit.TONS}</option>
+            </Select>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">{t.recordWeightHint}</p>
+      </form>
+    </Dialog>
   );
 }
 
@@ -392,11 +524,20 @@ function MovementFormDialog({
     editing?.wasteDestination ?? ""
   );
   const [partnerId, setPartnerId] = useState(editing?.partnerId ?? "");
+  const [partnerWorkPointId, setPartnerWorkPointId] = useState(
+    editing?.partnerWorkPointId ?? ""
+  );
+  const recipientWorkPoints = useMemo(
+    () => (partners ?? []).find((p) => p.id === partnerId)?.workPoints ?? [],
+    [partners, partnerId]
+  );
   const [internalGeneratorId, setInternalGeneratorId] = useState(
     editing?.internalGeneratorId ?? ""
   );
   const [documentReference, setDocumentReference] = useState(editing?.documentReference ?? "");
   const [unloadDate, setUnloadDate] = useState(editing?.unloadDate ?? "");
+  // Null = "ca la firmă": alegerea de pe firmă (V19), iar în lipsa ei unitatea mișcării.
+  const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">(editing?.anexa3Unit ?? "");
   const [transportPartnerId, setTransportPartnerId] = useState(editing?.transportPartnerId ?? "");
   const [driverName, setDriverName] = useState(editing?.driverName ?? "");
   const [driverIdentification, setDriverIdentification] = useState(
@@ -408,6 +549,8 @@ function MovementFormDialog({
   const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>(
     editing?.transportDestinations ?? []
   );
+  // Adevărat cât timp bifele sunt ale noastre, nu ale lui: atunci scrie sub ele de unde vin.
+  const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -508,6 +651,8 @@ function MovementFormDialog({
       documentReference: documentReference.trim() || null,
       notes: notes.trim() || null,
       unloadDate: unloadDate || null,
+      partnerWorkPointId: partnerWorkPointId || null,
+      anexa3Unit: anexa3Unit || null,
       transportPartnerId: transportPartnerId || null,
       driverName: driverName.trim() || null,
       driverIdentification: driverIdentification.trim() || null,
@@ -814,7 +959,27 @@ function MovementFormDialog({
 
         <div>
           <Label htmlFor="mv-partner">{t.partner}</Label>
-          <Select id="mv-partner" value={partnerId} onChange={(ev) => setPartnerId(ev.target.value)}>
+          <Select
+            id="mv-partner"
+            value={partnerId}
+            onChange={(ev) => {
+              const id = ev.target.value;
+              setPartnerId(id);
+              // Punctul de lucru e al partenerului: dacă se schimbă partenerul, alegerea veche
+              // nu mai are ce căuta pe formular.
+              setPartnerWorkPointId("");
+              // Se sugerează doar peste o rubrică neatinsă: o bifă pusă de om nu se rescrie,
+              // fiindcă el știe despre transportul ăsta ce nu știm noi.
+              if (transportDestinations.length === 0) {
+                const chosen = (partners ?? []).find((x) => x.id === id);
+                const suggested = suggestedDestinations(chosen?.type, operation);
+                if (suggested.length > 0) {
+                  setTransportDestinations(suggested);
+                  setDestinationsPrefilled(true);
+                }
+              }
+            }}
+          >
             <option value="">{t.partnerPlaceholder}</option>
             {(partners ?? [])
               .filter((p) => p.active)
@@ -827,13 +992,43 @@ function MovementFormDialog({
           <p className="mt-1 text-xs text-gray-500">{t.partnerHint}</p>
         </div>
 
+        {/* Punctul de lucru al destinatarului — numai când partenerul are mai multe. Cu unul
+            singur nu e nimic de ales, iar Anexa 3 îl scrie oricum pe acela. */}
+        {recipientWorkPoints.length > 1 && (
+          <div>
+            <Label htmlFor="mv-partner-wp">{t.partnerWorkPoint}</Label>
+            <Select
+              id="mv-partner-wp"
+              value={partnerWorkPointId}
+              onChange={(ev) => setPartnerWorkPointId(ev.target.value)}
+            >
+              <option value="">—</option>
+              {recipientWorkPoints.map((wp) => (
+                <option key={wp.id} value={wp.id}>
+                  {wp.name ? `${wp.name}, ${wp.address}` : wp.address}
+                </option>
+              ))}
+            </Select>
+            <p className="mt-1 text-xs text-gray-500">{t.partnerWorkPointHint}</p>
+          </div>
+        )}
+
         {showAnexa3Section && (
           <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3">
             <div>
               <span className="text-sm font-semibold text-gray-800">{t.anexa3Section}</span>
               <p className="text-xs text-gray-500">{t.anexa3SectionHint}</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <p className="text-xs text-gray-500">{t.anexa3Copies}</p>
+            <div className="grid grid-cols-3 gap-3">
+              {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
+                  Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr
+                  e tot ce ne trebuie. Se arată ca să se vadă ce se tipărește. */}
+              <div>
+                <Label htmlFor="mv-load">{t.loadDate}</Label>
+                <DateInput id="mv-load" value={date} disabled className="bg-gray-100 text-gray-500" />
+                <p className="mt-1 text-xs text-gray-500">{t.loadDateHint}</p>
+              </div>
               <div>
                 <Label htmlFor="mv-unload">{t.unloadDate}</Label>
                 <DateInput
@@ -842,6 +1037,21 @@ function MovementFormDialog({
                   onChange={(ev) => setUnloadDate(ev.target.value)}
                 />
               </div>
+              <div>
+                <Label htmlFor="mv-anexa3-unit">{t.anexa3Unit}</Label>
+                <Select
+                  id="mv-anexa3-unit"
+                  value={anexa3Unit}
+                  onChange={(ev) => setAnexa3Unit(ev.target.value as Unit | "")}
+                >
+                  <option value="">{t.anexa3UnitCompany}</option>
+                  <option value="KG">{e.unit.KG}</option>
+                  <option value="TONS">{e.unit.TONS}</option>
+                </Select>
+                <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="mv-carrier">{t.transportPartner}</Label>
                 <Select
@@ -891,7 +1101,9 @@ function MovementFormDialog({
               <span className="block text-sm font-medium text-gray-700">
                 {t.transportDestinations}
               </span>
-              <p className="text-xs text-gray-500">{t.transportDestinationsHint}</p>
+              <p className="text-xs text-gray-500">
+                {destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}
+              </p>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                 {(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => (
                   <label key={d} className="flex items-center gap-1.5 text-sm">
@@ -899,11 +1111,12 @@ function MovementFormDialog({
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300"
                       checked={transportDestinations.includes(d)}
-                      onChange={() =>
+                      onChange={() => {
+                        setDestinationsPrefilled(false);
                         setTransportDestinations((prev) =>
                           prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
-                        )
-                      }
+                        );
+                      }}
                     />
                     {e.transportDestination[d]}
                   </label>

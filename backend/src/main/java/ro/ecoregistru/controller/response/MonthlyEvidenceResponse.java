@@ -23,7 +23,13 @@ public record MonthlyEvidenceResponse(
         String wasteCode,
         String wasteCodeName,
         boolean hazardous,
+        /** What the form prints at "Generate": recorded plus {@code impliedGenerated}. */
         BigDecimal totalGenerated,
+        /**
+         * The part of it that follows from the exits rather than from a recorded generation —
+         * see {@code MonthlyEvidence.impliedGenerated}. Zero for a client who records both sides.
+         */
+        BigDecimal impliedGenerated,
         BigDecimal totalRecovered,
         BigDecimal totalDisposed,
         BigDecimal totalHandedOver,

@@ -108,6 +108,8 @@ export interface Company {
   authorizedOperationCodes?: WasteOperationCode[];
   /** Producător / importator / comerciant. Gol = întrebarea nu are încă răspuns. */
   marketRoles?: MarketRole[];
+  /** Ce contribuții la Fondul pentru mediu datorează. Gol = nu s-a răspuns. */
+  afmContributions?: AfmContribution[];
   authorizedWasteCodes?: WasteCode[];
   /** Asked of a collector only. */
   transportMeans?: string | null;
@@ -137,6 +139,7 @@ export interface CompanyInput {
   contactPhone?: string | null;
   authorizedOperationCodes?: WasteOperationCode[];
   marketRoles?: MarketRole[];
+  afmContributions?: AfmContribution[];
   /** Sent as ids; the backend resolves them against the nomenclator. */
   authorizedWasteCodeIds?: string[];
   transportMeans?: string | null;
@@ -269,7 +272,60 @@ export interface WasteCode {
  * not a category of partner, and it lives on the movement (transportPartnerId) where Anexa 3 asks
  * for it. Which way the invoice travels is the separate client/supplier pair.
  */
-export type PartnerType = "GENERATOR" | "COLLECTOR";
+export type PartnerType = "GENERATOR" | "COLLECTOR" | "RECOVERER";
+
+/**
+ * Contribuțiile la Fondul pentru mediu, fiecare cu cadența ei (OUG 196/2005 art. 11). Un set gol
+ * înseamnă că nu s-a răspuns — și atunci firma primește în continuare vechiul termen lunar.
+ */
+/** Rândurile de material din Anexa 1 Ambalaje (Ordinul 794/2012), în ordinea formularului. */
+export type PackagingMaterial =
+  | "STICLA"
+  | "PET"
+  | "ALTE_PLASTICE"
+  | "HARTIE_CARTON"
+  | "ALUMINIU"
+  | "OTEL"
+  | "LEMN"
+  | "ALTELE";
+
+/** Un rând din tabelul 1: ce a pus firma pe piață. null = rubrica n-a primit răspuns. */
+export interface PackagingMarketRow {
+  material: PackagingMaterial;
+  year: number;
+  salesPackaging: number | null;
+  primaryTotal: number | null;
+  primaryReusable: number | null;
+  secondaryTotal: number | null;
+  secondaryReusable: number | null;
+  hazardousContent: number | null;
+}
+
+export interface PackagingMarketInput {
+  material: PackagingMaterial;
+  year: number;
+  salesPackaging: number | null;
+  primaryTotal: number | null;
+  primaryReusable: number | null;
+  secondaryTotal: number | null;
+  secondaryReusable: number | null;
+  hazardousContent: number | null;
+}
+
+/** Un rând din tabelul 2, calculat din predările pe coduri 15 01 xx. */
+export interface PackagingHandoverRow {
+  material: PackagingMaterial;
+  quantity: number | null;
+  operatorName: string;
+  operatorAddress: string | null;
+  operatorCui: string | null;
+  operation: string;
+}
+
+export type AfmContribution =
+  | "WITHHOLDING_2_PERCENT"
+  | "CIRCULAR_ECONOMY"
+  | "PACKAGING";
 
 export interface Partner {
   id: string;
@@ -281,8 +337,11 @@ export interface Partner {
   type: PartnerType;
   // --- What Anexa 3 prints about them, as recipient or as carrier ---
   address: string | null;
-  /** Where the waste is actually unloaded, when that is not the registered office. */
-  workPointAddress: string | null;
+  /**
+   * Unde se descarcă efectiv deșeul. Un colector are des mai multe depozite, iar mișcarea spune
+   * la care a ajuns marfa — adresa aia se tipărește pe Anexa 3.
+   */
+  workPoints: PartnerWorkPoint[];
   tradeRegisterNumber: string | null;
   transportLicenseNumber: string | null;
   transportLicenseExpiry: string | null; // yyyy-MM-dd
@@ -292,6 +351,19 @@ export interface Partner {
   supplier: boolean;
   active: boolean;
   expiringSoon: boolean;
+}
+
+export interface PartnerWorkPoint {
+  id: string;
+  name: string | null;
+  address: string;
+}
+
+export interface PartnerWorkPointInput {
+  /** Lipsă = punct nou. Un id păstrat ține legătura cu mișcările care îl arată deja pe Anexa 3. */
+  id?: string;
+  name?: string | null;
+  address: string;
 }
 
 export interface PartnerInput {
@@ -304,7 +376,8 @@ export interface PartnerInput {
   client: boolean;
   supplier: boolean;
   address?: string | null;
-  workPointAddress?: string | null;
+  /** Lista se înlocuiește la salvare cu ce e pe ecran; omisă, rămâne cum era. */
+  workPoints?: PartnerWorkPointInput[];
   tradeRegisterNumber?: string | null;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
@@ -362,6 +435,9 @@ export interface WasteMovement {
   clientGeneratedId: string | null;
   // --- Anexa 3 la HG 1061/2008 ---
   unloadDate: string | null; // yyyy-MM-dd
+  /** La care punct de lucru al destinatarului a ajuns marfa; null = singurul, dacă are unul. */
+  partnerWorkPointId: string | null;
+  partnerWorkPointLabel: string | null;
   transportPartnerId: string | null;
   transportPartnerName: string | null;
   driverName: string | null;
@@ -371,6 +447,8 @@ export interface WasteMovement {
   /** Set once the form has been generated; a reprint keeps the same series and number. */
   anexa3Series: string | null;
   anexa3Number: number | null;
+  /** Null = the company's standing choice, and failing that the unit the quantity was recorded in. */
+  anexa3Unit: Unit | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -402,11 +480,14 @@ export interface WasteMovementInput {
   notes?: string | null;
   // --- Anexa 3 ---
   unloadDate?: string | null; // yyyy-MM-dd
+  partnerWorkPointId?: string | null;
   transportPartnerId?: string | null;
   driverName?: string | null;
   driverIdentification?: string | null;
   vehicleRegistration?: string | null;
   transportDestinations?: TransportDestination[];
+  /** The unit this one form prints in; null keeps the company setting. */
+  anexa3Unit?: Unit | null;
 }
 
 /** Filters for the movements list query; empty fields are omitted from the request. */

@@ -7,7 +7,12 @@ import {
   useUpdatePartner,
   useDeactivatePartner,
 } from "@/hooks/usePartners";
-import type { Partner, PartnerInput, PartnerType } from "@/lib/types";
+import type {
+  Partner,
+  PartnerInput,
+  PartnerType,
+  PartnerWorkPointInput,
+} from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -24,7 +29,7 @@ import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 const t = strings.partners;
 const typeLabels = strings.enums.partnerType;
 const roleLabels = strings.enums.partnerRole;
-const PARTNER_TYPES: PartnerType[] = ["COLLECTOR", "GENERATOR"];
+const PARTNER_TYPES: PartnerType[] = ["COLLECTOR", "RECOVERER", "GENERATOR"];
 
 /** Filter values for the commercial role. "none" surfaces the partners still to be classified. */
 type RoleFilter = "" | "client" | "supplier" | "none";
@@ -66,13 +71,29 @@ export function PartnersPage() {
   const [isClient, setIsClient] = useState(false);
   const [isSupplier, setIsSupplier] = useState(true);
   const [address, setAddress] = useState("");
-  const [workPointAddress, setWorkPointAddress] = useState("");
+  const [workPoints, setWorkPoints] = useState<PartnerWorkPointInput[]>([]);
   const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
   const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
   const [nameError, setNameError] = useState(false);
   const [roleError, setRoleError] = useState(false);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
+
+  /**
+   * Ce parteneri are deja firma, potriviti pe ce s-a tastat. Doua litere e pragul cerut pe
+   * 24.08.2026: "cand adaugi partener si scrii sa apara din db ce clienti sunt dupa primele 2
+   * litere". Se cauta si la inceput, si in interiorul numelui, fiindca "SC Retim SA" se cauta la
+   * fel de des dupa "re" ca dupa "sc".
+   *
+   * Nu e un apel nou: lista partenerilor e deja incarcata pentru tabel, si e a tenantului. La
+   * editare nu se sugereaza nimic — partenerul exista deja, iar propriul nume nu e un duplicat.
+   */
+  const nameSuggestions =
+    editing || name.trim().length < 2
+      ? []
+      : (partners ?? [])
+          .filter((p) => p.name.toLowerCase().includes(name.trim().toLowerCase()))
+          .slice(0, 5);
 
   const visiblePartners = (partners ?? []).filter((p) => {
     if (roleFilter === "client") return p.client;
@@ -93,7 +114,7 @@ export function PartnersPage() {
     setIsClient(false);
     setIsSupplier(true);
     setAddress("");
-    setWorkPointAddress("");
+    setWorkPoints([]);
     setTradeRegisterNumber("");
     setTransportLicenseNumber("");
     setTransportLicenseExpiry("");
@@ -112,7 +133,11 @@ export function PartnersPage() {
     setIsClient(p.client);
     setIsSupplier(p.supplier);
     setAddress(p.address ?? "");
-    setWorkPointAddress(p.workPointAddress ?? "");
+    setWorkPoints((p.workPoints ?? []).map((wp) => ({
+      id: wp.id,
+      name: wp.name ?? "",
+      address: wp.address,
+    })));
     setTradeRegisterNumber(p.tradeRegisterNumber ?? "");
     setTransportLicenseNumber(p.transportLicenseNumber ?? "");
     setTransportLicenseExpiry(p.transportLicenseExpiry ?? "");
@@ -141,7 +166,10 @@ export function PartnersPage() {
       client: isClient,
       supplier: isSupplier,
       address: address.trim() || null,
-      workPointAddress: workPointAddress.trim() || null,
+      // Rândurile fără adresă se aruncă: un punct de lucru fără adresă nu e nimic pe Anexa 3.
+      workPoints: workPoints
+        .filter((wp) => wp.address.trim() !== "")
+        .map((wp) => ({ id: wp.id, name: wp.name?.trim() || null, address: wp.address.trim() })),
       tradeRegisterNumber: tradeRegisterNumber.trim() || null,
       transportLicenseNumber: transportLicenseNumber.trim() || null,
       transportLicenseExpiry: transportLicenseExpiry || null,
@@ -301,6 +329,27 @@ export function PartnersPage() {
               autoFocus
             />
             {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+            {nameSuggestions.length > 0 && (
+              <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
+                <p className="text-xs font-medium text-amber-800">{t.nameSuggestions}</p>
+                <ul className="mt-0.5 space-y-0.5">
+                  {nameSuggestions.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className="text-xs text-amber-900 underline underline-offset-2"
+                        onClick={() => openEdit(p)}
+                      >
+                        {p.name}
+                        {p.cui ? ` — ${p.cui}` : ""}
+                        {!p.active ? ` (${t.inactive})` : ""}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-0.5 text-xs text-amber-700">{t.nameSuggestionsHint}</p>
+              </div>
+            )}
           </div>
           <div>
             <span className="block text-sm font-medium text-gray-700">{t.role}</span>
@@ -386,13 +435,58 @@ export function PartnersPage() {
               <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="p-wp-address">{t.workPointAddress}</Label>
-              <Input
-                id="p-wp-address"
-                value={workPointAddress}
-                onChange={(e) => setWorkPointAddress(e.target.value)}
-              />
-              <p className="mt-1 text-xs text-gray-500">{t.workPointAddressHint}</p>
+              <span className="block text-sm font-medium text-gray-700">{t.workPoints}</span>
+              <p className="mt-0.5 text-xs text-gray-500">{t.workPointsHint}</p>
+              <div className="mt-2 space-y-2">
+                {workPoints.map((wp, index) => (
+                  <div key={wp.id ?? `new-${index}`} className="flex items-end gap-2">
+                    <div className="w-52">
+                      <Label htmlFor={`p-wp-name-${index}`}>{t.workPointName}</Label>
+                      <Input
+                        id={`p-wp-name-${index}`}
+                        value={wp.name ?? ""}
+                        placeholder={t.workPointNamePlaceholder}
+                        onChange={(e) =>
+                          setWorkPoints((prev) =>
+                            prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label htmlFor={`p-wp-address-${index}`}>{t.workPointAddress}</Label>
+                      <Input
+                        id={`p-wp-address-${index}`}
+                        value={wp.address}
+                        onChange={(e) =>
+                          setWorkPoints((prev) =>
+                            prev.map((x, i) => (i === index ? { ...x, address: e.target.value } : x))
+                          )
+                        }
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mb-1 text-red-600 hover:bg-red-50"
+                      onClick={() => setWorkPoints((prev) => prev.filter((_, i) => i !== index))}
+                    >
+                      {t.removeWorkPoint}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => setWorkPoints((prev) => [...prev, { name: "", address: "" }])}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                {t.addWorkPoint}
+              </Button>
             </div>
             <div>
               <Label htmlFor="p-reg">{t.tradeRegisterNumber}</Label>

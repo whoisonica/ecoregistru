@@ -13,6 +13,7 @@ import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.EvidenceCalculator;
+import ro.ecoregistru.service.export.Anexa1Sheet;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -104,6 +105,70 @@ class Anexa1FormConformanceIT {
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+    }
+
+    /**
+     * Answer B, 24.08.2026: "trebuie un rând nou pentru fiecare chestie nouă pentru luna
+     * respectivă." A month with two handovers under different R codes, or to different operators,
+     * prints two lines in chapter 3 — not two values inside one cell, which is what this did until
+     * that answer arrived.
+     *
+     * <p>Chapter 1 is untouched by the split: it stays one line per month, because its running
+     * stock is the whole point of the twelve-row table. So the two chapters have to keep agreeing —
+     * the lines of a month add up to that month's "valorificată".
+     */
+    @Test
+    void aMonthWithTwoDifferentHandoversPrintsTwoLines() {
+        Partner second = partnerRepository.save(Partner.builder()
+                .company(companyRepository.findById(tenantId).orElseThrow())
+                .name("Al doilea colector SRL").cui("RO2" + UUID.randomUUID().toString().substring(0, 6))
+                .type(PartnerType.COLLECTOR).client(true).active(true)
+                .createdAt(Instant.now()).build());
+        // May already has nothing going out; give it two handovers that differ in both rubrics.
+        save(LocalDate.of(YEAR, 5, 10), "30.000", WasteOperation.RECOVERED,
+                WasteOperationCode.R3, recycler);
+        save(LocalDate.of(YEAR, 5, 20), "20.000", WasteOperation.RECOVERED,
+                WasteOperationCode.R12, second);
+
+        evidenceCalculator.regenerateYear(YEAR);
+        Anexa1Sheet sheet = evidenceCalculator.anexa1(YEAR, workPoint.getId()).stream()
+                .filter(s -> s.wasteCode().equals("20 03 01"))
+                .findFirst().orElseThrow();
+        Anexa1Sheet.Anexa1MonthRow may = sheet.rows().get(4);
+
+        assertThat(may.recoveries()).hasSize(2);
+        assertThat(may.recoveries()).extracting(Anexa1Sheet.Handover::operation)
+                .containsExactly("R3", "R12");
+        assertThat(may.recoveries()).extracting(Anexa1Sheet.Handover::operator)
+                .containsExactly("Reciclator SRL", "Al doilea colector SRL");
+        assertThat(may.recoveries().stream()
+                .map(Anexa1Sheet.Handover::quantity)
+                .reduce(BigDecimal.ZERO, BigDecimal::add))
+                .usingComparator(BigDecimal::compareTo)
+                .isEqualTo(may.recovered());
+    }
+
+    /**
+     * The same month, the same operator, the same code: one line, not two. The rule is a line per
+     * distinct rubric, not a line per movement — otherwise a client who records four pickups a
+     * month from the same collector would file a sheet nobody can read.
+     */
+    @Test
+    void twoHandoversThatAgreeStayOnOneLine() {
+        save(LocalDate.of(YEAR, 5, 10), "30.000", WasteOperation.RECOVERED,
+                WasteOperationCode.R3, recycler);
+        save(LocalDate.of(YEAR, 5, 20), "20.000", WasteOperation.RECOVERED,
+                WasteOperationCode.R3, recycler);
+
+        evidenceCalculator.regenerateYear(YEAR);
+        Anexa1Sheet sheet = evidenceCalculator.anexa1(YEAR, workPoint.getId()).stream()
+                .filter(s -> s.wasteCode().equals("20 03 01"))
+                .findFirst().orElseThrow();
+
+        assertThat(sheet.rows().get(4).recoveries()).singleElement()
+                .satisfies(h -> assertThat(h.quantity())
+                        .usingComparator(BigDecimal::compareTo)
+                        .isEqualTo(new BigDecimal("50.000")));
     }
 
     @Test

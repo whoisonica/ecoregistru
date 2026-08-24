@@ -81,7 +81,7 @@ class AuditFileIT {
                 // The regulated document: four chapters per waste code, asked for by the
                 // specialist on 23.08.2026 ("când dă print la dosar control să respecte
                 // structura de 4 tabele pe care o am de la Andreea").
-                "anexa1-2026.pdf",
+                "evidenta-gestiunii-deseurilor-2026.pdf",
                 "evidenta-2026.xlsx",
                 "evidenta-2026.pdf",
                 "autorizatii-parteneri.pdf",
@@ -96,7 +96,7 @@ class AuditFileIT {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        byte[] pdf = readEntryBytes(zip, "anexa1-2026.pdf");
+        byte[] pdf = readEntryBytes(zip, "evidenta-gestiunii-deseurilor-2026.pdf");
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
     }
@@ -138,16 +138,16 @@ class AuditFileIT {
         List<String> entries = zipEntryNames(res.getContentAsByteArray());
         assertThat(entries).contains(
                 "README.txt",
-                "2024/anexa1-2024.pdf",
-                "2025/anexa1-2025.pdf",
-                "2026/anexa1-2026.pdf",
+                "2024/evidenta-gestiunii-deseurilor-2024.pdf",
+                "2025/evidenta-gestiunii-deseurilor-2025.pdf",
+                "2026/evidenta-gestiunii-deseurilor-2026.pdf",
                 "2026/declaratie-anuala-2026.pdf",
                 "2026/evidenta-2026.xlsx",
                 "2026/atasamente/index.txt",
                 // One snapshot for the whole dossier: the status is read against today, not
                 // against a reporting year.
                 "autorizatii-parteneri.pdf");
-        assertThat(entries).doesNotContain("anexa1-2026.pdf");
+        assertThat(entries).doesNotContain("evidenta-gestiunii-deseurilor-2026.pdf");
     }
 
     @Test
@@ -183,11 +183,25 @@ class AuditFileIT {
         assertThat(readme).contains("nu exist\u0103 nicio linie de eviden\u021b\u0103 calculat\u0103");
     }
 
+    /**
+     * Five years, not three. The law's floor is three (OUG 92/2021, art. 48 alin. (5)); the
+     * specialist asked for the margin on 24.08.2026 — "sunt 3 în lege dar de safety". A year the
+     * application never kept comes out empty and named as such in README.txt, so the margin
+     * cannot quietly ship a blank official sheet.
+     */
     @Test
-    void moreThanThreeYearsIsRefused() throws Exception {
+    void fiveYearsIsAllowedAndSixIsRefused() throws Exception {
         mockMvc.perform(get("/api/v1/audit-file")
                         .param("year", "2026")
-                        .param("years", "4")
+                        .param("years", "5")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("dosar-control-2022-2026.zip")));
+
+        mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .param("years", "6")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isBadRequest());
     }

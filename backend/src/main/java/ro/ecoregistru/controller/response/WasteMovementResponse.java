@@ -60,6 +60,8 @@ public record WasteMovementResponse(
 
         // --- Anexa 3 ---
         LocalDate unloadDate,
+        UUID partnerWorkPointId,
+        String partnerWorkPointLabel,
         UUID transportPartnerId,
         String transportPartnerName,
         String driverName,
@@ -69,6 +71,8 @@ public record WasteMovementResponse(
         /** Set once the form has been generated; a reprint keeps the same series and number. */
         String anexa3Series,
         Integer anexa3Number,
+        /** Null means "as the company chose, and failing that as the quantity was recorded". */
+        Unit anexa3Unit,
 
         Instant createdAt,
         Instant updatedAt

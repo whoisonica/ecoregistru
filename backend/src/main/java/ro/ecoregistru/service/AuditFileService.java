@@ -60,7 +60,8 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 /**
  * Builds the "dosar de control" (audit file) for a tenant and year as a single ZIP:
  *   - README.txt describing the contents and generation date,
- *   - the official Anexa 1 sheets (HG 856/2002): four chapters per waste code, one page each,
+ *   - "Evidenta gestiunii deseurilor generate" (HG 856/2002, anexa 1): four chapters per
+ *     waste code, one page each,
  *   - the annual declaration: the same year folded to one line per waste code, per work point,
  *   - the generic evidence summary in both xlsx and pdf,
  *   - a PDF summary of partner authorizations (with expiry status),
@@ -85,11 +86,15 @@ public class AuditFileService {
     private static final int ATTACHMENT_TIMEOUT_SECONDS = 15;
     /**
      * How far back a dossier may reach. OUG 92/2021 art. 48 alin. (5): the operator keeps the
-     * waste-management evidence "cel putin 3 ani" (12 months for transporters). Three years is
-     * what an inspection can ask for, so three is what the archive offers - promising more would
-     * promise years the application may not have kept at all.
+     * waste-management evidence "cel putin 3 ani" (12 months for transporters), and that is the
+     * period an inspection can ask for.
+     *
+     * <p><b>Five, not three, since 24.08.2026</b>, at the specialist's request: "sa fie pastrate
+     * 5 ani documentele din dosar, sunt 3 in lege dar de safety". The law sets a floor, not a
+     * ceiling, and the margin costs nothing here - a year the application never kept simply comes
+     * out empty, and README.txt names it as such instead of shipping a blank official sheet.
      */
-    private static final int MAX_YEARS = 3;
+    private static final int MAX_YEARS = 5;
     /** Width of the file-name column in README.txt, wide enough for "2026/declaratie-anuala-2026.pdf". */
     private static final int NAME_COLUMN = 31;
 
@@ -116,7 +121,7 @@ public class AuditFileService {
      * status ("expira in 30 de zile") is read against today, not against a reporting year, so a
      * copy per year would be the same page three times, carrying a date that fits none of them.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public byte[] build(int year, int years) {
         if (years < 1 || years > MAX_YEARS) {
             throw new BadRequestException(AUDIT_FILE_YEARS_UNSUPPORTED);
@@ -129,10 +134,17 @@ public class AuditFileService {
         int firstYear = year - years + 1;
 
         // Read once, used twice: the README says how many evidence lines each year actually has,
-        // and the exports print them. A year with none is a year nobody regenerated, and the
-        // dossier says so instead of shipping an empty sheet that looks like lost data.
+        // and the exports print them.
+        //
+        // Rebuilt first, and that is the point. The monthly lines are a cache of the movements,
+        // and a client who has never pressed "Regenerează" used to get a dossier of blank official
+        // sheets — which is what the specialist saw on 25.08.2026 ("a generat doar documente
+        // aiurea, fără date"). The dossier is the one download nobody should have to prepare for,
+        // so it brings the cache up to date itself. Idempotent: with nothing new to fold in, the
+        // lines come out identical.
         Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear = new LinkedHashMap<>();
         for (int y = firstYear; y <= year; y++) {
+            evidenceCalculator.regenerateYear(y);
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
         }
 
@@ -165,7 +177,7 @@ public class AuditFileService {
 
         // The regulated document of the bundle, and the reason the dossier gets printed at
         // all: one page per waste code, carrying the four chapters of the form.
-        writeEntry(zip, prefix + "anexa1-" + year + ".pdf",
+        writeEntry(zip, prefix + "evidenta-gestiunii-deseurilor-" + year + ".pdf",
                 anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
         // The summary page that goes in front of those sheets: same figures, folded to the
         // year, which is what the authority reads before it opens the twelve-row detail.
@@ -346,7 +358,7 @@ public class AuditFileService {
                 sb.append("== ").append(year).append(" ").append("=".repeat(60)).append("\n");
             }
             sb.append("Conținut:\n")
-                    .append(entry(prefix + "anexa1-" + year + ".pdf",
+                    .append(entry(prefix + "evidenta-gestiunii-deseurilor-" + year + ".pdf",
                             "Evidența gestiunii deșeurilor generate " + year,
                             "(HG 856/2002, anexa 1) — fișa oficială, cu cele patru",
                             "capitole, o pagină per cod de deșeu.",
@@ -376,7 +388,8 @@ public class AuditFileService {
         }
 
         sb.append(marketRoleNote(company))
-                .append("Notă: în afară de fișa Anexa 1 de mai sus, dosarul NU înlocuiește formularele oficiale de\n")
+                .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
+                .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
         return sb.toString();
     }
@@ -427,9 +440,10 @@ public class AuditFileService {
         return "Tipul de generator declarat: " + named + ".\n"
                 + (MarketRole.putsPackagingOnMarket(roles)
                 ? "  -> pune produse ambalate pe piață, deci depune și declarația de ambalaje\n"
-                + "     (Ordinul 794/2012, anexa 1), termen 25 februarie.\n"
+                + "     — Anexa 1 Ambalaje (Ordinul 794/2012), termen 25 februarie.\n"
                 : "  -> comerciant: vinde marfă ambalată de altcineva, deci NU depune declarația de\n"
-                + "     ambalaje (Ordinul 794/2012, anexa 1). Fișa Anexa 1 de mai sus rămâne obligatorie.\n")
+                + "     ambalaje — Anexa 1 Ambalaje (Ordinul 794/2012). Evidența gestiunii\n"
+                + "     deșeurilor generate de mai sus rămâne obligatorie.\n")
                 + "\n";
     }
 
@@ -444,6 +458,7 @@ public class AuditFileService {
     private String partnerType(PartnerType type) {
         return switch (type) {
             case COLLECTOR -> "Colector";
+            case RECOVERER -> "Valorificator";
             case GENERATOR -> "Generator";
         };
     }

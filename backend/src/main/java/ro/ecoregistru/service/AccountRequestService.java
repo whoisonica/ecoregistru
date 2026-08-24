@@ -116,6 +116,9 @@ public class AccountRequestService {
                 request.getContactPhone(),
                 request.getOperationCodes(),
                 request.getMarketRoles(), // producător / importator / comerciant, as answered
+                // Which AFM contributions are owed is a determination, like the flag above: the
+                // intake form does not ask it, and support fills it in with the client.
+                Set.of(),
                 Set.of(), // the free-text waste codes are mapped by hand; nothing is guessed here
                 request.getTransportMeans(),
                 request.getTransportLicenseNumber(),

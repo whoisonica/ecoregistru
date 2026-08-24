@@ -28,9 +28,10 @@ public class AuditFileController {
 
     /**
      * @param year  the last reporting year in the dossier
-     * @param years how many consecutive years back to include, 1..3. Three is the retention
-     *              period an inspection may ask for (OUG 92/2021, art. 48 alin. (5)); the default
-     *              stays 1, because most downloads are for the year being filed.
+     * @param years how many consecutive years back to include, 1..5. Three is the retention
+     *              period an inspection may ask for (OUG 92/2021, art. 48 alin. (5)); five is the
+     *              margin the specialist asked for on 24.08.2026. The default stays 1, because
+     *              most downloads are for the year being filed.
      */
     @GetMapping
     public ResponseEntity<byte[]> download(@RequestParam int year,

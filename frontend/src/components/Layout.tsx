@@ -8,6 +8,7 @@ import {
   Users,
   CalendarClock,
   FolderArchive,
+  Package,
   Settings,
   LogOut,
   Building2,
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [
   { to: "/evidente", label: strings.nav.evidences, icon: FileSpreadsheet },
   { to: "/parteneri", label: strings.nav.partners, icon: Users },
   { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock },
+  { to: "/ambalaje", label: strings.nav.packaging, icon: Package },
   { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive },
   { to: "/setari", label: strings.nav.settings, icon: Settings },
 ];

@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Attachment, MovementFilters, WasteMovement, WasteMovementInput } from "@/lib/types";
+import type {
+  Attachment,
+  MovementFilters,
+  Unit,
+  WasteMovement,
+  WasteMovementInput,
+} from "@/lib/types";
 
 /**
  * TanStack Query hooks for waste movements — same per-resource pattern as
@@ -42,6 +48,22 @@ export function useUpdateMovement() {
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: WasteMovementInput }) =>
       (await api.put<WasteMovement>(`/api/v1/movements/${id}`, input)).data,
+    onSuccess: () => invalidateAll(qc),
+  });
+}
+
+/**
+ * The weight, once the recipient sent it back. A separate call from the full update on purpose:
+ * the movement form greys the quantity out while "se cântărește la descărcare" is ticked, so
+ * before this there was no way in that did not also throw away the fact of who weighed it.
+ */
+export function useRecordWeight() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, quantity, unit }: { id: string; quantity: number; unit: Unit }) =>
+      (
+        await api.post<WasteMovement>(`/api/v1/movements/${id}/weight`, { quantity, unit })
+      ).data,
     onSuccess: () => invalidateAll(qc),
   });
 }

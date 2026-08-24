@@ -73,7 +73,10 @@ public class Anexa1FormGenerator {
         this.columnHead = new Font(bold, 6f);
         this.body = new Font(plain, 6f);
         this.bodyBold = new Font(bold, 6f);
-        this.note = new Font(plain, 5f);
+        // 4.4f, not 5f: chapters 3 and 4 can now carry more than twelve rows (answer B), so
+        // the notes have to give back the room those rows take — otherwise a busy sheet spills
+        // one orphan line onto a second page. Measured on a rendered PDF, not assumed.
+        this.note = new Font(plain, 4.4f);
     }
 
     public byte[] render(List<Anexa1Sheet> sheets) {
@@ -277,20 +280,45 @@ public class Anexa1FormGenerator {
                 : "Agentul economic care efectuează operaţia de eliminare", 1, 1);
 
         BigDecimal total = BigDecimal.ZERO;
+        int index = 0;
         for (Anexa1Sheet.Anexa1MonthRow row : s.rows()) {
-            BigDecimal quantity = recovery ? row.recovered() : row.disposed();
-            String operations = recovery ? row.recoveryOperations() : row.disposalOperations();
-            String operators = recovery ? row.recoveryOperators() : row.disposalOperators();
+            BigDecimal monthTotal = recovery ? row.recovered() : row.disposed();
+            List<Anexa1Sheet.Handover> handovers = recovery ? row.recoveries() : row.disposals();
+            total = total.add(monthTotal);
 
-            cell(t, String.valueOf(row.month()), Element.ALIGN_CENTER);
-            cell(t, MONTHS[row.month() - 1], Element.ALIGN_LEFT);
-            num(t, quantity);
-            cell(t, dash(operations), Element.ALIGN_CENTER);
-            // No operator named means we did it ourselves, on our own site.
-            cell(t, operators == null || operators.isBlank()
-                    ? (quantity.signum() > 0 ? "în activitatea proprie" : "-")
-                    : operators, Element.ALIGN_LEFT);
-            total = total.add(quantity);
+            // A month with nothing to report still gets its line: the models print all twelve.
+            if (handovers.isEmpty()) {
+                index++;
+                cell(t, String.valueOf(index), Element.ALIGN_CENTER);
+                cell(t, MONTHS[row.month() - 1], Element.ALIGN_LEFT);
+                num(t, monthTotal);
+                cell(t, "-", Element.ALIGN_CENTER);
+                // A quantity with no movement behind it can only be one we handled ourselves.
+                cell(t, monthTotal.signum() > 0 ? "în activitatea proprie" : "-",
+                        Element.ALIGN_LEFT);
+                continue;
+            }
+            // Answer B: a new row per distinct handover, so two operators in one month are two
+            // lines. "Nr. crt." runs on down the table rather than repeating the month number,
+            // and the month is repeated on each of its lines so no line can be read on its own
+            // and land in the wrong month.
+            for (Anexa1Sheet.Handover handover : handovers) {
+                index++;
+                cell(t, String.valueOf(index), Element.ALIGN_CENTER);
+                cell(t, MONTHS[row.month() - 1], Element.ALIGN_LEFT);
+                // Null means every movement behind this line is still awaiting the weighbridge:
+                // the cell stays empty instead of printing a zero nobody measured.
+                if (handover.quantity() == null) {
+                    cell(t, "", Element.ALIGN_RIGHT);
+                } else {
+                    num(t, handover.quantity());
+                }
+                cell(t, dash(handover.operation()), Element.ALIGN_CENTER);
+                // No operator named means we did it ourselves, on our own site.
+                cell(t, handover.operator() == null || handover.operator().isBlank()
+                        ? "în activitatea proprie"
+                        : handover.operator(), Element.ALIGN_LEFT);
+            }
         }
         totalCell(t, 1);
         cellBold(t, "TOTAL AN", Element.ALIGN_LEFT);
@@ -303,7 +331,8 @@ public class Anexa1FormGenerator {
     /** The five closed nomenclators, verbatim, exactly as the form prints them under the tables. */
     private Paragraph notes() {
         Paragraph p = new Paragraph();
-        p.setSpacingBefore(3f);
+        p.setSpacingBefore(2f);
+        p.setLeading(5.2f);
         p.add(new Phrase(cp1250("NOTĂ:\n"), columnHead));
         p.add(new Phrase(cp1250(
                 "1) Tipul de stocare: RM - recipient metalic; RP - recipient de plastic; "
@@ -330,7 +359,7 @@ public class Anexa1FormGenerator {
         PdfPTable t = new PdfPTable(widths.length);
         t.setWidthPercentage(100);
         widths(t, widths);
-        t.setSpacingBefore(3f);
+        t.setSpacingBefore(2f);
         return t;
     }
 
@@ -376,7 +405,7 @@ public class Anexa1FormGenerator {
 
     private void addCell(PdfPTable t, String text, Font font, int align) {
         PdfPCell c = new PdfPCell(new Phrase(cp1250(text == null ? "" : text), font));
-        c.setPadding(1.2f);
+        c.setPadding(1f);
         c.setHorizontalAlignment(align);
         t.addCell(c);
     }

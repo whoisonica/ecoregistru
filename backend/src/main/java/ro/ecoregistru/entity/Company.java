@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
@@ -120,6 +121,19 @@ public class Company {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     Set<MarketRole> marketRoles = new LinkedHashSet<>();
+
+    /**
+     * Which contributions to the Environment Fund this company owes, each with its own rhythm
+     * (OUG 196/2005 art. 11). Empty means the question has not been answered — and then
+     * {@link #afmObligation}, the old boolean, still drives the monthly deadline it always did.
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "company_afm_contributions",
+            joinColumns = @JoinColumn(name = "company_id"))
+    @Column(name = "contribution", length = 40, nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    Set<AfmContribution> afmContributions = new LinkedHashSet<>();
 
     /**
      * The waste codes the environmental authorization covers — "ce generez" for a generator,

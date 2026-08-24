@@ -33,6 +33,13 @@ Thumbs.db
 /docs/intrebari-specialist.md
 /docs/EcoRegistru-intrebari-specialist.pdf
 /docs/raspunsuri-specialist.md
+# Foaia de intrebari trimisa specialistei: numeste contul ei de proba.
+/docs/EcoRegistru - intrebari specialist*.docx
+# Documente de proba generate din aplicatie (capturi cu date de client).
+/docs/EcoRegistru-de-la-cerere-la-dosar.pdf
+/docs/Analiza-concurenta-software-deseuri.pdf
+/docs/anexa1-*.pdf
+/docs/anexa3-*.pdf
 
 # Build artefacts
 frontend/tsconfig.tsbuildinfo

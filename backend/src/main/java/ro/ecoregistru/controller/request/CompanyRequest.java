@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
@@ -40,6 +41,12 @@ public record CompanyRequest(
          * packaging contribution — never the fişa de gestiune, which every generator keeps.
          */
         Set<MarketRole> marketRoles,
+        /**
+         * Which Environment Fund contributions it owes, each with its own rhythm. Empty (or
+         * absent) leaves the answer unmade, and the legacy {@code afmObligation} flag keeps
+         * producing the monthly deadline it always did.
+         */
+        Set<AfmContribution> afmContributions,
         /** The waste codes its authorization covers; narrows the code picker. */
         Set<UUID> authorizedWasteCodeIds,
         /** Asked of a collector: what it transports with, and its goods-transport licence. */

@@ -18,6 +18,17 @@ public enum PartnerType {
     /** They produce the waste; we take it over. Only meaningful for a collector's own partners. */
     GENERATOR,
 
-    /** They take waste over: collection centre, sorting station, treatment plant, landfill. */
-    COLLECTOR
+    /** They take waste over and pass it on: collection centre, sorting station, depot. */
+    COLLECTOR,
+
+    /**
+     * They are where the waste actually ends up being recovered — a recycler, not a middleman.
+     *
+     * <p>Added on 24.08.2026 at the specialist's request, and it earns its place by deciding
+     * something: the "Destinat:" box of Anexa 3. Her answer to A3.1 splits exactly along this
+     * line — "când pleacă la colector se pot bifa valorificării şi colectării [...] iar când
+     * pleacă la valorificator, doar valorificării". Without the distinction the form cannot
+     * suggest anything, because the R/D code does not carry it: the same R3 goes to both.
+     */
+    RECOVERER
 }

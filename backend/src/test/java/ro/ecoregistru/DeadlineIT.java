@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.DeadlineStatus;
@@ -49,11 +50,13 @@ class DeadlineIT {
     @Autowired ReportingDeadlineRepository deadlineRepository;
 
     /** Fresh tenant so deadline counts are deterministic regardless of other test methods. */
-    private TenantFixture newTenant(boolean afmObligation) {
+    private TenantFixture newTenant(boolean afmObligation, AfmContribution... contributions) {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         Company company = companyRepository.save(Company.builder()
                 .name("Termene " + suffix).cui("ROT" + suffix).type(CompanyType.GENERATOR)
-                .active(true).afmObligation(afmObligation).createdAt(Instant.now()).build());
+                .active(true).afmObligation(afmObligation)
+                .afmContributions(new java.util.LinkedHashSet<>(java.util.List.of(contributions)))
+                .createdAt(Instant.now()).build());
         AppUser admin = appUserRepository.save(AppUser.builder()
                 .email("t-admin+" + suffix + "@demo.ro").password("x")
                 .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
@@ -88,6 +91,67 @@ class DeadlineIT {
                 .andExpect(jsonPath("$.length()", is(1)))
                 .andExpect(jsonPath("$[0].reportType", is("SIM_ANNUAL")))
                 .andExpect(jsonPath("$[0].dueDate", is("2026-03-15")));
+    }
+
+    // ---------- The three cadences of OUG 196/2005 art. 11 ----------
+
+    /**
+     * The wrong output this slice was written to fix: a company whose only Environment Fund
+     * contribution is the yearly packaging one used to get <b>twelve</b> monthly deadlines. It now
+     * gets one, on 25 January — not 15 March, and not monthly.
+     */
+    @Test
+    void packagingOnlyGetsOneDeadlineOn25January() throws Exception {
+        TenantFixture t = newTenant(true, AfmContribution.PACKAGING);
+        regenerate(t.token, 2026);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()", is(2))) // SIM + one AFM
+                .andExpect(jsonPath("$[?(@.reportType == 'AFM_ANNUAL' && @.dueDate == '2026-01-25')]")
+                        .exists())
+                .andExpect(jsonPath("$[?(@.reportType == 'AFM_MONTHLY')]").doesNotExist());
+    }
+
+    /** The 2% a collector withholds at source is monthly, so this one really is twelve. */
+    @Test
+    void theWithheldTwoPercentIsMonthly() throws Exception {
+        TenantFixture t = newTenant(false, AfmContribution.WITHHOLDING_2_PERCENT);
+        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.generated", is(13))); // 1 SIM + 12 monthly
+    }
+
+    /** The circular-economy contribution of a landfill: four, after each quarter. */
+    @Test
+    void theCircularEconomyContributionIsQuarterly() throws Exception {
+        TenantFixture t = newTenant(false, AfmContribution.CIRCULAR_ECONOMY);
+        regenerate(t.token, 2026);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()", is(5))) // SIM + four quarters
+                .andExpect(jsonPath("$[?(@.reportType == 'AFM_QUARTERLY' && @.dueDate == '2026-04-25')]")
+                        .exists())
+                .andExpect(jsonPath("$[?(@.reportType == 'AFM_QUARTERLY' && @.dueDate == '2026-10-25')]")
+                        .exists());
+    }
+
+    /**
+     * An account nobody has filled in keeps exactly what it had: the flag alone still means twelve
+     * monthly deadlines. Switching an alert off on an assumption is worse than leaving one that is
+     * too loud, so the legacy path fades out as accounts get answered — not all at once.
+     */
+    @Test
+    void anUnansweredAccountKeepsTheOldMonthlyDeadline() throws Exception {
+        TenantFixture t = newTenant(true);
+        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.generated", is(13)));
     }
 
     @Test

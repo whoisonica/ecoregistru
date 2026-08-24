@@ -11,6 +11,7 @@ import {
 } from "@/hooks/useEvidences";
 import type { EvidenceFilters, MovementFilters } from "@/lib/types";
 import { HandoverRegister } from "@/components/HandoverRegister";
+import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -105,7 +106,28 @@ export function EvidencesPage() {
     });
   }
 
+  /**
+   * Both official documents are yearly and cover every month, whatever month the screen is
+   * filtered to — so the check that runs before them has to look at the whole year, scoped to the
+   * work point being printed and nothing wider. That is the "doar unde impactează" part: a load
+   * still on the road in another work point is not this document's problem.
+   */
+  const { data: yearRows } = useEvidences({ year, workPointId: workPointId || undefined });
+  const pendingWeighing = useMemo(
+    () => (yearRows ?? []).filter((r) => r.awaitingWeighing),
+    [yearRows]
+  );
+  const [pendingDoc, setPendingDoc] = useState<null | "anexa1" | "declaration">(null);
+
   async function handleAnexa1() {
+    if (pendingWeighing.length > 0) {
+      setPendingDoc("anexa1");
+      return;
+    }
+    await generateAnexa1();
+  }
+
+  async function generateAnexa1() {
     setExporting("pdf");
     try {
       await downloadAnexa1Form(filters);
@@ -117,6 +139,14 @@ export function EvidencesPage() {
   }
 
   async function handleAnnualDeclaration() {
+    if (pendingWeighing.length > 0) {
+      setPendingDoc("declaration");
+      return;
+    }
+    await generateAnnualDeclaration();
+  }
+
+  async function generateAnnualDeclaration() {
     setExporting("declaration");
     try {
       await downloadAnnualDeclaration(filters);
@@ -140,6 +170,17 @@ export function EvidencesPage() {
 
   return (
     <div>
+      {pendingDoc && (
+        <AwaitingWeighingDialog
+          lines={pendingWeighing}
+          onCancel={() => setPendingDoc(null)}
+          onConfirm={() => {
+            const doc = pendingDoc;
+            setPendingDoc(null);
+            void (doc === "anexa1" ? generateAnexa1() : generateAnnualDeclaration());
+          }}
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t.title}</h1>

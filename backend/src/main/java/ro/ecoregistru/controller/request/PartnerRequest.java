@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.PartnerType;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Create/update payload for a partner. {@code client} and {@code supplier} are the commercial
@@ -22,7 +23,11 @@ public record PartnerRequest(
 
         // --- What Anexa 3 prints about them, as recipient or as carrier ---
         String address,
-        String workPointAddress,
+        /**
+         * The partner's work points, replacing the list wholesale on save. Empty clears it — this
+         * is a small, fully visible list on one screen, so "what you see is what is stored".
+         */
+        List<PartnerWorkPointRequest> workPoints,
         String tradeRegisterNumber,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry

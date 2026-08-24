@@ -62,7 +62,8 @@ public class EvidenceController {
      * what the last regeneration cached (no recompute); an empty cache yields a header-only file.
      */
     /**
-     * The Anexa 1 form itself (HG 856/2002) — one page per waste code per work point, with the
+     * The waste-management record itself (HG 856/2002, anexa 1) — one page per waste code per
+     * work point, with the
      * identification header and the four chapters. This is the document the client files; the
      * "export" below is an unofficial working summary and stays separate on purpose.
      */
@@ -71,7 +72,7 @@ public class EvidenceController {
                                          @RequestParam(required = false) UUID workPointId) {
         byte[] body = anexa1FormGenerator.render(evidenceCalculator.anexa1(year, workPointId));
         ContentDisposition disposition = ContentDisposition.attachment()
-                .filename("anexa1-" + year + ".pdf")
+                .filename("evidenta-gestiunii-deseurilor-" + year + ".pdf")
                 .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
@@ -80,7 +81,7 @@ public class EvidenceController {
     }
 
     /**
-     * The annual declaration — the summary sheet that goes in front of the Anexa 1 pages: one line
+     * The annual declaration — the summary sheet that goes in front of the record pages: one line
      * per waste code, one page per work point. Same source as the fişa, folded to the year.
      */
     @GetMapping("/declaratie-anuala")

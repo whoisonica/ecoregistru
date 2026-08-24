@@ -14,11 +14,15 @@ import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.PartnerRepository;
+import ro.ecoregistru.repository.WasteCodeRepository;
+import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.service.EvidenceCalculator;
 import ro.ecoregistru.service.export.Anexa1Sheet;
 import ro.ecoregistru.security.TenantContext;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 import java.util.List;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
@@ -56,6 +60,9 @@ class Anexa1FormIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired CompanyRepository companyRepository;
     @Autowired EvidenceCalculator evidenceCalculator;
+    @Autowired WorkPointRepository workPointRepository;
+    @Autowired WasteCodeRepository wasteCodeRepository;
+    @Autowired PartnerRepository partnerRepository;
 
     private String token;
     private AppUser admin;
@@ -86,24 +93,99 @@ class Anexa1FormIT {
     }
 
     /**
-     * Chapter 2 describes what happened on our own site. A recovery performed by a partner is
-     * treated at their place, so it belongs in chapter 3 and not in the "Tratare" column here —
-     * exactly as the filled model shows it, with 0.000 treated and the full quantity recovered.
+     * Both "Cant." columns of chapter 2 carry the month's quantity.
+     *
+     * <p>Changed on 25.08.2026, on the specialist's own printed sheets: "stocarea trebuie sa apara
+     * si la cantitatea 1 si la cantitatea 2". Her corpus reads the same — all 336 filled months
+     * have a figure in both. It does sit against answer U of the day before, where she confirmed
+     * 0 in "Tratare: Cant." for a client who only hands the waste over; her latest word, given
+     * while looking at real output, is what this pins, and the tension is question V.
      */
     @Test
-    void chapterTwoCountsOnlyWhatWeTreatedOurselves() {
+    void chapterTwoCarriesTheMonthQuantityInBothColumns() {
         Anexa1Sheet paper = sheets().stream()
                 .filter(s -> s.wasteCode().equals("20 01 01"))
                 .findFirst()
                 .orElseThrow();
 
-        // February at Cluj: 100 kg generated, 60 kg recovered by the collector, nothing by us.
+        // February at Cluj: 100 kg generated, 60 kg recovered by the collector.
         Anexa1Sheet.Anexa1MonthRow february = paper.rows().get(1);
         assertThat(february.recovered()).usingComparator(BigDecimal::compareTo)
                 .isEqualTo(new BigDecimal("60.000"));
+        assertThat(february.storedQuantity()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(february.generated());
         assertThat(february.treatedQuantity()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(february.generated());
+        assertThat(february.recoveries()).singleElement()
+                .satisfies(h -> assertThat(h.operator()).isNotBlank());
+    }
+
+    /**
+     * The sheet the specialist printed from her own account on 25.08.2026, reproduced: two
+     * handovers, no generation recorded anywhere, and nothing else.
+     *
+     * <p>It used to come out reading <em>Generate 0, valorificata 100, ramasa in stoc -100</em> —
+     * a sheet nobody can file and nobody can explain. Her objection was the shortest possible one:
+     * "cum poti sa valorifici ceva ce nu este generat?". The form agrees with her, in its own
+     * heading: cap. 1 is "Generate — din care: valorificata | eliminata final | ramasa in stoc".
+     *
+     * <p>So a quantity that left is now also reported as generated, unless the recorded generation
+     * or the stock carried in already covers it. Nothing is invented: it is the figure recorded on
+     * the way out, acknowledged in the column it must have come from.
+     */
+    @Test
+    void aHandoverWithNoRecordedGenerationStillReportsGeneration() throws Exception {
+        Company company = admin.getCompany();
+        UUID workPointId = workPointRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+        UUID codeId = wasteCodeRepository.findByCode("15 01 03").orElseThrow().getId();
+        UUID partnerId = partnerRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+
+        String body = """
+                {
+                  "workPointId": "%s", "date": "%d-08-24", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 100,
+                  "operation": "RECOVERED", "operationCode": "R3", "partnerId": "%s"
+                }
+                """.formatted(workPointId, YEAR, codeId, partnerId);
+        mockMvc.perform(post("/api/v1/movements")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/evidences/regenerate?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        Anexa1Sheet sheet = sheets().stream()
+                .filter(s -> s.wasteCode().equals("15 01 03"))
+                .findFirst().orElseThrow();
+        Anexa1Sheet.Anexa1MonthRow august = sheet.rows().get(7);
+
+        assertThat(august.generated()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("100.000"));
+        assertThat(august.recovered()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("100.000"));
+        // The point of the whole change: the sheet closes at zero instead of at minus a hundred.
+        assertThat(august.closingStock()).usingComparator(BigDecimal::compareTo)
                 .isEqualTo(BigDecimal.ZERO);
-        assertThat(february.recoveryOperators()).isNotBlank();
+        assertThat(sheet.rows().get(11).closingStock()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(BigDecimal.ZERO);
+    }
+
+    /**
+     * The other half of the same rule: when the client does record the generation, nothing is
+     * implied and the figures stay exactly as recorded — no quantity is counted twice.
+     */
+    @Test
+    void recordedGenerationIsNotDoubled() {
+        Anexa1Sheet paper = sheets().stream()
+                .filter(s -> s.wasteCode().equals("20 01 01"))
+                .findFirst().orElseThrow();
+
+        // The demo tenant records both sides in February: 100 generated, 60 recovered.
+        Anexa1Sheet.Anexa1MonthRow february = paper.rows().get(1);
+        assertThat(february.generated()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("100.000"));
     }
 
     @Test

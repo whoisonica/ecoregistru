@@ -16,6 +16,7 @@ export const strings = {
   },
 
   nav: {
+    packaging: "Ambalaje",
     dashboard: "Panou",
     movements: "Mișcări",
     evidences: "Evidențe",
@@ -138,7 +139,7 @@ export const strings = {
     missingCodeHint:
       "Ieșire înregistrată înainte ca aplicația să ceară codul de operațiune. Cantitatea a plecat din stoc, dar nu intră nici la „Valorificat”, nici la „Eliminat”. Deschide mișcarea și alege codul.",
     volumeM3: "Volum (mc)",
-    volumeM3Hint: "Singura măsură pe care o ai fără cântar. Nu ține loc de kilograme în Anexa 1.",
+    volumeM3Hint: "Singura măsură pe care o ai fără cântar. Nu ține loc de kilograme în evidență.",
     operation: "Operațiune",
     physicalState: "Stare fizică",
     physicalStatePlaceholder: "— fără —",
@@ -150,7 +151,7 @@ export const strings = {
     nomenclatorPlaceholder: "— fără —",
     operationCode: "Cod operațiune (R/D)",
     operationCodeHint:
-      "Fișa Anexa 1 nu are coloană de „predare”: cantitatea se raportează la „valorificată” (cod R) sau la „eliminată final” (cod D). Predarea se înregistrează alegând operațiunea și partenerul care o face.",
+      "Evidența gestiunii deșeurilor nu are coloană de „predare”: cantitatea se raportează la „valorificată” (cod R) sau la „eliminată final” (cod D). Predarea se înregistrează alegând operațiunea și partenerul care o face.",
     partner: "Operatorul care efectuează operațiunea",
     partnerPlaceholder: "— noi, pe amplasamentul propriu —",
     partnerHint:
@@ -167,17 +168,37 @@ export const strings = {
     anexa3Section: "Anexa 3 — dovada predării",
     anexa3SectionHint:
       "Formularul de încărcare-descărcare deșeuri nepericuloase (HG 1061/2008), tipărit din această mișcare. Completează ce apare pe hârtie.",
+    recordWeight: "Adaugă cantitatea",
+    recordWeightTitle: "Cantitatea cântărită la descărcare",
+    recordWeightHint:
+      "Cifra pe care ți-a trimis-o destinatarul după cântărire. Până o completezi, luna rămâne provizorie în evidență și rubrica de pe Anexa 3 iese goală.",
+    recordWeightSaved: "Cantitatea a fost înregistrată.",
+    recordWeightError: "Cantitatea nu a putut fi înregistrată.",
+    loadDate: "Data încărcării",
+    loadDateHint: "Este data mișcării, de mai sus — pe formular sunt același lucru.",
+    anexa3Unit: "Unitatea tipărită",
+    anexa3UnitCompany: "Ca la firmă",
+    anexa3UnitHint:
+      "Actul are „tone”, dar evidența se ține în kilograme. Cifra se convertește la tipărire, deci cifra și unitatea de pe hârtie sunt mereu de acord.",
+    anexa3Copies:
+      "Formularul iese în 3 exemplare, numite: expeditor (generator), destinatar (colector), transportator.",
     anexa3Download: "Anexa 3",
     anexa3Downloading: "Se generează...",
     anexa3Error: "Formularul nu a putut fi generat.",
     unloadDate: "Data descărcării",
     transportPartner: "Transportator",
+    partnerWorkPoint: "Punctul de lucru al destinatarului",
+    partnerWorkPointHint:
+      "Unde s-a descărcat marfa. Se tipărește pe Anexa 3, la destinatar.",
+    partnerWorkPointOnly: "Singurul punct de lucru al partenerului",
     transportPartnerPlaceholder: "— transportăm noi —",
     driverName: "Delegat (șofer)",
     driverIdentification: "Act de identitate",
     driverIdentificationPlaceholder: "ex. serie și nr. CI",
     vehicleRegistration: "Nr. înmatriculare",
     transportDestinations: "Destinat:",
+    destinationsPrefilled:
+      "Bifat automat după ce este destinatarul. Schimbă dacă transportul ăsta e altfel.",
     transportDestinationsHint: "Se pot bifa mai multe, ca pe formular.",
     // validation / feedback
     weighingNeedsPartner: "Cântărirea la descărcare o face destinatarul: alege partenerul care preia deșeul.",
@@ -256,14 +277,22 @@ export const strings = {
     type: "Tip",
     authorizationNumber: "Nr. autorizație",
     authorizationExpiry: "Expirare autorizație",
+    nameSuggestions: "Există deja la tine:",
+    nameSuggestionsHint:
+      "Ca să nu apară același partener de două ori, cu două grafii. Apasă unul ca să-l deschizi în loc să creezi altul.",
     role: "Rol comercial",
     filterRole: "Rol",
     filterRoleAll: "Toate rolurile",
     roleRequired: "Alege cel puțin un rol: client, furnizor sau ambele.",
     address: "Adresa sediului social",
-    workPointAddress: "Adresa punctului de lucru",
-    workPointAddressHint:
-      "Unde se descarcă efectiv deșeul, dacă e altundeva decât sediul. Asta se tipărește pe Anexa 3.",
+    workPoints: "Puncte de lucru",
+    workPointsHint:
+      "Unde se descarcă efectiv deșeul, dacă e altundeva decât sediul. Adaugă câte are — la înregistrarea mișcării alegi la care a ajuns marfa, și adresa aia se tipărește pe Anexa 3.",
+    workPointName: "Nume (opțional)",
+    workPointNamePlaceholder: "ex. Depozit Florești",
+    workPointAddress: "Adresa",
+    addWorkPoint: "Adaugă punct de lucru",
+    removeWorkPoint: "Șterge",
     tradeRegisterNumber: "Nr. Registrul Comerțului",
     tradeRegisterNumberPlaceholder: "ex. J12/1351/2011",
     transportLicenseNumber: "Licență de transport mărfuri",
@@ -300,10 +329,13 @@ export const strings = {
     regenerated: "Evidență regenerată: {count} linii pentru {year}.",
     // export
     export: "Export",
-    anexa1: "Fișa Anexa 1",
+    // Numele scurt "Anexa 1" a fost cedat declarației de ambalaje (Ordinul 794/2012) pe
+    // 24.08.2026, la cererea specialistei: așa îi zice clientul. Documentul de aici își
+    // poartă de-acum numele întreg, care e și titlul tipărit pe el.
+    anexa1: "Evidența gestiunii deșeurilor generate",
     anexa1Hint:
-      "Formularul oficial (HG 856/2002): antet + cele 4 capitole, o pagină per cod de deșeu.",
-    anexa1Error: "Fișa nu a putut fi generată.",
+      "Formularul oficial (HG 856/2002, anexa 1): antet + cele 4 capitole, o pagină per cod de deșeu.",
+    anexa1Error: "Evidența gestiunii deșeurilor nu a putut fi generată.",
     annualDeclaration: "Declarația anuală",
     annualDeclarationHint:
       "Centralizatorul anual: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
@@ -333,9 +365,9 @@ export const strings = {
     // line warnings
     // Cele două vederi ale tabului. Implicit e registrul de predări, cerut la meeting; vederea
     // lunară rămâne fiindcă poartă stocul cumulativ, singura cifră pe care ochiul n-o reface și
-    // exact ce cere fișa Anexa 1.
+    // exact ce cere evidența gestiunii deșeurilor.
     viewHandovers: "Predări",
-    viewMonthly: "Anexa 1 — lunar",
+    viewMonthly: "Evidența lunară",
     handoversSubtitle:
       "Ce a plecat de pe amplasament: cantitatea, data predării, cine a primit și sub ce cod. Din rândul de aici tipărești Anexa 3.",
     colHandoverDate: "Data predării",
@@ -345,7 +377,7 @@ export const strings = {
     handoversLoadError: "Nu am putut încărca predările.",
     ownSite: "pe amplasament propriu",
     // Roșu, nu galben: o ieșire fără cod R/D nu e o rubrică de completat cândva, e o cantitate
-    // care lipsește din Anexa 1. Se cere la orice ieșire nouă, deci rândurile astea sunt vechi.
+    // care lipsește din evidență. Se cere la orice ieșire nouă, deci rândurile astea sunt vechi.
     missingCode: "Fără cod R/D",
     missingCodeHint:
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
@@ -404,6 +436,8 @@ export const strings = {
     yearsOne: "Doar anul ales",
     yearsTwo: "Ultimii 2 ani",
     yearsThree: "Ultimii 3 ani (cât cere un control)",
+    yearsFour: "Ultimii 4 ani",
+    yearsFive: "Ultimii 5 ani (cu marjă peste termenul legal)",
     yearsHint:
       "Evidența se păstrează cel puțin 3 ani (OUG 92/2021, art. 48). La control se poate cere toată perioada, nu doar anul curent.",
     download: "Descarcă dosarul (.zip)",
@@ -411,13 +445,13 @@ export const strings = {
     downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
     contents: "Arhiva conține:",
     contentAnexa1:
-      "Evidența gestiunii deșeurilor generate — fișa Anexa 1 (HG 856/2002): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
+      "Evidența gestiunii deșeurilor generate (HG 856/2002, anexa 1): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
     contentAnnualDeclaration:
       "Declarația anuală (centralizatorul): un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
     contentEvidence: "Același an ca tabel de lucru (Excel + PDF)",
     contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
     contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
-    note: "Notă: în afară de fișa Anexa 1, dosarul NU înlocuiește formularele oficiale (SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
+    note: "Notă: în afară de evidența gestiunii deșeurilor, dosarul NU înlocuiește formularele oficiale (SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
   },
 
   clients: {
@@ -438,7 +472,13 @@ export const strings = {
     // form fields
     namePlaceholder: "ex. Demo Reciclare SRL",
     cuiPlaceholder: "ex. RO12345678",
-    afmLabel: "Firma are obligație de declarație AFM lunară",
+    // Bifa veche rămâne, dar numai ca stare moștenită: cât timp nu s-a bifat nicio contribuție,
+    // ea e cea care produce termenul lunar de dinainte. Se stinge singură pe măsură ce conturile
+    // sunt completate — a opri o alertă pe o presupunere e mai rău decât a lăsa una gălăgioasă.
+    afmLabel: "Datorează ceva la AFM, dar nu s-a stabilit ce (termen lunar, ca înainte)",
+    afmContributions: "Contribuții la Fondul pentru mediu",
+    afmContributionsHint:
+      "Fiecare are cadența ei (OUG 196/2005, art. 11). Bifează-le pe cele datorate și clientul primește exact termenele lui — nu douăsprezece pe an pentru o contribuție anuală. Nebifat nu înseamnă „niciuna”, ci „nu s-a răspuns”.",
     environmentalAuthNumber: "Nr. autorizație de mediu",
     environmentalAuthExpiry: "Expirare autorizație de mediu",
     address: "Adresă",
@@ -523,7 +563,7 @@ export const strings = {
       noneHint: "Alege rolul la editare — nu îl putem deduce din datele existente.",
     },
     wasteRegister: {
-      ANEXA_1: "Anexa 1 — deșeu propriu",
+      ANEXA_1: "Evidența gestiunii — deșeu propriu",
       ART_48: "Registru cronologic — preluat de la terți",
     },
     // HG 856/2002, anexa nr. 1, cap. 2, nota 3. Nota definește și „E — în vederea eliminării”,
@@ -599,9 +639,34 @@ export const strings = {
     },
     // Ce este partenerul in raport cu deseul. Transportatorul nu mai e o categorie: e o rubrica a
     // transportului, pe miscare.
+    packagingMaterial: {
+      STICLA: "Sticlă",
+      PET: "PET",
+      ALTE_PLASTICE: "Alte plastice",
+      HARTIE_CARTON: "Hârtie carton",
+      ALUMINIU: "Aluminiu",
+      OTEL: "Oțel",
+      LEMN: "Lemn",
+      ALTELE: "Altele",
+    },
+    afmContribution: {
+      WITHHOLDING_2_PERCENT: "2% reținut la sursă (lunar, 25)",
+      WITHHOLDING_2_PERCENT_HINT:
+        "OUG 196/2005 art. 9 lit. a): 2% din vânzarea oricărui deșeu, reținuți de colector. E a centrelor de colectare, nu a firmei care doar vinde deșeul — aceleia i se reține din factură.",
+      CIRCULAR_ECONOMY: "Economia circulară (trimestrial, 25)",
+      CIRCULAR_ECONOMY_HINT:
+        "OUG 196/2005 art. 9 lit. c): a depozitelor, pentru deșeurile duse la eliminare.",
+      PACKAGING: "Ambalaje (anual, 25 ianuarie)",
+      PACKAGING_HINT:
+        "OUG 196/2005 art. 9 lit. d): a celor care pun produse ambalate pe piață — producători și importatori.",
+    },
     partnerType: {
       GENERATOR: "Generator",
       COLLECTOR: "Colector",
+      // Cerut pe 24.08.2026. Nu e cosmetic: de el atârnă ce se prebifează la „Destinat:” pe
+      // Anexa 3 — la colector se bifează colectării + valorificării, la valorificator doar
+      // valorificării. Codul R/D nu poate face diferența, fiindcă același R3 merge la amândoi.
+      RECOVERER: "Valorificator",
     },
     companyType: {
       GENERATOR: "Generator",
@@ -627,11 +692,16 @@ export const strings = {
       CLIENT_VIEWER: "Vizualizare (read-only)",
     },
     reportType: {
-      // Ce se depune pe 15 martie e chiar evidența — fișa Anexa 1 din HG 856/2002 —, încărcată
+      // Ce se depune pe 15 martie e chiar evidența din HG 856/2002, anexa 1, încărcată
       // în sistemul pus la dispoziție de APM (OUG 92/2021 art. 48 alin. (1)). „Raportarea SIM"
       // numea canalul și lăsa clientul să ghicească ce are de pregătit.
-      SIM_ANNUAL: "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)",
-      AFM_MONTHLY: "AFM (lunar) — Fondul pentru Mediu",
+      SIM_ANNUAL: "Evidența gestiunii deșeurilor generate (anual, 15 martie)",
+      // Trei termene, nu unul: OUG 196/2005 art. 11 are trei cadențe, iar până pe 24.08.2026
+      // dădeam termenul lunar oricui avea bifa — 11 alerte greșite pe an la o firmă cu
+      // contribuție doar anuală.
+      AFM_MONTHLY: "AFM (lunar, 25) — contribuția de 2% reținută la sursă",
+      AFM_QUARTERLY: "AFM (trimestrial, 25) — contribuția pentru economia circulară",
+      AFM_ANNUAL: "AFM (anual, 25 ianuarie) — contribuția pentru ambalaje",
       OTHER: "Altă raportare",
     },
     deadlineStatus: {
@@ -772,9 +842,9 @@ export const strings = {
       "Răspunsurile din formularul completat de client. Din ele se decide ce vede omul în aplicație — dacă nu completezi nimic, se oferă tot.",
     marketRoles: "Tip de generator",
     marketRolesHint:
-      "Ce e firma pe piață pentru marfa pe care o vinde. Decide dacă depune declarația de ambalaje (Ordinul 794/2012). Fișa Anexa 1 se ține oricum, de oricine generează deșeu.",
+      "Ce e firma pe piață pentru marfa pe care o vinde. Decide dacă depune Anexa 1 Ambalaje (Ordinul 794/2012). Evidența gestiunii deșeurilor se ține oricum, de oricine generează deșeu.",
     marketRolesTraderOnly:
-      "Comerciant: nu introduce el ambalaj pe piață, deci nu depune declarația de ambalaje. Fișa Anexa 1 rămâne obligatorie.",
+      "Comerciant: nu introduce el ambalaj pe piață, deci nu depune Anexa 1 Ambalaje. Evidența gestiunii deșeurilor rămâne obligatorie.",
     operationCodes: "Operațiuni de valorificare / eliminare",
     operationCodesHint:
       "Ce se întâmplă cu deșeul. Doar acestea apar la mișcări, după operațiune.",
@@ -793,6 +863,52 @@ export const strings = {
     transportLicenseNumber: "Licență de transport mărfuri",
     transportLicenseExpiry: "Expiră licența de transport",
     empty: "Necompletat — se oferă tot.",
+  },
+
+  /**
+   * Avertismentul de dinaintea generarii unui document, cand o cantitate inca nu a venit de la
+   * destinatar. Cerut pe 24.08.2026, cu precizarea care conteaza: "doar unde impacteaza acea
+   * miscare" — deci se numara doar liniile care chiar intra in documentul cerut.
+   */
+  awaitingWeighing: {
+    title: "Ai cantități care încă nu au venit de la destinatar",
+    body: "{count} linii din documentul pe care îl generezi așteaptă cântarul de la destinatar („se cântărește la descărcare”). Pe hârtie, cantitatea lor va lipsi, iar stocul nu se închide pe rândurile astea.",
+    andMore: "și încă {count}",
+    hint: "Poți completa cifra din Mișcări → „Adaugă cantitatea”, pe rândurile marcate „De cântărit”. Sau generează acum, dacă documentul e o ciornă de lucru.",
+    generateAnyway: "Generează oricum",
+    cancel: "Renunț, completez întâi",
+  },
+
+  packaging: {
+    title: "Ambalaje",
+    subtitle:
+      "Anexa 1 Ambalaje (Ordinul 794/2012): ce ambalaje ai pus pe piața națională și ce deșeuri de ambalaje ai predat. Se depune pentru anul anterior; cifrele ei sunt și baza contribuției pe ambalaje la Fondul pentru mediu.",
+    year: "Anul",
+    download: "Descarcă Anexa 1 Ambalaje",
+    downloadHint: "PDF cu ambele tabele, în kilograme, ca în model.",
+    downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
+    saveError: "Cifra nu a putut fi salvată.",
+    table1Title: "Tabel 1. Ambalaje introduse pe piața națională",
+    table1Hint:
+      "Se completează de tine: sunt despre marfa vândută, nu despre deșeu, deci nu se pot deduce din mișcări. O rubrică lăsată goală se tipărește goală — „gol” nu înseamnă „zero”. Cifrele sunt în kilograme, iar coloana „Total (col. 3+5)” se calculează singură.",
+    table2Title: "Tabelul 2. Deșeuri de ambalaje gestionate",
+    table2Hint:
+      "Se completează singur, din predările înregistrate pe coduri 15 01 xx — un rând pentru fiecare operator care a preluat, cum cere nota formularului. Cartonul înregistrat pe 20 01 01 nu intră aici: intră în evidența gestiunii deșeurilor.",
+    material: "Material",
+    colSales: "Ambalaje de desfacere fabricate/importate",
+    colTotal: "Total (col. 3+5)",
+    colPrimary: "Primare — total",
+    colPrimaryReusable: "Primare — reutilizabile",
+    colSecondary: "Secundare și de transport — total",
+    colSecondaryReusable: "Secundare — reutilizabile",
+    colHazardous: "Cu conținut periculos",
+    total: "TOTAL",
+    quantity: "Cantitatea (kg)",
+    operator: "Operatorul care a preluat",
+    operatorCui: "CUI",
+    operation: "Operațiunea",
+    noHandovers:
+      "Nicio predare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
   },
 
   common: {

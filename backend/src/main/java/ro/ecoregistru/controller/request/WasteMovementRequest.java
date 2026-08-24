@@ -51,9 +51,16 @@ public record WasteMovementRequest(
 
         // --- Anexa 3 la HG 1061/2008: filled in when the transport form is going to be printed ---
         LocalDate unloadDate,
+        /** Which of the recipient's work points received the load; null = the only one. */
+        UUID partnerWorkPointId,
         UUID transportPartnerId,
         String driverName,
         String driverIdentification,
         String vehicleRegistration,
-        Set<TransportDestination> transportDestinations
+        Set<TransportDestination> transportDestinations,
+        /**
+         * The unit this one form prints in. Null falls back to the company setting, and then
+         * to {@link #unit()} — see {@code Anexa3FormGenerator.printedUnit}.
+         */
+        Unit anexa3Unit
 ) {}

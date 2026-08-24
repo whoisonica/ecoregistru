@@ -182,6 +182,14 @@ public class WasteMovement {
     LocalDate unloadDate;
 
     /**
+     * Which of the recipient's work points took the load. Null means "the one they have", which is
+     * the ordinary case and what every movement recorded before V23 means.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_work_point_id")
+    PartnerWorkPoint partnerWorkPoint;
+
+    /**
      * Who hauls the waste. Often the recipient itself, sometimes a separate carrier; null means
      * we transport it ourselves, and the form then prints our own details in that column.
      */
@@ -220,6 +228,19 @@ public class WasteMovement {
 
     @Column(name = "anexa3_number")
     Integer anexa3Number;
+
+    /**
+     * The unit this one transport form prints its quantity in, overriding the company's standing
+     * choice. Null is the normal case: fall back to {@code Company.anexa3Unit}, and then to
+     * {@link #unit}, the unit the quantity was recorded in.
+     *
+     * <p>Answer A3.4, 24.08.2026: "da, e bine să poată selecta la introducerea mişcării". The
+     * form travels with the load, and two recipients can want two different units from the same
+     * company. The figure is converted exactly, by moving the decimal point.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "anexa3_unit", length = 10)
+    Unit anexa3Unit;
 
     /** Free text, e.g. aviz nr. */
     String documentReference;

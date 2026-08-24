@@ -943,6 +943,396 @@ acum `-450.000` pe TOTAL AN, exact valoarea din decembrie.
 deci toate cifrele de mai sus sunt din cele nouă `.xlsx`.*
 
 
+## Toate răspunsurile, în scris (24.08.2026, seara târziu)
+
+Documentul Word s-a întors completat. Din cele şaptesprezece întrebări, **treisprezece au primit
+răspuns**, patru au rămas fără (C, I, Q, şi partea de amplasare a titlului din P). Răspunsurile au
+adus şi **nouă cereri noi**, care n-au fost întrebări — notate ca atare, ca să nu pară că le-a cerut
+cineva de două ori.
+
+### 1. Confirmă ce face aplicaţia — zero cod de schimbat
+
+| Întrebarea | Răspunsul, pe scurt |
+|---|---|
+| **A** — antetul cap. 3/4 | „e corect cum ai pus tu cu OUG nou". Deci **OUG 92/2021**, nu actul abrogat. Abaterea de la modelele primite e acum decizie luată, nu presupunere |
+| **U** — „Tratare: Cant." la o firmă care doar predă | „ai dreptate" — **0**, nu cantitatea lunii. Comentariul fals din `Anexa1SheetBuilder`, prins la recitirea corpusului, avea totuşi concluzia bună |
+| **T** — rând de TOTAL pe centralizator | „nu, e ok cum ai făcut tu". Lipsa lui din toate cele nouă fişiere **era** răspunsul |
+| **M** — formularea celor trei bife | „sunt foarte clare" |
+| **J** — ce lipseşte din formularul de cerere de cont | „este foarte ok tot ce am pus noi în chestionar" — şi a completat un cont nou prin el, de verificat în producţie |
+
+### 2. Schimbă comportamentul
+
+- **B — o lună cu mai multe predări diferite: „trebuie un rând nou pentru fiecare chestie nouă
+  pentru luna respectivă."** Contrazice ce facem: azi înghesuim valorile distincte într-o celulă
+  („R3, R12"). Fişa capătă deci **mai multe rânduri pentru aceeaşi lună** la cap. 3 şi 4 — corpusul
+  n-avea precedent fiindcă la ei nu s-a nimerit, nu fiindcă aşa se scrie. E singurul răspuns care
+  strică o regulă deja tipărită pe hârtie.
+- **S — antetul declaraţiei anuale: „cod CAEN completat de utilizator, semnează cine a întocmit."**
+  Deci CAEN rămâne **pe firmă**, cerut de la client (nu se mută pe punctul de lucru), iar „Întocmit"
+  e **cine ţine evidenţa** — aceeaşi persoană semnează. Se schimbă eticheta, nu câmpurile.
+- **A3.1 — „când pleacă la colector se pot bifa valorificării şi colectării, dacă se poate
+  valorifica. Iar când pleacă la valorificator, doar valorificării."** Prebifarea redevine posibilă,
+  dar **nu după codul R/D** (aia era greşeala pe care documentul Hamburger a arătat-o), ci după
+  **ce este destinatarul**. De aceea atârnă de tipul de partener nou (vezi §4).
+- **A3.3 — „în 3 exemplare, pentru generator, colector şi transportator."** Cele trei ale art. 20
+  alin. (2), cu destinatarul fiecărui exemplar numit pe el. Al patrulea din discuţie nu există.
+- **A3.4 — „e bine să poată selecta la introducerea mişcării."** Unitatea nu mai e doar alegere de
+  firmă (`V19`): se alege şi **pe mişcare**, cu setarea firmei ca implicit.
+- **L — „2% pe orice deşeu, păstrăm alerta. De obicei plăteşte colectorul şi se reflectă în factură.
+  Datorează 2%; dacă deşeul nu e din sursă gospodărie proprie, încă 10%."** Contribuţia de 2%
+  (OUG 196/2005 art. 9 alin. (1) lit. a) **nu se stinge** — nu ţine de ambalaje, ci de orice vânzare
+  de deşeu, şi o reţine colectorul. **Etapa 7 se deblochează**: setul de contribuţii cu trei cadenţe
+  rămâne exact cum e documentat, iar alerta lunară a colectorului rămâne pe loc.
+  ⚠️ **Cei 10% nu sunt AFM.** Citirea noastră: impozit pe venit reţinut la sursă de la persoana
+  fizică ce vinde deşeu care nu provine din gospodăria proprie — Codul fiscal, nu OUG 196/2005.
+  **Neverificat pe sursă primară**, deci nu se codează nimic pe el; intră în `surse-oficiale.md`
+  abia după ce se citeşte articolul.
+- **N — „cartonul din magazine este 15 01 01"**, iar raportarea lui se face în declaraţia de
+  ambalaje. Nu propunem coduri în formular, deci nu se schimbă nicio validare — dar modulul de
+  ambalaje ştie de-acum ce coduri îl privesc.
+
+### 3. Corectarea de nume, cerută explicit
+
+> „Anexa 1 de la noi ar trebui să se numească **Evidenţa gestiunii deşeurilor generate**, şi
+> **Anexa 1 Ambalaje** [să fie] deşeurile de ambalaje puse pe piaţa naţională. [...] Anexa 1
+> ambalaje este pentru fondul de mediu, declaraţie AFM. Te rog să corectezi confuzia."
+
+Aplicaţia numeşte azi „Fişa Anexa 1" documentul din HG 856/2002 — corect faţă de act, dar în vorbirea
+clientului „Anexa 1" înseamnă **cealaltă** anexă, cea de ambalaje. Numele care circulă câştigă:
+
+| Ce e | Cum se numeşte de-acum în aplicaţie | Act |
+|---|---|---|
+| Fişa cu patru capitole × 12 luni, o pagină per cod | **Evidenţa gestiunii deşeurilor generate** | HG 856/2002, anexa 1 |
+| Tabelele pe materiale, în kg | **Anexa 1 Ambalaje** | Ordinul 794/2012, anexa 1 |
+
+Se schimbă butonul din Evidenţe, numele fişierului, `README.txt`-ul din dosarul de control şi
+eticheta termenului de 15 martie. **Distincţia din documentaţie rămâne exact cum era** — sunt tot
+două documente diferite; se schimbă doar care dintre ele poartă numele scurt.
+
+⚠️ **Un lucru de reconfirmat, într-o linie.** Specialista spune că Anexa 1 Ambalaje „este pentru
+fondul de mediu, declaraţie AFM". Ordinul 794/2012, citit verbatim (`surse-oficiale.md` §5), cere
+raportarea **la APM judeţeană / ANPM**, până pe **25 februarie**. Cele două nu se exclud — cifrele
+din tabele sunt şi baza contribuţiei pe ambalaje datorate AFM (art. 9 alin. (1) lit. d, anuală, pe
+25 ianuarie) —, dar ar fi **două depuneri, la două autorităţi, la două date**. Până la confirmare,
+termenele se generează pe ce scrie în acte.
+
+### 4. Cereri noi, ieşite din răspunsuri
+
+Niciuna n-a fost întrebare; toate nouă sunt din marginile documentului.
+
+| # | Cererea, în cuvintele ei | Ce înseamnă în cod |
+|---|---|---|
+| 1 | „vom face un tab nou numit **Ambalaje** [...] să se completeze automat şi corect cum e acolo, pentru ambele sheeturi" | **Modul nou** — Anexa 1 Ambalaje, cele două tabele din §5 |
+| 2 | „un nou tip la parteneri: **Valorificator**" | `PartnerType` capătă un al treilea membru — şi de el atârnă prebifarea de la A3.1 |
+| 3 | „să poţi să adaugi mai multe puncte/parteneri" | partenerul are azi **o** adresă de punct de lucru; devin mai multe |
+| 4 | „descărcarea din Anexa 3 să se poată face din mişcări pentru punctele de lucru dorite" | filtrare pe punct de lucru la generarea Anexei 3 |
+| 5 | „când adaugi partener şi scrii, să apară din db ce clienţi sunt după primele 2 litere" | autocomplete pe parteneri, prag de 2 caractere |
+| 6 | „notează în todo lookup după CUI, integrare cu ANAF" | **TODO**, nu felie: completarea firmei din CUI. Utilizatorul are o aplicaţie în `Work/` cu ceva asemănător |
+| 7 | „buton **actualizează cantitatea**" după ce vine cântarul de la colector | azi se completează editând mişcarea; se cere o acţiune dedicată, vizibilă pe rândurile „De cântărit". Motivul e explicit: „ne încurcă la rapoarte şi la anexe lipsa cantităţii" |
+| 8 | „să fie păstrate **5 ani** documentele din dosar, sunt 3 în lege dar de safety" | `MAX_YEARS` din `AuditFileService`: 3 → 5 |
+| 9 | la Anexa 3, „primul element **data încărcării**, după **data descărcării**" | ordinea celor două date în formularul de mişcare |
+
+### 5. Ce arată fişierele de ambalaje, citite rubrică cu rubrică
+
+`RAPORTARE AMBALAJE 2021_anexa 1_ HRR.xlsx` (completat) şi `RAPORTARE AMBALAJE _anexa 1.xlsx`
+(gol) au **aceeaşi structură**: două foi, `Tabelul nr. 1` şi `Tabelul nr. 2`, ambele în
+**`[kilograme]`** — exact ce spune actul, deci fişierele astea nu sunt şablon modificat local.
+
+- **Antetul** (7 rânduri, pe foaia 1): denumire · judeţ şi localitate · adresă · tel/fax/e-mail ·
+  **cod CAEN pentru activitatea aferentă raportării** · CUI · anul. Le avem pe toate.
+- **Tabelul 1 — ambalaje introduse pe piaţa naţională.** Rânduri: Sticlă · PET · Alte plastice ·
+  Total plastic · Hârtie carton · Aluminiu · Oţel · Total metal · Lemn · Altele · TOTAL. Coloanele
+  1–7: ambalaje de desfacere fabricate/importate · total (col. 3+5) · primare (total, din care
+  reutilizabil) · secundare şi de transport (total, din care reutilizabil) · cu conţinut periculos.
+  ⚠️ **Datele astea nu există în aplicaţie şi nu se pot deduce din mişcări** — sunt despre marfa
+  pusă pe piaţă, nu despre deşeu. Se introduc de client. La HRR e completat un singur rând
+  (Oţel, 5192 kg), restul foii e gol.
+- **Tabelul 2 — deşeuri de ambalaje gestionate.** Material · cantitate · **operatorul** (denumire +
+  adresă punct de lucru + CUI) · **operaţiunea** la care l-a supus. Nota 1 cere „câte o rubrică
+  distinctă pentru fiecare dintre operatorii care au preluat" — deci **un rând per operator**,
+  aceeaşi regulă ca răspunsul **B**. **Asta se completează singură din ce avem deja**: predările pe
+  coduri `15 01 xx`, cu partenerul şi codul R.
+- Blocul de semnătură: „Numele şi prenumele" + **„Funcţia: DIRECTOR"** — la HRR semnează directorul,
+  nu cine ţine evidenţa. Deci răspunsul de la **S** („semnează cine a întocmit") priveşte
+  centralizatorul, nu şi documentul ăsta.
+- ⚠️ Nota 2 a tabelului 2 trimite tot la **Legea 211/2011**, abrogată — aceeaşi situaţie ca la
+  cap. 3/4 ale fişei, unde răspunsul **A** ne-a dat voie să tipărim actul în vigoare.
+
+### 6. Ce a rămas fără răspuns
+
+| # | Ce | Ce facem până atunci |
+|---|---|---|
+| **C** | cine se scrie la „agentul economic care efectuează operaţia" când firma îşi tratează singură deşeul | scriem „în activitatea proprie" |
+| **I** | declaraţia anuală: se depune odată cu fişele sau separat, ce termen, cine dă numărul de înregistrare | o generăm la cerere, fără număr |
+| **Q** | 15 martie: o depunere sau două (fişa la APM **şi** chestionarul SIM) | un singur termen, numit după document |
+| **P** | *partea de amplasare:* titlul pe fiecare fişă sau doar pe centralizator — răspunsul primit a fost despre **nume**, nu despre unde stă | îl tipărim pe amândouă |
+
+
+## Ce s-a construit din răspunsuri (25.08.2026)
+
+Cinci grupuri, în ordinea în care contau. **152 de teste verzi** (137 înainte). Migrări noi:
+**`V20`**–**`V23`**; următoarea liberă e **`V24`**.
+
+### Grupul 1 — rândul per predare, şi redenumirea
+
+**Răspunsul B, în cod.** Capitolele 3 şi 4 ale fişei au de-acum **un rând per predare distinctă**,
+nu valori înghesuite într-o celulă. Concret:
+
+- gruparea se face pe (cod R/D, operator), în ordinea mişcărilor, iar două predări identice rămân
+  un singur rând — regula e „un rând per rubrică nouă", nu „un rând per mişcare", altfel un client
+  cu patru ridicări pe lună de la acelaşi colector ar depune o fişă pe care n-o citeşte nimeni;
+- **„Nr. crt." curge** (1, 2, 3…) în loc să repete numărul lunii, iar luna se scrie pe fiecare rând
+  al ei, ca un rând citit singur să nu aterizeze în luna greşită;
+- **capitolele 1 şi 2 rămân pe 12 rânduri.** Cap. 1 e registrul de stoc — soldul trebuie citit lună
+  de lună —, iar „Stocare: Cant." din cap. 2 e cantitatea lunii, care nu se poate împărţi pe secţii
+  după nicio regulă pe care ne-a dat-o cineva. Suma rândurilor unei luni din cap. 3 e egală cu
+  cifra ei din cap. 1, şi există test pe asta;
+- un grup în care **nicio** mişcare n-a fost cântărită tipăreşte celula de cantitate **goală**, nu
+  zero, dar îşi păstrează rândul: predarea a avut loc, doar cifra lipseşte.
+
+⚠️ **Verificat pe hârtie, şi bine că a fost.** Fişa cu rânduri în plus **curgea pe a doua pagină** —
+o singură linie orfană din notele de subsol. S-au strâns fontul notelor (5 → 4,4), interliniajul şi
+paddingul celulelor; acum o foaie cu trei rânduri în plus la cap. 3 încape lejer, cu spaţiu rămas.
+Exact tiparul pe care regula „randează PDF-ul şi uită-te la el" l-a mai prins o dată.
+
+**Redenumirea, cerută explicit.** „Fişa Anexa 1" se numeşte peste tot **„Evidenţa gestiunii
+deşeurilor generate"** — butonul din Evidenţe, textele din Mişcări, fişierul descărcat
+(`evidenta-gestiunii-deseurilor-2026.pdf`), intrarea şi nota din `README.txt`-ul dosarului, şi
+eticheta termenului de 15 martie. Numele scurt **„Anexa 1"** e liber acum pentru ambalaje, iar
+acolo unde chiar despre ambalaje e vorba scrie **„Anexa 1 Ambalaje"**. Comentariile care citează
+actul („HG 856/2002, anexa 1") au rămas — acolo e numele corect.
+
+### Grupul 2 — mărunţişurile care se văd
+
+| Ce | Unde | Din ce răspuns |
+|---|---|---|
+| **Butonul „Adaugă cantitatea"** pe rândurile „De cântărit", cu dialog de o cifră | Mişcări | cererea Andreei: „ne încurcă la rapoarte şi la anexe lipsa cantităţii" |
+| **Dosarul merge până la 5 ani** (`MAX_YEARS` 3 → 5) | Dosar de control | „sunt 3 în lege dar de safety" |
+| **Unitatea Anexei 3 se alege pe mişcare**, nu doar pe firmă (`V20`) | Mişcări | A3.4 |
+| **Anexa 3 iese în 3 exemplare numite** — expeditor (generator) · destinatar (colector) · transportator | Anexa 3 | A3.3 |
+| **Data încărcării stă prima**, apoi descărcarea | Mişcări, secţiunea Anexa 3 | cererea din 24.08 |
+| **Sugestii de partener după două litere** | Parteneri | „să apară din db ce clienţi sunt după primele 2 litere" |
+
+Două lucruri de reţinut despre butonul de cantitate. Are **endpoint propriu**
+(`POST /movements/{id}/weight`), nu trece prin editarea mişcării, fiindcă formularul face câmpul
+gri cât timp e bifat „se cântăreşte la descărcare" — singura cale de dinainte era să debifezi, adică
+să ştergi tocmai informaţia că destinatarul a cântărit. Şi **bifa rămâne pusă** după completare: aşa
+*a fost* cântărită marfa. Linia lunară iese din „provizoriu" fiindcă motorul citeşte cantitatea, nu
+bifa. Editarea unei cantităţi deja existente e refuzată acolo — aia e o editare şi se face din
+formular, unde se vede toată mişcarea.
+
+**Data încărcării** nu e câmp nou: e data mişcării, arătată în secţiunea Anexei 3 ca rubrică gri, cu
+o notă că e aceeaşi. Două câmpuri pentru aceeaşi dată ar fi două date care se pot contrazice pe un
+formular semnat.
+
+### Grupul 3 — avertismentul înainte de generare (cerut în timpul lucrului)
+
+> „vreau când generezi doc să te atenţioneze că ai mişcări nenotate ca şi cantitate dacă ai bifat
+> chestia cu cântărire la descărcare" — şi, imediat după: **„doar unde impactează acea mişcare"**.
+
+Aşa e făcut. Înainte de **Evidenţa gestiunii deşeurilor**, de **Declaraţia anuală** şi de
+**descărcarea dosarului**, aplicaţia numără liniile care aşteaptă cântarul **din exact ce intră în
+documentul cerut** — anul şi punctul de lucru pentru primele două, anii cuprinşi în arhivă pentru
+al treilea. Dacă sunt, arată un dialog care le **listează** (cod, luna, punctul de lucru) şi lasă
+alegerea: „Generează oricum" sau „Renunţ, completez întâi". Nu blochează: o ciornă de lucru e utilă
+şi incompletă, iar cifra poate să chiar nu existe încă.
+
+O mişcare care aşteaptă cântarul într-un alt punct de lucru **nu** apare pe documentul altcuiva.
+
+### Grupul 4 — tipul „Valorificator" şi prebifarea casetei „Destinat:"
+
+`PartnerType` are un al treilea membru, **`RECOVERER`** („Valorificator"), şi nu e cosmetic: de el
+atârnă răspunsul **A3.1**. La alegerea partenerului pe o mişcare de valorificare se prebifează
+
+- **colector** → *Colectării* **+** *Valorificării*
+- **valorificator** → doar *Valorificării*
+
+exact cum a spus. **Nu după codul R/D** — aia era greşeala pe care documentul Hamburger a
+arătat-o: acolo marfa pleacă sub `15 01 01` la un colector şi caseta pretipărită e *colectării*,
+fiindcă rubrica spune ce face **destinatarul**, nu ce cod a ales expeditorul.
+
+Trei garduri în jurul prebifării: se pune numai peste o rubrică **neatinsă**, sub ea scrie că bifele
+sunt puse automat, iar din clipa în care omul umblă la ele redevin ale lui. **Eliminarea nu se
+prebifează** — n-a fost întrebată.
+
+### Grupul 5 — Etapa 7, cadenţele AFM (`V21`)
+
+Deblocată de răspunsul **L**: „2% pe orice deşeu, păstrăm alerta. De obicei plăteşte colectorul şi
+se reflectă în factură." Deci cei 2% **nu ţin de ambalaje** şi nu se sting.
+
+`Company.afmObligation`, un boolean care producea un termen lunar pentru oricine, devine un **set de
+contribuţii**, fiecare cu ritmul din OUG 196/2005 art. 11:
+
+| Contribuţie | Cadenţă | Cine |
+|---|---|---|
+| 2% reţinut la sursă (art. 9 lit. a) | **lunar**, pe 25 | colectorul care cumpără deşeu |
+| Economia circulară (lit. c) | **trimestrial**, pe 25 după trimestru | depozitele |
+| Ambalaje (lit. d) | **anual**, pe **25 ianuarie** | cine pune produse ambalate pe piaţă |
+
+Cu asta dispar cele **11 alerte greşite pe an** primite de o firmă cu obligaţie doar anuală — cel
+mai vechi output greşit din aplicaţie.
+
+**Ce nu se ghiceşte.** Migrarea completează doar ce se poate deriva: un colector cu obligaţia
+pornită primeşte 2%, o firmă care pune ambalaje pe piaţă primeşte contribuţia pe ambalaje. Restul
+rămân cu setul **gol** — şi tocmai de aceea flagul vechi **nu s-a şters**: cât timp setul e gol,
+firma primeşte exact termenul lunar de dinainte. A stinge o alertă pe o presupunere e mai rău decât
+a lăsa una gălăgioasă; calea veche se stinge singură, pe măsură ce conturile se completează.
+
+⚠️ **Cei 10% din răspuns** („dacă deşeul nu e din sursă gospodărie proprie, încă 10%") **nu sunt în
+cod**. Citirea noastră e că e impozit pe venit reţinut la sursă de la persoana fizică — Codul fiscal,
+nu OUG 196/2005 — dar n-a fost verificat pe sursă primară, deci nu s-a codat nimic pe el.
+
+### Grupul 6 — modulul Ambalaje: Anexa 1 Ambalaje (`V22`)
+
+Tab nou, **Ambalaje**, şi documentul pe care îl cere: Ordinul 794/2012, anexa nr. 1, cele două
+tabele, în kilograme, după modelul completat de la Hamburger Recycling.
+
+**Cele două tabele au proprietari diferiţi, şi ecranul o spune:**
+
+- **Tabelul 2 — deşeuri de ambalaje gestionate: se completează singur.** Iese din predările deja
+  înregistrate pe coduri **`15 01 xx`**, cu partenerul, adresa punctului lui de lucru, CUI-ul şi
+  codul R/D. **Un rând per operator**, cum cere nota 1 a formularului — aceeaşi regulă pe care a
+  dat-o şi pentru fişă în răspunsul B, scrisă de data asta chiar în act.
+- **Tabelul 1 — ambalaje introduse pe piaţa naţională: se scrie de client.** Nu se poate deduce din
+  **nimic** din ce ţinem: e despre marfa vândută, nu despre deşeu. Grilă de 8 materiale × 6 cifre,
+  salvată rând cu rând la ieşirea din câmp. „Total (col. 3+5)", „Total plastic", „Total metal" şi
+  „TOTAL" **nu se stochează** — sunt sume, făcute la tipărire.
+
+**Ce nu ghiceşte, şi o spune pe hârtie.** `15 01 04` e „ambalaje metalice": aluminiul şi oţelul au
+acelaşi cod, iar formularul are rând pentru fiecare. Cantitatea intră la **„Altele"**, iar sub tabel
+se tipăreşte o linie care **numeşte codurile** ajunse acolo şi de ce. La fel, `15 01 02` intră la
+„Alte plastice", fiindcă PET-ul nu se distinge din cod. O rubrică fără răspuns se tipăreşte
+**goală**, nu 0.000: pe formularul ăsta „nimic" şi „n-am răspuns" sunt două afirmaţii diferite, şi
+amândouă sunt ale clientului.
+
+Distincţia care contează comercial, din răspunsul **N**: cartonul dintr-un magazin e **`15 01 01`**
+şi intră aici; acelaşi carton înregistrat pe `20 01 01` intră doar în evidenţa gestiunii. Codul
+ales la înregistrare decide, iar aplicaţia nu propune niciunul. Există test pe asta.
+
+**Verificat pe hârtie:** PDF randat şi comparat cu modelul HRR — antetul de 7 rânduri, rândul de
+numere 0–7, subtotalurile la locul lor, TOTAL-ul care se închide (5.192 + 3.400 = 8.592), nota
+despre codurile nerezolvate, blocul de semnătură. O rubrică de reparat s-a văzut tot acolo:
+„Judeţ şi localitate" tipărea a doua oară adresa, fiindcă ţinem o singură adresă liberă. Acum rămâne
+goală.
+
+### Grupul 7 — puncte de lucru pe partener (`V23`)
+
+Cererea „să poţi să adaugi mai multe puncte" avea două citiri; utilizatorul a ales-o pe cea care se
+potriveşte cu Anexa 3: **un partener are mai multe puncte de lucru**, iar mişcarea spune la care a
+ajuns marfa.
+
+- **`partner_work_points`**, cu nume opţional şi adresă. Adresa unică de dinainte
+  (`partners.work_point_address`, `V11`) devine primul punct, numit „Punct de lucru"; coloana
+  rămâne, necitită şi nescrisă, până o scoate o migrare viitoare — precedentul e `total_collected`.
+- **Mişcarea poartă `partner_work_point_id`.** E o proprietate a **transportului**, nu a
+  partenerului: acelaşi colector primeşte marfa când într-un depozit, când în altul. Un punct de
+  lucru al altui partener e refuzat — o Anexă 3 care numeşte o firmă şi depozitul alteia nu se poate
+  urmări înapoi.
+- **Ce tipăreşte Anexa 3 la destinatar**, de la specific la general: punctul ales pe mişcare → dacă
+  partenerul are exact unul, acela → altfel sediul. Un partener cu trei depozite şi nicio alegere
+  primeşte **sediul**, nu un depozit ales de noi: pe o hârtie care pleacă cu camionul, depozitul
+  greşit e mai rău decât niciunul. Aceeaşi regulă la coloana „Denumirea, adresă punct de lucru" din
+  tabelul 2 al declaraţiei de ambalaje.
+- În ecrane: listă cu adăugare/ştergere în formularul de partener, iar la mişcare selectorul apare
+  **doar dacă partenerul are mai multe** — cu unul singur n-are ce alege nimeni.
+- Salvarea înlocuiește lista cu ce e pe ecran, dar un rând **îşi păstrează id-ul**, deci o mişcare
+  care îl arată deja pe o Anexă 3 tipărită continuă să numească acelaşi loc. Lista lipsă din cerere
+  (`null`) nu şterge nimic — aceeaşi regulă ca la profilul firmei.
+
+**Suită: 152 de teste verzi.** Migrare: `V23`; următoarea liberă e **`V24`**.
+
+## Fişele scoase din contul specialistei, reparate (25.08.2026)
+
+Specialista şi-a făcut singură cont prin formularul public, a înregistrat două mişcări şi
+şi-a tipărit documentele. Ce a ieşit nu se putea depune nicăieri.
+Patru observaţii ale ei, şi toate patru veneau **din aceeaşi cauză**.
+
+### Ce era în contul ei, exact
+
+Citit în baza de producţie (read-only), nu presupus:
+
+| Data | Cod | Cantitate | Operaţie | Partener |
+|---|---|---|---|---|
+| 24.08.2026 | `15 01 01` | 100 kg | R3 | un colector |
+| 24.08.2026 | `15 01 02` | 50 kg | R12 | alt colector |
+
+Zero mişcări de generare. Zero secţii definite. Şi linia de evidenţă rezultată:
+
+```
+Generate 0.000 | valorificată 100.000 | eliminată 0.000 | rămasă în stoc −100.000
+```
+
+### 1. „Cum poţi să valorifici ceva ce nu este generat?" (`V24`)
+
+Are dreptate, şi o spune chiar antetul formularului: cap. 1 e „Cantitatea de deşeuri **Generate**",
+iar sub el **„din care:** valorificată | eliminată final | rămasă în stoc". Coloanele 2–4 sunt părţi
+din coloana 1 — nu pot fi mai mari decât ea, iar un stoc negativ nu există pe hârtie.
+
+Motorul deduce de-acum generarea din ieşiri, lună cu lună:
+
+```
+ieşiri    = valorificat + eliminat + ieşiri fără cod R/D
+acoperire = stoc la începutul lunii + generat înregistrat
+dedus     = max(0, ieşiri − acoperire)
+```
+
+„Generate" tipărit = înregistrat + dedus. **Când clientul chiar înregistrează generarea, sau când
+stocul reportat acoperă ieşirea, dedusul e zero şi nu se schimbă nimic** — există test pe asta, ca
+să nu se numere o cantitate de două ori.
+
+Nu e o cifră inventată: e cea pe care omul a scris-o la ieşire, recunoscută în coloana din care nu
+avea cum să nu vină. Partea dedusă se ţine separat (`implied_generated`), ca să se poată spune
+oricând cât din „Generate" a scris omul şi cât a rezultat din predări. Cache-ul se goleşte, ca la
+`V6`: `total_generated` şi-a schimbat înţelesul.
+
+**Fişa ei, după:** August — Generate 100.000, valorificată 100.000, **rămasă în stoc 0.000**;
+TOTAL AN la fel. Declaraţia anuală: Generat 100 / Valorificat 100 / **Stoc 0.000**, cu operatorul şi codul R
+la „Valorificat prin". Verificate pe PDF randat, pe datele ei reconstruite.
+
+### 2. „Stocarea trebuie să apară şi la cantitatea 1 şi la cantitatea 2"
+
+Ambele coloane „Cant." din cap. 2 poartă acum cantitatea lunii. Prima o purta şi înainte (= ce s-a
+generat), dar ieşea 0 din aceeaşi cauză ca mai sus; a doua tipărea doar ce trata firma cu mijloace
+proprii, adică 0 la o simplă predare.
+
+⚠️ **Asta contrazice răspunsul U** din 24.08, unde confirmase 0 la „Tratare: Cant." pentru un client
+care doar predă. Am aplicat ce a spus ultima dată, uitându-se la hârtia ei, şi fiindcă tot corpusul
+ei arată la fel (336 din 336 de luni au cifră în ambele) — dar tensiunea nu se rezolvă de noi: e
+**întrebarea V**. Într-un sens sau în altul, e o linie de cod.
+
+### 3. Secţia: „Birouri + producţie", predefinit
+
+Două lucruri, fiindcă erau două cauze:
+
+- **Fiecare punct de lucru nou porneşte cu două secţii**, „Birouri" şi „Producţie" — verbatim ce
+  scrie în coloana „Secţia" din fişele ei („birouri", „productie"). Firma ei avea **zero** secţii,
+  deci nimeni n-avea ce alege.
+- **Cap. 2 nu mai lasă coloana goală**: când mişcările lunii nu numesc nicio secţie, se tipăresc
+  secţiile punctului de lucru („Birouri, Producţie"). E provenienţa deşeului de pe amplasament, nu
+  o presupunere despre un transport anume. Un punct de lucru fără secţii definite tipăreşte în
+  continuare gol — nu se inventează din nimic.
+
+### 4. Dosarul de control „cu documente aiurea, fără date"
+
+Două cauze, amândouă închise. Prima e chiar (1): fişa din arhivă avea aceleaşi zerouri. A doua e a
+noastră şi era mai urâtă: **dosarul citea cache-ul lunar fără să-l reconstruiască**, deci un client
+care n-a apăsat niciodată „Regenerează" primea un pachet de formulare oficiale goale — care arată
+exact ca date pierdute. De-acum arhiva **regenerează evidenţa fiecărui an pe care îl acoperă**
+înainte să împacheteze. Idempotent: fără nimic nou de adunat, ies aceleaşi linii.
+
+Verificat pe arhiva ei reconstruită: `evidenta-gestiunii-deseurilor-2026.pdf` conţine 100.000 şi
+nu mai conţine −100.
+
+**Migrare:** `V24`. **Suită: 154 de teste verzi.**
+
+### Ce s-a mai văzut în contul ei, şi nu e defect
+
+- **Tabul Ambalaje îi merge din prima**: ambele coduri sunt `15 01 xx`, deci tabelul 2 al Anexei 1
+  Ambalaje se completează singur, cu operatorii şi codurile R.
+- **Autorizaţia de mediu lipseşte** de pe firmă, deci rubrica ei iese goală pe declaraţia anuală.
+  Nu e bug — n-a completat-o nimeni.
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

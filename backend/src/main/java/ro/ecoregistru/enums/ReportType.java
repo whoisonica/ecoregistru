@@ -15,7 +15,26 @@ public enum ReportType {
      */
     SIM_ANNUAL,
 
+    /**
+     * The monthly Environment Fund filing, due on the 25th for the previous month. Produced by
+     * {@link ro.ecoregistru.enums.AfmContribution#WITHHOLDING_2_PERCENT} — the 2% a collector
+     * withholds at source — and, for accounts that have not answered which contributions they
+     * owe, by the legacy {@code afmObligation} flag.
+     */
     AFM_MONTHLY,
+
+    /**
+     * The quarterly Environment Fund filing, due on the 25th of the month after the quarter
+     * (OUG 196/2005 art. 11 alin. (1^1)): the circular-economy contribution of a landfill.
+     */
+    AFM_QUARTERLY,
+
+    /**
+     * The yearly Environment Fund filing, due <b>25 January</b> for the previous year (art. 11
+     * alin. (2)): the packaging contribution. Not 15 March, and not monthly — the eleven wrong
+     * reminders a packaging-only client used to get were exactly this deadline mis-cadenced.
+     */
+    AFM_ANNUAL,
 
     OTHER
 }

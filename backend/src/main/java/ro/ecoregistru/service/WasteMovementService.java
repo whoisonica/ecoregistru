@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ro.ecoregistru.controller.request.RecordWeightRequest;
 import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
@@ -43,6 +44,7 @@ public class WasteMovementService {
     WorkPointRepository workPointRepository;
     WasteCodeRepository wasteCodeRepository;
     PartnerRepository partnerRepository;
+    PartnerWorkPointRepository partnerWorkPointRepository;
     InternalGeneratorRepository internalGeneratorRepository;
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
@@ -94,6 +96,8 @@ public class WasteMovementService {
                 .partner(partner)
                 .internalGenerator(internalGenerator)
                 .unloadDate(request.unloadDate())
+                .partnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner))
+                .anexa3Unit(request.anexa3Unit())
                 .transportPartner(carrier)
                 .driverName(request.driverName())
                 .driverIdentification(request.driverIdentification())
@@ -147,6 +151,8 @@ public class WasteMovementService {
         movement.setPartner(partner);
         movement.setInternalGenerator(internalGenerator);
         movement.setUnloadDate(request.unloadDate());
+        movement.setPartnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner));
+        movement.setAnexa3Unit(request.anexa3Unit());
         movement.setTransportPartner(carrier);
         movement.setDriverName(request.driverName());
         movement.setDriverIdentification(request.driverIdentification());
@@ -157,6 +163,35 @@ public class WasteMovementService {
         movement.setDocumentReference(request.documentReference());
         movement.setNotes(request.notes());
 
+        return mapper.toResponse(movement);
+    }
+
+    /**
+     * Fills in the weight the recipient sent back, for a load that left without one.
+     *
+     * <p>Deliberately narrow: it touches the quantity and, if the figure came back in another
+     * unit, the unit. Everything else stays, {@code weighedAtUnloading} included — that flag says
+     * how this load was weighed, and it is still true once the number arrives. The evidence line
+     * stops being provisional because {@code EvidenceCalculator} reads the quantity, not the flag.
+     *
+     * <p>Refused when there is already a quantity: changing a figure that is on a printed Anexa 3
+     * is an edit, and edits go through the form where the whole movement is visible.
+     */
+    @Transactional
+    public WasteMovementResponse recordWeight(UUID id, RecordWeightRequest request) {
+        UUID tenantId = TenantContext.require();
+        WasteMovement movement = requireMovement(id, tenantId);
+
+        if (movement.getQuantity() != null) {
+            throw new BusinessException(NOT_AWAITING_WEIGHING);
+        }
+        if (request.quantity() == null || request.quantity().signum() <= 0) {
+            throw new BusinessException(INVALID_QUANTITY);
+        }
+        movement.setQuantity(request.quantity());
+        if (request.unit() != null) {
+            movement.setUnit(request.unit());
+        }
         return mapper.toResponse(movement);
     }
 
@@ -330,6 +365,26 @@ public class WasteMovementService {
         if (request.quantity() == null) {
             throw new BusinessException(QUANTITY_REQUIRED);
         }
+    }
+
+    /**
+     * The recipient's work point that took the load, if one was picked.
+     *
+     * <p>Refused when it belongs to a different partner than the one receiving the waste: an Anexa
+     * 3 naming one company and another company's depot is a form nobody can follow back.
+     */
+    private PartnerWorkPoint resolvePartnerWorkPoint(WasteMovementRequest request, UUID tenantId,
+                                                     Partner partner) {
+        if (request.partnerWorkPointId() == null) {
+            return null;
+        }
+        PartnerWorkPoint workPoint = partnerWorkPointRepository
+                .findByIdAndPartner_Company_Id(request.partnerWorkPointId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
+        if (partner == null || !workPoint.getPartner().getId().equals(partner.getId())) {
+            throw new BusinessException(PARTNER_WORK_POINT_MISMATCH);
+        }
+        return workPoint;
     }
 
     /** The carrier named on the transport form; null means we haul it ourselves. */

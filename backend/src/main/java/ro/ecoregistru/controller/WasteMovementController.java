@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ro.ecoregistru.controller.request.RecordWeightRequest;
 import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
@@ -56,6 +57,19 @@ public class WasteMovementController {
     @PreAuthorize(CAN_WRITE)
     public WasteMovementResponse update(@PathVariable UUID id, @RequestBody @Valid WasteMovementRequest request) {
         return movementService.update(id, request);
+    }
+
+    /**
+     * The weight, once the recipient has weighed the load. A small act of its own rather than a
+     * full edit: the client opens the row, types the figure the collector sent back, and the
+     * monthly line stops being provisional. Asked for on 24.08.2026 — the missing quantity "ne
+     * încurcă la rapoarte și la anexe".
+     */
+    @PostMapping("/{id}/weight")
+    @PreAuthorize(CAN_WRITE)
+    public WasteMovementResponse recordWeight(@PathVariable UUID id,
+                                              @RequestBody @Valid RecordWeightRequest request) {
+        return movementService.recordWeight(id, request);
     }
 
     /**

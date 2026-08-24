@@ -81,48 +81,72 @@ public class Anexa3FormGenerator {
         this.small = new Font(base, 6.5f);
     }
 
+    /**
+     * Who each printed copy belongs to. HG 1061/2008 art. 20 alin. (2) asks for three, and the
+     * specialist named them on 24.08.2026 (answer A3.3): "în 3 exemplare pentru generator, colector
+     * şi transportator". The fourth copy that came up in conversation does not exist.
+     *
+     * <p>Printing all three in one PDF rather than asking the client to hit print three times is
+     * the whole point: the three are the same document, and each carries the name of the party who
+     * keeps it, so nobody has to remember which sheet goes where after signing.
+     */
+    private static final String[] COPIES = {
+            "Exemplarul 1 din 3 — expeditor (generator)",
+            "Exemplarul 2 din 3 — destinatar (colector)",
+            "Exemplarul 3 din 3 — transportator"
+    };
+
     public byte[] render(WasteMovement movement, Company sender) {
         Document doc = new Document(PageSize.A4, 28, 28, 28, 28);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
             doc.open();
-
-            Paragraph head = new Paragraph(cp1250(TITLE), title);
-            doc.add(head);
-            Paragraph basis = new Paragraph(cp1250(LEGAL_BASIS), body);
-            basis.setSpacingAfter(6f);
-            doc.add(basis);
-
-            PdfPTable series = new PdfPTable(1);
-            series.setWidthPercentage(100);
-            Paragraph seriesLine = new Paragraph();
-            seriesLine.add(text("Serie şi număr: " + seriesAndNumber(movement), label));
-            PdfPCell seriesCell = new PdfPCell();
-            seriesCell.addElement(seriesLine);
-            seriesCell.setPadding(4f);
-            series.addCell(seriesCell);
-            doc.add(series);
-
-            PdfPTable table = new PdfPTable(6);
-            table.setWidthPercentage(100);
-            table.setWidths(new float[]{16, 11, 21, 13, 30, 9});
-            table.addCell(column(carrierColumn(movement, sender)));
-            table.addCell(column(dateColumn(movement)));
-            table.addCell(column(wasteColumn(movement)));
-            table.addCell(column(quantityColumn(movement)));
-            table.addCell(column(partiesColumn(movement, sender)));
-            table.addCell(column(observationsColumn(movement)));
-            doc.add(table);
-
-            Paragraph foot = new Paragraph(cp1250(FOOTNOTE), small);
-            foot.setSpacingBefore(4f);
-            doc.add(foot);
-
+            for (int copy = 0; copy < COPIES.length; copy++) {
+                if (copy > 0) {
+                    doc.newPage();
+                }
+                addForm(doc, movement, sender, COPIES[copy]);
+            }
             doc.close();
             return out.toByteArray();
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to build the Anexa 3 transport form", ex);
         }
+    }
+
+    private void addForm(Document doc, WasteMovement movement, Company sender, String copyLabel)
+            throws DocumentException {
+        Paragraph head = new Paragraph(cp1250(TITLE), title);
+        doc.add(head);
+        Paragraph basis = new Paragraph(cp1250(LEGAL_BASIS), body);
+        basis.setSpacingAfter(6f);
+        doc.add(basis);
+
+        PdfPTable series = new PdfPTable(1);
+        series.setWidthPercentage(100);
+        Paragraph seriesLine = new Paragraph();
+        seriesLine.add(text("Serie şi număr: " + seriesAndNumber(movement), label));
+        seriesLine.add(text("        " + copyLabel, small));
+        PdfPCell seriesCell = new PdfPCell();
+        seriesCell.addElement(seriesLine);
+        seriesCell.setPadding(4f);
+        series.addCell(seriesCell);
+        doc.add(series);
+
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{16, 11, 21, 13, 30, 9});
+        table.addCell(column(carrierColumn(movement, sender)));
+        table.addCell(column(dateColumn(movement)));
+        table.addCell(column(wasteColumn(movement)));
+        table.addCell(column(quantityColumn(movement)));
+        table.addCell(column(partiesColumn(movement, sender)));
+        table.addCell(column(observationsColumn(movement)));
+        doc.add(table);
+
+        Paragraph foot = new Paragraph(cp1250(FOOTNOTE), small);
+        foot.setSpacingBefore(4f);
+        doc.add(foot);
     }
 
     // --- the six columns, in the order the form prints them ---
@@ -211,6 +235,26 @@ public class Anexa3FormGenerator {
         return List.of(weight, volume);
     }
 
+    /**
+     * Where the load was actually unloaded — the recipient's work point, not their registered
+     * office. The filled model writes "P.L. ILFOV, Şos. de Centura nr. 2-8, Bragadiru" here.
+     *
+     * <p>From the most specific downwards: the work point picked on this movement, then their only
+     * one if they have exactly one, then the head office. A partner with several depots and no
+     * choice made prints the office rather than picking a depot for them — on a form that travels
+     * with the truck, the wrong depot is worse than none.
+     */
+    private String recipientPlace(WasteMovement m, Partner recipient) {
+        if (m.getPartnerWorkPoint() != null) {
+            return m.getPartnerWorkPoint().label();
+        }
+        List<ro.ecoregistru.entity.PartnerWorkPoint> points = recipient.getWorkPoints();
+        if (points != null && points.size() == 1) {
+            return points.get(0).label();
+        }
+        return recipient.getAddress();
+    }
+
     /** "Date privind punctul de lucru *) unde se efectuează": ÎNCĂRCAREA, then DESCĂRCAREA. */
     private List<Paragraph> partiesColumn(WasteMovement m, Company sender) {
         Paragraph header = block("Date privind punctul de lucru *) unde se efectuează");
@@ -231,9 +275,7 @@ public class Anexa3FormGenerator {
         if (recipient != null) {
             addLines(unloading, recipient.getName(),
                     joinNonBlank(recipient.getCui(), recipient.getTradeRegisterNumber()),
-                    // The unloading actually happens at their work point when they have one;
-                    // the model writes "P.L. ILFOV, Sos. de Centura nr. 2-8" there, not the office.
-                    firstNonBlank(recipient.getWorkPointAddress(), recipient.getAddress()));
+                    recipientPlace(m, recipient));
         }
 
         Paragraph recipientAuth = block("Autorizaţie de mediu nr.");
@@ -273,16 +315,20 @@ public class Anexa3FormGenerator {
     }
 
     /**
-     * The unit this company prints on its Anexa 3 forms: its own choice when it made one, otherwise
-     * the unit the movement was recorded in — which is what every account did before the setting
-     * existed.
+     * The unit this form prints its quantity in, from the most specific choice to the least: this
+     * transport's own, then the company's standing one, then the unit the movement was recorded in
+     * — which is what every account did before either setting existed.
      *
      * <p>The choice exists because the sources disagree. HG 1061/2008 anexa 3 carries "tone" and
      * "mc"; two of the three filled models agree with it, including the stamped one from a
-     * professional collector where 76 kilograms are written 0,076. The third prints KG. Until the
-     * specialist settles question A3.4 we do not pick for the client.
+     * professional collector where 76 kilograms are written 0,076. The third prints KG. Asked which
+     * matters at an inspection (question A3.4), the specialist answered that the client should be
+     * able to pick "la introducerea mişcării" — so we do not pick for them at either level.
      */
     public static Unit printedUnit(WasteMovement m) {
+        if (m.getAnexa3Unit() != null) {
+            return m.getAnexa3Unit();
+        }
         Unit chosen = m.getCompany() == null ? null : m.getCompany().getAnexa3Unit();
         return chosen != null ? chosen : m.getUnit();
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   FolderArchive,
   Download,
@@ -8,6 +8,8 @@ import {
   Paperclip,
 } from "lucide-react";
 import { downloadAuditFile } from "@/hooks/useAuditFile";
+import { useEvidences } from "@/hooks/useEvidences";
+import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,36 @@ export function AuditFilePage() {
   const [downloading, setDownloading] = useState(false);
   const { notify } = useToast();
 
+  /**
+   * The dossier carries both official documents, so it gets the same warning as the buttons that
+   * print them — scoped to the years it actually contains, and to nothing else.
+   *
+   * <p>Five hooks with a fixed order because that is what the rules require, and only the ones
+   * inside the chosen range are enabled: picking "doar anul ales" fetches one year, not five.
+   */
+  const y0 = useEvidences({ year }, years > 0);
+  const y1 = useEvidences({ year: year - 1 }, years > 1);
+  const y2 = useEvidences({ year: year - 2 }, years > 2);
+  const y3 = useEvidences({ year: year - 3 }, years > 3);
+  const y4 = useEvidences({ year: year - 4 }, years > 4);
+  const pendingWeighing = useMemo(
+    () =>
+      [y0.data, y1.data, y2.data, y3.data, y4.data]
+        .flatMap((rows) => rows ?? [])
+        .filter((r) => r.awaitingWeighing),
+    [y0.data, y1.data, y2.data, y3.data, y4.data]
+  );
+  const [confirming, setConfirming] = useState(false);
+
   async function handleDownload() {
+    if (pendingWeighing.length > 0) {
+      setConfirming(true);
+      return;
+    }
+    await download();
+  }
+
+  async function download() {
     setDownloading(true);
     try {
       await downloadAuditFile(year, years);
@@ -42,6 +73,16 @@ export function AuditFilePage() {
 
   return (
     <div>
+      {confirming && (
+        <AwaitingWeighingDialog
+          lines={pendingWeighing}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            void download();
+          }}
+        />
+      )}
       <h1 className="text-2xl font-bold">{t.title}</h1>
       <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
 
@@ -73,6 +114,8 @@ export function AuditFilePage() {
               <option value="1">{t.yearsOne}</option>
               <option value="2">{t.yearsTwo}</option>
               <option value="3">{t.yearsThree}</option>
+              <option value="4">{t.yearsFour}</option>
+              <option value="5">{t.yearsFive}</option>
             </Select>
           </div>
           <Button onClick={handleDownload} disabled={downloading} className="shrink-0 whitespace-nowrap">

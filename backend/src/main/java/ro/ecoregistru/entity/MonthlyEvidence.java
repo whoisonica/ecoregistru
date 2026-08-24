@@ -55,6 +55,22 @@ public class MonthlyEvidence {
     @Column(nullable = false, precision = 16, scale = 3)
     BigDecimal totalGenerated;
 
+    /**
+     * How much of {@link #totalGenerated} nobody recorded as generation: it follows from the
+     * month's exits, because a quantity that left the site was necessarily produced there.
+     *
+     * <p>Anexa 1 cap. 1 heads its columns "Cantitatea de deşeuri Generate — din care: valorificată
+     * | eliminată final | rămasă în stoc". The last three are parts of the first, so they cannot
+     * exceed it. A client who records only handovers used to get a sheet reading generated 0,
+     * recovered 300, stock −300; the specialist put it plainly on 25.08.2026 — "cum poţi să
+     * valorifici ceva ce nu este generat?".
+     *
+     * <p>Kept apart from the recorded figure so the two can always be told from each other.
+     */
+    @Column(name = "implied_generated", nullable = false, precision = 14, scale = 3)
+    @Builder.Default
+    BigDecimal impliedGenerated = java.math.BigDecimal.ZERO;
+
     @Column(nullable = false, precision = 16, scale = 3)
     BigDecimal totalRecovered;
 

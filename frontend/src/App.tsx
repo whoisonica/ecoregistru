@@ -12,6 +12,7 @@ import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
 import { AuditFilePage } from "@/pages/AuditFilePage";
+import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
+          <Route path="/ambalaje" element={<AppShell><PackagingPage /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
           <Route path="/clienti" element={<AppShell><ClientsPage /></AppShell>} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />

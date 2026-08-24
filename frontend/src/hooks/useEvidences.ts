@@ -10,8 +10,14 @@ import type { EvidenceFilters, EvidenceRegenerationResponse, MonthlyEvidence } f
 const evidencesRoot = ["evidences"] as const;
 export const evidencesKey = (filters: EvidenceFilters) => [...evidencesRoot, filters] as const;
 
-export function useEvidences(filters: EvidenceFilters) {
+/**
+ * @param enabled off for a query that is only needed in some states — the dossier checks one year
+ *                per option in its range and leaves the rest unfetched, rather than pulling five
+ *                years of lines to warn about one.
+ */
+export function useEvidences(filters: EvidenceFilters, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: evidencesKey(filters),
     queryFn: async () => {
       const params: Record<string, string | number> = { year: filters.year };
@@ -41,7 +47,9 @@ export function useRegenerateEvidence() {
  * Uses the same filters as the list so the file matches what's on screen.
  */
 /**
- * The Anexa 1 form itself — the document the client files, one page per waste code per work point.
+ * The waste-management record itself (HG 856/2002, anexa 1) — the document the client files,
+ * one page per waste code per work point. Named after the document, not after the annex: since
+ * 24.08.2026 "Anexa 1" means the packaging declaration in this application.
  * Separate from the "export" below, which is an unofficial working summary and says so on its own
  * header; mixing the two into one button is how somebody ends up filing the wrong paper.
  */
@@ -54,7 +62,7 @@ export async function downloadAnexa1Form(filters: EvidenceFilters): Promise<void
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `anexa1-${filters.year}.pdf`;
+    a.download = `evidenta-gestiunii-deseurilor-${filters.year}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -64,7 +72,7 @@ export async function downloadAnexa1Form(filters: EvidenceFilters): Promise<void
 }
 
 /**
- * The annual declaration — the summary page in front of the Anexa 1 sheets: one line per waste
+ * The annual declaration — the summary page in front of the record sheets: one line per waste
  * code, one page per work point. Same figures as the fişa, folded to the year.
  */
 export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promise<void> {

@@ -3,6 +3,7 @@ package ro.ecoregistru.controller.response;
 import ro.ecoregistru.enums.PartnerType;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public record PartnerResponse(
@@ -22,7 +23,7 @@ public record PartnerResponse(
 
         // --- What Anexa 3 prints about them ---
         String address,
-        String workPointAddress,
+        List<PartnerWorkPointResponse> workPoints,
         String tradeRegisterNumber,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry

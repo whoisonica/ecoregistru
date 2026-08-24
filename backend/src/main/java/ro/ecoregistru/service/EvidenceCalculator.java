@@ -69,6 +69,7 @@ public class EvidenceCalculator {
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
     ro.ecoregistru.service.export.Anexa1SheetBuilder anexa1SheetBuilder;
+    ro.ecoregistru.repository.InternalGeneratorRepository internalGeneratorRepository;
     ro.ecoregistru.service.export.AnnualDeclarationBuilder annualDeclarationBuilder;
 
     /** Groups movements by the (work point, waste code) an evidence line is scoped to. */
@@ -149,11 +150,25 @@ public class EvidenceCalculator {
             BigDecimal running = from == null ? BigDecimal.ZERO : from.openingStock();
             for (int month = 1; month <= 12; month++) {
                 Totals totals = sum(byMonth.getOrDefault(month, List.of()));
-                running = running
-                        .add(totals.generated)
-                        .subtract(totals.recovered)
-                        .subtract(totals.disposed)
-                        .subtract(totals.unclassifiedOut);
+
+                // What left the site this month was produced somewhere, and on this form that
+                // somewhere is here: cap. 1 reads "Generate — din care: valorificată | eliminată
+                // final | rămasă în stoc", so the three are parts of the first and cannot exceed
+                // it. When the recorded generation plus the stock carried in does not cover the
+                // exits, the difference is generation that nobody wrote down.
+                //
+                // Not an invented figure: it is the quantity already recorded on the way out,
+                // acknowledged in the column it must have come from. When the client does record
+                // generation, or the carried stock covers the exit, this is zero and nothing
+                // changes. Specialist, 25.08.2026: "cum poţi să valorifici ceva ce nu este generat?"
+                BigDecimal exits = totals.recovered
+                        .add(totals.disposed)
+                        .add(totals.unclassifiedOut);
+                BigDecimal covered = running.add(totals.generated);
+                BigDecimal implied = exits.subtract(covered).max(BigDecimal.ZERO);
+                BigDecimal generated = totals.generated.add(implied);
+
+                running = running.add(generated).subtract(exits);
 
                 lines.add(MonthlyEvidence.builder()
                         .company(company)
@@ -161,7 +176,8 @@ public class EvidenceCalculator {
                         .year(year)
                         .month(month)
                         .wasteCode(wasteCode)
-                        .totalGenerated(totals.generated)
+                        .totalGenerated(generated)
+                        .impliedGenerated(implied)
                         .totalRecovered(totals.recovered)
                         .totalDisposed(totals.disposed)
                         .totalHandedOver(totals.handedOver)
@@ -191,7 +207,23 @@ public class EvidenceCalculator {
         List<WasteMovement> movements = movementRepository
                 .findAllByCompany_IdAndDeletedFalseAndDateBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
-        return anexa1SheetBuilder.build(company, year, lines, movements);
+        return anexa1SheetBuilder.build(company, year, lines, movements,
+                sectionsByWorkPoint(tenantId));
+    }
+
+    /**
+     * What each work point has defined under "Secţia", in name order. Cap. 2 falls back to these
+     * when a month's movements name no section of their own.
+     */
+    private Map<UUID, List<String>> sectionsByWorkPoint(UUID tenantId) {
+        Map<UUID, List<String>> byWorkPoint = new LinkedHashMap<>();
+        for (var section : internalGeneratorRepository.findAllByCompany_IdOrderByNameAsc(tenantId)) {
+            if (section.isActive()) {
+                byWorkPoint.computeIfAbsent(section.getWorkPoint().getId(),
+                        k -> new ArrayList<>()).add(section.getName());
+            }
+        }
+        return byWorkPoint;
     }
 
     /**
@@ -282,6 +314,7 @@ public class EvidenceCalculator {
                 e.getWasteCode().getName(),
                 e.getWasteCode().isHazardous(),
                 e.getTotalGenerated(),
+                e.getImpliedGenerated(),
                 e.getTotalRecovered(),
                 e.getTotalDisposed(),
                 e.getTotalHandedOver(),

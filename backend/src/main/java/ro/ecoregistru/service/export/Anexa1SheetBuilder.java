@@ -42,10 +42,15 @@ public class Anexa1SheetBuilder {
      * @param evidence the monthly lines for the year, already filtered to the wanted work points
      * @param movements every live movement of that year for the same tenant
      */
+    /**
+     * @param sectionsByWorkPoint what each work point has defined under "Secţia", used when a
+     *                            month's movements name none — see {@link #section}
+     */
     public List<Anexa1Sheet> build(Company company,
                                    int year,
                                    List<MonthlyEvidenceResponse> evidence,
-                                   List<WasteMovement> movements) {
+                                   List<WasteMovement> movements,
+                                   Map<UUID, List<String>> sectionsByWorkPoint) {
         // The form is per (work point, waste code); the evidence lines already come in that shape.
         Map<Key, List<MonthlyEvidenceResponse>> byPair = evidence.stream()
                 .collect(Collectors.groupingBy(e -> new Key(e.workPointId(), e.wasteCodeId()),
@@ -71,7 +76,8 @@ public class Anexa1SheetBuilder {
                     movementsByPair.getOrDefault(entry.getKey(), List.of()).stream()
                             .collect(Collectors.groupingBy(m -> m.getDate().getMonthValue()));
 
-            sheets.add(sheet(company, year, lines, byMonth));
+            sheets.add(sheet(company, year, lines, byMonth,
+                    sectionsByWorkPoint.getOrDefault(entry.getKey().workPointId(), List.of())));
         }
         sheets.sort(Comparator.comparing(Anexa1Sheet::workPointName, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(Anexa1Sheet::wasteCode));
@@ -80,7 +86,8 @@ public class Anexa1SheetBuilder {
 
     private Anexa1Sheet sheet(Company company, int year,
                               List<MonthlyEvidenceResponse> lines,
-                              Map<Integer, List<WasteMovement>> byMonth) {
+                              Map<Integer, List<WasteMovement>> byMonth,
+                              List<String> sections) {
         MonthlyEvidenceResponse first = lines.get(0);
 
         // The header's "Stoc/kg" is what the year opened with: January's closing stock, wound back
@@ -94,7 +101,7 @@ public class Anexa1SheetBuilder {
         List<Anexa1Sheet.Anexa1MonthRow> rows = new ArrayList<>();
         for (MonthlyEvidenceResponse line : lines) {
             List<WasteMovement> monthly = byMonth.getOrDefault(line.month(), List.of());
-            rows.add(row(line, monthly));
+            rows.add(row(line, monthly, sections));
         }
 
         return new Anexa1Sheet(
@@ -103,47 +110,103 @@ public class Anexa1SheetBuilder {
                 physicalState(byMonth), opening, rows);
     }
 
-    private Anexa1Sheet.Anexa1MonthRow row(MonthlyEvidenceResponse line, List<WasteMovement> monthly) {
+    private Anexa1Sheet.Anexa1MonthRow row(MonthlyEvidenceResponse line,
+                                           List<WasteMovement> monthly,
+                                           List<String> sections) {
         List<WasteMovement> recoveries = monthly.stream()
                 .filter(m -> m.getOperation() == WasteOperation.RECOVERED).toList();
         List<WasteMovement> disposals = monthly.stream()
                 .filter(m -> m.getOperation() == WasteOperation.DISPOSED).toList();
 
-        // Cap. 2 is about what happened ON the site. What was stored is what the month produced —
-        // confirmed on 336 filled months, where "Stocare: Cant." equals the month's generated
-        // quantity and never the remaining stock, even on a sheet carrying 50 tonnes of it.
+        // Cap. 2 is about what happened ON the site, and both its "Cant." columns carry the
+        // month's quantity — what was stored is what the month produced, confirmed on 336 filled
+        // months where "Stocare: Cant." equals the generated quantity and never the remaining
+        // stock, even on a sheet carrying 50 tonnes of it.
         //
-        // What was "treated" is only the part this company handled itself. ⚠️ Careful: the comment
-        // here used to claim the filled models show 0 in that column when a partner does the work.
-        // They do not — checked on 24.08.2026, all 336 months read "Tratare: Cant." = the month's
-        // quantity, including where chapter 3 names an outside recycler. The corpus is a recycling
-        // company that really does sort and bale on site, so its sheets may be describing its own
-        // treatment rather than a rule; a client who only hands cardboard over treats nothing.
-        // Left as it is until the specialist answers (question U) — printing the quantity would
-        // claim a treatment that never happened.
-        BigDecimal treatedHere = monthly.stream()
-                .filter(m -> m.getOperation().isExit() && m.getPartner() == null)
-                .map(this::kg)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // ⚠️ The second column, "Tratare: Cant.", used to print only what this company treated
+        // itself, which for a client who just hands the waste over is zero. It carries the same
+        // figure as the first carry the month's quantity, and that is a change of
+        // 25.08.2026 asked for on her own printed sheets: "stocarea trebuie să apară şi la
+        // cantitatea 1 şi la cantitatea 2". Her corpus agrees — all 336 filled months have both.
+        //
+        // It sits uneasily beside answer U from the day before, where she confirmed 0 in "Tratare:
+        // Cant." for a client who only hands the waste over. Her latest word, given while looking
+        // at real output, wins; the tension is written down as question V rather than resolved by
+        // us. Whatever the answer, this is one line.
+        BigDecimal quantityOnSite = line.totalGenerated();
 
         return new Anexa1Sheet.Anexa1MonthRow(
                 line.month(),
                 line.totalGenerated(), line.totalRecovered(), line.totalDisposed(),
                 line.closingStock(),
-                distinct(monthly, m -> m.getInternalGenerator() == null
-                        ? null : m.getInternalGenerator().getName()),
-                line.totalGenerated(),
+                section(monthly, sections),
+                quantityOnSite,
                 distinct(monthly, m -> name(m.getStorageType())),
-                treatedHere,
+                quantityOnSite,
                 distinct(monthly, m -> name(m.getTreatmentMethod())),
                 distinct(monthly, m -> m.getOperationCode() == null
                         ? null : name(m.getOperationCode().treatmentPurpose())),
                 distinct(monthly, m -> name(m.getTransportMeans())),
                 distinct(monthly, m -> name(m.getWasteDestination())),
-                distinct(recoveries, m -> name(m.getOperationCode())),
-                distinct(recoveries, m -> m.getPartner() == null ? null : m.getPartner().getName()),
-                distinct(disposals, m -> name(m.getOperationCode())),
-                distinct(disposals, m -> m.getPartner() == null ? null : m.getPartner().getName()));
+                handovers(recoveries),
+                handovers(disposals));
+    }
+
+    /**
+     * The lines chapter 3 or chapter 4 gets for one month: one per distinct (operation, operator)
+     * pair, in the order the movements happened.
+     *
+     * <p>Answer B, 24.08.2026: "trebuie un rând nou pentru fiecare chestie nouă pentru luna
+     * respectivă". Two handovers of the same waste in the same month, under different R codes or
+     * to different operators, are two lines — not two values crammed into one cell, which is what
+     * this printed before. The quantities still add up to the month's figure in chapter 1, because
+     * they are summed here exactly as {@code EvidenceCalculator} sums them: kilograms, and a
+     * movement still waiting for the recipient's weighbridge contributes nothing.
+     *
+     * <p>A group where <em>no</em> movement has been weighed yet keeps a {@code null} quantity, so
+     * the form prints an empty cell instead of a zero it cannot stand behind. The operator's name
+     * still appears — the handover happened, only the weight is missing.
+     */
+    private List<Anexa1Sheet.Handover> handovers(List<WasteMovement> movements) {
+        Map<String, BigDecimal> quantities = new java.util.LinkedHashMap<>();
+        Map<String, Anexa1Sheet.Handover> rubrics = new java.util.LinkedHashMap<>();
+
+        for (WasteMovement m : movements.stream()
+                .sorted(Comparator.comparing(WasteMovement::getDate)).toList()) {
+            String operation = name(m.getOperationCode());
+            String operator = m.getPartner() == null ? null : m.getPartner().getName();
+            String key = operation + " " + operator;
+
+            rubrics.putIfAbsent(key, new Anexa1Sheet.Handover(null, operation, operator));
+            if (m.getQuantity() != null) {
+                quantities.merge(key, kg(m), BigDecimal::add);
+            }
+        }
+        return rubrics.entrySet().stream()
+                .map(e -> new Anexa1Sheet.Handover(quantities.get(e.getKey()),
+                        e.getValue().operation(), e.getValue().operator()))
+                .toList();
+    }
+
+    /**
+     * The "Secţia" column of cap. 2: where the waste came from inside the work point.
+     *
+     * <p>What the movements say, when they say anything. When they do not — the ordinary case for a
+     * client who records a handover and nothing else — the work point's own sections are printed
+     * instead: "Birouri, Producţie". Asked for on 25.08.2026 on her own sheet, where the column
+     * came out empty because no movement named a section.
+     *
+     * <p>It is the provenance of the site's waste rather than a claim about one load, which is why
+     * it prints all of them and not a guess at one. A work point with no sections defined still
+     * prints an empty column — nothing is invented out of nowhere.
+     */
+    private String section(List<WasteMovement> monthly, List<String> sections) {
+        String recorded = distinct(monthly, m -> m.getInternalGenerator() == null
+                ? null : m.getInternalGenerator().getName());
+        if (!recorded.isBlank()) {
+            return recorded;
+        }
+        return monthly.isEmpty() ? "" : String.join(", ", sections);
     }
 
     /** The physical state as recorded; blank when the movements of the year disagree or say nothing. */
@@ -157,9 +220,13 @@ public class Anexa1SheetBuilder {
     }
 
     /**
-     * The distinct values of one rubric within a month, joined. The form has twelve rows and no
-     * room for a thirteenth, so a month with two different operators prints both rather than
-     * silently losing one.
+     * The distinct values of one rubric within a month, joined.
+     *
+     * <p>This is chapter 2 only, and it stays joined on purpose. Chapters 3 and 4 split into one
+     * line per handover (see {@link #handovers}), but chapter 2's line carries the month's stored
+     * quantity — "Stocare: Cant." is what the month generated, on all 336 filled months — and that
+     * figure belongs to the month, not to any one section or means of transport. Splitting the row
+     * would mean splitting that quantity on a rule nobody has given us.
      */
     private String distinct(List<WasteMovement> movements, Function<WasteMovement, String> of) {
         return movements.stream()

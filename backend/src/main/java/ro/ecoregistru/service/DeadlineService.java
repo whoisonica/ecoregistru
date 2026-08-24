@@ -18,7 +18,11 @@ import ro.ecoregistru.repository.ReportingDeadlineRepository;
 import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
+import ro.ecoregistru.enums.AfmContribution;
+
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 import java.time.Month;
 import java.util.List;
 import java.util.UUID;
@@ -30,8 +34,10 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
  * Legal reporting deadlines for the current tenant (FAZA TERMENE).
  *
  * Deadline rules (docs/legislatie.md §1, high confidence):
- *  - AFM_MONTHLY — the 25th of each month, covering the previous month. Generated ONLY for
- *    companies with {@code afmObligation}; AFM is not universal, so we never falsely alarm.
+ *  - the Environment Fund deadlines — one cadence per contribution the company owes
+ *    (monthly on the 25th, quarterly after each quarter, or once on 25 January). AFM is not
+ *    universal and its rhythms differ, so nothing is generated for a company that owes nothing.
+ *    See {@link #afmDeadlines}.
  *  - SIM_ANNUAL — 15 March, for the previous calendar year's data. Generated for every company:
  *    this is the Anexa 1 evidence being filed, and art. 1 alin. (1) HG 856/2002 binds anyone who
  *    generates waste. See {@link ReportType#SIM_ANNUAL} for why there is no separate Anexa 1 type.
@@ -74,13 +80,7 @@ public class DeadlineService {
         // SIM annual: 15 March of this year (covers the previous year).
         created += createIfMissing(company, ReportType.SIM_ANNUAL, LocalDate.of(year, Month.MARCH, 15));
 
-        // AFM monthly: the 25th of each month this year — only if the company owes AFM.
-        if (company.isAfmObligation()) {
-            for (Month month : Month.values()) {
-                created += createIfMissing(company, ReportType.AFM_MONTHLY,
-                        LocalDate.of(year, month, 25));
-            }
-        }
+        created += afmDeadlines(company, year);
 
         return new DeadlineGenerationResponse(year, created);
     }
@@ -101,6 +101,63 @@ public class DeadlineService {
         deadline.setCompletedAt(null);
         deadline.setCompletionNote(null);
         return toResponse(deadline, LocalDate.now());
+    }
+
+    /**
+     * The Environment Fund deadlines, one cadence per contribution owed (OUG 196/2005 art. 11).
+     *
+     * <p>Before 24.08.2026 this generated a monthly deadline for anyone with the {@code
+     * afmObligation} flag, whatever they actually owed — so a client whose only contribution is
+     * the yearly packaging one received eleven wrong reminders a year. Now each contribution
+     * brings its own rhythm:
+     *
+     * <ul>
+     *   <li>the 2% withheld at source — monthly, the 25th;</li>
+     *   <li>the circular-economy contribution — quarterly, the 25th after each quarter;</li>
+     *   <li>the packaging contribution — once, on 25 January.</li>
+     * </ul>
+     *
+     * <p>An account that has not answered which contributions it owes keeps the old behaviour
+     * exactly: the flag alone still produces the twelve monthly deadlines. Switching an alert off
+     * on an assumption is worse than leaving one that is too loud, and this way the legacy path
+     * fades out as accounts are filled in rather than going quiet all at once.
+     */
+    private int afmDeadlines(Company company, int year) {
+        Set<AfmContribution> owed = company.getAfmContributions();
+        if (owed.isEmpty()) {
+            if (!company.isAfmObligation()) {
+                return 0;
+            }
+            int created = 0;
+            for (Month month : Month.values()) {
+                created += createIfMissing(company, ReportType.AFM_MONTHLY,
+                        LocalDate.of(year, month, 25));
+            }
+            return created;
+        }
+
+        int created = 0;
+        for (AfmContribution contribution : owed) {
+            switch (contribution.getCadence()) {
+                case MONTHLY -> {
+                    for (Month month : Month.values()) {
+                        created += createIfMissing(company, ReportType.AFM_MONTHLY,
+                                LocalDate.of(year, month, 25));
+                    }
+                }
+                // The 25th of the month after each quarter: April, July, October, January.
+                case QUARTERLY -> {
+                    for (Month month : List.of(Month.APRIL, Month.JULY, Month.OCTOBER,
+                            Month.JANUARY)) {
+                        created += createIfMissing(company, ReportType.AFM_QUARTERLY,
+                                LocalDate.of(year, month, 25));
+                    }
+                }
+                case ANNUAL -> created += createIfMissing(company, ReportType.AFM_ANNUAL,
+                        LocalDate.of(year, Month.JANUARY, 25));
+            }
+        }
+        return created;
     }
 
     private int createIfMissing(Company company, ReportType type, LocalDate dueDate) {

@@ -138,6 +138,9 @@ public class CompanyService {
         if (request.marketRoles() != null) {
             company.setMarketRoles(new LinkedHashSet<>(request.marketRoles()));
         }
+        if (request.afmContributions() != null) {
+            company.setAfmContributions(new LinkedHashSet<>(request.afmContributions()));
+        }
         if (request.authorizedWasteCodeIds() != null) {
             Set<WasteCode> codes = new LinkedHashSet<>(
                     wasteCodeRepository.findAllById(request.authorizedWasteCodeIds()));
@@ -179,6 +182,7 @@ public class CompanyService {
                 c.getContactName(), c.getContactEmail(), c.getContactPhone(),
                 new LinkedHashSet<>(c.getAuthorizedOperationCodes()),
                 new LinkedHashSet<>(c.getMarketRoles()),
+                new LinkedHashSet<>(c.getAfmContributions()),
                 c.getAuthorizedWasteCodes().stream()
                         .sorted(Comparator.comparing(WasteCode::getCode))
                         .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous()))

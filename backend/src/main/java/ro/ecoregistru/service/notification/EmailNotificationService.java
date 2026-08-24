@@ -59,8 +59,10 @@ public class EmailNotificationService implements NotificationService {
      */
     private String label(ReportType type) {
         return switch (type) {
-            case SIM_ANNUAL -> "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)";
-            case AFM_MONTHLY -> "Declarația AFM (lunară) — Fondul pentru Mediu";
+            case SIM_ANNUAL -> "Evidența gestiunii deșeurilor generate (anual, 15 martie)";
+            case AFM_MONTHLY -> "Declarația AFM (lunară, 25) — contribuția de 2% reținută la sursă";
+            case AFM_QUARTERLY -> "Declarația AFM (trimestrială, 25) — contribuția pentru economia circulară";
+            case AFM_ANNUAL -> "Declarația AFM (anuală, 25 ianuarie) — contribuția pentru ambalaje";
             case OTHER -> "Raportare";
         };
     }

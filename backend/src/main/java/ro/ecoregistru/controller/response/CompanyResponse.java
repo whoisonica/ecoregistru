@@ -1,6 +1,7 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
@@ -38,6 +39,8 @@ public record CompanyResponse(
         Set<WasteOperationCode> authorizedOperationCodes,
         /** Producător / importator / comerciant; empty means the question has no answer yet. */
         Set<MarketRole> marketRoles,
+        /** Empty means nobody has answered which AFM contributions are owed. */
+        Set<AfmContribution> afmContributions,
         List<WasteCodeResponse> authorizedWasteCodes,
         String transportMeans,
         String transportLicenseNumber,

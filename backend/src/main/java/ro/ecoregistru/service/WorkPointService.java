@@ -7,9 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.WorkPointRequest;
 import ro.ecoregistru.controller.response.WorkPointResponse;
+import ro.ecoregistru.entity.InternalGenerator;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.InternalGeneratorRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
 
@@ -25,7 +27,11 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
 public class WorkPointService {
 
     WorkPointRepository workPointRepository;
+    InternalGeneratorRepository internalGeneratorRepository;
     CompanyRepository companyRepository;
+
+    /** Verbatim what the filled sheets carry in the "Secţia" column: "birouri", "productie". */
+    private static final List<String> DEFAULT_SECTIONS = List.of("Birouri", "Producţie");
 
     @Transactional(readOnly = true)
     public List<WorkPointResponse> list() {
@@ -44,7 +50,29 @@ public class WorkPointService {
                 .createdAt(Instant.now())
                 .build();
         workPointRepository.save(workPoint);
+        seedDefaultSections(workPoint);
         return toResponse(workPoint);
+    }
+
+    /**
+     * Every new work point starts with the two sections nearly every site has: <b>Birouri</b> and
+     * <b>Producţie</b>.
+     *
+     * <p>They are what Anexa 1 cap. 2 prints under "Secţia", and asking a client to invent the
+     * column from scratch is how it ends up empty on a filed form — which is exactly what the
+     * specialist saw on 25.08.2026 in her own account. Predefined, not imposed: they can be
+     * renamed or removed, and a movement still says which one the waste came from.
+     */
+    private void seedDefaultSections(WorkPoint workPoint) {
+        for (String name : DEFAULT_SECTIONS) {
+            internalGeneratorRepository.save(InternalGenerator.builder()
+                    .company(workPoint.getCompany())
+                    .workPoint(workPoint)
+                    .name(name)
+                    .active(true)
+                    .createdAt(Instant.now())
+                    .build());
+        }
     }
 
     @Transactional

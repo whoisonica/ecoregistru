@@ -52,6 +52,8 @@ public class WasteMovementMapper {
                 attachments,
                 m.getClientGeneratedId(),
                 m.getUnloadDate(),
+                m.getPartnerWorkPoint() == null ? null : m.getPartnerWorkPoint().getId(),
+                m.getPartnerWorkPoint() == null ? null : m.getPartnerWorkPoint().label(),
                 carrier != null ? carrier.getId() : null,
                 carrier != null ? carrier.getName() : null,
                 m.getDriverName(),
@@ -60,6 +62,7 @@ public class WasteMovementMapper {
                 new java.util.LinkedHashSet<>(m.getTransportDestinations()),
                 m.getAnexa3Series(),
                 m.getAnexa3Number(),
+                m.getAnexa3Unit(),
                 m.getCreatedAt(),
                 m.getUpdatedAt()
         );

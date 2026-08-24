@@ -7,7 +7,15 @@ import {
   useUpdateCompany,
   useInviteUser,
 } from "@/hooks/useCompanies";
-import type { Company, CompanyInput, CompanyType, InviteRole, InviteUserInput, Unit } from "@/lib/types";
+import type {
+  AfmContribution,
+  Company,
+  CompanyInput,
+  CompanyType,
+  InviteRole,
+  InviteUserInput,
+  Unit,
+} from "@/lib/types";
 import {
   CompanyProfileFields,
   emptyCompanyProfile,
@@ -29,6 +37,13 @@ import { useToast } from "@/components/ui/toast";
 const t = strings.clients;
 const typeLabels = strings.enums.companyType;
 const roleLabels = strings.enums.inviteRole;
+
+/** Ordinea în care se citesc: lunar, trimestrial, anual — ca în art. 11. */
+const AFM_CONTRIBUTIONS: AfmContribution[] = [
+  "WITHHOLDING_2_PERCENT",
+  "CIRCULAR_ECONOMY",
+  "PACKAGING",
+];
 const COMPANY_TYPES: CompanyType[] = ["GENERATOR", "COLLECTOR", "BOTH"];
 const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
 
@@ -49,6 +64,7 @@ export function ClientsPage() {
   const [cui, setCui] = useState("");
   const [type, setType] = useState<CompanyType>("GENERATOR");
   const [afmObligation, setAfmObligation] = useState(false);
+  const [afmContributions, setAfmContributions] = useState<AfmContribution[]>([]);
   const [environmentalAuthNumber, setEnvironmentalAuthNumber] = useState("");
   const [environmentalAuthExpiry, setEnvironmentalAuthExpiry] = useState("");
   const [address, setAddress] = useState("");
@@ -113,6 +129,7 @@ export function ClientsPage() {
     setCui(c.cui);
     setType(c.type);
     setAfmObligation(!!c.afmObligation);
+    setAfmContributions(c.afmContributions ?? []);
     setEnvironmentalAuthNumber(c.environmentalAuthNumber ?? "");
     setEnvironmentalAuthExpiry(c.environmentalAuthExpiry ?? "");
     setAddress(c.address ?? "");
@@ -151,6 +168,7 @@ export function ClientsPage() {
       cui: cui.trim(),
       type,
       afmObligation,
+      afmContributions,
       environmentalAuthNumber: environmentalAuthNumber.trim() || null,
       environmentalAuthExpiry: environmentalAuthExpiry || null,
       address: address.trim() || null,
@@ -354,15 +372,47 @@ export function ClientsPage() {
               </Select>
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-              checked={afmObligation}
-              onChange={(e) => setAfmObligation(e.target.checked)}
-            />
-            {t.afmLabel}
-          </label>
+          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+            <span className="block text-sm font-medium text-gray-700">{t.afmContributions}</span>
+            <p className="mt-0.5 text-xs text-gray-500">{t.afmContributionsHint}</p>
+            <div className="mt-2 space-y-2">
+              {AFM_CONTRIBUTIONS.map((contribution) => (
+                <label key={contribution} className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                    checked={afmContributions.includes(contribution)}
+                    onChange={() =>
+                      setAfmContributions((prev) =>
+                        prev.includes(contribution)
+                          ? prev.filter((x) => x !== contribution)
+                          : [...prev, contribution]
+                      )
+                    }
+                  />
+                  <span>
+                    <span className="font-medium text-gray-800">
+                      {strings.enums.afmContribution[contribution]}
+                    </span>
+                    <span className="block text-xs text-gray-500">
+                      {strings.enums.afmContribution[`${contribution}_HINT`]}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {afmContributions.length === 0 && (
+              <label className="mt-3 flex items-center gap-2 border-t border-gray-200 pt-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                  checked={afmObligation}
+                  onChange={(e) => setAfmObligation(e.target.checked)}
+                />
+                {t.afmLabel}
+              </label>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>

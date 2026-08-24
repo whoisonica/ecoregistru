@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import ro.ecoregistru.enums.PartnerType;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -62,10 +64,23 @@ public class Partner {
     String address;
 
     /**
-     * Where the waste is actually unloaded, when that is not the registered office. The filled
-     * Anexa 3 model writes the recipient as "P.L. ILFOV, Şos. de Centura nr. 2-8, Bragadiru" —
-     * a work point, not a head office — so the form needs both addresses.
+     * Where the waste is actually unloaded, when that is not the registered office.
+     *
+     * <p>One partner, several depots: a collector receives a load at whichever of its work points
+     * is nearest, and Anexa 3 names that one — "P.L. ILFOV, Şos. de Centura nr. 2-8, Bragadiru" on
+     * the filled model. Which one received a given load is a fact about the transport, so the
+     * movement points at it; this list is only what the partner has.
      */
+    @OneToMany(mappedBy = "partner", cascade = CascadeType.ALL, orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    @Builder.Default
+    List<PartnerWorkPoint> workPoints = new ArrayList<>();
+
+    /**
+     * @deprecated superseded by {@link #workPoints} in V23, which moved the single address into
+     *         the new table. Kept unread as a safety net until a later migration drops the column.
+     */
+    @Deprecated
     @Column(name = "work_point_address", length = 500)
     String workPointAddress;
 
