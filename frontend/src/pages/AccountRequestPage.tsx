@@ -53,6 +53,9 @@ export function AccountRequestPage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  // Cele două rubrici de antet ale declarației anuale. Se cer aici o dată, nu se retastează.
+  const [contactRole, setContactRole] = useState("");
+  const [caenCode, setCaenCode] = useState("");
   const [authNumber, setAuthNumber] = useState("");
   const [authExpiry, setAuthExpiry] = useState("");
   const [transportMeans, setTransportMeans] = useState("");
@@ -91,6 +94,8 @@ export function AccountRequestPage() {
       contactName: contactName.trim() || null,
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim() || null,
+      contactRole: contactRole.trim() || null,
+      caenCode: caenCode.trim() || null,
       environmentalAuthNumber: authNumber.trim() || null,
       environmentalAuthExpiry: authExpiry || null,
       transportMeans: asksTransport ? transportMeans.trim() || null : null,
@@ -165,6 +170,16 @@ export function AccountRequestPage() {
             </div>
           </div>
           <div>
+            <Label htmlFor="ar-caen">{t.caenCode}</Label>
+            <Input
+              id="ar-caen"
+              value={caenCode}
+              onChange={(e) => setCaenCode(e.target.value)}
+              placeholder={t.caenCodePlaceholder}
+            />
+            <p className="mt-1 text-xs text-gray-500">{t.caenCodeHint}</p>
+          </div>
+          <div>
             <Label htmlFor="ar-address">{t.companyAddress}</Label>
             <Textarea
               id="ar-address"
@@ -216,6 +231,16 @@ export function AccountRequestPage() {
                 onChange={(e) => setContactPhone(e.target.value)}
               />
             </div>
+          </div>
+          <div>
+            <Label htmlFor="ar-contact-role">{t.contactRole}</Label>
+            <Input
+              id="ar-contact-role"
+              value={contactRole}
+              onChange={(e) => setContactRole(e.target.value)}
+              placeholder={t.contactRolePlaceholder}
+            />
+            <p className="mt-1 text-xs text-gray-500">{t.contactRoleHint}</p>
           </div>
           <div>
             <Label htmlFor="ar-contact-email">{t.contactEmail}</Label>

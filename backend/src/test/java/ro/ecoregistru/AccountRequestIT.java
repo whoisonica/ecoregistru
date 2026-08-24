@@ -108,7 +108,12 @@ class AccountRequestIT {
                 // "ce tip de generator" travels too: it decides the packaging declaration, and
                 // asking the client twice is how the two answers end up different.
                 .andExpect(jsonPath("$.marketRoles", hasItem("TRADER")))
-                .andExpect(jsonPath("$.transportLicenseNumber", is("LTM-777")));
+                .andExpect(jsonPath("$.transportLicenseNumber", is("LTM-777")))
+                // The annual declaration's header travels as well. Asked once, at intake, by the
+                // only party that knows them: the CAEN code cannot be derived from the CUI, and
+                // support would otherwise have to chase both on the phone.
+                .andExpect(jsonPath("$.caenCode", is("4677")))
+                .andExpect(jsonPath("$.contactRole", is("Manager Mediu")));
 
         AccountRequest handled = accountRequestRepository.findById(request.getId()).orElseThrow();
         assertThat(handled.getStatus()).isEqualTo(AccountRequestStatus.APPROVED);
@@ -122,6 +127,34 @@ class AccountRequestIT {
                     assertThat(wp.getName()).isEqualTo("Hala Florești");
                     assertThat(wp.getAddress()).isEqualTo("Str. Depozitelor nr. 4, Florești");
                 });
+    }
+
+    /**
+     * The two declaration rubrics are optional, and a request without them still becomes a
+     * company. Nothing is invented in their place: the sheet prints the rubric empty, which is
+     * the whole module's rule — a missing figure must be visible as missing.
+     */
+    @Test
+    void theDeclarationHeaderIsOptional() throws Exception {
+        String cui = "RO" + digits();
+        String body = """
+                {
+                  "companyName": "Fara Antet SRL",
+                  "cui": "%s",
+                  "companyType": "GENERATOR",
+                  "contactEmail": "fara.antet@example.ro"
+                }
+                """.formatted(cui);
+        mockMvc.perform(post("/api/v1/account-requests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isAccepted());
+
+        mockMvc.perform(post("/api/v1/account-requests/" + latest(cui).getId() + "/approve")
+                        .header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.caenCode").doesNotExist())
+                .andExpect(jsonPath("$.contactRole").doesNotExist());
     }
 
     @Test
@@ -165,6 +198,8 @@ class AccountRequestIT {
                   "contactName": "Ion Popescu",
                   "contactEmail": "ion.popescu@example.ro",
                   "contactPhone": "0740111222",
+                  "contactRole": "Manager Mediu",
+                  "caenCode": "4677",
                   "environmentalAuthNumber": "AM-2026-14",
                   "transportMeans": "Autoutilitară 3,5 t",
                   "transportLicenseNumber": "LTM-777",

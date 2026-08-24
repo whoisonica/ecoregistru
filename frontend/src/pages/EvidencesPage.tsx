@@ -4,6 +4,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import {
   downloadAnexa1Form,
+  downloadAnnualDeclaration,
   downloadEvidenceExport,
   useEvidences,
   useRegenerateEvidence,
@@ -76,7 +77,7 @@ export function EvidencesPage() {
   const { data: evidences, isLoading, isError } = useEvidences(filters);
   const regenerateMut = useRegenerateEvidence();
   const { notify } = useToast();
-  const [exporting, setExporting] = useState<"xlsx" | "pdf" | null>(null);
+  const [exporting, setExporting] = useState<"xlsx" | "pdf" | "declaration" | null>(null);
 
   // Stable display order: work point, then month, then waste code.
   const rows = useMemo(() => {
@@ -115,6 +116,17 @@ export function EvidencesPage() {
     }
   }
 
+  async function handleAnnualDeclaration() {
+    setExporting("declaration");
+    try {
+      await downloadAnnualDeclaration(filters);
+    } catch (err) {
+      notify(apiErrorMessage(err, t.annualDeclarationError), "error");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   async function handleExport(format: "xlsx" | "pdf") {
     setExporting(format);
     try {
@@ -142,6 +154,16 @@ export function EvidencesPage() {
           >
             <FileText className="mr-2 h-4 w-4" />
             {t.anexa1}
+          </Button>
+          {/* The summary that goes in front of it, and the page the authority reads first. */}
+          <Button
+            variant="outline"
+            onClick={handleAnnualDeclaration}
+            disabled={rows.length === 0 || exporting !== null}
+            title={t.annualDeclarationHint}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {t.annualDeclaration}
           </Button>
           {/* Export is read-only: available to every tenant member, viewer included. */}
           <Button

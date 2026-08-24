@@ -219,7 +219,7 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 
 ---
 
-## Ce s-a implementat din toate astea (23.08.2026, etapele G1–G4)
+## Ce s-a implementat din toate astea (24.08.2026, etapele G1–G8)
 
 | Cerință legală | Unde e în cod | Stare |
 |---|---|---|
@@ -229,8 +229,8 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 | Anexa 1 cap. 2 — Scopul (V/E) | `TreatmentPurpose`, derivat din codul R/D; **doar `V`** se scrie | ✅ |
 | Anexa 1 cap. 2 — Transport (Mijlocul, Destinaţia) | `TransportMeans`, `WasteDestination`, nota 4 și 5 verbatim | ✅ |
 | Anexa 1 cap. 3 și 4 — cantitate + operaţie + operator | `operationCode` + `partner` pe mişcare | ✅ |
-| **Fişa oficială Anexa 1 tipărită** (antet + cele 4 capitole) | — | 🔜 G5 |
+| **Fişa oficială Anexa 1 tipărită** (antet + cele 4 capitole) | `Anexa1SheetBuilder` + `Anexa1FormGenerator` | ✅ |
 | Anexa 3 la HG 1061/2008 — formularul de transport | `Anexa3FormGenerator` | ✅ |
 | Cantitate necunoscută la predare (cântărire la destinatar) | `weighedAtUnloading`, cantitate nullable, linie provizorie | ✅ |
 | Registrul art. 48 OUG 92/2021 | `Reception` / `Delivery` — schemă, fără ecrane | 🔜 Etapa 8 |
-| Declaraţia anuală (foaia „raportare deseuri generate”) | — | 🔜 G6 |
+| Declaraţia anuală (foaia „raportare deseuri generate”) | `AnnualDeclarationBuilder` + `AnnualDeclarationGenerator` — un rând per cod, o pagină per punct de lucru | ✅ |

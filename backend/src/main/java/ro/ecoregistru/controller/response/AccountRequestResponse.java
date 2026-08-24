@@ -22,6 +22,8 @@ public record AccountRequestResponse(
         String contactName,
         String contactEmail,
         String contactPhone,
+        String contactRole,
+        String caenCode,
         String environmentalAuthNumber,
         LocalDate environmentalAuthExpiry,
         String transportMeans,

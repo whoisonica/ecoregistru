@@ -39,6 +39,7 @@ public class EvidenceController {
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
     ro.ecoregistru.service.export.Anexa1FormGenerator anexa1FormGenerator;
+    ro.ecoregistru.service.export.AnnualDeclarationGenerator annualDeclarationGenerator;
     CompanyRepository companyRepository;
 
     @GetMapping
@@ -71,6 +72,25 @@ public class EvidenceController {
         byte[] body = anexa1FormGenerator.render(evidenceCalculator.anexa1(year, workPointId));
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("anexa1-" + year + ".pdf")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
+    /**
+     * The annual declaration — the summary sheet that goes in front of the Anexa 1 pages: one line
+     * per waste code, one page per work point. Same source as the fişa, folded to the year.
+     */
+    @GetMapping("/declaratie-anuala")
+    public ResponseEntity<byte[]> annualDeclaration(
+            @RequestParam int year,
+            @RequestParam(required = false) UUID workPointId) {
+        byte[] body = annualDeclarationGenerator.render(
+                evidenceCalculator.annualDeclaration(year, workPointId));
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("declaratie-anuala-" + year + ".pdf")
                 .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)

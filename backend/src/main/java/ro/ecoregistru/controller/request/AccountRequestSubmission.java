@@ -29,6 +29,12 @@ public record AccountRequestSubmission(
         String contactName,
         @NotBlank @Email String contactEmail,
         String contactPhone,
+        /**
+         * The two rubrics the annual declaration's header and signature block need. Optional, like
+         * everything that is not needed in order to answer the request; blank prints blank.
+         */
+        String contactRole,
+        String caenCode,
 
         String environmentalAuthNumber,
         LocalDate environmentalAuthExpiry,

@@ -28,6 +28,7 @@ import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.Anexa1FormGenerator;
+import ro.ecoregistru.service.export.AnnualDeclarationGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.GenericEvidenceExporter;
 
@@ -56,6 +57,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
  * Builds the "dosar de control" (audit file) for a tenant and year as a single ZIP:
  *   - README.txt describing the contents and generation date,
  *   - the official Anexa 1 sheets (HG 856/2002): four chapters per waste code, one page each,
+ *   - the annual declaration: the same year folded to one line per waste code, per work point,
  *   - the generic evidence summary in both xlsx and pdf,
  *   - a PDF summary of partner authorizations (with expiry status),
  *   - atasamente/index.txt listing every movement attachment, and the attachment files
@@ -81,6 +83,7 @@ public class AuditFileService {
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
     Anexa1FormGenerator anexa1FormGenerator;
+    AnnualDeclarationGenerator annualDeclarationGenerator;
     PartnerRepository partnerRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
@@ -105,6 +108,11 @@ public class AuditFileService {
             // all: one page per waste code, carrying the four chapters of the form.
             writeEntry(zip, "anexa1-" + year + ".pdf",
                     anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
+            // The summary page that goes in front of those sheets: same figures, folded to the
+            // year, which is what the authority reads before it opens the twelve-row detail.
+            writeEntry(zip, "declaratie-anuala-" + year + ".pdf",
+                    annualDeclarationGenerator.render(
+                            evidenceCalculator.annualDeclaration(year, null)));
             writeEntry(zip, "evidenta-" + year + ".xlsx",
                     evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence));
             writeEntry(zip, "evidenta-" + year + ".pdf",
@@ -270,6 +278,9 @@ public class AuditFileService {
                 + "                                        (HG 856/2002, anexa 1) — fișa oficială, cu cele patru\n"
                 + "                                        capitole, o pagină per cod de deșeu.\n"
                 + "                                        Termen de depunere: 15 martie " + (year + 1) + ".\n"
+                + "  - declaratie-anuala-" + year + ".pdf : centralizatorul anual — un rând per cod de deșeu,\n"
+                + "                                        cu stoc inițial, generat, valorificat, eliminat,\n"
+                + "                                        stoc final și prin cine. O pagină per punct de lucru.\n"
                 + "  - evidenta-" + year + ".xlsx / .pdf : același an ca tabel de lucru (rezumat neoficial)\n"
                 + "  - autorizatii-parteneri.pdf         : autorizațiile partenerilor și statusul lor\n"
                 + "  - atasamente/                       : documentele justificative atașate mișcărilor (+ index.txt)\n\n"

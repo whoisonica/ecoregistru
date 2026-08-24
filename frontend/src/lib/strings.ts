@@ -300,6 +300,10 @@ export const strings = {
     anexa1Hint:
       "Formularul oficial (HG 856/2002): antet + cele 4 capitole, o pagină per cod de deșeu.",
     anexa1Error: "Fișa nu a putut fi generată.",
+    annualDeclaration: "Declarația anuală",
+    annualDeclarationHint:
+      "Centralizatorul anual: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
+    annualDeclarationError: "Declarația anuală nu a putut fi generată.",
     exportExcel: "Export Excel",
     exportPdf: "Export PDF",
     exportError: "Exportul a eșuat. Încearcă din nou.",
@@ -395,6 +399,8 @@ export const strings = {
     contents: "Arhiva conține:",
     contentAnexa1:
       "Evidența gestiunii deșeurilor generate — fișa Anexa 1 (HG 856/2002): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
+    contentAnnualDeclaration:
+      "Declarația anuală (centralizatorul): un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
     contentEvidence: "Același an ca tabel de lucru (Excel + PDF)",
     contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
     contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
@@ -429,6 +435,12 @@ export const strings = {
     anexa3Series: "Serie formulare Anexa 3",
     anexa3SeriesPlaceholder: "ex. HMB",
     anexa3SeriesHint: "Apare pe formularele de transport; numărul îl alocăm noi, crescător.",
+    caenCode: "Cod CAEN",
+    caenCodePlaceholder: "ex. 4677",
+    caenCodeHint: "Apare în antetul declarației anuale. Necompletat, rubrica rămâne goală.",
+    contactRole: "Funcția persoanei de contact",
+    contactRolePlaceholder: "ex. Manager Mediu",
+    contactRoleHint: "Se tipărește la „Întocmit / Funcția” pe declarația anuală.",
     // status / badges
     active: "Activ",
     inactive: "Inactiv",
@@ -664,6 +676,16 @@ export const strings = {
     contactEmail: "Email",
     contactPhone: "Telefon",
     contactHint: "Pe acest email primești datele de acces, după ce creăm contul.",
+    // Cele două rubrici pe care le cere antetul declarației anuale. Formularea e de validat cu
+    // specialista (întrebarea S) — până atunci spun ce știm și nu presupun nimic în plus.
+    contactRole: "Funcția",
+    contactRolePlaceholder: "ex. Manager Mediu, administrator",
+    contactRoleHint:
+      "Persoana care semnează raportarea anuală. Se tipărește la „Întocmit / Funcția” pe declarație.",
+    caenCode: "Cod CAEN",
+    caenCodePlaceholder: "ex. 4677",
+    caenCodeHint:
+      "Apare în antetul declarației anuale de deșeuri. Dacă nu ești sigur care e, lasă gol — rubrica rămâne necompletată și o stabilim împreună.",
     environmentalAuthNumber: "Nr. autorizație de mediu",
     environmentalAuthExpiry: "Expiră la",
     transportMeans: "Cu ce transportați",

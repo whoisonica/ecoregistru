@@ -47,5 +47,12 @@ public record CompanyRequest(
 
         /** Printed by Anexa 3 next to the CUI, and the series of this company's forms. */
         String tradeRegisterNumber,
-        String anexa3Series
+        String anexa3Series,
+
+        /**
+         * The header of the annual declaration: the CAEN activity code, and the job title of the
+         * person who signs it. Both may be null - the rubric then prints empty rather than guessed.
+         */
+        String caenCode,
+        String contactRole
 ) {}

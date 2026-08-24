@@ -57,6 +57,21 @@ public class Company {
     String contactEmail;
     String contactPhone;
 
+    /**
+     * The job title of the person who signs the annual declaration — "Functia:" in the signature
+     * block of every filled model ("Manager Mediu", "Area Manager"). Free text, not a nomenclature.
+     */
+    @Column(name = "contact_role", length = 120)
+    String contactRole;
+
+    /**
+     * The CAEN activity code, printed in the annual declaration's header ("COD CAEN 4677"). It
+     * cannot be derived from anything else we hold, so when it is unset the rubric prints empty
+     * rather than a guess.
+     */
+    @Column(name = "caen_code", length = 10)
+    String caenCode;
+
     // --- The account profile: what this client answered on the intake form ---
     //
     // Both sets narrow what the screens offer, and both are allowed to be empty: an empty set

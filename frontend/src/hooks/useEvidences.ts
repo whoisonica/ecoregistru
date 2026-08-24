@@ -63,6 +63,31 @@ export async function downloadAnexa1Form(filters: EvidenceFilters): Promise<void
   }
 }
 
+/**
+ * The annual declaration — the summary page in front of the Anexa 1 sheets: one line per waste
+ * code, one page per work point. Same figures as the fişa, folded to the year.
+ */
+export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promise<void> {
+  const params: Record<string, string | number> = { year: filters.year };
+  if (filters.workPointId) params.workPointId = filters.workPointId;
+
+  const res = await api.get("/api/v1/evidences/declaratie-anuala", {
+    params,
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(res.data as Blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `declaratie-anuala-${filters.year}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export async function downloadEvidenceExport(
   filters: EvidenceFilters,
   format: "xlsx" | "pdf"

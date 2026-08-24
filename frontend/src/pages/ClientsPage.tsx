@@ -57,6 +57,10 @@ export function ClientsPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
   const [anexa3Series, setAnexa3Series] = useState("");
+  // Header rubrics of the annual declaration. Blank prints blank on the form — the sheet never
+  // guesses a CAEN code or a job title.
+  const [caenCode, setCaenCode] = useState("");
+  const [contactRole, setContactRole] = useState("");
   // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
   const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
   const [formError, setFormError] = useState<false | "name" | "cui">(false);
@@ -96,6 +100,8 @@ export function ClientsPage() {
     setFormError(false);
     setTradeRegisterNumber("");
     setAnexa3Series("");
+    setCaenCode("");
+    setContactRole("");
     setProfile(emptyCompanyProfile);
     setDialogOpen(true);
   }
@@ -114,6 +120,8 @@ export function ClientsPage() {
     setContactPhone(c.contactPhone ?? "");
     setTradeRegisterNumber(c.tradeRegisterNumber ?? "");
     setAnexa3Series(c.anexa3Series ?? "");
+    setCaenCode(c.caenCode ?? "");
+    setContactRole(c.contactRole ?? "");
     setProfile({
       authorizedOperationCodes: c.authorizedOperationCodes ?? [],
       marketRoles: c.marketRoles ?? [],
@@ -149,6 +157,8 @@ export function ClientsPage() {
       contactPhone: contactPhone.trim() || null,
       tradeRegisterNumber: tradeRegisterNumber.trim() || null,
       anexa3Series: anexa3Series.trim() || null,
+      caenCode: caenCode.trim() || null,
+      contactRole: contactRole.trim() || null,
       authorizedOperationCodes: profile.authorizedOperationCodes,
       marketRoles: profile.marketRoles,
       authorizedWasteCodeIds: profile.authorizedWasteCodes.map((w) => w.id),
@@ -388,6 +398,29 @@ export function ClientsPage() {
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
               />
+            </div>
+          </div>
+          {/* The two rubrics the annual declaration's header and signature block need. */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="c-caen">{t.caenCode}</Label>
+              <Input
+                id="c-caen"
+                value={caenCode}
+                onChange={(e) => setCaenCode(e.target.value)}
+                placeholder={t.caenCodePlaceholder}
+              />
+              <p className="mt-1 text-xs text-gray-500">{t.caenCodeHint}</p>
+            </div>
+            <div>
+              <Label htmlFor="c-contact-role">{t.contactRole}</Label>
+              <Input
+                id="c-contact-role"
+                value={contactRole}
+                onChange={(e) => setContactRole(e.target.value)}
+                placeholder={t.contactRolePlaceholder}
+              />
+              <p className="mt-1 text-xs text-gray-500">{t.contactRoleHint}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

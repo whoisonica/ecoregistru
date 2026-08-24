@@ -76,6 +76,20 @@ public class AccountRequest {
     @Column(name = "contact_phone", length = 50)
     String contactPhone;
 
+    /**
+     * The job title of whoever will sign the annual declaration - "Functia:" in the signature
+     * block of every filled model. Copied onto the company at approval.
+     */
+    @Column(name = "contact_role", length = 120)
+    String contactRole;
+
+    /**
+     * The CAEN activity code, printed in the annual declaration's header. Asked here because the
+     * client knows it and we do not: it cannot be derived from the CUI or from the account type.
+     */
+    @Column(name = "caen_code", length = 10)
+    String caenCode;
+
     // --- The environmental authorization ---
 
     @Column(name = "environmental_auth_number")

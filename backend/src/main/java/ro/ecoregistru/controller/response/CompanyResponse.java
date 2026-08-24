@@ -41,5 +41,9 @@ public record CompanyResponse(
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
         String tradeRegisterNumber,
-        String anexa3Series
+        String anexa3Series,
+
+        /** Header rubrics of the annual declaration; null when never filled in. */
+        String caenCode,
+        String contactRole
 ) {}

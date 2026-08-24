@@ -64,6 +64,8 @@ public class AccountRequestService {
                 .contactName(blankToNull(submission.contactName()))
                 .contactEmail(submission.contactEmail().trim().toLowerCase())
                 .contactPhone(blankToNull(submission.contactPhone()))
+                .contactRole(blankToNull(submission.contactRole()))
+                .caenCode(blankToNull(submission.caenCode()))
                 .environmentalAuthNumber(blankToNull(submission.environmentalAuthNumber()))
                 .environmentalAuthExpiry(submission.environmentalAuthExpiry())
                 .transportMeans(blankToNull(submission.transportMeans()))
@@ -119,7 +121,9 @@ public class AccountRequestService {
                 request.getTransportLicenseNumber(),
                 request.getTransportLicenseExpiry(),
                 null,   // trade register number: not asked on the intake form
-                null)); // Anexa 3 series: set later, when the client has a form pad
+                null,   // Anexa 3 series: set later, when the client has a form pad
+                request.getCaenCode(),      // both rubrics of the annual declaration's header,
+                request.getContactRole())); // asked once at intake and copied, never retyped
 
         Company company = companyRepository.getReferenceById(created.id());
         if (request.getWorkPointName() != null || request.getWorkPointAddress() != null) {
@@ -174,6 +178,7 @@ public class AccountRequestService {
                 r.getId(), r.getCompanyName(), r.getCui(), r.getCompanyType(),
                 r.getCompanyAddress(), r.getWorkPointName(), r.getWorkPointAddress(),
                 r.getContactName(), r.getContactEmail(), r.getContactPhone(),
+                r.getContactRole(), r.getCaenCode(),
                 r.getEnvironmentalAuthNumber(), r.getEnvironmentalAuthExpiry(),
                 r.getTransportMeans(), r.getTransportLicenseNumber(), r.getTransportLicenseExpiry(),
                 new LinkedHashSet<>(r.getMarketRoles()),

@@ -562,6 +562,100 @@ Declarația anuală (G6), cele trei cadențe AFM (Etapa 7), modulul de depozit (
 confirmarea de email — `/verifica-email` n-are rută, iar fluxul lui e orfan: niciun ecran nu-l
 declanșează, iar conturile invitate se activează prin alegerea parolei.
 
+## G6 — Declaraţia anuală (centralizatorul) (24.08.2026)
+
+Ultima felie neconstruită a modulului de generatori. Foaia `raportare deseuri generate` din
+fişierele primite: **un rând per cod de deşeu**, cu stoc iniţial → generat → valorificat → eliminat
+→ stoc final, plus „prin cine", şi **o pagină per punct de lucru**. Datele existau deja toate; ce a
+adus felia e împachetarea lor în forma pe care o depune clientul.
+
+**Corpusul are două layouturi ale aceleiaşi foi**, şi alegerea dintre ele nu e cosmetică:
+
+| Layout | Unde | Antet |
+|---|---|---|
+| **Complet** — 11 rânduri de identificare, apoi titlul „Evidenţa gestiunii deşeurilor generate «an»" | Cluj şi Timişoara 2022–2024 (6 fişiere) **şi şablonul gol** | denumire · judeţ+localitate · adresă · tel/fax/email · CUI · autorizaţie de mediu · **cod CAEN** · anul · punct de lucru · u.m. „kg" |
+| **Scurt** — trei rânduri şi titlul „CENTRALIZATOR" | Bragadiru 2022–2024 (3 fişiere) | agentul economic · punct de lucru · anul |
+
+**Tipărim layoutul complet**, fiindcă e cel al şablonului gol pe care specialista l-a trimis ca
+model de completat, şi singurul care identifică firma destul cât să stea singur odată desprins din
+workbook. Ambele au aceleaşi nouă coloane şi acelaşi bloc de semnătură („Intocmit / Functia /
+Telefon / Email").
+
+### Ce a cerut o migrare, şi ce nu
+
+Tot antetul exista deja pe `Company` sau pe `WorkPoint`, **în afară de două rubrici**. Migrarea
+**`V15`** le adaugă, aditiv şi nullable:
+
+- **`caen_code`** — „COD CAEN 4677". Nu se derivă din nimic: CUI-ul nu-l conţine, iar tipul de cont
+  (generator / colector) e clasificarea noastră, nu a INS. Necompletat, rubrica **rămâne goală** —
+  nu se pune o cifră ghicită pe un formular depus la APM.
+- **`contact_role`** — „Functia:" din blocul de semnătură. `contact_name`, `contact_phone` şi
+  `contact_email` existau din `V1`; funcţia lipsea. În corpus e text liber („Manager Mediu",
+  „Area Manager"), nu nomenclator.
+
+Ambele se completează în **Clienţi → editează firma**. Formularul public de cerere de cont **nu**
+le întreabă — ar fi însemnat lărgirea feliei în încă un ecran; se pot muta acolo oricând.
+
+### Trei abateri de la model, toate deliberate
+
+1. **Data din capul coloanei de stoc.** Modelele scriu „stoc la 01.01.«an»" şi îl copiază de la an
+   la an fără să-l actualizeze: fişa Cluj 2024 zice `01.01.2023`, cea Bragadiru 2024 zice
+   `01.01.2020`. Noi tipărim anul declarat, fiindcă cifra de dedesubt e chiar stocul lui de
+   deschidere. E o scăpare de transcriere în workbook-uri, nu o alegere de model — deci se
+   corectează, nu se reproduce.
+2. **Fără rând TOTAL.** Îl construisem, şi a fost scos la verificarea pe hârtie: **niciun model din
+   corpus nu are aşa ceva**, iar suma ar aduna kilograme de hârtie cu kilograme de menajer — o cifră
+   pe care n-o cere nimeni şi n-o poate folosi nimeni.
+3. **Marcajul `(*)` stă pe stoc, nu pe cod.** Un rând cu ieşiri fără cod R/D nu se închide aritmetic
+   (cantitatea s-a scăzut din stoc dar nu intră în nicio coloană oficială), deci e marcat şi explicat
+   sub tabel. Marcajul **nu poate sta lângă codul de deşeu**: în Lista Europeană steluţa de după cod
+   e chiar ce face codul periculos, iar „02 02 02 *" s-ar citi ca alt deşeu. Modelele n-au nici
+   marcaj, nici notă — cine completează de mână scrie codul odată cu linia şi n-are cum să aibă
+   rândul ăsta.
+
+### Ce ţin testele (`AnnualDeclarationIT`, 9 teste)
+
+O pagină per punct de lucru · rândul se închide (`stoc final = stoc iniţial + generat − valorificat
+− eliminat`) · **stocul de deschidere e identic cu cel din antetul fişei** — cele două documente se
+citesc alături, iar un client care găseşte două stocuri diferite nu mai are încredere în niciunul ·
+„valorificat prin" poartă codul **şi** operatorul, amândoi când anul a avut doi („R3 - Colector SRL;
+R13 - Reciclator SRL") · preluarea de la terţi rămâne pe dinafară (art. 2 alin. (1)) · ieşirea fără
+cod e semnalată, nu absorbită.
+
+Corpusul e gitignored, deci niciun test nu-l citeşte: regula extrasă din el e scrisă ca fixture, cu
+numărul de fişiere care o sprijină notat în comentariu.
+
+**Unde se vede:** **Evidenţe → „Declaraţia anuală"**, şi în arhiva din **Dosar de control**
+(`declaratie-anuala-«an».pdf`, imediat după fişa Anexa 1). Verificat pe PDF randat, nu doar pe
+aserţiuni — aşa au ieşit la iveală rândul TOTAL şi steluţa.
+
+### Restanţa feliei, închisă în aceeaşi zi: formularul public întreabă cele două rubrici
+
+`V15` le adăugase pe `companies`, unde le citeşte generatorul de PDF — dar acolo le completa doar
+administratorul platformei, din ce afla pe telefon. **Clientul, care le ştie, n-avea unde să le
+scrie.** Migrarea **`V16`** le mută în locul care le e firesc: cererea de cont. Se cer o dată, la
+intrare, iar aprobarea rămâne o **copiere**, nu o traducere — acelaşi tratament ca `marketRoles` în
+`V13`. Ambele opţionale: un formular care refuză să plece e un formular pe care nu-l trimite nimeni.
+
+Se văd şi în inbox-ul de cereri din **Clienţi** (CAEN sub tipul de firmă, funcţia lângă numele
+persoanei), ca aprobarea să nu fie pe încredere oarbă.
+
+⚠️ **Formularea celor două întrebări e a noastră, nu a specialistei** — de-aia e scrisă ca
+întrebare, nu doar ca cod: **întrebarea S** din `intrebari-specialist.md`. Două necunoscute reale:
+
+| Ce nu ştim | De ce contează |
+|---|---|
+| **Care CAEN** — cel principal al firmei, sau al activităţii de pe amplasamentul care generează deşeul? | Declaraţia se depune **per punct de lucru**. În fişierele primite acelaşi `4677` apare pe toate trei punctele, ceea ce sugerează codul firmei — dar e o singură observaţie, pe o singură firmă. Dacă e per amplasament, câmpul se mută de pe `companies` pe `work_points`. |
+| **Cine e „Întocmit"** — cine ţine evidenţa, sau cine semnează ca reprezentant legal? | La un magazin mic e aceeaşi persoană; la o firmă cu departament de mediu, nu. |
+
+Până la răspuns, eticheta spune ce ştim şi nu presupune nimic în plus („Dacă nu eşti sigur care e,
+lasă gol"), iar rubrica necompletată se tipăreşte goală. A doua întrebare deschisă de felie e
+**T**: lipsa rândului TOTAL din toate cele nouă fişiere e chiar răspunsul, sau vrea vreo autoritate
+un total?
+
+**Migrări:** `V15` (declaraţia) + `V16` (cererea de cont). Următoarea liberă e **`V17`**.
+**Suită: 117 teste verzi** (107 înainte).
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -668,7 +762,7 @@ după ce generatorul e complet. Ce urmează imediat, în ordine:
 | G3 | ✅ **Anexa 3 — dovada predării**, generată din mișcare · cantitate cântărită la descărcare | G2 | **GATA** |
 | G4 | ✅ Cap. 2 — ultimele două nomenclatoare (Transport: mijlocul, destinația) | G2 | **GATA** |
 | G5 | ✅ **Fișa oficială Anexa 1** — antet + cele 4 capitole, o pagină per cod | G4 | **GATA** |
-| G6 | **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc | G5 | M |
+| G6 | ✅ **Declarația anuală** (foaia `raportare deseuri generate`): un rând per cod, stoc → generat → valorificat → eliminat → stoc, o pagină per punct de lucru | G5 | **GATA** |
 | G7 | ✅ **Dosarul de control pe structura Andreei** — fișa Anexa 1 în arhivă · titlul „Evidenţa gestiunii deşeurilor generate «an»" · termenul de 15 martie numit după document · întrebarea „ce tip de generator" | G5 | **GATA** |
 
 **Ce a rămas deschis după Etapa 2, în ordinea în care doare:**

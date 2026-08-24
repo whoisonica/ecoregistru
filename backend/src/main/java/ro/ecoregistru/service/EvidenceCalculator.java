@@ -19,6 +19,7 @@ import ro.ecoregistru.repository.MonthlyEvidenceRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.Anexa1Sheet;
+import ro.ecoregistru.service.export.AnnualDeclaration;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -68,6 +69,7 @@ public class EvidenceCalculator {
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
     ro.ecoregistru.service.export.Anexa1SheetBuilder anexa1SheetBuilder;
+    ro.ecoregistru.service.export.AnnualDeclarationBuilder annualDeclarationBuilder;
 
     /** Groups movements by the (work point, waste code) an evidence line is scoped to. */
     private record GroupKey(UUID workPointId, UUID wasteCodeId) {}
@@ -190,6 +192,22 @@ public class EvidenceCalculator {
                 .findAllByCompany_IdAndDeletedFalseAndDateBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
         return anexa1SheetBuilder.build(company, year, lines, movements);
+    }
+
+    /**
+     * The annual declaration for a year: one sheet per work point, one row per waste code. It
+     * summarises exactly what {@link #anexa1(int, UUID)} details month by month, and reads the same
+     * cached lines so the two documents cannot disagree.
+     */
+    @Transactional(readOnly = true)
+    public List<AnnualDeclaration> annualDeclaration(int year, UUID workPointId) {
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.getReferenceById(tenantId);
+        List<MonthlyEvidenceResponse> lines = list(year, null, workPointId);
+        List<WasteMovement> movements = movementRepository
+                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+        return annualDeclarationBuilder.build(company, year, lines, movements);
     }
 
     @Transactional(readOnly = true)

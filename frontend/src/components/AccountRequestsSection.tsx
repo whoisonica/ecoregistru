@@ -104,6 +104,9 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                   </TD>
                   <TD>
                     {typeLabels[r.companyType]}
+                    {r.caenCode && (
+                      <span className="block text-xs text-gray-400">CAEN {r.caenCode}</span>
+                    )}
                     {(r.marketRoles ?? []).length > 0 && (
                       <span className="block text-xs text-gray-500">
                         {(r.marketRoles ?? []).map((m) => marketRoleLabels[m]).join(", ")}
@@ -113,7 +116,10 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                   <TD>
                     <span className="block text-gray-700">{r.contactEmail}</span>
                     {r.contactName && (
-                      <span className="block text-xs text-gray-400">{r.contactName}</span>
+                      <span className="block text-xs text-gray-400">
+                        {r.contactName}
+                        {r.contactRole ? ` · ${r.contactRole}` : ""}
+                      </span>
                     )}
                   </TD>
                   <TD className="max-w-xs">

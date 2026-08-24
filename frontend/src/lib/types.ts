@@ -116,6 +116,9 @@ export interface Company {
   /** Printed by Anexa 3 next to the CUI, and the series of this company's forms. */
   tradeRegisterNumber?: string | null;
   anexa3Series?: string | null;
+  /** Header rubrics of the annual declaration; null when never filled in. */
+  caenCode?: string | null;
+  contactRole?: string | null;
 }
 
 /** Create/update payload for a company (PLATFORM_ADMIN only). */
@@ -139,6 +142,9 @@ export interface CompanyInput {
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
   tradeRegisterNumber?: string | null;
   anexa3Series?: string | null;
+  /** Printed in the annual declaration's header and signature block. */
+  caenCode?: string | null;
+  contactRole?: string | null;
 }
 
 // --- Account requests (the intake form) ---
@@ -159,6 +165,9 @@ export interface AccountRequestInput {
   contactName?: string | null;
   contactEmail: string;
   contactPhone?: string | null;
+  /** Antetul declarației anuale: „Functia:" și codul CAEN. Opționale — gol se tipărește gol. */
+  contactRole?: string | null;
+  caenCode?: string | null;
   environmentalAuthNumber?: string | null;
   environmentalAuthExpiry?: string | null; // yyyy-MM-dd
   /** Asked only of a collector. */

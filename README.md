@@ -184,6 +184,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | What | Where | What to look for |
 |---|---|---|
 | Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not |
+| Declaration header | `/cerere-cont` → "Cod CAEN" and "Funcția" | Both optional, and the hint says so: leave them blank and the annual declaration prints the rubric empty rather than a guess. They travel onto the company on approval |
 | Type of generator | `/cerere-cont` → "Tipul de generator" | Producător / importator / comerciant. Tick only "Comerciant" and the form says what follows: no packaging declaration, but the Anexa 1 sheet stays |
 | Requests inbox | **Clienți**, below the company list | "Creează contul" turns a request into a company with its profile and work point |
 | Account profile | **Clienți** → edit a company | R/D codes, the waste codes of the authorization, transport details for a collector |
@@ -198,7 +199,8 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Handover register | **Evidențe** (default view) | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending |
 | Monthly Anexa 1 | **Evidențe** → "Anexa 1 — lunar" | The running stock, which is the only figure the register cannot show |
 | **The Anexa 1 form** | **Evidențe** → "Fișa Anexa 1" | A PDF titled "Evidenţa gestiunii deşeurilor generate «year»", one page per waste code: header plus the four chapters, twelve rows and a TOTAL AN each |
-| Control dossier | **Dosar de control** → download | The ZIP opens with `anexa1-«year».pdf` — the same four-chapter sheet — and its `README.txt` names the 15 March deadline |
+| **The annual declaration** | **Evidențe** → "Declarația anuală" | The centralizator: one line per waste code — opening stock, generated, recovered, disposed, closing stock, and through whom — one page per work point. A row whose exits carry no R/D code is marked `(*)` on the stock, with the reason under the table |
+| Control dossier | **Dosar de control** → download | The ZIP opens with `anexa1-«year».pdf` — the same four-chapter sheet — then `declaratie-anuala-«year».pdf`, and its `README.txt` names the 15 March deadline |
 | The 15 March deadline | **Termene** | Reads "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)": the document, not the portal |
 
 ### Tests
@@ -209,7 +211,8 @@ cd backend
 ```
 
 Integration tests cover tenant isolation, evidence calculation, export correctness,
-movement validation and company management.
+movement validation, company management and the two official forms — the Anexa 1 sheet and
+the annual declaration.
 
 ---
 
