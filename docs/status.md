@@ -895,6 +895,44 @@ vrem.
 mai e „kg sau tone", ci „contează la control că scrie kg lângă cifră?".
 
 
+## Corpusul citit rând cu rând — trei întrebări închise fără specialistă (24.08.2026)
+
+Întrebarea utilizatorului a fost bună: dacă citim tot ce e în `documente oficiale/` riguros, nu
+găsim singuri o parte din răspunsuri? Ba da. Nouă fişiere, 33 de foi, **336 de luni completate**,
+citite rubrică cu rubrică, cu întrebările deschise în mână.
+
+| Întrebarea | Ce spune corpusul | Consecinţa |
+|---|---|---|
+| **D** — „Stocare: Cant." | = cantitatea **generată** în lună, 336 din 336. Decisiv pe foaia `19 12 12`, unde stocul trece de 50 t iar stocarea rămâne 1.827 kg | ✅ închisă; aplicaţia făcea deja aşa |
+| **E** — „Rămasă în stoc" pe TOTAL AN | **stocul din decembrie**: 28 din 33 de foi. Singura foaie unde cele două citiri diferă scrie decembrie. **Niciuna nu lasă celula goală** | ✅ închisă; **noi o lăsam goală** — reparat |
+| **C** — agentul economic | mereu **partenerul direct** (Hamburger Hungaria, Retim, SALSERV…) | ✅ jumătate închisă; rămâne doar cazul tratării proprii, care în corpus nu apare |
+| **B** — mai multe predări într-o lună | 345 de celule completate, **niciuna** cu două valori | 🟠 rămâne deschisă, dar acum ştim că ce tipărim noi n-are precedent |
+
+### Ce am reparat imediat
+
+Celula „rămasă în stoc" de pe rândul TOTAL AN al capitolului 1 **nu mai iese goală**: tipăreşte
+stocul din decembrie, care e stocul anului. Verificat pe hârtie, nu doar în cod — fişa demo arată
+acum `-450.000` pe TOTAL AN, exact valoarea din decembrie.
+
+### Trei lucruri pe care nu le căutam
+
+1. **`D5` nu apare nicăieri în corpus.** Se folosesc `D1` (Bragadiru, refuz de sortare, către
+   SALSERV Ecosistem) şi `D15` (Timişoara, menajer, către Retim). Îndrumarea primită — „D5 peste
+   tot" — pare să fie o **corectare** a practicii, nu o descriere a ei. Devine întrebarea **V**.
+2. **`R13` nu apare nicăieri; corpusul foloseşte `R12`** pentru marfa care pleacă la un
+   intermediar. Noi pusesem R13 în datele de exemplu, marcat explicit ca alegerea noastră —
+   alegerea nu se potriveşte cu practica lor.
+3. **⚠️ Un comentariu din codul nostru era fals.** `Anexa1SheetBuilder` scria că modelele completate
+   arată 0 la „Tratare: Cant." atunci când valorificarea o face partenerul. Nu arată: toate cele 336
+   de luni au acolo cantitatea lunii. **Comportamentul nu s-a schimbat** — corpusul e al unei firme
+   care chiar sortează şi balotează pe amplasament, deci scrie ce face ea, iar un client care doar
+   predă nu tratează nimic. Dar comentariul a fost corectat, fiindcă sprijinea o regulă cu o dovadă
+   inexistentă. Devine întrebarea **U**.
+
+*Cele trei fişiere Oradea sunt `.xls` vechi şi tot n-au putut fi deschise (`xlrd` nu e instalat),
+deci toate cifrele de mai sus sunt din cele nouă `.xlsx`.*
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

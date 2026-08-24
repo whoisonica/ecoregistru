@@ -193,9 +193,15 @@ public class Anexa1FormGenerator {
         numBold(t, g);
         numBold(t, r);
         numBold(t, d);
-        // No yearly total for the stock: it is a running balance, not a sum. The last month's
-        // closing stock is the year's, and it is already on the December row.
-        cell(t, "", Element.ALIGN_CENTER);
+        // The stock is not summed — it is a running balance, and adding the twelve values would
+        // produce a number that means nothing. What goes here is December's closing stock, which
+        // is also the year's. That is what the filled sheets do: of the 33 sheets in the corpus,
+        // 28 carry December's figure and none leaves the cell empty. The five that differ hold
+        // "generat − valorificat", which coincides with December whenever the year opened at zero;
+        // the one sheet where the two readings disagree — a year opening on 50.582 kg of 19 12 12
+        // — writes December. We printed an empty cell until 24.08.2026, which is the only thing
+        // no model does.
+        numBold(t, s.rows().get(s.rows().size() - 1).closingStock());
         return t;
     }
 

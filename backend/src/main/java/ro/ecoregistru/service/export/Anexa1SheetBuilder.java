@@ -109,10 +109,18 @@ public class Anexa1SheetBuilder {
         List<WasteMovement> disposals = monthly.stream()
                 .filter(m -> m.getOperation() == WasteOperation.DISPOSED).toList();
 
-        // Cap. 2 is about what happened ON the site. What was stored is what the month produced;
-        // what was "treated" is only the part this company handled itself — an exit performed by a
-        // partner is treated at their place, not here, which is why the filled model shows 0 in
-        // that column while chapter 3 shows the whole quantity.
+        // Cap. 2 is about what happened ON the site. What was stored is what the month produced —
+        // confirmed on 336 filled months, where "Stocare: Cant." equals the month's generated
+        // quantity and never the remaining stock, even on a sheet carrying 50 tonnes of it.
+        //
+        // What was "treated" is only the part this company handled itself. ⚠️ Careful: the comment
+        // here used to claim the filled models show 0 in that column when a partner does the work.
+        // They do not — checked on 24.08.2026, all 336 months read "Tratare: Cant." = the month's
+        // quantity, including where chapter 3 names an outside recycler. The corpus is a recycling
+        // company that really does sort and bale on site, so its sheets may be describing its own
+        // treatment rather than a rule; a client who only hands cardboard over treats nothing.
+        // Left as it is until the specialist answers (question U) — printing the quantity would
+        // claim a treatment that never happened.
         BigDecimal treatedHere = monthly.stream()
                 .filter(m -> m.getOperation().isExit() && m.getPartner() == null)
                 .map(this::kg)
