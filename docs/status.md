@@ -1323,6 +1323,14 @@ exact ca date pierdute. De-acum arhiva **regenerează evidenţa fiecărui an pe 
 Verificat pe arhiva ei reconstruită: `evidenta-gestiunii-deseurilor-2026.pdf` conţine 100.000 şi
 nu mai conţine −100.
 
+### Şi o plasă sub toate: cache-ul gol se reface singur
+
+Liniile lunare sunt date derivate, deci un cache gol nu e o veste pe care s-o poarte clientul:
+înseamnă că nimeni n-a apăsat încă „Regenerează", sau că o migrare l-a golit fiindcă s-a schimbat
+înţelesul unei coloane — exact ce face `V24`. Până acum, ecranul ieşea gol şi fişa după el, ceea ce
+arată leit a evidenţă pierdută. De-acum, un an care **are mişcări dar n-are linii** se
+reconstruieşte la prima citire. Restul citirilor rămân citiri.
+
 **Migrare:** `V24`. **Suită: 154 de teste verzi.**
 
 ### Ce s-a mai văzut în contul ei, şi nu e defect

@@ -242,9 +242,25 @@ public class EvidenceCalculator {
         return annualDeclarationBuilder.build(company, year, lines, movements);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * The cached lines of a year, rebuilding them first if the year has movements but no lines.
+     *
+     * <p>The cache is derived data, so an empty one is never news the client should have to act
+     * on: it means nobody has pressed "Regenerează" yet, or a migration cleared it because the
+     * meaning of a column changed (as {@code V24} did). Either way the screen used to come up
+     * empty and the printed sheet with it, which looks exactly like lost records.
+     *
+     * <p>Only the empty case rebuilds, so the ordinary read stays a read and a year that is
+     * genuinely empty — no movements at all — costs one extra count.
+     */
+    @Transactional
     public List<MonthlyEvidenceResponse> list(int year, Integer month, UUID workPointId) {
         UUID tenantId = TenantContext.require();
+        if (evidenceRepository.findByCompany_IdAndYear(tenantId, year).isEmpty()
+                && !movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)).isEmpty()) {
+            regenerateYear(year);
+        }
         return evidenceRepository.findByCompany_IdAndYear(tenantId, year).stream()
                 .filter(e -> month == null || e.getMonth() == month)
                 .filter(e -> workPointId == null || e.getWorkPoint().getId().equals(workPointId))
