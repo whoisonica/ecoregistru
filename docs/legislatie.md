@@ -128,7 +128,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | 2 | Coloanele celor 4 capitole ale Anexei 1 | confirmate verbatim | `surse-oficiale.md` §1.2 |
 | 3 | Termen de arhivare | **3 ani**; 12 luni la transportatori | OUG 92/2021 art. 48(5) — ✅ în cod din 24.08: dosarul acceptă 1–3 ani |
 | 6 | Starea fizică — listă standard | **nu există** listă închisă; e câmp liber în act | `surse-oficiale.md` §1.2 |
-| 7 | Unitatea de raportare | evidența în kg; **raportarea art. 48 în tone** | OUG 92/2021 art. 48(1) |
+| 7 | Unitatea de raportare | evidența în kg; **raportarea art. 48 în tone**; **ambalajele în kg** (Ordin 794/2012, toate anexele); **Anexa 3 în tone** în act, dar firma alege (`V19`) | OUG 92/2021 art. 48(1) · HG 1061/2008 anexa 3 |
 | 9 | SIATD — cine intră | 15 categorii de operatori EPR; **generatorii mici nu** | Ordin 701/2024 art. 2 |
 | — | Referința R/D de pus în export | **OUG 92/2021 anexa 3 și anexa 7** | `surse-oficiale.md` §2.2–2.3 |
 | — | Care listă de coduri | **Decizia 2014/955/UE**, 842 coduri | `surse-oficiale.md` §3 |

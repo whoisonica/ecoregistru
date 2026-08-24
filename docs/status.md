@@ -837,6 +837,64 @@ Probe pe dyno, nu presupuneri:
 | Fișa Anexa 1 din arhiva de producție, anul 2026 | ✅ 40 KB, cu conținut (2024 și 2025 goale, numite ca atare în README) |
 | `years=4` | ✅ 400 |
 
+## Runda de răspunsuri de seară, și unitatea de pe Anexa 3 (24.08.2026)
+
+Cinci răspunsuri primite după deploy, plus o felie mică ieșită din unul dintre ele.
+**137 de teste verzi** (130 înainte). Migrare nouă: **`V19`**; următoarea liberă e **`V20`**.
+
+### Ce s-a închis
+
+| Întrebarea | Răspunsul | Cod schimbat |
+|---|---|---|
+| **1 / H** — chestionarele SIM | se completează cu **datele din anexe**, deci nu lipsește niciun câmp din model | niciunul |
+| **2** — unitatea la ambalaje | **kilograme**, ca în act (a treia confirmare, acum pe un fișier completat) | niciunul |
+| **5** — o fișă completată | a sosit și declarația de ambalaje completată, care era chiar „anexa" la care se referea | niciunul |
+| **menajer D5/D1** | **D5 peste tot**, D1 n-ar mai trebui să existe | niciunul — `D1` nu se propune nicăieri de pe 20.08 |
+| **O** — „comercial nu are deșeuri proprii" | despre **ambalaje**; fișa rămâne a tuturor | niciunul |
+
+Documentul de întrebări a fost **restructurat**, fiindcă devenise un labirint: sus, lista completă a
+celor șaptesprezece întrebări deschise, grupate pe document (fișa Anexa 1 · declarația anuală ·
+Anexa 3 · obligații), fiecare cu ce face aplicația până la răspuns. Dedesubt, un tabel scurt cu ce
+s-a închis. Textul lung al fiecărei întrebări a trecut în **arhivă**, nimic șters.
+
+### ⚠️ Corpusul de referință e al unei singure firme
+
+Declarația de ambalaje completată e a **Hamburger Recycling Romania**, adresa de e-mail din antetul
+ei e chiar a specialistei, Anexa 3 primită azi e a aceleiași firme, iar punctele de lucru din
+corpusul de fișe — Cluj, Timișoara, Bragadiru, Oradea — se potrivesc cu ale ei.
+
+Deci **cele zece fișe sunt zece fișiere ale aceleiași firme, nu zece firme.** Regulile scoase din
+ele rămân valabile și verificate, dar comentariile din cod care spun „pe câte fișiere se sprijină"
+trebuie citite așa: zece fișiere, o practică. Consecința imediată e la **întrebarea S**: observația
+noastră că `4677` apare identic pe toate punctele de lucru **nu** mai sugerează nimic despre
+firmă-vs-amplasament — e aceeași firmă. Întrebarea rămâne exact la fel de deschisă.
+
+### Felia: unitatea de pe Anexa 3 se alege pe firmă (`V19`)
+
+Recitind actul pentru răspunsul la întrebarea 2, a ieșit o distincție pe care o amestecasem:
+
+- **raportarea de ambalaje** (Ordinul 794/2012) scrie `[kilograme]`, verbatim, la toate cele cinci
+  anexe;
+- **formularul de transport** (HG 1061/2008, anexa 3) are la „Cantitate" rubricile **tone** și
+  **mc** — verificat pe Portalul Legislativ, nu doar pe modele.
+
+Două din cele trei modele completate îi dau dreptate actului, inclusiv cel ștampilat de la
+Hamburger, unde 76 de kilograme se scriu `0,076`. Al treilea (`ANEXA 3 model_CARTON.docx`) scrie KG
+și pare adaptat local — exact tiparul fișierului de ambalaje în tone, despre care se lămurise deja
+că nu e forma oficială.
+
+**Nu alegem noi în locul clientului.** `Company.anexa3Unit` (`V19`, nullable): necompletat înseamnă
+„ca în mișcare", adică fix comportamentul de până acum, deci **niciun cont existent nu se schimbă**.
+Firma poate forța kg sau tone din **Clienți → editează firma**, iar cantitatea se convertește la
+tipărire prin mutarea virgulei — exact, fără rotunjire. Cifra și unitatea de pe hârtie sunt
+întotdeauna de acord; o eroare de 1000× pe un formular care pleacă la transportator e exact ce nu
+vrem.
+
+`Anexa3UnitTest` (7 teste) fixează conversia, fiindcă e singurul loc unde o greșeală tăcută ar
+înmulți o cifră oficială cu o mie. Întrebarea **A3.4** rămâne la specialistă, dar s-a schimbat: nu
+mai e „kg sau tone", ci „contează la control că scrie kg lângă cifră?".
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -1074,12 +1132,10 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
 
 ## Blocaje rămase
 
-- 🟡 **Layoutul chestionarelor SIM** (PRODDES / COL-TRAT) — în spatele login-ului pe
-  `raportare.anpm.ro`, neobtenabile din documente publice. **Coborât de la 🔴 pe 24.08** (R20):
-  specialista confirmă că „SIM se bazează pe documentele pe care le avem" — Anexa 1 pentru
-  producător/importator, evidența pentru colector. Deci **nu lipsește niciun câmp din model** și
-  niciun client nu va trebui să completeze retroactiv un an; rămâne nevăzută doar forma ecranului,
-  de care are nevoie exportul SIM, felie de oricum mult mai târzie.
+- ✅ **Chestionarele SIM — închis pe 24.08.** Se completează cu **datele din anexe**: Anexa 1 la
+  producător/importator, evidența la colector. Nu lipsește niciun câmp din model și niciun client
+  nu va trebui să completeze retroactiv un an — de asta era roșu. Rămâne nevăzut doar **layoutul**
+  ecranului, care ar scuti muncă la exportul SIM (felie târzie oricum); e o înlesnire, nu un blocaj.
 - 🟠 **Cuantumul contribuției pentru economia circulară** (OUG 196/2005, anexa nr. 2) — Portalul
   Legislativ trunchiază anexele pe versiunile consolidate. Blochează doar profilul de groapă.
 - 🟠 **Termenul de păstrare al borderoului de achiziție** — nu e în OUG 31/2011; intră sub Legea
