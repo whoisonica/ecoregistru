@@ -225,7 +225,7 @@ Accesat 22.08.2026.
 > gestionare au fost efectuate.
 
 > **Trei consecințe.**
-> 1. Dosarul de control se dimensionează la **3 ani** (12 luni la transportatori). Închide D1.
+> 1. Dosarul de control se dimensionează la **3 ani** (12 luni la transportatori). Închide D1. ✅ **Construit pe 24.08.2026** (Etapa 6): `years=1..3`, folder per an.
 > 2. **15 martie e termen legal**, nu cutumă ANPM. Închide C3.
 > 3. Evidența lunară se ține în kg (practica fișei Anexa 1), dar **raportarea de la art. 48 e în
 >    tone**. Conversia trebuie să existe într-un singur loc în cod, nu presărată prin export.

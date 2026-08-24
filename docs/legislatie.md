@@ -126,7 +126,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | # | Întrebare | Răspuns | Unde |
 |---|---|---|---|
 | 2 | Coloanele celor 4 capitole ale Anexei 1 | confirmate verbatim | `surse-oficiale.md` §1.2 |
-| 3 | Termen de arhivare | **3 ani**; 12 luni la transportatori | OUG 92/2021 art. 48(5) |
+| 3 | Termen de arhivare | **3 ani**; 12 luni la transportatori | OUG 92/2021 art. 48(5) — ✅ în cod din 24.08: dosarul acceptă 1–3 ani |
 | 6 | Starea fizică — listă standard | **nu există** listă închisă; e câmp liber în act | `surse-oficiale.md` §1.2 |
 | 7 | Unitatea de raportare | evidența în kg; **raportarea art. 48 în tone** | OUG 92/2021 art. 48(1) |
 | 9 | SIATD — cine intră | 15 categorii de operatori EPR; **generatorii mici nu** | Ordin 701/2024 art. 2 |

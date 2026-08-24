@@ -693,6 +693,9 @@ dosarul de control dimensionat la termenul legal, și cele patru restanțe de ig
 strânseseră. **130 de teste verzi** (117 înainte). Migrări noi: **`V17`**, **`V18`**; următoarea
 liberă e **`V19`**.
 
+Commit-urile, în ordine: `c5d7b9c` (sesiunea), `9762bb0` (dosarul pe 3 ani), `b3e2c65` (igiena),
+`de3447f` (documentația), `340629e` (lista de secții).
+
 ### 1. Sesiunea nu mai expiră mut — și cauza era în backend, nu în interfață
 
 Restanța (a) părea o problemă de frontend: interceptorul de 401 golea tokenul și făcea
@@ -815,6 +818,24 @@ Backend pornit local pe Postgres real, frontend pe Vite, parcurs în browser:
 
 Două lucruri au ieșit prost la probă și au fost reparate în aceeași trecere: ciorna goală
 salvată după „Șterge", și butonul de descărcare strâns de al treilea control de pe rând.
+
+### Livrat în producție pe 24.08.2026, ora 17:49
+
+`ecoregistru-api` la **v22** (`62cbbce`), `ecoregistru-app` la **v16** (`0d38a7e`). `V17` și `V18`
+aplicate pe baza de producție în **48 ms**, aplicația pornită în **8,9 s**. La cherry-pick-ul către
+repo-ul de frontend, commit-ul de igienă a ieșit gol — partea lui de frontend era doar ștergerea
+`tsconfig.node.tsbuildinfo`, fișier deja absent acolo. `--skip`, nu `--force`: exact conflictul
+cunoscut, de acum stins la sursă, fiindcă fișierul nu mai e tracked în monorepo.
+
+Probe pe dyno, nu presupuneri:
+
+| Verificare | Rezultat |
+|---|---|
+| `GET /api/v1/work-points` fără token | ✅ **401**, `error-code: session.expired` (înainte: 403) |
+| `GET /api/v1/waste-codes?q=deseuri` | ✅ 50 de rezultate |
+| `GET /api/v1/audit-file?year=2026&years=3` | ✅ `dosar-control-2024-2026.zip`, folder per an, autorizațiile o dată |
+| Fișa Anexa 1 din arhiva de producție, anul 2026 | ✅ 40 KB, cu conținut (2024 și 2025 goale, numite ca atare în README) |
+| `years=4` | ✅ 400 |
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
