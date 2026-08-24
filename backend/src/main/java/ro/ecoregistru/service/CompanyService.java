@@ -144,6 +144,9 @@ public class CompanyService {
             company.setAuthorizedWasteCodes(codes);
         }
         company.setCaenCode(blankToNull(request.caenCode()));
+        // null stays null on purpose: "not answered" means the Anexa 3 keeps printing the unit
+        // the movement was recorded in.
+        company.setAnexa3Unit(request.anexa3Unit());
         company.setContactRole(blankToNull(request.contactRole()));
         company.setTradeRegisterNumber(blankToNull(request.tradeRegisterNumber()));
         company.setAnexa3Series(blankToNull(request.anexa3Series()));
@@ -182,6 +185,6 @@ public class CompanyService {
                         .toList(),
                 c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry(),
                 c.getTradeRegisterNumber(), c.getAnexa3Series(),
-                c.getCaenCode(), c.getContactRole());
+                c.getCaenCode(), c.getAnexa3Unit(), c.getContactRole());
     }
 }

@@ -123,6 +123,8 @@ public class AccountRequestService {
                 null,   // trade register number: not asked on the intake form
                 null,   // Anexa 3 series: set later, when the client has a form pad
                 request.getCaenCode(),      // both rubrics of the annual declaration's header,
+                null,   // Anexa 3 unit: not asked at intake — the form pad decides it, and an
+                        // unanswered setting keeps printing the unit of the movement
                 request.getContactRole())); // asked once at intake and copied, never retyped
 
         Company company = companyRepository.getReferenceById(created.id());

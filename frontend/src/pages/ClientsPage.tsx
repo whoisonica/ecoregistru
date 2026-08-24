@@ -7,7 +7,7 @@ import {
   useUpdateCompany,
   useInviteUser,
 } from "@/hooks/useCompanies";
-import type { Company, CompanyInput, CompanyType, InviteRole, InviteUserInput } from "@/lib/types";
+import type { Company, CompanyInput, CompanyType, InviteRole, InviteUserInput, Unit } from "@/lib/types";
 import {
   CompanyProfileFields,
   emptyCompanyProfile,
@@ -60,6 +60,7 @@ export function ClientsPage() {
   // Header rubrics of the annual declaration. Blank prints blank on the form — the sheet never
   // guesses a CAEN code or a job title.
   const [caenCode, setCaenCode] = useState("");
+  const [anexa3Unit, setAnexa3Unit] = useState<"" | Unit>("");
   const [contactRole, setContactRole] = useState("");
   // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
   const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
@@ -121,6 +122,7 @@ export function ClientsPage() {
     setTradeRegisterNumber(c.tradeRegisterNumber ?? "");
     setAnexa3Series(c.anexa3Series ?? "");
     setCaenCode(c.caenCode ?? "");
+    setAnexa3Unit(c.anexa3Unit ?? "");
     setContactRole(c.contactRole ?? "");
     setProfile({
       authorizedOperationCodes: c.authorizedOperationCodes ?? [],
@@ -158,6 +160,7 @@ export function ClientsPage() {
       tradeRegisterNumber: tradeRegisterNumber.trim() || null,
       anexa3Series: anexa3Series.trim() || null,
       caenCode: caenCode.trim() || null,
+      anexa3Unit: anexa3Unit || null,
       contactRole: contactRole.trim() || null,
       authorizedOperationCodes: profile.authorizedOperationCodes,
       marketRoles: profile.marketRoles,
@@ -411,6 +414,19 @@ export function ClientsPage() {
                 placeholder={t.caenCodePlaceholder}
               />
               <p className="mt-1 text-xs text-gray-500">{t.caenCodeHint}</p>
+            </div>
+            <div>
+              <Label htmlFor="c-a3unit">{t.anexa3Unit}</Label>
+              <Select
+                id="c-a3unit"
+                value={anexa3Unit}
+                onChange={(e) => setAnexa3Unit(e.target.value as "" | Unit)}
+              >
+                <option value="">{t.anexa3UnitAsRecorded}</option>
+                <option value="KG">{t.anexa3UnitKg}</option>
+                <option value="TONS">{t.anexa3UnitTons}</option>
+              </Select>
+              <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
             </div>
             <div>
               <Label htmlFor="c-contact-role">{t.contactRole}</Label>

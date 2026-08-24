@@ -118,6 +118,8 @@ export interface Company {
   anexa3Series?: string | null;
   /** Header rubrics of the annual declaration; null when never filled in. */
   caenCode?: string | null;
+  /** null = unitatea în care e înregistrată mișcarea (Anexa 3). */
+  anexa3Unit?: Unit | null;
   contactRole?: string | null;
 }
 
@@ -144,6 +146,8 @@ export interface CompanyInput {
   anexa3Series?: string | null;
   /** Printed in the annual declaration's header and signature block. */
   caenCode?: string | null;
+  /** null = unitatea în care e înregistrată mișcarea (Anexa 3). */
+  anexa3Unit?: Unit | null;
   contactRole?: string | null;
 }
 
@@ -168,6 +172,8 @@ export interface AccountRequestInput {
   /** Antetul declarației anuale: „Functia:" și codul CAEN. Opționale — gol se tipărește gol. */
   contactRole?: string | null;
   caenCode?: string | null;
+  /** null = unitatea în care e înregistrată mișcarea (Anexa 3). */
+  anexa3Unit?: Unit | null;
   environmentalAuthNumber?: string | null;
   environmentalAuthExpiry?: string | null; // yyyy-MM-dd
   /** Asked only of a collector. */

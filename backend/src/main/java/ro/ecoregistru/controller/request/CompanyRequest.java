@@ -19,6 +19,8 @@ import java.util.UUID;
  * client's intake form. Both sets may be empty, and empty means "not answered yet": the screens
  * then offer everything rather than nothing.
  */
+import ro.ecoregistru.enums.Unit;
+
 public record CompanyRequest(
         @NotBlank String name,
         @NotBlank String cui,
@@ -54,5 +56,6 @@ public record CompanyRequest(
          * person who signs it. Both may be null - the rubric then prints empty rather than guessed.
          */
         String caenCode,
+        Unit anexa3Unit,
         String contactRole
 ) {}

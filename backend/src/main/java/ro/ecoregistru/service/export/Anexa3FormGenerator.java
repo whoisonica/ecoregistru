@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.TransportDestination;
 
 import java.io.ByteArrayOutputStream;
@@ -193,8 +194,9 @@ public class Anexa3FormGenerator {
      * model reached us, with the figure written in afterwards by hand.
      */
     private List<Paragraph> quantityColumn(WasteMovement m) {
-        Paragraph weight = block("Cantitate\n" + unitLabel(m));
-        BigDecimal quantity = m.getQuantity();
+        Unit printed = printedUnit(m);
+        Paragraph weight = block("Cantitate\n" + unitLabel(printed));
+        BigDecimal quantity = converted(m.getQuantity(), m.getUnit(), printed);
         if (quantity != null) {
             weight.add(text(plain(quantity), body));
         } else {
@@ -270,8 +272,38 @@ public class Anexa3FormGenerator {
         return series + (m.getAnexa3Number() == null ? "" : m.getAnexa3Number());
     }
 
-    private String unitLabel(WasteMovement m) {
-        return switch (m.getUnit()) {
+    /**
+     * The unit this company prints on its Anexa 3 forms: its own choice when it made one, otherwise
+     * the unit the movement was recorded in — which is what every account did before the setting
+     * existed.
+     *
+     * <p>The choice exists because the sources disagree. HG 1061/2008 anexa 3 carries "tone" and
+     * "mc"; two of the three filled models agree with it, including the stamped one from a
+     * professional collector where 76 kilograms are written 0,076. The third prints KG. Until the
+     * specialist settles question A3.4 we do not pick for the client.
+     */
+    public static Unit printedUnit(WasteMovement m) {
+        Unit chosen = m.getCompany() == null ? null : m.getCompany().getAnexa3Unit();
+        return chosen != null ? chosen : m.getUnit();
+    }
+
+    /**
+     * The quantity expressed in {@code target}. Exact: moving the decimal point three places, never
+     * rounding — a form that leaves the site must not carry a figure that disagrees with the unit
+     * printed beside it, and 1000x is the worst kind of disagreement.
+     *
+     * @return {@code null} when there is no quantity yet, which is legitimate: the recipient weighs
+     *         at unloading and the rubric is printed blank
+     */
+    public static BigDecimal converted(BigDecimal quantity, Unit recorded, Unit target) {
+        if (quantity == null || recorded == target) {
+            return quantity;
+        }
+        return recorded == Unit.KG ? quantity.movePointLeft(3) : quantity.movePointRight(3);
+    }
+
+    private String unitLabel(Unit unit) {
+        return switch (unit) {
             case KG -> "kg";
             case TONS -> "tone";
         };

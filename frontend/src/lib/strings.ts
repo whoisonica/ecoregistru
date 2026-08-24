@@ -451,6 +451,14 @@ export const strings = {
     caenCode: "Cod CAEN",
     caenCodePlaceholder: "ex. 4677",
     caenCodeHint: "Apare în antetul declarației anuale. Necompletat, rubrica rămâne goală.",
+    // Actul (HG 1061/2008) scrie tone, un model primit scrie KG. Nu alegem noi: alege firma,
+    // o dată, iar necompletat înseamnă „ca în mișcare" — adică exact ce făcea aplicația înainte.
+    anexa3Unit: "Unitatea de pe Anexa 3",
+    anexa3UnitAsRecorded: "Ca în mișcare (implicit)",
+    anexa3UnitKg: "Kilograme",
+    anexa3UnitTons: "Tone",
+    anexa3UnitHint:
+      "Actul scrie „tone”, dar unele firme lucrează în kg. Cantitatea se convertește la tipărire, deci cifra și unitatea de pe formular sunt mereu de acord.",
     contactRole: "Funcția persoanei de contact",
     contactRolePlaceholder: "ex. Manager Mediu",
     contactRoleHint: "Se tipărește la „Întocmit / Funcția” pe declarația anuală.",

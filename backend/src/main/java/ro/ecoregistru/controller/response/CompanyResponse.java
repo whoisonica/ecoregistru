@@ -17,6 +17,8 @@ import java.util.UUID;
  * <p>It is also what every screen reads from {@code GET /api/v1/companies/current} to know what to
  * offer: the type decides the operations, the profile decides the R/D codes and the waste codes.
  */
+import ro.ecoregistru.enums.Unit;
+
 public record CompanyResponse(
         UUID id,
         String name,
@@ -45,5 +47,6 @@ public record CompanyResponse(
 
         /** Header rubrics of the annual declaration; null when never filled in. */
         String caenCode,
+        Unit anexa3Unit,
         String contactRole
 ) {}

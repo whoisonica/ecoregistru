@@ -3,6 +3,7 @@ package ro.ecoregistru.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
@@ -71,6 +72,20 @@ public class Company {
      */
     @Column(name = "caen_code", length = 10)
     String caenCode;
+
+    /**
+     * The unit printed on this company's Anexa 3 forms, or {@code null} for "whatever the movement
+     * was recorded in" — which is what every account did before V19, so an unanswered profile keeps
+     * behaving exactly as it did.
+     *
+     * <p>It exists because the act and the models disagree: HG 1061/2008 anexa 3 carries "tone" and
+     * "mc", two of the three filled models agree with it, and one prints KG. Rather than pick for
+     * the client, the company picks once; the figure is converted at print time so the number and
+     * the unit on paper always agree.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "anexa3_unit", length = 10)
+    Unit anexa3Unit;
 
     // --- The account profile: what this client answered on the intake form ---
     //
