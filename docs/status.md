@@ -408,11 +408,12 @@ zgomotoasă.
 ### Ce rămâne interpretarea noastră, şi e trimis la validare
 
 Toată felia s-a construit dintr-o pagină de notițe scrise de mână. Trei locuri unde am **ales**, nu
-am citit — runda 3 de întrebări, `intrebari-specialist.md`:
+am citit — runda 3 de întrebări, `intrebari-specialist.md`. **Prima a primit răspuns în aceeași
+zi și confirmă alegerea noastră; celelalte două rămân deschise:**
 
 | # | Ce am presupus | Ce se strică dacă greșim |
 |---|---|---|
-| **O** 🔴 | „Comercial nu are deșeuri proprii" e despre **ambalaje**; fișa HG 856 rămâne obligatorie și pentru un comerciant | arătăm un ecran și tipărim un formular unui client care nu-l datorează |
+| **O** ✅ | „Comercial nu are deșeuri proprii" e despre **ambalaje**; fișa HG 856 rămâne obligatorie și pentru un comerciant | — **confirmat 24.08**: „se referă la deșeuri de ambalaj" (R31). Zero cod schimbat |
 | **P** 🟡 | Titlul se pune pe **fiecare fișă**. În fișierele ei stă pe foaia de centralizare, iar foile per cod încep direct cu „Agentul economic:" | abatere de la un model pe care autoritatea l-a acceptat; se mută într-o linie |
 | **Q** 🟠 | 15 martie e **o singură** depunere (fișa = ce se încarcă în SIM), deci un singur termen | dacă sunt două obligații distincte, clientul vede un termen în loc de două și nu le poate bifa separat |
 
@@ -551,10 +552,13 @@ n-au urcat stocul din fișă. Art. 2 alin. (1) e respectat pe date reale, nu doa
    mișcare, imediat după ce secția tocmai a fost creată în Setări. Prima mișcare s-a salvat fără
    secție. La a doua deschidere e acolo. E cache-ul listei, nu pierdere de date.
 3. 🟡 **Caseta „Destinat:” de pe Anexa 3 se uită ușor.** Două din trei Anexe 3 tipărite au ieșit cu
-   toate cele cinci căsuțe goale, deși codul `D5`, respectiv `R13`, era completat alături. Codul
-   pune `X` doar unde s-a bifat — nu deduce nimic. Propunerea, **blocată pe specialistă**
-   (întrebarea R): prebifare din familia codului (`R` → Valorificării, `D` → Eliminării), editabilă.
-   Necunoscuta e `R13` — stocare temporară, valorificare, sau amândouă.
+   toate cele cinci căsuțe goale, deși codul `D5`, respectiv `R13`, era completat alături. Codul pune
+   `X` doar unde s-a bifat — nu deduce nimic. Propunerea era prebifarea din familia codului
+   (`R` → Valorificării, `D` → Eliminării). ⚠️ **Documentul primit în aceeași zi o contrazice**
+   (`anexa 3 hamburger reciclying.pdf`, R32): la o predare către un colector, caseta bifată —
+   pretipărită de colector — e **`colectării`**, singură, iar formularul n-are deloc rubrică de cod
+   R/D. Caseta spune ce face **destinatarul**, nu ce cod a ales expeditorul. Rămâne blocată pe
+   **întrebarea R**, acum reformulată; necunoscuta e tot `R13`.
 
 ### Ce nu s-a putut acoperi
 
@@ -682,6 +686,136 @@ reale, nu doar în teste:
   vechi, dinainte ca aplicaţia să ceară codul R/D — cantitatea a plecat din stoc şi nu intră în
   nicio coloană oficială. Restanţa de clasificare din Etapa 2, acum **vizibilă pe formular**.
 
+## Restanțele probei de acceptanță, Etapa 6 și igiena (24.08.2026)
+
+Sesiune de reparații, nu de felii noi: cele două restanțe deblocate din proba de acceptanță,
+dosarul de control dimensionat la termenul legal, și cele patru restanțe de igienă care se
+strânseseră. **130 de teste verzi** (117 înainte). Migrări noi: **`V17`**, **`V18`**; următoarea
+liberă e **`V19`**.
+
+### 1. Sesiunea nu mai expiră mut — și cauza era în backend, nu în interfață
+
+Restanța (a) părea o problemă de frontend: interceptorul de 401 golea tokenul și făcea
+`window.location = "/login"` fără niciun cuvânt. Pusă sub probă, s-a văzut că **interceptorul nici
+nu se declanșa**: la un token expirat sau stricat, backendul răspundea **403**, nu 401.
+
+Motivul: `SecurityConfiguration` n-avea `authenticationEntryPoint`, deci Spring Security cădea pe
+`Http403ForbiddenEntryPoint`. Pe deasupra, `JwtAuthenticationFilter` chema `extractEmail` fără
+`try/catch`, iar JJWT aruncă pe un token expirat — o excepție care iese dintr-un filtru e un 500.
+
+Reparat pe ambele capete:
+
+- **`RestAuthenticationEntryPoint`** răspunde **401** cu plicul obișnuit de erori
+  (`error-code: session.expired`). **403 rămâne ce a fost**: `AccessDeniedException`, adică un
+  utilizator autentificat care întinde mâna peste rolul lui. Sunt două răspunsuri la două
+  întrebări diferite, iar clientul chiar are nevoie să le deosebească.
+- **`JwtAuthenticationFilter`** prinde `JwtException` și lasă cererea neautentificată. Log pe
+  `debug`, nu `warn`: așa arată un tab lăsat deschis o lună, nu un atac.
+- **Trei teste fixau vechiul 403** pentru cereri fără token (`CompaniesControllerIT`,
+  `TenantIsolationIT`, `AccountRequestIT`). Toate trei ziceau ce se întâmpla, nu ce trebuia să se
+  întâmple — actualizate la 401, cu motivul scris lângă ele.
+- **`SessionExpiryIT`** (4 teste) ține de acum contractul: fără token, token stricat, token expirat
+  cu semnătură bună → toate 401 cu `session.expired`; token valid → 200.
+
+Pe frontend:
+
+- Interceptorul deosebește acum **cine a pățit-o**: un 401 pe o cerere care **n-avea** token e o
+  parolă greșită la login sau un link de resetare expirat — pagina își arată singură eroarea. Doar
+  un 401 pe o cerere autentificată închide sesiunea.
+- **Paginile publice nu mai sunt evacuate.** `/cerere-cont`, `/parola-uitata`, `/reseteaza-parola`
+  și `/login` rămân pe loc: exact accidentul din probă, unde o sesiune expirată într-un tab a luat
+  cu ea formularul de șase secțiuni din altul.
+- Motivul călătorește ca **parametru în URL** (`/login?expirat=1`), nu în `sessionStorage`. Prima
+  variantă folosea un flag „consumat" la prima citire — și n-a mers: sub `StrictMode`, React
+  invocă inițializatorul lui `useState` de două ori, deci flagul era consumat înainte de randare.
+  Un parametru se citește acolo unde se afișează, dispare la următoarea navigare și nu poartă
+  nimic personal.
+- **`useFormDraft`** ține formularul de cerere în browser (debounce 400 ms, versionat, expiră în 7
+  zile), îl pune la loc **vizibil**, cu buton de aruncat. Nu salvează un formular neatins și nu
+  anunță o restaurare goală — prima variantă făcea amândouă, s-a văzut la probă.
+  Ciorna se șterge la trimiterea reușită. Nimic nu pleacă din browser până la trimitere.
+- Cheile de sesiune stau acum într-un singur loc (`tokenStore` / `tenantStore` / `userStore` +
+  `clearSession()`), nu jumătate în `api.ts` și jumătate în `AuthContext`.
+
+### 2. Lista de secții se reîmprospătează la prima deschidere
+
+Restanța (b). Mutațiile invalidau deja cheia, dar `invalidateQueries` reîmprospătează implicit
+**doar interogările montate în acel moment** — pe celelalte le marchează învechite. Lista de secții
+din formularul de mișcare e tocmai una dintre „celelalte": trăiește pe altă rută. De aici
+„apare abia la a doua deschidere".
+
+`refetchType: "all"`, iar rezultatul se așteaptă (`await`), deci dialogul din Setări stă pe ecran
+până când datele sunt reale.
+
+### 3. Etapa 6 — dosarul de control dimensionat la 3 ani
+
+**OUG 92/2021, art. 48 alin. (5):** operatorul păstrează evidența **cel puțin 3 ani** (12 luni la
+transportatori). Atât poate cere un control, deci atât oferă arhiva.
+
+- `GET /api/v1/audit-file?year=&years=` — `years` implicit **1**, plafonat la **3**. Peste, 400 cu
+  `audit.file.years.unsupported`.
+- **Un an rămâne exact cum era** (fișiere la rădăcină, `dosar-control-2026.zip`). Mai mulți ani
+  intră fiecare în folderul lui (`2024/`, `2025/`, `2026/`), fiindcă numele de fișiere se repetă;
+  arhiva se cheamă `dosar-control-2024-2026.zip`.
+- **Autorizațiile partenerilor rămân o singură dată, la rădăcină.** Statusul lor („expiră în 30 de
+  zile") se citește față de ziua de azi, nu față de un an de raportare — trei copii ar fi aceeași
+  pagină cu o dată care nu se potrivește niciuneia.
+- **Un an fără linii de evidență e numit ca atare în `README.txt`**, cu ce are omul de făcut
+  („deschide Evidențe, alege anul, apasă Regenerează"). Altfel dosarul ar preda o fișă oficială
+  goală care arată ca date pierdute.
+- `AuditFileIT` are 4 teste noi (9 în total): structura pe foldere, antetul cu termenul de
+  păstrare, avertismentul pe anul gol, și refuzul peste 3 ani.
+- În interfață: selectorul **Perioada** („Doar anul ales" / „Ultimii 2 ani" / „Ultimii 3 ani (cât
+  cere un control)"), cu temeiul legal scris dedesubt.
+
+### 4. Cele patru restanțe de igienă
+
+- **Căutarea de coduri nu mai depinde de diacritice** (`V17`). Cele 842 de denumiri din Lista
+  Europeană sunt scrise cu diacritice, iar căutarea compara literal: cine tastează „deseuri" —
+  adică oricine, la o tastatură fără layout românesc — nu găsea **nimic**. Acum `waste_codes` are o
+  coloană **generată** (`search_text`) cu forma pliată a codului și denumirii, iar
+  `Diacritics.fold` pliază la fel textul căutat. Generată, nu întreținută de mână: se recalculează
+  singură la orice reîncărcare viitoare a nomenclatorului. Nu `unaccent`, fiindcă acela cere
+  `CREATE EXTENSION` și nu e immutable. Ambele jumătăți acoperă și ș/ț cu virgulă, și ş/ţ cu
+  sedilă — fișierele oficiale le amestecă. `WasteCodeSearchIT`, 5 teste.
+- **`total_collected` a ieșit din schemă** (`V18`). Nemapată de entitate de la `V6`, deci fiecare
+  rând a primit 0 din default și nimeni nu l-a citit. Precedentul e `V14`. **`total_handed_over`
+  rămâne** — documentația internă le enumera pe amândouă ca „rămase în schemă nescrise", dar aia e
+  scrisă de `EvidenceCalculator`, e memo-ul „din care predat" din răspunsul API și are teste care o
+  fixează; a fost scoasă din ecran la G3b, nu din model.
+- **`frontend/tsconfig.node.tsbuildinfo` nu mai e tracked.** Artefact de build care dădea conflict
+  modify/delete la fiecare cherry-pick către repo-ul de frontend, adică la fiecare deploy.
+- **Fluxul de confirmare a emailului, scos.** `/verifica-email` n-a avut niciodată rută, iar
+  `POST /auth/verify-email` și `/auth/resend-verification-email` nu erau chemate de niciun ecran.
+  Venea din șablonul de la care a pornit proiectul, unde omul se înregistra singur. Aici registrul
+  e închis: contul se creează dezactivat printr-o invitație, iar alegerea parolei prin
+  `/reset-password` e ce îl activează — deci confirmarea n-avea ce confirma. Scoase: cele două
+  endpointuri, metodele din `AuthenticationService`/`EmailService`, cele două DTO-uri și șablonul
+  `verify_email.html`. `/parola-uitata` merge și pentru un cont dezactivat, deci nimeni n-a pierdut
+  o cale de intrare.
+
+### Ce s-a verificat pe viu, nu doar în teste
+
+Backend pornit local pe Postgres real, frontend pe Vite, parcurs în browser:
+
+| Verificare | Rezultat |
+|---|---|
+| `V17` și `V18` aplicate pe baza de dev | ✅ „now at version v18", 310 ms |
+| Căutare „deseuri" fără diacritice | ✅ 50 de rezultate (înainte: zero) |
+| „ambalaje de hartie" găsește „ambalaje de hârtie și carton" | ✅ |
+| Dosar pe 3 ani: foldere, nume de arhivă, autorizații o dată | ✅ `dosar-control-2024-2026.zip` |
+| `years=4` | ✅ 400, cu mesajul care spune de ce |
+| Fișa Anexa 1 din dosarul multianual, **randată și privită** | ✅ 7 pagini, patru capitole, antet corect |
+| Parolă greșită la login | ✅ „Email sau parolă incorecte", **nu** „sesiunea a expirat" |
+| Sesiune expirată în timpul lucrului | ✅ `/login?expirat=1`, cu mesajul galben |
+| Sesiune expirată **în timp ce completezi formularul public** | ✅ rămâi pe formular, textul tastat rămâne |
+| Ciornă restaurată după reîncărcarea paginii | ✅ cu anunț și buton de ștergere |
+| Formular neatins | ✅ nu salvează nimic |
+| Secție nou creată, la **prima** deschidere a formularului de mișcare | ✅ apare |
+
+Două lucruri au ieșit prost la probă și au fost reparate în aceeași trecere: ciorna goală
+salvată după „Șterge", și butonul de descărcare strâns de al treilea control de pe rând.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -691,7 +825,7 @@ nu se salvează.
 > ⚠️ **Tabelul ăsta e de pe 22.08 şi a fost depăşit de feliile G.** Etapele 3, 4 şi 5 s-au livrat
 > sub alte nume (G2+G4, G5, G6) după meeting-ul din 23.08. **Sursa de adevăr pentru ce urmează e
 > tabelul G de mai jos** plus lista din `plan-executie.md`; ăsta rămâne ca să se vadă de unde am
-> plecat. Ce a mai rămas nelivrat din el: **6** (dosar pe 3 ani), **7** (cadenţele AFM) şi
+> plecat. Ce a mai rămas nelivrat din el: **7** (cadenţele AFM) şi
 > **8–11** (modulul de depozit).
 
 | # | Etapă | Depinde de | Mărime |
@@ -702,7 +836,7 @@ nu se salvează.
 | 3 | ✅ Cap. 2 ca profil (5 nomenclatoare + `Secția`) — *livrat ca G2 + G4* | 2 | **GATA** |
 | 4 | ✅ **Export oficial Anexa 1** (4 capitole) — *livrat ca G5* | 1, 2, 3 | **GATA** |
 | 5 | ✅ **Centralizator anual** — *livrat ca G6*. 🔜 Conversia kg→tone rămâne, dar e a registrului art. 48 (Etapa 8), nu a centralizatorului: fişa şi declaraţia sunt în kg | 4 | **GATA** (partea de centralizator) |
-| 6 | Dosar de control dimensionat la 3 ani | 4 | S |
+| 6 | ✅ **Dosar de control dimensionat la 3 ani** — livrat 24.08.2026 (`years=1..3`, folder per an, avertisment pe anul fără evidență) | 4 | **GATA** |
 | 7 | 🟠 **Obligațiile AFM ca set de contribuții + trei cadențe** — reparație în Termene | — | M |
 | 8 | **Modul depozit — ecrane** (Recepții/Livrări, registru art. 48, formulare HG 1061, ceas SIATD) | 2 | L |
 | 9 | Borderou de achiziție la metale (OUG 31/2011) + regim GDPR pentru CNP | 8 | M |
