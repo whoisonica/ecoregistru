@@ -21,12 +21,25 @@ export function useInternalGenerators(workPointId?: string) {
   });
 }
 
+/**
+ * Every list of sections, wherever it is mounted, after one of them changes.
+ *
+ * `refetchType: "all"` is the point: the default only refetches queries that are mounted right
+ * now, and marks the rest stale. The section list in the movement dialog is exactly one of "the
+ * rest" — it lives on another route, so it used to come back with the cached list and show the
+ * new section only on the second open (proba de acceptanță, 24.08.2026: prima mișcare s-a salvat
+ * fără secție). Awaiting it also keeps the Settings dialog on screen until the data is real.
+ */
+function refreshInternalGenerators(qc: ReturnType<typeof useQueryClient>) {
+  return qc.invalidateQueries({ queryKey: internalGeneratorsKey, refetchType: "all" });
+}
+
 export function useCreateInternalGenerator() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: InternalGeneratorInput) =>
       (await api.post<InternalGenerator>("/api/v1/internal-generators", input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: internalGeneratorsKey }),
+    onSuccess: () => refreshInternalGenerators(qc),
   });
 }
 
@@ -35,7 +48,7 @@ export function useUpdateInternalGenerator() {
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: InternalGeneratorInput }) =>
       (await api.put<InternalGenerator>(`/api/v1/internal-generators/${id}`, input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: internalGeneratorsKey }),
+    onSuccess: () => refreshInternalGenerators(qc),
   });
 }
 
@@ -45,6 +58,6 @@ export function useDeactivateInternalGenerator() {
     mutationFn: async (id: string) => {
       await api.delete(`/api/v1/internal-generators/${id}`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: internalGeneratorsKey }),
+    onSuccess: () => refreshInternalGenerators(qc),
   });
 }
