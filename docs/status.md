@@ -1717,7 +1717,15 @@ Până la răspuns rămâne bifa. Dacă Andreea spune că regula e alta — de p
 firmei, nu după mişcare — se schimbă un singur filtru în `PackagingDeclarationBuilder`, plus
 implicitul bifei. Coloana rămâne oricum utilă.
 
-### Commis şi pushat, tot (25.08.2026, ora 13:17)
+### Commis şi pushat, tot (25.08.2026, ora 15:24)
+
+| Unde | Ce | Stare |
+|---|---|---|
+| `origin/main` şi `origin/deploy/heroku-split` | `228434b` | ✅ |
+| `newrepo/main` | `8f1ebd3` | ✅ `ecoregistru-api` la **v29**, `V27` aplicată, pornire 8,36 s |
+| `ferepo/main` | `2a77e3b` | ✅ `ecoregistru-app` la **v22** |
+
+### Commis şi pushat (25.08.2026, ora 13:17)
 
 | Unde | Ce | Stare |
 |---|---|---|
