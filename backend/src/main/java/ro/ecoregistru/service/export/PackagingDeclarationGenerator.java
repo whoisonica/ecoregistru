@@ -300,15 +300,29 @@ public class PackagingDeclarationGenerator {
                         + "NOTĂ: Se completează în tabel distinct în cazul deşeurilor de ambalaje "
                         + "periculoase."), note));
 
-        // The codes the European List cannot place on a material row. Said out loud rather than
-        // quietly parked in "Altele": the client is the only one who knows whether the metal
-        // packaging was aluminium or steel.
-        if (!d.ambiguousCodes().isEmpty()) {
-            p.add(new Phrase(cp1250(
-                    "\nDe verificat: cantităţile pe codurile " + String.join(", ", d.ambiguousCodes())
-                            + " sunt trecute la „Altele”, fiindcă Lista Europeană nu spune din ce "
-                            + "material sunt (15 01 04 acoperă şi aluminiul, şi oţelul). Mută-le pe "
-                            + "rândul potrivit dacă ştii materialul."), note));
+        // Ce n-a intrat în tabelul 1 se spune pe hârtie. Nu se împinge la „Altele": specialista
+        // zice că rândul acela rămâne gol în practică, iar cine ştie dacă ambalajul metalic a fost
+        // aluminiu sau oţel e clientul, nu noi.
+        if (!d.unclassified().isEmpty()) {
+            long noMaterial = d.unclassified().stream()
+                    .filter(PackagingDeclaration.UnclassifiedRow::missingMaterial).count();
+            long noCategory = d.unclassified().stream()
+                    .filter(r -> !r.missingMaterial() && r.missingCategory()).count();
+            StringBuilder sb = new StringBuilder("\nDe completat: ")
+                    .append(d.unclassified().size())
+                    .append(d.unclassified().size() == 1
+                            ? " mişcare de ambalaje nu a intrat în tabelul 1"
+                            : " mişcări de ambalaje nu au intrat în tabelul 1");
+            if (noMaterial > 0) {
+                sb.append(" — ").append(noMaterial)
+                        .append(" fără materialul ambalajului (15 01 04 acoperă şi aluminiul, şi "
+                                + "oţelul; 15 01 02 şi PET-ul, şi navetele)");
+            }
+            if (noCategory > 0) {
+                sb.append(noMaterial > 0 ? ", " : " — ").append(noCategory)
+                        .append(" fără felul ambalajului (desfacere / primar / secundar)");
+            }
+            p.add(new Phrase(cp1250(sb.append(".").toString()), note));
         }
         return p;
     }

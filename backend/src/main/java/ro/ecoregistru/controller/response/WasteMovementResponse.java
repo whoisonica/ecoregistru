@@ -1,5 +1,7 @@
 package ro.ecoregistru.controller.response;
 
+import ro.ecoregistru.enums.PackagingCategory;
+import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TransportDestination;
@@ -73,6 +75,18 @@ public record WasteMovementResponse(
         Integer anexa3Number,
         /** Null means "as the company chose, and failing that as the quantity was recorded". */
         Unit anexa3Unit,
+
+        // --- Anexa 1 Ambalaje ---
+        /** What the client chose; null means "as the code proposes". */
+        PackagingMaterial packagingMaterial,
+        /** What the table will actually use: the choice, or what the code proposes, or null. */
+        PackagingMaterial effectivePackagingMaterial,
+        /** Which column group of tabelul 1 the quantity counts in; null on non-packaging codes. */
+        PackagingCategory packagingCategory,
+        Boolean packagingReusable,
+        Boolean packagingHazardousContent,
+        /** True when the code is 15 01 xx, so the screen knows to ask the three above. */
+        boolean packagingCode,
 
         Instant createdAt,
         Instant updatedAt

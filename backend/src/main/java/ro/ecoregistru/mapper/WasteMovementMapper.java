@@ -7,6 +7,7 @@ import ro.ecoregistru.entity.Attachment;
 import ro.ecoregistru.entity.InternalGenerator;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.enums.PackagingMaterial;
 
 import java.util.List;
 
@@ -63,6 +64,13 @@ public class WasteMovementMapper {
                 m.getAnexa3Series(),
                 m.getAnexa3Number(),
                 m.getAnexa3Unit(),
+                m.getPackagingMaterial(),
+                PackagingMaterial.resolve(m.getPackagingMaterial(), m.getWasteCode().getCode())
+                        .orElse(null),
+                m.getPackagingCategory(),
+                m.getPackagingReusable(),
+                m.getPackagingHazardousContent(),
+                PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()),
                 m.getCreatedAt(),
                 m.getUpdatedAt()
         );

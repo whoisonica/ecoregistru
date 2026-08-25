@@ -13,6 +13,7 @@ import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.*;
+import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.exception.BusinessException;
@@ -98,6 +99,14 @@ public class WasteMovementService {
                 .unloadDate(request.unloadDate())
                 .partnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner))
                 .anexa3Unit(request.anexa3Unit())
+                // Ambalaje: cele trei rubrici ale tabelului 1 călătoresc pe mişcare, dar numai pe
+                // un cod 15 01 xx. Pe orice alt cod se ignoră, ca să nu rămână un răspuns agăţat
+                // de o mişcare pe care declaraţia n-o citeşte niciodată.
+                .packagingMaterial(packagingOnly(wasteCode, request.packagingMaterial()))
+                .packagingCategory(packagingOnly(wasteCode, request.packagingCategory()))
+                .packagingReusable(packagingOnly(wasteCode, request.packagingReusable()))
+                .packagingHazardousContent(
+                        packagingOnly(wasteCode, request.packagingHazardousContent()))
                 .transportPartner(carrier)
                 .driverName(request.driverName())
                 .driverIdentification(request.driverIdentification())
@@ -153,6 +162,11 @@ public class WasteMovementService {
         movement.setUnloadDate(request.unloadDate());
         movement.setPartnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner));
         movement.setAnexa3Unit(request.anexa3Unit());
+        movement.setPackagingMaterial(packagingOnly(wasteCode, request.packagingMaterial()));
+        movement.setPackagingCategory(packagingOnly(wasteCode, request.packagingCategory()));
+        movement.setPackagingReusable(packagingOnly(wasteCode, request.packagingReusable()));
+        movement.setPackagingHazardousContent(
+                packagingOnly(wasteCode, request.packagingHazardousContent()));
         movement.setTransportPartner(carrier);
         movement.setDriverName(request.driverName());
         movement.setDriverIdentification(request.driverIdentification());
@@ -330,6 +344,15 @@ public class WasteMovementService {
     private WasteCode requireWasteCode(UUID id) {
         return wasteCodeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(WASTE_CODE_NOT_FOUND));
+    }
+
+    /**
+     * Keeps the three Anexa 1 Ambalaje answers only where they mean something — on a
+     * {@code 15 01 xx} code. Moving a movement off a packaging code therefore clears them, instead
+     * of leaving an answer behind that no document reads and nobody would think to correct.
+     */
+    private <T> T packagingOnly(WasteCode wasteCode, T value) {
+        return PackagingMaterial.isPackagingCode(wasteCode.getCode()) ? value : null;
     }
 
     /**

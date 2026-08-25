@@ -128,7 +128,9 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | 2 | Coloanele celor 4 capitole ale Anexei 1 | confirmate verbatim | `surse-oficiale.md` §1.2 |
 | 3 | Termen de arhivare | **3 ani**; 12 luni la transportatori | OUG 92/2021 art. 48(5) — ✅ în cod din 24.08: dosarul acceptă 1–3 ani |
 | 6 | Starea fizică — listă standard | **nu există** listă închisă; e câmp liber în act | `surse-oficiale.md` §1.2 |
-| 7 | Unitatea de raportare | evidența în kg; **raportarea art. 48 în tone**; **ambalajele în kg** (Ordin 794/2012, toate anexele); **Anexa 3 în tone** în act, dar firma alege (`V19`) | OUG 92/2021 art. 48(1) · HG 1061/2008 anexa 3 |
+| 7 | Unitatea de raportare | evidența în kg; **raportarea art. 48 în tone**; **ambalajele în kg** (Ordin 794/2012 **art. 8 alin. (1)**, nu doar antetul anexelor); **Anexa 3 în tone** în act, dar firma alege (`V19`) | OUG 92/2021 art. 48(1) · HG 1061/2008 anexa 3 · `surse-oficiale.md` §5.1 |
+| 12 | Formatul de depunere al Anexei 1 Ambalaje | **`.xls`**, cerut pe nume de act; ANPM publică formatul | Ordin 794/2012 art. 6 + art. 7 — ✅ în cod din 25.08 (`PackagingDeclarationXlsxGenerator`) |
+| 13 | Unde se depune Anexa 1 Ambalaje | **agenţia judeţeană/regională de mediu**, din raza sediului social, pe **25 februarie**. Notificarea de la art. 3 e altceva: la **AFM**, pe **25 ianuarie** | Ordin 794/2012 art. 1, 3, 6 |
 | 9 | SIATD — cine intră | 15 categorii de operatori EPR; **generatorii mici nu** | Ordin 701/2024 art. 2 |
 | — | Referința R/D de pus în export | **OUG 92/2021 anexa 3 și anexa 7** | `surse-oficiale.md` §2.2–2.3 |
 | — | Care listă de coduri | **Decizia 2014/955/UE**, 842 coduri | `surse-oficiale.md` §3 |
@@ -168,7 +170,7 @@ Confuzia asta e cea mai ieftină cale de a strica modulul de generatori, deci se
 | Titlu | „Evidenţa gestiunii deşeurilor" | „Producători şi importatori de ambalaje de desfacere, **de produse ambalate**, supraambalatori de produse ambalate" |
 | Cine o ține | orice generator, per cod de deșeu (art. 1 alin. (1)) | cine **pune pe piaţă marfă ambalată** — deci pune și ambalajul, adică generează deșeu de ambalaj în piață |
 | Formă | 4 capitole × 12 luni, o pagină per cod | tabele pe materiale (PET, hârtie, aluminiu, oțel, lemn, sticlă), în kg |
-| În aplicație | **G5, livrat** | modulul de ambalaje, **nescris** (Etapa 11) |
+| În aplicație | **G5, livrat** | modulul de ambalaje, **livrat 25.08** (`V22` + `V26`): ambele tabele se însumează din mişcările pe coduri `15 01 xx`, iar descărcarea e `.xls` cu două foi |
 
 Titlul celui de-al doilea se citește **până la capăt**: nu „producători şi importatori *de ambalaje*", ci „*de ambalaje de desfacere, de produse ambalate*". Nu fabricanții de ambalaje — **oricine pune pe piață produse ambalate**. Categorie largă, nu de nișă.
 

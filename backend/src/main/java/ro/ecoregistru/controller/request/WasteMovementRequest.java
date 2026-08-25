@@ -8,6 +8,8 @@ import ro.ecoregistru.enums.TransportDestination;
 import ro.ecoregistru.enums.TransportMeans;
 import ro.ecoregistru.enums.WasteDestination;
 import ro.ecoregistru.enums.TreatmentMethod;
+import ro.ecoregistru.enums.PackagingCategory;
+import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteOperationCode;
@@ -62,5 +64,23 @@ public record WasteMovementRequest(
          * The unit this one form prints in. Null falls back to the company setting, and then
          * to {@link #unit()} — see {@code Anexa3FormGenerator.printedUnit}.
          */
-        Unit anexa3Unit
+        Unit anexa3Unit,
+
+        // --- Anexa 1 Ambalaje (Ordinul 794/2012), tabelul 1 ---
+
+        /**
+         * Which material row of tabelul 1 this load counts in. Null lets the waste code propose
+         * one, which it can do for 15 01 01, 02, 03 and 07 and not for the rest.
+         */
+        PackagingMaterial packagingMaterial,
+        /**
+         * Which column group of tabelul 1 this load counts in. Asked only when the waste code is
+         * {@code 15 01 xx}; null everywhere else, and null on a packaging code means the question
+         * has not been answered — the quantity then stays out of the printed table.
+         */
+        PackagingCategory packagingCategory,
+        /** Col. 4 / col. 6 of tabelul 1, "din care: ambalaj reutilizabil". */
+        Boolean packagingReusable,
+        /** Col. 7 of tabelul 1, "ambalaje cu conţinut periculos" — also part of col. 3. */
+        Boolean packagingHazardousContent
 ) {}

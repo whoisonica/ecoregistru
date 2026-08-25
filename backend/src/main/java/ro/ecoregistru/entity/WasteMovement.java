@@ -5,6 +5,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import ro.ecoregistru.enums.PackagingCategory;
+import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.TransportDestination;
 import ro.ecoregistru.enums.TransportMeans;
@@ -241,6 +243,44 @@ public class WasteMovement {
     @Enumerated(EnumType.STRING)
     @Column(name = "anexa3_unit", length = 10)
     Unit anexa3Unit;
+
+    // --- Anexa 1 Ambalaje (Ordinul 794/2012), tabelul 1 ---
+
+    /**
+     * Which material row of tabelul 1 this load counts in. Null falls back to what the waste code
+     * proposes ({@code PackagingMaterial.suggestedFor}); when the code proposes nothing either —
+     * {@code 15 01 04} is both aluminium and steel — the quantity stays off the printed table and
+     * the packaging tab asks for it.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "packaging_material", length = 20)
+    PackagingMaterial packagingMaterial;
+
+    /**
+     * Which of the three quantity groups of tabelul 1 this load counts in — sales packaging,
+     * primary, or secondary and transport. Only meaningful on a {@code 15 01 xx} code.
+     *
+     * <p>Null is "nobody answered", and it stays out of the printed table rather than being placed
+     * on a guess. The packaging tab lists such movements separately so the gap is visible.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "packaging_category", length = 20)
+    PackagingCategory packagingCategory;
+
+    /**
+     * Col. 4 / col. 6 of tabelul 1, "din care: ambalaj reutilizabil". Nota 2 of the form: reported
+     * once, when first put into the filling circuit and delivered.
+     */
+    @Column(name = "packaging_reusable")
+    Boolean packagingReusable;
+
+    /**
+     * Col. 7 of tabelul 1, "ambalaje cu conţinut periculos". Nota 3 says these are primary
+     * packaging too and are found in col. 3 as well — so the quantity is counted in both columns,
+     * not moved out of one into the other.
+     */
+    @Column(name = "packaging_hazardous_content")
+    Boolean packagingHazardousContent;
 
     /** Free text, e.g. aviz nr. */
     String documentReference;

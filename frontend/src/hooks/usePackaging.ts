@@ -4,22 +4,36 @@ import type {
   PackagingHandoverRow,
   PackagingMarketRow,
   PackagingMarketInput,
+  PackagingTable1Row,
+  PackagingUnclassifiedRow,
+  WasteMovement,
 } from "@/lib/types";
 
 /**
- * The packaging module — Anexa 1 Ambalaje (Ordinul 794/2012).
+ * Modulul Ambalaje — Anexa 1 Ambalaje (Ordinul 794/2012).
  *
- * <p>Two queries because the declaration has two halves with different owners: tabelul 1 is
- * answered by the client and stored, tabelul 2 is computed from the movements. Saving a market row
- * invalidates both, since the printed form draws on the two together.
+ * <p>Totul pleacă din același loc: mișcările pe coduri `15 01 xx`. Registrul le arată așa cum sunt,
+ * iar cele două tabele ale declarației se însumează din ele. Cifra scrisă de mână există în
+ * continuare, dar numai ca **suprascriere** pe un material — de aceea salvarea ei invalidează tot
+ * grupul, nu doar grila.
  */
 const packagingRoot = ["packaging"] as const;
 
-export function usePackagingMarket(year: number) {
+/** Registrul: mișcările de ambalaje ale anului, cele mai noi întâi. */
+export function usePackagingMovements(year: number) {
   return useQuery({
-    queryKey: [...packagingRoot, "market", year] as const,
+    queryKey: [...packagingRoot, "movements", year] as const,
     queryFn: async () =>
-      (await api.get<PackagingMarketRow[]>("/api/v1/packaging/market", { params: { year } })).data,
+      (await api.get<WasteMovement[]>("/api/v1/packaging/movements", { params: { year } })).data,
+  });
+}
+
+/** Tabelul 1 așa cum îl va tipări documentul. */
+export function usePackagingTable1(year: number) {
+  return useQuery({
+    queryKey: [...packagingRoot, "table1", year] as const,
+    queryFn: async () =>
+      (await api.get<PackagingTable1Row[]>("/api/v1/packaging/table1", { params: { year } })).data,
   });
 }
 
@@ -32,6 +46,28 @@ export function usePackagingHandovers(year: number) {
   });
 }
 
+/** Ce n-a intrat în tabele și de ce — semnalul care blochează depunerea. */
+export function usePackagingUnclassified(year: number) {
+  return useQuery({
+    queryKey: [...packagingRoot, "unclassified", year] as const,
+    queryFn: async () =>
+      (
+        await api.get<PackagingUnclassifiedRow[]>("/api/v1/packaging/unclassified", {
+          params: { year },
+        })
+      ).data,
+  });
+}
+
+/** Doar suprascrierile stocate: rânduri goale acolo unde firma n-a scris nimic. */
+export function usePackagingMarket(year: number) {
+  return useQuery({
+    queryKey: [...packagingRoot, "market", year] as const,
+    queryFn: async () =>
+      (await api.get<PackagingMarketRow[]>("/api/v1/packaging/market", { params: { year } })).data,
+  });
+}
+
 export function useSavePackagingMarket() {
   const qc = useQueryClient();
   return useMutation({
@@ -41,17 +77,20 @@ export function useSavePackagingMarket() {
   });
 }
 
-/** Streams the PDF and hands it to the browser, like the other official documents. */
-export async function downloadPackagingDeclaration(year: number) {
+/**
+ * Descarcă documentul. Implicit `.xlsx`, fiindcă art. 6 din ordin cere raportarea „în format
+ * electronic «.xls»"; PDF-ul rămâne pentru dosarul de control.
+ */
+export async function downloadPackagingDeclaration(year: number, format: "xlsx" | "pdf" = "xlsx") {
   const res = await api.get("/api/v1/packaging/anexa1", {
-    params: { year },
+    params: { year, format },
     responseType: "blob",
   });
   const url = URL.createObjectURL(res.data as Blob);
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `anexa1-ambalaje-${year}.pdf`;
+    a.download = `anexa1-ambalaje-${year}.${format}`;
     a.click();
   } finally {
     URL.revokeObjectURL(url);

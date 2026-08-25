@@ -2,7 +2,9 @@ package ro.ecoregistru.enums;
 
 import lombok.Getter;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -12,36 +14,42 @@ import java.util.Set;
  * {@code RAPORTARE AMBALAJE _anexa 1.xlsx} (blank) and {@code RAPORTARE AMBALAJE 2021_anexa 1_ HRR.xlsx}
  * (filled): Sticlă · PET · Alte plastice · <i>Total plastic</i> · Hârtie carton · Aluminiu · Oţel ·
  * <i>Total metal</i> · Lemn · Altele · <i>TOTAL</i>. The three italic rows are sums, computed when
- * the form is drawn rather than stored.
+ * the form is drawn rather than stored — {@link #plasticParts()} and {@link #metalParts()} say
+ * which rows feed which sum, and Sticlă, Hârtie carton, Lemn and Altele stand on their own.
  *
- * <p><b>Which waste codes feed which row.</b> Table 2 of that annex — the waste actually handed
- * over — can be filled from the movements already recorded, but only where the European List code
- * says the material without ambiguity. Two cases where it does not:
+ * <p><b>How a quantity finds its row.</b> Not from the waste code alone — the European List does
+ * not carry the distinction the form asks for. {@code 15 01 04} is "ambalaje metalice" and covers
+ * both an aluminium can and a steel drum; {@code 15 01 02} is "ambalaje de materiale plastice" and
+ * covers both a PET bottle and a plastic crate. So the material is <b>chosen on the movement</b>,
+ * and the code only <i>proposes</i> it — see {@link #suggestedFor(String)}.
  *
- * <ul>
- *   <li><b>15 01 02</b> is "ambalaje de materiale plastice", full stop. A PET bottle and a plastic
- *       crate share it, so the quantity lands in <i>Alte plastice</i> and the client moves what is
- *       PET. Putting it in PET would be a guess on a filed form.</li>
- *   <li><b>15 01 04</b> is "ambalaje metalice" — aluminium cans and steel drums, same code. It
- *       lands in <i>Altele</i>, and the form prints a line naming the codes that ended up there,
- *       so the gap is visible instead of silent.</li>
- * </ul>
+ * <p><b>Why "Altele" is not the fallback.</b> It was, until 25.08.2026: everything the code could
+ * not place landed there and the form printed a line naming the codes that did. The specialist's
+ * hint, relayed by the user the same day, was that "Altele" should in practice stay empty — the
+ * quantity belongs on a real material row, and only the client knows which. So an unanswered
+ * movement now stays <b>out</b> of the table and is listed as such in the packaging tab, rather
+ * than being swept into a row that would then be filed with an authority. Same house rule as
+ * everywhere else: what is missing is shown to be missing.
  */
 @Getter
 public enum PackagingMaterial {
 
     STICLA("Sticlă", Set.of("15 01 07")),
     PET("PET", Set.of()),
-    ALTE_PLASTICE("Alte plastice", Set.of("15 01 02")),
+    ALTE_PLASTICE("Alte plastice", Set.of()),
     HARTIE_CARTON("Hârtie carton", Set.of("15 01 01")),
     ALUMINIU("Aluminiu", Set.of()),
     OTEL("Oţel", Set.of()),
     LEMN("Lemn", Set.of("15 01 03")),
-    /** Everything the code cannot place: metals (15 01 04), composites, mixed, textile, ceramic. */
-    ALTELE("Altele", Set.of("15 01 04", "15 01 05", "15 01 06", "15 01 09", "15 01 07*"));
+    /** Kept because the form has the row. Only ever used when the client picks it deliberately. */
+    ALTELE("Altele", Set.of());
 
     private final String officialLabel;
-    /** European List codes that land in this row on their own. */
+
+    /**
+     * European List codes that settle this row on their own, with no question asked. Deliberately
+     * short: only where the code names exactly one of the form's materials.
+     */
     private final Set<String> wasteCodes;
 
     PackagingMaterial(String officialLabel, Set<String> wasteCodes) {
@@ -50,25 +58,39 @@ public enum PackagingMaterial {
     }
 
     /**
-     * The row a packaging waste code belongs to, or empty when the code is not packaging at all.
+     * Whether this code belongs to the packaging declaration at all.
      *
      * <p>Only chapter 15 01 counts. A shop's cardboard recorded under 20 01 01 does <b>not</b> feed
      * this declaration — which is exactly the distinction the specialist drew on 24.08.2026:
      * "cartonul din magazine este 15 01 01", and it is the code chosen at recording that decides.
      */
-    public static java.util.Optional<PackagingMaterial> forWasteCode(String code) {
-        if (code == null || !code.startsWith("15 01")) {
-            return java.util.Optional.empty();
-        }
-        return java.util.Arrays.stream(values())
-                .filter(m -> m.wasteCodes.contains(code))
-                .findFirst()
-                .or(() -> java.util.Optional.of(ALTELE));
+    public static boolean isPackagingCode(String code) {
+        return code != null && code.startsWith("15 01");
     }
 
-    /** True for the codes we cannot place on a material row without the client telling us. */
-    public static boolean isAmbiguous(String code) {
-        return ALTELE.wasteCodes.contains(code);
+    /**
+     * The material a code proposes, for the movement form to pre-select — empty when the code does
+     * not settle it and the client has to say.
+     *
+     * <p>{@code 15 01 02} proposes <i>Alte plastice</i> rather than PET: a PET bottle and a plastic
+     * crate share the code, and PET is the narrower claim, so it is the client's to make.
+     */
+    public static Optional<PackagingMaterial> suggestedFor(String code) {
+        if (!isPackagingCode(code)) {
+            return Optional.empty();
+        }
+        return Arrays.stream(values())
+                .filter(m -> m.wasteCodes.contains(code))
+                .findFirst()
+                .or(() -> "15 01 02".equals(code) ? Optional.of(ALTE_PLASTICE) : Optional.empty());
+    }
+
+    /**
+     * The row a movement's quantity counts in: what the client chose, and failing that what the
+     * code proposes. Empty means nobody has answered — the quantity stays off the printed table.
+     */
+    public static Optional<PackagingMaterial> resolve(PackagingMaterial chosen, String code) {
+        return chosen != null ? Optional.of(chosen) : suggestedFor(code);
     }
 
     /** The rows that are sums of the ones above them, in the order the form draws them. */

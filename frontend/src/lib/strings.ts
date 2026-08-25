@@ -165,6 +165,21 @@ export const strings = {
     attachments: "Atașamente",
     hazardous: "Periculos",
     // Anexa 3 — dovada predării
+    // --- Anexa 1 Ambalaje: se cer doar pe coduri 15 01 xx ---
+    packagingSection: "Ambalaje — pentru Anexa 1",
+    packagingSectionHint:
+      "Codul e de ambalaje, deci mișcarea intră în Anexa 1 Ambalaje. Cele două rubrici de mai jos îi dau rândul și coloana din tabelul 1; fără ele, cantitatea rămâne în afara declarației.",
+    packagingMaterial: "Materialul ambalajului",
+    packagingMaterialPlaceholder: "Alege materialul",
+    packagingFromCode: "(propus din cod)",
+    packagingMaterialNeeded:
+      "Codul nu spune din ce material e: 15 01 04 acoperă și aluminiul, și oțelul. Alege tu, altfel cantitatea nu intră în tabel.",
+    packagingCategory: "Felul ambalajului",
+    packagingCategoryPlaceholder: "Alege felul",
+    packagingCategoryHint:
+      "Coloana din tabelul 1: desfacere (col. 1), primar (col. 3) sau secundar și de transport (col. 5).",
+    packagingReusable: "Ambalaj reutilizabil",
+    packagingHazardous: "A conținut substanțe periculoase",
     anexa3Section: "Anexa 3 — dovada predării",
     anexa3SectionHint:
       "Formularul de încărcare-descărcare deșeuri nepericuloase (HG 1061/2008), tipărit din această mișcare. Completează ce apare pe hârtie.",
@@ -639,6 +654,11 @@ export const strings = {
     },
     // Ce este partenerul in raport cu deseul. Transportatorul nu mai e o categorie: e o rubrica a
     // transportului, pe miscare.
+    packagingCategory: {
+      SALES: "De desfacere (fabricate/importate)",
+      PRIMARY: "Primar",
+      SECONDARY: "Secundar și de transport",
+    },
     packagingMaterial: {
       STICLA: "Sticlă",
       PET: "PET",
@@ -882,18 +902,58 @@ export const strings = {
   packaging: {
     title: "Ambalaje",
     subtitle:
-      "Anexa 1 Ambalaje (Ordinul 794/2012): ce ambalaje ai pus pe piața națională și ce deșeuri de ambalaje ai predat. Se depune pentru anul anterior; cifrele ei sunt și baza contribuției pe ambalaje la Fondul pentru mediu.",
+      "Tot ce ține de ambalaje, într-un loc. Mișcările pe coduri 15 01 xx sunt registrul; din ele se însumează cele două tabele ale Anexei 1 Ambalaje (Ordinul 794/2012), care se depune la agenția județeană de mediu până pe 25 februarie, pentru anul anterior. Totul în kilograme, cum cere art. 8 din ordin.",
     year: "Anul",
     download: "Descarcă Anexa 1 Ambalaje",
-    downloadHint: "PDF cu ambele tabele, în kilograme, ca în model.",
+    downloadXlsx: "XLS — formatul de depunere",
+    downloadPdf: "PDF — pentru dosar",
+    downloadHint:
+      "Art. 6 din Ordinul 794/2012 cere raportarea „în format electronic «.xls»”, cu cele două foi. PDF-ul e aceeași declarație, pentru dosarul de control.",
     downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
     saveError: "Cifra nu a putut fi salvată.",
+
+    // --- registrul ---
+    registerTitle: "Mișcări de ambalaje",
+    registerHint:
+      "Fiecare mișcare înregistrată pe un cod 15 01 xx. Astea sunt kilogramele din care se face declarația — cartonul înregistrat pe 20 01 01 nu intră aici, intră în evidența gestiunii deșeurilor.",
+    registerEmpty:
+      "Nicio mișcare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
+    date: "Data",
+    code: "Cod",
+    kind: "Felul ambalajului",
+    partner: "Partener",
+    workPoint: "Punct de lucru",
+    fromCode: "din cod",
+    goToMovements: "Deschide în Mișcări",
+    addMovement: "Adaugă mișcare",
+
+    // --- semnale ---
+    blockedTitle: "Nu intră în declarație",
+    blockedMissingMaterial:
+      "{n} mișcări fără materialul ambalajului. Codul nu îl decide singur: 15 01 04 acoperă și aluminiul, și oțelul; 15 01 02 și PET-ul, și navetele. Alege-l pe mișcare.",
+    blockedMissingCategory:
+      "{n} mișcări fără felul ambalajului (desfacere / primar / secundar și de transport), deci n-au coloană în tabelul 1.",
+    awaitingWeighing: "{n} mișcări încă de cântărit — cantitatea lor lipsește din ambele tabele.",
+    missingOperation: "{n} mișcări fără cod R/D — operatorul apare, operațiunea rămâne goală.",
+    fix: "Completează",
+
+    // --- tabelul 1 ---
     table1Title: "Tabel 1. Ambalaje introduse pe piața națională",
     table1Hint:
-      "Se completează de tine: sunt despre marfa vândută, nu despre deșeu, deci nu se pot deduce din mișcări. O rubrică lăsată goală se tipărește goală — „gol” nu înseamnă „zero”. Cifrele sunt în kilograme, iar coloana „Total (col. 3+5)” se calculează singură.",
+      "Se însumează din mișcări: materialul dă rândul, felul ambalajului dă coloana. Coloana „Total (col. 3+5)” e o sumă. O celulă fără nicio mișcare rămâne goală — „gol” nu înseamnă „zero”, și pe un formular depus e altceva.",
+    table1Override:
+      "Dacă cifra reală de piață diferă de ce arată mișcările — tabelul e despre marfa vândută, nu despre deșeu — o poți scrie tu, pe materialul respectiv. Rândul scris de tine înlocuiește rândul calculat și e marcat ca atare.",
+    overrideOpen: "Scrie cifre proprii",
+    overrideClose: "Ascunde cifrele proprii",
+    overriddenBadge: "scris de tine",
+    computedBadge: "din mișcări",
+    overrideClear: "Golește rândul ca să revii la cifra din mișcări.",
+
+    // --- tabelul 2 ---
     table2Title: "Tabelul 2. Deșeuri de ambalaje gestionate",
     table2Hint:
-      "Se completează singur, din predările înregistrate pe coduri 15 01 xx — un rând pentru fiecare operator care a preluat, cum cere nota formularului. Cartonul înregistrat pe 20 01 01 nu intră aici: intră în evidența gestiunii deșeurilor.",
+      "Se completează singur, din predările înregistrate pe coduri 15 01 xx — un rând pentru fiecare operator care a preluat, cum cere nota 1 a formularului.",
+
     material: "Material",
     colSales: "Ambalaje de desfacere fabricate/importate",
     colTotal: "Total (col. 3+5)",
@@ -902,6 +962,8 @@ export const strings = {
     colSecondary: "Secundare și de transport — total",
     colSecondaryReusable: "Secundare — reutilizabile",
     colHazardous: "Cu conținut periculos",
+    totalPlastic: "Total plastic",
+    totalMetal: "Total metal",
     total: "TOTAL",
     quantity: "Cantitatea (kg)",
     operator: "Operatorul care a preluat",

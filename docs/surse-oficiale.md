@@ -470,6 +470,49 @@ Actul din care provin cele două fișiere primite de la specialistă:
 > ⚠️ Merită totuși o confirmare de o linie de la specialistă: dacă APM-ul județean îi acceptă în
 > practică șablonul în tone, generăm ce cere actul (kg) și o avertizăm despre diferență.
 
+### 5.1 Articolele, citite verbatim (25.08.2026)
+
+Sursă secundară, cerută de utilizator: [envirocons.ro/ordinul-794-din-2012-varianta-actualizata](https://envirocons.ro/ordinul-794-din-2012-varianta-actualizata/),
+accesată 25.08.2026. Confirmă ce știam și adaugă **trei lucruri pe care nu le aveam**.
+
+> **Art. 1** — „Operatorii economici, producători și importatori de ambalaje de desfacere [...] sunt
+> obligați să raporteze **agenției județene/regionale pentru protecția mediului** datele cuprinse în
+> anexa nr. 1." Raportarea se transmite agenției din raza **sediului social**.
+>
+> **Art. 3** — „Operatorii economici care își îndeplinesc în mod individual obiectivele [...] sunt
+> obligați să comunice aceasta **Administrației Fondului pentru Mediu**, până cel târziu la data de
+> **25 ianuarie** a fiecărui an."
+>
+> **Art. 6** — „Datele de raportare se transmit **în format electronic „.xls"** [...] până cel
+> târziu la data de **25 februarie** a fiecărui an."
+>
+> **Art. 7** — ANPM pune formatul „.xls" la dispoziție pe pagina de internet.
+>
+> **Art. 8 alin. (1)** — „Cantitățile de ambalaje, respectiv de deșeuri de ambalaje se raportează
+> **în kilograme**."
+
+**1. Formatul cerut e `.xls`, scris în act.** Art. 6 nu spune „un document", spune formatul. Asta
+transformă exportul XLSX din comoditate în **cerință**: cele două foi, cu structura pe care ANPM o
+publică. De aici vine `PackagingDeclarationXlsxGenerator`, iar PDF-ul rămâne pentru dosarul de
+control, nu pentru depunere.
+
+**2. Întrebarea Y se lămurește pe jumătate: sunt două depuneri diferite, nu una.**
+
+| Ce | Unde | Când | Temei |
+|---|---|---|---|
+| **Anexa 1 Ambalaje** (cele două tabele) | agenția **județeană/regională** de mediu, din raza sediului social | **25 februarie** | art. 1 + art. 6 |
+| Notificarea „îmi îndeplinesc individual obiectivele" | **AFM** | **25 ianuarie** | art. 3 |
+
+Deci și specialista („Anexa 1 ambalaje este pentru fondul de mediu, declarație AFM"), și actul
+(„agenția județeană") spun adevărul, despre **documente diferite**. Ce mai rămâne de confirmat la
+**Y** e o singură linie: dacă în practica ei cele două se depun împreună sau separat. Cadența AFM
+anuală pe 25 ianuarie era deja în cod din `V21` (`AfmContribution.PACKAGING`) — și acum se vede că
+data aia nu e a declarației de ambalaje, ci a notificării de la art. 3.
+
+**3. A treia confirmare a kilogramelor, de data asta dintr-un articol, nu dintr-un antet de tabel.**
+Până acum ne sprijineam pe `[kilograme]` tipărit deasupra celor cinci anexe. Art. 8 alin. (1) o
+spune ca obligație. Fișierul primit în tone rămâne, definitiv, șablon modificat local.
+
 ---
 
 ## 6. Ordinul MMAP 701/2024 — SIATD

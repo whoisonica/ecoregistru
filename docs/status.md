@@ -1350,6 +1350,91 @@ reconstruieşte la prima citire. Restul citirilor rămân citiri.
   Nu e bug — n-a completat-o nimeni.
 
 
+## Ambalajele se declară din mişcări (25.08.2026)
+
+**Reclamaţia, în cuvintele utilizatorului:** *„cred că Andreea voia să se vadă automat în ambalaje
+mişcările care sunt pentru asta, nu să fie XLS-ul cu 2 sheeturi de completat în UI. XLS-ul să se
+genereze în funcţie de ce mişcări sunt în ambalaje, tabul ambalaje să centralizeze cumva tot ce ţine
+de ambalaje, mişcări. Să poţi genera Anexa 1 Ambalaje."*
+
+Şi avea dreptate pe fond. Tabul livrat pe 25.08 dimineaţa (`V22`, grupul 6 de mai sus) **reproducea
+fişierul**: o grilă de şaizeci şi şase de celule pentru tabelul 1, tabelul 2 calculat — iar
+mişcările pe `15 01 xx`, cele din care iese tot, **nu se vedeau nicăieri** în ecran.
+
+### Ce era greşit în premisa lui `V22`
+
+`V22` pornea de la o propoziţie care părea de nezdruncinat: *tabelul 1 e despre marfa pusă pe piaţă,
+nu despre deşeu, deci nu se poate deduce din nimic din ce ţine aplicaţia.* Legal, propoziţia e
+adevărată. Ca flux, e falsă — şi utilizatorul a arătat de ce, într-o frază:
+
+> „Omul, când reciclează acea cantitate de ambalaj pusă pe piaţă, o să adauge mişcare, ca să o poată
+> scoate şi să apară în gestiune şi în rapoarte."
+
+Kilogramele **trec oricum printr-o mişcare**: aşa ies din stoc şi aşa ajung în evidenţă. Ce lipsea
+nu era cifra, ci **felul ambalajului** — singura rubrică a tabelului 1 pe care mişcarea n-o purta.
+Deci nu un registru paralel, ci trei rubrici în plus pe mişcare.
+
+### Ce s-a construit (`V26`)
+
+| # | Ce | Unde |
+|---|---|---|
+| 1 | **Mişcarea poartă ambalajul**: materialul, felul (desfacere / primar / secundar-transport), bifa „reutilizabil", bifa „conţinut periculos" | `V26`, `PackagingCategory`, blocul din formularul de mişcare — se arată **doar** pe coduri `15 01 xx` |
+| 2 | **Tabelul 1 se însumează din mişcări**: materialul dă rândul, felul dă coloana | `PackagingDeclarationBuilder.marketRows` |
+| 3 | **Tabul e registrul**: mişcările de ambalaje ale anului, cu ce le lipseşte scris pe fiecare rând, plus o bandă de semnale deasupra | `PackagingPage`, `GET /api/v1/packaging/movements` |
+| 4 | **Descărcarea e `.xls`, cu două foi** — `Tabelul nr. 1` şi `Tabelul nr. 2`, la aceleaşi adrese de celulă ca modelul | `PackagingDeclarationXlsxGenerator` |
+| 5 | Grila rămâne, pliată, ca **suprascriere pe material** | `PUT /api/v1/packaging/market` |
+
+**Fiecare kilogram se numără o dată.** O firmă care înregistrează şi generarea, şi predarea aceleiaşi
+încărcături are două mişcări pentru o singură cantitate. Per cod de deşeu şi an: dacă există
+generări înregistrate, ele contează; dacă nu există, ieşirile ţin locul lor. E **exact** substituţia
+pe care motorul de evidenţă o face pentru generarea dedusă (`V24`), şi din acelaşi motiv — ieşirea e
+dovada că deşeul a existat. Are test (`oneLoadRecordedTwiceIsDeclaredOnce`).
+
+### „Altele" nu mai e găleată
+
+Indicaţia Andreei, relatată de utilizator: rândurile de material sunt **PET + Alte plastice = Total
+plastic**, **Aluminiu + Oţel = Total metal**, iar Sticla, Hârtia carton şi Lemnul stau singure —
+*„Altele nu cred că trebuie să fie, a zis Andreea"*.
+
+Sumele erau deja aşa. Ce s-a schimbat e **fallback-ul**: până acum, orice cod `15 01` pe care Lista
+Europeană nu-l aşeza cădea în „Altele", iar formularul tipărea sub tabel ce coduri au ajuns acolo.
+De-acum, cantitatea aia **nu intră în tabel** şi se raportează ca neîncadrată — în ecran, ca semnal
+portocaliu pe rândul mişcării, şi pe hârtie, ca linie sub tabelul 1. Rândul „Altele" rămâne pe
+formular, fiindcă actul îl are, dar se foloseşte numai dacă îl alege cineva deliberat.
+
+**Asta închide întrebarea Z.** `15 01 04` („ambalaje metalice" — şi aluminiu, şi oţel) şi `15 01 02`
+(„ambalaje de materiale plastice" — şi PET, şi navete) se rezolvă acolo unde se ştie răspunsul: la
+înregistrarea mişcării. Codul **propune** materialul unde îl decide singur (`15 01 01` → Hârtie
+carton, `15 01 02` → Alte plastice, `15 01 03` → Lemn, `15 01 07` → Sticlă) şi tace unde nu.
+
+### Ce a adus textul ordinului
+
+Utilizatorul a trimis [envirocons.ro/ordinul-794-din-2012-varianta-actualizata](https://envirocons.ro/ordinul-794-din-2012-varianta-actualizata/).
+Trei lucruri noi, verbatim în `surse-oficiale.md` §5.1:
+
+1. **Art. 6: „Datele de raportare se transmit în format electronic «.xls»".** Formatul e **cerut de
+   act**, nu ales de noi — ceea ce ridică exportul XLSX de la comoditate la cerinţă, şi confirmă
+   exact ce ceruse utilizatorul. PDF-ul rămâne pentru dosarul de control.
+2. **Întrebarea Y se lămureşte pe jumătate: sunt două depuneri, nu una.** Anexa 1 Ambalaje merge la
+   **agenţia judeţeană/regională de mediu** pe **25 februarie** (art. 1 + art. 6); notificarea
+   „îmi îndeplinesc individual obiectivele" merge la **AFM** pe **25 ianuarie** (art. 3). Deci şi
+   specialista, şi actul spun adevărul — despre documente diferite. Cadenţa AFM din `V21` e a
+   notificării de la art. 3, nu a declaraţiei.
+3. **Art. 8 alin. (1): „se raportează în kilograme"** — a treia confirmare, prima dintr-un articol
+   şi nu dintr-un antet de tabel.
+
+### Verificat pe hârtie, nu doar în teste
+
+Randat şi privit, ca la fiecare formular oficial. XLSX-ul cade **celulă cu celulă** peste model:
+titlul în `B2`, antetul în `B4:B10`, `[kilograme]` în `I15`, banda numerotată `B19:I19`, materialele
+`B20:B30`, notele `B32:B35`; foaia a doua cu `B5/C5/F5`, `C6/D6`, `D7/E7` şi blocul de semnătură.
+PDF-ul tipăreşte aceleaşi cifre pe o pagină. Ce s-a prins uitându-mă: scria „**1 mişcări**" pe linia
+de avertizare — niciun test nu s-ar fi supărat.
+
+**Migrare:** `V26`. **Ce nu s-a atins:** `packaging_market_entries` rămâne pe loc, cu comentariul
+schimbat; rândurile scrise până acum devin suprascrieri, deci nicio cifră existentă nu dispare.
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

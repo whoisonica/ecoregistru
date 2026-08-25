@@ -4,29 +4,47 @@ import org.springframework.stereotype.Component;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.PackagingMarketEntry;
 import ro.ecoregistru.entity.Partner;
+import ro.ecoregistru.entity.PartnerWorkPoint;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.enums.PackagingCategory;
 import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.Unit;
+import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 /**
- * Assembles Anexa 1 Ambalaje (Ordinul 794/2012) from the two halves it has: the market figures the
- * client answered, and the handovers already recorded.
+ * Assembles Anexa 1 Ambalaje (Ordinul 794/2012) out of the movements.
  *
- * <p>Tabelul 2 is derived, and it is derived narrowly on purpose. Only <b>15 01 xx</b> counts: a
- * shop's cardboard recorded under 20 01 01 is waste like any other and belongs on the
+ * <p>Both tables are derived, and both derive narrowly on purpose. Only <b>15 01 xx</b> counts: a
+ * shop cardboard recorded under 20 01 01 is waste like any other and belongs on the
  * waste-management record, not in a packaging declaration. That is the distinction the specialist
  * drew on 24.08.2026 — "cartonul din magazine este 15 01 01" — and the code chosen when the
  * movement was recorded is what decides, because nothing here proposes codes.
+ *
+ * <p><b>Tabelul 1 — ambalaje introduse pe piaţa naţională.</b> The kilograms the company put on the
+ * market are the kilograms that come back as packaging waste, and the client records those anyway:
+ * "omul, când reciclează acea cantitate de ambalaj pusă pe piaţă, o să adauge mişcare, ca să o
+ * poată scoate şi să apară în gestiune şi în rapoarte" (user, 25.08.2026). So the table sums the
+ * movements, split by the material and the kind of packaging the movement now carries.
+ *
+ * <p><b>Each kilogram is counted once.</b> A company that records both the generation and the
+ * handover of the same load has two movements for one quantity. Per waste code and year, the
+ * generations win when there are any, and the exits stand in when there are none — the same
+ * substitution the evidence engine makes for implied generation ({@code V24}), and for the same
+ * reason: the exit is the proof the waste existed.
+ *
+ * <p><b>Tabelul 2 — deşeuri de ambalaje gestionate.</b> Only handovers count: a quantity with no
+ * operator named was treated on our own site and was never "încredinţat unui operator economic
+ * autorizat".
  */
 @Component
 public class PackagingDeclarationBuilder {
@@ -37,26 +55,16 @@ public class PackagingDeclarationBuilder {
                                       int year,
                                       List<PackagingMarketEntry> entries,
                                       List<WasteMovement> movements) {
-        Map<PackagingMaterial, PackagingMarketEntry> byMaterial = new LinkedHashMap<>();
-        for (PackagingMarketEntry entry : entries) {
-            byMaterial.put(entry.getMaterial(), entry);
-        }
 
-        List<PackagingDeclaration.MarketRow> marketRows = new ArrayList<>();
-        for (PackagingMaterial material : PackagingMaterial.values()) {
-            PackagingMarketEntry e = byMaterial.get(material);
-            marketRows.add(new PackagingDeclaration.MarketRow(
-                    material,
-                    e == null ? null : e.getSalesPackaging(),
-                    e == null ? null : e.getPrimaryTotal(),
-                    e == null ? null : e.getPrimaryReusable(),
-                    e == null ? null : e.getSecondaryTotal(),
-                    e == null ? null : e.getSecondaryReusable(),
-                    e == null ? null : e.getHazardousContent()));
-        }
+        List<WasteMovement> packaging = movements.stream()
+                .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
+                .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
+                .sorted(Comparator.comparing(WasteMovement::getDate))
+                .toList();
 
-        Set<String> ambiguous = new LinkedHashSet<>();
-        List<PackagingDeclaration.HandoverRow> handovers = handovers(movements, ambiguous);
+        List<PackagingDeclaration.UnclassifiedRow> unclassified = new ArrayList<>();
+        List<PackagingDeclaration.MarketRow> marketRows =
+                marketRows(packaging, entries, unclassified);
 
         return new PackagingDeclaration(
                 company.getName(),
@@ -70,41 +78,167 @@ public class PackagingDeclarationBuilder {
                 company.getCui(),
                 year,
                 marketRows,
-                handovers,
-                List.copyOf(ambiguous),
+                handovers(packaging),
+                unclassified,
                 company.getContactName(),
                 company.getContactRole());
     }
 
+    // ---------------------------------------------------------------- tabelul 1
+
     /**
-     * Tabelul 2: one line per (material, operator), which the annex asks for in writing — nota 1,
-     * "câte o rubrică distinctă pentru fiecare dintre operatorii care au preluat deşeurile de
-     * ambalaje din materialul respectiv".
-     *
-     * <p>Only handovers count: a quantity with no operator named was treated on our own site and
-     * was never "încredinţat unui operator economic autorizat". Quantities still waiting for the
-     * recipient's weighbridge contribute nothing to the figure but keep their line, so the operator
-     * is on the form and the missing weight is visible.
+     * One row per material, in the order the form prints them, summed from the movements that put
+     * the packaging on the record — and replaced wholesale where the client stored their own
+     * figures for that material.
      */
-    private List<PackagingDeclaration.HandoverRow> handovers(List<WasteMovement> movements,
-                                                             Set<String> ambiguous) {
+    private List<PackagingDeclaration.MarketRow> marketRows(
+            List<WasteMovement> packaging,
+            List<PackagingMarketEntry> entries,
+            List<PackagingDeclaration.UnclassifiedRow> unclassified) {
+
+        Map<PackagingMaterial, PackagingMarketEntry> overrides =
+                new EnumMap<>(PackagingMaterial.class);
+        for (PackagingMarketEntry entry : entries) {
+            overrides.put(entry.getMaterial(), entry);
+        }
+
+        Map<PackagingMaterial, Sums> computed = new EnumMap<>(PackagingMaterial.class);
+        for (WasteMovement m : countOnce(packaging)) {
+            PackagingMaterial material =
+                    PackagingMaterial.resolve(m.getPackagingMaterial(), m.getWasteCode().getCode())
+                            .orElse(null);
+            PackagingCategory category = m.getPackagingCategory();
+
+            if (material == null || category == null) {
+                unclassified.add(new PackagingDeclaration.UnclassifiedRow(
+                        m.getId(), m.getDate(), m.getWasteCode().getCode(),
+                        m.getQuantity() == null ? null : kg(m), material, category,
+                        material == null, category == null));
+                continue;
+            }
+            if (m.getQuantity() == null) {
+                // De cântărit: linia îşi păstrează locul în ecran prin lista de mişcări, dar nu
+                // aduce nicio cifră aici. Un zero ar spune "n-a fost nimic", ceea ce e altceva.
+                continue;
+            }
+            computed.computeIfAbsent(material, k -> new Sums()).add(category, m, kg(m));
+        }
+
+        List<PackagingDeclaration.MarketRow> rows = new ArrayList<>();
+        for (PackagingMaterial material : PackagingMaterial.values()) {
+            PackagingMarketEntry override = overrides.get(material);
+            if (override != null) {
+                rows.add(new PackagingDeclaration.MarketRow(
+                        material, override.getSalesPackaging(), override.getPrimaryTotal(),
+                        override.getPrimaryReusable(), override.getSecondaryTotal(),
+                        override.getSecondaryReusable(), override.getHazardousContent(), true));
+                continue;
+            }
+            Sums s = computed.get(material);
+            rows.add(s == null
+                    ? new PackagingDeclaration.MarketRow(
+                            material, null, null, null, null, null, null, false)
+                    : s.toRow(material));
+        }
+        return rows;
+    }
+
+    /**
+     * The movements whose kilograms tabelul 1 may count, one physical quantity at a time.
+     *
+     * <p>Grouped by waste code: where the year holds recorded generations for a code, only those
+     * count; where it holds none, the exits stand in for them. A company that records both would
+     * otherwise declare the same load twice, and a company that records only the handover — the
+     * usual case, and the one that forced implied generation in {@code V24} — would declare nothing
+     * at all.
+     */
+    private List<WasteMovement> countOnce(List<WasteMovement> packaging) {
+        Map<String, List<WasteMovement>> byCode = new LinkedHashMap<>();
+        for (WasteMovement m : packaging) {
+            byCode.computeIfAbsent(m.getWasteCode().getCode(), k -> new ArrayList<>()).add(m);
+        }
+
+        List<WasteMovement> basis = new ArrayList<>();
+        for (List<WasteMovement> group : byCode.values()) {
+            List<WasteMovement> generated = group.stream()
+                    .filter(m -> m.getOperation() == WasteOperation.GENERATED)
+                    .toList();
+            basis.addAll(generated.isEmpty()
+                    ? group.stream()
+                            .filter(m -> m.getOperation() != WasteOperation.COLLECTED)
+                            .toList()
+                    : generated);
+        }
+        return basis;
+    }
+
+    /** The six figures of one material row, accumulated as the movements come in. */
+    private static final class Sums {
+        BigDecimal sales;
+        BigDecimal primaryTotal;
+        BigDecimal primaryReusable;
+        BigDecimal secondaryTotal;
+        BigDecimal secondaryReusable;
+        BigDecimal hazardous;
+
+        void add(PackagingCategory category, WasteMovement m, BigDecimal kg) {
+            switch (category) {
+                case SALES -> sales = plus(sales, kg);
+                case PRIMARY -> {
+                    primaryTotal = plus(primaryTotal, kg);
+                    if (Boolean.TRUE.equals(m.getPackagingReusable())) {
+                        primaryReusable = plus(primaryReusable, kg);
+                    }
+                }
+                case SECONDARY -> {
+                    secondaryTotal = plus(secondaryTotal, kg);
+                    if (Boolean.TRUE.equals(m.getPackagingReusable())) {
+                        secondaryReusable = plus(secondaryReusable, kg);
+                    }
+                }
+            }
+            // Nota 3: ambalajele cu conţinut periculos "sunt tot ambalaje primare şi se regăsesc şi
+            // în coloana 3". Deci cantitatea se numără în amândouă, nu se mută din una în alta.
+            if (Boolean.TRUE.equals(m.getPackagingHazardousContent())) {
+                hazardous = plus(hazardous, kg);
+            }
+        }
+
+        PackagingDeclaration.MarketRow toRow(PackagingMaterial material) {
+            return new PackagingDeclaration.MarketRow(material, sales, primaryTotal,
+                    primaryReusable, secondaryTotal, secondaryReusable, hazardous, false);
+        }
+
+        private static BigDecimal plus(BigDecimal acc, BigDecimal kg) {
+            return acc == null ? kg : acc.add(kg);
+        }
+    }
+
+    // ---------------------------------------------------------------- tabelul 2
+
+    /**
+     * Tabelul 2: one line per (material, operator, operation), which the annex asks for in writing
+     * — nota 1, "câte o rubrică distinctă pentru fiecare dintre operatorii care au preluat
+     * deşeurile de ambalaje din materialul respectiv".
+     *
+     * <p>Quantities still waiting for the recipient weighbridge contribute nothing to the figure
+     * but keep their line, so the operator is on the form and the missing weight is visible.
+     * A movement whose material nobody settled has no row to sit on and is reported as unclassified
+     * by tabelul 1 instead — the same gap, named once.
+     */
+    private List<PackagingDeclaration.HandoverRow> handovers(List<WasteMovement> packaging) {
         Map<String, PackagingDeclaration.HandoverRow> rows = new LinkedHashMap<>();
         Map<String, BigDecimal> quantities = new LinkedHashMap<>();
 
-        for (WasteMovement m : movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
-                .filter(m -> m.getOperation().isExit())
-                .filter(m -> m.getPartner() != null)
-                .sorted(Comparator.comparing(WasteMovement::getDate))
-                .toList()) {
-
-            String code = m.getWasteCode().getCode();
-            PackagingMaterial material = PackagingMaterial.forWasteCode(code).orElse(null);
-            if (material == null) {
+        for (WasteMovement m : packaging) {
+            if (!m.getOperation().isExit() || m.getPartner() == null) {
                 continue;
             }
-            if (PackagingMaterial.isAmbiguous(code)) {
-                ambiguous.add(code);
+            PackagingMaterial material =
+                    PackagingMaterial.resolve(m.getPackagingMaterial(), m.getWasteCode().getCode())
+                            .orElse(null);
+            if (material == null) {
+                continue;
             }
             Partner operator = m.getPartner();
             String operation = m.getOperationCode() == null ? "" : m.getOperationCode().name();
@@ -139,7 +273,7 @@ public class PackagingDeclarationBuilder {
         if (m.getPartnerWorkPoint() != null) {
             return m.getPartnerWorkPoint().label();
         }
-        List<ro.ecoregistru.entity.PartnerWorkPoint> points = operator.getWorkPoints();
+        List<PartnerWorkPoint> points = operator.getWorkPoints();
         if (points != null && points.size() == 1) {
             return points.get(0).label();
         }
@@ -160,7 +294,13 @@ public class PackagingDeclarationBuilder {
         return sb.toString();
     }
 
+    /** The act prints [kilograme] at the head of every table, so everything converts to kg. */
     private BigDecimal kg(WasteMovement m) {
         return m.getUnit() == Unit.TONS ? m.getQuantity().multiply(KG_PER_TON) : m.getQuantity();
+    }
+
+    /** The material row a movement lands on: what the client chose, or what the code proposes. */
+    public static Optional<PackagingMaterial> materialOf(WasteMovement m) {
+        return PackagingMaterial.resolve(m.getPackagingMaterial(), m.getWasteCode().getCode());
     }
 }

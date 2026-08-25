@@ -17,6 +17,8 @@ import {
 } from "@/hooks/useMovements";
 import type {
   CompanyType,
+  PackagingCategory,
+  PackagingMaterial,
   PartnerType,
   TransportDestination,
   TransportMeans,
@@ -50,6 +52,32 @@ import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 
 const t = strings.movements;
 const e = strings.enums;
+
+/** Rândurile de material ale Anexei 1 Ambalaje, în ordinea formularului. */
+const PACKAGING_MATERIALS: PackagingMaterial[] = [
+  "STICLA",
+  "PET",
+  "ALTE_PLASTICE",
+  "HARTIE_CARTON",
+  "ALUMINIU",
+  "OTEL",
+  "LEMN",
+  "ALTELE",
+];
+
+/**
+ * Ce material propune codul de deşeu, acolo unde îl decide singur. `15 01 04` nu apare aici
+ * dinadins: „ambalaje metalice" acoperă şi aluminiul, şi oţelul, iar formularul are rând pentru
+ * fiecare — deci întreabă, nu ghiceşte. `15 01 02` propune „Alte plastice", fiindcă PET-ul e
+ * afirmaţia mai îngustă şi e a clientului.
+ */
+function suggestedPackagingMaterial(codeLabel: string): PackagingMaterial | null {
+  if (codeLabel.startsWith("15 01 01")) return "HARTIE_CARTON";
+  if (codeLabel.startsWith("15 01 02")) return "ALTE_PLASTICE";
+  if (codeLabel.startsWith("15 01 03")) return "LEMN";
+  if (codeLabel.startsWith("15 01 07")) return "STICLA";
+  return null;
+}
 
 /**
  * Which operations the account may record, by company type — the same rule the backend enforces
@@ -496,6 +524,20 @@ function MovementFormDialog({
       : null
   );
   const [codeQuery, setCodeQuery] = useState("");
+  // Ambalaje: cele trei rubrici pe care le cere tabelul 1 al Anexei 1 Ambalaje şi pe care numai
+  // mişcarea le poate purta. Se arată doar pe coduri 15 01 xx — vezi isPackagingCode.
+  const [packagingMaterial, setPackagingMaterial] = useState<PackagingMaterial | "">(
+    editing?.packagingMaterial ?? ""
+  );
+  const [packagingCategory, setPackagingCategory] = useState<PackagingCategory | "">(
+    editing?.packagingCategory ?? ""
+  );
+  const [packagingReusable, setPackagingReusable] = useState(
+    editing?.packagingReusable ?? false
+  );
+  const [packagingHazardousContent, setPackagingHazardousContent] = useState(
+    editing?.packagingHazardousContent ?? false
+  );
   const [quantity, setQuantity] = useState(
     editing?.quantity != null ? String(editing.quantity) : ""
   );
@@ -592,6 +634,14 @@ function MovementFormDialog({
   // remain saveable without silently losing its operation.
   // Same rule as the list button: the form covers a non-hazardous handover. The combobox marks a
   // hazardous code with its sublabel, so that is where the answer comes from.
+  /**
+   * Codul de ambalaje deschide blocul de mai jos. Materialul se propune din cod acolo unde codul îl
+   * decide singur (15 01 01 hârtie, 15 01 02 alte plastice, 15 01 03 lemn, 15 01 07 sticlă); la
+   * 15 01 04 nu se propune nimic, fiindcă acoperă şi aluminiul, şi oţelul.
+   */
+  const isPackagingCode = (wasteCode?.label ?? "").startsWith("15 01");
+  const suggestedMaterial = suggestedPackagingMaterial(wasteCode?.label ?? "");
+
   const showAnexa3Section =
     (operation === "RECOVERED" || operation === "DISPOSED") &&
     Boolean(partnerId) &&
@@ -658,6 +708,12 @@ function MovementFormDialog({
       driverIdentification: driverIdentification.trim() || null,
       vehicleRegistration: vehicleRegistration.trim() || null,
       transportDestinations,
+      // Backendul le ignoră pe orice alt cod, dar nu i le trimitem degeaba.
+      packagingMaterial: isPackagingCode ? packagingMaterial || null : null,
+      packagingCategory: isPackagingCode ? packagingCategory || null : null,
+      packagingReusable: isPackagingCode ? packagingReusable : null,
+      packagingHazardousContent:
+        isPackagingCode && packagingCategory === "PRIMARY" ? packagingHazardousContent : null,
     };
   }
 
@@ -1010,6 +1066,79 @@ function MovementFormDialog({
               ))}
             </Select>
             <p className="mt-1 text-xs text-gray-500">{t.partnerWorkPointHint}</p>
+          </div>
+        )}
+
+        {isPackagingCode && (
+          <div className="space-y-3 rounded-md border border-emerald-200 bg-emerald-50/50 p-3">
+            <div>
+              <span className="text-sm font-semibold text-gray-800">{t.packagingSection}</span>
+              <p className="text-xs text-gray-500">{t.packagingSectionHint}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="mv-pk-material">{t.packagingMaterial}</Label>
+                <Select
+                  id="mv-pk-material"
+                  value={packagingMaterial}
+                  onChange={(ev) =>
+                    setPackagingMaterial(ev.target.value as PackagingMaterial | "")
+                  }
+                >
+                  <option value="">
+                    {suggestedMaterial
+                      ? `${e.packagingMaterial[suggestedMaterial]} ${t.packagingFromCode}`
+                      : t.packagingMaterialPlaceholder}
+                  </option>
+                  {PACKAGING_MATERIALS.map((m) => (
+                    <option key={m} value={m}>
+                      {e.packagingMaterial[m]}
+                    </option>
+                  ))}
+                </Select>
+                {!suggestedMaterial && !packagingMaterial && (
+                  <p className="mt-1 text-xs text-amber-700">{t.packagingMaterialNeeded}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="mv-pk-category">{t.packagingCategory}</Label>
+                <Select
+                  id="mv-pk-category"
+                  value={packagingCategory}
+                  onChange={(ev) => setPackagingCategory(ev.target.value as PackagingCategory | "")}
+                >
+                  <option value="">{t.packagingCategoryPlaceholder}</option>
+                  <option value="SALES">{e.packagingCategory.SALES}</option>
+                  <option value="PRIMARY">{e.packagingCategory.PRIMARY}</option>
+                  <option value="SECONDARY">{e.packagingCategory.SECONDARY}</option>
+                </Select>
+                <p className="mt-1 text-xs text-gray-500">{t.packagingCategoryHint}</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={packagingReusable}
+                  onChange={(ev) => setPackagingReusable(ev.target.checked)}
+                />
+                {t.packagingReusable}
+              </label>
+              {/* Nota 3: ambalajele cu conţinut periculos sunt tot ambalaje primare. Bifa apare
+                  numai acolo, ca să nu se poată răspunde ceva ce formularul n-ar putea tipări. */}
+              {packagingCategory === "PRIMARY" && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={packagingHazardousContent}
+                    onChange={(ev) => setPackagingHazardousContent(ev.target.checked)}
+                  />
+                  {t.packagingHazardous}
+                </label>
+              )}
+            </div>
           </div>
         )}
 

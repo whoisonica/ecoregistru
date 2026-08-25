@@ -289,6 +289,13 @@ export type PackagingMaterial =
   | "LEMN"
   | "ALTELE";
 
+/**
+ * Felul ambalajului — cele trei grupe de coloane ale tabelului 1 (Ordinul 794/2012, anexa 1):
+ * col. 1 „ambalaje de desfacere fabricate/importate", col. 3 „ambalaje primare", col. 5 „ambalaje
+ * secundare şi de transport". Col. 2 e suma 3+5, deci n-are membru.
+ */
+export type PackagingCategory = "SALES" | "PRIMARY" | "SECONDARY";
+
 /** Un rând din tabelul 1: ce a pus firma pe piață. null = rubrica n-a primit răspuns. */
 export interface PackagingMarketRow {
   material: PackagingMaterial;
@@ -310,6 +317,34 @@ export interface PackagingMarketInput {
   secondaryTotal: number | null;
   secondaryReusable: number | null;
   hazardousContent: number | null;
+}
+
+/**
+ * Un rând din tabelul 1 aşa cum îl tipăreşte documentul: însumat din mişcări, sau — dacă firma a
+ * scris o cifră proprie pentru materialul ăla — cifra ei. `packagedGoodsTotal` e col. 2, suma 3+5.
+ */
+export interface PackagingTable1Row {
+  material: PackagingMaterial;
+  salesPackaging: number | null;
+  primaryTotal: number | null;
+  primaryReusable: number | null;
+  secondaryTotal: number | null;
+  secondaryReusable: number | null;
+  hazardousContent: number | null;
+  /** True când rândul vine din cifra scrisă de firmă, nu din mişcări. */
+  overridden: boolean;
+}
+
+/** O mişcare de ambalaje pe care tabelele n-au putut-o folosi, şi ce îi lipseşte. */
+export interface PackagingUnclassifiedRow {
+  movementId: string;
+  date: string; // yyyy-MM-dd
+  wasteCode: string;
+  quantity: number | null;
+  material: PackagingMaterial | null;
+  category: PackagingCategory | null;
+  missingMaterial: boolean;
+  missingCategory: boolean;
 }
 
 /** Un rând din tabelul 2, calculat din predările pe coduri 15 01 xx. */
@@ -449,6 +484,16 @@ export interface WasteMovement {
   anexa3Number: number | null;
   /** Null = the company's standing choice, and failing that the unit the quantity was recorded in. */
   anexa3Unit: Unit | null;
+  // --- Anexa 1 Ambalaje ---
+  /** Ce a ales clientul; null înseamnă „cum propune codul". */
+  packagingMaterial: PackagingMaterial | null;
+  /** Ce foloseşte tabelul: alegerea, sau propunerea codului, sau null dacă nu ştie nimeni. */
+  effectivePackagingMaterial: PackagingMaterial | null;
+  packagingCategory: PackagingCategory | null;
+  packagingReusable: boolean | null;
+  packagingHazardousContent: boolean | null;
+  /** True când codul e 15 01 xx, deci ecranul ştie să întrebe cele de mai sus. */
+  packagingCode: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -488,6 +533,11 @@ export interface WasteMovementInput {
   transportDestinations?: TransportDestination[];
   /** The unit this one form prints in; null keeps the company setting. */
   anexa3Unit?: Unit | null;
+  // --- Anexa 1 Ambalaje: se cer doar pe coduri 15 01 xx ---
+  packagingMaterial?: PackagingMaterial | null;
+  packagingCategory?: PackagingCategory | null;
+  packagingReusable?: boolean | null;
+  packagingHazardousContent?: boolean | null;
 }
 
 /** Filters for the movements list query; empty fields are omitted from the request. */

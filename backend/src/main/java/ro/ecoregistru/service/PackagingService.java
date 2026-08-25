@@ -7,18 +7,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.PackagingMarketRequest;
 import ro.ecoregistru.controller.response.PackagingMarketResponse;
+import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.PackagingMarketEntry;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.exception.NotFoundException;
+import ro.ecoregistru.mapper.WasteMovementMapper;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PackagingMarketEntryRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.PackagingDeclaration;
 import ro.ecoregistru.service.export.PackagingDeclarationBuilder;
 import ro.ecoregistru.service.export.PackagingDeclarationGenerator;
+import ro.ecoregistru.service.export.PackagingDeclarationXlsxGenerator;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -30,13 +34,18 @@ import java.util.UUID;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 
 /**
- * The packaging module: Anexa 1 Ambalaje (Ordinul 794/2012) and the figures behind it.
+ * The packaging module: Anexa 1 Ambalaje (Ordinul 794/2012) and everything the tab centralises.
  *
- * <p>Two halves with different owners. <b>Tabelul 2</b> — the packaging waste handed over — is
- * computed from the movements, so nobody types it twice. <b>Tabelul 1</b> — what the company put
- * on the national market — cannot be computed from anything the application holds: it is about
- * goods sold, not waste recorded. So it is stored, one row per material and year, and what nobody
- * answered prints as an empty cell.
+ * <p><b>One source, the movements.</b> Both tables of the declaration are computed from the
+ * movements recorded on {@code 15 01 xx} codes — tabelul 2 from the handovers, tabelul 1 from the
+ * material and kind of packaging those movements now carry ({@code V26}). Nothing is typed twice,
+ * and the screen shows the same movements the document will use, so a figure that looks wrong can
+ * be traced to the line that produced it.
+ *
+ * <p><b>The stored market rows survive as an override.</b> Tabelul 1 is legally about goods put on
+ * the market, not about waste, so a company that knows its market figure differs from what the
+ * movements show may state it — and then the form prints what they stated, for that material only.
+ * Nothing writes those rows by itself.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,10 +55,32 @@ public class PackagingService {
     PackagingMarketEntryRepository entryRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
+    WasteMovementMapper movementMapper;
     PackagingDeclarationBuilder builder;
-    PackagingDeclarationGenerator generator;
+    PackagingDeclarationGenerator pdfGenerator;
+    PackagingDeclarationXlsxGenerator xlsxGenerator;
 
-    /** The market figures for a year, one row per material, in the order the form prints them. */
+    /**
+     * The packaging movements of a year — every movement on a {@code 15 01 xx} code, newest first,
+     * exactly as the tab lists them.
+     *
+     * <p>This is the register the declaration is built from, so the screen can show what is missing
+     * on each line: the material where the code does not settle it, the kind of packaging, the
+     * weight that has not come back from the recipient, the R/D code.
+     */
+    @Transactional(readOnly = true)
+    public List<WasteMovementResponse> movements(int year) {
+        return yearMovements(TenantContext.require(), year).stream()
+                .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
+                .sorted(Comparator.comparing(WasteMovement::getDate).reversed())
+                .map(movementMapper::toResponse)
+                .toList();
+    }
+
+    /**
+     * The stored overrides for a year, one row per material, empty where the client has not
+     * overridden anything. The computed figures live on the declaration, not here.
+     */
     @Transactional(readOnly = true)
     public List<PackagingMarketResponse> marketEntries(int year) {
         UUID tenantId = TenantContext.require();
@@ -73,9 +104,8 @@ public class PackagingService {
     }
 
     /**
-     * Saves one material row. An all-empty row is stored as all-empty rather than as zeroes: the
-     * difference between "nothing was put on the market" and "nobody has answered yet" is the
-     * client's to state, and the form prints it as they left it.
+     * Overrides one material row of tabelul 1, or drops the override when every figure comes back
+     * empty — an all-empty row means "go back to what the movements say", not "declare nothing".
      */
     @Transactional
     public PackagingMarketResponse saveMarketEntry(PackagingMarketRequest request) {
@@ -83,11 +113,21 @@ public class PackagingService {
         Company company = companyRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
 
-        PackagingMarketEntry entry = entryRepository
+        PackagingMarketEntry existing = entryRepository
                 .findByCompany_IdAndYearAndMaterial(tenantId, request.year(), request.material())
-                .orElseGet(() -> PackagingMarketEntry.builder()
-                        .company(company).year(request.year()).material(request.material())
-                        .build());
+                .orElse(null);
+
+        if (isEmpty(request)) {
+            if (existing != null) {
+                entryRepository.delete(existing);
+            }
+            return new PackagingMarketResponse(request.material(), request.year(),
+                    null, null, null, null, null, null);
+        }
+
+        PackagingMarketEntry entry = existing != null ? existing : PackagingMarketEntry.builder()
+                .company(company).year(request.year()).material(request.material())
+                .build();
 
         entry.setSalesPackaging(request.salesPackaging());
         entry.setPrimaryTotal(request.primaryTotal());
@@ -105,7 +145,13 @@ public class PackagingService {
                 entry.getHazardousContent());
     }
 
-    /** The whole declaration, assembled: the stored table 1 plus the computed table 2. */
+    private boolean isEmpty(PackagingMarketRequest r) {
+        return r.salesPackaging() == null && r.primaryTotal() == null && r.primaryReusable() == null
+                && r.secondaryTotal() == null && r.secondaryReusable() == null
+                && r.hazardousContent() == null;
+    }
+
+    /** The whole declaration, assembled from the year's movements plus any stored overrides. */
     @Transactional(readOnly = true)
     public PackagingDeclaration declaration(int year) {
         UUID tenantId = TenantContext.require();
@@ -113,25 +159,41 @@ public class PackagingService {
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         List<PackagingMarketEntry> entries = entryRepository
                 .findAllByCompany_IdAndYear(tenantId, year);
-        List<WasteMovement> movements = movementRepository
-                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
-                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
-        return builder.build(company, year, entries, movements);
+        return builder.build(company, year, entries, yearMovements(tenantId, year));
     }
 
+    /** Renders the declaration. XLSX is the form the authority receives; PDF is for the file. */
     @Transactional(readOnly = true)
-    public byte[] render(int year) {
-        return generator.render(declaration(year));
+    public byte[] render(int year, ExportFormat format) {
+        PackagingDeclaration declaration = declaration(year);
+        return format == ExportFormat.XLSX
+                ? xlsxGenerator.render(declaration)
+                : pdfGenerator.render(declaration);
+    }
+
+    /** Tabelul 1 as the screen shows it before printing: computed, with the overrides applied. */
+    @Transactional(readOnly = true)
+    public List<PackagingDeclaration.MarketRow> marketRows(int year) {
+        return declaration(year).marketRows();
     }
 
     /**
-     * The packaging waste handed over in a year, as the screen shows it before printing — so the
-     * client can see what table 2 will say without downloading a PDF to find out.
+     * Tabelul 2 as the screen shows it before printing — so the client can see what the form will
+     * say without downloading it to find out.
      */
     @Transactional(readOnly = true)
     public List<PackagingDeclaration.HandoverRow> handovers(int year) {
-        return declaration(year).handoverRows().stream()
-                .sorted(Comparator.comparing(r -> r.material().ordinal()))
-                .toList();
+        return declaration(year).handoverRows();
+    }
+
+    /** The movements neither table could use, and what each of them is missing. */
+    @Transactional(readOnly = true)
+    public List<PackagingDeclaration.UnclassifiedRow> unclassified(int year) {
+        return declaration(year).unclassified();
+    }
+
+    private List<WasteMovement> yearMovements(UUID tenantId, int year) {
+        return movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
     }
 }

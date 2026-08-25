@@ -106,7 +106,7 @@ easiest way to break this codebase:
 | | What the app prints | What it does not |
 |---|---|---|
 | **HG 856/2002, anexa 1** | the waste-management record: four chapters × twelve months, one page per waste code | — |
-| **Ordinul 794/2012, anexa 1** | — | the packaging declaration: "producers and importers of sales packaging, **of packaged goods**, over-packagers", i.e. anyone putting packaged goods on the market. Tables by material, in kg. Belongs to the packaging module, which is not built |
+| **Ordinul 794/2012, anexa 1** | the packaging declaration — two tables by material, in kg, as the **`.xls`** art. 6 asks for by name. Both tables are summed from the movements recorded on `15 01 xx` codes | — |
 
 "Anexa 3" is likewise two documents: HG 1061/2008 (the handover form the app prints) and
 Ordinul 794/2012 anexa 3 (the annual packaging report of collectors and traders).
@@ -190,6 +190,8 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Account profile | **Clienți** → edit a company | R/D codes, the waste codes of the authorization, transport details for a collector |
 | Partner roles | **Parteneri** | Green = client, amber = supplier, grey = "rol nestabilit"; filter by role |
 | Internal generators | **Setări**, under work points | The "Secţia" of Anexa 1 cap. 2 — birouri, producţie |
+| Packaging register | **Ambalaje** | Every movement on a `15 01 xx` code, with what each line is missing. Record one with no material chosen on `15 01 04` and the row turns amber: the quantity stays out of the declaration until someone says aluminium or steel |
+| Packaging declaration | **Ambalaje** → "XLS — formatul de depunere" | Two sheets, `Tabelul nr. 1` and `Tabelul nr. 2`, at the same cell addresses as the model. Table 1 is summed from the movements; the material gives the row, the kind of packaging gives the column |
 | Narrowed operations | **Mișcări** → add | No "Predare" in the list; the R/D codes are the five in the profile, not all 28 |
 | Weighed at unloading | **Mișcări** → add, tick the box | "Cantitate" is replaced by "Volum (mc)" — the only measure you have without a scale — and the movement saves with no weight at all |
 | Chapter 2 | **Mișcări** → add | Storage type, treatment method, transport means and destination, under the waste code |
