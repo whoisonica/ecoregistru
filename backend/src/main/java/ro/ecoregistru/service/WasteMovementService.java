@@ -102,6 +102,7 @@ public class WasteMovementService {
                 // Ambalaje: cele trei rubrici ale tabelului 1 călătoresc pe mişcare, dar numai pe
                 // un cod 15 01 xx. Pe orice alt cod se ignoră, ca să nu rămână un răspuns agăţat
                 // de o mişcare pe care declaraţia n-o citeşte niciodată.
+                .packagingOnMarket(packagingOnly(wasteCode, request.packagingOnMarket()))
                 .packagingMaterial(packagingOnly(wasteCode, request.packagingMaterial()))
                 .packagingCategory(packagingOnly(wasteCode, request.packagingCategory()))
                 .packagingReusable(packagingOnly(wasteCode, request.packagingReusable()))
@@ -162,6 +163,7 @@ public class WasteMovementService {
         movement.setUnloadDate(request.unloadDate());
         movement.setPartnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner));
         movement.setAnexa3Unit(request.anexa3Unit());
+        movement.setPackagingOnMarket(packagingOnly(wasteCode, request.packagingOnMarket()));
         movement.setPackagingMaterial(packagingOnly(wasteCode, request.packagingMaterial()));
         movement.setPackagingCategory(packagingOnly(wasteCode, request.packagingCategory()));
         movement.setPackagingReusable(packagingOnly(wasteCode, request.packagingReusable()));

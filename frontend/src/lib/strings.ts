@@ -188,7 +188,12 @@ export const strings = {
     // --- Anexa 1 Ambalaje: se cer doar pe coduri 15 01 xx ---
     packagingSection: "Ambalaje — pentru Anexa 1",
     packagingSectionHint:
-      "Codul e de ambalaje, deci mișcarea intră în Anexa 1 Ambalaje. Cele două rubrici de mai jos îi dau rândul și coloana din tabelul 1; fără ele, cantitatea rămâne în afara declarației.",
+      "Codul e de ambalaje. Dar Anexa 1 Ambalaje raportează ambalajul pe care l-ai pus TU pe piața națională, nu orice deșeu de ambalaj — cutiile în care ți-a venit marfa le-a pus pe piață furnizorul tău. Deci se bifează, nu se deduce din cod.",
+    packagingOnMarket: "Ambalaj pus de noi pe piața națională",
+    packagingOnMarketHint:
+      "Bifează dacă firma ta a introdus ambalajul ăsta pe piață, odată cu marfa vândută. Nebifat, cantitatea rămâne în evidența gestiunii deșeurilor ca oricare alta — doar că nu intră în Anexa 1 Ambalaje.",
+    packagingLegacy:
+      "Mișcare înregistrată înainte de a exista întrebarea: intră în Anexa 1 Ambalaje ca până acum. Bifează sau debifează ca să confirmi.",
     packagingMaterial: "Materialul ambalajului",
     packagingMaterialPlaceholder: "Alege materialul",
     packagingFromCode: "(propus din cod)",
@@ -936,6 +941,14 @@ export const strings = {
     registerTitle: "Mișcări de ambalaje",
     registerHint:
       "Fiecare mișcare înregistrată pe un cod 15 01 xx. Astea sunt kilogramele din care se face declarația — cartonul înregistrat pe 20 01 01 nu intră aici, intră în evidența gestiunii deșeurilor.",
+    inAnexa1: "În Anexa 1",
+    inAnexa1Yes: "Da",
+    inAnexa1No: "Nu — nu l-am pus noi pe piață",
+    inAnexa1Legacy: "Din cod, neconfirmat",
+    inAnexa1LegacyHint:
+      "Mișcare de dinaintea bifei. Intră în declarație ca până acum; deschide-o și confirmă, ca să nu rămână o presupunere pe un formular depus.",
+    inAnexa1NoHint:
+      "Ambalajul l-a pus pe piață altcineva, deci nu intră în Anexa 1 Ambalaje. Rămâne în evidența gestiunii deșeurilor.",
     origin: "Proveniența",
     originOwnShort: "Deșeu propriu",
     originTakeoverShort: "Preluat de la terți",

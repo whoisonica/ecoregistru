@@ -69,6 +69,12 @@ public record WasteMovementRequest(
         // --- Anexa 1 Ambalaje (Ordinul 794/2012), tabelul 1 ---
 
         /**
+         * Whether this packaging was put on the national market by this company — the tick that
+         * decides whether the movement reaches Anexa 1 Ambalaje at all. Null keeps the pre-question
+         * behaviour for rows that predate it.
+         */
+        Boolean packagingOnMarket,
+        /**
          * Which material row of tabelul 1 this load counts in. Null lets the waste code propose
          * one, which it can do for 15 01 01, 02, 03 and 07 and not for the rest.
          */

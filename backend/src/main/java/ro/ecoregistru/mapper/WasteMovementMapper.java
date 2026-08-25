@@ -64,6 +64,9 @@ public class WasteMovementMapper {
                 m.getAnexa3Series(),
                 m.getAnexa3Number(),
                 m.getAnexa3Unit(),
+                m.getPackagingOnMarket(),
+                PackagingMaterial.isPackagingCode(m.getWasteCode().getCode())
+                        && !Boolean.FALSE.equals(m.getPackagingOnMarket()),
                 m.getPackagingMaterial(),
                 PackagingMaterial.resolve(m.getPackagingMaterial(), m.getWasteCode().getCode())
                         .orElse(null),

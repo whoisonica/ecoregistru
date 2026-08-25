@@ -1637,6 +1637,86 @@ Felia are migrare, ecran şi generator propriu; nu e o variantă a celei de azi.
    modificarea din greşeală, dar clientul o poate ridica dacă are de corectat ceva. Şi tot de acolo
    se vede că **PDF-ul nu e un moft**: e exemplarul pe hârtie pe care actul îl cere alături de fişier.
 
+## Ce intră în Anexa 1 Ambalaje se bifează, nu se deduce din cod (25.08.2026)
+
+**Reclamaţia, a treia oară pe acelaşi ecran** — şi de data asta cu diagnosticul corect în ea:
+
+> „Anexa 1 ambalaje este pentru producători şi importatori care pun ambalaje pe piaţă. Trebuie cumva
+> să bifezi un checkbox. [...] Dacă pun 15 01 01 cred că îmi blochează, pentru că se consideră
+> automat ambalaj după cod."
+
+### Întâi, ce **nu** era stricat — verificat în aplicaţia live, nu din citit
+
+Primele două explicaţii pe care le-am dat au fost citite din cod şi n-au convins, pe bună dreptate.
+Deci am deschis producţia în browser şi am reprodus fluxul, pas cu pas, pe `Ecodoc SRL`:
+
+1. „Adaugă mişcare" → cod `15 01 01` → blocul **Ambalaje** apare. Corect.
+2. Operaţiune = **Generare** → nu există Anexa 3, fiindcă nu există predare. Corect.
+3. Operaţiune = **Valorificare** → apare „Cod operaţiune (R/D)" **şi** linia nouă: *„Anexa 3 (dovada
+   predării) apare după ce alegi partenerul care preia deşeul — fără destinatar, formularul n-are ce
+   tipări."*
+4. Partener = **Hamburger Recycling** → **Anexa 3 apare**, sub blocul de ambalaje. Ambele
+   secţiuni, în acelaşi formular, în acelaşi timp.
+
+**Deci nimic nu se blochează şi nimic nu dispare.** Condiţia Anexei 3 e neatinsă din 24.08 (cere un
+partener, verificat în `git diff`); ce se schimbase e că blocul de ambalaje apare acum imediat ce
+codul e `15 01 xx` şi ocupă locul unde ochiul căuta Anexa 3. Explicaţia adăugată mai devreme e live
+şi se vede în captură.
+
+Verificat şi al doilea lucru din reclamaţie: **cantităţile intră deja în amândouă**. Aceeaşi mişcare
+pe `15 01 01`, registru Anexa 1, hrăneşte şi *Evidenţa gestiunii deşeurilor generate*
+(`EvidenceCalculator` filtrează `register == ANEXA_1`) şi *Anexa 1 Ambalaje*. Nu e nimic de reparat
+acolo.
+
+### Ce **era** stricat: codul decidea în locul omului
+
+Partea de fond a reclamaţiei era corectă, şi e o eroare de model, nu de ecran. Regula de includere
+era: *orice mişcare pe cod `15 01 xx`, din registrul Anexa 1, intră în declaraţie*. Prea larg.
+
+Declaraţia se cheamă „**Producători şi importatori** de ambalaje de desfacere, **de produse
+ambalate**, supraambalatori" şi raportează **ambalajul pe care firma l-a introdus pe piaţa
+naţională** — nu orice deşeu de ambalaj care trece prin curte. Un magazin care aruncă cutiile în
+care i-a venit marfa generează deşeu pe `15 01 01`, dar ambalajul acela l-a pus pe piaţă furnizorul
+lui. **Aceleaşi kilograme, două documente diferite**: fişa de evidenţă — mereu; Anexa 1 Ambalaje —
+numai dacă el le-a introdus.
+
+**Reparaţia (`V27`):** o bifă pe mişcare, „**Ambalaj pus de noi pe piaţa naţională**", în capul
+blocului de ambalaje. Nebifat, restul rubricilor (material, fel) se ascund — n-au sens dacă mişcarea
+nu ajunge în tabel — iar cantitatea rămâne în evidenţa gestiunii ca oricare alta.
+
+| Valoare | Ce înseamnă | Ce face |
+|---|---|---|
+| **bifat** | firma a introdus ambalajul pe piaţă | intră în ambele tabele ale Anexei 1 Ambalaje |
+| **nebifat** | l-a pus altcineva pe piaţă | rămâne **doar** în evidenţa gestiunii; în tab apare gri, „Nu — nu l-am pus noi pe piaţă" |
+| **null** | mişcare de dinaintea întrebării | se poartă **ca înainte** (intră), ca să nu se schimbe de la sine o cifră deja tipărită; în tab apare portocaliu, „Din cod, neconfirmat" |
+
+Implicitul pe o mişcare **nouă** e **nebifat**: întrebarea e „ai pus **tu** ambalajul pe piaţă?", iar
+un „da" presupus e chiar ce se reclama.
+
+**Unde a ajuns bifa şi unde nu.** Prima variantă a fost în **profilul firmei** — o întrebare la
+nivel de companie („îţi îndeplineşti individual obiectivele sau le-ai transferat unui OIREP?", art. 1
+alin. (1)). A fost **revertită la cererea utilizatorului**: *„eu cred că atunci când înregistrezi
+mişcarea să fie acel checkbox, nu în profil"*. Are dreptate practic — răspunsul diferă de la o
+mişcare la alta, iar o firmă poate pune pe piaţă un ambalaj şi arunca altul primit. Întrebarea de
+profil rămâne notată ca **AB**, nescrisă.
+
+**Teste:** `packagingSomebodyElsePutOnTheMarketStaysOutOfTheDeclaration` — 300 kg bifate şi 900 kg
+nebifate pe acelaşi cod dau **300** în tabelul 1, o singură linie în tabelul 2, iar rândul de 900
+apare în registrul tabului cu `countsForAnexa1Packaging: false`. **167 de teste verzi.**
+
+### 🟡 Întrebarea AC — deja trimisă Andreei
+
+Utilizatorul a trimis-o în timp ce se construia, deci regula de mai sus e **implementată dar
+neconfirmată**:
+
+> „Salut Andreea, am făcut tabul Ambalaje. Bazat pe ce regulă să se afişeze în tabul Ambalaje şi în
+> «Anexa 1 Ambalaje» mişcările care se includ în această anexă? Să fac un checkbox «Deşeuri de
+> ambalaj puse pe piaţa naţională (Anexa 1 Deşeuri)» pentru codurile de ambalaj?"
+
+Până la răspuns rămâne bifa. Dacă Andreea spune că regula e alta — de pildă că se ia după rolul
+firmei, nu după mişcare — se schimbă un singur filtru în `PackagingDeclarationBuilder`, plus
+implicitul bifei. Coloana rămâne oricum utilă.
+
 ### Commis şi pushat, tot (25.08.2026, ora 13:17)
 
 | Unde | Ce | Stare |

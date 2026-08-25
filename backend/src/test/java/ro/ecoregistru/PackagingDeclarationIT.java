@@ -309,6 +309,35 @@ class PackagingDeclarationIT {
         });
     }
 
+    /**
+     * The tick, not the code, decides what reaches the declaration.
+     *
+     * <p>A shop throwing out the boxes its stock arrived in records {@code 15 01 01} like anyone
+     * else — but its supplier put that packaging on the market, and this form reports what the
+     * declarant introduced. So the quantity stays in the waste record and out of Anexa 1.
+     */
+    @Test
+    void packagingSomebodyElsePutOnTheMarketStaysOutOfTheDeclaration() throws Exception {
+        handover("15 01 01", "300", collector.getId(), "R13", "SECONDARY", null);
+        notOnMarket("15 01 01", "900", collector.getId());
+
+        PackagingDeclaration d = declaration();
+
+        // Numai cele 300 kg bifate, nu 1200.
+        assertThat(row(d, PackagingMaterial.HARTIE_CARTON).secondaryTotal())
+                .isEqualByComparingTo("300");
+        assertThat(d.handoverRows()).singleElement()
+                .satisfies(r -> assertThat(r.quantity()).isEqualByComparingTo("300"));
+        assertThat(d.unclassified()).isEmpty();
+        // Dar rândul se vede în registrul tabului, marcat ca fiind în afara declaraţiei.
+        mockMvc.perform(get("/api/v1/packaging/movements?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()", is(2)))
+                .andExpect(jsonPath("$[?(@.quantity == 900)].countsForAnexa1Packaging",
+                        is(List.of(false))));
+    }
+
     /** The register the tab lists: every movement on a packaging code, and nothing else. */
     @Test
     void theTabListsThePackagingMovements() throws Exception {
@@ -449,7 +478,7 @@ class PackagingDeclarationIT {
                 {
                   "workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s, "operation": "GENERATED",
-                  "packagingCategory": "%s"
+                  "packagingOnMarket": true, "packagingCategory": "%s"
                 }
                 """.formatted(workPointId, YEAR, codeId, quantity, category));
     }
@@ -470,9 +499,23 @@ class PackagingDeclarationIT {
                 {
                   "workPointId": "%s", "date": "%d-05-12", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s,
-                  "operation": "RECOVERED", "operationCode": "%s", "partnerId": "%s"%s
+                  "operation": "RECOVERED", "operationCode": "%s", "partnerId": "%s",
+                  "packagingOnMarket": true%s
                 }
                 """.formatted(workPointId, YEAR, codeId, quantity, operationCode, partnerId, extra));
+    }
+
+    /** O mişcare de ambalaj pe care firma nu l-a pus ea pe piaţă. */
+    private void notOnMarket(String code, String quantity, UUID partnerId) throws Exception {
+        UUID codeId = wasteCodeRepository.findByCode(code).orElseThrow().getId();
+        createMovement("""
+                {
+                  "workPointId": "%s", "date": "%d-06-12", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": %s,
+                  "operation": "RECOVERED", "operationCode": "R3", "partnerId": "%s",
+                  "packagingOnMarket": false
+                }
+                """.formatted(workPointId, YEAR, codeId, quantity, partnerId));
     }
 
     private void createMovement(String body) throws Exception {

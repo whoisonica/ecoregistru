@@ -247,6 +247,24 @@ public class WasteMovement {
     // --- Anexa 1 Ambalaje (Ordinul 794/2012), tabelul 1 ---
 
     /**
+     * Whether this packaging was put on the national market <b>by this company</b>, and therefore
+     * belongs in Anexa 1 Ambalaje at all.
+     *
+     * <p>The waste code cannot answer this. A shop throwing out the boxes its stock arrived in
+     * generates waste on {@code 15 01 01} like anyone else, but that packaging was placed on the
+     * market by its supplier — the declaration is titled "Producători şi importatori [...] de
+     * produse ambalate" and reports what the declarant introduced. Same kilograms, two documents:
+     * the waste-management record always, this declaration only if the company put them there.
+     *
+     * <p>{@code null} means the movement predates the question and keeps the old behaviour —
+     * included — so no figure already printed changes by itself; the packaging tab shows those as
+     * unconfirmed. {@code false} is an answer, not a gap: the quantity stays in the waste record
+     * and out of the declaration.
+     */
+    @Column(name = "packaging_on_market")
+    Boolean packagingOnMarket;
+
+    /**
      * Which material row of tabelul 1 this load counts in. Null falls back to what the waste code
      * proposes ({@code PackagingMaterial.suggestedFor}); when the code proposes nothing either —
      * {@code 15 01 04} is both aluminium and steel — the quantity stays off the printed table and

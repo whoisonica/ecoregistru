@@ -142,7 +142,11 @@ export function PackagingPage() {
     const list = unclassified ?? [];
     // Semnalele privesc doar ce hrăneşte declaraţia. O mişcare pe marfă preluată nu intră în Anexa 1
     // oricât de completă ar fi, deci a o număra la „de cântărit" ar cere o reparaţie fără efect.
-    const all = (movements ?? []).filter((m) => m.register !== "ART_48");
+    // Semnalele privesc doar ce hrăneşte declaraţia: marfa preluată şi ambalajul pe care nu l-am
+    // pus noi pe piaţă n-au ce repara acolo, oricât de incomplete ar fi.
+    const all = (movements ?? []).filter(
+      (m) => m.register !== "ART_48" && m.countsForAnexa1Packaging
+    );
     return {
       missingMaterial: list.filter((r) => r.missingMaterial).length,
       missingCategory: list.filter((r) => !r.missingMaterial && r.missingCategory).length,
@@ -306,6 +310,7 @@ export function PackagingPage() {
                 <TH className="text-right">{t.quantity}</TH>
                 <TH>{t.partner}</TH>
                 <TH>{t.operation}</TH>
+                <TH>{t.inAnexa1}</TH>
                 <TH>{t.origin}</TH>
                 <TH>{t.workPoint}</TH>
               </TR>
@@ -313,12 +318,12 @@ export function PackagingPage() {
             <TBody>
               {loadingMovements && (
                 <TR>
-                  <TD colSpan={9}>{strings.common.loading}</TD>
+                  <TD colSpan={10}>{strings.common.loading}</TD>
                 </TR>
               )}
               {!loadingMovements && (movements ?? []).length === 0 && (
                 <TR>
-                  <TD colSpan={9} className="text-gray-500">
+                  <TD colSpan={10} className="text-gray-500">
                     {t.registerEmpty}
                   </TD>
                 </TR>
@@ -327,7 +332,7 @@ export function PackagingPage() {
                 <TR
                   key={m.id}
                   className={
-                    m.register === "ART_48"
+                    m.register === "ART_48" || m.packagingOnMarket === false
                       ? "text-gray-400"
                       : unclassifiedIds.has(m.id)
                         ? "bg-amber-50/60"
@@ -378,6 +383,21 @@ export function PackagingPage() {
                       ) : (
                         "—"
                       )
+                    )}
+                  </TD>
+                  {/* Bifa de pe mişcare decide dacă rândul hrăneşte declaraţia. Se arată aici,
+                      fiindcă tabul e locul unde omul verifică ce va fi depus. */}
+                  <TD className="whitespace-nowrap">
+                    {m.packagingOnMarket === false ? (
+                      <Badge variant="muted" title={t.inAnexa1NoHint}>
+                        {t.inAnexa1No}
+                      </Badge>
+                    ) : m.packagingOnMarket == null ? (
+                      <Badge variant="warning" title={t.inAnexa1LegacyHint}>
+                        {t.inAnexa1Legacy}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-gray-500">{t.inAnexa1Yes}</span>
                     )}
                   </TD>
                   {/* Mişcările pe marfă preluată apar în registru fiindcă sunt ambalaj, dar nu

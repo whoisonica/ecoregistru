@@ -485,6 +485,10 @@ export interface WasteMovement {
   /** Null = the company's standing choice, and failing that the unit the quantity was recorded in. */
   anexa3Unit: Unit | null;
   // --- Anexa 1 Ambalaje ---
+  /** Bifa „ambalaj pus de noi pe piaţa naţională". Null = mişcare de dinaintea întrebării. */
+  packagingOnMarket: boolean | null;
+  /** Ce fac tabelele cu ea: true când mişcarea chiar hrăneşte Anexa 1 Ambalaje. */
+  countsForAnexa1Packaging: boolean;
   /** Ce a ales clientul; null înseamnă „cum propune codul". */
   packagingMaterial: PackagingMaterial | null;
   /** Ce foloseşte tabelul: alegerea, sau propunerea codului, sau null dacă nu ştie nimeni. */
@@ -534,6 +538,7 @@ export interface WasteMovementInput {
   /** The unit this one form prints in; null keeps the company setting. */
   anexa3Unit?: Unit | null;
   // --- Anexa 1 Ambalaje: se cer doar pe coduri 15 01 xx ---
+  packagingOnMarket?: boolean | null;
   packagingMaterial?: PackagingMaterial | null;
   packagingCategory?: PackagingCategory | null;
   packagingReusable?: boolean | null;

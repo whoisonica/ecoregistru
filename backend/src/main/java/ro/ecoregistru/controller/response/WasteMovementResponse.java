@@ -77,6 +77,10 @@ public record WasteMovementResponse(
         Unit anexa3Unit,
 
         // --- Anexa 1 Ambalaje ---
+        /** Null on rows that predate the question; they behave as true. */
+        Boolean packagingOnMarket,
+        /** What the tables actually do with it: true when the movement feeds Anexa 1 Ambalaje. */
+        boolean countsForAnexa1Packaging,
         /** What the client chose; null means "as the code proposes". */
         PackagingMaterial packagingMaterial,
         /** What the table will actually use: the choice, or what the code proposes, or null. */

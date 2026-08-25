@@ -30,6 +30,10 @@ import java.util.Optional;
  * drew on 24.08.2026 — "cartonul din magazine este 15 01 01" — and the code chosen when the
  * movement was recorded is what decides, because nothing here proposes codes.
  *
+ * <p><b>What reaches this declaration is ticked, not deduced.</b> Only movements marked "ambalaj pus
+ * de noi pe piaţa naţională" count ({@code V27}). The code alone was too wide: a shop's own
+ * {@code 15 01 01} is waste it generated, but packaging its supplier placed on the market.
+ *
  * <p><b>Tabelul 1 — ambalaje introduse pe piaţa naţională.</b> The kilograms the company put on the
  * market are the kilograms that come back as packaging waste, and the client records those anyway:
  * "omul, când reciclează acea cantitate de ambalaj pusă pe piaţă, o să adauge mişcare, ca să o
@@ -59,6 +63,7 @@ public class PackagingDeclarationBuilder {
         List<WasteMovement> packaging = movements.stream()
                 .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
                 .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
+                .filter(PackagingDeclarationBuilder::putOnMarketByUs)
                 .sorted(Comparator.comparing(WasteMovement::getDate))
                 .toList();
 
@@ -297,6 +302,24 @@ public class PackagingDeclarationBuilder {
     /** The act prints [kilograme] at the head of every table, so everything converts to kg. */
     private BigDecimal kg(WasteMovement m) {
         return m.getUnit() == Unit.TONS ? m.getQuantity().multiply(KG_PER_TON) : m.getQuantity();
+    }
+
+    /**
+     * Whether the company put this packaging on the national market itself — the tick that decides
+     * whether the movement reaches this declaration at all.
+     *
+     * <p>The waste code is not enough, and that was the flaw: a shop throwing out the boxes its
+     * stock arrived in records {@code 15 01 01} like anyone else, but its supplier placed that
+     * packaging on the market. The declaration reports what <b>the declarant</b> introduced —
+     * "Producători şi importatori [...] de produse ambalate" — so the answer belongs to the person
+     * recording the movement, who is the only one who knows.
+     *
+     * <p>Null keeps the behaviour movements had before the question existed: included. Changing a
+     * figure already printed, silently, on a form filed with an authority, is the one thing this
+     * module never does; the tab marks those rows as unconfirmed instead.
+     */
+    private static boolean putOnMarketByUs(WasteMovement m) {
+        return !Boolean.FALSE.equals(m.getPackagingOnMarket());
     }
 
     /** The material row a movement lands on: what the client chose, or what the code proposes. */

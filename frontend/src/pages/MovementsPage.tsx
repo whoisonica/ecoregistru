@@ -526,6 +526,12 @@ function MovementFormDialog({
   const [codeQuery, setCodeQuery] = useState("");
   // Ambalaje: cele trei rubrici pe care le cere tabelul 1 al Anexei 1 Ambalaje şi pe care numai
   // mişcarea le poate purta. Se arată doar pe coduri 15 01 xx — vezi isPackagingCode.
+  // Pe o mişcare nouă bifa porneşte nebifată: întrebarea e „ai pus TU ambalajul pe piaţă?", iar
+  // răspunsul implicit „da" e exact ce reclama utilizatorul. Pe o mişcare veche păstrăm `null`
+  // până când cineva atinge bifa, ca să nu schimbăm tăcut o cifră deja tipărită.
+  const [packagingOnMarket, setPackagingOnMarket] = useState<boolean | null>(
+    editing ? (editing.packagingOnMarket ?? null) : false
+  );
   const [packagingMaterial, setPackagingMaterial] = useState<PackagingMaterial | "">(
     editing?.packagingMaterial ?? ""
   );
@@ -720,6 +726,7 @@ function MovementFormDialog({
       vehicleRegistration: vehicleRegistration.trim() || null,
       transportDestinations,
       // Backendul le ignoră pe orice alt cod, dar nu i le trimitem degeaba.
+      packagingOnMarket: isPackagingCode ? packagingOnMarket : null,
       packagingMaterial: isPackagingCode ? packagingMaterial || null : null,
       packagingCategory: isPackagingCode ? packagingCategory || null : null,
       packagingReusable: isPackagingCode ? packagingReusable : null,
@@ -1112,6 +1119,28 @@ function MovementFormDialog({
               <span className="text-sm font-semibold text-gray-800">{t.packagingSection}</span>
               <p className="text-xs text-gray-500">{t.packagingSectionHint}</p>
             </div>
+            <label className="flex cursor-pointer items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0"
+                checked={packagingOnMarket !== false}
+                onChange={(ev) => setPackagingOnMarket(ev.target.checked)}
+              />
+              <span>
+                <span className="text-sm font-medium text-gray-800">{t.packagingOnMarket}</span>
+                <span className="block text-xs text-gray-500">{t.packagingOnMarketHint}</span>
+              </span>
+            </label>
+
+            {packagingOnMarket === null && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                {t.packagingLegacy}
+              </p>
+            )}
+
+            {/* Rubricile de mai jos dau rândul şi coloana din tabelul 1, deci n-au sens dacă
+                mişcarea nu ajunge în tabel. */}
+            {packagingOnMarket !== false && (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="mv-pk-material">{t.packagingMaterial}</Label>
@@ -1152,6 +1181,8 @@ function MovementFormDialog({
                 <p className="mt-1 text-xs text-gray-500">{t.packagingCategoryHint}</p>
               </div>
             </div>
+            )}
+            {packagingOnMarket !== false && (
             <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -1176,6 +1207,7 @@ function MovementFormDialog({
                 </label>
               )}
             </div>
+            )}
           </div>
         )}
 
