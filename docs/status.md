@@ -1637,13 +1637,16 @@ Felia are migrare, ecran şi generator propriu; nu e o variantă a celei de azi.
    modificarea din greşeală, dar clientul o poate ridica dacă are de corectat ceva. Şi tot de acolo
    se vede că **PDF-ul nu e un moft**: e exemplarul pe hârtie pe care actul îl cere alături de fişier.
 
-### Commis şi pushat, tot (25.08.2026, ora 12:53)
+### Commis şi pushat, tot (25.08.2026, ora 13:17)
 
 | Unde | Ce | Stare |
 |---|---|---|
-| `origin/main` şi `origin/deploy/heroku-split` | `a50bb17` | ✅ |
-| `newrepo/main` | `15fb46e` | ✅ `ecoregistru-api` la **v27**, pornire 8,49 s (fără migrare nouă) |
-| `ferepo/main` | `3da4c9c` | ✅ `ecoregistru-app` la **v20** |
+| `origin/main` şi `origin/deploy/heroku-split` | `19cfa5c` | ✅ |
+| `newrepo/main` | `3ad4d97` | ✅ `ecoregistru-api` la **v28**, pornire 9,17 s (fără migrare nouă) |
+| `ferepo/main` | `f74869a` | ✅ `ecoregistru-app` la **v21** |
+
+Releaseurile intermediare ale zilei: api `v26` (`58e1025`, cu `V26`) → `v27` (`15fb46e`,
+reparaţia registrului) → `v28`; app `v19` → `v20` → `v21`.
 
 
 ## Ce urmează — plan revizuit (22.08.2026)
