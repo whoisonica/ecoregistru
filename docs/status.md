@@ -1564,6 +1564,15 @@ Utilizatorul a cerut explicit să fie notată, ca să fim siguri înainte de a c
    (25 ianuarie, AFM) se depun separat, în practica ei?
 
 
+### Commis şi pushat, tot (25.08.2026, ora 12:53)
+
+| Unde | Ce | Stare |
+|---|---|---|
+| `origin/main` şi `origin/deploy/heroku-split` | `a50bb17` | ✅ |
+| `newrepo/main` | `15fb46e` | ✅ `ecoregistru-api` la **v27**, pornire 8,49 s (fără migrare nouă) |
+| `ferepo/main` | `3da4c9c` | ✅ `ecoregistru-app` la **v20** |
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
