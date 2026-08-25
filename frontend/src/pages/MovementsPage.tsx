@@ -32,6 +32,7 @@ import type {
   WasteMovementInput,
   WasteOperation,
   WasteOperationCode,
+  WasteRegister,
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -552,6 +553,7 @@ function MovementFormDialog({
   const [physicalState, setPhysicalState] = useState<PhysicalState | "">(
     editing?.physicalState ?? ""
   );
+  const [register, setRegister] = useState<WasteRegister | "">(editing?.register ?? "");
   const [operationCode, setOperationCode] = useState<WasteOperationCode | "">(
     editing?.operationCode ?? ""
   );
@@ -625,6 +627,13 @@ function MovementFormDialog({
   // report the quantity next to "Operaţia de valorificare"/"de eliminare" and the operator doing
   // it — the partner, when it is not us.
   const requiresCode = operation === "RECOVERED" || operation === "DISPOSED";
+
+  /**
+   * Provenienţa deşeului la ieşire. Se întreabă doar la conturile care pot prelua de la terţi:
+   * la un generator pur n-ar avea sens, fiindcă tot ce iese e al lui. Fără ea, aceeaşi valorificare
+   * cădea automat pe Anexa 1, deci marfa altcuiva se declara ca pusă pe piaţă de firmă.
+   */
+  const asksOrigin = requiresCode && company != null && company.type !== "GENERATOR";
   const familyCodes =
     operation === "RECOVERED" ? R_CODES : operation === "DISPOSED" ? D_CODES : ALL_CODES;
   // The account profile narrows the list to the operations this client actually works with, so a
@@ -674,6 +683,7 @@ function MovementFormDialog({
       return t.recoveryCodeRequired;
     if (operation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
       return t.disposalCodeRequired;
+    if (asksOrigin && !register) return t.originRequired;
     if (isLegacyExit) return t.legacyExitHint;
     return null;
   }
@@ -696,6 +706,9 @@ function MovementFormDialog({
       wasteDestination: wasteDestination || null,
       // Backend rejects operationCode on non-R/D operations, so only send it when relevant.
       operationCode: requiresCode ? (operationCode as WasteOperationCode) : null,
+      // Numai la ieşire şi numai unde s-a întrebat. La preluare backendul o forţează pe art. 48,
+      // iar la generare pe Anexa 1 — două capete fixate de lege, nu de ecran.
+      register: asksOrigin ? (register as WasteRegister) : null,
       partnerId: partnerId || null,
       internalGeneratorId: internalGeneratorId || null,
       documentReference: documentReference.trim() || null,
@@ -880,7 +893,53 @@ function MovementFormDialog({
                   {e.wasteOperation[op]}
                 </option>
               ))}
-              {isLegacyExit && (
+              {asksOrigin && (
+          <div className="rounded-md border border-gray-300 p-3">
+            <span className="text-sm font-medium text-gray-800">
+              {t.originTitle}
+              <span className="text-red-600"> *</span>
+            </span>
+            <p className="mt-1 text-xs text-gray-500">{t.originHint}</p>
+            <div className="mt-2 space-y-2">
+              {/* Fiecare opţiune îşi spune efectul: alegerea nu schimbă un câmp, ci pe ce formular
+                  oficial ajunge cantitatea. */}
+              <label className="flex cursor-pointer gap-2">
+                <input
+                  type="radio"
+                  name="mv-register"
+                  className="mt-1 h-4 w-4 shrink-0"
+                  checked={register === "ANEXA_1"}
+                  onChange={() => setRegister("ANEXA_1")}
+                />
+                <span>
+                  <span className="text-sm font-medium">{t.originOwn}</span>
+                  <span className="block text-xs text-gray-500">{t.originOwnEffect}</span>
+                </span>
+              </label>
+              <label className="flex cursor-pointer gap-2">
+                <input
+                  type="radio"
+                  name="mv-register"
+                  className="mt-1 h-4 w-4 shrink-0"
+                  checked={register === "ART_48"}
+                  onChange={() => setRegister("ART_48")}
+                />
+                <span>
+                  <span className="text-sm font-medium">{t.originTakeover}</span>
+                  <span className="block text-xs text-gray-500">{t.originTakeoverEffect}</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {operation === "COLLECTED" && (
+          <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+            {t.originCollected}
+          </p>
+        )}
+
+        {isLegacyExit && (
                 <option value="UNCLASSIFIED_OUT">{e.wasteOperation.UNCLASSIFIED_OUT}</option>
               )}
             </Select>

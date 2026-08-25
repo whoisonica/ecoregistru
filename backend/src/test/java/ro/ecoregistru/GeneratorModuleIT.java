@@ -188,7 +188,7 @@ class GeneratorModuleIT {
     @Test
     void anOperationCodeOutsideTheProfileIsRejected() throws Exception {
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"operationCode\": \"R1\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R1\""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.operation.code.not.in.profile")));
     }
@@ -196,7 +196,7 @@ class GeneratorModuleIT {
     @Test
     void anOperationCodeInsideTheProfileIsAccepted() throws Exception {
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"operationCode\": \"R3\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operationCode", is("R3")));
     }

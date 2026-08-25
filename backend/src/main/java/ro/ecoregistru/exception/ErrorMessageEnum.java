@@ -74,6 +74,14 @@ public enum ErrorMessageEnum {
     OPERATION_CODE_NOT_IN_PROFILE("movement.operation.code.not.in.profile", "Codul de operație nu e printre cele declarate de firmă. Completează profilul firmei dacă a apărut o operațiune nouă."),
     OPERATION_NOT_SELECTABLE("movement.operation.not.selectable", "„Ieșire neclasificată” nu se poate alege: e starea liniilor vechi, fără cod R/D. Alege valorificare sau eliminare și codul operației."),
     REGISTER_INVALID_FOR_OPERATION("movement.register.invalid", "Registrul nu se potrivește cu operațiunea: deșeul generat intră în Anexa 1, iar preluarea de la terți în registrul cronologic."),
+    // Un cont care preia deşeu de la terţi nu poate lăsa întrebarea fără răspuns: aceeaşi ieşire
+    // ajunge fie pe Anexa 1 (deşeu propriu), fie pe registrul art. 48 şi pe Anexa 3 Ambalaje
+    // (marfă preluată). Implicitul de dinainte era Anexa 1, deci marfa altuia se declara ca pusă
+    // pe piaţă de firmă. Vezi docs/status.md, „Provenienţa deşeului la ieşire" (25.08.2026).
+    REGISTER_REQUIRED_ON_EXIT("movement.register.required",
+            "Spune de unde vine deşeul: generat în activitatea proprie sau preluat de la terţi. "
+                    + "De răspunsul ăsta atârnă pe ce formular ajunge cantitatea."),
+
     ART48_REGISTER_NOT_ENABLED("movement.register.art48.disabled", "Firma e înregistrată doar ca generator. Preluarea de deșeuri de la terți cere tipul „Colector” sau „Ambele”."),
 
     // --- Evidence / deadlines ---

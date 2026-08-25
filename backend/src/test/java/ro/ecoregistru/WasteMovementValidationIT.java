@@ -120,7 +120,8 @@ class WasteMovementValidationIT {
                   "unit": "KG",
                   "operation": "%s",
                   "physicalState": "%s",
-                  "operationCode": %s
+                  "operationCode": %s,
+                  "register": "ANEXA_1"
                 }
                 """.formatted(workPointId, wasteCodeId, operation, physicalState, opCodeJson);
         return post("/api/v1/movements")

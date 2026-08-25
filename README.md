@@ -190,6 +190,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Account profile | **Clienți** → edit a company | R/D codes, the waste codes of the authorization, transport details for a collector |
 | Partner roles | **Parteneri** | Green = client, amber = supplier, grey = "rol nestabilit"; filter by role |
 | Internal generators | **Setări**, under work points | The "Secţia" of Anexa 1 cap. 2 — birouri, producţie |
+| Origin of the waste | **Mișcări** → record a handover on a collector/"both" account | A radio with no preselection, and each option says which official form it reaches. Pick "preluat de la terți" and the quantity leaves Anexa 1 and the evidence sheet entirely — it is not your waste (HG 856/2002 art. 2 alin. (1)) |
 | Packaging register | **Ambalaje** | Every movement on a `15 01 xx` code, with what each line is missing. Record one with no material chosen on `15 01 04` and the row turns amber: the quantity stays out of the declaration until someone says aluminium or steel |
 | Packaging declaration | **Ambalaje** → "XLS — formatul de depunere" | Two sheets, `Tabelul nr. 1` and `Tabelul nr. 2`, at the same cell addresses as the model. Table 1 is summed from the movements; the material gives the row, the kind of packaging gives the column |
 | Narrowed operations | **Mișcări** → add | No "Predare" in the list; the R/D codes are the five in the profile, not all 28 |

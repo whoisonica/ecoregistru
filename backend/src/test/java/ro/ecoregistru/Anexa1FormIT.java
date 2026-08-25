@@ -144,7 +144,7 @@ class Anexa1FormIT {
                 {
                   "workPointId": "%s", "date": "%d-08-24", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": 100,
-                  "operation": "RECOVERED", "operationCode": "R3", "partnerId": "%s"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s"
                 }
                 """.formatted(workPointId, YEAR, codeId, partnerId);
         mockMvc.perform(post("/api/v1/movements")

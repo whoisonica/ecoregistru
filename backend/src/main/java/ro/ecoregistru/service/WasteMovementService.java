@@ -517,6 +517,20 @@ public class WasteMovementService {
      */
     private WasteRegister resolveRegister(WasteMovementRequest request, Company company) {
         boolean takeover = request.operation() == WasteOperation.COLLECTED;
+
+        // Ieşirea e singurul loc unde implicitul minţea. Un colector care valorifică marfă preluată
+        // înregistra RECOVERED, nimeni nu-l întreba nimic, iar cantitatea cădea pe Anexa 1 — adică
+        // se declara drept ambalaj pus pe piaţă de el. Proba, 25.08.2026: 1000 kg de 15 01 01 luaţi
+        // de la un magazin şi valorificaţi apăreau în tabelul 1 al Anexei 1 Ambalaje, iar generarea
+        // dedusă din V24 îi mai spunea şi „generate de tine". Deci se întreabă, nu se presupune —
+        // şi numai la firmele care chiar pot prelua, ca generatorul pur să nu vadă o întrebare
+        // fără sens.
+        if (request.operation().isExit()
+                && company.getType().keepsArt48Register()
+                && request.register() == null) {
+            throw new BusinessException(REGISTER_REQUIRED_ON_EXIT);
+        }
+
         WasteRegister register = request.register() != null
                 ? request.register()
                 : (takeover ? WasteRegister.ART_48 : WasteRegister.ANEXA_1);

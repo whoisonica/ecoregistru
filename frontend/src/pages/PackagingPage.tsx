@@ -140,7 +140,9 @@ export function PackagingPage() {
 
   const signals = useMemo(() => {
     const list = unclassified ?? [];
-    const all = movements ?? [];
+    // Semnalele privesc doar ce hrăneşte declaraţia. O mişcare pe marfă preluată nu intră în Anexa 1
+    // oricât de completă ar fi, deci a o număra la „de cântărit" ar cere o reparaţie fără efect.
+    const all = (movements ?? []).filter((m) => m.register !== "ART_48");
     return {
       missingMaterial: list.filter((r) => r.missingMaterial).length,
       missingCategory: list.filter((r) => !r.missingMaterial && r.missingCategory).length,
@@ -304,18 +306,19 @@ export function PackagingPage() {
                 <TH className="text-right">{t.quantity}</TH>
                 <TH>{t.partner}</TH>
                 <TH>{t.operation}</TH>
+                <TH>{t.origin}</TH>
                 <TH>{t.workPoint}</TH>
               </TR>
             </THead>
             <TBody>
               {loadingMovements && (
                 <TR>
-                  <TD colSpan={8}>{strings.common.loading}</TD>
+                  <TD colSpan={9}>{strings.common.loading}</TD>
                 </TR>
               )}
               {!loadingMovements && (movements ?? []).length === 0 && (
                 <TR>
-                  <TD colSpan={8} className="text-gray-500">
+                  <TD colSpan={9} className="text-gray-500">
                     {t.registerEmpty}
                   </TD>
                 </TR>
@@ -323,7 +326,13 @@ export function PackagingPage() {
               {(movements ?? []).map((m: WasteMovement) => (
                 <TR
                   key={m.id}
-                  className={unclassifiedIds.has(m.id) ? "bg-amber-50/60" : undefined}
+                  className={
+                    m.register === "ART_48"
+                      ? "text-gray-400"
+                      : unclassifiedIds.has(m.id)
+                        ? "bg-amber-50/60"
+                        : undefined
+                  }
                 >
                   <TD className="whitespace-nowrap">{m.date}</TD>
                   <TD className="whitespace-nowrap font-mono text-xs">{m.wasteCode}</TD>
@@ -369,6 +378,18 @@ export function PackagingPage() {
                       ) : (
                         "—"
                       )
+                    )}
+                  </TD>
+                  {/* Mişcările pe marfă preluată apar în registru fiindcă sunt ambalaj, dar nu
+                      hrănesc niciun tabel: Anexa 1 e despre deşeul propriu. Se spune pe rând, ca
+                      să nu pară că lipsesc din calcul dintr-o eroare. */}
+                  <TD className="whitespace-nowrap">
+                    {m.register === "ART_48" ? (
+                      <Badge variant="muted" title={t.originTakeoverInTab}>
+                        {t.originTakeoverShort}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-gray-500">{t.originOwnShort}</span>
                     )}
                   </TD>
                   <TD>{m.workPointName}</TD>

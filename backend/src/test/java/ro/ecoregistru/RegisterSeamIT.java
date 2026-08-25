@@ -117,7 +117,7 @@ class RegisterSeamIT {
     @Test
     void anExitWithoutAnOperationCodeIsRejected() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId + "\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId + "\""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.operation.code.recovery")));
     }
@@ -126,7 +126,7 @@ class RegisterSeamIT {
     @Test
     void recoveryByAPartnerLandsInTheValorificataColumn() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"R13\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.register", is("ANEXA_1")))
@@ -144,7 +144,7 @@ class RegisterSeamIT {
     @Test
     void disposalByAPartnerCarriesItsDCodeAndNoScopulLetter() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"DISPOSED\", \"partnerId\": \"" + partnerId
+                        "  \"operation\": \"DISPOSED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"D5\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operationCode", is("D5")))
@@ -155,7 +155,7 @@ class RegisterSeamIT {
     @Test
     void recoveryOnOurOwnSiteNeedsNoPartner() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"RECOVERED\", \"operationCode\": \"R3\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.partnerId", is(nullValue())));
     }
@@ -188,7 +188,7 @@ class RegisterSeamIT {
     @Test
     void passingOnCollectedGoodsStaysOutOfAnexa1() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"R13\", \"register\": \"ART_48\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.register", is("ART_48")));

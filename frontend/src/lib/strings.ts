@@ -165,6 +165,23 @@ export const strings = {
     attachments: "Atașamente",
     hazardous: "Periculos",
     // Anexa 3 — dovada predării
+    // --- Provenienţa deşeului la ieşire ---
+    // Se arată doar la conturile care pot prelua de la terţi. Fiecare opţiune îşi spune efectul,
+    // fiindcă alegerea nu schimbă un câmp, ci pe ce formular oficial ajunge cantitatea.
+    originTitle: "Proveniența deșeului",
+    originHint:
+      "De răspunsul ăsta atârnă pe ce formular ajunge cantitatea. Nu se poate deduce din operațiune: și deșeul tău, și marfa preluată se valorifică cu același cod R.",
+    originOwn: "Generat în activitatea proprie",
+    originOwnEffect:
+      "Intră în Evidența gestiunii deșeurilor generate și, dacă e cod 15 01 xx, în Anexa 1 Ambalaje — tabelul 1 ca ambalaj pus de tine pe piață, tabelul 2 dacă l-ai predat cuiva.",
+    originTakeover: "Preluat de la terți",
+    originTakeoverEffect:
+      "Intră în registrul cronologic art. 48 și în raportarea colectorilor (Anexa 3 la Ordinul 794/2012, încă neconstruită). NU intră în Anexa 1 și nici în evidența gestiunii — nu e deșeul tău.",
+    originRequired:
+      "Alege proveniența: fără ea, cantitatea ar intra automat în Anexa 1 ca deșeu propriu.",
+    originCollected:
+      "Preluare de la terți: intră automat în registrul cronologic art. 48, niciodată în Anexa 1.",
+
     // --- Anexa 1 Ambalaje: se cer doar pe coduri 15 01 xx ---
     packagingSection: "Ambalaje — pentru Anexa 1",
     packagingSectionHint:
@@ -916,6 +933,11 @@ export const strings = {
     registerTitle: "Mișcări de ambalaje",
     registerHint:
       "Fiecare mișcare înregistrată pe un cod 15 01 xx. Astea sunt kilogramele din care se face declarația — cartonul înregistrat pe 20 01 01 nu intră aici, intră în evidența gestiunii deșeurilor.",
+    origin: "Proveniența",
+    originOwnShort: "Deșeu propriu",
+    originTakeoverShort: "Preluat de la terți",
+    originTakeoverInTab:
+      "Marfă preluată de la terți: apare aici fiindcă e ambalaj, dar NU intră în Anexa 1 — nu e deșeul tău. Raportul ei e Anexa 3 la Ordinul 794/2012, încă neconstruită.",
     registerEmpty:
       "Nicio mișcare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
     date: "Data",

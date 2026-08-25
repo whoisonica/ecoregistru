@@ -1453,6 +1453,117 @@ ele (rândul R6, întrebările Y şi Z, deciziile 21 şi 22, numărul de teste �
 public.
 
 
+## Provenienţa deşeului la ieşire — un defect găsit dintr-o întrebare (25.08.2026)
+
+**Întrebarea utilizatorului**, imediat după ce s-a livrat modulul de ambalaje:
+
+> „Şi dacă de exemplu eu sunt reciclator, adică Hamburger Recycling, şi iau de la un generator deşeu
+> de 15 01 01 şi îl valorific şi adaug în mişcare, nu va fi considerată în Anexa 1 Ambalaje, ceea ce
+> este greşit? [...] că teoretic nu e generat de mine."
+
+Al doilea gând e criteriul legal exact — HG 856/2002 art. 2 alin. (1): un operator autorizat ţine
+Anexa 1 *„numai pentru deşeurile generate în cadrul activităţilor proprii"*. Deci **nu**, marfa
+preluată n-are ce căuta acolo. Dar verificând, s-a văzut că regula era aplicată **pe jumătate**.
+
+### Ce era rupt
+
+`resolveRegister` fixa doar cele două capete: `GENERATED` → Anexa 1, `COLLECTED` → art. 48. **Ieşirea
+nu era întrebată nimic** şi cădea pe implicitul `ANEXA_1` — iar formularul de mişcare nu trimitea
+niciodată câmpul `register`. Deci un reciclator care valorifica marfa preluată o declara ca a lui.
+
+Probat, nu dedus. Scenariul din întrebare, rulat cap-coadă:
+
+```
+preiau 1000 kg 15 01 01 de la un magazin   (COLLECTED → art. 48, corect afară)
+le valorific R3 la mine                    (RECOVERED → implicit Anexa 1)
+
+→ tabel 1, Hârtie carton, secundar = 1000.000   ← ambalajul altuia, declarat pus pe piaţă de mine
+→ tabel 2, rânduri = 0                          ← corect, n-am predat nimănui
+```
+
+Şi nu se oprea la ambalaje: aceeaşi mişcare intra şi în *Evidenţa gestiunii deşeurilor generate*,
+unde generarea dedusă din `V24` o raporta drept **generată de firmă** — exact ce nu generase.
+Defectul e mai vechi decât modulul de ambalaje (vine din implicitul modulului de generatori), dar
+`V24` şi tabelul 1 l-au făcut vizibil în cifre.
+
+### Reparaţia: se întreabă, nu se presupune
+
+Alegerea utilizatorului dintre cele două variante. Aceeaşi valorificare, cu acelaşi cod R, poate fi
+a deşeului propriu sau a mărfii preluate — **operaţiunea nu spune care**, deci nu se deduce.
+
+- **Backend:** o ieşire (`RECOVERED`/`DISPOSED`) de pe un cont care ţine registrul art. 48
+  (`COLLECTOR` sau `BOTH`) **cere** registrul explicit; fără el, 400 cu `movement.register.required`.
+  Un generator pur nu vede nimic — n-are ce prelua, deci întrebarea n-ar avea sens.
+- **Formular:** blocul „Proveniența deșeului", radio fără preselecţie, **cu efectul scris sub
+  fiecare opţiune** — fiindcă alegerea nu schimbă un câmp, ci pe ce formular oficial ajunge cifra:
+
+  | Alegerea | Ce scrie în ecran că se întâmplă |
+  |---|---|
+  | **Generat în activitatea proprie** | „Intră în Evidenţa gestiunii deşeurilor generate şi, dacă e cod 15 01 xx, în Anexa 1 Ambalaje — tabelul 1 ca ambalaj pus de tine pe piaţă, tabelul 2 dacă l-ai predat cuiva." |
+  | **Preluat de la terţi** | „Intră în registrul cronologic art. 48 şi în raportarea colectorilor (Anexa 3 la Ordinul 794/2012, încă neconstruită). NU intră în Anexa 1 şi nici în evidenţa gestiunii — nu e deşeul tău." |
+
+  La `COLLECTED` nu se întreabă nimic, dar se scrie de ce: „intră automat în registrul cronologic
+  art. 48, niciodată în Anexa 1".
+- **Tabul Ambalaje:** mişcările pe marfă preluată **rămân în registru** — sunt ambalaj, şi omul le
+  caută acolo — dar gri, cu eticheta „Preluat de la terţi" şi explicaţia că nu hrănesc niciun tabel.
+  Semnalele („de cântărit", „fără cod R/D") le sar: o reparaţie pe ele n-ar schimba nicio cifră.
+
+**Teste noi:** `ThirdPartyPackagingIT`, patru — ieşirea fără provenienţă e refuzată; marfa preluată
+stă în afara ambelor tabele dar se vede în registru; deşeul propriu al **aceleiaşi firme** intră
+normal (regula separă registrele, nu firmele); preluarea nu poate cere Anexa 1.
+
+**Cincisprezece teste vechi au picat, şi asta a fost informativ.** Tenantul demo e `CompanyType.BOTH`,
+deci regula i se aplică — iar testele alea creau ieşiri fără să spună de unde vine deşeul. Toate
+descriau deşeu propriu, deci au primit `"register": "ANEXA_1"` explicit; sunt mai oneste aşa. **166
+de teste verzi.**
+
+### Anexa 3 la Ordinul 794/2012 — raportul care lipseşte
+
+Ce **nu** s-a construit, şi cine îl datorează. Ordinul are cinci anexe, iar reciclatorul din
+întrebare nu depune anexa 1, ci **anexa 3**:
+
+> **Art. 4** — operatorii economici autorizaţi pentru **colectarea, reciclarea şi valorificarea**
+> deşeurilor de ambalaje, şi **comercianţii** de deşeuri de ambalaje, raportează agenţiei
+> judeţene/regionale de mediu **din raza de activitate**; comercianţii raportează la ANPM.
+> Raportarea se face **per punct de lucru**.
+
+Modelul e deja la noi: `documente oficiale/RAPORTARE DESEURI DE AMBALAJ COLECTATE ANUAL.ods`. Citit
+pe 25.08, o singură foaie, `RAPORTARE_AMBALAJE`:
+
+- **Antetul** cere ceva ce Anexa 1 nu cerea: **autorizaţia de mediu** (nr. înregistrare / dată /
+  valabilitate) şi **punctul de lucru**. Le avem pe amândouă pe firmă.
+- **Coloanele:** Material · *Cantitatea colectată* (Total | **din care periculoase**) ·
+  **Provenienţa** · *Deşeuri comercializate / trimise la reciclare / valorificare / exportate*
+  (cantitate | operatorul economic).
+- **Rândurile de material sunt altele decât la anexa 1**: hârtie-carton · PET · alte plastice ·
+  *total plastic* · lemn · **metal/aluminiu** (un singur rând, nu aluminiu şi oţel separat) ·
+  *total metal* · *TOTAL ambalaje*.
+- ⚠️ **„Provenienţa" e o dimensiune pe care mişcarea n-o are**: fiecare material se desface pe trei
+  rânduri — **populaţie · colectori · generatori persoane juridice**. Fără ea, raportul nu se poate
+  completa deloc.
+- ⚠️ Fişierul e în **tone**; actul zice **kilograme** la art. 8 alin. (1). Acelaşi tipar ca la
+  anexa 1: şablon modificat local.
+
+Deci felia are o migrare (provenienţa pe mişcare), un ecran şi un generator — nu e o variantă a
+celei de azi.
+
+### 🟡 De întrebat pe Andreea (întrebarea **AA**)
+
+Utilizatorul a cerut explicit să fie notată, ca să fim siguri înainte de a construi:
+
+1. **Provenienţa se ţine per mişcare sau per partener?** Un colector cumpără de la aceiaşi furnizori
+   lună de lună; dacă „populaţie / colector / generator persoană juridică" e o proprietate a
+   partenerului, se răspunde o dată şi nu la fiecare recepţie. Dar un centru care primeşte şi de la
+   populaţie direct, fără partener, are nevoie de ea **pe mişcare**. Bănuiala noastră: pe partener,
+   cu posibilitatea de a suprascrie pe mişcare — de confirmat.
+2. **Raportul se depune în kg (art. 8) sau în tone (şablonul ei)?** La anexa 1 a confirmat
+   kilogramele; şablonul de aici e în tone, deci merită întrebat separat.
+3. **„Metal/aluminiu" e chiar un singur rând** la anexa 3, deşi anexa 1 desparte aluminiul de oţel?
+   Dacă da, un colector care ţine cele două separat le adună la raportare.
+4. Şi o confirmare de o linie la **Y**: anexa 1 (25 februarie, APM) şi notificarea de la art. 3
+   (25 ianuarie, AFM) se depun separat, în practica ei?
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
