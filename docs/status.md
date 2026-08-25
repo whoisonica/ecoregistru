@@ -1434,6 +1434,24 @@ de avertizare — niciun test nu s-ar fi supărat.
 **Migrare:** `V26`. **Ce nu s-a atins:** `packaging_market_entries` rămâne pe loc, cu comentariul
 schimbat; rândurile scrise până acum devin suprascrieri, deci nicio cifră existentă nu dispare.
 
+### Commis şi pushat, tot (25.08.2026, ora 12:19)
+
+Toate cele trei repo-uri, plus ambele dyno-uri:
+
+| Unde | Ce | Stare |
+|---|---|---|
+| `origin/main` şi `origin/deploy/heroku-split` | `0d1c1c7` | ✅ împinse, cele două branch-uri sincronizate |
+| `newrepo/main` (`ecoregistru-backend`) | `58e1025` | ✅ `ecoregistru-api` la **v26** |
+| `ferepo/main` (`ecoregistru-frontend`) | `81ea3e5` | ✅ `ecoregistru-app` la **v19** |
+
+`V26` aplicată pe producţie în **19 ms**, aplicaţia pornită în **9,75 s**. Niciun conflict la
+cherry-pick, niciun commit gol — commit-ul atinge şi backendul, şi frontendul.
+
+⚠️ **`docs/plan-executie.md` şi `docs/prompt-continuare.md` sunt gitignored**, deci modificările din
+ele (rândul R6, întrebările Y şi Z, deciziile 21 şi 22, numărul de teste şi migrarea liberă) există
+**doar local**. Nu sunt în niciunul din cele trei repo-uri — aşa e regula, fiindcă monorepo-ul e
+public.
+
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
