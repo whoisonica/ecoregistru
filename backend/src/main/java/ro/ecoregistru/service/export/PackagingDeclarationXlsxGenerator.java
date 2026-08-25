@@ -36,6 +36,14 @@ import java.util.function.Function;
  * material rows from {@code B20} — so a client who has filed this form before recognises the sheet
  * they already know rather than a rebuilt one.
  *
+ * <p><b>De ce e foaia protejată.</b> Art. 6 din ordin, verbatim: „Datele de raportare se transmit
+ * în format electronic «.xls» <b>protejat împotriva modificării datelor</b> şi <b>pe suport
+ * hârtie</b>, până cel târziu la data de 25 februarie a fiecărui an". Deci protecţia e cerută, nu
+ * o alegere — şi tot de acolo vine faptul că PDF-ul nu e un moft: e exemplarul pe hârtie. Parola e
+ * goală dinadins: protecţia opreşte modificarea din greşeală, dar clientul o poate ridica dacă are
+ * de corectat ceva înainte de depunere. O parolă pe care n-o ştie ar transforma cerinţa actului
+ * într-un obstacol.
+ *
  * <p>Empty stays empty. A material nobody has movements for prints blank, not 0: on a filed form
  * "none" and "not answered" are different statements, and only the client may make either.
  */
@@ -76,6 +84,9 @@ public class PackagingDeclarationXlsxGenerator {
             Styles s = new Styles(wb);
             sheet1(wb, s, d);
             sheet2(wb, s, d);
+            for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                wb.getSheetAt(i).protectSheet("");
+            }
             wb.write(out);
             return out.toByteArray();
         } catch (IOException ex) {

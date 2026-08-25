@@ -1547,22 +1547,95 @@ pe 25.08, o singură foaie, `RAPORTARE_AMBALAJE`:
 Deci felia are o migrare (provenienţa pe mişcare), un ecran şi un generator — nu e o variantă a
 celei de azi.
 
-### 🟡 De întrebat pe Andreea (întrebarea **AA**)
+### Întrebarea AA, răspunsă pe 25.08 — şi ce a mai ieşit din actul citit integral
 
-Utilizatorul a cerut explicit să fie notată, ca să fim siguri înainte de a construi:
+Utilizatorul a cerut răspunsuri, iar textul oficial al ordinului (citit integral, `surse-oficiale.md`
+§5.2) le-a confirmat pe toate.
 
-1. **Provenienţa se ţine per mişcare sau per partener?** Un colector cumpără de la aceiaşi furnizori
-   lună de lună; dacă „populaţie / colector / generator persoană juridică" e o proprietate a
-   partenerului, se răspunde o dată şi nu la fiecare recepţie. Dar un centru care primeşte şi de la
-   populaţie direct, fără partener, are nevoie de ea **pe mişcare**. Bănuiala noastră: pe partener,
-   cu posibilitatea de a suprascrie pe mişcare — de confirmat.
-2. **Raportul se depune în kg (art. 8) sau în tone (şablonul ei)?** La anexa 1 a confirmat
-   kilogramele; şablonul de aici e în tone, deci merită întrebat separat.
-3. **„Metal/aluminiu" e chiar un singur rând** la anexa 3, deşi anexa 1 desparte aluminiul de oţel?
-   Dacă da, un colector care ţine cele două separat le adună la raportare.
-4. Şi o confirmare de o linie la **Y**: anexa 1 (25 februarie, APM) şi notificarea de la art. 3
-   (25 ianuarie, AFM) se depun separat, în practica ei?
+| # | Întrebarea | Răspunsul | Sursa |
+|---|---|---|---|
+| **1** | Provenienţa: per mişcare sau per partener? | **Pe partener, cu suprascriere pe mişcare** — vezi mai jos. 🟡 rămâne de confirmat cu Andreea | decizia noastră, sprijinită de nota 2 |
+| **2** | kg sau tone? | **Kilograme** | utilizatorul + art. 8 alin. (1) lit. a) |
+| **3** | „metal/aluminiu" un singur rând? | **Nu** — Aluminiu şi Oţel separat, plus *Total metal*, exact ca la anexa 1. Fişierul `.ods` e şablon modificat local | utilizatorul („aşa arată corect, ca în raportare ambalaje 2021 anexa 1 HRR") + textul anexei 3 |
+| **4** | Cele două depuneri sunt separate? | **Da, şi sunt de fapt trei lucruri distincte** | căutat şi verificat pe act |
 
+**Detaliul lui 4**, fiindcă e uşor de confundat:
+
+1. **Anexa 1** → agenţia judeţeană de mediu, din raza **sediului social**, **25 februarie**.
+2. **Notificarea de la art. 3** („îmi îndeplinesc individual obiectivele") → **AFM**, **25 ianuarie**.
+3. **Contribuţia de 2 lei/kg** → AFM, declarată şi plătită **anual, 25 ianuarie**, şi **numai dacă
+   nu ţi-ai atins obiectivele** de valorificare (OUG 196/2005 art. 9 alin. (1) lit. d) + art. 11
+   alin. (2)).
+
+Un rezumat de pe internet dădea contribuţia pe ambalaje drept **lunară**. E greşit — art. 11
+alin. (2) o pune explicit în grupa anuală, alături de lit. i), j), p), v), w), x). Verificat pe
+Portalul Legislativ înainte de a schimba ceva; `V21` rămâne corectă, n-am atins nimic.
+
+**Răspunsul la 1, şi de ce.** Nota 2 a formularului spune „în funcţie de persoanele juridice sau
+fizice **de la care provin** deşeurile" — deci provenienţa descrie **sursa**, nu transportul şi nu
+încărcătura. Iar sursa e, în aplicaţie, partenerul. Deci: câmp pe **partener**, moştenit automat de
+fiecare recepţie de la el, cu posibilitatea de a-l suprascrie pe o mişcare anume. Aşa se răspunde o
+dată pentru un furnizor care revine lunar, dar rămâne loc pentru cazul mixt.
+Excepţia care cere şi câmpul pe mişcare: **„populaţie"** n-are partener — un centru care primeşte
+direct de la oameni n-are pe cine să eticheteze.
+⚠️ **Valorile sunt patru, nu trei** — `.ods`-ul primit omitea „comerciant": populaţie · generator
+persoană juridică · colector · comerciant.
+🟡 **Rămâne de confirmat cu Andreea** cum ţine ea evidenţa în practică — pe furnizor sau pe recepţie.
+
+### 🟡 Ce a deschis actul, şi nu era întrebat
+
+**Anexa 1 nu e a tuturor.** Art. 1 alin. (1) o cere celor care îşi îndeplinesc obiectivele **în mod
+individual**; cine şi-a transferat obligaţiile către un OIREP nu o depune (OIREP-ul raportează prin
+anexele 2A/2B), iar cine a transferat **parţial** raportează doar cantităţile netransferate. Noi nu
+întrebăm pe nimeni dacă a transferat obligaţiile, deci tabul se oferă tuturor. **Nu s-a schimbat
+nimic** — a restrânge pe un răspuns pe care nu-l avem ar ascunde ecranul unor firme care chiar
+depun. Devine **întrebarea AB**: se întreabă în chestionarul de cerere de cont dacă firma îşi
+îndeplineşte obiectivele individual sau a transferat către un OIREP?
+
+### TODO — Anexa 3 Ambalaje (Ordinul 794/2012, anexa nr. 3)
+
+**Neînceput.** Structura reală, din act, nu din `.ods`-ul primit:
+
+- **Două tabele, şi se completează unul singur**, „după caz" (art. 4 alin. (1)):
+  **tabelul 1** pentru colectori şi comercianţi, **tabelul 2** pentru reciclatori şi valorificatori.
+  Hamburger Recycling, exemplul din întrebarea utilizatorului, completează **tabelul 2**.
+- **Antetul** cere în plus faţă de anexa 1: **autorizaţia de mediu** (nr./dată/valabilitate) şi
+  punctul de lucru. Le avem pe firmă.
+- **Coloanele tabelului 2:** Material · cantitatea preluată (Total | din care periculoase) ·
+  **Provenienţa** · cantitatea **reciclată** · cantitatea **valorificată** (numai prin alte metode
+  decât reciclarea) · **metoda**.
+- **Rândurile de material sunt cele de la anexa 1** — Aluminiu şi Oţel separat.
+- **Se depune per punct de lucru** (art. 4 alin. (4)), la agenţia din raza punctului de lucru; un
+  comerciant raportează în schimb la ANPM.
+- **Ce lipseşte din model:** provenienţa (migrare nouă, pe partener + pe mişcare) şi separarea
+  „reciclat" / „valorificat prin alte metode", care s-ar putea deduce din codul R (R3 reciclare vs.
+  R1 valorificare energetică) — de confirmat.
+
+Felia are migrare, ecran şi generator propriu; nu e o variantă a celei de azi.
+
+### Trei lucruri mici, din aceeaşi sesiune
+
+1. **„Secţia" a ieşit din formularul de mişcare** (cererea utilizatorului: *„Generator intern
+   (Secţia) şterge de tot. Doar în tabelul ăla să apară automat birouri şi producţie. Atât"* — iar
+   „tabelul ăla" e, precizat imediat, **cap. 2 Stocare** al Evidenţei gestiunii). Nu se mai alege pe
+   mişcare; rubrica se completează singură cu secţiile punctului de lucru, exact ce face decizia 19
+   când mişcarea nu numeşte niciuna. **Ce nu s-a atins:** coloana şi entitatea rămân, iar la editarea
+   unei mişcări vechi valoarea ei se **păstrează** — o fişă tipărită până acum nu se schimbă. Lista
+   de secţii se administrează în continuare în **Setări**, sub punctele de lucru; de acolo vin
+   „Birouri" şi „Producţie".
+
+2. **Anexa 3 nu dispăruse, doar tăcea.** Reclamaţia: *„e o problemă la adaugă mişcare, nu mai este
+   «generează Anexa 3», doar să completezi Anexa 1 Ambalaje când pun cod de 15 01 01."* Verificat în
+   git: condiţia `showAnexa3Section` e neatinsă de sesiunea asta — cere de dinainte un **partener
+   ales**, fiindcă Anexa 3 e dovada predării şi n-are ce tipări fără destinatar. Ce se schimbase e că
+   blocul de ambalaje apare acum imediat ce codul e `15 01 xx`, deci ocupă locul unde ochiul o
+   căuta. Reparaţia e la vizibilitate, nu la logică: când mişcarea e o ieşire şi secţiunea nu apare,
+   scrie **de ce**.
+
+3. **Foile XLSX sunt protejate.** Art. 6 cere „format electronic «.xls» **protejat împotriva
+   modificării datelor** şi pe suport hârtie". Parola e goală dinadins — protecţia opreşte
+   modificarea din greşeală, dar clientul o poate ridica dacă are de corectat ceva. Şi tot de acolo
+   se vede că **PDF-ul nu e un moft**: e exemplarul pe hârtie pe care actul îl cere alături de fişier.
 
 ### Commis şi pushat, tot (25.08.2026, ora 12:53)
 

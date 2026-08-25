@@ -4,7 +4,6 @@ import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
 import { useCurrentCompany } from "@/hooks/useCompanies";
-import { useInternalGenerators } from "@/hooks/useInternalGenerators";
 import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import {
   useMovements,
@@ -575,9 +574,13 @@ function MovementFormDialog({
     () => (partners ?? []).find((p) => p.id === partnerId)?.workPoints ?? [],
     [partners, partnerId]
   );
-  const [internalGeneratorId, setInternalGeneratorId] = useState(
-    editing?.internalGeneratorId ?? ""
-  );
+  /**
+   * „Secţia" nu se mai alege pe mişcare (25.08.2026, la cererea utilizatorului). Rubrica din cap. 2
+   * al fişei se completează singură cu secţiile punctului de lucru — „Birouri, Producţie" — aşa cum
+   * face decizia 19 când mişcarea nu numeşte niciuna. Valoarea existentă se **păstrează** la
+   * editare: o mişcare veche care numea o secţie n-o pierde doar fiindcă i s-a deschis formularul.
+   */
+  const internalGeneratorId = editing?.internalGeneratorId ?? "";
   const [documentReference, setDocumentReference] = useState(editing?.documentReference ?? "");
   const [unloadDate, setUnloadDate] = useState(editing?.unloadDate ?? "");
   // Null = "ca la firmă": alegerea de pe firmă (V19), iar în lipsa ei unitatea mișcării.
@@ -613,11 +616,6 @@ function MovementFormDialog({
     label: `${w.code} — ${w.name}`,
     sublabel: w.hazardous ? t.hazardous : undefined,
   }));
-
-  // Sections belong to a work point, so the list follows the work point chosen above; changing
-  // it clears a section that would no longer belong.
-  const { data: sections } = useInternalGenerators(workPointId || undefined);
-  const activeSections = (sections ?? []).filter((g) => g.active);
 
   const operations = operationsFor(company?.type);
   // A legacy row is the one case the form shows an operation nobody may choose: it has to be
@@ -793,10 +791,7 @@ function MovementFormDialog({
             <Select
               id="mv-wp"
               value={workPointId}
-              onChange={(ev) => {
-                setWorkPointId(ev.target.value);
-                setInternalGeneratorId(""); // sections belong to one work point
-              }}
+              onChange={(ev) => setWorkPointId(ev.target.value)}
             >
               {workPoints.map((w) => (
                 <option key={w.id} value={w.id}>
@@ -1056,23 +1051,6 @@ function MovementFormDialog({
         </div>
 
         <div>
-          <Label htmlFor="mv-section">{t.internalGenerator}</Label>
-          <Select
-            id="mv-section"
-            value={internalGeneratorId}
-            onChange={(ev) => setInternalGeneratorId(ev.target.value)}
-          >
-            <option value="">{t.internalGeneratorPlaceholder}</option>
-            {activeSections.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </Select>
-          <p className="mt-1 text-xs text-gray-500">{t.internalGeneratorHint}</p>
-        </div>
-
-        <div>
           <Label htmlFor="mv-partner">{t.partner}</Label>
           <Select
             id="mv-partner"
@@ -1199,6 +1177,14 @@ function MovementFormDialog({
               )}
             </div>
           </div>
+        )}
+
+        {/* Anexa 3 e dovada predării, deci n-are cum să existe fără destinatar. Până acum condiţia
+            era tăcută: alegeai codul, secţiunea nu apărea, şi nu scria nicăieri de ce. */}
+        {requiresCode && !showAnexa3Section && wasteCode?.sublabel !== t.hazardous && (
+          <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+            {t.anexa3NeedsPartner}
+          </p>
         )}
 
         {showAnexa3Section && (

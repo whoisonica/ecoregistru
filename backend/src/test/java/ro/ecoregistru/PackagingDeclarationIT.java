@@ -348,6 +348,9 @@ class PackagingDeclarationIT {
                     .contains(String.valueOf(YEAR));
             assertThat(wb.getSheetAt(0).getRow(14).getCell(8).getStringCellValue())
                     .isEqualTo("[kilograme]");
+            // Art. 6: „în format electronic «.xls» protejat împotriva modificării datelor".
+            assertThat(wb.getSheetAt(0).getProtect()).isTrue();
+            assertThat(wb.getSheetAt(1).getProtect()).isTrue();
 
             // Hârtie carton e al cincilea rând de material şi poartă cele 300 kg pe col. 5.
             assertThat(cell(wb, 0, 23, 1)).isEqualTo("Hârtie carton");

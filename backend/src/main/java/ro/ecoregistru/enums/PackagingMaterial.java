@@ -25,11 +25,23 @@ import java.util.Set;
  *
  * <p><b>Why "Altele" is not the fallback.</b> It was, until 25.08.2026: everything the code could
  * not place landed there and the form printed a line naming the codes that did. The specialist's
- * hint, relayed by the user the same day, was that "Altele" should in practice stay empty — the
- * quantity belongs on a real material row, and only the client knows which. So an unanswered
- * movement now stays <b>out</b> of the table and is listed as such in the packaging tab, rather
- * than being swept into a row that would then be filed with an authority. Same house rule as
- * everywhere else: what is missing is shown to be missing.
+ * hint, relayed by the user the same day, was that "Altele" should in practice stay empty — and
+ * reading the order itself turned that hint into a rule with a citation. <b>Art. 8 alin. (1)
+ * lit. d)</b>, verbatim: <i>"În coloana «material», rubrica «altele» va cuprinde numai alte
+ * materiale decât cele nominalizate în coloana 0."</i> Metal packaging ({@code 15 01 04}) and
+ * plastic packaging ({@code 15 01 02}) are nominated materials, so sweeping them into "Altele" was
+ * against the act, not merely against practice. An unanswered movement now stays <b>out</b> of the
+ * table and is listed as such in the packaging tab. Same house rule as everywhere else: what is
+ * missing is shown to be missing.
+ *
+ * <p><b>Composites too.</b> Art. 8 alin. (1) lit. b): <i>"Ambalajele din materiale compozite se
+ * raportează în funcţie de materialul preponderent."</i> So {@code 15 01 05} does not belong in
+ * "Altele" either — it belongs on whichever material predominates, which only the client can say.
+ * That is why the code proposes nothing for it and the movement asks.
+ *
+ * <p>Lit. e) adds that the wood row covers cork as well, and alin. (2) that exported packaging and
+ * packaging in transit are left out of the report entirely — neither is decided here, but both are
+ * written down in {@code docs/surse-oficiale.md} §5.2 so nobody has to rediscover them.
  */
 @Getter
 public enum PackagingMaterial {

@@ -165,6 +165,9 @@ export const strings = {
     attachments: "Atașamente",
     hazardous: "Periculos",
     // Anexa 3 — dovada predării
+    anexa3NeedsPartner:
+      "Anexa 3 (dovada predării) apare după ce alegi partenerul care preia deșeul — fără destinatar, formularul n-are ce tipări.",
+
     // --- Provenienţa deşeului la ieşire ---
     // Se arată doar la conturile care pot prelua de la terţi. Fiecare opţiune îşi spune efectul,
     // fiindcă alegerea nu schimbă un câmp, ci pe ce formular oficial ajunge cantitatea.

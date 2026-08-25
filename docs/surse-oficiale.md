@@ -513,6 +513,108 @@ data aia nu e a declarației de ambalaje, ci a notificării de la art. 3.
 Până acum ne sprijineam pe `[kilograme]` tipărit deasupra celor cinci anexe. Art. 8 alin. (1) o
 spune ca obligație. Fișierul primit în tone rămâne, definitiv, șablon modificat local.
 
+### 5.2 Textul oficial, integral (25.08.2026)
+
+Sursă: forma consolidată la 04.02.2021, PDF Lege5 găzduit de FEPRA
+([fepra.ro/files/legal/ORDIN_794_-_06-02-2012.pdf](https://fepra.ro/files/legal/ORDIN_794_-_06-02-2012.pdf)),
+citit integral pe 25.08.2026. Înlocuieşte rezumatul din §5.1, care era corect dar incomplet.
+**Şase lucruri pe care nu le aveam, şi patru dintre ele ating cod.**
+
+#### 1. ⚠️ Anexa 1 nu e a tuturor — e a celor care îşi îndeplinesc **individual** obiectivele
+
+> **Art. 1 alin. (1)** — „Operatorii economici, producători şi importatori de ambalaje de desfacere,
+> producători/importatori de produse ambalate, precum şi cei care supraambalează produse ambalate,
+> **care îşi îndeplinesc în mod individual obiectivele** prevăzute la art. 16 alin. (4) din HG nr.
+> 621/2005 [...], sunt obligaţi să raporteze agenţiei judeţene/regionale pentru protecţia mediului
+> datele cuprinse în anexa nr. 1."
+>
+> **Alin. (2)** — cine a transferat obligaţiile **doar parţial** raportează pentru cantităţile
+> netransferate.
+
+Deci o firmă care şi-a transferat integral obligaţiile către un OIREP **nu depune anexa 1** — OIREP-ul
+raportează în locul ei, prin anexele 2A/2B. Nu ştiam asta, şi e chiar populaţia despre care vorbea
+specialista când zicea „Anexa 1 e strict pentru...". **Nu restrânge tabul azi** (nu întrebăm pe
+nimeni dacă a transferat obligaţiile), dar e o întrebare de pus.
+
+#### 2. Formatul: `.xls` **protejat**, şi **pe hârtie**
+
+> **Art. 6** — „Datele de raportare se transmit în format electronic „.xls" **protejat împotriva
+> modificării datelor** şi **pe suport hârtie**, până cel târziu la data de 25 februarie a fiecărui
+> an pentru anul anterior celui pentru care se realizează raportarea."
+
+Două consecinţe directe: foile generate sunt **protejate** (parolă goală, ca să poată fi ridicată —
+vezi `PackagingDeclarationXlsxGenerator`), iar **PDF-ul nu e un moft**: e exemplarul pe hârtie.
+Art. 7: ANPM publică formatul „xls" pe pagina de internet.
+
+#### 3. Regulile de completare — art. 8 alin. (1), pe care ne sprijinim acum în cod
+
+> a) „Cantităţile de ambalaje, respectiv de deşeuri de ambalaje se raportează **în kilograme**."
+> b) „Ambalajele din **materiale compozite** se raportează în funcţie de **materialul preponderent**."
+> c) „**Achiziţiile intracomunitare** de ambalaje şi produse ambalate **se asimilează importurilor**."
+> d) „În coloana «material», rubrica **«altele» va cuprinde numai alte materiale decât cele
+> nominalizate în coloana 0**."
+> e) „Rubrica «lemn» va cuprinde atât lemnul, cât şi pluta."
+>
+> **Alin. (2)** — „Datele referitoare la produsele/ambalajele **exportate** şi cele aflate **în
+> tranzit** pe teritoriul României **nu se includ** în datele de raportare."
+
+**Litera d) e temeiul legal al indicaţiei Andreei** că „Altele" n-ar trebui folosit. Nu e o preferinţă
+de practică: rubrica e rezervată materialelor **nenominalizate**, iar ambalajul metalic (`15 01 04`)
+şi cel de plastic (`15 01 02`) sunt nominalizate. Deci fallback-ul vechi, care le arunca acolo, era
+contra actului. Litera b) spune şi ce se face cu compozitele (`15 01 05`): merg pe materialul
+preponderent — pe care numai clientul îl ştie, deci tot pe mişcare se răspunde.
+
+#### 4. Anexa 3 are **două tabele**, şi reciclatorul îl completează pe al doilea
+
+> **Art. 4 alin. (1)** — colectorii, reciclatorii, valorificatorii, **comercianţii** de deşeuri de
+> ambalaje şi operatorii de salubritate autorizaţi pentru colectare „sunt obligaţi să raporteze
+> datele prevăzute în anexa nr. 3, **tabelul 1 sau, după caz, tabelul 2**".
+> **Alin. (3)** — colectorii/reciclatorii/valorificatorii raportează la agenţia din raza în care îşi
+> desfăşoară activitatea; **comercianţii la ANPM**.
+> **Alin. (4)** — „Raportarea se realizează **pentru fiecare punct de lucru în parte**."
+
+| | Tabelul 1 — **Colectori/Comercianţi** | Tabelul 2 — **Reciclatori/Valorificatori** |
+|---|---|---|
+| Cantitatea | colectată: Total \| din care periculoase | preluată: Total \| din care periculoase |
+| Provenienţa | da | da |
+| Ieşirea | comercializate/trimise la reciclare/valorificare/exportate: cantitate + **operatorul economic** (denumire + CUI; la export şi ţara) | **cantitatea reciclată** \| **cantitatea valorificată** (numai prin alte metode decât reciclarea) \| **metoda** |
+
+⚠️ **Rândurile de material sunt aceleaşi ca la anexa 1**: Sticlă · Pet · Alte plastice · *Total
+plastic* · Hârtie carton · **Aluminiu · Oţel** · *Total metal* · Lemn · Altele · *TOTAL*. Fişierul
+`.ods` primit, cu un singur rând „metal/aluminiu" şi în **tone**, e — ca şi cel de anexa 1 — **şablon
+modificat local**. Utilizatorul a spus exact asta pe 25.08 („aşa arată corect, ca în raportare
+ambalaje 2021 anexa 1 HRR"), iar actul îi dă dreptate.
+
+#### 5. „Provenienţa" are **patru** valori, nu trei
+
+> **Nota 2** a ambelor tabele — „Se menţionează, după caz, **«populaţie»**, **«generator persoană
+> juridică»**, **«colector»**, **«comerciant»**, în funcţie de persoanele juridice sau fizice **de la
+> care provin** deşeurile de ambalaje preluate."
+
+Fişierul `.ods` avea doar trei (îi lipsea „comerciant"). Şi formularea închide jumătate din
+întrebarea **AA**: provenienţa e o proprietate a **sursei**, nu a transportului — deci stă natural pe
+partener, cu excepţia „populaţiei", care n-are partener.
+
+#### 6. Calendarul complet
+
+| Cine / ce | Unde | Termen | Temei |
+|---|---|---|---|
+| Anexa 1 — producători/importatori **care îşi îndeplinesc individual obiectivele** | APM judeţeană/regională, din raza **sediului social** | **25 februarie** | art. 1 + art. 6 |
+| Anexele 2A/2B — OIREP-uri | **ANPM** | 25 februarie | art. 2 |
+| Notificarea „îmi îndeplinesc individual obiectivele" | **AFM** | **25 ianuarie** | art. 3 |
+| Anexa 3 — colectori/reciclatori/valorificatori | APM din raza **punctului de lucru**, per punct de lucru | 25 februarie | art. 4 |
+| Anexa 3 — **comercianţi** | **ANPM** | 25 februarie | art. 4 alin. (3) |
+| Anexa 4 — autorităţi locale | APM | 25 februarie | art. 5 |
+| AFM → ANPM: lista contribuabililor pe ambalaje | — | 31 ianuarie | art. 9 |
+| APM → ANPM: datele centralizate | — | 1 mai | art. 10 |
+
+**Separat de tot ce e mai sus**, contribuţia pe ambalaje la Fondul pentru mediu: **2 lei/kg**,
+datorată **numai** dacă nu ţi-ai atins obiectivele de valorificare, declarată şi plătită **anual,
+până pe 25 ianuarie** — OUG 196/2005 art. 9 alin. (1) lit. d) + **art. 11 alin. (2)**: „Sumele
+prevăzute la art. 9 alin. (1) **lit. d)**, i), j), p), v), w) şi x)" sunt cele anuale. Verificat pe
+Portalul Legislativ pe 25.08.2026, fiindcă un rezumat de pe internet o dădea drept lunară — nu e.
+`AfmContribution.PACKAGING` din `V21` rămâne corectă.
+
 ---
 
 ## 6. Ordinul MMAP 701/2024 — SIATD
