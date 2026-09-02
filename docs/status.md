@@ -15,11 +15,10 @@ rulează local și are testele verzi.
 > **Urmează:** modulul de depozit — ecrane `Reception`/`Delivery`, registru art. 48, borderou de
 > achiziție la metale, profil de groapă (Etapele 8–11), plus TODO-ul Anexa 3 Ambalaje.
 >
-> **Deschis:** **trei** întrebări către specialistă — **C** (cine se scrie la tratarea proprie),
-> **W** (generarea dedusă fără stoc) și **AC** (regula bifei de ambalaje, implementată și
-> neconfirmată; criteriul e însă în act, vezi §5.3). Din unsprezece, patru s-au închis pe corpus
-> (**V**, **X**, **P**, **I**) și trei pe textul actelor (**Q**, **Y**, **AA**); **AB** a rămas o
-> alegere de produs, nu o întrebare. Blocajele de infrastructură sunt la finalul documentului.
+> **Deschis:** **două** întrebări către specialistă — **C** (cine se scrie la tratarea proprie) și
+> **W** (generarea dedusă fără stoc). Din unsprezece: patru închise pe corpus (**V**, **X**, **P**,
+> **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
+> produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
@@ -2160,8 +2159,9 @@ răspuns — anexa 1 o depun doar cei cu obiective individuale; rămâne alegere
 asta în cererea de cont), iar la **AC** criteriul e în act (notele 1 și 4 + art. 8 alin. (2):
 ambalaj pus pe piața națională, exportul exclus) — deschisă rămâne doar forma, nu regula.
 
-Rămân trei: **C**, **W** și forma lui **AC**. Zero cod schimbat — toate trei confirmă ce face
-aplicația.
+**Rămân două: C și W.** Forma lui **AC** a fost decisă de utilizator în aceeași zi — *„la AC lasă
+momentan bifa"* — iar bifa e confirmată pe producție: `V27` aplicată, coloana `packaging_on_market`
+prezentă pe `waste_movements`. Zero cod schimbat: toate confirmă ce face aplicația.
 
 ---
 
