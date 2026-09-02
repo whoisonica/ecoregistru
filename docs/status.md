@@ -15,10 +15,11 @@ rulează local și are testele verzi.
 > **Urmează:** modulul de depozit — ecrane `Reception`/`Delivery`, registru art. 48, borderou de
 > achiziție la metale, profil de groapă (Etapele 8–11), plus TODO-ul Anexa 3 Ambalaje.
 >
-> **Deschis:** **șapte** întrebări către specialistă — C, Q, W, Y, AA, AB, AC — dintre care **AC**,
-> regula bifei „ambalaj pus de noi pe piața națională", e implementată și neconfirmată. Patru s-au
-> închis pe 02.09 din corpus (**V**, **X**, **P**, **I**); vezi „Corpusul, recitit integral".
-> Blocajele de infrastructură sunt la finalul documentului.
+> **Deschis:** **trei** întrebări către specialistă — **C** (cine se scrie la tratarea proprie),
+> **W** (generarea dedusă fără stoc) și **AC** (regula bifei de ambalaje, implementată și
+> neconfirmată; criteriul e însă în act, vezi §5.3). Din unsprezece, patru s-au închis pe corpus
+> (**V**, **X**, **P**, **I**) și trei pe textul actelor (**Q**, **Y**, **AA**); **AB** a rămas o
+> alegere de produs, nu o întrebare. Blocajele de infrastructură sunt la finalul documentului.
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
@@ -2142,6 +2143,27 @@ depășit în model nu se copiază** — corpusul spune cum se completează un f
 vigoare.
 
 Detaliile verbatim, cu citatele din note: `surse-oficiale.md` §1.2, §1.3 (punctele 4 și 6–10) și §5.3.
+
+### Trei întrebări închise pe textul actelor, nu pe practică (02.09.2026)
+
+Reverificare direct pe **Portalul Legislativ**, fiindcă o parte din citate veneau de la gazde
+secundare (PDF Lege5 găzduit de FEPRA). Textul e identic; sursa e acum primă.
+
+| Întrebare | Ce spune actul |
+|---|---|
+| **Q** — 15 martie, una sau două depuneri | **Una.** HG 856/2002 (consolidare 19.03.2007) nu impune niciun termen: cere să **ții** evidența (art. 1) și să o dai **la cerere** (art. 2 alin. (2), art. 3). Singura depunere cu dată fixă e OUG 92/2021 art. 48 alin. (1). |
+| **Y** — împreună sau separat | **Nu pot fi împreună.** Notificarea la AFM pe 25 ianuarie (art. 3), raportarea la agenția județeană pe 25 februarie (art. 1 + art. 6). Alt destinatar, altă lună. |
+| **AA** — valorile „Provenienței" | **Patru**, verbatim din anexa 3 nota 2: „populație", „generator persoană juridică", „colector", „comerciant". Șablonul primit, cu trei sub-rânduri, e modificat local. |
+
+Pe deasupra, două reclasificări: **AB** nu mai e întrebare pentru specialistă (art. 1 alin. (1) a
+răspuns — anexa 1 o depun doar cei cu obiective individuale; rămâne alegerea noastră dacă întrebăm
+asta în cererea de cont), iar la **AC** criteriul e în act (notele 1 și 4 + art. 8 alin. (2):
+ambalaj pus pe piața națională, exportul exclus) — deschisă rămâne doar forma, nu regula.
+
+Rămân trei: **C**, **W** și forma lui **AC**. Zero cod schimbat — toate trei confirmă ce face
+aplicația.
+
+---
 
 ### Commis, pushat și deployat (02.09.2026, ora 16:43)
 

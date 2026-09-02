@@ -54,6 +54,13 @@ Sursă: [legislatie.just.ro/Public/DetaliiDocumentAfis/38294](https://legislatie
 
 Termenul de păstrare **al operatorului economic** e la OUG 92/2021 art. 48 alin. (5) — vezi §2.1.
 
+> ✅ **HG 856/2002 nu impune niciun termen de depunere** — reverificat pe Portalul Legislativ pe
+> 02.09.2026 (consolidare 19.03.2007, ultima). Obligaţia e de a **ţine** evidenţa (art. 1) şi de a o
+> transmite **la cererea** autorităţii (art. 2 alin. (2), art. 3). Singura depunere cu dată fixă din
+> tot dreptul aplicabil e cea din **OUG 92/2021 art. 48 alin. (1) — 15 martie**, electronic, în
+> sistemul APM. **Deci pe 15 martie e o singură depunere, nu două: închide întrebarea Q.** Codul
+> avea deja un singur `ReportType.SIM_ANNUAL`; nu se adaugă un al doilea.
+
 ### 1.2 ANEXA Nr. 1 — modelul fișei (reprodusă în facsimil în act)
 
 Câmpuri de identificare, în capul fișei:
@@ -570,8 +577,13 @@ control, nu pentru depunere.
 | Notificarea „îmi îndeplinesc individual obiectivele" | **AFM** | **25 ianuarie** | art. 3 |
 
 Deci și specialista („Anexa 1 ambalaje este pentru fondul de mediu, declarație AFM"), și actul
-(„agenția județeană") spun adevărul, despre **documente diferite**. Ce mai rămâne de confirmat la
-**Y** e o singură linie: dacă în practica ei cele două se depun împreună sau separat. Cadența AFM
+(„agenţia judeţeană") spun adevărul, despre **documente diferite**.
+
+✅ **Închis pe 02.09.2026, pe textul de pe Portalul Legislativ.** Întrebarea era dacă în practică se
+depun împreună sau separat — dar **nu pot fi depuse împreună**: art. 3 trimite notificarea la **AFM
+până pe 25 ianuarie**, iar art. 1 + art. 6 trimit raportarea la **agenţia judeţeană de mediu până pe
+25 februarie**. Alt destinatar, altă lună. Practica nu poate contrazice asta, deci nu mai e o
+întrebare pentru specialistă. Cadenţa AFM
 anuală pe 25 ianuarie era deja în cod din `V21` (`AfmContribution.PACKAGING`) — și acum se vede că
 data aia nu e a declarației de ambalaje, ci a notificării de la art. 3.
 
@@ -584,6 +596,10 @@ spune ca obligație. Fișierul primit în tone rămâne, definitiv, șablon modi
 Sursă: forma consolidată la 04.02.2021, PDF Lege5 găzduit de FEPRA
 ([fepra.ro/files/legal/ORDIN_794_-_06-02-2012.pdf](https://fepra.ro/files/legal/ORDIN_794_-_06-02-2012.pdf)),
 citit integral pe 25.08.2026. Înlocuieşte rezumatul din §5.1, care era corect dar incomplet.
+✅ **Reverificat pe 02.09.2026 direct pe Portalul Legislativ**
+([legislatie.just.ro/Public/DetaliiDocumentAfis/135672](https://legislatie.just.ro/Public/DetaliiDocumentAfis/135672)),
+fiindcă FEPRA e gazdă secundară, nu sursă primară. Art. 1, 3, 4 şi 6 şi notele anexelor sunt
+**identice** cu ce aveam. Actul e în vigoare.
 **Şase lucruri pe care nu le aveam, şi patru dintre ele ating cod.**
 
 #### 1. ⚠️ Anexa 1 nu e a tuturor — e a celor care îşi îndeplinesc **individual** obiectivele
@@ -719,7 +735,18 @@ plin de operatori străini (*Hamburger Hungaria*, *Hamburger Recycling Group GMB
 Adresa partenerului e text liber, deci ţara **încape** acolo; nu cere schemă nouă, doar ca cineva
 să o scrie.
 
-**2. „Provenienţa" din Anexa 3 Ambalaje nu e un câmp, e o axă a tabelului.** În şablonul primit,
+**2. „Provenienţa" — nota actului, verbatim (Portalul Legislativ, 02.09.2026):**
+
+> **Anexa nr. 3, nota 2)** — „Se menţionează, după caz, «populaţie», «generator persoană juridică»,
+> «colector», «comerciant»."
+
+✅ **Patru valori, exact cele presupuse** — deci şablonul primit, care are doar trei sub-rânduri
+(`populatie`, `colectori`, `generatori persoane juridice`) şi nu-l are pe „comerciant", e într-adevăr
+modificat local. **Închide jumătatea de drept a întrebării AA.** Cealaltă jumătate — dacă ţinem
+provenienţa pe partener sau pe mişcare — **nu e o întrebare pentru specialistă, e decizia noastră de
+model**: actul spune ce valori se scriu în rubrică, nu unde le stocăm noi.
+
+**2b. Forma rubricii în şablon.** În şablonul primit,
 fiecare material se sparge în **trei sub-rânduri fixe** — `populatie`, `colectori`,
 `generatori persoane juridice` — plus un rând „total <material>". Nu apare `comerciant`.
 ⚠️ Şablonul e însă cel **modificat local**: scrie „tone" (actul spune kilograme, art. 8 alin. (1)) şi
