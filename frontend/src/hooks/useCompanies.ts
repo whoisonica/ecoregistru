@@ -21,7 +21,8 @@ export function useCompanies(enabled: boolean) {
 /**
  * The tenant the session is scoped to, readable by any member. Every screen that has to know what
  * kind of company this is reads it here — the movement form offers the operations the type allows.
- * The tenant switcher clears the whole query cache, so no tenant id belongs in the key.
+ * The tenant switcher drops the cached data of the company being left, so no tenant id belongs
+ * in the key.
  */
 export const currentCompanyKey = ["company", "current"] as const;
 

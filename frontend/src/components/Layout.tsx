@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,9 +14,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { useCompanies } from "@/hooks/useCompanies";
+import { companiesKey, useCompanies } from "@/hooks/useCompanies";
 import { Select } from "@/components/ui/select";
-import { tenantStore } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -45,15 +43,14 @@ const clientsNavItem: NavItem = { to: "/clienti", label: strings.nav.clients, ic
 
 /**
  * Current-company block under the app name. Normal users see their company name (read-only).
- * PLATFORM_ADMIN gets a tenant switcher that sets X-Tenant-Id (via tenantStore) and clears the
- * whole query cache so every list reloads for the newly selected tenant.
+ * PLATFORM_ADMIN gets a tenant switcher that sets X-Tenant-Id (via `switchTenant`) and drops the
+ * cached data of the company being left.
  */
 function CompanyBlock() {
-  const { user } = useAuth();
+  const { user, tenantId, switchTenant } = useAuth();
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
   const queryClient = useQueryClient();
   const { data: companies, isError } = useCompanies(!!isPlatformAdmin);
-  const [tenantId, setTenantId] = useState<string>(() => tenantStore.get() ?? "");
 
   if (!isPlatformAdmin) {
     return (
@@ -72,14 +69,14 @@ function CompanyBlock() {
   }
 
   function handleChange(id: string) {
-    setTenantId(id);
-    if (id) {
-      tenantStore.set(id);
-    } else {
-      tenantStore.clear();
-    }
-    // Switching tenant must not mix data between companies: drop every cached query.
-    queryClient.clear();
+    // Switching tenant must not mix data between companies: drop every cached query. The list of
+    // companies is the one exception — it is the same for every tenant, and it is read from here,
+    // outside the subtree that remounts below, so a removed query would leave this switcher
+    // holding data nothing ever refetches.
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== companiesKey[0],
+    });
+    switchTenant(id || null);
   }
 
   return (
@@ -89,7 +86,7 @@ function CompanyBlock() {
       </div>
       <Select
         className="mt-1 h-9 bg-white"
-        value={tenantId}
+        value={tenantId ?? ""}
         onChange={(e) => handleChange(e.target.value)}
       >
         <option value="">{strings.header.selectCompany}</option>
@@ -107,7 +104,7 @@ function CompanyBlock() {
 }
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout, tenantId } = useAuth();
   const navigate = useNavigate();
 
   // Platform admin gets the "Clienți" entry, inserted just before Settings.
@@ -163,7 +160,15 @@ export function Layout({ children }: { children: ReactNode }) {
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto p-8">{children}</main>
+      {/*
+        Keyed by company: changing it remounts the page instead of leaving it on screen with the
+        previous tenant's filters — a work-point id or a partner selected for the company we just
+        left means nothing in the new one. The cache was emptied in `handleChange`, so the fresh
+        mount refetches everything with the new X-Tenant-Id, and nobody has to reload the page.
+      */}
+      <main key={tenantId ?? "fara-companie"} className="flex-1 overflow-auto p-8">
+        {children}
+      </main>
     </div>
   );
 }

@@ -13,6 +13,14 @@ export interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
+  /**
+   * The company every request is scoped to. Mirrors `tenantStore` (which the axios interceptor
+   * reads) as React state, so that changing companies re-renders the app instead of waiting for
+   * the user to reload the page. For a scoped user it is simply their own company.
+   */
+  tenantId: string | null;
+  /** PLATFORM_ADMIN only: point the session at another company. `null` = none selected. */
+  switchTenant: (id: string | null) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -29,6 +37,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = userStore.get();
     if (token && stored) {
       setUser(JSON.parse(stored) as AuthUser);
+      setTenantId(tenantStore.get());
     }
     setLoading(false);
   }, []);
@@ -54,14 +64,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tenantStore.set(data.tenantId);
     }
     setUser(authUser);
+    setTenantId(data.tenantId);
+  }
+
+  function switchTenant(id: string | null) {
+    if (id) {
+      tenantStore.set(id);
+    } else {
+      tenantStore.clear();
+    }
+    setTenantId(id);
   }
 
   function logout() {
     clearSession();
     setUser(null);
+    setTenantId(null);
   }
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading]);
+  const value = useMemo(
+    () => ({ user, loading, tenantId, switchTenant, login, logout }),
+    [user, loading, tenantId]
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
