@@ -8,6 +8,11 @@ package ro.ecoregistru.enums;
  * to the driver and the plate number, exactly as Anexa 3 la HG 1061/2008 asks for it. Any partner
  * can be named there.
  *
+ * <p>What V28 added is not a fourth value but a tick, {@code Partner.carrier}: "this one can haul
+ * it". A value would have been exclusive, and the firm that both collects and hauls — the ordinary
+ * case — would have had to be entered twice. A pure haulage firm is the one partner with no type
+ * at all: it does nothing with the waste, so the field is null and only the tick is set.
+ *
  * <p>This axis answers "what are they"; the commercial role on {@link ro.ecoregistru.entity.Partner}
  * — client / supplier — answers "which way does the invoice travel". They are independent: the
  * collector who buys our cardboard is a COLLECTOR and a client, the one who empties our bins is a

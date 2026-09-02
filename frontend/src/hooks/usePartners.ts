@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { driversKey } from "@/hooks/useDrivers";
 import type { Partner, PartnerInput } from "@/lib/types";
 
 /**
@@ -7,6 +8,9 @@ import type { Partner, PartnerInput } from "@/lib/types";
  * mutations that invalidate the key on success). Deactivate is one-way:
  * the backend has no reactivate endpoint, so the UI hides the action on
  * inactive rows rather than exposing a toggle.
+ *
+ * Salvarea unui partener îi rescrie și șoferii, deci invalidează și `driversKey`: altfel
+ * formularul de mișcare ar oferi lista de dinaintea salvării.
  */
 export const partnersKey = ["partners"] as const;
 
@@ -22,7 +26,10 @@ export function useCreatePartner() {
   return useMutation({
     mutationFn: async (input: PartnerInput) =>
       (await api.post<Partner>("/api/v1/partners", input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: partnersKey }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: partnersKey });
+      qc.invalidateQueries({ queryKey: driversKey });
+    },
   });
 }
 
@@ -31,7 +38,10 @@ export function useUpdatePartner() {
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: PartnerInput }) =>
       (await api.put<Partner>(`/api/v1/partners/${id}`, input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: partnersKey }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: partnersKey });
+      qc.invalidateQueries({ queryKey: driversKey });
+    },
   });
 }
 

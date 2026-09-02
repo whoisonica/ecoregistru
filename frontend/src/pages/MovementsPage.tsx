@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Paperclip, FileText, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
+import { useDrivers } from "@/hooks/useDrivers";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import {
@@ -112,7 +113,7 @@ const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
  * @returns casetele sugerate, sau o listă goală când nu avem ce sugera
  */
 function suggestedDestinations(
-  partnerType: PartnerType | undefined,
+  partnerType: PartnerType | null | undefined,
   operation: WasteOperation
 ): TransportDestination[] {
   if (operation !== "RECOVERED") return [];
@@ -509,6 +510,7 @@ function MovementFormDialog({
   const addAttachmentMut = useAddAttachment();
   const deleteAttachmentMut = useDeleteAttachment();
   const { data: partners } = usePartners();
+  const { data: drivers } = useDrivers();
   const { data: company } = useCurrentCompany();
 
   const [workPointId, setWorkPointId] = useState(editing?.workPointId ?? defaultWorkPointId ?? "");
@@ -581,6 +583,24 @@ function MovementFormDialog({
     [partners, partnerId]
   );
   /**
+   * Transportatorii se grupează, nu se filtrează. Regula casei e că un răspuns lipsă nu restrânge
+   * nimic (vezi profilul de firmă): dacă nimeni n-a bifat încă „Transportator" în Parteneri, un
+   * filtru dur ar goli select-ul și ar arăta ca un defect. Așa, cei bifați stau primii și sub un
+   * titlu, iar restul rămân la îndemână.
+   */
+  const activePartners = useMemo(
+    () => (partners ?? []).filter((p) => p.active),
+    [partners]
+  );
+  const carrierPartners = useMemo(
+    () => activePartners.filter((p) => p.carrier),
+    [activePartners]
+  );
+  const otherPartners = useMemo(
+    () => activePartners.filter((p) => !p.carrier),
+    [activePartners]
+  );
+  /**
    * „Secţia" nu se mai alege pe mişcare (25.08.2026, la cererea utilizatorului). Rubrica din cap. 2
    * al fişei se completează singură cu secţiile punctului de lucru — „Birouri, Producţie" — aşa cum
    * face decizia 19 când mişcarea nu numeşte niciuna. Valoarea existentă se **păstrează** la
@@ -598,6 +618,24 @@ function MovementFormDialog({
   );
   const [vehicleRegistration, setVehicleRegistration] = useState(
     editing?.vehicleRegistration ?? ""
+  );
+  /**
+   * Care șofer configurat s-a ales, ca să se vadă bifat în select. `""` înseamnă „altcineva", și e
+   * și implicitul la editare: ce s-a salvat pe mișcare sunt cele trei texte, nu o legătură către un
+   * șofer, tocmai fiindcă formularul tipărește un instantaneu — actul de identitate de atunci,
+   * mașina de atunci. Alegerea din listă doar precompletează.
+   */
+  const [driverId, setDriverId] = useState("");
+  /**
+   * Șoferii pe care îi propune formularul: ai transportatorului ales, sau ai noștri când transportăm
+   * noi (`partnerId` gol pe șofer = șofer propriu).
+   */
+  const availableDrivers = useMemo(
+    () =>
+      (drivers ?? []).filter(
+        (d) => d.active && (transportPartnerId ? d.partnerId === transportPartnerId : d.partnerId === null)
+      ),
+    [drivers, transportPartnerId]
   );
   const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>(
     editing?.transportDestinations ?? []
@@ -1258,22 +1296,75 @@ function MovementFormDialog({
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              {/* Transportatorul și șoferul stau alături: alegerea firmei decide ce șoferi se
+                  propun, iar alăturarea face legătura vizibilă fără s-o explice nimeni. */}
               <div>
                 <Label htmlFor="mv-carrier">{t.transportPartner}</Label>
                 <Select
                   id="mv-carrier"
                   value={transportPartnerId}
-                  onChange={(ev) => setTransportPartnerId(ev.target.value)}
+                  onChange={(ev) => {
+                    setTransportPartnerId(ev.target.value);
+                    // Șoferii sunt ai transportatorului: schimbi firma, alegerea nu mai e a ei.
+                    // Textul deja scris rămâne — poate a fost scris de mână, și nu se șterge munca.
+                    setDriverId("");
+                  }}
                 >
                   <option value="">{t.transportPartnerPlaceholder}</option>
-                  {(partners ?? [])
-                    .filter((p) => p.active)
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                  {carrierPartners.length > 0 && (
+                    <optgroup label={t.carrierGroup}>
+                      {carrierPartners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {otherPartners.length > 0 && (
+                    <optgroup label={carrierPartners.length > 0 ? t.otherPartnersGroup : t.allPartnersGroup}>
+                      {otherPartners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </Select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {carrierPartners.length > 0 ? t.transportPartnerHint : t.transportPartnerNoneHint}
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="mv-driver-pick">{t.driverPick}</Label>
+                <Select
+                  id="mv-driver-pick"
+                  value={driverId}
+                  onChange={(ev) => {
+                    const picked = availableDrivers.find((d) => d.id === ev.target.value);
+                    setDriverId(ev.target.value);
+                    if (picked) {
+                      setDriverName(picked.name);
+                      setDriverIdentification(picked.identification ?? "");
+                      setVehicleRegistration(picked.vehicleRegistration ?? "");
+                    }
+                  }}
+                  disabled={availableDrivers.length === 0}
+                >
+                  <option value="">{t.driverPickFreeText}</option>
+                  {availableDrivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                      {d.vehicleRegistration ? ` — ${d.vehicleRegistration}` : ""}
+                    </option>
+                  ))}
+                </Select>
+                <p className="mt-1 text-xs text-gray-500">
+                  {availableDrivers.length > 0
+                    ? t.driverPickHint
+                    : transportPartnerId
+                      ? t.driverPickNoneCarrier
+                      : t.driverPickNoneOwn}
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">

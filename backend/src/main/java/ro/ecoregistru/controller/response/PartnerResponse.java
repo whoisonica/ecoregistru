@@ -12,11 +12,14 @@ public record PartnerResponse(
         String cui,
         String authorizationNumber,
         LocalDate authorizationExpiry,
+        /** What they do with the waste; null means a pure haulage firm — see {@code carrier}. */
         PartnerType type,
         /** We hand waste over to them and we invoice them. */
         boolean client,
         /** They perform the service and they invoice us. */
         boolean supplier,
+        /** They can haul the waste; drives the "Transportatori" group of the movement form. */
+        boolean carrier,
         boolean active,
         /** True when the authorization expires within 60 days (drives the UI badge). */
         boolean expiringSoon,
@@ -26,5 +29,6 @@ public record PartnerResponse(
         List<PartnerWorkPointResponse> workPoints,
         String tradeRegisterNumber,
         String transportLicenseNumber,
-        LocalDate transportLicenseExpiry
+        LocalDate transportLicenseExpiry,
+        List<DriverResponse> drivers
 ) {}

@@ -19,7 +19,8 @@ import java.util.UUID;
  * asked for:
  *
  * <ul>
- *   <li>{@link #type} — what they are authorised to do with waste (collector, carrier, both);</li>
+ *   <li>{@link #type} — what they do with the waste (generator, collector, recoverer), plus the
+ *       independent {@link #carrier} tick for "can also haul it";</li>
  *   <li>{@link #client} / {@link #supplier} — which way the invoice travels. A <em>client</em>
  *       takes our waste and we invoice them (the cardboard we sell). A <em>supplier</em> provides
  *       the service, gives us the traceability documents and invoices us (the mixed waste we pay
@@ -87,6 +88,27 @@ public class Partner {
     @Column(name = "trade_register_number", length = 50)
     String tradeRegisterNumber;
 
+    /**
+     * They can haul the waste themselves — the tick that puts them in the "Transportatori" group
+     * of the movement form's carrier select and reveals the two licence fields below.
+     *
+     * <p>A tick and not a {@link PartnerType} value, for the same reason the commercial role is
+     * two flags: the same firm is routinely a collector <em>and</em> a carrier, and an exclusive
+     * enum would force it to exist twice. A pure haulage firm is the other case — it does nothing
+     * with the waste, so {@link #type} is null and only this is set.
+     */
+    @Column(name = "is_carrier", nullable = false)
+    boolean carrier;
+
+    /**
+     * His drivers, for the "Date de identificare delegat" rubric of Anexa 3. Only meaningful on a
+     * carrier; our own drivers are the rows of the same table with no partner.
+     */
+    @OneToMany(mappedBy = "partner", cascade = CascadeType.ALL, orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    @Builder.Default
+    List<Driver> drivers = new ArrayList<>();
+
     /** "Licenţa de transport mărfuri nepericuloase nr." + its expiry, for the carrier column. */
     @Column(name = "transport_license_number")
     String transportLicenseNumber;
@@ -97,8 +119,13 @@ public class Partner {
     /** Authorization expiry date; alert when within 60 days. */
     LocalDate authorizationExpiry;
 
+    /**
+     * What they do with the waste. Nullable since V28: a pure haulage firm does nothing with it,
+     * it moves it, and typing it "Colector" would be a guessed value on a printed rubric — the
+     * audit file prints the column, and the Anexa 3 "Destinat:" ticks are prefilled from it. Null
+     * is only allowed together with {@link #carrier}; the service enforces that.
+     */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     PartnerType type;
 
     /** We hand waste over to them and we invoice them. */

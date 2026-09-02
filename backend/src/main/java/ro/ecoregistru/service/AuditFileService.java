@@ -455,7 +455,11 @@ public class AuditFileService {
         };
     }
 
+    /** Null since V28: a pure haulage firm does nothing with the waste, so the column stays empty. */
     private String partnerType(PartnerType type) {
+        if (type == null) {
+            return "—";
+        }
         return switch (type) {
             case COLLECTOR -> "Colector";
             case RECOVERER -> "Valorificator";

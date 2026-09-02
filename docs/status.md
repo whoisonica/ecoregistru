@@ -1737,6 +1737,113 @@ Releaseurile intermediare ale zilei: api `v26` (`58e1025`, cu `V26`) → `v27` (
 reparaţia registrului) → `v28`; app `v19` → `v20` → `v21`.
 
 
+## Transportatorul se configurează, iar șoferii nu se mai rescriu (`V28`) (02.09.2026)
+
+**Cererea:**
+
+> „vreau la parteneri să poți configura și transportator și să se vadă pe anexa 3 transport
+> transportatorul și să îl poți selecta de acolo și să poți cumva să configurezi și șoferii de acolo
+> sau să scrii free text. să facem un tab nou pentru transportator? ideea e că uneori firma care
+> colectează și transportă, alteori nu poate să transporte o firmă de transport mai mare."
+
+### Ce exista deja, și de ce n-a fost construit a doua oară
+
+Jumătate din cerere era livrată din `V10` și n-am atins-o:
+
+- `WasteMovement` avea `transportPartner`, `driverName`, `driverIdentification`,
+  `vehicleRegistration`;
+- formularul de mișcare avea select-ul **Transportator**, cu implicitul `— transportăm noi —`;
+- `Anexa3FormGenerator.carrierColumn()` tipărea deja coloana „Date de identificare transportator" —
+  nume, adresă, CUI, Reg. Com., licența și data expirării — luate de la partenerul ales, sau de la
+  firma noastră când nu e ales niciunul.
+
+Ce lipsea era exact ce se **configurează**: nu puteai marca un partener ca transportator (select-ul
+lista toți partenerii activi, nefiltrat), iar cele trei rubrici ale delegatului se scriau de mână la
+fiecare transport, deși vin aceiași doi-trei oameni cu aceleași mașini luni de zile.
+
+### Decizia: bifă, nu tab, nu tip
+
+Întrebarea din cerere („să facem un tab nou?") s-a pus înainte de orice cod, cu trei variante puse
+pe masă. Răspunsul a fost **bifa**, iar motivul e chiar exemplul din cerere: firma care *și*
+colectează, *și* transportă. Cu tab separat sau cu o a patra valoare în `PartnerType`, aceeași firmă
+s-ar fi introdus de două ori, cu CUI și adresă de ținut sincronizate manual — problema pe care a
+rezolvat-o `V23` la punctele de lucru. Codul luase deja aceeași decizie de două ori: rolul comercial
+e două flaguri, nu un enum (`V7`), iar javadoc-ul lui `PartnerType` scrie de la `V10`
+*„There is deliberately no CARRIER"*. Rămâne adevărat: hauling-ul e o rubrică a unui transport anume;
+bifa spune doar **cine poate** apărea acolo.
+
+### Nodul: `type` a devenit nullable
+
+O firmă de transport pură nu e nici GENERATOR, nici COLLECTOR, nici RECOVERER — nu face nimic cu
+deșeul, îl mută. A o trece „Colector" ar fi fost o cifră ghicită pe o rubrică tipărită: coloana „Tip"
+apare în dosarul de control, iar prebifarea casetei „Destinat:" de pe Anexa 3 se citește **chiar din
+tip** (decizia de la G3b/`V11`). Deci `type` s-a relaxat la nullable, cu înțelesul „doar
+transportator".
+
+E a **doua** relaxare de migrare din proiect, după `quantity` (`V10`), și urmează aceeași regulă: se
+relaxează doar când alternativa e să ghicim. Constrângerea n-a dispărut, s-a mutat în serviciu — **ori
+tip, ori bifa** — și are testul ei (`aPartnerThatIsNeitherIsRefused`).
+
+### Backfill-ul e din răspunsuri deja date, nu din ghicit
+
+`V28` bifează „Transportator" la partenerii care **erau deja folosiți** ca atare: cei care apar pe o
+mișcare la `transport_partner_id`, și cei cărora li s-a completat licența de transport. Amândouă sunt
+lucruri scrise de om. Restul rămân nebifați.
+
+### Șoferii: un tabel cu `partner_id` **nullable**
+
+Asta e miezul feliei:
+
+| `partner_id` | Cine sunt | Unde se editează |
+|---|---|---|
+| completat | șoferii transportatorului | fișa partenerului, ca punctele de lucru |
+| `NULL` | **șoferii noștri** | Setări, sub generatorii interni |
+
+Rândurile cu `NULL` sunt exact cazul `— transportăm noi —`, care altfel rămânea pe free text pe veci.
+
+**Ce se salvează pe mișcare rămân tot cele trei coloane text din `V10`, nu o cheie străină.**
+Alegerea unui șofer precompletează câmpurile, atât. Motivul e că formularul tipărește un
+**instantaneu** — actul de identitate de la data aia, mașina de la data aia — iar o mișcare veche
+trebuie să tipărească mâine exact ce tipărea ieri, chiar dacă omul și-a schimbat între timp buletinul
+sau a plecat de la firmă. Free textul rămâne prima clasă, nu o portiță.
+
+### Trei alegeri de interfață care nu sunt cosmetice
+
+1. **Transportatorii se grupează, nu se filtrează.** Select-ul de pe mișcare pune întâi `<optgroup>`
+   „Transportatori", apoi „Alți parteneri". Regula casei e că un răspuns lipsă nu restrânge nimic
+   (vezi „profil gol = fără restricție"): dacă nimeni n-a bifat încă pe nimeni, un filtru dur ar goli
+   select-ul și ar arăta ca un defect. Sub el scrie care e situația.
+2. **Licența și șoferii apar doar la bifat.** Cele două câmpuri de licență se cereau până acum
+   tuturor partenerilor, inclusiv unui valorificator care n-a transportat nimic niciodată.
+3. **Debifarea „Transportator" NU șterge șoferii.** Bifa se ia jos pentru un sezon — colectorul care
+   de obicei transportă, dar iarna asta nu — și o listă de oameni scrisă de mână n-are voie să
+   evaporeze pe un checkbox. Are test (`untickingCarrierKeepsTheDrivers`).
+
+### Un singur drum de scriere per fel de șofer
+
+Șoferii unui transportator se scriu **doar** prin formularul partenerului, unde lista se înlocuiește
+la salvare. `POST/PUT/DELETE /api/v1/drivers` ating doar șoferii noștri și **refuză** explicit un
+șofer care are partener (`driver.belongs.to.partner`). Fără regula asta, un șofer adăugat prin
+endpoint ar fi dispărut data viitoare când cineva deschidea și salva partenerul — un bug tăcut, greu
+de reprodus. `GET` întoarce tot, fiindcă formularul de mișcare are nevoie de amândouă felurile
+într-un apel.
+
+### Verificat pe hârtie, nu doar în teste
+
+Regula 4 a casei: PDF-ul s-a randat și s-a **uitat** cineva la el. Anexa 3 a unei mișcări cu
+transportator configurat tipărește în coloana din stânga **Trans Greu SA**, cu CUI-ul, adresa și
+Reg. Com. **lui**, licența `LIC 4417/2025` expirând `31.03.2027`, iar dedesubt delegatul
+`Ion Popescu` / `CJ 123456` / `CJ 01 ABC` — toate venite din configurare, niciuna scrisă de mână.
+Expeditorul rămâne firma noastră. Testul `anexa3PrintsTheChosenCarrierAndHisLicence` lasă PDF-ul în
+`backend/build/anexa3-carrier.pdf` după fiecare rulare, ca să poată fi deschis din nou.
+
+### Stare
+
+**175 de teste verzi** (8 noi, în `CarrierAndDriversIT`), migrări până la **`V28`**; următoarea
+liberă e **`V29`**.
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

@@ -232,6 +232,20 @@ export const strings = {
       "Unde s-a descărcat marfa. Se tipărește pe Anexa 3, la destinatar.",
     partnerWorkPointOnly: "Singurul punct de lucru al partenerului",
     transportPartnerPlaceholder: "— transportăm noi —",
+    carrierGroup: "Transportatori",
+    otherPartnersGroup: "Alți parteneri",
+    allPartnersGroup: "Parteneri",
+    transportPartnerHint:
+      "Cei bifați „Transportator” în Parteneri stau primii. Poate fi ales oricare partener.",
+    transportPartnerNoneHint:
+      "Niciun partener nu e bifat „Transportator” încă. Bifa se pune în Parteneri și aduce cu ea licența de transport și șoferii.",
+    driverPick: "Alege delegatul",
+    driverPickFreeText: "— altcineva (scriu mai jos) —",
+    driverPickHint: "Completează singur cele trei rubrici de mai jos. Rămân editabile.",
+    driverPickNoneCarrier:
+      "Transportatorul ăsta n-are șoferi configurați. Se adaugă în fișa lui, din Parteneri.",
+    driverPickNoneOwn:
+      "N-ai șoferi proprii configurați. Se adaugă în Setări, sub punctele de lucru.",
     driverName: "Delegat (șofer)",
     driverIdentification: "Act de identitate",
     driverIdentificationPlaceholder: "ex. serie și nr. CI",
@@ -275,6 +289,33 @@ export const strings = {
       deactivated: "Punct de lucru dezactivat.",
       saveError: "Salvarea a eșuat. Încearcă din nou.",
       loadError: "Nu am putut încărca punctele de lucru.",
+    },
+    drivers: {
+      title: "Șoferii noștri",
+      subtitle:
+        "Delegații firmei, pentru transporturile pe care le faci singur. La înregistrarea mișcării îi alegi din listă și rubricile de pe Anexa 3 se completează singure. Șoferii unui transportator se adaugă în fișa lui, din Parteneri.",
+      add: "Adaugă șofer",
+      addTitle: "Adaugă șofer",
+      editTitle: "Editează șoferul",
+      name: "Nume",
+      namePlaceholder: "ex. Ion Popescu",
+      identification: "Act de identitate",
+      identificationPlaceholder: "ex. CJ 123456",
+      identificationHint:
+        "Ce se scrie pe formular la „Date de identificare delegat”: serie și număr de CI, sau CNP. Rămâne editabil pe fiecare mișcare.",
+      vehicle: "Nr. înmatriculare uzual",
+      vehiclePlaceholder: "ex. CJ 01 ABC",
+      vehicleHint: "Mașina cu care vine de obicei. Pe mișcare se poate schimba.",
+      empty: "Niciun șofer încă.",
+      active: "Activ",
+      inactive: "Inactiv",
+      deactivate: "Dezactivează",
+      confirmDeactivate: "Sigur dezactivezi acest șofer? Mișcările deja înregistrate nu se schimbă.",
+      loadError: "Nu am putut încărca șoferii.",
+      created: "Șofer adăugat.",
+      updated: "Șofer actualizat.",
+      deactivated: "Șofer dezactivat.",
+      saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
     },
     internalGenerators: {
       title: "Generatori interni",
@@ -339,6 +380,31 @@ export const strings = {
     transportLicenseExpiry: "Expiră licența",
     anexa3Hint:
       "Datele astea se tipăresc pe Anexa 3 când îi predai deșeu sau când el face transportul.",
+    // --- Transportator (V28) ---
+    carrier: "Transportator",
+    carrierHint:
+      "Poate face transportul. Bifă, nu tip: același partener e des și colector, și transportator. La înregistrarea mișcării apare în grupa „Transportatori”.",
+    carrierColumn: "Transport",
+    carrierYes: "Transportator",
+    carrierNo: "—",
+    filterCarrier: "Transportatori",
+    typeNone: "— doar transportator —",
+    typeNoneShort: "Doar transport",
+    typeNoneHint:
+      "Pentru o firmă care doar transportă: nu face nimic cu deșeul, deci n-are tip. Se poate alege numai cu bifa de mai sus.",
+    typeRequired:
+      "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă.",
+    drivers: "Șoferi",
+    driversHint:
+      "Delegații care vin de obicei de la el. La înregistrarea mișcării îl alegi din listă și cele trei rubrici de pe Anexa 3 se completează singure — sau scrii altul de mână.",
+    driverName: "Nume",
+    driverNamePlaceholder: "ex. Ion Popescu",
+    driverIdentification: "Act de identitate",
+    driverIdentificationPlaceholder: "ex. CJ 123456",
+    driverVehicle: "Nr. înmatriculare uzual",
+    driverVehiclePlaceholder: "ex. CJ 01 ABC",
+    addDriver: "Adaugă șofer",
+    removeDriver: "Șterge",
     // form placeholders
     cuiPlaceholder: "ex. RO12345678",
     authorizationNumberPlaceholder: "ex. 123/2024",

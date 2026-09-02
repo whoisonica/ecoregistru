@@ -271,6 +271,11 @@ export interface WasteCode {
  * What a partner is in relation to the waste. No CARRIER: hauling is a rubric of one transport,
  * not a category of partner, and it lives on the movement (transportPartnerId) where Anexa 3 asks
  * for it. Which way the invoice travels is the separate client/supplier pair.
+ *
+ * Ce a adăugat V28 nu e o a patra valoare, ci bifa `carrier` — „poate transporta". O valoare ar fi
+ * fost exclusivă, iar firma care și colectează, și transportă ar fi trebuit introdusă de două ori.
+ * O firmă de transport pură e singurul partener fără tip: nu face nimic cu deșeul, deci `type` e
+ * null și e bifat doar `carrier`.
  */
 export type PartnerType = "GENERATOR" | "COLLECTOR" | "RECOVERER";
 
@@ -368,8 +373,8 @@ export interface Partner {
   cui: string | null;
   authorizationNumber: string | null;
   authorizationExpiry: string | null; // yyyy-MM-dd
-  /** What they are authorised to do with waste. */
-  type: PartnerType;
+  /** Ce face cu deșeul. null = firmă de transport pură — vezi `carrier`. */
+  type: PartnerType | null;
   // --- What Anexa 3 prints about them, as recipient or as carrier ---
   address: string | null;
   /**
@@ -380,6 +385,10 @@ export interface Partner {
   tradeRegisterNumber: string | null;
   transportLicenseNumber: string | null;
   transportLicenseExpiry: string | null; // yyyy-MM-dd
+  /** Poate face transportul. Independent de `type`: mai toți transportatorii sunt și colectori. */
+  carrier: boolean;
+  /** Șoferii lui, pentru rubrica „delegat" de pe Anexa 3. Goală la un partener care nu transportă. */
+  drivers: Driver[];
   /** We hand waste over to them and we invoice them. */
   client: boolean;
   /** They perform the service and they invoice us. */
@@ -394,6 +403,28 @@ export interface PartnerWorkPoint {
   address: string;
 }
 
+/**
+ * Un delegat care poate apărea pe Anexa 3. `partnerId` completat = șoferul unui transportator;
+ * null = șofer de-al nostru, cazul „transportăm noi".
+ */
+export interface Driver {
+  id: string;
+  partnerId: string | null;
+  partnerName: string | null;
+  name: string;
+  identification: string | null;
+  vehicleRegistration: string | null;
+  active: boolean;
+}
+
+export interface DriverInput {
+  /** Lipsă = șofer nou. */
+  id?: string;
+  name: string;
+  identification?: string | null;
+  vehicleRegistration?: string | null;
+}
+
 export interface PartnerWorkPointInput {
   /** Lipsă = punct nou. Un id păstrat ține legătura cu mișcările care îl arată deja pe Anexa 3. */
   id?: string;
@@ -406,16 +437,20 @@ export interface PartnerInput {
   cui?: string | null;
   authorizationNumber?: string | null;
   authorizationExpiry?: string | null; // yyyy-MM-dd
-  type: PartnerType;
+  /** null e permis doar împreună cu `carrier`; backendul refuză un partener fără niciunul. */
+  type: PartnerType | null;
   /** At least one of the two is required; the backend rejects a partner with no role. */
   client: boolean;
   supplier: boolean;
+  carrier: boolean;
   address?: string | null;
   /** Lista se înlocuiește la salvare cu ce e pe ecran; omisă, rămâne cum era. */
   workPoints?: PartnerWorkPointInput[];
   tradeRegisterNumber?: string | null;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
+  /** Lista se înlocuiește la salvare cu ce e pe ecran; omisă, rămâne cum era. */
+  drivers?: DriverInput[];
 }
 
 // --- Attachments ---

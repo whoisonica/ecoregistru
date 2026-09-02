@@ -19,6 +19,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
+import { OwnDriversSection } from "@/components/OwnDriversSection";
 
 const t = strings.settings.workPoints;
 
@@ -164,6 +165,8 @@ export function SettingsPage() {
       </section>
 
       <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
+
+      <OwnDriversSection canManage={canManage} />
 
       <Dialog
         open={dialogOpen}

@@ -45,6 +45,10 @@ public enum ErrorMessageEnum {
 
     // --- Partner ---
     PARTNER_NOT_FOUND("partner.not.found", "Partenerul nu a fost găsit."),
+    DRIVER_NOT_FOUND("driver.not.found", "Șoferul nu a fost găsit."),
+    DRIVER_NAME_REQUIRED("driver.name.required", "Scrie numele șoferului."),
+    DRIVER_BELONGS_TO_PARTNER("driver.belongs.to.partner", "Șoferul ăsta e al unui transportator: editează-l în fișa partenerului."),
+    PARTNER_TYPE_REQUIRED("partner.type.required", "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă."),
     PARTNER_ROLE_REQUIRED("partner.role.required", "Alege rolul partenerului: client (îi predai deșeu și îi facturezi tu), furnizor (îți prestează serviciul și îți facturează el) sau ambele."),
 
     // --- Internal generator (Anexa 1 cap. 2 "Secţia") ---
