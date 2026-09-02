@@ -1844,6 +1844,76 @@ liberă e **`V29`**.
 
 ---
 
+## Anexa 3, redesenată 1 la 1 după modelul Hamburger (02.09.2026)
+
+**Cererea:** „scoate din antet «Exemplarul 2 din 3 — destinatar (colector)» [...] cumva să fie 1 la 1
+cu ce vezi tu aici" — cu modelul ștampilat de la Hamburger Recycling Romania alături
+(`documente oficiale/anexa 3 hamburger reciclying.pdf`, seria HRR-BH, două formulare).
+
+Am pus modelul lângă ce tipăream și am mers rubrică cu rubrică. Fiecare diferență găsită era **ceva
+pus de noi în plus**, nu ceva lipsă — util de știut, fiindcă antetul era locul unde adăugasem cel mai
+mult.
+
+### Antetul: trei rânduri devenite unul
+
+Tipăream un titlu mare („FORMULAR DE ÎNCĂRCARE-DESCĂRCARE DEŞEURI NEPERICULOASE"), un subtitlu cu
+temeiul legal („Anexa 3 la HG 1061/2008") și o casetă cu chenar în care stăteau seria și eticheta
+exemplarului. Modelul are **un singur rând, fără chenar**: `ANEXA 3` în stânga, iar în dreapta
+`Serie şi număr: HRR-BH 20 Nr: 169924 / 12 . 08 . 2026`. Atât. Numele actului nu se pierde: îl spune
+al doilea rând de subsol, exact ca pe model.
+
+### Exemplarele nu se mai numesc
+
+Scriam „Exemplarul 1 din 3 — expeditor (generator)" ș.a.m.d. în antetul fiecărei pagini. **Niciun
+model n-are așa ceva**, și motivul e fizic: pe hârtie cele trei exemplare sunt un carnet cu indigo —
+aceeași filă de trei ori, sortată după semnare, nu înainte.
+
+Cele **trei pagini rămân** (HG 1061/2008 art. 20 alin. (2) cere trei exemplare, iar specialista le-a
+numit părțile pe 24.08). Ce s-a mutat e doar eticheta: cine ia care exemplar scrie acum în hintul de
+pe ecran, unde nu costă nimic, în loc să fie tipărit pe un formular oficial.
+
+### Restul diferențelor, rubrică cu rubrică
+
+| Ce | Aveam | Modelul, deci acum |
+|---|---|---|
+| Prima casetă a fiecărei coloane | conținut amestecat cu titlul (`Data\nÎncărcare`) | **doar titlul coloanei** — așa desenează hârtia rândul de sus |
+| Delegatul | trei valori una sub alta | etichetele modelului: `Nume si prenume:` și `Nr.inmatr.mij.trans:` |
+| Codul deșeului | `cod 20 01 01` | `Cod: 20 01 01` |
+| Bifele „Destinat:" | `Colectării   [X]` | `colectării   \|X\|` — notația și minusculele modelului |
+| „Descriere" și „Destinat:" | casete separate | aceeași casetă, bifele în următoarea |
+| Rubrica punctului de lucru | `Date privind punctul de lucru *) unde se efectuează` | `Date privind punctul de lucru unde se efectuează *)`, și **repetată** a doua oară între cele două blocuri de semnătură, ca pe model |
+| Expirarea autorizației | `Data la care expiră autorizaţia` | `... autorizaţia de mediu` |
+| DESCĂRCAREA | nume, CUI, apoi locul descărcării | **locul descărcării întâi**, apoi `Date de identificare destinatar` cu sediul social — două adrese diferite: unde a ajuns camionul, apoi a cui e |
+| Coloana 6 | `Obs` | `Observaţii` |
+| Subsolul | doar nota cu asterisc | plus `Publicat în Monitorul Oficial cu numărul 672 din data de 30 septembrie 2008` |
+| Înălțimea tabelului | ~60% din pagină | **umple pagina**: liniile coloanelor coboară până jos, iar ultima rubrică a fiecărei coloane se termină într-o casetă goală — acolo se semnează și se scrie de mână cantitatea |
+
+### Ce **nu** s-a luat din model, și de ce
+
+- **Datele de identificare ale transportatorului rămân complete** (nume, adresă, CUI, Reg. Com.).
+  Modelul scrie doar numele fiindcă e carnetul lui Hamburger, pre-tipărit cu datele lui în altă
+  parte; rubrica se cheamă „Date de identificare", iar a scoate CUI-ul de pe un document de transport
+  ar fi înrăutățit formularul, nu l-ar fi apropiat de model.
+- **Codul se scrie cu spații** (`15 01 01`), nu cu puncte ca la ei: așa îl scrie Lista Europeană.
+- **Unitatea rămâne alegerea firmei** (`kg` / `tone`, `mc`) — decizia 16, nemodificată. Modelul e în
+  tone fiindcă așa a ales Hamburger.
+- „Semnătura şi **stampila**", fără diacritică, e greșeala lor de tastare; noi scriem „ştampila".
+
+### Verificat pe hârtie
+
+PDF-ul randat și comparat vizual cu modelul, la 120 dpi, pagină lângă pagină. Testul
+`theFormPrintsThreeIdenticalCopies` ține de-acum trei lucruri: trei pagini, niciuna cu cuvântul
+„Exemplarul", și **pagina 1 identică cu pagina 3** — dacă mâine cineva pune la loc o etichetă pe
+exemplare, testul cade.
+
+⚠️ Asertările din testul ăsta sunt pe text **ASCII**: `PdfTextExtractor` decodează pagina Cp1250
+înapoi prin Latin-1, deci „ă" iese „ª" la citire, deși pe pagina tipărită e corect. Nu e nimic de
+reparat în formular — e și motivul pentru care asertările vechi erau tot ASCII.
+
+**175 de teste verzi.**
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

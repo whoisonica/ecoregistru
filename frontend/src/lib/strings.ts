@@ -220,8 +220,11 @@ export const strings = {
     anexa3UnitCompany: "Ca la firmă",
     anexa3UnitHint:
       "Actul are „tone”, dar evidența se ține în kilograme. Cifra se convertește la tipărire, deci cifra și unitatea de pe hârtie sunt mereu de acord.",
+    // Cele trei exemplare nu se mai numesc *pe hârtie* (02.09.2026): modelul n-are așa ceva, iar
+    // pe hârtie sunt un carnet cu indigo — aceeași filă de trei ori, sortată după semnare. Cine ce
+    // exemplar ia rămâne scris aici, unde nu costă nimic.
     anexa3Copies:
-      "Formularul iese în 3 exemplare, numite: expeditor (generator), destinatar (colector), transportator.",
+      "Formularul iese în 3 exemplare identice, ca pe carnet: unul rămâne la tine (expeditor), unul la destinatar, unul la transportator.",
     anexa3Download: "Anexa 3",
     anexa3Downloading: "Se generează...",
     anexa3Error: "Formularul nu a putut fi generat.",

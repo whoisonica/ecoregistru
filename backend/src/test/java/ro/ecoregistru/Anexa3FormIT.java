@@ -193,12 +193,13 @@ class Anexa3FormIT {
     }
 
     /**
-     * Three copies, each naming who keeps it. HG 1061/2008 art. 20 alin. (2) asks for three; the
-     * specialist named them on 24.08.2026 — generator, colector, transportator. Printing them in
-     * one PDF is the point: nobody has to remember which signed sheet goes where.
+     * Three copies, identical and unlabelled. HG 1061/2008 art. 20 alin. (2) asks for three, and on
+     * paper they are a carbon booklet: the same sheet three times, sorted after signing. Until
+     * 02.09.2026 we wrote "Exemplarul 2 din 3 — destinatar (colector)" into the header; no model
+     * has such a line, and the header the models do have is one line — "ANEXA 3" plus the series.
      */
     @Test
-    void theFormPrintsThreeNamedCopies() throws Exception {
+    void theFormPrintsThreeIdenticalCopies() throws Exception {
         UUID id = createMovement("""
                   "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s",
                   "quantity": 120
@@ -213,9 +214,16 @@ class Anexa3FormIT {
         assertThat(reader.getNumberOfPages()).isEqualTo(3);
         com.lowagie.text.pdf.parser.PdfTextExtractor text =
                 new com.lowagie.text.pdf.parser.PdfTextExtractor(reader);
-        assertThat(text.getTextFromPage(1)).contains("Exemplarul 1 din 3");
-        assertThat(text.getTextFromPage(2)).contains("Exemplarul 2 din 3");
-        assertThat(text.getTextFromPage(3)).contains("Exemplarul 3 din 3");
+        for (int page = 1; page <= 3; page++) {
+            // ASCII only: PdfTextExtractor decodes the Cp1250 page back through Latin-1, so "ă"
+            // comes out as "ª" here even though the printed page is correct. Nothing to fix in the
+            // form — the same artefact is why the older assertions were ASCII too.
+            assertThat(text.getTextFromPage(page))
+                    .contains("ANEXA 3")
+                    .contains("Serie")
+                    .doesNotContain("Exemplarul");
+        }
+        assertThat(text.getTextFromPage(1)).isEqualTo(text.getTextFromPage(3));
         reader.close();
     }
 

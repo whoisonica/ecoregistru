@@ -31,10 +31,26 @@ import java.util.List;
  * Renders Anexa 3 la HG 1061/2008 — <em>formularul de încărcare-descărcare deşeuri
  * nepericuloase</em> — from a movement that is already recorded.
  *
- * <p>The layout follows the filled model received from the specialist (series HMB 180) rubric by
- * rubric: a six-column table under the title, with the carrier and its delegate on the left, the
- * two dates next to them, the waste and the "Destinat:" ticks in the middle, the quantity, then
- * the loading and unloading parties on the right, and the observations column last.
+ * <p>The layout follows, rubric by rubric and line by line, the stamped model from Hamburger
+ * Recycling Romania (series HRR-BH, two forms). Redrawn against it on 02.09.2026 at the user's
+ * request — "cumva sa fie 1 la 1 cu ce vezi tu aici" — and the differences that closed then are
+ * worth naming, because each was us adding something the paper does not have:
+ *
+ * <ul>
+ *   <li>the header is <b>one line</b>: "ANEXA 3" on the left, "Serie şi număr: … Nr: … / … . … .
+ *       ####" on the right. No document title, no legal-basis subtitle, and no bordered box;</li>
+ *   <li><b>no copy is labelled.</b> The three printed pages are the three copies art. 20 alin. (2)
+ *       asks for, and on paper they are a carbon booklet: identical sheets, nothing written on them
+ *       to say who keeps which. We used to print "Exemplarul 2 din 3 — destinatar (colector)" in
+ *       the header, which no model has;</li>
+ *   <li>the first box of <b>every</b> column is that column's heading, and only that — the way the
+ *       paper draws its top row;</li>
+ *   <li>the footer carries the publication line as well as the starred note.</li>
+ * </ul>
+ *
+ * <p>The grid itself is six columns: the carrier and its delegate on the left, the two dates next
+ * to them, the waste and the "Destinat:" ticks in the middle, the quantity, then the loading and
+ * unloading parties on the right, and the observations column last.
  *
  * <p>Two things the model taught us and this generator keeps:
  *
@@ -56,12 +72,17 @@ import java.util.List;
 @Component
 public class Anexa3FormGenerator {
 
-    private static final String TITLE =
-            "FORMULAR DE ÎNCĂRCARE-DESCĂRCARE DEŞEURI NEPERICULOASE";
-    private static final String LEGAL_BASIS = "Anexa 3 la HG 1061/2008";
+    /** What the paper prints in the top left corner, and the whole of its title. */
+    private static final String TITLE = "ANEXA 3";
     private static final String FOOTNOTE =
             "*) Se va completa numai în cazul în care încărcarea/descărcarea are loc la un punct "
                     + "de lucru care nu reprezintă sediul social.";
+    /** The second footer line of the model — how the paper names the act it comes from. */
+    private static final String PUBLICATION =
+            "Publicat în Monitorul Oficial cu numărul 672 din data de 30 septembrie 2008";
+    /** The rubric heading the model repeats, once above ÎNCĂRCAREA and once above DESCĂRCAREA. */
+    private static final String WORK_POINT_RUBRIC =
+            "Date privind punctul de lucru unde se efectuează *)";
     private static final String WEIGHED_AT_UNLOADING =
             "Se cântăreşte la descărcare, de destinatar.";
 
@@ -82,30 +103,29 @@ public class Anexa3FormGenerator {
     }
 
     /**
-     * Who each printed copy belongs to. HG 1061/2008 art. 20 alin. (2) asks for three, and the
-     * specialist named them on 24.08.2026 (answer A3.3): "în 3 exemplare pentru generator, colector
-     * şi transportator". The fourth copy that came up in conversation does not exist.
+     * How many copies the PDF carries. HG 1061/2008 art. 20 alin. (2) asks for three — the
+     * specialist named the parties on 24.08.2026 (answer A3.3): "în 3 exemplare pentru generator,
+     * colector şi transportator" — and printing all three in one PDF spares the client three trips
+     * to the printer.
      *
-     * <p>Printing all three in one PDF rather than asking the client to hit print three times is
-     * the whole point: the three are the same document, and each carries the name of the party who
-     * keeps it, so nobody has to remember which sheet goes where after signing.
+     * <p>They are <b>identical and unlabelled</b>, which is the change of 02.09.2026. We used to
+     * write "Exemplarul 2 din 3 — destinatar (colector)" into the header; no model has such a line,
+     * and on paper the three copies are a carbon booklet — the same sheet three times, sorted after
+     * signing, not before. Who keeps which is in the screen's hint, where it costs nothing, rather
+     * than printed onto an official form.
      */
-    private static final String[] COPIES = {
-            "Exemplarul 1 din 3 — expeditor (generator)",
-            "Exemplarul 2 din 3 — destinatar (colector)",
-            "Exemplarul 3 din 3 — transportator"
-    };
+    private static final int COPIES = 3;
 
     public byte[] render(WasteMovement movement, Company sender) {
         Document doc = new Document(PageSize.A4, 28, 28, 28, 28);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
             doc.open();
-            for (int copy = 0; copy < COPIES.length; copy++) {
+            for (int copy = 0; copy < COPIES; copy++) {
                 if (copy > 0) {
                     doc.newPage();
                 }
-                addForm(doc, movement, sender, COPIES[copy]);
+                addForm(doc, movement, sender);
             }
             doc.close();
             return out.toByteArray();
@@ -114,24 +134,9 @@ public class Anexa3FormGenerator {
         }
     }
 
-    private void addForm(Document doc, WasteMovement movement, Company sender, String copyLabel)
+    private void addForm(Document doc, WasteMovement movement, Company sender)
             throws DocumentException {
-        Paragraph head = new Paragraph(cp1250(TITLE), title);
-        doc.add(head);
-        Paragraph basis = new Paragraph(cp1250(LEGAL_BASIS), body);
-        basis.setSpacingAfter(6f);
-        doc.add(basis);
-
-        PdfPTable series = new PdfPTable(1);
-        series.setWidthPercentage(100);
-        Paragraph seriesLine = new Paragraph();
-        seriesLine.add(text("Serie şi număr: " + seriesAndNumber(movement), label));
-        seriesLine.add(text("        " + copyLabel, small));
-        PdfPCell seriesCell = new PdfPCell();
-        seriesCell.addElement(seriesLine);
-        seriesCell.setPadding(4f);
-        series.addCell(seriesCell);
-        doc.add(series);
+        doc.add(header(movement));
 
         PdfPTable table = new PdfPTable(6);
         table.setWidthPercentage(100);
@@ -147,6 +152,31 @@ public class Anexa3FormGenerator {
         Paragraph foot = new Paragraph(cp1250(FOOTNOTE), small);
         foot.setSpacingBefore(4f);
         doc.add(foot);
+        doc.add(new Paragraph(cp1250(PUBLICATION), small));
+    }
+
+    /**
+     * The one header line of the model: "ANEXA 3" hard left, the series and number filling the rest.
+     * A borderless two-column table rather than one paragraph, because the two halves have to sit on
+     * the same baseline with the number free to run long.
+     */
+    private PdfPTable header(WasteMovement m) {
+        PdfPTable head = new PdfPTable(2);
+        head.setWidthPercentage(100);
+        head.setWidths(new float[]{18, 82});
+        head.setSpacingAfter(4f);
+        head.addCell(borderless(new Phrase(cp1250(TITLE), title), Element.ALIGN_LEFT));
+        head.addCell(borderless(new Phrase(cp1250(seriesLine(m)), label), Element.ALIGN_CENTER));
+        return head;
+    }
+
+    private PdfPCell borderless(Phrase phrase, int alignment) {
+        PdfPCell cell = new PdfPCell(phrase);
+        cell.setBorder(com.lowagie.text.Rectangle.NO_BORDER);
+        cell.setHorizontalAlignment(alignment);
+        cell.setVerticalAlignment(Element.ALIGN_BOTTOM);
+        cell.setPadding(0f);
+        return cell;
     }
 
     // --- the six columns, in the order the form prints them ---
@@ -167,13 +197,18 @@ public class Anexa3FormGenerator {
         LocalDate licenceExpiry = carrier != null
                 ? carrier.getTransportLicenseExpiry() : sender.getTransportLicenseExpiry();
 
+        // The model's first box in every column is the column heading with, here, the carrier
+        // underneath it. Address, CUI and trade register follow: the rubric asks for identification
+        // data, and the paper omits them only because it is that carrier's own pre-printed booklet.
         Paragraph who = block("Date de identificare transportator");
         addLines(who, name, address, prefixed("CUI: ", cui), prefixed("Reg. Com. ", reg));
 
         Paragraph delegate =
-                block("Date de identificare delegat şi nr. de înmatriculare mijloc de transport:");
-        addLines(delegate, m.getDriverName(), m.getDriverIdentification(),
-                m.getVehicleRegistration());
+                block("Date de identificare delegat şi nr. înmatriculare mijloc de transport");
+        delegate.add(text("Nume si prenume:", label));
+        addLines(delegate, m.getDriverName(), m.getDriverIdentification());
+        delegate.add(text("Nr.inmatr.mij.trans:", label));
+        addLines(delegate, m.getVehicleRegistration());
 
         Paragraph licenceBox = block("Licenţa de transport mărfuri nepericuloase nr.");
         addLines(licenceBox, licence);
@@ -187,30 +222,43 @@ public class Anexa3FormGenerator {
     }
 
     private List<Paragraph> dateColumn(WasteMovement m) {
-        Paragraph loading = block("Data\nÎncărcare");
+        Paragraph heading = block("Data");
+
+        Paragraph loading = block("Încărcare");
         addLines(loading, date(m.getDate()));
 
-        Paragraph unloading = block("Data\nDescărcare");
+        Paragraph unloading = block("Descărcare");
         addLines(unloading, date(m.getUnloadDate()));
 
-        return List.of(loading, unloading);
+        return List.of(heading, loading, unloading);
     }
 
     /** "Caracteristici deşeuri: Categorii deşeuri/cod", the free description, and "Destinat:". */
     private List<Paragraph> wasteColumn(WasteMovement m) {
-        Paragraph waste = block("Caracteristici deşeuri: Categorii deşeuri/cod");
-        addLines(waste, m.getWasteCode().getName(), "cod " + m.getWasteCode().getCode());
+        Paragraph heading = block("Caracteristici deşeuri:");
 
+        Paragraph waste = block("Categorii deşeuri");
+        addLines(waste, m.getWasteCode().getName(), "Cod: " + m.getWasteCode().getCode());
+
+        // "Descriere" and "Destinat:" share one box on the paper; the ticks sit in the next one.
         Paragraph description = block("Descriere");
         addLines(description, m.getNotes());
+        description.add(text("Destinat:", label));
 
-        Paragraph destination = block("Destinat:");
+        Paragraph destination = new Paragraph();
         for (TransportDestination d : TransportDestination.values()) {
             boolean ticked = m.getTransportDestinations().contains(d);
-            destination.add(text(d.getOfficialLabel() + "   [" + (ticked ? "X" : " ") + "]", body));
+            // |X| and |_| is the model's notation, and lower case is how it writes the five words.
+            destination.add(text(decapitalize(d.getOfficialLabel())
+                    + "   |" + (ticked ? "X" : "_") + "|", body));
         }
 
-        return List.of(waste, description, destination);
+        return List.of(heading, waste, description, destination);
+    }
+
+    /** "Colectării" is how the enum names it for the screen; the form writes "colectării". */
+    private static String decapitalize(String value) {
+        return value.isEmpty() ? value : Character.toLowerCase(value.charAt(0)) + value.substring(1);
     }
 
     /**
@@ -219,7 +267,8 @@ public class Anexa3FormGenerator {
      */
     private List<Paragraph> quantityColumn(WasteMovement m) {
         Unit printed = printedUnit(m);
-        Paragraph weight = block("Cantitate\n" + unitLabel(printed));
+        Paragraph heading = block("Cantitate");
+        Paragraph weight = block(unitLabel(printed));
         BigDecimal quantity = converted(m.getQuantity(), m.getUnit(), printed);
         if (quantity != null) {
             weight.add(text(plain(quantity), body));
@@ -232,7 +281,7 @@ public class Anexa3FormGenerator {
         Paragraph volume = block("mc");
         addLines(volume, m.getVolumeM3() == null ? null : plain(m.getVolumeM3()));
 
-        return List.of(weight, volume);
+        return List.of(heading, weight, volume);
     }
 
     /**
@@ -257,44 +306,54 @@ public class Anexa3FormGenerator {
 
     /** "Date privind punctul de lucru *) unde se efectuează": ÎNCĂRCAREA, then DESCĂRCAREA. */
     private List<Paragraph> partiesColumn(WasteMovement m, Company sender) {
-        Paragraph header = block("Date privind punctul de lucru *) unde se efectuează");
+        Paragraph heading = block(WORK_POINT_RUBRIC);
 
-        Paragraph loading = block("ÎNCĂRCAREA\nDate de identificare expeditor:");
+        Paragraph loading = block("ÎNCĂRCAREA");
+        loading.add(text("Date de identificare expeditor", label));
         addLines(loading, sender.getName(),
                 joinNonBlank(sender.getCui(), sender.getTradeRegisterNumber()),
                 workPointAddress(m, sender));
 
         Paragraph senderAuth = block("Autorizaţie de mediu nr.");
         addLines(senderAuth, sender.getEnvironmentalAuthNumber());
-        senderAuth.add(text("Data la care expiră autorizaţia", label));
+        senderAuth.add(text("Data la care expiră autorizaţia de mediu", label));
         addLines(senderAuth, date(sender.getEnvironmentalAuthExpiry()));
         senderAuth.add(text("Semnătura şi ştampila", label));
 
-        Paragraph unloading = block("DESCĂRCAREA\nDate de identificare destinatar:");
+        // The model repeats the rubric here, between the two signature blocks.
+        Paragraph unloadingRubric = block(WORK_POINT_RUBRIC);
+
+        // On the paper the unloading place comes first — "Str. Borşului, Nr.19D Oradea" — and the
+        // recipient's own identification underneath it. Two different addresses: where the truck
+        // went, then which company owns it.
+        Paragraph unloading = block("DESCĂRCAREA");
         Partner recipient = m.getPartner();
         if (recipient != null) {
+            addLines(unloading, recipientPlace(m, recipient));
+            unloading.add(text("Date de identificare destinatar", label));
             addLines(unloading, recipient.getName(),
                     joinNonBlank(recipient.getCui(), recipient.getTradeRegisterNumber()),
-                    recipientPlace(m, recipient));
+                    recipient.getAddress());
         }
 
         Paragraph recipientAuth = block("Autorizaţie de mediu nr.");
         if (recipient != null) {
             addLines(recipientAuth, recipient.getAuthorizationNumber());
-            recipientAuth.add(text("Data la care expiră autorizaţia", label));
+            recipientAuth.add(text("Data la care expiră autorizaţia de mediu", label));
             addLines(recipientAuth, date(recipient.getAuthorizationExpiry()));
         }
         recipientAuth.add(text("Semnătura şi ştampila", label));
 
-        return List.of(header, loading, senderAuth, unloading, recipientAuth);
+        return List.of(heading, loading, senderAuth, unloadingRubric, unloading, recipientAuth);
     }
 
     private List<Paragraph> observationsColumn(WasteMovement m) {
         // The reference is printed as the client wrote it; the model's own cell just says
         // "aviz 1406/11.01", so a separate "aviz" label above it would only repeat the word.
-        Paragraph p = block("Obs");
+        Paragraph heading = block("Observaţii");
+        Paragraph p = new Paragraph();
         addLines(p, m.getDocumentReference());
-        return List.of(p);
+        return List.of(heading, p);
     }
 
     // --- helpers ---
@@ -309,9 +368,19 @@ public class Anexa3FormGenerator {
         return address != null && !address.isBlank() ? address : sender.getAddress();
     }
 
-    private String seriesAndNumber(WasteMovement m) {
+    /**
+     * The header line of the model, verbatim in shape: "Serie şi număr: HRR-BH 20 Nr: 169924 / 12 .
+     * 08 . 2026" — the series, the allocated number, then the date of the transport spelled out with
+     * the same separators the printed booklet leaves blanks for.
+     */
+    private String seriesLine(WasteMovement m) {
         String series = m.getAnexa3Series() == null ? "" : m.getAnexa3Series() + " ";
-        return series + (m.getAnexa3Number() == null ? "" : m.getAnexa3Number());
+        String number = m.getAnexa3Number() == null ? "" : String.valueOf(m.getAnexa3Number());
+        LocalDate on = m.getDate();
+        String when = on == null ? ""
+                : " / %02d . %02d . %d".formatted(on.getDayOfMonth(), on.getMonthValue(),
+                        on.getYear());
+        return "Serie şi număr: " + series + "Nr: " + number + when;
     }
 
     /**
@@ -426,7 +495,11 @@ public class Anexa3FormGenerator {
         PdfPCell cell = new PdfPCell(nested);
         cell.setPadding(0f);
         cell.setBorderWidth(0.8f);
-        cell.setMinimumHeight(340f);
+        // The table fills the page, as it does on paper: the six column lines run to the bottom and
+        // the last rubric of each column ends in a tall empty box, which is where the signatures and
+        // the handwritten quantity go. 700pt is A4 minus the margins, the header line and the two
+        // footer lines, with room for the border widths.
+        cell.setMinimumHeight(700f);
         return cell;
     }
 
