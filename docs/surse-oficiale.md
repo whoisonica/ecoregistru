@@ -302,6 +302,11 @@ Accesat 22.08.2026.
 > 2. **15 martie e termen legal**, nu cutumă ANPM. Închide C3.
 > 3. Evidența lunară se ține în kg (practica fișei Anexa 1), dar **raportarea de la art. 48 e în
 >    tone**. Conversia trebuie să existe într-un singur loc în cod, nu presărată prin export.
+> 4. 🔴 **Articolul descrie conţinutul, nu forma — şi n-are anexă cu facsimil.** Lit. a)–c) spun ce
+>    date trebuie să conţină evidenţa cronologică, iar depunerea se face „în sistemul pus la
+>    dispoziţie de APM". Spre deosebire de HG 856/2002, care reproduce modelul fişei în anexa nr. 1,
+>    **aici nu există un formular de reprodus**. Deci formatul registrului art. 48 nu se poate citi
+>    din act: e nevoie de un exemplar completat. Vezi întrebarea **AD** — nu avem niciunul.
 
 ### 2.2 ANEXA Nr. 3 — OPERAŢIUNI DE VALORIFICARE
 

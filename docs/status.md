@@ -14,9 +14,11 @@ rulează local și are testele verzi.
 >
 > **Urmează:** modulul de depozit — ecrane `Reception`/`Delivery`, registru art. 48, borderou de
 > achiziție la metale, profil de groapă (Etapele 8–11), plus TODO-ul Anexa 3 Ambalaje.
+> 🔴 **Cere întâi modelul de registru art. 48** — vezi întrebarea AD la „Blocaje rămase".
 >
-> **Deschis:** **două** întrebări către specialistă — **C** (cine se scrie la tratarea proprie) și
-> **W** (generarea dedusă fără stoc). Din unsprezece: patru închise pe corpus (**V**, **X**, **P**,
+> **Deschis:** **trei** întrebări către specialistă — 🔴 **AD** (n-avem niciun model de registru
+> art. 48; blochează exportul din Etapa 8), **C** (cine se scrie la tratarea proprie) și **W**
+> (generarea dedusă fără stoc). Din unsprezece vechi: patru închise pe corpus (**V**, **X**, **P**,
 > **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
 > produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
@@ -2417,6 +2419,15 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
 ---
 
 ## Blocaje rămase
+
+- 🔴 **N-avem niciun model de registru art. 48** (întrebarea **AD**, deschisă 02.09.2026). Tot
+  corpusul primit e despre fișa de gestiune, declarația anuală, Anexa 3 și ambalaje. Despre evidența
+  cronologică lunară a mărfii preluate de la terți — nimic.
+  **De ce contează:** OUG 92/2021 art. 48 alin. (1) descrie **conținutul** (lit. a–c) și spune că se
+  depune „în sistemul pus la dispoziție de APM", dar **n-are anexă cu facsimil**, cum are HG 856/2002
+  pentru fișă. Formatul nu se poate citi din act. Ecranele Etapei 8 se pot construi și fără model —
+  schema există din `V5` — dar **exportul ar fi ghicit**, iar asta contrazice regula pe care stă tot
+  proiectul: nu inventează formate oficiale. De cerut **înainte** de Etapa 8, nu în timpul ei.
 
 *Verificate pe dyno la 02.09.2026: `CLOUDINARY_URL` și `SPRING_PROFILES_ACTIVE` continuă să fie
 nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
