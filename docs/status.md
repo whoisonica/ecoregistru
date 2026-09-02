@@ -1997,6 +1997,18 @@ Rămân neprobate live două lucruri, din lipsă de date: select-ul cu **o singu
 de generator pur (tenantul demo e `BOTH`) și redeschiderea unei ieșiri pe **art. 48** (demo n-are
 niciuna) — ambele sunt o ramură de-o linie, dar merită văzute pe contul specialistei.
 
+### Deployat și verificat pe producție (02.09.2026, ora 13:50)
+
+`ecoregistru-app` la **v26** (`0182ef4`); backendul n-a fost atins, deci `ecoregistru-api` rămâne
+unde era. Proba, pe **contul specialistei** (`Ecodoc SRL`, generator pur) — nimic salvat:
+
+- „Operațiune" are **o singură opțiune, „Generare"**, cu hintul care spune unde se alege restul.
+  Ăsta e cazul pe care tenantul demo nu-l putea arăta.
+- *Transport spre valorificare* → „Cod operațiune (R/D)" cu R1–R13; partener `Hamburger Recycling`
+  → **Anexa 3 apare**, sub el.
+- Mișcarea ei reală din 25.08 (`15 01 03`, Valorificare R3, 1000 kg) se **redeschide** ca
+  Generare + *Transport spre valorificare*, cu R3 preselectat.
+
 ### Stare
 
 Frontend curat: `tsc -b` și `vite build` trec. Backendul nu s-a atins — contractul era deja bun
