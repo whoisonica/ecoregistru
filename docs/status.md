@@ -2143,6 +2143,14 @@ vigoare.
 
 Detaliile verbatim, cu citatele din note: `surse-oficiale.md` §1.2, §1.3 (punctele 4 și 6–10) și §5.3.
 
+### Commis, pushat și deployat (02.09.2026, ora 16:43)
+
+| Unde | Ce | Stare |
+|---|---|---|
+| `origin/main` și `origin/deploy/heroku-split` | `54ec88d` | ✅ |
+| `newrepo/main` | `889f6a7` | ✅ `ecoregistru-api` la **v32**, pornire 9,66 s, fără migrare nouă |
+| `ferepo/main` | `0182ef4`, neschimbat | ✅ frontendul n-a fost atins — `tmp-frontend` a ieșit identic cu `ferepo/main`, deci n-a fost nimic de trimis. E cazul normal, nu o eroare |
+
 ---
 
 ## Ce urmează — plan revizuit (22.08.2026)
