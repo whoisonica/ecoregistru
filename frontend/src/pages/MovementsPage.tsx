@@ -87,8 +87,22 @@ function suggestedPackagingMaterial(codeLabel: string): PackagingMaterial | null
  * UNCLASSIFIED_OUT is in no list: it is the state of legacy rows, written by a migration.
  */
 function operationsFor(type: CompanyType | undefined): WasteOperation[] {
-  const own: WasteOperation[] = ["GENERATED", "RECOVERED", "DISPOSED"];
-  return type && type !== "GENERATOR" ? ["GENERATED", "COLLECTED", "RECOVERED", "DISPOSED"] : own;
+  // La un generator rămâne o singură opţiune, fiindcă mişcarea lui porneşte mereu de la generare:
+  // ce se întâmplă cu deşeul după se alege mai jos, sub transport. Cererea specialistei, 25.08.2026:
+  // „aici, la operaţiune, trebuie să rămână Generator [...] şi după, mai jos, trebuie pus în tab cu
+  // Valorificare/Eliminare [...] după ce alegi la Transport spre Valorificare să apară următoarele
+  // taburi cu codurile". Un cont care poate prelua de la terţi păstrează şi ieşirea directă: marfa
+  // preluată n-a fost generată de el, deci nu se poate scrie ca generare urmată de predare.
+  return type && type !== "GENERATOR"
+    ? ["GENERATED", "COLLECTED", "RECOVERED", "DISPOSED"]
+    : ["GENERATED"];
+}
+
+/** Cele două operaţiuni care scot cantitatea de pe amplasament. */
+type ExitOperation = "RECOVERED" | "DISPOSED";
+
+function isExit(operation: WasteOperation): boolean {
+  return operation === "RECOVERED" || operation === "DISPOSED";
 }
 const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
 const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
@@ -556,7 +570,23 @@ function MovementFormDialog({
     editing?.volumeM3 != null ? String(editing.volumeM3) : ""
   );
   const [unit, setUnit] = useState(editing?.unit ?? "KG");
-  const [operation, setOperation] = useState<WasteOperation>(editing?.operation ?? "GENERATED");
+  /**
+   * Mişcarea are două jumătăţi de când operaţiunea s-a mutat sub transport: de unde vine deşeul
+   * (select-ul de sus) şi ce se întâmplă cu el ({@code fate}, blocul de după transport).
+   *
+   * <p>La redeschidere, o ieşire de pe Anexa 1 se citeşte înapoi ca <b>generare + predare</b>: e
+   * deşeul firmei, iar motorul deduce oricum generarea din ieşire (decizia 17). Una pe art. 48
+   * rămâne <b>ieşire directă</b> — marfa preluată nu e generată de noi, iar a o rescrie ca generare
+   * i-ar muta tăcut cantitatea pe alt formular.
+   */
+  const editingOwnExit =
+    editing != null && isExit(editing.operation) && editing.register !== "ART_48";
+  const [operation, setOperation] = useState<WasteOperation>(
+    editingOwnExit ? "GENERATED" : (editing?.operation ?? "GENERATED")
+  );
+  const [fate, setFate] = useState<ExitOperation | "">(
+    editingOwnExit ? (editing.operation as ExitOperation) : ""
+  );
   const [physicalState, setPhysicalState] = useState<PhysicalState | "">(
     editing?.physicalState ?? ""
   );
@@ -662,22 +692,42 @@ function MovementFormDialog({
   }));
 
   const operations = operationsFor(company?.type);
+  /**
+   * Operaţiunea care se salvează: jumătatea de jos o suprascrie pe cea de sus. „Generare +
+   * transport spre valorificare" pleacă pe server ca {@code RECOVERED} — fişa n-are coloană de
+   * predare (decizia 1) — iar generarea o deduce motorul din ieşire (decizia 17), deci aceeaşi
+   * mişcare iese pe fişă generat 100 · valorificat 100 · stoc 0.
+   */
+  const effectiveOperation: WasteOperation = fate || operation;
   // A legacy row is the one case the form shows an operation nobody may choose: it has to be
-  // editable, and editing it is exactly how it gets completed.
-  const isLegacyExit = operation === "UNCLASSIFIED_OUT";
+  // editable, and editing it is exactly how it gets completed — alegând mai jos ce s-a întâmplat.
+  const isLegacyExit = effectiveOperation === "UNCLASSIFIED_OUT";
   // Every movement that takes waste off the site names its operation: Anexa 1 cap. 3 and cap. 4
   // report the quantity next to "Operaţia de valorificare"/"de eliminare" and the operator doing
   // it — the partner, when it is not us.
-  const requiresCode = operation === "RECOVERED" || operation === "DISPOSED";
+  const requiresCode = isExit(effectiveOperation);
+  // Blocul de sub transport apare acolo unde mişcarea porneşte de la noi: generare, sau o linie
+  // veche fără cod, care exact aşa se completează. La o ieşire directă (marfă preluată) n-are ce
+  // alege — operaţiunea e deja aleasă sus.
+  const showsFate = operation === "GENERATED" || operation === "UNCLASSIFIED_OUT";
 
   /**
    * Provenienţa deşeului la ieşire. Se întreabă doar la conturile care pot prelua de la terţi:
    * la un generator pur n-ar avea sens, fiindcă tot ce iese e al lui. Fără ea, aceeaşi valorificare
    * cădea automat pe Anexa 1, deci marfa altcuiva se declara ca pusă pe piaţă de firmă.
+   *
+   * <p>Şi nu se mai întreabă când ieşirea vine din blocul de sub transport: acolo răspunsul e deja
+   * dat sus, fiindcă „Generare" înseamnă chiar deşeul firmei. Întrebarea rămâne unde e ambiguu —
+   * la ieşirea directă, care poate fi şi marfă preluată.
    */
-  const asksOrigin = requiresCode && company != null && company.type !== "GENERATOR";
+  const asksOrigin =
+    requiresCode && company != null && company.type !== "GENERATOR" && !showsFate;
   const familyCodes =
-    operation === "RECOVERED" ? R_CODES : operation === "DISPOSED" ? D_CODES : ALL_CODES;
+    effectiveOperation === "RECOVERED"
+      ? R_CODES
+      : effectiveOperation === "DISPOSED"
+        ? D_CODES
+        : ALL_CODES;
   // The account profile narrows the list to the operations this client actually works with, so a
   // joinery that hands cardboard to a recycler never scrolls past D7 "evacuare în mări". An empty
   // profile means the intake form has not been answered yet, and then everything stays on offer.
@@ -694,7 +744,7 @@ function MovementFormDialog({
   const suggestedMaterial = suggestedPackagingMaterial(wasteCode?.label ?? "");
 
   const showAnexa3Section =
-    (operation === "RECOVERED" || operation === "DISPOSED") &&
+    isExit(effectiveOperation) &&
     Boolean(partnerId) &&
     wasteCode?.sublabel !== t.hazardous;
 
@@ -721,9 +771,9 @@ function MovementFormDialog({
     } else if (!partnerId) {
       return t.weighingNeedsPartner;
     }
-    if (operation === "RECOVERED" && (!operationCode || !operationCode.startsWith("R")))
+    if (effectiveOperation === "RECOVERED" && (!operationCode || !operationCode.startsWith("R")))
       return t.recoveryCodeRequired;
-    if (operation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
+    if (effectiveOperation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
       return t.disposalCodeRequired;
     if (asksOrigin && !register) return t.originRequired;
     if (isLegacyExit) return t.legacyExitHint;
@@ -740,7 +790,7 @@ function MovementFormDialog({
       weighedAtUnloading,
       volumeM3: volumeM3 ? Number(volumeM3) : null,
       unit,
-      operation,
+      operation: effectiveOperation,
       physicalState: physicalState || null,
       storageType: storageType || null,
       treatmentMethod: treatmentMethod || null,
@@ -750,7 +800,14 @@ function MovementFormDialog({
       operationCode: requiresCode ? (operationCode as WasteOperationCode) : null,
       // Numai la ieşire şi numai unde s-a întrebat. La preluare backendul o forţează pe art. 48,
       // iar la generare pe Anexa 1 — două capete fixate de lege, nu de ecran.
-      register: asksOrigin ? (register as WasteRegister) : null,
+      // Când ieşirea s-a ales sub transport, provenienţa e deja spusă sus — „Generare" e chiar
+      // deşeul firmei — şi se trimite explicit, fiindcă backendul cere registrul la orice ieşire
+      // de pe un cont care ţine şi art. 48 (decizia 23). Nu se ghiceşte nimic: e alegerea omului.
+      register: asksOrigin
+        ? (register as WasteRegister)
+        : requiresCode && operation === "GENERATED"
+          ? "ANEXA_1"
+          : null,
       partnerId: partnerId || null,
       internalGeneratorId: internalGeneratorId || null,
       documentReference: documentReference.trim() || null,
@@ -925,6 +982,7 @@ function MovementFormDialog({
               value={operation}
               onChange={(ev) => {
                 setOperation(ev.target.value as WasteOperation);
+                setFate(""); // ce se întâmplă cu deşeul se alege din nou
                 setOperationCode(""); // reset — options depend on operation
               }}
             >
@@ -933,7 +991,32 @@ function MovementFormDialog({
                   {e.wasteOperation[op]}
                 </option>
               ))}
-              {asksOrigin && (
+              {operation === "UNCLASSIFIED_OUT" && (
+                <option value="UNCLASSIFIED_OUT">{e.wasteOperation.UNCLASSIFIED_OUT}</option>
+              )}
+            </Select>
+            {operations.length === 1 && (
+              <p className="mt-1 text-xs text-gray-500">{t.operationGeneratorHint}</p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="mv-state">{t.physicalState}</Label>
+            <Select
+              id="mv-state"
+              value={physicalState}
+              onChange={(ev) => setPhysicalState(ev.target.value as typeof physicalState)}
+            >
+              <option value="">{t.physicalStatePlaceholder}</option>
+              {Object.entries(e.physicalState).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+
+        {asksOrigin && (
           <div className="rounded-md border border-gray-300 p-3">
             <span className="text-sm font-medium text-gray-800">
               {t.originTitle}
@@ -977,50 +1060,6 @@ function MovementFormDialog({
           <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
             {t.originCollected}
           </p>
-        )}
-
-        {isLegacyExit && (
-                <option value="UNCLASSIFIED_OUT">{e.wasteOperation.UNCLASSIFIED_OUT}</option>
-              )}
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="mv-state">{t.physicalState}</Label>
-            <Select
-              id="mv-state"
-              value={physicalState}
-              onChange={(ev) => setPhysicalState(ev.target.value as typeof physicalState)}
-            >
-              <option value="">{t.physicalStatePlaceholder}</option>
-              {Object.entries(e.physicalState).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-
-        {requiresCode && (
-          <div>
-            <Label htmlFor="mv-code-rd">
-              {t.operationCode}
-              <span className="text-red-600"> *</span>
-            </Label>
-            <Select
-              id="mv-code-rd"
-              value={operationCode}
-              onChange={(ev) => setOperationCode(ev.target.value as WasteOperationCode)}
-            >
-              <option value="">{strings.common.requiredField}</option>
-              {codeOptions.map((c) => (
-                <option key={c} value={c}>
-                  {e.wasteOperationCode[c]}
-                </option>
-              ))}
-            </Select>
-            <p className="mt-1 text-xs text-gray-500">{t.operationCodeHint}</p>
-          </div>
         )}
 
         {isLegacyExit && (
@@ -1095,6 +1134,72 @@ function MovementFormDialog({
           </div>
         </div>
 
+        {/* Ce se întâmplă cu deşeul stă sub transport, fiindcă de transport atârnă: „după ce alegi
+            la Transport spre Valorificare să apară următoarele taburi cu codurile de valorificare,
+            sau cu codurile de eliminare, în funcţie de cum o să fie transportul" (specialista,
+            25.08.2026). Sus rămâne de unde vine deşeul; aici, unde ajunge. */}
+        {(showsFate || requiresCode) && (
+          <div className="space-y-3 rounded-md border border-gray-300 p-3">
+            <div>
+              <span className="text-sm font-semibold text-gray-800">{t.fateTitle}</span>
+              <p className="text-xs text-gray-500">{t.fateHint}</p>
+            </div>
+
+            {showsFate && (
+              <div className="space-y-2">
+                {/* Ca la provenienţă: fiecare opţiune îşi spune efectul, fiindcă alegerea nu schimbă
+                    un câmp, ci coloana din fişă în care intră cantitatea. */}
+                {(
+                  [
+                    ["", t.fateStock, t.fateStockEffect],
+                    ["RECOVERED", t.fateRecovery, t.fateRecoveryEffect],
+                    ["DISPOSED", t.fateDisposal, t.fateDisposalEffect],
+                  ] as const
+                ).map(([value, label, effect]) => (
+                  <label key={value || "STOCK"} className="flex cursor-pointer gap-2">
+                    <input
+                      type="radio"
+                      name="mv-fate"
+                      className="mt-1 h-4 w-4 shrink-0"
+                      checked={fate === value}
+                      onChange={() => {
+                        setFate(value);
+                        setOperationCode(""); // familia de coduri se schimbă cu alegerea
+                      }}
+                    />
+                    <span>
+                      <span className="text-sm font-medium">{label}</span>
+                      <span className="block text-xs text-gray-500">{effect}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {requiresCode && (
+              <div>
+                <Label htmlFor="mv-code-rd">
+                  {t.operationCode}
+                  <span className="text-red-600"> *</span>
+                </Label>
+                <Select
+                  id="mv-code-rd"
+                  value={operationCode}
+                  onChange={(ev) => setOperationCode(ev.target.value as WasteOperationCode)}
+                >
+                  <option value="">{strings.common.requiredField}</option>
+                  {codeOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {e.wasteOperationCode[c]}
+                    </option>
+                  ))}
+                </Select>
+                <p className="mt-1 text-xs text-gray-500">{t.operationCodeHint}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div>
           <Label htmlFor="mv-partner">{t.partner}</Label>
           <Select
@@ -1110,7 +1215,7 @@ function MovementFormDialog({
               // fiindcă el știe despre transportul ăsta ce nu știm noi.
               if (transportDestinations.length === 0) {
                 const chosen = (partners ?? []).find((x) => x.id === id);
-                const suggested = suggestedDestinations(chosen?.type, operation);
+                const suggested = suggestedDestinations(chosen?.type, effectiveOperation);
                 if (suggested.length > 0) {
                   setTransportDestinations(suggested);
                   setDestinationsPrefilled(true);

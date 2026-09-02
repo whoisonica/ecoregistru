@@ -1914,6 +1914,96 @@ reparat în formular — e și motivul pentru care asertările vechi erau tot AS
 
 ---
 
+## Operațiunea s-a mutat sub transport, iar la generator rămâne „Generare" (02.09.2026)
+
+**Cererea, din conversația cu specialista de pe 25.08.2026**, cuvânt cu cuvânt:
+
+> „Dar asta nu trebuie pusă aici, ci în alt tab. Că dacă alegi Valorificare rămân necompletate
+> restul. [...] Aici, la operațiune, aici trebuie să rămână Generator. Și după, mai jos, trebuie pus
+> în tab cu Valorificare/Eliminare, unde poți să le selectezi. [...] După ce alegi la Transport spre
+> Valorificare să apară următoarele taburi cu codurile de valorificare. Sau cu codurile de eliminare.
+> În funcție de cum o să fie transportul."
+
+Și, în aceeași conversație, ce **nu** se face: *„nu o să-și pună stocuri generatorii [...] doar la
+colectori trebuie"* — deci nicio validare de stoc la ieșire. Rămâne cum era.
+
+### Ce s-a schimbat pe ecran
+
+Formularul de mișcare are de-acum două jumătăți, în ordinea în care se întâmplă lucrurile:
+
+1. **Sus, „Operațiune" = de unde vine deșeul.** Pe un cont de generator, select-ul are o singură
+   opțiune, „Generare", cu o linie sub el care spune unde se alege restul. Un cont care poate prelua
+   de la terți păstrează și `Preluare`, și ieșirea directă.
+2. **Sub transport, „Ce se întâmplă cu deșeul"** — trei opțiuni, fiecare cu efectul ei scris dedesubt,
+   ca la blocul de proveniență: *Rămâne în stoc* (implicit) · *Transport spre valorificare* ·
+   *Transport spre eliminare*. Codul R/D apare acolo, în aceeași casetă, și numai familia potrivită.
+
+Anexa 3 apare mai departe după aceleași reguli (ieșire + partener ales, decizia 25); ce s-a schimbat
+e că acum se ajunge la ea pe drumul pe care îl descrie ea: transport → ce se întâmplă → destinatar.
+
+### De ce o singură mișcare, și nu două
+
+„Generare + transport spre valorificare" pleacă pe server ca **o** mișcare `RECOVERED` cu cod R.
+N-a fost nevoie de nimic nou în model, fiindcă motorul face deja jumătatea cealaltă: **generarea se
+deduce din ieșire** (decizia 17, `V24`), tocmai din observația ei — *„cum poți să valorifici ceva ce
+nu este generat?"*. Deci aceeași mișcare iese pe fișă **generat 100 · valorificat 100 · stoc 0**,
+exact ca proba de pe producție din 25.08. Zero migrări, zero schimbări de backend.
+
+Varianta cu două mișcări legate (o intrare `GENERATED` + o ieșire) ar fi cerut o migrare, ar fi
+atins editarea, ștergerea și registrul de predări, și ar fi dublat rândurile din listă — pentru
+aceleași cifre pe formular.
+
+### Nodul: ce se întâmplă la redeschiderea unei mișcări vechi
+
+O ieșire salvată înainte se citește înapoi în cele două jumătăți, dar **nu la fel pentru toate**:
+
+| Mișcarea în bază | Se redeschide ca | De ce |
+|---|---|---|
+| `RECOVERED`/`DISPOSED`, registru **Anexa 1** | Generare + „spre valorificare/eliminare" | E deșeul firmei; motorul îi deducea oricum generarea |
+| `RECOVERED`/`DISPOSED`, registru **art. 48** | Ieșire directă, ca până acum | Marfa preluată **nu** e generată de noi; a o rescrie ca generare i-ar muta tăcut cantitatea pe alt formular |
+| `UNCLASSIFIED_OUT` (linie veche fără cod) | Ieșire neclasificată, cu roșu | Se completează alegând mai jos ce s-a întâmplat — exact drumul nou |
+
+Din tabelul ăsta iese și regula pentru **proveniență** (decizia 23): întrebarea „de unde vine deșeul"
+se pune numai la ieșirea directă, unde e ambiguă. Când ieșirea vine din blocul de sub transport,
+răspunsul e deja dat sus — „Generare" înseamnă chiar deșeul firmei — deci se trimite `ANEXA_1`
+explicit, fiindcă backendul cere registrul la orice ieșire de pe un cont care ține și art. 48.
+Nu se ghicește nimic; e chiar clicul omului.
+
+### Ce **era** stricat, găsit în drum
+
+Blocul de radio-uri „Proveniența deșeului" și hintul de la `Preluare` fuseseră lipite, în `a50bb17`
+(25.08), **înăuntrul `<select>`-ului de operațiune**. Browserul aruncă din `<select>` orice nu e
+`<option>`, deci întrebarea nu se vedea niciodată — iar validarea o cerea. Pe un cont de colector,
+**nicio valorificare nu se putea salva**: mesajul „Alege proveniența" apărea pentru un câmp care nu
+exista pe ecran. Nu era vizibil în teste, fiindcă e o regulă de HTML, nu de TypeScript.
+
+### Verificat în aplicație, nu doar la compilare
+
+Dev server local, cu proxy-ul întors spre API-ul de producție, pe `Demo Reciclare SRL` (cont care
+ține și art. 48). Nimic salvat — doar parcurs:
+
+1. **Mișcare nouă, Operațiune = Generare** → blocul „Ce se întâmplă cu deșeul" apare imediat sub
+   „Transport — mijlocul / destinația", cu *Rămâne în stoc* bifat.
+2. **Transport spre valorificare** → apare „Cod operațiune (R/D) *", cu **doar R1–R13** în listă.
+   Proveniența **nu** se întreabă: răspunsul e deja dat sus.
+3. **Operațiune = Valorificare** (ieșirea directă) → radio-urile „Proveniența deșeului" **se văd**
+   — ăsta e defectul reparat — iar blocul de jos rămâne doar cu codul.
+4. **Editez `15 01 02` Valorificare(R3) din 16.07** → se redeschide ca **Generare** +
+   *Transport spre valorificare*, cu **R3** preselectat. Dus-întors curat.
+5. **Editez o linie veche „Fără cod R/D"** → „Ieșire neclasificată" cu hintul roșu sus, iar blocul
+   de jos e chiar drumul prin care se completează.
+
+Rămân neprobate live două lucruri, din lipsă de date: select-ul cu **o singură opțiune** pe un cont
+de generator pur (tenantul demo e `BOTH`) și redeschiderea unei ieșiri pe **art. 48** (demo n-are
+niciuna) — ambele sunt o ramură de-o linie, dar merită văzute pe contul specialistei.
+
+### Stare
+
+Frontend curat: `tsc -b` și `vite build` trec. Backendul nu s-a atins — contractul era deja bun
+(`resolveRegister` acceptă `ANEXA_1` pe o ieșire), deci cele **175 de teste** rămân cum erau.
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

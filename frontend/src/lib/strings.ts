@@ -149,6 +149,21 @@ export const strings = {
     storageType: "Stocare — tipul",
     treatmentMethod: "Tratare — ce se face",
     nomenclatorPlaceholder: "— fără —",
+    operationGeneratorHint:
+      "Mișcarea pornește de la generare. Ce se întâmplă cu deșeul după — pleacă spre valorificare sau spre eliminare — se alege mai jos, după transport.",
+    // --- Ce se întâmplă cu deşeul: sub transport, nu în capul formularului ---
+    fateTitle: "Ce se întâmplă cu deșeul",
+    fateHint:
+      "Se alege după transport, fiindcă de el atârnă: transportul spre valorificare cere un cod R, cel spre eliminare un cod D.",
+    fateStock: "Rămâne în stoc",
+    fateStockEffect:
+      "Cantitatea intră la „Generate” și rămâne pe amplasament. Nu se predă nimic, deci nu există Anexa 3.",
+    fateRecovery: "Transport spre valorificare",
+    fateRecoveryEffect:
+      "Cantitatea se raportează la „Valorificată”, cu un cod R și cu operatorul care o face (cap. 3).",
+    fateDisposal: "Transport spre eliminare",
+    fateDisposalEffect:
+      "Cantitatea se raportează la „Eliminată final”, cu un cod D și cu operatorul care o face (cap. 4).",
     operationCode: "Cod operațiune (R/D)",
     operationCodeHint:
       "Evidența gestiunii deșeurilor nu are coloană de „predare”: cantitatea se raportează la „valorificată” (cod R) sau la „eliminată final” (cod D). Predarea se înregistrează alegând operațiunea și partenerul care o face.",
