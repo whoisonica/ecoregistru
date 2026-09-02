@@ -51,14 +51,24 @@ lines per (work point, waste code) per year, on the identity the form encodes �
 `stock = previous + generated − recovered − disposed` — carrying the balance across empty months and
 across years, and flagging negative balances. A handover is reported in the recovered or disposed
 column its R/D code implies, never as a column of its own; a quantity that left without a code is
-reported apart and marks the line incomplete. Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
+reported apart and marks the line incomplete. What left the site and is covered neither by opening
+stock nor by a recorded generation is reported as generated too — the form's own header reads
+"Generated — *of which:* recovered | disposed | left in stock", and a client who records only the
+handover would otherwise get a sheet reading zero generated and a negative balance.
+Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
 
-**Deadlines and alerts.** Automatic generation of the annual SIM deadline and the monthly AFM
-deadline (only for companies subject to it), plus a daily cross-tenant scheduler that emails
-T-7 / T-1 reminders with per-company deduplication.
+**Deadlines and alerts.** Automatic generation of the annual filing deadline and of the AFM
+contributions a company actually owes — each on the cadence OUG 196/2005 art. 11 gives it: monthly
+for the 2% withheld at source, quarterly for the circular-economy contribution, annually for
+packaging. A single boolean would have sent a company with a yearly obligation eleven wrong alerts
+a year. A daily cross-tenant scheduler emails T-7 / T-1 reminders with per-company deduplication.
 
-**Inspection file.** `GET /api/v1/audit-file?year=` streams a ZIP containing the yearly evidence
-(xlsx + pdf), partner authorization PDFs and every movement attachment.
+**Inspection file.** `GET /api/v1/audit-file?year=&years=` streams a ZIP covering one to five years
+— three is the retention period an inspection may ask for (OUG 92/2021 art. 48(5)), five the margin
+the specialist asked for — a folder per year with the evidence (xlsx + pdf) and the official record
+sheet, the partner authorizations once, and every movement attachment. It regenerates the monthly
+evidence before packing: the cache is derived from movements, and a client who never pressed
+"Regenerate" would otherwise be handed a bundle of empty official forms.
 
 **Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `CLIENT_VIEWER`, enforced at endpoint level.
 
@@ -96,8 +106,10 @@ The application is built around what a waste generator actually has to do, in th
 The generic evidence export (Excel/PDF) is implemented and explicitly labelled as an
 **unofficial summary**. The official record — the **Anexa 1 form of HG 856/2002**, header plus the
 four chapters, one page per waste code — is now generated too, but only because the specialist sent
-ten completed sheets to check it against; it was deliberately withheld until then, and this project
-still does not invent official formats. The **SIM/AFM structures remain unimplemented**: the SIM
+completed sheets to check it against; it was deliberately withheld until then, and this project
+still does not invent official formats. The five code lists of chapter 2 (storage type, treatment
+method, purpose, transport means, destination) are checked value by value against the form's own
+legend, from two independent copies of it. The **SIM/AFM structures remain unimplemented**: the SIM
 questionnaires (PRODDES, COL-TRAT) sit behind a login and nobody has shown us one.
 
 Careful with the name **"Anexa 1"** — it denotes two unrelated documents, and confusing them is the
@@ -218,9 +230,10 @@ cd backend
 ./gradlew.bat test
 ```
 
-Integration tests cover tenant isolation, evidence calculation, export correctness,
-movement validation, company management and the two official forms — the Anexa 1 sheet and
-the annual declaration.
+Integration tests cover tenant isolation, evidence calculation, export correctness, movement
+validation, company management and the four official documents the app prints — the HG 856/2002
+record sheet, the annual declaration, the HG 1061/2008 transport form, and the packaging
+declaration of Ordinul 794/2012.
 
 ---
 

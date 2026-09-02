@@ -203,15 +203,22 @@ class Anexa1FormIT {
     }
 
     /**
-     * The document names itself, above the identification block: "Evidenţa gestiunii deşeurilor
-     * generate {an}". Verbatim from the filled workbooks — six of them carry it in exactly that
-     * form (Cluj and Timişoara, 2022–2024) and the blank template has it with the year as "20..".
+     * The per-code sheet carries <b>no</b> document title: it opens at "Agentul economic:", exactly
+     * as every model does.
      *
-     * <p>The year in the title is the point: it is a yearly document, twelve rows and a TOTAL AN,
-     * never a monthly one.
+     * <p>Checked against the whole corpus on 02.09.2026 — 33 per-code sheets, two companies
+     * (Hamburger Recycling Romania and Panemar Jr.), 2022 through 2025. Not one of them titles the
+     * page. The title "Evidenţa gestiunii deşeurilor generate {an}" belongs to the summary sheet,
+     * and {@code AnnualDeclarationIT} holds it there.
+     *
+     * <p>This assertion used to be the opposite. We printed the title on every page so that a
+     * twenty-page PDF would not reach an inspector unnamed — but the control dossier already names
+     * the file and describes it in its README, so the reasoning bought nothing while departing from
+     * every model we have. The test is kept inverted rather than deleted: it is the same rule,
+     * pointing the right way.
      */
     @Test
-    void theSheetIsTitledAfterTheDocumentAndCarriesTheYear() throws Exception {
+    void thePerCodeSheetCarriesNoDocumentTitle() throws Exception {
         byte[] pdf = mockMvc.perform(get("/api/v1/evidences/anexa1?year=" + YEAR)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -221,7 +228,9 @@ class Anexa1FormIT {
         String firstPage = new com.lowagie.text.pdf.parser.PdfTextExtractor(reader).getTextFromPage(1);
         reader.close();
 
-        assertThat(firstPage).contains("Evidenţa gestiunii deşeurilor generate " + YEAR);
+        assertThat(firstPage).doesNotContain("Evidenţa gestiunii deşeurilor generate");
+        assertThat(firstPage).contains("Agentul economic:");
+        assertThat(firstPage).contains(String.valueOf(YEAR));
     }
 
     /**

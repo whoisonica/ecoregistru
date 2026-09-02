@@ -10,6 +10,9 @@
 >
 > Ultima verificare: **22.08.2026**, integral pe surse primare.
 > Completat pe **23.08.2026** cu consecința pe model a coloanelor din cap. 3 și 4 (§1.2).
+> Completat pe **02.09.2026** cu citirea integrală a corpusului de formulare completate: cele cinci
+> nomenclatoare verificate valoare cu valoare faţă de cod (§1.2), şase constatări noi din practică
+> (§1.3, punctele 6–10) şi notele tipărite pe declaraţia de ambalaje (§5.3).
 
 ---
 
@@ -125,6 +128,13 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 > nota 4; `A` înseamnă *altele* la patru note diferite; `D` e *deshidratare* la nota 2, dar prefix de
 > cod de eliminare în altă parte. Sunt cinci enum-uri distincte, nu unul comun.
 
+> ✅ **Verificat în cod, valoare cu valoare, pe 02.09.2026.** Legenda de mai sus apare şi în corpus,
+> pe foaia `simboluri` din cele trei fişiere Oradea — deci o avem din două surse independente, actul
+> şi un fişier de lucru al specialistei. Cele cinci enum-uri (`StorageType`, `TreatmentMethod`,
+> `TransportMeans`, `WasteDestination`, `TreatmentPurpose`) conţin **exact** valorile de aici, în
+> aceeaşi ordine, cu o singură abatere deliberată: `TreatmentPurpose` n-are `E` — motivul e la §1.3,
+> punctul 1. Nimic de corectat.
+
 **CAPITOLUL 3 — Valorificarea deşeurilor**
 
 | Nr. | Luna | Cantitatea de deşeu valorificată | Operaţia de valorificare | Agentul economic care efectuează operaţia de valorificare |
@@ -160,25 +170,81 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 
 ---
 
-### 1.3 Ce spune practica peste ce spune actul (corpus de 10 fişe completate, 23.08.2026)
+### 1.3 Ce spune practica peste ce spune actul (corpus de fişe completate, 23.08.2026, recitit 02.09.2026)
 
-Actul reproduce formularul; **cum se completează** l-am citit din zece Anexe 1 completate cu cifre
+Actul reproduce formularul; **cum se completează** l-am citit din Anexele 1 completate cu cifre
 reale, primite de la specialistă (Cluj, Timişoara, Bragadiru, Oradea — 2022–2024, plus Cluj 2025 ca
 PDF). Fişierele sunt gitignored, deci **niciun test nu le poate citi**: regula extrasă din ele se
 scrie în cod ca un comentariu care spune pe câte fişiere se sprijină.
 
-1. **Litera „E” din cap. 2 nota 3 nu se mai scrie.** Nota defineşte `V - pentru valorificare` şi
-   `E - în vederea eliminării`, dar pe cele zece fişe `E` apare **o singură dată** (Cluj 2022, codul
-   19 12 12) şi acelaşi client a pus liniuţă în 2023 şi 2024. Pe toate fişele de valorificare scrie
-   `V` pe toate cele 12 rânduri; pe cele de eliminare, liniuţă. Ce identifică eliminarea e **codul D
-   din cap. 4**, lângă operator. → `TreatmentPurpose` are un singur membru.
+⚠️ **Corectare, 02.09.2026 — corpusul e al a două firme, nu al uneia.** Până acum scria peste tot
+„zece fişe, o singură firmă". Recitirea integrală (13 fişiere, 409 rânduri de lună în cap. 2) arată
+că `deseuri generate_Cluj_2025_Iuhos Lorena.pdf` e al unei **alte firme**: `Panemar Jr.`,
+CUI RO 17022001, **CAEN 1071 — brutărie**, întocmit de altcineva. Restul e Hamburger Recycling
+Romania. Diferenţa contează: Hamburger tratează efectiv (balotează), Panemar doar predă, iar
+**contrastul dintre ele răspunde la întrebări** pe care o singură firmă nu le putea răspunde
+(vezi punctul 6 de mai jos).
+
+1. **Litera „E” din cap. 2 nota 3 nu se scrie.** Nota defineşte `V - pentru valorificare` şi
+   `E - în vederea eliminării`, dar pe toate cele 13 fişiere `E` apare **într-o singură foaie**
+   (Cluj 2022, codul 19 12 12), pe 11 rânduri, iar acelaşi client a pus liniuţă în 2023 şi 2024.
+   → `TreatmentPurpose` are un singur membru.
+   ✅ **Întărit pe 02.09.2026, din două direcţii.** Întâi: cele 11 rânduri cu `E` sunt **greşite în
+   fişierul lor** — cap. 1 al aceleiaşi foi arată cantitatea trecută la *valorificat* (6 · 20,48 ·
+   4,42 · 9,26 t), cu *eliminat* zero pe toate lunile. Au scris „în vederea eliminării" peste o
+   valorificare. Al doilea: fişierele Oradea, care **chiar elimină** (`20 03 01` → `D1`, prin RER
+   Ecologic Service), lasă celula **goală**, nu `E`. Deci practica e consecventă: la eliminare,
+   liniuţă. Numărătoarea completă a coloanei: `V` 342 · liniuţă 188 · gol 25 · `E` 11.
 2. **Coloana „Secţia” din cap. 2 e constantă pe cele 12 luni** ale unei foi („birouri”, „productie”).
    E o proprietate a sursei, nu a lunii. → entitatea `InternalGenerator`, sub punctul de lucru.
+   ✅ **Numărat pe 02.09.2026, 409 rânduri:** `birouri` 336 · `productie`/`prod.`/`PRODUCTIE` 56 ·
+   **`birouri+productie` 15** · `personal` 2. Cele două implicite ale aplicaţiei acoperă 407 din
+   409, iar practica de a le tipări **pe amândouă** când nu s-a ales una există deja în corpus,
+   scrisă combinat într-o singură celulă. → închide întrebarea **X**.
 3. **Fişa are exact 12 rânduri per capitol, plus TOTAL AN**, chiar şi în lunile fără mişcări.
 4. **Antetul cap. 3 şi 4 trimite încă la Legea 211/2011**, abrogată de OUG 92/2021. Numerele anexelor
-   sunt identice în noul act (3 = valorificare, 2 = eliminare), deci corectura ar fi doar numele
-   actului — 🟠 **decizie deschisă**, e a specialistei.
+   sunt identice în noul act (3 = valorificare, 2 = eliminare), deci corectura e doar numele actului.
+   ✅ **Închis pe 02.09.2026, şi nu era o întrebare.** Un act abrogat nu devine autoritate fiindcă
+   apare într-un model: şablonul lor e pur şi simplu **vechi**, ne-actualizat după 2021. Tipărim
+   OUG 92/2021 şi rămâne aşa. **Regula generală, de aplicat la tot corpusul: ce e depăşit în model
+   nu se copiază.** Corpusul spune cum se completează un formular, nu ce lege e în vigoare — aia se
+   ia de aici, din sursa primară.
 5. **Unitatea e kg** pe toate fişele, şi antetul o declară explicit („Unitatea de măsură: kg”).
+   ⚠️ Cu o excepţie care e greşeala lor: foaia Timişoara `19 12 12` declară „tone" peste cifre clar
+   în kg (stoc iniţial 48.755).
+
+6. ✅ **Cele două coloane „Cant." din cap. 2 — răspuns, 02.09.2026.** „Tratare: Cant." e **numai ce
+   a tratat firma însăşi**, şi contrastul dintre cele două firme din corpus o arată fără echivoc:
+
+   | Firma | Stocare Cant. | Tratare Cant. | Modul |
+   |---|---|---|---|
+   | **Panemar** (brutărie, doar predă), pe toate cele 5 coduri | 53,000 | **0,000** | `-` |
+   | **Hamburger** (balotează pe amplasament) | 25 | **25** | `TM` |
+
+   Nu e „0 mereu" şi nici „cantitatea mereu": se citeşte din „Modul". Din 409 rânduri, 287 au
+   Tratare = Stocare, 60 o au goală, iar cele 50 rămase au **Stocare 0 şi Tratare > 0** — niciun
+   rând invers. Comportamentul aplicaţiei (ieşirile fără partener) e corect. → închide **V**.
+
+7. ✅ **Titlul stă doar pe centralizator.** „Evidenta gestiunii deseurilor generate «an»" apare pe
+   foaia de centralizare (`D12`/`A12`); varianta Bragadiru scrie în loc „CENTRALIZATOR". Pe cele 33
+   de foi per cod de deşeu antetul începe direct cu „Agentul economic:" — **niciun titlu**, în
+   niciun fişier. → materia întrebării **P**.
+
+8. ✅ **Numărul de înregistrare îl dă autoritatea la depunere.** Două fişiere îl poartă sus-dreapta
+   pe centralizator: Hamburger Cluj 2024 → `Nr inreg: 23/11.02.2025`, Panemar 2025 →
+   `Nr inreg: 25/11.02.2025`. **Două firme diferite, numere apropiate, aceeaşi zi**, aceeaşi agenţie
+   judeţeană, cu o lună înainte de termenul de 15 martie. E un registru de intrare al agenţiei, nu
+   ceva ce generează depunătorul. → materia întrebării **I**.
+
+9. **Ieşirea care depăşeşte generarea lunii se acoperă din stocul reportat, nu prin deducere.** În
+   cele 7 luni din corpus unde se întâmplă, stocul absoarbe diferenţa: Timişoara 2022 `19 12 12`
+   face 48.755 + 200.008 − 225.430 = **23.333**, exact formula noastră. Confirmă precedenţa din
+   `V24` — întâi stocul, abia apoi generarea dedusă. Cazul fără stoc nu apare, deci **W** rămâne
+   deschisă.
+
+10. **Lunile fără operaţie se umplu în patru feluri diferite** — `-`, soft-hyphen (`U+00AD`), `x`,
+    `X` — uneori în acelaşi fişier. Nu e o regulă, e obişnuinţa fiecărui completator; noi scriem
+    liniuţă şi e în regulă.
 
 ---
 
@@ -614,6 +680,52 @@ până pe 25 ianuarie** — OUG 196/2005 art. 9 alin. (1) lit. d) + **art. 11 al
 prevăzute la art. 9 alin. (1) **lit. d)**, i), j), p), v), w) şi x)" sunt cele anuale. Verificat pe
 Portalul Legislativ pe 25.08.2026, fiindcă un rezumat de pe internet o dădea drept lunară — nu e.
 `AfmContribution.PACKAGING` din `V21` rămâne corectă.
+
+---
+
+### 5.3 Ce arată formularele completate (corpus, citit rubrică cu rubrică pe 02.09.2026)
+
+Trei fişiere: declaraţia HRR 2021 completată, şablonul gol de lângă ea, şi şablonul Anexei 3
+Ambalaje (`.ods`). Notele tipărite pe formular sunt **text de act**, deci se citează aici.
+
+**1. Tabelul 1 şi Tabelul 2 raportează lucruri diferite — şi la HRR nu se suprapun deloc.**
+
+> **Nota 1)** (col. 1) — „Se raportează **numai ambalajele de desfacere destinate pieţei
+> naţionale**, definite prin HG nr. 621/2005 [...]"
+>
+> **Nota 4)** (col. 2) — „Se raportează **numai ambalajele folosite la ambalarea produselor
+> destinate pieţei naţionale** şi se includ şi ambalajele utilizate pentru ambalarea ambalajelor de
+> desfacere."
+>
+> **Antetul Tabelului 2** — „Deşeuri de ambalaje **încredinţate unui operator economic autorizat**",
+> cu **nota 1)**: „Se completează **câte o rubrică distinctă pentru fiecare dintre operatorii** care
+> au preluat deşeurile de ambalaje din materialul respectiv."
+
+Proba, pe declaraţia lor din 2021: Tabelul 1 raportează **numai Oţel, 5.192 kg** — o cifră care nu
+apare în nicio fişă de gestiune a lor. Invers, `15 01 02` din fişe (5,5 kg/an) **nu apare** în
+declaraţie. Iar Tabelul 2 e **complet gol**. Deci:
+
+- **Tabelul 1** e despre marfă pusă pe piaţă, nu despre deşeu. Nu e derivabil din mişcări — ceea ce
+  justifică bifa din `V27` (întrebarea **AC**) şi suprascrierea pe material din `V26`.
+- **Tabelul 2** e chiar despre deşeul predat, cu un rând per operator — **acela** se însumează
+  corect din mişcări, şi aşa îl construieşte `PackagingDeclarationBuilder`. ✅ Verificat în cod pe
+  02.09: rândurile ies per (material, operator, operaţie), cu denumire, adresa punctului de lucru şi
+  CUI, exact cum cer rubricile `D7`/`E7` ale formularului.
+
+⚠️ Nota Tabelului 2 mai cere ceva ce corpusul face necesar: „În cazul în care operaţiunea de
+reciclare/valorificare se face **prin export sau transfer intracomunitar**, se va specifica alături
+de denumirea operatorului economic, **adresa punctului de lucru şi ţara de destinaţie**." Corpusul e
+plin de operatori străini (*Hamburger Hungaria*, *Hamburger Recycling Group GMBH* — 105 rânduri).
+Adresa partenerului e text liber, deci ţara **încape** acolo; nu cere schemă nouă, doar ca cineva
+să o scrie.
+
+**2. „Provenienţa" din Anexa 3 Ambalaje nu e un câmp, e o axă a tabelului.** În şablonul primit,
+fiecare material se sparge în **trei sub-rânduri fixe** — `populatie`, `colectori`,
+`generatori persoane juridice` — plus un rând „total <material>". Nu apare `comerciant`.
+⚠️ Şablonul e însă cel **modificat local**: scrie „tone" (actul spune kilograme, art. 8 alin. (1)) şi
+pune „metal /aluminiu" pe un rând, deşi actul cere Aluminiu şi Oţel separat. Deci pentru **numărul**
+valorilor rămâne actul autoritatea, dar pentru **forma** rubricii — trei rânduri sub fiecare
+material, nu o coloană — şablonul arată cum se completează. Materia întrebării **AA**.
 
 ---
 

@@ -26,12 +26,21 @@ import java.util.Locale;
 /**
  * Renders the Anexa 1 form (HG 856/2002) — <em>fişa de evidenţă a gestiunii deşeurilor</em> — one
  * page per waste code per work point, laid out after the filled sheets received from the
- * specialist: the title "Evidenţa gestiunii deşeurilor generate {year}", an identification header,
- * then the four chapters, each with twelve rows and a TOTAL AN line.
+ * specialist: an identification header, then the four chapters, each with twelve rows and a
+ * TOTAL AN line.
  *
- * <p>Reference: {@code documente oficiale/deseuri generate_Cluj_2025_Iuhos Lorena.pdf} plus the ten
- * filled workbooks. This is the document the whole generator module has been building towards; the
- * quantities are in kilograms, as every one of those sheets declares in its header.
+ * <p>Reference: the filled workbooks in {@code documente oficiale/} — thirteen files from
+ * <b>two</b> companies, a recycler and a bakery. This is the document the whole generator module
+ * has been building towards; the quantities are in kilograms, as every one of those sheets declares
+ * in its header.
+ *
+ * <p><b>The page carries no document title, because no model does.</b> All 33 per-code sheets in
+ * the corpus — both companies, 2022 through 2025 — start straight at "Agentul economic:"; the
+ * title "Evidenţa gestiunii deşeurilor generate {year}" lives on the summary sheet, which is what
+ * {@link AnnualDeclarationGenerator} prints. We used to repeat it on every page, on the reasoning
+ * that a twenty-page PDF with no title is hard to hand to an inspector — but the control dossier
+ * already names the file {@code evidenta-gestiunii-deseurilor-{year}.pdf} and describes it in its
+ * README, so the argument bought nothing and cost a departure from every model we have.
  *
  * <p><b>One deliberate departure from the models.</b> They head chapters 3 and 4 with "conform
  * Anexei 3 / Anexei 2 din Legea 211/2011". That act was repealed by OUG 92/2021, whose annexes
@@ -102,37 +111,12 @@ public class Anexa1FormGenerator {
     }
 
     private void addSheet(Document doc, Anexa1Sheet sheet) {
-        doc.add(documentTitle(sheet));
         doc.add(identification(sheet));
         doc.add(chapterOne(sheet));
         doc.add(chapterTwo(sheet));
         doc.add(chapterThree(sheet));
         doc.add(chapterFour(sheet));
         doc.add(notes());
-    }
-
-    /**
-     * The document's own title, above everything else.
-     *
-     * <p>Verbatim from the filled workbooks, which write it with the year attached — "Evidenta
-     * gestiunii deseurilor generate 2024". Six of the received files carry it in exactly that form
-     * (Cluj and Timişoara, 2022 through 2024), and the seventh, the blank template, has it with the
-     * year left as "20..". So it is a yearly document, not a monthly one: the sheet under it has
-     * twelve rows and a TOTAL AN, and the header's own rubric is "Anul", never "Luna".
-     *
-     * <p><b>A second deliberate departure from the models.</b> In those workbooks the title sits on
-     * the summary sheet ({@code raportare deseuri generate}); the per-code sheets start straight at
-     * "Agentul economic:". We print it on every sheet instead, because the meeting note ties the
-     * title to the control dossier and a twenty-page PDF with no title on its pages is harder to
-     * hand to an inspector. Flagged for the specialist as question P in
-     * docs/intrebari-specialist.md; it is one line to move if she wants it only on the summary.
-     */
-    private Paragraph documentTitle(Anexa1Sheet s) {
-        Paragraph p = new Paragraph(
-                cp1250("Evidenţa gestiunii deşeurilor generate " + s.year()), title);
-        p.setAlignment(Element.ALIGN_CENTER);
-        p.setSpacingAfter(4f);
-        return p;
     }
 
     // --- the identification block above chapter 1 ---

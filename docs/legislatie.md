@@ -10,7 +10,17 @@
 > textul de lege, cu link la sursa primară și data accesării. Documentul de față rămâne harta și
 > analiza de gap; când cele două se contrazic, `surse-oficiale.md` are dreptate.
 >
-> Ultima actualizare: 2026-08-23 (gap analysis reîmprospătat după Etapa 2a — seam-ul de registru).
+> Ultima actualizare: 2026-09-02 (gap analysis reverificat rând cu rând față de cod, plus citirea
+> integrală a corpusului de formulare completate).
+> Cercetarea legislativă de dedesubt e din 22–25.08.2026; ce s-a schimbat pe 02.09 e starea
+> implementării și ce spune practica, nu citirea actelor.
+>
+> ✅ **Cele cinci nomenclatoare din cap. 2 sunt verificate valoare cu valoare** față de legenda
+> oficială (notele 1–5 din HG 856/2002 anexa 1), pe care o avem acum din **două surse independente**:
+> actul, și foaia `simboluri` din fișierele Oradea ale corpusului. `StorageType`,
+> `TreatmentMethod`, `TransportMeans` și `WasteDestination` sunt **identice**; `TreatmentPurpose`
+> n-are `E`, abatere deliberată cu motivul în `surse-oficiale.md` §1.3 punctul 1. Vezi și
+> `status.md`, „Corpusul, recitit integral".
 > Verificarea legislativă integrală pe surse primare (Portal Legislativ, EUR-Lex, sgglegis.gov.ro)
 > e din 2026-08-22. Cercetarea anterioară, din 2026-07-11, era făcută pe surse secundare — o parte
 > din afirmațiile ei au fost corectate mai jos.
@@ -101,13 +111,13 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 |---|---|---|---|
 | `WasteCode` (cod, nume, periculos) | nomenclatorul ✅ + **lista 2014/955/UE completă (842 coduri)**, încărcată 22.08.2026 (Etapa 1) ✅ | — | ✅ închis |
 | `WasteMovement.operation` + `register` + `operationCode` | ✅ **Etapa 2a (23.08.2026):** `register` (`ANEXA_1`/`ART_48`) scoate preluarea din Anexa 1 (art. 2(1)); `operationCode` e obligatoriu la **orice ieșire**, fiindcă Cap. 3/4 cer operaţia + operatorul. ✅ **Etapa G1 (23.08.2026):** „predare” nu mai e operațiune — predarea e o valorificare/eliminare **făcută de partenerul numit**; litera „Scopul” se derivă din cod și e **doar `V`** (pe cele 10 Anexe 1 completate primite, fișele de eliminare au liniuță, nu `E`) | 🟠 ieșirile vechi n-au cod și nu pot fi clasificate retroactiv → 2b le marchează incomplete, nu le ghicește. ✅ **închis 24.08:** ce cod se trece la predarea către un colector îl **alege clientul la înregistrare** — nu există implicit de codat; 🟠 rămâne doar cine e „agentul economic" din rubrică (colector vs. reciclator final) | ✅ model închis |
-| `WasteMovement` — Cap. 2 | — | **lipsesc integral**: `Secția` + cele **cinci nomenclatoare** (tip stocare, mod tratare, scop, mijloc transport, destinație). În date reale sunt constante pe 12 luni → se modelează ca **profil implicit per (punct de lucru, cod)**, cu override pe lună | mare |
-| `Partner` (colector/transportator + autorizație) | operatorul din Cap. 3/4 ✅ | rol precis (valorificator vs. eliminator vs. transportator) | medie |
-| `MonthlyEvidence` (totaluri/operație pe lună) | agregarea lunară + stoc ✅ | 🔴 **formula e încă greșită în cod** (adună `collected`, scade `handedOver` peste `recovered`/`disposed`); **12 rânduri indiferent de mișcări**; grupurile cu stoc dar fără mișcări în an dispar din raport; regenerarea nu invalidează anii următori. Modelul de sub ea e acum corect — rămâne calculatorul | 🔴 critic — **Etapa 2b, următoarea** |
-| `Company` (CUI, tip, autorizație) | identificarea agentului ✅; `CompanyType` e de la Etapa 2a **comutator funcțional** (`keepsArt48Register()`) — o firmă doar-generator nu poate scrie în registrul art. 48 | CAEN, date suplimentare cerute de SIM (🟡 de văzut chestionarul); `afmObligation` boolean → **set de contribuții cu trei cadențe** (Etapa 7) | medie |
-| `ReportingDeadline` (AFM lunar auto pe 25) | calendarul ✅ | termen SIM anual **15 martie** (acum știm că e termen legal, art. 48(1)) | mare |
+| `WasteMovement` — Cap. 2 | ✅ **complet (G2 + G4, 23–24.08.2026)**: stocare + tratare (`V8`, `V9`), Mijlocul și Destinația transportului (`V12`). „Secția" nu se mai alege pe mișcare — se completează din secțiile punctului de lucru, iar orice punct nou pornește cu „Birouri" și „Producție" (`V25`) | — | ✅ închis |
+| `Partner` (colector/transportator + autorizație) | operatorul din Cap. 3/4 ✅; tipul e `GENERATOR`/`COLLECTOR` (`V11`), cu `RECOVERER` adăugat pe 24.08 fiindcă decide caseta „Destinat:" de pe Anexa 3; rolul comercial e două flaguri, iar **transportatorul e o bifă, nu un tip** (`V28`, care a făcut și `type` nullable — o firmă de transport pură nu face nimic cu deșeul) — aceeași firmă e des și colector, și transportator | — | ✅ închis |
+| `MonthlyEvidence` (totaluri/operație pe lună) | ✅ **formula reparată în Etapa 2b–2d (23.08.2026, `V6`)**: `stoc = stoc_anterior + generat − valorificat − eliminat − ieșiri neclasificate`, pe registrul `ANEXA_1` singur. Cele 12 rânduri, perechile cu stoc reportat fără mișcări și cascada regenerării către anii următori — toate închise. Din `V24`, ce a ieșit și nu e acoperit de stoc sau de o generare înregistrată se raportează **și ca generat** | — | ✅ închis |
+| `Company` (CUI, tip, autorizație) | identificarea agentului ✅; `CompanyType` e de la Etapa 2a **comutator funcțional** (`keepsArt48Register()`) — o firmă doar-generator nu poate scrie în registrul art. 48. ✅ CAEN și funcția semnatarului se întreabă în cererea de cont (`V16`); ✅ `afmObligation` a devenit **set de contribuții cu trei cadențe** (`V21`) | 🟡 date suplimentare cerute de SIM — de văzut chestionarul, care e în spatele unui login | 🟡 mică |
+| `ReportingDeadline` | ✅ calendarul complet: termenul anual **15 martie** (art. 48(1)) numit după document, plus contribuțiile AFM pe ritmul fiecăreia — lunar / trimestrial / anual (`V21`) | — | ✅ închis |
 | `Reception` / `Delivery` | ✅ **schemă + entități (Etapa 2a)** — marfa tranzacționată, flux separat de `WasteMovement`, alimentează registrul art. 48, **NU** Anexa 1. Recepția e documentul primar (are și prețul, pentru contribuția AFM de 2%) | ecrane, servicii, controllere — **Etapa 8**; mișcările `COLLECTED` vechi se mută fizic acolo atunci, o singură dată | mare |
-| — (nu există) | — | **conversia kg → tone** pentru raportarea art. 48; un singur loc în cod | medie |
+| — (nu există) | — | **conversia kg → tone** pentru raportarea art. 48; un singur loc în cod. Fișa de gestiune și declarația de ambalaje rămân în kg, deci ține strict de **Etapa 8** | medie |
 
 ### Insight-uri strategice
 1. **Amenda: corectăm în tot materialul de vânzare la 20.000–40.000 lei** (per OUG 92/2021).
@@ -130,7 +140,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | 6 | Starea fizică — listă standard | **nu există** listă închisă; e câmp liber în act | `surse-oficiale.md` §1.2 |
 | 7 | Unitatea de raportare | evidența în kg; **raportarea art. 48 în tone**; **ambalajele în kg** (Ordin 794/2012 **art. 8 alin. (1)**, nu doar antetul anexelor); **Anexa 3 în tone** în act, dar firma alege (`V19`) | OUG 92/2021 art. 48(1) · HG 1061/2008 anexa 3 · `surse-oficiale.md` §5.1 |
 | 12 | Formatul de depunere al Anexei 1 Ambalaje | **`.xls`**, cerut pe nume de act; ANPM publică formatul | Ordin 794/2012 art. 6 + art. 7 — ✅ în cod din 25.08 (`PackagingDeclarationXlsxGenerator`) |
-| 14 | Raportul colectorului/reciclatorului de ambalaje | **Anexa 3 la Ordinul 794/2012**, **două tabele** (1 = colectori/comercianți, 2 = reciclatori/valorificatori), per **punct de lucru**, la agenția din raza de activitate; comercianții la ANPM. Cere „Proveniența" — **populație · generator persoană juridică · colector · comerciant**. **Neconstruit** (TODO) | Ordin 794/2012 art. 4 · nota 2 |
+| 14 | Raportul colectorului/reciclatorului de ambalaje | **Anexa 3 la Ordinul 794/2012**, **două tabele** (1 = colectori/comercianți, 2 = reciclatori/valorificatori), per **punct de lucru**, la agenția din raza de activitate; comercianții la ANPM. Cere „Proveniența" — **populație · generator persoană juridică · colector · comerciant**. ⚠️ În șablonul primit (02.09) proveniența e **o axă a tabelului**, nu un câmp: trei sub-rânduri fixe sub fiecare material, fără „comerciant" — dar șablonul e modificat local. **Neconstruit** (TODO) | Ordin 794/2012 art. 4 · nota 2 |
 | 15 | Cine depune Anexa 1 Ambalaje | doar cine își îndeplinește obiectivele **în mod individual**; cine a transferat către un OIREP nu o depune (raportează OIREP-ul, anexele 2A/2B). **Nu e întrebat nicăieri azi** — întrebarea AB | Ordin 794/2012 art. 1 alin. (1)–(2) |
 | 16 | „Altele" pe formularele de ambalaje | rubrica cuprinde **numai alte materiale decât cele nominalizate**; compozitele merg pe **materialul preponderent**; exportul și tranzitul **nu se raportează** | Ordin 794/2012 art. 8 alin. (1) lit. b), d) și alin. (2) — ✅ în cod din 25.08 |
 | 13 | Unde se depune Anexa 1 Ambalaje | **agenţia judeţeană/regională de mediu**, din raza sediului social, pe **25 februarie**. Notificarea de la art. 3 e altceva: la **AFM**, pe **25 ianuarie** | Ordin 794/2012 art. 1, 3, 6 |
@@ -159,7 +169,8 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
    În cod: `MarketRole`, migrarea `V13`. Sursa: `surse-oficiale.md` §11. *(Textul de mai jos e
    întrebarea așa cum a fost pusă; se păstrează fiindcă explică de ce nu era evident.)*
 
-   ~~🔴 NOU 24.08.2026 — despre care „Anexa 1" vorbește specialista~~ când spune „e strict pentru generatorii de deșeuri de ambalaj, producători/importatorii"? Vezi caseta de mai jos. Nu blochează cod; decide cui spunem că are nevoie de aplicație. Întrebarea K din `intrebari-specialist.md`.
+   ~~🔴 NOU 24.08.2026 — despre care „Anexa 1" vorbește specialista~~ când spune „e strict pentru generatorii de deșeuri de ambalaj, producători/importatorii"? Vezi caseta de mai jos. Nu blochează cod; decide cui spunem că are nevoie de aplicație. Întrebarea K, închisă pe 24.08 (fișierul de întrebări în markdown nu mai există; răspunsurile sunt
+   în `status.md`).
 
 ---
 

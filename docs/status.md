@@ -3,6 +3,26 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **Unde suntem — 02.09.2026.** 175 de teste verzi (0 eșecuri). Migrări până la **`V28`**, următoarea
+> liberă e **`V29`**. În producție: `ecoregistru-api` la **v31** (`84e6efe`), `ecoregistru-app` la
+> **v26** (`0182ef4`); `main`, `origin/main` și `origin/deploy/heroku-split` sunt la `7ae9ee3`.
+>
+> **Livrat:** fundația · nomenclatorul LED (842 coduri) · motorul de evidență cu stoc cumulativ ·
+> termene, alerte și dosar de control · modulul de generatori complet (G1–G8) cu cele patru
+> documente oficiale — fișa de evidență (HG 856/2002), declarația anuală, Anexa 3 (HG 1061/2008) și
+> Anexa 1 Ambalaje (Ordinul 794/2012, `.xls`) · cadențele AFM · transportatori cu șoferi.
+>
+> **Urmează:** modulul de depozit — ecrane `Reception`/`Delivery`, registru art. 48, borderou de
+> achiziție la metale, profil de groapă (Etapele 8–11), plus TODO-ul Anexa 3 Ambalaje.
+>
+> **Deschis:** **șapte** întrebări către specialistă — C, Q, W, Y, AA, AB, AC — dintre care **AC**,
+> regula bifei „ambalaj pus de noi pe piața națională", e implementată și neconfirmată. Patru s-au
+> închis pe 02.09 din corpus (**V**, **X**, **P**, **I**); vezi „Corpusul, recitit integral".
+> Blocajele de infrastructură sunt la finalul documentului.
+>
+> *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
+> ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
+
 - ✅ **B0 — Fundația:** auth JWT (login, verificare email, resend, reset parolă), multi-tenancy
   (`company_id` pe fiecare tabelă + `TenantContext` + `TenantFilter`, izolare la nivel de request;
   PLATFORM_ADMIN comută tenantul via `X-Tenant-Id`), roluri `PLATFORM_ADMIN`/`ADMIN`/`OPERATOR`/`CLIENT_VIEWER`,
@@ -868,6 +888,12 @@ ele rămân valabile și verificate, dar comentariile din cod care spun „pe c�
 trebuie citite așa: zece fișiere, o practică. Consecința imediată e la **întrebarea S**: observația
 noastră că `4677` apare identic pe toate punctele de lucru **nu** mai sugerează nimic despre
 firmă-vs-amplasament — e aceeași firmă. Întrebarea rămâne exact la fel de deschisă.
+
+> ✅ **Corectat pe 02.09.2026 — sunt două firme, nu una.** Vezi secțiunea „Corpusul, recitit integral"
+> de la finalul jurnalului: `deseuri generate_Cluj_2025_Iuhos Lorena.pdf` e al firmei **Panemar Jr.**
+> (CAEN 1071, brutărie), nu al lui Hamburger. Restul paragrafului de mai sus rămâne adevărat, iar
+> observația despre CAEN tot nu spune nimic — dar „o singură practică" nu mai e exact: **contrastul
+> dintre un reciclator și o brutărie** e chiar ce a închis întrebarea V.
 
 ### Felia: unitatea de pe Anexa 3 se alege pe firmă (`V19`)
 
@@ -2016,6 +2042,109 @@ Frontend curat: `tsc -b` și `vite build` trec. Backendul nu s-a atins — contr
 
 ---
 
+## Corpusul, recitit integral — patru întrebări închise, zero cod de schimbat (02.09.2026)
+
+Toate cele 20 de fișiere din `documente oficiale/` citite rubrică cu rubrică, nu pe sărite: 13
+fișiere de evidență (409 rânduri de lună în cap. 2, 382 în cap. 1, 610 în cap. 3/4), cele două
+declarații de ambalaje, șablonul Anexei 3 Ambalaje și cele două modele de Anexa 3. Trei formate care
+nu se citiseră până acum — `.xls` (Oradea, prin `xlrd`), `.ods` (dezarhivat, `content.xml`) și
+`.docx`.
+
+### Întâi: corpusul e al **a două** firme
+
+`deseuri generate_Cluj_2025_Iuhos Lorena.pdf` **nu e Hamburger** — e **Panemar Jr.**, CUI
+RO 17022001, **CAEN 1071 (brutărie)**, `office1@panemar.ro`, întocmit de altcineva. Documentul e
+real, nu ieșit din aplicația noastră (producer `iLovePDF`, iulie 2025). Restul corpusului rămâne
+Hamburger Recycling Romania, inclusiv fișierele Oradea și modelul „Anexa 3 CARTON".
+
+Contează, fiindcă **una tratează deșeul și cealaltă doar îl predă** — iar diferența dintre ele
+răspunde la o întrebare pe care o singură firmă n-o putea răspunde.
+
+### Ce s-a închis
+
+| Întrebare | Răspunsul din corpus |
+|---|---|
+| **V** — „Tratare: Cant." la un client care doar predă | **0.** Panemar scrie `0.000` cu Modul `-` pe toate cele 5 coduri; Hamburger scrie cantitatea, cu Modul `TM`, fiindcă chiar balotează. Regula e „ce a tratat firma însăși", citită din Modul. Din 409 rânduri: 287 cu Tratare = Stocare, 60 goale, 50 cu Stocare 0 și Tratare > 0 — **niciunul invers**. |
+| **X** — sunt „Birouri" și „Producție" secțiile potrivite | **Da.** `birouri` 336 · `productie` (trei ortografii) 56 · **`birouri+productie` 15** · `personal` 2. Cele două implicite acoperă 407 din 409, iar tipărirea amândurora când nu s-a ales una **există deja în corpus**, scrisă combinat într-o celulă. |
+| **P** — unde stă titlul | **Doar pe centralizator** (`D12`/`A12`); varianta Bragadiru scrie „CENTRALIZATOR". Pe cele 33 de foi per cod de deșeu, antetul începe direct cu „Agentul economic:" — niciun titlu, în niciun fișier. **✅ Implementat** — vezi mai jos. |
+| **I** — cine dă numărul de înregistrare | **Autoritatea, la depunere.** Hamburger Cluj 2024 → `Nr inreg: 23/11.02.2025`; Panemar 2025 → `Nr inreg: 25/11.02.2025`. Două firme diferite, numere apropiate, **aceeași zi**, aceeași agenție județeană, cu o lună înainte de 15 martie. E registrul de intrare al agenției. |
+
+### Ce s-a nuanțat
+
+- **AC** — declarația HRR 2021 raportează **numai Oțel, 5.192 kg**, cifră absentă din toate fișele
+  lor de gestiune; invers, `15 01 02` din fișe (5,5 kg) lipsește din declarație, iar **Tabelul 2 e
+  complet gol**. Cele două documente raportează mulțimi disjuncte. Notele 1) și 4) explică de ce:
+  Tabelul 1 e despre marfă pusă pe piață, nu despre deșeu. Deci bifa din `V27` e justificată — dar
+  premisa lui `V26`, că *ambele* tabele se însumează din mișcări, ține **doar pentru Tabelul 2**.
+- **AA** — „Proveniența" nu e un câmp, ci **o axă a tabelului**: fiecare material se sparge în trei
+  sub-rânduri fixe (`populatie`, `colectori`, `generatori persoane juridice`), fără „comerciant".
+  Șablonul e însă cel modificat local, deci pentru numărul valorilor rămâne actul autoritatea.
+- **W** — cele 7 luni din corpus cu ieșire > generat sunt **toate** absorbite de stocul reportat.
+  Timișoara 2022 `19 12 12`: 48.755 + 200.008 − 225.430 = **23.333**, exact formula noastră.
+  Confirmă precedența din `V24`; cazul fără stoc nu apare, deci întrebarea rămâne.
+- **C** — în 610 rânduri de cap. 3/4 apar 18 operatori, **niciodată firma raportoare**. Nu există
+  niciun exemplu de tratare proprie, deci corpusul nu spune ce se scrie acolo.
+
+### Auditul de cod: cinci verificări, zero defecte
+
+Fișierele Oradea au o foaie `simboluri` — **legenda celor cinci nomenclatoare, notele 1–5 din
+HG 856/2002**. Deci le avem din două surse independente: actul și un fișier de lucru al
+specialistei. Comparate valoare cu valoare cu enum-urile din cod:
+
+| Nomenclator | Act | Cod |
+|---|---|---|
+| `StorageType` | RM RP BZ CT CF S PD VN VA RL A | identic |
+| `TreatmentMethod` | TM TC TMC TB TT D A | identic |
+| `TransportMeans` | AS AN H CF A | identic |
+| `WasteDestination` | DO HP HC I Vr P Ve A | identic |
+| `TreatmentPurpose` | V E | **doar `V`** — abatere deliberată, vezi mai jos |
+
+Restul verificărilor, toate curate: cele două coloane „Cant." din cap. 2 (`treatedHere` = ieșirile
+fără partener — exact regula pe care o arată contrastul Panemar/Hamburger), rândurile per operator
+din Tabelul 2 (`PackagingDeclarationBuilder`, cu denumire + adresă + CUI, cum cer rubricile `D7`/`E7`),
+rândurile de subtotal „Total plastic" / „Total metal" / „TOTAL:", și secțiile implicite din `V25`.
+
+**`TreatmentPurpose` fără `E` nu mai e o presupunere, e o constatare.** Cele 11 rânduri cu `E` din
+corpus sunt toate într-o singură foaie (Cluj 2022, `19 12 12`) și sunt **greșite în fișierul lor**:
+cap. 1 al aceleiași foi arată cantitatea la *valorificat* (6 · 20,48 · 4,42 · 9,26 t), cu *eliminat*
+zero pe toate lunile. Au scris „în vederea eliminării" peste o valorificare. Fișierele Oradea, care
+**chiar elimină** (`20 03 01` → `D1`, prin RER Ecologic Service), lasă celula **goală**. Numărătoarea
+completă: `V` 342 · liniuță 188 · gol 25 · `E` 11.
+
+### Ce s-a schimbat în cod: titlul iese de pe fișă (**P**)
+
+Trei din cele patru întrebări închise confirmau comportamentul existent. A patra nu: tipăream
+„Evidența gestiunii deșeurilor generate «an»" în capul **fiecărei** fișe per cod de deșeu, iar
+**niciunul** din cele 33 de modele nu face asta — ele încep direct la „Agentul economic:", iar
+titlul stă pe centralizator, unde `AnnualDeclarationGenerator` îl tipărea deja.
+
+Motivul pentru care deviasem era scris în javadoc și **nu mai stă în picioare**: „un PDF de 20 de
+pagini fără titlu e greu de dat unui inspector" — dar dosarul de control numește deja fișierul
+`evidenta-gestiunii-deseurilor-{an}.pdf` și îl descrie în README-ul lui. Deci argumentul nu cumpăra
+nimic și costa o abatere de la fiecare model pe care îl avem.
+
+- `Anexa1FormGenerator.addSheet` nu mai adaugă titlul; metoda `documentTitle()` a fost ștearsă.
+- Testul **n-a fost șters, ci inversat** (`thePerCodeSheetCarriesNoDocumentTitle`): aceeași regulă,
+  întoarsă în direcția bună — pagina **nu** conține titlul, dar conține „Agentul economic:" și anul.
+- **Verificat pe hârtie**, nu doar la teste: PDF randat și privit. Pagina se deschide la „Agentul
+  economic:", fără spațiu rămas, cele patru capitole intacte, nota cu legenda la subsol, iar
+  antetele cap. 3/4 tipăresc **OUG 92/2021**.
+
+Nicio migrare. **175 de teste verzi.**
+
+### Ce nu s-a schimbat, și de ce
+
+Restul auditului n-a găsit nimic de reparat — nomenclatoarele, cele două coloane „Cant.", rândurile
+per operator din Tabelul 2, subtotalurile, secțiile. **Și antetul cap. 3/4 a încetat să fie o
+întrebare:** modelele trimit la Legea 211/2011, abrogată de OUG 92/2021, dar un act abrogat nu
+devine autoritate fiindcă apare într-un șablon vechi. Regula, de aplicat la tot corpusul: **ce e
+depășit în model nu se copiază** — corpusul spune cum se completează un formular, nu ce lege e în
+vigoare.
+
+Detaliile verbatim, cu citatele din note: `surse-oficiale.md` §1.2, §1.3 (punctele 4 și 6–10) și §5.3.
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -2036,24 +2165,28 @@ nu se salvează.
 | 3 | ✅ Cap. 2 ca profil (5 nomenclatoare + `Secția`) — *livrat ca G2 + G4* | 2 | **GATA** |
 | 4 | ✅ **Export oficial Anexa 1** (4 capitole) — *livrat ca G5* | 1, 2, 3 | **GATA** |
 | 5 | ✅ **Centralizator anual** — *livrat ca G6*. 🔜 Conversia kg→tone rămâne, dar e a registrului art. 48 (Etapa 8), nu a centralizatorului: fişa şi declaraţia sunt în kg | 4 | **GATA** (partea de centralizator) |
-| 6 | ✅ **Dosar de control dimensionat la 3 ani** — livrat 24.08.2026 (`years=1..3`, folder per an, avertisment pe anul fără evidență) | 4 | **GATA** |
-| 7 | 🟠 **Obligațiile AFM ca set de contribuții + trei cadențe** — reparație în Termene | — | M |
-| 8 | **Modul depozit — ecrane** (Recepții/Livrări, registru art. 48, formulare HG 1061, ceas SIATD) | 2 | L |
+| 6 | ✅ **Dosar de control pe mai mulți ani** — livrat 24.08.2026 (folder per an, avertisment pe anul fără evidență). Plaja a crescut la **`years=1..5`** pe 25.08, la cererea specialistei: 3 ani e ce cere inspecția (OUG 92/2021 art. 48(5)), 5 e marja ei | 4 | **GATA** |
+| 7 | ✅ **Obligațiile AFM ca set de contribuții + trei cadențe** — livrat 25.08.2026 (`V21`, Grupul 5) | — | **GATA** |
+| 8 | 🔜 **Modul depozit — ecrane** (Recepții/Livrări, registru art. 48, formulare HG 1061, ceas SIATD) — **următorul** | 2 | L |
 | 9 | Borderou de achiziție la metale (OUG 31/2011) + regim GDPR pentru CNP | 8 | M |
 | 10 | Profil groapă (registru recepție HG 349 art. 15, raportare semestrială, alertă 12h) | 8 + cuantumul din anexa 2 | M |
-| 11 | Modul ambalaje (Ordin 794/2012 anexa 3, **în kg**) | 8 | M |
+| 11 | 🟡 Modul ambalaje (Ordin 794/2012, **în kg**) — **livrat parțial 25.08**: Anexa 1 Ambalaje în `.xls` (`V22`, `V26`, `V27`). Rămâne **Anexa 3 Ambalaje**, raportul anual al colectorilor | 8 | S |
 
 **Restanțe mici (S, se pot lua oricând, nu blochează nimic):**
 
-- **Căutarea de coduri e sensibilă la diacritice.** `WasteCodeRepository.search` face
-  `lower(...) like`, iar denumirile din nomenclator au diacritice: cine tastează „deseuri" nu
-  găsește nimic. Cu 10 coduri nu conta; de la Etapa 1 încoace, cu 842, se vede. Reparație:
-  `unaccent` sau o coloană normalizată, plus un test pe „deseuri" vs. „deșeuri".
+- ✅ ~~**Căutarea de coduri e sensibilă la diacritice.**~~ **Rezolvat pe 24.08** (`V17`): cine
+  tastează „deseuri" găsește „deșeuri". *(Rândul rămâne corectat, nu șters — descria un defect
+  real timp de două zile.)*
+- **`total_collected` și `total_handed_over` au rămas în schemă nescrise.** Se curăță în Etapa 8,
+  odată cu mișcările `COLLECTED`.
+- **Alerte de expirare a autorizației de partener (<60 zile)** — ultimul slice al fazei TERMENE.
+  Cere o coloană de dedup pe `partners`, altfel trimite e-mail zilnic.
 
 **Etapa 2 e livrată integral (2a–2d, 23.08.2026); G1, G2 și G3 sunt livrate peste ea.** Următoarea
-migrare liberă e **`V13`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` = modulul de
-generatori, `V8` = profilul de cont, `V9` = cererile de cont, `V10` = Anexa 3, `V11` = tipul de
-partener, `V12` = transportul din cap. 2).
+migrare liberă era atunci **`V13`** (`V5` = seam-ul de registru, `V6` = modelul de stoc, `V7` =
+modulul de generatori, `V8` = profilul de cont, `V9` = cererile de cont, `V10` = Anexa 3, `V11` =
+tipul de partener, `V12` = transportul din cap. 2). ⚠️ **Azi (02.09.2026) următoarea liberă e
+`V29`** — numărul de mai sus e de pe 23.08 și e păstrat ca instantaneu.
 
 ### Schițele de la meeting (docs, 23.08.2026) — ce confirmă și ce deschide
 
@@ -2096,6 +2229,8 @@ după ce au fost introduse datele”, „10 kg (se cântărește la descărcare)
   ⚠️ **Antetul cap. 3/4 din exemple trimite la Legea 211/2011, abrogată de OUG 92/2021.** Numerele
   anexelor sunt aceleași (3 = valorificare, 2 = eliminare), deci corectura e doar numele actului —
   dar e o abatere de la model pe un formular oficial și **e decizia specialistei**, nu a noastră.
+  ✅ **Închis pe 02.09.2026: nu era o decizie de luat.** Un act abrogat nu devine autoritate fiindcă
+  apare într-un model — șablonul lor e vechi, atât. Tipărim OUG 92/2021 și rămâne așa.
 - ✅ **„D5 peste tot; nu ar trebui să mai fie D1”** — deja aplicat (datele demo și
   `docs/legislatie.md` foloseau D5 din 20.08).
 - 📎 **„Anexa 1 e strict pentru generatorii de deșeuri de ambalaj (producători/importatori)”** și
@@ -2252,6 +2387,9 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
 ---
 
 ## Blocaje rămase
+
+*Verificate pe dyno la 02.09.2026: `CLOUDINARY_URL` și `SPRING_PROFILES_ACTIVE` continuă să fie
+nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
 
 - ✅ **Chestionarele SIM — închis pe 24.08.** Se completează cu **datele din anexe**: Anexa 1 la
   producător/importator, evidența la colector. Nu lipsește niciun câmp din model și niciun client
