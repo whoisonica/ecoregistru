@@ -17,12 +17,15 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import ro.ecoregistru.controller.response.MonthlyEvidenceResponse;
+import ro.ecoregistru.exception.BadRequestException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.util.List;
+
+import static ro.ecoregistru.exception.ErrorMessageEnum.EXPORT_FORMAT_UNSUPPORTED;
 
 /**
  * Produces a downloadable, human-readable summary of the monthly evidence — a "generic table",
@@ -56,6 +59,11 @@ public class GenericEvidenceExporter {
         return switch (format) {
             case XLSX -> toXlsx(companyName, year, month, rows);
             case PDF -> toPdf(companyName, year, month, rows);
+            // XLS (BIFF8) exists for one document only: the packaging declaration, whose format
+            // Ordinul 794/2012 art. 6 names on sight. This export is an explicitly unofficial
+            // summary — no act constrains it — so it stays on the modern spreadsheet and answers
+            // 400 rather than quietly handing back a different format than the one asked for.
+            case XLS -> throw new BadRequestException(EXPORT_FORMAT_UNSUPPORTED);
         };
     }
 

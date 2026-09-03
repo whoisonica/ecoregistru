@@ -2177,6 +2177,148 @@ prezentă pe `waste_movements`. Zero cod schimbat: toate confirmă ce face aplic
 
 ---
 
+## Reparaţiile auditului care nu depindeau de nimeni (02.09.2026)
+
+Şase din cele 14 puncte s-au închis în aceeaşi zi — toate cele la care **actul răspunde singur**,
+deci nu era nimic de întrebat. **177 de teste verzi** (de la 175). Migrări: **niciuna** — totul e
+afişare, format de fişier sau text.
+
+| Pct. | Ce s-a schimbat | Unde |
+|---|---|---|
+| 1 | Cap. 4 al fişei trimite la **anexa nr. 7**, nu nr. 2 | `Anexa1FormGenerator` |
+| 2 | Codurile periculoase se tipăresc **cu asterisc**, pe fişă şi pe declaraţia anuală | `WasteCodeLabel` (nou), `Anexa1Sheet`, `AnnualDeclaration.Row` |
+| 4 | Ambalajele se descarcă **`.xls` real** (BIFF8), nu `.xlsx` | `PackagingDeclarationXlsGenerator` (redenumit), `ExportFormat.XLS` |
+| 11 | Mesajul dosarului: 5 ani, iar art. 48(5) e prag, nu plafon | `ErrorMessageEnum` |
+| 12 | Nota 2 a fişei: `D` înaintea lui `TT`, ca în act | `Anexa1FormGenerator` |
+| 13 | `ReportType` din frontend are toate cele cinci valori | `types.ts` |
+
+**Cum s-a pus asteriscul, şi unde nu.** `WasteCodeLabel.official(cod, periculos)` e singurul loc
+care ştie regula, e idempotent şi lasă un cod gol neatins. Denumirile **nu** se ating: actul scrie
+referinţele încrucişate din ele curat, iar seed-ul le are verbatim din EUR-Lex. Anexa 3 n-a avut
+nevoie de nimic — refuză oricum codurile periculoase (`ANEXA3_HAZARDOUS_NOT_ALLOWED`), deci n-are
+cum să tipărească vreunul.
+
+⚠️ **Coliziunea celor două `(*)` a rămas, deliberat.** Pe declaraţia anuală, codul poartă acum `*`
+iar stocul poate purta `(*)` cu alt înţeles. Sunt în coloane diferite şi al doilea e în paranteze,
+iar nota de subsol a fost rescrisă ca să spună explicit care e care şi să numească şi celălalt
+înţeles. **Nu s-a schimbat al doilea marcaj** — asta e întrebarea **AE**, şi n-are rost ghicit.
+
+**Două teste noi în `Anexa1FormIT`:** `chaptersThreeAndFourCiteTheAnnexesInForce` (cere anexele 3 şi
+7, respinge „anexei nr. 2" şi „211/2011"; normalizează spaţiile, fiindcă antetul se rupe pe rânduri
+în coloana îngustă) şi `aHazardousCodePrintsItsAsteriskAndAPlainOneDoesNot` — a doua jumătate a
+numelui e partea care contează. `PackagingDeclarationIT` citeşte acum fişierul cu `HSSFWorkbook`,
+deci o întoarcere la OOXML cade la parsare, nu trei rubrici mai jos.
+
+✅ **Verificat pe documentele randate, nu doar la teste** (regula 5): fişa scrie
+`Cod deşeu: 16 06 01*` şi încape în continuare pe o pagină · cap. 3 „conform anexei nr. 3", cap. 4
+„conform anexei nr. 7" · declaraţia anuală scrie `16 06 01*` şi `13 02 08*`, iar `20 01 01` rămâne
+curat · fişierul de ambalaje începe cu `d0 cf 11 e0 a1 b1 1a e1` — OLE2/BIFF8, `.xls` adevărat — şi
+se serveşte cu `application/vnd.ms-excel`, sub numele `anexa1-ambalaje-2026.xls`.
+
+**Un lucru prins de compilator, care merită ţinut minte:** `ExportFormat` e folosit într-un `switch`
+exhaustiv în `GenericEvidenceExporter`, deci adăugarea lui `XLS` a rupt compilarea până i s-a dat un
+răspuns explicit. Exportul generic e un rezumat **neoficial**, pe care niciun act nu-l constrânge,
+deci rămâne pe `.xlsx` şi întoarce 400 dacă i se cere `.xls` — nu tăcere şi nici alt format decât
+cel cerut.
+
+---
+
+## Audit de conformitate legală — 14 puncte, două abateri confirmate (02.09.2026)
+
+Documentul complet, cu temeiul fiecărui punct: **`docs/audit-conformitate.md`** (gitignored — enumeră
+abateri nereparate într-un repo public; după ce se repară, concluziile intră aici ca istoric).
+Întrebările ieşite din el: **`docs/intrebari-specialist.md`**, literele **AE–AN**.
+
+**Metoda, şi de ce contează.** Până acum documentarea a mers într-o direcţie: *citim actul, apoi
+construim*. Auditul a mers invers — *citim ce tipăreşte aplicaţia, apoi căutăm rubrica în act*. E
+altă operaţie şi găseşte alte lucruri: cele două abateri de mai jos au trecut prin toate rundele de
+documentare tocmai fiindcă nimeni nu s-a uitat la ele **dinspre hârtie înapoi spre lege**.
+
+Baza: 175 de teste verzi la momentul auditului, arbore curat la `4193a2c`. **Niciunul dintre cele 14
+puncte nu e prins de un test** — testele verifică ce am scris noi, nu ce cere actul.
+
+### Cele două abateri confirmate
+
+**1. Cap. 4 al fişei trimitea la anexa greşită.** `Anexa1FormGenerator` tipărea „Operaţia de
+eliminare, conform **anexei nr. 2** din OUG 92/2021". Anexa nr. 2 e „EXEMPLE de instrumente
+economice"; operaţiunile D1–D15 sunt în **anexa nr. 7**. Cap. 3 (anexa nr. 3, valorificare) era
+corect, şi de aici a venit şi greşeala: javadoc-ul presupunea că OUG 92/2021 a păstrat numerotarea
+din Legea 211/2011, unde eliminarea era anexa 2. A păstrat-o doar pentru valorificare.
+
+Verificat pe textul din Monitorul Oficial (p. 58 şi 69) şi confirmat a doua oară de definiţiile din
+anexa nr. 1 — pct. 17 („Anexa nr. 7 stabileşte o listă a operaţiunilor de eliminare") şi pct. 37
+(„Anexa nr. 3 [...] operaţiunilor de valorificare"). Tabelul complet al anexelor e în
+`surse-oficiale.md` §2.3. **Nu e întrebare pentru specialistă: actul o spune de două ori.**
+
+**2. Codurile periculoase se tipăreau fără asterisc.** HG 856/2002 **art. 4 alin. (3)**: „Deşeurile
+periculoase prevăzute în anexa nr. 2 sunt marcate cu un asterisc (*)" — iar antetul fişei trimite
+chiar la „codificarea din anexa nr. 2". `waste_codes.csv` ţine deliberat codul fără asterisc, cu
+periculozitatea ca boolean separat (corect pentru stocare), dar **niciun generator nu-l punea înapoi
+la tipărire**: nici fişa, nici declaraţia anuală, nici Anexa 3. 408 coduri din 842.
+
+**Unde stă asteriscul, verificat pe anexa 2:** **numai în coloana de cod**. În denumiri, actul scrie
+referinţele încrucişate curat — `19 12 12` e „…altele decât cele specificate la **19 12 11**", iar
+`20 01 36` trimite la „20 01 21, 20 01 23 şi 20 01 35", toate periculoase, niciuna cu asterisc.
+Deci **denumirile din `waste_codes.csv` sunt deja corecte** şi nu se ating; reparaţia atinge strict
+codul.
+
+**Ce spune corpusul — şi ce nu poate spune.** Prima citire a concluzionat că n-are niciun cod
+periculos; **e adevărat doar pentru codurile raportate**. Scanat programatic la audit, `19 12 11*`
+apare în **patru** fişiere (Bragadiru 2022 şi 2024, Cluj 2022, Timişoara 2022) — nu ca rând raportat,
+ci **înăuntrul denumirii** lui `19 12 12`, şi acolo ei îl scriu **cu** asterisc, deşi actul nu-l pune.
+Deci practica lor foloseşte marcajul mai des decât legea, nu mai rar. Sprijină reparaţia, fără s-o
+închidă: niciunul din cele 33 de rânduri raportate nu e pe un cod periculos, deci n-avem niciun
+antet completat cu unul — de aici întrebarea **AE**.
+
+⚠️ **Lecţia de metodă, mai valoroasă decât punctul în sine.** „Corpusul nu conţine X" e o afirmaţie
+care se **verifică**, nu se presupune din ce scrie în documentaţia noastră despre corpus. Prima
+formulare a acestui paragraf a fost greşită fiindcă a repetat o listă de coduri din alt document în
+loc să scaneze fişierele. Scanarea a durat un minut şi a schimbat concluzia în bine.
+
+⚠️ **Coliziune de marcaj, de rezolvat odată cu reparaţia:** declaraţia anuală foloseşte deja `(*)`
+pe coloana de stoc cu alt înţeles — ieşiri fără cod R/D. Cele două pot ajunge pe acelaşi rând.
+Comentariul din `AnnualDeclarationGenerator` arăta că ştiam de ambiguitate; acum devine reală.
+Întrebarea **AE**.
+
+### Cinci cerinţe legale neacoperite
+
+| # | Ce lipseşte | Temei | Întrebarea |
+|---|---|---|---|
+| 3 | **Termenul de 25 februarie** nu se generează. Construim documentul, README-ul dosarului îl numeşte, dar nu pleacă nicio alertă. `AFM_ANNUAL` pe 25 ianuarie e altceva — alt destinatar, alt temei | Ordin 794/2012 art. 6 | **AM** |
+| 4 | **Fişierul de ambalaje e `.xlsx`, nu `.xls`.** `XSSFWorkbook` produce OOXML. Documentaţia promitea deja lucrul corect; doar codul nu-l făcea | Ordin 794/2012 art. 6 | **AG** |
+| 5 | **Nimeni nu verifică autorizaţia partenerului la data predării.** O tipărim pe Anexa 3, dar `expiringSoon` se calculează faţă de *azi* şi e doar un badge | OUG 92/2021 art. 23(1) + art. 24(1) | **AH** |
+| 6 | **Deşeurile periculoase n-au document de transport.** Blocăm corect Anexa 3, dar nu punem nimic în loc — anexa 2 la HG 1061/2008, plus aprobarea prealabilă din anexa 1 | HG 1061/2008 | **AI** 🔴 |
+| 7 | **Art. 48 cere tone**, toate documentele sunt în kg. Kilogramele sunt corecte pe fişă; lipseşte cifra pentru depunerea de pe 15 martie, generată azi pentru orice generator | OUG 92/2021 art. 48(1) lit. a) şi c) | **AF** |
+
+Plus două obligaţii pe care nu le ţinem nicăieri: **persoana desemnată** cu gestiunea deşeurilor
+(art. 23 alin. (4)–(5) — şi consultantul de mediu *este* „terţa persoană" de acolo, deci rubrica s-ar
+completa singură pentru tot portofoliul specialistei — întrebarea **AK**) şi **buletinele de
+analiză** pentru codurile periculoase (art. 48 alin. (2), întrebarea **AL**).
+
+### Cinci mărunte
+
+Notele Tabelului 1 din declaraţia de ambalaje citează **HG 621/2005** (abrogată în 2015 de Legea
+249/2015) şi **HG 937/2010** (abrogată în 2016) — inconsecvent, fiindcă nota 2 a Tabelului 2 fusese
+deja actualizată deliberat (**AJ**) · mesajul dosarului spune „cel mult 3 ani" unde `MAX_YEARS = 5`,
+şi prezintă art. 48(5) ca plafon când e prag · nota 2 a fişei inversează `D` şi `TT` faţă de act ·
+`ReportType` din frontend a rămas la trei valori din cinci · cap. 2 poate tipări `Modul: TM` lângă
+`Cant.: 0.000`, fiindcă modul se ia din toate mişcările iar cantitatea doar din tratarea proprie
+(**AN**).
+
+### Ce s-a verificat şi e corect
+
+Nu se atinge, şi fiecare rând a fost citit înapoi în act în sesiunea asta: cele **842 de coduri** ·
+cele **cinci nomenclatoare închise** din cap. 2, valoare cu valoare · **formula stocului** · structura
+fişei · referinţa cap. 3 · **un singur termen pe 15 martie** · **cele trei cadenţe AFM** · Anexa 3 ca
+formular nepericulos cu 3 exemplare · kilogramele la ambalaje · depunerea pe sediul social · foile
+protejate · dosarul dimensionat pe 3 ani · filtrul care ţine marfa preluată în afara Anexei 1.
+
+**Toate actele sunt în vigoare şi nemodificate**, reverificate pe 02.09.2026: HG 856/2002 (ultima
+consolidare 19.03.2007), OUG 92/2021 art. 48 cu termenul de 15 martie neschimbat, Ordinul 794/2012 cu
+25 februarie, HG 1061/2008.
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -2420,6 +2562,13 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
 
 ## Blocaje rămase
 
+- ✅ ~~**Două abateri confirmate**~~ — **reparate în aceeaşi zi**, împreună cu alte patru puncte la
+  care actul răspundea singur. Vezi secţiunea „Reparaţiile auditului care nu depindeau de nimeni".
+  Rămân **opt** puncte, toate blocate pe răspunsurile **AE–AN**.
+- 🔴 **N-avem niciun model de formular anexa 2 la HG 1061/2008** — transportul deşeurilor
+  **periculoase** (întrebarea **AI**). E acelaşi tip de blocaj ca AD, din acelaşi motiv: refuzăm să
+  inventăm un formular oficial. Deosebirea e că aici nu blochează o etapă viitoare, ci lasă o gaură
+  în modulul **deja livrat** — un generator cu ulei uzat sau tuburi fluorescente n-are ce tipări.
 - 🔴 **N-avem niciun model de registru art. 48** (întrebarea **AD**, deschisă 02.09.2026). Tot
   corpusul primit e despre fișa de gestiune, declarația anuală, Anexa 3 și ambalaje. Despre evidența
   cronologică lunară a mărfii preluate de la terți — nimic.

@@ -97,6 +97,7 @@ public class AnnualDeclarationBuilder {
             rows.add(new AnnualDeclaration.Row(
                     first.wasteCode(),
                     first.wasteCodeName(),
+                    first.hazardous(),
                     openingStock(first),
                     generated, recovered, disposed,
                     last.closingStock(),

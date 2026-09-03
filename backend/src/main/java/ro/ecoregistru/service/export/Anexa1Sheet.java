@@ -13,6 +13,13 @@ import java.util.List;
  * filled workbooks alongside it.
  *
  * @param openingStock the stock the year starts with — the header's "Stoc/kg"
+ * @param hazardous    whether the code is a hazardous one, so the header can print it the way the
+ *                     codification the form points at writes it: with a trailing asterisk. HG
+ *                     856/2002 art. 4 alin. (3) — "Deşeurile periculoase prevăzute în anexa nr. 2
+ *                     sunt marcate cu un asterisc (*)" — and the header rubric says "cod …
+ *                     (conform codificării din anexa nr. 2)". Kept as a flag rather than baked into
+ *                     {@code wasteCode} because the stored code has no asterisk (see
+ *                     {@code waste_codes.csv}) and sorting should not depend on presentation.
  */
 public record Anexa1Sheet(
         String companyName,
@@ -20,6 +27,7 @@ public record Anexa1Sheet(
         String workPointName,
         String wasteCodeName,
         String wasteCode,
+        boolean hazardous,
         String physicalState,
         BigDecimal openingStock,
         List<Anexa1MonthRow> rows

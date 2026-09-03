@@ -78,13 +78,18 @@ public class PackagingController {
     }
 
     /**
-     * The document. {@code format=xlsx} is the default: the authority receives a spreadsheet, and
-     * the model we hold is one — two sheets, {@code Tabelul nr. 1} and {@code Tabelul nr. 2}.
-     * {@code format=pdf} prints the same content on one page, for the control file.
+     * The document. {@code format=xls} is the default, and it is the act's own choice of words:
+     * Ordinul 794/2012 art. 6 asks for "format electronic «.xls»" — two sheets, {@code Tabelul
+     * nr. 1} and {@code Tabelul nr. 2}. {@code format=pdf} prints the same content on one page,
+     * which is the "suport hârtie" the same article requires next to the file.
+     *
+     * <p>The default was {@code xlsx} until 02.09.2026, and the bytes really were OOXML — caught by
+     * the conformance audit. Kept as a separate {@link ExportFormat} value so the generic evidence
+     * export, which no act constrains, stays on the modern format.
      */
     @GetMapping("/anexa1")
     public ResponseEntity<byte[]> anexa1(@RequestParam int year,
-                                         @RequestParam(defaultValue = "xlsx") String format) {
+                                         @RequestParam(defaultValue = "xls") String format) {
         ExportFormat exportFormat = ExportFormat.fromParam(format);
         byte[] body = packagingService.render(year, exportFormat);
         ContentDisposition disposition = ContentDisposition.attachment()

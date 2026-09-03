@@ -12,7 +12,20 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.EXPORT_FORMAT_UNSUPPORTE
 @Getter
 public enum ExportFormat {
 
+    /**
+     * OOXML, the modern spreadsheet. Used by the <em>generic</em> evidence export, which is an
+     * unofficial summary and may take the convenient format.
+     */
     XLSX("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
+
+    /**
+     * BIFF8, the legacy Excel format — and the one Ordinul 794/2012 art. 6 names on sight for the
+     * packaging declaration: <em>"Datele de raportare se transmit în format electronic «.xls»"</em>.
+     * Separate from {@link #XLSX} on purpose: only the filing the act constrains uses it, so the
+     * generic export is not dragged back to a 1997 format for no reason.
+     */
+    XLS("application/vnd.ms-excel", "xls"),
+
     PDF("application/pdf", "pdf");
 
     private final String contentType;

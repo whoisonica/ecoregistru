@@ -61,6 +61,49 @@ Termenul de păstrare **al operatorului economic** e la OUG 92/2021 art. 48 alin
 > sistemul APM. **Deci pe 15 martie e o singură depunere, nu două: închide întrebarea Q.** Codul
 > avea deja un singur `ReportType.SIM_ANNUAL`; nu se adaugă un al doilea.
 
+**Art. 4 alin. (3)** — cum se scrie un cod periculos. *Citat adăugat pe 02.09.2026, la auditul de
+conformitate; e temeiul punctului 2 din `audit-conformitate.md`.*
+
+> Deşeurile periculoase prevăzute în anexa nr. 2 sunt marcate cu un **asterisc (*)**.
+
+**Art. 5 alin. (1):**
+
+> Tipurile de deşeuri prevăzute în anexa nr. 2 sunt definite în mod individual printr-un cod complet
+> format din **6 cifre**.
+
+> **Consecință pe export.** Antetul fișei cere „Tipul de deşeu … cod … **(conform codificării din
+> anexa nr. 2)**" — deci codificarea la care trimite formularul e chiar cea în care asteriscul e
+> marcajul de periculozitate. Anexa 2 tipărește 406 coduri cu asterisc; lista 2014 are 408.
+> `waste_codes.csv` ține deliberat codul fără asterisc și periculozitatea ca boolean separat, ceea
+> ce e corect pentru stocare — dar la **tipărire** asteriscul trebuie pus la loc, altfel un deșeu
+> periculos arată pe fișă exact ca unul nepericulos.
+>
+> ⚠️ Sursa e Portalul Legislativ, nu PDF-ul din `documente oficiale/` — acela vine de pe lege6.ro și
+> are erori de transcriere confirmate (vezi `.gitignore`). Ambele spun același lucru aici, dar
+> citatul de mai sus e de pe sursa primară.
+>
+> **Asteriscul stă în coloana de cod, şi numai acolo — verificat pe anexa 2, 02.09.2026.** În
+> denumiri, actul scrie referinţele încrucişate **fără** asterisc: `19 12 12` = „alte deşeuri […]
+> altele decât cele specificate la **19 12 11**", iar `20 01 36` = „[…] altele decât cele specificate
+> la **20 01 21, 20 01 23 şi 20 01 35**" — toate trei periculoase, toate trei scrise curat. Asteriscul
+> apare doar în coloana din stânga (`19 13 01*`, `20 01 37*`).
+> **Consecinţa pe reparaţie:** se pune asteriscul **numai** pe cod. `waste_codes.csv` are denumirile
+> verbatim din EUR-Lex şi ele **sunt deja corecte** — nu se atinge nimic acolo.
+>
+> 🟡 **Ce spune corpusul, şi cât de departe merge.** Cele patru fişiere din 2022 şi 2024 scriu în
+> denumirea lui `19 12 12` „…altele decât cele specificate la **19 12 11\***", **cu** asterisc — deci
+> practica specialistei foloseşte marcajul când trimite la un cod periculos. E o înfrumuseţare a lor
+> faţă de textul actului, nu invers, deci **nu o copiem în denumiri**. Dar arată că marcajul le e
+> familiar şi îl aşteaptă.
+> ⚠️ **Ce corpusul nu poate arăta:** niciunul din cele 33 de rânduri raportate nu e pe un cod
+> periculos — sunt `20 01 01`, `19 12 12`, `20 03 01`, `20 01 36`, `15 01 xx`. Deci n-avem niciun
+> exemplu de antet completat cu un cod periculos. De aici întrebarea **AE**, care e confirmare de
+> practică, nu de drept.
+>
+> **Atenție la coliziune de marcaj:** declarația anuală folosește deja `(*)` pe coloana de stoc cu
+> alt înțeles — ieșiri fără cod R/D. Cele două pot ajunge pe același rând, deci legenda trebuie să
+> le despartă.
+
 ### 1.2 ANEXA Nr. 1 — modelul fișei (reprodusă în facsimil în act)
 
 Câmpuri de identificare, în capul fișei:
@@ -308,6 +351,61 @@ Accesat 22.08.2026.
 >    **aici nu există un formular de reprodus**. Deci formatul registrului art. 48 nu se poate citi
 >    din act: e nevoie de un exemplar completat. Vezi întrebarea **AD** — nu avem niciunul.
 
+**Alin. (2)** — buletinele de analiză. *Citat adăugat 02.09.2026 (audit, pct. 9).*
+
+> Producătorii şi deţinătorii de deşeuri periculoase sunt obligaţi să deţină **buletinele de analiză
+> care caracterizează deşeurile periculoase** şi să le transmită, la cerere, autorităţilor competente
+> pentru protecţia mediului.
+
+> **Consecință.** Ataşamentele generice de pe mişcare pot ţine fişierul, dar nimic nu leagă un
+> buletin de un cod periculos şi nimic nu semnalează absenţa lui în dosarul de control. Pentru un
+> client cu coduri periculoase, dosarul e incomplet legal fără să se vadă. Întrebarea **AL**.
+
+### 2.1b ARTICOLUL 23 — cui poţi preda deşeul, şi cine răspunde de el
+
+*Adăugat 02.09.2026, la audit. E temeiul punctelor 5 şi 8 din `audit-conformitate.md`.*
+
+**Alin. (1):**
+
+> Producătorul de deşeuri iniţial sau, după caz, orice deţinător de deşeuri are obligaţia de a
+> efectua operaţiunile de tratare în conformitate cu prevederile art. 4 alin. (1) - (3) şi art. 21
+> prin mijloace proprii sau prin intermediul unui **operator economic autorizat** care desfăşoară
+> activităţi de tratare a deşeurilor sau unui operator public ori privat de colectare a deşeurilor
+> [...]
+
+**Alin. (4) şi (5)** — persoana desemnată:
+
+> (4) Pentru îndeplinirea obligaţiilor legale privind gestionarea deşeurilor, titularul unei
+> activităţi, pentru care autoritatea competentă pentru protecţia mediului a emis o autorizaţie de
+> mediu/autorizaţie integrată de mediu, are obligaţia să **desemneze o persoană** din rândul
+> angajaţilor proprii sau să **delege această obligaţie unei terţe persoane**.
+>
+> (5) Persoanele desemnate, prevăzute la alin. (4), trebuie să fie **instruite** în domeniul
+> prevenirii generării de deşeuri şi al managementului deşeurilor, inclusiv în domeniul substanţelor
+> periculoase, ca urmare a absolvirii unor programe de perfecţionare şi specializare recunoscute la
+> nivel naţional [...]
+
+**Art. 24 alin. (1)** — predarea nu descarcă de răspundere:
+
+> Producătorul sau deţinătorul care transferă deşeuri către una dintre persoanele fizice autorizate
+> ori persoanele juridice prevăzute la art. 23 alin. (1) în vederea efectuării unor operaţiuni de
+> tratare preliminară operaţiunilor de valorificare sau de eliminare completă **nu este scutit, ca
+> regulă generală, de responsabilitatea** pentru realizarea operaţiunilor de valorificare ori de
+> eliminare completă.
+
+> **Trei consecințe pe cod.**
+> 1. Alin. (1) cere ca destinatarul să fie **autorizat**, iar Anexa 3 chiar tipărește numărul și
+>    expirarea autorizației lui. Azi nimic nu compară expirarea cu **data mișcării** — `expiringSoon`
+>    se calculează față de *azi* și e doar un badge în lista de Parteneri. Deci putem tipări un
+>    formular care documentează o predare către un operator neautorizat la acea dată. Întrebarea
+>    **AH**.
+> 2. Alin. (4)–(5) sunt o rubrică de dosar pe care n-o ținem nicăieri. `contactName`/`contactRole`
+>    sunt blocul de semnătură al declarației, nu persoana desemnată, și nu poartă certificatul de
+>    instruire. Notă de produs: **consultantul de mediu e chiar „terța persoană" de la alin. (4)** —
+>    rubrica se completează singură pentru portofoliul specialistei. Întrebarea **AK**.
+> 3. Art. 24 alin. (1) explică de ce predarea nu închide subiectul: clientul rămâne răspunzător.
+>    Argument în plus pentru avertismentul de la pct. 1, nu doar pentru un badge.
+
 ### 2.2 ANEXA Nr. 3 — OPERAŢIUNI DE VALORIFICARE
 
 ```
@@ -357,6 +455,28 @@ D15 Stocarea înaintea oricărei operaţiuni numerotate de la D1 la D14 (excluz�
 ```
 
 **13 coduri R + 15 coduri D.** `WasteOperationCode` din cod e corect și complet.
+
+> ✅ **Numerotarea anexelor, reverificată pe 02.09.2026 la audit**, direct pe textul din Monitorul
+> Oficial (extras cu PyMuPDF din PDF-ul citat în capul secțiunii, ca să nu depindem de un rezumat):
+>
+> | Anexă | Titlu verbatim | Pagina |
+> |---|---|---|
+> | ANEXA Nr. 1 | DEFINIREA unor termeni în sensul prezentei ordonanţe de urgenţă | 53 |
+> | ANEXA Nr. 2 | EXEMPLE de instrumente economice şi alte măsuri [...] | 57 |
+> | **ANEXA Nr. 3** | **OPERAŢIUNI DE VALORIFICARE** (R1–R13) | 58 |
+> | ANEXA Nr. 4 | PROPRIETĂŢI ale deşeurilor care fac ca acestea să fie periculoase | 59 |
+> | **ANEXA Nr. 7** | **OPERAŢIUNILE DE ELIMINARE** (D1–D15) | 69 |
+> | ANEXA Nr. 8 | EXEMPLE DE MĂSURI DE PREVENIRE A GENERĂRII DEŞEURILOR | 70 |
+>
+> Confirmat și de art. 1 din anexa nr. 1: „Anexa nr. **7** stabileşte o listă a operaţiunilor de
+> **eliminare**" (pct. 17) și „Anexa nr. **3** stabileşte o listă a operaţiunilor de
+> **valorificare**" (pct. 37). Deci actul o spune de două ori, în două locuri.
+>
+> 🔴 **De aici a ieșit prima abatere confirmată a auditului.** `Anexa1FormGenerator` tipărea pe
+> cap. 4 „conform **anexei nr. 2** din OUG 92/2021" — care e lista de instrumente economice.
+> Presupunerea din javadoc, că OUG 92/2021 a păstrat numerotarea din Legea 211/2011 (unde eliminarea
+> era anexa 2), e adevărată doar pentru valorificare, rămasă la 3. Vezi `audit-conformitate.md`
+> pct. 1. **Nu e o întrebare pentru specialistă** — actul o spune de două ori.
 
 > **Nuanța D1 / D5 NU e tranșată de sursa primară.** Specialista a spus că deșeul menajer dus la
 > depozit se codifică **D5**, nu D1, pentru că depozitele conforme au celule etanșe — iar textul lui
@@ -431,6 +551,22 @@ obținute din surse independente, se validează reciproc.
 
 Sursă: [legislatie.just.ro/Public/DetaliiDocument/97706](https://legislatie.just.ro/Public/DetaliiDocument/97706),
 consolidare 23.01.2026. **În vigoare.** Accesat 22.08.2026.
+
+**Cele trei anexe, reverificate pe 02.09.2026 la audit** — fiindcă aplicaţia trimite clientul la una
+dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
+
+| Anexă | Ce e | Îl generăm? |
+|---|---|---|
+| **nr. 1** | Formular pentru **aprobarea** transportului deşeurilor periculoase | ❌ nu |
+| **nr. 2** | Formular de **expediţie/transport deşeuri periculoase** | ❌ nu |
+| **nr. 3** | Formular de **încărcare-descărcare deşeuri nepericuloase** | ✅ da |
+
+> ✅ Mesajul `ANEXA3_HAZARDOUS_NOT_ALLOWED` trimite corect la anexa 2 pentru un cod periculos.
+> 🟠 **Dar nu punem nimic în loc.** Un generator obişnuit *are* coduri periculoase — un service auto
+> are ulei uzat (`13 02 xx*`) şi filtre, o clinică are `18 01 03*`, un birou are tuburi fluorescente
+> (`20 01 21*`). Pentru ei ţinem fişa corect şi nu putem tipări niciun document de transport. Şi e
+> mai mult decât un formular: transportul periculos cere **aprobare prealabilă** (anexa 1), adică o
+> procedură, nu o pagină. Vezi `audit-conformitate.md` pct. 6 şi întrebarea **AI**.
 
 Formularul de încărcare-descărcare deșeuri nepericuloase (anexa nr. 3) — câmpuri:
 
@@ -758,6 +894,35 @@ fiecare material se sparge în **trei sub-rânduri fixe** — `populatie`, `cole
 pune „metal /aluminiu" pe un rând, deşi actul cere Aluminiu şi Oţel separat. Deci pentru **numărul**
 valorilor rămâne actul autoritatea, dar pentru **forma** rubricii — trei rânduri sub fiecare
 material, nu o coloană — şablonul arată cum se completează. Materia întrebării **AA**.
+
+### 5.4 Ce a găsit auditul de conformitate (02.09.2026)
+
+**1. Formatul cerut e `.xls`, iar noi producem `.xlsx`.** Art. 6 numeşte formatul pe nume, şi ăsta a
+fost chiar argumentul pentru care s-a construit generatorul de foaie de calcul. Codul foloseşte însă
+`XSSFWorkbook`, care produce **OOXML** — formatul `.xlsx` introdus în 2007 — servit cu extensia
+`xlsx` şi content type-ul OOXML. `.xls` (BIFF8) se produce cu `HSSFWorkbook` şi se serveşte cu
+`application/vnd.ms-excel`; protecţia foii cu parolă goală merge identic pe HSSF, deci cerinţa din
+aceeaşi frază nu se pierde.
+Art. 7 spune că **ANPM publică formatul pe pagina proprie**, deci depunerea se face pe şablonul lor
+— iar un portal care validează extensia sau semnătura de fişier respinge un `.xlsx`.
+🟡 **Cât de strict e în practică e singurul lucru neclar**, şi numai ea ştie: întrebarea **AG**.
+Reparaţia se face oricum, fiindcă actul e explicit.
+
+**2. Două note ale Tabelului 1 citează acte abrogate.** Reproduse verbatim din model:
+
+| Nota | Trimite la | Stare |
+|---|---|---|
+| 1) | HG 621/2005 privind gestionarea ambalajelor | **abrogată la 1 noiembrie 2015**, de Legea 249/2015 |
+| 3) | HG 937/2010 (clasificarea/etichetarea preparatelor periculoase) | **abrogată prin HG 539/2016** |
+
+Inconsecvenţa e în acelaşi fişier: nota 2) a Tabelului 2 a fost **actualizată deliberat** de la
+Legea 211/2011 la OUG 92/2021, cu un comentariu care explică de ce. Acelaşi lucru s-a făcut şi pe
+cap. 3/4 ale fişei Anexa 1. Deci politica „actualizăm referinţele abrogate" e stabilită de două ori
+şi aplicată în trei locuri din cinci.
+🟡 **De decis o dată, pentru tot** — şi e o întrebare de practică, nu de drept: agenţia compară
+notele cu şablonul ei? Întrebarea **AJ**. Ordinul 794/2012 n-a fost actualizat după 2015, deci
+notele lui *sunt* textul în vigoare al ordinului, chiar dacă trimit la acte moarte; e exact situaţia
+de la antetul cap. 3/4, unde am ales să actualizăm.
 
 ---
 

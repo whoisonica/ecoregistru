@@ -55,10 +55,15 @@ public record AnnualDeclaration(
      *                        up. Zero on every well-formed row.
      * @param recoveredThrough distinct "R3 - Operator" values for the year, joined; blank when
      *                         nothing was recovered
+     * @param hazardous        whether the nomenclator marks the code as hazardous, so the code
+     *                         column can print the trailing asterisk HG 856/2002 art. 4 alin. (3)
+     *                         requires. Not baked into {@code wasteCode}: the rows are sorted by it
+     *                         and the stored code has no asterisk.
      */
     public record Row(
             String wasteCode,
             String wasteCodeName,
+            boolean hazardous,
             BigDecimal openingStock,
             BigDecimal generated,
             BigDecimal recovered,

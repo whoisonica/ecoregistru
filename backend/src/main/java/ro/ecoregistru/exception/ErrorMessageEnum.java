@@ -92,7 +92,10 @@ public enum ErrorMessageEnum {
     EVIDENCE_NOT_FOUND("evidence.not.found", "Evidența nu a fost găsită."),
     EXPORT_FORMAT_UNSUPPORTED("export.format.unsupported", "Format de export nesuportat. Alege „xlsx” sau „pdf”."),
     AUDIT_FILE_YEARS_UNSUPPORTED("audit.file.years.unsupported",
-            "Dosarul se poate genera pentru cel mult 3 ani — termenul de păstrare a evidenței (OUG 92/2021, art. 48). Alege 1, 2 sau 3 ani."),
+            // Cifra e MAX_YEARS din AuditFileService, nu termenul din lege: art. 48 alin. (5) spune
+            // „cel puțin 3 ani", adică un prag, nu un plafon. Mesajul spunea „cel mult 3 ani" și
+            // prezenta pragul ca limită — de două ori greșit, fiindcă plaja crescuse la 5 pe 25.08.
+            "Dosarul se poate genera pentru cel mult 5 ani. Alege un număr între 1 și 5. (Evidența se păstrează cel puțin 3 ani — OUG 92/2021, art. 48 alin. (5).)"),
     DEADLINE_NOT_FOUND("deadline.not.found", "Termenul nu a fost găsit.");
 
     private final String code;

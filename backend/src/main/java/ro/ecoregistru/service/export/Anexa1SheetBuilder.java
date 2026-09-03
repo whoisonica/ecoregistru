@@ -106,7 +106,7 @@ public class Anexa1SheetBuilder {
 
         return new Anexa1Sheet(
                 company.getName(), year, first.workPointName(),
-                first.wasteCodeName(), first.wasteCode(),
+                first.wasteCodeName(), first.wasteCode(), first.hazardous(),
                 physicalState(byMonth), opening, rows);
     }
 

@@ -78,10 +78,11 @@ export function useSavePackagingMarket() {
 }
 
 /**
- * Descarcă documentul. Implicit `.xlsx`, fiindcă art. 6 din ordin cere raportarea „în format
- * electronic «.xls»"; PDF-ul rămâne pentru dosarul de control.
+ * Descarcă documentul. Implicit `.xls` — art. 6 din ordin numește formatul pe litere, „în format
+ * electronic «.xls»", iar până pe 02.09.2026 trimiteam de fapt un `.xlsx`. PDF-ul rămâne
+ * exemplarul pe hârtie cerut de același articol, și dosarul de control.
  */
-export async function downloadPackagingDeclaration(year: number, format: "xlsx" | "pdf" = "xlsx") {
+export async function downloadPackagingDeclaration(year: number, format: "xls" | "pdf" = "xls") {
   const res = await api.get("/api/v1/packaging/anexa1", {
     params: { year, format },
     responseType: "blob",

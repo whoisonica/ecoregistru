@@ -2,7 +2,7 @@ package ro.ecoregistru;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -362,12 +362,14 @@ class PackagingDeclarationIT {
     void theDeclarationDownloadsAsTheTwoSheetSpreadsheetTheActAsksFor() throws Exception {
         handover("15 01 01", "300", collector.getId(), "R13", "SECONDARY", null);
 
-        byte[] xlsx = mockMvc.perform(get("/api/v1/packaging/anexa1?year=" + YEAR)
+        byte[] xls = mockMvc.perform(get("/api/v1/packaging/anexa1?year=" + YEAR)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
+        // HSSFWorkbook, nu XSSF: art. 6 cere «.xls», iar dacă cineva întoarce generatorul la
+        // OOXML testul cade aici cu un format necunoscut, nu peste trei rubrici mai jos.
+        try (Workbook wb = new HSSFWorkbook(new ByteArrayInputStream(xls))) {
             assertThat(wb.getNumberOfSheets()).isEqualTo(2);
             assertThat(wb.getSheetName(0)).isEqualTo("Tabelul nr. 1");
             assertThat(wb.getSheetName(1)).isEqualTo("Tabelul nr. 2");

@@ -1014,7 +1014,7 @@ export const strings = {
       "Tot ce ține de ambalaje, într-un loc. Mișcările pe coduri 15 01 xx sunt registrul; din ele se însumează cele două tabele ale Anexei 1 Ambalaje (Ordinul 794/2012), care se depune la agenția județeană de mediu până pe 25 februarie, pentru anul anterior. Totul în kilograme, cum cere art. 8 din ordin.",
     year: "Anul",
     download: "Descarcă Anexa 1 Ambalaje",
-    downloadXlsx: "XLS — formatul de depunere",
+    downloadXls: "XLS — formatul de depunere",
     downloadPdf: "PDF — pentru dosar",
     downloadHint:
       "Art. 6 din Ordinul 794/2012 cere raportarea „în format electronic «.xls»”, cu cele două foi. PDF-ul e aceeași declarație, pentru dosarul de control.",

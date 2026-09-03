@@ -12,6 +12,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
+import ro.ecoregistru.util.WasteCodeLabel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -154,15 +155,22 @@ public class AnnualDeclarationGenerator {
         head(t, "Eliminat prin:");
 
         for (AnnualDeclaration.Row row : d.rows()) {
-            cell(t, row.wasteCode(), Element.ALIGN_CENTER);
+            // The trailing star on a hazardous code is part of how the act spells it — HG 856/2002
+            // art. 4 alin. (3) — so it goes here, in the code column, and only here.
+            cell(t, WasteCodeLabel.official(row.wasteCode(), row.hazardous()), Element.ALIGN_CENTER);
             cell(t, row.wasteCodeName(), Element.ALIGN_LEFT);
             num(t, row.openingStock());
             num(t, row.generated());
             num(t, row.recovered());
             num(t, row.disposed());
             // The marker rides on the stock, because the stock is the figure that does not add up
-            // and because the code column cannot carry it: in the European List a trailing star is
-            // what makes a code hazardous, and "02 02 02 *" would read as a different waste.
+            // — and it has to stay off the code column, where a trailing star already means
+            // "hazardous" (HG 856/2002 art. 4 alin. (3)). Since 02.09.2026 that column really does
+            // print one, so the two marks now coexist on the same row: "13 02 08*" on the left,
+            // "450.000  (*)" on the right. They are told apart by column and by the brackets, and
+            // the footnote below names the column it belongs to. Question AE asks the specialist
+            // whether to move this one to a different symbol; until she answers, it stays put
+            // rather than being swapped on a guess.
             cell(t, kg(row.closingStock()) + (row.hasUnclassifiedOut() ? "  (*)" : ""),
                     Element.ALIGN_RIGHT);
             cell(t, dash(row.recoveredThrough()), Element.ALIGN_LEFT);
@@ -183,10 +191,13 @@ public class AnnualDeclarationGenerator {
      */
     private Paragraph unclassifiedNote() {
         Paragraph p = new Paragraph(cp1250(
-                "(*) Rândul conţine cantităţi ieşite de pe amplasament fără cod de operaţiune R/D, "
-                        + "deci scăzute din stoc dar necuprinse în „Valorificat\" sau „Eliminat\". "
-                        + "Completaţi codul pe mişcările respective (ecranul Mişcări) şi regeneraţi "
-                        + "evidenţa înainte de depunere."), note);
+                "(*) după cifra din coloana „Stoc\": rândul conţine cantităţi ieşite de pe "
+                        + "amplasament fără cod de operaţiune R/D, deci scăzute din stoc dar "
+                        + "necuprinse în „Valorificat\" sau „Eliminat\". Completaţi codul pe "
+                        + "mişcările respective (ecranul Mişcări) şi regeneraţi evidenţa înainte "
+                        + "de depunere. (Asteriscul de după codul de deşeu are alt înţeles: "
+                        + "marchează un deşeu periculos, conform HG 856/2002 art. 4 alin. (3).)"),
+                note);
         p.setSpacingAfter(6f);
         return p;
     }

@@ -638,7 +638,18 @@ export interface EvidenceFilters {
 
 // --- Reporting deadlines (FAZA TERMENE) ---
 
-export type ReportType = "SIM_ANNUAL" | "AFM_MONTHLY" | "OTHER";
+/**
+ * Oglindește `ReportType` din backend. Cele trei cadențe AFM sunt distincte fiindcă OUG 196/2005
+ * art. 11 are trei ritmuri, nu unul: lunar pe 25, trimestrial pe 25 după trimestru, anual pe
+ * 25 ianuarie. Tipul rămăsese la trei valori din cinci de la `V21` încoace — etichetele existau în
+ * `strings.ts`, deci la rulare mergea, dar tipul mințea. Corectat la auditul din 02.09.2026.
+ */
+export type ReportType =
+  | "SIM_ANNUAL"
+  | "AFM_MONTHLY"
+  | "AFM_QUARTERLY"
+  | "AFM_ANNUAL"
+  | "OTHER";
 
 export type DeadlineStatus = "UPCOMING" | "DONE" | "OVERDUE";
 

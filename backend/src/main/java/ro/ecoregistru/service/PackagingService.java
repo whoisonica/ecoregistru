@@ -22,7 +22,7 @@ import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.PackagingDeclaration;
 import ro.ecoregistru.service.export.PackagingDeclarationBuilder;
 import ro.ecoregistru.service.export.PackagingDeclarationGenerator;
-import ro.ecoregistru.service.export.PackagingDeclarationXlsxGenerator;
+import ro.ecoregistru.service.export.PackagingDeclarationXlsGenerator;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -58,7 +58,7 @@ public class PackagingService {
     WasteMovementMapper movementMapper;
     PackagingDeclarationBuilder builder;
     PackagingDeclarationGenerator pdfGenerator;
-    PackagingDeclarationXlsxGenerator xlsxGenerator;
+    PackagingDeclarationXlsGenerator xlsGenerator;
 
     /**
      * The packaging movements of a year — every movement on a {@code 15 01 xx} code, newest first,
@@ -162,12 +162,16 @@ public class PackagingService {
         return builder.build(company, year, entries, yearMovements(tenantId, year));
     }
 
-    /** Renders the declaration. XLSX is the form the authority receives; PDF is for the file. */
+    /**
+     * Renders the declaration. {@code .xls} is the form the authority receives — the format
+     * Ordinul 794/2012 art. 6 names on sight — and the PDF is the paper copy the same article asks
+     * for alongside it. Anything else falls to the PDF rather than inventing a third form.
+     */
     @Transactional(readOnly = true)
     public byte[] render(int year, ExportFormat format) {
         PackagingDeclaration declaration = declaration(year);
-        return format == ExportFormat.XLSX
-                ? xlsxGenerator.render(declaration)
+        return format == ExportFormat.XLS
+                ? xlsGenerator.render(declaration)
                 : pdfGenerator.render(declaration);
     }
 

@@ -12,6 +12,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import org.springframework.stereotype.Component;
+import ro.ecoregistru.util.WasteCodeLabel;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -43,10 +44,10 @@ import java.util.Locale;
  * README, so the argument bought nothing and cost a departure from every model we have.
  *
  * <p><b>One deliberate departure from the models.</b> They head chapters 3 and 4 with "conform
- * Anexei 3 / Anexei 2 din Legea 211/2011". That act was repealed by OUG 92/2021, whose annexes
- * carry the same numbers and the same operation lists, so the reference is updated rather than
- * reproduced — printing a repealed act on a form filed with the authority is the kind of detail an
- * inspection notices. Flagged for the specialist in docs/status.md.
+ * Anexei 3 / Anexei 2 din Legea 211/2011". That act was repealed by OUG 92/2021, so the reference
+ * is updated rather than reproduced — printing a repealed act on a form filed with the authority is
+ * the kind of detail an inspection notices. <b>The numbers do not carry over unchanged:</b>
+ * recovery is still anexa nr. 3, but disposal moved to <b>anexa nr. 7</b>.
  *
  * <p>Diacritics go through Cp1250 for the same reason as {@link Anexa3FormGenerator}: Cp1252 has no
  * ă/ş/ţ and would drop them.
@@ -133,7 +134,12 @@ public class Anexa1FormGenerator {
         headerLine(t, "Anul:", String.valueOf(s.year()));
         headerLine(t, "Punct de lucru:", s.workPointName());
         headerLine(t, "Tipul de deşeu:", s.wasteCodeName());
-        headerLine(t, "Cod deşeu:", s.wasteCode());
+        // The asterisk belongs on the code and nowhere else. HG 856/2002 art. 4 alin. (3) marks
+        // hazardous entries of anexa nr. 2 with it, and this rubric points at that very
+        // codification. The act writes cross-references inside the denominations clean — 19 12 12
+        // reads "altele decât cele specificate la 19 12 11", with 19 12 11* hazardous — so the
+        // name above is printed exactly as stored and only this line gains the star.
+        headerLine(t, "Cod deşeu:", WasteCodeLabel.official(s.wasteCode(), s.hazardous()));
         headerLine(t, "Starea fizică:", s.physicalState());
         headerLine(t, "Unitatea de măsură:", "kg");
         headerLine(t, "Stoc/kg:", kg(s.openingStock()));
@@ -255,10 +261,17 @@ public class Anexa1FormGenerator {
         head(t, "Nr. crt.", 1, 1);
         head(t, "Luna", 1, 1);
         head(t, recovery ? "Cantitatea de deşeu valorificată" : "Cantitatea de deşeu eliminată", 1, 1);
-        // Legea 211/2011 was repealed by OUG 92/2021; its annexes carry the same numbers.
+        // Legea 211/2011 was repealed by OUG 92/2021, so the reference is updated rather than
+        // reproduced. The annexes do NOT carry the same numbers: recovery stayed at 3, but
+        // disposal moved from anexa 2 to ANEXA Nr. 7. We printed "anexa nr. 2" until the
+        // conformance audit of 02.09.2026 caught it — and anexa nr. 2 of OUG 92/2021 is
+        // "EXEMPLE de instrumente economice", which has nothing to do with disposal.
+        // The act says it twice: the annex titles themselves, and anexa nr. 1 pct. 17 ("Anexa
+        // nr. 7 stabileşte o listă a operaţiunilor de eliminare") and pct. 37 (anexa nr. 3, for
+        // recovery). See docs/surse-oficiale.md §2.3; Anexa1FormIT pins both strings.
         head(t, recovery
                 ? "Operaţia de valorificare, conform anexei nr. 3 din OUG 92/2021"
-                : "Operaţia de eliminare, conform anexei nr. 2 din OUG 92/2021", 1, 1);
+                : "Operaţia de eliminare, conform anexei nr. 7 din OUG 92/2021", 1, 1);
         head(t, recovery
                 ? "Agentul economic care efectuează operaţia de valorificare"
                 : "Agentul economic care efectuează operaţia de eliminare", 1, 1);
@@ -324,8 +337,8 @@ public class Anexa1FormGenerator {
                         + "S - saci; PD - platformă de deshidratare; VN - în vrac, neacoperit; "
                         + "VA - în vrac, incintă acoperită; RL - recipient din lemn; A - altele.\n"
                         + "2) Modul de tratare: TM - tratare mecanică; TC - tratare chimică; "
-                        + "TMC - tratare mecano-chimică; TB - tratare biochimică; TT - tratare termică; "
-                        + "D - deshidratare; A - altele.\n"
+                        + "TMC - tratare mecano-chimică; TB - tratare biochimică; D - deshidratare; "
+                        + "TT - tratare termică; A - altele.\n"
                         + "3) Scopul tratării: V - pentru valorificare; E - în vederea eliminării.\n"
                         + "4) Mijlocul de transport: AS - autospeciale; AN - auto nespecial; "
                         + "H - transport hidraulic; CF - cale ferată; A - altele.\n"

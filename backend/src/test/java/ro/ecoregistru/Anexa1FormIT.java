@@ -252,6 +252,115 @@ class Anexa1FormIT {
         assertThat(sheets()).isNotEmpty();
     }
 
+    /**
+     * Chapters 3 and 4 cite the annexes of the act <b>in force</b>, and they are not the same
+     * number.
+     *
+     * <p>The filled models head these columns "conform Anexei 3 / Anexei 2 din Legea 211/2011".
+     * That act was repealed by OUG 92/2021, whose <b>anexa nr. 3</b> is still the recovery list but
+     * whose disposal list moved to <b>anexa nr. 7</b>. We printed "anexa nr. 2" until the
+     * conformance audit of 02.09.2026 — and anexa nr. 2 of OUG 92/2021 is "EXEMPLE de instrumente
+     * economice", which has nothing to do with eliminating waste.
+     *
+     * <p>The act says it twice, so there was never a question for the specialist here: the annex
+     * titles themselves (p. 58 and p. 69 of the Monitorul Oficial text), and anexa nr. 1 pct. 17
+     * ("Anexa nr. 7 stabileşte o listă a operaţiunilor de eliminare") and pct. 37 (anexa nr. 3, for
+     * recovery). See docs/surse-oficiale.md §2.3.
+     */
+    @Test
+    void chaptersThreeAndFourCiteTheAnnexesInForce() throws Exception {
+        // Whitespace-normalised: the column is narrow and 6pt, so the heading wraps and the text
+        // extractor puts a newline wherever the line broke. Asserting on the raw extraction would
+        // make this test fail the next time a column width is nudged, which is not the rule it is
+        // here to protect.
+        String text = flatten(allPagesText());
+
+        assertThat(text).contains("conform anexei nr. 3 din OUG 92/2021");
+        assertThat(text).contains("conform anexei nr. 7 din OUG 92/2021");
+        // The two wrong references this form has carried or could carry: anexa nr. 2 of OUG
+        // 92/2021 is the list of economic instruments, and Legea 211/2011 is repealed.
+        assertThat(text).doesNotContain("anexei nr. 2 din OUG 92/2021");
+        assertThat(text).doesNotContain("211/2011");
+    }
+
+    /** Collapses every run of whitespace to a single space, so line breaks stop mattering. */
+    private static String flatten(String text) {
+        return text.replaceAll("\\s+", " ");
+    }
+
+    /**
+     * A hazardous code prints with the asterisk the codification the header points at gives it.
+     *
+     * <p>HG 856/2002 art. 4 alin. (3): "Deşeurile periculoase prevăzute în anexa nr. 2 sunt marcate
+     * cu un asterisc (*)". The rubric above reads "Tipul de deşeu … cod … (conform codificării din
+     * anexa nr. 2)", so on this form the star is part of how the code is spelled. We stripped it
+     * everywhere until 02.09.2026 — 408 of the 842 codes are affected — and the corpus could not
+     * catch it, because not one of its 33 sheets reports a hazardous code.
+     *
+     * <p>The second assertion is the one that matters most: the star goes on hazardous codes and
+     * <b>only</b> on them.
+     */
+    @Test
+    void aHazardousCodePrintsItsAsteriskAndAPlainOneDoesNot() throws Exception {
+        Company company = admin.getCompany();
+        UUID workPointId = workPointRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+        UUID codeId = wasteCodeRepository.findByCode("13 02 08").orElseThrow().getId();
+        UUID partnerId = partnerRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+
+        String body = """
+                {
+                  "workPointId": "%s", "date": "%d-09-02", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 40,
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s"
+                }
+                """.formatted(workPointId, YEAR, codeId, partnerId);
+        mockMvc.perform(post("/api/v1/movements")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/evidences/regenerate?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // The sheet carries the flag; the generator is what spells the code out.
+        Anexa1Sheet hazardous = sheets().stream()
+                .filter(s -> s.wasteCode().equals("13 02 08"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(hazardous.hazardous()).isTrue();
+        assertThat(hazardous.wasteCode()).isEqualTo("13 02 08");
+
+        String pages = flatten(allPagesText());
+        assertThat(pages).contains("13 02 08*");
+        // 20 01 01 (paper and cardboard) is not hazardous and must stay bare.
+        assertThat(pages).contains("20 01 01");
+        assertThat(pages).doesNotContain("20 01 01*");
+    }
+
+    /** Every page joined, for assertions that do not care which sheet a code landed on. */
+    private String allPagesText() throws Exception {
+        byte[] pdf = renderPdf();
+        com.lowagie.text.pdf.PdfReader reader = new com.lowagie.text.pdf.PdfReader(pdf);
+        try {
+            StringBuilder all = new StringBuilder();
+            var extractor = new com.lowagie.text.pdf.parser.PdfTextExtractor(reader);
+            for (int page = 1; page <= reader.getNumberOfPages(); page++) {
+                all.append(extractor.getTextFromPage(page)).append('\n');
+            }
+            return all.toString();
+        } finally {
+            reader.close();
+        }
+    }
+
+    private byte[] renderPdf() throws Exception {
+        return mockMvc.perform(get("/api/v1/evidences/anexa1?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+    }
+
     private List<Anexa1Sheet> sheets() {
         TenantContext.set(admin.getCompany().getId());
         try {

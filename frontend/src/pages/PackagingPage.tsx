@@ -125,7 +125,7 @@ export function PackagingPage() {
   const { data: overrides } = usePackagingMarket(year);
   const saveMut = useSavePackagingMarket();
   const { notify } = useToast();
-  const [downloading, setDownloading] = useState<"xlsx" | "pdf" | null>(null);
+  const [downloading, setDownloading] = useState<"xls" | "pdf" | null>(null);
   const [overridesOpen, setOverridesOpen] = useState(false);
 
   // Ce s-a tastat şi nu s-a salvat încă, per material. Salvarea e pe rând, la ieşirea din câmp:
@@ -162,7 +162,7 @@ export function PackagingPage() {
     [unclassified]
   );
 
-  async function handleDownload(format: "xlsx" | "pdf") {
+  async function handleDownload(format: "xls" | "pdf") {
     setDownloading(format);
     try {
       await downloadPackagingDeclaration(year, format);
@@ -227,9 +227,9 @@ export function PackagingPage() {
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-2">
-            <Button onClick={() => handleDownload("xlsx")} disabled={downloading != null}>
+            <Button onClick={() => handleDownload("xls")} disabled={downloading != null}>
               <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {downloading === "xlsx" ? strings.common.loading : t.downloadXlsx}
+              {downloading === "xls" ? strings.common.loading : t.downloadXls}
             </Button>
             <Button
               variant="outline"

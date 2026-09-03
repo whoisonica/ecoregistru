@@ -9,8 +9,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Font;
 import org.springframework.stereotype.Component;
 import ro.ecoregistru.enums.PackagingMaterial;
 
@@ -36,6 +36,15 @@ import java.util.function.Function;
  * material rows from {@code B20} — so a client who has filed this form before recognises the sheet
  * they already know rather than a rebuilt one.
  *
+ * <p><b>De ce BIFF8 şi nu OOXML.</b> Art. 6 numeşte formatul, nu doar „un fişier": «.xls». Până la
+ * auditul de conformitate din 02.09.2026 clasa asta folosea {@code XSSFWorkbook}, care produce
+ * <b>.xlsx</b> — formatul introdus în 2007 — deşi documentaţia noastră promitea deja lucrul corect.
+ * {@code HSSFWorkbook} scrie BIFF8, adică exact ce cere articolul, servit cu
+ * {@code application/vnd.ms-excel}. Art. 7 spune că ANPM publică formatul pe pagina proprie, deci
+ * depunerea se face pe şablonul lor: un portal care validează extensia sau semnătura fişierului ar
+ * fi respins un .xlsx chiar în ziua depunerii. Cât de strict e în practică e întrebarea <b>AG</b> —
+ * dar reparaţia nu depinde de răspuns, fiindcă actul e explicit.
+ *
  * <p><b>De ce e foaia protejată.</b> Art. 6 din ordin, verbatim: „Datele de raportare se transmit
  * în format electronic «.xls» <b>protejat împotriva modificării datelor</b> şi <b>pe suport
  * hârtie</b>, până cel târziu la data de 25 februarie a fiecărui an". Deci protecţia e cerută, nu
@@ -48,7 +57,7 @@ import java.util.function.Function;
  * "none" and "not answered" are different statements, and only the client may make either.
  */
 @Component
-public class PackagingDeclarationXlsxGenerator {
+public class PackagingDeclarationXlsGenerator {
 
     private static final String TITLE =
             "ANEXA Nr. 1: Producători şi importatori de ambalaje de desfacere, de produse "
@@ -80,7 +89,7 @@ public class PackagingDeclarationXlsxGenerator {
                     + "adresa punctului de lucru şi ţara de destinaţie.");
 
     public byte[] render(PackagingDeclaration d) {
-        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try (Workbook wb = new HSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Styles s = new Styles(wb);
             sheet1(wb, s, d);
             sheet2(wb, s, d);
@@ -417,11 +426,11 @@ public class PackagingDeclarationXlsxGenerator {
         final CellStyle warning;
 
         Styles(Workbook wb) {
-            XSSFFont bold = (XSSFFont) wb.createFont();
+            Font bold = wb.createFont();
             bold.setBold(true);
-            XSSFFont small = (XSSFFont) wb.createFont();
+            Font small = wb.createFont();
             small.setFontHeightInPoints((short) 8);
-            XSSFFont warn = (XSSFFont) wb.createFont();
+            Font warn = wb.createFont();
             warn.setFontHeightInPoints((short) 8);
             warn.setBold(true);
 
