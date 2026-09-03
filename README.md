@@ -117,7 +117,7 @@ easiest way to break this codebase:
 
 | | What the app prints | What it does not |
 |---|---|---|
-| **HG 856/2002, anexa 1** | the waste-management record: four chapters × twelve months, one page per waste code | — |
+| **HG 856/2002, anexa 1** | the waste-management record: four chapters × twelve months, one page per waste code. Hazardous codes print with the asterisk art. 4 alin. (3) gives them — `13 02 08*` — and chapters 3 and 4 cite the annexes **in force**: anexa nr. 3 for recovery, anexa nr. **7** for disposal | — |
 | **Ordinul 794/2012, anexa 1** | the packaging declaration — two tables by material, in kg, as the **`.xls`** art. 6 asks for by name. Both tables are summed from the movements recorded on `15 01 xx` codes | — |
 
 "Anexa 3" is likewise two documents: HG 1061/2008 (the handover form the app prints) and

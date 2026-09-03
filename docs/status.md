@@ -2221,6 +2221,26 @@ răspuns explicit. Exportul generic e un rezumat **neoficial**, pe care niciun a
 deci rămâne pe `.xlsx` şi întoarce 400 dacă i se cere `.xls` — nu tăcere şi nici alt format decât
 cel cerut.
 
+### Commis, pushat şi deployat (04.09.2026, ora 01:25)
+
+Commit `dee10f4` pe `main`, split-uri `08089bb` (backend) şi `274cabd` (frontend), procedura
+obişnuită, fără `--force` şi fără conflicte. **`ecoregistru-api` la v33** (`08089bb`), pornit în
+8,1 s, `Current version of schema "public": 28` — **nicio migrare, cum trebuia.**
+
+✅ **Proba pe producţie, pe documentele descărcate de pe dyno**, nu pe cele locale:
+
+| Ce | Rezultat |
+|---|---|
+| `anexa1-ambalaje-2026.xls` | `Content-Type: application/vnd.ms-excel`, magic `d0 cf 11 e0 a1 b1 1a e1` — **BIFF8 real** |
+| Fişa, 8 pagini | `13 02 08*` şi `16 06 01*` **cu** asterisc; `15 01 01`, `15 01 02`, `15 01 07`, `20 01 01`, `20 01 40`, `20 03 01` **fără** |
+| Fişa, cap. 3 şi 4 | „conform anexei nr. 3" ✅ · „conform anexei nr. **7**" ✅ · „anexei nr. 2" **absent** ✅ |
+| Declaraţia anuală, 3 pagini | aceleaşi două coduri cu asterisc, restul curate |
+
+⚠️ **Am apăsat „Regenerează" pe tenantul demo de pe producţie** ca să am ce descărca (96 de linii de
+evidenţă, 2026). E date derivate din mişcări şi idempotent — dosarul de control o face oricum înainte
+să împacheteze — şi e tenantul de test, nu un client. Dar e o scriere în baza de producţie, deci se
+scrie aici.
+
 ---
 
 ## Audit de conformitate legală — 14 puncte, două abateri confirmate (02.09.2026)
