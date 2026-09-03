@@ -355,6 +355,32 @@ class PackagingDeclarationIT {
     }
 
     /**
+     * A browser still running yesterday's bundle asks for {@code format=xlsx}, and gets the
+     * {@code .xls} anyway.
+     *
+     * <p>This endpoint has one spreadsheet to give — the one Ordinul 794/2012 art. 6 names. Before
+     * the coercion, a stale request fell through to the PDF branch and downloaded a PDF labelled
+     * {@code .xlsx} with an OOXML content type: a broken file, from a button that looked fine. The
+     * transition is one deploy long, but a wrong file is worse than an old one.
+     */
+    @Test
+    void aStaleClientAskingForXlsxStillGetsTheXls() throws Exception {
+        handover("15 01 01", "300", collector.getId(), "R13", "SECONDARY", null);
+
+        var response = mockMvc.perform(get("/api/v1/packaging/anexa1?year=" + YEAR + "&format=xlsx")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse();
+
+        assertThat(response.getContentType()).isEqualTo("application/vnd.ms-excel");
+        assertThat(response.getHeader("Content-Disposition")).contains(".xls\"");
+        assertThat(response.getHeader("Content-Disposition")).doesNotContain(".xlsx");
+        // OLE2/BIFF8, not OOXML and not a PDF wearing a spreadsheet's name.
+        assertThat(response.getContentAsByteArray()).startsWith(
+                new byte[]{(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0});
+    }
+
+    /**
      * Art. 6 of the order asks for the report "în format electronic «.xls»", so that is the
      * default download: two sheets named as the model names them, in kilograms.
      */

@@ -86,11 +86,19 @@ public class PackagingController {
      * <p>The default was {@code xlsx} until 02.09.2026, and the bytes really were OOXML — caught by
      * the conformance audit. Kept as a separate {@link ExportFormat} value so the generic evidence
      * export, which no act constrains, stays on the modern format.
+     *
+     * <p><b>{@code xlsx} is still accepted here, and answers with the {@code .xls}.</b> A browser
+     * holding yesterday's bundle keeps asking for the old value, and this endpoint has exactly one
+     * spreadsheet to give — the one the act names. Without this the stale request would fall
+     * through to the PDF branch and download a PDF labelled {@code .xlsx}, with an OOXML content
+     * type: a broken file, from a button that looked fine. The client is ours and the transition is
+     * one deploy long, but a wrong file is worse than an old one.
      */
     @GetMapping("/anexa1")
     public ResponseEntity<byte[]> anexa1(@RequestParam int year,
                                          @RequestParam(defaultValue = "xls") String format) {
-        ExportFormat exportFormat = ExportFormat.fromParam(format);
+        ExportFormat requested = ExportFormat.fromParam(format);
+        ExportFormat exportFormat = requested == ExportFormat.XLSX ? ExportFormat.XLS : requested;
         byte[] body = packagingService.render(year, exportFormat);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("anexa1-ambalaje-" + year + "." + exportFormat.getExtension())
