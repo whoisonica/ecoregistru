@@ -2241,6 +2241,30 @@ evidenţă, 2026). E date derivate din mişcări şi idempotent — dosarul de c
 să împacheteze — şi e tenantul de test, nu un client. Dar e o scriere în baza de producţie, deci se
 scrie aici.
 
+### Tranziţia de cache, prinsă la timp (04.09.2026)
+
+Schimbarea formatului a lăsat o gaură de un deploy, găsită **după** push: un browser care încă
+rulează bundle-ul vechi cere `format=xlsx`, iar cererea cădea pe ramura PDF. Rezultatul era un
+**PDF numit `.xlsx`, cu content type OOXML** — un fişier stricat, dintr-un buton care arăta bine.
+
+Endpointul are un singur fişier de calcul de dat, cel pe care îl numeşte art. 6, deci acum
+`xlsx` e primit şi **răspuns cu `.xls`**, cu numele şi content type-ul corecte. Tranziţia ţine un
+singur deploy, dar un fişier greşit e mai rău decât unul vechi — şi nu cere nimănui să dea
+hard-refresh.
+
+Testul `aStaleClientAskingForXlsxStillGetsTheXls` verifică toate trei: content type-ul, numele care
+se termină în `.xls` şi nu în `.xlsx`, şi primii patru octeţi `d0 cf 11 e0` — ca să nu treacă nici un
+PDF deghizat. **178 de teste verzi.** Commit `d38d4b8`, split `7b0124e`.
+
+✅ **Verificat pe producţie la 01:35**, cerând endpointului exact ce ar cere un client vechi
+(`format=xlsx`): răspunde `Content-Type: application/vnd.ms-excel`, nume
+`anexa1-ambalaje-2026.xls`, magic `d0 cf 11 e0` — deci `.xls` real, nu PDF-ul de dinainte.
+
+**Releaseuri:** `ecoregistru-api` **v34** (`7b0124e`) · `ecoregistru-app` **v27** (`274cabd`).
+⚠️ Build-ul de frontend a stat `pending` **zece minute** în coada Heroku, deşi cel de backend din
+acelaşi push a trecut în 12 secunde. A intrat singur. Nu e o eroare de-a noastră şi nu e nimic de
+reparat — dar merită ştiut, ca să nu creadă cineva că push-ul n-a plecat şi să forţeze un al doilea.
+
 ---
 
 ## Audit de conformitate legală — 14 puncte, două abateri confirmate (02.09.2026)
