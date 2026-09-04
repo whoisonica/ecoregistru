@@ -222,6 +222,10 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Three years of dossier | **Dosar de control** → *Perioada* → „Ultimii 3 ani" | One folder per year (`2024/`, `2025/`, `2026/`), partner authorizations once at the root, and a `README.txt` that names any year with no evidence lines instead of shipping a blank sheet |
 | Search without diacritics | **Mișcări** → add → waste code box → type `deseuri` | Results appear: the nomenclator is searched on a folded copy of code and name (V17) |
 | The 15 March deadline | **Termene** | Reads "Anexa 1 — evidența gestiunii deșeurilor generate (anual, 15 martie)": the document, not the portal |
+| The 25 February deadline | **Termene**, on a company whose profile answers "producător" or "importator" | The packaging report of Ordinul 794/2012 art. 6, at the county agency. Tick only "Comerciant", or leave the question unanswered, and it does not appear — an alert asserts something, so it stays silent where a screen would still offer |
+| Lapsed recipient authorization | **Mișcări** → hand waste to a partner whose authorization expired before that date | An amber **"Autorizație expirată"** badge next to the partner, naming the expiry date. Anexa 3 still prints: the handover happened, and the warning stays off the paper that reaches the inspector |
+| Tonnes for the filing | **Evidențe** → "Anexa 1 — lunar", below the table | The year's totals per waste code in tonnes, because OUG 92/2021 art. 48 alin. (1) asks for tonnes at filing while the sheet itself stays in kg. Nothing printed changes — it saves dividing by 1000 by hand on the day |
+| Designated waste manager | **Clienți** → edit a company | Name, capacity, employee vs. delegated third party, training certificate — OUG 92/2021 art. 23 alin. (4)–(5). Not the contact person, who is the declaration's signature block. Leave it blank and the control dossier's `README.txt` says so out loud, because its absence is itself the finding |
 
 ### Tests
 

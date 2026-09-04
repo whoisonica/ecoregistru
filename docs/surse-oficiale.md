@@ -924,6 +924,31 @@ notele cu şablonul ei? Întrebarea **AJ**. Ordinul 794/2012 n-a fost actualizat
 notele lui *sunt* textul în vigoare al ordinului, chiar dacă trimit la acte moarte; e exact situaţia
 de la antetul cap. 3/4, unde am ales să actualizăm.
 
+✅ **Decis şi aplicat pe 04.09.2026: actualizăm, în toate cele cinci locuri.** Aceeaşi politică pe
+care o aplicam deja în trei din cinci. Nota 1 → **Legea nr. 249/2015**, nota 3 → **Regulamentul (CE)
+nr. 1272/2008** (CLP).
+
+⚠️ **Şi aici e o corectură a auditului însuşi.** Auditul propusese pentru nota 3 „Regulamentul CLP /
+**HG 539/2016**". A doua variantă e greşită, şi se vede numai citind actul. Titlul lui, verificat pe
+Portalul Legislativ pe 04.09.2026
+([legislatie.just.ro/Public/DetaliiDocument/180604](https://legislatie.just.ro/Public/DetaliiDocument/180604)),
+verbatim:
+
+> HOTĂRÂRE nr. 539 din 27 iulie 2016 **pentru abrogarea** Hotărârii Guvernului nr. 1.408/2008 privind
+> clasificarea, ambalarea şi etichetarea substanţelor periculoase **şi a Hotărârii Guvernului
+> nr. 937/2010** privind clasificarea, ambalarea şi etichetarea la introducerea pe piaţă a
+> preparatelor periculoase
+
+Deci e un **act pur de abrogare, fără conţinut propriu**. O notă care ar trimite acolo ar duce
+cititorul la o pagină care nu spune nimic despre cum se etichetează un ambalaj. Regula de fond în
+vigoare e Regulamentul (CE) nr. 1272/2008, direct aplicabil — şi chiar preambulul lui HG 539/2016 îl
+numeşte ca motiv pentru care actele naţionale au devenit redundante.
+
+**Lecţia, care depăşeşte nota asta:** „actul X a fost abrogat de Y" **nu** înseamnă „scrie Y în loc
+de X". Actul abrogator poate fi doar un certificat de deces. Succesorul se caută în conţinut, nu în
+istoricul abrogărilor. Testul care ţine regula pe loc:
+`PackagingDeclarationIT.theFootnotesCiteTheActsInForce` — respinge explicit şi `539/2016`.
+
 ---
 
 ## 6. Ordinul MMAP 701/2024 — SIATD

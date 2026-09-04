@@ -2363,6 +2363,181 @@ consolidare 19.03.2007), OUG 92/2021 art. 48 cu termenul de 15 martie neschimbat
 
 ---
 
+## Șase puncte de audit deblocate prin decizie, nu prin răspuns (04.09.2026)
+
+**Întrebarea care a pornit sesiunea:** *„putem progresa și fără Andreea într-o anumită direcție?"*
+
+Răspunsul, după recitirea celor patru documente: **da, și blocajul era mai mic decât arăta
+documentația.** Din cele opt puncte marcate „blocate pe specialistă", **unul singur** era blocat pe
+ceva ce numai ea poate trimite — **AI**, modelul completat de anexa 2 la HG 1061/2008. Plus **AD**,
+din afara auditului. Restul de șase erau blocate pe o **decizie**, iar decizia era a utilizatorului.
+
+Le-a luat pe toate șase într-o singură rundă. Ce urmează e ce s-a construit din ele.
+
+### Distincția care a deblocat lista: „nu știm ce cere ea" vs. „nu ne-am hotărât noi"
+
+Documentația le amestecase sub aceeași etichetă. Triajul nou:
+
+| Fel | Exemplu | Ce se face |
+|---|---|---|
+| Lipsește un **document** pe care numai ea îl are | AD (registru art. 48), AI (anexa 2 periculoase) | se așteaptă — altfel inventăm un format oficial |
+| Lipsește o **decizie de produs** | AH (avertisment vs. refuz), AM (vrem alerta?), AJ (politica notelor) | o ia utilizatorul |
+| Actul **răspunde deja**, iar întrebarea confirma doar practica | AE, AN, AF | se citește actul și corpusul |
+
+Mailul care i se trimite s-a scurtat de la zece întrebări la **două cereri**: un registru art. 48
+completat și un formular anexa 2 completat.
+
+### AH — autorizația expirată la data predării: avertisment, și numai pe ecran
+
+`renderAnexa3` avea două refuzuri, amândouă spunând „ăsta e documentul greșit" — fără partener n-ai
+destinatar, cod periculos merge pe anexa 2. **O autorizație expirată nu face Anexa 3 documentul
+greșit:** predarea chiar a avut loc. Un refuz ar fi însemnat că aplicația refuză să documenteze
+realitatea, și ar fi blocat reconstituirea unui dosar vechi ai cărui parteneri au expirat între timp.
+
+`WasteMovementResponse` poartă de-acum `recipientAuthorizationExpired` + data, calculate în mapper:
+
+- **numai pe ieșiri** — o intrare sau o generare n-are destinatar de autorizat;
+- **numai cu expirare completată** — un câmp gol înseamnă „nu știm", iar regula de lucru 1 interzice
+  transformarea unei lipse în acuzație;
+- **strict înainte de data mișcării** — o autorizație valabilă *în* ziua expirării e valabilă, deci
+  comparația e `expiry.isBefore(date)`. Ambiguitatea cade în favoarea clientului.
+
+Pe ecran, badge **galben** în coloana de partener — nu roșu. Roșul e al lui `UNCLASSIFIED_OUT`, unde
+rândul chiar e de nedepus; aici rândul e corect, dar lipsește o condiție de legalitate a predării, pe
+care clientul o poate lămuri. E aceeași familie cu „De cântărit".
+
+⚠️ **Și nu se tipărește pe formular.** Hârtia ajunge la destinatar și, la control, la inspector — o
+notă a noastră în marginea ei ar fi propria noastră acuzație pusă în dosarul clientului. Pe ecran e
+informație; pe hârtie ar fi probă împotriva celui pentru care am construit-o. Motivul e scris în
+javadoc-ul lui `renderAnexa3`, ca următorul să nu-l „repare" invers.
+
+Teste: `Anexa3FormIT` — flagul apare, **formularul se tipărește oricum**, iar ziua expirării și
+câmpul gol nu declanșează nimic.
+
+### AM — 25 februarie există, 25 ianuarie numește două documente
+
+`ReportType.PACKAGING_ANNUAL`, generat de `DeadlineService.packagingDeadline`. Aplicația construia
+documentul de la `V22`, README-ul dosarului chiar numea termenul — dar nu pleca **nicio** alertă
+pentru singura depunere pentru care fusese construit tot modulul de ambalaje.
+
+**Cine îl primește:** doar o firmă al cărei profil e **răspuns** și pune ambalaje pe piață. Un profil
+gol nu primește nimic — **deliberat invers față de regula ecranelor** (decizia 6: profil gol nu
+restrânge nimic). O alertă e o *afirmație*, un ecran e doar o *ofertă*: o alertă lipsă e mai tăcută
+decât una falsă, iar cea falsă e exact ce a costat o migrare la `V21`. Comentariul e în cod, ca
+inconsecvența aparentă să nu fie „reparată" de cineva care vede doar una din cele două reguli.
+
+**25 ianuarie n-a primit un rând nou.** Notificarea din Ordinul 794/2012 art. 3 și contribuția din
+OUG 196/2005 art. 11 alin. (2) cad în aceeași zi, la **același destinatar** (AFM). Două rânduri ar fi
+pus două alerte în aceeași zi la aceeași adresă — zgomotul pe care `V21` l-a stins. Un rând, o
+etichetă care numește ambele documente.
+
+Fără migrare: `report_type` e stocat ca text. Teste: producător da, comerciant nu, profil gol nu.
+
+### AJ — notele actualizate în toate cele cinci locuri, și o corectură a auditului
+
+Politica era luată de două ori și aplicată în trei locuri din cinci. Acum e aplicată peste tot:
+nota 1 → **Legea nr. 249/2015**, nota 3 → **Regulamentul (CE) nr. 1272/2008**, în PDF și în `.xls`.
+
+🔍 **Ce a ieșit la verificare, și e mai valoros decât reparația.** Auditul propusese pentru nota 3
+„Regulamentul CLP / **HG 539/2016**". Citit pe Portalul Legislativ, titlul lui HG 539/2016 e:
+
+> HOTĂRÂRE nr. 539 din 27 iulie 2016 **pentru abrogarea** Hotărârii Guvernului nr. 1.408/2008 [...]
+> **şi a Hotărârii Guvernului nr. 937/2010** [...]
+
+E un **act pur de abrogare, fără conținut propriu**. O notă care ar trimite acolo ar duce cititorul
+la o pagină care nu spune nimic despre etichetare. Regula de fond e Regulamentul CLP, direct
+aplicabil — numit chiar în preambulul acelei hotărâri ca motiv al abrogării.
+
+**Lecția, care depășește nota:** *„actul X a fost abrogat de Y" nu înseamnă „scrie Y în loc de X".*
+Actul abrogator poate fi doar un certificat de deces. Succesorul se caută în **conținut**, nu în
+istoricul abrogărilor. Detaliul, cu link: `surse-oficiale.md` §5.
+
+Testul `PackagingDeclarationIT.theFootnotesCiteTheActsInForce` asertează și **absențele** —
+`621/2005`, `937/2010` și `539/2016` — fiindcă modul de eșec e revenirea către model: cineva citește
+„verbatim din model" într-un javadoc și pune HG 621/2005 la loc.
+
+### AN — `Modul` și `Scopul` tac odată cu cantitatea
+
+`Anexa1SheetBuilder` calcula cantitatea tratată doar din tratarea proprie (`isExit() && partner ==
+null`), corect de la decizia 18 — dar lua `Modul` și `Scopul` din **toate** mișcările lunii. Deci o
+predare pe care clientul completase și un mod de tratare tipărea `Modul: TM` lângă `Cant.: 0.000`: o
+tratare declarată fără cantitate, o rubrică ce se contrazice singură pe un formular depus.
+
+Cele trei rubrici descriu **același eveniment**, deci vin acum din aceeași mulțime. Corpusul decide
+forma rubricii (regula de lucru 3): Panemar — brutărie, doar predă — scrie `0.000` cu Modul `-`;
+Hamburger scrie amândouă, fiindcă chiar balotează.
+
+### AF — cifra în tone există, dar nu pe hârtie
+
+OUG 92/2021 art. 48 alin. (1) scrie „cantitatea **în tone**" de două ori. Evidența noastră e integral
+în kg — și e **corectă** așa: HG 856/2002 lasă unitatea câmp liber, iar toate cele 33 de foi primite
+sunt în kilograme. Una e ce **ții**, alta ce **depui**; până acum clientul făcea conversia de mână,
+cod cu cod, în ziua depunerii.
+
+Ce s-a construit: `frontend/src/lib/units.ts` (un singur loc pentru factorul 1000) și, pe ecranul
+Evidențe, un panou **„Pentru depunerea din 15 martie — totalul anului, în tone"**, per cod de deșeu,
+calculat din rândurile anului.
+
+**Ce NU s-a atins:** niciun formular tipărit. Fișa și declarația rămân în kg. Un document nou
+„fișă de depunere SIM" ar fi fost un format oficial inventat. Afișarea e nedistructivă indiferent de
+răspunsul la **AF**: arată ambele unități, nu înlocuiește una cu alta.
+
+### AK — persoana desemnată, minimul care se poate construi (`V29`)
+
+OUG 92/2021 art. 23 alin. (4)–(5). Patru coloane nullable pe `companies`: nume, calitate, angajat
+propriu vs. terță persoană delegată, certificat de instruire ca text liber.
+
+**Nu e `contact_name`/`contact_role`,** și confuzia era ușoară: acelea sunt blocul de semnătură al
+declarației anuale („Întocmit"/„Funcția"), adică cine a redactat documentul. Persoana desemnată e
+desemnată prin decizie internă, poate fi din afară, și poartă un certificat pe care blocul de
+semnătură nu-l poartă.
+
+**De ce fără să așteptăm răspunsul:** obligația e a legii, nu a practicii. Ce rămâne întrebat e dacă
+inspectorul cere certificatul și în ce formă; dacă răspunsul e „nu cere nimeni", costul greșelii e
+**patru coloane nefolosite**, nu o felie de aruncat.
+
+În dosarul de control, blocul se tipărește — **iar când lipsește, o spune cu voce tare.** Și asta e
+singura diferență față de `marketRoleNote`, care tace la profil gol: rolul de piață e o *proprietate*
+a firmei, deci necunoscută înseamnă că nu putem conchide nimic. Persoana desemnată e o *obligație* a
+oricui are autorizație de mediu, deci absența ei **este** constatarea. Mai bine o citește clientul
+în README decât s-o audă de la inspector.
+
+**Un lucru prins la verificarea pe document, nu la teste:** primul mesaj scria „Completeaz-o în
+Setări → profilul firmei". Profilul firmei se editează însă din ecranul **Clienți**, care e
+`PLATFORM_ONLY` — deci un ADMIN de client ar fi fost trimis într-un ecran pe care nu-l are. Mesajul
+spune acum pe cine să întrebe.
+
+### Verificat pe hârtie, nu doar în teste
+
+Regula de lucru 5, cu un test temporar care a scos documentele pe disc și PyMuPDF pentru randare
+(poppler tot nu e instalat). Ce s-a văzut, pe fișa `15 01 01`, luna Septembrie:
+
+- cap. 2 — **Stocare: `250.000` / `CT`** rămâne, fiindcă stocarea chiar s-a întâmplat aici; **Tratare:
+  `0.000`, Modul gol, Scopul gol**. `TM`-ul care se tipărea singur a dispărut. Exact reparația AN;
+- cap. 3 — `R3` cu operatorul numit; cap. 4 trimite la **anexa nr. 7**, deci reparația din 02.09 ține;
+- ambalaje PDF **și** `.xls` — notele scriu `Legea nr. 249/2015` și `Regulamentul (CE) nr. 1272/2008`;
+  `.xls`-ul începe cu `d0 cf 11 e0`, deci e BIFF8 adevărat;
+- README-ul dosarului — blocul persoanei desemnate, cu textul de „necompletată".
+
+Diacriticele au trecut prin Cp1250 pe toate.
+
+### Igienă găsită în drum
+
+`Anexa1SheetBuilder.java` conținea un **byte NUL brut** într-un literal de String, folosit ca
+separator de cheie. Fișierul ieșea „binar" la `grep` și la unelte. Înlocuit cu escape-ul `\0` —
+aceeași constantă compilată, fișier text. Plus un import dublu de `java.util.List` în
+`DeadlineService`.
+
+### Stare
+
+**186 de teste verzi** (de la 178: opt noi), 0 eșecuri, 0 erori, 0 sărite. O migrare, **`V29`**;
+următoarea liberă e `V30`. Frontendul trece `tsc --noEmit` și se build-uiește.
+
+**Ce rămâne blocat, și acum e o listă scurtă:** **AD** (registru art. 48) și **AI** (anexa 2,
+transport periculos) — amândouă cer un formular completat. **AE** s-a închis fără cod: coliziunea
+celor două marcaje `(*)` era deja rezolvată în `AnnualDeclarationGenerator` prin coloană, paranteze
+și o notă de subsol care le numește pe amândouă. **AG** era închisă de reparația din 02.09.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
