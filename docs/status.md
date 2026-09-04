@@ -2538,6 +2538,44 @@ transport periculos) — amândouă cer un formular completat. **AE** s-a închi
 celor două marcaje `(*)` era deja rezolvată în `AnnualDeclarationGenerator` prin coloană, paranteze
 și o notă de subsol care le numește pe amândouă. **AG** era închisă de reparația din 02.09.
 
+### Commis, pushat şi deployat (04.09.2026, ora 12:40)
+
+Două commit-uri pe monorepo: `be91df2` (codul) şi `ee7efe5` (documentaţia). Split-urile s-au tăiat
+şi s-au cherry-pickat după procedura obişnuită, fără `--force` şi fără conflicte — un singur commit
+nou de fiecare parte, fiindcă commit-ul de documentaţie nu atinge nici `backend/`, nici `frontend/`.
+
+| | Hash | Release |
+|---|---|---|
+| `origin/main` = `origin/deploy/heroku-split` | `ee7efe5` | — |
+| `newrepo/main` → `ecoregistru-api` | `f79e54d` | **v35** |
+| `ferepo/main` → `ecoregistru-app` | `d1a1a12` | **v28** |
+
+**Migrarea a rulat**, verificat în logurile dyno-ului:
+
+```
+Current version of schema "public": 28
+Migrating schema "public" to version "29 - designated waste manager"
+Successfully applied 1 migration to schema "public", now at version v29
+Started EcoRegistruApplication in 13.987 seconds
+```
+
+**Proba pe producţie, nu doar la teste.** Autentificat pe `admin@demo.ro` şi regenerate termenele
+pentru 2027: ies **13** — douăsprezece AFM lunare plus 15 martie. **`PACKAGING_ANNUAL` nu apare**,
+şi asta e răspunsul corect: `marketRoles` al tenantului demo e `[]`, iar decizia 37 spune că o
+alertă tace la un profil fără răspuns. Dacă ar fi apărut, ar fi fost defectul. `companies/current`
+întoarce şi câmpurile noi de persoană desemnată, goale.
+
+**Frontendul, verificat pe bundle-ul servit.** Build-ul a stat din nou în coada Heroku — cel de
+backend din acelaşi push a intrat în secunde, ăsta a venit după opt minute. A intrat singur, ca pe
+02.09; nu e nimic de reparat, doar de ştiut. Bundle-ul de pe dyno (`/assets/index-DYXCxcIV.js`)
+conţine toate cele patru şiruri noi: „Autorizaţie expirată", „25 februarie", „Persoana desemnată" şi
+„în tone" — deci ecranele chiar au ajuns acolo, nu doar commit-ul.
+
+*(Regenerarea a lăsat pe tenantul demo termenele pentru 2027 — rânduri aditive pe un tenant de test,
+pentru un an care n-a venit încă. Cazul pozitiv al lui `PACKAGING_ANNUAL` e acoperit de
+`DeadlineIT`, care face acelaşi drum HTTP prin Postgres; n-am schimbat profilul de piaţă al
+tenantului demo doar ca să-l probez pe dyno.)*
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
