@@ -2571,10 +2571,38 @@ backend din acelaşi push a intrat în secunde, ăsta a venit după opt minute. 
 conţine toate cele patru şiruri noi: „Autorizaţie expirată", „25 februarie", „Persoana desemnată" şi
 „în tone" — deci ecranele chiar au ajuns acolo, nu doar commit-ul.
 
-*(Regenerarea a lăsat pe tenantul demo termenele pentru 2027 — rânduri aditive pe un tenant de test,
-pentru un an care n-a venit încă. Cazul pozitiv al lui `PACKAGING_ANNUAL` e acoperit de
-`DeadlineIT`, care face acelaşi drum HTTP prin Postgres; n-am schimbat profilul de piaţă al
-tenantului demo doar ca să-l probez pe dyno.)*
+### Şi cazul pozitiv, probat pe producţie (04.09.2026, ora 13:05)
+
+Prima rundă probase doar cazul negativ. La cererea utilizatorului s-a făcut şi cealaltă jumătate,
+pe ani neatinşi (2028, 2029) ca să nu se amestece cu termenele deja generate:
+
+| | Ce s-a pus pe profil | Ce a ieşit |
+|---|---|---|
+| 1 | `marketRoles: []` | `AFM_MONTHLY`, `SIM_ANNUAL` — **niciun** `PACKAGING_ANNUAL` |
+| 2 | `["PRODUCER"]` | `PACKAGING_ANNUAL` pe **`2028-02-25`** |
+| 3 | `["TRADER"]` | `AFM_MONTHLY`, `SIM_ANNUAL` — **niciun** `PACKAGING_ANNUAL` |
+| 4 | persoana desemnată completată | dosarul de control tipăreşte blocul: Nume, Calitate, „Delegată unei terţe persoane", Instruire |
+
+Deci regula ţine capăt la capăt pe dyno, nu doar în teste: **profil gol tace, producătorul primeşte
+termenul, comerciantul nu.**
+
+⚠️ **Cum s-a făcut, fiindcă PUT-ul pe firmă e o capcană.** `applyProfile` lasă în pace seturile
+când vin `null`, dar scrie **necondiţionat** scalarele — `caenCode`, `contactRole`, `anexa3Series`,
+cele patru de persoană desemnată. Un PUT parţial le-ar fi golit tăcut. Proba a citit starea
+completă înainte, a trimis de fiecare dată payload-ul întreg cu o singură valoare schimbată, şi a
+restaurat instantaneul în `finally`. Verificat după: **identic cu starea iniţială**.
+
+🧹 **Ce a rămas în urmă, şi de ce nu se poate curăţa.** Generarea de termene e **aditivă prin
+design** — nu şterge niciodată, ca să supravieţuiască starea de „finalizat" la o regenerare — iar
+`DeadlineController` n-are endpoint de ştergere. Deci pe tenantul demo au rămas termenele pentru
+**2027, 2028 şi 2029**, printre care un **`PACKAGING_ANNUAL` pe `2028-02-25`**, creat cât profilul
+era `PRODUCER`.
+
+**Nu e un defect al filtrului.** Dacă o sesiune viitoare vede rândul acela pe un tenant al cărui
+`marketRoles` e `[]` şi crede că gating-ul s-a stricat: nu s-a stricat, rândul e mai vechi decât
+profilul de azi. Sunt ani care n-au venit încă, pe un tenant de test.
+
+
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
