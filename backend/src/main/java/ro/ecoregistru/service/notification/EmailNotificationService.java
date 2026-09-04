@@ -62,7 +62,10 @@ public class EmailNotificationService implements NotificationService {
             case SIM_ANNUAL -> "Evidența gestiunii deșeurilor generate (anual, 15 martie)";
             case AFM_MONTHLY -> "Declarația AFM (lunară, 25) — contribuția de 2% reținută la sursă";
             case AFM_QUARTERLY -> "Declarația AFM (trimestrială, 25) — contribuția pentru economia circulară";
-            case AFM_ANNUAL -> "Declarația AFM (anuală, 25 ianuarie) — contribuția pentru ambalaje";
+            case AFM_ANNUAL -> "Declarația AFM (anuală, 25 ianuarie) — contribuția pentru ambalaje "
+                    + "și notificarea că obiectivele se îndeplinesc individual";
+            case PACKAGING_ANNUAL -> "Anexa 1 Ambalaje (anual, 25 februarie) — la agenția "
+                    + "județeană de mediu";
             case OTHER -> "Raportare";
         };
     }

@@ -78,6 +78,12 @@ export function ClientsPage() {
   const [caenCode, setCaenCode] = useState("");
   const [anexa3Unit, setAnexa3Unit] = useState<"" | Unit>("");
   const [contactRole, setContactRole] = useState("");
+  // Persoana desemnată cu gestiunea deșeurilor (OUG 92/2021 art. 23 alin. (4)-(5)). Altceva decât
+  // contactRole de mai sus, care e blocul de semnătură al declarației anuale.
+  const [wasteManagerName, setWasteManagerName] = useState("");
+  const [wasteManagerRole, setWasteManagerRole] = useState("");
+  const [wasteManagerExternal, setWasteManagerExternal] = useState<"" | "yes" | "no">("");
+  const [wasteManagerTraining, setWasteManagerTraining] = useState("");
   // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
   const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
   const [formError, setFormError] = useState<false | "name" | "cui">(false);
@@ -141,6 +147,12 @@ export function ClientsPage() {
     setCaenCode(c.caenCode ?? "");
     setAnexa3Unit(c.anexa3Unit ?? "");
     setContactRole(c.contactRole ?? "");
+    setWasteManagerName(c.wasteManagerName ?? "");
+    setWasteManagerRole(c.wasteManagerRole ?? "");
+    setWasteManagerExternal(
+      c.wasteManagerExternal == null ? "" : c.wasteManagerExternal ? "yes" : "no",
+    );
+    setWasteManagerTraining(c.wasteManagerTraining ?? "");
     setProfile({
       authorizedOperationCodes: c.authorizedOperationCodes ?? [],
       marketRoles: c.marketRoles ?? [],
@@ -180,6 +192,11 @@ export function ClientsPage() {
       caenCode: caenCode.trim() || null,
       anexa3Unit: anexa3Unit || null,
       contactRole: contactRole.trim() || null,
+      wasteManagerName: wasteManagerName.trim() || null,
+      wasteManagerRole: wasteManagerRole.trim() || null,
+      // "" rămâne null: „nu s-a răspuns" nu e același lucru cu „angajat propriu".
+      wasteManagerExternal: wasteManagerExternal === "" ? null : wasteManagerExternal === "yes",
+      wasteManagerTraining: wasteManagerTraining.trim() || null,
       authorizedOperationCodes: profile.authorizedOperationCodes,
       marketRoles: profile.marketRoles,
       authorizedWasteCodeIds: profile.authorizedWasteCodes.map((w) => w.id),
@@ -489,6 +506,58 @@ export function ClientsPage() {
               <p className="mt-1 text-xs text-gray-500">{t.contactRoleHint}</p>
             </div>
           </div>
+
+          {/* Persoana desemnată cu gestiunea deșeurilor — bloc separat, fiindcă e altceva decât
+              persoana de contact de mai sus și se confundă ușor cu ea. */}
+          <div className="rounded-lg border border-gray-200 p-3">
+            <p className="text-sm font-semibold text-gray-800">{t.wasteManagerTitle}</p>
+            <p className="mt-1 text-xs text-gray-500">{t.wasteManagerHint}</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
+                <Input
+                  id="c-wm-name"
+                  value={wasteManagerName}
+                  onChange={(e) => setWasteManagerName(e.target.value)}
+                  placeholder={t.wasteManagerNamePlaceholder}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-wm-role">{t.wasteManagerRole}</Label>
+                <Input
+                  id="c-wm-role"
+                  value={wasteManagerRole}
+                  onChange={(e) => setWasteManagerRole(e.target.value)}
+                  placeholder={t.wasteManagerRolePlaceholder}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-wm-external">{t.wasteManagerExternal}</Label>
+                <Select
+                  id="c-wm-external"
+                  value={wasteManagerExternal}
+                  onChange={(e) =>
+                    setWasteManagerExternal(e.target.value as "" | "yes" | "no")
+                  }
+                >
+                  <option value="">{t.wasteManagerExternalUnset}</option>
+                  <option value="no">{t.wasteManagerExternalNo}</option>
+                  <option value="yes">{t.wasteManagerExternalYes}</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="c-wm-training">{t.wasteManagerTraining}</Label>
+                <Input
+                  id="c-wm-training"
+                  value={wasteManagerTraining}
+                  onChange={(e) => setWasteManagerTraining(e.target.value)}
+                  placeholder={t.wasteManagerTrainingPlaceholder}
+                />
+                <p className="mt-1 text-xs text-gray-500">{t.wasteManagerTrainingHint}</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="c-reg">{strings.partners.tradeRegisterNumber}</Label>

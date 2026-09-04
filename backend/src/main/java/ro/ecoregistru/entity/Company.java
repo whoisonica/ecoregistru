@@ -74,6 +74,38 @@ public class Company {
     @Column(name = "caen_code", length = 10)
     String caenCode;
 
+    // --- The person designated for waste management (OUG 92/2021 art. 23 alin. (4)-(5)) ---
+    //
+    // Not the same as contactName/contactRole above, and the difference matters: those two are the
+    // signature block of the annual declaration ("Întocmit" / "Funcţia"), naming whoever drew the
+    // document up. This one is designated by an internal decision, may be an outside consultant,
+    // and carries a training certificate the signature block never carries. An inspector asks for
+    // it early. Audit point 8; all four are nullable, so an unfilled profile behaves as before.
+
+    /** Named by the company under art. 23 alin. (4); null while unanswered. */
+    @Column(name = "waste_manager_name", length = 160)
+    String wasteManagerName;
+
+    /** Her role in the company, or the capacity she is delegated in. Free text. */
+    @Column(name = "waste_manager_role", length = 120)
+    String wasteManagerRole;
+
+    /**
+     * True when the obligation is delegated to a third party rather than to an employee — the
+     * second branch of art. 23 alin. (4). An environmental consultant <em>is</em> that third
+     * person, which is why this rubric fills itself in for a consultancy's whole portfolio.
+     */
+    @Column(name = "waste_manager_external")
+    Boolean wasteManagerExternal;
+
+    /**
+     * The training certificate art. 23 alin. (5) requires — programme, number and date, as free
+     * text. The act requires the training, not a particular shape of proof, so nothing here is
+     * structured on a guess.
+     */
+    @Column(name = "waste_manager_training", length = 255)
+    String wasteManagerTraining;
+
     /**
      * The unit printed on this company's Anexa 3 forms, or {@code null} for "whatever the movement
      * was recorded in" — which is what every account did before V19, so an unanswered profile keeps

@@ -17,6 +17,7 @@ import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
@@ -132,6 +133,86 @@ class Anexa3FormIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.awaitingWeighing == true)]").exists())
                 .andExpect(jsonPath("$[?(@.awaitingWeighing == true && @.incomplete == true)]").exists());
+    }
+
+    // ---------- The recipient's authorization, at the date of the handover ----------
+
+    /**
+     * Audit point 5: the handover is legal only towards an <em>authorized</em> operator
+     * (OUG 92/2021 art. 23 alin. (1)), and until 04.09.2026 nothing compared that authorization
+     * with the date of the movement. The only check was a badge in the partner list computed
+     * against today, so Anexa 3 could print, silently, a transport towards an operator who was
+     * not authorized on the day the document itself names.
+     */
+    @Test
+    void aHandoverToAPartnerWhoseAuthorizationHadLapsedIsFlagged() throws Exception {
+        setAuthorizationExpiry(partnerId, LocalDate.of(2026, 6, 30)); // movement is 2026-07-05
+
+        mockMvc.perform(movement("""
+                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
+                          "partnerId": "%s", "quantity": 100
+                        """.formatted(partnerId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipientAuthorizationExpired", is(true)))
+                .andExpect(jsonPath("$.recipientAuthorizationExpiry", is("2026-06-30")));
+    }
+
+    /**
+     * And it is a warning, not a refusal — the one thing this slice must never become. The
+     * handover really happened; refusing to print would mean the application declines to document
+     * reality, and would block reconstructing an old dossier whose partners have since lapsed.
+     */
+    @Test
+    void theFormStillPrintsForALapsedAuthorization() throws Exception {
+        setAuthorizationExpiry(partnerId, LocalDate.of(2026, 6, 30));
+
+        String id = movementId("""
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
+                  "partnerId": "%s", "quantity": 100
+                """.formatted(partnerId));
+
+        byte[] pdf = mockMvc.perform(get("/api/v1/movements/" + id + "/anexa3")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
+    }
+
+    /**
+     * An authorization valid <em>on</em> its expiry day is valid, and an empty expiry field means
+     * "we have not been told", not "it lapsed". Both fall for the client — regula de lucru 1: a
+     * gap is shown as a gap, never converted into a finding against them.
+     */
+    @Test
+    void anAuthorizationExpiringOnTheDayOrNotRecordedAtAllIsNotFlagged() throws Exception {
+        setAuthorizationExpiry(partnerId, LocalDate.of(2026, 7, 5)); // the movement's own date
+        mockMvc.perform(movement("""
+                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
+                          "partnerId": "%s", "quantity": 100
+                        """.formatted(partnerId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipientAuthorizationExpired", is(false)));
+
+        setAuthorizationExpiry(partnerId, null);
+        mockMvc.perform(movement("""
+                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
+                          "partnerId": "%s", "quantity": 100
+                        """.formatted(partnerId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipientAuthorizationExpired", is(false)));
+    }
+
+    private void setAuthorizationExpiry(UUID id, LocalDate expiry) {
+        ro.ecoregistru.entity.Partner p = partnerRepository.findById(id).orElseThrow();
+        p.setAuthorizationExpiry(expiry);
+        partnerRepository.save(p);
+    }
+
+    private String movementId(String extraJson) throws Exception {
+        String json = mockMvc.perform(movement(extraJson))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return com.jayway.jsonpath.JsonPath.read(json, "$.id");
     }
 
     // ---------- Which movements the form may be printed for ----------

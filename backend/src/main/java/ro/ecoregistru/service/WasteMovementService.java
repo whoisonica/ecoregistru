@@ -305,6 +305,18 @@ public class WasteMovementService {
      * half. And its title says <em>nepericuloase</em>: a hazardous code belongs on the expedition
      * form of anexa 2, which is a different document we do not produce yet, so we say that instead
      * of printing the wrong one.
+     *
+     * <p><b>And one thing that is deliberately not a third refusal</b> (audit point 5, decided
+     * 04.09.2026): an expired recipient authorization. Both refusals above say "this is the wrong
+     * document"; a lapsed authorization does not make Anexa 3 the wrong document, because the
+     * handover really did happen and the client still has to be able to reconstruct an old file.
+     * Refusing would mean the application declines to document reality. The warning is carried
+     * instead on {@code WasteMovementResponse#recipientAuthorizationExpired} and shown on screen.
+     *
+     * <p><b>It must not be printed on the form.</b> The paper goes to the recipient and, at an
+     * inspection, to the authority — a note of ours in its margin would be our own accusation
+     * filed in the client's own dossier. On screen it is information; on paper it would be
+     * evidence against the person we built it for.
      */
     @Transactional
     public byte[] renderAnexa3(UUID id) {

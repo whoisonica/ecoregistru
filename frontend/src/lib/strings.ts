@@ -183,6 +183,17 @@ export const strings = {
     anexa3NeedsPartner:
       "Anexa 3 (dovada predării) apare după ce alegi partenerul care preia deșeul — fără destinatar, formularul n-are ce tipări.",
 
+    // --- Autorizația destinatarului la data predării (OUG 92/2021 art. 23 alin. (1)) ---
+    // Avertisment, niciodată refuz: predarea a avut loc, iar un refuz ar bloca reconstituirea
+    // unui dosar vechi. Și nu se tipărește pe Anexa 3 — hârtia ajunge la inspector, iar o notă
+    // a noastră pe ea ar fi propria noastră acuzație pusă în dosarul clientului.
+    authExpiredAtHandover: "Autorizație expirată",
+    // Primește data deja formatată: strings.ts nu importă nimic, ca să rămână un modul de text pur.
+    authExpiredAtHandoverHint: (expiryFormatted: string | null) =>
+      `Autorizația de mediu a destinatarului${
+        expiryFormatted ? ` expirase la ${expiryFormatted}` : " expirase"
+      }, adică înainte de data acestei predări. Legea cere predarea către un operator autorizat (OUG 92/2021, art. 23 alin. (1)), iar predarea nu te descarcă de răspundere (art. 24 alin. (1)). Formularul se tipărește oricum — documentul consemnează ce s-a întâmplat. Verifică dacă partenerul are o autorizație reînnoită și actualizeaz-o în fișa lui.`,
+
     // --- Provenienţa deşeului la ieşire ---
     // Se arată doar la conturile care pot prelua de la terţi. Fiecare opţiune îşi spune efectul,
     // fiindcă alegerea nu schimbă un câmp, ci pe ce formular oficial ajunge cantitatea.
@@ -464,6 +475,15 @@ export const strings = {
     annualDeclarationHint:
       "Centralizatorul anual: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
     annualDeclarationError: "Declarația anuală nu a putut fi generată.",
+
+    // --- Cifra pentru depunere, în tone (OUG 92/2021 art. 48 alin. (1)) ---
+    // Evidența rămâne în kg peste tot, inclusiv pe hârtie; asta e doar ajutorul de la încărcare.
+    tonnesTitle: "Pentru depunerea din 15 martie — totalul anului {year}, în tone",
+    tonnesHint:
+      "Evidența se ține în kilograme, și e corect așa: fișa din HG 856/2002 lasă unitatea la alegere, iar formularele tipărite rămân în kg. Depunerea e altceva — OUG 92/2021, art. 48 alin. (1) cere cantitatea în tone. Aici o ai gata calculată pe an și pe cod, ca să n-o împarți de mână la 1000 în ziua depunerii.",
+    colGeneratedTonnes: "Generat [t]",
+    colRecoveredTonnes: "Valorificat [t]",
+    colDisposedTonnes: "Eliminat [t]",
     exportExcel: "Export Excel",
     exportPdf: "Export PDF",
     exportError: "Exportul a eșuat. Încearcă din nou.",
@@ -626,6 +646,27 @@ export const strings = {
     contactRole: "Funcția persoanei de contact",
     contactRolePlaceholder: "ex. Manager Mediu",
     contactRoleHint: "Se tipărește la „Întocmit / Funcția” pe declarația anuală.",
+
+    // --- Persoana desemnată cu gestiunea deșeurilor (OUG 92/2021 art. 23 alin. (4)-(5)) ---
+    // Bloc separat dinadins: se confundă ușor cu persoana de contact de mai sus, dar aceea e
+    // blocul de semnătură al declarației anuale, iar asta e o desemnare cerută de lege, care
+    // poartă certificat de instruire. Inspectorul o cere printre primele lucruri.
+    wasteManagerTitle: "Persoana desemnată cu gestiunea deșeurilor",
+    wasteManagerHint:
+      "Cerută de OUG 92/2021, art. 23 alin. (4): titularul unei autorizații de mediu desemnează o persoană dintre angajați sau deleagă obligația unei terțe persoane — de exemplu consultantul de mediu. Nu e persoana de contact de mai sus: aceea semnează declarația anuală. Necompletată, dosarul de control o va marca lipsă.",
+    wasteManagerName: "Nume",
+    wasteManagerNamePlaceholder: "ex. Popescu Andrei",
+    wasteManagerRole: "Calitatea",
+    wasteManagerRolePlaceholder: "ex. consultant de mediu / responsabil mediu",
+    wasteManagerExternal: "Cine e",
+    wasteManagerExternalUnset: "— nu s-a răspuns —",
+    wasteManagerExternalNo: "Angajat propriu",
+    wasteManagerExternalYes: "Terță persoană delegată",
+    wasteManagerTraining: "Certificat de instruire",
+    wasteManagerTrainingPlaceholder: "program, număr și dată",
+    wasteManagerTrainingHint:
+      "Art. 23 alin. (5) cere ca persoana să fie instruită prin programe recunoscute la nivel național. Actul nu impune forma dovezii, deci se scrie liber.",
+
     // status / badges
     active: "Activ",
     inactive: "Inactiv",
@@ -830,7 +871,16 @@ export const strings = {
       // contribuție doar anuală.
       AFM_MONTHLY: "AFM (lunar, 25) — contribuția de 2% reținută la sursă",
       AFM_QUARTERLY: "AFM (trimestrial, 25) — contribuția pentru economia circulară",
-      AFM_ANNUAL: "AFM (anual, 25 ianuarie) — contribuția pentru ambalaje",
+      // Două obligații cad pe 25 ianuarie, la același destinatar (AFM): contribuția pentru
+      // ambalaje (OUG 196/2005 art. 11 alin. (2)) și notificarea din Ordinul 794/2012 art. 3.
+      // Un al doilea rând ar pune două alerte în aceeași zi la aceeași adresă — exact zgomotul
+      // pe care l-a stins `V21`. Un rând, o etichetă care le numește pe amândouă.
+      AFM_ANNUAL:
+        "AFM (anual, 25 ianuarie) — contribuția pentru ambalaje și notificarea că obiectivele se îndeplinesc individual",
+      // 25 februarie e alt document, alt destinatar, alt act: raportarea de ambalaje din
+      // Ordinul 794/2012 art. 6, la agenția județeană — nu la AFM. Construiam documentul de la
+      // `V22`, dar nu pleca nicio alertă pentru el (punctul 3 al auditului).
+      PACKAGING_ANNUAL: "Anexa 1 Ambalaje (anual, 25 februarie) — la agenția județeană de mediu",
       OTHER: "Altă raportare",
     },
     deadlineStatus: {

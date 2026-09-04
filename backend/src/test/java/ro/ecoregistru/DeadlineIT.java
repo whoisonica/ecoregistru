@@ -15,6 +15,7 @@ import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.DeadlineStatus;
+import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.repository.AppUserRepository;
@@ -219,6 +220,65 @@ class DeadlineIT {
                         .header("Authorization", "Bearer " + b.token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()", is(0)));
+    }
+
+    // ---------- 25 February: the packaging report of Ordinul 794/2012 (audit point 3) ----------
+
+    /**
+     * A producer files the packaging report at the county agency by 25 February (art. 1 + art. 6).
+     * Before 04.09.2026 the application built that document and even named the term in the
+     * audit-file README, but generated no deadline for it at all.
+     */
+    @Test
+    void aProducerGetsThe25FebruaryPackagingDeadline() throws Exception {
+        TenantFixture t = newTenantWithRoles(MarketRole.PRODUCER);
+        regenerate(t.token, 2026);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL' "
+                        + "&& @.dueDate == '2026-02-25')]").exists());
+    }
+
+    /**
+     * A trader sells goods somebody else packaged, so it never introduced the packaging on the
+     * national market and does not file — Legea 249/2015, and {@code MarketRole#putsPackagingOnMarket}.
+     */
+    @Test
+    void aTraderGetsNoPackagingDeadline() throws Exception {
+        TenantFixture t = newTenantWithRoles(MarketRole.TRADER);
+        regenerate(t.token, 2026);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL')]").doesNotExist());
+    }
+
+    /**
+     * And an account that never answered the question gets nothing either — deliberately the
+     * opposite of how an empty profile treats <em>screens</em>, which stay fully offered
+     * (decizia 6). An alert asserts something about the client; a screen only offers. Sending a
+     * false reminder is the mistake {@code V21} spent a migration undoing, so silence wins here.
+     */
+    @Test
+    void anUnansweredProfileGetsNoPackagingDeadline() throws Exception {
+        TenantFixture t = newTenant(false); // no market roles at all
+        regenerate(t.token, 2026);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL')]").doesNotExist());
+    }
+
+    private TenantFixture newTenantWithRoles(MarketRole... roles) {
+        TenantFixture t = newTenant(false);
+        Company company = companyRepository.findById(t.company.getId()).orElseThrow();
+        company.setMarketRoles(new java.util.LinkedHashSet<>(java.util.List.of(roles)));
+        companyRepository.save(company);
+        return t;
     }
 
     private void regenerate(String token, int year) throws Exception {

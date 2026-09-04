@@ -388,6 +388,7 @@ public class AuditFileService {
         }
 
         sb.append(marketRoleNote(company))
+                .append(wasteManagerNote(company))
                 .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
                 .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
@@ -445,6 +446,55 @@ public class AuditFileService {
                 + "     ambalaje — Anexa 1 Ambalaje (Ordinul 794/2012). Evidența gestiunii\n"
                 + "     deșeurilor generate de mai sus rămâne obligatorie.\n")
                 + "\n";
+    }
+
+    /**
+     * The person designated for waste management — OUG 92/2021 art. 23 alin. (4) and (5). Audit
+     * point 8, added 04.09.2026: it is among the first things an inspector asks for, and the
+     * dossier neither carried it nor named it.
+     *
+     * <p>When it has not been filled in, the block says so <b>out loud</b> instead of staying
+     * silent, and that is the one place this differs from {@link #marketRoleNote}. The market role
+     * is a property of the business: not knowing it means we cannot conclude anything, and printing
+     * a guess would be worse than printing nothing. The designated person is an <em>obligation</em>
+     * of anyone holding an environmental authorization, so its absence is itself the finding — and
+     * regula de lucru 1 says a gap must be visible as a gap. Better the client reads it here than
+     * hears it from the inspector.
+     */
+    private String wasteManagerNote(Company company) {
+        String name = company.getWasteManagerName();
+        if (name == null || name.isBlank()) {
+            return "Persoana desemnată cu gestiunea deșeurilor: NECOMPLETATĂ.\n"
+                    + "  -> OUG 92/2021, art. 23 alin. (4): titularul unei autorizații de mediu are\n"
+                    + "     obligația să desemneze o persoană dintre angajați SAU să delege obligația\n"
+                    + "     unei terțe persoane (de exemplu consultantul de mediu). Alin. (5) cere ca ea\n"
+                    + "     să fie instruită prin programe recunoscute la nivel național.\n"
+                    // Profilul firmei se editează din ecranul Clienți, care e PLATFORM_ONLY — deci
+                    // un ADMIN de client nu-l poate completa singur. Mesajul spune pe cine să
+                    // întrebe, nu îl trimite într-un ecran pe care nu-l are.
+                    + "     Se completează în profilul firmei (ecranul Clienți, cont de platformă):\n"
+                    + "     cere-i-o consultantului care îți administrează contul, apoi regenerează\n"
+                    + "     dosarul.\n\n";
+        }
+        StringBuilder sb = new StringBuilder("Persoana desemnată cu gestiunea deșeurilor ")
+                .append("(OUG 92/2021, art. 23 alin. (4)):\n")
+                .append("  - Nume    : ").append(name).append("\n");
+        if (company.getWasteManagerRole() != null && !company.getWasteManagerRole().isBlank()) {
+            sb.append("  - Calitate: ").append(company.getWasteManagerRole()).append("\n");
+        }
+        if (Boolean.TRUE.equals(company.getWasteManagerExternal())) {
+            sb.append("  - Delegată unei terțe persoane (art. 23 alin. (4), a doua variantă).\n");
+        } else if (Boolean.FALSE.equals(company.getWasteManagerExternal())) {
+            sb.append("  - Angajat propriu.\n");
+        }
+        String training = company.getWasteManagerTraining();
+        if (training != null && !training.isBlank()) {
+            sb.append("  - Instruire: ").append(training).append("\n");
+        } else {
+            sb.append("  - Instruire: NECOMPLETATĂ — art. 23 alin. (5) cere absolvirea unui program\n")
+                    .append("               de perfecționare recunoscut la nivel național.\n");
+        }
+        return sb.append("\n").toString();
     }
 
     private static String marketRole(MarketRole role) {

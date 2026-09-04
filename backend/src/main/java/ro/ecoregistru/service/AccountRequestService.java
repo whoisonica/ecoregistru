@@ -128,7 +128,13 @@ public class AccountRequestService {
                 request.getCaenCode(),      // both rubrics of the annual declaration's header,
                 null,   // Anexa 3 unit: not asked at intake — the form pad decides it, and an
                         // unanswered setting keeps printing the unit of the movement
-                request.getContactRole())); // asked once at intake and copied, never retyped
+                request.getContactRole(), // asked once at intake and copied, never retyped
+                // The designated waste manager is not asked on the intake form. It is a legal
+                // obligation (OUG 92/2021 art. 23 alin. (4)), not a preference, and often the
+                // consultant themselves — so it is filled in with the client afterwards, in
+                // Setări, rather than guessed from the contact person, who is somebody else.
+                // Until then the audit dossier says out loud that it is missing.
+                null, null, null, null));
 
         Company company = companyRepository.getReferenceById(created.id());
         if (request.getWorkPointName() != null || request.getWorkPointAddress() != null) {

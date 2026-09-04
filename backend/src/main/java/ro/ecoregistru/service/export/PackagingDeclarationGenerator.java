@@ -217,17 +217,23 @@ public class PackagingDeclarationGenerator {
         }
     }
 
+    /**
+     * The four footnotes of tabelul 1, with the two dead references replaced by the acts in force —
+     * audit point 10, decided 04.09.2026. See {@link PackagingDeclarationXlsGenerator} for why, and
+     * for why note 3 does <em>not</em> cite HG 539/2016.
+     */
     private Paragraph marketNotes() {
         Paragraph p = new Paragraph();
         p.setSpacingBefore(2f);
         p.setLeading(6f);
         p.add(new Phrase(cp1250(
                 "1) Se raportează numai ambalajele de desfacere destinate pieţei naţionale, "
-                        + "definite prin HG nr. 621/2005.\n"
+                        + "definite prin Legea nr. 249/2015.\n"
                         + "2) Se raportează o singură dată, atunci când sunt introduse în circuitul "
                         + "de umplere şi livrate pentru prima dată.\n"
                         + "3) Se raportează numai ambalajele care au conţinut substanţe periculoase "
-                        + "inscripţionate ca atare (HG nr. 937/2010). Cantităţile de ambalaje cu "
+                        + "inscripţionate ca atare (Regulamentul (CE) nr. 1272/2008). Cantităţile de "
+                        + "ambalaje cu "
                         + "conţinut periculos sunt tot ambalaje primare şi se regăsesc şi în coloana 3.\n"
                         + "4) Se raportează numai ambalajele folosite la ambalarea produselor destinate "
                         + "pieţei naţionale şi se includ şi ambalajele utilizate pentru ambalarea "

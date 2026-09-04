@@ -421,6 +421,36 @@ class PackagingDeclarationIT {
         }
     }
 
+    /**
+     * The footnotes name the acts in force, not the ones the 2012 model still points at — audit
+     * point 10, applied 04.09.2026 in all five places instead of three.
+     *
+     * <p>The test asserts the absences as loudly as the presences, because the failure mode is a
+     * revert towards the model: somebody reads "verbatim from the model" in a javadoc and puts
+     * HG 621/2005 back. It also pins the choice of <b>Regulamentul (CE) nr. 1272/2008</b> over
+     * HG 539/2016 for nota 3 — the latter is a pure repealing act with no substantive content,
+     * so citing it would send a reader to a page that says nothing about labelling.
+     */
+    @Test
+    void theFootnotesCiteTheActsInForce() throws Exception {
+        handover("15 01 01", "300", collector.getId(), "R13", "SECONDARY", null);
+
+        byte[] xls = mockMvc.perform(get("/api/v1/packaging/anexa1?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        try (Workbook wb = new HSSFWorkbook(new ByteArrayInputStream(xls))) {
+            String notes = sheetText(wb, 0);
+            assertThat(notes).contains("Legea nr. 249/2015");
+            assertThat(notes).contains("Regulamentului (CE) nr. 1272/2008");
+            assertThat(notes).doesNotContain("621/2005");
+            assertThat(notes).doesNotContain("937/2010");
+            // Nu HG 539/2016: e actul care abrogă, fără conţinut propriu despre etichetare.
+            assertThat(notes).doesNotContain("539/2016");
+        }
+    }
+
     /** The PDF stays available for the control file — same content, one page. */
     @Test
     void thePdfIsStillThereForTheControlFile() throws Exception {

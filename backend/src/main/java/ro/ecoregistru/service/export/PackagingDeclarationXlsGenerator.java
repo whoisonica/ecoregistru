@@ -63,15 +63,37 @@ public class PackagingDeclarationXlsGenerator {
             "ANEXA Nr. 1: Producători şi importatori de ambalaje de desfacere, de produse "
                     + "ambalate, supraambalatori de produse ambalate";
 
-    /** Verbatim from the model, footnotes 1 to 4 of tabelul 1. */
+    /**
+     * Footnotes 1 to 4 of tabelul 1, from the model — with the two dead references replaced by the
+     * acts in force. Audit point 10, decided 04.09.2026.
+     *
+     * <p><b>The policy, now applied in all five places instead of three.</b> Ordinul 794/2012 has
+     * not been touched since 2015, so its notes still name acts that no longer exist: nota 1 cites
+     * HG 621/2005, abrogated on 1 November 2015 by Legea 249/2015, and nota 3 cites HG 937/2010,
+     * abrogated in 2016. We print the act in force — the same licence answer A granted for cap. 3/4
+     * of the fişă and nota 2 of tabelul 2, which had already been updated from Legea 211/2011 to
+     * OUG 92/2021. Reproducing a reference to a repealed act because the model does is regula de
+     * lucru 2 inverted: the corpus says how a rubric is filled in, never which law is in force.
+     *
+     * <p><b>Why nota 3 does not cite HG 539/2016.</b> That is the act which <em>abrogated</em>
+     * HG 937/2010 — verified on the Portal Legislativ, 04.09.2026: its full title is "HOTĂRÂRE
+     * nr. 539 din 27 iulie 2016 pentru abrogarea Hotărârii Guvernului nr. 1.408/2008 [...] şi a
+     * Hotărârii Guvernului nr. 937/2010 [...]". It is a pure repealing act with no substantive
+     * content, so a note pointing a reader there would send them to a page that says nothing about
+     * how a package is labelled. The rule in force is <b>Regulamentul (CE) nr. 1272/2008</b> (CLP),
+     * directly applicable, and named in that decision's own preamble as the reason the national
+     * acts became redundant. The audit had suggested "Regulamentul CLP / HG 539/2016"; only the
+     * first half survives reading the act.
+     */
     private static final List<String> TABLE1_NOTES = List.of(
             "1) Se raportează numai ambalajele de desfacere destinate pieţei naţionale, definite "
-                    + "prin Hotărârea Guvernului nr. 621/2005 privind gestionarea ambalajelor şi a "
+                    + "prin Legea nr. 249/2015 privind modalitatea de gestionare a ambalajelor şi a "
                     + "deşeurilor de ambalaje, cu modificările şi completările ulterioare.",
             "2) Se raportează o singură dată, atunci când sunt introduse în circuitul de umplere şi "
                     + "livrate pentru prima dată.",
             "3) Se raportează numai ambalajele care au conţinut substanţe periculoase inscripţionate "
-                    + "ca atare potrivit Hotărârii Guvernului nr. 937/2010. Cantităţile de ambalaje "
+                    + "ca atare potrivit Regulamentului (CE) nr. 1272/2008 al Parlamentului European "
+                    + "şi al Consiliului. Cantităţile de ambalaje "
                     + "cu conţinut periculos sunt tot ambalaje primare şi se regăsesc şi în coloana 3.",
             "4) Se raportează numai ambalajele folosite la ambalarea produselor destinate pieţei "
                     + "naţionale şi se includ şi ambalajele utilizate pentru ambalarea ambalajelor "

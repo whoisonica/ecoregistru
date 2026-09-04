@@ -121,6 +121,55 @@ class Anexa1FormIT {
     }
 
     /**
+     * And "Modul" keeps quiet along with the quantity — audit point 14, fixed 04.09.2026.
+     *
+     * <p>The quantity was already computed from own treatment alone, but "Modul" and "Scopul" were
+     * read from <em>every</em> movement of the month. So a handover on which the client had also
+     * ticked a treatment method printed <em>Modul: TM</em> next to <em>Cant.: 0.000</em>: a
+     * treatment declared with no quantity, a rubric contradicting itself on a filed form.
+     *
+     * <p>The corpus decides the shape of the rubric (regula de lucru 3). Panemar — a bakery that
+     * only hands waste over — writes {@code 0.000} with Modul {@code -}; Hamburger, which really
+     * does bale, writes both. Both silent is their practice for a pure handover.
+     */
+    @Test
+    void chapterTwoLeavesTheTreatmentModeBlankWhenNothingWasTreatedHere() throws Exception {
+        Company company = admin.getCompany();
+        UUID workPointId = workPointRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+        UUID codeId = wasteCodeRepository.findByCode("15 01 03").orElseThrow().getId();
+        UUID partnerId = partnerRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+
+        // A plain handover to a partner, with a treatment method filled in on it anyway.
+        String body = """
+                {
+                  "workPointId": "%s", "date": "%d-09-10", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 100,
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                  "partnerId": "%s", "treatmentMethod": "TM"
+                }
+                """.formatted(workPointId, YEAR, codeId, partnerId);
+        mockMvc.perform(post("/api/v1/movements")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/evidences/regenerate?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        Anexa1Sheet sheet = sheets().stream()
+                .filter(s -> s.wasteCode().equals("15 01 03"))
+                .findFirst().orElseThrow();
+        Anexa1Sheet.Anexa1MonthRow september = sheet.rows().get(8);
+
+        assertThat(september.treatedQuantity()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(BigDecimal.ZERO);
+        // The point of the fix: the mode must not survive alone.
+        assertThat(september.treatmentMethod()).isBlank();
+        assertThat(september.purpose()).isBlank();
+    }
+
+    /**
      * The sheet the specialist printed from her own account on 25.08.2026, reproduced: two
      * handovers, no generation recorded anywhere, and nothing else.
      *

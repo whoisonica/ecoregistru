@@ -51,5 +51,11 @@ public record CompanyResponse(
         /** Header rubrics of the annual declaration; null when never filled in. */
         String caenCode,
         Unit anexa3Unit,
-        String contactRole
+        String contactRole,
+
+        /** The designated waste manager (art. 23 alin. (4)-(5)); null while unanswered. */
+        String wasteManagerName,
+        String wasteManagerRole,
+        Boolean wasteManagerExternal,
+        String wasteManagerTraining
 ) {}

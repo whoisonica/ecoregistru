@@ -64,5 +64,14 @@ public record CompanyRequest(
          */
         String caenCode,
         Unit anexa3Unit,
-        String contactRole
+        String contactRole,
+
+        /**
+         * The person designated for waste management (OUG 92/2021 art. 23 alin. (4)-(5)). Distinct
+         * from {@code contactRole}, which is the annual declaration's signature block.
+         */
+        String wasteManagerName,
+        String wasteManagerRole,
+        Boolean wasteManagerExternal,
+        String wasteManagerTraining
 ) {}

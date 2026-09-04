@@ -46,6 +46,8 @@ public class WasteMovementMapper {
                 m.getOperationCode(),
                 partner != null ? partner.getId() : null,
                 partner != null ? partner.getName() : null,
+                authorizationExpiredAtHandover(m, partner),
+                partner != null ? partner.getAuthorizationExpiry() : null,
                 section != null ? section.getId() : null,
                 section != null ? section.getName() : null,
                 m.getDocumentReference(),
@@ -81,5 +83,36 @@ public class WasteMovementMapper {
 
     public AttachmentResponse toAttachmentResponse(Attachment a) {
         return new AttachmentResponse(a.getId(), a.getUrl(), a.getFileName(), a.getContentType());
+    }
+
+    /**
+     * Whether the recipient's environmental authorization had already lapsed on the day the waste
+     * left the site — audit point 5, built 04.09.2026.
+     *
+     * <p>OUG 92/2021 art. 23 alin. (1) makes the handover legal only towards an <em>authorized</em>
+     * operator, and art. 24 alin. (1) adds that handing over does not discharge responsibility. Yet
+     * the only check in the application was {@code PartnerService}'s {@code expiringSoon} badge,
+     * computed against <b>today</b> at 60 days and shown in the partner list. Nothing compared the
+     * expiry with the date of the movement, so Anexa 3 could print — silently — a transport
+     * document towards an operator who was not authorized on the day it names.
+     *
+     * <p>Three deliberate restrictions:
+     * <ul>
+     *   <li><b>Exits only.</b> An intake or a generation has no recipient to be authorized.</li>
+     *   <li><b>A recorded expiry only.</b> A blank field means the client has not filled it in;
+     *       regula de lucru 1 says a gap must be visible as a gap, not converted into a finding
+     *       against the client.</li>
+     *   <li><b>Strictly before the movement date.</b> An authorization valid <em>on</em> its expiry
+     *       day is valid, so the comparison is {@code expiry.isBefore(date)} — the last day counts
+     *       for the client, which is the direction an ambiguity on an official form should fall.</li>
+     * </ul>
+     */
+    private boolean authorizationExpiredAtHandover(WasteMovement m, Partner partner) {
+        if (partner == null || !m.getOperation().isExit()) {
+            return false;
+        }
+        return partner.getAuthorizationExpiry() != null
+                && m.getDate() != null
+                && partner.getAuthorizationExpiry().isBefore(m.getDate());
     }
 }

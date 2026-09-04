@@ -123,6 +123,15 @@ export interface Company {
   /** null = unitatea în care e înregistrată mișcarea (Anexa 3). */
   anexa3Unit?: Unit | null;
   contactRole?: string | null;
+  /**
+   * Persoana desemnată cu gestiunea deșeurilor — OUG 92/2021 art. 23 alin. (4)-(5). Altceva decât
+   * `contactName`/`contactRole`, care sunt blocul de semnătură al declarației anuale.
+   * `wasteManagerExternal` null = nu s-a răspuns; true = terță persoană delegată (consultantul).
+   */
+  wasteManagerName?: string | null;
+  wasteManagerRole?: string | null;
+  wasteManagerExternal?: boolean | null;
+  wasteManagerTraining?: string | null;
 }
 
 /** Create/update payload for a company (PLATFORM_ADMIN only). */
@@ -152,6 +161,15 @@ export interface CompanyInput {
   /** null = unitatea în care e înregistrată mișcarea (Anexa 3). */
   anexa3Unit?: Unit | null;
   contactRole?: string | null;
+  /**
+   * Persoana desemnată cu gestiunea deșeurilor — OUG 92/2021 art. 23 alin. (4)-(5). Altceva decât
+   * `contactName`/`contactRole`, care sunt blocul de semnătură al declarației anuale.
+   * `wasteManagerExternal` null = nu s-a răspuns; true = terță persoană delegată (consultantul).
+   */
+  wasteManagerName?: string | null;
+  wasteManagerRole?: string | null;
+  wasteManagerExternal?: boolean | null;
+  wasteManagerTraining?: string | null;
 }
 
 // --- Account requests (the intake form) ---
@@ -496,6 +514,14 @@ export interface WasteMovement {
   /** Who performed the operation, when it was not us. Null = on our own site. */
   partnerId: string | null;
   partnerName: string | null;
+  /**
+   * Autorizația de mediu a destinatarului expirase deja la data acestei predări — OUG 92/2021
+   * art. 23 alin. (1). Comparată cu `date`, nu cu ziua de azi: contează dacă operatorul era
+   * autorizat când a plecat deșeul. `false` și când partenerul n-are expirare completată, fiindcă
+   * un câmp gol înseamnă „nu știm", nu „a expirat".
+   */
+  recipientAuthorizationExpired: boolean;
+  recipientAuthorizationExpiry: string | null;
   /** The section it came from — "Secţia" of Anexa 1 cap. 2. */
   internalGeneratorId: string | null;
   internalGeneratorName: string | null;
@@ -649,6 +675,7 @@ export type ReportType =
   | "AFM_MONTHLY"
   | "AFM_QUARTERLY"
   | "AFM_ANNUAL"
+  | "PACKAGING_ANNUAL"
   | "OTHER";
 
 export type DeadlineStatus = "UPCOMING" | "DONE" | "OVERDUE";

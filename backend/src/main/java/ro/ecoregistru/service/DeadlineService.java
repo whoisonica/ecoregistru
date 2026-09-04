@@ -17,14 +17,14 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ReportingDeadlineRepository;
 import ro.ecoregistru.security.TenantContext;
 
-import java.time.Instant;
 import ro.ecoregistru.enums.AfmContribution;
+import ro.ecoregistru.enums.MarketRole;
 
+import java.time.Instant;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
 import java.time.Month;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
@@ -41,6 +41,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
  *  - SIM_ANNUAL — 15 March, for the previous calendar year's data. Generated for every company:
  *    this is the Anexa 1 evidence being filed, and art. 1 alin. (1) HG 856/2002 binds anyone who
  *    generates waste. See {@link ReportType#SIM_ANNUAL} for why there is no separate Anexa 1 type.
+ *  - PACKAGING_ANNUAL — 25 February, the packaging report of Ordinul 794/2012 art. 6, at the
+ *    county environmental agency. Only for a company whose profile says it puts packaging on the
+ *    national market; an unanswered profile gets nothing. See {@link #packagingDeadline}.
  *
  * Generation is additive and idempotent (unique on company+type+due_date): it never deletes,
  * so completion state and warning flags survive a re-run. Effective status (OVERDUE) is derived
@@ -81,8 +84,29 @@ public class DeadlineService {
         created += createIfMissing(company, ReportType.SIM_ANNUAL, LocalDate.of(year, Month.MARCH, 15));
 
         created += afmDeadlines(company, year);
+        created += packagingDeadline(company, year);
 
         return new DeadlineGenerationResponse(year, created);
+    }
+
+    /**
+     * The packaging report of Ordinul 794/2012, due 25 February at the county environmental agency
+     * (art. 1 and art. 6). Audit point 3, built 04.09.2026.
+     *
+     * <p>Only for a company that <em>says</em> it puts packaging on the national market. A profile
+     * with no answer produces nothing: {@link MarketRole#putsPackagingOnMarket(java.util.Collection)}
+     * already returns {@code false} for an empty set, and {@link MarketRole#answered} is asserted
+     * next to it so the intent reads as a decision rather than as a side effect of the default.
+     * A trader gets nothing either — it sells goods somebody else packaged, so it never introduced
+     * the packaging and does not file (Legea 249/2015; see {@link MarketRole}).
+     */
+    private int packagingDeadline(Company company, int year) {
+        Set<MarketRole> roles = company.getMarketRoles();
+        if (!MarketRole.answered(roles) || !MarketRole.putsPackagingOnMarket(roles)) {
+            return 0;
+        }
+        return createIfMissing(company, ReportType.PACKAGING_ANNUAL,
+                LocalDate.of(year, Month.FEBRUARY, 25));
     }
 
     @Transactional

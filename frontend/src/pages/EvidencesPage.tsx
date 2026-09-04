@@ -14,6 +14,7 @@ import { HandoverRegister } from "@/components/HandoverRegister";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { formatTonnes } from "@/lib/units";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +118,36 @@ export function EvidencesPage() {
     () => (yearRows ?? []).filter((r) => r.awaitingWeighing),
     [yearRows]
   );
+
+  /**
+   * Totalul anului per cod de deșeu — ce se încarcă în SIM pe 15 martie, iar OUG 92/2021 art. 48
+   * alin. (1) îl cere **în tone**. Se calculează din rândurile anului, nu din cele filtrate pe
+   * lună: depunerea acoperă anul întreg, oricum ar fi filtrat ecranul (aceeași logică pentru care
+   * `yearRows` există deja, pentru verificarea de dinaintea documentelor).
+   *
+   * Punctul 7 al auditului. Vezi `lib/units.ts` pentru ce nu face: nu mută niciun formular pe tone.
+   */
+  const annualByCode = useMemo(() => {
+    const acc = new Map<
+      string,
+      { wasteCode: string; wasteCodeName: string; hazardous: boolean; generated: number; recovered: number; disposed: number }
+    >();
+    for (const r of yearRows ?? []) {
+      const entry = acc.get(r.wasteCode) ?? {
+        wasteCode: r.wasteCode,
+        wasteCodeName: r.wasteCodeName,
+        hazardous: r.hazardous,
+        generated: 0,
+        recovered: 0,
+        disposed: 0,
+      };
+      entry.generated += r.totalGenerated;
+      entry.recovered += r.totalRecovered;
+      entry.disposed += r.totalDisposed;
+      acc.set(r.wasteCode, entry);
+    }
+    return [...acc.values()].sort((a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"));
+  }, [yearRows]);
   const [pendingDoc, setPendingDoc] = useState<null | "anexa1" | "declaration">(null);
 
   async function handleAnexa1() {
@@ -390,6 +421,49 @@ export function EvidencesPage() {
                 ))}
               </TBody>
             </Table>
+          </div>
+        )}
+
+        {/* Ce se încarcă în SIM pe 15 martie, în unitatea pe care o cere actul. Stă lângă
+            evidența în kg, nu în locul ei: fișa și declarația rămân în kilograme pe hârtie. */}
+        {!isLoading && !isError && annualByCode.length > 0 && (
+          <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <h3 className="text-sm font-semibold text-gray-800">
+              {t.tonnesTitle.replace("{year}", String(year))}
+            </h3>
+            <p className="mt-1 text-xs text-gray-500">{t.tonnesHint}</p>
+            <div className="mt-3 overflow-x-auto">
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>{t.colWasteCode}</TH>
+                    <TH className="text-right">{t.colGeneratedTonnes}</TH>
+                    <TH className="text-right">{t.colRecoveredTonnes}</TH>
+                    <TH className="text-right">{t.colDisposedTonnes}</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {annualByCode.map((r) => (
+                    <TR key={r.wasteCode}>
+                      <TD>
+                        <span className="font-medium text-gray-900">{r.wasteCode}</span>
+                        {r.hazardous && (
+                          <Badge variant="danger" className="ml-2">
+                            {t.hazardous}
+                          </Badge>
+                        )}
+                        <span className="block max-w-xs truncate text-xs text-gray-400">
+                          {r.wasteCodeName}
+                        </span>
+                      </TD>
+                      <TD className="whitespace-nowrap text-right">{formatTonnes(r.generated)}</TD>
+                      <TD className="whitespace-nowrap text-right">{formatTonnes(r.recovered)}</TD>
+                      <TD className="whitespace-nowrap text-right">{formatTonnes(r.disposed)}</TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+            </div>
           </div>
         )}
           </>

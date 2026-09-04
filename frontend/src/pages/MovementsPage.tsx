@@ -342,7 +342,27 @@ export function MovementsPage() {
                       </Badge>
                     )}
                   </TD>
-                  <TD>{m.partnerName || "—"}</TD>
+                  <TD>
+                    {m.partnerName || "—"}
+                    {/* Galben, nu roșu: predarea chiar a avut loc, iar rândul nu e greșit — spre
+                        deosebire de UNCLASSIFIED_OUT de mai sus, care nu intră în nicio coloană
+                        oficială. Aici lipsește o condiție de legalitate a predării (OUG 92/2021
+                        art. 23 alin. (1)), pe care clientul o poate lămuri cu partenerul; e
+                        aceeași familie cu „De cântărit". */}
+                    {m.recipientAuthorizationExpired && (
+                      <Badge
+                        variant="warning"
+                        className="mt-0.5 block w-fit"
+                        title={t.authExpiredAtHandoverHint(
+                          m.recipientAuthorizationExpiry
+                            ? formatDate(m.recipientAuthorizationExpiry)
+                            : null,
+                        )}
+                      >
+                        {t.authExpiredAtHandover}
+                      </Badge>
+                    )}
+                  </TD>
                   <TD>{m.internalGeneratorName || "—"}</TD>
                   <TD>{m.workPointName}</TD>
                   <TD className="text-center">

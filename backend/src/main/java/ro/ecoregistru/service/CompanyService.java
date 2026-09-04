@@ -151,6 +151,12 @@ public class CompanyService {
         // the movement was recorded in.
         company.setAnexa3Unit(request.anexa3Unit());
         company.setContactRole(blankToNull(request.contactRole()));
+        company.setWasteManagerName(blankToNull(request.wasteManagerName()));
+        company.setWasteManagerRole(blankToNull(request.wasteManagerRole()));
+        // Boolean, not boolean: null means the question was never put, and that is different from
+        // "an employee, not a third party". Only the client may turn one into the other.
+        company.setWasteManagerExternal(request.wasteManagerExternal());
+        company.setWasteManagerTraining(blankToNull(request.wasteManagerTraining()));
         company.setTradeRegisterNumber(blankToNull(request.tradeRegisterNumber()));
         company.setAnexa3Series(blankToNull(request.anexa3Series()));
         company.setTransportMeans(blankToNull(request.transportMeans()));
@@ -189,6 +195,8 @@ public class CompanyService {
                         .toList(),
                 c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry(),
                 c.getTradeRegisterNumber(), c.getAnexa3Series(),
-                c.getCaenCode(), c.getAnexa3Unit(), c.getContactRole());
+                c.getCaenCode(), c.getAnexa3Unit(), c.getContactRole(),
+                c.getWasteManagerName(), c.getWasteManagerRole(),
+                c.getWasteManagerExternal(), c.getWasteManagerTraining());
     }
 }

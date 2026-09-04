@@ -52,6 +52,23 @@ public record WasteMovementResponse(
         WasteOperationCode operationCode,
         UUID partnerId,
         String partnerName,
+        /**
+         * True when the recipient's environmental authorization had already expired on the day of
+         * this movement — OUG 92/2021 art. 23 alin. (1), which requires the handover to go to an
+         * <em>authorized</em> operator. Compared against {@link #date()}, not against today: the
+         * question the form answers is whether the operator was authorized when the waste left,
+         * and a partner whose paperwork has lapsed since does not make last year's handover wrong.
+         *
+         * <p>False when the partner has no expiry recorded at all — an empty field is "we do not
+         * know", and regula de lucru 1 forbids turning that into an accusation.
+         *
+         * <p>It is a warning, never a refusal, and it is shown on screen only. See
+         * {@code WasteMovementService#renderAnexa3} for why the form still prints, and why the
+         * warning must not be printed on it.
+         */
+        boolean recipientAuthorizationExpired,
+        /** The recipient's authorization expiry, so the screen can name the date it warns about. */
+        LocalDate recipientAuthorizationExpiry,
         UUID internalGeneratorId,
         /** Printed as "Secţia" in Anexa 1 cap. 2; null when the movement predates the notion. */
         String internalGeneratorName,
