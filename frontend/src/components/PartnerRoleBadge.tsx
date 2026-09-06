@@ -26,7 +26,7 @@ export function partnerRoleLabel(p: PartnerRole): string {
 const ROLE_CLASSES = {
   client: "bg-emerald-100 text-emerald-800 ring-emerald-200",
   supplier: "bg-amber-100 text-amber-800 ring-amber-200",
-  none: "bg-gray-100 text-gray-500 ring-gray-200",
+  none: "bg-surface-sunken text-content-muted ring-line",
 } as const;
 
 function Chip({ label, tone }: { label: string; tone: keyof typeof ROLE_CLASSES }) {

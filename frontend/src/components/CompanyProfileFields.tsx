@@ -45,20 +45,20 @@ export function MarketRolePicker({
 
   return (
     <div>
-      <span className="block text-sm font-medium text-gray-700">{label}</span>
-      <p className="text-xs text-gray-500">{hint}</p>
-      <div className="mt-2 space-y-2 rounded-md border border-gray-200 p-3">
+      <span className="block text-sm font-medium text-content-strong">{label}</span>
+      <p className="text-xs text-content-muted">{hint}</p>
+      <div className="mt-2 space-y-2 rounded-md border border-line p-3">
         {MARKET_ROLES.map((role) => (
           <label key={role} className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              className="mt-0.5 h-4 w-4 rounded border-line-strong"
               checked={value.includes(role)}
               onChange={() => toggle(role)}
             />
             <span>
-              <span className="font-medium text-gray-800">{marketRoleLabels[role]}</span>
-              <span className="block text-xs text-gray-500">{marketRoleHints[role]}</span>
+              <span className="font-medium text-content-strong">{marketRoleLabels[role]}</span>
+              <span className="block text-xs text-content-muted">{marketRoleHints[role]}</span>
             </span>
           </label>
         ))}
@@ -107,7 +107,7 @@ function CodeGroup({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">{title}</span>
         <button
           type="button"
           className="text-xs text-blue-600 hover:underline"
@@ -122,16 +122,16 @@ function CodeGroup({
           {allSelected ? t.clearAll : t.selectAll}
         </button>
       </div>
-      <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
+      <div className="mt-1 max-h-44 space-y-1 overflow-y-auto rounded-md border border-line p-2">
         {codes.map((c) => (
           <label key={c} className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+              className="mt-0.5 h-4 w-4 rounded border-line-strong"
               checked={selected.includes(c)}
               onChange={() => onToggle(c)}
             />
-            <span className="text-gray-700">{codeLabels[c]}</span>
+            <span className="text-content-strong">{codeLabels[c]}</span>
           </label>
         ))}
       </div>
@@ -176,10 +176,10 @@ export function CompanyProfileFields({
   const asksTransport = companyType !== "GENERATOR";
 
   return (
-    <div className="space-y-5 border-t border-gray-200 pt-5">
+    <div className="space-y-5 border-t border-line pt-5">
       <div>
-        <h3 className="text-sm font-semibold text-gray-900">{t.title}</h3>
-        <p className="mt-1 text-xs text-gray-500">{t.subtitle}</p>
+        <h3 className="text-sm font-semibold text-content">{t.title}</h3>
+        <p className="mt-1 text-xs text-content-muted">{t.subtitle}</p>
       </div>
 
       <MarketRolePicker
@@ -190,8 +190,8 @@ export function CompanyProfileFields({
       />
 
       <div>
-        <span className="block text-sm font-medium text-gray-700">{t.operationCodes}</span>
-        <p className="text-xs text-gray-500">{t.operationCodesHint}</p>
+        <span className="block text-sm font-medium text-content-strong">{t.operationCodes}</span>
+        <p className="text-xs text-content-muted">{t.operationCodesHint}</p>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
           <CodeGroup
             title={t.recovery}
@@ -224,7 +224,7 @@ export function CompanyProfileFields({
 
       <div>
         <Label htmlFor="cp-waste-codes">{t.wasteCodes}</Label>
-        <p className="text-xs text-gray-500">{t.wasteCodesHint}</p>
+        <p className="text-xs text-content-muted">{t.wasteCodesHint}</p>
         <div className="mt-2">
           <Combobox
             id="cp-waste-codes"
@@ -242,13 +242,13 @@ export function CompanyProfileFields({
             {value.authorizedWasteCodes.map((w) => (
               <span
                 key={w.id}
-                className="inline-flex items-center gap-1 rounded-full bg-gray-100 py-0.5 pl-2.5 pr-1 text-xs text-gray-700"
+                className="inline-flex items-center gap-1 rounded-full bg-surface-sunken py-0.5 pl-2.5 pr-1 text-xs text-content-strong"
               >
                 {w.code}
                 <button
                   type="button"
                   aria-label={t.removeWasteCode}
-                  className="rounded-full p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+                  className="rounded-full p-0.5 text-content-subtle hover:bg-surface-sunken hover:text-content-strong"
                   onClick={() =>
                     patch({
                       authorizedWasteCodes: value.authorizedWasteCodes.filter((x) => x.id !== w.id),
@@ -265,7 +265,7 @@ export function CompanyProfileFields({
 
       {asksTransport && (
         <div className="space-y-3">
-          <span className="block text-sm font-medium text-gray-700">{t.transport}</span>
+          <span className="block text-sm font-medium text-content-strong">{t.transport}</span>
           <div>
             <Label htmlFor="cp-transport-means">{t.transportMeans}</Label>
             <Textarea

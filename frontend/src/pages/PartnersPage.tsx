@@ -48,7 +48,7 @@ type RoleFilter = "" | "client" | "supplier" | "none" | "carrier";
 /** Formats an authorization expiry as a status badge, mirroring backend `expiringSoon`. */
 function ExpiryBadge({ partner }: { partner: Partner }) {
   if (!partner.authorizationExpiry) {
-    return <span className="text-gray-400">{t.noAuthorization}</span>;
+    return <span className="text-content-subtle">{t.noAuthorization}</span>;
   }
   const date = partner.authorizationExpiry;
   const isExpired = new Date(date) < new Date(new Date().toDateString());
@@ -341,7 +341,7 @@ export function PartnersPage() {
               )}
               {visiblePartners.map((p) => (
                 <TR key={p.id}>
-                  <TD className="font-medium text-gray-900">{p.name}</TD>
+                  <TD className="font-medium text-content">{p.name}</TD>
                   <TD>{p.cui || "—"}</TD>
                   <TD>
                     <PartnerRoleBadge partner={p} />
@@ -350,14 +350,14 @@ export function PartnersPage() {
                     {p.type ? (
                       typeLabels[p.type]
                     ) : (
-                      <span className="text-gray-500">{t.typeNoneShort}</span>
+                      <span className="text-content-muted">{t.typeNoneShort}</span>
                     )}
                   </TD>
                   <TD>
                     {p.carrier ? (
                       <Badge variant="muted">{t.carrierYes}</Badge>
                     ) : (
-                      <span className="text-gray-400">{t.carrierNo}</span>
+                      <span className="text-content-subtle">{t.carrierNo}</span>
                     )}
                   </TD>
                   <TD>{p.authorizationNumber || "—"}</TD>
@@ -450,12 +450,12 @@ export function PartnersPage() {
             )}
           </div>
           <div>
-            <span className="block text-sm font-medium text-gray-700">{t.role}</span>
+            <span className="block text-sm font-medium text-content-strong">{t.role}</span>
             <div className="mt-2 space-y-2">
               <label className="flex items-start gap-2 text-sm">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600"
+                  className="mt-0.5 h-4 w-4 rounded border-line-strong text-emerald-600"
                   checked={isClient}
                   onChange={(ev) => {
                     setIsClient(ev.target.checked);
@@ -464,13 +464,13 @@ export function PartnersPage() {
                 />
                 <span>
                   <span className="font-medium text-emerald-800">{roleLabels.client}</span>
-                  <span className="block text-xs text-gray-500">{roleLabels.clientHint}</span>
+                  <span className="block text-xs text-content-muted">{roleLabels.clientHint}</span>
                 </span>
               </label>
               <label className="flex items-start gap-2 text-sm">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600"
+                  className="mt-0.5 h-4 w-4 rounded border-line-strong text-amber-600"
                   checked={isSupplier}
                   onChange={(ev) => {
                     setIsSupplier(ev.target.checked);
@@ -479,7 +479,7 @@ export function PartnersPage() {
                 />
                 <span>
                   <span className="font-medium text-amber-800">{roleLabels.supplier}</span>
-                  <span className="block text-xs text-gray-500">{roleLabels.supplierHint}</span>
+                  <span className="block text-xs text-content-muted">{roleLabels.supplierHint}</span>
                 </span>
               </label>
             </div>
@@ -502,7 +502,7 @@ export function PartnersPage() {
               ))}
               <option value="">{t.typeNone}</option>
             </Select>
-            {!type && <p className="mt-1 text-xs text-gray-500">{t.typeNoneHint}</p>}
+            {!type && <p className="mt-1 text-xs text-content-muted">{t.typeNoneHint}</p>}
             {typeError && <p className="mt-1 text-xs text-red-600">{t.typeRequired}</p>}
           </div>
 
@@ -521,14 +521,14 @@ export function PartnersPage() {
               <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
               <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
             </Select>
-            <p className="mt-1 text-xs text-gray-500">{strings.packagingOrigin.hintPartner}</p>
+            <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
           </div>
 
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+          <div className="rounded-md border border-line bg-surface-muted p-3">
             <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-sky-600"
+                className="mt-0.5 h-4 w-4 rounded border-line-strong text-sky-600"
                 checked={isCarrier}
                 onChange={(ev) => {
                   setIsCarrier(ev.target.checked);
@@ -537,12 +537,12 @@ export function PartnersPage() {
               />
               <span>
                 <span className="font-medium text-sky-800">{t.carrier}</span>
-                <span className="block text-xs text-gray-500">{t.carrierHint}</span>
+                <span className="block text-xs text-content-muted">{t.carrierHint}</span>
               </span>
             </label>
 
             {isCarrier && (
-              <div className="mt-3 space-y-3 border-t border-gray-200 pt-3">
+              <div className="mt-3 space-y-3 border-t border-line pt-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
@@ -562,8 +562,8 @@ export function PartnersPage() {
                   </div>
                 </div>
                 <div>
-                  <span className="block text-sm font-medium text-gray-700">{t.drivers}</span>
-                  <p className="mt-0.5 text-xs text-gray-500">{t.driversHint}</p>
+                  <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
+                  <p className="mt-0.5 text-xs text-content-muted">{t.driversHint}</p>
                   <div className="mt-2 space-y-2">
                     {drivers.map((d, index) => (
                       <div key={d.id ?? `new-${index}`} className="flex items-end gap-2">
@@ -668,15 +668,15 @@ export function PartnersPage() {
             />
           </div>
 
-          <div className="space-y-4 border-t border-gray-200 pt-4">
-            <p className="text-xs text-gray-500">{t.anexa3Hint}</p>
+          <div className="space-y-4 border-t border-line pt-4">
+            <p className="text-xs text-content-muted">{t.anexa3Hint}</p>
             <div>
               <Label htmlFor="p-address">{t.address}</Label>
               <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
             </div>
             <div>
-              <span className="block text-sm font-medium text-gray-700">{t.workPoints}</span>
-              <p className="mt-0.5 text-xs text-gray-500">{t.workPointsHint}</p>
+              <span className="block text-sm font-medium text-content-strong">{t.workPoints}</span>
+              <p className="mt-0.5 text-xs text-content-muted">{t.workPointsHint}</p>
               <div className="mt-2 space-y-2">
                 {workPoints.map((wp, index) => (
                   <div key={wp.id ?? `new-${index}`} className="flex items-end gap-2">

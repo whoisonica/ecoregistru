@@ -44,7 +44,7 @@ export function AwaitingWeighingDialog({
       }
     >
       <div className="space-y-3">
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-content-strong">
           {t.body.replace("{count}", String(lines.length))}
         </p>
         <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -57,7 +57,7 @@ export function AwaitingWeighingDialog({
             <li className="text-amber-700">{t.andMore.replace("{count}", String(rest))}</li>
           )}
         </ul>
-        <p className="text-xs text-gray-500">{t.hint}</p>
+        <p className="text-xs text-content-muted">{t.hint}</p>
       </div>
     </Dialog>
   );

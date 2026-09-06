@@ -125,7 +125,7 @@ export function SettingsPage() {
       />
 
       <section className="mt-6">
-        <h2 className="mb-3 text-lg font-semibold text-gray-900">{t.title}</h2>
+        <h2 className="mb-3 text-lg font-semibold text-content">{t.title}</h2>
 
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
@@ -159,7 +159,7 @@ export function SettingsPage() {
               )}
               {(workPoints ?? []).map((wp) => (
                 <TR key={wp.id}>
-                  <TD className="font-medium text-gray-900">{wp.name}</TD>
+                  <TD className="font-medium text-content">{wp.name}</TD>
                   <TD>{wp.address || "—"}</TD>
                   <TD>
                     {wp.active ? (

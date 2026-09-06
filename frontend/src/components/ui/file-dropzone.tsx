@@ -46,12 +46,12 @@ export function FileDropzone({ files, onChange, hint, disabled = false }: FileDr
         onDrop={onDrop}
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-4 py-5 text-center text-sm transition-colors",
-          dragging ? "border-brand bg-brand-muted" : "border-gray-300 bg-gray-50 hover:bg-gray-100",
+          dragging ? "border-brand bg-brand-muted" : "border-line-strong bg-surface-muted hover:bg-surface-sunken",
           disabled && "cursor-not-allowed opacity-50"
         )}
       >
-        <UploadCloud className="h-5 w-5 text-gray-400" />
-        <span className="text-gray-500">{hint ?? "Trage fișiere aici sau apasă pentru a alege"}</span>
+        <UploadCloud className="h-5 w-5 text-content-subtle" />
+        <span className="text-content-muted">{hint ?? "Trage fișiere aici sau apasă pentru a alege"}</span>
         <input
           ref={inputRef}
           type="file"
@@ -70,16 +70,16 @@ export function FileDropzone({ files, onChange, hint, disabled = false }: FileDr
           {files.map((file, index) => (
             <li
               key={`${file.name}-${index}`}
-              className="flex items-center justify-between gap-2 rounded border border-gray-200 px-2 py-1 text-sm"
+              className="flex items-center justify-between gap-2 rounded border border-line px-2 py-1 text-sm"
             >
               <span className="flex min-w-0 items-center gap-2">
-                <Paperclip className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                <span className="truncate text-gray-700">{file.name}</span>
+                <Paperclip className="h-3.5 w-3.5 shrink-0 text-content-subtle" />
+                <span className="truncate text-content-strong">{file.name}</span>
               </span>
               <button
                 type="button"
                 onClick={() => removeAt(index)}
-                className="shrink-0 text-gray-400 hover:text-red-600"
+                className="shrink-0 text-content-subtle hover:text-red-600"
                 aria-label="Elimină fișierul"
               >
                 <X className="h-4 w-4" />

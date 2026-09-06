@@ -171,7 +171,7 @@ export function DeadlinesPage() {
                 )}
                 {rows.map((d) => (
                   <TR key={d.id}>
-                    <TD className="font-medium text-gray-900">
+                    <TD className="font-medium text-content">
                       {strings.enums.reportType[d.reportType]}
                     </TD>
                     <TD className="whitespace-nowrap">{formatDate(d.dueDate)}</TD>
@@ -180,7 +180,7 @@ export function DeadlinesPage() {
                         {strings.enums.deadlineStatus[d.status]}
                       </Badge>
                     </TD>
-                    <TD className="max-w-xs truncate text-gray-500">
+                    <TD className="max-w-xs truncate text-content-muted">
                       {d.completionNote ?? "—"}
                     </TD>
                     {canManage && (
@@ -228,8 +228,8 @@ export function DeadlinesPage() {
       >
         {completing && (
           <div className="space-y-3">
-            <div className="text-sm text-gray-600">
-              <span className="font-medium text-gray-900">
+            <div className="text-sm text-content-strong">
+              <span className="font-medium text-content">
                 {strings.enums.reportType[completing.reportType]}
               </span>
               {" — "}

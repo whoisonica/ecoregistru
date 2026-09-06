@@ -281,7 +281,7 @@ export function EvidencesPage() {
       )}
 
       {/* Filters */}
-      <div className="mt-6 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+      <div className="mt-6 inline-flex rounded-lg border border-line bg-surface-muted p-0.5">
         {(["handovers", "monthly"] as const).map((v) => (
           <button
             key={v}
@@ -289,8 +289,8 @@ export function EvidencesPage() {
             onClick={() => setView(v)}
             className={
               view === v
-                ? "rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm"
-                : "rounded-md px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                ? "rounded-md bg-white px-3 py-1.5 text-sm font-medium text-content shadow-sm"
+                : "rounded-md px-3 py-1.5 text-sm text-content-muted hover:text-content-strong"
             }
           >
             {v === "handovers" ? t.viewHandovers : t.viewMonthly}
@@ -395,7 +395,7 @@ export function EvidencesPage() {
                     <TD>{r.workPointName}</TD>
                     <TD className="whitespace-nowrap">{monthName(r.month)}</TD>
                     <TD>
-                      <span className="font-medium text-gray-900">{r.wasteCode}</span>
+                      <span className="font-medium text-content">{r.wasteCode}</span>
                       {r.hazardous && (
                         <Badge variant="danger" className="ml-2">
                           {t.hazardous}
@@ -415,7 +415,7 @@ export function EvidencesPage() {
                           </Badge>
                         </Tooltip>
                       )}
-                      <span className="block max-w-xs truncate text-xs text-gray-400">
+                      <span className="block max-w-xs truncate text-xs text-content-subtle">
                         {r.wasteCodeName}
                       </span>
                     </TD>
@@ -424,7 +424,7 @@ export function EvidencesPage() {
                     <TD className="text-right">{kg(r.totalDisposed)}</TD>
                     <TD
                       className={`text-right ${
-                        r.totalUnclassifiedOut > 0 ? "font-medium text-red-600" : "text-gray-400"
+                        r.totalUnclassifiedOut > 0 ? "font-medium text-red-600" : "text-content-subtle"
                       }`}
                       title={r.totalUnclassifiedOut > 0 ? t.missingCodeHint : undefined}
                     >
@@ -432,7 +432,7 @@ export function EvidencesPage() {
                     </TD>
                     <TD
                       className={`text-right font-medium ${
-                        r.closingStock < 0 ? "text-red-600" : "text-gray-900"
+                        r.closingStock < 0 ? "text-red-600" : "text-content"
                       }`}
                     >
                       {kg(r.closingStock)}
@@ -447,11 +447,11 @@ export function EvidencesPage() {
         {/* Ce se încarcă în SIM pe 15 martie, în unitatea pe care o cere actul. Stă lângă
             evidența în kg, nu în locul ei: fișa și declarația rămân în kilograme pe hârtie. */}
         {!isLoading && annualByCode.length > 0 && (
-          <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h3 className="text-sm font-semibold text-gray-800">
+          <div className="mt-8 rounded-lg border border-line bg-surface-muted p-4">
+            <h3 className="text-sm font-semibold text-content-strong">
               {t.tonnesTitle.replace("{year}", String(year))}
             </h3>
-            <p className="mt-1 text-xs text-gray-500">{t.tonnesHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.tonnesHint}</p>
             <div className="mt-3 overflow-x-auto">
               <Table>
                 <THead>
@@ -466,13 +466,13 @@ export function EvidencesPage() {
                   {annualByCode.map((r) => (
                     <TR key={r.wasteCode}>
                       <TD>
-                        <span className="font-medium text-gray-900">{r.wasteCode}</span>
+                        <span className="font-medium text-content">{r.wasteCode}</span>
                         {r.hazardous && (
                           <Badge variant="danger" className="ml-2">
                             {t.hazardous}
                           </Badge>
                         )}
-                        <span className="block max-w-xs truncate text-xs text-gray-400">
+                        <span className="block max-w-xs truncate text-xs text-content-subtle">
                           {r.wasteCodeName}
                         </span>
                       </TD>

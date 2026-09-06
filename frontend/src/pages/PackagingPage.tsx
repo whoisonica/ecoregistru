@@ -303,12 +303,12 @@ export function PackagingPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">{t.registerTitle}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.registerHint}</p>
+            <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.registerHint}</p>
           </div>
           {canWrite && (
             <Link
               to="/miscari"
-              className="inline-flex h-10 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex h-10 items-center rounded-md border border-line-strong px-4 text-sm font-medium text-content-strong hover:bg-surface-muted"
             >
               <Plus className="mr-2 h-4 w-4" />
               {t.addMovement}
@@ -345,7 +345,7 @@ export function PackagingPage() {
                   key={m.id}
                   className={
                     m.register === "ART_48" || m.packagingOnMarket === false
-                      ? "text-gray-400"
+                      ? "text-content-subtle"
                       : unclassifiedIds.has(m.id)
                         ? "bg-amber-50/60"
                         : undefined
@@ -358,7 +358,7 @@ export function PackagingPage() {
                       <>
                         {materialLabels[m.effectivePackagingMaterial]}
                         {m.packagingMaterial == null && (
-                          <span className="ml-1 text-xs text-gray-400">({t.fromCode})</span>
+                          <span className="ml-1 text-xs text-content-subtle">({t.fromCode})</span>
                         )}
                       </>
                     ) : (
@@ -370,10 +370,10 @@ export function PackagingPage() {
                       <>
                         {categoryLabels[m.packagingCategory]}
                         {m.packagingReusable && (
-                          <span className="ml-1 text-xs text-gray-500">· reutilizabil</span>
+                          <span className="ml-1 text-xs text-content-muted">· reutilizabil</span>
                         )}
                         {m.packagingHazardousContent && (
-                          <span className="ml-1 text-xs text-gray-500">· periculos</span>
+                          <span className="ml-1 text-xs text-content-muted">· periculos</span>
                         )}
                       </>
                     ) : (
@@ -409,7 +409,7 @@ export function PackagingPage() {
                         <Badge variant="warning">{t.inAnexa1Legacy}</Badge>
                       </Tooltip>
                     ) : (
-                      <span className="text-xs text-gray-500">{t.inAnexa1Yes}</span>
+                      <span className="text-xs text-content-muted">{t.inAnexa1Yes}</span>
                     )}
                   </TD>
                   {/* Mişcările pe marfă preluată apar în registru fiindcă sunt ambalaj, dar nu
@@ -421,7 +421,7 @@ export function PackagingPage() {
                         <Badge variant="muted">{t.originTakeoverShort}</Badge>
                       </Tooltip>
                     ) : (
-                      <span className="text-xs text-gray-500">{t.originOwnShort}</span>
+                      <span className="text-xs text-content-muted">{t.originOwnShort}</span>
                     )}
                   </TD>
                   <TD>{m.workPointName}</TD>
@@ -435,7 +435,7 @@ export function PackagingPage() {
       {/* ---- Tabelul 1, însumat din registrul de mai sus ---- */}
       <section className="mt-10">
         <h2 className="text-lg font-semibold">{t.table1Title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.table1Hint}</p>
+        <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table1Hint}</p>
         <div className="mt-3 overflow-x-auto">
           <Table>
             <THead>
@@ -467,7 +467,7 @@ export function PackagingPage() {
                           )}
                         </TD>
                         <TD className="text-right">{kg(row?.salesPackaging)}</TD>
-                        <TD className="text-right text-gray-500">{kg(packagedGoodsTotal(row))}</TD>
+                        <TD className="text-right text-content-muted">{kg(packagedGoodsTotal(row))}</TD>
                         <TD className="text-right">{kg(row?.primaryTotal)}</TD>
                         <TD className="text-right">{kg(row?.primaryReusable)}</TD>
                         <TD className="text-right">{kg(row?.secondaryTotal)}</TD>
@@ -495,9 +495,9 @@ export function PackagingPage() {
               {overridesOpen ? t.overrideClose : t.overrideOpen}
             </button>
             {overridesOpen && (
-              <div className="mt-3 rounded-lg border border-gray-200 p-4">
-                <p className="max-w-3xl text-sm text-gray-500">{t.table1Override}</p>
-                <p className="mt-1 text-xs text-gray-400">{t.overrideClear}</p>
+              <div className="mt-3 rounded-lg border border-line p-4">
+                <p className="max-w-3xl text-sm text-content-muted">{t.table1Override}</p>
+                <p className="mt-1 text-xs text-content-subtle">{t.overrideClear}</p>
                 <div className="mt-3 overflow-x-auto">
                   <Table>
                     <THead>
@@ -544,7 +544,7 @@ export function PackagingPage() {
       {/* ---- Tabelul 2, calculat din predări ---- */}
       <section className="mt-10">
         <h2 className="text-lg font-semibold">{t.table2Title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.table2Hint}</p>
+        <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table2Hint}</p>
         <div className="mt-3 overflow-x-auto">
           <Table>
             <THead>
@@ -567,7 +567,7 @@ export function PackagingPage() {
                   <TD>
                     {row.operatorName}
                     {row.operatorAddress ? (
-                      <span className="block text-xs text-gray-500">{row.operatorAddress}</span>
+                      <span className="block text-xs text-content-muted">{row.operatorAddress}</span>
                     ) : null}
                   </TD>
                   <TD>{row.operatorCui ?? "—"}</TD>
@@ -631,8 +631,8 @@ function Anexa3Section({ year }: { year: number }) {
     <section className="mt-10">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
-          <h2 className="text-lg font-semibold text-gray-900">{t.anexa3Title}</h2>
-          <p className="mt-1 text-sm text-gray-500">{t.anexa3Hint}</p>
+          <h2 className="text-lg font-semibold text-content">{t.anexa3Title}</h2>
+          <p className="mt-1 text-sm text-content-muted">{t.anexa3Hint}</p>
         </div>
         <div className="flex items-end gap-2">
           <div>
@@ -664,7 +664,7 @@ function Anexa3Section({ year }: { year: number }) {
           </Button>
         </div>
       </div>
-      <p className="mt-1 text-xs text-gray-500">{t.anexa3WorkPointHint}</p>
+      <p className="mt-1 text-xs text-content-muted">{t.anexa3WorkPointHint}</p>
       {data?.printable && workPointId === "" && (
         <p className="mt-1 text-xs text-amber-700">{t.anexa3PickWorkPoint}</p>
       )}
@@ -694,7 +694,7 @@ function Anexa3Section({ year }: { year: number }) {
 
       {data?.printable && (
         <>
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-sm text-content-strong">
             <span className="font-medium">
               {table2 ? t.anexa3Table2Title : t.anexa3Table1Title}
             </span>
@@ -722,8 +722,8 @@ function Anexa3Section({ year }: { year: number }) {
           )}
 
           <div className="mt-3 overflow-x-auto">
-            <h3 className="text-sm font-semibold text-gray-800">{t.anexa3IntakeTitle}</h3>
-            <p className="mb-2 text-xs text-gray-500">{t.anexa3IntakeHint}</p>
+            <h3 className="text-sm font-semibold text-content-strong">{t.anexa3IntakeTitle}</h3>
+            <p className="mb-2 text-xs text-content-muted">{t.anexa3IntakeHint}</p>
             <Table>
               <THead>
                 <TR>
@@ -736,7 +736,7 @@ function Anexa3Section({ year }: { year: number }) {
               <TBody>
                 {data.intake.length === 0 && (
                   <TR>
-                    <TD colSpan={4} className="text-gray-500">
+                    <TD colSpan={4} className="text-content-muted">
                       {t.anexa3Empty}
                     </TD>
                   </TR>
@@ -754,8 +754,8 @@ function Anexa3Section({ year }: { year: number }) {
           </div>
 
           <div className="mt-6 overflow-x-auto">
-            <h3 className="text-sm font-semibold text-gray-800">{t.anexa3OutTitle}</h3>
-            {table2 && <p className="mb-2 text-xs text-gray-500">{t.anexa3RecyclingHint}</p>}
+            <h3 className="text-sm font-semibold text-content-strong">{t.anexa3OutTitle}</h3>
+            {table2 && <p className="mb-2 text-xs text-content-muted">{t.anexa3RecyclingHint}</p>}
             <Table>
               <THead>
                 <TR>
@@ -791,14 +791,14 @@ function Anexa3Section({ year }: { year: number }) {
                         <TD>
                           {row.operatorName ?? "—"}
                           {row.operatorCui ? (
-                            <span className="block text-xs text-gray-500">{row.operatorCui}</span>
+                            <span className="block text-xs text-content-muted">{row.operatorCui}</span>
                           ) : null}
                         </TD>
                       </TR>
                     ))}
                 {(table2 ? data.treatments : data.handovers).length === 0 && (
                   <TR>
-                    <TD colSpan={table2 ? 4 : 3} className="text-gray-500">
+                    <TD colSpan={table2 ? 4 : 3} className="text-content-muted">
                       {t.noHandovers}
                     </TD>
                   </TR>
@@ -807,7 +807,7 @@ function Anexa3Section({ year }: { year: number }) {
             </Table>
           </div>
 
-          <p className="mt-3 text-xs text-gray-500">{t.anexa3DownloadHint}</p>
+          <p className="mt-3 text-xs text-content-muted">{t.anexa3DownloadHint}</p>
         </>
       )}
     </section>
@@ -833,7 +833,7 @@ function sumRow(rows: PackagingTable1Row[], label: string, parts: PackagingMater
     (r) => r.hazardousContent,
   ];
   return (
-    <TR className="bg-gray-50">
+    <TR className="bg-surface-muted">
       <TD className="font-semibold">{label}</TD>
       {columns.map((pick, i) => (
         <TD key={i} className="text-right font-semibold">

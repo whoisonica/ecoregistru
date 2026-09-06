@@ -305,14 +305,14 @@ export function ClientsPage() {
               )}
               {(companies ?? []).map((c) => (
                 <TR key={c.id}>
-                  <TD className="font-medium text-gray-900">{c.name}</TD>
+                  <TD className="font-medium text-content">{c.name}</TD>
                   <TD>{c.cui}</TD>
                   <TD>{typeLabels[c.type]}</TD>
                   <TD>
                     {c.afmObligation ? (
                       <Badge variant="warning">{t.afmYes}</Badge>
                     ) : (
-                      <span className="text-gray-400">{t.afmNo}</span>
+                      <span className="text-content-subtle">{t.afmNo}</span>
                     )}
                   </TD>
                   <TD>
@@ -405,15 +405,15 @@ export function ClientsPage() {
               </Select>
             </div>
           </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <span className="block text-sm font-medium text-gray-700">{t.afmContributions}</span>
-            <p className="mt-0.5 text-xs text-gray-500">{t.afmContributionsHint}</p>
+          <div className="rounded-md border border-line bg-surface-muted p-3">
+            <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
+            <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>
             <div className="mt-2 space-y-2">
               {AFM_CONTRIBUTIONS.map((contribution) => (
                 <label key={contribution} className="flex items-start gap-2 text-sm">
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
                     checked={afmContributions.includes(contribution)}
                     onChange={() =>
                       setAfmContributions((prev) =>
@@ -424,10 +424,10 @@ export function ClientsPage() {
                     }
                   />
                   <span>
-                    <span className="font-medium text-gray-800">
+                    <span className="font-medium text-content-strong">
                       {strings.enums.afmContribution[contribution]}
                     </span>
-                    <span className="block text-xs text-gray-500">
+                    <span className="block text-xs text-content-muted">
                       {strings.enums.afmContribution[`${contribution}_HINT`]}
                     </span>
                   </span>
@@ -435,10 +435,10 @@ export function ClientsPage() {
               ))}
             </div>
             {afmContributions.length === 0 && (
-              <label className="mt-3 flex items-center gap-2 border-t border-gray-200 pt-2 text-sm text-gray-700">
+              <label className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-sm text-content-strong">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                  className="h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
                   checked={afmObligation}
                   onChange={(e) => setAfmObligation(e.target.checked)}
                 />
@@ -496,7 +496,7 @@ export function ClientsPage() {
                 onChange={(e) => setCaenCode(e.target.value)}
                 placeholder={t.caenCodePlaceholder}
               />
-              <p className="mt-1 text-xs text-gray-500">{t.caenCodeHint}</p>
+              <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
             </div>
             <div>
               <Label htmlFor="c-a3unit">{t.anexa3Unit}</Label>
@@ -509,7 +509,7 @@ export function ClientsPage() {
                 <option value="KG">{t.anexa3UnitKg}</option>
                 <option value="TONS">{t.anexa3UnitTons}</option>
               </Select>
-              <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
+              <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
             </div>
             <div className="col-span-2">
               <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
@@ -528,7 +528,7 @@ export function ClientsPage() {
                   {strings.packagingOperatorRole.VALORIFICATOR}
                 </option>
               </Select>
-              <p className="mt-1 text-xs text-gray-500">{strings.packagingOperatorRole.hint}</p>
+              <p className="mt-1 text-xs text-content-muted">{strings.packagingOperatorRole.hint}</p>
             </div>
             <div>
               <Label htmlFor="c-contact-role">{t.contactRole}</Label>
@@ -538,15 +538,15 @@ export function ClientsPage() {
                 onChange={(e) => setContactRole(e.target.value)}
                 placeholder={t.contactRolePlaceholder}
               />
-              <p className="mt-1 text-xs text-gray-500">{t.contactRoleHint}</p>
+              <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
             </div>
           </div>
 
           {/* Persoana desemnată cu gestiunea deșeurilor — bloc separat, fiindcă e altceva decât
               persoana de contact de mai sus și se confundă ușor cu ea. */}
-          <div className="rounded-lg border border-gray-200 p-3">
-            <p className="text-sm font-semibold text-gray-800">{t.wasteManagerTitle}</p>
-            <p className="mt-1 text-xs text-gray-500">{t.wasteManagerHint}</p>
+          <div className="rounded-lg border border-line p-3">
+            <p className="text-sm font-semibold text-content-strong">{t.wasteManagerTitle}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.wasteManagerHint}</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
@@ -588,7 +588,7 @@ export function ClientsPage() {
                   onChange={(e) => setWasteManagerTraining(e.target.value)}
                   placeholder={t.wasteManagerTrainingPlaceholder}
                 />
-                <p className="mt-1 text-xs text-gray-500">{t.wasteManagerTrainingHint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.wasteManagerTrainingHint}</p>
               </div>
             </div>
           </div>
@@ -611,7 +611,7 @@ export function ClientsPage() {
                 onChange={(e) => setAnexa3Series(e.target.value)}
                 placeholder={t.anexa3SeriesPlaceholder}
               />
-              <p className="mt-1 text-xs text-gray-500">{t.anexa3SeriesHint}</p>
+              <p className="mt-1 text-xs text-content-muted">{t.anexa3SeriesHint}</p>
             </div>
           </div>
 
@@ -646,7 +646,7 @@ export function ClientsPage() {
         }
       >
         <form id="invite-form" onSubmit={handleInvite} className="space-y-4">
-          <p className="text-xs text-gray-500">{t.inviteHint}</p>
+          <p className="text-xs text-content-muted">{t.inviteHint}</p>
           <div>
             <Label htmlFor="i-email">{t.inviteEmail}</Label>
             <Input

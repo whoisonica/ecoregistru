@@ -64,8 +64,8 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold text-gray-900">{t.adminTitle}</h2>
-      <p className="mt-1 text-sm text-gray-500">{t.adminSubtitle}</p>
+      <h2 className="text-lg font-semibold text-content">{t.adminTitle}</h2>
+      <p className="mt-1 text-sm text-content-muted">{t.adminSubtitle}</p>
 
       <div className="mt-3">
         {isError && <p className="text-sm text-red-600">{t.adminLoadError}</p>}
@@ -95,10 +95,10 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
               {(requests ?? []).map((r) => (
                 <TR key={r.id}>
                   <TD>
-                    <span className="font-medium text-gray-900">{r.companyName}</span>
-                    <span className="block text-xs text-gray-400">{r.cui}</span>
+                    <span className="font-medium text-content">{r.companyName}</span>
+                    <span className="block text-xs text-content-subtle">{r.cui}</span>
                     {r.workPointAddress && (
-                      <span className="block max-w-xs truncate text-xs text-gray-400">
+                      <span className="block max-w-xs truncate text-xs text-content-subtle">
                         {r.workPointAddress}
                       </span>
                     )}
@@ -106,27 +106,27 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                   <TD>
                     {typeLabels[r.companyType]}
                     {r.caenCode && (
-                      <span className="block text-xs text-gray-400">CAEN {r.caenCode}</span>
+                      <span className="block text-xs text-content-subtle">CAEN {r.caenCode}</span>
                     )}
                     {(r.marketRoles ?? []).length > 0 && (
-                      <span className="block text-xs text-gray-500">
+                      <span className="block text-xs text-content-muted">
                         {(r.marketRoles ?? []).map((m) => marketRoleLabels[m]).join(", ")}
                       </span>
                     )}
                   </TD>
                   <TD>
-                    <span className="block text-gray-700">{r.contactEmail}</span>
+                    <span className="block text-content-strong">{r.contactEmail}</span>
                     {r.contactName && (
-                      <span className="block text-xs text-gray-400">
+                      <span className="block text-xs text-content-subtle">
                         {r.contactName}
                         {r.contactRole ? ` · ${r.contactRole}` : ""}
                       </span>
                     )}
                   </TD>
                   <TD className="max-w-xs">
-                    <span className="block truncate text-gray-700">{r.wasteCodesText || "—"}</span>
+                    <span className="block truncate text-content-strong">{r.wasteCodesText || "—"}</span>
                     {(r.operationCodes ?? []).length > 0 && (
-                      <span className="block text-xs text-gray-400">
+                      <span className="block text-xs text-content-subtle">
                         {(r.operationCodes ?? []).join(", ")}
                       </span>
                     )}

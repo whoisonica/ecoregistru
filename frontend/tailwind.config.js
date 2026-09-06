@@ -38,6 +38,7 @@ export default {
         },
         content: {
           DEFAULT: "rgb(var(--content) / <alpha-value>)",
+          strong: "rgb(var(--content-strong) / <alpha-value>)",
           muted: "rgb(var(--content-muted) / <alpha-value>)",
           subtle: "rgb(var(--content-subtle) / <alpha-value>)",
         },

@@ -62,7 +62,7 @@ const variantIcon = {
 const variantStyle: Record<ToastVariant, string> = {
   success: "border-emerald-200 bg-emerald-50 text-emerald-800",
   error: "border-red-200 bg-red-50 text-red-800",
-  info: "border-gray-200 bg-white text-gray-800",
+  info: "border-line bg-white text-content-strong",
 };
 
 function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {

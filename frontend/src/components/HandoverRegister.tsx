@@ -44,7 +44,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
 
   return (
     <>
-      <p className="mb-3 text-sm text-gray-500">{t.handoversSubtitle}</p>
+      <p className="mb-3 text-sm text-content-muted">{t.handoversSubtitle}</p>
       <div className="overflow-x-auto">
         <Table>
           <THead>
@@ -74,13 +74,13 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                   {formatDate(mv.unloadDate ?? mv.date)}
                 </TD>
                 <TD>
-                  <span className="font-medium text-gray-900">{mv.wasteCode}</span>
+                  <span className="font-medium text-content">{mv.wasteCode}</span>
                   {mv.hazardous && (
                     <Badge variant="danger" className="ml-2">
                       {t.hazardous}
                     </Badge>
                   )}
-                  <span className="block max-w-xs truncate text-xs text-gray-400">
+                  <span className="block max-w-xs truncate text-xs text-content-subtle">
                     {mv.wasteCodeName}
                   </span>
                 </TD>
@@ -98,10 +98,10 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                 <TD className="whitespace-nowrap">
                   {mv.operationCode ? (
                     <>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-content">
                         {mv.treatmentPurpose ?? mv.operationCode.charAt(0)}
                       </span>
-                      <span className="ml-1 text-gray-500">{mv.operationCode}</span>
+                      <span className="ml-1 text-content-muted">{mv.operationCode}</span>
                     </>
                   ) : (
                     <Tooltip content={t.missingCodeHint}>
@@ -110,7 +110,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                   )}
                 </TD>
                 <TD>
-                  {mv.partnerName ?? <span className="text-gray-400">{t.ownSite}</span>}
+                  {mv.partnerName ?? <span className="text-content-subtle">{t.ownSite}</span>}
                 </TD>
                 <TD>{mv.workPointName}</TD>
                 <TD className="text-right">

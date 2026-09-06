@@ -51,16 +51,16 @@ export function ResetPasswordPage() {
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-xl border border-line bg-white p-8 shadow-sm">
         <div className="mb-6 text-center">
           <div className="text-2xl font-bold text-brand">{strings.appName}</div>
-          <div className="text-sm text-gray-500">{strings.tagline}</div>
+          <div className="text-sm text-content-muted">{strings.tagline}</div>
         </div>
 
         {done ? (
           <div className="space-y-4 text-center">
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
-            <p className="text-sm text-gray-600">{t.done}</p>
+            <p className="text-sm text-content-strong">{t.done}</p>
             <Button className="w-full" onClick={() => navigate("/login")}>
               {t.toLogin}
             </Button>
@@ -78,7 +78,7 @@ export function ResetPasswordPage() {
         ) : (
           <>
             <h1 className="mb-1 text-lg font-semibold">{t.title}</h1>
-            <p className="mb-4 text-sm text-gray-500">{t.subtitle}</p>
+            <p className="mb-4 text-sm text-content-muted">{t.subtitle}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="rp-pass">{t.password}</Label>
@@ -90,7 +90,7 @@ export function ResetPasswordPage() {
                   required
                   autoComplete="new-password"
                 />
-                <p className="mt-1 text-xs text-gray-500">{t.rules}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.rules}</p>
               </div>
               <div>
                 <Label htmlFor="rp-confirm">{t.confirmPassword}</Label>

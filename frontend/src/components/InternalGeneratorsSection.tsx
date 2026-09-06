@@ -127,8 +127,8 @@ export function InternalGeneratorsSection({
     <section className="mt-10">
       <div className="mb-3 flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t.title}</h2>
-          <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
+          <h2 className="text-lg font-semibold text-content">{t.title}</h2>
+          <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
         </div>
         {canManage && (
           <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
@@ -169,9 +169,9 @@ export function InternalGeneratorsSection({
             )}
             {(generators ?? []).map((g) => (
               <TR key={g.id}>
-                <TD className="font-medium text-gray-900">{g.name}</TD>
+                <TD className="font-medium text-content">{g.name}</TD>
                 <TD>{g.workPointName}</TD>
-                <TD className="max-w-xs truncate text-gray-500">{g.description || "—"}</TD>
+                <TD className="max-w-xs truncate text-content-muted">{g.description || "—"}</TD>
                 <TD>
                   {g.active ? (
                     <Badge variant="success">{t.active}</Badge>
@@ -236,7 +236,7 @@ export function InternalGeneratorsSection({
                 </option>
               ))}
             </Select>
-            {editing && <p className="mt-1 text-xs text-gray-500">{t.workPointLocked}</p>}
+            {editing && <p className="mt-1 text-xs text-content-muted">{t.workPointLocked}</p>}
           </div>
           <div>
             <Label htmlFor="ig-name">{t.name}</Label>

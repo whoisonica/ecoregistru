@@ -86,7 +86,7 @@ export function AuditFilePage() {
       )}
       <PageHeader title={t.title} description={t.subtitle} />
 
-      <div className="mt-6 max-w-xl rounded-xl border border-gray-200 bg-white p-6">
+      <div className="mt-6 max-w-xl rounded-xl border border-line bg-white p-6">
         <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
@@ -128,18 +128,18 @@ export function AuditFilePage() {
           </Button>
         </div>
 
-        <p className="mt-2 text-xs text-gray-500">{t.yearsHint}</p>
+        <p className="mt-2 text-xs text-content-muted">{t.yearsHint}</p>
 
-        <div className="mt-6 border-t border-gray-100 pt-4">
-          <p className="text-sm font-medium text-gray-700">{t.contents}</p>
-          <ul className="mt-3 space-y-2 text-sm text-gray-600">
+        <div className="mt-6 border-t border-line pt-4">
+          <p className="text-sm font-medium text-content-strong">{t.contents}</p>
+          <ul className="mt-3 space-y-2 text-sm text-content-strong">
             <li className="flex items-start gap-2">
               <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span className="font-medium text-gray-800">{t.contentAnexa1}</span>
+              <span className="font-medium text-content-strong">{t.contentAnexa1}</span>
             </li>
             <li className="flex items-start gap-2">
               <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span className="font-medium text-gray-800">{t.contentAnnualDeclaration}</span>
+              <span className="font-medium text-content-strong">{t.contentAnnualDeclaration}</span>
             </li>
             <li className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4 text-brand" />

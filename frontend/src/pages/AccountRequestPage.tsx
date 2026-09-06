@@ -25,8 +25,8 @@ const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 border-t border-gray-200 pt-5 first:border-0 first:pt-0">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">{title}</h2>
+    <section className="space-y-3 border-t border-line pt-5 first:border-0 first:pt-0">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-content-muted">{title}</h2>
       {children}
     </section>
   );
@@ -206,8 +206,8 @@ export function AccountRequestPage() {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-4 text-center">
         <CheckCircle2 className="h-12 w-12 text-emerald-600" />
-        <h1 className="mt-4 text-2xl font-bold text-gray-900">{t.successTitle}</h1>
-        <p className="mt-2 text-sm text-gray-600">{t.successBody}</p>
+        <h1 className="mt-4 text-2xl font-bold text-content">{t.successTitle}</h1>
+        <p className="mt-2 text-sm text-content-strong">{t.successBody}</p>
         <Link to="/login" className="mt-6 text-sm text-blue-600 hover:underline">
           {t.backToLogin}
         </Link>
@@ -217,8 +217,8 @@ export function AccountRequestPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
-      <p className="mt-2 text-sm text-gray-600">{t.subtitle}</p>
+      <h1 className="text-2xl font-bold text-content">{t.title}</h1>
+      <p className="mt-2 text-sm text-content-strong">{t.subtitle}</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {draft.restored && (
@@ -277,7 +277,7 @@ export function AccountRequestPage() {
               onChange={(e) => setCaenCode(e.target.value)}
               placeholder={t.caenCodePlaceholder}
             />
-            <p className="mt-1 text-xs text-gray-500">{t.caenCodeHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
           </div>
           <div>
             <Label htmlFor="ar-address">{t.companyAddress}</Label>
@@ -291,7 +291,7 @@ export function AccountRequestPage() {
         </Section>
 
         <Section title={t.sectionWorkPoint}>
-          <p className="text-xs text-gray-500">{t.workPointHint}</p>
+          <p className="text-xs text-content-muted">{t.workPointHint}</p>
           <div>
             <Label htmlFor="ar-wp-name">{t.workPointName}</Label>
             <Input
@@ -313,7 +313,7 @@ export function AccountRequestPage() {
         </Section>
 
         <Section title={t.sectionContact}>
-          <p className="text-xs text-gray-500">{t.contactHint}</p>
+          <p className="text-xs text-content-muted">{t.contactHint}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="ar-contact-name">{t.contactName}</Label>
@@ -340,7 +340,7 @@ export function AccountRequestPage() {
               onChange={(e) => setContactRole(e.target.value)}
               placeholder={t.contactRolePlaceholder}
             />
-            <p className="mt-1 text-xs text-gray-500">{t.contactRoleHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
           </div>
           <div>
             <Label htmlFor="ar-contact-email">{t.contactEmail}</Label>
@@ -376,7 +376,7 @@ export function AccountRequestPage() {
 
         {asksTransport && (
           <Section title={t.sectionTransport}>
-            <p className="text-xs text-gray-500">{t.transportHint}</p>
+            <p className="text-xs text-content-muted">{t.transportHint}</p>
             <div>
               <Label htmlFor="ar-transport-means">{t.transportMeans}</Label>
               <Textarea
@@ -427,31 +427,31 @@ export function AccountRequestPage() {
               onChange={(e) => setWasteCodesText(e.target.value)}
               placeholder={t.wasteCodesTextPlaceholder}
             />
-            <p className="mt-1 text-xs text-gray-500">{t.wasteCodesTextHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.wasteCodesTextHint}</p>
           </div>
 
           <div>
-            <span className="block text-sm font-medium text-gray-700">{t.operationCodes}</span>
-            <p className="text-xs text-gray-500">{t.operationCodesHint}</p>
+            <span className="block text-sm font-medium text-content-strong">{t.operationCodes}</span>
+            <p className="text-xs text-content-muted">{t.operationCodesHint}</p>
             <div className="mt-2 grid gap-3 sm:grid-cols-2">
               {[
                 { title: t.recovery, codes: R_CODES },
                 { title: t.disposal, codes: D_CODES },
               ].map((group) => (
                 <div key={group.title}>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">
                     {group.title}
                   </span>
-                  <div className="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
+                  <div className="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-line p-2">
                     {group.codes.map((c) => (
                       <label key={c} className="flex items-start gap-2 text-sm">
                         <input
                           type="checkbox"
-                          className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                          className="mt-0.5 h-4 w-4 rounded border-line-strong"
                           checked={operationCodes.includes(c)}
                           onChange={() => toggleCode(c)}
                         />
-                        <span className="text-gray-700">{codeLabels[c]}</span>
+                        <span className="text-content-strong">{codeLabels[c]}</span>
                       </label>
                     ))}
                   </div>
@@ -471,7 +471,7 @@ export function AccountRequestPage() {
           </div>
         </Section>
 
-        <div className="flex items-center justify-between border-t border-gray-200 pt-5">
+        <div className="flex items-center justify-between border-t border-line pt-5">
           <Link to="/login" className="text-sm text-blue-600 hover:underline">
             {t.backToLogin}
           </Link>

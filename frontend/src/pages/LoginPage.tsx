@@ -34,10 +34,10 @@ export function LoginPage() {
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-xl border border-line bg-white p-8 shadow-sm">
         <div className="mb-6 text-center">
           <div className="text-2xl font-bold text-brand">{strings.appName}</div>
-          <div className="text-sm text-gray-500">{strings.tagline}</div>
+          <div className="text-sm text-content-muted">{strings.tagline}</div>
         </div>
         <h1 className="mb-4 text-lg font-semibold">{strings.login.title}</h1>
         {expired && (
@@ -47,7 +47,7 @@ export function LoginPage() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">{strings.login.email}</label>
+            <label className="mb-1 block text-sm font-medium text-content-strong">{strings.login.email}</label>
             <Input
               type="email"
               value={email}
@@ -57,7 +57,7 @@ export function LoginPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">{strings.login.password}</label>
+            <label className="mb-1 block text-sm font-medium text-content-strong">{strings.login.password}</label>
             <Input
               type="password"
               value={password}

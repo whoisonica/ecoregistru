@@ -418,17 +418,17 @@ export function MovementsPage() {
                   <TR key={m.id}>
                     <TD className="whitespace-nowrap">{formatDate(m.date)}</TD>
                     <TD>
-                      <span className="font-medium text-gray-900">{m.wasteCode}</span>
+                      <span className="font-medium text-content">{m.wasteCode}</span>
                       {m.hazardous && (
                         <Badge variant="danger" className="ml-2">
                           {t.hazardous}
                         </Badge>
                       )}
-                      <span className="block max-w-xs truncate text-xs text-gray-400">
+                      <span className="block max-w-xs truncate text-xs text-content-subtle">
                         {m.wasteCodeName}
                       </span>
                       {(m.storageType || m.treatmentMethod) && (
-                        <span className="mt-0.5 block text-xs text-gray-500">
+                        <span className="mt-0.5 block text-xs text-content-muted">
                           {[
                             m.storageType && e.storageType[m.storageType],
                             m.treatmentMethod && e.treatmentMethod[m.treatmentMethod],
@@ -450,7 +450,7 @@ export function MovementsPage() {
                         <>
                           {e.wasteOperation[m.operation]}
                           {m.operationCode && (
-                            <span className="ml-1 text-xs text-gray-400">({m.operationCode})</span>
+                            <span className="ml-1 text-xs text-content-subtle">({m.operationCode})</span>
                           )}
                         </>
                       )}
@@ -491,7 +491,7 @@ export function MovementsPage() {
                     <TD>{m.workPointName}</TD>
                     <TD className="text-center">
                       {m.attachments.length > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-gray-500">
+                        <span className="inline-flex items-center gap-1 text-content-muted">
                           <Paperclip className="h-3.5 w-3.5" />
                           {m.attachments.length}
                         </span>
@@ -634,7 +634,7 @@ function RecordWeightDialog({
       }
     >
       <form id="weight-form" onSubmit={submit} className="space-y-3">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-content-strong">
           {movement.wasteCode} — {movement.wasteCodeName}
           {movement.partnerName ? `, ${movement.partnerName}` : ""}, {formatDate(movement.date)}
         </p>
@@ -659,7 +659,7 @@ function RecordWeightDialog({
             </Select>
           </div>
         </div>
-        <p className="text-xs text-gray-500">{t.recordWeightHint}</p>
+        <p className="text-xs text-content-muted">{t.recordWeightHint}</p>
       </form>
     </Dialog>
   );
@@ -1263,13 +1263,13 @@ function MovementFormDialog({
             <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                className="mt-0.5 h-4 w-4 rounded border-line-strong"
                 checked={weighedAtUnloading}
                 onChange={(ev) => setWeighedAtUnloading(ev.target.checked)}
               />
               <span>
-                <span className="font-medium text-gray-800">{t.weighedAtUnloading}</span>
-                <span className="block text-xs text-gray-500">{t.weighedAtUnloadingHint}</span>
+                <span className="font-medium text-content-strong">{t.weighedAtUnloading}</span>
+                <span className="block text-xs text-content-muted">{t.weighedAtUnloadingHint}</span>
               </span>
             </label>
             {weighedAtUnloading && (
@@ -1283,7 +1283,7 @@ function MovementFormDialog({
                   value={volumeM3}
                   onChange={(ev) => setVolumeM3(ev.target.value)}
                 />
-                <p className="mt-1 text-xs text-gray-500">{t.volumeM3Hint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.volumeM3Hint}</p>
               </div>
             )}
           </div>
@@ -1312,7 +1312,7 @@ function MovementFormDialog({
                 )}
               </Select>
               {operations.length === 1 && (
-                <p className="mt-1 text-xs text-gray-500">{t.operationGeneratorHint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.operationGeneratorHint}</p>
               )}
             </div>
             <div>
@@ -1338,16 +1338,16 @@ function MovementFormDialog({
               aria-labelledby="mv-register-title"
               className={cn(
                 "rounded-md border p-3",
-                errors.register ? "border-red-400 bg-red-50/40" : "border-gray-300"
+                errors.register ? "border-red-400 bg-red-50/40" : "border-line-strong"
               )}
               {...invalidProps("mv-register-err", errors.register)}
               tabIndex={errors.register ? -1 : undefined}
             >
-              <span id="mv-register-title" className="text-sm font-medium text-gray-800">
+              <span id="mv-register-title" className="text-sm font-medium text-content-strong">
                 {t.originTitle}
                 <span className="text-red-600"> *</span>
               </span>
-              <p className="mt-1 text-xs text-gray-500">{t.originHint}</p>
+              <p className="mt-1 text-xs text-content-muted">{t.originHint}</p>
               <div className="mt-2 space-y-2">
                 {/* Fiecare opţiune îşi spune efectul: alegerea nu schimbă un câmp, ci pe ce formular
                     oficial ajunge cantitatea. */}
@@ -1361,7 +1361,7 @@ function MovementFormDialog({
                   />
                   <span>
                     <span className="text-sm font-medium">{t.originOwn}</span>
-                    <span className="block text-xs text-gray-500">{t.originOwnEffect}</span>
+                    <span className="block text-xs text-content-muted">{t.originOwnEffect}</span>
                   </span>
                 </label>
                 <label className="flex cursor-pointer gap-2">
@@ -1374,7 +1374,7 @@ function MovementFormDialog({
                   />
                   <span>
                     <span className="text-sm font-medium">{t.originTakeover}</span>
-                    <span className="block text-xs text-gray-500">{t.originTakeoverEffect}</span>
+                    <span className="block text-xs text-content-muted">{t.originTakeoverEffect}</span>
                   </span>
                 </label>
               </div>
@@ -1383,7 +1383,7 @@ function MovementFormDialog({
           )}
 
           {operation === "COLLECTED" && (
-            <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+            <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">
               {t.originCollected}
             </p>
           )}
@@ -1469,10 +1469,10 @@ function MovementFormDialog({
               sau cu codurile de eliminare, în funcţie de cum o să fie transportul" (specialista,
               25.08.2026). Sus rămâne de unde vine deşeul; aici, unde ajunge. */}
           {(showsFate || requiresCode) && (
-            <div className="space-y-3 rounded-md border border-gray-300 p-3">
+            <div className="space-y-3 rounded-md border border-line-strong p-3">
               <div>
-                <span className="text-sm font-semibold text-gray-800">{t.fateTitle}</span>
-                <p className="text-xs text-gray-500">{t.fateHint}</p>
+                <span className="text-sm font-semibold text-content-strong">{t.fateTitle}</span>
+                <p className="text-xs text-content-muted">{t.fateHint}</p>
               </div>
 
               {showsFate && (
@@ -1499,7 +1499,7 @@ function MovementFormDialog({
                       />
                       <span>
                         <span className="text-sm font-medium">{label}</span>
-                        <span className="block text-xs text-gray-500">{effect}</span>
+                        <span className="block text-xs text-content-muted">{effect}</span>
                       </span>
                     </label>
                   ))}
@@ -1526,7 +1526,7 @@ function MovementFormDialog({
                     ))}
                   </Select>
                   <FieldError id="mv-code-rd-err" message={errors.operationCode} />
-                  <p className="mt-1 text-xs text-gray-500">{t.operationCodeHint}</p>
+                  <p className="mt-1 text-xs text-content-muted">{t.operationCodeHint}</p>
                 </div>
               )}
             </div>
@@ -1568,7 +1568,7 @@ function MovementFormDialog({
                 ))}
             </Select>
             <FieldError id="mv-partner-err" message={errors.partnerId} />
-            <p className="mt-1 text-xs text-gray-500">{t.partnerHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.partnerHint}</p>
           </div>
 
           {/* Punctul de lucru al destinatarului — numai când partenerul are mai multe. Cu unul
@@ -1588,7 +1588,7 @@ function MovementFormDialog({
                   </option>
                 ))}
               </Select>
-              <p className="mt-1 text-xs text-gray-500">{t.partnerWorkPointHint}</p>
+              <p className="mt-1 text-xs text-content-muted">{t.partnerWorkPointHint}</p>
             </div>
           )}
         </FormSection>
@@ -1596,8 +1596,8 @@ function MovementFormDialog({
         {isPackagingCode && (
           <div className="space-y-3 rounded-md border border-emerald-200 bg-emerald-50/50 p-3">
             <div>
-              <span className="text-sm font-semibold text-gray-800">{t.packagingSection}</span>
-              <p className="text-xs text-gray-500">{t.packagingSectionHint}</p>
+              <span className="text-sm font-semibold text-content-strong">{t.packagingSection}</span>
+              <p className="text-xs text-content-muted">{t.packagingSectionHint}</p>
             </div>
             <label className="flex cursor-pointer items-start gap-2">
               <input
@@ -1607,8 +1607,8 @@ function MovementFormDialog({
                 onChange={(ev) => setPackagingOnMarket(ev.target.checked)}
               />
               <span>
-                <span className="text-sm font-medium text-gray-800">{t.packagingOnMarket}</span>
-                <span className="block text-xs text-gray-500">{t.packagingOnMarketHint}</span>
+                <span className="text-sm font-medium text-content-strong">{t.packagingOnMarket}</span>
+                <span className="block text-xs text-content-muted">{t.packagingOnMarketHint}</span>
               </span>
             </label>
 
@@ -1626,7 +1626,7 @@ function MovementFormDialog({
                   <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
                   <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
                 </Select>
-                <p className="mt-1 text-xs text-gray-500">{strings.packagingOrigin.hintMovement}</p>
+                <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintMovement}</p>
               </div>
             )}
 
@@ -1676,7 +1676,7 @@ function MovementFormDialog({
                   <option value="PRIMARY">{e.packagingCategory.PRIMARY}</option>
                   <option value="SECONDARY">{e.packagingCategory.SECONDARY}</option>
                 </Select>
-                <p className="mt-1 text-xs text-gray-500">{t.packagingCategoryHint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.packagingCategoryHint}</p>
               </div>
             </div>
             )}
@@ -1712,26 +1712,26 @@ function MovementFormDialog({
         {/* Anexa 3 e dovada predării, deci n-are cum să existe fără destinatar. Până acum condiţia
             era tăcută: alegeai codul, secţiunea nu apărea, şi nu scria nicăieri de ce. */}
         {requiresCode && !showAnexa3Section && wasteCode?.sublabel !== t.hazardous && (
-          <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+          <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">
             {t.anexa3NeedsPartner}
           </p>
         )}
 
         {showAnexa3Section && (
-          <div className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3">
+          <div className="space-y-3 rounded-md border border-line bg-surface-muted p-3">
             <div>
-              <span className="text-sm font-semibold text-gray-800">{t.anexa3Section}</span>
-              <p className="text-xs text-gray-500">{t.anexa3SectionHint}</p>
+              <span className="text-sm font-semibold text-content-strong">{t.anexa3Section}</span>
+              <p className="text-xs text-content-muted">{t.anexa3SectionHint}</p>
             </div>
-            <p className="text-xs text-gray-500">{t.anexa3Copies}</p>
+            <p className="text-xs text-content-muted">{t.anexa3Copies}</p>
             <div className="grid gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
                   Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr
                   e tot ce ne trebuie. Se arată ca să se vadă ce se tipărește. */}
               <div>
                 <Label htmlFor="mv-load">{t.loadDate}</Label>
-                <DateInput id="mv-load" value={date} disabled className="bg-gray-100 text-gray-500" />
-                <p className="mt-1 text-xs text-gray-500">{t.loadDateHint}</p>
+                <DateInput id="mv-load" value={date} disabled className="bg-surface-sunken text-content-muted" />
+                <p className="mt-1 text-xs text-content-muted">{t.loadDateHint}</p>
               </div>
               <div>
                 <Label htmlFor="mv-unload">{t.unloadDate}</Label>
@@ -1752,7 +1752,7 @@ function MovementFormDialog({
                   <option value="KG">{e.unit.KG}</option>
                   <option value="TONS">{e.unit.TONS}</option>
                 </Select>
-                <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -1790,7 +1790,7 @@ function MovementFormDialog({
                     </optgroup>
                   )}
                 </Select>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-content-muted">
                   {carrierPartners.length > 0 ? t.transportPartnerHint : t.transportPartnerNoneHint}
                 </p>
               </div>
@@ -1818,7 +1818,7 @@ function MovementFormDialog({
                     </option>
                   ))}
                 </Select>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-content-muted">
                   {availableDrivers.length > 0
                     ? t.driverPickHint
                     : transportPartnerId
@@ -1855,10 +1855,10 @@ function MovementFormDialog({
               </div>
             </div>
             <div>
-              <span className="block text-sm font-medium text-gray-700">
+              <span className="block text-sm font-medium text-content-strong">
                 {t.transportDestinations}
               </span>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-content-muted">
                 {destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}
               </p>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
@@ -1866,7 +1866,7 @@ function MovementFormDialog({
                   <label key={d} className="flex items-center gap-1.5 text-sm">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-4 w-4 rounded border-line-strong"
                       checked={transportDestinations.includes(d)}
                       onChange={() => {
                         setDestinationsPrefilled(false);
@@ -1912,7 +1912,7 @@ function MovementFormDialog({
                 {editing.attachments.map((a) => (
                   <li
                     key={a.id}
-                    className="flex items-center justify-between gap-2 rounded border border-gray-200 px-2 py-1 text-sm"
+                    className="flex items-center justify-between gap-2 rounded border border-line px-2 py-1 text-sm"
                   >
                     <a
                       href={a.url}
@@ -1926,7 +1926,7 @@ function MovementFormDialog({
                     <button
                       type="button"
                       onClick={() => handleDeleteAttachment(a.id)}
-                      className="shrink-0 text-gray-400 hover:text-red-600"
+                      className="shrink-0 text-content-subtle hover:text-red-600"
                       aria-label={strings.common.delete}
                     >
                       <Trash2 className="h-4 w-4" />

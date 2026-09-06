@@ -117,8 +117,8 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     <section className="mt-10">
       <div className="mb-3 flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t.title}</h2>
-          <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
+          <h2 className="text-lg font-semibold text-content">{t.title}</h2>
+          <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
         </div>
         {canManage && (
           <Button onClick={openCreate}>
@@ -153,7 +153,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
             )}
             {drivers.map((d) => (
               <TR key={d.id}>
-                <TD className="font-medium text-gray-900">{d.name}</TD>
+                <TD className="font-medium text-content">{d.name}</TD>
                 <TD>{d.identification || "—"}</TD>
                 <TD>{d.vehicleRegistration || "—"}</TD>
                 <TD>
@@ -228,7 +228,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
               onChange={(e) => setIdentification(e.target.value)}
               placeholder={t.identificationPlaceholder}
             />
-            <p className="mt-1 text-xs text-gray-500">{t.identificationHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.identificationHint}</p>
           </div>
           <div>
             <Label htmlFor="d-vehicle">{t.vehicle}</Label>
@@ -238,7 +238,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
               onChange={(e) => setVehicleRegistration(e.target.value)}
               placeholder={t.vehiclePlaceholder}
             />
-            <p className="mt-1 text-xs text-gray-500">{t.vehicleHint}</p>
+            <p className="mt-1 text-xs text-content-muted">{t.vehicleHint}</p>
           </div>
         </form>
       </Dialog>
