@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,6 +14,7 @@ import {
   Building2,
   Menu,
   X,
+  ChevronUp,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -30,19 +31,54 @@ interface NavItem {
   end?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { to: "/", label: strings.nav.dashboard, icon: LayoutDashboard, end: true },
-  { to: "/miscari", label: strings.nav.movements, icon: Truck },
-  { to: "/evidente", label: strings.nav.evidences, icon: FileSpreadsheet },
-  { to: "/parteneri", label: strings.nav.partners, icon: Users },
-  { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock },
-  { to: "/ambalaje", label: strings.nav.packaging, icon: Package },
-  { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive },
-  { to: "/setari", label: strings.nav.settings, icon: Settings },
-];
+interface NavGroup {
+  /** Lipsește la primul grup: Panoul stă singur, fără titlu peste el. */
+  label?: string;
+  items: NavItem[];
+  /** Grupul se vede numai de către administratorul platformei. */
+  platformAdminOnly?: boolean;
+}
 
-/** Nav item only PLATFORM_ADMIN sees: manage the client companies (tenants). */
-const clientsNavItem: NavItem = { to: "/clienti", label: strings.nav.clients, icon: Building2 };
+/**
+ * Bara laterală, pe grupuri.
+ *
+ * <p>Erau nouă intrări una sub alta, în ordinea în care s-au construit ecranele — Mișcări,
+ * Evidențe, Parteneri, Termene, Ambalaje, Dosar, Setări. Ordinea aia nu spune nimic despre ce ține
+ * de ce: Ambalajele sunt evidență, ca Mișcările, dar stăteau după Termene; Parteneri e
+ * nomenclator, ca Setări, dar stătea între Evidențe și Termene.
+ *
+ * <p>Grupurile răspund la „ce fac aici": înregistrez ceva, scot un document, sau configurez.
+ */
+const navGroups: NavGroup[] = [
+  { items: [{ to: "/", label: strings.nav.dashboard, icon: LayoutDashboard, end: true }] },
+  {
+    label: strings.nav.groupRecords,
+    items: [
+      { to: "/miscari", label: strings.nav.movements, icon: Truck },
+      { to: "/evidente", label: strings.nav.evidences, icon: FileSpreadsheet },
+      { to: "/ambalaje", label: strings.nav.packaging, icon: Package },
+    ],
+  },
+  {
+    label: strings.nav.groupReporting,
+    items: [
+      { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock },
+      { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive },
+    ],
+  },
+  {
+    label: strings.nav.groupSetup,
+    items: [
+      { to: "/parteneri", label: strings.nav.partners, icon: Users },
+      { to: "/setari", label: strings.nav.settings, icon: Settings },
+    ],
+  },
+  {
+    label: strings.nav.groupAdmin,
+    platformAdminOnly: true,
+    items: [{ to: "/clienti", label: strings.nav.clients, icon: Building2 }],
+  },
+];
 
 /**
  * Current-company block under the app name. Normal users see their company name (read-only).
@@ -110,6 +146,92 @@ function CompanyBlock() {
   );
 }
 
+/**
+ * Contul, ca meniu.
+ *
+ * <p>Erau două rânduri de text — adresa și rolul — plus un buton de deconectare mereu vizibil, în
+ * subsolul barei. Deconectarea e o acțiune rară care stătea în drum la fiecare privire, iar rolul
+ * se afișa ca `PLATFORM_ADMIN`, adică numele constantei din backend.
+ */
+function UserMenu({
+  email,
+  role,
+  onLogout,
+}: {
+  email?: string;
+  role?: string;
+  onLogout: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Prima literă a adresei. Nu e o poză de profil, dar e un reper care se ține minte mai ușor
+  // decât un rând de text tăiat la jumătate.
+  const initial = (email ?? "?").charAt(0).toUpperCase();
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-label={strings.common.userMenu}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-surface-sunken"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-muted text-sm font-semibold text-brand">
+          {initial}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium text-content">{email}</span>
+          <span className="block truncate text-[11px] text-content-subtle">
+            {role ? (strings.enums.role[role as keyof typeof strings.enums.role] ?? role) : ""}
+          </span>
+        </span>
+        <ChevronUp
+          className={cn(
+            "h-4 w-4 shrink-0 text-content-subtle transition-transform",
+            !open && "rotate-180"
+          )}
+          aria-hidden
+        />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute bottom-full left-0 z-30 mb-1 w-full animate-slide-up overflow-hidden rounded-md border border-line bg-surface py-1 shadow-popover"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onLogout}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-content transition-colors hover:bg-surface-muted"
+          >
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+            {strings.nav.logout}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: ReactNode }) {
   const { user, logout, tenantId } = useAuth();
   const navigate = useNavigate();
@@ -135,11 +257,8 @@ export function Layout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  // Platform admin gets the "Clienți" entry, inserted just before Settings.
-  const items =
-    user?.role === "PLATFORM_ADMIN"
-      ? [...navItems.slice(0, -1), clientsNavItem, navItems[navItems.length - 1]]
-      : navItems;
+  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
+  const groups = navGroups.filter((g) => !g.platformAdminOnly || isPlatformAdmin);
 
   function handleLogout() {
     logout();
@@ -209,38 +328,39 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="px-3 pb-3">
           <CompanyBlock />
         </div>
-        <nav aria-label={strings.common.mainNav} className="flex-1 space-y-1 overflow-y-auto px-3">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-brand-muted text-brand"
-                    : "text-content-muted hover:bg-surface-sunken"
-                )
-              }
-            >
-              <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-              {item.label}
-            </NavLink>
+        <nav aria-label={strings.common.mainNav} className="flex-1 overflow-y-auto px-3 pb-3">
+          {groups.map((group, index) => (
+            <div key={group.label ?? "principal"} className={index > 0 ? "mt-5" : undefined}>
+              {group.label && (
+                <div className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-subtle">
+                  {group.label}
+                </div>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-brand-muted text-brand"
+                          : "text-content-muted hover:bg-surface-sunken"
+                      )
+                    }
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" aria-hidden />
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="border-t border-line p-3">
-          <div className="px-2 pb-2 text-xs text-content-muted">
-            <div className="truncate font-medium text-content">{user?.email}</div>
-            <div>{user?.role}</div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-content-muted transition-colors hover:bg-surface-sunken"
-          >
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-            {strings.nav.logout}
-          </button>
+          <UserMenu email={user?.email} role={user?.role} onLogout={handleLogout} />
         </div>
       </aside>
 

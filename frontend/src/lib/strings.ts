@@ -26,6 +26,12 @@ export const strings = {
     clients: "Clienți",
     settings: "Setări",
     logout: "Deconectare",
+    // Grupurile din bara laterală. Nouă intrări plate nu spun nimic despre ce ține de ce; patru
+    // grupuri de două-trei spun.
+    groupRecords: "Evidență",
+    groupReporting: "Raportare",
+    groupSetup: "Configurare",
+    groupAdmin: "Administrare",
   },
 
   login: {
@@ -782,6 +788,17 @@ export const strings = {
 
   // Romanian labels for backend enums (constants are English by convention).
   enums: {
+    /**
+     * Rolurile, în românește. Până acum bara laterală tipărea chiar constanta din backend —
+     * `PLATFORM_ADMIN` — sub adresa de email.
+     */
+    role: {
+      PLATFORM_ADMIN: "Administrator platformă",
+      ADMIN: "Administrator",
+      OPERATOR: "Operator",
+      CLIENT_VIEWER: "Vizualizare",
+    },
+
     wasteOperation: {
       GENERATED: "Generare",
       COLLECTED: "Preluare de la terți",
