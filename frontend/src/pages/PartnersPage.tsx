@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Pencil, Ban } from "lucide-react";
+import { Ban, Pencil, Plus, Users } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   usePartners,
@@ -26,6 +26,7 @@ import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
@@ -296,10 +297,9 @@ export function PartnersPage() {
       </div>
 
       <section className="mt-4">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && (
+        {!isError && (
           <Table>
             <THead>
               <TR>
@@ -315,12 +315,22 @@ export function PartnersPage() {
               </TR>
             </THead>
             <TBody>
-              {visiblePartners.length === 0 && (
-                <TR>
-                  <TD colSpan={canManage ? 9 : 8} className="text-center text-gray-400">
-                    {t.empty}
-                  </TD>
-                </TR>
+              {(isLoading || visiblePartners.length === 0) && (
+                <TableFallbackRow
+                  columns={canManage ? 9 : 8}
+                  loading={isLoading}
+                  icon={Users}
+                  title={t.empty}
+                  description={t.emptyHint}
+                  action={
+                    canManage && (
+                      <Button onClick={openCreate}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t.add}
+                      </Button>
+                    )
+                  }
+                />
               )}
               {visiblePartners.map((p) => (
                 <TR key={p.id}>

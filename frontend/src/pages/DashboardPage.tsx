@@ -10,6 +10,7 @@ import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
+import { ListSkeleton } from "@/components/ui/skeleton";
 import type { BadgeProps } from "@/components/ui/badge";
 
 const t = strings.dashboard;
@@ -66,8 +67,8 @@ export function DashboardPage() {
   const month = now.getMonth() + 1;
 
   const { data: movements } = useMovements({ year, month });
-  const { data: deadlines } = useDeadlines(year);
-  const { data: partners } = usePartners();
+  const { data: deadlines, isLoading: loadingDeadlines } = useDeadlines(year);
+  const { data: partners, isLoading: loadingPartners } = usePartners();
 
   const openDeadlines = useMemo(
     () =>
@@ -145,8 +146,10 @@ export function DashboardPage() {
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
-          {openDeadlines.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400">{t.upcomingEmpty}</p>
+          {loadingDeadlines ? (
+            <ListSkeleton />
+          ) : openDeadlines.length === 0 ? (
+            <p className="mt-4 text-sm text-content-subtle">{t.upcomingEmpty}</p>
           ) : (
             <ul className="mt-3 divide-y divide-gray-100">
               {openDeadlines.slice(0, 5).map((d) => (
@@ -178,8 +181,10 @@ export function DashboardPage() {
               <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
-          {expiringPartners.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400">{t.expiringEmpty}</p>
+          {loadingPartners ? (
+            <ListSkeleton />
+          ) : expiringPartners.length === 0 ? (
+            <p className="mt-4 text-sm text-content-subtle">{t.expiringEmpty}</p>
           ) : (
             <ul className="mt-3 divide-y divide-gray-100">
               {expiringPartners.slice(0, 5).map((p) => (

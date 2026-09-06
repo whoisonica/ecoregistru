@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Pencil, UserPlus } from "lucide-react";
+import { Building2, Pencil, Plus, UserPlus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   useCompanies,
@@ -34,6 +34,7 @@ import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.clients;
@@ -272,10 +273,9 @@ export function ClientsPage() {
       />
 
       <section className="mt-6">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && (
+        {!isError && (
           <Table>
             <THead>
               <TR>
@@ -288,12 +288,20 @@ export function ClientsPage() {
               </TR>
             </THead>
             <TBody>
-              {(companies ?? []).length === 0 && (
-                <TR>
-                  <TD colSpan={6} className="text-center text-gray-400">
-                    {t.empty}
-                  </TD>
-                </TR>
+              {(isLoading || (companies ?? []).length === 0) && (
+                <TableFallbackRow
+                  columns={6}
+                  loading={isLoading}
+                  icon={Building2}
+                  title={t.empty}
+                  description={t.emptyHint}
+                  action={
+                    <Button onClick={openCreate}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t.add}
+                    </Button>
+                  }
+                />
               )}
               {(companies ?? []).map((c) => (
                 <TR key={c.id}>

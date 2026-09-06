@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, FileSpreadsheet, FileText, Plus } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, FileText, Package, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   downloadPackagingAnexa3,
@@ -31,6 +31,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow, TableSkeletonRows } from "@/components/ui/table-fallback";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.packaging;
@@ -321,17 +323,13 @@ export function PackagingPage() {
               </TR>
             </THead>
             <TBody>
-              {loadingMovements && (
-                <TR>
-                  <TD colSpan={10}>{strings.common.loading}</TD>
-                </TR>
-              )}
-              {!loadingMovements && (movements ?? []).length === 0 && (
-                <TR>
-                  <TD colSpan={10} className="text-gray-500">
-                    {t.registerEmpty}
-                  </TD>
-                </TR>
+              {(loadingMovements || (movements ?? []).length === 0) && (
+                <TableFallbackRow
+                  columns={10}
+                  loading={loadingMovements}
+                  icon={Package}
+                  title={t.registerEmpty}
+                />
               )}
               {(movements ?? []).map((m: WasteMovement) => (
                 <TR
@@ -444,11 +442,7 @@ export function PackagingPage() {
               </TR>
             </THead>
             <TBody>
-              {loadingTable1 && (
-                <TR>
-                  <TD colSpan={8}>{strings.common.loading}</TD>
-                </TR>
-              )}
+              {loadingTable1 && <TableSkeletonRows columns={8} rows={8} />}
               {!loadingTable1 &&
                 MATERIAL_ORDER.map((material) => {
                   const row = rowFor(material);
@@ -555,11 +549,7 @@ export function PackagingPage() {
             </THead>
             <TBody>
               {(handovers ?? []).length === 0 && (
-                <TR>
-                  <TD colSpan={5} className="text-gray-500">
-                    {t.noHandovers}
-                  </TD>
-                </TR>
+                <TableFallbackRow columns={5} loading={false} icon={Package} title={t.noHandovers} />
               )}
               {(handovers ?? []).map((row, i) => (
                 <TR key={`${row.material}-${row.operatorCui}-${row.operation}-${i}`}>
@@ -670,7 +660,14 @@ function Anexa3Section({ year }: { year: number }) {
         <p className="mt-1 text-xs text-amber-700">{t.anexa3PickWorkPoint}</p>
       )}
 
-      {isLoading && <p className="mt-4 text-sm text-gray-500">{strings.common.loading}</p>}
+      {/* Scheletul ține forma a ce urmează — o casetă de avertisment sau un tabel mic — ca
+          secțiunea să nu sară când vin datele. */}
+      {isLoading && (
+        <div className="mt-4 space-y-2">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+        </div>
+      )}
 
       {/* Profilul n-a spus care tabel se aplică: nu tipărim nimic şi spunem de ce. */}
       {data && !data.printable && (

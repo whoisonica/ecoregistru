@@ -1,4 +1,4 @@
-import { Check, X } from "lucide-react";
+import { Check, Inbox, X } from "lucide-react";
 import {
   useAccountRequests,
   useApproveAccountRequest,
@@ -10,6 +10,7 @@ import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.accountRequest;
@@ -67,10 +68,9 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
       <p className="mt-1 text-sm text-gray-500">{t.adminSubtitle}</p>
 
       <div className="mt-3">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.adminLoadError}</p>}
 
-        {!isLoading && !isError && (
+        {!isError && (
           <Table>
             <THead>
               <TR>
@@ -84,12 +84,13 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
               </TR>
             </THead>
             <TBody>
-              {(requests ?? []).length === 0 && (
-                <TR>
-                  <TD colSpan={7} className="text-center text-gray-400">
-                    {t.adminEmpty}
-                  </TD>
-                </TR>
+              {(isLoading || (requests ?? []).length === 0) && (
+                <TableFallbackRow
+                  columns={7}
+                  loading={isLoading}
+                  icon={Inbox}
+                  title={t.adminEmpty}
+                />
               )}
               {(requests ?? []).map((r) => (
                 <TR key={r.id}>

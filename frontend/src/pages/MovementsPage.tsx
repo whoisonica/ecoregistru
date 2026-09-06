@@ -53,8 +53,7 @@ import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD, SortableTH, Pagination } from "@/components/ui/table";
 import { RowAction, RowActions, TableSearch } from "@/components/ui/table-toolbar";
-import { TableSkeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/ui/empty-state";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -395,23 +394,17 @@ export function MovementsPage() {
                   {canWrite && <TH className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
-              {isLoading ? (
-                <TableSkeleton columns={canWrite ? 9 : 8} />
-              ) : (
               <TBody>
-                {view.visible.length === 0 && (
-                  <TR>
-                    <TD colSpan={canWrite ? 9 : 8} className="px-4 py-10 text-center">
-                      <EmptyState
-                        icon={Truck}
-                        title={view.emptiedBySearch ? strings.common.noResults : t.empty}
-                        description={
-                          view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
-                        }
-                        className="border-0 bg-transparent py-0"
-                      />
-                    </TD>
-                  </TR>
+                {(isLoading || view.visible.length === 0) && (
+                  <TableFallbackRow
+                    columns={canWrite ? 9 : 8}
+                    loading={isLoading}
+                    icon={Truck}
+                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    description={
+                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                    }
+                  />
                 )}
                 {view.visible.map((m) => (
                   <TR key={m.id}>
@@ -544,7 +537,6 @@ export function MovementsPage() {
                   </TR>
                 ))}
               </TBody>
-              )}
             </Table>
             <Pagination
               page={view.page}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, FileText, RefreshCw } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import {
@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.evidences;
@@ -345,22 +346,10 @@ export function EvidencesPage() {
 
         {view === "monthly" && (
           <>
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && rows.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-            <p className="text-gray-500">{t.empty.replace("{year}", String(year))}</p>
-            {canManage && (
-              <p className="mt-1 text-sm text-gray-400">
-                {t.emptyHint.replace("{year}", String(year))}
-              </p>
-            )}
-          </div>
-        )}
-
-        {!isLoading && !isError && rows.length > 0 && (
-          <div className="overflow-x-auto">
+        {!isError && (
+          <div>
             <Table>
               <THead>
                 <TR>
@@ -375,6 +364,25 @@ export function EvidencesPage() {
                 </TR>
               </THead>
               <TBody>
+                {(isLoading || rows.length === 0) && (
+                  <TableFallbackRow
+                    columns={8}
+                    loading={isLoading}
+                    icon={FileSpreadsheet}
+                    title={t.empty.replace("{year}", String(year))}
+                    description={canManage ? t.emptyHint.replace("{year}", String(year)) : undefined}
+                    action={
+                      canManage && (
+                        <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+                          <RefreshCw
+                            className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+                          />
+                          {t.regenerate}
+                        </Button>
+                      )
+                    }
+                  />
+                )}
                 {rows.map((r) => (
                   <TR key={r.id}>
                     <TD>{r.workPointName}</TD>
@@ -427,7 +435,7 @@ export function EvidencesPage() {
 
         {/* Ce se încarcă în SIM pe 15 martie, în unitatea pe care o cere actul. Stă lângă
             evidența în kg, nu în locul ei: fișa și declarația rămân în kilograme pe hârtie. */}
-        {!isLoading && !isError && annualByCode.length > 0 && (
+        {!isLoading && annualByCode.length > 0 && (
           <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
             <h3 className="text-sm font-semibold text-gray-800">
               {t.tonnesTitle.replace("{year}", String(year))}

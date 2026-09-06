@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Pencil, Ban } from "lucide-react";
+import { Ban, UserCircle, Pencil, Plus } from "lucide-react";
 import {
   useDrivers,
   useCreateDriver,
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
@@ -127,10 +128,9 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
         )}
       </div>
 
-      {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
       {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-      {!isLoading && !isError && (
+      {!isError && (
         <Table>
           <THead>
             <TR>
@@ -142,12 +142,14 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
             </TR>
           </THead>
           <TBody>
-            {drivers.length === 0 && (
-              <TR>
-                <TD colSpan={canManage ? 5 : 4} className="text-center text-gray-400">
-                  {t.empty}
-                </TD>
-              </TR>
+            {(isLoading || drivers.length === 0) && (
+              <TableFallbackRow
+                columns={canManage ? 5 : 4}
+                loading={isLoading}
+                icon={UserCircle}
+                title={t.empty}
+                description={t.emptyHint}
+              />
             )}
             {drivers.map((d) => (
               <TR key={d.id}>

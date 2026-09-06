@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Pencil, Ban } from "lucide-react";
+import { Ban, Factory, Pencil, Plus } from "lucide-react";
 import {
   useInternalGenerators,
   useCreateInternalGenerator,
@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
@@ -143,10 +144,9 @@ export function InternalGeneratorsSection({
         </p>
       )}
 
-      {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
       {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-      {!isLoading && !isError && (
+      {!isError && (
         <Table>
           <THead>
             <TR>
@@ -158,12 +158,14 @@ export function InternalGeneratorsSection({
             </TR>
           </THead>
           <TBody>
-            {(generators ?? []).length === 0 && (
-              <TR>
-                <TD colSpan={canManage ? 5 : 4} className="text-center text-gray-400">
-                  {t.empty}
-                </TD>
-              </TR>
+            {(isLoading || (generators ?? []).length === 0) && (
+              <TableFallbackRow
+                columns={canManage ? 5 : 4}
+                loading={isLoading}
+                icon={Factory}
+                title={t.empty}
+                description={t.emptyHint}
+              />
             )}
             {(generators ?? []).map((g) => (
               <TR key={g.id}>

@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { ArrowRightLeft, FileText } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
@@ -6,6 +6,7 @@ import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 
 const t = strings.evidences;
 const m = strings.movements;
@@ -38,7 +39,6 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
       || mv.operation === "UNCLASSIFIED_OUT"
   );
 
-  if (isLoading) return <p className="text-sm text-gray-500">{strings.common.loading}</p>;
   if (isError) return <p className="text-sm text-red-600">{t.handoversLoadError}</p>;
 
   return (
@@ -58,12 +58,13 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
             </TR>
           </THead>
           <TBody>
-            {rows.length === 0 && (
-              <TR>
-                <TD colSpan={7} className="text-center text-gray-400">
-                  {t.emptyHandovers}
-                </TD>
-              </TR>
+            {(isLoading || rows.length === 0) && (
+              <TableFallbackRow
+                columns={7}
+                loading={isLoading}
+                icon={ArrowRightLeft}
+                title={t.emptyHandovers}
+              />
             )}
             {rows.map((mv: WasteMovement) => (
               <TR key={mv.id}>
