@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
@@ -401,14 +402,18 @@ export function EvidencesPage() {
                         </Badge>
                       )}
                       {r.totalUnclassifiedOut > 0 && (
-                        <Badge variant="danger" className="ml-2" title={t.missingCodeHint}>
-                          {t.missingCode}
-                        </Badge>
+                        <Tooltip content={t.missingCodeHint}>
+                          <Badge variant="danger" className="ml-2">
+                            {t.missingCode}
+                          </Badge>
+                        </Tooltip>
                       )}
                       {r.awaitingWeighing && (
-                        <Badge variant="warning" className="ml-2" title={t.awaitingWeighingHint}>
-                          {t.awaitingWeighing}
-                        </Badge>
+                        <Tooltip content={t.awaitingWeighingHint}>
+                          <Badge variant="warning" className="ml-2">
+                            {t.awaitingWeighing}
+                          </Badge>
+                        </Tooltip>
                       )}
                       <span className="block max-w-xs truncate text-xs text-gray-400">
                         {r.wasteCodeName}

@@ -26,7 +26,7 @@ interface TooltipProps {
 export function Tooltip({ content, children, className }: TooltipProps) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number; below: boolean } | null>(null);
-  const triggerRef = useRef<HTMLSpanElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
   const id = useId();
 
@@ -76,13 +76,15 @@ export function Tooltip({ content, children, className }: TooltipProps) {
 
   return (
     <>
-      <span
+      <button
         ref={triggerRef}
-        tabIndex={0}
-        role="button"
+        type="button"
         aria-describedby={open ? id : undefined}
         aria-expanded={open}
-        className="inline-flex cursor-help items-center rounded"
+        // Buton adevărat, nu un `span` cu `role="button"`: focusul, Enter și Space vin de la
+        // browser, nu trebuie scrise. `type="button"` fiindcă unele insigne stau în formulare,
+        // iar implicitul ar trimite formularul.
+        className="inline-flex cursor-help items-center rounded text-left"
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
@@ -96,7 +98,7 @@ export function Tooltip({ content, children, className }: TooltipProps) {
         }}
       >
         {children}
-      </span>
+      </button>
       {open &&
         createPortal(
           <div

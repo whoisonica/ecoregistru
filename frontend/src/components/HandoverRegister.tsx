@@ -5,6 +5,7 @@ import type { MovementFilters, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 
@@ -103,9 +104,9 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                       <span className="ml-1 text-gray-500">{mv.operationCode}</span>
                     </>
                   ) : (
-                    <Badge variant="danger" title={t.missingCodeHint}>
-                      {t.missingCode}
-                    </Badge>
+                    <Tooltip content={t.missingCodeHint}>
+                      <Badge variant="danger">{t.missingCode}</Badge>
+                    </Tooltip>
                   )}
                 </TD>
                 <TD>

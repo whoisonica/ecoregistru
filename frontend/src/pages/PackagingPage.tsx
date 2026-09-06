@@ -26,6 +26,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -400,13 +401,13 @@ export function PackagingPage() {
                       fiindcă tabul e locul unde omul verifică ce va fi depus. */}
                   <TD className="whitespace-nowrap">
                     {m.packagingOnMarket === false ? (
-                      <Badge variant="muted" title={t.inAnexa1NoHint}>
-                        {t.inAnexa1No}
-                      </Badge>
+                      <Tooltip content={t.inAnexa1NoHint}>
+                        <Badge variant="muted">{t.inAnexa1No}</Badge>
+                      </Tooltip>
                     ) : m.packagingOnMarket == null ? (
-                      <Badge variant="warning" title={t.inAnexa1LegacyHint}>
-                        {t.inAnexa1Legacy}
-                      </Badge>
+                      <Tooltip content={t.inAnexa1LegacyHint}>
+                        <Badge variant="warning">{t.inAnexa1Legacy}</Badge>
+                      </Tooltip>
                     ) : (
                       <span className="text-xs text-gray-500">{t.inAnexa1Yes}</span>
                     )}
@@ -416,9 +417,9 @@ export function PackagingPage() {
                       să nu pară că lipsesc din calcul dintr-o eroare. */}
                   <TD className="whitespace-nowrap">
                     {m.register === "ART_48" ? (
-                      <Badge variant="muted" title={t.originTakeoverInTab}>
-                        {t.originTakeoverShort}
-                      </Badge>
+                      <Tooltip content={t.originTakeoverInTab}>
+                        <Badge variant="muted">{t.originTakeoverShort}</Badge>
+                      </Tooltip>
                     ) : (
                       <span className="text-xs text-gray-500">{t.originOwnShort}</span>
                     )}

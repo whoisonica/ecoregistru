@@ -46,6 +46,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
@@ -442,9 +443,9 @@ export function MovementsPage() {
                           it is red, not grey: the quantity left the site but reaches neither
                           official column of Anexa 1. Editing the row is how it gets completed. */}
                       {m.operation === "UNCLASSIFIED_OUT" ? (
-                        <Badge variant="danger" title={t.missingCodeHint}>
-                          {t.missingCode}
-                        </Badge>
+                        <Tooltip content={t.missingCodeHint}>
+                          <Badge variant="danger">{t.missingCode}</Badge>
+                        </Tooltip>
                       ) : (
                         <>
                           {e.wasteOperation[m.operation]}
@@ -460,9 +461,9 @@ export function MovementsPage() {
                           {m.quantity} {e.unit[m.unit]}
                         </>
                       ) : (
-                        <Badge variant="warning" title={t.awaitingWeighingHint}>
-                          {t.awaitingWeighing}
-                        </Badge>
+                        <Tooltip content={t.awaitingWeighingHint}>
+                          <Badge variant="warning">{t.awaitingWeighing}</Badge>
+                        </Tooltip>
                       )}
                     </TD>
                     <TD>
@@ -473,17 +474,17 @@ export function MovementsPage() {
                           art. 23 alin. (1)), pe care clientul o poate lămuri cu partenerul; e
                           aceeași familie cu „De cântărit". */}
                       {m.recipientAuthorizationExpired && (
-                        <Badge
-                          variant="warning"
-                          className="mt-0.5 block w-fit"
-                          title={t.authExpiredAtHandoverHint(
+                        <Tooltip
+                          content={t.authExpiredAtHandoverHint(
                             m.recipientAuthorizationExpiry
                               ? formatDate(m.recipientAuthorizationExpiry)
                               : null,
                           )}
                         >
-                          {t.authExpiredAtHandover}
-                        </Badge>
+                          <Badge variant="warning" className="mt-0.5 block w-fit">
+                            {t.authExpiredAtHandover}
+                          </Badge>
+                        </Tooltip>
                       )}
                     </TD>
                     <TD>{m.internalGeneratorName || "—"}</TD>
