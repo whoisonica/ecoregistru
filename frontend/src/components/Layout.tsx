@@ -22,6 +22,8 @@ import { companiesKey, useCompanies } from "@/hooks/useCompanies";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
+import { CommandPalette, useNavigationCommands } from "@/components/CommandPalette";
+import { useHotkey } from "@/hooks/useHotkey";
 import type { ReactNode } from "react";
 
 interface NavItem {
@@ -49,7 +51,7 @@ interface NavGroup {
  *
  * <p>Grupurile răspund la „ce fac aici": înregistrez ceva, scot un document, sau configurez.
  */
-const navGroups: NavGroup[] = [
+export const navGroups: NavGroup[] = [
   { items: [{ to: "/", label: strings.nav.dashboard, icon: LayoutDashboard, end: true }] },
   {
     label: strings.nav.groupRecords,
@@ -265,6 +267,23 @@ export function Layout({ children }: { children: ReactNode }) {
     navigate("/login");
   }
 
+  const commands = useNavigationCommands(groups);
+
+  /**
+   * `/` duce în caseta de căutare a ecranului curent, oriunde ar fi ea.
+   *
+   * <p>Legătura se face prin DOM (`[data-table-search]`), nu printr-un context cu referințe:
+   * ecranele care au o casetă o au deja randată, iar cele care n-au n-ar avea ce să pună în
+   * context. Un selector nu cere nimic de la nimeni.
+   */
+  useHotkey("/", () => {
+    const search = document.querySelector<HTMLInputElement>("[data-table-search]");
+    if (search) {
+      search.focus();
+      search.select();
+    }
+  });
+
   return (
     <div className="flex h-full">
       {/* Prima oprire a tastaturii: sare peste cele nouă intrări de meniu, care se repetă pe
@@ -359,6 +378,11 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
+        {/* Scurtăturile scrise undeva: altfel există, dar nu le găsește nimeni. Ascunse pe
+            ecran îngust, unde nu e tastatură. */}
+        <p className="hidden px-5 pb-3 text-[11px] leading-relaxed text-content-subtle lg:block">
+          {strings.common.shortcutHint}
+        </p>
         <div className="border-t border-line p-3">
           <UserMenu email={user?.email} role={user?.role} onLogout={handleLogout} />
         </div>
@@ -370,6 +394,8 @@ export function Layout({ children }: { children: ReactNode }) {
         left means nothing in the new one. The cache was emptied in `handleChange`, so the fresh
         mount refetches everything with the new X-Tenant-Id, and nobody has to reload the page.
       */}
+      <CommandPalette commands={commands} />
+
       <main
         id="continut"
         key={tenantId ?? "fara-companie"}

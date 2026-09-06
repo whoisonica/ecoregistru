@@ -1361,5 +1361,10 @@ export const strings = {
     fixErrors: "Verifică rubricile marcate mai jos.",
     // Rezultatul unei operațiuni lungi, când nu se poate arăta un procent.
     working: "Se lucrează...",
+    // Scurtături
+    commandPalette: "Caută sau sari la",
+    commandPalettePlaceholder: "Sari la un ecran... (Ctrl+K)",
+    goTo: "Navigare",
+    shortcutHint: "Ctrl+K pentru comenzi · / pentru căutare · N pentru adăugare",
   },
 } as const;

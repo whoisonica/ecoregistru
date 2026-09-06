@@ -10,6 +10,7 @@ import {
 import type { WorkPoint } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useHotkey } from "@/hooks/useHotkey";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,10 @@ export function SettingsPage() {
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
     });
   }
+
+  // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
+  // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
+  useHotkey("n", openCreate, { enabled: Boolean(canManage) });
 
   return (
     <div>

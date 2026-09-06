@@ -36,6 +36,8 @@ export function TableSearch({
         <input
           ref={inputRef}
           type="search"
+          // Cârligul după care scurtătura `/` găsește caseta ecranului curent.
+          data-table-search
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
