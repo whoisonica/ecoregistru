@@ -2746,7 +2746,7 @@ aplicabil, semnalele pentru ce n-a intrat, şi cele două descărcări.
 **224 de teste verzi** (de la 186: 38 noi), 0 eşecuri, 0 erori, 0 sărite. Migrări până la **`V31`**;
 următoarea liberă e **`V32`**. Frontendul trece `tsc --noEmit` şi se build-uieşte.
 
-**Necommis şi nedeployat** — utilizatorul nu a cerut încă.
+**Commis, pushat şi deployat** — vezi secţiunea de mai jos.
 
 ### Auditul cerut după livrare — cinci defecte, toate în ce nu se vedea (06.09.2026)
 
@@ -2828,6 +2828,55 @@ după mutarea totalurilor, şi un import nefolosit.
 > final, e singura care prinde clasa asta. Şi încă ceva: **două generatoare pentru acelaşi
 > document sunt două ocazii să difere** — dacă amândouă calculează, vor diverge; dacă amândouă
 > citesc, nu pot.
+
+### Commis, pushat şi deployat (06.09.2026, ora 15:01)
+
+Două commit-uri pe monorepo: `b367b57` (codul, ambele felii) şi `4cac65a` (documentaţia). Un singur
+commit de cod fiindcă cele două felii ating aceeaşi entitate — `Partner` — iar o despărţire ar fi
+produs un commit care nu compilează; e scris ca atare în mesaj.
+
+Split-urile s-au tăiat şi s-au cherry-pickat după procedura obişnuită, fără `--force` şi fără
+conflicte, câte un commit nou de fiecare parte. `git reset --hard` din procedură **n-a fost
+necesar**: cele două branch-uri locale erau deja exact la capetele remote-urilor, aşa că s-a sărit —
+merită verificat întâi cu `git rev-parse`, e mai rapid şi mai puţin brutal decât resetul.
+
+| | Hash | Release |
+|---|---|---|
+| `origin/main` = `origin/deploy/heroku-split` | `4cac65a` | — |
+| `newrepo/main` → `ecoregistru-api` | `6e16562` | **v36** |
+| `ferepo/main` → `ecoregistru-app` | `e595e19` | **v29** |
+
+**Amândouă migrările au rulat**, verificat în logurile dyno-ului:
+
+```
+Current version of schema "public": 29
+Migrating schema "public" to version "30 - partner authorization alert"
+Migrating schema "public" to version "31 - packaging anexa3"
+Successfully applied 2 migrations to schema "public", now at version v31
+Started EcoRegistruApplication in 8.035 seconds
+```
+
+**Verificat şi în baza de producţie**, nu doar în loguri: cele patru coloane există
+(`partners.authorization_warning_sent_for` ca `date`, `partners.packaging_origin`,
+`companies.packaging_operator_role`, `waste_movements.packaging_origin`), iar `flyway_schema_history`
+are `30` şi `31` cu `success = true`.
+
+**Frontendul, verificat pe bundle-ul servit**, nu pe build: `/assets/index-CvqdoP90.js` de pe dyno
+conţine toate şirurile noi — „Anexa 3. Deşeuri de ambalaje preluate", „Provenienţa", „populaţie",
+„Reciclator" şi citatul din art. 4 alin. (1). Deci ecranul chiar a ajuns acolo. *(De data asta
+build-ul de frontend a intrat înaintea celui de backend, invers decât ultimele două dăţi.)*
+
+**Şi proba alertei, pe datele reale.** Interogat pe producţie cine ar primi mail la următoarea
+rulare de 07:15: **exact un partener**, `Hamburger`, cu autorizaţia expirând pe 24.09.2026. Cei doi
+parteneri cu autorizaţii deja expirate (12.06 şi 26.08) **nu** apar — adică fereastra „numai
+înainte" se poartă pe date reale exact cum spune migrarea, şi prima rulare nu inundă pe nimeni.
+
+⚠️ **Ce se va vedea în loguri, şi nu e defect.** Partenerul acela e al lui `Demo Reciclare SRL`, ai
+cărui utilizatori sunt toţi pe `@demo.ro` — domeniu care nu e al nostru, deci Gmail îi va respinge.
+Schedulerul prinde excepţia, o loghează, **lasă flagul nescris** şi reîncearcă mâine. Deci va apărea
+un `Failed to send authorization warning` pe zi până pe 24.09, când partenerul iese din fereastra de
+60 de zile şi zgomotul se opreşte singur. E chiar comportamentul proiectat — o livrare eşuată nu se
+marchează ca trimisă — şi totodată o consecinţă a conturilor de demo lăsate deliberat în producţie.
 
 ### Agenda meetingului cu Andreea, pregătită
 
