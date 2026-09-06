@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
 
@@ -32,6 +33,7 @@ export function SettingsPage() {
   const updateMut = useUpdateWorkPoint();
   const deactivateMut = useDeactivateWorkPoint();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<WorkPoint | null>(null);
@@ -79,7 +81,21 @@ export function SettingsPage() {
   }
 
   function handleDeactivate(wp: WorkPoint) {
-    if (!window.confirm(t.confirmDeactivate)) return;
+    confirm({
+      title: t.confirmDeactivateTitle,
+      message: (
+        <>
+          <strong className="text-content">{wp.name}</strong>
+          {wp.address ? ` — ${wp.address}` : ""}. {t.confirmDeactivate}
+        </>
+      ),
+      confirmLabel: t.deactivate,
+      tone: "danger",
+      onConfirm: () => deactivate(wp),
+    });
+  }
+
+  function deactivate(wp: WorkPoint) {
     deactivateMut.mutate(wp.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
@@ -208,6 +224,8 @@ export function SettingsPage() {
           </div>
         </form>
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const t = strings.settings.internalGenerators;
 
@@ -43,6 +44,7 @@ export function InternalGeneratorsSection({
   const updateMut = useUpdateInternalGenerator();
   const deactivateMut = useDeactivateInternalGenerator();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const activeWorkPoints = workPoints.filter((w) => w.active);
 
@@ -99,7 +101,21 @@ export function InternalGeneratorsSection({
   }
 
   function handleDeactivate(g: InternalGenerator) {
-    if (!window.confirm(t.confirmDeactivate)) return;
+    confirm({
+      title: t.confirmDeactivateTitle,
+      message: (
+        <>
+          <strong className="text-content">{g.name}</strong>
+          {g.workPointName ? ` — ${g.workPointName}` : ""}. {t.confirmDeactivate}
+        </>
+      ),
+      confirmLabel: t.deactivate,
+      tone: "danger",
+      onConfirm: () => deactivate(g),
+    });
+  }
+
+  function deactivate(g: InternalGenerator) {
     deactivateMut.mutate(g.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
@@ -245,6 +261,8 @@ export function InternalGeneratorsSection({
           </div>
         </form>
       </Dialog>
+
+      {confirmDialog}
     </section>
   );
 }

@@ -26,6 +26,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 
 const t = strings.partners;
@@ -66,6 +67,7 @@ export function PartnersPage() {
   const updateMut = useUpdatePartner();
   const deactivateMut = useDeactivatePartner();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
@@ -234,7 +236,21 @@ export function PartnersPage() {
   }
 
   function handleDeactivate(p: Partner) {
-    if (!window.confirm(t.confirmDeactivate)) return;
+    confirm({
+      title: t.confirmDeactivateTitle,
+      message: (
+        <>
+          <strong className="text-content">{p.name}</strong>
+          {p.cui ? ` — CUI ${p.cui}` : ""}. {t.confirmDeactivate}
+        </>
+      ),
+      confirmLabel: t.deactivate,
+      tone: "danger",
+      onConfirm: () => deactivate(p),
+    });
+  }
+
+  function deactivate(p: Partner) {
     deactivateMut.mutate(p.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
@@ -706,6 +722,8 @@ export function PartnersPage() {
           </div>
         </form>
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 }

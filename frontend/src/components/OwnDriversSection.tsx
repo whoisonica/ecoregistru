@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const t = strings.settings.drivers;
 
@@ -33,6 +34,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   const updateMut = useUpdateDriver();
   const deactivateMut = useDeactivateDriver();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const drivers = (allDrivers ?? []).filter((d) => d.partnerId === null);
 
@@ -89,7 +91,21 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   }
 
   function handleDeactivate(d: Driver) {
-    if (!window.confirm(t.confirmDeactivate)) return;
+    confirm({
+      title: t.confirmDeactivateTitle,
+      message: (
+        <>
+          <strong className="text-content">{d.name}</strong>
+          {d.vehicleRegistration ? ` — ${d.vehicleRegistration}` : ""}. {t.confirmDeactivate}
+        </>
+      ),
+      confirmLabel: t.deactivate,
+      tone: "danger",
+      onConfirm: () => deactivate(d),
+    });
+  }
+
+  function deactivate(d: Driver) {
     deactivateMut.mutate(d.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
@@ -224,6 +240,8 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
           </div>
         </form>
       </Dialog>
+
+      {confirmDialog}
     </section>
   );
 }

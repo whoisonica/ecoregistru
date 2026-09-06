@@ -49,6 +49,7 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 
@@ -175,6 +176,7 @@ export function MovementsPage() {
   const { data: movements, isLoading, isError } = useMovements(filters);
   const deleteMut = useDeleteMovement();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<WasteMovement | null>(null);
@@ -195,10 +197,25 @@ export function MovementsPage() {
   }
 
   function handleDelete(m: WasteMovement) {
-    if (!window.confirm(t.confirmDelete)) return;
-    deleteMut.mutate(m.id, {
-      onSuccess: () => notify(t.deleted, "success"),
-      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    // Identitatea rândului în corpul dialogului: `window.confirm` nu putea decât un șir fix, deci
+    // întreba „sigur ștergi această mișcare?" fără să spună vreodată *care*. Cu patru butoane pe
+    // rând și rânduri care se aseamănă, asta e chiar informația care oprește greșeala.
+    confirm({
+      title: t.confirmDeleteTitle,
+      message: (
+        <>
+          <strong className="text-content">{m.wasteCode}</strong> — {m.wasteCodeName},{" "}
+          {formatDate(m.date)}
+          {m.quantity != null ? `, ${m.quantity} ${e.unit[m.unit]}` : ""}
+          {m.partnerName ? `, ${m.partnerName}` : ""}. {t.confirmDelete}
+        </>
+      ),
+      tone: "danger",
+      onConfirm: () =>
+        deleteMut.mutate(m.id, {
+          onSuccess: () => notify(t.deleted, "success"),
+          onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+        }),
     });
   }
 
@@ -431,6 +448,8 @@ export function MovementsPage() {
           onClose={() => setDialogOpen(false)}
         />
       )}
+
+      {confirmDialog}
     </div>
   );
 }

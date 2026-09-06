@@ -293,7 +293,10 @@ export const strings = {
     updated: "Mișcare actualizată.",
     deleted: "Mișcare ștearsă.",
     saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
-    confirmDelete: "Sigur ștergi această mișcare?",
+    confirmDeleteTitle: "Ștergi mișcarea?",
+    // Corpul dialogului poartă identitatea rândului; aici rămâne doar urmarea.
+    confirmDelete:
+      "Cantitatea dispare din evidența lunară și din documentele care se tipăresc din ea. Ștergerea nu poate fi anulată.",
     attachmentError: "Fișierul nu a putut fi încărcat.",
     attachmentDeleted: "Atașament șters.",
     noWorkPointHint: "Adaugă întâi un punct de lucru din Setări.",
@@ -312,7 +315,9 @@ export const strings = {
       active: "Activ",
       inactive: "Inactiv",
       deactivate: "Dezactivează",
-      confirmDeactivate: "Sigur dezactivezi acest punct de lucru?",
+      confirmDeactivateTitle: "Dezactivezi punctul de lucru?",
+      confirmDeactivate:
+        "Nu mai apare la înregistrarea mișcărilor. Cele deja înregistrate rămân neatinse, dar dezactivarea nu poate fi anulată.",
       created: "Punct de lucru adăugat.",
       updated: "Punct de lucru actualizat.",
       deactivated: "Punct de lucru dezactivat.",
@@ -339,7 +344,9 @@ export const strings = {
       active: "Activ",
       inactive: "Inactiv",
       deactivate: "Dezactivează",
-      confirmDeactivate: "Sigur dezactivezi acest șofer? Mișcările deja înregistrate nu se schimbă.",
+      confirmDeactivateTitle: "Dezactivezi șoferul?",
+      confirmDeactivate:
+        "Nu mai apare în lista de delegați. Mișcările deja înregistrate nu se schimbă — Anexa 3 tipărește instantaneul de atunci. Dezactivarea nu poate fi anulată.",
       loadError: "Nu am putut încărca șoferii.",
       created: "Șofer adăugat.",
       updated: "Șofer actualizat.",
@@ -362,7 +369,9 @@ export const strings = {
       active: "Activ",
       inactive: "Inactiv",
       deactivate: "Dezactivează",
-      confirmDeactivate: "Sigur dezactivezi acest generator intern?",
+      confirmDeactivateTitle: "Dezactivezi generatorul intern?",
+      confirmDeactivate:
+        "Nu mai apare ca secție la înregistrarea mișcărilor. Cele deja înregistrate rămân neatinse, dar dezactivarea nu poate fi anulată.",
       created: "Generator intern adăugat.",
       updated: "Generator intern actualizat.",
       deactivated: "Generator intern dezactivat.",
@@ -445,7 +454,9 @@ export const strings = {
     expired: "Expirată",
     expiringSoon: "Expiră curând",
     deactivate: "Dezactivează",
-    confirmDeactivate: "Sigur dezactivezi acest partener? Acțiunea nu poate fi anulată.",
+    confirmDeactivateTitle: "Dezactivezi partenerul?",
+    confirmDeactivate:
+      "Nu mai apare la înregistrarea mișcărilor. Cele deja înregistrate rămân neatinse, dar dezactivarea nu poate fi anulată — nu există reactivare.",
     // feedback
     created: "Partener adăugat.",
     updated: "Partener actualizat.",
