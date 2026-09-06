@@ -26,6 +26,7 @@ import { AccountRequestsSection } from "@/components/AccountRequestsSection";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -108,8 +109,7 @@ export function ClientsPage() {
   if (!isPlatformAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-bold">{t.title}</h1>
-        <p className="mt-4 text-sm text-gray-500">{t.onlyPlatformAdmin}</p>
+        <PageHeader title={t.title} description={t.onlyPlatformAdmin} />
       </div>
     );
   }
@@ -260,16 +260,16 @@ export function ClientsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t.add}
-        </Button>
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t.add}
+          </Button>
+        }
+      />
 
       <section className="mt-6">
         {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
@@ -366,7 +366,7 @@ export function ClientsPage() {
               <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-cui">{t.cui}</Label>
               <Input
@@ -438,7 +438,7 @@ export function ClientsPage() {
               </label>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
               <Input
@@ -460,7 +460,7 @@ export function ClientsPage() {
             <Label htmlFor="c-address">{t.address}</Label>
             <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-contact-name">{t.contactName}</Label>
               <Input
@@ -479,7 +479,7 @@ export function ClientsPage() {
             </div>
           </div>
           {/* The two rubrics the annual declaration's header and signature block need. */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-caen">{t.caenCode}</Label>
               <Input
@@ -539,7 +539,7 @@ export function ClientsPage() {
           <div className="rounded-lg border border-gray-200 p-3">
             <p className="text-sm font-semibold text-gray-800">{t.wasteManagerTitle}</p>
             <p className="mt-1 text-xs text-gray-500">{t.wasteManagerHint}</p>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
                 <Input
@@ -585,7 +585,7 @@ export function ClientsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-reg">{strings.partners.tradeRegisterNumber}</Label>
               <Input
@@ -670,7 +670,7 @@ export function ClientsPage() {
               ))}
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="i-first">{t.inviteFirstName}</Label>
               <Input

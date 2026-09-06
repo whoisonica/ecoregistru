@@ -13,6 +13,7 @@ import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
@@ -83,18 +84,17 @@ export function AuditFilePage() {
           }}
         />
       )}
-      <h1 className="text-2xl font-bold">{t.title}</h1>
-      <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
+      <PageHeader title={t.title} description={t.subtitle} />
 
       <div className="mt-6 max-w-xl rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
             <Select
               id="af-year"
               value={String(year)}
               onChange={(ev) => setYear(Number(ev.target.value))}
-              className="w-32"
+              className="w-full sm:w-32"
             >
               {yearOptions().map((y) => (
                 <option key={y} value={y}>
@@ -109,7 +109,7 @@ export function AuditFilePage() {
               id="af-years"
               value={String(years)}
               onChange={(ev) => setYears(Number(ev.target.value))}
-              className="w-64"
+              className="w-full sm:w-64"
             >
               <option value="1">{t.yearsOne}</option>
               <option value="2">{t.yearsTwo}</option>

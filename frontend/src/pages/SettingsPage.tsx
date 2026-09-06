@@ -11,6 +11,7 @@ import type { WorkPoint } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -104,18 +105,18 @@ export function SettingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{strings.settings.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        {canManage && (
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t.add}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={strings.settings.title}
+        description={t.subtitle}
+        actions={
+          canManage && (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t.add}
+            </Button>
+          )
+        }
+      />
 
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-semibold text-gray-900">{t.title}</h2>

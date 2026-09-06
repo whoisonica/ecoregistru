@@ -244,7 +244,7 @@ export function AccountRequestPage() {
             <Label htmlFor="ar-name">{t.companyName}</Label>
             <Input id="ar-name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="ar-cui">{t.cui}</Label>
               <Input
@@ -314,7 +314,7 @@ export function AccountRequestPage() {
 
         <Section title={t.sectionContact}>
           <p className="text-xs text-gray-500">{t.contactHint}</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="ar-contact-name">{t.contactName}</Label>
               <Input
@@ -354,7 +354,7 @@ export function AccountRequestPage() {
         </Section>
 
         <Section title={t.sectionAuthorization}>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="ar-auth-number">{t.environmentalAuthNumber}</Label>
               <Input
@@ -387,7 +387,7 @@ export function AccountRequestPage() {
                 placeholder={t.transportMeansPlaceholder}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="ar-transport-licence">{t.transportLicenseNumber}</Label>
                 <Input

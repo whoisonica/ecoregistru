@@ -38,6 +38,7 @@ import type {
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -221,18 +222,18 @@ export function MovementsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        {canWrite && (
-          <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t.add}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          canWrite && (
+            <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t.add}
+            </Button>
+          )
+        }
+      />
 
       {canWrite && activeWorkPoints.length === 0 && (
         <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -241,7 +242,7 @@ export function MovementsPage() {
       )}
 
       {/* Filters */}
-      <div className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="filter-month">{t.filterMonth}</Label>
           <Input
@@ -249,7 +250,7 @@ export function MovementsPage() {
             type="month"
             value={monthFilter}
             onChange={(ev) => setMonthFilter(ev.target.value)}
-            className="w-44"
+            className="w-full sm:w-44"
           />
         </div>
         <div>
@@ -258,7 +259,7 @@ export function MovementsPage() {
             id="filter-wp"
             value={workPointFilter}
             onChange={(ev) => setWorkPointFilter(ev.target.value)}
-            className="w-56"
+            className="w-full sm:w-56"
           >
             <option value="">{t.filterAll}</option>
             {activeWorkPoints.map((w) => (
@@ -516,7 +517,7 @@ function RecordWeightDialog({
           {movement.wasteCode} — {movement.wasteCodeName}
           {movement.partnerName ? `, ${movement.partnerName}` : ""}, {formatDate(movement.date)}
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="wg-qty">{t.quantity}</Label>
             <Input
@@ -938,7 +939,7 @@ function MovementFormDialog({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="mv-wp">{t.filterWorkPoint}</Label>
             <Select
@@ -973,7 +974,7 @@ function MovementFormDialog({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="mv-qty">{t.quantity}</Label>
             <Input
@@ -1025,7 +1026,7 @@ function MovementFormDialog({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="mv-op">{t.operation}</Label>
             <Select
@@ -1119,7 +1120,7 @@ function MovementFormDialog({
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="mv-storage">{t.storageType}</Label>
             <Select
@@ -1152,7 +1153,7 @@ function MovementFormDialog({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="mv-transport-means">{t.transportMeans}</Label>
             <Select
@@ -1353,7 +1354,7 @@ function MovementFormDialog({
             {/* Rubricile de mai jos dau rândul şi coloana din tabelul 1, deci n-au sens dacă
                 mişcarea nu ajunge în tabel. */}
             {packagingOnMarket !== false && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="mv-pk-material">{t.packagingMaterial}</Label>
                 <Select
@@ -1438,7 +1439,7 @@ function MovementFormDialog({
               <p className="text-xs text-gray-500">{t.anexa3SectionHint}</p>
             </div>
             <p className="text-xs text-gray-500">{t.anexa3Copies}</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
                   Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr
                   e tot ce ne trebuie. Se arată ca să se vadă ce se tipărește. */}
@@ -1469,7 +1470,7 @@ function MovementFormDialog({
                 <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {/* Transportatorul și șoferul stau alături: alegerea firmei decide ce șoferi se
                   propun, iar alăturarea face legătura vizibilă fără s-o explice nimeni. */}
               <div>
@@ -1541,7 +1542,7 @@ function MovementFormDialog({
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div>
                 <Label htmlFor="mv-driver">{t.driverName}</Label>
                 <Input

@@ -8,6 +8,7 @@ import { usePartners } from "@/hooks/usePartners";
 import type { DeadlineStatus } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import type { BadgeProps } from "@/components/ui/badge";
 
@@ -86,22 +87,24 @@ export function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-gray-500">
+      <PageHeader
+        title={t.title}
+        description={
+          <>
             {t.welcome}, <span className="font-medium">{user?.email}</span>.
-          </p>
-        </div>
-        {canAdd && (
-          <Link to="/miscari">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              {t.addMovement}
-            </Button>
-          </Link>
-        )}
-      </div>
+          </>
+        }
+        actions={
+          canAdd && (
+            <Link to="/miscari">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                {t.addMovement}
+              </Button>
+            </Link>
+          )
+        }
+      />
 
       {/* Stat tiles */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

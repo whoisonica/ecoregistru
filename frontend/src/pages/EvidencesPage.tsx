@@ -16,6 +16,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatTonnes } from "@/lib/units";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
@@ -212,58 +213,58 @@ export function EvidencesPage() {
           }}
         />
       )}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* The official form first: it is the one the client actually files. */}
-          <Button
-            onClick={handleAnexa1}
-            disabled={rows.length === 0 || exporting !== null}
-            title={t.anexa1Hint}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {t.anexa1}
-          </Button>
-          {/* The summary that goes in front of it, and the page the authority reads first. */}
-          <Button
-            variant="outline"
-            onClick={handleAnnualDeclaration}
-            disabled={rows.length === 0 || exporting !== null}
-            title={t.annualDeclarationHint}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {t.annualDeclaration}
-          </Button>
-          {/* Export is read-only: available to every tenant member, viewer included. */}
-          <Button
-            variant="outline"
-            onClick={() => handleExport("xlsx")}
-            disabled={rows.length === 0 || exporting !== null}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {t.exportExcel}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleExport("pdf")}
-            disabled={rows.length === 0 || exporting !== null}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {t.exportPdf}
-          </Button>
-          {canManage && (
-            <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
-              />
-              {regenerateMut.isPending ? t.regenerating : t.regenerate}
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <>
+            {/* The official form first: it is the one the client actually files. */}
+            <Button
+              onClick={handleAnexa1}
+              disabled={rows.length === 0 || exporting !== null}
+              title={t.anexa1Hint}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {t.anexa1}
             </Button>
-          )}
-        </div>
-      </div>
+            {/* The summary that goes in front of it, and the page the authority reads first. */}
+            <Button
+              variant="outline"
+              onClick={handleAnnualDeclaration}
+              disabled={rows.length === 0 || exporting !== null}
+              title={t.annualDeclarationHint}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {t.annualDeclaration}
+            </Button>
+            {/* Export is read-only: available to every tenant member, viewer included. */}
+            <Button
+              variant="outline"
+              onClick={() => handleExport("xlsx")}
+              disabled={rows.length === 0 || exporting !== null}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {t.exportExcel}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleExport("pdf")}
+              disabled={rows.length === 0 || exporting !== null}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {t.exportPdf}
+            </Button>
+            {canManage && (
+              <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+                />
+                {regenerateMut.isPending ? t.regenerating : t.regenerate}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {canManage && (
         <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -289,14 +290,14 @@ export function EvidencesPage() {
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end gap-3">
+      <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="ev-year">{t.filterYear}</Label>
           <Select
             id="ev-year"
             value={String(year)}
             onChange={(ev) => setYear(Number(ev.target.value))}
-            className="w-32"
+            className="w-full sm:w-32"
           >
             {yearOptions().map((y) => (
               <option key={y} value={y}>
@@ -311,7 +312,7 @@ export function EvidencesPage() {
             id="ev-month"
             value={month}
             onChange={(ev) => setMonth(ev.target.value)}
-            className="w-44"
+            className="w-full sm:w-44"
           >
             <option value="">{t.allMonths}</option>
             {strings.months.map((name, i) => (
@@ -327,7 +328,7 @@ export function EvidencesPage() {
             id="ev-wp"
             value={workPointId}
             onChange={(ev) => setWorkPointId(ev.target.value)}
-            className="w-56"
+            className="w-full sm:w-56"
           >
             <option value="">{t.allWorkPoints}</option>
             {activeWorkPoints.map((w) => (

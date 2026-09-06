@@ -26,6 +26,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -224,29 +225,29 @@ export function PackagingPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2">
-            <Button onClick={() => handleDownload("xls")} disabled={downloading != null}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {downloading === "xls" ? strings.common.loading : t.downloadXls}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleDownload("pdf")}
-              disabled={downloading != null}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              {downloading === "pdf" ? strings.common.loading : t.downloadPdf}
-            </Button>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => handleDownload("xls")} disabled={downloading != null}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                {downloading === "xls" ? strings.common.loading : t.downloadXls}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDownload("pdf")}
+                disabled={downloading != null}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                {downloading === "pdf" ? strings.common.loading : t.downloadPdf}
+              </Button>
+            </div>
+            <p className="max-w-sm text-xs text-content-muted sm:text-right">{t.downloadHint}</p>
           </div>
-          <p className="max-w-sm text-right text-xs text-gray-500">{t.downloadHint}</p>
-        </div>
-      </div>
+        }
+      />
 
       <div className="mt-6 w-40">
         <Label htmlFor="pk-year">{t.year}</Label>

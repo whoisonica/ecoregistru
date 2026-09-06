@@ -11,6 +11,7 @@ import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
@@ -97,30 +98,30 @@ export function DeadlinesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        {canManage && (
-          <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
-            />
-            {regenerateMut.isPending ? t.generating : t.generate}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          canManage && (
+            <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+              />
+              {regenerateMut.isPending ? t.generating : t.generate}
+            </Button>
+          )
+        }
+      />
 
       {/* Filters */}
-      <div className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="dl-year">{t.filterYear}</Label>
           <Select
             id="dl-year"
             value={String(year)}
             onChange={(ev) => setYear(Number(ev.target.value))}
-            className="w-32"
+            className="w-full sm:w-32"
           >
             {yearOptions().map((y) => (
               <option key={y} value={y}>

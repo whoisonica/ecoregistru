@@ -18,6 +18,7 @@ import type {
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -259,27 +260,27 @@ export function PartnersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        {canManage && (
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t.add}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          canManage && (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t.add}
+            </Button>
+          )
+        }
+      />
 
-      <div className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="filter-role">{t.filterRole}</Label>
           <Select
             id="filter-role"
             value={roleFilter}
             onChange={(ev) => setRoleFilter(ev.target.value as RoleFilter)}
-            className="w-56"
+            className="w-full sm:w-56"
           >
             <option value="">{t.filterRoleAll}</option>
             <option value="client">{roleLabels.client}</option>
@@ -525,7 +526,7 @@ export function PartnersPage() {
 
             {isCarrier && (
               <div className="mt-3 space-y-3 border-t border-gray-200 pt-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
                     <Input
@@ -562,7 +563,7 @@ export function PartnersPage() {
                             }
                           />
                         </div>
-                        <div className="w-40">
+                        <div className="w-full sm:w-40">
                           <Label htmlFor={`p-driver-id-${index}`}>{t.driverIdentification}</Label>
                           <Input
                             id={`p-driver-id-${index}`}
