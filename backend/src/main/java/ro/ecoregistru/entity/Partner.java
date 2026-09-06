@@ -3,6 +3,7 @@ package ro.ecoregistru.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PartnerType;
 
 import java.time.Instant;
@@ -120,6 +121,19 @@ public class Partner {
     LocalDate authorizationExpiry;
 
     /**
+     * The expiry date the 60-day warning e-mail has already been sent for (V30). Deduplication
+     * key of {@code PartnerAuthorizationAlertScheduler}, and a date rather than a boolean on
+     * purpose: renewing the authorization writes a new {@link #authorizationExpiry}, which no
+     * longer equals this one, so the alert re-arms itself. A boolean would have needed clearing by
+     * hand at renewal, and the second term would have passed in silence.
+     *
+     * <p>Nothing in {@code PartnerService} touches it — that is the point of keying it on the
+     * value rather than on an event.
+     */
+    @Column(name = "authorization_warning_sent_for")
+    LocalDate authorizationWarningSentFor;
+
+    /**
      * What they do with the waste. Nullable since V28: a pure haulage firm does nothing with it,
      * it moves it, and typing it "Colector" would be a guessed value on a printed rubric — the
      * audit file prints the column, and the Anexa 3 "Destinat:" ticks are prefilled from it. Null
@@ -135,6 +149,19 @@ public class Partner {
     /** They perform the service and they invoice us. */
     @Column(name = "is_supplier", nullable = false)
     boolean supplier;
+
+    /**
+     * "Provenienţa" this partner represents on Anexa 3 la Ordinul 794/2012 (V31) — what they are
+     * relative to the packaging waste they bring: a generator, another collector, or a trader.
+     *
+     * <p>Answered once here rather than on every load, because nota 2 of the annex describes the
+     * source, not the transport, and a collector one buys from is a collector every time. A
+     * movement may still override it; {@code POPULATIE} is only ever set there, since a natural
+     * person is not a partner. Null means unanswered, and the quantity stays off the table.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "packaging_origin", length = 32)
+    PackagingOrigin packagingOrigin;
 
     @Column(nullable = false)
     boolean active;

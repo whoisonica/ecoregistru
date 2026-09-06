@@ -75,6 +75,12 @@ public class WasteMovementMapper {
                 m.getPackagingCategory(),
                 m.getPackagingReusable(),
                 m.getPackagingHazardousContent(),
+                m.getPackagingOrigin(),
+                // What the form will print: the movement's answer, or the partner's.
+                ro.ecoregistru.enums.PackagingOrigin.resolve(
+                                m.getPackagingOrigin(),
+                                partner == null ? null : partner.getPackagingOrigin())
+                        .orElse(null),
                 PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()),
                 m.getCreatedAt(),
                 m.getUpdatedAt()

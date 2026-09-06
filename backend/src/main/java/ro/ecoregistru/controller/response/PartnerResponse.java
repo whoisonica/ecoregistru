@@ -1,6 +1,7 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PartnerType;
+import ro.ecoregistru.enums.PackagingOrigin;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +22,8 @@ public record PartnerResponse(
         /** They can haul the waste; drives the "Transportatori" group of the movement form. */
         boolean carrier,
         boolean active,
+        /** Provenienţa they represent on anexa 3 ambalaje; null while unanswered. */
+        PackagingOrigin packagingOrigin,
         /** True when the authorization expires within 60 days (drives the UI badge). */
         boolean expiringSoon,
 

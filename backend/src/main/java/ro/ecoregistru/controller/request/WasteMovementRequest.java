@@ -10,6 +10,7 @@ import ro.ecoregistru.enums.WasteDestination;
 import ro.ecoregistru.enums.TreatmentMethod;
 import ro.ecoregistru.enums.PackagingCategory;
 import ro.ecoregistru.enums.PackagingMaterial;
+import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteOperationCode;
@@ -88,5 +89,11 @@ public record WasteMovementRequest(
         /** Col. 4 / col. 6 of tabelul 1, "din care: ambalaj reutilizabil". */
         Boolean packagingReusable,
         /** Col. 7 of tabelul 1, "ambalaje cu conţinut periculos" — also part of col. 3. */
-        Boolean packagingHazardousContent
+        Boolean packagingHazardousContent,
+        /**
+         * "Provenienţa" of Anexa 3 la Ordinul 794/2012 (V31), overriding the partner's own
+         * answer. The only place {@code POPULATIE} can be said, since a natural person is not
+         * a partner. Null takes it from the partner.
+         */
+        PackagingOrigin packagingOrigin
 ) {}

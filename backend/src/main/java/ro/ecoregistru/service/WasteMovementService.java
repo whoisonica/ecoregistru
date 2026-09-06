@@ -108,6 +108,7 @@ public class WasteMovementService {
                 .packagingReusable(packagingOnly(wasteCode, request.packagingReusable()))
                 .packagingHazardousContent(
                         packagingOnly(wasteCode, request.packagingHazardousContent()))
+                .packagingOrigin(packagingOnly(wasteCode, request.packagingOrigin()))
                 .transportPartner(carrier)
                 .driverName(request.driverName())
                 .driverIdentification(request.driverIdentification())
@@ -169,6 +170,7 @@ public class WasteMovementService {
         movement.setPackagingReusable(packagingOnly(wasteCode, request.packagingReusable()));
         movement.setPackagingHazardousContent(
                 packagingOnly(wasteCode, request.packagingHazardousContent()));
+        movement.setPackagingOrigin(packagingOnly(wasteCode, request.packagingOrigin()));
         movement.setTransportPartner(carrier);
         movement.setDriverName(request.driverName());
         movement.setDriverIdentification(request.driverIdentification());

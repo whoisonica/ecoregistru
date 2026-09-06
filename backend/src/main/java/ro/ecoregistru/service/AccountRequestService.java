@@ -125,6 +125,12 @@ public class AccountRequestService {
                 request.getTransportLicenseExpiry(),
                 null,   // trade register number: not asked on the intake form
                 null,   // Anexa 3 series: set later, when the client has a form pad
+                // Which table of anexa 3 ambalaje applies is not asked at intake either: it is a
+                // legal quality (Ordinul 794/2012 art. 4 alin. (1)), it only concerns operators who
+                // take packaging waste over from third parties, and putting it on a form every
+                // generator fills in would ask most clients a question that does not apply to them.
+                // Filled in with the client afterwards; until then no anexa 3 prints.
+                null,
                 request.getCaenCode(),      // both rubrics of the annual declaration's header,
                 null,   // Anexa 3 unit: not asked at intake — the form pad decides it, and an
                         // unanswered setting keeps printing the unit of the movement

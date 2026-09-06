@@ -3,6 +3,7 @@ package ro.ecoregistru.controller.response;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
+import ro.ecoregistru.enums.PackagingOperatorRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.LocalDate;
@@ -49,6 +50,8 @@ public record CompanyResponse(
         String anexa3Series,
 
         /** Header rubrics of the annual declaration; null when never filled in. */
+        /** Which table of anexa 3 ambalaje applies; null while unanswered. */
+        PackagingOperatorRole packagingOperatorRole,
         String caenCode,
         Unit anexa3Unit,
         String contactRole,

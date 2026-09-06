@@ -14,6 +14,7 @@ import type {
   CompanyType,
   InviteRole,
   InviteUserInput,
+  PackagingOperatorRole,
   Unit,
 } from "@/lib/types";
 import {
@@ -80,6 +81,11 @@ export function ClientsPage() {
   const [contactRole, setContactRole] = useState("");
   // Persoana desemnată cu gestiunea deșeurilor (OUG 92/2021 art. 23 alin. (4)-(5)). Altceva decât
   // contactRole de mai sus, care e blocul de semnătură al declarației anuale.
+  // Calitatea din Ordinul 794/2012 art. 4 alin. (1). Nu se cere la cererea de cont: priveşte doar
+  // operatorii care preiau deşeuri de ambalaje de la terţi, iar pe formularul pe care îl completează
+  // orice generator ar fi o întrebare care nu i se aplică.
+  const [packagingOperatorRole, setPackagingOperatorRole] =
+    useState<"" | PackagingOperatorRole>("");
   const [wasteManagerName, setWasteManagerName] = useState("");
   const [wasteManagerRole, setWasteManagerRole] = useState("");
   const [wasteManagerExternal, setWasteManagerExternal] = useState<"" | "yes" | "no">("");
@@ -147,6 +153,7 @@ export function ClientsPage() {
     setCaenCode(c.caenCode ?? "");
     setAnexa3Unit(c.anexa3Unit ?? "");
     setContactRole(c.contactRole ?? "");
+    setPackagingOperatorRole(c.packagingOperatorRole ?? "");
     setWasteManagerName(c.wasteManagerName ?? "");
     setWasteManagerRole(c.wasteManagerRole ?? "");
     setWasteManagerExternal(
@@ -192,6 +199,7 @@ export function ClientsPage() {
       caenCode: caenCode.trim() || null,
       anexa3Unit: anexa3Unit || null,
       contactRole: contactRole.trim() || null,
+      packagingOperatorRole: packagingOperatorRole || null,
       wasteManagerName: wasteManagerName.trim() || null,
       wasteManagerRole: wasteManagerRole.trim() || null,
       // "" rămâne null: „nu s-a răspuns" nu e același lucru cu „angajat propriu".
@@ -494,6 +502,25 @@ export function ClientsPage() {
                 <option value="TONS">{t.anexa3UnitTons}</option>
               </Select>
               <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
+              <Select
+                id="c-pkg-role"
+                value={packagingOperatorRole}
+                onChange={(e) =>
+                  setPackagingOperatorRole(e.target.value as "" | PackagingOperatorRole)
+                }
+              >
+                <option value="">{strings.packagingOperatorRole.none}</option>
+                <option value="COLECTOR">{strings.packagingOperatorRole.COLECTOR}</option>
+                <option value="COMERCIANT">{strings.packagingOperatorRole.COMERCIANT}</option>
+                <option value="RECICLATOR">{strings.packagingOperatorRole.RECICLATOR}</option>
+                <option value="VALORIFICATOR">
+                  {strings.packagingOperatorRole.VALORIFICATOR}
+                </option>
+              </Select>
+              <p className="mt-1 text-xs text-gray-500">{strings.packagingOperatorRole.hint}</p>
             </div>
             <div>
               <Label htmlFor="c-contact-role">{t.contactRole}</Label>

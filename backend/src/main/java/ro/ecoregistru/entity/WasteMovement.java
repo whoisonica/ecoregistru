@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import ro.ecoregistru.enums.PackagingCategory;
 import ro.ecoregistru.enums.PackagingMaterial;
+import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.TransportDestination;
 import ro.ecoregistru.enums.TransportMeans;
@@ -284,6 +285,21 @@ public class WasteMovement {
     @Enumerated(EnumType.STRING)
     @Column(name = "packaging_category", length = 20)
     PackagingCategory packagingCategory;
+
+    /**
+     * "Provenienţa" of Anexa 3 la Ordinul 794/2012 (V31), overriding whatever the partner says.
+     *
+     * <p>Normally the answer lives on the partner, because nota 2 describes the <em>source</em> of
+     * the waste rather than the transport. This column exists for the one value that can have no
+     * partner: {@code POPULATIE}. A natural person has no CUI and no authorization and does not
+     * belong in the partner register, so without this the form's "populaţie" row could never be
+     * filled — and a collection centre buys from natural persons daily.
+     *
+     * <p>Null means "take it from the partner". See {@link ro.ecoregistru.enums.PackagingOrigin}.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "packaging_origin", length = 32)
+    PackagingOrigin packagingOrigin;
 
     /**
      * Col. 4 / col. 6 of tabelul 1, "din care: ambalaj reutilizabil". Nota 2 of the form: reported

@@ -113,4 +113,18 @@ public enum PackagingMaterial {
     public static List<PackagingMaterial> metalParts() {
         return List.of(ALUMINIU, OTEL);
     }
+
+    /**
+     * Whether this material is summed into one of the two group rows above, rather than standing
+     * on its own.
+     *
+     * <p>It decides who gets a "total &lt;material&gt;" line of their own on Anexa 3 la Ordinul
+     * 794/2012: the blank model closes hârtie-carton and lemn with one, but never PET or alte
+     * plastice, because those two are closed by "total plastic" instead. Printing both would state
+     * the same kilograms twice under two labels, and on a form filed with an authority a repeated
+     * figure reads as a second, different quantity.
+     */
+    public boolean isSummedIntoAGroup() {
+        return plasticParts().contains(this) || metalParts().contains(this);
+    }
 }

@@ -19,6 +19,7 @@ import type {
   CompanyType,
   PackagingCategory,
   PackagingMaterial,
+  PackagingOrigin,
   PartnerType,
   TransportDestination,
   TransportMeans,
@@ -574,6 +575,15 @@ function MovementFormDialog({
   const [packagingCategory, setPackagingCategory] = useState<PackagingCategory | "">(
     editing?.packagingCategory ?? ""
   );
+  // Provenienţa de pe Anexa 3 Ambalaje. Normal se răspunde o dată, pe partener; aici e
+  // suprascrierea — şi singurul loc unde se poate spune „populaţie", fiindcă o persoană fizică
+  // nu e partener. Se arată numai la preluări: nota 2 întreabă de unde vine marfa preluată, deci
+  // pe o generare sau pe o predare rubrica n-ar avea niciun înţeles.
+  const [packagingOrigin, setPackagingOrigin] = useState<PackagingOrigin | "">(
+    // Suprascrierea de pe mişcare, nu valoarea rezolvată: altfel redeschiderea unei mişcări care
+    // moştenea răspunsul partenerului l-ar transforma tăcut în suprascriere proprie.
+    editing?.packagingOrigin ?? ""
+  );
   const [packagingReusable, setPackagingReusable] = useState(
     editing?.packagingReusable ?? false
   );
@@ -845,6 +855,8 @@ function MovementFormDialog({
       packagingMaterial: isPackagingCode ? packagingMaterial || null : null,
       packagingCategory: isPackagingCode ? packagingCategory || null : null,
       packagingReusable: isPackagingCode ? packagingReusable : null,
+      packagingOrigin:
+        isPackagingCode && operation === "COLLECTED" ? packagingOrigin || null : null,
       packagingHazardousContent:
         isPackagingCode && packagingCategory === "PRIMARY" ? packagingHazardousContent : null,
     };
@@ -1294,6 +1306,24 @@ function MovementFormDialog({
                 <span className="block text-xs text-gray-500">{t.packagingOnMarketHint}</span>
               </span>
             </label>
+
+            {operation === "COLLECTED" && (
+              <div>
+                <Label htmlFor="mv-pk-origin">{strings.packagingOrigin.label}</Label>
+                <Select
+                  id="mv-pk-origin"
+                  value={packagingOrigin}
+                  onChange={(ev) => setPackagingOrigin(ev.target.value as PackagingOrigin | "")}
+                >
+                  <option value="">{strings.packagingOrigin.fromPartner}</option>
+                  <option value="POPULATIE">{strings.packagingOrigin.POPULATIE}</option>
+                  <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
+                  <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
+                  <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
+                </Select>
+                <p className="mt-1 text-xs text-gray-500">{strings.packagingOrigin.hintMovement}</p>
+              </div>
+            )}
 
             {packagingOnMarket === null && (
               <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

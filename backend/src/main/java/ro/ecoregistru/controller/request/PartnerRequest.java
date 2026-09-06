@@ -2,6 +2,7 @@ package ro.ecoregistru.controller.request;
 
 import jakarta.validation.constraints.NotBlank;
 import ro.ecoregistru.enums.PartnerType;
+import ro.ecoregistru.enums.PackagingOrigin;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,6 +25,12 @@ public record PartnerRequest(
         boolean supplier,
         /** They can haul the waste. Independent of {@code type}: most carriers are also collectors. */
         boolean carrier,
+        /**
+         * What this partner is relative to the packaging waste they bring — nota 2 of anexa 3
+         * la Ordinul 794/2012. Answered once here, because the note describes the source and
+         * not the transport. Null means unanswered.
+         */
+        PackagingOrigin packagingOrigin,
 
         // --- What Anexa 3 prints about them, as recipient or as carrier ---
         String address,

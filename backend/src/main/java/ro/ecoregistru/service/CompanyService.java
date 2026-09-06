@@ -150,6 +150,9 @@ public class CompanyService {
         // null stays null on purpose: "not answered" means the Anexa 3 keeps printing the unit
         // the movement was recorded in.
         company.setAnexa3Unit(request.anexa3Unit());
+        // Scalar, so null clears it — same contract as anexa3Unit above, and the same
+        // trap: a partial PUT wipes it. The profile screen sends the whole object.
+        company.setPackagingOperatorRole(request.packagingOperatorRole());
         company.setContactRole(blankToNull(request.contactRole()));
         company.setWasteManagerName(blankToNull(request.wasteManagerName()));
         company.setWasteManagerRole(blankToNull(request.wasteManagerRole()));
@@ -195,6 +198,7 @@ public class CompanyService {
                         .toList(),
                 c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry(),
                 c.getTradeRegisterNumber(), c.getAnexa3Series(),
+                c.getPackagingOperatorRole(),
                 c.getCaenCode(), c.getAnexa3Unit(), c.getContactRole(),
                 c.getWasteManagerName(), c.getWasteManagerRole(),
                 c.getWasteManagerExternal(), c.getWasteManagerTraining());

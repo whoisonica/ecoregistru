@@ -10,6 +10,7 @@ import {
 import type {
   DriverInput,
   Partner,
+  PackagingOrigin,
   PartnerInput,
   PartnerType,
   PartnerWorkPointInput,
@@ -79,6 +80,10 @@ export function PartnersPage() {
   const [address, setAddress] = useState("");
   const [workPoints, setWorkPoints] = useState<PartnerWorkPointInput[]>([]);
   const [isCarrier, setIsCarrier] = useState(false);
+  // Provenienţa pentru Anexa 3 Ambalaje. Stă aici, nu pe mişcare, fiindcă nota 2 a anexei
+  // descrie sursa, nu transportul: un colector de la care cumperi e colector la fiecare
+  // transport. „Populaţie" lipseşte dinadins din listă — o persoană fizică nu e partener.
+  const [packagingOrigin, setPackagingOrigin] = useState<"" | PackagingOrigin>("");
   const [drivers, setDrivers] = useState<DriverInput[]>([]);
   const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
@@ -124,6 +129,7 @@ export function PartnersPage() {
     setIsClient(false);
     setIsSupplier(true);
     setIsCarrier(false);
+    setPackagingOrigin("");
     setDrivers([]);
     setAddress("");
     setWorkPoints([]);
@@ -146,6 +152,7 @@ export function PartnersPage() {
     setIsClient(p.client);
     setIsSupplier(p.supplier);
     setIsCarrier(p.carrier);
+    setPackagingOrigin(p.packagingOrigin ?? "");
     setDrivers((p.drivers ?? []).map((d) => ({
       id: d.id,
       name: d.name,
@@ -192,6 +199,7 @@ export function PartnersPage() {
       client: isClient,
       supplier: isSupplier,
       carrier: isCarrier,
+      packagingOrigin: packagingOrigin || null,
       address: address.trim() || null,
       // Rândurile fără adresă se aruncă: un punct de lucru fără adresă nu e nimic pe Anexa 3.
       workPoints: workPoints
@@ -467,6 +475,21 @@ export function PartnersPage() {
           {/* Transportatorul e o bifă, nu un tip: aceeași firmă e des și colector, și
               transportator, iar un enum exclusiv ar fi obligat-o să existe de două ori. Licența și
               șoferii apar numai bifat, ca să nu se ceară tuturor date care nu-i privesc. */}
+          <div>
+            <Label htmlFor="p-pkg-origin">{strings.packagingOrigin.label}</Label>
+            <Select
+              id="p-pkg-origin"
+              value={packagingOrigin}
+              onChange={(e) => setPackagingOrigin(e.target.value as "" | PackagingOrigin)}
+            >
+              <option value="">{strings.packagingOrigin.none}</option>
+              <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
+              <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
+              <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
+            </Select>
+            <p className="mt-1 text-xs text-gray-500">{strings.packagingOrigin.hintPartner}</p>
+          </div>
+
           <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
             <label className="flex items-start gap-2 text-sm">
               <input

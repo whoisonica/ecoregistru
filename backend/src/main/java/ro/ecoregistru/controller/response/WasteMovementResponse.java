@@ -2,6 +2,7 @@ package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PackagingCategory;
 import ro.ecoregistru.enums.PackagingMaterial;
+import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TransportDestination;
@@ -106,6 +107,16 @@ public record WasteMovementResponse(
         PackagingCategory packagingCategory,
         Boolean packagingReusable,
         Boolean packagingHazardousContent,
+        /**
+         * What the <em>movement</em> says about the provenance — the override, empty when the
+         * answer is the partner's. Kept separate from {@code effectivePackagingOrigin} for the
+         * same reason {@code packagingMaterial} is kept separate from its effective twin: the form
+         * has to reopen showing what was typed on it, not what was resolved for printing, or
+         * saving it again would silently turn a partner's answer into a movement-level override.
+         */
+        PackagingOrigin packagingOrigin,
+        /** What the form will actually print: the movement's answer, or the partner's. */
+        PackagingOrigin effectivePackagingOrigin,
         /** True when the code is 15 01 xx, so the screen knows to ask the three above. */
         boolean packagingCode,
 

@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
+import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.service.EmailService;
@@ -15,8 +16,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Email implementation of {@link NotificationService} (Romanian). Renders one reminder per
- * recipient via the shared {@link EmailService}; template at resources/templates/mail/deadline_reminder.html.
+ * Email implementation of {@link NotificationService} (Romanian). Renders one message per
+ * recipient via the shared {@link EmailService}; templates under resources/templates/mail/.
  */
 @Slf4j
 @Service
@@ -44,12 +45,62 @@ public class EmailNotificationService implements NotificationService {
         }
     }
 
+    /**
+     * The 60-day warning that a partner's environmental authorization is running out (V30).
+     *
+     * <p>The subject names the partner, not the rule: what the reader has to do is check one
+     * specific company, and a subject that says "Autorizaţie de mediu" without a name is a subject
+     * nobody opens twice. The body says what is at stake — art. 23 alin. (1) — because otherwise
+     * the natural reading is "the partner has a problem", when in fact the exposure is the
+     * tenant's own.
+     */
+    @Override
+    public void sendPartnerAuthorizationWarning(Partner partner, List<String> recipientEmails, long daysUntil) {
+        String expiryDate = partner.getAuthorizationExpiry().format(DATE);
+        String subject = "Autorizația de mediu a partenerului " + partner.getName()
+                + " expiră (" + whenExpiry(daysUntil) + ")";
+
+        for (String to : recipientEmails) {
+            Context ctx = new Context(Locale.of("ro"));
+            ctx.setVariable("partnerName", partner.getName());
+            ctx.setVariable("partnerCui", partner.getCui());
+            ctx.setVariable("authorizationNumber", partner.getAuthorizationNumber());
+            ctx.setVariable("expiryDate", expiryDate);
+            ctx.setVariable("daysUntil", daysUntil);
+            ctx.setVariable("whenText", whenExpiry(daysUntil));
+            emailService.send(to, subject, "mail/partner_authorization_expiring", ctx);
+        }
+    }
+
     /** Human phrasing of the remaining time, used in the subject and body. */
     private String when(long daysUntil) {
         if (daysUntil <= 0) return "scadent astăzi";
         if (daysUntil == 1) return "scadent mâine";
         return "scadent în " + daysUntil + " zile";
     }
+
+    /**
+     * Same idea as {@link #when(long)}, but for an expiry rather than a due date. Separate because
+     * "scadent" is wrong about an authorization: a deadline is something you meet, an authorization
+     * is something that lapses.
+     *
+     * <p>Zero and negative are handled even though the scheduler never sends them — its window
+     * starts today (see V30) — so that a future caller with a different window does not print
+     * "expiră în -3 zile".
+     */
+    private String whenExpiry(long daysUntil) {
+        if (daysUntil < 0) return "expirată";
+        if (daysUntil == 0) return "expiră astăzi";
+        if (daysUntil == 1) return "expiră mâine";
+        return "expiră în " + daysUntil + (daysUntil >= 20 ? " de zile" : " zile");
+    }
+
+    /*
+     * The "de" above is grammar, not decoration: Romanian inserts it before the noun from 20
+     * upwards, so "în 60 de zile" but "în 5 zile". It matters here and not in when(), whose
+     * window is seven days and never reaches the threshold — which is why the two phrasings stay
+     * separate methods rather than one shared helper that would be right for only one of them.
+     */
 
     /**
      * What the client is actually being reminded of. SIM_ANNUAL is named after the document, not

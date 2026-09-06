@@ -63,6 +63,7 @@ public class PartnerService {
                 .client(request.client())
                 .supplier(request.supplier())
                 .carrier(request.carrier())
+                .packagingOrigin(request.packagingOrigin())
                 .address(request.address())
                 .tradeRegisterNumber(request.tradeRegisterNumber())
                 .transportLicenseNumber(request.transportLicenseNumber())
@@ -89,6 +90,7 @@ public class PartnerService {
         partner.setClient(request.client());
         partner.setSupplier(request.supplier());
         partner.setCarrier(request.carrier());
+        partner.setPackagingOrigin(request.packagingOrigin());
         partner.setAddress(request.address());
         applyWorkPoints(partner, request);
         applyDrivers(partner, request);
@@ -215,7 +217,7 @@ public class PartnerService {
         return new PartnerResponse(
                 p.getId(), p.getName(), p.getCui(), p.getAuthorizationNumber(),
                 p.getAuthorizationExpiry(), p.getType(), p.isClient(), p.isSupplier(),
-                p.isCarrier(), p.isActive(), expiringSoon,
+                p.isCarrier(), p.isActive(), p.getPackagingOrigin(), expiringSoon,
                 p.getAddress(),
                 p.getWorkPoints().stream()
                         .map(wp -> new PartnerWorkPointResponse(wp.getId(), wp.getName(),

@@ -14,7 +14,9 @@ import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.mapper.WasteMovementMapper;
+import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.repository.PackagingMarketEntryRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
@@ -23,6 +25,10 @@ import ro.ecoregistru.service.export.PackagingDeclaration;
 import ro.ecoregistru.service.export.PackagingDeclarationBuilder;
 import ro.ecoregistru.service.export.PackagingDeclarationGenerator;
 import ro.ecoregistru.service.export.PackagingDeclarationXlsGenerator;
+import ro.ecoregistru.service.export.PackagingAnexa3;
+import ro.ecoregistru.service.export.PackagingAnexa3Builder;
+import ro.ecoregistru.service.export.PackagingAnexa3Generator;
+import ro.ecoregistru.service.export.PackagingAnexa3XlsGenerator;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -31,7 +37,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import ro.ecoregistru.exception.BusinessException;
+
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.PACKAGING_OPERATOR_ROLE_REQUIRED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
 
 /**
  * The packaging module: Anexa 1 Ambalaje (Ordinul 794/2012) and everything the tab centralises.
@@ -59,6 +69,10 @@ public class PackagingService {
     PackagingDeclarationBuilder builder;
     PackagingDeclarationGenerator pdfGenerator;
     PackagingDeclarationXlsGenerator xlsGenerator;
+    WorkPointRepository workPointRepository;
+    PackagingAnexa3Builder anexa3Builder;
+    PackagingAnexa3Generator anexa3PdfGenerator;
+    PackagingAnexa3XlsGenerator anexa3XlsGenerator;
 
     /**
      * The packaging movements of a year — every movement on a {@code 15 01 xx} code, newest first,
@@ -194,6 +208,48 @@ public class PackagingService {
     @Transactional(readOnly = true)
     public List<PackagingDeclaration.UnclassifiedRow> unclassified(int year) {
         return declaration(year).unclassified();
+    }
+
+    // ------------------------------------------------------------------ anexa 3
+
+    /**
+     * Anexa 3 la Ordinul 794/2012 for one work point and one year, assembled but not yet rendered
+     * — the screen shows exactly this before anybody downloads a file.
+     *
+     * <p>Per work point because art. 4 alin. (4) says so ("Raportarea se realizează pentru fiecare
+     * punct de lucru în parte") and alin. (3) sends each to the agency in whose area it lies, so
+     * two work points in two counties are two reports to two addressees. Passing {@code null} for
+     * the work point builds the whole company instead, which is what the screen shows an account
+     * that has only ever had one.
+     */
+    @Transactional(readOnly = true)
+    public PackagingAnexa3 anexa3(int year, UUID workPointId) {
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        WorkPoint workPoint = workPointId == null ? null : workPointRepository.findById(workPointId)
+                .filter(wp -> wp.getCompany().getId().equals(tenantId))
+                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        return anexa3Builder.build(company, workPoint, year, yearMovements(tenantId, year));
+    }
+
+    /**
+     * Renders it. {@code .xls} is what the authority receives and the PDF is the paper copy beside
+     * it — art. 6 asks for both, in those words.
+     *
+     * <p>Refuses when the company profile does not say which table applies. The generators would
+     * throw anyway; catching it here turns it into the message that names what to go and answer,
+     * instead of a 500 from inside a spreadsheet library.
+     */
+    @Transactional(readOnly = true)
+    public byte[] renderAnexa3(int year, UUID workPointId, ExportFormat format) {
+        PackagingAnexa3 document = anexa3(year, workPointId);
+        if (!document.printable()) {
+            throw new BusinessException(PACKAGING_OPERATOR_ROLE_REQUIRED);
+        }
+        return format == ExportFormat.XLS
+                ? anexa3XlsGenerator.render(document)
+                : anexa3PdfGenerator.render(document);
     }
 
     private List<WasteMovement> yearMovements(UUID tenantId, int year) {

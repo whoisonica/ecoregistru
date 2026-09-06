@@ -1087,7 +1087,7 @@ export const strings = {
     originOwnShort: "Deșeu propriu",
     originTakeoverShort: "Preluat de la terți",
     originTakeoverInTab:
-      "Marfă preluată de la terți: apare aici fiindcă e ambalaj, dar NU intră în Anexa 1 — nu e deșeul tău. Raportul ei e Anexa 3 la Ordinul 794/2012, încă neconstruită.",
+      "Marfă preluată de la terți: apare aici fiindcă e ambalaj, dar NU intră în Anexa 1 — nu e deșeul tău. Raportul ei e Anexa 3 la Ordinul 794/2012, mai jos.",
     registerEmpty:
       "Nicio mișcare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
     date: "Data",
@@ -1143,6 +1143,78 @@ export const strings = {
     operation: "Operațiunea",
     noHandovers:
       "Nicio predare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
+
+    // --- Anexa 3: raportul anual al colectorilor, comercianților, reciclatorilor și valorificatorilor ---
+    anexa3Title: "Anexa 3. Deșeuri de ambalaje preluate de la terți",
+    anexa3Hint:
+      "Celălalt capăt al lanțului față de Anexa 1: aceea raportează ce ai pus tu pe piață, asta raportează ce ai preluat de la alții și ce ai făcut cu marfa. Se însumează din mișcările de preluare pe coduri 15 01 xx. Termen: 25 februarie, ca și Anexa 1.",
+    anexa3WorkPoint: "Punct de lucru",
+    anexa3AllWorkPoints: "Toate punctele de lucru",
+    anexa3WorkPointHint:
+      "Art. 4 alin. (4) cere raportarea „pentru fiecare punct de lucru în parte”, iar alin. (3) o trimite la agenția din raza punctului de lucru — deci două puncte de lucru în două județe înseamnă două depuneri, la doi destinatari. Alege punctul de lucru înainte să descarci.",
+    anexa3RoleMissing: "Nu știm care tabel ți se aplică",
+    anexa3RoleMissingHint:
+      "Ordinul 794/2012 art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2” — tabelul 1 pentru colectori și comercianți, tabelul 2 pentru reciclatori și valorificatori. Care anume ține de calitatea firmei, pe care numai tu o știi. Până răspunzi, nu tipărim nimic: un formular depus ar afirma în locul tău o calitate juridică.",
+    anexa3RoleMissingAction: "Completează calitatea în profilul firmei",
+    anexa3Addressee: "Se depune la",
+    anexa3Table1Title: "Tabelul 1 — colectori și comercianți",
+    anexa3Table2Title: "Tabelul 2 — reciclatori și valorificatori",
+    anexa3IntakeTitle: "Cantitatea preluată",
+    anexa3IntakeHint:
+      "Un rând pentru fiecare material și fiecare proveniență, cum desenează formularul. Proveniența se răspunde o dată pe partener; „populație” se alege pe mișcare, fiindcă o persoană fizică nu e partener.",
+    anexa3ColTotal: "Total (kg)",
+    anexa3ColHazardous: "din care periculoase",
+    anexa3ColOrigin: "Proveniența",
+    anexa3OutTitle: "Ce a plecat mai departe",
+    anexa3ColOut: "Cantitatea comercializată / trimisă la reciclare, valorificare sau export (kg)",
+    anexa3ColOperator: "Operatorul economic",
+    anexa3ColRecycled: "Cantitatea reciclată (kg)",
+    anexa3ColOtherRecovery: "Cantitatea valorificată prin alte metode (kg)",
+    anexa3ColMethods: "Metoda",
+    anexa3RecyclingHint:
+      "Împărțirea se citește din act, nu se ghicește: OUG 92/2021 anexa nr. 3 numește „Reciclarea/Recuperarea” exact trei operațiuni — R3, R4 și R5. Restul codurilor R sunt valorificare prin alte metode; R1 e arderea pentru energie, deci sigur nu reciclare. Codurile D nu intră în niciuna: eliminarea nu e valorificare.",
+    anexa3Empty:
+      "Nicio preluare de ambalaje în anul ales. Anexa 3 se completează din mișcări cu operațiunea „Preluare” pe coduri 15 01 xx.",
+    anexa3UnclassifiedTitle: "Nu intră în tabel",
+    anexa3MissingOrigin:
+      "{n} preluări fără proveniență. Răspunde o dată pe partener, în Parteneri — sau pe mișcare, dacă marfa vine de la populație.",
+    anexa3MissingMaterialCount:
+      "{n} preluări fără materialul ambalajului. Codul nu îl decide singur.",
+    anexa3MissingQuantity:
+      "{n} mişcări încă de cântărit. Nu au kilograme, deci nu intră în niciun tabel — completează cantitatea când vine cifra de la cântar.",
+    anexa3Download: "Descarcă Anexa 3",
+    anexa3DownloadHint:
+      "Același art. 6 ca la Anexa 1: „.xls” protejat pentru depunere, plus exemplarul pe hârtie. Se tipărește un singur tabel — cel care ți se aplică.",
+    anexa3DownloadError: "Anexa 3 nu a putut fi generată.",
+    anexa3PickWorkPoint:
+      "Alege un punct de lucru ca să descarci. „Toate” e doar o privire de ansamblu pe ecran: art. 4 alin. (4) cere raportarea pentru fiecare punct de lucru în parte, iar un formular cu rubrica „Punct de lucru” goală nu se poate depune.",
+  },
+
+  /** Cele patru cuvinte pe care nota 2 a Anexei 3 le permite la „Proveniența". */
+  packagingOrigin: {
+    POPULATIE: "Populație",
+    GENERATOR_PJ: "Generator persoană juridică",
+    COLECTOR: "Colector",
+    COMERCIANT: "Comerciant",
+    label: "Proveniența deșeului de ambalaj",
+    hintPartner:
+      "Ce e partenerul ăsta față de ambalajele pe care ți le aduce. Nota 2 a Anexei 3 (Ordinul 794/2012) descrie sursa, nu transportul — deci se răspunde o dată aici, nu la fiecare transport.",
+    hintMovement:
+      "Doar dacă transportul ăsta vine de altundeva decât de obicei. Gol = se ia de pe partener. „Populație” se poate alege numai aici: o persoană fizică nu e partener.",
+    none: "— nu s-a răspuns —",
+    fromPartner: "de pe partener",
+  },
+
+  /** Calitatea din Ordinul 794/2012 art. 4 alin. (1), care decide care tabel al Anexei 3 se depune. */
+  packagingOperatorRole: {
+    label: "Calitatea pentru deșeuri de ambalaje",
+    hint:
+      "Decide care tabel al Anexei 3 se depune (Ordinul 794/2012, art. 4 alin. (1)): colectorii și comercianții completează tabelul 1, reciclatorii și valorificatorii tabelul 2. Se cere doar operatorilor care preiau deșeuri de ambalaje de la terți; un generator obișnuit o lasă goală.",
+    none: "— nu se aplică / nu s-a răspuns —",
+    COLECTOR: "Colector — tabelul 1",
+    COMERCIANT: "Comerciant — tabelul 1, depus la ANPM",
+    RECICLATOR: "Reciclator — tabelul 2",
+    VALORIFICATOR: "Valorificator — tabelul 2",
   },
 
   common: {

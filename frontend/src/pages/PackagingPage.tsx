@@ -3,21 +3,25 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, FileSpreadsheet, FileText, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
+  downloadPackagingAnexa3,
   downloadPackagingDeclaration,
   usePackagingHandovers,
   usePackagingMarket,
   usePackagingMovements,
+  usePackagingAnexa3,
   usePackagingTable1,
   usePackagingUnclassified,
   useSavePackagingMarket,
 } from "@/hooks/usePackaging";
 import type {
+  PackagingAnexa3,
   PackagingMarketRow,
   PackagingMaterial,
   PackagingTable1Row,
   PackagingUnclassifiedRow,
   WasteMovement,
 } from "@/lib/types";
+import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Badge } from "@/components/ui/badge";
@@ -574,8 +578,240 @@ export function PackagingPage() {
           </Table>
         </div>
       </section>
+
+      <Anexa3Section year={year} />
     </div>
   );
+}
+
+/**
+ * Anexa 3 la Ordinul 794/2012 — celălalt capăt al lanţului faţă de Anexa 1: ce a preluat firma de
+ * la terţi şi ce a făcut cu marfa.
+ *
+ * <p>Se arată **un singur tabel**, cel care i se aplică firmei (art. 4 alin. (1): „tabelul 1 sau,
+ * după caz, tabelul 2"), iar când profilul n-a răspuns nu se arată niciunul şi ecranul spune ce e
+ * de completat. Un ecran e o ofertă, un document e o afirmaţie — vezi decizia 37.
+ */
+function Anexa3Section({ year }: { year: number }) {
+  const { data: workPoints } = useWorkPoints();
+  const [workPointId, setWorkPointId] = useState("");
+
+  // Cu un singur punct de lucru, alegerea nu e o alegere: se selectează singur, ca butonul de
+  // descărcare să fie activ din prima. Cu mai multe, rămâne pe „Toate" până alege omul.
+  useEffect(() => {
+    if (!workPointId && workPoints?.length === 1) {
+      setWorkPointId(workPoints[0].id);
+    }
+  }, [workPoints, workPointId]);
+  const { data, isLoading } = usePackagingAnexa3(year, workPointId || undefined);
+  const { notify } = useToast();
+  const [downloading, setDownloading] = useState<"xls" | "pdf" | null>(null);
+
+  async function download(format: "xls" | "pdf") {
+    setDownloading(format);
+    try {
+      await downloadPackagingAnexa3(year, workPointId || undefined, format);
+    } catch (err) {
+      notify(apiErrorMessage(err, t.anexa3DownloadError), "error");
+    } finally {
+      setDownloading(null);
+    }
+  }
+
+  // „Toate punctele de lucru" e util pe ecran şi nedepunibil pe hârtie: art. 4 alin. (4) cere
+  // raportarea per punct de lucru, iar alin. (3) o trimite la agenţia din raza lui. Un fişier cu
+  // rubrica „Punct de lucru" goală ar fi un formular pe care clientul nu-l poate folosi.
+  const canDownload = (data?.printable ?? false) && workPointId !== "";
+  const table2 = data?.usesTable2 ?? false;
+  const missingOrigin = (data?.unclassified ?? []).filter((r) => r.missingOrigin).length;
+  const missingMaterial = (data?.unclassified ?? []).filter((r) => r.missingMaterial).length;
+  const missingQuantity = (data?.unclassified ?? []).filter((r) => r.missingQuantity).length;
+
+  return (
+    <section className="mt-10">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-3xl">
+          <h2 className="text-lg font-semibold text-gray-900">{t.anexa3Title}</h2>
+          <p className="mt-1 text-sm text-gray-500">{t.anexa3Hint}</p>
+        </div>
+        <div className="flex items-end gap-2">
+          <div>
+            <Label htmlFor="a3-wp">{t.anexa3WorkPoint}</Label>
+            <Select id="a3-wp" value={workPointId} onChange={(e) => setWorkPointId(e.target.value)}>
+              <option value="">{t.anexa3AllWorkPoints}</option>
+              {(workPoints ?? []).map((wp) => (
+                <option key={wp.id} value={wp.id}>
+                  {wp.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <Button
+            variant="outline"
+            disabled={!canDownload || downloading !== null}
+            onClick={() => download("xls")}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t.anexa3Download}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!canDownload || downloading !== null}
+            onClick={() => download("pdf")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            PDF
+          </Button>
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-gray-500">{t.anexa3WorkPointHint}</p>
+      {data?.printable && workPointId === "" && (
+        <p className="mt-1 text-xs text-amber-700">{t.anexa3PickWorkPoint}</p>
+      )}
+
+      {isLoading && <p className="mt-4 text-sm text-gray-500">{strings.common.loading}</p>}
+
+      {/* Profilul n-a spus care tabel se aplică: nu tipărim nimic şi spunem de ce. */}
+      {data && !data.printable && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-900">{t.anexa3RoleMissing}</p>
+              <p className="mt-1 text-sm text-amber-800">{t.anexa3RoleMissingHint}</p>
+              <p className="mt-2 text-xs text-amber-700">{t.anexa3RoleMissingAction}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {data?.printable && (
+        <>
+          <p className="mt-3 text-sm text-gray-600">
+            <span className="font-medium">
+              {table2 ? t.anexa3Table2Title : t.anexa3Table1Title}
+            </span>
+            {" · "}
+            {t.anexa3Addressee}: {addresseeOf(data)}
+          </p>
+
+          {(missingOrigin > 0 || missingMaterial > 0 || missingQuantity > 0) && (
+            <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              <p className="font-medium">{t.anexa3UnclassifiedTitle}</p>
+              {missingOrigin > 0 && (
+                <p className="mt-1">{t.anexa3MissingOrigin.replace("{n}", String(missingOrigin))}</p>
+              )}
+              {missingMaterial > 0 && (
+                <p className="mt-1">
+                  {t.anexa3MissingMaterialCount.replace("{n}", String(missingMaterial))}
+                </p>
+              )}
+              {missingQuantity > 0 && (
+                <p className="mt-1">
+                  {t.anexa3MissingQuantity.replace("{n}", String(missingQuantity))}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="mt-3 overflow-x-auto">
+            <h3 className="text-sm font-semibold text-gray-800">{t.anexa3IntakeTitle}</h3>
+            <p className="mb-2 text-xs text-gray-500">{t.anexa3IntakeHint}</p>
+            <Table>
+              <THead>
+                <TR>
+                  <TH>{t.material}</TH>
+                  <TH className="text-right">{t.anexa3ColTotal}</TH>
+                  <TH className="text-right">{t.anexa3ColHazardous}</TH>
+                  <TH>{t.anexa3ColOrigin}</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {data.intake.length === 0 && (
+                  <TR>
+                    <TD colSpan={4} className="text-gray-500">
+                      {t.anexa3Empty}
+                    </TD>
+                  </TR>
+                )}
+                {data.intake.map((row, i) => (
+                  <TR key={`${row.material}-${row.origin}-${i}`}>
+                    <TD className="whitespace-nowrap">{materialLabels[row.material]}</TD>
+                    <TD className="text-right">{kg(row.total)}</TD>
+                    <TD className="text-right">{row.hazardous ? kg(row.hazardous) : "—"}</TD>
+                    <TD>{strings.packagingOrigin[row.origin]}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </div>
+
+          <div className="mt-6 overflow-x-auto">
+            <h3 className="text-sm font-semibold text-gray-800">{t.anexa3OutTitle}</h3>
+            {table2 && <p className="mb-2 text-xs text-gray-500">{t.anexa3RecyclingHint}</p>}
+            <Table>
+              <THead>
+                <TR>
+                  <TH>{t.material}</TH>
+                  {table2 ? (
+                    <>
+                      <TH className="text-right">{t.anexa3ColRecycled}</TH>
+                      <TH className="text-right">{t.anexa3ColOtherRecovery}</TH>
+                      <TH>{t.anexa3ColMethods}</TH>
+                    </>
+                  ) : (
+                    <>
+                      <TH className="text-right">{t.anexa3ColOut}</TH>
+                      <TH>{t.anexa3ColOperator}</TH>
+                    </>
+                  )}
+                </TR>
+              </THead>
+              <TBody>
+                {table2
+                  ? data.treatments.map((row, i) => (
+                      <TR key={`${row.material}-${i}`}>
+                        <TD className="whitespace-nowrap">{materialLabels[row.material]}</TD>
+                        <TD className="text-right">{kg(row.recycled)}</TD>
+                        <TD className="text-right">{kg(row.otherRecovery)}</TD>
+                        <TD>{row.methods.join(", ") || "—"}</TD>
+                      </TR>
+                    ))
+                  : data.handovers.map((row, i) => (
+                      <TR key={`${row.material}-${row.operatorCui}-${i}`}>
+                        <TD className="whitespace-nowrap">{materialLabels[row.material]}</TD>
+                        <TD className="text-right">{kg(row.quantity)}</TD>
+                        <TD>
+                          {row.operatorName ?? "—"}
+                          {row.operatorCui ? (
+                            <span className="block text-xs text-gray-500">{row.operatorCui}</span>
+                          ) : null}
+                        </TD>
+                      </TR>
+                    ))}
+                {(table2 ? data.treatments : data.handovers).length === 0 && (
+                  <TR>
+                    <TD colSpan={table2 ? 4 : 3} className="text-gray-500">
+                      {t.noHandovers}
+                    </TD>
+                  </TR>
+                )}
+              </TBody>
+            </Table>
+          </div>
+
+          <p className="mt-3 text-xs text-gray-500">{t.anexa3DownloadHint}</p>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Art. 4 alin. (3): toţi depun la agenţia din raza punctului de lucru, comerciantul la ANPM. */
+function addresseeOf(d: PackagingAnexa3): string {
+  return d.role === "COMERCIANT"
+    ? "ANPM"
+    : "agenţia judeţeană pentru protecţia mediului din raza punctului de lucru";
 }
 
 /** Un rând de sumă din formular — Total plastic, Total metal, TOTAL. */

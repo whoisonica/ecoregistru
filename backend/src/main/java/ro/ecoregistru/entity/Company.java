@@ -7,6 +7,7 @@ import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
+import ro.ecoregistru.enums.PackagingOperatorRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.Instant;
@@ -153,6 +154,16 @@ public class Company {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     Set<MarketRole> marketRoles = new LinkedHashSet<>();
+
+    /**
+     * What the company is in the packaging-waste chain, and therefore which table of Anexa 3 la
+     * Ordinul 794/2012 it files (V31). Null means the question has not been answered, and then
+     * neither table prints — see {@link ro.ecoregistru.enums.PackagingOperatorRole} for why a
+     * document is treated more strictly than a screen.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "packaging_operator_role", length = 32)
+    PackagingOperatorRole packagingOperatorRole;
 
     /**
      * Which contributions to the Environment Fund this company owes, each with its own rhythm

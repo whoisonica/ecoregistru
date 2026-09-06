@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
+import ro.ecoregistru.enums.PackagingOperatorRole;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.LocalDate;
@@ -62,6 +63,12 @@ public record CompanyRequest(
          * The header of the annual declaration: the CAEN activity code, and the job title of the
          * person who signs it. Both may be null - the rubric then prints empty rather than guessed.
          */
+        /**
+         * Which table of Anexa 3 la Ordinul 794/2012 this company files (V31): colector /
+         * comerciant fill tabelul 1, reciclator / valorificator fill tabelul 2. Null leaves the
+         * question unanswered, and then neither table prints.
+         */
+        PackagingOperatorRole packagingOperatorRole,
         String caenCode,
         Unit anexa3Unit,
         String contactRole,

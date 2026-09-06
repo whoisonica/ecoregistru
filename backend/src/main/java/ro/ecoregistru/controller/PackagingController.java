@@ -15,9 +15,11 @@ import ro.ecoregistru.controller.response.PackagingMarketResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.service.PackagingService;
 import ro.ecoregistru.service.export.ExportFormat;
+import ro.ecoregistru.service.export.PackagingAnexa3;
 import ro.ecoregistru.service.export.PackagingDeclaration;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The packaging module — Anexa 1 Ambalaje (Ordinul 794/2012).
@@ -75,6 +77,48 @@ public class PackagingController {
     @PreAuthorize(CAN_WRITE)
     public PackagingMarketResponse saveMarket(@RequestBody @Valid PackagingMarketRequest request) {
         return packagingService.saveMarketEntry(request);
+    }
+
+    // ---------------------------------------------------------------- anexa 3
+
+    /**
+     * Anexa 3 la Ordinul 794/2012 as the screen shows it: which table applies, the takeovers per
+     * material and provenance, the right half, and the movements neither could place.
+     *
+     * <p>{@code workPointId} is optional. Art. 4 alin. (4) files this per work point, so the screen
+     * asks for one; omitting it builds the whole company, which is the same thing for an account
+     * with a single work point and a useful overview for one with several.
+     */
+    @GetMapping("/anexa3")
+    public PackagingAnexa3 anexa3(@RequestParam int year,
+                                  @RequestParam(required = false) UUID workPointId) {
+        return packagingService.anexa3(year, workPointId);
+    }
+
+    /**
+     * The anexa 3 document. Same two formats and the same reason as anexa 1: art. 6 asks for the
+     * ".xls" and the paper copy beside it, so {@code xls} is the default and {@code pdf} is the
+     * other half of the requirement rather than a convenience.
+     *
+     * <p>Returns 400 with a named message when the company profile has not said which table
+     * applies — see {@code PACKAGING_OPERATOR_ROLE_REQUIRED}. Better a sentence that says what to
+     * answer than a form asserting a legal quality nobody stated.
+     */
+    @GetMapping("/anexa3/download")
+    public ResponseEntity<byte[]> anexa3Download(
+            @RequestParam int year,
+            @RequestParam(required = false) UUID workPointId,
+            @RequestParam(defaultValue = "xls") String format) {
+        ExportFormat requested = ExportFormat.fromParam(format);
+        ExportFormat exportFormat = requested == ExportFormat.XLSX ? ExportFormat.XLS : requested;
+        byte[] body = packagingService.renderAnexa3(year, workPointId, exportFormat);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("anexa3-ambalaje-" + year + "." + exportFormat.getExtension())
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(exportFormat.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
     }
 
     /**

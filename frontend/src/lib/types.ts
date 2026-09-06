@@ -110,6 +110,8 @@ export interface Company {
   marketRoles?: MarketRole[];
   /** Ce contribuții la Fondul pentru mediu datorează. Gol = nu s-a răspuns. */
   afmContributions?: AfmContribution[];
+  /** Care tabel al Anexei 3 Ambalaje se aplică; null = nu s-a răspuns, deci nu se tipăreşte. */
+  packagingOperatorRole?: PackagingOperatorRole | null;
   authorizedWasteCodes?: WasteCode[];
   /** Asked of a collector only. */
   transportMeans?: string | null;
@@ -149,6 +151,7 @@ export interface CompanyInput {
   authorizedOperationCodes?: WasteOperationCode[];
   marketRoles?: MarketRole[];
   afmContributions?: AfmContribution[];
+  packagingOperatorRole?: PackagingOperatorRole | null;
   /** Sent as ids; the backend resolves them against the nomenclator. */
   authorizedWasteCodeIds?: string[];
   transportMeans?: string | null;
@@ -380,6 +383,88 @@ export interface PackagingHandoverRow {
   operation: string;
 }
 
+/**
+ * Provenienţa deşeului de ambalaj preluat — nota 2 a ambelor tabele ale Anexei 3
+ * (Ordinul 794/2012). Patru valori: şablonul primit de la specialistă are doar trei, dar e o copie
+ * modificată local, iar actul le numeşte pe toate patru.
+ *
+ * „Populaţie" se poate spune doar pe mişcare: o persoană fizică nu e partener.
+ */
+export type PackagingOrigin = "POPULATIE" | "GENERATOR_PJ" | "COLECTOR" | "COMERCIANT";
+
+/**
+ * Calitatea firmei din Ordinul 794/2012 art. 4 alin. (1), care decide **care tabel** al Anexei 3
+ * se depune: colectorii şi comercianţii completează tabelul 1, reciclatorii şi valorificatorii
+ * tabelul 2. `null` = nu s-a răspuns, şi atunci nu se tipăreşte niciunul.
+ */
+export type PackagingOperatorRole =
+  | "COLECTOR"
+  | "COMERCIANT"
+  | "RECICLATOR"
+  | "VALORIFICATOR";
+
+/** Jumătatea stângă a ambelor tabele: un rând per material şi provenienţă, în kilograme. */
+export interface PackagingAnexa3IntakeRow {
+  material: PackagingMaterial;
+  origin: PackagingOrigin;
+  total: number;
+  hazardous: number | null;
+}
+
+/** Jumătatea dreaptă a tabelului 1: ce a plecat mai departe, per operator. */
+export interface PackagingAnexa3HandoverRow {
+  material: PackagingMaterial;
+  quantity: number | null;
+  operatorName: string | null;
+  operatorCui: string | null;
+  country: string | null;
+}
+
+/** Jumătatea dreaptă a tabelului 2: cât s-a reciclat, cât s-a valorificat altfel, prin ce metode. */
+export interface PackagingAnexa3TreatmentRow {
+  material: PackagingMaterial;
+  recycled: number | null;
+  otherRecovery: number | null;
+  methods: WasteOperationCode[];
+}
+
+/** O preluare pe care tabelul n-a putut-o aşeza, şi ce îi lipseşte. */
+export interface PackagingAnexa3UnclassifiedRow {
+  movementId: string;
+  date: string;
+  wasteCode: string;
+  quantity: number | null;
+  partnerName: string | null;
+  missingMaterial: boolean;
+  missingOrigin: boolean;
+  /** Mişcarea aşteaptă încă cântarul, deci n-are kilograme de pus nicăieri. */
+  missingQuantity: boolean;
+}
+
+/** Anexa 3 aşa cum o arată ecranul, înainte să descarce cineva un fişier. */
+export interface PackagingAnexa3 {
+  role: PackagingOperatorRole | null;
+  companyName: string;
+  county: string | null;
+  address: string | null;
+  contact: string | null;
+  cui: string | null;
+  caenCode: string | null;
+  authorization: string | null;
+  workPointName: string | null;
+  workPointAddress: string | null;
+  year: number;
+  intake: PackagingAnexa3IntakeRow[];
+  handovers: PackagingAnexa3HandoverRow[];
+  treatments: PackagingAnexa3TreatmentRow[];
+  unclassified: PackagingAnexa3UnclassifiedRow[];
+  preparedBy: string | null;
+  preparedByRole: string | null;
+  /** false = profilul n-a spus care tabel se aplică, deci nu se tipăreşte nimic. */
+  printable: boolean;
+  usesTable2: boolean;
+}
+
 export type AfmContribution =
   | "WITHHOLDING_2_PERCENT"
   | "CIRCULAR_ECONOMY"
@@ -412,6 +497,8 @@ export interface Partner {
   /** They perform the service and they invoice us. */
   supplier: boolean;
   active: boolean;
+  /** Provenienţa pe care o reprezintă pe Anexa 3 Ambalaje; null = nu s-a răspuns. */
+  packagingOrigin: PackagingOrigin | null;
   expiringSoon: boolean;
 }
 
@@ -461,6 +548,8 @@ export interface PartnerInput {
   client: boolean;
   supplier: boolean;
   carrier: boolean;
+  /** Provenienţa pe Anexa 3 Ambalaje. „Populaţie" nu apare aici: nu e partener. */
+  packagingOrigin?: PackagingOrigin | null;
   address?: string | null;
   /** Lista se înlocuiește la salvare cu ce e pe ecran; omisă, rămâne cum era. */
   workPoints?: PartnerWorkPointInput[];
@@ -557,6 +646,13 @@ export interface WasteMovement {
   packagingCategory: PackagingCategory | null;
   packagingReusable: boolean | null;
   packagingHazardousContent: boolean | null;
+  /** Ce a scris clientul **pe mişcare**; null înseamnă „ia-o de pe partener". */
+  packagingOrigin: PackagingOrigin | null;
+  /**
+   * Ce va tipări formularul: suprascrierea de pe mişcare, sau răspunsul partenerului. Null = nu
+   * s-a răspuns nicăieri, deci cantitatea stă în afara tabelului.
+   */
+  effectivePackagingOrigin: PackagingOrigin | null;
   /** True când codul e 15 01 xx, deci ecranul ştie să întrebe cele de mai sus. */
   packagingCode: boolean;
   createdAt: string;
@@ -604,6 +700,8 @@ export interface WasteMovementInput {
   packagingCategory?: PackagingCategory | null;
   packagingReusable?: boolean | null;
   packagingHazardousContent?: boolean | null;
+  /** Suprascrie provenienţa partenerului. Singurul loc unde se poate spune „populaţie". */
+  packagingOrigin?: PackagingOrigin | null;
 }
 
 /** Filters for the movements list query; empty fields are omitted from the request. */

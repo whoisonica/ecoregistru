@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
+  PackagingAnexa3,
   PackagingHandoverRow,
   PackagingMarketRow,
   PackagingMarketInput,
@@ -92,6 +93,52 @@ export async function downloadPackagingDeclaration(year: number, format: "xls" |
     const a = document.createElement("a");
     a.href = url;
     a.download = `anexa1-ambalaje-${year}.${format}`;
+    a.click();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Anexa 3 la Ordinul 794/2012 — raportul anual al colectorilor, comercianților, reciclatorilor și
+ * valorificatorilor de deșeuri de ambalaje.
+ *
+ * <p>Per punct de lucru, fiindcă art. 4 alin. (4) o cere „pentru fiecare punct de lucru în parte"
+ * și alin. (3) o trimite la agenția din raza lui. `workPointId` gol construiește toată firma, ceea
+ * ce e același lucru pentru un cont cu un singur punct de lucru și o privire de ansamblu utilă
+ * pentru unul cu mai multe.
+ */
+export function usePackagingAnexa3(year: number, workPointId?: string) {
+  return useQuery({
+    queryKey: [...packagingRoot, "anexa3", year, workPointId ?? null] as const,
+    queryFn: async () =>
+      (
+        await api.get<PackagingAnexa3>("/api/v1/packaging/anexa3", {
+          params: workPointId ? { year, workPointId } : { year },
+        })
+      ).data,
+  });
+}
+
+/**
+ * Descarcă Anexa 3. Aceleași două formate ca la Anexa 1 și din același art. 6: `.xls` protejat
+ * pentru depunere, PDF pentru exemplarul pe hârtie. Se tipărește **un singur tabel**, cel care i se
+ * aplică firmei — art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2", nu amândouă.
+ */
+export async function downloadPackagingAnexa3(
+  year: number,
+  workPointId?: string,
+  format: "xls" | "pdf" = "xls"
+) {
+  const res = await api.get("/api/v1/packaging/anexa3/download", {
+    params: workPointId ? { year, workPointId, format } : { year, format },
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(res.data as Blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `anexa3-ambalaje-${year}.${format}`;
     a.click();
   } finally {
     URL.revokeObjectURL(url);
