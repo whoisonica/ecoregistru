@@ -95,6 +95,38 @@ export const strings = {
     expiringEmpty: "Nicio autorizație de partener aproape de expirare.",
     viewAll: "Vezi toate",
     loadError: "Nu am putut încărca datele panoului.",
+
+    // --- Starea de conformitate: întrebarea la care panoul trebuie să răspundă ---
+    statusTitle: "Starea evidenței pe {year}",
+    statusOk: "Nimic nu blochează documentele",
+    statusOkHint:
+      "Toate ieșirile au cod R/D și cantitate. Fișa de evidență și declarația se pot tipări așa cum sunt.",
+    statusBlocked: "{n} lucruri de lămurit înainte de depunere",
+    // Cele două feluri de a fi „nu gata", cu urmarea fiecăruia.
+    blockerMissingCode: "{n} linii cu ieșiri fără cod R/D",
+    blockerMissingCodeHint:
+      "Cantitatea a plecat de pe amplasament, dar nu intră în nicio coloană oficială. Fișa nu se poate depune așa.",
+    blockerAwaitingWeighing: "{n} linii care așteaptă cântarul",
+    blockerAwaitingWeighingHint:
+      "Ieșiri cântărite la destinatar. Așteptare legitimă, dar cifrele sunt provizorii până vine bonul.",
+    blockerFix: "Vezi liniile",
+
+    // --- Cifrele care contează ---
+    // „Generat" ar fi o afirmație falsă: suma e pe toate mișcările lunii, iar o ieșire nu e o
+    // generare. Iar generarea o deduce motorul din ieșiri (decizia 17), deci n-ar fi nici măcar
+    // suma rândurilor cu operațiunea „Generare".
+    statGenerated: "Cantitate înregistrată în {month}",
+    statGeneratedSub: "kilograme, pe toate mișcările lunii",
+    statStock: "Stoc la zi",
+    // Stocul vine din evidența calculată, care poate fi în urma mișcărilor — de asta scrie
+    // „la ultima lună calculată" și nu „acum".
+    statStockSub: "kilograme, la ultima lună calculată",
+    statDeadlinesNext: "Următorul termen: {label}, în {days} zile",
+    statDeadlinesOverdue: "{n} depășite",
+    statDeadlinesNone: "Niciun termen deschis",
+    statExpiringDays: "expiră în {days} zile",
+    statExpiringPast: "expirată",
+    daysShort: "{n} zile",
   },
 
   movements: {
