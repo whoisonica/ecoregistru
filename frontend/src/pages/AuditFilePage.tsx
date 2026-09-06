@@ -12,6 +12,7 @@ import { useEvidences } from "@/hooks/useEvidences";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
@@ -27,8 +28,8 @@ function yearOptions(): number[] {
 }
 
 export function AuditFilePage() {
-  const [year, setYear] = useState(() => new Date().getFullYear());
-  const [years, setYears] = useState(1);
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
+  const [years, setYears] = useUrlNumber("ani", 1);
   const [downloading, setDownloading] = useState(false);
   const { notify } = useToast();
 

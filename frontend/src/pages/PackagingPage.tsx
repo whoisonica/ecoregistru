@@ -24,6 +24,7 @@ import type {
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlNumber } from "@/hooks/useUrlState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -124,7 +125,7 @@ export function PackagingPage() {
   const canWrite =
     user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
 
-  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: movements, isLoading: loadingMovements } = usePackagingMovements(year);
   const { data: table1, isLoading: loadingTable1 } = usePackagingTable1(year);
   const { data: handovers } = usePackagingHandovers(year);

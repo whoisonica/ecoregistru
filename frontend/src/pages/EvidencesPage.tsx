@@ -14,6 +14,7 @@ import { HandoverRegister } from "@/components/HandoverRegister";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { formatTonnes } from "@/lib/units";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -53,16 +54,18 @@ export function EvidencesPage() {
     [workPoints]
   );
 
-  const [year, setYear] = useState(() => new Date().getFullYear());
-  const [month, setMonth] = useState(""); // "" = all months
-  const [workPointId, setWorkPointId] = useState(""); // "" = all work points
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
+  const [month, setMonth] = useUrlState("luna"); // "" = toate lunile
+  const [workPointId, setWorkPointId] = useUrlState("punct"); // "" = toate punctele
   /**
    * Two views of the same period. "Predări" is the default because it is what the meeting asked
    * the tab to show — quantity, handover date, partner, R/D code, and that is it. The monthly
    * Anexa 1 aggregate stays one click away: the running stock is the one figure that cannot be
    * reconstructed by reading the rows, and it is the one the form is built around.
    */
-  const [view, setView] = useState<"handovers" | "monthly">("handovers");
+  const [viewParam, setViewParam] = useUrlState("vedere", "handovers");
+  const view = viewParam === "monthly" ? "monthly" : "handovers";
+  const setView = setViewParam;
 
   const movementFilters: MovementFilters = useMemo(() => {
     const f: MovementFilters = { year };

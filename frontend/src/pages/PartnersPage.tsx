@@ -17,6 +17,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -95,7 +96,8 @@ export function PartnersPage() {
   const [nameError, setNameError] = useState(false);
   const [roleError, setRoleError] = useState(false);
   const [typeError, setTypeError] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
+  const [roleFilterRaw, setRoleFilter] = useUrlState("rol");
+  const roleFilter = roleFilterRaw as RoleFilter;
 
   /**
    * Ce parteneri are deja firma, potriviti pe ce s-a tastat. Doua litere e pragul cerut pe

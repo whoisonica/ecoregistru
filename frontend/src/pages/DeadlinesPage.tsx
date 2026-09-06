@@ -10,6 +10,7 @@ import {
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,7 @@ export function DeadlinesPage() {
   const canManage =
     user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
 
-  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: deadlines, isLoading, isError } = useDeadlines(year);
   const regenerateMut = useRegenerateDeadlines();
   const completeMut = useCompleteDeadline();

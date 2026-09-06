@@ -37,6 +37,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlState } from "@/hooks/useUrlState";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -176,8 +177,9 @@ export function MovementsPage() {
   );
 
   // --- Filters ---
-  const [monthFilter, setMonthFilter] = useState(""); // "yyyy-MM" or ""
-  const [workPointFilter, setWorkPointFilter] = useState("");
+  // Filtrele stau în bara de adrese: se păstrează la navigare și se pot trimite ca link.
+  const [monthFilter, setMonthFilter] = useUrlState("luna"); // "yyyy-MM" sau ""
+  const [workPointFilter, setWorkPointFilter] = useUrlState("punct");
 
   const filters: MovementFilters = useMemo(() => {
     const f: MovementFilters = {};
