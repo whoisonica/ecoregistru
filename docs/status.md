@@ -1622,7 +1622,14 @@ depun. Devine **întrebarea AB**: se întreabă în chestionarul de cerere de co
 
 ### TODO — Anexa 3 Ambalaje (Ordinul 794/2012, anexa nr. 3)
 
-**Neînceput.** Structura reală, din act, nu din `.ods`-ul primit:
+> ✅ **Livrată pe 06.09.2026** (`V31`). Ce urmează mai jos e analiza din 25.08 care a stat la baza
+> ei, păstrată fiindcă fiecare rând s-a dovedit corect — inclusiv bănuiala că împărțirea
+> reciclat/valorificat se citește din codul R. Ce a adăugat construcția: proveniența e **sub-rând
+> sub fiecare material**, nu o coloană; documentul e **unul per punct de lucru**, nu o pagină per
+> punct de lucru; și care tabel se aplică vine din **profilul firmei**. Deciziile 42–46 din
+> `prompt-continuare.md`.
+
+**Neînceput** *(la data scrierii)*. Structura reală, din act, nu din `.ods`-ul primit:
 
 - **Două tabele, şi se completează unul singur**, „după caz" (art. 4 alin. (1)):
   **tabelul 1** pentru colectori şi comercianţi, **tabelul 2** pentru reciclatori şi valorificatori.
@@ -2604,6 +2611,233 @@ profilul de azi. Sunt ani care n-au venit încă, pe un tenant de test.
 
 
 
+## Depozitul amânat, două felii deblocate în loc (06.09.2026)
+
+Sesiunea a început cu întrebarea „unde suntem". Prima alegere a fost **Etapa 8 fără export**, iar
+utilizatorul a revenit după ce am citit schema: *„hai să lăsăm partea de depozit deoparte până am
+meeting cu Andreea"*. Decizia e bună şi merită scrisă cu motivul, fiindcă e uşor de reluat greşit:
+pentru fişă, Anexa 1 Ambalaje şi Anexa 3 avem **model completat** în corpus, deci forma se poate
+copia; pentru registrul art. 48 **nu avem niciunul**, iar actul descrie conţinutul, nu forma. Deci
+Etapa 8 nu e „mai grea", e **de alt fel**: e singura felie unde am inventa un format oficial.
+
+Ce s-a livrat în loc — două felii care nu depind de nimeni.
+
+### Trei corecturi de stare, făcute înainte de orice cod
+
+1. **„Cele două coloane moarte" din `prompt-continuare.md` nu mai există.** `total_collected` a fost
+   scoasă în `V18`, iar `total_handed_over` **e scrisă** de `EvidenceCalculator` şi are teste care o
+   ţin. Chiar comentariul lui `V18` spunea asta („Documentaţia internă le enumera pe amândouă ca
+   «rămase în schemă nescrise»; era adevărat doar despre asta de aici"), dar rândul din handoff n-a
+   fost corectat atunci. Acum e.
+2. **`CLOUDINARY_URL` chiar lipseşte**, verificat pe dyno cu `heroku config -a ecoregistru-api`:
+   sunt opt variabile, niciuna Cloudinary. Ataşamentele de pe mişcări nu urcă în producţie. Rămâne
+   deschisă — cere contul, nu cod.
+3. **Producţia are 4 mişcări pe registrul art. 48** (3 `COLLECTED` + 1 `RECOVERED`) şi tabelele
+   `receptions`/`deliveries` sunt goale, cum le-a lăsat `V5`. Citit ca să ştiu ce mută Etapa 8.
+
+### Felia 1 — alerta de expirare a autorizaţiei partenerului (`V30`)
+
+Ultimul slice deschis din FAZA TERMENE. `MailType.PARTNER_AUTHORIZATION_EXPIRING` exista în enum
+**şi nu era folosit nicăieri**: felia fusese numită, nu construită.
+
+**Temeiul.** OUG 92/2021 art. 23 alin. (1) — predarea e legală numai către un operator **autorizat**;
+alin. (2) — predarea nu descarcă de răspundere. Deci expunerea e a clientului, nu a partenerului, şi
+mailul o spune în atâtea cuvinte, altfel se citeşte ca „are partenerul o problemă".
+
+**Nu e o dublare a deciziei 36.** Cele două rezolvă lucruri diferite: decizia 36 compară expirarea
+cu **data mişcării** şi arată un badge galben — semnalează **după**, când predarea s-a întâmplat
+deja. Asta scrie un mail cu 60 de zile **înainte**, cât mai e timp de reînnoit sau de ales altcineva.
+Prima e o constatare, a doua e o şansă.
+
+**Fereastra e numai înainte, `[azi, azi+60]`.** O autorizaţie deja expirată nu intră pe mail:
+un mail despre una expirată acum doi ani nu previne nimic, iar la prima rulare ar fi plecat câte
+unul pe fiecare partener vechi deodată. E deja acoperită în alte două locuri — badge-ul din ecranul
+Parteneri (acelaşi prag, dar calculat cu `<=`, deci prinde şi trecutul) şi avertismentul de la
+predare. Pe producţie, regula asta înseamnă **un singur partener** care ar primi mail azi
+(expirare 24.09.2026), nu trei.
+
+**Coloana ţine o dată, nu un boolean**, şi ăsta e miezul feliei. Cheia de deduplicare e chiar
+expirarea pentru care s-a scris ultima oară. Un boolean ar fi cerut ca cineva să-l stingă manual la
+reînnoire — şi nimeni n-ar fi făcut-o, deci al doilea termen ar fi trecut tăcut. Cu o dată,
+reînnoirea **rearmează singură** alerta, şi nicio linie din `PartnerService` nu trebuie să ştie de
+coloană. Există test: `renewingTheAuthorizationReArmsTheAlert`.
+
+**Clasă proprie, nu o metodă pe schedulerul de termene.** Un termen de raportare şi o autorizaţie de
+partener au comun doar faptul că au o dată. Ferestre diferite, deduplicare diferită, moduri de eşec
+diferite — iar numele `DeadlineAlertScheduler` ar fi încetat să fie adevărat. Sunt două joburi care
+se nimeresc dimineaţa aceleiaşi zile.
+
+**Şi mailul s-a verificat pe artefact, nu doar din aserţiuni** (regula de lucru 5, aplicată unui
+e-mail în loc de un PDF). `PartnerAuthorizationMailIT` porneşte serviciul real, `EmailService` real
+şi Thymeleaf real, cu numai SMTP-ul mockat, şi citeşte HTML-ul din `MimeMessage`. Un şablon care ar
+citi `${partnerNume}` în loc de `partnerName` randează o celulă goală şi trece toate celelalte teste
+din proiect. Două lucruri prinse aşa, pe care nicio aserţiune nu le-ar fi semnalat:
+
+- **diacriticele erau cu sedilă** (`ţ`, `ş`) în tot şablonul, iar restul textelor din aplicaţie sunt
+  cu virgulă (`ț`, `ș`). Corectat. *(Sedila rămâne corectă în PDF-uri — acolo e Cp1250, decizia 8.)*
+- **„expiră în 60 zile" e agramatical.** Româna cere „de" de la 20 în sus. `whenExpiry` are acum
+  pragul, cu test (`theWordingAgreesWithSmallNumbers`), iar `when()` de la termene rămâne separată
+  fiindcă fereastra ei e de şapte zile şi nu atinge niciodată pragul.
+
+Două capcane de mediu, notate ca să nu se redescopere: mock-ul de `JavaMailSender` lasă fără bean
+health-check-ul de mail din actuator şi pică tot contextul cu „Beans must not be empty"
+(`management.health.mail.enabled=false` în test), iar `MimeMessage` nu-şi scrie anteturile
+`Content-Type` până la `saveChanges()`, deci parcurgerea MIME găseşte peste tot `text/plain`.
+
+**14 teste noi**, 10 pe scheduler şi 4 pe mailul randat.
+
+### Felia 2 — Anexa 3 Ambalaje (`V31`)
+
+Raportul anual al colectorilor, comercianţilor, reciclatorilor şi valorificatorilor de deşeuri de
+ambalaje (Ordinul 794/2012, anexa nr. 3). Termen 25 februarie, ca şi anexa 1. **Celălalt capăt al
+lanţului**: anexa 1 raportează ce a pus firma pe piaţă, anexa 3 ce a **preluat de la terţi** şi ce a
+făcut cu marfa.
+
+S-a putut construi fără să aşteptăm nimic fiindcă avem **modelul completat**
+(`documente oficiale/RAPORTARE DESEURI DE AMBALAJ COLECTATE ANUAL.ods`, care e tabelul 1 gol) plus
+textul articolelor. Citit din `.ods` direct din `content.xml`, fiindcă `odfpy` nu e instalat aici.
+
+**Ce a arătat modelul şi documentaţia nu descria:** provenienţa e **sub-rând sub fiecare material**,
+nu o coloană cu o valoare. Hârtie-carton urmată de populaţie / colectori / generatori persoane
+juridice, apoi „total hârtie-carton".
+
+#### Deciziile, fiecare cu sursa
+
+| | Ce | De unde |
+|---|---|---|
+| **Care tabel** | din profilul firmei, `PackagingOperatorRole` — colector/comerciant → tabelul 1, reciclator/valorificator → tabelul 2 | art. 4 alin. (1): „tabelul 1 sau, **după caz**, tabelul 2"; alegerea utilizatorului, dintre trei variante |
+| **Nul = nu se tipăreşte nimic** | ecranul spune ce e de completat, documentul refuză | decizia 37 aplicată unui document: *un ecran e o ofertă, un document e o afirmaţie*. Un antet „Colectori/Comercianţi" pe un formular ar afirma calitatea juridică a clientului în locul lui |
+| **Provenienţa stă pe partener** | `partners.packaging_origin`, cu suprascriere pe mişcare | nota 2 descrie **sursa**, nu transportul. Închide jumătatea lui **AA** care era a noastră |
+| **Suprascrierea pe mişcare nu e un moft** | `waste_movements.packaging_origin` | „populaţia" n-are CUI, n-are autorizaţie şi nu e partener. **Fără coloană, rândul „populaţie" al formularului n-ar putea fi completat deloc** — iar un centru de colectare cumpără de la populaţie zilnic |
+| **Reciclare = R3, R4, R5** | restul codurilor R = valorificare prin alte metode; codurile D = niciuna | **se citeşte din act**: OUG 92/2021 anexa nr. 3 numeşte „Reciclarea/Recuperarea" exact trei operaţiuni. R1 e „întrebuinţarea în principal drept combustibil", pe care directiva-cadru o exclude pe nume |
+| **Un document per punct de lucru** | nu o pagină per punct de lucru, cum face declaraţia anuală | art. 4 alin. (4) „pentru fiecare punct de lucru în parte" + alin. (3) trimite la agenţia din raza lui: două puncte în două judeţe = două depuneri, la doi destinatari. Un fişier unic n-ar putea fi depus |
+| **Kilograme, nu tone** | deşi modelul scrie „(tone)" în antet | art. 8 alin. (1) lit. a). Modelul e şablon modificat local, ca şi cel de anexa 1 — regula de lucru 2 |
+| **Aluminiu şi Oţel separat** | deşi modelul are un singur rând „metal /aluminiu" | acelaşi motiv, aceleaşi rânduri ca la anexa 1 |
+| **`.xls` protejat + PDF** | ca la anexa 1 | art. 6 e despre „datele de raportare" în general, nu doar despre anexa 1 |
+
+#### Două defecte prinse uitându-mă la document, nu din teste
+
+Regula de lucru 5, încă o dată, şi încă o dată a meritat. Cele 16 teste treceau toate.
+
+1. **Totaluri duplicate.** Ieşea „total pet — 980" şi imediat sub el „total plastic — 980". În model,
+   materialele care intră într-o grupă (PET şi alte plastice → plastic; aluminiu şi oţel → metal)
+   **nu** au total propriu; îl are doar grupa. Total propriu au doar Sticla, Hârtia carton, Lemnul şi
+   Altele. Aceeaşi cifră sub două etichete se citeşte, pe un formular depus, ca **două cantităţi
+   diferite**. Reparat cu `PackagingMaterial.isSummedIntoAGroup()`, cu două teste.
+2. **O aliniere care minte.** Cele două jumătăţi ale tabelului au cardinalităţi diferite — trei
+   provenienţe faţă de doi operatori — iar împerecherea rând cu rând punea „22.000 kg → Reciclator
+   SA" pe acelaşi rând cu „populaţie". Pe hârtie rubrica materialului e o **casetă**, nu un rând; la
+   noi bordura face rândul să pară o afirmaţie. Acum jumătăţile sunt **stivuite**: un rând poartă una
+   sau alta, niciodată o coincidenţă. Test: `noRowPairsAProvenanceWithAnOperatorFigure`.
+
+#### Şi o pierdere tăcută de date, prinsă înainte să existe
+
+Răspunsul întorcea provenienţa **rezolvată** (mişcare sau partener). La redeschiderea unei mişcări
+care moştenea răspunsul partenerului, select-ul ar fi arătat gol şi salvarea l-ar fi şters; invers,
+o suprascriere proprie ar fi fost transformată tăcut în moştenire. Rezolvat exact ca la material:
+`packagingOrigin` e ce a scris clientul **pe mişcare**, `effectivePackagingOrigin` e ce va tipări
+formularul.
+
+**19 teste noi.** Ecranul: secţiune nouă în tabul Ambalaje, cu selectorul de punct de lucru, tabelul
+aplicabil, semnalele pentru ce n-a intrat, şi cele două descărcări.
+
+### Stare
+
+**224 de teste verzi** (de la 186: 38 noi), 0 eşecuri, 0 erori, 0 sărite. Migrări până la **`V31`**;
+următoarea liberă e **`V32`**. Frontendul trece `tsc --noEmit` şi se build-uieşte.
+
+**Necommis şi nedeployat** — utilizatorul nu a cerut încă.
+
+### Auditul cerut după livrare — cinci defecte, toate în ce nu se vedea (06.09.2026)
+
+Cele două felii erau „gata": 221 de teste verzi, frontendul build-uit. La cererea utilizatorului
+(*„verifică bine ce ai lucrat [...] să nu fi lăsat inconsistenţe sau buguri"*) am făcut o trecere
+sistematică. **Cinci defecte, niciunul prins de teste** — şi toate în acelaşi loc: în ce nu se
+vedea. Patru din cinci au ieşit **citind documentul randat**, a cincea scriind un test care să
+demonstreze o bănuială.
+
+#### 1. XLS: a doua cifră a tabelului 2 era text, nu număr
+
+Cele două tabele împărţeau un singur scriitor de rânduri, care primea toate celulele ca `String[]`.
+Pe tabelul 1 asta e inofensiv — coloana 6 chiar e text, numele operatorului. Pe tabelul 2 coloana 6
+e **„cantitatea valorificată prin alte metode"**, deci ieşea o celulă text pe care Excel n-o
+adună, şi pe care depunătorul n-o poate verifica. În plus, acumulatorul de totaluri aduna doar
+prima cifră, deci coloana lipsea şi din „total <material>" şi din „TOTAL ambalaje".
+**Reparat** scriind cele două tabele separat, ca în generatorul PDF. Test:
+`bothColumnsOfTabelul2AreNumbersAndBothCountInTheTotals`.
+
+#### 2. O preluare necântărită dispărea fără urmă
+
+Constructorul filtra `quantity != null` din capul locului. O mişcare care aşteaptă cântarul —
+caz legitim, `quantity` e nullable prin decizia 5 — nu apărea nici în tabel, nici în lista „nu
+intră în tabel". Adică exact ce interzice regula casei: **o lipsă trebuie să se vadă ca lipsă.**
+**Reparat:** cantitatea lipsă e acum al treilea motiv de raportare, lângă material şi provenienţă,
+şi pe intrări, şi pe ieşiri. Se numără şi pe ecran. Test:
+`aTakeoverStillAwaitingItsWeightIsShownRatherThanDropped`.
+
+#### 3. 🔴 PDF: reciclarea şi valorificarea, adunate în coloana greşită
+
+Cel mai grav. Pe tabelul 2, rândurile de total ale PDF-ului puneau **suma amândurora** în coloana
+„cantitatea reciclată" şi lăsau vecina goală: 22.000 kg reciclaţi + 2.100 valorificaţi altfel se
+tipăreau ca **24.100 kg reciclaţi**. Pe formularul ăsta aia e chiar cifra cu consecinţe legale —
+obiectivele de reciclare. XLS-ul era corect, deci **cele două documente ale aceleiaşi depuneri
+spuneau lucruri diferite**.
+
+**Cauza e structurală, nu o scăpare:** fiecare generator îşi calcula singur totalurile. Reparaţia nu
+e o corectură într-un loc, ci mutarea calculului în document — `PackagingAnexa3.Totals`, cu
+`totalsFor`, `totalsOver` şi `grandTotals` —, iar cele două generatoare doar tipăresc ce li se dă.
+O sursă, două imprimante; clasa asta de bug nu se mai poate întoarce. Teste:
+`aSummedLineKeepsRecyclingApartFromOtherRecovery` şi
+`onTabelul1EverythingThatLeftCountsInOneColumn`.
+
+#### 4. Totalul nu însuma coloana „din care periculoase"
+
+Rândul de detaliu arăta 120 kg periculoase la Oţel, iar „total metal" lăsa celula goală. Nu e
+fidelitate faţă de model, e **document care se contrazice singur**: aceeaşi coloană, totalizată
+într-un rând şi nu în celălalt. Reparat în amândouă. Test: `theTotalRowsSumTheHazardousColumnToo`.
+
+#### 5. Se putea descărca formularul fără punct de lucru
+
+Selectorul avea „Toate punctele de lucru", util pe ecran — dar descărcarea din starea aia producea
+un formular cu rubrica „Punct de lucru" **goală**, adică nedepunibil: art. 4 alin. (4) cere
+raportarea per punct de lucru, iar alin. (3) o trimite la agenţia din raza lui. Acum, cu un singur
+punct de lucru se selectează singur, iar pe „Toate" butoanele sunt inactive şi ecranul spune de ce.
+
+#### Şi trei lucruri verificate care **nu** erau defecte
+
+- **Firmele dezactivate n-ar primi mailuri greşite:** `CompanyRequest` n-are câmpul `active` şi
+  `CompanyService` scrie doar `active(true)`, deci o firmă nu poate fi dezactivată prin API.
+  Schedulerul nou se poartă oricum identic cu cel de termene.
+- **Suprascrierea provenienţei nu se pierde la reeditare** — separarea
+  `packagingOrigin` / `effectivePackagingOrigin` era deja făcută exact pentru asta.
+- **Fereastra alertei e inclusivă la ambele capete** (`Between`), cu teste pe ziua 60 şi ziua 61.
+
+#### Igienă găsită în drum
+
+`V31` crea un index parţial pe `(company_id, packaging_origin)`, cu un comentariu care spunea că
+„adaugă capătul pe cod" — fals de două ori: indexul nu conţine codul, iar documentul citeşte
+mişcările prin `findAllByCompany_IdAndDeletedFalseAndDateBetween`, acoperit deja de indexul din
+`V5`, şi filtrează în memorie. **Un index pe care nu-l foloseşte nicio interogare e cost de scriere
+fără cititor** — scos, cu motivul în migrare. Plus un `nz()` rămas mort în amândouă generatoarele
+după mutarea totalurilor, şi un import nefolosit.
+
+**224 de teste verzi** după audit — 219 înainte, plus cele **cinci** scrise ca să ţină pe loc fiecare defect găsit. 0 eşecuri, 0 erori, 0 sărite.
+
+> **Ce merită reţinut din runda asta.** Toate cele patru defecte de output au trecut de teste
+> verzi şi au picat la prima citire a documentului randat. Regula de lucru 5 nu e o formalitate de
+> final, e singura care prinde clasa asta. Şi încă ceva: **două generatoare pentru acelaşi
+> document sunt două ocazii să difere** — dacă amândouă calculează, vor diverge; dacă amândouă
+> citesc, nu pot.
+
+### Agenda meetingului cu Andreea, pregătită
+
+`docs/intrebari-specialist.md` (gitignored) are acum, în cap, o **agendă pe cinci puncte, ordonată
+după ce se pierde dacă meetingul se termină devreme**: cele două documente de obţinut (**AD**,
+**AI**), practica inspectorului (**AL**), cele două întrebări vechi (**C**, **W**) — scrise complet
+în fişier, unde lipseau —, cele două lucruri de confirmat pe Anexa 3 Ambalaje, şi confirmările de
+pus doar dacă mai e timp. Plus ce ducem noi: zece întrebări au devenit trei, şi de ce.
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -2629,7 +2863,7 @@ nu se salvează.
 | 8 | 🔜 **Modul depozit — ecrane** (Recepții/Livrări, registru art. 48, formulare HG 1061, ceas SIATD) — **următorul** | 2 | L |
 | 9 | Borderou de achiziție la metale (OUG 31/2011) + regim GDPR pentru CNP | 8 | M |
 | 10 | Profil groapă (registru recepție HG 349 art. 15, raportare semestrială, alertă 12h) | 8 + cuantumul din anexa 2 | M |
-| 11 | 🟡 Modul ambalaje (Ordin 794/2012, **în kg**) — **livrat parțial 25.08**: Anexa 1 Ambalaje în `.xls` (`V22`, `V26`, `V27`). Rămâne **Anexa 3 Ambalaje**, raportul anual al colectorilor | 8 | S |
+| 11 | ✅ Modul ambalaje (Ordin 794/2012, **în kg**) — **complet**: Anexa 1 Ambalaje în `.xls` (`V22`, `V26`, `V27`, 25.08) și **Anexa 3 Ambalaje** (`V31`, 06.09) | 8 | **GATA** |
 
 **Restanțe mici (S, se pot lua oricând, nu blochează nimic):**
 
