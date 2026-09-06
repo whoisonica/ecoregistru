@@ -1229,5 +1229,45 @@ export const strings = {
     status: "Status",
     actions: "Acțiuni",
     requiredField: "Câmp obligatoriu.",
+    // Adăugate pe 07.09.2026, odată cu modernizarea interfeței.
+    confirmDelete: "Confirmi ștergerea?",
+    confirmDeactivate: "Confirmi dezactivarea?",
+    deactivate: "Dezactivează",
+    duplicate: "Duplică",
+    search: "Caută",
+    searchPlaceholder: "Caută în listă...",
+    clearSearch: "Golește căutarea",
+    filters: "Filtre",
+    clearFilters: "Șterge filtrele",
+    noResults: "Niciun rezultat",
+    noResultsHint: "Niciun rând nu se potrivește cu filtrele puse. Șterge-le ca să vezi tot.",
+    retry: "Încearcă din nou",
+    openMenu: "Deschide meniul",
+    moreActions: "Mai multe acțiuni",
+    // Paginare
+    previous: "Înapoi",
+    next: "Înainte",
+    // „12–24 din 340"
+    rangeOfTotal: "{from}–{to} din {total}",
+    perPage: "pe pagină",
+    // Sortare — anunțate cititoarelor de ecran prin aria-sort, și scrise în tooltip.
+    sortBy: "Sortează după {column}",
+    sortedAsc: "sortat crescător",
+    sortedDesc: "sortat descrescător",
+    // Navigație
+    skipToContent: "Sari la conținut",
+    mainNav: "Navigație principală",
+    openNav: "Deschide meniul de navigație",
+    closeNav: "Închide meniul de navigație",
+    userMenu: "Meniul contului",
+    // Selecție multiplă
+    selectRow: "Selectează rândul",
+    selectAll: "Selectează tot",
+    selectedCount: "{n} selectate",
+    clearSelection: "Renunță la selecție",
+    // Erori de formular
+    fixErrors: "Verifică rubricile marcate mai jos.",
+    // Rezultatul unei operațiuni lungi, când nu se poate arăta un procent.
+    working: "Se lucrează...",
   },
 } as const;
