@@ -24,6 +24,12 @@ interface ComboboxProps {
   id?: string;
   /** Numele accesibil, când eticheta vizibilă nu e legată prin `htmlFor`. */
   "aria-label"?: string;
+  /**
+   * Id-ul mesajului de eroare, când rubrica e greșită. Marchează declanșatorul roșu și îl face
+   * găsibil prin `[data-invalid="true"]`, cârligul după care formularul derulează la prima
+   * rubrică greșită.
+   */
+  invalid?: string;
 }
 
 /**
@@ -50,6 +56,7 @@ export function Combobox({
   emptyText = "Niciun rezultat.",
   id,
   "aria-label": ariaLabel,
+  invalid,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -168,6 +175,9 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-controls={open ? listId : undefined}
         aria-label={ariaLabel}
+        aria-invalid={invalid ? true : undefined}
+        aria-describedby={invalid}
+        data-invalid={invalid ? "true" : undefined}
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => {
@@ -178,7 +188,8 @@ export function Combobox({
           }
         }}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-line-strong bg-surface px-3 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50",
+          "flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50",
+          invalid ? "border-red-400" : "border-line-strong",
           // Loc pentru butonul de ștergere, care stă deasupra și nu mai e copilul acestuia.
           value ? "pr-16" : "pr-9",
           !value && "text-content-subtle"

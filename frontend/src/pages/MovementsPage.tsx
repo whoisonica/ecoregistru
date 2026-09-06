@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Plus, Pencil, Trash2, Paperclip, FileText, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
@@ -37,6 +37,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
+import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
@@ -101,6 +103,16 @@ function operationsFor(type: CompanyType | undefined): WasteOperation[] {
     ? ["GENERATED", "COLLECTED", "RECOVERED", "DISPOSED"]
     : ["GENERATED"];
 }
+
+/**
+ * Ce rubrică a formularului de mişcare e greşită. `form` e pentru ce nu ţine de o rubrică anume.
+ */
+type FieldErrors = Partial<
+  Record<
+    "workPointId" | "date" | "wasteCode" | "quantity" | "partnerId" | "operationCode" | "register" | "form",
+    string
+  >
+>;
 
 /** Cele două operaţiuni care scot cantitatea de pe amplasament. */
 type ExitOperation = "RECOVERED" | "DISPOSED";
@@ -725,7 +737,8 @@ function MovementFormDialog({
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const formRef = useRef<HTMLFormElement>(null);
 
   const codeSearch = useWasteCodeSearch(codeQuery);
 
@@ -856,27 +869,36 @@ function MovementFormDialog({
   const isSaving =
     createMut.isPending || updateMut.isPending || addAttachmentMut.isPending;
 
-  function validate(): string | null {
-    if (!workPointId) return strings.common.requiredField;
-    if (!date) return strings.common.requiredField;
-    if (!wasteCode) return t.wasteCodePlaceholder;
+  /**
+   * Ce e greșit, pe rubrici.
+   *
+   * <p>Înainte întorcea un singur șir, pus în capul unui formular care se derulează pe câteva
+   * ecrane: aflai *că* e ceva greșit, nu și *unde*. Regulile sunt neatinse — aceleași condiții, în
+   * aceeași ordine — doar că fiecare își spune acum numele rubricii. `form` e pentru ce nu ține de
+   * o rubrică anume (linia veche fără cod R/D).
+   */
+  function validate(): FieldErrors {
+    const errs: FieldErrors = {};
+    if (!workPointId) errs.workPointId = strings.common.requiredField;
+    if (!date) errs.date = strings.common.requiredField;
+    if (!wasteCode) errs.wasteCode = t.wasteCodePlaceholder;
     // The recipient's weighbridge decides the figure, so the field is left empty on purpose —
     // exactly how the paper form reaches the depot.
     if (!weighedAtUnloading) {
       const qty = Number(quantity);
       if (!quantity || Number.isNaN(qty) || qty <= 0) {
-        return t.quantity + ": " + strings.common.requiredField;
+        errs.quantity = strings.common.requiredField;
       }
     } else if (!partnerId) {
-      return t.weighingNeedsPartner;
+      errs.partnerId = t.weighingNeedsPartner;
     }
     if (effectiveOperation === "RECOVERED" && (!operationCode || !operationCode.startsWith("R")))
-      return t.recoveryCodeRequired;
+      errs.operationCode = t.recoveryCodeRequired;
     if (effectiveOperation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
-      return t.disposalCodeRequired;
-    if (asksOrigin && !register) return t.originRequired;
-    if (isLegacyExit) return t.legacyExitHint;
-    return null;
+      errs.operationCode = t.disposalCodeRequired;
+    if (asksOrigin && !register) errs.register = t.originRequired;
+    if (isLegacyExit) errs.form = t.legacyExitHint;
+    return errs;
   }
 
   function buildInput(): WasteMovementInput {
@@ -933,12 +955,20 @@ function MovementFormDialog({
 
   async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
+    const found = validate();
+    if (Object.keys(found).length > 0) {
+      setErrors(found);
+      // După ce randarea a pus semnele pe rubrici, du ochiul la prima. `data-invalid` e cârligul,
+      // deci nu ținem nicio listă de referințe în paralel cu formularul.
+      requestAnimationFrame(() => {
+        const first = formRef.current?.querySelector<HTMLElement>('[data-invalid="true"]');
+        if (!first) return;
+        first.scrollIntoView({ block: "center", behavior: "smooth" });
+        first.focus({ preventScroll: true });
+      });
       return;
     }
-    setError(null);
+    setErrors({});
     const input = buildInput();
     try {
       const movementId = editing
@@ -982,10 +1012,13 @@ function MovementFormDialog({
         </>
       }
     >
-      <form id="movement-form" onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
+      <form ref={formRef} id="movement-form" onSubmit={handleSubmit} className="space-y-6">
+        {Object.keys(errors).length > 0 && (
+          <p
+            role="alert"
+            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {errors.form ?? strings.common.fixErrors}
           </p>
         )}
 
@@ -1056,8 +1089,12 @@ function MovementFormDialog({
                 value={weighedAtUnloading ? "" : quantity}
                 onChange={(ev) => setQuantity(ev.target.value)}
                 disabled={weighedAtUnloading}
-                className={weighedAtUnloading ? "bg-gray-100 text-gray-400" : undefined}
+                className={
+                  weighedAtUnloading ? "bg-surface-sunken text-content-subtle" : undefined
+                }
+                {...invalidProps("mv-qty-err", errors.quantity)}
               />
+              <FieldError id="mv-qty-err" message={errors.quantity} />
             </div>
             <div>
               <Label htmlFor="mv-unit">{t.unit}</Label>
@@ -1142,8 +1179,17 @@ function MovementFormDialog({
           </div>
 
           {asksOrigin && (
-            <div className="rounded-md border border-gray-300 p-3">
-              <span className="text-sm font-medium text-gray-800">
+            <div
+              role="radiogroup"
+              aria-labelledby="mv-register-title"
+              className={cn(
+                "rounded-md border p-3",
+                errors.register ? "border-red-400 bg-red-50/40" : "border-gray-300"
+              )}
+              {...invalidProps("mv-register-err", errors.register)}
+              tabIndex={errors.register ? -1 : undefined}
+            >
+              <span id="mv-register-title" className="text-sm font-medium text-gray-800">
                 {t.originTitle}
                 <span className="text-red-600"> *</span>
               </span>
@@ -1178,6 +1224,7 @@ function MovementFormDialog({
                   </span>
                 </label>
               </div>
+              <FieldError id="mv-register-err" message={errors.register} />
             </div>
           )}
 
@@ -1315,6 +1362,7 @@ function MovementFormDialog({
                     id="mv-code-rd"
                     value={operationCode}
                     onChange={(ev) => setOperationCode(ev.target.value as WasteOperationCode)}
+                    {...invalidProps("mv-code-rd-err", errors.operationCode)}
                   >
                     <option value="">{strings.common.requiredField}</option>
                     {codeOptions.map((c) => (
@@ -1323,6 +1371,7 @@ function MovementFormDialog({
                       </option>
                     ))}
                   </Select>
+                  <FieldError id="mv-code-rd-err" message={errors.operationCode} />
                   <p className="mt-1 text-xs text-gray-500">{t.operationCodeHint}</p>
                 </div>
               )}
@@ -1336,6 +1385,7 @@ function MovementFormDialog({
             <Select
               id="mv-partner"
               value={partnerId}
+              {...invalidProps("mv-partner-err", errors.partnerId)}
               onChange={(ev) => {
                 const id = ev.target.value;
                 setPartnerId(id);
@@ -1363,6 +1413,7 @@ function MovementFormDialog({
                   </option>
                 ))}
             </Select>
+            <FieldError id="mv-partner-err" message={errors.partnerId} />
             <p className="mt-1 text-xs text-gray-500">{t.partnerHint}</p>
           </div>
 
