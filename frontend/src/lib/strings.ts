@@ -103,6 +103,26 @@ export const strings = {
     add: "Adaugă mișcare",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
+    // Reperele formularului lung. Sunt titluri, nu uși: secțiunile nu se pliază, fiindcă jumătate
+    // din ele conțin rubrici obligatorii.
+    sectionWaste: "Deșeul",
+    sectionQuantity: "Cantitatea",
+    sectionOperation: "Operațiunea",
+    sectionHandling: "Depozitare și tratare",
+    sectionTransport: "Transport",
+    sectionRecipient: "Destinatarul",
+    sectionDocument: "Document și observații",
+    sectionAttachments: "Atașamente",
+    // Banda de sus: unde ajunge cantitatea, spusă înainte de salvare.
+    effectTitle: "Ce face mișcarea asta",
+    effectAnexa1: "Intră pe fișa de evidență (Anexa 1)",
+    effectArt48: "Intră în registrul art. 48 — marfă preluată, nu deșeul firmei",
+    effectStock: "Rămâne pe stoc: nicio ieșire, doar generarea",
+    effectRecovered: "Iese ca valorificare, cu codul {code}",
+    effectDisposed: "Iese ca eliminare, cu codul {code}",
+    effectPackaging: "Intră și în declarația de ambalaje (Anexa 1 Ambalaje)",
+    effectAnexa3: "Se poate tipări Anexa 3 pentru predarea asta",
+    effectIncomplete: "Alege codul de deșeu ca să vezi unde ajunge cantitatea.",
     empty: "Nicio mișcare pentru filtrele alese.",
     loadError: "Nu am putut încărca mișcările.",
     // filters
