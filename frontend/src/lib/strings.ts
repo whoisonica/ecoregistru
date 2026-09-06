@@ -124,6 +124,10 @@ export const strings = {
     effectAnexa3: "Se poate tipări Anexa 3 pentru predarea asta",
     effectIncomplete: "Alege codul de deșeu ca să vezi unde ajunge cantitatea.",
     empty: "Nicio mișcare pentru filtrele alese.",
+    emptyHint: "Schimbă luna sau punctul de lucru, ori adaugă prima mișcare a perioadei.",
+    searchPlaceholder: "Caută după cod, partener, punct de lucru, document...",
+    duplicate: "Duplică mișcarea",
+    duplicateTitle: "Mișcare nouă, pornită de la alta",
     loadError: "Nu am putut încărca mișcările.",
     // filters
     filterMonth: "Luna",

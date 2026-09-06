@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowRight, Plus, Pencil, Trash2, Paperclip, FileText, Scale } from "lucide-react";
+import { ArrowRight, Copy, Plus, Pencil, Trash2, Paperclip, FileText, Scale, Truck } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
@@ -51,7 +51,11 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
 import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { FormSection } from "@/components/ui/form-section";
-import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { Table, THead, TBody, TR, TH, TD, SortableTH, Pagination } from "@/components/ui/table";
+import { RowAction, RowActions, TableSearch } from "@/components/ui/table-toolbar";
+import { TableSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
@@ -188,12 +192,52 @@ export function MovementsPage() {
   }, [monthFilter, workPointFilter]);
 
   const { data: movements, isLoading, isError } = useMovements(filters);
+  const rows = useMemo(() => movements ?? [], [movements]);
+  /**
+   * Căutarea, sortarea și paginarea lucrează pe rândurile deja aduse. Filtrele de sus rămân ce
+   * erau — ele restrâng *cererea*, pe an și pe punct de lucru; astea de aici așază ce a venit.
+   *
+   * <p>Textul în care se caută sunt coloanele pe care le-ar tasta cineva: codul, denumirea,
+   * partenerul, secția, punctul de lucru, numărul documentului. Nu tot obiectul — o potrivire pe
+   * un id nu ajută pe nimeni.
+   */
+  const view = useTableView(rows, {
+    searchText: (m) =>
+      [
+        m.wasteCode,
+        m.wasteCodeName,
+        m.partnerName,
+        m.internalGeneratorName,
+        m.workPointName,
+        m.documentReference,
+        formatDate(m.date),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    comparators: {
+      date: (a, b) => a.date.localeCompare(b.date),
+      wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
+      // Cantitatea lipsă („de cântărit") stă la coadă în ambele sensuri: nu e nici mică, nici
+      // mare, e nespusă, și n-are ce căuta amestecată printre cifre.
+      quantity: (a, b) => {
+        if (a.quantity == null) return 1;
+        if (b.quantity == null) return -1;
+        return a.quantity - b.quantity;
+      },
+      partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
+      workPointName: (a, b) => a.workPointName.localeCompare(b.workPointName, "ro"),
+    },
+    initialSort: { key: "date", direction: "desc" },
+  });
   const deleteMut = useDeleteMovement();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<WasteMovement | null>(null);
+  // Mișcarea de la care pornește una nouă. Separată de `editing`, fiindcă răspunde la altă
+  // întrebare: de unde se iau valorile, nu ce se face cu ele la salvare.
+  const [duplicating, setDuplicating] = useState<WasteMovement | null>(null);
   // Mișcarea căreia i-a venit cântarul de la destinatar; null = dialogul e închis.
   const [weighing, setWeighing] = useState<WasteMovement | null>(null);
 
@@ -202,11 +246,26 @@ export function MovementsPage() {
 
   function openCreate() {
     setEditing(null);
+    setDuplicating(null);
     setDialogOpen(true);
   }
 
   function openEdit(m: WasteMovement) {
     setEditing(m);
+    setDuplicating(null);
+    setDialogOpen(true);
+  }
+
+  /**
+   * Aceeași marfă, același partener, alt transport.
+   *
+   * <p>Treizeci de predări pe lună însemnau treizeci de deschideri ale unui formular cu treizeci
+   * de rubrici, dintre care aceleași douăzeci și opt de fiecare dată. Duplicarea le aduce pe
+   * toate, în afară de cele două care chiar diferă: data și numărul documentului.
+   */
+  function openDuplicate(m: WasteMovement) {
+    setEditing(null);
+    setDuplicating(m);
     setDialogOpen(true);
   }
 
@@ -296,157 +355,205 @@ export function MovementsPage() {
       </div>
 
       <section className="mt-4">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t.colDate}</TH>
-                <TH>{t.colWasteCode}</TH>
-                <TH>{t.colOperation}</TH>
-                <TH className="text-right">{t.colQuantity}</TH>
-                <TH>{t.colPartner}</TH>
-                <TH>{t.colInternalGenerator}</TH>
-                <TH>{t.colWorkPoint}</TH>
-                <TH className="text-center">{t.colAttachments}</TH>
-                {canWrite && <TH className="text-right">{strings.common.actions}</TH>}
-              </TR>
-            </THead>
-            <TBody>
-              {(movements ?? []).length === 0 && (
+        {!isError && (
+          <>
+            <TableSearch
+              value={view.query}
+              onChange={view.search}
+              placeholder={t.searchPlaceholder}
+              matchCount={view.matchCount}
+              className="mb-3"
+            />
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
-                  <TD colSpan={canWrite ? 9 : 8} className="text-center text-gray-400">
-                    {t.empty}
-                  </TD>
+                  <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colDate}
+                  </SortableTH>
+                  <SortableTH sortKey="wasteCode" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colWasteCode}
+                  </SortableTH>
+                  <TH>{t.colOperation}</TH>
+                  <SortableTH
+                    sortKey="quantity"
+                    sort={view.sort}
+                    onSort={view.toggleSort}
+                    align="right"
+                  >
+                    {t.colQuantity}
+                  </SortableTH>
+                  <SortableTH sortKey="partnerName" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colPartner}
+                  </SortableTH>
+                  <TH>{t.colInternalGenerator}</TH>
+                  <SortableTH sortKey="workPointName" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colWorkPoint}
+                  </SortableTH>
+                  <TH className="text-center">{t.colAttachments}</TH>
+                  {canWrite && <TH className="text-right">{strings.common.actions}</TH>}
                 </TR>
-              )}
-              {(movements ?? []).map((m) => (
-                <TR key={m.id}>
-                  <TD className="whitespace-nowrap">{formatDate(m.date)}</TD>
-                  <TD>
-                    <span className="font-medium text-gray-900">{m.wasteCode}</span>
-                    {m.hazardous && (
-                      <Badge variant="danger" className="ml-2">
-                        {t.hazardous}
-                      </Badge>
-                    )}
-                    <span className="block max-w-xs truncate text-xs text-gray-400">
-                      {m.wasteCodeName}
-                    </span>
-                    {(m.storageType || m.treatmentMethod) && (
-                      <span className="mt-0.5 block text-xs text-gray-500">
-                        {[
-                          m.storageType && e.storageType[m.storageType],
-                          m.treatmentMethod && e.treatmentMethod[m.treatmentMethod],
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    )}
-                  </TD>
-                  <TD>
-                    {/* A legacy exit is the one row on this screen that is wrong as it stands, so
-                        it is red, not grey: the quantity left the site but reaches neither
-                        official column of Anexa 1. Editing the row is how it gets completed. */}
-                    {m.operation === "UNCLASSIFIED_OUT" ? (
-                      <Badge variant="danger" title={t.missingCodeHint}>
-                        {t.missingCode}
-                      </Badge>
-                    ) : (
-                      <>
-                        {e.wasteOperation[m.operation]}
-                        {m.operationCode && (
-                          <span className="ml-1 text-xs text-gray-400">({m.operationCode})</span>
-                        )}
-                      </>
-                    )}
-                  </TD>
-                  <TD className="whitespace-nowrap text-right">
-                    {m.quantity != null ? (
-                      <>
-                        {m.quantity} {e.unit[m.unit]}
-                      </>
-                    ) : (
-                      <Badge variant="warning" title={t.awaitingWeighingHint}>
-                        {t.awaitingWeighing}
-                      </Badge>
-                    )}
-                  </TD>
-                  <TD>
-                    {m.partnerName || "—"}
-                    {/* Galben, nu roșu: predarea chiar a avut loc, iar rândul nu e greșit — spre
-                        deosebire de UNCLASSIFIED_OUT de mai sus, care nu intră în nicio coloană
-                        oficială. Aici lipsește o condiție de legalitate a predării (OUG 92/2021
-                        art. 23 alin. (1)), pe care clientul o poate lămuri cu partenerul; e
-                        aceeași familie cu „De cântărit". */}
-                    {m.recipientAuthorizationExpired && (
-                      <Badge
-                        variant="warning"
-                        className="mt-0.5 block w-fit"
-                        title={t.authExpiredAtHandoverHint(
-                          m.recipientAuthorizationExpiry
-                            ? formatDate(m.recipientAuthorizationExpiry)
-                            : null,
-                        )}
-                      >
-                        {t.authExpiredAtHandover}
-                      </Badge>
-                    )}
-                  </TD>
-                  <TD>{m.internalGeneratorName || "—"}</TD>
-                  <TD>{m.workPointName}</TD>
-                  <TD className="text-center">
-                    {m.attachments.length > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-gray-500">
-                        <Paperclip className="h-3.5 w-3.5" />
-                        {m.attachments.length}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </TD>
-                  {canWrite && (
-                    <TD className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {m.quantity == null && (
-                          <Button variant="ghost" size="sm" onClick={() => setWeighing(m)}>
-                            <Scale className="mr-1 h-3.5 w-3.5" />
-                            {t.recordWeight}
-                          </Button>
-                        )}
-                        {canPrintAnexa3(m) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={downloadingId === m.id}
-                            onClick={() => downloadAnexa3(m)}
-                          >
-                            <FileText className="mr-1 h-3.5 w-3.5" />
-                            {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
-                          <Pencil className="mr-1 h-3.5 w-3.5" />
-                          {strings.common.edit}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(m)}
-                        >
-                          <Trash2 className="mr-1 h-3.5 w-3.5" />
-                          {strings.common.delete}
-                        </Button>
-                      </div>
+              </THead>
+              {isLoading ? (
+                <TableSkeleton columns={canWrite ? 9 : 8} />
+              ) : (
+              <TBody>
+                {view.visible.length === 0 && (
+                  <TR>
+                    <TD colSpan={canWrite ? 9 : 8} className="px-4 py-10 text-center">
+                      <EmptyState
+                        icon={Truck}
+                        title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                        description={
+                          view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                        }
+                        className="border-0 bg-transparent py-0"
+                      />
                     </TD>
-                  )}
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+                  </TR>
+                )}
+                {view.visible.map((m) => (
+                  <TR key={m.id}>
+                    <TD className="whitespace-nowrap">{formatDate(m.date)}</TD>
+                    <TD>
+                      <span className="font-medium text-gray-900">{m.wasteCode}</span>
+                      {m.hazardous && (
+                        <Badge variant="danger" className="ml-2">
+                          {t.hazardous}
+                        </Badge>
+                      )}
+                      <span className="block max-w-xs truncate text-xs text-gray-400">
+                        {m.wasteCodeName}
+                      </span>
+                      {(m.storageType || m.treatmentMethod) && (
+                        <span className="mt-0.5 block text-xs text-gray-500">
+                          {[
+                            m.storageType && e.storageType[m.storageType],
+                            m.treatmentMethod && e.treatmentMethod[m.treatmentMethod],
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      )}
+                    </TD>
+                    <TD>
+                      {/* A legacy exit is the one row on this screen that is wrong as it stands, so
+                          it is red, not grey: the quantity left the site but reaches neither
+                          official column of Anexa 1. Editing the row is how it gets completed. */}
+                      {m.operation === "UNCLASSIFIED_OUT" ? (
+                        <Badge variant="danger" title={t.missingCodeHint}>
+                          {t.missingCode}
+                        </Badge>
+                      ) : (
+                        <>
+                          {e.wasteOperation[m.operation]}
+                          {m.operationCode && (
+                            <span className="ml-1 text-xs text-gray-400">({m.operationCode})</span>
+                          )}
+                        </>
+                      )}
+                    </TD>
+                    <TD className="whitespace-nowrap text-right">
+                      {m.quantity != null ? (
+                        <>
+                          {m.quantity} {e.unit[m.unit]}
+                        </>
+                      ) : (
+                        <Badge variant="warning" title={t.awaitingWeighingHint}>
+                          {t.awaitingWeighing}
+                        </Badge>
+                      )}
+                    </TD>
+                    <TD>
+                      {m.partnerName || "—"}
+                      {/* Galben, nu roșu: predarea chiar a avut loc, iar rândul nu e greșit — spre
+                          deosebire de UNCLASSIFIED_OUT de mai sus, care nu intră în nicio coloană
+                          oficială. Aici lipsește o condiție de legalitate a predării (OUG 92/2021
+                          art. 23 alin. (1)), pe care clientul o poate lămuri cu partenerul; e
+                          aceeași familie cu „De cântărit". */}
+                      {m.recipientAuthorizationExpired && (
+                        <Badge
+                          variant="warning"
+                          className="mt-0.5 block w-fit"
+                          title={t.authExpiredAtHandoverHint(
+                            m.recipientAuthorizationExpiry
+                              ? formatDate(m.recipientAuthorizationExpiry)
+                              : null,
+                          )}
+                        >
+                          {t.authExpiredAtHandover}
+                        </Badge>
+                      )}
+                    </TD>
+                    <TD>{m.internalGeneratorName || "—"}</TD>
+                    <TD>{m.workPointName}</TD>
+                    <TD className="text-center">
+                      {m.attachments.length > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-gray-500">
+                          <Paperclip className="h-3.5 w-3.5" />
+                          {m.attachments.length}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </TD>
+                    {canWrite && (
+                      <TD className="text-right">
+                        {/* Una afară, restul în meniu. Patru butoane cu text pe fiecare rând
+                            înseamnă vreo 380px de comenzi repetate, într-un tabel care are deja
+                            nouă coloane. Afară rămâne cea care e chiar de făcut acum: cântarul,
+                            când lipsește cifra; altfel, editarea. */}
+                        <div className="flex items-center justify-end gap-1">
+                          {m.quantity == null ? (
+                            <Button variant="ghost" size="sm" onClick={() => setWeighing(m)}>
+                              <Scale className="mr-1 h-3.5 w-3.5" />
+                              {t.recordWeight}
+                            </Button>
+                          ) : (
+                            <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
+                              <Pencil className="mr-1 h-3.5 w-3.5" />
+                              {strings.common.edit}
+                            </Button>
+                          )}
+                          <RowActions>
+                            {m.quantity == null && (
+                              <RowAction icon={Pencil} onClick={() => openEdit(m)}>
+                                {strings.common.edit}
+                              </RowAction>
+                            )}
+                            <RowAction icon={Copy} onClick={() => openDuplicate(m)}>
+                              {t.duplicate}
+                            </RowAction>
+                            {canPrintAnexa3(m) && (
+                              <RowAction
+                                icon={FileText}
+                                disabled={downloadingId === m.id}
+                                onClick={() => downloadAnexa3(m)}
+                              >
+                                {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
+                              </RowAction>
+                            )}
+                            <RowAction icon={Trash2} tone="danger" onClick={() => handleDelete(m)}>
+                              {strings.common.delete}
+                            </RowAction>
+                          </RowActions>
+                        </div>
+                      </TD>
+                    )}
+                  </TR>
+                ))}
+              </TBody>
+              )}
+            </Table>
+            <Pagination
+              page={view.page}
+              pageCount={view.pageCount}
+              onPage={view.setPage}
+              matchCount={view.matchCount}
+              pageSize={view.pageSize}
+            />
+          </>
         )}
       </section>
 
@@ -457,6 +564,7 @@ export function MovementsPage() {
       {dialogOpen && (
         <MovementFormDialog
           editing={editing}
+          duplicateOf={duplicating}
           workPoints={activeWorkPoints.map((w) => ({ id: w.id, name: w.name }))}
           defaultWorkPointId={workPointFilter || activeWorkPoints[0]?.id}
           onClose={() => setDialogOpen(false)}
@@ -561,6 +669,11 @@ function RecordWeightDialog({
 
 interface MovementFormDialogProps {
   editing: WasteMovement | null;
+  /**
+   * Mișcarea de la care pornește una nouă. Se citește la fel ca `editing` pentru valorile de
+   * pornire, dar **nu** face din formular o editare: se salvează o înregistrare nouă.
+   */
+  duplicateOf?: WasteMovement | null;
   workPoints: { id: string; name: string }[];
   defaultWorkPointId?: string;
   onClose: () => void;
@@ -568,10 +681,19 @@ interface MovementFormDialogProps {
 
 function MovementFormDialog({
   editing,
+  duplicateOf,
   workPoints,
   defaultWorkPointId,
   onClose,
 }: MovementFormDialogProps) {
+  /**
+   * De unde se citesc valorile de pornire. `editing` când se editează, mișcarea-sursă când se
+   * duplică — și `null` la una nouă de tot.
+   *
+   * <p>Peste tot mai jos, `initial` decide **ce scrie în rubrici**, iar `editing` decide **ce se
+   * întâmplă la salvare**. Sunt două întrebări diferite, iar înainte era una singură.
+   */
+  const initial = editing ?? duplicateOf ?? null;
   const { notify } = useToast();
   const createMut = useCreateMovement();
   const updateMut = useUpdateMovement();
@@ -581,15 +703,15 @@ function MovementFormDialog({
   const { data: drivers } = useDrivers();
   const { data: company } = useCurrentCompany();
 
-  const [workPointId, setWorkPointId] = useState(editing?.workPointId ?? defaultWorkPointId ?? "");
+  const [workPointId, setWorkPointId] = useState(initial?.workPointId ?? defaultWorkPointId ?? "");
   const [date, setDate] = useState(editing?.date ?? todayIso());
   const [wasteCode, setWasteCode] = useState<ComboboxItem | null>(
-    editing
+    initial
       ? {
-          id: editing.wasteCodeId,
-          label: `${editing.wasteCode} — ${editing.wasteCodeName}`,
+          id: initial.wasteCodeId,
+          label: `${initial.wasteCode} — ${initial.wasteCodeName}`,
           // Same marker the search results carry, so "is this hazardous?" has one answer here.
-          sublabel: editing.hazardous ? t.hazardous : undefined,
+          sublabel: initial.hazardous ? t.hazardous : undefined,
         }
       : null
   );
@@ -600,13 +722,13 @@ function MovementFormDialog({
   // răspunsul implicit „da" e exact ce reclama utilizatorul. Pe o mişcare veche păstrăm `null`
   // până când cineva atinge bifa, ca să nu schimbăm tăcut o cifră deja tipărită.
   const [packagingOnMarket, setPackagingOnMarket] = useState<boolean | null>(
-    editing ? (editing.packagingOnMarket ?? null) : false
+    initial ? (initial.packagingOnMarket ?? null) : false
   );
   const [packagingMaterial, setPackagingMaterial] = useState<PackagingMaterial | "">(
-    editing?.packagingMaterial ?? ""
+    initial?.packagingMaterial ?? ""
   );
   const [packagingCategory, setPackagingCategory] = useState<PackagingCategory | "">(
-    editing?.packagingCategory ?? ""
+    initial?.packagingCategory ?? ""
   );
   // Provenienţa de pe Anexa 3 Ambalaje. Normal se răspunde o dată, pe partener; aici e
   // suprascrierea — şi singurul loc unde se poate spune „populaţie", fiindcă o persoană fizică
@@ -615,61 +737,62 @@ function MovementFormDialog({
   const [packagingOrigin, setPackagingOrigin] = useState<PackagingOrigin | "">(
     // Suprascrierea de pe mişcare, nu valoarea rezolvată: altfel redeschiderea unei mişcări care
     // moştenea răspunsul partenerului l-ar transforma tăcut în suprascriere proprie.
-    editing?.packagingOrigin ?? ""
+    initial?.packagingOrigin ?? ""
   );
   const [packagingReusable, setPackagingReusable] = useState(
-    editing?.packagingReusable ?? false
+    initial?.packagingReusable ?? false
   );
   const [packagingHazardousContent, setPackagingHazardousContent] = useState(
-    editing?.packagingHazardousContent ?? false
+    initial?.packagingHazardousContent ?? false
   );
   const [quantity, setQuantity] = useState(
-    editing?.quantity != null ? String(editing.quantity) : ""
+    initial?.quantity != null ? String(initial.quantity) : ""
   );
   const [weighedAtUnloading, setWeighedAtUnloading] = useState(
-    editing?.weighedAtUnloading ?? false
+    initial?.weighedAtUnloading ?? false
   );
   const [volumeM3, setVolumeM3] = useState(
-    editing?.volumeM3 != null ? String(editing.volumeM3) : ""
+    initial?.volumeM3 != null ? String(initial.volumeM3) : ""
   );
-  const [unit, setUnit] = useState(editing?.unit ?? "KG");
+  const [unit, setUnit] = useState(initial?.unit ?? "KG");
   /**
    * Mişcarea are două jumătăţi de când operaţiunea s-a mutat sub transport: de unde vine deşeul
    * (select-ul de sus) şi ce se întâmplă cu el ({@code fate}, blocul de după transport).
    *
-   * <p>La redeschidere, o ieşire de pe Anexa 1 se citeşte înapoi ca <b>generare + predare</b>: e
+   * <p>La redeschidere (sau la duplicare), o ieşire de pe Anexa 1 se citeşte înapoi ca
+   * <b>generare + predare</b>: e
    * deşeul firmei, iar motorul deduce oricum generarea din ieşire (decizia 17). Una pe art. 48
    * rămâne <b>ieşire directă</b> — marfa preluată nu e generată de noi, iar a o rescrie ca generare
    * i-ar muta tăcut cantitatea pe alt formular.
    */
-  const editingOwnExit =
-    editing != null && isExit(editing.operation) && editing.register !== "ART_48";
+  const initialOwnExit =
+    initial != null && isExit(initial.operation) && initial.register !== "ART_48";
   const [operation, setOperation] = useState<WasteOperation>(
-    editingOwnExit ? "GENERATED" : (editing?.operation ?? "GENERATED")
+    initialOwnExit ? "GENERATED" : (initial?.operation ?? "GENERATED")
   );
   const [fate, setFate] = useState<ExitOperation | "">(
-    editingOwnExit ? (editing.operation as ExitOperation) : ""
+    initialOwnExit ? (initial.operation as ExitOperation) : ""
   );
   const [physicalState, setPhysicalState] = useState<PhysicalState | "">(
-    editing?.physicalState ?? ""
+    initial?.physicalState ?? ""
   );
-  const [register, setRegister] = useState<WasteRegister | "">(editing?.register ?? "");
+  const [register, setRegister] = useState<WasteRegister | "">(initial?.register ?? "");
   const [operationCode, setOperationCode] = useState<WasteOperationCode | "">(
-    editing?.operationCode ?? ""
+    initial?.operationCode ?? ""
   );
-  const [storageType, setStorageType] = useState<StorageType | "">(editing?.storageType ?? "");
+  const [storageType, setStorageType] = useState<StorageType | "">(initial?.storageType ?? "");
   const [treatmentMethod, setTreatmentMethod] = useState<TreatmentMethod | "">(
-    editing?.treatmentMethod ?? ""
+    initial?.treatmentMethod ?? ""
   );
   const [transportMeans, setTransportMeans] = useState<TransportMeans | "">(
-    editing?.transportMeans ?? ""
+    initial?.transportMeans ?? ""
   );
   const [wasteDestination, setWasteDestination] = useState<WasteDestination | "">(
-    editing?.wasteDestination ?? ""
+    initial?.wasteDestination ?? ""
   );
-  const [partnerId, setPartnerId] = useState(editing?.partnerId ?? "");
+  const [partnerId, setPartnerId] = useState(initial?.partnerId ?? "");
   const [partnerWorkPointId, setPartnerWorkPointId] = useState(
-    editing?.partnerWorkPointId ?? ""
+    initial?.partnerWorkPointId ?? ""
   );
   const recipientWorkPoints = useMemo(
     () => (partners ?? []).find((p) => p.id === partnerId)?.workPoints ?? [],
@@ -699,18 +822,20 @@ function MovementFormDialog({
    * face decizia 19 când mişcarea nu numeşte niciuna. Valoarea existentă se **păstrează** la
    * editare: o mişcare veche care numea o secţie n-o pierde doar fiindcă i s-a deschis formularul.
    */
-  const internalGeneratorId = editing?.internalGeneratorId ?? "";
-  const [documentReference, setDocumentReference] = useState(editing?.documentReference ?? "");
-  const [unloadDate, setUnloadDate] = useState(editing?.unloadDate ?? "");
+  const internalGeneratorId = initial?.internalGeneratorId ?? "";
+  const [documentReference, setDocumentReference] = useState(
+    editing?.documentReference ?? ""
+  );
+  const [unloadDate, setUnloadDate] = useState(initial?.unloadDate ?? "");
   // Null = "ca la firmă": alegerea de pe firmă (V19), iar în lipsa ei unitatea mișcării.
-  const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">(editing?.anexa3Unit ?? "");
-  const [transportPartnerId, setTransportPartnerId] = useState(editing?.transportPartnerId ?? "");
-  const [driverName, setDriverName] = useState(editing?.driverName ?? "");
+  const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">(initial?.anexa3Unit ?? "");
+  const [transportPartnerId, setTransportPartnerId] = useState(initial?.transportPartnerId ?? "");
+  const [driverName, setDriverName] = useState(initial?.driverName ?? "");
   const [driverIdentification, setDriverIdentification] = useState(
-    editing?.driverIdentification ?? ""
+    initial?.driverIdentification ?? ""
   );
   const [vehicleRegistration, setVehicleRegistration] = useState(
-    editing?.vehicleRegistration ?? ""
+    initial?.vehicleRegistration ?? ""
   );
   /**
    * Care șofer configurat s-a ales, ca să se vadă bifat în select. `""` înseamnă „altcineva", și e
@@ -731,11 +856,11 @@ function MovementFormDialog({
     [drivers, transportPartnerId]
   );
   const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>(
-    editing?.transportDestinations ?? []
+    initial?.transportDestinations ?? []
   );
   // Adevărat cât timp bifele sunt ale noastre, nu ale lui: atunci scrie sub ele de unde vin.
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
-  const [notes, setNotes] = useState(editing?.notes ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const formRef = useRef<HTMLFormElement>(null);
@@ -816,7 +941,7 @@ function MovementFormDialog({
   const codeOptions =
     profileCodes.length === 0
       ? familyCodes
-      : familyCodes.filter((c) => profileCodes.includes(c) || c === editing?.operationCode);
+      : familyCodes.filter((c) => profileCodes.includes(c) || c === initial?.operationCode);
 
   /**
    * Unde ajunge cantitatea, spus **înainte** de salvare.
@@ -1000,7 +1125,7 @@ function MovementFormDialog({
       open
       size="xl"
       onClose={onClose}
-      title={editing ? t.editTitle : t.addTitle}
+      title={editing ? t.editTitle : duplicateOf ? t.duplicateTitle : t.addTitle}
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
