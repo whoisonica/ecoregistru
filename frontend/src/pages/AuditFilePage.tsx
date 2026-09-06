@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  FolderArchive,
   Download,
   FileSpreadsheet,
   FileCheck2,
@@ -119,12 +118,12 @@ export function AuditFilePage() {
               <option value="5">{t.yearsFive}</option>
             </Select>
           </div>
-          <Button onClick={handleDownload} disabled={downloading} className="shrink-0 whitespace-nowrap">
-            {downloading ? (
-              <FolderArchive className="mr-2 h-4 w-4 animate-pulse" />
-            ) : (
-              <Download className="mr-2 h-4 w-4" />
-            )}
+          <Button
+            onClick={handleDownload}
+            loading={downloading}
+            className="shrink-0 whitespace-nowrap"
+          >
+            {!downloading && <Download className="mr-2 h-4 w-4" />}
             {downloading ? t.downloading : t.download}
           </Button>
         </div>

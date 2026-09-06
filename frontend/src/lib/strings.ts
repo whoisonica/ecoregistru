@@ -166,6 +166,9 @@ export const strings = {
     searchPlaceholder: "Caută după cod, partener, punct de lucru, document...",
     duplicate: "Duplică mișcarea",
     duplicateTitle: "Mișcare nouă, pornită de la alta",
+    // Urcarea atașamentelor e secvențială și poate dura: fără semn, arată a aplicație blocată.
+    uploadingFile: "Se încarcă fișierul {n} din {total}: {name}",
+    uploadingWait: "Nu închide fereastra până nu se termină.",
     loadError: "Nu am putut încărca mișcările.",
     // filters
     filterMonth: "Luna",

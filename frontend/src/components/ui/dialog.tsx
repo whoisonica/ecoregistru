@@ -32,6 +32,15 @@ interface DialogProps {
   footer?: ReactNode;
   /** Implicit `lg` — măsura de dinainte, ca dialogurile existente să nu se miște. */
   size?: DialogSize;
+  /**
+   * Cât timp e adevărat, dialogul nu se închide: nici cu Escape, nici cu clic pe fundal, nici pe
+   * butonul de închidere.
+   *
+   * <p>E pentru fapta pe care închiderea ar rupe-o la mijloc — urcarea a cinci atașamente, una
+   * după alta. Până acum butonul „Anulează" se dezactiva, dar fundalul și „×" rămâneau vii, deci
+   * cel mai obișnuit reflex era și singurul care strica.
+   */
+  busy?: boolean;
 }
 
 /** Ce poate primi focus înăuntru. Folosit și pentru capcana de Tab, și pentru focusul inițial. */
@@ -54,6 +63,7 @@ export function Dialog({
   children,
   footer,
   size = "lg",
+  busy = false,
 }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   // Cine avea focusul înainte să deschidem: acolo îl punem înapoi la închidere.
@@ -67,7 +77,7 @@ export function Dialog({
 
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        if (!busy) onClose();
         return;
       }
       if (e.key !== "Tab") return;
@@ -104,7 +114,7 @@ export function Dialog({
       document.body.style.overflow = previousOverflow;
       returnFocusRef.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open, onClose, busy]);
 
   // Focusul inițial, dar numai dacă nu l-a luat deja cineva dinăuntru: câteva formulare pun
   // `autoFocus` pe primul câmp, și acela e răspunsul mai bun decât panoul însuși.
@@ -120,7 +130,11 @@ export function Dialog({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
-      <div className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} aria-hidden />
+      <div
+        className="absolute inset-0 animate-fade-in bg-black/40"
+        onClick={busy ? undefined : onClose}
+        aria-hidden
+      />
       <div
         ref={panelRef}
         role="dialog"
@@ -149,7 +163,8 @@ export function Dialog({
           <button
             type="button"
             onClick={onClose}
-            className="-mr-1 shrink-0 rounded-md p-1 text-content-subtle transition-colors hover:bg-surface-sunken hover:text-content-muted"
+            disabled={busy}
+            className="-mr-1 shrink-0 rounded-md p-1 text-content-subtle transition-colors hover:bg-surface-sunken hover:text-content-muted disabled:opacity-40 disabled:hover:bg-transparent"
             aria-label={strings.common.close}
           >
             <X className="h-5 w-5" />

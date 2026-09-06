@@ -858,6 +858,14 @@ function MovementFormDialog({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const formRef = useRef<HTMLFormElement>(null);
+  /**
+   * Al câtelea fișier se urcă acum. Urcarea e secvențială — și rămâne așa, fiindcă backendul
+   * primește câte unul — dar până acum nu se vedea nimic: o scanare de câțiva megaocteți pe
+   * conexiunea din depozit arăta ca o aplicație blocată, iar reflexul era să se apese din nou.
+   */
+  const [upload, setUpload] = useState<{ index: number; total: number; name: string } | null>(
+    null
+  );
 
   const codeSearch = useWasteCodeSearch(codeQuery);
 
@@ -1093,13 +1101,17 @@ function MovementFormDialog({
       const movementId = editing
         ? (await updateMut.mutateAsync({ id: editing.id, input }), editing.id)
         : (await createMut.mutateAsync(input)).id;
-      for (const file of pendingFiles) {
+      for (const [index, file] of pendingFiles.entries()) {
+        setUpload({ index: index + 1, total: pendingFiles.length, name: file.name });
         await addAttachmentMut.mutateAsync({ movementId, file });
       }
       notify(editing ? t.updated : t.created, "success");
       onClose();
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
+    } finally {
+      // Și pe eroare: altfel bara ar rămâne pe ecran peste un formular care nu mai lucrează.
+      setUpload(null);
     }
   }
 
@@ -1120,12 +1132,29 @@ function MovementFormDialog({
       size="xl"
       onClose={onClose}
       title={editing ? t.editTitle : duplicateOf ? t.duplicateTitle : t.addTitle}
+      busy={isSaving}
       footer={
         <>
+          {upload && (
+            <div className="mr-auto min-w-0 text-xs text-content-muted sm:max-w-xs">
+              <p className="truncate">
+                {t.uploadingFile
+                  .replace("{n}", String(upload.index))
+                  .replace("{total}", String(upload.total))
+                  .replace("{name}", upload.name)}
+              </p>
+              <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-surface-sunken">
+                <div
+                  className="h-full rounded-full bg-brand transition-all"
+                  style={{ width: `${(upload.index / upload.total) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
           <Button variant="outline" onClick={onClose} disabled={isSaving}>
             {strings.common.cancel}
           </Button>
-          <Button type="submit" form="movement-form" disabled={isSaving}>
+          <Button type="submit" form="movement-form" loading={isSaving}>
             {isSaving ? strings.common.saving : strings.common.save}
           </Button>
         </>

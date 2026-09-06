@@ -226,9 +226,10 @@ export function EvidencesPage() {
             <Button
               onClick={handleAnexa1}
               disabled={rows.length === 0 || exporting !== null}
+              loading={exporting === "pdf"}
               title={t.anexa1Hint}
             >
-              <FileText className="mr-2 h-4 w-4" />
+              {exporting !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
               {t.anexa1}
             </Button>
             {/* The summary that goes in front of it, and the page the authority reads first. */}
@@ -236,9 +237,10 @@ export function EvidencesPage() {
               variant="outline"
               onClick={handleAnnualDeclaration}
               disabled={rows.length === 0 || exporting !== null}
+              loading={exporting === "declaration"}
               title={t.annualDeclarationHint}
             >
-              <FileText className="mr-2 h-4 w-4" />
+              {exporting !== "declaration" && <FileText className="mr-2 h-4 w-4" />}
               {t.annualDeclaration}
             </Button>
             {/* Export is read-only: available to every tenant member, viewer included. */}
@@ -246,8 +248,9 @@ export function EvidencesPage() {
               variant="outline"
               onClick={() => handleExport("xlsx")}
               disabled={rows.length === 0 || exporting !== null}
+              loading={exporting === "xlsx"}
             >
-              <Download className="mr-2 h-4 w-4" />
+              {exporting !== "xlsx" && <Download className="mr-2 h-4 w-4" />}
               {t.exportExcel}
             </Button>
             <Button

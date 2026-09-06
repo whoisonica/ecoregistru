@@ -234,17 +234,24 @@ export function PackagingPage() {
         actions={
           <div className="flex flex-col gap-2 sm:items-end">
             <div className="flex flex-wrap gap-2">
-              <Button onClick={() => handleDownload("xls")} disabled={downloading != null}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                {downloading === "xls" ? strings.common.loading : t.downloadXls}
+              {/* Eticheta rămâne aceeași cât se lucrează: schimbată în „Se încarcă...",
+                  butonul își schimba lățimea sub deget. */}
+              <Button
+                onClick={() => handleDownload("xls")}
+                disabled={downloading != null}
+                loading={downloading === "xls"}
+              >
+                {downloading !== "xls" && <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                {t.downloadXls}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => handleDownload("pdf")}
                 disabled={downloading != null}
+                loading={downloading === "pdf"}
               >
-                <FileText className="mr-2 h-4 w-4" />
-                {downloading === "pdf" ? strings.common.loading : t.downloadPdf}
+                {downloading !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
+                {t.downloadPdf}
               </Button>
             </div>
             <p className="max-w-sm text-xs text-content-muted sm:text-right">{t.downloadHint}</p>
