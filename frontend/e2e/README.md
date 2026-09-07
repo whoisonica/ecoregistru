@@ -44,9 +44,26 @@ E2E_BASE=http://localhost:4173 npm run e2e
 
 ### Browserul
 
-Se conduce **Chrome-ul deja instalat** (`channel: "chrome"`), deci `playwright-core` nu descarcă
-niciun browser — de asta e `playwright-core`, nu `playwright`. Dacă pe maşina ta nu e Chrome, pune
-`channel: "msedge"` în `lib.mjs`; Edge e tot Chromium şi merge la fel.
+Se conduce **Chrome-ul deja instalat**, deci `playwright-core` nu descarcă niciun browser — de asta
+e `playwright-core`, nu `playwright`. Se alege prin `E2E_CHANNEL`, implicit `chrome`:
+
+```bash
+E2E_CHANNEL=msedge npm run e2e     # Edge e tot Chromium, merge la fel
+```
+
+**Pe o maşină fără niciun browser din familia Chromium**, `E2E_CHANNEL` gol foloseşte Chromium-ul
+lui Playwright, din cache. Cere o descărcare, o singură dată — ceea ce e chiar lucrul pe care
+`playwright-core` îl evită, deci e ieşirea de rezervă, nu drumul obişnuit:
+
+```bash
+node node_modules/playwright-core/cli.js install chromium
+E2E_CHANNEL= npm run e2e
+```
+
+Probat pe 07.09.2026 pe un Mac care avea doar Safari: până atunci suita nu putea porni deloc acolo,
+fiindcă `channel` era scris în `lib.mjs`. Dacă `npm run e2e` cade cu `Cannot find package
+'playwright-core'`, lipseşte doar `npm install` — dependenţa e în manifest, dar un checkout de
+ramură nu atinge `node_modules`.
 
 ---
 
@@ -77,3 +94,24 @@ ceva acolo, scrie de ce: un filtru fără motiv ascunde exact defectul următor.
 
 **Pragul de căutare e 10 rânduri.** Pe un tabel cu mai puţine, caseta nu se randează — nu e o
 scăpare, e regula din `TableToolbar`. Proba de pe Parteneri (5 rânduri) o verifică explicit.
+
+**Pune o gardă care spune că proba a avut ce verifica.** O probă care trece pe zero rânduri nu
+probează nimic, dar arată la fel cu una care trece. Vezi mai jos.
+
+---
+
+## Ce nu se poate proba aici, şi de ce
+
+**Stările „lipsă" nu există în seed-ul de demo.** Zero din cele 34 de mişcări n-au cantitate, zero
+din cei 5 parteneri n-au dată de autorizaţie. Or tocmai pentru stările astea are ecranul reguli
+proprii: „De cântărit" şi autorizaţia fără dată trebuie să stea **la coada** sortării, în ambele
+sensuri.
+
+Regula s-a stricat şi s-a reparat pe 07.09.2026 — `useTableView` aplica direcţia cu `reverse()`,
+deci a doua apăsare pe coloană le aducea tocmai la vârf — şi **nicio probă de aici n-a putut-o
+prinde**, fiindcă n-are pe ce. Verificarea scrisă atunci a fost scoasă: garda ei a raportat
+„0 rânduri fără cantitate", adică trecea pe gol.
+
+Ca să existe proba, seed-ul trebuie să conţină întâi stările pentru care ecranul are reguli — o
+mişcare cu `weighed_at_unloading`, un partener fără dată de expirare, o ieşire fără cod R/D.
+Atinge backendul, deci n-a intrat în ramura de interfaţă.

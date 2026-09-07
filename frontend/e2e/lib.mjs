@@ -6,6 +6,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const BASE = process.env.E2E_BASE ?? "http://localhost:5173";
+/**
+ * Ce browser se conduce. Implicit Chrome-ul instalat pe maşină — de asta `playwright-core`, care
+ * nu descarcă nimic. `E2E_CHANNEL=msedge` merge la fel.
+ *
+ * <p>`E2E_CHANNEL=` (gol) foloseşte Chromium-ul lui Playwright, din cache. E ieşirea pentru o
+ * maşină fără niciun browser din familia Chromium — probat pe 07.09.2026 pe un Mac care avea doar
+ * Safari, unde suita nu putea porni deloc.
+ */
+export const CHANNEL = process.env.E2E_CHANNEL ?? "chrome";
 /** Lângă suită, nu în directorul din care s-a pornit comanda. Gitignored. */
 export const SHOTS = path.join(path.dirname(fileURLToPath(import.meta.url)), "shots");
 
@@ -28,7 +37,7 @@ const IGNORED = [
 export async function launch() {
   fs.mkdirSync(SHOTS, { recursive: true });
   const browser = await chromium.launch({
-    channel: "chrome",
+    ...(CHANNEL ? { channel: CHANNEL } : {}),
     headless: true,
     args: ["--disable-dev-shm-usage"],
   });
