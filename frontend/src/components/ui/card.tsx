@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Suprafața pe care stă orice bloc de conținut. Exista deja, dar scrisă de mână — combinația
- * `rounded-xl border border-gray-200 bg-white p-5` apărea în vreo douăzeci de locuri, cu p-4,
+ * `rounded-xl border border-gray-200 bg-surface p-5` apărea în vreo douăzeci de locuri, cu p-4,
  * p-5 și p-6 amestecate. Aici e o singură decizie.
  */
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

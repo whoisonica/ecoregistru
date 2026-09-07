@@ -110,7 +110,7 @@ function CodeGroup({
         <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">{title}</span>
         <button
           type="button"
-          className="text-xs text-blue-600 hover:underline"
+          className="text-xs text-brand hover:underline"
           onClick={() =>
             onSet(
               allSelected

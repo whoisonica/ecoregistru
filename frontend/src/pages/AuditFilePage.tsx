@@ -13,6 +13,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -86,7 +87,7 @@ export function AuditFilePage() {
       )}
       <PageHeader title={t.title} description={t.subtitle} />
 
-      <div className="mt-6 max-w-xl rounded-xl border border-line bg-white p-6">
+      <Card className="mt-6 max-w-xl p-6">
         <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
@@ -155,7 +156,7 @@ export function AuditFilePage() {
             </li>
           </ul>
         </div>
-      </div>
+      </Card>
 
       <p className="mt-4 max-w-xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
         {t.note}

@@ -2,7 +2,9 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
 import { apiErrorMessage, LOGIN_EXPIRED_PARAM } from "@/lib/api";
 
@@ -34,7 +36,7 @@ export function LoginPage() {
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-xl border border-line bg-white p-8 shadow-sm">
+      <Card className="w-full max-w-sm p-8">
         <div className="mb-6 text-center">
           <div className="text-2xl font-bold text-brand">{strings.appName}</div>
           <div className="text-sm text-content-muted">{strings.tagline}</div>
@@ -47,18 +49,24 @@ export function LoginPage() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-content-strong">{strings.login.email}</label>
+            {/* `Label` cu `htmlFor`, ca peste tot în aplicație: eticheta scrisă de mână nu era
+                legată de câmp, deci nici clicul pe ea nu focaliza, nici cititorul de ecran nu
+                știa ce se cere. */}
+            <Label htmlFor="login-email">{strings.login.email}</Label>
             <Input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              autoFocus
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-content-strong">{strings.login.password}</label>
+            <Label htmlFor="login-password">{strings.login.password}</Label>
             <Input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -66,23 +74,27 @@ export function LoginPage() {
               autoComplete="current-password"
             />
           </div>
-          {error && <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          {error && (
+            <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          <Button type="submit" className="w-full" loading={loading}>
             {loading ? strings.login.loading : strings.login.submit}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm">
-          <Link to="/parola-uitata" className="text-blue-600 hover:underline">
+          <Link to="/parola-uitata" className="text-brand hover:underline">
             {strings.login.forgotPassword}
           </Link>
         </p>
         {/* The register is closed: there is no sign-up, only a request support acts on. */}
         <p className="mt-2 text-center text-sm">
-          <Link to="/cerere-cont" className="text-blue-600 hover:underline">
+          <Link to="/cerere-cont" className="text-brand hover:underline">
             {strings.accountRequest.linkFromLogin}
           </Link>
         </p>
-      </div>
+      </Card>
     </div>
   );
 }

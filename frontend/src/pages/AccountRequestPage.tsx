@@ -208,7 +208,7 @@ export function AccountRequestPage() {
         <CheckCircle2 className="h-12 w-12 text-emerald-600" />
         <h1 className="mt-4 text-2xl font-bold text-content">{t.successTitle}</h1>
         <p className="mt-2 text-sm text-content-strong">{t.successBody}</p>
-        <Link to="/login" className="mt-6 text-sm text-blue-600 hover:underline">
+        <Link to="/login" className="mt-6 text-sm text-brand hover:underline">
           {t.backToLogin}
         </Link>
       </div>
@@ -472,7 +472,7 @@ export function AccountRequestPage() {
         </Section>
 
         <div className="flex items-center justify-between border-t border-line pt-5">
-          <Link to="/login" className="text-sm text-blue-600 hover:underline">
+          <Link to="/login" className="text-sm text-brand hover:underline">
             {t.backToLogin}
           </Link>
           <Button type="submit" disabled={submitMut.isPending}>

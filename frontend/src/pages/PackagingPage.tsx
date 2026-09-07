@@ -67,6 +67,22 @@ const COLUMNS = [
 type Column = (typeof COLUMNS)[number];
 
 /**
+ * Numele coloanei, pentru numele accesibil al celulei.
+ *
+ * <p>Grila de suprascriere are șaizeci și șase de câmpuri numerice fără nicio etichetă: un
+ * cititor de ecran anunța „câmp de editare" de șaizeci și șase de ori, fără să spună nici
+ * materialul, nici coloana. Capul de tabel se **vede**, dar nu se aude.
+ */
+const COLUMN_LABELS: Record<Column, string> = {
+  salesPackaging: t.colSales,
+  primaryTotal: t.colPrimary,
+  primaryReusable: t.colPrimaryReusable,
+  secondaryTotal: t.colSecondary,
+  secondaryReusable: t.colSecondaryReusable,
+  hazardousContent: t.colHazardous,
+};
+
+/**
  * Rândurile de material, în ordinea actului, cu cele trei sume intercalate — exact aşa cum le
  * desenează formularul: PET + Alte plastice = Total plastic, Aluminiu + Oţel = Total metal, iar
  * Sticla, Hârtia carton, Lemnul şi Altele stau singure.
@@ -554,6 +570,7 @@ export function PackagingPage() {
                                 type="number"
                                 step="0.001"
                                 min="0"
+                                aria-label={`${materialLabels[row.material]} — ${COLUMN_LABELS[column]}`}
                                 className="w-28 text-right"
                                 value={cellValue(row, column)}
                                 onChange={(ev) => edit(row.material, column, ev.target.value)}

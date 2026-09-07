@@ -308,7 +308,7 @@ export function EvidencesPage() {
             onClick={() => setView(v)}
             className={
               view === v
-                ? "rounded-md bg-white px-3 py-1.5 text-sm font-medium text-content shadow-sm"
+                ? "rounded-md bg-surface px-3 py-1.5 text-sm font-medium text-content shadow-sm"
                 : "rounded-md px-3 py-1.5 text-sm text-content-muted hover:text-content-strong"
             }
           >
