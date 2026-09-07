@@ -7,6 +7,7 @@ import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode }
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -217,8 +218,7 @@ export function AccountRequestPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-content">{t.title}</h1>
-      <p className="mt-2 text-sm text-content-strong">{t.subtitle}</p>
+      <PageHeader title={t.title} description={t.subtitle} />
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {draft.restored && (
