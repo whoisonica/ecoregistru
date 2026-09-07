@@ -2887,6 +2887,79 @@ după ce se pierde dacă meetingul se termină devreme**: cele două documente d
 pus doar dacă mai e timp. Plus ce ducem noi: zece întrebări au devenit trei, şi de ce.
 
 
+### Modernizarea interfeţei — şaisprezece puncte, pe felii (07.09.2026)
+
+La cererea utilizatorului (*„scanează aplicaţia şi spune-mi ce improvement de UI/UX am putea
+face"*, apoi *„să le faci treptat pe toate şi să verifici constant [...] să nu strici nimic sau să
+bagi buguri sau inconsistenţe"*), o trecere completă peste frontend. **Fără temă întunecată**, cerut
+explicit. Ramura: `ui-ux-modernizare`; `main` neatins.
+
+Scanarea a găsit șaisprezece lucruri. Cele care cântăreau, în ordinea în care s-au reparat:
+
+1. **Aplicaţia nu era responsive.** Patru breakpointuri în opt mii de linii, toate pe Panou.
+   Sidebarul era `w-60` fix, fără cale de a-l ascunde — iar omul care înregistrează o predare la
+   cântar, în depozit, e exact utilizatorul de telefon. Acum: sertar sub `lg`, 24 de grile de
+   formular stivuite, `PageHeader` în loc de antetul scris de mână în opt pagini.
+2. **Formularul de mişcare stătea în 512px** cu treizeci de rubrici şi rânduri de câte trei
+   coloane. Acum e `xl`, cu opt secţiuni titrate. **Ordinea rubricilor nu s-a schimbat** — e cea
+   stabilită cu specialista; blocurile s-au mutat prin poziţie, nu rescrise.
+3. **Eroarea de validare nu spunea care rubrică.** `validate()` întorcea un şir pus în capul unui
+   formular care se derulează pe câteva ecrane. Acum întoarce o hartă rubrică → mesaj, cu
+   `aria-describedby` şi derulare la prima greşeală. Regulile sunt neatinse.
+4. **Cele cinci `window.confirm`** nu puteau spune *ce* rând se şterge. Textele s-au rescris ca să
+   spună urmarea — verificată în cod, nu presupusă: `usePartners` şi `useInternalGenerators` spun
+   amândouă că dezactivarea e într-un singur sens, deci niciun mesaj nu promite că se poate desface.
+5. **Tabelele nu scalau.** Unsprezece tabele, niciunul cu căutare, sortare sau paginare.
+6. **Duplicarea mişcării** lipsea: treizeci de predări pe lună însemnau treizeci de deschideri ale
+   unui formular din care aceleaşi douăzeci şi opt de rubrici se rescriau de fiecare dată.
+
+Restul: schelete şi stări goale unificate în toate tabelele · filtrele în bara de adrese
+(`?an=`, `?luna=`, `?punct=`, `?rol=`, `?vedere=`) · panoul care răspunde la „sunt în regulă?" ·
+navigaţia grupată şi contul ca meniu · progres pe urcarea atașamentelor · paletă de comenzi
+(Ctrl+K), `/` şi `N` · tooltip-uri în locul lui `title` · 266 de clase `gray-*` mutate pe tokens.
+
+**Două afirmaţii scrise cu grijă ca să nu mintă.** Suma lunii de pe panou e „cantitate
+înregistrată", nu „generat" — o ieşire nu e o generare, iar generarea o deduce motorul din ieşiri
+(decizia 17). Stocul spune „la ultima lună calculată", fiindcă vine din evidenţa care poate fi în
+urma mişcărilor.
+
+**Verificare:** `tsc --noEmit` curat şi `vite build` verde **după fiecare felie**, nu doar la final.
+**Backendul n-a fost atins**, deci cele 224 de teste rămân cum erau.
+
+#### Auditul de după — inconsistenţa cea mai mare era a mea
+
+La a doua cerere (*„verifică tot şi continuă, dar să fie totul pus la punct"*) am făcut o trecere
+sistematică peste ce livrasem. A ieşit exact defectul pe care îl reproşasem codului: **unsprezece
+tabele şi un singur tabel cu bară de căutare.** Mişcări fusese primul refăcut, restul rămăseseră.
+
+Regula e acum una singură, scrisă într-un loc: fiecare tabel primeşte `TableToolbar` şi
+`TablePagination`; bara apare de la zece rânduri în sus şi rămâne cât timp se caută ceva; antetul
+lipicios e implicit peste tot. Pe un tabel cu patru puncte de lucru nu apare nimic în plus.
+
+Restul auditului:
+
+- 14 şiruri şi componenta `InfoHint`, adăugate speculativ, pe care nu le folosea nimeni
+- `padded` pe `Card`, `label` pe `RowActions`, `setPageSize` pe vedere — API neatins de niciun apelant
+- `bg-white` scăpase de migrarea pe tokens (mapa acoperea doar `bg-gray-*`): unsprezece locuri
+- `Card` se folosea doar pe Panou, deşi Dosarul de control şi cele trei pagini de autentificare
+  aveau aceeaşi cutie scrisă de mână
+- nouă linkuri `text-blue-600` într-un produs al cărui brand e emerald
+- **formularul de autentificare n-avea etichete legate** (`<label>` fără `htmlFor`): nici clicul nu
+  focaliza, nici cititorul de ecran nu ştia ce se cere
+- **cele 66 de câmpuri din grila de suprascriere a Anexei 1 Ambalaje n-aveau nume**: capul de tabel
+  se vede, dar nu se aude
+- indentarea blocului „lunar" din Evidenţe, greşită încă dinainte — derivă de la 56% la 7%
+
+**Două greşeli proprii, reparate în aceeaşi sesiune.** Am rulat Prettier pe fişiere editate;
+proiectul nu-l are configurat, iar implicitul de 80 de coloane a reformatat două fişiere întregi
+contra stilului de ~100 al casei. Am revenit la commit şi am reaplicat prin scripturi — build-ul de
+după a ieşit cu hash identic. A doua: scriptul de tokens a rescris şi numele de clase **din
+comentarii**, care descriau codul vechi; le-am pus la loc.
+
+**Nevăzut cu ochii:** extensia Chrome nu era conectată, deci verificarea a fost compilator, build şi
+citirea codului. Nu s-a deschis niciun ecran.
+
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
