@@ -135,7 +135,7 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Six suites, 96 checks:
+download — against the local dev server and a backend on the `dev` profile. Six suites, 99 checks:
 every screen opens clean, the action column stays reachable when a table scrolls, search and sort
 and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the movement
 form marks the fields it rejects, Escape inside the waste-code picker closes the list and not the

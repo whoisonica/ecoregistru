@@ -1,6 +1,6 @@
 # Probe de interfaţă
 
-Cinci suite care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
+Şase suite, 99 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
 
 **De ce există.** Pe 07.09.2026, după şaisprezece felii de UI/UX toate „verzi" — `tsc --noEmit`
 curat, `vite build` verde, cod recitit — prima rulare adevărată a scos **şapte defecte**. Patru
@@ -75,7 +75,8 @@ ramură nu atinge `node_modules`.
 | `2-tabele.mjs` | Coloana de acţiuni rămâne vizibilă şi după ce tabelul se derulează la capăt pe orizontală. La 1280px, Mişcări depăşeşte lăţimea cu ~200px. |
 | `3-interactiuni.mjs` | Căutarea restrânge şi **toate** rezultatele se potrivesc; `deseuri` găseşte cât `deșeuri`; Escape o goleşte; golul din căutare are alt mesaj decât golul din lipsă de date. Sortarea schimbă `aria-sort` **şi** ordinea rândurilor. Paginarea. Filtrele în adresă, inclusiv după navigare. Ctrl+K, `/`, `N`. |
 | `4-formular.mjs` | Cele opt secţiuni, lăţimea dialogului, banda de efect. Trimiterea unui formular gol marchează rubricile şi le leagă de mesaje prin `aria-describedby`. Duplicarea aduce codul, pune data de azi, goleşte documentul. Confirmarea de ştergere numeşte rândul — şi **anulează**, nu şterge. |
-| `5-telefon.mjs` | La 375px: nicio pagină nu se derulează lateral, sertarul se deschide din buton şi se închide la navigare şi cu Escape, dialogul urcă de la marginea de jos, grilele de formular sunt pe o coloană. |
+| `5-telefon.mjs` | La 375px: nicio pagină nu se derulează lateral — **inclusiv `/cerere-cont`, probat înainte de autentificare**, fiindcă aşa îl vede prospectul —, banda de trei paşi se stivuieşte, sertarul se deschide din buton şi se închide la navigare şi cu Escape, dialogul urcă de la marginea de jos, grilele de formular sunt pe o coloană. |
+| `6-cerere-si-rapoarte.mjs` | Formularul public: marcajele de obligatoriu, erorile pe rubrici cu derulare la prima greşită, CUI-ul respins cu forma cerută, lista de coduri R/D pliată, pagina de mulţumire cu emailul şi termenul. Inboxul: dialogul citeşte toate rubricile, inclusiv textul liber, iar cele necompletate se **arată** goale. Drumul cap-coadă de la blocajul roşu de pe Panou, prin registrul filtrat, până la mişcarea deschisă. ⚠️ **Scrie o cerere** în baza de dev la fiecare rulare, cu CUI unic; nu curăţă după ea, fiindcă aprobarea ar crea o firmă şi firmele nu se şterg. |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 
@@ -100,18 +101,43 @@ probează nimic, dar arată la fel cu una care trece. Vezi mai jos.
 
 ---
 
-## Ce nu se poate proba aici, şi de ce
+## Stările „lipsă" — datoria care bloca probele, plătită
 
-**Stările „lipsă" nu există în seed-ul de demo.** Zero din cele 34 de mişcări n-au cantitate, zero
-din cei 5 parteneri n-au dată de autorizaţie. Or tocmai pentru stările astea are ecranul reguli
-proprii: „De cântărit" şi autorizaţia fără dată trebuie să stea **la coada** sortării, în ambele
-sensuri.
+*Secţiunea asta descria, până pe 07.09.2026 seara, o gaură. O păstrăm cu istoria ei, fiindcă
+motivul rămâne valabil pentru orice regulă nouă scrisă în jurul unei valori care poate lipsi.*
 
-Regula s-a stricat şi s-a reparat pe 07.09.2026 — `useTableView` aplica direcţia cu `reverse()`,
-deci a doua apăsare pe coloană le aducea tocmai la vârf — şi **nicio probă de aici n-a putut-o
-prinde**, fiindcă n-are pe ce. Verificarea scrisă atunci a fost scoasă: garda ei a raportat
-„0 rânduri fără cantitate", adică trecea pe gol.
+**Cum era.** Zero din cele 34 de mişcări ale seed-ului n-aveau cantitate, zero din cei 5 parteneri
+n-aveau dată de autorizaţie, nicio ieşire nu era fără cod R/D. Or tocmai pentru stările astea au
+ecranele reguli proprii: „De cântărit" şi autorizaţia fără dată trebuie să stea **la coada**
+sortării, în ambele sensuri.
 
-Ca să existe proba, seed-ul trebuie să conţină întâi stările pentru care ecranul are reguli — o
-mişcare cu `weighed_at_unloading`, un partener fără dată de expirare, o ieşire fără cod R/D.
-Atinge backendul, deci n-a intrat în ramura de interfaţă.
+Regula s-a stricat şi s-a reparat în aceeaşi zi — `useTableView` aplica direcţia cu `reverse()`,
+deci a doua apăsare pe coloană le aducea tocmai la vârf — şi **nicio probă n-a putut-o prinde**,
+fiindcă n-avea pe ce. Verificarea scrisă atunci a fost **scoasă**: garda ei raporta „0 rânduri fără
+cantitate", adică trecea pe gol.
+
+**Cum e acum.** `DevDataSeeder` are toate trei stările — o ieşire `UNCLASSIFIED_OUT` (badge roşu), o
+predare cu `weighed_at_unloading` şi `quantity` null (badge galben) şi un partener fără dată de
+expirare. Aşezate pe plastic la Turda dinadins: seria de hârtie de la Cluj
+(40→30→50→50→30→50.5) e vitrina stocului cumulativ şi rămâne neatinsă. `ApplicationBootIT` le
+numără **pe nume** — un total care creşte nu spune că stările există.
+
+⚠️ **Baza de dev nu se re-seedează singură.** Seeder-ul rulează doar pe bază goală, deci o bază
+făcută înainte de 07.09 n-are rândurile astea, iar probele care se sprijină pe ele trec pe gol fără
+să pară. Le adaugi cu `TRUNCATE` pe tabelele demo şi repornire, sau cu un `INSERT` aditiv.
+
+**Ce rămâne cu adevărat neprobabil aici:** ce se **tipăreşte**. Un PDF randat nu se citeşte din DOM
+— pentru feliile care ating documente oficiale, regula rămâne cea din `todo-ui-ux.md`: randează
+pagina şi uită-te la ea.
+
+---
+
+## Şi ce nu prinde nici DOM-ul
+
+Trei defecte din runda de 07.09 s-au văzut **numai** deschizând captura, cu toate verificările
+verzi: rândul TOTAL AN dispărut, steluţa de lângă cod, şi coloana de acţiuni a inboxului de cereri,
+unde al treilea buton le rupea pe toate pe câte două rânduri. O probă poate măsura că nimic nu
+depăşeşte pe orizontală; nu poate spune că arată prost.
+
+`shots/` (gitignored) există exact pentru asta. **Uită-te la ele** când adaugi ceva vizibil, nu doar
+când cade o probă.

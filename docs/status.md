@@ -3304,15 +3304,48 @@ el trecea pe un tabel care n-avea rândul, şi a fost **scoasă** în loc să fi
 Cluj (40→30→50→50→30→50.5) e vitrina stocului cumulativ şi rămâne neatinsă. `ApplicationBootIT` le
 numără **pe nume**, nu doar în total: un total care creşte nu spune că stările există.
 
+### 6. Ce a ieşit uitându-mă la capturi, cu toate verificările verzi
+
+Suita trecea, `tsc` era curat. Deschiderea capturilor a scos două lucruri:
+
+- **Coloana de acţiuni a inboxului de cereri se rupea pe două rânduri.** Al treilea buton
+  („Vezi cererea", adăugat mai sus) le frângea pe toate — „Vezi / cererea", „Creează / contul" —,
+  rândurile creşteau în înălţime şi etichetele se citeau greu. `whitespace-nowrap` pe toate trei;
+  coloana e `sticky="right"`, deci poate fi mai lată fără să iasă din îndemână.
+- ⚠️ **Prima reparaţie a fost mai proastă decât defectul.** Am încercat o pictogramă învelită în
+  `Tooltip` — care îşi randează **propriul `<button>`**, deci ieşea buton în buton, HTML invalid.
+  React o spunea în consolă, iar suita citeşte consola, deci a picat pe loc. Nota a rămas în cod, ca
+  să nu se reîncerce. **`Tooltip` nu poate înveli nimic interactiv**, atât.
+
+Şi o gaură în ce se proba, nu în cod: **suita de ecran îngust umbla doar pe cele patru ecrane de
+după autentificare**, deci `/cerere-cont` — rescris cap-coadă chiar azi — n-a fost privit niciodată
+la 375px. Intră acum în ea, cu verificarea că banda de trei paşi (`sm:grid-cols-3`) chiar se
+stivuieşte pe telefon.
+
+E a treia oară când regula de lucru 5 („randează şi uită-te") prinde ce testele nu pot — vezi şi
+rândul TOTAL AN dispărut, şi steluţa de lângă cod de la G6. De data asta nu era un document
+tipărit, ci un ecran: **regula e mai largă decât credeam când s-a scris.**
+
 ### Cifrele
 
 - **230 de teste verzi** (de la 228): honeypot-ul, concurenţa evidenţei, cele două stări din seed.
   Migrări tot până la **`V31`** — reparaţia de concurenţă n-a cerut niciuna, şi ăsta era criteriul.
-- **Suita de interfaţă: 6 probe, 96 de verificări** (de la 5 şi 60). Proba nouă,
+- **Suita de interfaţă: 6 probe, 99 de verificări** (de la 5 şi 60). Proba nouă,
   `6-cerere-si-rapoarte.mjs`, acoperă formularul public, inboxul şi drumul cap-coadă de la blocajul
-  de pe Panou până la mişcarea deschisă.
+  de pe Panou până la mişcarea deschisă. ⚠️ **Scrie o cerere în baza de dev la fiecare rulare** şi
+  nu curăţă după ea — aprobarea ar crea o firmă, iar firmele nu se şterg.
 - `tsc --noEmit` curat, `vite build` verde.
 - ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
+### Ce s-a găsit pe drum şi n-a fost reparat
+
+**`MovementsPage.tsx:360` foloseşte `<input type="month">`, pe care Safari nu-l implementează.** Pe
+Mac devine câmp text liber: filtrul principal al celui mai folosit ecran n-are selector, n-are
+validare, şi cere tastat `2026-06` exact. E notat la Prioritatea 3 în `todo-ui-ux.md`, şi acolo e
+prea jos — nu e cizelare, e o funcţie ruptă pe o familie întreagă de browsere, chiar pe maşina de
+dezvoltare. Recomandarea, scrisă şi în lista de îmbunătăţiri: se ia împreună cu al doilea punct de
+la Mişcări (fără filtru de lună se aduc **toate** mişcările, oricâte), fiindcă e aceeaşi reparaţie
+pe aceleaşi trei linii.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
