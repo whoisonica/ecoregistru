@@ -135,14 +135,16 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Six suites, 99 checks:
-every screen opens clean, the action column stays reachable when a table scrolls, search and sort
-and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the movement
-form marks the fields it rejects, Escape inside the waste-code picker closes the list and not the
-whole form, nothing scrolls sideways at 375px, the public intake form marks the three fields it
-requires and scrolls to the first one it rejects, the request inbox reads back every answer the
-client gave, and the red "no R/D code" badge leads from the dashboard through the filtered register
-to the movement itself.
+download — against the local dev server and a backend on the `dev` profile. Seven suites, 127
+checks: every screen opens clean, the action column stays reachable when a table scrolls, search
+and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
+month filter is a real select that starts on the current month, the movement form marks the fields
+it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started
+form asks before it closes and Escape over that question closes only the question, nothing scrolls
+sideways at 375px, the public intake form marks the three fields it requires and scrolls to the
+first one it rejects, the request inbox reads back every answer the client gave, the red "no R/D
+code" badge leads from the dashboard through the filtered register to the movement itself, and a
+deactivated row can be found through the state filter and brought back.
 
 They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
 `vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
@@ -270,6 +272,10 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Lapsed recipient authorization | **Mișcări** → hand waste to a partner whose authorization expired before that date | An amber **"Autorizație expirată"** badge next to the partner, naming the expiry date. Anexa 3 still prints: the handover happened, and the warning stays off the paper that reaches the inspector |
 | Tonnes for the filing | **Evidențe** → "Anexa 1 — lunar", below the table | The year's totals per waste code in tonnes, because OUG 92/2021 art. 48 alin. (1) asks for tonnes at filing while the sheet itself stays in kg. Nothing printed changes — it saves dividing by 1000 by hand on the day |
 | Designated waste manager | **Clienți** → edit a company | Name, capacity, employee vs. delegated third party, training certificate — OUG 92/2021 art. 23 alin. (4)–(5). Not the contact person, who is the declaration's signature block. Leave it blank and the control dossier's `README.txt` says so out loud, because its absence is itself the finding |
+| Picking a month | **Mișcări** → the "Luna" filter | Two plain selects, month then year, because `<input type="month">` does not exist in Safari or Firefox — there it degrades to a free-text box. The screen opens on the current month, so it no longer fetches the whole history on every visit; "Tot anul" is the way back, and a month with no rows says which month is empty and offers the year |
+| Closing a started form | **Mișcări** → add → type anything → Escape | It asks. On an untouched form it just closes — a question about an empty form is noise. Escape over the question closes only the question: what you typed is still there |
+| Your own company's data | **Setări** → "Datele firmei" | CAEN, the environmental authorization, the designated person, the Anexa 3 series — read-only, because they are edited from **Clienți**, which is platform-admin. Unfilled rubrics show as "Necompletat" rather than being skipped: an empty CAEN prints empty on the annual declaration |
+| Undoing a deactivation | **Setări** or **Parteneri** → deactivate a row, then switch the state filter to "Inactive" | "Reactivează" on the row. Deactivation never deleted anything — old movements quote the row — so it was never meant to be final. The state filter starts on "Active" and stays hidden until something has actually been deactivated |
 
 ### Tests
 
