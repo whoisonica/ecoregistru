@@ -34,6 +34,9 @@ import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 
@@ -104,6 +107,15 @@ export function ClientsPage() {
   const [inviteFirstName, setInviteFirstName] = useState("");
   const [inviteLastName, setInviteLastName] = useState("");
   const [inviteEmailError, setInviteEmailError] = useState(false);
+
+  const view = useTableView(companies ?? [], {
+    searchText: (c) => [c.name, c.cui].filter(Boolean).join(" "),
+    comparators: {
+      name: (a, b) => a.name.localeCompare(b.name, "ro"),
+      cui: (a, b) => (a.cui ?? "").localeCompare(b.cui ?? "", "ro"),
+    },
+    initialSort: { key: "name", direction: "asc" },
+  });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -276,68 +288,78 @@ export function ClientsPage() {
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t.name}</TH>
-                <TH>{t.cui}</TH>
-                <TH>{t.type}</TH>
-                <TH>{t.afm}</TH>
-                <TH>{strings.common.status}</TH>
-                <TH className="text-right">{strings.common.actions}</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {(isLoading || (companies ?? []).length === 0) && (
-                <TableFallbackRow
-                  columns={6}
-                  loading={isLoading}
-                  icon={Building2}
-                  title={t.empty}
-                  description={t.emptyHint}
-                  action={
-                    <Button onClick={openCreate}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      {t.add}
-                    </Button>
-                  }
-                />
-              )}
-              {(companies ?? []).map((c) => (
-                <TR key={c.id}>
-                  <TD className="font-medium text-content">{c.name}</TD>
-                  <TD>{c.cui}</TD>
-                  <TD>{typeLabels[c.type]}</TD>
-                  <TD>
-                    {c.afmObligation ? (
-                      <Badge variant="warning">{t.afmYes}</Badge>
-                    ) : (
-                      <span className="text-content-subtle">{t.afmNo}</span>
-                    )}
-                  </TD>
-                  <TD>
-                    {c.active ? (
-                      <Badge variant="success">{t.active}</Badge>
-                    ) : (
-                      <Badge variant="muted">{t.inactive}</Badge>
-                    )}
-                  </TD>
-                  <TD className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
-                        <UserPlus className="mr-1 h-3.5 w-3.5" />
-                        {t.invite}
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        {strings.common.edit}
-                      </Button>
-                    </div>
-                  </TD>
+          <>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <Table stickyHeader>
+              <THead sticky>
+                <TR>
+                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                    {t.name}
+                  </SortableTH>
+                  <SortableTH sortKey="cui" sort={view.sort} onSort={view.toggleSort}>
+                    {t.cui}
+                  </SortableTH>
+                  <TH>{t.type}</TH>
+                  <TH>{t.afm}</TH>
+                  <TH>{strings.common.status}</TH>
+                  <TH className="text-right">{strings.common.actions}</TH>
                 </TR>
-              ))}
-            </TBody>
-          </Table>
+              </THead>
+              <TBody>
+                {(isLoading || view.visible.length === 0) && (
+                  <TableFallbackRow
+                    columns={6}
+                    loading={isLoading}
+                    icon={Building2}
+                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    description={
+                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                    }
+                    action={
+                      <Button onClick={openCreate}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t.add}
+                      </Button>
+                    }
+                  />
+                )}
+                {view.visible.map((c) => (
+                  <TR key={c.id}>
+                    <TD className="font-medium text-content">{c.name}</TD>
+                    <TD>{c.cui}</TD>
+                    <TD>{typeLabels[c.type]}</TD>
+                    <TD>
+                      {c.afmObligation ? (
+                        <Badge variant="warning">{t.afmYes}</Badge>
+                      ) : (
+                        <span className="text-content-subtle">{t.afmNo}</span>
+                      )}
+                    </TD>
+                    <TD>
+                      {c.active ? (
+                        <Badge variant="success">{t.active}</Badge>
+                      ) : (
+                        <Badge variant="muted">{t.inactive}</Badge>
+                      )}
+                    </TD>
+                    <TD className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
+                          <UserPlus className="mr-1 h-3.5 w-3.5" />
+                          {t.invite}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          {strings.common.edit}
+                        </Button>
+                      </div>
+                    </TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+            <TablePagination view={view} />
+          </>
         )}
       </section>
 

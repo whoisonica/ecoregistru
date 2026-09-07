@@ -19,6 +19,9 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import type { BadgeProps } from "@/components/ui/badge";
@@ -58,6 +61,20 @@ export function DeadlinesPage() {
   const [note, setNote] = useState("");
 
   const rows = useMemo(() => deadlines ?? [], [deadlines]);
+
+  const view = useTableView(rows, {
+    searchText: (d) =>
+      [strings.enums.reportType[d.reportType], d.completionNote].filter(Boolean).join(" "),
+    comparators: {
+      reportType: (a, b) =>
+        strings.enums.reportType[a.reportType].localeCompare(
+          strings.enums.reportType[b.reportType],
+          "ro"
+        ),
+      dueDate: (a, b) => a.dueDate.localeCompare(b.dueDate),
+    },
+    initialSort: { key: "dueDate", direction: "asc" },
+  });
 
   function handleRegenerate() {
     regenerateMut.mutate(year, {
@@ -139,23 +156,32 @@ export function DeadlinesPage() {
 
         {!isError && (
           <div>
-            <Table>
-              <THead>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
-                  <TH>{t.colReportType}</TH>
-                  <TH>{t.colDueDate}</TH>
+                  <SortableTH sortKey="reportType" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colReportType}
+                  </SortableTH>
+                  <SortableTH sortKey="dueDate" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colDueDate}
+                  </SortableTH>
                   <TH>{t.colStatus}</TH>
                   <TH>{t.colNote}</TH>
                   {canManage && <TH className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
-                {(isLoading || rows.length === 0) && (
+                {(isLoading || view.visible.length === 0) && (
                   <TableFallbackRow
                     columns={canManage ? 5 : 4}
                     loading={isLoading}
                     icon={CalendarClock}
-                    title={t.empty.replace("{year}", String(year))}
+                    title={
+                      view.emptiedBySearch
+                        ? strings.common.noResults
+                        : t.empty.replace("{year}", String(year))
+                    }
                     description={canManage ? t.emptyHint.replace("{year}", String(year)) : undefined}
                     action={
                       canManage && (
@@ -169,7 +195,7 @@ export function DeadlinesPage() {
                     }
                   />
                 )}
-                {rows.map((d) => (
+                {view.visible.map((d) => (
                   <TR key={d.id}>
                     <TD className="font-medium text-content">
                       {strings.enums.reportType[d.reportType]}
@@ -207,6 +233,7 @@ export function DeadlinesPage() {
                 ))}
               </TBody>
             </Table>
+            <TablePagination view={view} />
           </div>
         )}
       </section>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Ban, Pencil, Plus, Users } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
@@ -28,6 +28,9 @@ import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -116,13 +119,39 @@ export function PartnersPage() {
           .filter((p) => p.name.toLowerCase().includes(name.trim().toLowerCase()))
           .slice(0, 5);
 
-  const visiblePartners = (partners ?? []).filter((p) => {
-    if (roleFilter === "client") return p.client;
-    if (roleFilter === "supplier") return p.supplier;
-    if (roleFilter === "none") return !p.client && !p.supplier;
-    if (roleFilter === "carrier") return p.carrier;
-    return true;
+  const filteredByRole = useMemo(
+    () =>
+      (partners ?? []).filter((p) => {
+        if (roleFilter === "client") return p.client;
+        if (roleFilter === "supplier") return p.supplier;
+        if (roleFilter === "none") return !p.client && !p.supplier;
+        if (roleFilter === "carrier") return p.carrier;
+        return true;
+      }),
+    [partners, roleFilter]
+  );
+
+  /**
+   * Filtrul de rol restrânge, apoi vederea caută, sortează și paginează ce a rămas. Ordinea
+   * contează: căutarea peste tot, urmată de filtru, ar arăta un număr de potriviri din care o
+   * parte nici nu se vede.
+   */
+  const view = useTableView(filteredByRole, {
+    searchText: (p) =>
+      [p.name, p.cui, p.authorizationNumber, p.address].filter(Boolean).join(" "),
+    comparators: {
+      name: (a, b) => a.name.localeCompare(b.name, "ro"),
+      cui: (a, b) => (a.cui ?? "").localeCompare(b.cui ?? "", "ro"),
+      // Autorizația fără dată stă la coadă: „nu se știe" nu e nici devreme, nici târziu.
+      authorizationExpiry: (a, b) => {
+        if (!a.authorizationExpiry) return 1;
+        if (!b.authorizationExpiry) return -1;
+        return a.authorizationExpiry.localeCompare(b.authorizationExpiry);
+      },
+    },
+    initialSort: { key: "name", direction: "asc" },
   });
+  const visiblePartners = view.visible;
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -307,95 +336,111 @@ export function PartnersPage() {
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t.name}</TH>
-                <TH>{t.cui}</TH>
-                <TH>{t.role}</TH>
-                <TH>{t.type}</TH>
-                <TH>{t.carrierColumn}</TH>
-                <TH>{t.authorizationNumber}</TH>
-                <TH>{t.authorizationExpiry}</TH>
-                <TH>{strings.common.status}</TH>
-                {canManage && <TH className="text-right">{strings.common.actions}</TH>}
-              </TR>
-            </THead>
-            <TBody>
-              {(isLoading || visiblePartners.length === 0) && (
-                <TableFallbackRow
-                  columns={canManage ? 9 : 8}
-                  loading={isLoading}
-                  icon={Users}
-                  title={t.empty}
-                  description={t.emptyHint}
-                  action={
-                    canManage && (
-                      <Button onClick={openCreate}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t.add}
-                      </Button>
-                    )
-                  }
-                />
-              )}
-              {visiblePartners.map((p) => (
-                <TR key={p.id}>
-                  <TD className="font-medium text-content">{p.name}</TD>
-                  <TD>{p.cui || "—"}</TD>
-                  <TD>
-                    <PartnerRoleBadge partner={p} />
-                  </TD>
-                  <TD>
-                    {p.type ? (
-                      typeLabels[p.type]
-                    ) : (
-                      <span className="text-content-muted">{t.typeNoneShort}</span>
-                    )}
-                  </TD>
-                  <TD>
-                    {p.carrier ? (
-                      <Badge variant="muted">{t.carrierYes}</Badge>
-                    ) : (
-                      <span className="text-content-subtle">{t.carrierNo}</span>
-                    )}
-                  </TD>
-                  <TD>{p.authorizationNumber || "—"}</TD>
-                  <TD>
-                    <ExpiryBadge partner={p} />
-                  </TD>
-                  <TD>
-                    {p.active ? (
-                      <Badge variant="success">{t.active}</Badge>
-                    ) : (
-                      <Badge variant="muted">{t.inactive}</Badge>
-                    )}
-                  </TD>
-                  {canManage && (
-                    <TD className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                          <Pencil className="mr-1 h-3.5 w-3.5" />
-                          {strings.common.edit}
-                        </Button>
-                        {p.active && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => handleDeactivate(p)}
-                          >
-                            <Ban className="mr-1 h-3.5 w-3.5" />
-                            {t.deactivate}
-                          </Button>
-                        )}
-                      </div>
-                    </TD>
-                  )}
+          <>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <Table stickyHeader>
+              <THead sticky>
+                <TR>
+                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                    {t.name}
+                  </SortableTH>
+                  <SortableTH sortKey="cui" sort={view.sort} onSort={view.toggleSort}>
+                    {t.cui}
+                  </SortableTH>
+                  <TH>{t.role}</TH>
+                  <TH>{t.type}</TH>
+                  <TH>{t.carrierColumn}</TH>
+                  <TH>{t.authorizationNumber}</TH>
+                  <SortableTH
+                    sortKey="authorizationExpiry"
+                    sort={view.sort}
+                    onSort={view.toggleSort}
+                  >
+                    {t.authorizationExpiry}
+                  </SortableTH>
+                  <TH>{strings.common.status}</TH>
+                  {canManage && <TH className="text-right">{strings.common.actions}</TH>}
                 </TR>
-              ))}
-            </TBody>
-          </Table>
+              </THead>
+              <TBody>
+                {(isLoading || visiblePartners.length === 0) && (
+                  <TableFallbackRow
+                    columns={canManage ? 9 : 8}
+                    loading={isLoading}
+                    icon={Users}
+                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    description={
+                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                    }
+                    action={
+                      canManage && (
+                        <Button onClick={openCreate}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t.add}
+                        </Button>
+                      )
+                    }
+                  />
+                )}
+                {visiblePartners.map((p) => (
+                  <TR key={p.id}>
+                    <TD className="font-medium text-content">{p.name}</TD>
+                    <TD>{p.cui || "—"}</TD>
+                    <TD>
+                      <PartnerRoleBadge partner={p} />
+                    </TD>
+                    <TD>
+                      {p.type ? (
+                        typeLabels[p.type]
+                      ) : (
+                        <span className="text-content-muted">{t.typeNoneShort}</span>
+                      )}
+                    </TD>
+                    <TD>
+                      {p.carrier ? (
+                        <Badge variant="muted">{t.carrierYes}</Badge>
+                      ) : (
+                        <span className="text-content-subtle">{t.carrierNo}</span>
+                      )}
+                    </TD>
+                    <TD>{p.authorizationNumber || "—"}</TD>
+                    <TD>
+                      <ExpiryBadge partner={p} />
+                    </TD>
+                    <TD>
+                      {p.active ? (
+                        <Badge variant="success">{t.active}</Badge>
+                      ) : (
+                        <Badge variant="muted">{t.inactive}</Badge>
+                      )}
+                    </TD>
+                    {canManage && (
+                      <TD className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                            <Pencil className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.edit}
+                          </Button>
+                          {p.active && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => handleDeactivate(p)}
+                            >
+                              <Ban className="mr-1 h-3.5 w-3.5" />
+                              {t.deactivate}
+                            </Button>
+                          )}
+                        </div>
+                      </TD>
+                    )}
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+            <TablePagination view={view} />
+          </>
         )}
       </section>
 

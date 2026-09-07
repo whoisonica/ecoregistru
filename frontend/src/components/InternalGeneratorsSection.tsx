@@ -17,6 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -55,6 +58,14 @@ export function InternalGeneratorsSection({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState(false);
+
+  const view = useTableView(generators ?? [], {
+    searchText: (g) => [g.name, g.workPointName, g.description].filter(Boolean).join(" "),
+    comparators: {
+      name: (a, b) => a.name.localeCompare(b.name, "ro"),
+      workPointName: (a, b) => a.workPointName.localeCompare(b.workPointName, "ro"),
+    },
+  });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -147,63 +158,71 @@ export function InternalGeneratorsSection({
       {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
       {!isError && (
-        <Table>
-          <THead>
-            <TR>
-              <TH>{t.name}</TH>
-              <TH>{t.workPoint}</TH>
-              <TH>{t.description}</TH>
-              <TH>{strings.common.status}</TH>
-              {canManage && <TH className="text-right">{strings.common.actions}</TH>}
-            </TR>
-          </THead>
-          <TBody>
-            {(isLoading || (generators ?? []).length === 0) && (
-              <TableFallbackRow
-                columns={canManage ? 5 : 4}
-                loading={isLoading}
-                icon={Factory}
-                title={t.empty}
-                description={t.emptyHint}
-              />
-            )}
-            {(generators ?? []).map((g) => (
-              <TR key={g.id}>
-                <TD className="font-medium text-content">{g.name}</TD>
-                <TD>{g.workPointName}</TD>
-                <TD className="max-w-xs truncate text-content-muted">{g.description || "—"}</TD>
-                <TD>
-                  {g.active ? (
-                    <Badge variant="success">{t.active}</Badge>
-                  ) : (
-                    <Badge variant="muted">{t.inactive}</Badge>
-                  )}
-                </TD>
-                {canManage && (
-                  <TD className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(g)}>
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        {strings.common.edit}
-                      </Button>
-                      {g.active && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeactivate(g)}
-                        >
-                          <Ban className="mr-1 h-3.5 w-3.5" />
-                          {t.deactivate}
-                        </Button>
-                      )}
-                    </div>
-                  </TD>
-                )}
+        <>
+          <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+          <Table stickyHeader>
+            <THead sticky>
+              <TR>
+                <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                  {t.name}
+                </SortableTH>
+                <TH>{t.workPoint}</TH>
+                <TH>{t.description}</TH>
+                <TH>{strings.common.status}</TH>
+                {canManage && <TH className="text-right">{strings.common.actions}</TH>}
               </TR>
-            ))}
-          </TBody>
-        </Table>
+            </THead>
+            <TBody>
+              {(isLoading || view.visible.length === 0) && (
+                <TableFallbackRow
+                  columns={canManage ? 5 : 4}
+                  loading={isLoading}
+                  icon={Factory}
+                  title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                  description={
+                    view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                  }
+                />
+              )}
+              {view.visible.map((g) => (
+                <TR key={g.id}>
+                  <TD className="font-medium text-content">{g.name}</TD>
+                  <TD>{g.workPointName}</TD>
+                  <TD className="max-w-xs truncate text-content-muted">{g.description || "—"}</TD>
+                  <TD>
+                    {g.active ? (
+                      <Badge variant="success">{t.active}</Badge>
+                    ) : (
+                      <Badge variant="muted">{t.inactive}</Badge>
+                    )}
+                  </TD>
+                  {canManage && (
+                    <TD className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(g)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          {strings.common.edit}
+                        </Button>
+                        {g.active && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeactivate(g)}
+                          >
+                            <Ban className="mr-1 h-3.5 w-3.5" />
+                            {t.deactivate}
+                          </Button>
+                        )}
+                      </div>
+                    </TD>
+                  )}
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+          <TablePagination view={view} />
+        </>
       )}
 
       <Dialog

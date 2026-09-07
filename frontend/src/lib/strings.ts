@@ -377,6 +377,7 @@ export const strings = {
       name: "Denumire",
       address: "Adresă",
       empty: "Niciun punct de lucru încă.",
+      searchPlaceholder: "Caută după nume sau adresă...",
       emptyHint: "Punctul de lucru e locul de unde pleacă deșeul. Fără cel puțin unul, nu se poate înregistra nicio mișcare.",
       active: "Activ",
       inactive: "Inactiv",
@@ -407,6 +408,7 @@ export const strings = {
       vehiclePlaceholder: "ex. CJ 01 ABC",
       vehicleHint: "Mașina cu care vine de obicei. Pe mișcare se poate schimba.",
       empty: "Niciun șofer încă.",
+      searchPlaceholder: "Caută după nume, act sau număr auto...",
       emptyHint: "Șoferii salvați aici precompletează rubrica de delegat de pe Anexa 3.",
       active: "Activ",
       inactive: "Inactiv",
@@ -433,6 +435,7 @@ export const strings = {
       namePlaceholder: "ex. birouri, producție, cantină",
       description: "Descriere",
       empty: "Niciun generator intern încă.",
+      searchPlaceholder: "Caută după nume sau punct de lucru...",
       emptyHint: "Secțiile — birouri, producție — se tipăresc în capitolul 2 al fișei de evidență.",
       active: "Activ",
       inactive: "Inactiv",
@@ -457,6 +460,7 @@ export const strings = {
     addTitle: "Adaugă partener",
     editTitle: "Editează partenerul",
     empty: "Niciun partener încă.",
+    searchPlaceholder: "Caută după nume, CUI, autorizație, adresă...",
     emptyHint: "Partenerii sunt firmele către care predai sau de la care preiei deșeu, plus transportatorii.",
     loadError: "Nu am putut încărca partenerii.",
     // columns
@@ -598,6 +602,7 @@ export const strings = {
     colOperationCode: "Operațiune",
     colPartnerName: "Partener",
     emptyHandovers: "Nicio predare pentru filtrele alese.",
+    handoversSearchPlaceholder: "Caută după cod, partener, punct de lucru...",
     handoversLoadError: "Nu am putut încărca predările.",
     ownSite: "pe amplasament propriu",
     // Roșu, nu galben: o ieșire fără cod R/D nu e o rubrică de completat cândva, e o cantitate
@@ -611,6 +616,7 @@ export const strings = {
     regeneratedCascade: "Evidență regenerată: {count} linii pentru {year} (și anii {years}).",
     // empty state
     empty: "Nu există linii de evidență pentru {year}.",
+    searchPlaceholder: "Caută după cod, denumire sau punct de lucru...",
     emptyHint: "Apasă „Regenerează” pentru a calcula evidența anului {year} din mișcări.",
     // note about the cache being manually regenerated
     staleNote:
@@ -645,6 +651,7 @@ export const strings = {
     notePlaceholder: "ex. depus la ANPM pe 12.03, nr. înregistrare 1234",
     // empty state
     empty: "Niciun termen pentru {year}.",
+    searchPlaceholder: "Caută după tip de raportare sau notă...",
     emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
   },
 
@@ -686,6 +693,7 @@ export const strings = {
     addTitle: "Adaugă firmă",
     editTitle: "Editează firma",
     empty: "Nicio firmă încă.",
+    searchPlaceholder: "Caută după nume sau CUI...",
     emptyHint: "Firmele client se creează de aici, sau dintr-o cerere de cont primită mai jos.",
     loadError: "Nu am putut încărca firmele.",
     onlyPlatformAdmin: "Această secțiune este disponibilă doar administratorului platformei.",
@@ -1086,6 +1094,7 @@ export const strings = {
     adminTitle: "Cereri de cont",
     adminSubtitle: "Formularele trimise de clienți. Din ele se creează firmele.",
     adminEmpty: "Nicio cerere.",
+    adminSearchPlaceholder: "Caută după firmă, CUI sau email...",
     adminLoadError: "Nu am putut încărca cererile.",
     colCompany: "Firma",
     colType: "Tip",
@@ -1151,6 +1160,7 @@ export const strings = {
   },
 
   packaging: {
+    searchPlaceholder: "Caută după cod, denumire, partener...",
     title: "Ambalaje",
     subtitle:
       "Tot ce ține de ambalaje, într-un loc. Mișcările pe coduri 15 01 xx sunt registrul; din ele se însumează cele două tabele ale Anexei 1 Ambalaje (Ordinul 794/2012), care se depune la agenția județeană de mediu până pe 25 februarie, pentru anul anterior. Totul în kilograme, cum cere art. 8 din ordin.",
@@ -1321,29 +1331,17 @@ export const strings = {
     status: "Status",
     actions: "Acțiuni",
     requiredField: "Câmp obligatoriu.",
-    // Adăugate pe 07.09.2026, odată cu modernizarea interfeței.
-    confirmDelete: "Confirmi ștergerea?",
-    confirmDeactivate: "Confirmi dezactivarea?",
-    deactivate: "Dezactivează",
-    duplicate: "Duplică",
     search: "Caută",
     searchPlaceholder: "Caută în listă...",
     clearSearch: "Golește căutarea",
-    filters: "Filtre",
-    clearFilters: "Șterge filtrele",
     noResults: "Niciun rezultat",
     noResultsHint: "Niciun rând nu se potrivește cu filtrele puse. Șterge-le ca să vezi tot.",
-    retry: "Încearcă din nou",
-    openMenu: "Deschide meniul",
     moreActions: "Mai multe acțiuni",
     // Paginare
     previous: "Înapoi",
     next: "Înainte",
     // „12–24 din 340"
     rangeOfTotal: "{from}–{to} din {total}",
-    perPage: "pe pagină",
-    // Sortare — anunțate cititoarelor de ecran prin aria-sort, și scrise în tooltip.
-    sortBy: "Sortează după {column}",
     sortedAsc: "sortat crescător",
     sortedDesc: "sortat descrescător",
     // Navigație
@@ -1352,15 +1350,8 @@ export const strings = {
     openNav: "Deschide meniul de navigație",
     closeNav: "Închide meniul de navigație",
     userMenu: "Meniul contului",
-    // Selecție multiplă
-    selectRow: "Selectează rândul",
-    selectAll: "Selectează tot",
-    selectedCount: "{n} selectate",
-    clearSelection: "Renunță la selecție",
     // Erori de formular
     fixErrors: "Verifică rubricile marcate mai jos.",
-    // Rezultatul unei operațiuni lungi, când nu se poate arăta un procent.
-    working: "Se lucrează...",
     // Scurtături
     commandPalette: "Caută sau sari la",
     commandPalettePlaceholder: "Sari la un ecran... (Ctrl+K)",

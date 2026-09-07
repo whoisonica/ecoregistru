@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 
 const t = strings.evidences;
@@ -40,17 +43,40 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
       || mv.operation === "UNCLASSIFIED_OUT"
   );
 
+  const view = useTableView(rows, {
+    searchText: (mv) =>
+      [mv.wasteCode, mv.wasteCodeName, mv.partnerName, mv.workPointName, mv.operationCode]
+        .filter(Boolean)
+        .join(" "),
+    comparators: {
+      date: (a, b) => a.date.localeCompare(b.date),
+      wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
+      quantity: (a, b) => {
+        if (a.quantity == null) return 1;
+        if (b.quantity == null) return -1;
+        return a.quantity - b.quantity;
+      },
+      partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
+    },
+    initialSort: { key: "date", direction: "desc" },
+  });
+
   if (isError) return <p className="text-sm text-red-600">{t.handoversLoadError}</p>;
 
   return (
     <>
       <p className="mb-3 text-sm text-content-muted">{t.handoversSubtitle}</p>
-      <div className="overflow-x-auto">
-        <Table>
-          <THead>
+      <TableToolbar view={view} placeholder={t.handoversSearchPlaceholder} />
+      <div>
+        <Table stickyHeader>
+          <THead sticky>
             <TR>
-              <TH>{t.colHandoverDate}</TH>
-              <TH>{t.colWasteCode}</TH>
+              <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>
+                {t.colHandoverDate}
+              </SortableTH>
+              <SortableTH sortKey="wasteCode" sort={view.sort} onSort={view.toggleSort}>
+                {t.colWasteCode}
+              </SortableTH>
               <TH className="text-right">{m.quantity}</TH>
               <TH>{t.colOperationCode}</TH>
               <TH>{t.colPartnerName}</TH>
@@ -59,15 +85,15 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
             </TR>
           </THead>
           <TBody>
-            {(isLoading || rows.length === 0) && (
+            {(isLoading || view.visible.length === 0) && (
               <TableFallbackRow
                 columns={7}
                 loading={isLoading}
                 icon={ArrowRightLeft}
-                title={t.emptyHandovers}
+                title={view.emptiedBySearch ? strings.common.noResults : t.emptyHandovers}
               />
             )}
-            {rows.map((mv: WasteMovement) => (
+            {view.visible.map((mv: WasteMovement) => (
               <TR key={mv.id}>
                 <TD className="whitespace-nowrap">
                   {/* The date the waste actually left; the unloading date when it is known. */}
@@ -130,6 +156,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
             ))}
           </TBody>
         </Table>
+        <TablePagination view={view} />
       </div>
     </>
   );

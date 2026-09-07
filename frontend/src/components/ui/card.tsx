@@ -6,18 +6,10 @@ import { cn } from "@/lib/utils";
  * `rounded-xl border border-gray-200 bg-white p-5` apărea în vreo douăzeci de locuri, cu p-4,
  * p-5 și p-6 amestecate. Aici e o singură decizie.
  */
-export function Card({
-  className,
-  padded = true,
-  ...props
-}: HTMLAttributes<HTMLDivElement> & { padded?: boolean }) {
+export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "rounded-xl border border-line bg-surface shadow-card",
-        padded && "p-5",
-        className
-      )}
+      className={cn("rounded-xl border border-line bg-surface p-5 shadow-card", className)}
       {...props}
     />
   );

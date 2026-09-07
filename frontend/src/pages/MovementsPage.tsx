@@ -54,8 +54,13 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
 import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { FormSection } from "@/components/ui/form-section";
-import { Table, THead, TBody, TR, TH, TD, SortableTH, Pagination } from "@/components/ui/table";
-import { RowAction, RowActions, TableSearch } from "@/components/ui/table-toolbar";
+import { Table, THead, TBody, TR, TH, TD, SortableTH } from "@/components/ui/table";
+import {
+  RowAction,
+  RowActions,
+  TablePagination,
+  TableToolbar,
+} from "@/components/ui/table-toolbar";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
@@ -366,13 +371,7 @@ export function MovementsPage() {
 
         {!isError && (
           <>
-            <TableSearch
-              value={view.query}
-              onChange={view.search}
-              placeholder={t.searchPlaceholder}
-              matchCount={view.matchCount}
-              className="mb-3"
-            />
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
             <Table stickyHeader>
               <THead sticky>
                 <TR>
@@ -546,13 +545,7 @@ export function MovementsPage() {
                 ))}
               </TBody>
             </Table>
-            <Pagination
-              page={view.page}
-              pageCount={view.pageCount}
-              onPage={view.setPage}
-              matchCount={view.matchCount}
-              pageSize={view.pageSize}
-            />
+            <TablePagination view={view} />
           </>
         )}
       </section>

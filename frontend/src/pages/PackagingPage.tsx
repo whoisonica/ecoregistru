@@ -33,6 +33,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow, TableSkeletonRows } from "@/components/ui/table-fallback";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
@@ -145,6 +148,20 @@ export function PackagingPage() {
   }, [year]);
 
   const rows = table1 ?? [];
+
+  /**
+   * Registrul de mișcări pe coduri 15 01 xx. Fără sortare implicită: vine de la server în ordinea
+   * în care se citește un registru, iar aia rămâne.
+   */
+  const registerView = useTableView(movements ?? [], {
+    searchText: (m: WasteMovement) =>
+      [m.wasteCode, m.wasteCodeName, m.partnerName, m.workPointName].filter(Boolean).join(" "),
+    comparators: {
+      date: (a: WasteMovement, b: WasteMovement) => a.date.localeCompare(b.date),
+      wasteCode: (a: WasteMovement, b: WasteMovement) =>
+        a.wasteCode.localeCompare(b.wasteCode, "ro"),
+    },
+  });
   const rowFor = (material: PackagingMaterial) => rows.find((r) => r.material === material);
 
   const signals = useMemo(() => {
@@ -315,11 +332,22 @@ export function PackagingPage() {
             </Link>
           )}
         </div>
-        <div className="mt-3 overflow-x-auto">
-          <Table>
-            <THead>
+        <TableToolbar
+          view={registerView}
+          placeholder={t.searchPlaceholder}
+          className="mt-3"
+        />
+        <div>
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
-                <TH>{t.date}</TH>
+                <SortableTH
+                  sortKey="date"
+                  sort={registerView.sort}
+                  onSort={registerView.toggleSort}
+                >
+                  {t.date}
+                </SortableTH>
                 <TH>{t.code}</TH>
                 <TH>{t.material}</TH>
                 <TH>{t.kind}</TH>
@@ -332,15 +360,17 @@ export function PackagingPage() {
               </TR>
             </THead>
             <TBody>
-              {(loadingMovements || (movements ?? []).length === 0) && (
+              {(loadingMovements || registerView.visible.length === 0) && (
                 <TableFallbackRow
                   columns={10}
                   loading={loadingMovements}
                   icon={Package}
-                  title={t.registerEmpty}
+                  title={
+                    registerView.emptiedBySearch ? strings.common.noResults : t.registerEmpty
+                  }
                 />
               )}
-              {(movements ?? []).map((m: WasteMovement) => (
+              {registerView.visible.map((m: WasteMovement) => (
                 <TR
                   key={m.id}
                   className={
@@ -429,6 +459,7 @@ export function PackagingPage() {
               ))}
             </TBody>
           </Table>
+          <TablePagination view={registerView} />
         </div>
       </section>
 
@@ -436,9 +467,9 @@ export function PackagingPage() {
       <section className="mt-10">
         <h2 className="text-lg font-semibold">{t.table1Title}</h2>
         <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table1Hint}</p>
-        <div className="mt-3 overflow-x-auto">
-          <Table>
-            <THead>
+        <div className="mt-3">
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
                 <TH>{t.material}</TH>
                 <TH className="text-right">{t.colSales}</TH>
@@ -498,9 +529,9 @@ export function PackagingPage() {
               <div className="mt-3 rounded-lg border border-line p-4">
                 <p className="max-w-3xl text-sm text-content-muted">{t.table1Override}</p>
                 <p className="mt-1 text-xs text-content-subtle">{t.overrideClear}</p>
-                <div className="mt-3 overflow-x-auto">
-                  <Table>
-                    <THead>
+                <div className="mt-3">
+                  <Table stickyHeader>
+                    <THead sticky>
                       <TR>
                         <TH>{t.material}</TH>
                         <TH className="text-right">{t.colSales}</TH>
@@ -545,9 +576,9 @@ export function PackagingPage() {
       <section className="mt-10">
         <h2 className="text-lg font-semibold">{t.table2Title}</h2>
         <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table2Hint}</p>
-        <div className="mt-3 overflow-x-auto">
-          <Table>
-            <THead>
+        <div className="mt-3">
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
                 <TH>{t.material}</TH>
                 <TH className="text-right">{t.quantity}</TH>
@@ -721,11 +752,11 @@ function Anexa3Section({ year }: { year: number }) {
             </div>
           )}
 
-          <div className="mt-3 overflow-x-auto">
+          <div className="mt-3">
             <h3 className="text-sm font-semibold text-content-strong">{t.anexa3IntakeTitle}</h3>
             <p className="mb-2 text-xs text-content-muted">{t.anexa3IntakeHint}</p>
-            <Table>
-              <THead>
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
                   <TH>{t.material}</TH>
                   <TH className="text-right">{t.anexa3ColTotal}</TH>
@@ -753,11 +784,11 @@ function Anexa3Section({ year }: { year: number }) {
             </Table>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
+          <div className="mt-6">
             <h3 className="text-sm font-semibold text-content-strong">{t.anexa3OutTitle}</h3>
             {table2 && <p className="mb-2 text-xs text-content-muted">{t.anexa3RecyclingHint}</p>}
-            <Table>
-              <THead>
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
                   <TH>{t.material}</TH>
                   {table2 ? (

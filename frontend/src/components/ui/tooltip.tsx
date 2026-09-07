@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TooltipProps {
@@ -121,20 +120,5 @@ export function Tooltip({ content, children, className }: TooltipProps) {
           document.body
         )}
     </>
-  );
-}
-
-/**
- * Semnul de întrebare de lângă o etichetă. Are nevoie de `label`: un declanșator fără nume e o
- * țintă pe care un cititor de ecran o anunță „buton", și atât.
- */
-export function InfoHint({ content, label }: { content: React.ReactNode; label: string }) {
-  return (
-    <Tooltip content={content}>
-      <HelpCircle
-        className="h-3.5 w-3.5 text-content-subtle transition-colors hover:text-content-muted"
-        aria-label={label}
-      />
-    </Tooltip>
   );
 }

@@ -19,6 +19,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -43,6 +46,11 @@ export function SettingsPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [nameError, setNameError] = useState(false);
+
+  const view = useTableView(workPoints ?? [], {
+    searchText: (wp) => [wp.name, wp.address].filter(Boolean).join(" "),
+    comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
+  });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -130,69 +138,77 @@ export function SettingsPage() {
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t.name}</TH>
-                <TH>{t.address}</TH>
-                <TH>{strings.common.status}</TH>
-                {canManage && <TH className="text-right">{strings.common.actions}</TH>}
-              </TR>
-            </THead>
-            <TBody>
-              {(isLoading || (workPoints ?? []).length === 0) && (
-                <TableFallbackRow
-                  columns={canManage ? 4 : 3}
-                  loading={isLoading}
-                  icon={MapPin}
-                  title={t.empty}
-                  description={t.emptyHint}
-                  action={
-                    canManage && (
-                      <Button onClick={openCreate}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t.add}
-                      </Button>
-                    )
-                  }
-                />
-              )}
-              {(workPoints ?? []).map((wp) => (
-                <TR key={wp.id}>
-                  <TD className="font-medium text-content">{wp.name}</TD>
-                  <TD>{wp.address || "—"}</TD>
-                  <TD>
-                    {wp.active ? (
-                      <Badge variant="success">{t.active}</Badge>
-                    ) : (
-                      <Badge variant="muted">{t.inactive}</Badge>
-                    )}
-                  </TD>
-                  {canManage && (
-                    <TD className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(wp)}>
-                          <Pencil className="mr-1 h-3.5 w-3.5" />
-                          {strings.common.edit}
-                        </Button>
-                        {wp.active && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => handleDeactivate(wp)}
-                          >
-                            <Ban className="mr-1 h-3.5 w-3.5" />
-                            {t.deactivate}
-                          </Button>
-                        )}
-                      </div>
-                    </TD>
-                  )}
+          <>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <Table stickyHeader>
+              <THead sticky>
+                <TR>
+                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                    {t.name}
+                  </SortableTH>
+                  <TH>{t.address}</TH>
+                  <TH>{strings.common.status}</TH>
+                  {canManage && <TH className="text-right">{strings.common.actions}</TH>}
                 </TR>
-              ))}
-            </TBody>
-          </Table>
+              </THead>
+              <TBody>
+                {(isLoading || view.visible.length === 0) && (
+                  <TableFallbackRow
+                    columns={canManage ? 4 : 3}
+                    loading={isLoading}
+                    icon={MapPin}
+                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    description={
+                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                    }
+                    action={
+                      canManage && (
+                        <Button onClick={openCreate}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t.add}
+                        </Button>
+                      )
+                    }
+                  />
+                )}
+                {view.visible.map((wp) => (
+                  <TR key={wp.id}>
+                    <TD className="font-medium text-content">{wp.name}</TD>
+                    <TD>{wp.address || "—"}</TD>
+                    <TD>
+                      {wp.active ? (
+                        <Badge variant="success">{t.active}</Badge>
+                      ) : (
+                        <Badge variant="muted">{t.inactive}</Badge>
+                      )}
+                    </TD>
+                    {canManage && (
+                      <TD className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(wp)}>
+                            <Pencil className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.edit}
+                          </Button>
+                          {wp.active && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => handleDeactivate(wp)}
+                            >
+                              <Ban className="mr-1 h-3.5 w-3.5" />
+                              {t.deactivate}
+                            </Button>
+                          )}
+                        </div>
+                      </TD>
+                    )}
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+            <TablePagination view={view} />
+          </>
         )}
       </section>
 

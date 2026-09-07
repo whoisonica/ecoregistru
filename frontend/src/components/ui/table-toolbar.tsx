@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MoreHorizontal, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { strings } from "@/lib/strings";
+import { Pagination } from "@/components/ui/table";
+import type { TableViewControls } from "@/hooks/useTableView";
 
 /**
  * Caseta de căutare de deasupra unui tabel.
@@ -81,7 +83,7 @@ export function TableSearch({
  * Șterge — adică vreo 380px de comenzi repetate pe fiecare rând, într-un tabel care are deja nouă
  * coloane. Acțiunea principală rămâne afară; restul intră aici.
  */
-export function RowActions({ children, label }: { children: ReactNode; label?: string }) {
+export function RowActions({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -106,7 +108,7 @@ export function RowActions({ children, label }: { children: ReactNode; label?: s
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={label ?? strings.common.moreActions}
+        aria-label={strings.common.moreActions}
         aria-haspopup="menu"
         aria-expanded={open}
         className="rounded-md p-1.5 text-content-muted transition-colors hover:bg-surface-sunken"
@@ -157,5 +159,65 @@ export function RowAction({
       {Icon && <Icon className="h-4 w-4 shrink-0" />}
       {children}
     </button>
+  );
+}
+
+/**
+ * Pragul de la care o casetă de căutare ajută mai mult decât încurcă.
+ *
+ * <p>Sub el, caseta e zgomot: pe un tabel cu patru puncte de lucru se vede totul dintr-o privire,
+ * iar un câmp de căutare deasupra doar ocupă locul. Peste el, derularea începe să coste.
+ *
+ * <p>Pragul e o singură decizie, aici, nu un „arată sau nu" hotărât separat la fiecare tabel —
+ * exact felul în care aplicația ajunsese să aibă unsprezece tabele și o singură bară de căutare.
+ */
+const SEARCH_FROM = 10;
+
+/**
+ * Bara de deasupra unui tabel: căutarea, plus ce mai vrea pagina să pună lângă ea.
+ *
+ * <p>Rămâne pe ecran cât timp se caută ceva, chiar dacă rezultatele au scăzut sub prag: altfel
+ * caseta ar dispărea sub degetul care tocmai a tastat în ea.
+ */
+export function TableToolbar({
+  view,
+  placeholder,
+  children,
+  className,
+}: {
+  view: TableViewControls;
+  placeholder?: string;
+  /** Filtre proprii ale paginii, așezate lângă căutare. */
+  children?: ReactNode;
+  className?: string;
+}) {
+  const showSearch = view.totalCount >= SEARCH_FROM || view.query !== "";
+  if (!showSearch && !children) return null;
+  return (
+    <div className={cn("mb-3 flex flex-wrap items-center gap-2", className)}>
+      {showSearch && (
+        <TableSearch
+          value={view.query}
+          onChange={view.search}
+          placeholder={placeholder}
+          matchCount={view.matchCount}
+          className="min-w-0 flex-1"
+        />
+      )}
+      {children}
+    </div>
+  );
+}
+
+/** Paginarea de sub tabel. Se ascunde singură pe o pagină unică. */
+export function TablePagination({ view }: { view: TableViewControls }) {
+  return (
+    <Pagination
+      page={view.page}
+      pageCount={view.pageCount}
+      onPage={view.setPage}
+      matchCount={view.matchCount}
+      pageSize={view.pageSize}
+    />
   );
 }

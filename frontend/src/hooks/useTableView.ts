@@ -21,6 +21,31 @@ interface TableViewOptions<T> {
 }
 
 /**
+ * Partea din vedere de care au nevoie bara de sus și paginarea de jos — fără rândurile însele.
+ *
+ * <p>Separată ca `TableToolbar` și `TablePagination` să primească orice vedere, indiferent de tipul
+ * rândurilor: altfel fiecare apelant ar trebui să-și tipizeze bara.
+ */
+export interface TableViewControls {
+  query: string;
+  search: (next: string) => void;
+  sort: SortState | null;
+  toggleSort: (key: string) => void;
+  page: number;
+  setPage: (page: number) => void;
+  pageCount: number;
+  pageSize: number;
+  matchCount: number;
+  totalCount: number;
+  emptiedBySearch: boolean;
+}
+
+export interface TableView<T> extends TableViewControls {
+  /** Rândurile paginii curente — ce se randează. */
+  visible: T[];
+}
+
+/**
  * Căutare, sortare și paginare peste un tablou deja încărcat.
  *
  * <p>Toate tabelele aplicației aduc tot ce e de arătat într-o singură cerere și îl randează la
@@ -31,13 +56,14 @@ interface TableViewOptions<T> {
  * <p>Ordinea e căutare → sortare → felie: căutarea restrânge întregul, sortarea așază restul, iar
  * pagina se taie la sfârșit. Invers, ai sorta ce nu se vede și ai pagina ce se aruncă.
  */
-export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}) {
+export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): TableView<T> {
   const { searchText, comparators, initialSort, pageSize: defaultPageSize = 25 } = options;
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState | null>(initialSort ?? null);
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
+  // Fix: nimeni nu alege câte rânduri pe pagină, iar un selector în plus nu se cere.
+  const pageSize = defaultPageSize;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -97,13 +123,11 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}) {
     setPage,
     pageCount,
     pageSize,
-    setPageSize,
-    /** Rândurile paginii curente — ce se randează. */
     visible,
-    /** Câte au trecut de căutare. Diferit de `rows.length` când se caută ceva. */
+    // Câte au trecut de căutare. Diferit de `totalCount` când se caută ceva.
     matchCount: sorted.length,
     totalCount: rows.length,
-    /** Adevărat când căutarea a golit lista, dar existau rânduri. */
+    // Adevărat când căutarea a golit lista, dar existau rânduri: alt gol, alt mesaj.
     emptiedBySearch: rows.length > 0 && sorted.length === 0,
   };
 }
