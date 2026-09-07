@@ -114,6 +114,13 @@ await page.waitForTimeout(300);
 const seeButtons = await page.$$('button:has-text("Vezi cererea")');
 check("fiecare cerere se poate citi întreagă", seeButtons.length > 0, seeButtons.length + " rânduri");
 
+// Coloana de acţiuni nu se mai rupe pe două rânduri. Un rând de tabel cu butoane frânte a fost
+// defectul găsit uitându-mă la captură, cu toate verificările de DOM verzi.
+const actionsWrap = await page.$$eval("tbody tr td:last-child > div", (cells) =>
+  cells.some((c) => c.getBoundingClientRect().height > 44)
+);
+check("butoanele de acţiune stau pe un rând", !actionsWrap);
+
 await seeButtons[0].click();
 await page.waitForTimeout(500);
 const dialog = await page.textContent('div[role="dialog"]');

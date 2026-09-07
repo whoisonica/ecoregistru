@@ -11,6 +11,30 @@ const check = (n, ok, d = "") => {
 
 // iPhone SE: cel mai îngust ecran pe care merită să funcționeze.
 const page = await newPage(browser, { width: 375, height: 667 });
+
+// Formularul public se probează **înainte** de autentificare, fiindcă aşa îl vede prospectul — şi
+// fiindcă e singura pagină pe care o deschide cineva de pe telefon fără să aibă cont. A lipsit de
+// aici până pe 07.09.2026, adică exact cât timp a fost singura pagină neatinsă de modernizare: s-a
+// rescris cap-coadă fără ca nimeni să se uite la ea la 375px.
+await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
+await page.waitForTimeout(600);
+{
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  check("cerere-cont: pagina nu se derulează lateral", overflow <= 1, String(overflow));
+  // Banda de trei paşi e `sm:grid-cols-3`: pe telefon trebuie să se stivuiască, nu să stea în trei
+  // coloane de o sută de pixeli.
+  const stepsStacked = await page.evaluate(() => {
+    const items = [...document.querySelectorAll("ol li")].slice(0, 3);
+    if (items.length < 3) return false;
+    const tops = items.map((i) => Math.round(i.getBoundingClientRect().top));
+    return new Set(tops).size === 3;
+  });
+  check("cerere-cont: cei trei paşi se stivuiesc", stepsStacked);
+  await shot(page, "telefon_cerere-cont");
+}
+
 await login(page, "admin");
 
 for (const [route, name] of [["/", "panou"], ["/miscari", "miscari"], ["/evidente", "evidente"], ["/setari", "setari"]]) {

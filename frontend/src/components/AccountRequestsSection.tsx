@@ -245,11 +245,20 @@ export function AccountRequestsSection({
                       <StatusBadge request={r} />
                     </TD>
                     <TD sticky="right" className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {/* Se citește pe orice rând, indiferent de stare: și după ce firma s-a
-                            creat, cererea rămâne singurul loc unde scrie ce a cerut clientul. */}
-                        <Button variant="ghost" size="sm" onClick={() => setViewing(r)}>
-                          <Eye className="mr-1 h-3.5 w-3.5" />
+                      <div className="flex items-center justify-end gap-1">
+                        {/* `whitespace-nowrap` pe toate trei, şi nu e cosmetic: al treilea buton
+                            din coloană le rupea pe fiecare pe câte două rânduri („Vezi / cererea",
+                            „Creează / contul"), iar rândurile creşteau în înălţime. Coloana e
+                            `sticky="right"`, deci poate fi mai lată fără să iasă din îndemână.
+                            (`Tooltip` nu e o variantă aici: îşi randează propriul `<button>`, deci
+                            ar fi buton în buton.) */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="whitespace-nowrap"
+                          onClick={() => setViewing(r)}
+                        >
+                          <Eye className="mr-1 h-3.5 w-3.5 shrink-0" />
                           {t.view}
                         </Button>
                         {r.status === "NEW" && (
@@ -257,20 +266,21 @@ export function AccountRequestsSection({
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="whitespace-nowrap"
                               disabled={busy}
                               onClick={() => handleApprove(r)}
                             >
-                              <Check className="mr-1 h-3.5 w-3.5" />
+                              <Check className="mr-1 h-3.5 w-3.5 shrink-0" />
                               {t.approve}
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:bg-red-50"
+                              className="whitespace-nowrap text-red-600 hover:bg-red-50"
                               disabled={busy}
                               onClick={() => openReject(r)}
                             >
-                              <X className="mr-1 h-3.5 w-3.5" />
+                              <X className="mr-1 h-3.5 w-3.5 shrink-0" />
                               {t.reject}
                             </Button>
                           </>
@@ -279,9 +289,10 @@ export function AccountRequestsSection({
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="whitespace-nowrap"
                             onClick={() => onOpenCompany(r.createdCompanyId!)}
                           >
-                            <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
+                            <ArrowUpRight className="mr-1 h-3.5 w-3.5 shrink-0" />
                             {t.openCompany}
                           </Button>
                         )}
