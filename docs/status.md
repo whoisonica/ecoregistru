@@ -22,7 +22,7 @@ rulează local și are testele verzi.
 > **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
 > produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
-> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (29 de commituri, împinsă pe
+> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (31 de commituri, împinsă pe
 > `origin`) duce cele șaisprezece puncte de UI/UX, șapte defecte găsite probând aplicația în
 > browser, suita care le-a găsit (`frontend/e2e/`, **58 de verificări verzi**) și încă trei defecte
 > găsite recitind ramura — de data asta în primitive, deci pe toate ecranele deodată — plus al
