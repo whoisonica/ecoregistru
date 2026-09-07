@@ -22,10 +22,11 @@ rulează local și are testele verzi.
 > **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
 > produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
-> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (28 de commituri, împinsă pe
+> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (29 de commituri, împinsă pe
 > `origin`) duce cele șaisprezece puncte de UI/UX, șapte defecte găsite probând aplicația în
 > browser, suita care le-a găsit (`frontend/e2e/`, **58 de verificări verzi**) și încă trei defecte
-> găsite recitind ramura — de data asta în primitive, deci pe toate ecranele deodată.
+> găsite recitind ramura — de data asta în primitive, deci pe toate ecranele deodată — plus al
+> patrulea, găsit de utilizator: căutarea cerea diacritice, deci `miscari` nu găsea nimic.
 > **Backendul n-a fost atins**, deci cifrele de mai sus rămân valabile. ⚠️ **Nu e deployată:**
 > merge-ul în `main` și push-ul pe repo-urile split se fac după ce interfața e privită cu ochiul.
 >
@@ -3062,6 +3063,39 @@ Chromium-ul lui Playwright ca ieşire de rezervă. Iar `playwright-core` era în
 `node_modules`: un checkout de ramură nu atinge dependenţele.
 
 **Suită: 58 de verificări, toate verzi** (55 înainte). `tsc --noEmit` curat, `vite build` verde.
+
+#### Căutarea cerea diacritice — al patrulea defect, găsit de utilizator (07.09.2026)
+
+*„la search dacă scriu miscari nu găsește, că nu are simbolul special."* Şi nu erau rezultate
+parţiale: era **zero**, cu ecranul spunând „Niciun rezultat" pentru un cuvânt care se vede în tabel.
+Măsurat pe browser cu datele demo: `deseuri` → 0 din 5 rânduri, `hartie` → 0 din 13, `sticla` → 0
+din 2, iar în paletă `miscari` şi `evidente` → nimic.
+
+Aplicaţia se foloseşte toată ziua, la introdus date, iar cine scrie repede nu pune diacritice. Deci
+căutarea — lucrul adăugat tocmai ca tabelele să scaleze — nu funcţiona pentru felul obişnuit de a
+tasta.
+
+`fold()` în `lib/utils`: `NFD` desface litera în literă + semn, `\p{Diacritic}` scoate semnul. Se
+aplică **şi** pe textul căutat, **şi** pe ce s-a tastat.
+
+**Trei locuri, nu două.** Al treilea e cel cu urmări asupra datelor, nu doar asupra răbdării:
+sugestiile de nume din Parteneri există ca să nu se creeze un partener de două ori. Cine tasta
+„deseuri" nu vedea „Transport Deşeuri SRL", deci îl adăuga încă o dată — iar duplicatul rămâne în
+nomenclator şi pe documentele tipărite. Celelalte două: `useTableView` (ambele treceri de potrivire)
+şi `CommandPalette` (inclusiv scorul, care pe text nepliat ar fi căzut tot pe ultima treaptă şi ar
+fi stricat ordonarea în tăcere).
+
+**Pliază în plus cedila peste virgulă** — `deşeuri` şi `deșeuri` devin acelaşi lucru — iar codul şi
+datele proiectului le amestecă pe amândouă, cum s-a văzut la auditul de diacritice din aceeaşi zi.
+
+⚠️ **O măsurătoare a mea a fost greşită pe drum, şi merită reţinut de ce.** Prima rulare a raportat
+„hârtie → 12", iar după reparaţie 13 — şi era gata să scriu că plierea a găsit un rând în plus.
+Măsurat însă comportamentul vechi ca lumea, cu reparaţia scoasă: era 13 şi înainte. Cei 12 erau un
+artefact al scriptului de probă, nu un rând. **Plierea nu descoperă rânduri noi**; face doar ca
+scrierea fără diacritice să dea acelaşi răspuns.
+
+Proba e în `3-interactiuni.mjs`, verificată că pică fără reparaţie (`0 vs 5`, `0 vs 13`).
+**Suită: 60 de verificări verzi.**
 
 
 ## Ce urmează — plan revizuit (22.08.2026)
