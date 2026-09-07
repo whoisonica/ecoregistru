@@ -132,6 +132,18 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ---
 
+### Interface tests
+
+`npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
+download — against the local dev server and a backend on the `dev` profile. Five suites, 55 checks:
+every screen opens clean, the action column stays reachable when a table scrolls, search and sort
+and the URL filters do what they claim, the movement form marks the fields it rejects, and nothing
+scrolls sideways at 375px.
+
+They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
+`vite build`, the first real run found **seven defects** — four of them needed a button pressed. See
+`frontend/e2e/README.md`.
+
 ## What is not in this repository
 
 This repo is public. The working notes, the commercial planning, and the **reference corpus** — ten

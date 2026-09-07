@@ -68,3 +68,6 @@ documente oficiale/
 /docs/stadiu-si-intrebari-*.html
 /docs/build-pdf-specialist.py
 /docs/proba-p*.png
+
+# Capturile probelor de interfata: se refac la fiecare rulare.
+/frontend/e2e/shots/
