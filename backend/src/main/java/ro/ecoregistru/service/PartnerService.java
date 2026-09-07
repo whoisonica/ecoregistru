@@ -106,6 +106,23 @@ public class PartnerService {
     }
 
     /**
+     * Desface dezactivarea.
+     *
+     * <p>Nu exista: prima greșeală era definitivă. Un punct de lucru dezactivat din greșeală, un
+     * partener scos la curățenie și regăsit peste o lună — amândouă rămâneau pe ecran, cu badge-ul
+     * „Inactiv", și nu se mai putea face nimic cu ele. Or dezactivarea e dinadins reversibilă: nu
+     * șterge nimic, doar scoate rândul din listele de ales.
+     *
+     * <p>Simetrică pe față cu {@code deactivate}: aceleași verificări de tenant, același răspuns
+     * gol. Nicio unicitate nu se poate strica, fiindcă cea care există — numele secției într-un
+     * punct de lucru — numără și rândurile inactive, deci un nume liber azi n-a fost al nimănui.
+     */
+    @Transactional
+    public void reactivate(UUID id) {
+        require(id).setActive(true);
+    }
+
+    /**
      * A partner with neither role cannot be saved. Partners created before the split have none —
      * which way the money flows is not derivable from anything stored, so V7 did not guess — and
      * this is what makes editing one complete it, the same way V5 made editing a handover supply

@@ -42,6 +42,17 @@ rulează local și are testele verzi.
 > e în `docs/todo-ui-ux.md`, cu ordinea de atacat și cu lista lucrurilor care par greșite și sunt
 > dinadins așa.
 >
+> **Adăugat 07.09.2026, noaptea — filtrul de lună, datele firmei, reactivarea.** Şase felii din
+> `docs/todo-ui-ux.md`, în ordinea de acolo. Una repară ceva **rupt**: `<input type="month">` nu
+> există în Safari şi Firefox, deci filtrul principal de pe Mişcări era câmp text liber pe Mac. Cu
+> el, ecranul porneşte pe luna curentă (nu mai aduce toate mişcările firmei) şi capătă treapta „tot
+> anul" — care a cerut şi backend, fiindcă `year` fără `month` se ignora în tăcere. Restul erau
+> lucruri care **lipseau**: garda de la închiderea formularului de mişcare, datele firmei în
+> „Setări" (în citire), plasa de sub excepţiile de randare, reactivarea a ce s-a dezactivat, şi
+> formularul de firmă lărgit. **Testele sunt acum 239** (de la 230), migrările rămân la `V31`;
+> suita de interfaţă e la **7 probe, 127 de verificări**. Detaliile şi motivele: secţiunea
+> „Filtrul de lună, datele firmei şi dezactivarea care se poate lua înapoi". ⚠️ Tot nedeployat.
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
@@ -3346,6 +3357,133 @@ prea jos — nu e cizelare, e o funcţie ruptă pe o familie întreagă de brows
 dezvoltare. Recomandarea, scrisă şi în lista de îmbunătăţiri: se ia împreună cu al doilea punct de
 la Mişcări (fără filtru de lună se aduc **toate** mişcările, oricâte), fiindcă e aceeaşi reparaţie
 pe aceleaşi trei linii.
+
+## Filtrul de lună, datele firmei şi dezactivarea care se poate lua înapoi (07.09.2026, noaptea)
+
+Trei felii cerute în ordinea din `todo-ui-ux.md`, după ce lista fusese rearanjată: felia „următoare"
+(filtrul de lună), Prioritatea 2 (garda de formular + datele firmei) şi ce urma după ea (plasa de
+sub excepţii, reactivarea, formularul de firmă). **Prima e singura care repară ceva rupt; restul
+sunt lucruri care lipseau.**
+
+### 1. Filtrul de lună de pe Mişcări — o funcţie ruptă pe Safari şi Firefox
+
+`<input type="month">` **nu există în Safari şi Firefox**: degenerează în câmp text liber. Adică pe
+Mac — chiar maşina de dezvoltare — filtrul principal al celui mai folosit ecran n-avea selector,
+n-avea validare şi cerea tastat `2026-06` exact, fără să spună asta nicăieri.
+
+În loc: `MonthInput`, două `<select>` native (luna, apoi anul — cum se citeşte în româneşte).
+Native dinadins: tastatura, cititorul de ecran şi selectorul de pe telefon vin gata făcute, ceea ce
+un calendar scris de mână ar fi trebuit să refacă.
+
+Odată cu el, **a doua jumătate a aceleiaşi reparaţii**: ecranul porneşte pe **luna curentă**. Fără
+lună se aduceau toate mişcările firmei, oricâte — la doi ani × 30 de predări pe lună sunt ~700 de
+rânduri la fiecare deschidere, iar `useTableView` paginează abia **după** ce au venit, deci
+paginarea nu apăra nimic. Luna implicită nu se scrie în adresă, deci `/miscari` rămâne un link
+curat care înseamnă „luna asta", iar `?luna=2026-03` continuă să însemne o lună anume — linkurile
+vechi din rapoarte deschid exact ce deschideau.
+
+**Treapta de mijloc, şi de ce a cerut backend.** „Tot anul" (`?luna=2026`) există fiindcă bara de
+căutare a tabelului caută în ce s-a **adus**: fără ea, o predare de acum trei luni s-ar găsi numai
+nimerindu-i luna din prima. Numai că `year` fără `month` nu însemna nimic în backend — se cerea
+`?year=2026` şi veneau înapoi toate mişcările, din toţi anii. **O filtrare ignorată în tăcere e mai
+rea decât una respinsă**, aşa că `WasteMovementService.list` o interpretează acum: an fără lună =
+anul întreg. Trei teste noi (`MovementListFilterIT`), fără migrare.
+
+Şi ieşirea din luna goală: pe o lună fără rânduri, tabelul spune **„Nicio mişcare în Februarie
+2019"** şi oferă butonul „Vezi tot anul 2019". Fără el, un ecran care porneşte pe luna curentă ar
+arăta „nicio mişcare" unui client care are şapte sute, iar nimic de pe ecran n-ar spune că vina e a
+filtrului, nu a datelor.
+
+### 2. Garda de la închiderea formularului de mişcare
+
+Escape sau un clic pe fundal ştergeau treizeci de rubrici din opt secţiuni, fără o vorbă. E
+jumătatea cealaltă a defectului reparat la Escape-ul din combobox: acolo se pierdea tot fiindcă
+tasta trecea prin listă până la dialog, aici se pierdea fiindcă dialogul făcea exact ce i se cerea.
+
+Formularul „atins" se marchează din `onChange`-ul **formularului**, nu din cele treizeci de
+`setState`: evenimentul urcă din orice rubrică nativă, deci o rubrică adăugată mâine intră singură
+sub gardă. Cele două căi care nu trec prin el — alegerea unui cod din listă şi fişierele lăsate cu
+mausul peste zonă — marchează pe faţă.
+
+**Şi o reparaţie în primitivă, cerută de asta:** `Dialog` ţine acum un **teanc** al dialogurilor
+deschise, iar la Escape şi la capcana de Tab răspunde doar cel de deasupra. Fără el, întrebarea
+„închizi fără să salvezi?" stând peste formular s-ar fi închis odată cu formularul la o singură
+apăsare de Escape — adică exact paguba de care întreabă. `confirm-dialog.tsx` ocolea până acum
+aceeaşi problemă închizându-se înainte de a lansa acţiunea.
+
+### 3. Datele firmei, în Setări
+
+Un ADMIN de firmă nu-şi vedea nicăieri CAEN-ul, autorizaţia de mediu, persoana desemnată sau seria
+Anexei 3 — toate se editează **exclusiv** din „Clienţi", care e ecran de `PLATFORM_ADMIN`. Intra în
+„Setări", singurul loc unde s-ar fi uitat, şi găsea puncte de lucru, secţii şi şoferi.
+
+`CompanyDetailsSection`, **numai citire**: cine poate schimba rubricile rămâne cine era; ce se
+schimbă e că se **văd** — inclusiv golurile, fiindcă un CAEN necompletat se tipăreşte gol pe
+declaraţia anuală, iar asta se află mai bine aici decât din documentul depus. Nota de subsol nu
+trimite la o adresă de e-mail: aplicaţia n-are nicăieri una, iar una inventată aici ar fi prima care
+se dovedeşte falsă — trimite la consultantul care a deschis contul.
+
+Etichetele rubricilor şi titlurile grupelor se citesc din `strings.clients`, adică din ecranul unde
+se **editează** aceleaşi rubrici: două nume pentru „Nr. Registrul Comerţului" ar fi două nume pentru
+acelaşi lucru. Excepţie fac două, care în formular sunt etichete de bifă („Datorează ceva la AFM,
+dar…") şi aici trebuie să stea singure deasupra unui răspuns.
+
+Plus `SectionNav`, cuprinsul lipicios al paginii — patru secţiuni, trei dintre ele tabele cu
+paginare. **Trei defecte ale lui s-au văzut abia pe captură**, cu toate verificările de DOM verzi:
+`overflow-x-auto` pe `<nav>` decupa şi pe verticală, deci banda care acoperă căptuşeala paginii nu
+se vedea şi pe sub bară trecea o dungă de tabel; coloana de acţiuni a tabelelor e şi ea lipită
+(`sticky right-0 z-10`) şi vine **după** bară în DOM, deci la z egal acoperea jumătatea din dreapta;
+iar prima variantă marca secţiunea curentă cu `IntersectionObserver`, care la capătul de jos al
+paginii nu vede niciodată ultima secţiune — clicul pe „Şoferii noştri" ducea acolo lăsând marcajul
+pe „Puncte de lucru". Regula 5, încă o dată: randează şi uită-te la el.
+
+### 4. Plasa de sub excepţii
+
+Orice excepţie de randare demonta tot arborele şi lăsa un `<div id="root">` gol: ecran alb, fără
+meniu, fără mesaj, fără drum înapoi, pe **orice** ecran, pentru un câmp null pe care nu-l aştepta
+nimeni. Cel mai ieftin defect de reparat şi cel mai scump de trăit — omul n-are ce povesti la
+telefon în afară de „s-a albit".
+
+`ErrorBoundary` stă în două locuri, fiindcă apără de două lucruri: în jurul paginii, **sub**
+`Layout`, unde meniul rămâne viu şi se poate merge în altă parte fără reîncărcare (cheia e adresa,
+deci plecarea de pe ecranul căzut şterge mesajul); şi în jurul aplicaţiei întregi, pentru ce cade în
+`Layout` sau în context.
+
+### 5. Dezactivarea se poate lua înapoi
+
+Prima greşeală era definitivă la **punct de lucru, partener, secţie şi şofer**. Dezactivarea nu
+şterge niciun rând — dinadins, fiindcă mişcările vechi îl citează — deci n-avea de ce să fie
+ireversibilă; pur şi simplu nu exista drumul înapoi.
+
+`POST /{id}/reactivate` pe toate patru (ca `/{id}/reopen` de la termene: e o faptă, nu o resursă),
+cu aceleaşi verificări de tenant şi aceleaşi reguli de rol ca dezactivarea. Nicio unicitate nu se
+poate strica: singura care există — numele secţiei într-un punct de lucru — numără şi rândurile
+inactive, deci un nume liber azi n-a fost al nimănui. Şase teste (`ReactivationIT`), pe toate patru
+resursele, fiindcă **simetria e chiar lucrul care se poate strica**: fiecare are propriul controller
+şi propriul serviciu, iar una uitată ar arăta pe ecran ca un buton care nu face nimic.
+
+Pe ecran: butonul „Reactivează" pe rândul inactiv, şi **filtrul activ/inactiv** cerut de mult —
+după un an de folosire, „Parteneri" e un cimitir prin care se caută. Porneşte pe **Active**, cu
+numărul celor scoase chiar în opţiune, şi **nu apare deloc** cât timp n-a fost dezactivat nimic: pe
+un cont nou ar fi un comutator între „tot" şi „tot".
+
+### 6. Formularul de firmă
+
+Al doilea ca mărime din aplicaţie — ~25 de rubrici, inclusiv profilul şi blocul persoanei desemnate
+— şi singurul rămas la 512px după modernizare. Acum `xl`, cu cinci secţiuni titrate: aceleaşi
+grupe, în aceeaşi ordine, ca vederea în citire din „Setări". Rubricile nu s-au schimbat, doar
+aşezarea.
+
+### Cifre
+
+- **239 de teste verzi** (de la 230): `ReactivationIT` (6) şi `MovementListFilterIT` (3). Migrări
+  tot până la **`V31`**, următoarea liberă **`V32`** — nicio felie n-a cerut una.
+- **Suita de interfaţă: 7 probe, 127 de verificări** (de la 6 şi 99). Proba nouă,
+  `7-firma-si-reactivare.mjs`, face drumul întreg al reactivării (creează un şofer, îl dezactivează,
+  îl regăseşte prin filtru, îl reactivează) şi probează garda formularului, inclusiv că Escape peste
+  întrebare închide **doar** întrebarea. ⚠️ Lasă în urmă un şofer dezactivat de probă.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

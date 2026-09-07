@@ -54,3 +54,17 @@ export function useDeactivatePartner() {
     onSuccess: () => qc.invalidateQueries({ queryKey: partnersKey }),
   });
 }
+
+/**
+ * Desface dezactivarea. Vezi `reactivate` din backend: dezactivarea nu șterge nimic, dar până acum
+ * nu se putea lua înapoi — prima greșeală era definitivă.
+ */
+export function useReactivatePartner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/v1/partners/${id}/reactivate`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: partnersKey }),
+  });
+}

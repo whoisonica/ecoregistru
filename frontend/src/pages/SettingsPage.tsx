@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { Ban, MapPin, Pencil, Plus } from "lucide-react";
+import { Ban, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   useWorkPoints,
   useCreateWorkPoint,
   useUpdateWorkPoint,
   useDeactivateWorkPoint,
+  useReactivateWorkPoint,
 } from "@/hooks/useWorkPoints";
 import type { WorkPoint } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -22,11 +23,14 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
+import { useActiveFilter } from "@/components/ui/active-filter";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
+import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
+import { SectionNav } from "@/components/ui/section-nav";
 
 const t = strings.settings.workPoints;
 
@@ -38,6 +42,7 @@ export function SettingsPage() {
   const createMut = useCreateWorkPoint();
   const updateMut = useUpdateWorkPoint();
   const deactivateMut = useDeactivateWorkPoint();
+  const reactivateMut = useReactivateWorkPoint();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
@@ -47,7 +52,8 @@ export function SettingsPage() {
   const [address, setAddress] = useState("");
   const [nameError, setNameError] = useState(false);
 
-  const view = useTableView(workPoints ?? [], {
+  const { rows: visibleWorkPoints, control: activeFilter } = useActiveFilter(workPoints ?? []);
+  const view = useTableView(visibleWorkPoints, {
     searchText: (wp) => [wp.name, wp.address].filter(Boolean).join(" "),
     comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
   });
@@ -113,6 +119,14 @@ export function SettingsPage() {
     });
   }
 
+  // Reactivarea nu întreabă nimic: nu strică nimic și se desface la loc cu butonul de alături.
+  function reactivate(wp: WorkPoint) {
+    reactivateMut.mutate(wp.id, {
+      onSuccess: () => notify(strings.common.reactivated, "success"),
+      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
   useHotkey("n", openCreate, { enabled: Boolean(canManage) });
@@ -132,14 +146,28 @@ export function SettingsPage() {
         }
       />
 
-      <section className="mt-6">
+      <SectionNav
+        label={strings.settings.sections}
+        items={[
+          { id: "datele-firmei", label: strings.settings.company.title },
+          { id: "puncte-de-lucru", label: t.title },
+          { id: "generatori-interni", label: strings.settings.internalGenerators.title },
+          { id: "soferi", label: strings.settings.drivers.title },
+        ]}
+      />
+
+      <CompanyDetailsSection />
+
+      <section id="puncte-de-lucru" className="mt-8 scroll-mt-20">
         <h2 className="mb-3 text-lg font-semibold text-content">{t.title}</h2>
 
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
           <>
-            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+              {activeFilter}
+            </TableToolbar>
             <Table stickyHeader>
               <THead sticky>
                 <TR>
@@ -189,7 +217,7 @@ export function SettingsPage() {
                             <Pencil className="mr-1 h-3.5 w-3.5" />
                             {strings.common.edit}
                           </Button>
-                          {wp.active && (
+                          {wp.active ? (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -198,6 +226,11 @@ export function SettingsPage() {
                             >
                               <Ban className="mr-1 h-3.5 w-3.5" />
                               {t.deactivate}
+                            </Button>
+                          ) : (
+                            <Button variant="ghost" size="sm" onClick={() => reactivate(wp)}>
+                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                              {strings.common.reactivate}
                             </Button>
                           )}
                         </div>

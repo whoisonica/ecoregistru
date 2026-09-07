@@ -48,3 +48,17 @@ export function useDeactivateDriver() {
     onSuccess: () => qc.invalidateQueries({ queryKey: driversKey }),
   });
 }
+
+/**
+ * Desface dezactivarea. Vezi `reactivate` din backend: dezactivarea nu șterge nimic, dar până acum
+ * nu se putea lua înapoi — prima greșeală era definitivă.
+ */
+export function useReactivateDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/v1/drivers/${id}/reactivate`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: driversKey }),
+  });
+}

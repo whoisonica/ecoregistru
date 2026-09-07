@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,20 @@ interface DialogProps {
   busy?: boolean;
 }
 
+/**
+ * Teancul dialogurilor deschise, în ordinea deschiderii.
+ *
+ * <p>Există fiindcă un dialog poate sta peste altul: garda de la închiderea formularului de
+ * mișcare întreabă „închizi fără să salvezi?" **peste** formular. Amândouă ascultă Escape pe
+ * `document`, deci fără teanc o singură apăsare le închidea pe amândouă — adică exact paguba de
+ * care întrebarea trebuia să apere. La fel și capcana de Tab: cea de dedesubt trăgea focusul
+ * înapoi din întrebare, ceea ce `confirm-dialog.tsx` ocolea până acum închizându-se înainte.
+ *
+ * <p>Doar cel de deasupra ascultă. Restul rămân randate, cu focusul blocat înăuntru — la
+ * închiderea celui de sus, ascultătorul lor devine iar cel activ, fără să se remonteze nimic.
+ */
+const openDialogs: symbol[] = [];
+
 /** Ce poate primi focus înăuntru. Folosit și pentru capcana de Tab, și pentru focusul inițial. */
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -66,6 +80,9 @@ export function Dialog({
   busy = false,
 }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // Identitatea acestui dialog în teanc. `useMemo` fără dependențe, ca să fie una singură cât
+  // trăiește componenta — un `useRef` ar fi cerut o inițializare leneșă pentru același lucru.
+  const id = useMemo(() => Symbol("dialog"), []);
   // Cine avea focusul înainte să deschidem: acolo îl punem înapoi la închidere.
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -91,21 +108,28 @@ export function Dialog({
    */
   useEffect(() => {
     if (!open) return;
+    openDialogs.push(id);
     returnFocusRef.current = document.activeElement as HTMLElement | null;
     // Pagina de dedesubt nu se mai derulează cât timp dialogul e deschis: altfel rotița mouse-ului
     // pe fundal mișcă lista, iar dialogul pare că plutește peste altceva decât ce ai lăsat.
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = previousOverflow;
+      const at = openDialogs.lastIndexOf(id);
+      if (at >= 0) openDialogs.splice(at, 1);
+      // Scrollul se redă doar când s-a închis și ultimul: două dialoguri suprapuse înseamnă două
+      // efecte, iar cel de deasupra ar debloca pagina de sub cel care mai e deschis.
+      if (openDialogs.length === 0) document.body.style.overflow = previousOverflow;
       returnFocusRef.current?.focus?.();
     };
-  }, [open]);
+  }, [open, id]);
 
   useEffect(() => {
     if (!open) return;
 
     function onKey(e: KeyboardEvent) {
+      // Numai dialogul de deasupra răspunde: vezi `openDialogs`.
+      if (openDialogs[openDialogs.length - 1] !== id) return;
       if (e.key === "Escape") {
         // Un strat dinăuntru s-a ocupat deja de Escape — lista comboboxului, de pildă. El se
         // închide, dialogul din jurul lui rămâne deschis.
@@ -138,7 +162,7 @@ export function Dialog({
 
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, id]);
 
   // Focusul inițial, dar numai dacă nu l-a luat deja cineva dinăuntru: câteva formulare pun
   // `autoFocus` pe primul câmp, și acela e răspunsul mai bun decât panoul însuși.

@@ -179,6 +179,12 @@ export const strings = {
     filterAll: "Toate",
     allMonths: "Toate lunile",
     clearFilters: "Șterge filtrele",
+    // Golul dintr-o lună anume nu se spune ca golul din tot: unul e o listă goală, celălalt e o
+    // firmă fără nicio mișcare. Al doilea îngrijorează pe drept, primul n-are de ce.
+    emptyMonth: "Nicio mișcare în {month}",
+    emptyMonthHint:
+      "Ecranul pornește pe luna curentă. Alege altă lună sau vezi anul întreg — mișcările vechi sunt acolo.",
+    showWholeYear: "Vezi tot anul {year}",
     // columns
     colDate: "Data",
     colWasteCode: "Cod deșeu",
@@ -379,6 +385,36 @@ export const strings = {
 
   settings: {
     title: "Setări",
+    // Cuprinsul lipicios din capul paginii. Patru secțiuni una sub alta, dintre care trei tabele,
+    // fac cea mai lungă pagină de configurare din aplicație.
+    sections: "Pe pagină",
+    company: {
+      title: "Datele firmei",
+      subtitle:
+        "Ce tipăresc documentele oficiale în capul lor: identificarea, autorizația, persoana desemnată.",
+      // Un titlu propriu: aici, sub autorizație, se citește și profilul (coduri R/D, coduri de
+      // deșeu, transport), care în formularul de editare stă în blocul lui.
+      groupAuthorization: "Autorizația de mediu și profilul",
+      // Rubrica există pe firmă (o tipărește Anexa 3, lângă CUI), dar nu se editează din „Clienți",
+      // deci eticheta ei nu e nici acolo. Cea din „Parteneri" e a partenerului, nu a firmei.
+      tradeRegisterNumber: "Nr. Registrul Comerțului",
+      unset: "Necompletat",
+      // Două rubrici își iau aici alt nume decât în formularul de editare. Acolo sunt etichete de
+      // bifă și de select, scrise ca să se citească împreună cu ce urmează („Datorează ceva la
+      // AFM, dar…"); aici stau singure, deasupra unui răspuns, și trebuie să se ție pe picioarele
+      // lor.
+      afm: "Obligație la Fondul pentru mediu",
+      wasteManagerExternal: "Angajat propriu sau terț",
+      until: "până la",
+      expired: "Expirată",
+      wasteCodesCount: "{n} coduri din autorizație",
+      editInClients: "Editează în Clienți",
+      // Nu trimite la o adresă de e-mail: aplicația n-are nicăieri una, iar o adresă inventată aici
+      // ar fi prima care se dovedește falsă. Trimite la om — cel care a deschis contul.
+      readOnlyNote:
+        "Rubricile astea se citesc aici, dar se schimbă din contul care ți-a deschis firma. Pentru o corectură — autorizație reînnoită, altă persoană desemnată — spune-i consultantului tău.",
+      loadError: "Nu am putut încărca datele firmei.",
+    },
     workPoints: {
       title: "Puncte de lucru",
       subtitle: "Locațiile pentru care ții evidența deșeurilor.",
@@ -705,6 +741,14 @@ export const strings = {
 
   clients: {
     title: "Clienți",
+    // Titlurile secțiunilor formularului de firmă. Le citește și „Setări", care arată exact
+    // aceleași rubrici în citire — două nume pentru aceleași grupuri ar fi două hărți ale
+    // aceluiași lucru.
+    groupIdentity: "Identificare",
+    groupAuthorization: "Autorizația de mediu",
+    groupWasteManager: "Persoana desemnată cu gestiunea deșeurilor",
+    groupReporting: "Raportare",
+    groupContact: "Persoana de contact",
     subtitle:
       "Firmele pentru care ții evidența. Creezi firme și inviți utilizatori care primesc pe email un link de setare a parolei.",
     add: "Adaugă firmă",
@@ -1417,6 +1461,15 @@ export const strings = {
     remove: "Elimină fișierul",
   },
 
+  errorBoundary: {
+    title: "Ceva s-a stricat pe ecranul ăsta",
+    body:
+      "Nu s-a pierdut nimic din ce era salvat. Reîncarcă pagina; dacă se repetă, spune-ne pe ce ecran și ce ai apăsat.",
+    details: "Detalii tehnice",
+    reload: "Reîncarcă pagina",
+    toDashboard: "Înapoi la Panou",
+  },
+
   common: {
     loading: "Se încarcă...",
     saving: "Se salvează...",
@@ -1432,11 +1485,24 @@ export const strings = {
     // Citit doar de cititorul de ecran, în locul asteriscului. Vezi `Label`.
     requiredMarker: "obligatoriu",
     search: "Caută",
+    // Citite doar de cititorul de ecran, pe cele două select-uri ale lui `MonthInput` — eticheta
+    // vizibilă e una singură, a filtrului.
+    month: "Luna",
+    year: "Anul",
+    wholeYear: "Tot anul",
     searchPlaceholder: "Caută în listă...",
     clearSearch: "Golește căutarea",
     noResults: "Niciun rezultat",
     noResultsHint: "Niciun rând nu se potrivește cu filtrele puse. Șterge-le ca să vezi tot.",
     moreActions: "Mai multe acțiuni",
+    // Filtrul activ / inactiv. Numărul celor inactive stă chiar în opțiune: altfel „Inactive" e o
+    // opțiune despre care nu știi dacă are ceva în ea până n-o alegi.
+    stateFilter: "Starea rândurilor",
+    stateActive: "Active",
+    stateInactive: "Inactive ({n})",
+    stateAll: "Toate",
+    reactivate: "Reactivează",
+    reactivated: "Reactivat.",
     // Paginare
     previous: "Înapoi",
     next: "Înainte",
@@ -1452,6 +1518,11 @@ export const strings = {
     userMenu: "Meniul contului",
     // Erori de formular
     fixErrors: "Verifică rubricile marcate mai jos.",
+    // Garda de la închiderea unui formular început. Titlul întreabă, mesajul spune ce se pierde,
+    // iar butonul numește fapta — „Da/Nu" pe un dialog citit în grabă nu spune care e care.
+    discardTitle: "Închizi fără să salvezi?",
+    discardMessage: "Ce ai completat până acum se pierde. Nimic nu se înregistrează.",
+    discardConfirm: "Închide, fără să salvez",
     // Scurtături
     commandPalette: "Caută sau sari la",
     commandPalettePlaceholder: "Sari la un ecran... (Ctrl+K)",

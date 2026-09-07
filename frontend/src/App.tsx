@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { AccountRequestPage } from "@/pages/AccountRequestPage";
@@ -18,9 +19,15 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 function AppShell({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   return (
     <ProtectedRoute>
-      <Layout>{children}</Layout>
+      <Layout>
+        {/* Plasa e **înăuntrul** lui `Layout`: o excepție într-o pagină lasă în picioare antetul
+            și meniul, deci se poate merge în altă parte fără reîncărcare. Cheia e adresa, ca
+            plecarea de pe ecranul căzut să șteargă mesajul. */}
+        <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>
+      </Layout>
     </ProtectedRoute>
   );
 }

@@ -16,8 +16,19 @@ function check(name, ok, detail = "") {
 
 const rows = () => page.$$eval("tbody tr", (r) => r.length);
 
+/**
+ * Mişcările pe **tot anul**.
+ *
+ * <p>Ecranul porneşte pe luna curentă (07.09.2026): fără lună se aduceau toate mişcările firmei,
+ * oricâte, iar paginarea taie abia după ce au venit. Aici e nevoie de mai mult de zece rânduri —
+ * bara de căutare apare abia de la zece în sus — deci proba cere dinadins anul întreg, ceea ce
+ * probează şi treapta nouă din filtru.
+ */
+const AN = new Date().getFullYear();
+const MISCARI = `${BASE}/miscari?luna=${AN}`;
+
 // ---------------------------------------------------------------- CĂUTARE
-await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });
+await page.goto(MISCARI, { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
 const before = await rows();
 await page.fill("[data-table-search]", "15 01 02");
@@ -96,8 +107,49 @@ await page.goto(BASE + "/panou-inexistent", { waitUntil: "domcontentloaded" }).c
 await page.goBack({ waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 check("filtrul supraviețuiește navigării", page.url().includes("punct="), page.url().split("?")[1] || "(fără query)");
-await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });
+await page.goto(MISCARI, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
+
+// ------------------------------------------------- FILTRUL DE LUNĂ (Safari-proof)
+// `<input type="month">` nu există în Safari şi Firefox: degenera în câmp text liber, adică pe Mac
+// filtrul principal al ecranului n-avea nici selector, nici validare. Proba cere ce s-a pus în loc.
+await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });
+await page.waitForTimeout(700);
+const luna = await page.evaluate(() => {
+  const el = document.querySelector("#filter-month");
+  const anul = el?.parentElement?.parentElement?.querySelectorAll("select")[1];
+  const azi = new Date();
+  return {
+    tag: el?.tagName,
+    tip: el?.getAttribute("type"),
+    optiuni: el ? el.options.length : 0,
+    valoare: el?.value,
+    lunaAzi: String(azi.getMonth() + 1),
+    anValoare: anul?.value,
+    anAzi: String(azi.getFullYear()),
+  };
+});
+check("luna se alege dintr-un select, nu dintr-un input", luna.tag === "SELECT" && !luna.tip, `${luna.tag} ${luna.tip ?? ""}`);
+check("are cele 12 luni plus „Tot anul”", luna.optiuni === 13, `${luna.optiuni} opțiuni`);
+check("pornește pe luna curentă", luna.valoare === luna.lunaAzi && luna.anValoare === luna.anAzi, `${luna.valoare}.${luna.anValoare}`);
+check("luna implicită nu murdărește adresa", !page.url().includes("luna="), page.url().split("?")[1] || "(fără query)");
+
+await page.selectOption("#filter-month", "3");
+await page.waitForTimeout(600);
+check("alegerea unei luni intră în adresă", /luna=\d{4}-03/.test(page.url()), page.url().split("?")[1] || "(fără query)");
+
+await page.selectOption("#filter-month", "0");
+await page.waitForTimeout(600);
+check("„Tot anul” cere anul, fără lună", /luna=\d{4}(&|$)/.test(page.url()), page.url().split("?")[1] || "(fără query)");
+
+// Luna goală îşi spune numele şi dă drumul înapoi — altfel un ecran care porneşte pe luna curentă
+// arată „nicio mişcare" unui client care are şapte sute.
+await page.goto(BASE + "/miscari?luna=2019-02", { waitUntil: "networkidle" });
+await page.waitForTimeout(700);
+const gol = await page.textContent("tbody");
+check("luna fără rânduri se explică", gol.includes("Nicio mișcare în Februarie 2019"), gol.trim().slice(0, 40));
+const iesire = await page.$("tbody button");
+check("și oferă anul întreg ca ieșire", !!iesire && (await iesire.textContent()).includes("2019"));
 
 // ---------------------------------------------------------------- PALETA Ctrl+K
 await page.keyboard.press("Control+k");
@@ -113,7 +165,7 @@ if (paletteOpen) {
 }
 
 // ---------------------------------------------------------------- „/" pe căutare
-await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });
+await page.goto(MISCARI, { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
 await page.click("h1");
 await page.keyboard.press("/");

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { Ban, Factory, Pencil, Plus } from "lucide-react";
+import { Ban, Factory, Pencil, Plus, RotateCcw } from "lucide-react";
 import {
   useInternalGenerators,
   useCreateInternalGenerator,
   useUpdateInternalGenerator,
   useDeactivateInternalGenerator,
+  useReactivateInternalGenerator,
 } from "@/hooks/useInternalGenerators";
 import type { InternalGenerator, WorkPoint } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -20,6 +21,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
+import { useActiveFilter } from "@/components/ui/active-filter";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -47,6 +49,7 @@ export function InternalGeneratorsSection({
   const createMut = useCreateInternalGenerator();
   const updateMut = useUpdateInternalGenerator();
   const deactivateMut = useDeactivateInternalGenerator();
+  const reactivateMut = useReactivateInternalGenerator();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
@@ -59,7 +62,8 @@ export function InternalGeneratorsSection({
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState(false);
 
-  const view = useTableView(generators ?? [], {
+  const { rows: visibleGenerators, control: activeFilter } = useActiveFilter(generators ?? []);
+  const view = useTableView(visibleGenerators, {
     searchText: (g) => [g.name, g.workPointName, g.description].filter(Boolean).join(" "),
     comparators: {
       name: (a, b) => a.name.localeCompare(b.name, "ro"),
@@ -134,8 +138,15 @@ export function InternalGeneratorsSection({
     });
   }
 
+  function reactivate(g: InternalGenerator) {
+    reactivateMut.mutate(g.id, {
+      onSuccess: () => notify(strings.common.reactivated, "success"),
+      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
   return (
-    <section className="mt-10">
+    <section id="generatori-interni" className="mt-10 scroll-mt-20">
       <div className="mb-3 flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>
@@ -159,7 +170,9 @@ export function InternalGeneratorsSection({
 
       {!isError && (
         <>
-          <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+          <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+            {activeFilter}
+          </TableToolbar>
           <Table stickyHeader>
             <THead sticky>
               <TR>
@@ -203,7 +216,7 @@ export function InternalGeneratorsSection({
                           <Pencil className="mr-1 h-3.5 w-3.5" />
                           {strings.common.edit}
                         </Button>
-                        {g.active && (
+                        {g.active ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -212,6 +225,11 @@ export function InternalGeneratorsSection({
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
                             {t.deactivate}
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => reactivate(g)}>
+                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.reactivate}
                           </Button>
                         )}
                       </div>

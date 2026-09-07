@@ -43,3 +43,17 @@ export function useDeactivateWorkPoint() {
     onSuccess: () => qc.invalidateQueries({ queryKey: workPointsKey }),
   });
 }
+
+/**
+ * Desface dezactivarea. Vezi `reactivate` din backend: dezactivarea nu șterge nimic, dar până acum
+ * nu se putea lua înapoi — prima greșeală era definitivă.
+ */
+export function useReactivateWorkPoint() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/v1/work-points/${id}/reactivate`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: workPointsKey }),
+  });
+}

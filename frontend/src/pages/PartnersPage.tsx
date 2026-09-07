@@ -1,11 +1,12 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { Ban, Pencil, Plus, Users } from "lucide-react";
+import { Ban, Pencil, Plus, RotateCcw, Users } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   usePartners,
   useCreatePartner,
   useUpdatePartner,
   useDeactivatePartner,
+  useReactivatePartner,
 } from "@/hooks/usePartners";
 import type {
   DriverInput,
@@ -31,6 +32,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { missingLast, useTableView } from "@/hooks/useTableView";
+import { useActiveFilter } from "@/components/ui/active-filter";
 import { fold, formatDate } from "@/lib/utils";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
@@ -76,6 +78,7 @@ export function PartnersPage() {
   const createMut = useCreatePartner();
   const updateMut = useUpdatePartner();
   const deactivateMut = useDeactivatePartner();
+  const reactivateMut = useReactivatePartner();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
@@ -142,7 +145,10 @@ export function PartnersPage() {
    * contează: căutarea peste tot, urmată de filtru, ar arăta un număr de potriviri din care o
    * parte nici nu se vede.
    */
-  const view = useTableView(filteredByRole, {
+  // Rolul restrânge, apoi starea: „furnizori activi" e întrebarea obișnuită, iar cimitirul de
+  // parteneri scoși din uz nu trebuie să stea în calea ei.
+  const { rows: activePartners, control: activeFilter } = useActiveFilter(filteredByRole);
+  const view = useTableView(activePartners, {
     searchText: (p) =>
       [p.name, p.cui, p.authorizationNumber, p.address].filter(Boolean).join(" "),
     comparators: {
@@ -297,6 +303,13 @@ export function PartnersPage() {
     });
   }
 
+  function reactivate(p: Partner) {
+    reactivateMut.mutate(p.id, {
+      onSuccess: () => notify(strings.common.reactivated, "success"),
+      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
   useHotkey("n", openCreate, { enabled: Boolean(canManage) });
@@ -343,7 +356,9 @@ export function PartnersPage() {
 
         {!isError && (
           <>
-            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+              {activeFilter}
+            </TableToolbar>
             <Table stickyHeader>
               <THead sticky>
                 <TR>
@@ -427,7 +442,7 @@ export function PartnersPage() {
                             <Pencil className="mr-1 h-3.5 w-3.5" />
                             {strings.common.edit}
                           </Button>
-                          {p.active && (
+                          {p.active ? (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -436,6 +451,11 @@ export function PartnersPage() {
                             >
                               <Ban className="mr-1 h-3.5 w-3.5" />
                               {t.deactivate}
+                            </Button>
+                          ) : (
+                            <Button variant="ghost" size="sm" onClick={() => reactivate(p)}>
+                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                              {strings.common.reactivate}
                             </Button>
                           )}
                         </div>

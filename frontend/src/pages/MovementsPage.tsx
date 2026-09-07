@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Copy, Plus, Pencil, Trash2, Paperclip, FileText, Scale, Truck } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
@@ -49,6 +49,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
+import { MonthInput, currentMonth, isMonthValue } from "@/components/ui/month-input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
@@ -180,16 +181,31 @@ export function MovementsPage() {
 
   // --- Filters ---
   // Filtrele stau în bara de adrese: se păstrează la navigare și se pot trimite ca link.
-  const [monthFilter, setMonthFilter] = useUrlState("luna"); // "yyyy-MM" sau ""
+  /**
+   * Ecranul pornește **pe luna curentă**, nu pe „tot".
+   *
+   * <p>Fără lună, cererea aducea toate mișcările firmei, oricâte: la doi ani de folosire cu
+   * treizeci de predări pe lună sunt ~700 de rânduri la fiecare deschidere a ecranului, iar
+   * `useTableView` paginează abia **după** ce au venit — deci paginarea nu apăra nimic.
+   *
+   * <p>Luna implicită nu se scrie în adresă (vezi `useUrlState`), deci `/miscari` rămâne un link
+   * curat care înseamnă „luna asta", iar `?luna=2026-03` continuă să însemne o lună anume.
+   */
+  const thisMonth = useMemo(() => currentMonth(), []);
+  const [monthParam, setMonthFilter] = useUrlState("luna", thisMonth);
   const [workPointFilter, setWorkPointFilter] = useUrlState("punct");
+  // O adresă editată cu mâna (`?luna=` sau `?luna=august`) nu golește ecranul și nu-l pune să
+  // aducă tot: cade pe luna curentă, ca `useUrlNumber` pe implicitul lui.
+  const monthFilter = isMonthValue(monthParam) ? monthParam : thisMonth;
 
   const filters: MovementFilters = useMemo(() => {
     const f: MovementFilters = {};
-    if (monthFilter) {
-      const [y, m] = monthFilter.split("-");
-      f.year = Number(y);
-      f.month = Number(m);
-    }
+    // `yyyy-MM` = o lună; `yyyy` = anul întreg. A doua treaptă există pentru căutare: bara
+    // tabelului caută în ce s-a adus, deci fără ea o predare de acum trei luni s-ar găsi numai
+    // nimerind luna ei din prima.
+    const [y, m] = monthFilter.split("-");
+    f.year = Number(y);
+    if (m) f.month = Number(m);
     if (workPointFilter) f.workPointId = workPointFilter;
     return f;
   }, [monthFilter, workPointFilter]);
@@ -243,7 +259,15 @@ export function MovementsPage() {
   // Mișcarea căreia i-a venit cântarul de la destinatar; null = dialogul e închis.
   const [weighing, setWeighing] = useState<WasteMovement | null>(null);
 
-  const hasFilters = Boolean(monthFilter || workPointFilter);
+  // „Șterge filtrele" apare doar când e ceva de șters. Luna curentă nu e un filtru pus de cineva,
+  // e punctul de plecare al ecranului — iar ștergerea o readuce, fiindcă „nicio lună" ar însemna
+  // din nou toate mișcările.
+  const hasFilters = Boolean(monthFilter !== thisMonth || workPointFilter);
+  // O lună anume, nu un an întreg — ce hotărăște dacă golul se explică prin filtru.
+  const isSingleMonth = monthFilter.includes("-");
+  const monthLabel = isSingleMonth
+    ? `${strings.months[Number(monthFilter.slice(5)) - 1]} ${monthFilter.slice(0, 4)}`
+    : monthFilter;
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
 
   /**
@@ -355,12 +379,11 @@ export function MovementsPage() {
       <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="filter-month">{t.filterMonth}</Label>
-          <Input
+          <MonthInput
             id="filter-month"
-            type="month"
             value={monthFilter}
-            onChange={(ev) => setMonthFilter(ev.target.value)}
-            className="w-full sm:w-44"
+            onChange={setMonthFilter}
+            allowWholeYear
           />
         </div>
         <div>
@@ -383,7 +406,7 @@ export function MovementsPage() {
           <Button
             variant="ghost"
             onClick={() => {
-              setMonthFilter("");
+              setMonthFilter(thisMonth);
               setWorkPointFilter("");
             }}
           >
@@ -433,9 +456,35 @@ export function MovementsPage() {
                     columns={canWrite ? 9 : 8}
                     loading={isLoading}
                     icon={Truck}
-                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    title={
+                      view.emptiedBySearch
+                        ? strings.common.noResults
+                        : isSingleMonth
+                          ? t.emptyMonth.replace("{month}", monthLabel)
+                          : t.empty
+                    }
                     description={
-                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                      view.emptiedBySearch
+                        ? strings.common.noResultsHint
+                        : isSingleMonth
+                          ? t.emptyMonthHint
+                          : t.emptyHint
+                    }
+                    /**
+                     * Ieșirea din luna goală. Fără ea, un ecran care pornește pe luna curentă
+                     * arată „nicio mișcare" unui client care are șapte sute — și nimic pe ecran
+                     * n-ar spune că vina e a filtrului, nu a datelor.
+                     */
+                    action={
+                      !view.emptiedBySearch &&
+                      isSingleMonth && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setMonthFilter(monthFilter.slice(0, 4))}
+                        >
+                          {t.showWholeYear.replace("{year}", monthFilter.slice(0, 4))}
+                        </Button>
+                      )
                     }
                   />
                 )}
@@ -905,6 +954,22 @@ function MovementFormDialog({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
+  /**
+   * Garda de la închiderea accidentală.
+   *
+   * <p>Formularul are treizeci de rubrici în opt secțiuni, iar Escape sau un clic pe fundal le
+   * ștergeau pe toate fără o vorbă. E jumătatea cealaltă a defectului reparat la Escape-ul din
+   * combobox — acolo se pierdea tot fiindcă tasta trecea prin listă la dialog; aici se pierdea
+   * tot fiindcă dialogul făcea exact ce i se cerea.
+   *
+   * <p>Se marchează din `onChange`-ul formularului, nu din cele treizeci de `setState`: evenimentul
+   * urcă din orice rubrică nativă — text, select, bifă, chiar și căutarea din combobox — deci o
+   * rubrică adăugată mâine intră singură sub gardă. Cele două căi care **nu** trec prin el (alegerea
+   * unui cod din listă și fișierele lăsate cu mouse-ul peste zonă) marchează pe față, mai jos.
+   */
+  const [dirty, setDirty] = useState(false);
+  const markDirty = useCallback(() => setDirty(true), []);
+  const [confirmClose, closeConfirmation] = useConfirm();
   const formRef = useRef<HTMLFormElement>(null);
   /**
    * Al câtelea fișier se urcă acum. Urcarea e secvențială — și rămâne așa, fiindcă backendul
@@ -1209,6 +1274,25 @@ function MovementFormDialog({
     onClose();
   }
 
+  /**
+   * Închiderea cerută de om — Escape, clic pe fundal, „×" sau „Anulează". Toate patru trec pe
+   * aici, fiindcă toate patru pierd la fel de mult; ce le deosebește e cât de ușor se apasă din
+   * greșeală, nu ce rămâne în urmă. Pe un formular neatins nu întreabă nimic.
+   */
+  function requestClose() {
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    confirmClose({
+      title: strings.common.discardTitle,
+      message: strings.common.discardMessage,
+      confirmLabel: strings.common.discardConfirm,
+      tone: "danger",
+      onConfirm: onClose,
+    });
+  }
+
   function handleDeleteAttachment(attachmentId: string) {
     if (!editing) return;
     deleteAttachmentMut.mutate(
@@ -1224,7 +1308,7 @@ function MovementFormDialog({
     <Dialog
       open
       size="xl"
-      onClose={onClose}
+      onClose={requestClose}
       title={editing ? t.editTitle : duplicateOf ? t.duplicateTitle : t.addTitle}
       busy={isSaving}
       footer={
@@ -1245,7 +1329,7 @@ function MovementFormDialog({
               </div>
             </div>
           )}
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+          <Button variant="outline" onClick={requestClose} disabled={isSaving}>
             {strings.common.cancel}
           </Button>
           <Button type="submit" form="movement-form" loading={isSaving}>
@@ -1254,7 +1338,13 @@ function MovementFormDialog({
         </>
       }
     >
-      <form ref={formRef} id="movement-form" onSubmit={handleSubmit} className="space-y-6">
+      <form
+        ref={formRef}
+        id="movement-form"
+        onSubmit={handleSubmit}
+        onChange={markDirty}
+        className="space-y-6"
+      >
         {Object.keys(errors).length > 0 && (
           <p
             role="alert"
@@ -1324,7 +1414,12 @@ function MovementFormDialog({
             <Combobox
               id="mv-code"
               value={wasteCode}
-              onSelect={setWasteCode}
+              onSelect={(item) => {
+                // Alegerea din listă e un clic pe un rând, nu o schimbare de rubrică: nu urcă
+                // niciun `change` până la formular, deci garda se marchează aici.
+                markDirty();
+                setWasteCode(item);
+              }}
               onQueryChange={setCodeQuery}
               items={codeItems}
               loading={codeSearch.isFetching}
@@ -2042,13 +2137,18 @@ function MovementFormDialog({
             )}
             <FileDropzone
               files={pendingFiles}
-              onChange={setPendingFiles}
+              onChange={(files) => {
+                // Fișierele lăsate cu mouse-ul peste zonă nu trec prin `<input type="file">`.
+                markDirty();
+                setPendingFiles(files);
+              }}
               disabled={isSaving}
               onReject={(message) => notify(message, "error")}
             />
           </div>
         </FormSection>
       </form>
+      {closeConfirmation}
     </Dialog>
   );
 }

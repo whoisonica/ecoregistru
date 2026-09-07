@@ -1,6 +1,6 @@
 # Probe de interfaţă
 
-Şase suite, 99 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
+Şapte suite, 127 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
 
 **De ce există.** Pe 07.09.2026, după şaisprezece felii de UI/UX toate „verzi" — `tsc --noEmit`
 curat, `vite build` verde, cod recitit — prima rulare adevărată a scos **şapte defecte**. Patru
@@ -78,6 +78,8 @@ ramură nu atinge `node_modules`.
 | `5-telefon.mjs` | La 375px: nicio pagină nu se derulează lateral — **inclusiv `/cerere-cont`, probat înainte de autentificare**, fiindcă aşa îl vede prospectul —, banda de trei paşi se stivuieşte, sertarul se deschide din buton şi se închide la navigare şi cu Escape, dialogul urcă de la marginea de jos, grilele de formular sunt pe o coloană. |
 | `6-cerere-si-rapoarte.mjs` | Formularul public: marcajele de obligatoriu, erorile pe rubrici cu derulare la prima greşită, CUI-ul respins cu forma cerută, lista de coduri R/D pliată, pagina de mulţumire cu emailul şi termenul. Inboxul: dialogul citeşte toate rubricile, inclusiv textul liber, iar cele necompletate se **arată** goale. Drumul cap-coadă de la blocajul roşu de pe Panou, prin registrul filtrat, până la mişcarea deschisă. ⚠️ **Scrie o cerere** în baza de dev la fiecare rulare, cu CUI unic; nu curăţă după ea, fiindcă aprobarea ar crea o firmă şi firmele nu se şterg. |
 
+| `7-firma-si-reactivare.mjs` | „Datele firmei" din Setări: cele cinci grupe, rubricile care se tipăresc pe documente, golurile spuse ca goluri, şi cuprinsul paginii cu ţinta fiecărei intrări. Drumul întreg al reactivării: creează un şofer, îl dezactivează prin confirmare, verifică faptul că **iese din listă** şi că filtrul de stare abia acum apare, îl regăseşte prin „Inactive", îl reactivează. Garda formularului de mişcare: neatins se închide direct, atins întreabă, iar Escape peste întrebare închide **doar** întrebarea, cu ce s-a scris neatins. ⚠️ **Lasă în urmă un şofer dezactivat** la fiecare rulare. |
+
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 
 ---
@@ -138,6 +140,14 @@ Trei defecte din runda de 07.09 s-au văzut **numai** deschizând captura, cu to
 verzi: rândul TOTAL AN dispărut, steluţa de lângă cod, şi coloana de acţiuni a inboxului de cereri,
 unde al treilea buton le rupea pe toate pe câte două rânduri. O probă poate măsura că nimic nu
 depăşeşte pe orizontală; nu poate spune că arată prost.
+
+**Încă trei, pe 07.09 târziu**, toate pe cuprinsul lipicios al paginii de Setări, toate cu
+verificările de DOM verzi: `overflow-x-auto` pe `<nav>` decupa şi pe verticală, deci banda care
+acoperă căptuşeala paginii nu se vedea şi pe sub bară trecea o dungă de tabel; coloana de acţiuni a
+tabelelor e şi ea `sticky z-10` şi vine **după** bară în DOM, deci la z egal acoperea jumătatea din
+dreapta; iar poziţia de lipire se numără de la marginea **conţinutului** zonei care se derulează,
+deci pe telefon bara stătea la 128px, nu sub antet. Niciuna nu e o proprietate pe care ştiai s-o
+măsori dinainte — se văd dintr-o privire şi din nimic altceva.
 
 `shots/` (gitignored) există exact pentru asta. **Uită-te la ele** când adaugi ceva vizibil, nu doar
 când cade o probă.

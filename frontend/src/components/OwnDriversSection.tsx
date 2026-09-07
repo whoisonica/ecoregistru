@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { Ban, UserCircle, Pencil, Plus } from "lucide-react";
+import { Ban, UserCircle, Pencil, Plus, RotateCcw } from "lucide-react";
 import {
   useDrivers,
   useCreateDriver,
   useUpdateDriver,
   useDeactivateDriver,
+  useReactivateDriver,
 } from "@/hooks/useDrivers";
 import type { Driver } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -18,6 +19,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
+import { useActiveFilter } from "@/components/ui/active-filter";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -37,6 +39,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   const createMut = useCreateDriver();
   const updateMut = useUpdateDriver();
   const deactivateMut = useDeactivateDriver();
+  const reactivateMut = useReactivateDriver();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
@@ -49,7 +52,8 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   const [vehicleRegistration, setVehicleRegistration] = useState("");
   const [nameError, setNameError] = useState(false);
 
-  const view = useTableView(drivers, {
+  const { rows: visibleDrivers, control: activeFilter } = useActiveFilter(drivers);
+  const view = useTableView(visibleDrivers, {
     searchText: (d) => [d.name, d.identification, d.vehicleRegistration].filter(Boolean).join(" "),
     comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
   });
@@ -121,8 +125,15 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     });
   }
 
+  function reactivate(d: Driver) {
+    reactivateMut.mutate(d.id, {
+      onSuccess: () => notify(strings.common.reactivated, "success"),
+      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
   return (
-    <section className="mt-10">
+    <section id="soferi" className="mt-10 scroll-mt-20">
       <div className="mb-3 flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>
@@ -140,7 +151,9 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
 
       {!isError && (
         <>
-          <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+          <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+            {activeFilter}
+          </TableToolbar>
           <Table stickyHeader>
             <THead sticky>
               <TR>
@@ -184,7 +197,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
                           <Pencil className="mr-1 h-3.5 w-3.5" />
                           {strings.common.edit}
                         </Button>
-                        {d.active && (
+                        {d.active ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -193,6 +206,11 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
                           >
                             <Ban className="mr-1 h-3.5 w-3.5" />
                             {t.deactivate}
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => reactivate(d)}>
+                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.reactivate}
                           </Button>
                         )}
                       </div>

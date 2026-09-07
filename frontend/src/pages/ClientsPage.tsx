@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
+import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
@@ -387,8 +388,11 @@ export function ClientsPage() {
       </section>
 
       {/* Create / edit company */}
+      {/* `xl`, ca formularul de mișcare: al doilea ca mărime din aplicație, ~25 de rubrici, și
+          singurul rămas la 512px după modernizare. */}
       <Dialog
         open={dialogOpen}
+        size="xl"
         onClose={() => setDialogOpen(false)}
         title={editing ? t.editTitle : t.addTitle}
         footer={
@@ -402,197 +406,105 @@ export function ClientsPage() {
           </>
         }
       >
-        <form id="company-form" onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="c-name">{t.name}</Label>
-            <Input
-              id="c-name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (formError === "name") setFormError(false);
-              }}
-              placeholder={t.namePlaceholder}
-              autoFocus
-            />
-            {formError === "name" && (
-              <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
-            )}
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <form id="company-form" onSubmit={handleSubmit} className="space-y-6">
+          <FormSection title={t.groupIdentity}>
             <div>
-              <Label htmlFor="c-cui">{t.cui}</Label>
+              <Label htmlFor="c-name">{t.name}</Label>
               <Input
-                id="c-cui"
-                value={cui}
+                id="c-name"
+                value={name}
                 onChange={(e) => {
-                  setCui(e.target.value);
-                  if (formError === "cui") setFormError(false);
+                  setName(e.target.value);
+                  if (formError === "name") setFormError(false);
                 }}
-                placeholder={t.cuiPlaceholder}
+                placeholder={t.namePlaceholder}
+                autoFocus
               />
-              {formError === "cui" && (
+              {formError === "name" && (
                 <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
               )}
             </div>
-            <div>
-              <Label htmlFor="c-type">{t.type}</Label>
-              <Select
-                id="c-type"
-                value={type}
-                onChange={(e) => setType(e.target.value as CompanyType)}
-              >
-                {COMPANY_TYPES.map((ct) => (
-                  <option key={ct} value={ct}>
-                    {typeLabels[ct]}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-          <div className="rounded-md border border-line bg-surface-muted p-3">
-            <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
-            <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>
-            <div className="mt-2 space-y-2">
-              {AFM_CONTRIBUTIONS.map((contribution) => (
-                <label key={contribution} className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
-                    checked={afmContributions.includes(contribution)}
-                    onChange={() =>
-                      setAfmContributions((prev) =>
-                        prev.includes(contribution)
-                          ? prev.filter((x) => x !== contribution)
-                          : [...prev, contribution]
-                      )
-                    }
-                  />
-                  <span>
-                    <span className="font-medium text-content-strong">
-                      {strings.enums.afmContribution[contribution]}
-                    </span>
-                    <span className="block text-xs text-content-muted">
-                      {strings.enums.afmContribution[`${contribution}_HINT`]}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-            {afmContributions.length === 0 && (
-              <label className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-sm text-content-strong">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
-                  checked={afmObligation}
-                  onChange={(e) => setAfmObligation(e.target.checked)}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-cui">{t.cui}</Label>
+                <Input
+                  id="c-cui"
+                  value={cui}
+                  onChange={(e) => {
+                    setCui(e.target.value);
+                    if (formError === "cui") setFormError(false);
+                  }}
+                  placeholder={t.cuiPlaceholder}
                 />
-                {t.afmLabel}
-              </label>
-            )}
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
-              <Input
-                id="c-auth-number"
-                value={environmentalAuthNumber}
-                onChange={(e) => setEnvironmentalAuthNumber(e.target.value)}
-              />
+                {formError === "cui" && (
+                  <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="c-reg">{strings.settings.company.tradeRegisterNumber}</Label>
+                <Input
+                  id="c-reg"
+                  value={tradeRegisterNumber}
+                  onChange={(e) => setTradeRegisterNumber(e.target.value)}
+                  placeholder={strings.partners.tradeRegisterNumberPlaceholder}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-type">{t.type}</Label>
+                <Select
+                  id="c-type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as CompanyType)}
+                >
+                  {COMPANY_TYPES.map((ct) => (
+                    <option key={ct} value={ct}>
+                      {typeLabels[ct]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="c-caen">{t.caenCode}</Label>
+                <Input
+                  id="c-caen"
+                  value={caenCode}
+                  onChange={(e) => setCaenCode(e.target.value)}
+                  placeholder={t.caenCodePlaceholder}
+                />
+                <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
+              </div>
             </div>
             <div>
-              <Label htmlFor="c-auth-expiry">{t.environmentalAuthExpiry}</Label>
-              <DateInput
-                id="c-auth-expiry"
-                value={environmentalAuthExpiry}
-                onChange={(e) => setEnvironmentalAuthExpiry(e.target.value)}
-              />
+              <Label htmlFor="c-address">{t.address}</Label>
+              <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="c-address">{t.address}</Label>
-            <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="c-contact-name">{t.contactName}</Label>
-              <Input
-                id="c-contact-name"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="c-contact-phone">{t.contactPhone}</Label>
-              <Input
-                id="c-contact-phone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-              />
-            </div>
-          </div>
-          {/* The two rubrics the annual declaration's header and signature block need. */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="c-caen">{t.caenCode}</Label>
-              <Input
-                id="c-caen"
-                value={caenCode}
-                onChange={(e) => setCaenCode(e.target.value)}
-                placeholder={t.caenCodePlaceholder}
-              />
-              <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
-            </div>
-            <div>
-              <Label htmlFor="c-a3unit">{t.anexa3Unit}</Label>
-              <Select
-                id="c-a3unit"
-                value={anexa3Unit}
-                onChange={(e) => setAnexa3Unit(e.target.value as "" | Unit)}
-              >
-                <option value="">{t.anexa3UnitAsRecorded}</option>
-                <option value="KG">{t.anexa3UnitKg}</option>
-                <option value="TONS">{t.anexa3UnitTons}</option>
-              </Select>
-              <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
-              <Select
-                id="c-pkg-role"
-                value={packagingOperatorRole}
-                onChange={(e) =>
-                  setPackagingOperatorRole(e.target.value as "" | PackagingOperatorRole)
-                }
-              >
-                <option value="">{strings.packagingOperatorRole.none}</option>
-                <option value="COLECTOR">{strings.packagingOperatorRole.COLECTOR}</option>
-                <option value="COMERCIANT">{strings.packagingOperatorRole.COMERCIANT}</option>
-                <option value="RECICLATOR">{strings.packagingOperatorRole.RECICLATOR}</option>
-                <option value="VALORIFICATOR">
-                  {strings.packagingOperatorRole.VALORIFICATOR}
-                </option>
-              </Select>
-              <p className="mt-1 text-xs text-content-muted">{strings.packagingOperatorRole.hint}</p>
-            </div>
-            <div>
-              <Label htmlFor="c-contact-role">{t.contactRole}</Label>
-              <Input
-                id="c-contact-role"
-                value={contactRole}
-                onChange={(e) => setContactRole(e.target.value)}
-                placeholder={t.contactRolePlaceholder}
-              />
-              <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
-            </div>
-          </div>
+          </FormSection>
 
-          {/* Persoana desemnată cu gestiunea deșeurilor — bloc separat, fiindcă e altceva decât
-              persoana de contact de mai sus și se confundă ușor cu ea. */}
-          <div className="rounded-lg border border-line p-3">
-            <p className="text-sm font-semibold text-content-strong">{t.wasteManagerTitle}</p>
-            <p className="mt-1 text-xs text-content-muted">{t.wasteManagerHint}</p>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <FormSection title={t.groupAuthorization}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
+                <Input
+                  id="c-auth-number"
+                  value={environmentalAuthNumber}
+                  onChange={(e) => setEnvironmentalAuthNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-auth-expiry">{t.environmentalAuthExpiry}</Label>
+                <DateInput
+                  id="c-auth-expiry"
+                  value={environmentalAuthExpiry}
+                  onChange={(e) => setEnvironmentalAuthExpiry(e.target.value)}
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          {/* Persoana desemnată cu gestiunea deșeurilor — secțiune separată, fiindcă e altceva
+              decât persoana de contact de mai jos și se confundă ușor cu ea. */}
+          <FormSection title={t.groupWasteManager} description={t.wasteManagerHint}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
                 <Input
@@ -636,39 +548,135 @@ export function ClientsPage() {
                 <p className="mt-1 text-xs text-content-muted">{t.wasteManagerTrainingHint}</p>
               </div>
             </div>
-          </div>
+          </FormSection>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="c-reg">{strings.partners.tradeRegisterNumber}</Label>
-              <Input
-                id="c-reg"
-                value={tradeRegisterNumber}
-                onChange={(e) => setTradeRegisterNumber(e.target.value)}
-                placeholder={strings.partners.tradeRegisterNumberPlaceholder}
-              />
+          <FormSection title={t.groupReporting}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-anexa3-series">{t.anexa3Series}</Label>
+                <Input
+                  id="c-anexa3-series"
+                  value={anexa3Series}
+                  onChange={(e) => setAnexa3Series(e.target.value)}
+                  placeholder={t.anexa3SeriesPlaceholder}
+                />
+                <p className="mt-1 text-xs text-content-muted">{t.anexa3SeriesHint}</p>
+              </div>
+              <div>
+                <Label htmlFor="c-a3unit">{t.anexa3Unit}</Label>
+                <Select
+                  id="c-a3unit"
+                  value={anexa3Unit}
+                  onChange={(e) => setAnexa3Unit(e.target.value as "" | Unit)}
+                >
+                  <option value="">{t.anexa3UnitAsRecorded}</option>
+                  <option value="KG">{t.anexa3UnitKg}</option>
+                  <option value="TONS">{t.anexa3UnitTons}</option>
+                </Select>
+                <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
+              </div>
             </div>
             <div>
-              <Label htmlFor="c-anexa3-series">{t.anexa3Series}</Label>
-              <Input
-                id="c-anexa3-series"
-                value={anexa3Series}
-                onChange={(e) => setAnexa3Series(e.target.value)}
-                placeholder={t.anexa3SeriesPlaceholder}
-              />
-              <p className="mt-1 text-xs text-content-muted">{t.anexa3SeriesHint}</p>
+              <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
+              <Select
+                id="c-pkg-role"
+                value={packagingOperatorRole}
+                onChange={(e) =>
+                  setPackagingOperatorRole(e.target.value as "" | PackagingOperatorRole)
+                }
+              >
+                <option value="">{strings.packagingOperatorRole.none}</option>
+                <option value="COLECTOR">{strings.packagingOperatorRole.COLECTOR}</option>
+                <option value="COMERCIANT">{strings.packagingOperatorRole.COMERCIANT}</option>
+                <option value="RECICLATOR">{strings.packagingOperatorRole.RECICLATOR}</option>
+                <option value="VALORIFICATOR">
+                  {strings.packagingOperatorRole.VALORIFICATOR}
+                </option>
+              </Select>
+              <p className="mt-1 text-xs text-content-muted">{strings.packagingOperatorRole.hint}</p>
             </div>
-          </div>
+            <div className="rounded-md border border-line bg-surface-muted p-3">
+              <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
+              <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>
+              <div className="mt-2 space-y-2">
+                {AFM_CONTRIBUTIONS.map((contribution) => (
+                  <label key={contribution} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                      checked={afmContributions.includes(contribution)}
+                      onChange={() =>
+                        setAfmContributions((prev) =>
+                          prev.includes(contribution)
+                            ? prev.filter((x) => x !== contribution)
+                            : [...prev, contribution]
+                        )
+                      }
+                    />
+                    <span>
+                      <span className="font-medium text-content-strong">
+                        {strings.enums.afmContribution[contribution]}
+                      </span>
+                      <span className="block text-xs text-content-muted">
+                        {strings.enums.afmContribution[`${contribution}_HINT`]}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {afmContributions.length === 0 && (
+                <label className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-sm text-content-strong">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                    checked={afmObligation}
+                    onChange={(e) => setAfmObligation(e.target.checked)}
+                  />
+                  {t.afmLabel}
+                </label>
+              )}
+            </div>
+          </FormSection>
 
-          <div>
-            <Label htmlFor="c-contact-email">{t.contactEmail}</Label>
-            <Input
-              id="c-contact-email"
-              type="email"
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-            />
-          </div>
+          <FormSection title={t.groupContact}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-contact-name">{t.contactName}</Label>
+                <Input
+                  id="c-contact-name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-contact-role">{t.contactRole}</Label>
+                <Input
+                  id="c-contact-role"
+                  value={contactRole}
+                  onChange={(e) => setContactRole(e.target.value)}
+                  placeholder={t.contactRolePlaceholder}
+                />
+                <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
+              </div>
+              <div>
+                <Label htmlFor="c-contact-email">{t.contactEmail}</Label>
+                <Input
+                  id="c-contact-email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-contact-phone">{t.contactPhone}</Label>
+                <Input
+                  id="c-contact-phone"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                />
+              </div>
+            </div>
+          </FormSection>
 
           <CompanyProfileFields value={profile} onChange={setProfile} companyType={type} />
         </form>
