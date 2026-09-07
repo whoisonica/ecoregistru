@@ -135,14 +135,20 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Five suites, 55 checks:
+download — against the local dev server and a backend on the `dev` profile. Five suites, 58 checks:
 every screen opens clean, the action column stays reachable when a table scrolls, search and sort
-and the URL filters do what they claim, the movement form marks the fields it rejects, and nothing
-scrolls sideways at 375px.
+and the URL filters do what they claim, the movement form marks the fields it rejects, Escape
+inside the waste-code picker closes the list and not the whole form, and nothing scrolls sideways
+at 375px.
 
 They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
-`vite build`, the first real run found **seven defects** — four of them needed a button pressed. See
-`frontend/e2e/README.md`.
+`vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
+review the same day found three more, in the primitives rather than the screens, so they reached
+every screen at once. See `frontend/e2e/README.md`, which also records what the suite **cannot**
+cover: the demo seed has no rows in the "value missing" states the screens have rules for.
+
+`E2E_CHANNEL=msedge` picks Edge; an empty `E2E_CHANNEL` falls back to Playwright's own Chromium,
+for a machine with no Chromium-family browser at all.
 
 ## What is not in this repository
 

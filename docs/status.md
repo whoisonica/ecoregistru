@@ -22,11 +22,12 @@ rulează local și are testele verzi.
 > **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
 > produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
-> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (21 de commituri, împinsă pe
-> `origin`) duce cele șaisprezece puncte de UI/UX plus șapte defecte găsite probând aplicația în
-> browser. **Backendul n-a fost atins**, deci cifrele de mai sus rămân valabile. ⚠️ **Nu e
-> deployată:** merge-ul în `main` și push-ul pe repo-urile split se fac după ce interfața e privită
-> cu ochiul.
+> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (28 de commituri, împinsă pe
+> `origin`) duce cele șaisprezece puncte de UI/UX, șapte defecte găsite probând aplicația în
+> browser, suita care le-a găsit (`frontend/e2e/`, **58 de verificări verzi**) și încă trei defecte
+> găsite recitind ramura — de data asta în primitive, deci pe toate ecranele deodată.
+> **Backendul n-a fost atins**, deci cifrele de mai sus rămân valabile. ⚠️ **Nu e deployată:**
+> merge-ul în `main` și push-ul pe repo-urile split se fac după ce interfața e privită cu ochiul.
 >
 > **Adăugat 07.09.2026 — materialul privat.** Ce ținea `.gitignore` afară nu era salvat nicăieri.
 > E acum în `whoisonica/ecoregistru-docs`, repo **privat**. Vezi „Ce nu se commite" din
@@ -3016,7 +3017,51 @@ consistent cu el însuşi, nu că face ce trebuie.
 
 **Suita a rămas în afara repo-ului**, în directorul temporar al sesiunii: patru fişiere `.mjs` şi
 `playwright-core`. Adăugarea unui cadru de teste în proiect e o decizie proprie, nu una de luat din
-mers.
+mers. *(Decisă în aceeaşi zi, câteva ore mai târziu: suita e acum `frontend/e2e/`.)*
+
+#### Recitirea ramurii — trei defecte, toate în primitive (07.09.2026)
+
+Ramura recitită de la capăt, cu `tsc`, `vite build` şi suita rulate pe ea. Cele şapte de mai sus
+erau fiecare într-un ecran; **astea trei sunt în primitivele pe care le folosesc toate**, deci
+ajungeau pe toate ecranele deodată.
+
+1. **`Dialog` îşi fura singur focusul.** Ascultătorul de taste avea `[open, onClose, busy]` în
+   dependenţe, iar cleanup-ul aceluiaşi efect e cel care dă focusul înapoi elementului de dinaintea
+   deschiderii. Cum `onClose` e scris inline la 11 din 13 apelanţi şi `busy` comută la fiecare
+   salvare, cleanup-ul rula **cu dialogul încă deschis**: apăsai Salvează şi focusul sărea pe
+   butonul din spatele lui. Pe o salvare respinsă de server formularul rămânea deschis cu focusul
+   afară, iar capcana de Tab nu-l mai aducea înapoi — ea prinde doar Shift+Tab din exterior.
+   Reparat rupând efectul în două: scrollul blocat şi focusul redat atârnă acum numai de `open`,
+   iar handlerul citeşte `onClose`/`busy` dintr-un ref, ca în `useHotkey`.
+2. **Escape în comboboxul de cod închidea tot formularul.** Comboboxul apela `preventDefault()`,
+   care nu opreşte propagarea, iar `Dialog` ascultă Escape pe `document`. Deci manevra adăugată
+   dinadins la felia de tastatură nu funcţiona exact în singurul loc unde contează: apăsai Escape
+   ca să scapi de lista de coduri şi pierdeai tot ce scrisesei în cele opt secţiuni. Reparat cu
+   `stopPropagation()`, plus o gardă pe `defaultPrevented` în `Dialog` pentru straturile viitoare.
+   **Proba a fost scrisă întâi şi verificată că pică fără reparaţie** — `{lista: false, dialog:
+   false}` înainte, `{lista: false, dialog: true}` după.
+3. **Sortarea descrescătoare aducea la vârf exact rândurile puse dinadins la coadă.** Trei
+   comparatoare scriau `return 1` pentru rândul fără valoare — cantitatea „De cântărit" pe Mişcări
+   şi în registrul de predări, autorizaţia fără dată pe Parteneri — iar `useTableView` aplica
+   direcţia cu `reverse()` peste rezultatul lor. Deci a doua apăsare pe „Cantitate" scotea în capul
+   listei toate mişcările necântărite, cu trei comentarii în cod care scriau că stau la coadă în
+   ambele sensuri. Reparat cu `missingLast()` în hook, iar direcţia se aplică negând comparatorul:
+   `reverse()` inversa în plus şi ordinea rândurilor egale între ele, adică ordinea de la server.
+
+**De ce n-a prins suita al treilea.** Fiindcă n-are pe ce: seed-ul de demo are **zero** din 34 de
+mişcări fără cantitate şi **zero** din 5 parteneri fără dată de autorizaţie. Verificarea scrisă
+pentru regulă a fost scoasă, nu lăsată să treacă pe gol — garda ei a raportat „0 rânduri fără
+cantitate". 🟡 **De completat seed-ul** cu stările pentru care ecranele au reguli proprii (o mişcare
+cu `weighed_at_unloading`, un partener fără expirare, o ieşire fără cod R/D); atinge backendul, deci
+n-a intrat în ramura de interfaţă.
+
+**Două lucruri ţineau de unealtă, nu de aplicaţie.** `channel: "chrome"` era scris în `lib.mjs`, iar
+maşina pe care s-a făcut recitirea n-are niciun browser din familia Chromium — doar Safari. Suita nu
+putea porni deloc acolo. Acum browserul se alege prin `E2E_CHANNEL`, implicit tot `chrome`, cu
+Chromium-ul lui Playwright ca ieşire de rezervă. Iar `playwright-core` era în manifest dar nu în
+`node_modules`: un checkout de ramură nu atinge dependenţele.
+
+**Suită: 58 de verificări, toate verzi** (55 înainte). `tsc --noEmit` curat, `vite build` verde.
 
 
 ## Ce urmează — plan revizuit (22.08.2026)
