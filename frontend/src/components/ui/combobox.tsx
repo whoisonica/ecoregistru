@@ -154,7 +154,13 @@ export function Combobox({
         if (activeIndex >= 0 && items[activeIndex]) choose(items[activeIndex]);
         break;
       case "Escape":
+        // `stopPropagation` neapărat, nu doar `preventDefault`: `Dialog` ascultă Escape pe
+        // `document`, iar comboboxul ăsta alege codul de deșeu într-un formular care stă chiar
+        // într-un dialog. Fără asta, Escape apăsat ca să se închidă lista închidea tot formularul,
+        // cu tot ce era scris în el — adică manevra adăugată aici nu funcționa exact în singurul
+        // loc unde contează.
         e.preventDefault();
+        e.stopPropagation();
         close();
         break;
       case "Tab":

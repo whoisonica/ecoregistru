@@ -62,7 +62,7 @@ import {
   TableToolbar,
 } from "@/components/ui/table-toolbar";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
-import { useTableView } from "@/hooks/useTableView";
+import { missingLast, useTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
@@ -227,11 +227,10 @@ export function MovementsPage() {
       wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
       // Cantitatea lipsă („de cântărit") stă la coadă în ambele sensuri: nu e nici mică, nici
       // mare, e nespusă, și n-are ce căuta amestecată printre cifre.
-      quantity: (a, b) => {
-        if (a.quantity == null) return 1;
-        if (b.quantity == null) return -1;
-        return a.quantity - b.quantity;
-      },
+      quantity: missingLast(
+        (m) => m.quantity,
+        (x, y) => x - y
+      ),
       partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
       workPointName: (a, b) => a.workPointName.localeCompare(b.workPointName, "ro"),
     },

@@ -55,6 +55,12 @@ const iso = dates.filter((d) => /^\d{2}\.\d{2}\.\d{4}$/.test(d)).map((d) => d.sp
 const ascending = iso.every((d, i) => i === 0 || iso[i - 1] <= d);
 check("rândurile chiar sunt sortate crescător", ascending, iso.slice(0, 3).join(" , "));
 
+// NEACOPERIT, şi dinadins: „De cântărit" trebuie să stea la coadă **în ambele sensuri** ale
+// sortării pe cantitate (la fel autorizaţia fără dată, pe Parteneri). Regula s-a stricat şi s-a
+// reparat pe 07.09.2026, dar nicio probă n-o poate prinde aici: seed-ul de demo n-are niciun rând
+// fără cantitate şi niciun partener fără dată de expirare — zero din 34, respectiv zero din 5.
+// Ca să existe proba, trebuie întâi ca seed-ul să conţină stările pentru care ecranul are reguli.
+
 // ---------------------------------------------------------------- PAGINARE
 const pageInfo = await page.textContent("section");
 check("paginarea arată intervalul", /\d+–\d+ din \d+/.test(pageInfo), (pageInfo.match(/\d+–\d+ din \d+/) || [""])[0]);

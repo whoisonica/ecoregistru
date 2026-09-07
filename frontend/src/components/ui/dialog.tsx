@@ -70,14 +70,47 @@ export function Dialog({
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const descId = useId();
+  /**
+   * Ce citește ascultătorul de taste, fără să atârne de identitatea lor.
+   *
+   * <p>`onClose` e o funcție scrisă inline la aproape toți apelanții, iar `busy` comută la fiecare
+   * salvare — deci amândouă se schimbă des. Ținute în dependențele efectului, îl reporneau; ținute
+   * aici, ascultătorul se pune o dată, la deschidere. Același tipar ca în `useHotkey`.
+   */
+  const latest = useRef({ onClose, busy });
+  latest.current = { onClose, busy };
 
+  /**
+   * Scrollul blocat și focusul redat — legate **numai** de deschidere.
+   *
+   * <p>Stăteau în același efect cu ascultătorul de taste, care depindea de `onClose` și de `busy`.
+   * Deci cleanup-ul lui — cel care dă focusul înapoi elementului de dinaintea deschiderii — rula
+   * la fiecare schimbare a lor, **cu dialogul încă deschis**: apăsai Salvează și focusul sărea pe
+   * butonul din spatele dialogului. Pe o salvare respinsă de server, formularul rămânea deschis cu
+   * focusul afară, iar capcana de Tab nu-l mai aducea înapoi.
+   */
   useEffect(() => {
     if (!open) return;
     returnFocusRef.current = document.activeElement as HTMLElement | null;
+    // Pagina de dedesubt nu se mai derulează cât timp dialogul e deschis: altfel rotița mouse-ului
+    // pe fundal mișcă lista, iar dialogul pare că plutește peste altceva decât ce ai lăsat.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus?.();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
 
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (!busy) onClose();
+        // Un strat dinăuntru s-a ocupat deja de Escape — lista comboboxului, de pildă. El se
+        // închide, dialogul din jurul lui rămâne deschis.
+        if (e.defaultPrevented) return;
+        if (!latest.current.busy) latest.current.onClose();
         return;
       }
       if (e.key !== "Tab") return;
@@ -104,17 +137,8 @@ export function Dialog({
     }
 
     document.addEventListener("keydown", onKey);
-    // Pagina de dedesubt nu se mai derulează cât timp dialogul e deschis: altfel rotița mouse-ului
-    // pe fundal mișcă lista, iar dialogul pare că plutește peste altceva decât ce ai lăsat.
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
-      returnFocusRef.current?.focus?.();
-    };
-  }, [open, onClose, busy]);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
 
   // Focusul inițial, dar numai dacă nu l-a luat deja cineva dinăuntru: câteva formulare pun
   // `autoFocus` pe primul câmp, și acela e răspunsul mai bun decât panoul însuși.

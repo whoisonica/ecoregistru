@@ -9,7 +9,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
-import { useTableView } from "@/hooks/useTableView";
+import { missingLast, useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 
 const t = strings.evidences;
@@ -51,11 +51,11 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
     comparators: {
       date: (a, b) => a.date.localeCompare(b.date),
       wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
-      quantity: (a, b) => {
-        if (a.quantity == null) return 1;
-        if (b.quantity == null) return -1;
-        return a.quantity - b.quantity;
-      },
+      // „De cântărit" stă la coadă în ambele sensuri, ca pe Mișcări: e o cantitate nespusă.
+      quantity: missingLast(
+        (a) => a.quantity,
+        (x, y) => x - y
+      ),
       partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
     },
     initialSort: { key: "date", direction: "desc" },

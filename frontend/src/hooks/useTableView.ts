@@ -18,6 +18,41 @@ export interface SortState {
   direction: SortDirection;
 }
 
+/**
+ * Comparator de coloană. Primeşte şi direcţia, pentru rândurile care trebuie să stea la coadă
+ * indiferent de ea — vezi {@link missingLast}.
+ */
+export type Comparator<T> = (a: T, b: T, direction: SortDirection) => number;
+
+/**
+ * Un comparator peste o valoare care poate lipsi, cu lipsa mereu la coadă — **în ambele sensuri**.
+ *
+ * <p>„De cântărit" nu e nici cea mai mică, nici cea mai mare cantitate: e nespusă, şi n-are ce
+ * căuta printre cifre la niciun capăt. La fel autorizaţia fără dată: „nu se ştie" nu e nici
+ * devreme, nici târziu.
+ *
+ * <p>Trei comparatoare scriau regula asta de mână, cu `return 1` pentru rândul fără valoare — şi
+ * o rateau, fiindcă direcţia se aplică peste rezultatul lor: la a doua apăsare pe coloană,
+ * rândurile puse dinadins la coadă ajungeau tocmai la vârf. Aici semnul se întoarce odată cu
+ * direcţia, deci după ce hook-ul îl neagă, lipsa e din nou la coadă.
+ *
+ * <p>Două lipsuri sunt egale între ele: altfel `compare(a,b)` şi `compare(b,a)` ar fi amândouă
+ * pozitive, ceea ce nu e un comparator valid.
+ */
+export function missingLast<T, V>(
+  get: (row: T) => V | null | undefined,
+  compare: (a: V, b: V) => number
+): Comparator<T> {
+  return (a, b, direction) => {
+    const x = get(a);
+    const y = get(b);
+    if (x == null && y == null) return 0;
+    if (x == null) return direction === "desc" ? -1 : 1;
+    if (y == null) return direction === "desc" ? 1 : -1;
+    return compare(x, y);
+  };
+}
+
 interface TableViewOptions<T> {
   /**
    * Textul în care caută caseta de căutare, pentru un rând. Se compune din coloanele pe care
@@ -26,7 +61,7 @@ interface TableViewOptions<T> {
    */
   searchText?: (row: T) => string;
   /** Comparatoare pe cheie de coloană. Cheia care lipsește de aici nu e sortabilă. */
-  comparators?: Record<string, (a: T, b: T) => number>;
+  comparators?: Record<string, Comparator<T>>;
   initialSort?: SortState;
   /** 0 = fără paginare. */
   pageSize?: number;
@@ -106,12 +141,21 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): T
     });
   }, [rows, query, searchText]);
 
+  /**
+   * Direcţia se aplică **negând comparatorul**, nu întorcând tabloul.
+   *
+   * <p>`reverse()` părea acelaşi lucru şi nu era, din două motive. Întâi, inversa şi ordinea
+   * rândurilor egale între ele — adică tocmai ordinea gândită de server, pe care sortarea stabilă
+   * o păstrează dinadins. Apoi, şi mai rău, muta la vârf rândurile pe care un comparator le
+   * pusese dinadins la coadă: „De cântărit" şi autorizaţia fără dată ajungeau primele la a doua
+   * apăsare pe coloană, deşi trei comentarii scriau că stau la coadă în ambele sensuri.
+   */
   const sorted = useMemo(() => {
     if (!sort || !comparators?.[sort.key]) return filtered;
     const compare = comparators[sort.key];
+    const sign = sort.direction === "desc" ? -1 : 1;
     // Copie: `Array.prototype.sort` lucrează pe loc, iar `filtered` poate fi chiar `rows`.
-    const out = [...filtered].sort(compare);
-    return sort.direction === "desc" ? out.reverse() : out;
+    return [...filtered].sort((a, b) => sign * compare(a, b, sort.direction));
   }, [filtered, sort, comparators]);
 
   const pageCount = pageSize > 0 ? Math.max(1, Math.ceil(sorted.length / pageSize)) : 1;

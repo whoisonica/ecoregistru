@@ -30,7 +30,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
-import { useTableView } from "@/hooks/useTableView";
+import { missingLast, useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -142,12 +142,12 @@ export function PartnersPage() {
     comparators: {
       name: (a, b) => a.name.localeCompare(b.name, "ro"),
       cui: (a, b) => (a.cui ?? "").localeCompare(b.cui ?? "", "ro"),
-      // Autorizația fără dată stă la coadă: „nu se știe" nu e nici devreme, nici târziu.
-      authorizationExpiry: (a, b) => {
-        if (!a.authorizationExpiry) return 1;
-        if (!b.authorizationExpiry) return -1;
-        return a.authorizationExpiry.localeCompare(b.authorizationExpiry);
-      },
+      // Autorizația fără dată stă la coadă, în ambele sensuri: „nu se știe" nu e nici devreme,
+      // nici târziu. `|| null` păstrează înțelesul de dinainte, în care și șirul gol e o lipsă.
+      authorizationExpiry: missingLast(
+        (p) => p.authorizationExpiry || null,
+        (x, y) => x.localeCompare(y)
+      ),
     },
     initialSort: { key: "name", direction: "asc" },
   });

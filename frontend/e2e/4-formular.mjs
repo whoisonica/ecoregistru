@@ -27,6 +27,22 @@ check("dialogul e mai lat de 512px", dlgWidth > 560, dlgWidth + "px");
 const effectBefore = await page.textContent('div[role="dialog"]');
 check("banda cere codul întâi", effectBefore.includes("Alege codul de deșeu"), "");
 
+// ------------------------------------------------------------ ESCAPE ÎN COMBOBOX
+// Escape apăsat ca să se închidă lista de coduri închidea **tot formularul**: `Dialog` ascultă
+// Escape pe `document`, iar comboboxul doar apela `preventDefault`, care nu opreşte propagarea.
+// Adică tot ce era scris în cele opt secţiuni se pierdea la o apăsare de tastă.
+await page.click("#mv-code");
+await page.waitForTimeout(300);
+check("comboboxul se deschide", await page.$('[role="listbox"]') !== null);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(350);
+const afterEscape = await page.evaluate(() => ({
+  lista: !!document.querySelector('[role="listbox"]'),
+  dialog: !!document.querySelector('div[role="dialog"][aria-modal="true"]'),
+}));
+check("Escape închide doar lista", afterEscape.lista === false, JSON.stringify(afterEscape));
+check("formularul rămâne deschis", afterEscape.dialog === true, JSON.stringify(afterEscape));
+
 // ------------------------------------------------------------ VALIDARE PE RUBRICI
 await page.click('button[type="submit"][form="movement-form"]');
 await page.waitForTimeout(600);
