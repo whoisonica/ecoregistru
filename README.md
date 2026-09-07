@@ -132,6 +132,16 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ---
 
+## What is not in this repository
+
+This repo is public. The working notes, the commercial planning, and the **reference corpus** — ten
+completed Anexa 1 sheets received from real clients — live in a separate private repository, because
+they name companies and quote from their filings. Several rules in this codebase are derived from
+that corpus; where that is the case, the code comment cites **how many sheets support the rule**
+rather than which ones.
+
+If a comment refers to something you cannot find, that is why — not because it went missing.
+
 ## Running it locally
 
 **Requirements:** Java 21 (Temurin is fine), Node 20+, PostgreSQL 15+ (developed on 17).
