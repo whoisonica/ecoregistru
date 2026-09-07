@@ -9,7 +9,7 @@ import {
 import { downloadAuditFile } from "@/hooks/useAuditFile";
 import { useEvidences } from "@/hooks/useEvidences";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
-import { apiErrorMessage } from "@/lib/api";
+import { apiBlobErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ export function AuditFilePage() {
     try {
       await downloadAuditFile(year, years);
     } catch (err) {
-      notify(apiErrorMessage(err, t.downloadError), "error");
+      notify(await apiBlobErrorMessage(err, t.downloadError), "error");
     } finally {
       setDownloading(false);
     }

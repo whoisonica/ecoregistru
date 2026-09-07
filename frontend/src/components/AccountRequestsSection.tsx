@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Check, Inbox, X } from "lucide-react";
 import {
   useAccountRequests,
@@ -15,6 +16,11 @@ import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { formatDate } from "@/lib/utils";
 
 const t = strings.accountRequest;
 const typeLabels = strings.enums.companyType;
@@ -24,10 +30,6 @@ function StatusBadge({ request }: { request: AccountRequest }) {
   if (request.status === "APPROVED") return <Badge variant="success">{t.status.APPROVED}</Badge>;
   if (request.status === "REJECTED") return <Badge variant="muted">{t.status.REJECTED}</Badge>;
   return <Badge variant="warning">{t.status.NEW}</Badge>;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ro-RO");
 }
 
 /**
@@ -45,21 +47,54 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
   const { notify } = useToast();
 
   const busy = approveMut.isPending || rejectMut.isPending;
+  const [confirm, confirmDialog] = useConfirm();
+  // Cererea pe cale de a fi respinsă, cu motivul care se scrie. `null` = dialogul e închis.
+  const [rejecting, setRejecting] = useState<AccountRequest | null>(null);
+  const [reason, setReason] = useState("");
 
+  /**
+   * Aprobarea creează o firmă reală și nu se poate desface: nu există ștergere de firmă, iar
+   * cererea rămâne pe veci ca urmă de hârtie. Ștergerea unei mișcări întreabă de mult, cu
+   * identitatea rândului în întrebare; asta nu întreba nimic, deși e fapta cu urmări mai mari.
+   */
   function handleApprove(r: AccountRequest) {
-    approveMut.mutate(r.id, {
-      onSuccess: () => notify(t.approved, "success"),
-      onError: (err) => notify(apiErrorMessage(err, t.actionError), "error"),
+    confirm({
+      title: t.confirmApproveTitle,
+      message: (
+        <>
+          <strong className="text-content">{r.companyName}</strong>
+          {r.cui ? ` — CUI ${r.cui}` : ""}. {t.confirmApprove}
+        </>
+      ),
+      confirmLabel: t.approve,
+      onConfirm: () =>
+        approveMut.mutate(r.id, {
+          onSuccess: () => notify(t.approved, "success"),
+          onError: (err) => notify(apiErrorMessage(err, t.actionError), "error"),
+        }),
     });
   }
 
-  function handleReject(r: AccountRequest) {
-    const reason = window.prompt(t.rejectPrompt);
-    if (reason === null) return;
+  function openReject(r: AccountRequest) {
+    setRejecting(r);
+    setReason("");
+  }
+
+  /**
+   * Respingerea cerea motivul printr-un `window.prompt` — ultimul dialog nativ rămas, după ce cele
+   * cinci `window.confirm` au fost înlocuite. Butoane în limba sistemului de operare, pe ecranul
+   * administratorului de platformă, și fără nicio cale de a spune **care** cerere se respinge.
+   * În plus, un motiv gol trecea: `null` era singura ieșire verificată.
+   */
+  function submitReject() {
+    if (!rejecting || !reason.trim()) return;
     rejectMut.mutate(
-      { id: r.id, reason },
+      { id: rejecting.id, reason: reason.trim() },
       {
-        onSuccess: () => notify(t.rejected, "success"),
+        onSuccess: () => {
+          notify(t.rejected, "success");
+          setRejecting(null);
+        },
         onError: (err) => notify(apiErrorMessage(err, t.actionError), "error"),
       }
     );
@@ -170,7 +205,7 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                             size="sm"
                             className="text-red-600 hover:bg-red-50"
                             disabled={busy}
-                            onClick={() => handleReject(r)}
+                            onClick={() => openReject(r)}
                           >
                             <X className="mr-1 h-3.5 w-3.5" />
                             {t.reject}
@@ -186,6 +221,45 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
           </>
         )}
       </div>
+
+      <Dialog
+        open={rejecting !== null}
+        onClose={() => setRejecting(null)}
+        title={t.rejectTitle}
+        description={rejecting ? `${rejecting.companyName}${rejecting.cui ? ` — ${rejecting.cui}` : ""}` : undefined}
+        busy={rejectMut.isPending}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setRejecting(null)} disabled={rejectMut.isPending}>
+              {strings.common.cancel}
+            </Button>
+            <Button
+              variant="danger"
+              onClick={submitReject}
+              disabled={!reason.trim()}
+              loading={rejectMut.isPending}
+            >
+              {t.reject}
+            </Button>
+          </>
+        }
+      >
+        <div>
+          <Label htmlFor="ar-reject-reason">{t.rejectReasonLabel}</Label>
+          <Textarea
+            id="ar-reject-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t.rejectReasonPlaceholder}
+            rows={3}
+            maxLength={500}
+            autoFocus
+          />
+          <p className="mt-1 text-xs text-content-muted">{t.rejectReasonHint}</p>
+        </div>
+      </Dialog>
+
+      {confirmDialog}
     </section>
   );
 }

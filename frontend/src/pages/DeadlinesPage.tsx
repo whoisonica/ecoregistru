@@ -10,6 +10,7 @@ import {
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { formatDate } from "@/lib/utils";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -39,11 +40,6 @@ const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
   DONE: "success",
   OVERDUE: "danger",
 };
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}.${m}.${y}`;
-}
 
 export function DeadlinesPage() {
   const { user } = useAuth();

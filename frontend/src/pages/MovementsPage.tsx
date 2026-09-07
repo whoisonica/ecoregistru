@@ -39,7 +39,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -165,11 +165,6 @@ function suggestedDestinations(
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function formatDate(iso: string) {
-  const [y, m, d] = iso.split("-");
-  return `${d}.${m}.${y}`;
 }
 
 export function MovementsPage() {
@@ -695,7 +690,27 @@ function MovementFormDialog({
   const { data: drivers } = useDrivers();
   const { data: company } = useCurrentCompany();
 
-  const [workPointId, setWorkPointId] = useState(initial?.workPointId ?? defaultWorkPointId ?? "");
+  const [workPointId, setWorkPointId] = useState(() => {
+    const preferred = initial?.workPointId ?? defaultWorkPointId ?? "";
+    // La editare, valoarea mișcării rămâne oricare ar fi — punctul ei apare în opțiuni chiar dacă
+    // a fost dezactivat între timp. La una nouă, implicitul vine din filtrul ecranului, care poate
+    // purta un `?punct=` rămas în adresă către un punct care nu mai e activ; atunci cade pe primul
+    // din listă, ca să nu pornim cu un id pe care select-ul n-are cum să-l arate.
+    if (initial || workPoints.some((w) => w.id === preferred)) return preferred;
+    return workPoints[0]?.id ?? "";
+  });
+  /**
+   * Ce se oferă în select: punctele active, plus cel al mișcării editate dacă între timp a fost
+   * dezactivat. O mișcare veche trebuie să rămână salvabilă fără să-și piardă tăcut amplasamentul —
+   * același tratament pe care îl primesc deja codul de deșeu și codul R/D din profil.
+   */
+  const workPointOptions = useMemo(() => {
+    const options = workPoints.map((w) => ({ id: w.id, name: w.name, inactive: false }));
+    if (initial?.workPointId && !options.some((w) => w.id === initial.workPointId)) {
+      options.push({ id: initial.workPointId, name: initial.workPointName, inactive: true });
+    }
+    return options;
+  }, [workPoints, initial?.workPointId, initial?.workPointName]);
   const [date, setDate] = useState(editing?.date ?? todayIso());
   const [wasteCode, setWasteCode] = useState<ComboboxItem | null>(
     initial
@@ -818,7 +833,10 @@ function MovementFormDialog({
   const [documentReference, setDocumentReference] = useState(
     editing?.documentReference ?? ""
   );
-  const [unloadDate, setUnloadDate] = useState(initial?.unloadDate ?? "");
+  // `editing?`, nu `initial?`: la duplicare, data descărcării e una din cele care **chiar** diferă
+  // între două transporturi, ca data și numărul documentului. Duplicând o predare din martie o
+  // porneai cu încărcarea azi și descărcarea în martie — pe un formular semnat de destinatar.
+  const [unloadDate, setUnloadDate] = useState(editing?.unloadDate ?? "");
   // Null = "ca la firmă": alegerea de pe firmă (V19), iar în lipsa ei unitatea mișcării.
   const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">(initial?.anexa3Unit ?? "");
   const [transportPartnerId, setTransportPartnerId] = useState(initial?.transportPartnerId ?? "");
@@ -864,6 +882,21 @@ function MovementFormDialog({
   const [upload, setUpload] = useState<{ index: number; total: number; name: string } | null>(
     null
   );
+  /**
+   * Cheia de idempotență a mișcării care se creează din formularul ăsta — una singură, cât trăiește
+   * dialogul.
+   *
+   * <p>Se genera în `buildInput()`, care se apelează **la fiecare** apăsare pe Salvează. Iar
+   * salvarea are două jumătăți: mișcarea, apoi atașamentele, una câte una. Dacă al doilea fișier
+   * cădea — scanare de câțiva megaocteți, conexiunea din depozit — mișcarea era deja creată, dar
+   * mesajul spunea „Salvarea a eșuat" și dialogul rămânea deschis. Omul apăsa din nou, `buildInput`
+   * scotea alt UUID, backendul n-avea pe ce să recunoască cererea, și ieșeau **două mișcări** cu
+   * aceeași cantitate în aceeași lună — adică o dublare a cifrei chiar în fișa de gestiune.
+   *
+   * <p>Ținută într-un `useRef`, cheia e aceeași la a doua încercare, deci a doua cerere se
+   * recunoaște ca fiind aceeași faptă. Exact la ce servește `clientGeneratedId`.
+   */
+  const idempotencyKey = useRef(crypto.randomUUID());
 
   const codeSearch = useWasteCodeSearch(codeQuery);
 
@@ -1028,7 +1061,7 @@ function MovementFormDialog({
 
   function buildInput(): WasteMovementInput {
     return {
-      clientGeneratedId: editing ? undefined : crypto.randomUUID(),
+      clientGeneratedId: editing ? undefined : idempotencyKey.current,
       workPointId,
       date,
       wasteCodeId: wasteCode!.id,
@@ -1095,22 +1128,53 @@ function MovementFormDialog({
     }
     setErrors({});
     const input = buildInput();
+
+    // Salvarea are două jumătăți, iar ele nu eșuează la fel: mișcarea e cantitatea din fișă,
+    // atașamentele sunt hârtii lângă ea. Ținute într-un singur `try`, o urcare căzută spunea
+    // „Salvarea a eșuat" peste o mișcare deja înregistrată — și reflexul, apăsatul din nou, o
+    // înregistra a doua oară.
+    let movementId: string;
     try {
-      const movementId = editing
+      movementId = editing
         ? (await updateMut.mutateAsync({ id: editing.id, input }), editing.id)
         : (await createMut.mutateAsync(input)).id;
-      for (const [index, file] of pendingFiles.entries()) {
-        setUpload({ index: index + 1, total: pendingFiles.length, name: file.name });
-        await addAttachmentMut.mutateAsync({ movementId, file });
-      }
-      notify(editing ? t.updated : t.created, "success");
-      onClose();
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
-    } finally {
-      // Și pe eroare: altfel bara ar rămâne pe ecran peste un formular care nu mai lucrează.
-      setUpload(null);
+      return;
     }
+
+    const failed: File[] = [];
+    let firstError: unknown = null;
+    for (const [index, file] of pendingFiles.entries()) {
+      setUpload({ index: index + 1, total: pendingFiles.length, name: file.name });
+      try {
+        await addAttachmentMut.mutateAsync({ movementId, file });
+      } catch (err) {
+        failed.push(file);
+        firstError ??= err;
+      }
+    }
+    // Și pe eroare: altfel bara ar rămâne pe ecran peste un formular care nu mai lucrează.
+    setUpload(null);
+
+    if (failed.length > 0) {
+      // În coadă rămân doar cele căzute, deci a doua apăsare le urcă pe alea și nu le repetă pe
+      // cele urcate. Mișcarea trece din nou pe la server, dar cu aceeași cheie de idempotență,
+      // deci se recunoaște ca aceeași și nu se dublează.
+      setPendingFiles(failed);
+      // Mesajul nostru primul: motivul serverului („Cloudinary nu e configurat") e util, dar ce
+      // trebuie citit întâi e că mișcarea **e** salvată.
+      const detail = apiErrorMessage(firstError, "");
+      notify(
+        t.attachmentsFailedSaved.replace("{n}", String(failed.length)) +
+          (detail ? ` (${detail})` : ""),
+        "error"
+      );
+      return;
+    }
+
+    notify(editing ? t.updated : t.created, "success");
+    onClose();
   }
 
   function handleDeleteAttachment(attachmentId: string) {
@@ -1196,9 +1260,16 @@ function MovementFormDialog({
                 onChange={(ev) => setWorkPointId(ev.target.value)}
                 {...invalidProps("mv-wp-err", errors.workPointId)}
               >
-                {workPoints.map((w) => (
+                {/* Opțiunea goală există ca select-ul să nu poată minți. Fără ea, o valoare care
+                    nu se află printre opțiuni — punctul de lucru al unei mișcări vechi, între timp
+                    dezactivat, sau un `?punct=` rămas în adresă — lăsa browserul să afișeze primul
+                    rând din listă în timp ce starea ținea cu totul altceva. Se vedea un punct de
+                    lucru ales și se salva altul. */}
+                <option value="">{t.workPointPlaceholder}</option>
+                {workPointOptions.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
+                    {w.inactive ? ` ${t.workPointInactiveSuffix}` : ""}
                   </option>
                 ))}
               </Select>
@@ -1937,7 +2008,12 @@ function MovementFormDialog({
                 ))}
               </ul>
             )}
-            <FileDropzone files={pendingFiles} onChange={setPendingFiles} disabled={isSaving} />
+            <FileDropzone
+              files={pendingFiles}
+              onChange={setPendingFiles}
+              disabled={isSaving}
+              onReject={(message) => notify(message, "error")}
+            />
           </div>
         </FormSection>
       </form>

@@ -26,3 +26,24 @@ export function cn(...inputs: ClassValue[]) {
 export function fold(text: string): string {
   return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
+
+/**
+ * O dată ISO (`2026-11-15`) scrisă cum se scrie în România: `15.11.2026`.
+ *
+ * <p>Funcția asta era copiată identic în patru ecrane — și lipsea din alte trei, care afișau data
+ * brută din backend. Aplicația avea trei formate deodată: `15.11.2026` pe Mișcări, Termene și
+ * Panou; `2026-11-15` pe Parteneri (badge-ul de expirare) și în registrul de ambalaje;
+ * `toLocaleDateString` în inboxul de cereri. Pe un produs care tipărește formulare oficiale, data
+ * e chiar rubrica pe care se uită omul întâi.
+ *
+ * <p>Nu trece prin `Date`: `new Date("2026-11-15")` e miezul nopții **UTC**, deci într-un fus
+ * negativ ar scrie ziua dinainte. Aici se taie șirul, fiindcă ce vine de la server e o zi
+ * calendaristică, nu un moment.
+ *
+ * @returns șirul gol pentru o valoare lipsă, ca apelantul să poată alege singur ce pune în loc
+ */
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return d && m && y ? `${d}.${m}.${y}` : iso;
+}

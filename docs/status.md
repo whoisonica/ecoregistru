@@ -34,6 +34,14 @@ rulează local și are testele verzi.
 > E acum în `whoisonica/ecoregistru-docs`, repo **privat**. Vezi „Ce nu se commite" din
 > `prompt-continuare.md`.
 >
+> **Adăugat 07.09.2026 — auditul de interfață.** O citire a frontendului ecran cu ecran a scos
+> **zece defecte**, dintre care unul în backend și cel mai scump din toate: documentele oficiale se
+> puteau tipări dintr-un cache rămas în urmă. Toate zece sunt reparate și probate — secțiunea
+> „Auditul de interfață" de mai jos. **Testele sunt acum 228** (de la 224), migrările rămân la
+> `V31`. Ce a ieșit din aceeași citire și **nu** e un defect — îmbunătățirile de UI/UX, pe ecrane —
+> e în `docs/todo-ui-ux.md`, cu ordinea de atacat și cu lista lucrurilor care par greșite și sunt
+> dinadins așa.
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
@@ -3096,6 +3104,88 @@ scrierea fără diacritice să dea acelaşi răspuns.
 
 Proba e în `3-interactiuni.mjs`, verificată că pică fără reparaţie (`0 vs 5`, `0 vs 13`).
 **Suită: 60 de verificări verzi.**
+
+---
+
+## Auditul de interfaţă — zece defecte reparate, unul în backend (07.09.2026)
+
+La cererea utilizatorului (*„citeşte toate md files şi după analizează aplicaţia pe fiecare ecran
+dacă există buguri sau probleme"*), o citire a întregului frontend ecran cu ecran, apoi
+*„fixează toate bugurile"*. Ce a ieşit e mai jos, în ordinea gravităţii. **Îmbunătăţirile de
+UI/UX** care au ieşit din aceeaşi citire n-au intrat aici: sunt în `docs/todo-ui-ux.md`, pe ecrane,
+cu ordinea de atacat.
+
+### 🔴 Documentele oficiale se puteau tipări dintr-un cache vechi
+
+Singurul defect din backend, şi cel mai scump: `EvidenceCalculator.list()` reconstruia evidenţa
+**doar când anul era gol**. Cache-ul populat şi rămas în urmă trecea neatins — iar prin `list()`
+trec toate: ecranul, panoul, exportul, şi cele **două documente oficiale**. Deci un client care
+înregistra trei predări şi apăsa „Evidenţa gestiunii deşeurilor" primea un PDF fără ele, care arată
+perfect valid şi se depune la agenţie. În acelaşi timp, panoul scria verde „nimic nu blochează
+depunerea" peste o ieşire fără cod R/D înregistrată cu cinci minute înainte. Singura apărare era
+bannerul galben permanent care ruga clientul să ţină minte să apese un buton.
+
+Dosarul de control făcea deja ce trebuie, şi scria de ce (`AuditFileService` regenerează înainte să
+împacheteze — decizia 20). Deci nu era o decizie nouă de produs, era **o inconsecvenţă**: două
+drumuri către acelaşi PDF, din care numai unul recalcula.
+
+Predicatul e acum „ce s-a schimbat de la ultima scriere": `max(updatedAt)` al mişcărilor faţă de
+`min(generatedAt)` al liniilor. Trei lucruri merită reţinute din cum a ieşit:
+
+1. **Interogarea mişcărilor n-are filtru `deletedFalse`.** O ştergere invalidează cache-ul exact ca
+   o editare, iar ştergerea e soft: rândul rămâne, cu `updatedAt` împins.
+2. **Reconstrucţia nu porneşte de la anul cerut.** Stocul se reportează, deci o corecţie pe o
+   mişcare din 2024 lasă **deschiderea lui 2026** greşită, iar a reconstrui 2026 singur l-ar
+   reconstrui pe aceeaşi cifră greşită. Porneşte de la cel mai vechi an cu linii mai vechi decât
+   schimbarea şi merge până la cel cerut. Se **opreşte** acolo, dinadins: anii de după răspund la
+   aceeaşi întrebare când îi deschide cineva. Aia e şi deosebirea de butonul „Regenerează", care
+   cascadează înainte — apăsarea lui e o afirmaţie despre tot dosarul, citirea unui an e o întrebare
+   despre anul ăla.
+3. **`anexa1()` şi `annualDeclaration()` nu mai sunt `readOnly`.** Cheamă `list()` prin
+   auto-invocare, deci rebuild-ul rula în tranzacţia lor; sub `readOnly = true` Hibernate trece pe
+   `FlushMode.MANUAL` şi liniile reconstruite s-ar fi pierdut la commit — documentul ar fi tipărit
+   cifra veche oricum, şi tăcut.
+
+**Probat pe date reale, nu doar la teste:** 777 kg înregistrate fără să se apese „Regenerează" →
+ecranul urcă cu 777, fişa Anexa 1 trece de la 35.258 la 39.825 de octeţi; ştergerea mişcării le
+scoate înapoi. **228 de teste verzi** (de la 224), patru noi în `EvidenceCalculatorIT`: mişcarea
+nouă, ştergerea, corecţia pe un an anterior, şi garda că o citire a unui an neschimbat **nu**
+rescrie nimic.
+
+### 🟠 Nouă defecte de interfaţă
+
+| Ce | Unde era |
+|---|---|
+| **Formularul de firmă nouă moştenea şapte rubrici** de la firma editată înainte — între ele **persoana desemnată**, care se tipăreşte în dosarul de control, şi calitatea care decide ce tabel din Anexa 3 Ambalaje se tipăreşte | `ClientsPage` avea două funcţii de umplere ţinute sincronizate cu mâna, iar cea de adăugare rămăsese în urmă. Acum e una singură, cu `null` = firmă nouă |
+| **A doua încercare după un ataşament căzut crea o mişcare duplicat** | `clientGeneratedId` se genera în `buildInput()`, deci alt UUID la fiecare apăsare. Acum e un `useRef`, stabil cât trăieşte dialogul — la ce serveşte cheia |
+| **Duplicarea păstra data de descărcare veche** | `initial?.unloadDate` în loc de `editing?.` — deci Anexa 3 ieşea cu încărcarea azi şi descărcarea acum şase luni |
+| **Mesajele backendului nu ajungeau la niciuna din cele opt descărcări** | `responseType: "blob"` se aplică şi răspunsului de eroare, deci `apiErrorMessage` citea un `Blob`. „Anexa 3 e formularul pentru nepericuloase…" se afişa ca „Anexa 3 nu a putut fi generată" |
+| **`window.prompt` la respingerea unei cereri; aprobarea nu întreba nimic** | Ultimul dialog nativ rămas după ce cele cinci `window.confirm` fuseseră înlocuite. Iar aprobarea creează un tenant real, ireversibil |
+| **Ataşamentele nu se puteau adăuga de la tastatură** | `<div onClick>` peste un `<input type="file">` cu `display:none` — singura zonă rămasă aşa după runda de accesibilitate |
+| **O adresă greşită dădea ecran alb** | `<Routes>` fără rută `*` nu randează nimic. Plus: login-ul uita unde voiai să ajungi |
+| **„Export PDF" învârtea rotiţa pe documentul oficial** | Amândouă foloseau `exporting === "pdf"`. Butoanele anuale se dezactivau şi după filtrul de lună, deşi documentele acoperă anul |
+| **Trei formate de dată în acelaşi produs**, şi o coloană care se sorta după altă valoare decât cea afişată | `formatDate` era copiată în patru ecrane şi lipsea din trei; registrul de predări arăta descărcarea şi sorta după încărcare |
+
+Plus trei mărunte din aceeaşi citire: panoul aduna `1000 kg + 1 t = 1001` (mişcarea îşi poartă
+unitatea, iar conversia exista doar în motorul de evidenţă); erorile din toast dispăreau în patru
+secunde, adică exact mesajele care de-acum poartă o propoziţie utilă; şi secţiunea Anexa 3 Ambalaje
+oferea puncte de lucru dezactivate, cu filtrul în afara adresei şi butoanele fără rotiţă.
+
+⚠️ **Bannerul galben permanent de pe Evidenţe a fost schimbat**, şi nu din estetică: „Evidenţa nu se
+actualizează singură" devenise o afirmaţie falsă. Un avertisment care e mereu acolo devine tapet în
+trei zile — şi atunci nu mai apără nimic exact în ziua în care ar fi trebuit.
+
+### Cum s-a verificat
+
+`tsc --noEmit` curat, `vite build` verde, **suita e2e trece** (rulată cu Chromium-ul lui Playwright:
+maşina n-are niciun browser Chromium instalat). Peste ea, **22 de verificări scrise anume pentru
+reparaţiile astea**, pe browser adevărat cu datele demo — suita nu le acoperă pe niciuna. Cea mai
+instructivă: toastul de la dosarul de control arată acum *„Dosarul se poate genera pentru cel mult 5
+ani"*, adică **mesajul corectat la punctul 11 al auditului de conformitate**, pe care până azi nu-l
+citise nimeni niciodată.
+
+*(Verificările punctuale n-au intrat în repo: sunt scrise pentru o reparaţie anume, nu pentru o
+regulă care trebuie ţinută. Ce merită păstrat din ele a intrat ca test în backend.)*
 
 
 ## Ce urmează — plan revizuit (22.08.2026)

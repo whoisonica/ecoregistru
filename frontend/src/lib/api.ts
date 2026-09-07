@@ -13,6 +13,13 @@ const USER_KEY = "eco_user";
  */
 export const LOGIN_EXPIRED_PARAM = "expirat";
 
+/**
+ * Unde voia omul să ajungă, dus prin adresă până la login și înapoi. Stă aici, lângă perechea lui,
+ * fiindcă îl scriu două locuri: `ProtectedRoute`, când pagina cere o sesiune, și interceptorul de
+ * mai jos, când sesiunea expiră sub degete.
+ */
+export const REDIRECT_PARAM = "catre";
+
 export const tokenStore = {
   get: () => localStorage.getItem(TOKEN_KEY),
   set: (t: string) => localStorage.setItem(TOKEN_KEY, t),
@@ -73,7 +80,10 @@ api.interceptors.response.use(
       if (wasAuthenticated) {
         clearSession();
         if (!PUBLIC_PATHS.includes(window.location.pathname)) {
-          window.location.href = `/login?${LOGIN_EXPIRED_PARAM}=1`;
+          // Pagina de pe care a căzut sesiunea se ia cu noi: după relogare se ajunge înapoi în ea,
+          // nu pe Panou. Cine tocmai completa un an de evidență nu trebuie să-l caute din nou.
+          const back = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = `/login?${LOGIN_EXPIRED_PARAM}=1&${REDIRECT_PARAM}=${back}`;
         }
       }
     }
@@ -90,4 +100,30 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
     }
   }
   return fallback;
+}
+
+/**
+ * Aceeași extragere, pentru cererile cerute ca **blob** — adică toate descărcările.
+ *
+ * <p>Un `responseType: "blob"` se aplică și răspunsului de eroare, deci `error.response.data` e un
+ * `Blob` cu JSON înăuntru, nu obiectul pe care îl citește {@link apiErrorMessage}. Rezultatul era
+ * că, pe **toate** cele opt descărcări, mesajul scris de backend nu ajungea niciodată la om: pe un
+ * cod periculos, „Anexa 3 e formularul pentru deșeuri nepericuloase; pentru cele periculoase se
+ * folosește formularul din anexa nr. 2 la HG 1061/2008" se afișa ca „Anexa 3 nu a putut fi
+ * generată". Adică exact propoziția care spune ce să faci în loc.
+ *
+ * <p>Asincronă fiindcă `Blob.text()` e asincron; apelanții erau deja în `catch`-ul unui `await`.
+ */
+export async function apiBlobErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+    try {
+      const text = await error.response.data.text();
+      const parsed = JSON.parse(text) as { "error-message"?: string };
+      if (parsed["error-message"]) return parsed["error-message"];
+    } catch {
+      // Un blob care nu e JSON — o pagină de eroare de la proxy, un răspuns tăiat. Cade pe
+      // mesajul de rezervă, care e tot ce se putea spune oricum.
+    }
+  }
+  return apiErrorMessage(error, fallback);
 }

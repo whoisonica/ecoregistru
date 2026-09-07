@@ -17,7 +17,7 @@ import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import type { DeadlineStatus } from "@/lib/types";
 import { strings } from "@/lib/strings";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -32,11 +32,6 @@ const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
   DONE: "success",
   OVERDUE: "danger",
 };
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}.${m}.${y}`;
-}
 
 /** Cantitățile vin din backend în kilograme; se scriu cu separatorul românesc. */
 const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
@@ -196,9 +191,20 @@ export function DashboardPage() {
   }, [evidences]);
   const blockerCount = blockers.missingCode + blockers.awaitingWeighing;
 
-  /** Kilogramele lunii — cifra pe care o caută cineva, spre deosebire de numărul de rânduri. */
+  /**
+   * Kilogramele lunii — cifra pe care o caută cineva, spre deosebire de numărul de rânduri.
+   *
+   * <p>⚠️ **Fiecare mișcare își poartă unitatea.** Suma aduna `quantity` brut, deci o mișcare de
+   * 1000 kg și una de 1 tonă ieșeau ca `1001` — aceeași cantitate numărată o dată corect și o dată
+   * de o mie de ori mai mic. Motorul de evidență normalizează la kilograme de mult (`KG_PER_TON`
+   * în `EvidenceCalculator`); panoul citea mișcările direct și rămăsese fără conversia aia.
+   */
   const generatedThisMonth = useMemo(
-    () => (movements ?? []).reduce((sum, m) => sum + (m.quantity ?? 0), 0),
+    () =>
+      (movements ?? []).reduce(
+        (sum, m) => sum + (m.quantity ?? 0) * (m.unit === "TONS" ? 1000 : 1),
+        0
+      ),
     [movements]
   );
   /** Stocul de la ultima lună calculată a anului, pe toate codurile. */

@@ -127,62 +127,68 @@ export function ClientsPage() {
     );
   }
 
-  function openCreate() {
-    setEditing(null);
-    setName("");
-    setCui("");
-    setType("GENERATOR");
-    setAfmObligation(false);
-    setEnvironmentalAuthNumber("");
-    setEnvironmentalAuthExpiry("");
-    setAddress("");
-    setContactName("");
-    setContactEmail("");
-    setContactPhone("");
+  /**
+   * Umple formularul din firma dată, sau îl golește de tot când nu e niciuna.
+   *
+   * <p>Erau două funcții — una pentru „adaugă", una pentru „editează" — ținute sincronizate cu
+   * mâna, iar cea de adăugare rămăsese în urmă cu **șapte rubrici**: contribuțiile AFM, unitatea de
+   * pe Anexa 3, calitatea de la Anexa 3 Ambalaje și toate cele patru ale persoanei desemnate. Deci
+   * editai firma A, închideai, apăsai „Adaugă firmă" — și firma B se năștea cu persoana desemnată a
+   * firmei A, care se tipărește în dosarul ei de control, și cu calitatea care decide **care tabel**
+   * din Anexa 3 Ambalaje i se tipărește.
+   *
+   * <p>Ce era greșit nu erau cele șapte rânduri lipsă, ci că se puteau lipsi: două liste care
+   * trebuie să acopere aceleași rubrici ajung mereu să nu le mai acopere. Aici e una singură, iar
+   * `null` e chiar cazul „firmă nouă", cu implicitele scrise o dată.
+   */
+  function fillForm(c: Company | null) {
+    setEditing(c);
+    setName(c?.name ?? "");
+    setCui(c?.cui ?? "");
+    setType(c?.type ?? "GENERATOR");
+    setAfmObligation(!!c?.afmObligation);
+    setAfmContributions(c?.afmContributions ?? []);
+    setEnvironmentalAuthNumber(c?.environmentalAuthNumber ?? "");
+    setEnvironmentalAuthExpiry(c?.environmentalAuthExpiry ?? "");
+    setAddress(c?.address ?? "");
+    setContactName(c?.contactName ?? "");
+    setContactEmail(c?.contactEmail ?? "");
+    setContactPhone(c?.contactPhone ?? "");
+    setTradeRegisterNumber(c?.tradeRegisterNumber ?? "");
+    setAnexa3Series(c?.anexa3Series ?? "");
+    setCaenCode(c?.caenCode ?? "");
+    setAnexa3Unit(c?.anexa3Unit ?? "");
+    setContactRole(c?.contactRole ?? "");
+    setPackagingOperatorRole(c?.packagingOperatorRole ?? "");
+    setWasteManagerName(c?.wasteManagerName ?? "");
+    setWasteManagerRole(c?.wasteManagerRole ?? "");
+    // "" rămâne "nu s-a răspuns", și e altceva decât "angajat propriu" — vezi handleSubmit.
+    setWasteManagerExternal(
+      c?.wasteManagerExternal == null ? "" : c.wasteManagerExternal ? "yes" : "no",
+    );
+    setWasteManagerTraining(c?.wasteManagerTraining ?? "");
+    setProfile(
+      c
+        ? {
+            authorizedOperationCodes: c.authorizedOperationCodes ?? [],
+            marketRoles: c.marketRoles ?? [],
+            authorizedWasteCodes: c.authorizedWasteCodes ?? [],
+            transportMeans: c.transportMeans ?? "",
+            transportLicenseNumber: c.transportLicenseNumber ?? "",
+            transportLicenseExpiry: c.transportLicenseExpiry ?? "",
+          }
+        : emptyCompanyProfile
+    );
     setFormError(false);
-    setTradeRegisterNumber("");
-    setAnexa3Series("");
-    setCaenCode("");
-    setContactRole("");
-    setProfile(emptyCompanyProfile);
     setDialogOpen(true);
   }
 
+  function openCreate() {
+    fillForm(null);
+  }
+
   function openEdit(c: Company) {
-    setEditing(c);
-    setName(c.name);
-    setCui(c.cui);
-    setType(c.type);
-    setAfmObligation(!!c.afmObligation);
-    setAfmContributions(c.afmContributions ?? []);
-    setEnvironmentalAuthNumber(c.environmentalAuthNumber ?? "");
-    setEnvironmentalAuthExpiry(c.environmentalAuthExpiry ?? "");
-    setAddress(c.address ?? "");
-    setContactName(c.contactName ?? "");
-    setContactEmail(c.contactEmail ?? "");
-    setContactPhone(c.contactPhone ?? "");
-    setTradeRegisterNumber(c.tradeRegisterNumber ?? "");
-    setAnexa3Series(c.anexa3Series ?? "");
-    setCaenCode(c.caenCode ?? "");
-    setAnexa3Unit(c.anexa3Unit ?? "");
-    setContactRole(c.contactRole ?? "");
-    setPackagingOperatorRole(c.packagingOperatorRole ?? "");
-    setWasteManagerName(c.wasteManagerName ?? "");
-    setWasteManagerRole(c.wasteManagerRole ?? "");
-    setWasteManagerExternal(
-      c.wasteManagerExternal == null ? "" : c.wasteManagerExternal ? "yes" : "no",
-    );
-    setWasteManagerTraining(c.wasteManagerTraining ?? "");
-    setProfile({
-      authorizedOperationCodes: c.authorizedOperationCodes ?? [],
-      marketRoles: c.marketRoles ?? [],
-      authorizedWasteCodes: c.authorizedWasteCodes ?? [],
-      transportMeans: c.transportMeans ?? "",
-      transportLicenseNumber: c.transportLicenseNumber ?? "",
-      transportLicenseExpiry: c.transportLicenseExpiry ?? "",
-    });
-    setFormError(false);
-    setDialogOpen(true);
+    fillForm(c);
   }
 
   async function handleSubmit(e: FormEvent) {

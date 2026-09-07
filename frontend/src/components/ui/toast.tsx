@@ -38,7 +38,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: string, variant: ToastVariant = "info") => {
       const id = Date.now() + Math.random();
       setToasts((current) => [...current, { id, message, variant }]);
-      window.setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
+      /**
+       * O confirmare se poate rata: „Mișcare salvată" nu spune nimic ce nu se vede în tabel. O
+       * eroare **nu** se poate rata — e singurul loc în care ajunge motivul scris de backend, iar
+       * de când descărcările nu-l mai înghit, motivul ăla e o propoziție întreagă despre ce e de
+       * făcut („se folosește formularul din anexa nr. 2"). Patru secunde nu ajung nici s-o
+       * citești, cu atât mai puțin s-o notezi.
+       *
+       * <p>Deci erorile stau până le închide omul, iar butonul de închidere era deja acolo.
+       */
+      if (variant !== "error") {
+        window.setTimeout(() => dismiss(id), AUTO_DISMISS_MS);
+      }
     },
     [dismiss]
   );

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
-import { apiErrorMessage, LOGIN_EXPIRED_PARAM } from "@/lib/api";
+import { apiErrorMessage, LOGIN_EXPIRED_PARAM, REDIRECT_PARAM } from "@/lib/api";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -19,6 +19,16 @@ export function LoginPage() {
   // message never outlives the eviction that caused it.
   const [searchParams] = useSearchParams();
   const expired = searchParams.get(LOGIN_EXPIRED_PARAM) === "1";
+  /**
+   * Pagina cerută înainte de autentificare, dusă până aici de `ProtectedRoute`.
+   *
+   * <p>Se acceptă **numai** o cale internă care începe cu un singur `/`. `//alt-domeniu.ro` e o
+   * adresă absolută cu schema moștenită, deci ar fi o redirectare deschisă — genul de lucru pe
+   * care o pagină de login nu-l oferă nimănui.
+   */
+  const requested = searchParams.get(REDIRECT_PARAM);
+  const redirectTo =
+    requested && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +36,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(apiErrorMessage(err, strings.login.genericError));
     } finally {

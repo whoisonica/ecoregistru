@@ -12,7 +12,7 @@ import {
 import type { EvidenceFilters, MovementFilters } from "@/lib/types";
 import { HandoverRegister } from "@/components/HandoverRegister";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
-import { apiErrorMessage } from "@/lib/api";
+import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { formatTonnes } from "@/lib/units";
@@ -88,7 +88,14 @@ export function EvidencesPage() {
   const { data: evidences, isLoading, isError } = useEvidences(filters);
   const regenerateMut = useRegenerateEvidence();
   const { notify } = useToast();
-  const [exporting, setExporting] = useState<"xlsx" | "pdf" | "declaration" | null>(null);
+  /**
+   * Ce document se pregătește acum. Patru valori, nu trei: „Evidența gestiunii deșeurilor" și
+   * „Export PDF" foloseau amândouă `"pdf"`, deci apăsarea pe al doilea învârtea rotița pe primul —
+   * adică pe documentul oficial, exact confuzia pe care cele două butoane există ca s-o evite.
+   */
+  const [exporting, setExporting] = useState<"anexa1" | "declaration" | "xlsx" | "pdf" | null>(
+    null
+  );
 
   // Stable display order: work point, then month, then waste code.
   const rows = useMemo(() => {
@@ -143,6 +150,15 @@ export function EvidencesPage() {
     () => (yearRows ?? []).filter((r) => r.awaitingWeighing),
     [yearRows]
   );
+  /**
+   * Dacă **anul** are ceva de tipărit — nu luna de pe ecran.
+   *
+   * <p>Cele două documente oficiale sunt anuale și acoperă toate cele douăsprezece luni, oricum ar
+   * fi filtrat ecranul. Butoanele se dezactivau pe `rows`, care e filtrat pe lună: alegeai o lună
+   * fără mișcări și nu mai puteai descărca fișa anului, deși anul avea date. Exporturile generice
+   * rămân pe `rows`, fiindcă ele chiar exportă ce se vede.
+   */
+  const hasYearData = (yearRows ?? []).length > 0;
 
   /**
    * Totalul anului per cod de deșeu — ce se încarcă în SIM pe 15 martie, iar OUG 92/2021 art. 48
@@ -184,11 +200,11 @@ export function EvidencesPage() {
   }
 
   async function generateAnexa1() {
-    setExporting("pdf");
+    setExporting("anexa1");
     try {
       await downloadAnexa1Form(filters);
     } catch (err) {
-      notify(apiErrorMessage(err, t.anexa1Error), "error");
+      notify(await apiBlobErrorMessage(err, t.anexa1Error), "error");
     } finally {
       setExporting(null);
     }
@@ -207,7 +223,7 @@ export function EvidencesPage() {
     try {
       await downloadAnnualDeclaration(filters);
     } catch (err) {
-      notify(apiErrorMessage(err, t.annualDeclarationError), "error");
+      notify(await apiBlobErrorMessage(err, t.annualDeclarationError), "error");
     } finally {
       setExporting(null);
     }
@@ -218,7 +234,7 @@ export function EvidencesPage() {
     try {
       await downloadEvidenceExport(filters, format);
     } catch (err) {
-      notify(apiErrorMessage(err, t.exportError), "error");
+      notify(await apiBlobErrorMessage(err, t.exportError), "error");
     } finally {
       setExporting(null);
     }
@@ -245,18 +261,18 @@ export function EvidencesPage() {
             {/* The official form first: it is the one the client actually files. */}
             <Button
               onClick={handleAnexa1}
-              disabled={rows.length === 0 || exporting !== null}
-              loading={exporting === "pdf"}
+              disabled={!hasYearData || exporting !== null}
+              loading={exporting === "anexa1"}
               title={t.anexa1Hint}
             >
-              {exporting !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
+              {exporting !== "anexa1" && <FileText className="mr-2 h-4 w-4" />}
               {t.anexa1}
             </Button>
             {/* The summary that goes in front of it, and the page the authority reads first. */}
             <Button
               variant="outline"
               onClick={handleAnnualDeclaration}
-              disabled={rows.length === 0 || exporting !== null}
+              disabled={!hasYearData || exporting !== null}
               loading={exporting === "declaration"}
               title={t.annualDeclarationHint}
             >
@@ -277,8 +293,9 @@ export function EvidencesPage() {
               variant="outline"
               onClick={() => handleExport("pdf")}
               disabled={rows.length === 0 || exporting !== null}
+              loading={exporting === "pdf"}
             >
-              <Download className="mr-2 h-4 w-4" />
+              {exporting !== "pdf" && <Download className="mr-2 h-4 w-4" />}
               {t.exportPdf}
             </Button>
             {canManage && (
@@ -293,11 +310,11 @@ export function EvidencesPage() {
         }
       />
 
-      {canManage && (
-        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {t.staleNote}
-        </p>
-      )}
+      {/* Nota nu mai e un avertisment: de când citirea reconstruiește singură un an rămas în urmă
+          (`EvidenceCalculator.list`), „Evidența nu se actualizează singură" era o afirmație falsă
+          scrisă cu galben pe fiecare vizită — iar un avertisment permanent devine tapet exact
+          până în ziua în care ar fi trebuit să apere ceva. */}
+      {canManage && <p className="mt-4 text-sm text-content-muted">{t.staleNote}</p>}
 
       {/* Filters */}
       <div className="mt-6 inline-flex rounded-lg border border-line bg-surface-muted p-0.5">

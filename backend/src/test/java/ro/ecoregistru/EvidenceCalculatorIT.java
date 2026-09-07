@@ -44,6 +44,7 @@ class EvidenceCalculatorIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired PartnerRepository partnerRepository;
     @Autowired WasteMovementRepository movementRepository;
+    @Autowired MonthlyEvidenceRepository evidenceRepository;
 
     private UUID tenantId;
     private WorkPoint workPoint;
@@ -198,6 +199,72 @@ class EvidenceCalculatorIT {
         assertThat(result.linesGenerated()).isEqualTo(24); // 2025 and 2026 together
         assertStock(byMonth(2025).get(12), "650");
         assertStock(byMonth(2026).get(1), "650"); // the correction reached the following year
+    }
+
+    /**
+     * The cache is derived data, so reading it has to answer for the movements as they are now.
+     *
+     * <p>Before this, a rebuild happened only when the year was <b>empty</b>. A client who
+     * recorded three handovers and pressed "Evidența gestiunii deșeurilor" got a PDF without them
+     * — every read goes through {@code list}, the two official documents included — and the
+     * dashboard said the file was clean at the same time. The only defence was a permanent banner
+     * asking the client to remember to press a button.
+     */
+    @Test
+    void aMovementRecordedAfterTheLastRebuildReachesTheSheetWithoutPressingAnything() {
+        evidenceCalculator.regenerateYear(2025);
+        assertStock(byMonth(2025).get(12), "600");
+
+        // Recorded the ordinary way: straight onto the movements, nobody pressing "Regenerează".
+        save(LocalDate.of(2025, 7, 3), "40.000", Unit.KG, WasteOperation.GENERATED, null, null);
+
+        assertStock(byMonth(2025).get(7), "540");
+        assertStock(byMonth(2025).get(12), "640");
+    }
+
+    /** A soft delete invalidates the cache exactly as an edit does — the quantity left the sheet. */
+    @Test
+    void deletingAMovementAlsoReachesTheSheet() {
+        evidenceCalculator.regenerateYear(2025);
+
+        WasteMovement december = movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(2025, 12, 1), LocalDate.of(2025, 12, 31))
+                .get(0);
+        december.setDeleted(true);
+        december.setDeletedAt(Instant.now());
+        movementRepository.saveAndFlush(december);
+
+        assertStock(byMonth(2025).get(12), "500"); // the 100 kg generated in December is gone
+    }
+
+    /**
+     * Stock carries, so the rebuild cannot start at the year being read: a correction on 2025
+     * leaves the 2026 opening balance wrong, and rebuilding 2026 alone would rebuild it on that
+     * same wrong figure. It starts at the earliest year whose lines predate the change.
+     */
+    @Test
+    void aCorrectionOnAnEarlierYearReachesTheOpeningStockOfALaterOne() {
+        evidenceCalculator.regenerateYear(2025);
+        evidenceCalculator.regenerateYear(2026); // opens at 600, no 2026 movements
+        assertStock(byMonth(2026).get(1), "600");
+
+        save(LocalDate.of(2025, 6, 4), "50.000", Unit.KG, WasteOperation.GENERATED, null, null);
+
+        // Read 2026 directly. Nobody regenerated 2025, which is where the correction landed.
+        assertStock(byMonth(2026).get(1), "650");
+        assertStock(byMonth(2025).get(12), "650");
+    }
+
+    /** A read of an unchanged year must stay a read: no rewrite, so no new {@code generatedAt}. */
+    @Test
+    void readingAnUnchangedYearDoesNotRewriteIt() {
+        evidenceCalculator.regenerateYear(2025);
+        Instant first = evidenceRepository.findOldestGeneratedAt(tenantId, 2025);
+
+        byMonth(2025);
+        byMonth(2025);
+
+        assertThat(evidenceRepository.findOldestGeneratedAt(tenantId, 2025)).isEqualTo(first);
     }
 
     @Test

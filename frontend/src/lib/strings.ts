@@ -362,8 +362,16 @@ export const strings = {
     confirmDelete:
       "Cantitatea dispare din evidența lunară și din documentele care se tipăresc din ea. Ștergerea nu poate fi anulată.",
     attachmentError: "Fișierul nu a putut fi încărcat.",
+    // Mișcarea s-a salvat, atașamentele nu — două fapte diferite, care înainte se spuneau amândouă
+    // ca „Salvarea a eșuat". Cine citea asta apăsa din nou și înregistra cantitatea a doua oară.
+    attachmentsFailedSaved:
+      "Mișcarea s-a salvat, dar {n} fișier(e) n-au urcat. Au rămas în listă — apasă Salvează încă o dată doar pentru ele.",
     attachmentDeleted: "Atașament șters.",
     noWorkPointHint: "Adaugă întâi un punct de lucru din Setări.",
+    workPointPlaceholder: "Alege punctul de lucru...",
+    // Punctul unei mișcări vechi, dezactivat între timp: rămâne în listă, dar se vede că nu mai e
+    // în uz. Alternativa — să dispară — ar face mișcarea nesalvabilă fără să spună de ce.
+    workPointInactiveSuffix: "(dezactivat)",
   },
 
   settings: {
@@ -617,9 +625,11 @@ export const strings = {
     empty: "Nu există linii de evidență pentru {year}.",
     searchPlaceholder: "Caută după cod, denumire sau punct de lucru...",
     emptyHint: "Apasă „Regenerează” pentru a calcula evidența anului {year} din mișcări.",
-    // note about the cache being manually regenerated
+    // Evidența e un cache derivat din mișcări, iar citirea îl reconstruiește când a rămas în
+    // urmă. Butonul rămâne pentru reconstrucția cerută explicit — după o migrare, sau când vrei
+    // să vezi cifra recalculată sub ochii tăi.
     staleNote:
-      "Evidența nu se actualizează singură. După ce adaugi sau ștergi mișcări, apasă „Regenerează”.",
+      "Evidența se recalculează din mișcări ori de câte ori s-a schimbat ceva. „Regenerează” o reconstruiește pe loc și rescrie și anii următori, fiindcă stocul se reportează.",
   },
 
   deadlines: {
@@ -1105,6 +1115,15 @@ export const strings = {
     approve: "Creează contul",
     reject: "Respinge",
     rejectPrompt: "De ce respingi cererea?",
+    rejectTitle: "Respinge cererea",
+    rejectReasonLabel: "Motivul",
+    rejectReasonPlaceholder: "Ex.: firma are deja cont · datele nu se verifică · duplicat",
+    rejectReasonHint: "Rămâne în cerere, ca urmă de hârtie. Nu se trimite automat clientului.",
+    // Aprobarea creează un tenant real, cu profil, punct de lucru și tot — iar aplicația n-are
+    // ștergere de firmă. Ștergerea unei mișcări întreabă; crearea unei firme nu întreba nimic.
+    confirmApproveTitle: "Creezi contul acestei firme?",
+    confirmApprove:
+      "Se creează firma cu profilul din cerere și punctul de lucru pe care l-a numit. Nu se invită încă niciun utilizator, iar firma nu se poate șterge după.",
     approved: "Firma a fost creată din cerere. Invită acum utilizatorul.",
     rejected: "Cerere respinsă.",
     actionError: "Acțiunea a eșuat. Încearcă din nou.",
@@ -1316,6 +1335,22 @@ export const strings = {
     COMERCIANT: "Comerciant — tabelul 1, depus la ANPM",
     RECICLATOR: "Reciclator — tabelul 2",
     VALORIFICATOR: "Valorificator — tabelul 2",
+  },
+
+  // Zona de atașamente. Erau scrise direct în componentă, singurele din aplicație în afara
+  // fișierului ăstuia, alături de cele trei din combobox.
+  notFound: {
+    title: "Pagina asta nu există",
+    body: "Adresa e greșită, sau pagina s-a mutat de când ai salvat linkul.",
+    toDashboard: "Înapoi la Panou",
+    toLogin: "Mergi la autentificare",
+  },
+
+  fileDropzone: {
+    hint: "Trage fișiere aici sau apasă pentru a alege",
+    limit: "Imagini, PDF, Word, Excel · cel mult {mb} MB per fișier",
+    tooBig: "Prea mari, peste {mb} MB: {files}",
+    remove: "Elimină fișierul",
   },
 
   common: {

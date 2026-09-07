@@ -15,6 +15,7 @@ import { AuditFilePage } from "@/pages/AuditFilePage";
 import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -46,6 +47,9 @@ export default function App() {
           <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
           <Route path="/clienti" element={<AppShell><ClientsPage /></AppShell>} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
+          {/* Fără ruta asta, o adresă greșită nu randa nimic: pagină albă, fără meniu și fără
+              mesaj, adică o aplicație care pare căzută pentru o literă în plus. */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { saveBlob } from "@/lib/download";
 import type {
   PackagingAnexa3,
   PackagingHandoverRow,
@@ -88,15 +89,7 @@ export async function downloadPackagingDeclaration(year: number, format: "xls" |
     params: { year, format },
     responseType: "blob",
   });
-  const url = URL.createObjectURL(res.data as Blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `anexa1-ambalaje-${year}.${format}`;
-    a.click();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  saveBlob(res.data as Blob, `anexa1-ambalaje-${year}.${format}`);
 }
 
 /**
@@ -134,13 +127,5 @@ export async function downloadPackagingAnexa3(
     params: workPointId ? { year, workPointId, format } : { year, format },
     responseType: "blob",
   });
-  const url = URL.createObjectURL(res.data as Blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `anexa3-ambalaje-${year}.${format}`;
-    a.click();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  saveBlob(res.data as Blob, `anexa3-ambalaje-${year}.${format}`);
 }

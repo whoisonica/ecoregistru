@@ -31,7 +31,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { missingLast, useTableView } from "@/hooks/useTableView";
-import { fold } from "@/lib/utils";
+import { fold, formatDate } from "@/lib/utils";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -59,10 +59,12 @@ function ExpiryBadge({ partner }: { partner: Partner }) {
   if (isExpired) {
     return <Badge variant="danger">{t.expired}</Badge>;
   }
+  // Data se scrie cum se scrie în România. Aici rămăsese ISO brut — `2026-11-15` lângă
+  // `15.11.2026` pe Mișcări și pe Termene, în același produs.
   if (partner.expiringSoon) {
-    return <Badge variant="warning">{`${t.expiringSoon} · ${date}`}</Badge>;
+    return <Badge variant="warning">{`${t.expiringSoon} · ${formatDate(date)}`}</Badge>;
   }
-  return <Badge variant="success">{date}</Badge>;
+  return <Badge variant="success">{formatDate(date)}</Badge>;
 }
 
 export function PartnersPage() {

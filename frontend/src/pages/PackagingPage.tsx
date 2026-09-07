@@ -22,9 +22,10 @@ import type {
   WasteMovement,
 } from "@/lib/types";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
-import { apiErrorMessage } from "@/lib/api";
+import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { useUrlNumber } from "@/hooks/useUrlState";
+import { formatDate } from "@/lib/utils";
+import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -209,7 +210,7 @@ export function PackagingPage() {
     try {
       await downloadPackagingDeclaration(year, format);
     } catch (err) {
-      notify(apiErrorMessage(err, t.downloadError), "error");
+      notify(await apiBlobErrorMessage(err, t.downloadError), "error");
     } finally {
       setDownloading(null);
     }
@@ -397,7 +398,7 @@ export function PackagingPage() {
                         : undefined
                   }
                 >
-                  <TD className="whitespace-nowrap">{m.date}</TD>
+                  <TD className="whitespace-nowrap">{formatDate(m.date)}</TD>
                   <TD className="whitespace-nowrap font-mono text-xs">{m.wasteCode}</TD>
                   <TD className="whitespace-nowrap">
                     {m.effectivePackagingMaterial ? (
@@ -642,15 +643,26 @@ export function PackagingPage() {
  */
 function Anexa3Section({ year }: { year: number }) {
   const { data: workPoints } = useWorkPoints();
-  const [workPointId, setWorkPointId] = useState("");
+  /**
+   * Numai punctele **active**. Restul ecranelor filtrează așa de mult (Mișcări, Evidențe); aici
+   * lista le arăta pe toate, deci se putea alege un punct de lucru scos din uz — și, cu
+   * auto-selecția de mai jos, se putea chiar nimeri singură pe el.
+   */
+  const activeWorkPoints = useMemo(
+    () => (workPoints ?? []).filter((w) => w.active),
+    [workPoints]
+  );
+  // În adresă, ca filtrul de an de deasupra: altfel un link către raportul unui punct de lucru
+  // anume nu putea exista, iar alegerea se pierdea la fiecare navigare.
+  const [workPointId, setWorkPointId] = useUrlState("punctA3");
 
   // Cu un singur punct de lucru, alegerea nu e o alegere: se selectează singur, ca butonul de
   // descărcare să fie activ din prima. Cu mai multe, rămâne pe „Toate" până alege omul.
   useEffect(() => {
-    if (!workPointId && workPoints?.length === 1) {
-      setWorkPointId(workPoints[0].id);
+    if (!workPointId && activeWorkPoints.length === 1) {
+      setWorkPointId(activeWorkPoints[0].id);
     }
-  }, [workPoints, workPointId]);
+  }, [activeWorkPoints, workPointId, setWorkPointId]);
   const { data, isLoading } = usePackagingAnexa3(year, workPointId || undefined);
   const { notify } = useToast();
   const [downloading, setDownloading] = useState<"xls" | "pdf" | null>(null);
@@ -660,7 +672,7 @@ function Anexa3Section({ year }: { year: number }) {
     try {
       await downloadPackagingAnexa3(year, workPointId || undefined, format);
     } catch (err) {
-      notify(apiErrorMessage(err, t.anexa3DownloadError), "error");
+      notify(await apiBlobErrorMessage(err, t.anexa3DownloadError), "error");
     } finally {
       setDownloading(null);
     }
@@ -687,27 +699,31 @@ function Anexa3Section({ year }: { year: number }) {
             <Label htmlFor="a3-wp">{t.anexa3WorkPoint}</Label>
             <Select id="a3-wp" value={workPointId} onChange={(e) => setWorkPointId(e.target.value)}>
               <option value="">{t.anexa3AllWorkPoints}</option>
-              {(workPoints ?? []).map((wp) => (
+              {activeWorkPoints.map((wp) => (
                 <option key={wp.id} value={wp.id}>
                   {wp.name}
                 </option>
               ))}
             </Select>
           </div>
+          {/* `loading`, ca butoanele de sus: starea `downloading` exista deja, dar nu o citea
+              nimeni, deci un `.xls` care se construiește câteva secunde arăta ca un buton mort. */}
           <Button
             variant="outline"
             disabled={!canDownload || downloading !== null}
+            loading={downloading === "xls"}
             onClick={() => download("xls")}
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {downloading !== "xls" && <FileSpreadsheet className="mr-2 h-4 w-4" />}
             {t.anexa3Download}
           </Button>
           <Button
             variant="outline"
             disabled={!canDownload || downloading !== null}
+            loading={downloading === "pdf"}
             onClick={() => download("pdf")}
           >
-            <FileText className="mr-2 h-4 w-4" />
+            {downloading !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
             PDF
           </Button>
         </div>

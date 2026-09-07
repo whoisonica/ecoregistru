@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { api, apiErrorMessage } from "@/lib/api";
+import { api, apiBlobErrorMessage } from "@/lib/api";
+import { saveBlob } from "@/lib/download";
 import type { WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { useToast } from "@/components/ui/toast";
@@ -28,14 +29,9 @@ export function useAnexa3Download() {
     setDownloadingId(m.id);
     try {
       const res = await api.get(`/api/v1/movements/${m.id}/anexa3`, { responseType: "blob" });
-      const url = URL.createObjectURL(res.data as Blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `anexa3-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
+      saveBlob(res.data as Blob, `anexa3-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`);
     } catch (err) {
-      notify(apiErrorMessage(err, strings.movements.anexa3Error), "error");
+      notify(await apiBlobErrorMessage(err, strings.movements.anexa3Error), "error");
     } finally {
       setDownloadingId(null);
     }

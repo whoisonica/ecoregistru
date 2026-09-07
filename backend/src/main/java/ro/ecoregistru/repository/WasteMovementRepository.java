@@ -35,4 +35,18 @@ public interface WasteMovementRepository
     /** All live movements for a tenant within a date range — the evidence engine's input. */
     List<WasteMovement> findAllByCompany_IdAndDeletedFalseAndDateBetween(
             UUID companyId, LocalDate from, LocalDate to);
+
+    /**
+     * The last time anything dated on or before {@code until} changed. Feeds the staleness check
+     * that decides whether the cached evidence of a year still describes the movements.
+     *
+     * <p>Two things about the query are deliberate. It has <b>no {@code deletedFalse} filter</b>:
+     * deleting a movement invalidates the cache exactly as editing one does, and a soft delete
+     * bumps {@code updatedAt} on a row that stays. And it looks at every year <b>up to</b> the one
+     * asked about, not only that year: stock is cumulative, so a correction on a 2024 movement
+     * makes the 2026 lines wrong through the opening balance they carry.
+     */
+    @Query("select max(m.updatedAt) from WasteMovement m "
+            + "where m.company.id = :companyId and m.date <= :until")
+    Instant findLastChangeUpTo(@Param("companyId") UUID companyId, @Param("until") LocalDate until);
 }

@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { saveBlob } from "@/lib/download";
 
 /**
  * Downloads the control dossier (dosar de control) as a ZIP and triggers a browser download.
@@ -14,18 +15,10 @@ export async function downloadAuditFile(year: number, years = 1): Promise<void> 
     params: { year, years },
     responseType: "blob",
   });
-  const url = URL.createObjectURL(res.data as Blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download =
-      years === 1
-        ? `dosar-control-${year}.zip`
-        : `dosar-control-${year - years + 1}-${year}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  saveBlob(
+    res.data as Blob,
+    years === 1
+      ? `dosar-control-${year}.zip`
+      : `dosar-control-${year - years + 1}-${year}.zip`
+  );
 }

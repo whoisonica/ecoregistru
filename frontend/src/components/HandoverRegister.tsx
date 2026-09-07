@@ -3,6 +3,7 @@ import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -15,11 +16,6 @@ import { TableFallbackRow } from "@/components/ui/table-fallback";
 const t = strings.evidences;
 const m = strings.movements;
 const e = strings.enums;
-
-function formatDate(iso: string) {
-  const [y, mo, d] = iso.split("-");
-  return `${d}.${mo}.${y}`;
-}
 
 /**
  * The handover register — what the Evidenţe tab shows by default, as asked at the 23.08.2026
@@ -43,13 +39,28 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
       || mv.operation === "UNCLASSIFIED_OUT"
   );
 
+  /**
+   * Ziua pe care o poartă rândul: descărcarea când se știe, altfel data mișcării. Coloana o
+   * **afișa** deja așa, dar se sorta și se căuta după `date` — deci apăsai pe „Data predării" și
+   * rândurile nu se așezau după cifrele scrise în ele, iar tastarea unei date nu găsea nimic în
+   * registru, deși pe Mișcări găsea. O singură expresie, folosită de toate trei.
+   */
+  const handoverDate = (mv: WasteMovement) => mv.unloadDate ?? mv.date;
+
   const view = useTableView(rows, {
     searchText: (mv) =>
-      [mv.wasteCode, mv.wasteCodeName, mv.partnerName, mv.workPointName, mv.operationCode]
+      [
+        mv.wasteCode,
+        mv.wasteCodeName,
+        mv.partnerName,
+        mv.workPointName,
+        mv.operationCode,
+        formatDate(handoverDate(mv)),
+      ]
         .filter(Boolean)
         .join(" "),
     comparators: {
-      date: (a, b) => a.date.localeCompare(b.date),
+      date: (a, b) => handoverDate(a).localeCompare(handoverDate(b)),
       wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
       // „De cântărit" stă la coadă în ambele sensuri, ca pe Mișcări: e o cantitate nespusă.
       quantity: missingLast(
@@ -97,7 +108,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
               <TR key={mv.id}>
                 <TD className="whitespace-nowrap">
                   {/* The date the waste actually left; the unloading date when it is known. */}
-                  {formatDate(mv.unloadDate ?? mv.date)}
+                  {formatDate(handoverDate(mv))}
                 </TD>
                 <TD>
                   <span className="font-medium text-content">{mv.wasteCode}</span>
