@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { fold } from "@/lib/utils";
 
 /**
  * Taie textul unui rând în cuvinte, pe orice nu e literă sau cifră.
@@ -126,10 +127,12 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): T
    * niciun rând, dar descrie exact rândul căutat.
    */
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // `fold` pe amândouă părţile: cine tastează „deseuri" caută acelaşi lucru ca cine tastează
+    // „deşeuri". Vezi `fold` în `lib/utils` — până la ea, prima variantă întorcea zero rânduri.
+    const q = fold(query.trim());
     if (!q || !searchText) return rows;
 
-    const haystacks = rows.map((row) => searchText(row).toLowerCase());
+    const haystacks = rows.map((row) => fold(searchText(row)));
     const phrase = rows.filter((_, i) => haystacks[i].includes(q));
     if (phrase.length > 0) return phrase;
 

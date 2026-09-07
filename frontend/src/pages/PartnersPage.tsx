@@ -31,6 +31,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { missingLast, useTableView } from "@/hooks/useTableView";
+import { fold } from "@/lib/utils";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -112,11 +113,14 @@ export function PartnersPage() {
    * Nu e un apel nou: lista partenerilor e deja incarcata pentru tabel, si e a tenantului. La
    * editare nu se sugereaza nimic — partenerul exista deja, iar propriul nume nu e un duplicat.
    */
+  // `fold` aici nu e doar comoditate, ca la căutarea din tabel: sugestia asta există ca să nu se
+  // creeze un partener de două ori. Cine tastează „deseuri" nu vedea „Transport Deșeuri SRL", deci
+  // îl adăuga încă o dată — iar duplicatul rămâne în nomenclator şi pe documentele tipărite.
   const nameSuggestions =
     editing || name.trim().length < 2
       ? []
       : (partners ?? [])
-          .filter((p) => p.name.toLowerCase().includes(name.trim().toLowerCase()))
+          .filter((p) => fold(p.name).includes(fold(name.trim())))
           .slice(0, 5);
 
   const filteredByRole = useMemo(

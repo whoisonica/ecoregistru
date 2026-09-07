@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { CornerDownLeft, Search, type LucideIcon } from "lucide-react";
 import { useHotkey } from "@/hooks/useHotkey";
 import { strings } from "@/lib/strings";
-import { cn } from "@/lib/utils";
+import { cn, fold } from "@/lib/utils";
 
 export interface Command {
   id: string;
@@ -58,14 +58,18 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
    * grupul.
    */
   const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // `fold` peste tot, inclusiv la scor: numele ecranelor sunt „Mişcări", „Evidenţe", „Termene",
+    // deci fără pliere paleta nu găsea aproape nimic tastat repede. Scorul se calculează pe text
+    // pliat dinadins — pe text nepliat, `startsWith` n-ar mai fi adevărat pentru nimic şi toate
+    // rezultatele ar cădea pe ultima treaptă, adică ordonarea s-ar strica în tăcere.
+    const q = fold(query.trim());
     if (!q) return commands;
     const words = q.split(/\s+/);
     const scored: { command: Command; score: number }[] = [];
     for (const c of commands) {
-      const label = c.label.toLowerCase();
-      const keywords = (c.keywords ?? "").toLowerCase();
-      const group = c.group.toLowerCase();
+      const label = fold(c.label);
+      const keywords = fold(c.keywords ?? "");
+      const group = fold(c.group);
       const haystack = `${label} ${keywords} ${group}`;
       if (!words.every((w) => haystack.includes(w))) continue;
       const score = label.startsWith(q)

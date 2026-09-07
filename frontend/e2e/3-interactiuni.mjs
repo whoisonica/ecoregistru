@@ -34,6 +34,28 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 check("Escape golește căutarea", (await rows()) === before, `înapoi la ${await rows()}`);
 
+// Diacriticele nu contează: cine tastează repede scrie „deseuri", nu „deșeuri". Până la `fold`
+// (07.09.2026) răspunsul era zero rânduri — nu rezultate parțiale, zero, cu ecranul spunând
+// „Niciun rezultat" pentru un cuvânt care se vede în tabel.
+const searchCount = async (q) => {
+  await page.fill("[data-table-search]", "");
+  await page.waitForTimeout(300);
+  await page.fill("[data-table-search]", q);
+  await page.waitForTimeout(600);
+  const cells = await page.$$eval("tbody tr", (rs) => rs.map((x) => x.textContent));
+  return cells.filter((t) => !t.includes("Niciun rezultat")).length;
+};
+for (const [fara, cu] of [
+  ["deseuri", "deșeuri"],
+  ["hartie", "hârtie"],
+]) {
+  const a = await searchCount(fara);
+  const b = await searchCount(cu);
+  check(`„${fara}" găsește cât „${cu}"`, a === b && a > 0, `${a} vs ${b} rânduri`);
+}
+await page.fill("[data-table-search]", "");
+await page.waitForTimeout(300);
+
 // Căutare fără rezultate → starea goală potrivită
 await page.fill("[data-table-search]", "zzzznuexista");
 await page.waitForTimeout(300);
