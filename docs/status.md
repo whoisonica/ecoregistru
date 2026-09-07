@@ -2956,8 +2956,57 @@ contra stilului de ~100 al casei. Am revenit la commit şi am reaplicat prin scr
 după a ieşit cu hash identic. A doua: scriptul de tokens a rescris şi numele de clase **din
 comentarii**, care descriau codul vechi; le-am pus la loc.
 
-**Nevăzut cu ochii:** extensia Chrome nu era conectată, deci verificarea a fost compilator, build şi
-citirea codului. Nu s-a deschis niciun ecran.
+**La momentul ăsta nu se deschisese niciun ecran:** extensia Chrome nu se conecta, deci verificarea
+era doar compilator, build şi citirea codului. Ce a ieşit când s-au deschis, în secţiunea
+următoare.
+
+
+#### Proba pe browser — şapte defecte pe care compilatorul nu le vedea (07.09.2026)
+
+La a treia cerere (*„deschide şi testează tot, nu punem nimic în prod fără să fie 100% validat"*),
+prima probă adevărată: **backend local** cu profilul `dev` şi datele demo (Postgres 17 era deja
+pornit), **Chrome condus prin Playwright** — extensia nu se conecta, dar `playwright-core` conduce
+Chrome-ul instalat, fără să descarce nimic. Nu s-a atins producţia: totul pe `localhost:8080`.
+
+55 de verificări: cele douăsprezece ecrane deschise şi fotografiate, interacţiunile apăsate una
+câte una, formularul de mişcare umblat, ecranul de 375px măsurat. **Şapte defecte, niciunul vizibil
+din cod** — `tsc` şi `vite build` treceau pe toate:
+
+1. **Căutarea „15 01 02" întorcea coduri 15 01 07.** Potrivirea era pe subşir oriunde în textul
+   rândului, iar „02" se găseşte în „2026" din dată. Reparat în două trepte — prima a scăzut
+   numărul de intruşi de la doi la unul, fiindcă rămânea mişcarea din **02**.06. Fondul: un cod de
+   deşeu e o **expresie**, nu trei cuvinte. Acum se caută întâi expresia întreagă.
+2. **Primul clic pe coloana sortată implicit părea că nu face nimic.** Ciclul avea trei stări, iar
+   pe Mişcări (implicit: dată descrescător) primul clic ducea la „deloc" — unde ordinea de la
+   server e tot descrescătoare după dată. Măsurat: `aria-sort` trecea pe `none`, primul rând
+   rămânea acelaşi. Acum două stări.
+3. **Paleta evidenţia „Mişcări" când tastai „evid"**, fiindcă grupul lui Mişcări e „Evidenţă" şi
+   intra în textul căutat. Apăsai Enter aşteptând Evidenţe şi rămâneai unde erai.
+4. **Trei rubrici din şapte n-aveau marcaj de eroare** — codul de deşeu, punctul de lucru, data.
+   Scriptul care le lega se oprise înainte să scrie; `validate()` le seta, dar nu le afişa nimeni.
+   Bannerul spunea „verifică rubricile marcate mai jos" **fără să marcheze nimic**. Ăsta e felul de
+   defect pe care numai apăsarea butonului îl scoate la iveală.
+5. **„Şterge" din meniul de rând nu se putea apăsa.** `position: sticky` face un context de
+   stivuire propriu, deci meniul rămânea prins în celula lui, iar celulele fixate ale rândurilor de
+   dedesubt se desenau peste el.
+6. **Coloana de acţiuni ieşea din ecran.** Măsurat la 1280px: Mişcări depăşeşte cu 202px, Ambalaje
+   cu 213, Parteneri cu 122. Nu se vedea nici măcar că *există* o coloană de acţiuni. Fixată la
+   marginea din dreapta, în toate cele nouă tabele care au una.
+7. **Panoul se derula lateral cu 110px pe telefon.** O grilă cu o singură coloană foloseşte o pistă
+   `auto`, dimensionată după conţinutul cel mai lat — iar `truncate` nu micşorează lăţimea maximă a
+   textului. 27 de grile au primit `grid-cols-1`, adică `minmax(0, 1fr)`.
+
+Plus rândurile de tabel cu `scroll-mt-12`, ca unul adus la vedere să nu ajungă sub antetul lipicios
+— browserul derulează singur când focusul cade pe un rând nevăzut, adică la navigarea cu Tab.
+
+**Ce spune asta despre feliile de dinainte.** Erau toate „verificate": `tsc --noEmit` curat, build
+verde, cod recitit. Niciuna dintre cele şapte n-a ieşit aşa. Patru cereau apăsarea unui buton, două
+o măsurătoare de geometrie, una o privire pe o captură. Compilatorul spune că programul e
+consistent cu el însuşi, nu că face ce trebuie.
+
+**Suita a rămas în afara repo-ului**, în directorul temporar al sesiunii: patru fişiere `.mjs` şi
+`playwright-core`. Adăugarea unui cadru de teste în proiect e o decizie proprie, nu una de luat din
+mers.
 
 
 ## Ce urmează — plan revizuit (22.08.2026)
