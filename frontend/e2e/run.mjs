@@ -14,6 +14,7 @@ const suites = [
   ["3-interactiuni.mjs", "căutare, sortare, filtre, scurtături"],
   ["4-formular.mjs", "formularul de mişcare"],
   ["5-telefon.mjs", "ecran îngust"],
+  ["6-cerere-si-rapoarte.mjs", "cererea de cont, inboxul ei şi drumul spre mişcarea vinovată"],
 ];
 
 const only = process.argv[2];

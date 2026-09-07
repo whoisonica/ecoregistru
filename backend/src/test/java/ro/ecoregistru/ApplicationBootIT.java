@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
@@ -59,6 +60,26 @@ class ApplicationBootIT {
         UUID demoTenantId = companyRepository.findAll().stream()
                 .filter(c -> "Demo Reciclare SRL".equals(c.getName()))
                 .findFirst().orElseThrow().getId();
-        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(34);
+        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(36);
+
+        /*
+         * Cele două rânduri adăugate pe 07.09.2026, și de ce sunt numărate pe nume, nu doar în
+         * total: seed-ul avea **zero** mișcări în stările pentru care ecranele au reguli proprii,
+         * deci fiecare probă scrisă în jurul lor trecea pe gol. Un total care crește nu spune că
+         * stările există; astea două o spun.
+         */
+        var demoMovements = wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId);
+        assertThat(demoMovements)
+                .as("o ieșire fără cod R/D — badge roșu, cantitate care nu intră în nicio coloană")
+                .anySatisfy(m -> {
+                    assertThat(m.getOperation()).isEqualTo(WasteOperation.UNCLASSIFIED_OUT);
+                    assertThat(m.getOperationCode()).isNull();
+                });
+        assertThat(demoMovements)
+                .as("o predare care așteaptă cântarul — badge galben, cantitate nespusă")
+                .anySatisfy(m -> {
+                    assertThat(m.isWeighedAtUnloading()).isTrue();
+                    assertThat(m.getQuantity()).isNull();
+                });
     }
 }

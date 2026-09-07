@@ -52,5 +52,22 @@ public record AccountRequestSubmission(
 
         Set<WasteOperationCode> operationCodes,
         String wasteCodesText,
-        String notes
-) {}
+        String notes,
+
+        /**
+         * The honeypot, and the only field here nobody is meant to answer. The form renders it
+         * hidden from the eye, out of the tab order and behind {@code aria-hidden}, so a human
+         * cannot fill it in even by accident — a value means an automated submission.
+         *
+         * <p>Named {@code website} because that is what a form-filling bot looks for. Kept out of
+         * {@link ro.ecoregistru.entity.AccountRequest} on purpose: it is a verdict about the
+         * sender, not an answer about the company.
+         */
+        String website
+) {
+
+    /** True when the trap was sprung. Blank and null both mean a human left it alone. */
+    public boolean looksAutomated() {
+        return website != null && !website.isBlank();
+    }
+}

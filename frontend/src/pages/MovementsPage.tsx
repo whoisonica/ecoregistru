@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Copy, Plus, Pencil, Trash2, Paperclip, FileText, Scale, Truck } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
@@ -245,6 +245,38 @@ export function MovementsPage() {
 
   const hasFilters = Boolean(monthFilter || workPointFilter);
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
+
+  /**
+   * Mișcarea pe care o cere adresa, deschisă direct în formularul de editare.
+   *
+   * <p>Rapoartele numesc rândul vinovat — badge-ul roșu „Fără cod R/D" din registrul de predări,
+   * rândul amber din registrul de ambalaje — și până acum se opreau acolo: aflai *care* mișcare e
+   * de reparat și rămâneai să o cauți cu mâna printre lunile din filtru. Linkul poartă și luna
+   * (`?luna=…&miscare=…`), fiindcă altfel rândul cerut n-ar fi printre cele aduse.
+   *
+   * <p>Parametrul se **consumă** la deschidere. Lăsat în adresă, un refresh ar redeschide dialogul
+   * peste ce lucrezi, iar butonul Înapoi n-ar mai închide nimic.
+   */
+  const [focusId, setFocusId] = useUrlState("miscare");
+  useEffect(() => {
+    if (!focusId) return;
+    const found = rows.find((mv) => mv.id === focusId);
+    if (found) {
+      // Aceleași trei atribuiri ca `openEdit`, scrise aici ca efectul să nu atârne de o funcție
+      // rescrisă la fiecare randare — exact felul de dependență care fura focusul din `Dialog`.
+      setEditing(found);
+      setDuplicating(null);
+      setDialogOpen(true);
+      setFocusId("");
+      return;
+    }
+    // Nu e printre rândurile aduse, iar aducerea s-a terminat: mișcarea a fost ștearsă între timp,
+    // sau linkul e vechi. Se spune, nu se deschide un formular gol.
+    if (!isLoading && movements) {
+      notify(t.movementNotFound, "error");
+      setFocusId("");
+    }
+  }, [focusId, rows, isLoading, movements, setFocusId, notify]);
 
   function openCreate() {
     setEditing(null);

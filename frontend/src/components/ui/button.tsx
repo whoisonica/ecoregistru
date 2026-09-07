@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
 import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { Link, type LinkProps } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -58,3 +59,19 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   )
 );
 Button.displayName = "Button";
+
+/**
+ * Un buton care duce undeva. Arată identic, dar **este** o legătură.
+ *
+ * <p>Diferența nu e cosmetică: o navigare scrisă ca `<button onClick={navigate(...)}>` nu se poate
+ * deschide într-o filă nouă, nu se poate copia cu clic dreapta și nu spune cititorului de ecran că
+ * duce în altă parte. Rapoartele care trimit spre mișcarea vinovată sunt exact cazul în care omul
+ * vrea des a doua filă: repară acolo, se întoarce la listă aici.
+ */
+export const LinkButton = forwardRef<
+  HTMLAnchorElement,
+  LinkProps & VariantProps<typeof buttonVariants>
+>(({ className, variant, size, ...props }, ref) => (
+  <Link ref={ref} className={cn(buttonVariants({ variant, size, className }))} {...props} />
+));
+LinkButton.displayName = "LinkButton";

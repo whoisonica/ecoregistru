@@ -191,6 +191,23 @@ export function ClientsPage() {
     fillForm(c);
   }
 
+  /**
+   * Capătul celălalt al fluxului de cereri: din rândul „Cont creat" se ajunge la firma pe care a
+   * născut-o, care stă în tabelul de deasupra dar putea fi la al treizecilea rând sau pe altă
+   * pagină a listei.
+   *
+   * <p>Când firma nu e în listă — s-a creat de altcineva de la ultima încărcare — se spune, nu se
+   * deschide un formular gol: un dialog cu rubricile goale ar arăta ca o firmă fără date.
+   */
+  function openCompanyById(companyId: string) {
+    const found = (companies ?? []).find((c) => c.id === companyId);
+    if (!found) {
+      notify(strings.accountRequest.openCompanyMissing, "error");
+      return;
+    }
+    openEdit(found);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
@@ -727,7 +744,7 @@ export function ClientsPage() {
         </form>
       </Dialog>
 
-      <AccountRequestsSection enabled={isPlatformAdmin} />
+      <AccountRequestsSection enabled={isPlatformAdmin} onOpenCompany={openCompanyById} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, FileSpreadsheet, FileText, Package, Plus } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, FileText, Package, Pencil, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   downloadPackagingAnexa3,
@@ -28,7 +28,7 @@ import { formatDate } from "@/lib/utils";
 import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,6 +205,26 @@ export function PackagingPage() {
     [unclassified]
   );
 
+  /**
+   * Rândurile care ies din calcul dinadins: marfa preluată de la terţi (Anexa 1 e despre deşeul
+   * propriu) şi ambalajul pe care l-a pus pe piaţă furnizorul. Nu sunt incomplete, sunt în afara
+   * documentului — de aceea nici nu se colorează, nici nu primesc acţiune.
+   */
+  const isExcluded = (m: WasteMovement) =>
+    m.register === "ART_48" || m.packagingOnMarket === false;
+
+  /**
+   * Rândul are ceva de completat **pe mişcare**, deci acţiunea are unde duce.
+   *
+   * <p>Condiţia e ţinută dinadins identică cu cea care colorează rândul: dacă tabelul semnalează
+   * ceva, se poate apăsa; dacă nu semnalează nimic, nu apare niciun buton care să sugereze că ar
+   * fi. Două condiţii apropiate dar diferite ar fi arătat exact ca un defect.
+   */
+  const needsFixing = (m: WasteMovement) =>
+    !isExcluded(m) &&
+    (unclassifiedIds.has(m.id) ||
+      ((m.operation === "RECOVERED" || m.operation === "DISPOSED") && !m.operationCode));
+
   async function handleDownload(format: "xls" | "pdf") {
     setDownloading(format);
     try {
@@ -374,12 +394,15 @@ export function PackagingPage() {
                 <TH>{t.inAnexa1}</TH>
                 <TH>{t.origin}</TH>
                 <TH>{t.workPoint}</TH>
+                <TH sticky="right" className="text-right">
+                  {strings.common.actions}
+                </TH>
               </TR>
             </THead>
             <TBody>
               {(loadingMovements || registerView.visible.length === 0) && (
                 <TableFallbackRow
-                  columns={10}
+                  columns={11}
                   loading={loadingMovements}
                   icon={Package}
                   title={
@@ -391,7 +414,7 @@ export function PackagingPage() {
                 <TR
                   key={m.id}
                   className={
-                    m.register === "ART_48" || m.packagingOnMarket === false
+                    isExcluded(m)
                       ? "text-content-subtle"
                       : unclassifiedIds.has(m.id)
                         ? "bg-amber-50/60"
@@ -472,6 +495,21 @@ export function PackagingPage() {
                     )}
                   </TD>
                   <TD>{m.workPointName}</TD>
+                  {/* Rândul amber spunea ce lipsește și se oprea acolo. Acțiunea apare doar unde
+                      chiar e ceva de completat pe mișcare — un rând care nu hrănește declaraţia
+                      (marfă preluată, ambalaj pus pe piaţă de furnizor) n-are ce repara. */}
+                  <TD sticky="right" className="text-right">
+                    {needsFixing(m) && (
+                      <LinkButton
+                        variant="ghost"
+                        size="sm"
+                        to={`/miscari?luna=${m.date.slice(0, 7)}&miscare=${m.id}`}
+                      >
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        {t.fixOnMovement}
+                      </LinkButton>
+                    )}
+                  </TD>
                 </TR>
               ))}
             </TBody>

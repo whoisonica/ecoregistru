@@ -51,9 +51,18 @@ public class AccountRequestService {
     WorkPointRepository workPointRepository;
     CompanyService companyService;
 
-    /** Public. Returns nothing about what it wrote, so it cannot be used to probe for companies. */
+    /**
+     * Public. Returns nothing about what it wrote, so it cannot be used to probe for companies.
+     *
+     * <p>A submission that filled in the honeypot is dropped without a trace, and the caller still
+     * gets the same 202 a real one gets. Answering "rejected" would tell a bot exactly which field
+     * to leave alone next time, and this is the only public write in the application.
+     */
     @Transactional
     public void submit(AccountRequestSubmission submission) {
+        if (submission.looksAutomated()) {
+            return;
+        }
         AccountRequest request = AccountRequest.builder()
                 .companyName(submission.companyName().trim())
                 .cui(normalizeCui(submission.cui()))

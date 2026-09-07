@@ -140,6 +140,9 @@ export const strings = {
     add: "Adaugă mișcare",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
+    // Linkul din rapoarte a adus un id care nu mai e printre mișcările lunii: ștearsă între timp,
+    // sau o adresă veche. Se spune, în loc să se deschidă un formular gol.
+    movementNotFound: "Mișcarea cerută nu mai există sau a fost ștearsă.",
     // Reperele formularului lung. Sunt titluri, nu uși: secțiunile nu se pliază, fiindcă jumătate
     // din ele conțin rubrici obligatorii.
     sectionWaste: "Deșeul",
@@ -617,6 +620,12 @@ export const strings = {
     missingCode: "Fără cod R/D",
     missingCodeHint:
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
+    // Badge-ul spunea ce e stricat; abia asta duce unde se repară.
+    fixMissingCode: "Completează codul",
+    // Filtrul care leagă panoul de rândurile vinovate. Stă în adresă, deci linkul se poate trimite.
+    onlyMissingCode: "Doar ieșirile fără cod R/D",
+    onlyMissingCodeOff: "Arată toate predările",
+    onlyMissingCodeEmpty: "Nicio ieșire fără cod R/D pentru filtrele alese. Depunerea nu e blocată aici.",
     awaitingWeighing: "De cântărit",
     awaitingWeighingHint:
       "O ieșire din luna asta așteaptă cântarul destinatarului, deci totalurile sunt provizorii.",
@@ -1040,12 +1049,30 @@ export const strings = {
     title: "Cerere de cont EcoRegistru",
     subtitle:
       "Conturile se creează de echipa EcoRegistru, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
+    // Cele trei rânduri din capul paginii. Un prospect care intră pe link nu știe nici unde a
+    // ajuns, nici cât durează, nici ce primește — iar formularul are șase secțiuni, deci
+    // întrebarea „merită să încep?" se pune înainte de prima rubrică, nu după.
+    stepsTitle: "Cum funcționează",
+    step1: "Completezi formularul — câteva minute, doar trei rubrici sunt obligatorii.",
+    step2: "Îl citim și configurăm aplicația pentru activitatea ta.",
+    step3: "Primești datele de acces pe email, în 1–2 zile lucrătoare.",
+    requiredLegend: "Rubricile marcate cu * sunt obligatorii. Restul ne scutesc de un telefon.",
     sectionCompany: "Firma",
     sectionWorkPoint: "Punctul de lucru",
     sectionContact: "Persoana de contact",
     sectionAuthorization: "Autorizația de mediu",
     sectionTransport: "Transport",
     sectionWaste: "Deșeurile",
+    // Rubricile respinse se marchează una câte una, ca pe formularul de mișcare. Bannerul din cap
+    // spunea „verifică rubricile marcate mai jos" fără să marcheze nimic — exact defectul reparat
+    // acolo pe 07.09, rămas aici.
+    errCompanyName: "Scrie denumirea firmei, ca în certificatul de înregistrare.",
+    errCui: "Scrie CUI-ul firmei.",
+    // Aceeași formă pe care o cere `CompanyService` la crearea firmei: un CUI care nu trece pe aici
+    // ar trece de formular și ar cădea abia la aprobare, în mâinile altcuiva.
+    errCuiFormat: "CUI-ul se scrie din 2–10 cifre, cu sau fără „RO” în față. Ex.: RO12345678.",
+    errContactEmail: "Scrie emailul pe care să-ți răspundem.",
+    errContactEmailFormat: "Emailul nu pare complet. Ex.: nume@firma.ro",
     companyName: "Denumirea firmei",
     cui: "CUI",
     cuiPlaceholder: "ex. RO12345678",
@@ -1084,6 +1111,17 @@ export const strings = {
     operationCodes: "Ce se întâmplă cu deșeul",
     operationCodesHint:
       "Bifează operațiunile pe care le folosiți. Doar acestea vor apărea în aplicație — poți lăsa necompletat dacă nu știi.",
+    // Cele 28 de bife R/D stăteau deschise în fața cuiva care poate n-a auzit de R13. Necompletat
+    // era deja un răspuns valid — „nu se restrânge nimic" — dar formularul nu spunea asta nicăieri,
+    // deci arăta ca o listă la care ai rămas dator. Acum e o alegere cu două ieșiri, prima onorabilă.
+    operationCodesUnknown: "Nu știu — le stabilim împreună",
+    operationCodesUnknownHint:
+      "Alegerea obișnuită dacă n-ai lucrat cu codurile R/D. Le completăm la configurarea contului, cu autorizația de mediu în față.",
+    operationCodesChoose: "Le știu, le aleg acum",
+    operationCodesChooseHint:
+      "Codurile din autorizația de mediu. Doar cele bifate apar mai târziu la înregistrarea mișcărilor.",
+    operationCodesSelected: "{n} operațiuni alese",
+    operationCodesSelectedOne: "o operațiune aleasă",
     recovery: "Valorificare (R)",
     disposal: "Eliminare (D)",
     wasteCodesText: "Ce deșeuri generați / preluați",
@@ -1096,6 +1134,15 @@ export const strings = {
     successTitle: "Cererea a fost trimisă",
     successBody:
       "Echipa EcoRegistru o verifică și îți creează contul. Primești datele de acces pe emailul completat.",
+    // „Am primit cererea" răspunde la ce s-a întâmplat, nu la ce urmează — iar omul tocmai a dat
+    // datele firmei lui unui site pe care nu-l cunoaște. Termenul e cel pe care îl ținem, nu unul
+    // rotund: mai bine două zile promise și una ținută.
+    successNextTitle: "Ce urmează",
+    successNext1: "Îți citim răspunsurile și configurăm aplicația pentru activitatea ta.",
+    successNext2: "Te sunăm sau îți scriem dacă ceva are nevoie de o lămurire.",
+    successNext3: "Primești pe {email} un link pe care îți alegi parola. În 1–2 zile lucrătoare.",
+    successNoEmailFallback: "emailul completat",
+    successSpam: "Dacă nu vezi mesajul, uită-te și în „Spam” — vine de la o adresă nouă pentru tine.",
     submitError: "Trimiterea a eșuat. Verifică datele și încearcă din nou.",
     backToLogin: "Înapoi la autentificare",
     linkFromLogin: "Nu ai cont? Trimite o cerere",
@@ -1112,6 +1159,19 @@ export const strings = {
     colWaste: "Deșeuri",
     colDate: "Trimisă",
     colStatus: "Stare",
+    // Tabelul arată șapte coloane dintr-un formular cu douăzeci de rubrici. Restul — adresa
+    // sediului, punctul de lucru, telefonul, autorizația, transportul și mai ales `notes`, rubrica
+    // de text liber în care omul scrie ce nu încape în celelalte — nu se citeau de nicăieri, deși
+    // exact cine creează firma din cerere are nevoie de ele.
+    view: "Vezi cererea",
+    viewTitle: "Cererea trimisă",
+    viewEmptyValue: "—",
+    viewSubmittedAt: "Trimisă la",
+    viewHandledAt: "Rezolvată la",
+    viewNoAnswers: "Nimic completat în această secțiune.",
+    // Rândul devenea „Cont creat" și nu ducea nicăieri, deși firma stă în tabelul de deasupra.
+    openCompany: "Vezi firma creată",
+    openCompanyMissing: "Firma creată nu mai e în listă.",
     approve: "Creează contul",
     reject: "Respinge",
     rejectPrompt: "De ce respingi cererea?",
@@ -1228,6 +1288,10 @@ export const strings = {
     awaitingWeighing: "{n} mișcări încă de cântărit — cantitatea lor lipsește din ambele tabele.",
     missingOperation: "{n} mișcări fără cod R/D — operatorul apare, operațiunea rămâne goală.",
     fix: "Completează",
+    // Badge-ul „Completează" spune ce lipsește; acțiunea de pe rând duce chiar la mișcarea unde
+    // se completează. Registrul de ambalaje era al treilea raport care numea vinovatul și se
+    // oprea acolo.
+    fixOnMovement: "Completează",
 
     // --- tabelul 1 ---
     table1Title: "Tabel 1. Ambalaje introduse pe piața națională",
@@ -1365,6 +1429,8 @@ export const strings = {
     status: "Status",
     actions: "Acțiuni",
     requiredField: "Câmp obligatoriu.",
+    // Citit doar de cititorul de ecran, în locul asteriscului. Vezi `Label`.
+    requiredMarker: "obligatoriu",
     search: "Caută",
     searchPlaceholder: "Caută în listă...",
     clearSearch: "Golește căutarea",

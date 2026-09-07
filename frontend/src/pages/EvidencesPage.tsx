@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Download, FileSpreadsheet, FileText, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
@@ -474,11 +475,22 @@ export function EvidencesPage() {
                               {t.hazardous}
                             </Badge>
                           )}
+                          {/* Rândul lunar e un agregat, deci nu poate deschide o mișcare — dar
+                              poate duce la rândurile care îl compun. Badge-ul devine drumul spre
+                              ele, restrâns la exact luna și punctul de lucru ale rândului. */}
                           {r.totalUnclassifiedOut > 0 && (
                             <Tooltip content={t.missingCodeHint}>
-                              <Badge variant="danger" className="ml-2">
-                                {t.missingCode}
-                              </Badge>
+                              <Link
+                                to={`/evidente?an=${r.year}&luna=${r.month}&punct=${r.workPointId}&vedere=handovers&problema=cod-rd`}
+                                className="ml-2 inline-block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                              >
+                                <Badge
+                                  variant="danger"
+                                  className="underline decoration-dotted underline-offset-2"
+                                >
+                                  {t.missingCode}
+                                </Badge>
+                              </Link>
                             </Tooltip>
                           )}
                           {r.awaitingWeighing && (

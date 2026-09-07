@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, Inbox, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowUpRight, Check, Eye, Inbox, X } from "lucide-react";
 import {
   useAccountRequests,
   useApproveAccountRequest,
@@ -26,10 +26,54 @@ const t = strings.accountRequest;
 const typeLabels = strings.enums.companyType;
 const marketRoleLabels = strings.enums.marketRole;
 
+const operationLabels = strings.enums.wasteOperationCode;
+
 function StatusBadge({ request }: { request: AccountRequest }) {
   if (request.status === "APPROVED") return <Badge variant="success">{t.status.APPROVED}</Badge>;
   if (request.status === "REJECTED") return <Badge variant="muted">{t.status.REJECTED}</Badge>;
   return <Badge variant="warning">{t.status.NEW}</Badge>;
+}
+
+/**
+ * O secțiune din cererea citită, cu rubricile ei.
+ *
+ * <p>Rubricile goale **se arată**, nu se sar: cine creează firma trebuie să vadă că adresa lipsește,
+ * nu să caute printre cele completate ca să deducă asta. Secțiunea întreagă dispare doar dacă n-are
+ * niciun răspuns — atunci absența e informația, și o spune un rând, nu opt liniuțe.
+ */
+function AnswerSection({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: { label: string; value: ReactNode }[];
+}) {
+  const answered = rows.filter((r) => r.value != null && r.value !== "");
+  return (
+    <section>
+      <h3 className="border-b border-line pb-1.5 text-xs font-semibold uppercase tracking-wide text-content-muted">
+        {title}
+      </h3>
+      {answered.length === 0 ? (
+        <p className="mt-2 text-sm text-content-subtle">{t.viewNoAnswers}</p>
+      ) : (
+        <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+          {rows.map((r) => (
+            <div key={r.label}>
+              <dt className="text-xs text-content-muted">{r.label}</dt>
+              <dd className="whitespace-pre-wrap break-words text-sm text-content-strong">
+                {r.value == null || r.value === "" ? (
+                  <span className="text-content-subtle">{t.viewEmptyValue}</span>
+                ) : (
+                  r.value
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
+  );
 }
 
 /**
@@ -40,7 +84,17 @@ function StatusBadge({ request }: { request: AccountRequest }) {
  * anyone. Creating an account and giving a person access stay two deliberate acts, so support
  * invites the user from the list above once the company exists.
  */
-export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
+export function AccountRequestsSection({
+  enabled,
+  onOpenCompany,
+}: {
+  enabled: boolean;
+  /**
+   * Deschide firma creată dintr-o cerere aprobată. Lipsa ei ascunde acțiunea, deci secțiunea
+   * rămâne folosibilă oriunde ar fi pusă — legătura e a paginii care ține și lista de firme.
+   */
+  onOpenCompany?: (companyId: string) => void;
+}) {
   const { data: requests, isLoading, isError } = useAccountRequests(enabled);
   const approveMut = useApproveAccountRequest();
   const rejectMut = useRejectAccountRequest();
@@ -51,6 +105,8 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
   // Cererea pe cale de a fi respinsă, cu motivul care se scrie. `null` = dialogul e închis.
   const [rejecting, setRejecting] = useState<AccountRequest | null>(null);
   const [reason, setReason] = useState("");
+  /** Cererea citită întreagă. `null` = dialogul e închis. */
+  const [viewing, setViewing] = useState<AccountRequest | null>(null);
 
   /**
    * Aprobarea creează o firmă reală și nu se poate desface: nu există ștergere de firmă, iar
@@ -189,29 +245,47 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                       <StatusBadge request={r} />
                     </TD>
                     <TD sticky="right" className="text-right">
-                      {r.status === "NEW" && (
-                        <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1">
+                        {/* Se citește pe orice rând, indiferent de stare: și după ce firma s-a
+                            creat, cererea rămâne singurul loc unde scrie ce a cerut clientul. */}
+                        <Button variant="ghost" size="sm" onClick={() => setViewing(r)}>
+                          <Eye className="mr-1 h-3.5 w-3.5" />
+                          {t.view}
+                        </Button>
+                        {r.status === "NEW" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => handleApprove(r)}
+                            >
+                              <Check className="mr-1 h-3.5 w-3.5" />
+                              {t.approve}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50"
+                              disabled={busy}
+                              onClick={() => openReject(r)}
+                            >
+                              <X className="mr-1 h-3.5 w-3.5" />
+                              {t.reject}
+                            </Button>
+                          </>
+                        )}
+                        {r.status === "APPROVED" && r.createdCompanyId && onOpenCompany && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            disabled={busy}
-                            onClick={() => handleApprove(r)}
+                            onClick={() => onOpenCompany(r.createdCompanyId!)}
                           >
-                            <Check className="mr-1 h-3.5 w-3.5" />
-                            {t.approve}
+                            <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
+                            {t.openCompany}
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            disabled={busy}
-                            onClick={() => openReject(r)}
-                          >
-                            <X className="mr-1 h-3.5 w-3.5" />
-                            {t.reject}
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </TD>
                   </TR>
                 ))}
@@ -221,6 +295,120 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
           </>
         )}
       </div>
+
+      {/* Cererea, întreagă. Ordinea e cea din formularul pe care l-a completat clientul: cine
+          citește aici și cine a scris acolo trec prin aceleași secțiuni, în aceeași ordine. */}
+      <Dialog
+        open={viewing !== null}
+        onClose={() => setViewing(null)}
+        title={t.viewTitle}
+        description={
+          viewing
+            ? `${viewing.companyName}${viewing.cui ? ` — ${viewing.cui}` : ""}`
+            : undefined
+        }
+        size="xl"
+        footer={
+          <>
+            {viewing?.status === "APPROVED" && viewing.createdCompanyId && onOpenCompany && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const companyId = viewing.createdCompanyId!;
+                  setViewing(null);
+                  onOpenCompany(companyId);
+                }}
+              >
+                <ArrowUpRight className="mr-1 h-4 w-4" />
+                {t.openCompany}
+              </Button>
+            )}
+            <Button onClick={() => setViewing(null)}>{strings.common.close}</Button>
+          </>
+        }
+      >
+        {viewing && (
+          <div className="space-y-5">
+            <AnswerSection
+              title={t.sectionCompany}
+              rows={[
+                { label: t.companyName, value: viewing.companyName },
+                { label: t.cui, value: viewing.cui },
+                { label: t.companyType, value: typeLabels[viewing.companyType] },
+                { label: t.caenCode, value: viewing.caenCode },
+                { label: t.companyAddress, value: viewing.companyAddress },
+              ]}
+            />
+            <AnswerSection
+              title={t.sectionWorkPoint}
+              rows={[
+                { label: t.workPointName, value: viewing.workPointName },
+                { label: t.workPointAddress, value: viewing.workPointAddress },
+              ]}
+            />
+            <AnswerSection
+              title={t.sectionContact}
+              rows={[
+                { label: t.contactName, value: viewing.contactName },
+                { label: t.contactRole, value: viewing.contactRole },
+                { label: t.contactEmail, value: viewing.contactEmail },
+                { label: t.contactPhone, value: viewing.contactPhone },
+              ]}
+            />
+            <AnswerSection
+              title={t.sectionAuthorization}
+              rows={[
+                { label: t.environmentalAuthNumber, value: viewing.environmentalAuthNumber },
+                {
+                  label: t.environmentalAuthExpiry,
+                  value: formatDate(viewing.environmentalAuthExpiry),
+                },
+              ]}
+            />
+            {/* Transportul se cere doar unui cont care poate prelua de la terți — dar dacă s-a
+                completat, se citește oricare ar fi tipul de azi: răspunsul e al clientului. */}
+            <AnswerSection
+              title={t.sectionTransport}
+              rows={[
+                { label: t.transportMeans, value: viewing.transportMeans },
+                { label: t.transportLicenseNumber, value: viewing.transportLicenseNumber },
+                {
+                  label: t.transportLicenseExpiry,
+                  value: formatDate(viewing.transportLicenseExpiry),
+                },
+              ]}
+            />
+            <AnswerSection
+              title={t.sectionMarketRole}
+              rows={[
+                {
+                  label: t.marketRoles,
+                  value: (viewing.marketRoles ?? [])
+                    .map((m) => marketRoleLabels[m])
+                    .join(", "),
+                },
+              ]}
+            />
+            <AnswerSection
+              title={t.sectionWaste}
+              rows={[
+                { label: t.wasteCodesText, value: viewing.wasteCodesText },
+                {
+                  label: t.operationCodes,
+                  value: (viewing.operationCodes ?? [])
+                    .map((c) => operationLabels[c])
+                    .join(" · "),
+                },
+                { label: t.notes, value: viewing.notes },
+              ]}
+            />
+            <p className="border-t border-line pt-3 text-xs text-content-muted">
+              {t.viewSubmittedAt} {formatDate(viewing.createdAt)}
+              {viewing.handledAt && ` · ${t.viewHandledAt} ${formatDate(viewing.handledAt)}`}
+            </p>
+          </div>
+        )}
+      </Dialog>
 
       <Dialog
         open={rejecting !== null}

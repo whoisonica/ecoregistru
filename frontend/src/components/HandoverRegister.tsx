@@ -1,10 +1,10 @@
-import { ArrowRightLeft, FileText } from "lucide-react";
+import { ArrowRightLeft, FileText, Pencil } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -12,6 +12,7 @@ import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { missingLast, useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
+import { useUrlState } from "@/hooks/useUrlState";
 
 const t = strings.evidences;
 const m = strings.movements;
@@ -34,10 +35,22 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   const { data: movements, isLoading, isError } = useMovements(filters);
   const { download, downloadingId } = useAnexa3Download();
 
-  const rows = (movements ?? []).filter(
+  /**
+   * „Arată-mi doar ce blochează depunerea", trimis prin adresă de pe Panou.
+   *
+   * <p>Panoul numără liniile de evidență fără cod R/D și promitea o reparație cu linkul „Repară";
+   * ducea însă la vederea lunară, unde rândurile sunt **agregate** pe (punct de lucru, cod, lună) și
+   * nu se poate deschide nicio mișcare. Registrul de predări e nivelul la care întrebarea are
+   * răspuns, fiindcă aici un rând **este** o mișcare.
+   */
+  const [problem, setProblem] = useUrlState("problema");
+  const onlyMissingCode = problem === "cod-rd";
+
+  const exits = (movements ?? []).filter(
     (mv) => mv.operation === "RECOVERED" || mv.operation === "DISPOSED"
       || mv.operation === "UNCLASSIFIED_OUT"
   );
+  const rows = onlyMissingCode ? exits.filter((mv) => !mv.operationCode) : exits;
 
   /**
    * Ziua pe care o poartă rândul: descărcarea când se știe, altfel data mișcării. Coloana o
@@ -46,6 +59,16 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
    * registru, deși pe Mișcări găsea. O singură expresie, folosită de toate trei.
    */
   const handoverDate = (mv: WasteMovement) => mv.unloadDate ?? mv.date;
+
+  /**
+   * Drumul de la rândul vinovat la mișcarea care îl produce.
+   *
+   * <p>⚠️ Luna din link e a lui **`date`**, nu a datei afișate în coloană. Ecranul Mișcări filtrează
+   * pe `date`, iar registrul arată `unloadDate` când o are — deci o predare din 31 martie descărcată
+   * pe 2 aprilie s-ar căuta în aprilie și n-ar fi găsită acolo.
+   */
+  const editHref = (mv: WasteMovement) =>
+    `/miscari?luna=${mv.date.slice(0, 7)}&miscare=${mv.id}`;
 
   const view = useTableView(rows, {
     searchText: (mv) =>
@@ -77,6 +100,20 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   return (
     <>
       <p className="mb-3 text-sm text-content-muted">{t.handoversSubtitle}</p>
+      {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel
+          tabelul pare gol pe nedrept, iar omul caută rânduri care există. */}
+      {onlyMissingCode && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <span className="font-medium">{t.onlyMissingCode}</span>
+          <button
+            type="button"
+            onClick={() => setProblem("")}
+            className="shrink-0 font-medium underline hover:no-underline"
+          >
+            {t.onlyMissingCodeOff}
+          </button>
+        </div>
+      )}
       <TableToolbar view={view} placeholder={t.handoversSearchPlaceholder} />
       <div>
         <Table stickyHeader>
@@ -101,7 +138,13 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                 columns={7}
                 loading={isLoading}
                 icon={ArrowRightLeft}
-                title={view.emptiedBySearch ? strings.common.noResults : t.emptyHandovers}
+                title={
+                  view.emptiedBySearch
+                    ? strings.common.noResults
+                    : onlyMissingCode
+                      ? t.onlyMissingCodeEmpty
+                      : t.emptyHandovers
+                }
               />
             )}
             {view.visible.map((mv: WasteMovement) => (
@@ -151,17 +194,28 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                 </TD>
                 <TD>{mv.workPointName}</TD>
                 <TD sticky="right" className="text-right">
-                  {canPrintAnexa3(mv) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={downloadingId === mv.id}
-                      onClick={() => download(mv)}
-                    >
-                      <FileText className="mr-1 h-3.5 w-3.5" />
-                      {downloadingId === mv.id ? m.anexa3Downloading : m.anexa3Download}
-                    </Button>
-                  )}
+                  <div className="flex justify-end gap-1">
+                    {/* Rândul roșu era un fund de sac: aflai care mișcare strică depunerea și
+                        rămâneai să o cauți cu mâna. Acțiunea e a rândului roșu, nu a celui amber —
+                        „De cântărit" e o așteptare legitimă, n-are ce repara nimeni azi. */}
+                    {!mv.operationCode && (
+                      <LinkButton variant="ghost" size="sm" to={editHref(mv)}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        {t.fixMissingCode}
+                      </LinkButton>
+                    )}
+                    {canPrintAnexa3(mv) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={downloadingId === mv.id}
+                        onClick={() => download(mv)}
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        {downloadingId === mv.id ? m.anexa3Downloading : m.anexa3Download}
+                      </Button>
+                    )}
+                  </div>
                 </TD>
               </TR>
             ))}

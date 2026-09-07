@@ -210,10 +210,19 @@ export interface AccountRequestInput {
   /** Free text: the nomenclator is behind auth, and "carton, folie" beats a guessed code. */
   wasteCodesText?: string | null;
   notes?: string | null;
+  /**
+   * Honeypot. Not a field anyone is meant to fill in: it is hidden from the eye, from Tab and from
+   * screen readers, so a value here means a bot. The server drops such a submission and still
+   * answers 202 — telling a bot it was caught is telling it what to change.
+   */
+  website?: string | null;
 }
 
-/** A submitted request, as PLATFORM_ADMIN reads it. */
-export interface AccountRequest extends AccountRequestInput {
+/**
+ * A submitted request, as PLATFORM_ADMIN reads it. The honeypot is not among the answers: a
+ * request that carried one was never written down.
+ */
+export interface AccountRequest extends Omit<AccountRequestInput, "website"> {
   id: string;
   status: AccountRequestStatus;
   createdCompanyId: string | null;

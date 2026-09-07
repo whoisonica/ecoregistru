@@ -93,6 +93,30 @@ class AccountRequestIT {
                 .andExpect(status().isOk());
     }
 
+    /**
+     * The honeypot: a submission that filled in the field no human can reach is dropped, and the
+     * answer stays the same 202 a real one gets.
+     *
+     * <p>Both halves matter. Dropping it keeps the only public write in the application from
+     * becoming a place to dump rows; answering identically keeps a bot from learning which field
+     * gave it away. A 400 here would be a tutorial.
+     */
+    @Test
+    void aSubmissionThatFillsTheHoneypotIsDroppedButAnsweredTheSameWay() throws Exception {
+        String trapped = "RO" + digits();
+        mockMvc.perform(submission("Robotel SRL", trapped, "GENERATOR", "https://spam.example"))
+                .andExpect(status().isAccepted())
+                .andExpect(content().string(""));
+        assertThat(accountRequestRepository.findAllByOrderByCreatedAtDesc())
+                .noneMatch(r -> trapped.equals(r.getCui()));
+
+        // A blank honeypot is what a human leaves behind, and must not be read as a verdict.
+        String human = "RO" + digits();
+        mockMvc.perform(submission("Om Adevarat SRL", human, "GENERATOR", ""))
+                .andExpect(status().isAccepted());
+        assertThat(latest(human)).isNotNull();
+    }
+
     @Test
     void approvingCreatesTheCompanyWithTheProfileAndTheWorkPoint() throws Exception {
         String cui = "RO" + digits();
@@ -189,6 +213,12 @@ class AccountRequestIT {
     }
 
     private MockHttpServletRequestBuilder submission(String name, String cui, String type) {
+        return submission(name, cui, type, null);
+    }
+
+    /** {@code website} is the honeypot; {@code null} omits it, which is what a real form sends. */
+    private MockHttpServletRequestBuilder submission(String name, String cui, String type,
+                                                     String website) {
         String body = """
                 {
                   "companyName": "%s",
@@ -208,9 +238,10 @@ class AccountRequestIT {
                   "marketRoles": ["TRADER"],
                   "operationCodes": ["R3", "R13"],
                   "wasteCodesText": "carton, folie de plastic",
-                  "notes": "Colectăm de la trei magazine."
+                  "notes": "Colectăm de la trei magazine."%s
                 }
-                """.formatted(name, cui, type);
+                """.formatted(name, cui, type,
+                website == null ? "" : ",\n  \"website\": \"" + website + "\"");
         return post("/api/v1/account-requests")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body);

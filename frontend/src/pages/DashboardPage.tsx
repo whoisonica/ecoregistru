@@ -273,7 +273,11 @@ export function DashboardPage() {
                 tone="danger"
                 title={t.blockerMissingCode.replace("{n}", String(blockers.missingCode))}
                 hint={t.blockerMissingCodeHint}
-                to="/evidente?vedere=monthly"
+                /* Ducea la vederea lunară, unde rândul e un agregat pe (punct de lucru, cod, lună)
+                   și nu se poate deschide nicio mișcare — deci „Repară" promitea mai mult decât
+                   ținea. Registrul de predări e nivelul la care un rând **este** o mișcare, iar
+                   filtrul îl restrânge la ce blochează chiar depunerea. */
+                to="/evidente?vedere=handovers&problema=cod-rd"
               />
             )}
             {blockers.awaitingWeighing > 0 && (
