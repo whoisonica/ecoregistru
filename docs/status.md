@@ -22,6 +22,16 @@ rulează local și are testele verzi.
 > **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
 > produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
+> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (21 de commituri, împinsă pe
+> `origin`) duce cele șaisprezece puncte de UI/UX plus șapte defecte găsite probând aplicația în
+> browser. **Backendul n-a fost atins**, deci cifrele de mai sus rămân valabile. ⚠️ **Nu e
+> deployată:** merge-ul în `main` și push-ul pe repo-urile split se fac după ce interfața e privită
+> cu ochiul.
+>
+> **Adăugat 07.09.2026 — materialul privat.** Ce ținea `.gitignore` afară nu era salvat nicăieri.
+> E acum în `whoisonica/ecoregistru-docs`, repo **privat**. Vezi „Ce nu se commite" din
+> `prompt-continuare.md`.
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
