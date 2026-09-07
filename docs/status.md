@@ -3188,6 +3188,132 @@ citise nimeni niciodată.
 regulă care trebuie ţinută. Ce merită păstrat din ele a intrat ca test în backend.)*
 
 
+## Primul contact cu produsul, şi rapoartele care duc undeva (07.09.2026, seara)
+
+Prioritatea 1 şi 2 din lista de îmbunătăţiri de interfaţă, plus un defect de concurenţă găsit în
+timpul probelor — singurul din runda asta care atinge date, nu ecrane.
+
+### 1. Formularul public `/cerere-cont`
+
+Singura pagină pe care o vede cineva **înainte** să fie client, şi singura pe care modernizarea din
+07.09 n-o atinsese deloc.
+
+- **Cele trei rubrici obligatorii se marchează**, cu asterisc plus un cuvânt citit doar de cititorul
+  de ecran — „*" rostit „stea" nu spune nimic. Marcajul a intrat în `Label` ca proprietate, deci e
+  disponibil pentru orice formular, nu scris pe loc aici.
+- **Erorile stau pe rubrici, nu într-un banner**, cu derulare la prima greşită. E fix defectul nr. 4
+  din proba pe browser („bannerul marca nimic"), rămas pe pagina asta după ce s-a reparat pe
+  formularul de mişcare: `FieldError` + `invalidProps` + cârligul `data-invalid` existau deja.
+- **CUI-ul se verifică aici**, cu aceeaşi formă pe care o cere `CompanyService` la creare. Înainte,
+  un CUI stricat trecea de formular şi cădea abia la aprobare, în mâinile altcuiva.
+- **Pagina are identitate** — cele două rânduri de brand ale cardului de login — şi un rând de trei
+  paşi în cap, care răspunde la „merită să încep?" **înainte** de prima rubrică, nu după şase
+  secţiuni.
+- **Cele 28 de bife R/D s-au pliat**, în spatele unei alegeri a cărei primă opţiune e „Nu știu — le
+  stabilim împreună". Setul gol era deja răspunsul „nu s-a răspuns" (decizia 6); ce s-a schimbat e
+  că formularul o spune. Trecerea pe „nu ştiu" **goleşte** ce s-a bifat, altfel ar rămâne în urmă
+  răspunsuri pe care omul crede că le-a retras.
+- **Pagina de mulţumire spune ce urmează**, cu emailul numit şi cu termenul de 1–2 zile lucrătoare.
+  „Am primit cererea" răspunde la ce s-a întâmplat; omul tocmai a dat datele firmei lui unui site pe
+  care nu-l cunoaşte.
+- 🔒 **Honeypot** pe singurul endpoint public de scriere. Rubrica e ascunsă de ochi, de Tab şi de
+  `aria-hidden`, deci un om n-o poate completa nici din greşeală. Backendul **nu scrie nimic şi
+  răspunde tot 202**: un refuz vizibil i-ar spune botului ce câmp să evite data viitoare. Un test
+  ţine ambele jumătăţi, inclusiv că gol nu se citeşte ca verdict.
+
+### 2. Inboxul de cereri — jumătatea care nu se citea
+
+Tabelul arăta şapte coloane dintr-un formular cu douăzeci de rubrici. **Opt câmpuri completate nu se
+citeau de nicăieri**, între ele `notes` — chiar rubrica de text liber în care omul scrie ce nu încape
+în celelalte —, deşi exact cine creează firma din cerere are nevoie de ele.
+
+- **„Vezi cererea"**, pe orice rând indiferent de stare: cererea întreagă, în ordinea secţiunilor pe
+  care le-a parcurs clientul. O rubrică necompletată **se arată goală**, nu se sare — cine creează
+  firma trebuie să vadă că lipseşte, nu să deducă asta. O secţiune fără niciun răspuns se pliază la
+  un rând, fiindcă acolo absenţa e chiar informaţia.
+- **„Vezi firma creată"** pe rândurile aprobate. Rândul devenea „Cont creat" şi nu ducea nicăieri,
+  deşi firma stă în tabelul de deasupra — putea fi al treizecilea rând sau pe altă pagină a listei.
+
+### 3. Badge-ul roşu nu mai e fund de sac
+
+„Fără cod R/D" e informaţia cea mai importantă din aplicaţie şi se vedea pe trei ecrane din care nu
+se putea face nimic.
+
+- **`/miscari?luna=…&miscare=…`** deschide mişcarea cerută direct în formularul de editare.
+  Parametrul se **consumă** la deschidere: lăsat în adresă, un refresh ar redeschide dialogul peste
+  ce lucrezi. ⚠️ Linkul poartă luna lui **`date`**, nu a datei afişate în registru — ecranul Mişcări
+  filtrează pe `date`, iar registrul arată `unloadDate` când o are, deci o predare din 31 martie
+  descărcată pe 2 aprilie s-ar căuta în aprilie şi n-ar fi găsită.
+- **Registrul de predări** primeşte „Completează codul" pe rândul roşu — şi numai pe el. Cel amber
+  („De cântărit") e o aşteptare legitimă, n-are ce repara nimeni azi.
+- **Filtrul `?problema=cod-rd`** pe registrul de predări, cu bannerul care spune că e pus şi butonul
+  care îl scoate. Un filtru venit din altă parte trebuie să se vadă, altfel tabelul pare gol pe
+  nedrept şi omul caută rânduri care există.
+- **Panoul duce acum unde promitea.** Linkul blocajului roşu mergea la vederea lunară, unde rândul e
+  un **agregat** pe (punct de lucru, cod, lună) şi nu se poate deschide nicio mişcare. Duce la
+  registrul filtrat, unde un rând **este** o mişcare.
+- **Vederea lunară** face acelaşi drum prin badge-ul ei, restrâns la luna şi punctul de lucru ale
+  rândului. **Registrul de ambalaje** primeşte coloană de acţiuni, cu condiţia ţinută dinadins
+  identică cu cea care colorează rândul: dacă tabelul semnalează ceva se poate apăsa, dacă nu, nu
+  apare niciun buton care să sugereze că ar fi.
+- `LinkButton` e primitivă nouă: o navigare scrisă ca `<button onClick={navigate}>` nu se deschide
+  în filă nouă şi nu spune cititorului de ecran că duce altundeva. Rapoartele sunt exact cazul în
+  care omul vrea a doua filă — repară acolo, se întoarce la listă aici.
+
+### 4. 🔴 Un defect de concurenţă în decizia 50, găsit de probe
+
+Nu era pe nicio listă. A ieşit fiindcă probele au făcut cache-ul de evidenţă să rămână în urmă —
+starea pe care decizia 50 o repară — iar apoi două ecrane au cerut acelaşi an deodată:
+
+```
+[HTTP 409] GET /api/v1/evidences?year=2026
+Concurrent update conflict: Row was updated or deleted by another transaction
+  : [MonthlyEvidence#7a497ff4-…]
+```
+
+**Ce se întâmplase.** Decizia 50 a făcut din citire o **scriere**: `list()` reconstruieşte anul când
+mişcările s-au mişcat de la ultima scriere. Reparaţia era corectă — se putea depune o fişă fără
+mişcările de ieri — dar a deschis o cursă pe care varianta veche aproape n-o avea, fiindcă
+reconstruia doar când anul era **gol**. `deleteByCompany_IdAndYear` încarcă rândurile înainte să le
+şteargă, deci a doua citire ştergea rânduri pe care prima le înlocuise deja.
+
+**Nu e teoretic:** Panoul şi ecranul Evidenţe cer amândouă anul curent. Două taburi, sau o navigare
+rapidă, sunt destul. Nu se pierde nimic din date — tranzacţia cade întreagă — dar clientul vede un
+raport care nu se deschide.
+
+**Reparaţia**, fără migrare: o secţiune critică per (firmă, an), cu **lacăt consultativ** Postgres
+(`pg_advisory_xact_lock`) şi **verificare dublă**. Nu un lacăt pe rând — nu există rând care să
+însemne „anul din cache", fiindcă reconstrucţia le şterge pe toate; nu unul pe firmă — ar serializa
+ani fără legătură şi ar bloca editările simple de firmă. Prima verificare, fără lacăt, ţine drumul
+obişnuit (cache la zi, cazul de aproape fiecare dată) la două agregate; a doua, sub lacăt, face ca
+aşteptarea la uşă să nu coste şi o reconstrucţie în plus. Postgres eliberează lacătul la commit sau
+rollback, deci o reconstrucţie care aruncă nu-l poate lăsa ţinut. Acelaşi lacăt s-a pus şi pe
+`regenerateYear`: butonul şi citirea rescriu aceleaşi rânduri, deci sunt aceeaşi secţiune critică.
+
+**Proba a fost scrisă întâi şi verificată că pică** — patru cititori pe un an învechit, cu aceeaşi
+excepţie ca în producţie. Nu doi: cu doi, fereastra se poate rata pe o maşină rapidă.
+
+### 5. Datoria care bloca probele, plătită
+
+Seed-ul demo n-avea **niciun** rând în stările pentru care ecranele au reguli proprii — zero din 34
+de mişcări fără cantitate, zero ieşiri fără cod R/D, zero parteneri fără dată de autorizaţie. De asta
+al treilea defect din primitivele reparate pe 07.09 a scăpat şi de suită: verificarea scrisă pentru
+el trecea pe un tabel care n-avea rândul, şi a fost **scoasă** în loc să fie lăsată să treacă pe gol.
+
+`DevDataSeeder` are acum toate trei, aşezate pe plastic la Turda dinadins — seria de hârtie de la
+Cluj (40→30→50→50→30→50.5) e vitrina stocului cumulativ şi rămâne neatinsă. `ApplicationBootIT` le
+numără **pe nume**, nu doar în total: un total care creşte nu spune că stările există.
+
+### Cifrele
+
+- **230 de teste verzi** (de la 228): honeypot-ul, concurenţa evidenţei, cele două stări din seed.
+  Migrări tot până la **`V31`** — reparaţia de concurenţă n-a cerut niciuna, şi ăsta era criteriul.
+- **Suita de interfaţă: 6 probe, 96 de verificări** (de la 5 şi 60). Proba nouă,
+  `6-cerere-si-rapoarte.mjs`, acoperă formularul public, inboxul şi drumul cap-coadă de la blocajul
+  de pe Panou până la mişcarea deschisă.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

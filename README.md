@@ -135,18 +135,23 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Five suites, 60 checks:
+download — against the local dev server and a backend on the `dev` profile. Six suites, 96 checks:
 every screen opens clean, the action column stays reachable when a table scrolls, search and sort
 and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the movement
 form marks the fields it rejects, Escape inside the waste-code picker closes the list and not the
-whole form, and nothing scrolls sideways at 375px.
+whole form, nothing scrolls sideways at 375px, the public intake form marks the three fields it
+requires and scrolls to the first one it rejects, the request inbox reads back every answer the
+client gave, and the red "no R/D code" badge leads from the dashboard through the filtered register
+to the movement itself.
 
 They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
 `vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
 review the same day found three more, in the primitives rather than the screens, so they reached
 every screen at once — and the user found a fourth: search demanded diacritics, so `miscari` found
 nothing at all. See `frontend/e2e/README.md`, which also records what the suite **cannot**
-cover: the demo seed has no rows in the "value missing" states the screens have rules for.
+cover — and the seed debt it named is now paid: the demo tenant carries an exit with no R/D code,
+a handover awaiting the weighbridge, and a partner with no authorization expiry, so the rules
+written around those states are proved on rows rather than on an empty table.
 
 `E2E_CHANNEL=msedge` picks Edge; an empty `E2E_CHANNEL` falls back to Playwright's own Chromium,
 for a machine with no Chromium-family browser at all.
@@ -224,7 +229,10 @@ R13, D5), so the narrowing is visible rather than theoretical.
 
 | What | Where | What to look for |
 |---|---|---|
-| Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not |
+| Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not. Press "Trimite" on an empty form: the three required fields mark themselves and the page scrolls to the first — a banner that marks nothing is the defect this page kept longest |
+| Not knowing the R/D codes | `/cerere-cont` → "Ce se întâmplă cu deșeul" | Twenty-eight tickboxes are folded behind a choice whose first option is "Nu știu — le stabilim împreună". An empty set was always a valid answer; now the form says so |
+| Reading a request | **Clienți** → a request row → "Vezi cererea" | Every answer the client gave, in the order they gave them — including `notes`, the free-text box. An unanswered field shows as an empty dash rather than being skipped; a section nobody filled in collapses to one line |
+| Request → company | **Clienți** → an approved request → "Vezi firma creată" | The row used to end at "Cont creat". It now opens the company it produced |
 | Declaration header | `/cerere-cont` → "Cod CAEN" and "Funcția" | Both optional, and the hint says so: leave them blank and the annual declaration prints the rubric empty rather than a guess. They travel onto the company on approval |
 | Type of generator | `/cerere-cont` → "Tipul de generator" | Producător / importator / comerciant. Tick only "Comerciant" and the form says what follows: no packaging declaration, but the Anexa 1 sheet stays |
 | Requests inbox | **Clienți**, below the company list | "Creează contul" turns a request into a company with its profile and work point |
@@ -248,6 +256,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | What the movement does | **Mișcări** → add | A strip at the top of the form names the official documents the quantity will reach — Anexa 1, the art. 48 register, the packaging declaration — and updates as you answer. It reads the same expressions `buildInput` does, so it cannot disagree with what gets saved |
 | Duplicate a movement | **Mișcări** → the row's ⋯ menu → "Duplică mișcarea" | Everything comes across except the date and the document number — the two rubrics that actually differ between two handovers |
 | Compliance status | **Panou** | Green when nothing blocks filing. Otherwise the blockers, each with its consequence and a link: red for an exit with no R/D code (a gap), amber for a line awaiting the weighbridge (a legitimate wait) |
+| From the blocker to the fix | **Panou** → red blocker → "Vezi liniile" | The handover register, filtered to the exits with no R/D code, with the filter named and removable. Each row carries "Completează codul", which opens that movement — the badge used to be a dead end on three screens |
 | Search any table | any table with more than ten rows | The search box appears from ten rows up and works on what is already loaded. Every word must match somewhere, so "hamburger 15 01" finds the row |
 | Keyboard | anywhere | **Ctrl+K** jumps to any screen · **/** focuses the current table's search · **N** opens the add form where the account may write |
 | Narrow screens | resize below 1024px | The sidebar becomes a drawer behind a menu button; form grids stack; the movement dialog rises from the bottom edge |
