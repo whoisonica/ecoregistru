@@ -17,8 +17,15 @@ import ro.ecoregistru.service.EvidenceCalculator;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -274,6 +281,61 @@ class EvidenceCalculatorIT {
         assertThat(second.linesGenerated()).isEqualTo(12);
         assertThat(second.cascadedYears()).isEmpty();
         assertThat(evidenceCalculator.list(2025, null, null)).hasSize(12);
+    }
+
+    /**
+     * Două citiri deodată pe un cache rămas în urmă nu se calcă una pe alta.
+     *
+     * <p>Decizia 50 a făcut din citire o **scriere**: `list()` reconstruiește anul când mișcările
+     * s-au mișcat de la ultima scriere. Asta a fost reparația corectă — se putea depune o fișă fără
+     * mișcările de ieri — dar a deschis o cursă pe care varianta veche aproape n-o avea, fiindcă
+     * reconstruia doar când anul era **gol**. Acum orice pereche de citiri simultane pe un an
+     * învechit intră amândouă în reconstrucție, iar `deleteByCompany_IdAndYear` încarcă entitățile
+     * înainte să le șteargă: a doua șterge rânduri pe care prima le-a înlocuit deja și cade cu
+     * „Row was updated or deleted by another transaction".
+     *
+     * <p>Nu e o cursă teoretică: Panoul și ecranul Evidențe cer amândouă anul curent, iar două
+     * taburi deschise sau o navigare rapidă sunt destul. Ce vede clientul e un ecran care dă eroare
+     * pe o citire — nu se pierde nimic din date, dar raportul nu se deschide.
+     *
+     * <p>Patru cititori, nu doi: cu doi, fereastra se poate rata pe o mașină rapidă.
+     */
+    @Test
+    void twoReadsAtOnceDoNotCollideOverTheRebuild() throws Exception {
+        evidenceCalculator.regenerateYear(2025);
+        // Cache-ul rămâne în urmă exact cum o face folosirea obișnuită: se mai înregistrează o
+        // mișcare, și nimeni nu apasă „Regenerează".
+        save(LocalDate.of(2025, 6, 3), "50.000", Unit.KG, WasteOperation.GENERATED, null, null);
+
+        int readers = 4;
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(readers);
+        List<Future<Integer>> results = new ArrayList<>();
+        for (int i = 0; i < readers; i++) {
+            results.add(pool.submit(() -> {
+                // `TenantContext` e un ThreadLocal: fiecare fir și-l pune singur.
+                TenantContext.set(tenantId);
+                try {
+                    start.await();
+                    return evidenceCalculator.list(2025, null, null).size();
+                } finally {
+                    TenantContext.clear();
+                }
+            }));
+        }
+        start.countDown();
+        try {
+            for (Future<Integer> result : results) {
+                assertThat(result.get(30, TimeUnit.SECONDS)).isEqualTo(12);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        // Și reconstrucția s-a făcut o dată, nu de patru ori: liniile poartă un singur instant.
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2025))
+                .extracting(MonthlyEvidence::getGeneratedAt)
+                .containsOnly(evidenceRepository.findOldestGeneratedAt(tenantId, 2025));
     }
 
     // --- helpers ---

@@ -88,6 +88,13 @@ public class EvidenceCalculator {
     public EvidenceRegenerationResponse regenerateYear(int year) {
         UUID tenantId = TenantContext.require();
 
+        // Acelaşi lacăt ca la reconstrucţia din citire, şi din acelaşi motiv: butonul şi citirea
+        // rescriu aceleaşi rânduri, deci sunt aceeaşi secţiune critică. Fără el, „Regenerează"
+        // apăsat în timp ce altcineva deschide raportul cade cu conflictul de concurenţă.
+        // Aici nu se verifică nimic după: apăsarea butonului e o cerere explicită de recalculare,
+        // nu o întrebare despre prospeţime — vezi javadocul lui `refreshIfStale`.
+        evidenceRepository.lockForRebuild(tenantId, year);
+
         int lines = regenerateSingleYear(tenantId, year);
 
         Integer lastCachedYear = evidenceRepository.findMaxYear(tenantId);
@@ -291,16 +298,13 @@ public class EvidenceCalculator {
      * Rebuilds a year, and the years before it that feed its opening balance, when the movements
      * have moved on since the lines were written.
      *
-     * <p>Three cases, in the order they are cheap to answer:
-     * <ul>
-     *   <li><b>no movements</b> dated up to the end of the year — nothing to derive from, so
-     *       whatever is cached (nothing, normally) is as right as it gets, and a genuinely empty
-     *       year costs one aggregate and no write;</li>
-     *   <li><b>no cached lines</b> but movements exist — the case this used to be the whole of:
-     *       nobody has pressed "Regenerează", or a migration cleared the cache;</li>
-     *   <li><b>both exist</b> — stale when the newest movement change is later than the oldest
-     *       cached line.</li>
-     * </ul>
+     * <p>Când e învechit — cele trei cazuri şi comparaţia strictă — stă în {@link #isStale}.
+     *
+     * <p><b>Unul singur reconstruieşte.</b> Citirea scrie, deci două citiri pe acelaşi an învechit
+     * intrau amândouă aici şi a doua cădea peste rândurile pe care prima le înlocuise. Verificarea e
+     * dublă dinadins: prima, fără lacăt, ţine drumul obişnuit — cache la zi — la două agregate;
+     * a doua, sub lacăt, e cea care face ca aşteptarea la uşă să nu coste şi o reconstrucţie în
+     * plus. Vezi {@link ro.ecoregistru.repository.MonthlyEvidenceRepository#lockForRebuild}.
      *
      * <p><b>Where the rebuild starts.</b> Not at the year asked for: stock carries across years, so
      * a correction made on a 2024 movement leaves the 2026 opening balance wrong, and rebuilding
@@ -311,26 +315,50 @@ public class EvidenceCalculator {
      * alone, because they answer the same question the moment somebody opens them. That is the one
      * difference from the "Regenerează" button, which cascades forward instead: pressing it is a
      * statement about the whole file, while reading a year is a question about that year.
-     *
-     * <p>The comparison is written with the movement side <b>strictly after</b> the evidence side,
-     * so a rebuild landing in the same instant as the change that caused it is not read as stale
-     * for ever after.
      */
     private void refreshIfStale(UUID tenantId, int year) {
+        // Drumul obişnuit — cache-ul e la zi — nu ia niciun lacăt: două interogări de agregat şi
+        // gata. Panoul cere anul curent la fiecare deschidere, deci ăsta e cazul de aproape
+        // fiecare dată, şi n-are de ce să aştepte pe nimeni.
+        if (!isStale(tenantId, year)) {
+            return;
+        }
+        // De aici încolo se **scrie**, deci intră unul singur. Lacătul e ţinut până la finalul
+        // tranzacţiei, deci al doilea cititor aşteaptă exact cât durează reconstrucţia primului.
+        evidenceRepository.lockForRebuild(tenantId, year);
+        // Şi a doua verificare, care e miezul: cine a aşteptat la uşă găseşte treaba făcută şi
+        // pleacă. Fără ea, lacătul ar fi doar serializat aceeaşi muncă de N ori — corect, dar
+        // plătit de N ori. Sub READ COMMITTED interogarea de aici vede ce a comis primul.
+        if (!isStale(tenantId, year)) {
+            return;
+        }
         Instant lastChange = movementRepository.findLastChangeUpTo(
                 tenantId, LocalDate.of(year, 12, 31));
-        if (lastChange == null) {
-            return;
-        }
-        Instant generatedAt = evidenceRepository.findOldestGeneratedAt(tenantId, year);
-        if (generatedAt != null && !lastChange.isAfter(generatedAt)) {
-            return;
-        }
         Integer earliestStale = evidenceRepository.findEarliestStaleYear(tenantId, year, lastChange);
         int from = earliestStale != null ? Math.min(earliestStale, year) : year;
         for (int y = from; y <= year; y++) {
             regenerateSingleYear(tenantId, y);
         }
+    }
+
+    /**
+     * Cache-ul anului a rămas în urma mişcărilor?
+     *
+     * <p>Trei cazuri, în ordinea în care sunt ieftine de răspuns: fără nicio mişcare până la finele
+     * anului nu e nimic de derivat, deci ce e în cache (nimic, de obicei) e cât se poate de corect;
+     * mişcări fără linii înseamnă că nimeni n-a apăsat „Regenerează", sau că o migrare a golit
+     * cache-ul; iar cu amândouă prezente, învechit înseamnă că ultima schimbare de mişcare e
+     * **strict** după cea mai veche linie — strict, ca o reconstrucţie care cade în aceeaşi clipă
+     * cu schimbarea care a provocat-o să nu se citească drept învechită pe vecie.
+     */
+    private boolean isStale(UUID tenantId, int year) {
+        Instant lastChange = movementRepository.findLastChangeUpTo(
+                tenantId, LocalDate.of(year, 12, 31));
+        if (lastChange == null) {
+            return false;
+        }
+        Instant generatedAt = evidenceRepository.findOldestGeneratedAt(tenantId, year);
+        return generatedAt == null || lastChange.isAfter(generatedAt);
     }
 
     /**
