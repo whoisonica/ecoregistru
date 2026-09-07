@@ -45,14 +45,40 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
     }
   }, [open]);
 
+  /**
+   * Ce se potriveşte, **în ordinea cât de bine**.
+   *
+   * <p>Probat pe 07.09.2026: tastând „evid", paleta evidenţia *Mişcări*. Numele grupului intra în
+   * textul căutat, iar grupul lui Mişcări e „Evidenţă" — deci toate cele trei intrări din grup se
+   * potriveau, iar prima din listă lua evidenţierea. Apăsai Enter aşteptând Evidenţe şi rămâneai
+   * unde erai.
+   *
+   * <p>Grupul rămâne căutabil (e util să tastezi „raportare" şi să vezi ce e acolo), dar cântăreşte
+   * cel mai puţin. Ordinea: eticheta începe cu ce ai scris, eticheta conţine, cuvintele-cheie,
+   * grupul.
+   */
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return commands;
     const words = q.split(/\s+/);
-    return commands.filter((c) => {
-      const haystack = `${c.label} ${c.keywords ?? ""} ${c.group}`.toLowerCase();
-      return words.every((w) => haystack.includes(w));
-    });
+    const scored: { command: Command; score: number }[] = [];
+    for (const c of commands) {
+      const label = c.label.toLowerCase();
+      const keywords = (c.keywords ?? "").toLowerCase();
+      const group = c.group.toLowerCase();
+      const haystack = `${label} ${keywords} ${group}`;
+      if (!words.every((w) => haystack.includes(w))) continue;
+      const score = label.startsWith(q)
+        ? 0
+        : label.includes(q)
+          ? 1
+          : keywords.includes(q)
+            ? 2
+            : 3;
+      scored.push({ command: c, score });
+    }
+    // `sort` e stabilă în JS modern, deci la scor egal rămâne ordinea din bara laterală.
+    return scored.sort((a, b) => a.score - b.score).map((x) => x.command);
   }, [commands, query]);
 
   // O listă nouă înseamnă alt prim rând; evidențierea veche ar arăta spre altceva.

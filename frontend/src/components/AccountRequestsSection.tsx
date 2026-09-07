@@ -98,7 +98,7 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                     {t.colDate}
                   </SortableTH>
                   <TH>{t.colStatus}</TH>
-                  <TH className="text-right">{strings.common.actions}</TH>
+                  <TH sticky="right" className="text-right">{strings.common.actions}</TH>
                 </TR>
               </THead>
               <TBody>
@@ -153,7 +153,7 @@ export function AccountRequestsSection({ enabled }: { enabled: boolean }) {
                     <TD>
                       <StatusBadge request={r} />
                     </TD>
-                    <TD className="text-right">
+                    <TD sticky="right" className="text-right">
                       {r.status === "NEW" && (
                         <div className="flex justify-end gap-1">
                           <Button

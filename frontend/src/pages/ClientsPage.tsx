@@ -302,7 +302,7 @@ export function ClientsPage() {
                   <TH>{t.type}</TH>
                   <TH>{t.afm}</TH>
                   <TH>{strings.common.status}</TH>
-                  <TH className="text-right">{strings.common.actions}</TH>
+                  <TH sticky="right" className="text-right">{strings.common.actions}</TH>
                 </TR>
               </THead>
               <TBody>
@@ -342,7 +342,7 @@ export function ClientsPage() {
                         <Badge variant="muted">{t.inactive}</Badge>
                       )}
                     </TD>
-                    <TD className="text-right">
+                    <TD sticky="right" className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
                           <UserPlus className="mr-1 h-3.5 w-3.5" />
@@ -396,7 +396,7 @@ export function ClientsPage() {
               <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
             )}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-cui">{t.cui}</Label>
               <Input
@@ -468,7 +468,7 @@ export function ClientsPage() {
               </label>
             )}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
               <Input
@@ -490,7 +490,7 @@ export function ClientsPage() {
             <Label htmlFor="c-address">{t.address}</Label>
             <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-contact-name">{t.contactName}</Label>
               <Input
@@ -509,7 +509,7 @@ export function ClientsPage() {
             </div>
           </div>
           {/* The two rubrics the annual declaration's header and signature block need. */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-caen">{t.caenCode}</Label>
               <Input
@@ -569,7 +569,7 @@ export function ClientsPage() {
           <div className="rounded-lg border border-line p-3">
             <p className="text-sm font-semibold text-content-strong">{t.wasteManagerTitle}</p>
             <p className="mt-1 text-xs text-content-muted">{t.wasteManagerHint}</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
                 <Input
@@ -615,7 +615,7 @@ export function ClientsPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="c-reg">{strings.partners.tradeRegisterNumber}</Label>
               <Input
@@ -700,7 +700,7 @@ export function ClientsPage() {
               ))}
             </Select>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="i-first">{t.inviteFirstName}</Label>
               <Input

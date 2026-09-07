@@ -93,7 +93,6 @@ export const strings = {
     statDeadlines: "Termene de făcut",
     statDeadlinesSub: "din care {overdue} depășite",
     statExpiring: "Autorizații care expiră",
-    statExpiringSub: "parteneri cu autorizația aproape expirată",
     // sections
     upcomingTitle: "Termene următoare",
     upcomingEmpty: "Niciun termen deschis pentru anul curent.",

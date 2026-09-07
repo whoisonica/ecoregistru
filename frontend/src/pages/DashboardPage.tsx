@@ -8,7 +8,6 @@ import {
   Package,
   Plus,
   Scale,
-  ShieldAlert,
   Trash2,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -288,7 +287,7 @@ export function DashboardPage() {
       </Card>
 
       {/* Cifrele. Kilograme, nu rânduri: nimeni nu se uită la câte înregistrări are luna. */}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatTile
           icon={Package}
           value={kgFormat.format(generatedThisMonth)}
@@ -324,7 +323,7 @@ export function DashboardPage() {
       </div>
 
       {/* Detail lists */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Upcoming deadlines */}
         <Card>
           <CardHeader
@@ -349,19 +348,19 @@ export function DashboardPage() {
                 const days = daysUntil(d.dueDate);
                 return (
                   <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-content">
                         {strings.enums.reportType[d.reportType]}
                       </div>
                       {/* Data singură cere o socoteală în cap; numărul de zile e răspunsul. */}
-                      <div className="text-xs text-content-subtle">
+                      <div className="truncate text-xs text-content-subtle">
                         {formatDate(d.dueDate)}
                         {d.status !== "OVERDUE" && days >= 0 && (
                           <> · {t.daysShort.replace("{n}", String(days))}</>
                         )}
                       </div>
                     </div>
-                    <Badge variant={statusVariant[d.status]}>
+                    <Badge variant={statusVariant[d.status]} className="shrink-0">
                       {strings.enums.deadlineStatus[d.status]}
                     </Badge>
                   </li>
@@ -395,13 +394,16 @@ export function DashboardPage() {
                 const days = p.authorizationExpiry ? daysUntil(p.authorizationExpiry) : null;
                 return (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-content">{p.name}</div>
                       <div className="truncate text-xs text-content-subtle">
                         {p.authorizationNumber ?? strings.partners.noAuthorization}
                       </div>
                     </div>
-                    <Badge variant={days != null && days < 0 ? "danger" : "warning"}>
+                    <Badge
+                      variant={days != null && days < 0 ? "danger" : "warning"}
+                      className="shrink-0"
+                    >
                       {days == null
                         ? strings.partners.expiringSoon
                         : days < 0
@@ -416,12 +418,6 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {expiringPartners.length > 0 && (
-        <p className="mt-4 flex items-start gap-2 text-xs text-content-subtle">
-          <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          {t.statExpiringSub}
-        </p>
-      )}
     </div>
   );
 }

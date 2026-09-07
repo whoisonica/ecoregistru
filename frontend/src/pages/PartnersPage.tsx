@@ -359,7 +359,7 @@ export function PartnersPage() {
                     {t.authorizationExpiry}
                   </SortableTH>
                   <TH>{strings.common.status}</TH>
-                  {canManage && <TH className="text-right">{strings.common.actions}</TH>}
+                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
@@ -415,7 +415,7 @@ export function PartnersPage() {
                       )}
                     </TD>
                     {canManage && (
-                      <TD className="text-right">
+                      <TD sticky="right" className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
                             <Pencil className="mr-1 h-3.5 w-3.5" />
@@ -588,7 +588,7 @@ export function PartnersPage() {
 
             {isCarrier && (
               <div className="mt-3 space-y-3 border-t border-line pt-3">
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
                     <Input

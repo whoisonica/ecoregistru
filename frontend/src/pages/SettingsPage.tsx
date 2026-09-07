@@ -148,7 +148,7 @@ export function SettingsPage() {
                   </SortableTH>
                   <TH>{t.address}</TH>
                   <TH>{strings.common.status}</TH>
-                  {canManage && <TH className="text-right">{strings.common.actions}</TH>}
+                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
@@ -183,7 +183,7 @@ export function SettingsPage() {
                       )}
                     </TD>
                     {canManage && (
-                      <TD className="text-right">
+                      <TD sticky="right" className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="sm" onClick={() => openEdit(wp)}>
                             <Pencil className="mr-1 h-3.5 w-3.5" />

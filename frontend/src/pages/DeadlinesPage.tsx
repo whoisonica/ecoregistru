@@ -168,7 +168,7 @@ export function DeadlinesPage() {
                   </SortableTH>
                   <TH>{t.colStatus}</TH>
                   <TH>{t.colNote}</TH>
-                  {canManage && <TH className="text-right">{strings.common.actions}</TH>}
+                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
@@ -210,7 +210,7 @@ export function DeadlinesPage() {
                       {d.completionNote ?? "—"}
                     </TD>
                     {canManage && (
-                      <TD className="text-right">
+                      <TD sticky="right" className="text-right">
                         {d.status === "DONE" ? (
                           <Button
                             variant="outline"

@@ -27,7 +27,7 @@ export function Table({
         "overflow-x-auto rounded-xl border border-line bg-surface",
         // Înălțimea maximă e ce face antetul lipicios să însemne ceva: fără ea, containerul
         // crește cât tabelul și nu se derulează nimic pe dinăuntru.
-        stickyHeader && "max-h-[70vh] overflow-y-auto",
+        stickyHeader && "max-h-[70vh] overflow-y-auto"
       )}
     >
       <table className={cn("w-full text-sm", className)} {...props} />
@@ -45,44 +45,94 @@ export function THead({
       className={cn(
         "border-b border-line bg-surface-muted text-left text-xs font-medium uppercase tracking-wide text-content-muted",
         // `bg-surface-muted` pe `thead` nu acoperă rândurile care trec pe dedesubt în unele
-        // browsere, de asta culoarea se pune și pe celule, mai jos, prin `[&>tr>th]`.
-        sticky && "sticky top-0 z-10 [&>tr>th]:bg-surface-muted",
-        className,
+        // browsere, de asta culoarea se pune și pe celule, prin `[&>tr>th]`.
+        //
+        // `z-20` bate `z-10` al coloanei fixate din dreapta: colțul din dreapta-sus e amândouă
+        // deodată, iar acolo antetul trebuie să fie deasupra.
+        sticky && "sticky top-0 z-20 [&>tr>th]:bg-surface-muted",
+        className
       )}
       {...props}
     />
   );
 }
 
-export function TBody({
-  className,
-  ...props
-}: HTMLAttributes<HTMLTableSectionElement>) {
+export function TBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
   return <tbody className={cn("divide-y divide-line", className)} {...props} />;
 }
 
-export function TR({
-  className,
-  ...props
-}: HTMLAttributes<HTMLTableRowElement>) {
+export function TR({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn("hover:bg-surface-muted/60", className)} {...props} />
+    <tr
+      className={cn(
+        // `group` ca celula fixată din dreapta să poată prelua evidențierea rândului: are fundal
+        // opac, altfel ar rămâne albă în timp ce restul rândului se colorează pe sub ea.
+        "group hover:bg-surface-muted/60",
+        // Loc pentru antetul lipicios, când ceva derulează rândul în raza vizibilă. Probat pe
+        // 07.09.2026: fără marja asta, un rând adus la vedere ajunge **sub** antet, iar butoanele
+        // lui nu se mai pot apăsa. Se întâmplă și fără cod de-al nostru — browserul derulează
+        // singur când focusul ajunge pe un rând care nu se vede, adică la navigarea cu Tab.
+        "scroll-mt-12",
+        className
+      )}
+      {...props}
+    />
   );
 }
 
+/**
+ * Ce ține o celulă lipită de marginea din dreapta cât timp tabelul se derulează pe orizontală.
+ *
+ * <p>Măsurat pe 07.09.2026, la 1280px: Mișcări depășește lățimea disponibilă cu 202px, Ambalaje cu
+ * 213, Parteneri cu 122. Derularea în sine e în regulă — asta face învelișul — dar coloana de
+ * acțiuni ieșea din ecran, iar din ce rămânea vizibil nici nu se vedea că **există** o coloană de
+ * acțiuni. Fixată, e mereu la îndemână, iar restul trece pe sub ea.
+ *
+ * <p>Dunga din stânga e un `before`, nu un `border-l`: un chenar ar intra în lățimea celulei și ar
+ * muta conținutul cu un pixel față de rândurile nefixate.
+ */
+const STICKY_RIGHT =
+  "sticky right-0 z-10 bg-surface group-hover:bg-surface-muted " +
+  // Cât timp se lucrează în celulă, ea urcă peste celelalte. `position: sticky` face un context
+  // de stivuire propriu, deci meniul de rând (oricât de mare i-ar fi z-index-ul) rămâne prins
+  // înăuntrul lui — iar celulele fixate ale rândurilor **de dedesubt**, fiind mai târziu în DOM,
+  // se desenau peste el. Probat pe 07.09.2026: „Șterge" din meniu nu se putea apăsa.
+  "focus-within:z-30 " +
+  "before:absolute before:inset-y-0 before:left-0 before:w-px before:bg-line";
+
 export function TH({
   className,
+  sticky,
   ...props
-}: ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("px-4 py-3", className)} {...props} />;
+}: ThHTMLAttributes<HTMLTableCellElement> & {
+  /** `right` ține coloana lipită de marginea din dreapta. Pentru coloana de acțiuni. */
+  sticky?: "right";
+}) {
+  return (
+    <th
+      className={cn("relative px-4 py-3", sticky === "right" && STICKY_RIGHT, className)}
+      {...props}
+    />
+  );
 }
 
 export function TD({
   className,
+  sticky,
   ...props
-}: TdHTMLAttributes<HTMLTableCellElement>) {
+}: TdHTMLAttributes<HTMLTableCellElement> & {
+  /** `right` ține celula lipită de marginea din dreapta. Pentru coloana de acțiuni. */
+  sticky?: "right";
+}) {
   return (
-    <td className={cn("px-4 py-3 text-content-muted", className)} {...props} />
+    <td
+      className={cn(
+        "relative px-4 py-3 text-content-muted",
+        sticky === "right" && STICKY_RIGHT,
+        className
+      )}
+      {...props}
+    />
   );
 }
 
@@ -124,19 +174,16 @@ export function SortableTH({
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        // Moștenește alinierea celulei: coloanele de cifre sunt la dreapta, iar butonul nu are
-        // de unde ști asta singur.
+        // Moștenește alinierea celulei: coloanele de cifre sunt la dreapta, iar butonul nu are de
+        // unde ști asta singur.
         className={cn(
           "flex w-full items-center gap-1.5 px-4 py-3 uppercase tracking-wide transition-colors hover:text-content",
-          align === "right" ? "justify-end text-right" : "text-left",
+          align === "right" ? "justify-end text-right" : "text-left"
         )}
       >
         <span>{children}</span>
         <Icon
-          className={cn(
-            "h-3 w-3 shrink-0",
-            active ? "text-brand" : "text-content-subtle/50",
-          )}
+          className={cn("h-3 w-3 shrink-0", active ? "text-brand" : "text-content-subtle/50")}
           aria-hidden
         />
         {label && <span className="sr-only">{label}</span>}

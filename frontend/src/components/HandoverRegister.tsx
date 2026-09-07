@@ -81,7 +81,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
               <TH>{t.colOperationCode}</TH>
               <TH>{t.colPartnerName}</TH>
               <TH>{t.colWorkPoint}</TH>
-              <TH className="text-right">{strings.common.actions}</TH>
+              <TH sticky="right" className="text-right">{strings.common.actions}</TH>
             </TR>
           </THead>
           <TBody>
@@ -139,7 +139,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                   {mv.partnerName ?? <span className="text-content-subtle">{t.ownSite}</span>}
                 </TD>
                 <TD>{mv.workPointName}</TD>
-                <TD className="text-right">
+                <TD sticky="right" className="text-right">
                   {canPrintAnexa3(mv) && (
                     <Button
                       variant="ghost"

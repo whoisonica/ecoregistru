@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 
+/**
+ * Taie textul unui rând în cuvinte, pe orice nu e literă sau cifră.
+ *
+ * <p>Folosit de căutarea pe cuvinte, care cere ca fiecare cuvânt tastat să **înceapă** un cuvânt
+ * din rând. Fără asta, „02" se potrivea în „2026" din data mişcării, iar o căutare după un cod de
+ * deşeu întorcea alt cod de deşeu — exact felul de greşeală pe care aplicaţia asta nu şi-o
+ * permite.
+ */
+function tokenize(text: string): string[] {
+  return text.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+}
+
 export type SortDirection = "asc" | "desc";
 export interface SortState {
   key: string;
@@ -65,15 +77,32 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): T
   // Fix: nimeni nu alege câte rânduri pe pagină, iar un selector în plus nu se cere.
   const pageSize = defaultPageSize;
 
+  /**
+   * Întâi expresia întreagă; dacă nimic nu se potriveşte aşa, fiecare cuvânt în parte.
+   *
+   * <p>Probat pe 07.09.2026, şi în două runde. Prima variantă căuta fiecare cuvânt ca subşir
+   * oriunde: „15 01 02" scotea şi coduri **15 01 07**, fiindcă „02" se găseşte în „2026" din dată.
+   * A doua variantă cerea ca fiecare cuvânt să **înceapă** un cuvânt din rând — mai bine, dar tot
+   * scotea codul 15 01 07 de pe o mişcare din **02**.06.2026.
+   *
+   * <p>Fondul problemei era altul: „15 01 02" e o **expresie**, nu trei cuvinte independente. Un
+   * cod de deşeu se caută întreg. Aşa că expresia are prioritate, iar căutarea pe cuvinte rămâne
+   * plasa de siguranţă — acolo îşi câştigă pâinea „hamburger 15 01", care nu e o expresie din
+   * niciun rând, dar descrie exact rândul căutat.
+   */
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q || !searchText) return rows;
-    // Fiecare cuvânt trebuie să se potrivească, undeva: „hamburger 15 01" găsește rândul, oricum
-    // ar fi ordonate coloanele în text.
+
+    const haystacks = rows.map((row) => searchText(row).toLowerCase());
+    const phrase = rows.filter((_, i) => haystacks[i].includes(q));
+    if (phrase.length > 0) return phrase;
+
+    // Cuvântul căutat trebuie să înceapă un cuvânt din rând: „02" nu mai prinde „2026".
     const words = q.split(/\s+/);
-    return rows.filter((row) => {
-      const haystack = searchText(row).toLowerCase();
-      return words.every((w) => haystack.includes(w));
+    return rows.filter((_, i) => {
+      const tokens = tokenize(haystacks[i]);
+      return words.every((w) => tokens.some((t) => t.startsWith(w)));
     });
   }, [rows, query, searchText]);
 
@@ -98,15 +127,24 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): T
     return sorted.slice(from, from + pageSize);
   }, [sorted, page, pageSize]);
 
+  /**
+   * Coloană nouă → crescător. Aceeaşi coloană → se întoarce direcţia.
+   *
+   * <p>Prima variantă avea trei stări (crescător → descrescător → deloc). Probat pe 07.09.2026:
+   * pe Mişcări, unde sortarea implicită e descrescător după dată, primul clic pe coloana „Data"
+   * ducea la „deloc" — iar ordinea de la server fiind tot descrescătoare după dată, **nu se
+   * schimba nimic pe ecran**. Utilizatorul apăsa şi credea că butonul e stricat.
+   *
+   * <p>Preţul e că nu se mai poate reveni la ordinea de la server dintr-un clic. Merită: aia se
+   * vede la deschiderea ecranului, pe când un buton care pare mort se vede la fiecare folosire.
+   */
   function toggleSort(key: string) {
     setPage(0);
-    setSort((current) => {
-      if (current?.key !== key) return { key, direction: "asc" };
-      // A treia apăsare scoate sortarea: te întorci la ordinea în care le-a trimis serverul, care
-      // e ordinea gândită de cineva, nu una alfabetică.
-      if (current.direction === "asc") return { key, direction: "desc" };
-      return null;
-    });
+    setSort((current) =>
+      current?.key === key
+        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    );
   }
 
   function search(next: string) {

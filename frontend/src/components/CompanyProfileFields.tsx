@@ -192,7 +192,7 @@ export function CompanyProfileFields({
       <div>
         <span className="block text-sm font-medium text-content-strong">{t.operationCodes}</span>
         <p className="text-xs text-content-muted">{t.operationCodesHint}</p>
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+        <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <CodeGroup
             title={t.recovery}
             codes={R_CODES}
@@ -276,7 +276,7 @@ export function CompanyProfileFields({
               placeholder={t.transportMeansPlaceholder}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="cp-transport-licence">{t.transportLicenseNumber}</Label>
               <Input

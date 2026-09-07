@@ -398,7 +398,7 @@ export function MovementsPage() {
                     {t.colWorkPoint}
                   </SortableTH>
                   <TH className="text-center">{t.colAttachments}</TH>
-                  {canWrite && <TH className="text-right">{strings.common.actions}</TH>}
+                  {canWrite && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
@@ -499,7 +499,7 @@ export function MovementsPage() {
                       )}
                     </TD>
                     {canWrite && (
-                      <TD className="text-right">
+                      <TD sticky="right" className="text-right">
                         {/* Una afară, restul în meniu. Patru butoane cu text pe fiecare rând
                             înseamnă vreo 380px de comenzi repetate, într-un tabel care are deja
                             nouă coloane. Afară rămâne cea care e chiar de făcut acum: cântarul,
@@ -631,7 +631,7 @@ function RecordWeightDialog({
           {movement.wasteCode} — {movement.wasteCodeName}
           {movement.partnerName ? `, ${movement.partnerName}` : ""}, {formatDate(movement.date)}
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="wg-qty">{t.quantity}</Label>
             <Input
@@ -1188,13 +1188,14 @@ function MovementFormDialog({
         </div>
 
         <FormSection title={t.sectionWaste}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-wp">{t.filterWorkPoint}</Label>
               <Select
                 id="mv-wp"
                 value={workPointId}
                 onChange={(ev) => setWorkPointId(ev.target.value)}
+                {...invalidProps("mv-wp-err", errors.workPointId)}
               >
                 {workPoints.map((w) => (
                   <option key={w.id} value={w.id}>
@@ -1202,10 +1203,17 @@ function MovementFormDialog({
                   </option>
                 ))}
               </Select>
+              <FieldError id="mv-wp-err" message={errors.workPointId} />
             </div>
             <div>
               <Label htmlFor="mv-date">{t.date}</Label>
-              <DateInput id="mv-date" value={date} onChange={(ev) => setDate(ev.target.value)} />
+              <DateInput
+                id="mv-date"
+                value={date}
+                onChange={(ev) => setDate(ev.target.value)}
+                {...invalidProps("mv-date-err", errors.date)}
+              />
+              <FieldError id="mv-date-err" message={errors.date} />
             </div>
           </div>
 
@@ -1220,12 +1228,14 @@ function MovementFormDialog({
               loading={codeSearch.isFetching}
               placeholder={t.wasteCodePlaceholder}
               searchPlaceholder={t.wasteCodeSearch}
+              invalid={errors.wasteCode ? "mv-code-err" : undefined}
             />
+            <FieldError id="mv-code-err" message={errors.wasteCode} />
           </div>
         </FormSection>
 
         <FormSection title={t.sectionQuantity}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-qty">{t.quantity}</Label>
               <Input
@@ -1283,7 +1293,7 @@ function MovementFormDialog({
         </FormSection>
 
         <FormSection title={t.sectionOperation}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-op">{t.operation}</Label>
               <Select
@@ -1389,7 +1399,7 @@ function MovementFormDialog({
         </FormSection>
 
         <FormSection title={t.sectionHandling}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-storage">{t.storageType}</Label>
               <Select
@@ -1424,7 +1434,7 @@ function MovementFormDialog({
         </FormSection>
 
         <FormSection title={t.sectionTransport}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-transport-means">{t.transportMeans}</Label>
               <Select
@@ -1632,7 +1642,7 @@ function MovementFormDialog({
             {/* Rubricile de mai jos dau rândul şi coloana din tabelul 1, deci n-au sens dacă
                 mişcarea nu ajunge în tabel. */}
             {packagingOnMarket !== false && (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="mv-pk-material">{t.packagingMaterial}</Label>
                 <Select
@@ -1717,7 +1727,7 @@ function MovementFormDialog({
               <p className="text-xs text-content-muted">{t.anexa3SectionHint}</p>
             </div>
             <p className="text-xs text-content-muted">{t.anexa3Copies}</p>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
                   Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr
                   e tot ce ne trebuie. Se arată ca să se vadă ce se tipărește. */}
@@ -1748,7 +1758,7 @@ function MovementFormDialog({
                 <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Transportatorul și șoferul stau alături: alegerea firmei decide ce șoferi se
                   propun, iar alăturarea face legătura vizibilă fără s-o explice nimeni. */}
               <div>
@@ -1820,7 +1830,7 @@ function MovementFormDialog({
                 </p>
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
                 <Label htmlFor="mv-driver">{t.driverName}</Label>
                 <Input
