@@ -61,3 +61,10 @@ documente oficiale/
 /docs/EcoRegistru-prezentare-specialist.pdf
 /docs/EcoRegistru-prezentare.pdf
 /docs/screenshots/
+
+# Documentul de stadiu si intrebari pentru specialista, cu sursa si scriptul lui:
+# numeste clientii ei si citeaza din fisele primite.
+/docs/EcoRegistru-stadiu-si-intrebari-*.pdf
+/docs/stadiu-si-intrebari-*.html
+/docs/build-pdf-specialist.py
+/docs/proba-p*.png
