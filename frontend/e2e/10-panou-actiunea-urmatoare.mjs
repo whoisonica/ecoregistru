@@ -263,6 +263,161 @@ const fisier = await descarcare;
 check("iar «Rezumat Excel» chiar descarcă", Boolean(fisier),
   fisier ? fisier.suggestedFilename() : "(nimic)");
 
+// ------------------------------------------------------ 8. PARTENERI: SUGESTIA NU MAI MUTĂ COVORUL
+// Apăsai pe firma sugerată și același dialog devenea „Editează partener": tot ce completasei
+// dispărea, iar singurul semn era titlul. Două drumuri de probat, fiindcă sunt două tratamente:
+// pe un formular în care nu e decât numele se comută pe loc și banda o spune; pe unul în care s-au
+// completat și alte rubrici, se întreabă întâi.
+async function deschideAdaugaPartener() {
+  await page.goto(BASE + "/parteneri", { waitUntil: "networkidle" });
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    [...document.querySelectorAll("button")]
+      .find((b) => b.textContent.includes("Adaugă partener"))
+      ?.click();
+  });
+  await page.waitForTimeout(400);
+}
+
+// (a) doar numele tastat → se comută direct, dar cu banda care spune ce s-a întâmplat
+await deschideAdaugaPartener();
+await page.fill("#p-name", "Colector");
+await page.waitForTimeout(400);
+const sugestii = await page.evaluate(() => {
+  const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+  const li = [...d.querySelectorAll("li button")].map((b) => b.textContent.trim());
+  return li;
+});
+check("sugestia de duplicat apare de la două litere", sugestii.length > 0, sugestii.join(" | "));
+
+await page.evaluate(() => {
+  const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+  d.querySelector("li button")?.click();
+});
+await page.waitForTimeout(500);
+const dupaComutare = await page.evaluate(() => {
+  const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+  return {
+    titlu: d?.querySelector("h2, h3")?.textContent.trim() ?? "",
+    text: d?.textContent.replace(/\s+/g, " ") ?? "",
+    nume: d?.querySelector("#p-name")?.value ?? "",
+  };
+});
+check("pe un formular cu doar numele se comută pe loc, fără întrebare",
+  /Editează/.test(dupaComutare.titlu), dupaComutare.titlu);
+check("dar banda spune că s-a comutat",
+  /Editezi un partener care există deja/.test(dupaComutare.text));
+check("și de unde ai venit", /din sugestia de duplicat/.test(dupaComutare.text));
+check("iar numele e al partenerului deschis, nu ce tastasei",
+  dupaComutare.nume !== "Colector" && dupaComutare.nume.length > 0, dupaComutare.nume);
+await shot(page, "10-parteneri-comutare");
+
+// și drumul înapoi pune la loc ce tastasei
+await page.evaluate(() => {
+  const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+  [...d.querySelectorAll("button")].find((b) => /Înapoi la adăugare/.test(b.textContent))?.click();
+});
+await page.waitForTimeout(400);
+const inapoi = await page.evaluate(() => {
+  const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+  return {
+    titlu: d?.querySelector("h2, h3")?.textContent.trim() ?? "",
+    nume: d?.querySelector("#p-name")?.value ?? "",
+    fataBanda: /Editezi un partener care există deja/.test(d?.textContent ?? ""),
+  };
+});
+check("«Înapoi la adăugare» revine la adăugare", /Adaugă/.test(inapoi.titlu), inapoi.titlu);
+check("cu numele tastat pus la loc", inapoi.nume === "Colector", inapoi.nume);
+check("și fără banda de comutare", !inapoi.fataBanda);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
+
+// (b) formular cu mai mult decât numele → se întreabă întâi
+await deschideAdaugaPartener();
+await page.fill("#p-name", "Colector");
+await page.fill("#p-cui", "RO12345678");
+await page.waitForTimeout(400);
+await page.evaluate(() => {
+  const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+  d.querySelector("li button")?.click();
+});
+await page.waitForTimeout(500);
+const intrebare = await page.evaluate(() => {
+  const dialoguri = [...document.querySelectorAll('div[role="dialog"][aria-modal="true"]')];
+  const txt = dialoguri.map((d) => d.textContent).join(" ");
+  return {
+    intreaba: /Deschizi fișa partenerului existent/.test(txt),
+    spuneCeSePierde: /nu se salvează/.test(txt),
+    // Formularul de dedesubt e încă cel de adăugare: întrebarea n-a comutat nimic încă.
+    incaAdauga: dialoguri.some((d) => /Adaugă partener/.test(d.querySelector("h2, h3")?.textContent ?? "")),
+  };
+});
+check("pe un formular început se întreabă întâi", intrebare.intreaba);
+check("și întrebarea spune ce se pierde", intrebare.spuneCeSePierde);
+check("iar până la răspuns nu s-a comutat nimic", intrebare.incaAdauga);
+await shot(page, "10-parteneri-intrebare");
+
+// Escape peste întrebare închide doar întrebarea — teancul din Dialog (07.09).
+await page.keyboard.press("Escape");
+await page.waitForTimeout(400);
+const dupaEsc = await page.evaluate(() => {
+  const dialoguri = [...document.querySelectorAll('div[role="dialog"][aria-modal="true"]')];
+  return {
+    cate: dialoguri.length,
+    cui: document.querySelector("#p-cui")?.value ?? "",
+  };
+});
+check("Escape închide doar întrebarea, nu și formularul", dupaEsc.cate === 1, dupaEsc.cate + " dialog(uri)");
+check("iar ce tastasei e încă acolo", dupaEsc.cui === "RO12345678", dupaEsc.cui);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
+
+// ---------------------------------------------- 9. BADGE-UL DE AUTORIZAȚIE DUCE LA PARTENER
+// „Autorizație expirată" spunea, în chiar textul lui, „actualizeaz-o în fișa lui" — și nu ducea
+// nicăieri. Al doilea fund de sac, după cel roșu reparat pe 07.09.
+await page.goto(BASE + "/miscari?luna=2026", { waitUntil: "networkidle" });
+await page.waitForTimeout(1500);
+const badge = await page.evaluate(() => {
+  const a = [...document.querySelectorAll("a")].find((x) =>
+    /Autorizație expirată/.test(x.textContent)
+  );
+  if (!a) return null;
+  return {
+    href: a.getAttribute("href"),
+    text: a.textContent.replace(/\s+/g, " ").trim(),
+    // Motivul întreg rămâne pentru cititorul de ecran, fiindcă `Tooltip` nu poate înveli un link.
+    aria: (a.getAttribute("aria-label") ?? "").slice(0, 60),
+  };
+});
+check("există un rând cu autorizație expirată la data predării", Boolean(badge),
+  badge?.text ?? "(niciunul)");
+if (badge) {
+  check("badge-ul e un link către partener", /\/parteneri\?partener=/.test(badge.href), badge.href);
+  check("și scrie data pe ecran, nu doar în spatele unui hover", /\d{2}\.\d{2}\.\d{4}/.test(badge.text),
+    badge.text);
+  check("iar motivul rămâne pentru cititorul de ecran", /Autorizația de mediu/.test(badge.aria),
+    badge.aria);
+
+  await page.goto(BASE + badge.href, { waitUntil: "networkidle" });
+  await page.waitForTimeout(1500);
+  const fisa = await page.evaluate(() => {
+    const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
+    return {
+      deschis: Boolean(d),
+      titlu: d?.querySelector("h2, h3")?.textContent.trim() ?? "",
+      nume: d?.querySelector("#p-name")?.value ?? "",
+      // Parametrul se consumă la deschidere, ca `?miscare=`: un refresh n-ar trebui să-l redeschidă.
+      url: location.pathname + location.search,
+    };
+  });
+  check("linkul deschide chiar fișa partenerului", fisa.deschis && /Editează/.test(fisa.titlu),
+    fisa.titlu + " — " + fisa.nume);
+  check("iar parametrul se consumă la deschidere", !/partener=/.test(fisa.url), fisa.url);
+  await shot(page, "10-partener-din-badge");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(300);
+}
+
 console.log("");
 if (fails === 0) console.log("✓ proba 10 trece.");
 else console.log(`✗ proba 10: ${fails} verificări au căzut.`);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Copy,
@@ -587,19 +588,42 @@ export function MovementsPage() {
                           oficială. Aici lipsește o condiție de legalitate a predării (OUG 92/2021
                           art. 23 alin. (1)), pe care clientul o poate lămuri cu partenerul; e
                           aceeași familie cu „De cântărit". */}
-                      {m.recipientAuthorizationExpired && (
-                        <Tooltip
-                          content={t.authExpiredAtHandoverHint(
-                            m.recipientAuthorizationExpiry
-                              ? formatDate(m.recipientAuthorizationExpiry)
-                              : null,
-                          )}
-                        >
-                          <Badge variant="warning" className="mt-0.5 block w-fit">
-                            {t.authExpiredAtHandover}
-                          </Badge>
-                        </Tooltip>
-                      )}
+                      {m.recipientAuthorizationExpired &&
+                        (() => {
+                          const expiry = m.recipientAuthorizationExpiry
+                            ? formatDate(m.recipientAuthorizationExpiry)
+                            : null;
+                          const why = t.authExpiredAtHandoverHint(expiry);
+                          /* Badge-ul spunea că lipsește o condiție de legalitate a predării și
+                             trimitea, în chiar textul lui, la fișa partenerului — dar nu ducea
+                             nicăieri. Al doilea fund de sac din aplicație, după cel roșu reparat
+                             pe 07.09; același drum, alt badge.
+
+                             ⚠️ Nu mai e învelit în `Tooltip`: bula își randează propriul
+                             `<button>`, deci n-ar putea înveli un link (defectul din 07.09,
+                             seara). Data urcă în badge — pe ecran, nu în spatele unui hover, ceea
+                             ce e oricum mai bine pe telefon —, iar motivul rămâne întreg în
+                             `aria-label`, pentru cine citește cu tastatura. */
+                          return m.partnerId ? (
+                            <Link
+                              to={`/parteneri?partener=${m.partnerId}`}
+                              aria-label={why}
+                              className="mt-0.5 block w-fit rounded-full hover:opacity-80"
+                            >
+                              <Badge variant="warning">
+                                {expiry
+                                  ? `${t.authExpiredAtHandover} · ${expiry}`
+                                  : t.authExpiredAtHandover}
+                              </Badge>
+                            </Link>
+                          ) : (
+                            <Tooltip content={why}>
+                              <Badge variant="warning" className="mt-0.5 block w-fit">
+                                {t.authExpiredAtHandover}
+                              </Badge>
+                            </Tooltip>
+                          );
+                        })()}
                     </TD>
                     <TD>{m.internalGeneratorName || "—"}</TD>
                     <TD>{m.workPointName}</TD>

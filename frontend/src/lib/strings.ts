@@ -603,6 +603,20 @@ export const strings = {
     sectionAuthorizationHint:
       "Predarea se face către un operator autorizat (OUG 92/2021, art. 23 alin. (1)). Cu data expirării completată, aplicația anunță cu 60 de zile înainte și marchează predările făcute după ea.",
     sectionAnexa3: "Date pentru Anexa 3",
+    // Sugestia de duplicat ducea la fişa existentă pe tăcute: acelaşi dialog devenea „Editează",
+    // iar tot ce completasei dispărea. Comutarea rămâne fapta bună — sugestia există tocmai ca să
+    // nu se creeze un partener de două ori —, dar se **spune** că s-a întâmplat, cu drum înapoi.
+    // Linkul din badge-ul „Autorizație expirată" de pe o predare. Partenerul poate fi dezactivat
+    // între timp, sau linkul poate fi vechi — se spune, nu se deschide un formular gol.
+    partnerNotFound: "Partenerul nu mai e în listă. Poate a fost dezactivat între timp.",
+    suggestionSwitchTitle: "Deschizi fișa partenerului existent?",
+    suggestionSwitchConfirm:
+      "Ce ai completat aici nu se salvează — deschizi fișa lui, nu adaugi un partener nou.",
+    suggestionSwitchGo: "Deschide fișa",
+    suggestionSwitchedTitle: "Editezi un partener care există deja.",
+    suggestionSwitchedHint:
+      "Ai ajuns aici din sugestia de duplicat, de la „{name}”. Modificările se salvează pe fișa lui.",
+    suggestionSwitchedBack: "Înapoi la adăugare",
     nameSuggestions: "Există deja la tine:",
     nameSuggestionsHint:
       "Ca să nu apară același partener de două ori, cu două grafii. Apasă unul ca să-l deschizi în loc să creezi altul.",

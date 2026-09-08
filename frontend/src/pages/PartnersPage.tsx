@@ -106,6 +106,12 @@ export function PartnersPage() {
   const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
   const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
+  /**
+   * Numele tastat înainte de a apăsa pe o sugestie de duplicat. `null` = dialogul s-a deschis
+   * normal. Ţine două lucruri deodată: că **s-a comutat**, şi ce se pune la loc dacă omul se
+   * răzgândeşte.
+   */
+  const [switchedFrom, setSwitchedFrom] = useState<string | null>(null);
   const [nameError, setNameError] = useState(false);
   const [roleError, setRoleError] = useState(false);
   const [typeError, setTypeError] = useState(false);
@@ -130,6 +136,24 @@ export function PartnersPage() {
       : (partners ?? [])
           .filter((p) => fold(p.name).includes(fold(name.trim())))
           .slice(0, 5);
+
+  /**
+   * S-a completat şi altceva în afară de nume? Se citeşte din starea care există deja, fără să se
+   * mai adauge un „touched": rubricile astea sunt exact cele pe care le-ar arunca o comutare.
+   * Tipul şi rolurile nu intră — au implicit la deschidere, deci n-ar deosebi nimic.
+   */
+  const formHasMoreThanName = Boolean(
+    cui ||
+      address ||
+      authorizationNumber ||
+      authorizationExpiry ||
+      tradeRegisterNumber ||
+      transportLicenseNumber ||
+      transportLicenseExpiry ||
+      packagingOrigin ||
+      drivers.length > 0 ||
+      workPoints.length > 0
+  );
 
   const filteredByRole = useMemo(
     () =>
@@ -190,6 +214,7 @@ export function PartnersPage() {
     setNameError(false);
     setRoleError(false);
     setTypeError(false);
+    setSwitchedFrom(null);
     setDialogOpen(true);
   }
 
@@ -205,6 +230,35 @@ export function PartnersPage() {
    */
   const openCreateRef = useRef(openCreate);
   openCreateRef.current = openCreate;
+
+  /**
+   * `?partener=<id>` — deschide fişa partenerului cerut, ca `?miscare=` pe Mişcări.
+   *
+   * <p>Vine din badge-ul „Autorizaţie expirată" de pe o predare: badge-ul spunea că lipseşte o
+   * condiţie de legalitate a predării (decizia 36) şi nu ducea nicăieri — al doilea fund de sac
+   * din aplicaţie, după cel roşu reparat pe 07.09. Numărul şi data autorizaţiei se editează în
+   * fişa partenerului, deci acolo duce.
+   *
+   * <p>Parametrul se **consumă** la deschidere: lăsat în adresă, un refresh ar redeschide dialogul
+   * peste ce lucrezi. Dacă partenerul nu mai e printre rândurile aduse — dezactivat, sau link
+   * vechi — se **spune**, nu se deschide un formular gol.
+   */
+  const [focusPartner, setFocusPartner] = useUrlState("partener");
+  const openEditRef = useRef(openEdit);
+  openEditRef.current = openEdit;
+  useEffect(() => {
+    if (!focusPartner) return;
+    const found = (partners ?? []).find((p) => p.id === focusPartner);
+    if (found) {
+      openEditRef.current(found); // deschide și dialogul
+      setFocusPartner("");
+      return;
+    }
+    if (!isLoading && partners) {
+      notify(t.partnerNotFound, "error");
+      setFocusPartner("");
+    }
+  }, [focusPartner, partners, isLoading, setFocusPartner, notify]);
   const [newParam, setNewParam] = useUrlState("nou");
   useEffect(() => {
     if (!newParam) return;
@@ -213,6 +267,7 @@ export function PartnersPage() {
   }, [newParam, setNewParam, canManage]);
 
   function openEdit(p: Partner) {
+    setSwitchedFrom(null);
     setEditing(p);
     setName(p.name);
     setCui(p.cui ?? "");
@@ -301,6 +356,46 @@ export function PartnersPage() {
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
     }
+  }
+
+  /**
+   * Sugestia de duplicat ducea la fişa existentă **pe tăcute**.
+   *
+   * <p>Apăsai pe firma sugerată şi acelaşi dialog devenea „Editează partener": tot ce completasei
+   * dispărea, iar singurul semn era titlul, pe care nu se uită nimeni când tocmai a apăsat pe altă
+   * parte a ecranului. Sugestia există ca să nu se creeze un partener de două ori, deci comutarea e
+   * fapta bună — ce lipsea era să **se vadă** că s-a întâmplat, şi drumul înapoi.
+   *
+   * <p>Două tratamente, după cât ai apucat să scrii, ca la garda de pe formularul de mişcare
+   * (07.09): pe un formular în care nu e decât numele, se comută pe loc şi banda de sus o spune; pe
+   * unul în care s-au completat şi alte rubrici, se **întreabă întâi** — acolo comutarea chiar
+   * aruncă muncă.
+   */
+  function openSuggested(p: Partner) {
+    const typed = name;
+    const go = () => {
+      openEdit(p);
+      setSwitchedFrom(typed);
+    };
+    if (!formHasMoreThanName) return go();
+    confirm({
+      title: t.suggestionSwitchTitle,
+      message: (
+        <>
+          <strong className="text-content">{p.name}</strong>
+          {p.cui ? ` — CUI ${p.cui}` : ""}. {t.suggestionSwitchConfirm}
+        </>
+      ),
+      confirmLabel: t.suggestionSwitchGo,
+      onConfirm: go,
+    });
+  }
+
+  /** Înapoi la adăugare, cu numele tastat pus la loc — restul rubricilor s-au pierdut oricum. */
+  function backToCreate() {
+    const typed = switchedFrom ?? "";
+    openCreate();
+    setName(typed);
   }
 
   function handleDeactivate(p: Partner) {
@@ -527,6 +622,24 @@ export function PartnersPage() {
             de unde stătea între bifa de transportator și autorizație — o identificare ruptă în
             două de o întrebare despre camioane. */}
         <form id="partner-form" onSubmit={handleSubmit} className="space-y-6">
+          {/* Ai venit aici dintr-o sugestie de duplicat: acelaşi dialog, altă faptă. Fără rândul
+              ăsta, singurul semn era titlul — iar cine tocmai a apăsat pe o sugestie se uită la
+              locul unde a apăsat, nu la antet. */}
+          {switchedFrom !== null && editing && (
+            <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 sm:flex-row sm:items-center">
+              <p className="min-w-0 flex-1 text-xs text-amber-900">
+                <strong className="font-medium">{t.suggestionSwitchedTitle}</strong>{" "}
+                {t.suggestionSwitchedHint.replace("{name}", switchedFrom)}
+              </p>
+              <button
+                type="button"
+                onClick={backToCreate}
+                className="shrink-0 whitespace-nowrap text-xs font-medium text-amber-800 underline underline-offset-2"
+              >
+                {t.suggestionSwitchedBack}
+              </button>
+            </div>
+          )}
           <FormSection title={t.sectionIdentity}>
             <div>
               <Label htmlFor="p-name">{t.name}</Label>
@@ -549,7 +662,7 @@ export function PartnersPage() {
                         <button
                           type="button"
                           className="text-xs text-amber-900 underline underline-offset-2"
-                          onClick={() => openEdit(p)}
+                          onClick={() => openSuggested(p)}
                         >
                           {p.name}
                           {p.cui ? ` — ${p.cui}` : ""}

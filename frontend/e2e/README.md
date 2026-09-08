@@ -133,6 +133,32 @@ numără **pe nume** — un total care creşte nu spune că stările există.
 există cale de a crea un ataşament prin aplicaţie. URL-urile arată către cloud-ul public `demo` al
 Cloudinary — se deschid, dar nu sunt documentele firmei.
 
+**Pe 08.09, seara, a treia:** o predare către un partener a cărui autorizaţie **expirase înainte de
+data predării** — starea din decizia 36, pe care badge-ul „Autorizaţie expirată" o semnalează şi din
+care duce acum la fişa partenerului. Zero rânduri din 37 o aveau, deci proba drumului s-ar fi făcut
+pe gol. Aditiv arată aşa (partenerul demo `Salubritate Municipală SA` expiră pe 08.08.2026):
+
+```sql
+insert into waste_movements (id, company_id, work_point_id, date, waste_code_id, quantity, unit,
+                             operation, operation_code, partner_id, register, weighed_at_unloading,
+                             deleted, created_by, created_at, updated_at)
+select gen_random_uuid(), m.company_id, m.work_point_id, date '2026-08-20', m.waste_code_id, 1,
+       'KG', 'DISPOSED', 'D5', p.id, 'ANEXA_1', false, false, m.created_by, now(), now()
+from waste_movements m
+cross join partners p
+where p.name = 'Salubritate Municipală SA' and m.deleted = false
+order by m.created_at limit 1;
+```
+
+⚠️ **Cantitatea e 1 kg dinadins.** Prima variantă punea 120 şi a dus stocul unui cod fix la zero,
+deci dala „Coduri cu stoc" a trecut de la 4 la 3 şi **proba 9 a căzut** — cea care fixează chiar
+cifra aia. Un rând de seed adăugat pentru o probă nu trebuie să mişte datele pe care se sprijină
+alta; când o face, se vede — dar numai dacă suita se rulează **întreagă**.
+
+🟡 **Nu e în `DevDataSeeder`**, ca celelalte două — seeder-ul e backend, iar felia care a cerut-o a
+fost de interfaţă. Rămâne restanţă: cine atinge următoarea oară backendul o mută acolo, ca starea
+să existe şi pe o bază proaspătă, nu numai pe cea cu `INSERT`-ul de mai sus.
+
 ⚠️ **Baza de dev nu se re-seedează singură.** Seeder-ul rulează doar pe bază goală, deci o bază
 făcută înainte de 07.09 n-are rândurile astea, iar probele care se sprijină pe ele trec pe gol fără
 să pară. Le adaugi cu `TRUNCATE` pe tabelele demo şi repornire, sau cu un `INSERT` aditiv. Pentru
