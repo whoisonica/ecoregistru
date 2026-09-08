@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
@@ -15,7 +15,7 @@ import { useEvidences } from "@/hooks/useEvidences";
 import { useMovements } from "@/hooks/useMovements";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
-import type { DeadlineStatus } from "@/lib/types";
+import type { DeadlineStatus, MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ function StatTile({
   sub,
   tone,
   loading = false,
+  children,
 }: {
   icon: typeof Scale;
   value: string;
@@ -64,6 +65,8 @@ function StatTile({
   sub: string;
   tone: "brand" | "amber" | "red";
   loading?: boolean;
+  /** Detaliul care face cifra să însemne ceva — la stoc, chiar codurile care îl poartă. */
+  children?: ReactNode;
 }) {
   const toneClasses = {
     brand: "bg-brand-muted text-brand",
@@ -84,6 +87,7 @@ function StatTile({
       </div>
       <div className="mt-3 text-sm font-medium text-content-muted">{label}</div>
       <div className="text-xs text-content-subtle">{sub}</div>
+      {!loading && children}
     </Card>
   );
 }
@@ -207,12 +211,45 @@ export function DashboardPage() {
       ),
     [movements]
   );
-  /** Stocul de la ultima lună calculată a anului, pe toate codurile. */
-  const currentStock = useMemo(() => {
-    const rows = evidences ?? [];
-    if (rows.length === 0) return 0;
-    const lastMonth = Math.max(...rows.map((r) => r.month));
-    return rows.filter((r) => r.month === lastMonth).reduce((sum, r) => sum + r.closingStock, 0);
+  /**
+   * Stocul, **pe coduri**. Până pe 08.09.2026 cifra era suma închiderilor peste toate codurile —
+   * hârtie plus ulei uzat plus menajer, adică o cantitate care nu există fizic nicăieri. Mai rău:
+   * un stoc negativ pe un cod (ieşiri neacoperite, exact ce nu se poate depune) se scădea din
+   * pozitivele celorlalte şi dispărea din ochi.
+   *
+   * <p>Se numără codurile care chiar au stoc şi se numesc primele trei. Stocul unei perechi
+   * (punct de lucru, cod) e închiderea **ultimei ei luni calculate**, nu a ultimei luni din tot
+   * setul: perechile pot avea lungimi diferite, iar un maxim luat peste tot ar sări perechea care
+   * se termină mai devreme.
+   *
+   * <p>Ordinea: întâi negativele, apoi pozitivele, fiecare după mărime. Un stoc negativ e
+   * interesant oricât de mic ar fi — dacă s-ar ordona doar după mărime, un −1 ar cădea sub prag
+   * exact când e singurul lucru de văzut.
+   */
+  const stock = useMemo(() => {
+    const lastPerPair = new Map<string, MonthlyEvidence>();
+    for (const r of evidences ?? []) {
+      const key = `${r.workPointId}|${r.wasteCodeId}`;
+      const prev = lastPerPair.get(key);
+      if (!prev || r.month > prev.month) lastPerPair.set(key, r);
+    }
+    const byCode = new Map<string, number>();
+    for (const r of lastPerPair.values()) {
+      byCode.set(r.wasteCode, (byCode.get(r.wasteCode) ?? 0) + r.closingStock);
+    }
+    const withStock = [...byCode.entries()]
+      .map(([code, kg]) => ({ code, kg }))
+      .filter((x) => x.kg !== 0)
+      .sort((a, b) => {
+        if (a.kg < 0 !== b.kg < 0) return a.kg < 0 ? -1 : 1;
+        return Math.abs(b.kg) - Math.abs(a.kg);
+      });
+    return {
+      count: withStock.length,
+      negative: withStock.filter((x) => x.kg < 0).length,
+      top: withStock.slice(0, 3),
+      rest: Math.max(0, withStock.length - 3),
+    };
   }, [evidences]);
 
   const monthLabel = strings.months[month - 1];
@@ -308,12 +345,39 @@ export function DashboardPage() {
         />
         <StatTile
           icon={Scale}
-          value={kgFormat.format(currentStock)}
+          value={String(stock.count)}
           label={t.statStock}
-          sub={t.statStockSub}
-          tone={currentStock < 0 ? "red" : "brand"}
+          sub={
+            stock.negative > 0
+              ? t.statStockNegative.replace("{n}", String(stock.negative))
+              : t.statStockSub
+          }
+          tone={stock.negative > 0 ? "red" : "brand"}
           loading={loadingEvidences}
-        />
+        >
+          {stock.top.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-xs">
+              {stock.top.map((row) => (
+                <li key={row.code} className="flex items-center justify-between gap-2">
+                  <span className="truncate text-content-muted">{row.code}</span>
+                  <span
+                    className={cn(
+                      "shrink-0 tabular-nums",
+                      row.kg < 0 ? "font-medium text-red-700" : "text-content"
+                    )}
+                  >
+                    {kgFormat.format(row.kg)} kg
+                  </span>
+                </li>
+              ))}
+              {stock.rest > 0 && (
+                <li className="text-content-subtle">
+                  {t.statStockMore.replace("{n}", String(stock.rest))}
+                </li>
+              )}
+            </ul>
+          )}
+        </StatTile>
         <StatTile
           icon={CalendarClock}
           value={String(openDeadlines.length)}

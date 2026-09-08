@@ -18,6 +18,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useCurrentCompany } from "@/hooks/useCompanies";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,7 @@ export function PartnersPage() {
     user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
 
   const { data: partners, isLoading, isError } = usePartners();
+  const { data: company } = useCurrentCompany();
   const createMut = useCreatePartner();
   const updateMut = useUpdatePartner();
   const deactivateMut = useDeactivatePartner();
@@ -329,6 +331,17 @@ export function PartnersPage() {
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
     });
   }
+
+  /**
+   * Cui i se cere provenienţa ambalajelor. Rubrica alimentează Anexa 3 Ambalaje, pe care o depun
+   * doar operatorii care preiau deşeuri de ambalaje de la terţi (Ordinul 794/2012, art. 4), deci
+   * un cont de generator pur n-are ce răspunde. Partenerul care **are** deja un răspuns îl arată
+   * oricum: o valoare scrisă cândva trebuie să rămână vizibilă şi editabilă, cum rămâne codul R/D
+   * al unei mişcări vechi. Cât timp firma nu s-a încărcat nu se ghiceşte — rubrica apare când se
+   * ştie că se aplică.
+   */
+  const asksPackagingOrigin =
+    (company != null && company.type !== "GENERATOR") || packagingOrigin !== "";
 
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
@@ -620,21 +633,32 @@ export function PartnersPage() {
 
             {/* Provenienţa stă aici, nu pe fiecare mişcare: nota 2 a Anexei 3 Ambalaje descrie
                 **sursa**, nu transportul, deci un colector de la care cumperi e colector la fiecare
-                transport (decizia 43). Rubrica de pe mişcare rămâne suprascrierea, pentru „populaţie". */}
-            <div>
-              <Label htmlFor="p-pkg-origin">{strings.packagingOrigin.label}</Label>
-              <Select
-                id="p-pkg-origin"
-                value={packagingOrigin}
-                onChange={(e) => setPackagingOrigin(e.target.value as "" | PackagingOrigin)}
-              >
-                <option value="">{strings.packagingOrigin.none}</option>
-                <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
-                <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
-                <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
-              </Select>
-              <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
-            </div>
+                transport (decizia 43). Rubrica de pe mişcare rămâne suprascrierea, pentru „populaţie".
+
+                Şi se întreabă numai de la conturile care pot prelua de la terţi: rubrica există
+                pentru Anexa 3 Ambalaje (Ordinul 794/2012), pe care o depun colectorii,
+                comercianţii, reciclatorii şi valorificatorii — un generator pur n-o depune
+                niciodată, deci întrebarea „ce e partenerul ăsta faţă de ambalajele pe care ţi le
+                aduce" n-are pentru el niciun răspuns. E acelaşi tip de restrângere ca la
+                provenienţa deşeului de pe mişcare (decizia 23), şi **nu** contrazice decizia 6:
+                nu restrângem pe un profil gol, ci pe un răspuns dat — tipul contului se alege la
+                deschiderea lui şi nu poate lipsi. */}
+            {asksPackagingOrigin && (
+              <div>
+                <Label htmlFor="p-pkg-origin">{strings.packagingOrigin.label}</Label>
+                <Select
+                  id="p-pkg-origin"
+                  value={packagingOrigin}
+                  onChange={(e) => setPackagingOrigin(e.target.value as "" | PackagingOrigin)}
+                >
+                  <option value="">{strings.packagingOrigin.none}</option>
+                  <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
+                  <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
+                  <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
+                </Select>
+                <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
+              </div>
+            )}
           </FormSection>
 
           {/* Transportatorul e o bifă, nu un tip: aceeași firmă e des și colector, și
@@ -681,6 +705,9 @@ export function PartnersPage() {
                   <div>
                     <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
                     <p className="mt-0.5 text-xs text-content-muted">{t.driversHint}</p>
+                    {/* Aceeași notă ca în „Șoferii noștri" din Setări: se scrie o dată, se arată în
+                        amândouă locurile unde chiar se tastează actul de identitate. */}
+                    <p className="mt-0.5 text-xs text-content-subtle">{strings.common.driversPrivacy}</p>
                     <div className="mt-2 space-y-2">
                       {drivers.map((d, index) => (
                         <div

@@ -138,6 +138,10 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>
           <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
+          {/* Actul de identitate al șoferului e singurul dat personal al cuiva din afara firmei pe
+              care aplicația îl ține — și singurul care se tipărește. Nota spune de ce se ține, cât
+              se ține și ce nu șterge dezactivarea. Vezi `strings.common.driversPrivacy`. */}
+          <p className="mt-1 max-w-3xl text-xs text-content-subtle">{strings.common.driversPrivacy}</p>
         </div>
         {canManage && (
           <Button onClick={openCreate}>

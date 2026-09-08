@@ -148,10 +148,15 @@ export const strings = {
     // suma rândurilor cu operațiunea „Generare".
     statGenerated: "Cantitate înregistrată în {month}",
     statGeneratedSub: "kilograme, pe toate mișcările lunii",
-    statStock: "Stoc la zi",
+    // Kilogramele nu se adună peste coduri: hârtie + ulei uzat + menajer nu e nicio cantitate
+    // fizică, iar un stoc negativ pe un cod se ascundea sub pozitivele celorlalte. Se numără
+    // codurile care au stoc și se numesc primele — cifra stă pe cod, unde înseamnă ceva.
+    statStock: "Coduri cu stoc",
     // Stocul vine din evidența calculată, care poate fi în urma mișcărilor — de asta scrie
     // „la ultima lună calculată" și nu „acum".
-    statStockSub: "kilograme, la ultima lună calculată",
+    statStockSub: "la ultima lună calculată; kilogramele stau pe cod",
+    statStockNegative: "{n} cu stoc negativ — ieșiri neacoperite",
+    statStockMore: "și încă {n}",
     statDeadlinesNext: "Următorul termen: {label}, în {days} zile",
     statDeadlinesOverdue: "{n} depășite",
     statDeadlinesNone: "Niciun termen deschis",
@@ -481,8 +486,12 @@ export const strings = {
       namePlaceholder: "ex. Ion Popescu",
       identification: "Act de identitate",
       identificationPlaceholder: "ex. CJ 123456",
+      // Rubrica de pe Anexa 3 se numește doar „Date de identificare delegat” și nu cere nimic
+      // anume, deci indicația noastră e cea mai mică variantă care o completează. Textul de
+      // dinainte oferea și CNP-ul ca opțiune la fel de bună — o invitație de a scrie mai mult
+      // decât are formularul nevoie, pe o hârtie care pleacă la destinatar.
       identificationHint:
-        "Ce se scrie pe formular la „Date de identificare delegat”: serie și număr de CI, sau CNP. Rămâne editabil pe fiecare mișcare.",
+        "Ce se scrie pe formular la „Date de identificare delegat”: de regulă seria și numărul actului de identitate. Scrie cât mai puțin — rubrica se tipărește pe Anexa 3. Rămâne editabil pe fiecare mișcare.",
       vehicle: "Nr. înmatriculare uzual",
       vehiclePlaceholder: "ex. CJ 01 ABC",
       vehicleHint: "Mașina cu care vine de obicei. Pe mișcare se poate schimba.",
@@ -752,6 +761,18 @@ export const strings = {
     empty: "Niciun termen pentru {year}.",
     searchPlaceholder: "Caută după tip de raportare sau notă...",
     emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
+    // Data singură cere o socoteală în cap — Panoul o făcea de mult, tabelul nu. „Azi" și „mâine"
+    // se scriu în cuvinte: „în 0 zile" e adevărat și nu se citește ca nimic.
+    daysLeft: "în {n} zile",
+    daysToday: "azi",
+    daysTomorrow: "mâine",
+    daysOverdue: "depășit de {n} zile",
+    // Drumul de la termen la documentul care îl stinge. Există doar unde chiar tipărim ceva:
+    // contribuțiile AFM sunt bani declarați în aplicația AFM, nu un formular al nostru, iar un
+    // link către un document inexistent ar promite mai mult decât ținem.
+    documentEvidence: "Deschide evidența pe {year}",
+    documentPackaging: "Deschide ambalajele pe {year}",
+    colDocument: "Documentul",
   },
 
   auditFile: {
@@ -1403,6 +1424,17 @@ export const strings = {
     overriddenBadge: "scris de tine",
     computedBadge: "din mișcări",
     overrideClear: "Golește rândul ca să revii la cifra din mișcări.",
+    // Grila are șaizeci și șase de celule și se salvează singură, un rând odată, la ieșirea din
+    // celulă. Până pe 08.09.2026 se vedeau numai erorile: o salvare reușită nu spunea nimic, deci
+    // cine completa tot tabelul n-avea de unde ști câte cifre au ajuns.
+    overrideAutosaveHint:
+      "Se salvează singur, un rând odată, când ieși din celulă. Coloana „Stare” spune ce s-a salvat și ce nu.",
+    overrideStatus: "Stare",
+    overrideDirty: "nesalvat",
+    overrideSaving: "se salvează…",
+    overrideSaved: "salvat",
+    overrideUnsavedRows: "{n} rânduri au cifre nesalvate. Ieși din celulă ca să plece.",
+    overrideUnsavedRow: "Un rând are cifre nesalvate. Ieși din celulă ca să plece.",
 
     // --- tabelul 2 ---
     table2Title: "Tabelul 2. Deșeuri de ambalaje gestionate",
@@ -1526,6 +1558,19 @@ export const strings = {
   },
 
   common: {
+    /**
+     * Nota de retenţie pentru actul de identitate al şoferilor — singurul dat personal pe care
+     * aplicaţia îl ţine despre cineva care nu are cont în ea, şi singurul care se **tipăreşte**
+     * (Anexa 3, rubrica „Date de identificare delegat"). Stă în ambele locuri unde se scrie: fişa
+     * partenerului şi „Şoferii noştri" din Setări.
+     *
+     * Nu inventează o regulă de protecţie a datelor: spune scopul (rubrica de pe formular),
+     * termenul (chiar cel de păstrare a evidenţei, OUG 92/2021 art. 48 alin. (5)) şi faptul —
+     * deja adevărat în cod, decizia 30 — că mişcarea păstrează un instantaneu, deci dezactivarea
+     * unui şofer nu-l scoate din documentele tipărite.
+     */
+    driversPrivacy:
+      "Date personale: se țin doar pentru rubrica „Date de identificare delegat” de pe Anexa 3 și se tipăresc pe ea. Scrie strict ce se completează pe formular — de regulă seria și numărul actului. Rămân cât timp se păstrează evidența: cel puțin 3 ani, 12 luni la transportatori (OUG 92/2021, art. 48 alin. (5)). Mișcările deja înregistrate păstrează datele de atunci, deci dezactivarea unui șofer nu îl scoate din ele.",
     loading: "Se încarcă...",
     saving: "Se salvează...",
     save: "Salvează",

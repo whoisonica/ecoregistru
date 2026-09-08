@@ -1,6 +1,6 @@
 # Probe de interfaţă
 
-Opt suite, 161 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
+Nouă suite, 200 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
 
 **De ce există.** Pe 07.09.2026, după şaisprezece felii de UI/UX toate „verzi" — `tsc --noEmit`
 curat, `vite build` verde, cod recitit — prima rulare adevărată a scos **şapte defecte**. Patru
@@ -80,6 +80,8 @@ ramură nu atinge `node_modules`.
 
 | `7-firma-si-reactivare.mjs` | „Datele firmei" din Setări: cele cinci grupe, rubricile care se tipăresc pe documente, golurile spuse ca goluri, şi cuprinsul paginii cu ţinta fiecărei intrări. Drumul întreg al reactivării: creează un şofer, îl dezactivează prin confirmare, verifică faptul că **iese din listă** şi că filtrul de stare abia acum apare, îl regăseşte prin „Inactive", îl reactivează. Garda formularului de mişcare: neatins se închide direct, atins întreabă, iar Escape peste întrebare închide **doar** întrebarea, cu ce s-a scris neatins. ⚠️ **Lasă în urmă un şofer dezactivat** la fiecare rulare. |
 | `8-atasamente-partener-paleta.mjs` | Coloana „📎" e un buton care deschide lista fişierelor, fiecare cu numele lui şi cu `target="_blank"`, fără buton de ştergere — ştergerea rămâne în formular. Formularul de partener: cele cinci secţiuni titrate, lăţimea `xl`, şi **ordinea rubricilor** (CUI-ul lângă denumire, nu după camioane). Cuprinsul de pe Ambalaje: cele patru ţinte există, bara stă lipită şi **nimic nu trece peste ea** (măsurat cu `elementFromPoint` în trei puncte), clicul duce sub bară la 80px, ultima secţiune duce la fundul paginii cu marcajul pe ea, iar la 375px pagina nu se derulează lateral. Paleta: „fisa" → Evidenţe, „anexa 1" → **amândouă** documentele **şi nimic altceva**, „predare" → acţiunea de adăugare, care duce pe Mişcări cu formularul deschis şi cu `?nou=1` consumat. Plus verificarea că nicio comandă nu recalculează un dosar. |
+
+| `9-restrangeri-si-semne.mjs` | Provenienţa ambalajelor se cere **numai** pe un cont care preia de la terţi — probat pe amândouă tipurile, comutând tenantul ca administrator de platformă, fiindcă o restrângere care ascunde tuturor e la fel de greşită ca una care nu ascunde nimănui. Grila de suprascriere de pe Ambalaje: „nesalvat" cât s-a tastat, „salvat" după ieşirea din celulă, cifra regăsită după reîncărcare, apoi **golită la loc** ca proba să nu lase nimic în urmă. Panoul numără coduri cu stoc, nu kilograme adunate peste coduri, şi numeşte primele trei. Termenele: zilele rămase pe fiecare rând, depăşirea scrisă ca depăşire, linkul către documentul care stinge termenul — **pe anul raportat**, nu pe anul termenului — şi absenţa lui la contribuţiile AFM, pentru care nu tipărim nimic; plus înălţimea butonului de acţiune, fiindcă a şasea coloană l-a rupt pe două rânduri prima oară. Nota de retenţie a actului de identitate, în amândouă locurile unde se tastează. |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 

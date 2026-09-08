@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { RefreshCw, Check, RotateCcw, CalendarClock } from "lucide-react";
+import { RefreshCw, Check, ChevronRight, RotateCcw, CalendarClock } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import {
   useDeadlines,
@@ -10,7 +11,7 @@ import {
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -40,6 +41,62 @@ const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
   DONE: "success",
   OVERDUE: "danger",
 };
+
+/**
+ * Câte zile mai sunt, socotite pe zile calendaristice — aceeaşi socoteală ca pe Panou, care o avea
+ * de mult, în timp ce tabelul lăsa clientul s-o facă în cap.
+ *
+ * <p>Se compară la miezul nopţii, nu la ora curentă: altfel un termen de mâine dimineaţă ar ieşi
+ * „0 zile" după-amiaza — adevărat în ore, fals în felul în care se citeşte un calendar.
+ */
+function daysUntil(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  const target = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+}
+
+/** Zilele rămase, în cuvinte. Un termen finalizat nu le mai are: nu mai e nimic de aşteptat. */
+function daysLabel(d: Deadline): string | null {
+  if (d.status === "DONE") return null;
+  const days = daysUntil(d.dueDate);
+  if (days < 0) return t.daysOverdue.replace("{n}", String(-days));
+  if (days === 0) return t.daysToday;
+  if (days === 1) return t.daysTomorrow;
+  return t.daysLeft.replace("{n}", String(days));
+}
+
+/**
+ * Ecranul de pe care se scoate documentul care stinge termenul.
+ *
+ * <p>Amândouă raportările anuale acoperă **anul precedent** celui în care se depun — 15 martie
+ * pentru evidenţa anului trecut (OUG 92/2021 art. 48 alin. (1)), 25 februarie pentru ambalajele
+ * anului trecut (Ordinul 794/2012 art. 6, „pentru anul anterior") — deci linkul duce la anul
+ * raportat, nu la anul termenului. A duce la anul termenului ar deschide un dosar gol chiar în ziua
+ * depunerii.
+ *
+ * <p>Contribuţiile AFM n-au link, şi asta nu e o scăpare: sunt bani declaraţi în aplicaţia AFM, iar
+ * aplicaţia noastră nu tipăreşte niciun formular pentru ele (vezi `docs/legislatie.md` §5.B). Un
+ * link către un document care nu există ar promite mai mult decât ţinem — chiar defectul reparat pe
+ * 07.09 la badge-ul roşu, pe dos.
+ */
+function documentFor(d: Deadline): { to: string; label: string } | null {
+  const reported = Number(d.dueDate.slice(0, 4)) - 1;
+  if (d.reportType === "SIM_ANNUAL") {
+    return {
+      to: `/evidente?an=${reported}`,
+      label: t.documentEvidence.replace("{year}", String(reported)),
+    };
+  }
+  if (d.reportType === "PACKAGING_ANNUAL") {
+    return {
+      to: `/ambalaje?an=${reported}`,
+      label: t.documentPackaging.replace("{year}", String(reported)),
+    };
+  }
+  return null;
+}
 
 export function DeadlinesPage() {
   const { user } = useAuth();
@@ -163,14 +220,19 @@ export function DeadlinesPage() {
                     {t.colDueDate}
                   </SortableTH>
                   <TH>{t.colStatus}</TH>
+                  <TH>{t.colDocument}</TH>
                   <TH>{t.colNote}</TH>
-                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
+                  {canManage && (
+                    <TH sticky="right" className="whitespace-nowrap text-right">
+                      {strings.common.actions}
+                    </TH>
+                  )}
                 </TR>
               </THead>
               <TBody>
                 {(isLoading || view.visible.length === 0) && (
                   <TableFallbackRow
-                    columns={canManage ? 5 : 4}
+                    columns={canManage ? 6 : 5}
                     loading={isLoading}
                     icon={CalendarClock}
                     title={
@@ -191,22 +253,50 @@ export function DeadlinesPage() {
                     }
                   />
                 )}
-                {view.visible.map((d) => (
+                {view.visible.map((d) => {
+                  const doc = documentFor(d);
+                  const days = daysLabel(d);
+                  return (
                   <TR key={d.id}>
                     <TD className="font-medium text-content">
                       {strings.enums.reportType[d.reportType]}
                     </TD>
-                    <TD className="whitespace-nowrap">{formatDate(d.dueDate)}</TD>
-                    <TD>
+                    <TD className="whitespace-nowrap">
+                      {formatDate(d.dueDate)}
+                      {days && (
+                        <span
+                          className={cn(
+                            "block text-xs",
+                            d.status === "OVERDUE" ? "text-red-600" : "text-content-subtle"
+                          )}
+                        >
+                          {days}
+                        </span>
+                      )}
+                    </TD>
+                    <TD className="whitespace-nowrap">
                       <Badge variant={statusVariant[d.status]}>
                         {strings.enums.deadlineStatus[d.status]}
                       </Badge>
+                    </TD>
+                    <TD className="whitespace-nowrap">
+                      {doc ? (
+                        <Link
+                          to={doc.to}
+                          className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+                        >
+                          {doc.label}
+                          <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                        </Link>
+                      ) : (
+                        <span className="text-content-subtle">—</span>
+                      )}
                     </TD>
                     <TD className="max-w-xs truncate text-content-muted">
                       {d.completionNote ?? "—"}
                     </TD>
                     {canManage && (
-                      <TD sticky="right" className="text-right">
+                      <TD sticky="right" className="whitespace-nowrap text-right">
                         {d.status === "DONE" ? (
                           <Button
                             variant="outline"
@@ -226,7 +316,8 @@ export function DeadlinesPage() {
                       </TD>
                     )}
                   </TR>
-                ))}
+                  );
+                })}
               </TBody>
             </Table>
             <TablePagination view={view} />

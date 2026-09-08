@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, FileSpreadsheet, FileText, Package, Pencil, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -131,6 +131,22 @@ function fill(template: string, n: number) {
 }
 
 /**
+ * Ce s-a întâmplat cu rândul de suprascriere: e ceva tastat şi neplecat, pleacă chiar acum, sau a
+ * ajuns. Grila se salvează singură la ieşirea din celulă, iar până pe 08.09.2026 se vedeau numai
+ * erorile — deci cine completa şaizeci şi şase de cifre n-avea de unde şti câte au ajuns.
+ *
+ * <p>Ordinea contează: cât timp salvarea zboară se spune asta, chiar dacă s-a mai tastat ceva între
+ * timp; ce s-a tastat rămâne „nesalvat" după ce răspunsul vine, fiindcă aia e situaţia. Un rând
+ * neatins nu spune nimic — un „—" pe opt rânduri ar fi opt afirmaţii despre nimic.
+ */
+function RowStatus({ state, dirty }: { state?: "saving" | "saved"; dirty: boolean }) {
+  if (state === "saving") return <span className="text-content-muted">{t.overrideSaving}</span>;
+  if (dirty) return <Badge variant="warning">{t.overrideDirty}</Badge>;
+  if (state === "saved") return <Badge variant="success">{t.overrideSaved}</Badge>;
+  return null;
+}
+
+/**
  * Tabul **Ambalaje** — Anexa 1 Ambalaje (Ordinul 794/2012) şi tot ce ţine de ea.
  *
  * <p>Ecranul are o singură sursă: **mişcările pe coduri 15 01 xx**. Registrul le arată aşa cum
@@ -161,11 +177,30 @@ export function PackagingPage() {
   // Ce s-a tastat şi nu s-a salvat încă, per material. Salvarea e pe rând, la ieşirea din câmp:
   // grila are şaizeci şi şase de celule, iar un buton „salvează tot" ar face o greşeală invizibilă.
   const [draft, setDraft] = useState<Record<string, Record<string, string>>>({});
+  /**
+   * Ce face rândul chiar acum: pleacă spre server, sau tocmai a ajuns. Starea e **per material**,
+   * nu pe mutaţie: `saveMut.isPending` e unul singur pentru toată grila, deci ar aprinde toate cele
+   * opt rânduri la fiecare salvare. „Nesalvat" nu stă aici — ăla se citeşte din `draft`, care e
+   * chiar definiţia lui.
+   */
+  const [rowState, setRowState] = useState<Record<string, "saving" | "saved">>({});
+  // „Salvat" se stinge singur; fără curăţarea asta, un cronometru ar scrie într-o componentă
+  // demontată la schimbarea anului sau la plecarea de pe ecran.
+  const savedTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  useEffect(() => {
+    const timers = savedTimers.current;
+    return () => {
+      for (const id of Object.values(timers)) clearTimeout(id);
+    };
+  }, []);
   useEffect(() => {
     setDraft({});
+    setRowState({});
   }, [year]);
 
   const rows = table1 ?? [];
+  /** Câte rânduri au cifre tastate şi neplecate. Zero e starea normală, deci nu se scrie nimic. */
+  const dirtyRows = Object.keys(draft).length;
 
   /**
    * Registrul de mișcări pe coduri 15 01 xx. Fără sortare implicită: vine de la server în ordinea
@@ -247,6 +282,21 @@ export function PackagingPage() {
     setDraft((prev) => ({ ...prev, [material]: { ...prev[material], [column]: value } }));
   }
 
+  function markSaved(material: string) {
+    setRowState((prev) => ({ ...prev, [material]: "saved" }));
+    clearTimeout(savedTimers.current[material]);
+    savedTimers.current[material] = setTimeout(() => {
+      setRowState((prev) => {
+        // Numai dacă între timp n-a început altă salvare pe rândul ăsta: altfel „se salvează…"
+        // s-ar stinge de la cronometrul salvării dinainte.
+        if (prev[material] !== "saved") return prev;
+        const next = { ...prev };
+        delete next[material];
+        return next;
+      });
+    }, 4000);
+  }
+
   function saveOverride(row: PackagingMarketRow) {
     const pending = draft[row.material];
     if (!pending) return;
@@ -258,6 +308,11 @@ export function PackagingPage() {
       const parsed = Number(raw.replace(",", "."));
       return Number.isFinite(parsed) ? parsed : null;
     };
+    // Ce pleacă acum, exact aşa cum e în clipa asta. Se ţine minte fiindcă răspunsul vine mai
+    // târziu, iar între timp se poate tasta în altă celulă a aceluiaşi rând.
+    const sent = { ...pending };
+    setRowState((prev) => ({ ...prev, [row.material]: "saving" }));
+    clearTimeout(savedTimers.current[row.material]);
     saveMut.mutate(
       {
         material: row.material,
@@ -272,12 +327,32 @@ export function PackagingPage() {
       {
         onSuccess: () => {
           setDraft((prev) => {
+            const current = prev[row.material];
+            if (!current) return prev;
+            // Se şterge din ciornă **numai ce s-a trimis şi n-a fost tastat între timp**. Înainte
+            // se ştergea rândul întreg: cine tasta în altă celulă cât zbura salvarea îşi pierdea
+            // cifra tăcut, la reîmprospătarea de după răspuns. Ce rămâne aici e chiar ce n-a plecat,
+            // deci rândul rămâne pe „nesalvat" şi pleacă la ieşirea din celula lui.
+            const rest = Object.fromEntries(
+              Object.entries(current).filter(([column, value]) => sent[column] !== value)
+            );
+            const next = { ...prev };
+            if (Object.keys(rest).length === 0) delete next[row.material];
+            else next[row.material] = rest;
+            return next;
+          });
+          markSaved(row.material);
+        },
+        onError: (err) => {
+          // Ciorna rămâne pe loc: cifra tastată nu se pierde fiindcă serverul a refuzat-o, iar
+          // rândul se întoarce la „nesalvat", care e adevărul.
+          setRowState((prev) => {
             const next = { ...prev };
             delete next[row.material];
             return next;
           });
+          notify(apiErrorMessage(err, t.saveError), "error");
         },
-        onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
       }
     );
   }
@@ -598,6 +673,7 @@ export function PackagingPage() {
               <div className="mt-3 rounded-lg border border-line p-4">
                 <p className="max-w-3xl text-sm text-content-muted">{t.table1Override}</p>
                 <p className="mt-1 text-xs text-content-subtle">{t.overrideClear}</p>
+                <p className="mt-1 text-xs text-content-subtle">{t.overrideAutosaveHint}</p>
                 <div className="mt-3">
                   <Table stickyHeader>
                     <THead sticky>
@@ -609,6 +685,7 @@ export function PackagingPage() {
                         <TH className="text-right">{t.colSecondary}</TH>
                         <TH className="text-right">{t.colSecondaryReusable}</TH>
                         <TH className="text-right">{t.colHazardous}</TH>
+                        <TH>{t.overrideStatus}</TH>
                       </TR>
                     </THead>
                     <TBody>
@@ -631,11 +708,24 @@ export function PackagingPage() {
                               />
                             </TD>
                           ))}
+                          {/* Ce s-a întâmplat cu rândul, în cuvinte. `aria-live` fiindcă starea se
+                              schimbă singură, fără ca nimeni să apese ceva: altfel un cititor de
+                              ecran n-ar afla niciodată că cifra a plecat. */}
+                          <TD className="whitespace-nowrap text-xs" aria-live="polite">
+                            <RowStatus state={rowState[row.material]} dirty={Boolean(draft[row.material])} />
+                          </TD>
                         </TR>
                       ))}
                     </TBody>
                   </Table>
                 </div>
+                {/* Cifra de care întreba felia: „câte au ajuns". Coloana o spune pe rând, dar un
+                    rând nesalvat poate fi derulat afară din ochi — aici se vede oricum. */}
+                {dirtyRows > 0 && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    {dirtyRows === 1 ? t.overrideUnsavedRow : fill(t.overrideUnsavedRows, dirtyRows)}
+                  </p>
+                )}
               </div>
             )}
           </div>
