@@ -63,7 +63,8 @@ rulează local și are testele verzi.
 > retenţie, în amândouă locurile unde se tastează. **Backendul n-a fost atins** — 239 de teste,
 > migrări tot până la `V31`. Suita de interfaţă e la **9 probe, 200 de verificări**. Detaliile şi
 > motivele: secţiunea „Rubrica cerută cui i se aplică, grila care spune că a salvat, stocul pe
-> coduri". ⚠️ Nedeployat.
+> coduri". ✅ **În producţie**: `ecoregistru-app` **v31**, `ecoregistru-api` neschimbat la v37,
+> schema tot la 31.
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
@@ -3767,7 +3768,28 @@ rescrie documente deja tipărite — deci rămâne o decizie, nu o felie de inte
   ştearsă la loc de aceeaşi probă, iar golirea rândului chiar şterge suprascrierea (backendul o
   spune explicit în `saveMarketEntry`).
 - `tsc --noEmit` curat, `vite build` verde.
-- ⚠️ **Nedeployat.** Merge-ul în `main` s-a făcut, push-ul pe repo-urile split nu.
+### ✅ În producţie (08.09.2026, ora 13:07)
+
+| Unde | La ce |
+|---|---|
+| `main` == `origin/main` == `origin/deploy/heroku-split` | **`5b54e5c`** (`313e862` codul, `5b54e5c` documentaţia) |
+| `ferepo/main` (frontend) | **`e27c220`** |
+| `newrepo/main` (backend) | `b5dd344`, **neatins** |
+| `ecoregistru-app` | **v31** (de la v30) |
+| `ecoregistru-api` | **v37**, neschimbat |
+
+- **Backendul n-a avut ce trimite**, şi asta e cazul normal descris în handoff: `tmp-backend` a ieşit
+  cu acelaşi commit în vârf ca `newrepo/main`, fiindcă niciun fişier din `backend/` nu s-a atins.
+  Schema rămâne la **31** în loguri; nicio migrare de rulat.
+- Cherry-pick fără conflict, cu aceeaşi explicaţie ca pe 08.09 dimineaţa: cele trei fişiere prin
+  care repo-ul de frontend diferă stabil de monorepo (`.gitignore`, `vite.config.js`,
+  `vite.config.d.ts`) n-au fost atinse de niciun commit.
+- Verificat **pe conţinut, nu pe hash** — bundle-ul servit de producţie conţine şirurile feliilor de
+  azi („Coduri cu stoc", „kilogramele stau pe cod", „Deschide evidenţa pe", „Se salvează singur, un
+  rând odată", „Date personale: se ţin doar pentru rubrica") **şi nu mai conţine** ce au înlocuit
+  ele („Stoc la zi", „kilograme, la ultima lună calculată").
+- *(Build-ul de frontend a intrat în ~1 minut de data asta; cozile de 8–10 minute din 02.09 şi 04.09
+  rămân posibile, nu obligatorii.)*
 
 ⚠️ **O probă poate trece din motivul greşit, a doua oară în două zile.** Prima rulare a probei de
 restrângere a raportat „provenienţa NU se cere unui generator pur" — verde, dar fiindcă
