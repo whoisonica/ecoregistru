@@ -53,6 +53,18 @@ rulează local și are testele verzi.
 > suita de interfaţă e la **7 probe, 127 de verificări**. Detaliile şi motivele: secţiunea
 > „Filtrul de lună, datele firmei şi dezactivarea care se poate lua înapoi". ⚠️ Tot nedeployat.
 >
+> **Adăugat 08.09.2026, după-amiaza — cinci felii de interfaţă, patru dintre ele afirmaţii
+> corectate.** Provenienţa ambalajelor nu se mai cere unui generator pur (Anexa 3 Ambalaje n-o
+> depune niciodată); grila de 66 de celule spune ce a salvat şi ce nu — şi, scriind starea, a ieşit
+> o **pierdere tăcută de date** veche de la `V22`: ciorna rândului se ştergea întreagă la răspuns,
+> deci ce se tasta cât zbura salvarea se pierdea; panoul numără **coduri cu stoc** în loc să adune
+> kilograme peste coduri diferite; termenele spun câte zile mai sunt şi duc la documentul care le
+> stinge, pe anul raportat; iar actul de identitate al şoferilor are, în sfârşit, o notă de
+> retenţie, în amândouă locurile unde se tastează. **Backendul n-a fost atins** — 239 de teste,
+> migrări tot până la `V31`. Suita de interfaţă e la **9 probe, 200 de verificări**. Detaliile şi
+> motivele: secţiunea „Rubrica cerută cui i se aplică, grila care spune că a salvat, stocul pe
+> coduri". ⚠️ Nedeployat.
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
@@ -3661,6 +3673,107 @@ păreau defecte ale aplicaţiei: (a) clicul pe „Tabelul 2" nu duce titlul sus,
 secţiuni intră amândouă în ultimul ecran şi pagina se termină înaintea lor — e chiar ramura „la
 fund" a primitivei, scrisă pe 07.09 după o captură; proba se face pe „Tabelul 1". (b) Cifra din
 capul unei probe nu spune nimic dacă tabelul n-are rândul — vezi datoria de seed de mai sus.
+
+## Rubrica cerută cui i se aplică, grila care spune că a salvat, stocul pe coduri (08.09.2026, după-amiaza)
+
+Cele cinci felii din capul secţiunii „Ordinea recomandată" a lui `todo-ui-ux.md`, luate în ordine.
+Niciuna nu repară ceva rupt — dar patru din cinci schimbă o **afirmaţie** pe care ecranul o făcea
+fără să aibă cum s-o susţină, iar una singură (grila) a scos la iveală şi o pierdere tăcută de date.
+
+### 1. Provenienţa ambalajelor se cere numai cui i se aplică
+
+Rubrica de pe partener alimentează Anexa 3 Ambalaje (Ordinul 794/2012, art. 4), pe care o depun
+colectorii, comercianţii, reciclatorii şi valorificatorii. Un **generator pur** n-o depune
+niciodată, deci întrebarea „ce e partenerul ăsta faţă de ambalajele pe care ţi le aduce" n-avea
+pentru el niciun răspuns — şi totuşi i se punea, pe formularul pe care îl deschide cel mai des.
+
+Se restrânge după **tipul contului**, exact ca provenienţa deşeului de pe mişcare (decizia 23).
+⚠️ **Şi nu contrazice decizia 6** („profil gol = fără restricţie"): nu restrângem pe un profil
+neîntrebat, ci pe un răspuns care nu poate lipsi — tipul firmei se alege la deschiderea contului.
+Un partener care **are** deja o provenienţă scrisă o vede oricum, ca să nu dispară tăcut o valoare
+scrisă cândva.
+
+### 2. Grila de 66 de celule spune ce a salvat — şi nu mai pierde ce s-a tastat între timp
+
+Se salvează singură, un rând odată, la ieşirea din celulă. Până azi se vedeau **numai erorile**: o
+salvare reuşită nu spunea nimic, deci cine completa şaizeci şi şase de cifre n-avea de unde şti
+câte au ajuns. Rândul are de-acum trei stări — „nesalvat", „se salvează…", „salvat" — plus o
+numărătoare sub grilă pentru rândul derulat afară din ochi.
+
+🔴 **Şi, scriind starea, a ieşit o pierdere tăcută de date.** `onSuccess` ştergea **ciorna rândului
+întreg**, nu ce trimisese: cine tasta într-o a doua celulă cât zbura salvarea primea, la
+reîmprospătarea de după răspuns, cifra veche a serverului peste ce tocmai scrisese. Acum se şterge
+din ciornă numai ce s-a trimis **şi n-a fost tastat între timp** — restul rămâne „nesalvat" şi
+pleacă la ieşirea din celula lui. Defectul era vechi de la `V22`; l-a scos la iveală chiar
+întrebarea „ce are rândul ăsta de spus despre el însuşi".
+
+Starea e **per material**, nu pe mutaţie: `saveMut.isPending` e unul singur pentru toată grila şi
+ar fi aprins toate cele opt rânduri la fiecare salvare.
+
+### 3. Panoul numără coduri, nu adună kilograme peste ele
+
+„Stoc la ultima lună calculată" era suma închiderilor peste **toate** codurile — hârtie plus ulei
+uzat plus menajer, o cifră care nu există fizic nicăieri. Mai rău: un stoc **negativ** pe un cod —
+ieşiri neacoperite, exact ce nu se poate depune — se scădea din pozitivele celorlalte şi dispărea
+din ochi.
+
+Dala numără de-acum **codurile cu stoc** şi le numeşte pe primele trei, cu kilogramele fiecăruia.
+Negativele stau primele şi sunt roşii, oricât de mici — ordonarea doar după mărime ar fi ascuns
+un −1 exact când e singurul lucru de văzut. Stocul unei perechi (punct de lucru, cod) e închiderea
+**ultimei ei luni calculate**, nu a ultimei luni din tot setul: un maxim luat peste tot ar sări
+perechea care se termină mai devreme.
+
+### 4. Termenele spun câte zile mai sunt, şi duc la documentul care le stinge
+
+Panoul socotea zilele de mult (`daysUntil`); tabelul lăsa clientul s-o facă în cap. Acum fiecare
+rând nefinalizat o spune, iar depăşirea se scrie ca depăşire („depăşit de 177 zile", roşu), nu ca
+aşteptare.
+
+Şi termenul duce la document: 15 martie → **Evidenţe**, 25 februarie → **Ambalaje**, amândouă pe
+**anul raportat**, adică anul precedent celui în care se depune (OUG 92/2021 art. 48 alin. (1);
+Ordinul 794/2012 art. 6, „pentru anul anterior"). A duce la anul termenului ar fi deschis un dosar
+gol chiar în ziua depunerii.
+⚠️ **Contribuţiile AFM n-au link, dinadins.** Sunt bani declaraţi în aplicaţia AFM, iar noi nu
+tipărim niciun formular pentru ele (`legislatie.md` §5.B). Un link către un document care nu există
+ar fi fost chiar promisiunea goală reparată pe 07.09 la badge-ul roşu, pe dos.
+
+🔴 **Coloana nouă a rupt butonul de acţiune pe două rânduri** — „Marchează / finalizat" — şi asta
+s-a văzut **numai pe captură**, cu toate verificările verzi. Acelaşi defect ca la inboxul de cereri,
+pe 07.09. Reparat cu `whitespace-nowrap` pe celula de acţiuni şi pe badge-ul de status; proba
+măsoară de-acum **înălţimea butonului**, fiindcă asta e proprietatea care se strică.
+
+### 5. Actul de identitate al şoferilor spune de ce e ţinut
+
+Singurul dat personal al cuiva din afara firmei pe care aplicaţia îl ţine — şi singurul care se
+**tipăreşte** (Anexa 3, „Date de identificare delegat"). `plan-executie.md` prevedea regim GDPR abia
+la Etapa 10, pentru CNP-ul de pe borderoul de metale, dar câmpul e în producţie de la `V28`.
+
+Nota de retenţie stă în **amândouă** locurile unde se tastează — „Şoferii noştri" din Setări şi fişa
+transportatorului — şi spune trei lucruri, toate verificabile: **de ce** se ţine (rubrica de pe
+formular), **cât** (cât se păstrează evidenţa: cel puţin 3 ani, 12 luni la transportatori, OUG
+92/2021 art. 48 alin. (5)) şi **ce nu face dezactivarea** (mişcările păstrează instantaneul —
+decizia 30). Indicaţia de sub câmp nu mai oferă CNP-ul ca variantă la fel de bună: rubrica cere
+„date de identificare", fără să numească nimic, iar noi cerem cât mai puţin, fiindcă hârtia ajunge
+la destinatar.
+⚠️ **Nu e o ştergere.** Un drum de ştergere adevărat (scoaterea unui şofer din rândurile vechi) ar
+rescrie documente deja tipărite — deci rămâne o decizie, nu o felie de interfaţă.
+
+### Starea
+
+- **Backendul n-a fost atins**: 239 de teste verzi, migrări tot până la **`V31`**, următoarea liberă
+  **`V32`**. Nicio felie n-a cerut una.
+- **Suita de interfaţă: 9 probe, 200 de verificări** (de la 8 şi 161). Proba nouă e
+  `frontend/e2e/9-restrangeri-si-semne.mjs`. **Nu lasă nimic în urmă**: cifra scrisă în grilă e
+  ştearsă la loc de aceeaşi probă, iar golirea rândului chiar şterge suprascrierea (backendul o
+  spune explicit în `saveMarketEntry`).
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Nedeployat.** Merge-ul în `main` s-a făcut, push-ul pe repo-urile split nu.
+
+⚠️ **O probă poate trece din motivul greşit, a doua oară în două zile.** Prima rulare a probei de
+restrângere a raportat „provenienţa NU se cere unui generator pur" — verde, dar fiindcă
+administratorul de platformă **nu alesese nicio firmă**, deci rubrica lipsea din alt motiv decât cel
+probat. Garda care aşteaptă lista de firme a fost scrisă abia după ce s-a văzut asta. Aceeaşi lecţie
+ca la paletă pe 08.09: verifică **şi** cazul pozitiv, pe aceeaşi probă.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

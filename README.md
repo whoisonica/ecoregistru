@@ -135,7 +135,7 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Seven suites, 127
+download — against the local dev server and a backend on the `dev` profile. Nine suites, 200
 checks: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
@@ -143,8 +143,12 @@ it rejects, Escape inside the waste-code picker closes the list and not the whol
 form asks before it closes and Escape over that question closes only the question, nothing scrolls
 sideways at 375px, the public intake form marks the three fields it requires and scrolls to the
 first one it rejects, the request inbox reads back every answer the client gave, the red "no R/D
-code" badge leads from the dashboard through the filtered register to the movement itself, and a
-deactivated row can be found through the state filter and brought back.
+code" badge leads from the dashboard through the filtered register to the movement itself, a
+deactivated row can be found through the state filter and brought back, the packaging override
+grid says which rows were saved and which were not, and the packaging-origin question is asked of
+an account that takes waste over from third parties and of no other — proved on both, by switching
+tenant, because a narrowing that hides the field from everyone passes a one-sided check just as
+easily as the right one does.
 
 They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
 `vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
@@ -279,6 +283,11 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Reading an attachment | **Mișcări** → June 2026 → the "📎 2" cell | It opens the files by name, each a link. It used to be a number and nothing else: the only way to the document ran through the thirty-field edit form — which a **VIEWER** cannot open at all, since "Editează" sits behind `canWrite`. Read-only on purpose: deleting stays in the form, next to uploading, where the confirmation is |
 | Adding a partner | **Parteneri** → "Adaugă partener" | Five named sections instead of a column of fifteen blocks: who they are · what they do · transport · authorization · what prints on Anexa 3. The CUI now sits next to the name, where it used to be separated from it by a question about lorries |
 | Finding your way down **Ambalaje** | **Ambalaje** | A sticky table of contents over the longest page in the app: four large tables plus a 66-cell grid. It sits above the amber "what blocks the declaration" panel, which comes and goes with the month — a contents bar that moved with it would be a different bar on every visit |
+| Which rows of the override grid were saved | **Ambalaje** → "Scrie cifre proprii" → type in a cell | The grid saves a row at a time, when you leave a cell, and now says so: the row reads "nesalvat" while the figure is still yours, "se salvează…" while it flies, "salvat" once it lands, and a line under the grid counts the rows still unsaved. Only errors used to be visible, so sixty-six cells gave no way of knowing how many had arrived |
+| Who is asked where the packaging came from | **Parteneri** → "Adaugă partener" | The question only appears on an account that can take waste over from third parties. It feeds the Anexa 3 Ambalaje of Ordinul 794/2012 — collectors, traders, recyclers — so on a pure generator's account it has no answer to give. A partner that already carries one keeps showing it |
+| What the stock tile counts | **Panou** | Codes with stock, and the largest three by name — not kilograms summed across codes, which was paper plus waste oil plus household waste in one figure that exists nowhere physically. A negative stock on one code used to be cancelled by the positives of the others; now it is counted, named and coloured |
+| From a deadline to the document that clears it | **Termene** | Each row says how many days are left (or by how many it is overdue), and the annual filings link to the screen that prints them — for the year **reported**, not the year of the deadline. The AFM contributions link nowhere on purpose: those are declared in AFM's own application, and we print no form for them |
+| Why a driver's ID papers are held | **Setări** → "Șoferii noștri", and a carrier's own form | A retention note where the field is typed: it is held for the "Date de identificare delegat" rubric of Anexa 3 and printed on it; it stays as long as the record must be kept (OUG 92/2021 art. 48 alin. (5) — at least three years, twelve months for carriers); and deactivating a driver does not remove them from movements already recorded, which keep the snapshot of the day |
 
 ### Tests
 
