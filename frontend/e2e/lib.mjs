@@ -49,7 +49,9 @@ export async function launch() {
  * nerezolvate și răspunsuri HTTP de 400 în sus.
  */
 export async function newPage(browser, { width = 1440, height = 900 } = {}) {
-  const context = await browser.newContext({ viewport: { width, height } });
+  // `acceptDownloads`: fără el, un `page.waitForEvent("download")` nu se declanșează niciodată, iar
+  // o probă care verifică o descărcare ar trece pe „nu s-a întâmplat nimic" — motivul greșit.
+  const context = await browser.newContext({ viewport: { width, height }, acceptDownloads: true });
   const page = await context.newPage();
   page.problems = [];
 

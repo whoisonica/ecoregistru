@@ -135,7 +135,7 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Nine suites, 200
+download — against the local dev server and a backend on the `dev` profile. Ten suites, 228
 checks: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
@@ -145,10 +145,12 @@ sideways at 375px, the public intake form marks the three fields it requires and
 first one it rejects, the request inbox reads back every answer the client gave, the red "no R/D
 code" badge leads from the dashboard through the filtered register to the movement itself, a
 deactivated row can be found through the state filter and brought back, the packaging override
-grid says which rows were saved and which were not, and the packaging-origin question is asked of
+grid says which rows were saved and which were not, the packaging-origin question is asked of
 an account that takes waste over from third parties and of no other — proved on both, by switching
 tenant, because a narrowing that hides the field from everyone passes a one-sided check just as
-easily as the right one does.
+easily as the right one does — and the dashboard's next-action band names the most expensive thing
+still open, proved on two tenants because a band that always said the same sentence would pass a
+single-tenant check just as well.
 
 They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
 `vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
@@ -287,6 +289,8 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Who is asked where the packaging came from | **Parteneri** → "Adaugă partener" | The question only appears on an account that can take waste over from third parties. It feeds the Anexa 3 Ambalaje of Ordinul 794/2012 — collectors, traders, recyclers — so on a pure generator's account it has no answer to give. A partner that already carries one keeps showing it |
 | What the stock tile counts | **Panou** | Codes with stock, and the largest three by name — not kilograms summed across codes, which was paper plus waste oil plus household waste in one figure that exists nowhere physically. A negative stock on one code used to be cancelled by the positives of the others; now it is counted, named and coloured |
 | From a deadline to the document that clears it | **Termene** | Each row says how many days are left (or by how many it is overdue), and the annual filings link to the screen that prints them — for the year **reported**, not the year of the deadline. The AFM contributions link nowhere on purpose: those are declared in AFM's own application, and we print no form for them |
+| What to do next | **Panou** | One band at the top names a single thing to do, picked by what costs most if left undone: an overdue deadline, then an exit with no R/D code, then a filing within thirty days (linking to the document that clears it, for the year *reported*), then a lapsing authorization, then the weighbridge. It stays silent until all three sources have loaded — "you are up to date" written over a half-loaded answer is the false green this codebase has paid for before |
+| Unofficial exports | **Evidențe** → "Alte descărcări" | The two official documents stay in the header; the generic exports moved into a menu that says what they are. They print "unofficial summary" on themselves, so five equally prominent buttons claimed all five were the same kind of thing — and squeezed the page title onto three lines |
 | Why a driver's ID papers are held | **Setări** → "Șoferii noștri", and a carrier's own form | A retention note where the field is typed: it is held for the "Date de identificare delegat" rubric of Anexa 3 and printed on it; it stays as long as the record must be kept (OUG 92/2021 art. 48 alin. (5) — at least three years, twelve months for carriers); and deactivating a driver does not remove them from movements already recorded, which keep the snapshot of the day |
 
 ### Tests

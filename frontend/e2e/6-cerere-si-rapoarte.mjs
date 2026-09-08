@@ -157,8 +157,8 @@ await page.goto(BASE + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
 const panel = await page.textContent("body");
 // Cele două blocaje au acum rânduri în seed-ul demo, deci se probează pe date, nu pe gol.
-check("panoul numără ieșirile fără cod R/D", /linii cu ieșiri fără cod R\/D/.test(panel), "");
-check("și le ține separate de cele care așteaptă cântarul", /linii care așteaptă cântarul/.test(panel), "");
+check("panoul numără ieșirile fără cod R/D", /lini(e|i) cu ieșiri fără cod R\/D/.test(panel), "");
+check("și le ține separate de cele care așteaptă cântarul", /lini(e|i) care așteaptă cântarul/.test(panel), "");
 
 const fixHref = await page.$$eval("a", (a) =>
   a.filter((x) => x.textContent.trim() === "Vezi liniile").map((x) => x.getAttribute("href"))

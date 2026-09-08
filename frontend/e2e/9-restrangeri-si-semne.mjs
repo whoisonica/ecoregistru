@@ -222,7 +222,7 @@ check("fiecare termen nefinalizat spune câte zile mai sunt",
   cuZile.length === termene.filter((r) => r.stare !== "Finalizat").length,
   cuZile[0]?.termen.replace(/\s+/g, " "));
 check("iar unul depăşit o spune ca depăşire, nu ca aşteptare",
-  termene.every((r) => r.stare !== "Depășit" || /depășit de \d+ zile/.test(r.termen)),
+  termene.every((r) => r.stare !== "Depășit" || /depășit de \d+ (de )?zile/.test(r.termen)),
   termene.find((r) => r.stare === "Depășit")?.termen.replace(/\s+/g, " "));
 
 const anexa1 = termene.find((r) => /Evidența gestiunii/.test(r.tip));

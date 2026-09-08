@@ -134,10 +134,10 @@ export const strings = {
       "Toate ieșirile au cod R/D și cantitate. Fișa de evidență și declarația se pot tipări așa cum sunt.",
     statusBlocked: "{n} lucruri de lămurit înainte de depunere",
     // Cele două feluri de a fi „nu gata", cu urmarea fiecăruia.
-    blockerMissingCode: "{n} linii cu ieșiri fără cod R/D",
+    blockerMissingCode: "{count} cu ieșiri fără cod R/D",
     blockerMissingCodeHint:
       "Cantitatea a plecat de pe amplasament, dar nu intră în nicio coloană oficială. Fișa nu se poate depune așa.",
-    blockerAwaitingWeighing: "{n} linii care așteaptă cântarul",
+    blockerAwaitingWeighing: "{count} care așteaptă cântarul",
     blockerAwaitingWeighingHint:
       "Ieșiri cântărite la destinatar. Așteptare legitimă, dar cifrele sunt provizorii până vine bonul.",
     blockerFix: "Vezi liniile",
@@ -147,7 +147,11 @@ export const strings = {
     // generare. Iar generarea o deduce motorul din ieșiri (decizia 17), deci n-ar fi nici măcar
     // suma rândurilor cu operațiunea „Generare".
     statGenerated: "Cantitate înregistrată în {month}",
-    statGeneratedSub: "kilograme, pe toate mișcările lunii",
+    // Numărul de mișcări stă lângă kilograme fiindcă răspunde la altceva: cifra spune *cât*, iar
+    // numărul spune *dacă se ține evidența la zi*. A fost pe dală ca cifră principală până pe
+    // 08.09, când dala a trecut pe kilograme; se întoarce aici, unde nu concurează cu ea.
+    statGeneratedSub: "kilograme, pe {count} din luna aceasta",
+    statGeneratedSubNone: "kilograme — nicio mișcare înregistrată luna aceasta",
     // Kilogramele nu se adună peste coduri: hârtie + ulei uzat + menajer nu e nicio cantitate
     // fizică, iar un stoc negativ pe un cod se ascundea sub pozitivele celorlalte. Se numără
     // codurile care au stoc și se numesc primele — cifra stă pe cod, unde înseamnă ceva.
@@ -160,9 +164,41 @@ export const strings = {
     statDeadlinesNext: "Următorul termen: {label}, în {days} zile",
     statDeadlinesOverdue: "{n} depășite",
     statDeadlinesNone: "Niciun termen deschis",
-    statExpiringDays: "expiră în {days} zile",
+    statExpiringDays: "expiră în {count}",
     statExpiringPast: "expirată",
-    daysShort: "{n} zile",
+
+    // --- Următoarea acțiune ---
+    // Panoul spunea *starea*, în cinci locuri deodată — trei dale, o casetă de blocaje și două
+    // liste — și lăsa clientul să tragă singur concluzia. Banda de sus numește **un singur** lucru,
+    // cel mai scump dintre cele deschise, și drumul către el. Nu aduce nicio cifră nouă pe ecran:
+    // ce lipsea era propoziția.
+    //
+    // Ordinea e după ce costă mai mult dacă rămâne nefăcut: un termen depășit curge deja, o ieșire
+    // fără cod R/D blochează depunerea următoare, un termen apropiat se poate încă prinde, o
+    // autorizație aproape expirată se poate reînnoi, iar cântarul e o așteptare legitimă (decizia
+    // 13) — deci ultimul.
+    nextTitle: "Următoarea acțiune",
+    nextOverdue: "{count} depășite",
+    nextOverdueHint:
+      "Depunerea se face oricum; marchează termenul finalizat după ce ai depus, cu numărul de înregistrare în notă.",
+    nextOverdueCta: "Vezi termenele",
+    nextMissingCode: "Completează codul R/D pe {count}",
+    nextMissingCodeHint:
+      "Cantitatea a plecat de pe amplasament și nu intră în nicio coloană oficială — fișa nu se poate depune așa.",
+    nextDeadline: "{label} — {days}",
+    nextDeadlineHint: "Documentul se scoate din aplicație; termenul se marchează finalizat după depunere.",
+    nextDeadlineCta: "Vezi termenul",
+    nextExpiring: "{count} cu autorizația aproape expirată",
+    nextExpiringHint:
+      "Predarea e legală doar către un operator autorizat (OUG 92/2021 art. 23), iar răspunderea rămâne a ta.",
+    nextExpiringCta: "Vezi partenerii",
+    nextWeighing: "{count} așteaptă cântarul",
+    nextWeighingHint:
+      "Cifra vine de la destinatar. Până atunci linia e provizorie — nu e o greșeală, dar documentele o poartă așa.",
+    nextWeighingCta: "Vezi mișcările",
+    nextNothing: "Ești la zi",
+    nextNothingHint:
+      "Niciun termen deschis apropiat, nicio linie de lămurit și nicio autorizație pe terminate.",
   },
 
   movements: {
@@ -668,8 +704,14 @@ export const strings = {
     colGeneratedTonnes: "Generat [t]",
     colRecoveredTonnes: "Valorificat [t]",
     colDisposedTonnes: "Eliminat [t]",
-    exportExcel: "Export Excel",
-    exportPdf: "Export PDF",
+    // Cele două exporturi generice au stat până pe 08.09 în antet, la fel de vizibile ca cele două
+    // documente oficiale — cinci butoane pe un rând, care strângeau titlul paginii pe trei rânduri.
+    // Sunt lucruri de alt fel: unul se depune la agenție, celălalt scrie pe el „rezumat neoficial".
+    // Deci ies din antet, într-un meniu care le spune pe față ce sunt.
+    exportsMenu: "Alte descărcări",
+    exportExcel: "Rezumat Excel",
+    exportPdf: "Rezumat PDF",
+    exportsHint: "Rezumat neoficial al evidenței — pentru lucru, nu pentru depunere.",
     exportError: "Exportul a eșuat. Încearcă din nou.",
     // filters
     filterYear: "An",
@@ -763,10 +805,10 @@ export const strings = {
     emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
     // Data singură cere o socoteală în cap — Panoul o făcea de mult, tabelul nu. „Azi" și „mâine"
     // se scriu în cuvinte: „în 0 zile" e adevărat și nu se citește ca nimic.
-    daysLeft: "în {n} zile",
+    daysLeft: "în {count}",
     daysToday: "azi",
     daysTomorrow: "mâine",
-    daysOverdue: "depășit de {n} zile",
+    daysOverdue: "depășit de {count}",
     // Drumul de la termen la documentul care îl stinge. Există doar unde chiar tipărim ceva:
     // contribuțiile AFM sunt bani declarați în aplicația AFM, nu un formular al nostru, iar un
     // link către un document inexistent ar promite mai mult decât ținem.

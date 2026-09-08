@@ -19,6 +19,7 @@ import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { formatTonnes } from "@/lib/units";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import { Menu, MenuItem } from "@/components/ui/menu";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -280,25 +281,29 @@ export function EvidencesPage() {
               {exporting !== "declaration" && <FileText className="mr-2 h-4 w-4" />}
               {t.annualDeclaration}
             </Button>
-            {/* Export is read-only: available to every tenant member, viewer included. */}
-            <Button
-              variant="outline"
-              onClick={() => handleExport("xlsx")}
-              disabled={rows.length === 0 || exporting !== null}
-              loading={exporting === "xlsx"}
-            >
-              {exporting !== "xlsx" && <Download className="mr-2 h-4 w-4" />}
-              {t.exportExcel}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleExport("pdf")}
-              disabled={rows.length === 0 || exporting !== null}
-              loading={exporting === "pdf"}
-            >
-              {exporting !== "pdf" && <Download className="mr-2 h-4 w-4" />}
-              {t.exportPdf}
-            </Button>
+            {/* Exporturile generice intră într-un meniu, fiindcă sunt de alt fel decât cele două de
+                deasupra: pe ele scrie „rezumat generic (neoficial)", iar la agenție se depun
+                celelalte. Cinci butoane la fel de vizibile ziceau că toate cinci sunt același
+                lucru — și strângeau titlul paginii pe trei rânduri ca să încapă.
+
+                Rămân la îndemâna oricui, viewer inclusiv: sunt o citire, nu o scriere. */}
+            <Menu label={t.exportsMenu} disabled={rows.length === 0 || exporting !== null}>
+              <MenuItem
+                icon={Download}
+                hint={t.exportsHint}
+                onClick={() => handleExport("xlsx")}
+                disabled={rows.length === 0 || exporting !== null}
+              >
+                {t.exportExcel}
+              </MenuItem>
+              <MenuItem
+                icon={Download}
+                onClick={() => handleExport("pdf")}
+                disabled={rows.length === 0 || exporting !== null}
+              >
+                {t.exportPdf}
+              </MenuItem>
+            </Menu>
             {canManage && (
               <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
                 <RefreshCw

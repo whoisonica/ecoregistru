@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MoreHorizontal, Search, X } from "lucide-react";
+import { useRef, type ComponentProps, type ReactNode } from "react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { strings } from "@/lib/strings";
 import { Pagination } from "@/components/ui/table";
+import { Menu, MenuItem } from "@/components/ui/menu";
 import type { TableViewControls } from "@/hooks/useTableView";
 
 /**
@@ -82,84 +83,18 @@ export function TableSearch({
  * <p>Pe Mișcări fiecare rând purta până la patru butoane cu text — Cântar, Anexa 3, Editează,
  * Șterge — adică vreo 380px de comenzi repetate pe fiecare rând, într-un tabel care are deja nouă
  * coloane. Acțiunea principală rămâne afară; restul intră aici.
+ *
+ * <p>Comportamentul stă de-acum în `ui/menu.tsx`, fiindcă antetul de pe Evidențe are nevoie de
+ * același meniu cu o etichetă în loc de „⋯". Cele două nume rămân aici: un „meniu de rând" e ce
+ * caută cineva care citește un tabel.
  */
 export function RowActions({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative inline-block text-left">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label={strings.common.moreActions}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="rounded-md p-1.5 text-content-muted transition-colors hover:bg-surface-sunken"
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </button>
-      {open && (
-        <div
-          role="menu"
-          // Deschis spre stânga: butonul stă în ultima coloană, lipit de marginea din dreapta.
-          className="absolute right-0 z-30 mt-1 w-52 animate-slide-up overflow-hidden rounded-md border border-line bg-surface py-1 shadow-popover"
-          onClick={() => setOpen(false)}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
+  return <Menu>{children}</Menu>;
 }
 
 /** Un rând din meniul de mai sus. `tone="danger"` pentru fapta care nu se ia înapoi. */
-export function RowAction({
-  icon: Icon,
-  children,
-  onClick,
-  disabled = false,
-  tone = "default",
-}: {
-  icon?: React.ComponentType<{ className?: string }>;
-  children: ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  tone?: "default" | "danger";
-}) {
-  return (
-    <button
-      type="button"
-      role="menuitem"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors disabled:opacity-40",
-        tone === "danger"
-          ? "text-red-600 hover:bg-red-50"
-          : "text-content hover:bg-surface-muted"
-      )}
-    >
-      {Icon && <Icon className="h-4 w-4 shrink-0" />}
-      {children}
-    </button>
-  );
+export function RowAction(props: ComponentProps<typeof MenuItem>) {
+  return <MenuItem {...props} />;
 }
 
 /**

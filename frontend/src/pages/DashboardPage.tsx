@@ -17,7 +17,8 @@ import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import type { DeadlineStatus, MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, countOf, formatDate } from "@/lib/utils";
+import { daysLabel, daysUntil, documentFor } from "@/lib/deadlines";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -37,18 +38,14 @@ const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
 const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 
 /**
- * Câte zile mai sunt până la o dată, socotite pe zile calendaristice.
+ * Cât de aproape trebuie să fie un termen ca să merite să fie **acțiunea următoare**.
  *
- * <p>Se compară la miezul nopții, nu la ora curentă: altfel un termen de mâine dimineață ar ieși
- * „0 zile" după-amiaza, ceea ce e adevărat în ore și fals în felul în care se citește un calendar.
+ * <p>Treizeci de zile, fiindcă atât ia strâns un dosar: regenerarea evidenței, verificarea liniilor
+ * roșii, scoaterea documentului. Mai devreme de-atât, banda ar numi luni întregi un lucru pe care
+ * nimeni nu-l face azi — iar o bandă care spune mereu același lucru devine tapet în trei zile, exact
+ * ce s-a reparat pe 07.09 la bannerul galben permanent de pe Evidențe.
  */
-function daysUntil(iso: string): number {
-  const [y, m, d] = iso.split("-").map(Number);
-  const target = new Date(y, m - 1, d);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.round((target.getTime() - today.getTime()) / 86_400_000);
-}
+const NEAR_DEADLINE_DAYS = 30;
 
 function StatTile({
   icon: Icon,
@@ -147,6 +144,84 @@ function Blocker({
         )}
       >
         {t.blockerFix}
+      </Link>
+    </div>
+  );
+}
+
+/** Ce anume e de făcut, o singură dată, cu drumul către el. `null` = nu s-a putut încă decide. */
+type NextAction = {
+  tone: "danger" | "warning" | "ok";
+  title: string;
+  hint: string;
+  to: string;
+  cta: string;
+};
+
+/**
+ * Banda din capul panoului: **un** lucru de făcut, nu cinci de citit.
+ *
+ * <p>Cât timp datele n-au venit toate, banda **tace** — nu arată o afirmație pe jumătate de răspuns.
+ * „Ești la zi" scris peste un `partners` încă neîncărcat ar fi exact felul de verde fals pentru care
+ * s-a reparat citirea evidenței pe 07.09.
+ */
+function NextActionBand({ action, loading }: { action: NextAction | null; loading: boolean }) {
+  if (loading || !action) {
+    return <Skeleton className="mt-6 h-[4.5rem] w-full rounded-xl" />;
+  }
+  const tone = {
+    danger: {
+      box: "border-red-200 bg-red-50",
+      icon: "text-red-600",
+      title: "text-red-900",
+      hint: "text-red-800",
+      link: "text-red-700",
+      Icon: AlertTriangle,
+    },
+    warning: {
+      box: "border-amber-200 bg-amber-50",
+      icon: "text-amber-600",
+      title: "text-amber-900",
+      hint: "text-amber-800",
+      link: "text-amber-700",
+      Icon: CalendarClock,
+    },
+    ok: {
+      box: "border-emerald-200 bg-emerald-50",
+      icon: "text-emerald-600",
+      title: "text-emerald-900",
+      hint: "text-emerald-800",
+      link: "text-emerald-700",
+      Icon: CheckCircle2,
+    },
+  }[action.tone];
+  const { Icon } = tone;
+  return (
+    <div
+      data-testid="next-action"
+      className={cn(
+        "mt-6 flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center",
+        tone.box
+      )}
+    >
+      <Icon className={cn("h-5 w-5 shrink-0", tone.icon)} aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-content-subtle">
+          {t.nextTitle}
+        </p>
+        <p className={cn("text-sm font-semibold", tone.title)}>{action.title}</p>
+        <p className={cn("mt-0.5 text-xs", tone.hint)}>{action.hint}</p>
+      </div>
+      {/* `whitespace-nowrap`, ca la coloana de acțiuni din Termene: o etichetă de două cuvinte
+          ruptă pe două rânduri crește banda și se citește greu (defectul din 07.09 și 08.09). */}
+      <Link
+        to={action.to}
+        className={cn(
+          "shrink-0 whitespace-nowrap text-sm font-medium hover:underline",
+          tone.link
+        )}
+      >
+        {action.cta} →
       </Link>
     </div>
   );
@@ -252,7 +327,98 @@ export function DashboardPage() {
     };
   }, [evidences]);
 
+  /** Câte mișcări s-au înregistrat luna asta — cifra care spune dacă evidența se ține la zi. */
+  const movementCount = movements?.length ?? 0;
+
   const monthLabel = strings.months[month - 1];
+
+  /**
+   * Un singur lucru de făcut, ales după cât costă dacă rămâne nefăcut.
+   *
+   * <p>Nu inventează nicio cifră: fiecare ramură citește exact numărul pe care ecranul îl arată deja
+   * mai jos. Ce adaugă e **ordinea** — ce se ia întâi — și drumul, care pe termene e chiar documentul
+   * care stinge termenul, pe **anul raportat** (decizia 59).
+   *
+   * <p>Contribuțiile AFM cad pe `/termene`, nu pe un document: nu tipărim niciun formular pentru
+   * ele, iar `documentFor` întoarce `null` tocmai ca să nu promitem unul.
+   */
+  const nextAction = useMemo<NextAction | null>(() => {
+    // 1. Un termen depășit curge deja — nimic din ce e mai jos nu costă mai mult.
+    const overdue = openDeadlines.filter((d) => d.status === "OVERDUE");
+    if (overdue.length === 1) {
+      const d = overdue[0];
+      const doc = documentFor(d);
+      return {
+        tone: "danger",
+        title: t.nextDeadline
+          .replace("{label}", strings.enums.reportType[d.reportType])
+          .replace("{days}", daysLabel(d) ?? ""),
+        hint: t.nextOverdueHint,
+        to: doc?.to ?? "/termene",
+        cta: doc?.label ?? t.nextOverdueCta,
+      };
+    }
+    if (overdue.length > 1) {
+      return {
+        tone: "danger",
+        title: t.nextOverdue.replace("{count}", countOf(overdue.length, "termen", "termene")),
+        hint: t.nextOverdueHint,
+        to: "/termene",
+        cta: t.nextOverdueCta,
+      };
+    }
+    // 2. Ieșirea fără cod R/D blochează depunerea următoare — aceeași țintă ca blocajul roșu.
+    if (blockers.missingCode > 0) {
+      return {
+        tone: "danger",
+        title: t.nextMissingCode.replace("{count}", countOf(blockers.missingCode, "linie", "linii")),
+        hint: t.nextMissingCodeHint,
+        to: "/evidente?vedere=handovers&problema=cod-rd",
+        cta: t.blockerFix,
+      };
+    }
+    // 3. Un termen care se mai poate prinde, cu documentul care îl stinge.
+    if (nextDeadline && daysUntil(nextDeadline.dueDate) <= NEAR_DEADLINE_DAYS) {
+      const doc = documentFor(nextDeadline);
+      return {
+        tone: "warning",
+        title: t.nextDeadline
+          .replace("{label}", strings.enums.reportType[nextDeadline.reportType])
+          .replace("{days}", daysLabel(nextDeadline) ?? ""),
+        hint: t.nextDeadlineHint,
+        to: doc?.to ?? "/termene",
+        cta: doc?.label ?? t.nextDeadlineCta,
+      };
+    }
+    // 4. O autorizație pe terminate se mai poate reînnoi; riscul e al clientului (decizia 41).
+    if (expiringPartners.length > 0) {
+      return {
+        tone: "warning",
+        title: t.nextExpiring.replace("{count}", countOf(expiringPartners.length, "partener", "parteneri")),
+        hint: t.nextExpiringHint,
+        to: "/parteneri",
+        cta: t.nextExpiringCta,
+      };
+    }
+    // 5. Cântarul e o așteptare legitimă, nu o greșeală (decizia 13) — deci ultimul.
+    if (blockers.awaitingWeighing > 0) {
+      return {
+        tone: "warning",
+        title: t.nextWeighing.replace("{count}", countOf(blockers.awaitingWeighing, "linie", "linii")),
+        hint: t.nextWeighingHint,
+        to: "/miscari",
+        cta: t.nextWeighingCta,
+      };
+    }
+    return { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/evidente", cta: t.viewAll };
+  }, [openDeadlines, nextDeadline, blockers, expiringPartners]);
+
+  /**
+   * Banda tace până vin **toate** cele trei surse din care alege. Fără garda asta, un `partners`
+   * întârziat ar scrie „Ești la zi" o clipă, peste o autorizație care expiră — o afirmație falsă,
+   * din exact motivul pentru care o probă poate trece verde: premisa nu s-a întâmplat încă.
+   */
+  const nextActionLoading = loadingDeadlines || loadingEvidences || loadingPartners;
 
   return (
     <div>
@@ -275,9 +441,13 @@ export function DashboardPage() {
         }
       />
 
+      {/* Un lucru de făcut, înaintea stării: „sunt în regulă?" are răspunsul mai jos, dar
+          „ce fac acum?" n-avea niciunul — se citeau cinci locuri și se trăgea singur concluzia. */}
+      <NextActionBand action={nextAction} loading={nextActionLoading} />
+
       {/* Starea de conformitate, înaintea oricărei cifre: e întrebarea pentru care clientul
           deschide aplicația, iar până acum răspunsul se afla derulând Evidențe. */}
-      <Card className="mt-6">
+      <Card className="mt-4">
         <CardHeader
           title={t.statusTitle.replace("{year}", String(year))}
           action={
@@ -308,7 +478,7 @@ export function DashboardPage() {
               <Blocker
                 icon={Trash2}
                 tone="danger"
-                title={t.blockerMissingCode.replace("{n}", String(blockers.missingCode))}
+                title={t.blockerMissingCode.replace("{count}", countOf(blockers.missingCode, "linie", "linii"))}
                 hint={t.blockerMissingCodeHint}
                 /* Ducea la vederea lunară, unde rândul e un agregat pe (punct de lucru, cod, lună)
                    și nu se poate deschide nicio mișcare — deci „Repară" promitea mai mult decât
@@ -322,8 +492,8 @@ export function DashboardPage() {
                 icon={Scale}
                 tone="warning"
                 title={t.blockerAwaitingWeighing.replace(
-                  "{n}",
-                  String(blockers.awaitingWeighing)
+                  "{count}",
+                  countOf(blockers.awaitingWeighing, "linie", "linii")
                 )}
                 hint={t.blockerAwaitingWeighingHint}
                 to="/miscari"
@@ -339,7 +509,11 @@ export function DashboardPage() {
           icon={Package}
           value={kgFormat.format(generatedThisMonth)}
           label={t.statGenerated.replace("{month}", monthLabel)}
-          sub={t.statGeneratedSub}
+          sub={
+            movementCount === 0
+              ? t.statGeneratedSubNone
+              : t.statGeneratedSub.replace("{count}", countOf(movementCount, "mișcare", "mișcări"))
+          }
           tone="brand"
           loading={loadingMovements}
         />
@@ -419,7 +593,11 @@ export function DashboardPage() {
           ) : (
             <ul className="mt-3 divide-y divide-line">
               {openDeadlines.slice(0, 5).map((d) => {
-                const days = daysUntil(d.dueDate);
+                /* Aceeaşi formulare ca pe Termene, din aceeaşi funcţie: „azi" / „mâine" / „în N
+                   zile" / „depăşit de N zile". Panoul avea un şir propriu care spunea numai zilele
+                   rămase şi tăcea pe cele depăşite — două nume pentru acelaşi lucru, iar cel de aici
+                   scria „1 zile". */
+                const days = daysLabel(d);
                 return (
                   <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
                     <div className="min-w-0 flex-1">
@@ -429,9 +607,7 @@ export function DashboardPage() {
                       {/* Data singură cere o socoteală în cap; numărul de zile e răspunsul. */}
                       <div className="truncate text-xs text-content-subtle">
                         {formatDate(d.dueDate)}
-                        {d.status !== "OVERDUE" && days >= 0 && (
-                          <> · {t.daysShort.replace("{n}", String(days))}</>
-                        )}
+                        {days && <> · {days}</>}
                       </div>
                     </div>
                     <Badge variant={statusVariant[d.status]} className="shrink-0">
@@ -482,7 +658,7 @@ export function DashboardPage() {
                         ? strings.partners.expiringSoon
                         : days < 0
                           ? t.statExpiringPast
-                          : t.statExpiringDays.replace("{days}", String(days))}
+                          : t.statExpiringDays.replace("{count}", countOf(days, "zi", "zile"))}
                     </Badge>
                   </li>
                 );

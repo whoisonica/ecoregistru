@@ -66,6 +66,17 @@ rulează local și are testele verzi.
 > coduri". ✅ **În producţie**: `ecoregistru-app` **v31**, `ecoregistru-api` neschimbat la v37,
 > schema tot la 31.
 >
+> **Adăugat 08.09.2026, seara — propoziţia care lipsea, şi „1 linii".** Panoul spunea *starea* în
+> cinci locuri şi lăsa clientul s-o sintetizeze; are de-acum o bandă care numeşte **un singur** lucru
+> de făcut, ales după cât costă dacă rămâne nefăcut, cu drumul către el — şi care **tace** până vin
+> toate sursele, ca să nu scrie „Eşti la zi" pe jumătate de răspuns. Antetul de pe Evidenţe a trecut
+> de la cinci butoane la trei şi un meniu: exporturile generice scriu pe ele „rezumat neoficial", nu
+> sunt acelaşi fel de lucru cu documentele care se depun. 🔴 **Şi, uitându-mă la captură, o greşeală
+> de limbă veche pe toate ecranele:** „1 linii", „pe 1 mişcări" — româna cere trei forme, iar de la
+> 20 în sus „de linii". `countOf` în `lib/utils`; backendul o reparase deja pe 06.09, la mail.
+> **Backendul n-a fost atins** — migrări tot până la `V31`. Suita: **10 probe, 228 de verificări**.
+> Detaliile: secţiunea „Propoziţia care lipsea de pe Panou". ⚠️ **Nedeployat**: împins doar pe `origin`.
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
@@ -3796,6 +3807,130 @@ restrângere a raportat „provenienţa NU se cere unui generator pur" — verde
 administratorul de platformă **nu alesese nicio firmă**, deci rubrica lipsea din alt motiv decât cel
 probat. Garda care aşteaptă lista de firme a fost scrisă abia după ce s-a văzut asta. Aceeaşi lecţie
 ca la paletă pe 08.09: verifică **şi** cazul pozitiv, pe aceeaşi probă.
+
+## Propoziţia care lipsea de pe Panou, şi cele cinci butoane de pe Evidenţe (08.09.2026, seara)
+
+Primele două felii din „Ordinea recomandată" a lui `todo-ui-ux.md`, luate în ordine. Niciuna nu
+repară ceva rupt — dar amândouă schimbă **ce spune ecranul despre el însuşi**, iar prima a scos la
+iveală o greşeală de limbă veche de pe toate ecranele.
+
+### 1. Panoul spune ce e de făcut, nu doar cum stau lucrurile
+
+Panoul răspundea la „sunt în regulă?" în **cinci locuri deodată** — trei dale, caseta de blocaje şi
+două liste — şi lăsa clientul să tragă singur concluzia. Banda nouă din capul paginii numeşte **un
+singur** lucru, cel mai scump dintre cele deschise, cu drumul către el.
+
+**Nu aduce nicio cifră nouă pe ecran**, şi ăsta e chiar conţinutul feliei: fiecare ramură citeşte
+exact numărul pe care ecranul îl arată deja mai jos. Ce adaugă e **ordinea** — ce se ia întâi:
+
+| # | Când | De ce în ordinea asta |
+|---|---|---|
+| 1 | un termen **depăşit** | curge deja; nimic din ce e mai jos nu costă mai mult |
+| 2 | ieşiri **fără cod R/D** | blochează depunerea următoare (decizia 13) |
+| 3 | un termen în **≤ 30 de zile** | se mai poate prinde, şi duce la documentul care îl stinge |
+| 4 | o **autorizaţie** de partener pe terminate | se mai poate reînnoi (decizia 41) |
+| 5 | linii care **aşteaptă cântarul** | aşteptare legitimă, nu greşeală — deci ultima |
+| — | nimic din ce e mai sus | „Eşti la zi" |
+
+⚠️ **Banda tace până vin toate trei sursele.** Fără garda asta, un `partners` întârziat ar scrie
+„Eşti la zi" o clipă, peste o autorizaţie care expiră — o afirmaţie falsă făcută pe jumătate de
+răspuns, exact clasa de defect pentru care s-a reparat citirea evidenţei pe 07.09.
+
+⚠️ **Şi dublează dinadins caseta de blocaje de dedesubt.** Una spune ce se face **acum**, cealaltă
+tot ce e de lămurit. Dacă vreodată una o înlocuieşte pe cealaltă, felia s-a înţeles greşit — proba
+verifică explicit că amândouă sunt pe ecran.
+
+**Legătura termen → document nu s-a scris a doua oară.** `daysUntil` era deja copiată identic pe
+Panou şi pe Termene, cu acelaşi javadoc; banda ar fi cerut a treia copie, iar `documentFor` — care
+decide **anul raportat** (decizia 59) — a doua. Amândouă s-au mutat în `frontend/src/lib/deadlines.ts`.
+De acolo a ieşit şi o îmbunătăţire pe care n-o căutam: lista de termene de pe Panou avea şirul ei
+propriu, care spunea numai zilele rămase şi **tăcea pe cele depăşite**; foloseşte acum aceeaşi
+formulare ca ecranul Termene, deci un termen trecut scrie „depăşit de 226 de zile".
+
+**Şi numărul de mişcări s-a întors lângă kilograme.** Era cifra principală a dalei până pe 08.09,
+când dala a trecut pe kilograme; el răspunde la altceva — *se ţine evidenţa la zi?* — deci stă în
+subtitlu, unde nu concurează cu cantitatea.
+
+### 2. 🔴 „1 linii" — greşeala de limbă găsită uitându-mă la captură
+
+Cu banda gata şi cele 15 verificări verzi, captura arăta **„1 linii cu ieşiri fără cod R/D"**,
+„1 linii care aşteaptă cântarul" şi — chiar şirul scris în felia asta — „pe 1 mişcări din luna
+aceasta". Niciun test n-avea cum s-o vadă: toate şirurile aveau `{n}` şi pluralul lipit de el.
+
+Româna are **trei** forme acolo unde engleza are două: `1 linie` · `2 linii` · **`20 de linii`**.
+„de" intră de la 20 în sus şi se întoarce la fiecare sută — `101 linii`, dar `120 de linii` —, deci
+regula se citeşte pe **ultimele două cifre**, nu pe număr. `countOf(n, "linie", "linii")` în
+`lib/utils` e singurul loc care o ştie.
+
+⚠️ **Backendul rezolvase deja aceeaşi problemă**, pe 06.09, la mailul de expirare a autorizaţiei
+(„expiră în 60 zile" → `theWordingAgreesWithSmallNumbers`). Interfaţa rămăsese în urmă un trimestru,
+pe ecranul cel mai des deschis din aplicaţie. **Când o regulă de limbă se repară pe un canal, merită
+căutată pe celelalte** — un mail şi un ecran scriu pentru acelaşi om.
+
+Aplicat pe tot Panoul şi pe zilele rămase (deci şi pe Termene, prin `daysLabel`). Restul ecranelor
+n-au fost atinse: e o trecere proprie, nu o notă de subsol a acesteia.
+
+**Două probe fixau formularea veche şi au căzut, cum trebuia:** proba 6 aştepta „linii" acolo unde
+un singur rând scrie acum „linie", iar proba 9 aştepta „depăşit de N zile" unde de la 20 în sus se
+scrie „de N zile". Regexurile s-au lărgit pe cele trei forme — probele erau învechite, nu aplicaţia.
+
+### 3. Evidenţe: cinci butoane la fel de vizibile, devenite trei şi un meniu
+
+Antetul avea **Evidenţa gestiunii deşeurilor · Declaraţia anuală · Export Excel · Export PDF ·
+Regenerează**, toate cu aceeaşi greutate vizuală — şi strângeau titlul paginii pe trei rânduri ca
+să le facă loc. Dar nu sunt acelaşi fel de lucru: pe primele două scrie ce se **depune la agenţie**,
+pe celelalte două scrie chiar în fişier „rezumat generic (**neoficial**)".
+
+Cele două exporturi generice au intrat într-un meniu numit „Alte descărcări", cu nota care spune pe
+faţă ce sunt („Rezumat neoficial al evidenţei — pentru lucru, nu pentru depunere") şi cu numele
+schimbat din „Export Excel/PDF" în **„Rezumat Excel/PDF"**. Rămân la îndemâna oricui, viewer
+inclusiv: sunt o citire, nu o scriere. „Regenerează" rămâne afară, gated pe rol — e o cerere
+explicită de recalculare pe un an anume (decizia 51), nu o descărcare.
+
+**Meniul nu s-a scris a doua oară.** Comportamentul exista în `RowActions` din `table-toolbar.tsx`
+— Escape, clic în afară, `role="menu"` — scris pentru meniul de rând de pe Mişcări. S-a mutat în
+`components/ui/menu.tsx` ca `Menu`/`MenuItem`, cu declanşator opţional cu etichetă; `RowActions` şi
+`RowAction` rămân exportate ca **învelişuri**, deci niciun apelant existent nu s-a schimbat. Un al
+doilea meniu ar fi însemnat două comportamente de Escape care trebuie să rămână identice — adică
+două ocazii să difere, aceeaşi lecţie ca la totalurile Anexei 3 Ambalaje (decizia 47).
+
+`Menu` are şi o gardă care nu era în original: **un meniu dezactivat se şi închide**, fiindcă
+butonul se poate dezactiva (o descărcare porneşte) cât timp caseta e deschisă sub degetul cuiva.
+
+### Ce ţin probele
+
+**Proba nouă `frontend/e2e/10-panou-actiunea-urmatoare.mjs`, 28 de verificări.** Ce merită reţinut
+din ea, fiindcă e a treia oară când aceeaşi capcană se închide altfel:
+
+- **banda e probată pe două ramuri, nu pe una.** Toate verificările ar fi trecut la fel de bine dacă
+  banda ar fi scris mereu acelaşi lucru: pe tenantul demo ramura de sus e adevărată. Proba comută pe
+  o firmă fără termene generate şi cere ca propoziţia **şi tonul** să se schimbe. Aceeaşi lecţie ca
+  la paletă (08.09, dimineaţa) şi ca la restrângerea de provenienţă (08.09, după-amiaza);
+- **descărcarea chiar pleacă**, nu doar meniul arată bine — pentru asta a trebuit
+  `acceptDownloads: true` în `lib.mjs`: fără el, `waitForEvent("download")` nu se declanşează
+  niciodată, iar verificarea ar fi trecut pe „nu s-a întâmplat nimic", adică din motivul greşit;
+- **ce era mai jos n-a dispărut** — caseta de stare, cele două dale, cele două liste;
+- geometria la 375px, şi înălţimea etichetei de link, fiindcă exact aia se rupe pe două rânduri.
+
+### Starea
+
+- **Backendul n-a fost atins**: migrări tot până la **`V31`**, următoarea liberă **`V32`**. Nicio
+  felie n-a cerut una.
+- **Suita de interfaţă: 10 probe, 228 de verificări** (de la 9 şi 200).
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Nedeployat.** Commis şi împins pe `origin`; split-ul către `ferepo` nu s-a făcut.
+
+### 📋 Ce urmează
+
+`docs/todo-ui-ux.md`, „Ordinea recomandată", de la punctul 3: sugestia de duplicat de la Parteneri
+care mută covorul · badge-ul „Autorizaţie expirată" fără link · şirurile hardcodate din
+`combobox.tsx` · 🔒 ştergerea datelor unui şofer, care e o **decizie**, nu o felie.
+
+🟡 **Şi o restanţă ieşită din felia 2:** numeralul corect s-a aplicat pe Panou şi pe zilele rămase,
+dar restul ecranelor scriu în continuare „{n} zile" fără acordul de la 20 în sus. `countOf` există;
+e o trecere de o oră peste `strings.ts`, de făcut într-o felie proprie ca să se vadă ce s-a schimbat.
+
+---
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

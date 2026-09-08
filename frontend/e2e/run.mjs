@@ -18,6 +18,7 @@ const suites = [
   ["7-firma-si-reactivare.mjs", "datele firmei, reactivarea şi garda formularului"],
   ["8-atasamente-partener-paleta.mjs", "atașamentele, partenerul pe secțiuni, cuprinsul și paleta"],
   ["9-restrangeri-si-semne.mjs", "rubrica restrânsă, grila care spune că a salvat, stocul pe coduri, termenele"],
+  ["10-panou-actiunea-urmatoare.mjs", "banda «următoarea acțiune» din capul Panoului"],
 ];
 
 const only = process.argv[2];
