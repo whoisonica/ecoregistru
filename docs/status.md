@@ -3616,7 +3616,45 @@ re-seedează singură**: pe o bază veche rândurile se adaugă cu un `INSERT` a
   `8-atasamente-partener-paleta.mjs`, acoperă toate cele patru felii şi e cea care a găsit defectul
   paletei.
 - `tsc --noEmit` curat, `vite build` verde.
-- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
+### Ramura a intrat în `main` (08.09.2026)
+
+`ui-ux-modernizare` a stat afară din `main` de pe 07.09, cât timp aştepta să fie **privită cu ochiul
+de cineva**. Decizia utilizatorului din 08.09 e că poate intra direct, aşa că cele 41 de commituri
+s-au mers cu `--no-ff` şi s-au împins.
+
+- `main` == `origin/main` == `origin/deploy/heroku-split` la **`4c5b8dc`** (merge commit).
+  Ultimele două de pe ramură: `8fb2988` codul, `dcfe439` documentaţia.
+- Verificat **după merge**, pe `main`, nu doar pe ramură: 239 de teste verzi, `tsc --noEmit` curat,
+  `vite build` verde.
+### Şi a ajuns în producţie (08.09.2026, ora 12:08)
+
+Modernizarea interfeţei a stat nedeployată de pe 07.09. Cu merge-ul făcut, procedura de split a
+rulat cap-coadă, prima oară pe maşina asta:
+
+- `newrepo` şi `ferepo` **nu existau ca remote-uri** — s-au adăugat. Procedura din handoff
+  presupunea că sunt acolo; acum sunt, deci data viitoare rulează ca scrisă.
+- `git subtree split` pe fiecare prefix, apoi cherry-pick peste capul fiecărui remote: **5 commituri
+  pe backend** (`99b8227..`) şi **31 pe frontend** (`ca3cf87..`). **Niciun conflict**, deşi
+  handoff-ul avertiza — vezi mai jos de ce.
+- `newrepo/main` la **`b5dd344`**, `ferepo/main` la **`2fac378`**.
+- **`ecoregistru-api` v36 → v37**, **`ecoregistru-app` v29 → v30**, amândouă verificate în
+  `heroku releases` cu hash-ul care trebuie.
+- **Schema rămâne la 31**: `Current version of schema "public": 31`, nicio migrare de rulat, iar
+  aplicaţia a pornit în 12,1 secunde fără erori.
+- Verificat pe conţinut, nu pe hash: bundle-ul servit de producţie **conţine** şirurile feliilor de
+  azi — „Vezi ataşamentele", „Atașamentele mișcării", „Ce face partenerul", „Date pentru Anexa 3" —
+  şi ale celor de ieri („Tot anul"). `/` întoarce 200, iar API-ul răspunde.
+
+⚠️ **Hash-ul bundle-ului din producţie nu se potriveşte cu cel construit local**, şi nu e un semn
+rău: monorepo-ul are **`vite.config.js` şi `vite.config.d.ts` urmărite** — artefacte compilate din
+`vite.config.ts` — iar repo-ul de frontend are doar `.ts`-ul. Vite caută `.js` **înaintea** lui
+`.ts`, deci local se citeşte artefactul, în producţie sursa. Azi au acelaşi conţinut, deci nu
+schimbă nimic; **dar o modificare viitoare în `vite.config.ts` n-ar avea efect local** până se
+recompilează artefactul. E acelaşi tip de capcană ca `tsconfig.node.tsbuildinfo`, care a fost scos
+din urmărire pe 24.08 exact din motivul ăsta. Aici mai explică şi de ce cele două repo-uri diferă cu
+`.gitignore` + cele două fişiere: **divergenţa e veche şi stabilă**, nu ceva ce s-a stricat azi, şi
+tocmai fiindcă niciun commit din interval nu le atinge, cherry-pick-ul n-a avut conflicte.
 
 **Două verificări scrise greşit, corectate după măsurătoare** — se scriu aici fiindcă amândouă
 păreau defecte ale aplicaţiei: (a) clicul pe „Tabelul 2" nu duce titlul sus, fiindcă ultimele două
