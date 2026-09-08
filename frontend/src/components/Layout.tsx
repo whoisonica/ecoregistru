@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -22,7 +22,11 @@ import { companiesKey, useCompanies } from "@/hooks/useCompanies";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
-import { CommandPalette, useNavigationCommands } from "@/components/CommandPalette";
+import {
+  CommandPalette,
+  useActionCommands,
+  useNavigationCommands,
+} from "@/components/CommandPalette";
 import { useHotkey } from "@/hooks/useHotkey";
 import type { ReactNode } from "react";
 
@@ -31,6 +35,14 @@ interface NavItem {
   label: string;
   icon: LucideIcon;
   end?: boolean;
+  /**
+   * Cuvintele după care paleta (Ctrl+K) mai găsește ecranul, pe lângă numele lui.
+   *
+   * <p>Stă aici, nu într-o listă a paletei: bara laterală e deja singura sursă a ecranelor, iar o
+   * a doua listă care trebuie să spună același lucru ajunge mereu să nu-l mai spună. Nu se vede
+   * nicăieri în bară — e text de căutat, nu de citit.
+   */
+  keywords?: string;
 }
 
 interface NavGroup {
@@ -52,33 +64,54 @@ interface NavGroup {
  * <p>Grupurile răspund la „ce fac aici": înregistrez ceva, scot un document, sau configurez.
  */
 export const navGroups: NavGroup[] = [
-  { items: [{ to: "/", label: strings.nav.dashboard, icon: LayoutDashboard, end: true }] },
+  { items: [{
+        to: "/",
+        label: strings.nav.dashboard,
+        icon: LayoutDashboard,
+        end: true,
+        keywords: strings.nav.kwDashboard,
+      }] },
   {
     label: strings.nav.groupRecords,
     items: [
-      { to: "/miscari", label: strings.nav.movements, icon: Truck },
-      { to: "/evidente", label: strings.nav.evidences, icon: FileSpreadsheet },
-      { to: "/ambalaje", label: strings.nav.packaging, icon: Package },
+      { to: "/miscari", label: strings.nav.movements, icon: Truck, keywords: strings.nav.kwMovements },
+      {
+        to: "/evidente",
+        label: strings.nav.evidences,
+        icon: FileSpreadsheet,
+        keywords: strings.nav.kwEvidences,
+      },
+      { to: "/ambalaje", label: strings.nav.packaging, icon: Package, keywords: strings.nav.kwPackaging },
     ],
   },
   {
     label: strings.nav.groupReporting,
     items: [
-      { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock },
-      { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive },
+      {
+        to: "/termene",
+        label: strings.nav.deadlines,
+        icon: CalendarClock,
+        keywords: strings.nav.kwDeadlines,
+      },
+      {
+        to: "/dosar-control",
+        label: strings.nav.auditFile,
+        icon: FolderArchive,
+        keywords: strings.nav.kwAuditFile,
+      },
     ],
   },
   {
     label: strings.nav.groupSetup,
     items: [
-      { to: "/parteneri", label: strings.nav.partners, icon: Users },
-      { to: "/setari", label: strings.nav.settings, icon: Settings },
+      { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },
+      { to: "/setari", label: strings.nav.settings, icon: Settings, keywords: strings.nav.kwSettings },
     ],
   },
   {
     label: strings.nav.groupAdmin,
     platformAdminOnly: true,
-    items: [{ to: "/clienti", label: strings.nav.clients, icon: Building2 }],
+    items: [{ to: "/clienti", label: strings.nav.clients, icon: Building2, keywords: strings.nav.kwClients }],
   },
 ];
 
@@ -267,7 +300,16 @@ export function Layout({ children }: { children: ReactNode }) {
     navigate("/login");
   }
 
-  const commands = useNavigationCommands(groups);
+  // Locurile întâi, apoi ce se poate începe: ordinea grupurilor din paletă e ordinea în care au
+  // venit comenzile, iar „unde ajung" e întrebarea de zece ori mai deasă decât „ce încep".
+  const navCommands = useNavigationCommands(groups);
+  const actionCommands = useActionCommands(
+    user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR"
+  );
+  const commands = useMemo(
+    () => [...navCommands, ...actionCommands],
+    [navCommands, actionCommands]
+  );
 
   /**
    * `/` duce în caseta de căutare a ecranului curent, oriunde ar fi ea.

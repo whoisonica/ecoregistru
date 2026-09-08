@@ -33,6 +33,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { SectionNav } from "@/components/ui/section-nav";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
@@ -325,6 +326,19 @@ export function PackagingPage() {
         </Select>
       </div>
 
+      {/* Cuprinsul stă deasupra semnalelor, nu sub ele: bara e a paginii, iar caseta chihlimbarie
+          apare şi dispare după cum e completată luna — un cuprins care sare cu ea ar fi altă bară
+          la fiecare deschidere. */}
+      <SectionNav
+        label={t.sections}
+        items={[
+          { id: "registru", label: t.navRegister },
+          { id: "tabelul-1", label: t.navTable1 },
+          { id: "tabelul-2", label: t.navTable2 },
+          { id: "anexa-3", label: t.navAnexa3 },
+        ]}
+      />
+
       {/* ---- Ce blochează declaraţia, spus înainte de tabele ---- */}
       {(signals.missingMaterial > 0 ||
         signals.missingCategory > 0 ||
@@ -353,7 +367,7 @@ export function PackagingPage() {
       )}
 
       {/* ---- Registrul: mişcările din care iese totul ---- */}
-      <section className="mt-8">
+      <section id="registru" className="mt-8 scroll-mt-20">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">{t.registerTitle}</h2>
@@ -519,7 +533,7 @@ export function PackagingPage() {
       </section>
 
       {/* ---- Tabelul 1, însumat din registrul de mai sus ---- */}
-      <section className="mt-10">
+      <section id="tabelul-1" className="mt-10 scroll-mt-20">
         <h2 className="text-lg font-semibold">{t.table1Title}</h2>
         <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table1Hint}</p>
         <div className="mt-3">
@@ -629,7 +643,7 @@ export function PackagingPage() {
       </section>
 
       {/* ---- Tabelul 2, calculat din predări ---- */}
-      <section className="mt-10">
+      <section id="tabelul-2" className="mt-10 scroll-mt-20">
         <h2 className="text-lg font-semibold">{t.table2Title}</h2>
         <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table2Hint}</p>
         <div className="mt-3">
@@ -726,7 +740,7 @@ function Anexa3Section({ year }: { year: number }) {
   const missingQuantity = (data?.unclassified ?? []).filter((r) => r.missingQuantity).length;
 
   return (
-    <section className="mt-10">
+    <section id="anexa-3" className="mt-10 scroll-mt-20">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
           <h2 className="text-lg font-semibold text-content">{t.anexa3Title}</h2>

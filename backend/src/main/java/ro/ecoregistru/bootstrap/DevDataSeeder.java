@@ -52,6 +52,7 @@ public class DevDataSeeder implements CommandLineRunner {
     WasteCodeRepository wasteCodeRepository;
     WasteMovementRepository wasteMovementRepository;
     InternalGeneratorRepository internalGeneratorRepository;
+    AttachmentRepository attachmentRepository;
     PasswordEncoder passwordEncoder;
 
     @Override
@@ -280,6 +281,37 @@ public class DevDataSeeder implements CommandLineRunner {
 
         wasteMovementRepository.saveAll(ms);
         log.info("Seeded {} sample movements.", ms.size());
+
+        // ---- A treia stare fără rânduri: mișcarea cu documente atașate ----
+        //
+        // Coloana „📎" avea zero din 36 de mișcări cu ceva în ea, deci vederea care le deschide se
+        // proba pe gol — exact felul de gol în care s-a ascuns al treilea defect din primitive.
+        // Două atașamente, nu unul: cu unul singur nu s-ar vedea dacă lista chiar le enumeră.
+        //
+        // Stau pe ieșirea fără cod R/D dinadins: e rândul pe care îl deschide inspectorul, iar
+        // avizul lui e chiar hârtia după care întreabă.
+        //
+        // ⚠️ Nu s-a urcat nimic. `CLOUDINARY_URL` nu e setat nici local, nici pe dyno, deci în
+        // dev nu există cale de a crea un atașament prin aplicație. URL-urile arată către cloud-ul
+        // public `demo` al Cloudinary — se deschid, dar nu sunt documentele firmei.
+        attachmentRepository.saveAll(List.of(
+                attachment(noCode, "aviz-369.jpg", "image/jpeg",
+                        "https://res.cloudinary.com/demo/image/upload/sample.jpg", "demo/sample"),
+                attachment(noCode, "cantar-369.jpg", "image/jpeg",
+                        "https://res.cloudinary.com/demo/image/upload/couple.jpg", "demo/couple")));
+        log.info("Seeded 2 demo attachments on the movement without an R/D code.");
+    }
+
+    private Attachment attachment(WasteMovement movement, String fileName, String contentType,
+                                  String url, String publicId) {
+        return Attachment.builder()
+                .movement(movement)
+                .url(url)
+                .publicId(publicId)
+                .fileName(fileName)
+                .contentType(contentType)
+                .createdAt(Instant.now())
+                .build();
     }
 
     /** Attaches the section the waste came from — Anexa 1 cap. 2 "Secţia". */

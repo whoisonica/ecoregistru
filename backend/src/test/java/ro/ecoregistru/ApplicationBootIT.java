@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.AttachmentRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -37,6 +38,9 @@ class ApplicationBootIT {
 
     @Autowired
     CompanyRepository companyRepository;
+
+    @Autowired
+    AttachmentRepository attachmentRepository;
 
     @Test
     void contextLoadsAndSeedApplied() {
@@ -80,6 +84,28 @@ class ApplicationBootIT {
                 .anySatisfy(m -> {
                     assertThat(m.isWeighedAtUnloading()).isTrue();
                     assertThat(m.getQuantity()).isNull();
+                });
+
+        /*
+         * A treia stare, adăugată pe 08.09.2026: mișcarea cu documente atașate. Coloana „📎" avea
+         * zero rânduri din 36, deci vederea care le deschide se proba pe gol — aceeași datorie ca
+         * cele două de mai sus. **Două** atașamente, nu unul: cu unul singur nu s-ar vedea dacă
+         * lista chiar le enumeră sau tipărește primul de două ori.
+         */
+        UUID noCodeId = demoMovements.stream()
+                .filter(m -> m.getOperation() == WasteOperation.UNCLASSIFIED_OUT)
+                .findFirst().orElseThrow().getId();
+        // `findAll` + filtru, nu o metodă nouă de repository: baza încorporată e împărțită cu
+        // celelalte clase de test, deci se numără atașamentele mișcării ăsteia, nu toate.
+        var attachments = attachmentRepository.findAll().stream()
+                .filter(a -> a.getMovement().getId().equals(noCodeId))
+                .toList();
+        assertThat(attachments)
+                .as("două atașamente pe ieșirea fără cod R/D — rândul după care întreabă inspectorul")
+                .hasSize(2)
+                .allSatisfy(a -> {
+                    assertThat(a.getFileName()).isNotBlank();
+                    assertThat(a.getUrl()).startsWith("https://");
                 });
     }
 }

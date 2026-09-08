@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowRight, Copy, Plus, Pencil, Trash2, Paperclip, FileText, Scale, Truck } from "lucide-react";
+import {
+  ArrowRight,
+  Copy,
+  ExternalLink,
+  Plus,
+  Pencil,
+  Trash2,
+  Paperclip,
+  FileText,
+  Scale,
+  Truck,
+} from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
@@ -258,6 +269,15 @@ export function MovementsPage() {
   const [duplicating, setDuplicating] = useState<WasteMovement | null>(null);
   // Mișcarea căreia i-a venit cântarul de la destinatar; null = dialogul e închis.
   const [weighing, setWeighing] = useState<WasteMovement | null>(null);
+  // Mișcarea ale cărei atașamente se citesc. Separată de `editing`: e o vedere, nu o editare, și
+  // se deschide pe orice rol — inclusiv VIEWER, care n-are butonul „Editează".
+  //
+  // Se ține `id`-ul, nu obiectul: lista se reîmprospătează sub dialog (o urcare din formular, o
+  // ștergere), iar un instantaneu ar arăta în continuare fișierul care tocmai a plecat.
+  const [attachmentsOf, setAttachmentsOf] = useState<string | null>(null);
+  const viewingAttachments = attachmentsOf
+    ? (rows.find((m) => m.id === attachmentsOf) ?? null)
+    : null;
 
   // „Șterge filtrele" apare doar când e ceva de șters. Luna curentă nu e un filtru pus de cineva,
   // e punctul de plecare al ecranului — iar ștergerea o readuce, fiindcă „nicio lună" ar însemna
@@ -301,6 +321,26 @@ export function MovementsPage() {
       setFocusId("");
     }
   }, [focusId, rows, isLoading, movements, setFocusId, notify]);
+
+  /**
+   * `?nou=1` — formularul gol, cerut din paletă (Ctrl+K → „Adaugă mișcare").
+   *
+   * <p>Se consumă la deschidere, ca `?miscare=`: lăsat în adresă, un refresh ar redeschide
+   * dialogul peste ce lucrezi, iar butonul Înapoi n-ar mai închide nimic. Se consumă **și** când
+   * rolul nu poate scrie — altfel parametrul ar rămâne agățat de un ecran care nu face nimic cu el.
+   *
+   * <p>Cele trei atribuiri sunt scrise aici, nu prin `openCreate`, ca efectul să nu atârne de o
+   * funcție rescrisă la fiecare randare.
+   */
+  const [newParam, setNewParam] = useUrlState("nou");
+  useEffect(() => {
+    if (!newParam) return;
+    setNewParam("");
+    if (!canWrite) return;
+    setEditing(null);
+    setDuplicating(null);
+    setDialogOpen(true);
+  }, [newParam, setNewParam, canWrite]);
 
   function openCreate() {
     setEditing(null);
@@ -565,10 +605,18 @@ export function MovementsPage() {
                     <TD>{m.workPointName}</TD>
                     <TD className="text-center">
                       {m.attachments.length > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-content-muted">
+                        // Buton, nu text: cifra spunea că există un document și nu ducea la el.
+                        // Nu `Tooltip` — bula își randează propriul `<button>`, deci n-ar putea
+                        // înveli linkuri; și oricum un fișier se deschide, nu se citește la hover.
+                        <button
+                          type="button"
+                          onClick={() => setAttachmentsOf(m.id)}
+                          aria-label={t.attachmentsView}
+                          className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-content-muted underline-offset-2 hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                        >
                           <Paperclip className="h-3.5 w-3.5" />
                           {m.attachments.length}
-                        </span>
+                        </button>
                       ) : (
                         "—"
                       )}
@@ -629,6 +677,13 @@ export function MovementsPage() {
         <RecordWeightDialog movement={weighing} onClose={() => setWeighing(null)} />
       )}
 
+      {viewingAttachments && (
+        <AttachmentsDialog
+          movement={viewingAttachments}
+          onClose={() => setAttachmentsOf(null)}
+        />
+      )}
+
       {dialogOpen && (
         <MovementFormDialog
           editing={editing}
@@ -641,6 +696,62 @@ export function MovementsPage() {
 
       {confirmDialog}
     </div>
+  );
+}
+
+// --- Atașamentele, citite din tabel ------------------------------------------
+
+/**
+ * Atașamentele unei mișcări, deschise din coloana „📎 N".
+ *
+ * <p>Până acum coloana arăta numărul și nimic mai mult: ca să vezi *ce* document e acolo trebuia
+ * deschis formularul de editare, cu treizeci de rubrici — iar un VIEWER nu-l poate deschide deloc,
+ * fiindcă butonul „Editează" stă sub `canWrite`. Deci pe rolul care există tocmai ca să citească,
+ * avizul urcat lângă predare era o cifră.
+ *
+ * <p>Numai citire, dinadins: ștergerea rămâne în formular, lângă urcare, unde e și confirmarea și
+ * regula de rol. Un coș de gunoi într-o vedere deschisă de oriunde ar fi cea mai ușoară apăsare
+ * greșită din ecran.
+ */
+function AttachmentsDialog({
+  movement,
+  onClose,
+}: {
+  movement: WasteMovement;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={t.attachmentsDialogTitle}
+      // Care mișcare — altfel dialogul deschis de pe al zecelea rând nu spune al cui e fișierul.
+      description={`${movement.wasteCode} · ${formatDate(movement.date)} · ${movement.workPointName}`}
+      size="md"
+      footer={
+        <Button variant="outline" onClick={onClose}>
+          {strings.common.close}
+        </Button>
+      }
+    >
+      <ul className="space-y-1">
+        {movement.attachments.map((a) => (
+          <li key={a.id}>
+            <a
+              href={a.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-2 rounded border border-line px-2 py-1.5 text-sm text-brand hover:bg-surface-sunken hover:underline"
+            >
+              <Paperclip className="h-3.5 w-3.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate">{a.fileName}</span>
+              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-content-subtle" />
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-content-subtle">{t.attachmentsDialogHint}</p>
+    </Dialog>
   );
 }
 

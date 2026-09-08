@@ -32,6 +32,32 @@ export const strings = {
     groupReporting: "Raportare",
     groupSetup: "Configurare",
     groupAdmin: "Administrare",
+
+    /**
+     * Cuvintele după care se mai găsește un ecran în paletă (Ctrl+K), pe lângă numele lui.
+     *
+     * <p>Sunt numele **documentelor** și vorbele clientului, nu sinonime de dicționar: nimeni nu
+     * caută „evidențe", toată lumea caută „fișa" sau „anexa 1". Nu se compară cu diacritice — și
+     * textul căutat, și astea trec prin `fold()`.
+     *
+     * <p>„Anexa 1" apare dinadins la două ecrane. Numele scurt înseamnă chiar două documente
+     * (decizia 12): declarația de ambalaje la Ambalaje, fișa din HG 856/2002 la Evidențe. A alege
+     * unul singur ca „adevăratul" ar ascunde celălalt document exact de cine îl caută pe nume;
+     * amândouă apar, cu eticheta lor, iar omul alege.
+     */
+    kwDashboard: "acasă start situație stoc alerte ce am de făcut",
+    kwMovements:
+      "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D",
+    kwEvidences:
+      "anexa 1 fișa de evidență evidența gestiunii deșeurilor generate declarația anuală centralizator HG 856/2002 regenerează tone",
+    kwPackaging:
+      "anexa 1 ambalaje anexa 3 ambalaje Ordinul 794/2012 tabelul 1 tabelul 2 xls pus pe piață",
+    kwDeadlines: "scadențe termene 15 martie 25 februarie 25 ianuarie AFM SIM alerte",
+    kwAuditFile: "arhivă inspector Garda de Mediu control dosar zip",
+    kwPartners: "clienți furnizori colector valorificator transportator șoferi autorizație CUI",
+    kwSettings:
+      "puncte de lucru secții generatori interni șoferii noștri datele firmei CAEN persoana desemnată",
+    kwClients: "firme companii tenant cereri de cont profil de piață",
   },
 
   login: {
@@ -171,6 +197,13 @@ export const strings = {
     // Urcarea atașamentelor e secvențială și poate dura: fără semn, arată a aplicație blocată.
     uploadingFile: "Se încarcă fișierul {n} din {total}: {name}",
     uploadingWait: "Nu închide fereastra până nu se termină.",
+    // Coloana arăta numărul și atât, iar singurul drum către fișier trecea prin formularul de
+    // treizeci de rubrici — pe care un VIEWER nici nu-l poate deschide, fiindcă butonul „Editează"
+    // stă sub `canWrite`. Deci pentru jumătate din roluri atașamentul era o cifră, nu un document.
+    attachmentsView: "Vezi atașamentele",
+    attachmentsDialogTitle: "Atașamentele mișcării",
+    attachmentsDialogHint:
+      "Fișierele se deschid într-un tab nou. Se adaugă și se șterg din editarea mișcării.",
     loadError: "Nu am putut încărca mișcările.",
     // filters
     filterMonth: "Luna",
@@ -515,6 +548,16 @@ export const strings = {
     type: "Tip",
     authorizationNumber: "Nr. autorizație",
     authorizationExpiry: "Expirare autorizație",
+    // Reperele formularului lung, ca la mișcare și la firmă. Nu se pliază: jumătate din secțiuni
+    // conțin rubrici obligatorii, iar un câmp obligatoriu ascuns sub un titlu închis e un formular
+    // care se refuză fără să spună de ce.
+    sectionIdentity: "Identificare",
+    sectionRole: "Ce face partenerul",
+    sectionCarrier: "Transport",
+    sectionAuthorization: "Autorizația de mediu",
+    sectionAuthorizationHint:
+      "Predarea se face către un operator autorizat (OUG 92/2021, art. 23 alin. (1)). Cu data expirării completată, aplicația anunță cu 60 de zile înainte și marchează predările făcute după ea.",
+    sectionAnexa3: "Date pentru Anexa 3",
     nameSuggestions: "Există deja la tine:",
     nameSuggestionsHint:
       "Ca să nu apară același partener de două ori, cu două grafii. Apasă unul ca să-l deschizi în loc să creezi altul.",
@@ -547,8 +590,10 @@ export const strings = {
     filterCarrier: "Transportatori",
     typeNone: "— doar transportator —",
     typeNoneShort: "Doar transport",
+    // Fără „de mai sus" / „de mai jos": bifa s-a mutat o dată deja (era sub select, iar textul
+    // spunea „mai sus"), și textul a rămas în urmă. Numește rubrica, nu direcția.
     typeNoneHint:
-      "Pentru o firmă care doar transportă: nu face nimic cu deșeul, deci n-are tip. Se poate alege numai cu bifa de mai sus.",
+      "Pentru o firmă care doar transportă: nu face nimic cu deșeul, deci n-are tip. Se poate alege numai bifând „Transportator”.",
     typeRequired:
       "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă.",
     drivers: "Șoferi",
@@ -1295,6 +1340,16 @@ export const strings = {
     downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
     saveError: "Cifra nu a putut fi salvată.",
 
+    // --- cuprinsul paginii ---
+    // Patru tabele mari unul sub altul plus grila de suprascriere: cea mai lungă pagină din
+    // aplicație. Etichetele sunt scurte dinadins — bara stă pe un rând, și pe telefon. Titlurile
+    // întregi, cu temeiul legal, rămân pe secțiuni.
+    sections: "Pe pagină",
+    navRegister: "Mișcări",
+    navTable1: "Tabelul 1",
+    navTable2: "Tabelul 2",
+    navAnexa3: "Anexa 3",
+
     // --- registrul ---
     registerTitle: "Mișcări de ambalaje",
     registerHint:
@@ -1527,6 +1582,14 @@ export const strings = {
     commandPalette: "Caută sau sari la",
     commandPalettePlaceholder: "Sari la un ecran... (Ctrl+K)",
     goTo: "Navigare",
+    // Al doilea grup al paletei: ce se **începe**, nu unde se ajunge. Cuvintele-cheie poartă
+    // sinonimele pe care le tastează cineva grăbit — „predare" pentru o mișcare, „client" sau
+    // „furnizor" pentru un partener.
+    actionsGroup: "Acțiuni",
+    actionNewMovement: "Adaugă mișcare",
+    actionNewMovementKeywords: "predare generare intrare ieșire nouă înregistrează transport",
+    actionNewPartner: "Adaugă partener",
+    actionNewPartnerKeywords: "client furnizor colector transportator firmă nouă",
     shortcutHint: "Ctrl+K pentru comenzi · / pentru căutare · N pentru adăugare",
   },
 } as const;

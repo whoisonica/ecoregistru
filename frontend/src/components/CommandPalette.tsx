@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { CornerDownLeft, Search, type LucideIcon } from "lucide-react";
+import { CornerDownLeft, Plus, Search, type LucideIcon } from "lucide-react";
 import { useHotkey } from "@/hooks/useHotkey";
 import { strings } from "@/lib/strings";
 import { cn, fold } from "@/lib/utils";
@@ -82,7 +82,30 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
       scored.push({ command: c, score });
     }
     // `sort` e stabilă în JS modern, deci la scor egal rămâne ordinea din bara laterală.
-    return scored.sort((a, b) => a.score - b.score).map((x) => x.command);
+    scored.sort((a, b) => a.score - b.score);
+
+    /**
+     * Grupurile rămân **întregi**, în ordinea celui mai bun membru al fiecăruia.
+     *
+     * <p>Sortarea pe scor amestecă grupurile între ele: tastând „anexa", ordinea ieşea
+     * Ambalaje · Mişcări · Dosar · Evidenţe · Ambalaje, adică antetul „Evidenţă" de două ori, cu
+     * altul între. Randarea deschide un `<div>` nou la fiecare schimbare de grup, cheia lui e
+     * **numele grupului**, iar două surori cu aceeaşi cheie strică reconcilierea: în listă rămâneau
+     * rânduri din randarea dinainte, cu `data-index` duplicat. Se vedea ca rezultate care n-aveau
+     * ce căuta acolo — „Dosar de control" la căutarea „anexa" — deci ca o potrivire prea largă,
+     * când de fapt erau rânduri moarte.
+     *
+     * <p>`Map` ţine ordinea inserării, iar sortarea a fost deja făcută: primul grup e cel care
+     * conţine cea mai bună potrivire, iar în el ea e prima. Deci **primul rând al listei rămâne
+     * cel mai bun rezultat** — proprietatea de care atârnă Enter — fără ca grupurile să se rupă.
+     */
+    const buckets = new Map<string, Command[]>();
+    for (const { command } of scored) {
+      const list = buckets.get(command.group);
+      if (list) list.push(command);
+      else buckets.set(command.group, [command]);
+    }
+    return [...buckets.values()].flat();
   }, [commands, query]);
 
   // O listă nouă înseamnă alt prim rând; evidențierea veche ar arăta spre altceva.
@@ -158,7 +181,10 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
             </p>
           )}
           {groups.map((group) => (
-            <div key={group.name}>
+            // Cheia e `id`-ul primei comenzi, nu numele grupului: numele se poate repeta dacă
+            // vreodată ordonarea rupe iar grupurile, iar două surori cu aceeaşi cheie lasă în DOM
+            // rânduri din randarea dinainte. `id`-ul e unic prin construcţie.
+            <div key={group.items[0].command.id}>
               <div className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-content-subtle">
                 {group.name}
               </div>
@@ -198,7 +224,10 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
  * lucru ajung mereu să nu-l mai spună.
  */
 export function useNavigationCommands(
-  groups: { label?: string; items: { to: string; label: string; icon: LucideIcon }[] }[]
+  groups: {
+    label?: string;
+    items: { to: string; label: string; icon: LucideIcon; keywords?: string }[];
+  }[]
 ): Command[] {
   const navigate = useNavigate();
   return useMemo(
@@ -207,6 +236,11 @@ export function useNavigationCommands(
         group.items.map((item) => ({
           id: `nav:${item.to}`,
           label: item.label,
+          // Cuvintele vin din bara laterală, unde stau lângă ecranul pe care îl descriu. `keywords`
+          // era declarat pe `Command` şi citit la potrivire, dar nu i-l dădea nimeni: tastai
+          // „fişa" sau „anexa 1" şi paleta nu găsea nimic, deşi propriul docstring promitea
+          // „unde vreau să ajung".
+          keywords: item.keywords,
           group: group.label ?? strings.common.goTo,
           icon: item.icon,
           run: () => navigate(item.to),
@@ -214,4 +248,41 @@ export function useNavigationCommands(
       ),
     [groups, navigate]
   );
+}
+
+/**
+ * Comenzile care **încep** ceva, nu doar duc undeva.
+ *
+ * <p>Jumătatea cealaltă a promisiunii din docstringul paletei: „ce vreau să încep". Fiecare duce
+ * pe ecranul ei cu formularul deschis, prin `?nou=1` — parametrul se consumă la deschidere, ca
+ * `?miscare=`, deci un refresh nu redeschide dialogul peste ce lucrezi.
+ *
+ * <p>**Niciuna nu scrie nimic.** „Regenerează evidența" ar fi fost a treia, și n-a intrat: butonul
+ * de pe Evidențe e o cerere explicită de recalculare pe un an anume (decizia 51), iar dintr-o
+ * paletă nu se vede pe care an ar cădea. O comandă care rescrie tăcut liniile unui dosar e exact
+ * genul de ghicit pe care ecranul ăsta nu-l face.
+ */
+export function useActionCommands(canWrite: boolean): Command[] {
+  const navigate = useNavigate();
+  return useMemo(() => {
+    if (!canWrite) return [];
+    return [
+      {
+        id: "action:new-movement",
+        label: strings.common.actionNewMovement,
+        keywords: strings.common.actionNewMovementKeywords,
+        group: strings.common.actionsGroup,
+        icon: Plus,
+        run: () => navigate("/miscari?nou=1"),
+      },
+      {
+        id: "action:new-partner",
+        label: strings.common.actionNewPartner,
+        keywords: strings.common.actionNewPartnerKeywords,
+        group: strings.common.actionsGroup,
+        icon: Plus,
+        run: () => navigate("/parteneri?nou=1"),
+      },
+    ];
+  }, [canWrite, navigate]);
 }
