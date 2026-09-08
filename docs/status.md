@@ -75,7 +75,7 @@ rulează local și are testele verzi.
 > de limbă veche pe toate ecranele:** „1 linii", „pe 1 mişcări" — româna cere trei forme, iar de la
 > 20 în sus „de linii". `countOf` în `lib/utils`; backendul o reparase deja pe 06.09, la mail.
 > **Backendul n-a fost atins** — migrări tot până la `V31`. Suita: **10 probe, 228 de verificări**.
-> Detaliile: secţiunea „Propoziţia care lipsea de pe Panou". ⚠️ **Nedeployat**: împins doar pe `origin`.
+> Detaliile: secţiunea „Propoziţia care lipsea de pe Panou". ✅ **În producţie**: `ecoregistru-app` **v32**, `ecoregistru-api` neschimbat la v37.
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
@@ -3918,7 +3918,18 @@ din ea, fiindcă e a treia oară când aceeaşi capcană se închide altfel:
   felie n-a cerut una.
 - **Suita de interfaţă: 10 probe, 228 de verificări** (de la 9 şi 200).
 - `tsc --noEmit` curat, `vite build` verde.
-- ⚠️ **Nedeployat.** Commis şi împins pe `origin`; split-ul către `ferepo` nu s-a făcut.
+- ✅ **Mers în `main` şi deployat** (08.09.2026, ora 13:45). `main` == `origin/main` ==
+  `origin/deploy/heroku-split` la **`584fe06`**; `ferepo/main` la **`c9d8208`**; `ecoregistru-app`
+  **v32**. **`newrepo/main` rămâne la `b5dd344`** — backendul n-a fost atins, deci `tmp-backend` a
+  ieşit cu acelaşi vârf ca remote-ul şi n-a avut ce trimite; `ecoregistru-api` rămâne **v37**, schema
+  **31**, nicio migrare. *(A treia oară la rând când `git reset --hard` din procedură e de prisos:
+  `split-frontend` era deja la `ferepo/main`. Verifică cu `git rev-parse` înainte să resetezi.)*
+  Verificat **pe conţinut, nu pe hash**: bundle-ul din producţie conţine „Următoarea acţiune",
+  „Alte descărcări", „Rezumat Excel" şi „Eşti la zi", şi **nu mai conţine** „Export Excel" /
+  „Export PDF".
+  ⚠️ **Şi o capcană de verificare, notată fiindcă a minţit o dată:** prima probă pe bundle a citit
+  fişierul de 596 KB într-o variabilă de shell şi l-a trecut prin `echo | grep` — toate cele patru
+  şiruri au ieşit „lipsă", inclusiv unele care erau acolo. **Descarcă în fişier şi caută în fişier.**
 
 ### 📋 Ce urmează
 
