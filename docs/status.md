@@ -75,6 +75,16 @@ rulează local și are testele verzi.
 > de limbă veche pe toate ecranele:** „1 linii", „pe 1 mişcări" — româna cere trei forme, iar de la
 > 20 în sus „de linii". `countOf` în `lib/utils`; backendul o reparase deja pe 06.09, la mail.
 > **Backendul n-a fost atins** — migrări tot până la `V31`. Suita: **10 probe, 228 de verificări**.
+> **Adăugat 08.09.2026, seara târziu — sugestia care nu mai mută covorul, şi badge-ul care duce
+> undeva.** Sugestia de duplicat de la Parteneri comuta pe tăcute la fişa existentă, aruncând tot ce
+> completasei; acum se **spune** că s-a comutat, cu drum înapoi, iar pe un formular început se
+> întreabă întâi. Badge-ul „Autorizaţie expirată" de pe o predare cerea, în chiar textul lui, să
+> actualizezi fişa partenerului — şi nu ducea nicăieri; duce acum, prin `?partener=`, şi a ieşit din
+> `Tooltip`, care nu poate înveli un link. 🔴 A treia tranşă de datorie de seed, iar prima ei
+> variantă a **rupt proba 9** ducând stocul unui cod la zero. **Suita: 10 probe, 245 de verificări.**
+> ✅ **În producţie**: `ecoregistru-app` **v33**. Detaliile: secţiunea „Sugestia care nu mai mută
+> covorul".
+>
 > Detaliile: secţiunea „Propoziţia care lipsea de pe Panou". ✅ **În producţie**: `ecoregistru-app` **v32**, `ecoregistru-api` neschimbat la v37.
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
@@ -3940,6 +3950,91 @@ care mută covorul · badge-ul „Autorizaţie expirată" fără link · şiruri
 🟡 **Şi o restanţă ieşită din felia 2:** numeralul corect s-a aplicat pe Panou şi pe zilele rămase,
 dar restul ecranelor scriu în continuare „{n} zile" fără acordul de la 20 în sus. `countOf` există;
 e o trecere de o oră peste `strings.ts`, de făcut într-o felie proprie ca să se vadă ce s-a schimbat.
+
+---
+
+## Sugestia care nu mai mută covorul, şi badge-ul care duce undeva (08.09.2026, seara târziu)
+
+Feliile 3 şi 4 din „Ordinea recomandată". Amândouă sunt despre acelaşi lucru, pe două ecrane: un
+element care **face** ceva fără să spună, sau care **spune** ceva fără să ducă undeva.
+
+### 1. Sugestia de duplicat comuta pe tăcute
+
+Apăsai pe firma sugerată şi acelaşi dialog devenea „Editează partener": tot ce completasei
+dispărea, iar singurul semn era **titlul** — pe care nu se uită nimeni când tocmai a apăsat pe altă
+parte a ecranului.
+
+**Comutarea rămâne fapta bună.** Sugestia există tocmai ca să nu se creeze un partener de două ori
+(un duplicat rămâne în nomenclator şi pe documentele tipărite), iar dacă firma chiar există, fişa ei
+e unde vrei să ajungi. Ce lipsea era să **se vadă** că s-a întâmplat, şi drumul înapoi.
+
+Două tratamente, după cât ai apucat să scrii — aceeaşi regulă ca la garda de pe formularul de
+mişcare (07.09), care întreabă doar pe un formular atins:
+
+| Ce ai completat | Ce se întâmplă |
+|---|---|
+| doar numele | se comută **pe loc**, iar o bandă în capul formularului spune „Editezi un partener care există deja", de unde ai venit, şi oferă „Înapoi la adăugare" |
+| şi alte rubrici | se **întreabă întâi**, cu ce se pierde scris în întrebare |
+
+„Înapoi la adăugare" pune **numele tastat la loc** — restul rubricilor s-au pierdut oricum la
+comutare, iar numele e chiar ce te-a adus acolo.
+
+`formHasMoreThanName` se citeşte din starea care există deja, fără să se mai adauge un „touched":
+rubricile numărate sunt exact cele pe care le-ar arunca o comutare. Tipul şi rolurile **nu intră** —
+au implicit la deschidere, deci n-ar deosebi nimic.
+
+⚠️ **Escape peste întrebare închide doar întrebarea**, nu şi formularul de sub ea — teancul din
+`Dialog`, scris pe 07.09 exact pentru cazul ăsta. Există verificare.
+
+### 2. Badge-ul „Autorizaţie expirată" era al doilea fund de sac
+
+Badge-ul galben de pe o predare (decizia 36) spunea, în chiar textul lui, *„verifică dacă partenerul
+are o autorizaţie reînnoită şi actualizeaz-o în fişa lui"* — şi **nu ducea nicăieri**. Acelaşi defect
+ca badge-ul roşu reparat pe 07.09, pe alt badge; îl aveam scris de două zile în listă şi nu-l
+văzusem ca fiind acelaşi.
+
+`/parteneri?partener=<id>` deschide fişa cerută, cu parametrul **consumat la deschidere** ca
+`?miscare=` pe Mişcări — lăsat în adresă, un refresh ar redeschide dialogul peste ce lucrezi. Dacă
+partenerul nu mai e printre rândurile aduse (dezactivat, sau link vechi) se **spune**, nu se
+deschide un formular gol.
+
+⚠️ **Badge-ul nu mai e învelit în `Tooltip`, şi n-avea cum să fie.** Bula îşi randează **propriul
+`<button>`**, deci nu poate înveli nimic interactiv — defectul din 07.09, seara, notat atunci în
+cod ca să nu se reîncerce. Deci data expirării a **urcat în badge**, unde se citeşte pe ecran în loc
+să stea în spatele unui hover (mai bine şi pe telefon), iar motivul întreg — cele două articole şi
+ce e de făcut — a rămas în `aria-label`, pentru cine citeşte cu tastatura. Pe o mişcare fără
+partener legat, badge-ul rămâne cu tooltip: n-are unde duce.
+
+### 3. Datoria de seed, a treia tranşă — şi un rând care a rupt altă probă
+
+**Zero rânduri din 37** aveau o predare către un partener cu autorizaţia expirată **la acea dată**,
+deci proba drumului s-ar fi făcut pe gol. `INSERT`-ul aditiv e în `frontend/e2e/README.md`, ca cel
+de ataşamente din 08.09 dimineaţa.
+
+🔴 **Şi prima variantă a lui a căzut proba 9.** Rândul avea 120 kg, ceea ce a dus stocul unui cod
+**fix la zero** — deci dala „Coduri cu stoc" a trecut de la 4 la 3, iar proba care fixează chiar
+cifra aia a picat. Cantitatea e de-acum 1 kg. **Lecţia**: un rând de seed adăugat pentru o probă nu
+trebuie să mişte datele pe care se sprijină alta — şi se vede că a mişcat **numai dacă suita se
+rulează întreagă**, nu doar proba la care lucrezi.
+
+🟡 **Nu e în `DevDataSeeder`**, ca celelalte două stări: seeder-ul e backend, iar felia a fost de
+interfaţă. Rămâne restanţă, scrisă în `e2e/README.md`.
+
+### Starea
+
+- **Backendul n-a fost atins**: migrări tot până la **`V31`**, următoarea liberă **`V32`**.
+- **Suita: 10 probe, 245 de verificări** (de la 228).
+- `tsc --noEmit` curat, `vite build` verde.
+- ✅ **În producţie** (08.09.2026, ora 16:47). `main` == `origin/main` == `origin/deploy/heroku-split`
+  la **`b6ee36c`**; `ferepo/main` la **`970fb52`**; `ecoregistru-app` **v33**. `newrepo` neatins,
+  `ecoregistru-api` rămâne **v37**, schema **31**. Verificat pe conţinut: bundle-ul din producţie
+  conţine „Editezi un partener care există deja", „Înapoi la adăugare", „Deschizi fişa partenerului
+  existent?" şi `partener=`.
+
+### 📋 Ce urmează
+
+`docs/todo-ui-ux.md`: şirurile hardcodate din `combobox.tsx` · 🔒 ştergerea datelor unui şofer (o
+**decizie**, nu o felie) · 🟡 numeralul pe restul ecranelor · 🟡 mutarea seed-ului în `DevDataSeeder`.
 
 ---
 

@@ -135,7 +135,7 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Ten suites, 228
+download — against the local dev server and a backend on the `dev` profile. Ten suites, 245
 checks: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
@@ -291,6 +291,8 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | From a deadline to the document that clears it | **Termene** | Each row says how many days are left (or by how many it is overdue), and the annual filings link to the screen that prints them — for the year **reported**, not the year of the deadline. The AFM contributions link nowhere on purpose: those are declared in AFM's own application, and we print no form for them |
 | What to do next | **Panou** | One band at the top names a single thing to do, picked by what costs most if left undone: an overdue deadline, then an exit with no R/D code, then a filing within thirty days (linking to the document that clears it, for the year *reported*), then a lapsing authorization, then the weighbridge. It stays silent until all three sources have loaded — "you are up to date" written over a half-loaded answer is the false green this codebase has paid for before |
 | Unofficial exports | **Evidențe** → "Alte descărcări" | The two official documents stay in the header; the generic exports moved into a menu that says what they are. They print "unofficial summary" on themselves, so five equally prominent buttons claimed all five were the same kind of thing — and squeezed the page title onto three lines |
+| A partner you may already have | **Parteneri** → "Adaugă partener" → type two letters of a name you already use | The duplicate suggestion used to swap the dialog into edit mode silently, throwing away everything typed — the only sign was the title. It still switches, because that is what you wanted; it now says so, and offers the way back with the name you typed restored. Fill in more than the name first and it asks before switching |
+| A recipient whose authorization had lapsed | **Mișcări** → a handover with the amber "Autorizație expirată" badge | The badge told you to update the partner's record and led nowhere. It is a link now, carrying the expiry date on screen rather than behind a hover — it cannot be a tooltip, because a tooltip renders its own button and could not wrap a link |
 | Why a driver's ID papers are held | **Setări** → "Șoferii noștri", and a carrier's own form | A retention note where the field is typed: it is held for the "Date de identificare delegat" rubric of Anexa 3 and printed on it; it stays as long as the record must be kept (OUG 92/2021 art. 48 alin. (5) — at least three years, twelve months for carriers); and deactivating a driver does not remove them from movements already recorded, which keep the snapshot of the day |
 
 ### Tests
