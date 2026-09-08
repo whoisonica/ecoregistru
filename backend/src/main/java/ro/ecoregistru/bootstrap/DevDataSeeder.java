@@ -52,6 +52,7 @@ public class DevDataSeeder implements CommandLineRunner {
     WasteCodeRepository wasteCodeRepository;
     WasteMovementRepository wasteMovementRepository;
     InternalGeneratorRepository internalGeneratorRepository;
+    AttachmentRepository attachmentRepository;
     PasswordEncoder passwordEncoder;
 
     @Override
@@ -118,6 +119,13 @@ public class DevDataSeeder implements CommandLineRunner {
         partnerRepository.save(partner(company, "Salubritate Municipală SA", "RO33445566",
                 "AUT-2022-042", LocalDate.now().minusDays(30), PartnerType.COLLECTOR,
                 false, true)); // expired -> red badge
+        // A partner whose authorization expiry nobody filled in. Blank is not "expired": it means
+        // we do not know, and every rule in the application treats it that way — no badge at the
+        // handover, no alert mail, and sorted to the end of the column in both directions. Without
+        // a row in this state the sorting rule was provable only on paper: `missingLast()` was
+        // written for exactly it, and the check that would have caught the bug ran on nothing.
+        partnerRepository.save(partner(company, "Depozitare Ardeal SRL", "RO77889900",
+                "AUT-2023-318", null, PartnerType.COLLECTOR, true, true));
 
         // --- Internal generators (Anexa 1 cap. 2 "Secţia") ---
         InternalGenerator birouri = internalGeneratorRepository.save(
@@ -241,8 +249,69 @@ public class DevDataSeeder implements CommandLineRunner {
         ms.add(mv(company, wpDepozit, d(5, 14), battery, "8.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
         ms.add(mv(company, wpDepozit, d(5, 29), battery, "8.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 359", createdBy));
 
+        // ---- Cele două stări pentru care ecranele au reguli proprii, dar seed-ul n-avea rânduri --
+        //
+        // Erau zero din 34 de mișcări fără cantitate și zero ieșiri fără cod R/D, deci fiecare
+        // regulă scrisă în jurul lor se proba pe gol: roșu față de galben pe badge-uri, drumul de
+        // la raport la mișcarea vinovată, sortarea care ține la coadă ce e nespus. Al treilea defect
+        // din primitivele reparate pe 07.09 a scăpat exact așa — verificarea scrisă pentru el trecea
+        // pe un tabel care n-avea rândul.
+        //
+        // Amândouă stau pe cod de plastic la Turda, dinadins: seria de hârtie de la Cluj
+        // (40→30→50→50→30→50.5) e vitrina stocului cumulativ și rămâne neatinsă.
+
+        // Ieșire fără cod R/D — badge **roșu**. Cantitatea a plecat de pe amplasament și nu intră în
+        // nicio coloană oficială, deci fișa nu se poate depune așa. E cazul liniilor vechi, de
+        // dinainte ca aplicația să ceară codul la orice ieșire: nu se poate ghici retroactiv, așa
+        // că se **vede** în loc să se închidă tăcut.
+        WasteMovement noCode = mv(company, wpTurda, d(6, 15), plastic, "40.000",
+                WasteOperation.UNCLASSIFIED_OUT, PhysicalState.SOLID, null, collector,
+                "Aviz nr. 369 (fără cod)", createdBy);
+        ms.add(section(noCode, productie));
+
+        // Predare care așteaptă cântarul destinatarului — badge **galben**, altă afirmație. Un
+        // magazin fără cântar predă, colectorul cântărește la descărcare, iar pe modelul de Anexa 3
+        // cifra e scrisă de mână. `quantity` e null dinadins: nici zero, nici o estimare nu stau în
+        // locul unei măsurători, iar linia lunară se raportează provizorie până vine cifra.
+        WasteMovement awaiting = mv(company, wpTurda, d(7, 22), plastic, null,
+                WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor,
+                "Aviz nr. 391", createdBy);
+        awaiting.setWeighedAtUnloading(true);
+        ms.add(section(awaiting, productie));
+
         wasteMovementRepository.saveAll(ms);
         log.info("Seeded {} sample movements.", ms.size());
+
+        // ---- A treia stare fără rânduri: mișcarea cu documente atașate ----
+        //
+        // Coloana „📎" avea zero din 36 de mișcări cu ceva în ea, deci vederea care le deschide se
+        // proba pe gol — exact felul de gol în care s-a ascuns al treilea defect din primitive.
+        // Două atașamente, nu unul: cu unul singur nu s-ar vedea dacă lista chiar le enumeră.
+        //
+        // Stau pe ieșirea fără cod R/D dinadins: e rândul pe care îl deschide inspectorul, iar
+        // avizul lui e chiar hârtia după care întreabă.
+        //
+        // ⚠️ Nu s-a urcat nimic. `CLOUDINARY_URL` nu e setat nici local, nici pe dyno, deci în
+        // dev nu există cale de a crea un atașament prin aplicație. URL-urile arată către cloud-ul
+        // public `demo` al Cloudinary — se deschid, dar nu sunt documentele firmei.
+        attachmentRepository.saveAll(List.of(
+                attachment(noCode, "aviz-369.jpg", "image/jpeg",
+                        "https://res.cloudinary.com/demo/image/upload/sample.jpg", "demo/sample"),
+                attachment(noCode, "cantar-369.jpg", "image/jpeg",
+                        "https://res.cloudinary.com/demo/image/upload/couple.jpg", "demo/couple")));
+        log.info("Seeded 2 demo attachments on the movement without an R/D code.");
+    }
+
+    private Attachment attachment(WasteMovement movement, String fileName, String contentType,
+                                  String url, String publicId) {
+        return Attachment.builder()
+                .movement(movement)
+                .url(url)
+                .publicId(publicId)
+                .fileName(fileName)
+                .contentType(contentType)
+                .createdAt(Instant.now())
+                .build();
     }
 
     /** Attaches the section the waste came from — Anexa 1 cap. 2 "Secţia". */
@@ -265,7 +334,9 @@ public class DevDataSeeder implements CommandLineRunner {
                 .workPoint(wp)
                 .date(date)
                 .wasteCode(code)
-                .quantity(new BigDecimal(qty))
+                // `null` e legal, și numai cu `weighedAtUnloading`: cantitatea se află la
+                // descărcare. Vezi rândul „de cântărit" de mai sus.
+                .quantity(qty == null ? null : new BigDecimal(qty))
                 .unit(Unit.KG)
                 .operation(op)
                 .physicalState(physicalState)

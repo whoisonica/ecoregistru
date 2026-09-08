@@ -1,20 +1,22 @@
-import { FileText } from "lucide-react";
+import { ArrowRightLeft, FileText, Pencil } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
-import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils";
+import { Button, LinkButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { missingLast, useTableView } from "@/hooks/useTableView";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
+import { useUrlState } from "@/hooks/useUrlState";
 
 const t = strings.evidences;
 const m = strings.movements;
 const e = strings.enums;
-
-function formatDate(iso: string) {
-  const [y, mo, d] = iso.split("-");
-  return `${d}.${mo}.${y}`;
-}
 
 /**
  * The handover register — what the Evidenţe tab shows by default, as asked at the 23.08.2026
@@ -33,52 +35,132 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   const { data: movements, isLoading, isError } = useMovements(filters);
   const { download, downloadingId } = useAnexa3Download();
 
-  const rows = (movements ?? []).filter(
+  /**
+   * „Arată-mi doar ce blochează depunerea", trimis prin adresă de pe Panou.
+   *
+   * <p>Panoul numără liniile de evidență fără cod R/D și promitea o reparație cu linkul „Repară";
+   * ducea însă la vederea lunară, unde rândurile sunt **agregate** pe (punct de lucru, cod, lună) și
+   * nu se poate deschide nicio mișcare. Registrul de predări e nivelul la care întrebarea are
+   * răspuns, fiindcă aici un rând **este** o mișcare.
+   */
+  const [problem, setProblem] = useUrlState("problema");
+  const onlyMissingCode = problem === "cod-rd";
+
+  const exits = (movements ?? []).filter(
     (mv) => mv.operation === "RECOVERED" || mv.operation === "DISPOSED"
       || mv.operation === "UNCLASSIFIED_OUT"
   );
+  const rows = onlyMissingCode ? exits.filter((mv) => !mv.operationCode) : exits;
 
-  if (isLoading) return <p className="text-sm text-gray-500">{strings.common.loading}</p>;
+  /**
+   * Ziua pe care o poartă rândul: descărcarea când se știe, altfel data mișcării. Coloana o
+   * **afișa** deja așa, dar se sorta și se căuta după `date` — deci apăsai pe „Data predării" și
+   * rândurile nu se așezau după cifrele scrise în ele, iar tastarea unei date nu găsea nimic în
+   * registru, deși pe Mișcări găsea. O singură expresie, folosită de toate trei.
+   */
+  const handoverDate = (mv: WasteMovement) => mv.unloadDate ?? mv.date;
+
+  /**
+   * Drumul de la rândul vinovat la mișcarea care îl produce.
+   *
+   * <p>⚠️ Luna din link e a lui **`date`**, nu a datei afișate în coloană. Ecranul Mișcări filtrează
+   * pe `date`, iar registrul arată `unloadDate` când o are — deci o predare din 31 martie descărcată
+   * pe 2 aprilie s-ar căuta în aprilie și n-ar fi găsită acolo.
+   */
+  const editHref = (mv: WasteMovement) =>
+    `/miscari?luna=${mv.date.slice(0, 7)}&miscare=${mv.id}`;
+
+  const view = useTableView(rows, {
+    searchText: (mv) =>
+      [
+        mv.wasteCode,
+        mv.wasteCodeName,
+        mv.partnerName,
+        mv.workPointName,
+        mv.operationCode,
+        formatDate(handoverDate(mv)),
+      ]
+        .filter(Boolean)
+        .join(" "),
+    comparators: {
+      date: (a, b) => handoverDate(a).localeCompare(handoverDate(b)),
+      wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
+      // „De cântărit" stă la coadă în ambele sensuri, ca pe Mișcări: e o cantitate nespusă.
+      quantity: missingLast(
+        (a) => a.quantity,
+        (x, y) => x - y
+      ),
+      partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
+    },
+    initialSort: { key: "date", direction: "desc" },
+  });
+
   if (isError) return <p className="text-sm text-red-600">{t.handoversLoadError}</p>;
 
   return (
     <>
-      <p className="mb-3 text-sm text-gray-500">{t.handoversSubtitle}</p>
-      <div className="overflow-x-auto">
-        <Table>
-          <THead>
+      <p className="mb-3 text-sm text-content-muted">{t.handoversSubtitle}</p>
+      {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel
+          tabelul pare gol pe nedrept, iar omul caută rânduri care există. */}
+      {onlyMissingCode && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <span className="font-medium">{t.onlyMissingCode}</span>
+          <button
+            type="button"
+            onClick={() => setProblem("")}
+            className="shrink-0 font-medium underline hover:no-underline"
+          >
+            {t.onlyMissingCodeOff}
+          </button>
+        </div>
+      )}
+      <TableToolbar view={view} placeholder={t.handoversSearchPlaceholder} />
+      <div>
+        <Table stickyHeader>
+          <THead sticky>
             <TR>
-              <TH>{t.colHandoverDate}</TH>
-              <TH>{t.colWasteCode}</TH>
+              <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>
+                {t.colHandoverDate}
+              </SortableTH>
+              <SortableTH sortKey="wasteCode" sort={view.sort} onSort={view.toggleSort}>
+                {t.colWasteCode}
+              </SortableTH>
               <TH className="text-right">{m.quantity}</TH>
               <TH>{t.colOperationCode}</TH>
               <TH>{t.colPartnerName}</TH>
               <TH>{t.colWorkPoint}</TH>
-              <TH className="text-right">{strings.common.actions}</TH>
+              <TH sticky="right" className="text-right">{strings.common.actions}</TH>
             </TR>
           </THead>
           <TBody>
-            {rows.length === 0 && (
-              <TR>
-                <TD colSpan={7} className="text-center text-gray-400">
-                  {t.emptyHandovers}
-                </TD>
-              </TR>
+            {(isLoading || view.visible.length === 0) && (
+              <TableFallbackRow
+                columns={7}
+                loading={isLoading}
+                icon={ArrowRightLeft}
+                title={
+                  view.emptiedBySearch
+                    ? strings.common.noResults
+                    : onlyMissingCode
+                      ? t.onlyMissingCodeEmpty
+                      : t.emptyHandovers
+                }
+              />
             )}
-            {rows.map((mv: WasteMovement) => (
+            {view.visible.map((mv: WasteMovement) => (
               <TR key={mv.id}>
                 <TD className="whitespace-nowrap">
                   {/* The date the waste actually left; the unloading date when it is known. */}
-                  {formatDate(mv.unloadDate ?? mv.date)}
+                  {formatDate(handoverDate(mv))}
                 </TD>
                 <TD>
-                  <span className="font-medium text-gray-900">{mv.wasteCode}</span>
+                  <span className="font-medium text-content">{mv.wasteCode}</span>
                   {mv.hazardous && (
                     <Badge variant="danger" className="ml-2">
                       {t.hazardous}
                     </Badge>
                   )}
-                  <span className="block max-w-xs truncate text-xs text-gray-400">
+                  <span className="block max-w-xs truncate text-xs text-content-subtle">
                     {mv.wasteCodeName}
                   </span>
                 </TD>
@@ -96,38 +178,50 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                 <TD className="whitespace-nowrap">
                   {mv.operationCode ? (
                     <>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-content">
                         {mv.treatmentPurpose ?? mv.operationCode.charAt(0)}
                       </span>
-                      <span className="ml-1 text-gray-500">{mv.operationCode}</span>
+                      <span className="ml-1 text-content-muted">{mv.operationCode}</span>
                     </>
                   ) : (
-                    <Badge variant="danger" title={t.missingCodeHint}>
-                      {t.missingCode}
-                    </Badge>
+                    <Tooltip content={t.missingCodeHint}>
+                      <Badge variant="danger">{t.missingCode}</Badge>
+                    </Tooltip>
                   )}
                 </TD>
                 <TD>
-                  {mv.partnerName ?? <span className="text-gray-400">{t.ownSite}</span>}
+                  {mv.partnerName ?? <span className="text-content-subtle">{t.ownSite}</span>}
                 </TD>
                 <TD>{mv.workPointName}</TD>
-                <TD className="text-right">
-                  {canPrintAnexa3(mv) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={downloadingId === mv.id}
-                      onClick={() => download(mv)}
-                    >
-                      <FileText className="mr-1 h-3.5 w-3.5" />
-                      {downloadingId === mv.id ? m.anexa3Downloading : m.anexa3Download}
-                    </Button>
-                  )}
+                <TD sticky="right" className="text-right">
+                  <div className="flex justify-end gap-1">
+                    {/* Rândul roșu era un fund de sac: aflai care mișcare strică depunerea și
+                        rămâneai să o cauți cu mâna. Acțiunea e a rândului roșu, nu a celui amber —
+                        „De cântărit" e o așteptare legitimă, n-are ce repara nimeni azi. */}
+                    {!mv.operationCode && (
+                      <LinkButton variant="ghost" size="sm" to={editHref(mv)}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        {t.fixMissingCode}
+                      </LinkButton>
+                    )}
+                    {canPrintAnexa3(mv) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={downloadingId === mv.id}
+                        onClick={() => download(mv)}
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        {downloadingId === mv.id ? m.anexa3Downloading : m.anexa3Download}
+                      </Button>
+                    )}
+                  </div>
                 </TD>
               </TR>
             ))}
           </TBody>
         </Table>
+        <TablePagination view={view} />
       </div>
     </>
   );

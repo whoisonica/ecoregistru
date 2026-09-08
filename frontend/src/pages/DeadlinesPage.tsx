@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { RefreshCw, Check, RotateCcw } from "lucide-react";
+import { RefreshCw, Check, RotateCcw, CalendarClock } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   useDeadlines,
@@ -10,13 +10,20 @@ import {
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { formatDate } from "@/lib/utils";
+import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import type { BadgeProps } from "@/components/ui/badge";
 
@@ -34,17 +41,12 @@ const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
   OVERDUE: "danger",
 };
 
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}.${m}.${y}`;
-}
-
 export function DeadlinesPage() {
   const { user } = useAuth();
   const canManage =
     user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
 
-  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: deadlines, isLoading, isError } = useDeadlines(year);
   const regenerateMut = useRegenerateDeadlines();
   const completeMut = useCompleteDeadline();
@@ -55,6 +57,20 @@ export function DeadlinesPage() {
   const [note, setNote] = useState("");
 
   const rows = useMemo(() => deadlines ?? [], [deadlines]);
+
+  const view = useTableView(rows, {
+    searchText: (d) =>
+      [strings.enums.reportType[d.reportType], d.completionNote].filter(Boolean).join(" "),
+    comparators: {
+      reportType: (a, b) =>
+        strings.enums.reportType[a.reportType].localeCompare(
+          strings.enums.reportType[b.reportType],
+          "ro"
+        ),
+      dueDate: (a, b) => a.dueDate.localeCompare(b.dueDate),
+    },
+    initialSort: { key: "dueDate", direction: "asc" },
+  });
 
   function handleRegenerate() {
     regenerateMut.mutate(year, {
@@ -97,30 +113,30 @@ export function DeadlinesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        {canManage && (
-          <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
-            />
-            {regenerateMut.isPending ? t.generating : t.generate}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          canManage && (
+            <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+              />
+              {regenerateMut.isPending ? t.generating : t.generate}
+            </Button>
+          )
+        }
+      />
 
       {/* Filters */}
-      <div className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="dl-year">{t.filterYear}</Label>
           <Select
             id="dl-year"
             value={String(year)}
             onChange={(ev) => setYear(Number(ev.target.value))}
-            className="w-32"
+            className="w-full sm:w-32"
           >
             {yearOptions().map((y) => (
               <option key={y} value={y}>
@@ -132,36 +148,52 @@ export function DeadlinesPage() {
       </div>
 
       <section className="mt-4">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && rows.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-            <p className="text-gray-500">{t.empty.replace("{year}", String(year))}</p>
-            {canManage && (
-              <p className="mt-1 text-sm text-gray-400">
-                {t.emptyHint.replace("{year}", String(year))}
-              </p>
-            )}
-          </div>
-        )}
-
-        {!isLoading && !isError && rows.length > 0 && (
-          <div className="overflow-x-auto">
-            <Table>
-              <THead>
+        {!isError && (
+          <div>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
-                  <TH>{t.colReportType}</TH>
-                  <TH>{t.colDueDate}</TH>
+                  <SortableTH sortKey="reportType" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colReportType}
+                  </SortableTH>
+                  <SortableTH sortKey="dueDate" sort={view.sort} onSort={view.toggleSort}>
+                    {t.colDueDate}
+                  </SortableTH>
                   <TH>{t.colStatus}</TH>
                   <TH>{t.colNote}</TH>
-                  {canManage && <TH className="text-right">{strings.common.actions}</TH>}
+                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
-                {rows.map((d) => (
+                {(isLoading || view.visible.length === 0) && (
+                  <TableFallbackRow
+                    columns={canManage ? 5 : 4}
+                    loading={isLoading}
+                    icon={CalendarClock}
+                    title={
+                      view.emptiedBySearch
+                        ? strings.common.noResults
+                        : t.empty.replace("{year}", String(year))
+                    }
+                    description={canManage ? t.emptyHint.replace("{year}", String(year)) : undefined}
+                    action={
+                      canManage && (
+                        <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+                          <RefreshCw
+                            className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+                          />
+                          {t.generate}
+                        </Button>
+                      )
+                    }
+                  />
+                )}
+                {view.visible.map((d) => (
                   <TR key={d.id}>
-                    <TD className="font-medium text-gray-900">
+                    <TD className="font-medium text-content">
                       {strings.enums.reportType[d.reportType]}
                     </TD>
                     <TD className="whitespace-nowrap">{formatDate(d.dueDate)}</TD>
@@ -170,11 +202,11 @@ export function DeadlinesPage() {
                         {strings.enums.deadlineStatus[d.status]}
                       </Badge>
                     </TD>
-                    <TD className="max-w-xs truncate text-gray-500">
+                    <TD className="max-w-xs truncate text-content-muted">
                       {d.completionNote ?? "—"}
                     </TD>
                     {canManage && (
-                      <TD className="text-right">
+                      <TD sticky="right" className="text-right">
                         {d.status === "DONE" ? (
                           <Button
                             variant="outline"
@@ -197,6 +229,7 @@ export function DeadlinesPage() {
                 ))}
               </TBody>
             </Table>
+            <TablePagination view={view} />
           </div>
         )}
       </section>
@@ -218,8 +251,8 @@ export function DeadlinesPage() {
       >
         {completing && (
           <div className="space-y-3">
-            <div className="text-sm text-gray-600">
-              <span className="font-medium text-gray-900">
+            <div className="text-sm text-content-strong">
+              <span className="font-medium text-content">
                 {strings.enums.reportType[completing.reportType]}
               </span>
               {" — "}

@@ -61,3 +61,17 @@ export function useDeactivateInternalGenerator() {
     onSuccess: () => refreshInternalGenerators(qc),
   });
 }
+
+/**
+ * Desface dezactivarea. Vezi `reactivate` din backend: dezactivarea nu șterge nimic, dar până acum
+ * nu se putea lua înapoi — prima greșeală era definitivă.
+ */
+export function useReactivateInternalGenerator() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/v1/internal-generators/${id}/reactivate`);
+    },
+    onSuccess: () => refreshInternalGenerators(qc),
+  });
+}

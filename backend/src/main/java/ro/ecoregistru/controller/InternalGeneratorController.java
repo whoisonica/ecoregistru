@@ -49,4 +49,12 @@ public class InternalGeneratorController {
         internalGeneratorService.deactivate(id);
         return ResponseEntity.noContent().build();
     }
+
+    /** Desface dezactivarea. POST, ca `/{id}/reopen` de la termene: e o faptă, nu o resursă. */
+    @PostMapping("/{id}/reactivate")
+    @PreAuthorize(CAN_WRITE)
+    public ResponseEntity<Void> reactivate(@PathVariable UUID id) {
+        internalGeneratorService.reactivate(id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Pencil, Ban } from "lucide-react";
+import { Ban, Factory, Pencil, Plus, RotateCcw } from "lucide-react";
 import {
   useInternalGenerators,
   useCreateInternalGenerator,
   useUpdateInternalGenerator,
   useDeactivateInternalGenerator,
+  useReactivateInternalGenerator,
 } from "@/hooks/useInternalGenerators";
 import type { InternalGenerator, WorkPoint } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -17,7 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
+import { useActiveFilter } from "@/components/ui/active-filter";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const t = strings.settings.internalGenerators;
 
@@ -42,7 +49,9 @@ export function InternalGeneratorsSection({
   const createMut = useCreateInternalGenerator();
   const updateMut = useUpdateInternalGenerator();
   const deactivateMut = useDeactivateInternalGenerator();
+  const reactivateMut = useReactivateInternalGenerator();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const activeWorkPoints = workPoints.filter((w) => w.active);
 
@@ -52,6 +61,15 @@ export function InternalGeneratorsSection({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState(false);
+
+  const { rows: visibleGenerators, control: activeFilter } = useActiveFilter(generators ?? []);
+  const view = useTableView(visibleGenerators, {
+    searchText: (g) => [g.name, g.workPointName, g.description].filter(Boolean).join(" "),
+    comparators: {
+      name: (a, b) => a.name.localeCompare(b.name, "ro"),
+      workPointName: (a, b) => a.workPointName.localeCompare(b.workPointName, "ro"),
+    },
+  });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -99,19 +117,40 @@ export function InternalGeneratorsSection({
   }
 
   function handleDeactivate(g: InternalGenerator) {
-    if (!window.confirm(t.confirmDeactivate)) return;
+    confirm({
+      title: t.confirmDeactivateTitle,
+      message: (
+        <>
+          <strong className="text-content">{g.name}</strong>
+          {g.workPointName ? ` — ${g.workPointName}` : ""}. {t.confirmDeactivate}
+        </>
+      ),
+      confirmLabel: t.deactivate,
+      tone: "danger",
+      onConfirm: () => deactivate(g),
+    });
+  }
+
+  function deactivate(g: InternalGenerator) {
     deactivateMut.mutate(g.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
     });
   }
 
+  function reactivate(g: InternalGenerator) {
+    reactivateMut.mutate(g.id, {
+      onSuccess: () => notify(strings.common.reactivated, "success"),
+      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
   return (
-    <section className="mt-10">
+    <section id="generatori-interni" className="mt-10 scroll-mt-20">
       <div className="mb-3 flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t.title}</h2>
-          <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
+          <h2 className="text-lg font-semibold text-content">{t.title}</h2>
+          <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
         </div>
         {canManage && (
           <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
@@ -127,65 +166,81 @@ export function InternalGeneratorsSection({
         </p>
       )}
 
-      {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
       {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-      {!isLoading && !isError && (
-        <Table>
-          <THead>
-            <TR>
-              <TH>{t.name}</TH>
-              <TH>{t.workPoint}</TH>
-              <TH>{t.description}</TH>
-              <TH>{strings.common.status}</TH>
-              {canManage && <TH className="text-right">{strings.common.actions}</TH>}
-            </TR>
-          </THead>
-          <TBody>
-            {(generators ?? []).length === 0 && (
+      {!isError && (
+        <>
+          <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+            {activeFilter}
+          </TableToolbar>
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
-                <TD colSpan={canManage ? 5 : 4} className="text-center text-gray-400">
-                  {t.empty}
-                </TD>
+                <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                  {t.name}
+                </SortableTH>
+                <TH>{t.workPoint}</TH>
+                <TH>{t.description}</TH>
+                <TH>{strings.common.status}</TH>
+                {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
               </TR>
-            )}
-            {(generators ?? []).map((g) => (
-              <TR key={g.id}>
-                <TD className="font-medium text-gray-900">{g.name}</TD>
-                <TD>{g.workPointName}</TD>
-                <TD className="max-w-xs truncate text-gray-500">{g.description || "—"}</TD>
-                <TD>
-                  {g.active ? (
-                    <Badge variant="success">{t.active}</Badge>
-                  ) : (
-                    <Badge variant="muted">{t.inactive}</Badge>
-                  )}
-                </TD>
-                {canManage && (
-                  <TD className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(g)}>
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        {strings.common.edit}
-                      </Button>
-                      {g.active && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeactivate(g)}
-                        >
-                          <Ban className="mr-1 h-3.5 w-3.5" />
-                          {t.deactivate}
-                        </Button>
-                      )}
-                    </div>
+            </THead>
+            <TBody>
+              {(isLoading || view.visible.length === 0) && (
+                <TableFallbackRow
+                  columns={canManage ? 5 : 4}
+                  loading={isLoading}
+                  icon={Factory}
+                  title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                  description={
+                    view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                  }
+                />
+              )}
+              {view.visible.map((g) => (
+                <TR key={g.id}>
+                  <TD className="font-medium text-content">{g.name}</TD>
+                  <TD>{g.workPointName}</TD>
+                  <TD className="max-w-xs truncate text-content-muted">{g.description || "—"}</TD>
+                  <TD>
+                    {g.active ? (
+                      <Badge variant="success">{t.active}</Badge>
+                    ) : (
+                      <Badge variant="muted">{t.inactive}</Badge>
+                    )}
                   </TD>
-                )}
-              </TR>
-            ))}
-          </TBody>
-        </Table>
+                  {canManage && (
+                    <TD sticky="right" className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(g)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          {strings.common.edit}
+                        </Button>
+                        {g.active ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeactivate(g)}
+                          >
+                            <Ban className="mr-1 h-3.5 w-3.5" />
+                            {t.deactivate}
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => reactivate(g)}>
+                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.reactivate}
+                          </Button>
+                        )}
+                      </div>
+                    </TD>
+                  )}
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+          <TablePagination view={view} />
+        </>
       )}
 
       <Dialog
@@ -218,7 +273,7 @@ export function InternalGeneratorsSection({
                 </option>
               ))}
             </Select>
-            {editing && <p className="mt-1 text-xs text-gray-500">{t.workPointLocked}</p>}
+            {editing && <p className="mt-1 text-xs text-content-muted">{t.workPointLocked}</p>}
           </div>
           <div>
             <Label htmlFor="ig-name">{t.name}</Label>
@@ -245,6 +300,8 @@ export function InternalGeneratorsSection({
           </div>
         </form>
       </Dialog>
+
+      {confirmDialog}
     </section>
   );
 }

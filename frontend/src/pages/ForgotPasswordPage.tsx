@@ -4,6 +4,7 @@ import { MailCheck } from "lucide-react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -40,25 +41,25 @@ export function ForgotPasswordPage() {
 
   return (
     <div className="flex h-full items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <Card className="w-full max-w-sm p-8">
         <div className="mb-6 text-center">
           <div className="text-2xl font-bold text-brand">{strings.appName}</div>
-          <div className="text-sm text-gray-500">{strings.tagline}</div>
+          <div className="text-sm text-content-muted">{strings.tagline}</div>
         </div>
 
         {sent ? (
           <div className="space-y-4 text-center">
             <MailCheck className="mx-auto h-10 w-10 text-emerald-600" />
-            <p className="text-sm text-gray-600">{t.sent}</p>
-            <p className="text-xs text-gray-500">{t.sentHint}</p>
-            <Link to="/login" className="block text-sm text-blue-600 hover:underline">
+            <p className="text-sm text-content-strong">{t.sent}</p>
+            <p className="text-xs text-content-muted">{t.sentHint}</p>
+            <Link to="/login" className="block text-sm text-brand hover:underline">
               {t.backToLogin}
             </Link>
           </div>
         ) : (
           <>
             <h1 className="mb-1 text-lg font-semibold">{t.title}</h1>
-            <p className="mb-4 text-sm text-gray-500">{t.subtitle}</p>
+            <p className="mb-4 text-sm text-content-muted">{t.subtitle}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="fp-email">{t.email}</Label>
@@ -79,13 +80,13 @@ export function ForgotPasswordPage() {
               </Button>
             </form>
             <p className="mt-4 text-center text-sm">
-              <Link to="/login" className="text-blue-600 hover:underline">
+              <Link to="/login" className="text-brand hover:underline">
                 {t.backToLogin}
               </Link>
             </p>
           </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Plus, Pencil, UserPlus } from "lucide-react";
+import { Building2, Pencil, Plus, UserPlus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   useCompanies,
@@ -26,13 +26,19 @@ import { AccountRequestsSection } from "@/components/AccountRequestsSection";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
+import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.clients;
@@ -103,73 +109,104 @@ export function ClientsPage() {
   const [inviteLastName, setInviteLastName] = useState("");
   const [inviteEmailError, setInviteEmailError] = useState(false);
 
+  const view = useTableView(companies ?? [], {
+    searchText: (c) => [c.name, c.cui].filter(Boolean).join(" "),
+    comparators: {
+      name: (a, b) => a.name.localeCompare(b.name, "ro"),
+      cui: (a, b) => (a.cui ?? "").localeCompare(b.cui ?? "", "ro"),
+    },
+    initialSort: { key: "name", direction: "asc" },
+  });
+
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
   if (!isPlatformAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-bold">{t.title}</h1>
-        <p className="mt-4 text-sm text-gray-500">{t.onlyPlatformAdmin}</p>
+        <PageHeader title={t.title} description={t.onlyPlatformAdmin} />
       </div>
     );
   }
 
-  function openCreate() {
-    setEditing(null);
-    setName("");
-    setCui("");
-    setType("GENERATOR");
-    setAfmObligation(false);
-    setEnvironmentalAuthNumber("");
-    setEnvironmentalAuthExpiry("");
-    setAddress("");
-    setContactName("");
-    setContactEmail("");
-    setContactPhone("");
+  /**
+   * Umple formularul din firma dată, sau îl golește de tot când nu e niciuna.
+   *
+   * <p>Erau două funcții — una pentru „adaugă", una pentru „editează" — ținute sincronizate cu
+   * mâna, iar cea de adăugare rămăsese în urmă cu **șapte rubrici**: contribuțiile AFM, unitatea de
+   * pe Anexa 3, calitatea de la Anexa 3 Ambalaje și toate cele patru ale persoanei desemnate. Deci
+   * editai firma A, închideai, apăsai „Adaugă firmă" — și firma B se năștea cu persoana desemnată a
+   * firmei A, care se tipărește în dosarul ei de control, și cu calitatea care decide **care tabel**
+   * din Anexa 3 Ambalaje i se tipărește.
+   *
+   * <p>Ce era greșit nu erau cele șapte rânduri lipsă, ci că se puteau lipsi: două liste care
+   * trebuie să acopere aceleași rubrici ajung mereu să nu le mai acopere. Aici e una singură, iar
+   * `null` e chiar cazul „firmă nouă", cu implicitele scrise o dată.
+   */
+  function fillForm(c: Company | null) {
+    setEditing(c);
+    setName(c?.name ?? "");
+    setCui(c?.cui ?? "");
+    setType(c?.type ?? "GENERATOR");
+    setAfmObligation(!!c?.afmObligation);
+    setAfmContributions(c?.afmContributions ?? []);
+    setEnvironmentalAuthNumber(c?.environmentalAuthNumber ?? "");
+    setEnvironmentalAuthExpiry(c?.environmentalAuthExpiry ?? "");
+    setAddress(c?.address ?? "");
+    setContactName(c?.contactName ?? "");
+    setContactEmail(c?.contactEmail ?? "");
+    setContactPhone(c?.contactPhone ?? "");
+    setTradeRegisterNumber(c?.tradeRegisterNumber ?? "");
+    setAnexa3Series(c?.anexa3Series ?? "");
+    setCaenCode(c?.caenCode ?? "");
+    setAnexa3Unit(c?.anexa3Unit ?? "");
+    setContactRole(c?.contactRole ?? "");
+    setPackagingOperatorRole(c?.packagingOperatorRole ?? "");
+    setWasteManagerName(c?.wasteManagerName ?? "");
+    setWasteManagerRole(c?.wasteManagerRole ?? "");
+    // "" rămâne "nu s-a răspuns", și e altceva decât "angajat propriu" — vezi handleSubmit.
+    setWasteManagerExternal(
+      c?.wasteManagerExternal == null ? "" : c.wasteManagerExternal ? "yes" : "no",
+    );
+    setWasteManagerTraining(c?.wasteManagerTraining ?? "");
+    setProfile(
+      c
+        ? {
+            authorizedOperationCodes: c.authorizedOperationCodes ?? [],
+            marketRoles: c.marketRoles ?? [],
+            authorizedWasteCodes: c.authorizedWasteCodes ?? [],
+            transportMeans: c.transportMeans ?? "",
+            transportLicenseNumber: c.transportLicenseNumber ?? "",
+            transportLicenseExpiry: c.transportLicenseExpiry ?? "",
+          }
+        : emptyCompanyProfile
+    );
     setFormError(false);
-    setTradeRegisterNumber("");
-    setAnexa3Series("");
-    setCaenCode("");
-    setContactRole("");
-    setProfile(emptyCompanyProfile);
     setDialogOpen(true);
   }
 
+  function openCreate() {
+    fillForm(null);
+  }
+
   function openEdit(c: Company) {
-    setEditing(c);
-    setName(c.name);
-    setCui(c.cui);
-    setType(c.type);
-    setAfmObligation(!!c.afmObligation);
-    setAfmContributions(c.afmContributions ?? []);
-    setEnvironmentalAuthNumber(c.environmentalAuthNumber ?? "");
-    setEnvironmentalAuthExpiry(c.environmentalAuthExpiry ?? "");
-    setAddress(c.address ?? "");
-    setContactName(c.contactName ?? "");
-    setContactEmail(c.contactEmail ?? "");
-    setContactPhone(c.contactPhone ?? "");
-    setTradeRegisterNumber(c.tradeRegisterNumber ?? "");
-    setAnexa3Series(c.anexa3Series ?? "");
-    setCaenCode(c.caenCode ?? "");
-    setAnexa3Unit(c.anexa3Unit ?? "");
-    setContactRole(c.contactRole ?? "");
-    setPackagingOperatorRole(c.packagingOperatorRole ?? "");
-    setWasteManagerName(c.wasteManagerName ?? "");
-    setWasteManagerRole(c.wasteManagerRole ?? "");
-    setWasteManagerExternal(
-      c.wasteManagerExternal == null ? "" : c.wasteManagerExternal ? "yes" : "no",
-    );
-    setWasteManagerTraining(c.wasteManagerTraining ?? "");
-    setProfile({
-      authorizedOperationCodes: c.authorizedOperationCodes ?? [],
-      marketRoles: c.marketRoles ?? [],
-      authorizedWasteCodes: c.authorizedWasteCodes ?? [],
-      transportMeans: c.transportMeans ?? "",
-      transportLicenseNumber: c.transportLicenseNumber ?? "",
-      transportLicenseExpiry: c.transportLicenseExpiry ?? "",
-    });
-    setFormError(false);
-    setDialogOpen(true);
+    fillForm(c);
+  }
+
+  /**
+   * Capătul celălalt al fluxului de cereri: din rândul „Cont creat" se ajunge la firma pe care a
+   * născut-o, care stă în tabelul de deasupra dar putea fi la al treizecilea rând sau pe altă
+   * pagină a listei.
+   *
+   * <p>Când firma nu e în listă — s-a creat de altcineva de la ultima încărcare — se spune, nu se
+   * deschide un formular gol: un dialog cu rubricile goale ar arăta ca o firmă fără date.
+   */
+  function openCompanyById(companyId: string) {
+    const found = (companies ?? []).find((c) => c.id === companyId);
+    if (!found) {
+      notify(strings.accountRequest.openCompanyMissing, "error");
+      return;
+    }
+    openEdit(found);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -260,82 +297,102 @@ export function ClientsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t.add}
-        </Button>
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t.add}
+          </Button>
+        }
+      />
 
       <section className="mt-6">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t.name}</TH>
-                <TH>{t.cui}</TH>
-                <TH>{t.type}</TH>
-                <TH>{t.afm}</TH>
-                <TH>{strings.common.status}</TH>
-                <TH className="text-right">{strings.common.actions}</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {(companies ?? []).length === 0 && (
+        {!isError && (
+          <>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder} />
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
-                  <TD colSpan={6} className="text-center text-gray-400">
-                    {t.empty}
-                  </TD>
+                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                    {t.name}
+                  </SortableTH>
+                  <SortableTH sortKey="cui" sort={view.sort} onSort={view.toggleSort}>
+                    {t.cui}
+                  </SortableTH>
+                  <TH>{t.type}</TH>
+                  <TH>{t.afm}</TH>
+                  <TH>{strings.common.status}</TH>
+                  <TH sticky="right" className="text-right">{strings.common.actions}</TH>
                 </TR>
-              )}
-              {(companies ?? []).map((c) => (
-                <TR key={c.id}>
-                  <TD className="font-medium text-gray-900">{c.name}</TD>
-                  <TD>{c.cui}</TD>
-                  <TD>{typeLabels[c.type]}</TD>
-                  <TD>
-                    {c.afmObligation ? (
-                      <Badge variant="warning">{t.afmYes}</Badge>
-                    ) : (
-                      <span className="text-gray-400">{t.afmNo}</span>
-                    )}
-                  </TD>
-                  <TD>
-                    {c.active ? (
-                      <Badge variant="success">{t.active}</Badge>
-                    ) : (
-                      <Badge variant="muted">{t.inactive}</Badge>
-                    )}
-                  </TD>
-                  <TD className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
-                        <UserPlus className="mr-1 h-3.5 w-3.5" />
-                        {t.invite}
+              </THead>
+              <TBody>
+                {(isLoading || view.visible.length === 0) && (
+                  <TableFallbackRow
+                    columns={6}
+                    loading={isLoading}
+                    icon={Building2}
+                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    description={
+                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                    }
+                    action={
+                      <Button onClick={openCreate}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t.add}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        {strings.common.edit}
-                      </Button>
-                    </div>
-                  </TD>
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+                    }
+                  />
+                )}
+                {view.visible.map((c) => (
+                  <TR key={c.id}>
+                    <TD className="font-medium text-content">{c.name}</TD>
+                    <TD>{c.cui}</TD>
+                    <TD>{typeLabels[c.type]}</TD>
+                    <TD>
+                      {c.afmObligation ? (
+                        <Badge variant="warning">{t.afmYes}</Badge>
+                      ) : (
+                        <span className="text-content-subtle">{t.afmNo}</span>
+                      )}
+                    </TD>
+                    <TD>
+                      {c.active ? (
+                        <Badge variant="success">{t.active}</Badge>
+                      ) : (
+                        <Badge variant="muted">{t.inactive}</Badge>
+                      )}
+                    </TD>
+                    <TD sticky="right" className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
+                          <UserPlus className="mr-1 h-3.5 w-3.5" />
+                          {t.invite}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          {strings.common.edit}
+                        </Button>
+                      </div>
+                    </TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+            <TablePagination view={view} />
+          </>
         )}
       </section>
 
       {/* Create / edit company */}
+      {/* `xl`, ca formularul de mișcare: al doilea ca mărime din aplicație, ~25 de rubrici, și
+          singurul rămas la 512px după modernizare. */}
       <Dialog
         open={dialogOpen}
+        size="xl"
         onClose={() => setDialogOpen(false)}
         title={editing ? t.editTitle : t.addTitle}
         footer={
@@ -349,197 +406,105 @@ export function ClientsPage() {
           </>
         }
       >
-        <form id="company-form" onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="c-name">{t.name}</Label>
-            <Input
-              id="c-name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (formError === "name") setFormError(false);
-              }}
-              placeholder={t.namePlaceholder}
-              autoFocus
-            />
-            {formError === "name" && (
-              <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <form id="company-form" onSubmit={handleSubmit} className="space-y-6">
+          <FormSection title={t.groupIdentity}>
             <div>
-              <Label htmlFor="c-cui">{t.cui}</Label>
+              <Label htmlFor="c-name">{t.name}</Label>
               <Input
-                id="c-cui"
-                value={cui}
+                id="c-name"
+                value={name}
                 onChange={(e) => {
-                  setCui(e.target.value);
-                  if (formError === "cui") setFormError(false);
+                  setName(e.target.value);
+                  if (formError === "name") setFormError(false);
                 }}
-                placeholder={t.cuiPlaceholder}
+                placeholder={t.namePlaceholder}
+                autoFocus
               />
-              {formError === "cui" && (
+              {formError === "name" && (
                 <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
               )}
             </div>
-            <div>
-              <Label htmlFor="c-type">{t.type}</Label>
-              <Select
-                id="c-type"
-                value={type}
-                onChange={(e) => setType(e.target.value as CompanyType)}
-              >
-                {COMPANY_TYPES.map((ct) => (
-                  <option key={ct} value={ct}>
-                    {typeLabels[ct]}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <span className="block text-sm font-medium text-gray-700">{t.afmContributions}</span>
-            <p className="mt-0.5 text-xs text-gray-500">{t.afmContributionsHint}</p>
-            <div className="mt-2 space-y-2">
-              {AFM_CONTRIBUTIONS.map((contribution) => (
-                <label key={contribution} className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                    checked={afmContributions.includes(contribution)}
-                    onChange={() =>
-                      setAfmContributions((prev) =>
-                        prev.includes(contribution)
-                          ? prev.filter((x) => x !== contribution)
-                          : [...prev, contribution]
-                      )
-                    }
-                  />
-                  <span>
-                    <span className="font-medium text-gray-800">
-                      {strings.enums.afmContribution[contribution]}
-                    </span>
-                    <span className="block text-xs text-gray-500">
-                      {strings.enums.afmContribution[`${contribution}_HINT`]}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-            {afmContributions.length === 0 && (
-              <label className="mt-3 flex items-center gap-2 border-t border-gray-200 pt-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                  checked={afmObligation}
-                  onChange={(e) => setAfmObligation(e.target.checked)}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-cui">{t.cui}</Label>
+                <Input
+                  id="c-cui"
+                  value={cui}
+                  onChange={(e) => {
+                    setCui(e.target.value);
+                    if (formError === "cui") setFormError(false);
+                  }}
+                  placeholder={t.cuiPlaceholder}
                 />
-                {t.afmLabel}
-              </label>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
-              <Input
-                id="c-auth-number"
-                value={environmentalAuthNumber}
-                onChange={(e) => setEnvironmentalAuthNumber(e.target.value)}
-              />
+                {formError === "cui" && (
+                  <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="c-reg">{strings.settings.company.tradeRegisterNumber}</Label>
+                <Input
+                  id="c-reg"
+                  value={tradeRegisterNumber}
+                  onChange={(e) => setTradeRegisterNumber(e.target.value)}
+                  placeholder={strings.partners.tradeRegisterNumberPlaceholder}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-type">{t.type}</Label>
+                <Select
+                  id="c-type"
+                  value={type}
+                  onChange={(e) => setType(e.target.value as CompanyType)}
+                >
+                  {COMPANY_TYPES.map((ct) => (
+                    <option key={ct} value={ct}>
+                      {typeLabels[ct]}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="c-caen">{t.caenCode}</Label>
+                <Input
+                  id="c-caen"
+                  value={caenCode}
+                  onChange={(e) => setCaenCode(e.target.value)}
+                  placeholder={t.caenCodePlaceholder}
+                />
+                <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
+              </div>
             </div>
             <div>
-              <Label htmlFor="c-auth-expiry">{t.environmentalAuthExpiry}</Label>
-              <DateInput
-                id="c-auth-expiry"
-                value={environmentalAuthExpiry}
-                onChange={(e) => setEnvironmentalAuthExpiry(e.target.value)}
-              />
+              <Label htmlFor="c-address">{t.address}</Label>
+              <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="c-address">{t.address}</Label>
-            <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="c-contact-name">{t.contactName}</Label>
-              <Input
-                id="c-contact-name"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="c-contact-phone">{t.contactPhone}</Label>
-              <Input
-                id="c-contact-phone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-              />
-            </div>
-          </div>
-          {/* The two rubrics the annual declaration's header and signature block need. */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="c-caen">{t.caenCode}</Label>
-              <Input
-                id="c-caen"
-                value={caenCode}
-                onChange={(e) => setCaenCode(e.target.value)}
-                placeholder={t.caenCodePlaceholder}
-              />
-              <p className="mt-1 text-xs text-gray-500">{t.caenCodeHint}</p>
-            </div>
-            <div>
-              <Label htmlFor="c-a3unit">{t.anexa3Unit}</Label>
-              <Select
-                id="c-a3unit"
-                value={anexa3Unit}
-                onChange={(e) => setAnexa3Unit(e.target.value as "" | Unit)}
-              >
-                <option value="">{t.anexa3UnitAsRecorded}</option>
-                <option value="KG">{t.anexa3UnitKg}</option>
-                <option value="TONS">{t.anexa3UnitTons}</option>
-              </Select>
-              <p className="mt-1 text-xs text-gray-500">{t.anexa3UnitHint}</p>
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
-              <Select
-                id="c-pkg-role"
-                value={packagingOperatorRole}
-                onChange={(e) =>
-                  setPackagingOperatorRole(e.target.value as "" | PackagingOperatorRole)
-                }
-              >
-                <option value="">{strings.packagingOperatorRole.none}</option>
-                <option value="COLECTOR">{strings.packagingOperatorRole.COLECTOR}</option>
-                <option value="COMERCIANT">{strings.packagingOperatorRole.COMERCIANT}</option>
-                <option value="RECICLATOR">{strings.packagingOperatorRole.RECICLATOR}</option>
-                <option value="VALORIFICATOR">
-                  {strings.packagingOperatorRole.VALORIFICATOR}
-                </option>
-              </Select>
-              <p className="mt-1 text-xs text-gray-500">{strings.packagingOperatorRole.hint}</p>
-            </div>
-            <div>
-              <Label htmlFor="c-contact-role">{t.contactRole}</Label>
-              <Input
-                id="c-contact-role"
-                value={contactRole}
-                onChange={(e) => setContactRole(e.target.value)}
-                placeholder={t.contactRolePlaceholder}
-              />
-              <p className="mt-1 text-xs text-gray-500">{t.contactRoleHint}</p>
-            </div>
-          </div>
+          </FormSection>
 
-          {/* Persoana desemnată cu gestiunea deșeurilor — bloc separat, fiindcă e altceva decât
-              persoana de contact de mai sus și se confundă ușor cu ea. */}
-          <div className="rounded-lg border border-gray-200 p-3">
-            <p className="text-sm font-semibold text-gray-800">{t.wasteManagerTitle}</p>
-            <p className="mt-1 text-xs text-gray-500">{t.wasteManagerHint}</p>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+          <FormSection title={t.groupAuthorization}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
+                <Input
+                  id="c-auth-number"
+                  value={environmentalAuthNumber}
+                  onChange={(e) => setEnvironmentalAuthNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-auth-expiry">{t.environmentalAuthExpiry}</Label>
+                <DateInput
+                  id="c-auth-expiry"
+                  value={environmentalAuthExpiry}
+                  onChange={(e) => setEnvironmentalAuthExpiry(e.target.value)}
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          {/* Persoana desemnată cu gestiunea deșeurilor — secțiune separată, fiindcă e altceva
+              decât persoana de contact de mai jos și se confundă ușor cu ea. */}
+          <FormSection title={t.groupWasteManager} description={t.wasteManagerHint}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
                 <Input
@@ -580,42 +545,138 @@ export function ClientsPage() {
                   onChange={(e) => setWasteManagerTraining(e.target.value)}
                   placeholder={t.wasteManagerTrainingPlaceholder}
                 />
-                <p className="mt-1 text-xs text-gray-500">{t.wasteManagerTrainingHint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.wasteManagerTrainingHint}</p>
               </div>
             </div>
-          </div>
+          </FormSection>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="c-reg">{strings.partners.tradeRegisterNumber}</Label>
-              <Input
-                id="c-reg"
-                value={tradeRegisterNumber}
-                onChange={(e) => setTradeRegisterNumber(e.target.value)}
-                placeholder={strings.partners.tradeRegisterNumberPlaceholder}
-              />
+          <FormSection title={t.groupReporting}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-anexa3-series">{t.anexa3Series}</Label>
+                <Input
+                  id="c-anexa3-series"
+                  value={anexa3Series}
+                  onChange={(e) => setAnexa3Series(e.target.value)}
+                  placeholder={t.anexa3SeriesPlaceholder}
+                />
+                <p className="mt-1 text-xs text-content-muted">{t.anexa3SeriesHint}</p>
+              </div>
+              <div>
+                <Label htmlFor="c-a3unit">{t.anexa3Unit}</Label>
+                <Select
+                  id="c-a3unit"
+                  value={anexa3Unit}
+                  onChange={(e) => setAnexa3Unit(e.target.value as "" | Unit)}
+                >
+                  <option value="">{t.anexa3UnitAsRecorded}</option>
+                  <option value="KG">{t.anexa3UnitKg}</option>
+                  <option value="TONS">{t.anexa3UnitTons}</option>
+                </Select>
+                <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
+              </div>
             </div>
             <div>
-              <Label htmlFor="c-anexa3-series">{t.anexa3Series}</Label>
-              <Input
-                id="c-anexa3-series"
-                value={anexa3Series}
-                onChange={(e) => setAnexa3Series(e.target.value)}
-                placeholder={t.anexa3SeriesPlaceholder}
-              />
-              <p className="mt-1 text-xs text-gray-500">{t.anexa3SeriesHint}</p>
+              <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
+              <Select
+                id="c-pkg-role"
+                value={packagingOperatorRole}
+                onChange={(e) =>
+                  setPackagingOperatorRole(e.target.value as "" | PackagingOperatorRole)
+                }
+              >
+                <option value="">{strings.packagingOperatorRole.none}</option>
+                <option value="COLECTOR">{strings.packagingOperatorRole.COLECTOR}</option>
+                <option value="COMERCIANT">{strings.packagingOperatorRole.COMERCIANT}</option>
+                <option value="RECICLATOR">{strings.packagingOperatorRole.RECICLATOR}</option>
+                <option value="VALORIFICATOR">
+                  {strings.packagingOperatorRole.VALORIFICATOR}
+                </option>
+              </Select>
+              <p className="mt-1 text-xs text-content-muted">{strings.packagingOperatorRole.hint}</p>
             </div>
-          </div>
+            <div className="rounded-md border border-line bg-surface-muted p-3">
+              <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
+              <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>
+              <div className="mt-2 space-y-2">
+                {AFM_CONTRIBUTIONS.map((contribution) => (
+                  <label key={contribution} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                      checked={afmContributions.includes(contribution)}
+                      onChange={() =>
+                        setAfmContributions((prev) =>
+                          prev.includes(contribution)
+                            ? prev.filter((x) => x !== contribution)
+                            : [...prev, contribution]
+                        )
+                      }
+                    />
+                    <span>
+                      <span className="font-medium text-content-strong">
+                        {strings.enums.afmContribution[contribution]}
+                      </span>
+                      <span className="block text-xs text-content-muted">
+                        {strings.enums.afmContribution[`${contribution}_HINT`]}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {afmContributions.length === 0 && (
+                <label className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-sm text-content-strong">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+                    checked={afmObligation}
+                    onChange={(e) => setAfmObligation(e.target.checked)}
+                  />
+                  {t.afmLabel}
+                </label>
+              )}
+            </div>
+          </FormSection>
 
-          <div>
-            <Label htmlFor="c-contact-email">{t.contactEmail}</Label>
-            <Input
-              id="c-contact-email"
-              type="email"
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-            />
-          </div>
+          <FormSection title={t.groupContact}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-contact-name">{t.contactName}</Label>
+                <Input
+                  id="c-contact-name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-contact-role">{t.contactRole}</Label>
+                <Input
+                  id="c-contact-role"
+                  value={contactRole}
+                  onChange={(e) => setContactRole(e.target.value)}
+                  placeholder={t.contactRolePlaceholder}
+                />
+                <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
+              </div>
+              <div>
+                <Label htmlFor="c-contact-email">{t.contactEmail}</Label>
+                <Input
+                  id="c-contact-email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="c-contact-phone">{t.contactPhone}</Label>
+                <Input
+                  id="c-contact-phone"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                />
+              </div>
+            </div>
+          </FormSection>
 
           <CompanyProfileFields value={profile} onChange={setProfile} companyType={type} />
         </form>
@@ -638,7 +699,7 @@ export function ClientsPage() {
         }
       >
         <form id="invite-form" onSubmit={handleInvite} className="space-y-4">
-          <p className="text-xs text-gray-500">{t.inviteHint}</p>
+          <p className="text-xs text-content-muted">{t.inviteHint}</p>
           <div>
             <Label htmlFor="i-email">{t.inviteEmail}</Label>
             <Input
@@ -670,7 +731,7 @@ export function ClientsPage() {
               ))}
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="i-first">{t.inviteFirstName}</Label>
               <Input
@@ -691,7 +752,7 @@ export function ClientsPage() {
         </form>
       </Dialog>
 
-      <AccountRequestsSection enabled={isPlatformAdmin} />
+      <AccountRequestsSection enabled={isPlatformAdmin} onOpenCompany={openCompanyById} />
     </div>
   );
 }

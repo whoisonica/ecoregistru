@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { saveBlob } from "@/lib/download";
 import type { EvidenceFilters, EvidenceRegenerationResponse, MonthlyEvidence } from "@/lib/types";
 
 /**
@@ -58,17 +59,7 @@ export async function downloadAnexa1Form(filters: EvidenceFilters): Promise<void
   if (filters.workPointId) params.workPointId = filters.workPointId;
 
   const res = await api.get("/api/v1/evidences/anexa1", { params, responseType: "blob" });
-  const url = URL.createObjectURL(res.data as Blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `evidenta-gestiunii-deseurilor-${filters.year}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  saveBlob(res.data as Blob, `evidenta-gestiunii-deseurilor-${filters.year}.pdf`);
 }
 
 /**
@@ -83,17 +74,7 @@ export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promi
     params,
     responseType: "blob",
   });
-  const url = URL.createObjectURL(res.data as Blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `declaratie-anuala-${filters.year}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  saveBlob(res.data as Blob, `declaratie-anuala-${filters.year}.pdf`);
 }
 
 export async function downloadEvidenceExport(
@@ -105,15 +86,5 @@ export async function downloadEvidenceExport(
   if (filters.workPointId) params.workPointId = filters.workPointId;
 
   const res = await api.get("/api/v1/evidences/export", { params, responseType: "blob" });
-  const url = URL.createObjectURL(res.data as Blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `evidenta-${filters.year}.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  saveBlob(res.data as Blob, `evidenta-${filters.year}.${format}`);
 }

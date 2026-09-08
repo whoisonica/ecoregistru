@@ -88,6 +88,13 @@ public class EvidenceCalculator {
     public EvidenceRegenerationResponse regenerateYear(int year) {
         UUID tenantId = TenantContext.require();
 
+        // Acelaşi lacăt ca la reconstrucţia din citire, şi din acelaşi motiv: butonul şi citirea
+        // rescriu aceleaşi rânduri, deci sunt aceeaşi secţiune critică. Fără el, „Regenerează"
+        // apăsat în timp ce altcineva deschide raportul cade cu conflictul de concurenţă.
+        // Aici nu se verifică nimic după: apăsarea butonului e o cerere explicită de recalculare,
+        // nu o întrebare despre prospeţime — vezi javadocul lui `refreshIfStale`.
+        evidenceRepository.lockForRebuild(tenantId, year);
+
         int lines = regenerateSingleYear(tenantId, year);
 
         Integer lastCachedYear = evidenceRepository.findMaxYear(tenantId);
@@ -198,8 +205,14 @@ public class EvidenceCalculator {
      * prints. Chapter 1 comes from the cached monthly lines — the stock identity has one
      * implementation and it is the one above — while chapters 2 to 4 need attributes the cache
      * does not carry, so they are read from the movements themselves.
+     *
+     * <p><b>Not {@code readOnly}</b>, and that is not an oversight: {@link #list(int, Integer,
+     * UUID)} rebuilds a stale year, and this is a self-invocation, so it runs inside whatever
+     * transaction is opened here. Under {@code readOnly = true} Hibernate takes the session to
+     * {@code FlushMode.MANUAL} and the rebuilt lines would be dropped at commit — the document
+     * would print the stale figures anyway, and silently.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Anexa1Sheet> anexa1(int year, UUID workPointId) {
         UUID tenantId = TenantContext.require();
         Company company = companyRepository.getReferenceById(tenantId);
@@ -230,8 +243,10 @@ public class EvidenceCalculator {
      * The annual declaration for a year: one sheet per work point, one row per waste code. It
      * summarises exactly what {@link #anexa1(int, UUID)} details month by month, and reads the same
      * cached lines so the two documents cannot disagree.
+     *
+     * <p>Not {@code readOnly}, for the reason given on {@link #anexa1(int, UUID)}.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<AnnualDeclaration> annualDeclaration(int year, UUID workPointId) {
         UUID tenantId = TenantContext.require();
         Company company = companyRepository.getReferenceById(tenantId);
@@ -243,24 +258,31 @@ public class EvidenceCalculator {
     }
 
     /**
-     * The cached lines of a year, rebuilding them first if the year has movements but no lines.
+     * The cached lines of a year, rebuilt first whenever the movements have moved on since they
+     * were written.
      *
-     * <p>The cache is derived data, so an empty one is never news the client should have to act
-     * on: it means nobody has pressed "Regenerează" yet, or a migration cleared it because the
-     * meaning of a column changed (as {@code V24} did). Either way the screen used to come up
-     * empty and the printed sheet with it, which looks exactly like lost records.
+     * <p>The cache is derived data, so being behind is never news the client should have to act
+     * on. It used to rebuild only when the year was <b>empty</b> — nobody had pressed
+     * "Regenerează" yet, or a migration had cleared it because the meaning of a column changed (as
+     * {@code V24} did) — which covered the case that looks like lost records but not the one that
+     * is worse: a cache that is <b>populated and out of date</b>. Every read went through here,
+     * including {@link #anexa1(int, UUID)} and {@link #annualDeclaration(int, UUID)}, so a client
+     * who recorded three handovers and pressed "Evidența gestiunii deșeurilor" got a PDF without
+     * them — filed at the agency, looking perfectly valid. The dashboard said the same: green,
+     * "nothing blocks filing", while an exit with no R/D code sat in the database.
      *
-     * <p>Only the empty case rebuilds, so the ordinary read stays a read and a year that is
-     * genuinely empty — no movements at all — costs one extra count.
+     * <p>The dossier already did the right thing here and said why ({@code AuditFileService}
+     * regenerates before packing, for exactly this reason). This makes the other path agree,
+     * rather than leaving two roads to the same PDF where only one of them recomputes.
+     *
+     * <p>Cost stays where it was for the ordinary read: one aggregate on each side, and no write
+     * unless something actually changed. After a rebuild the year is fresh by construction, so it
+     * does not run twice.
      */
     @Transactional
     public List<MonthlyEvidenceResponse> list(int year, Integer month, UUID workPointId) {
         UUID tenantId = TenantContext.require();
-        if (evidenceRepository.findByCompany_IdAndYear(tenantId, year).isEmpty()
-                && !movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
-                        tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)).isEmpty()) {
-            regenerateYear(year);
-        }
+        refreshIfStale(tenantId, year);
         return evidenceRepository.findByCompany_IdAndYear(tenantId, year).stream()
                 .filter(e -> month == null || e.getMonth() == month)
                 .filter(e -> workPointId == null || e.getWorkPoint().getId().equals(workPointId))
@@ -270,6 +292,73 @@ public class EvidenceCalculator {
                         .thenComparing(MonthlyEvidence::getMonth))
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Rebuilds a year, and the years before it that feed its opening balance, when the movements
+     * have moved on since the lines were written.
+     *
+     * <p>Când e învechit — cele trei cazuri şi comparaţia strictă — stă în {@link #isStale}.
+     *
+     * <p><b>Unul singur reconstruieşte.</b> Citirea scrie, deci două citiri pe acelaşi an învechit
+     * intrau amândouă aici şi a doua cădea peste rândurile pe care prima le înlocuise. Verificarea e
+     * dublă dinadins: prima, fără lacăt, ţine drumul obişnuit — cache la zi — la două agregate;
+     * a doua, sub lacăt, e cea care face ca aşteptarea la uşă să nu coste şi o reconstrucţie în
+     * plus. Vezi {@link ro.ecoregistru.repository.MonthlyEvidenceRepository#lockForRebuild}.
+     *
+     * <p><b>Where the rebuild starts.</b> Not at the year asked for: stock carries across years, so
+     * a correction made on a 2024 movement leaves the 2026 opening balance wrong, and rebuilding
+     * 2026 alone would rebuild it on that same wrong figure. It starts at the earliest year whose
+     * lines predate the change, and walks forward to the one asked for.
+     *
+     * <p><b>Where it stops.</b> At the year asked for, deliberately — the years after it are left
+     * alone, because they answer the same question the moment somebody opens them. That is the one
+     * difference from the "Regenerează" button, which cascades forward instead: pressing it is a
+     * statement about the whole file, while reading a year is a question about that year.
+     */
+    private void refreshIfStale(UUID tenantId, int year) {
+        // Drumul obişnuit — cache-ul e la zi — nu ia niciun lacăt: două interogări de agregat şi
+        // gata. Panoul cere anul curent la fiecare deschidere, deci ăsta e cazul de aproape
+        // fiecare dată, şi n-are de ce să aştepte pe nimeni.
+        if (!isStale(tenantId, year)) {
+            return;
+        }
+        // De aici încolo se **scrie**, deci intră unul singur. Lacătul e ţinut până la finalul
+        // tranzacţiei, deci al doilea cititor aşteaptă exact cât durează reconstrucţia primului.
+        evidenceRepository.lockForRebuild(tenantId, year);
+        // Şi a doua verificare, care e miezul: cine a aşteptat la uşă găseşte treaba făcută şi
+        // pleacă. Fără ea, lacătul ar fi doar serializat aceeaşi muncă de N ori — corect, dar
+        // plătit de N ori. Sub READ COMMITTED interogarea de aici vede ce a comis primul.
+        if (!isStale(tenantId, year)) {
+            return;
+        }
+        Instant lastChange = movementRepository.findLastChangeUpTo(
+                tenantId, LocalDate.of(year, 12, 31));
+        Integer earliestStale = evidenceRepository.findEarliestStaleYear(tenantId, year, lastChange);
+        int from = earliestStale != null ? Math.min(earliestStale, year) : year;
+        for (int y = from; y <= year; y++) {
+            regenerateSingleYear(tenantId, y);
+        }
+    }
+
+    /**
+     * Cache-ul anului a rămas în urma mişcărilor?
+     *
+     * <p>Trei cazuri, în ordinea în care sunt ieftine de răspuns: fără nicio mişcare până la finele
+     * anului nu e nimic de derivat, deci ce e în cache (nimic, de obicei) e cât se poate de corect;
+     * mişcări fără linii înseamnă că nimeni n-a apăsat „Regenerează", sau că o migrare a golit
+     * cache-ul; iar cu amândouă prezente, învechit înseamnă că ultima schimbare de mişcare e
+     * **strict** după cea mai veche linie — strict, ca o reconstrucţie care cade în aceeaşi clipă
+     * cu schimbarea care a provocat-o să nu se citească drept învechită pe vecie.
+     */
+    private boolean isStale(UUID tenantId, int year) {
+        Instant lastChange = movementRepository.findLastChangeUpTo(
+                tenantId, LocalDate.of(year, 12, 31));
+        if (lastChange == null) {
+            return false;
+        }
+        Instant generatedAt = evidenceRepository.findOldestGeneratedAt(tenantId, year);
+        return generatedAt == null || lastChange.isAfter(generatedAt);
     }
 
     /**

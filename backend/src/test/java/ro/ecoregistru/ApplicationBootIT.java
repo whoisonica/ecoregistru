@@ -5,7 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.AttachmentRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -37,6 +39,9 @@ class ApplicationBootIT {
     @Autowired
     CompanyRepository companyRepository;
 
+    @Autowired
+    AttachmentRepository attachmentRepository;
+
     @Test
     void contextLoadsAndSeedApplied() {
         // Flyway V4 reloaded the full European List of Waste over V2's 10 placeholders.
@@ -59,6 +64,48 @@ class ApplicationBootIT {
         UUID demoTenantId = companyRepository.findAll().stream()
                 .filter(c -> "Demo Reciclare SRL".equals(c.getName()))
                 .findFirst().orElseThrow().getId();
-        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(34);
+        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(36);
+
+        /*
+         * Cele două rânduri adăugate pe 07.09.2026, și de ce sunt numărate pe nume, nu doar în
+         * total: seed-ul avea **zero** mișcări în stările pentru care ecranele au reguli proprii,
+         * deci fiecare probă scrisă în jurul lor trecea pe gol. Un total care crește nu spune că
+         * stările există; astea două o spun.
+         */
+        var demoMovements = wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId);
+        assertThat(demoMovements)
+                .as("o ieșire fără cod R/D — badge roșu, cantitate care nu intră în nicio coloană")
+                .anySatisfy(m -> {
+                    assertThat(m.getOperation()).isEqualTo(WasteOperation.UNCLASSIFIED_OUT);
+                    assertThat(m.getOperationCode()).isNull();
+                });
+        assertThat(demoMovements)
+                .as("o predare care așteaptă cântarul — badge galben, cantitate nespusă")
+                .anySatisfy(m -> {
+                    assertThat(m.isWeighedAtUnloading()).isTrue();
+                    assertThat(m.getQuantity()).isNull();
+                });
+
+        /*
+         * A treia stare, adăugată pe 08.09.2026: mișcarea cu documente atașate. Coloana „📎" avea
+         * zero rânduri din 36, deci vederea care le deschide se proba pe gol — aceeași datorie ca
+         * cele două de mai sus. **Două** atașamente, nu unul: cu unul singur nu s-ar vedea dacă
+         * lista chiar le enumeră sau tipărește primul de două ori.
+         */
+        UUID noCodeId = demoMovements.stream()
+                .filter(m -> m.getOperation() == WasteOperation.UNCLASSIFIED_OUT)
+                .findFirst().orElseThrow().getId();
+        // `findAll` + filtru, nu o metodă nouă de repository: baza încorporată e împărțită cu
+        // celelalte clase de test, deci se numără atașamentele mișcării ăsteia, nu toate.
+        var attachments = attachmentRepository.findAll().stream()
+                .filter(a -> a.getMovement().getId().equals(noCodeId))
+                .toList();
+        assertThat(attachments)
+                .as("două atașamente pe ieșirea fără cod R/D — rândul după care întreabă inspectorul")
+                .hasSize(2)
+                .allSatisfy(a -> {
+                    assertThat(a.getFileName()).isNotBlank();
+                    assertThat(a.getUrl()).startsWith("https://");
+                });
     }
 }

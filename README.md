@@ -132,6 +132,42 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ---
 
+### Interface tests
+
+`npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
+download — against the local dev server and a backend on the `dev` profile. Seven suites, 127
+checks: every screen opens clean, the action column stays reachable when a table scrolls, search
+and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
+month filter is a real select that starts on the current month, the movement form marks the fields
+it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started
+form asks before it closes and Escape over that question closes only the question, nothing scrolls
+sideways at 375px, the public intake form marks the three fields it requires and scrolls to the
+first one it rejects, the request inbox reads back every answer the client gave, the red "no R/D
+code" badge leads from the dashboard through the filtered register to the movement itself, and a
+deactivated row can be found through the state filter and brought back.
+
+They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
+`vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
+review the same day found three more, in the primitives rather than the screens, so they reached
+every screen at once — and the user found a fourth: search demanded diacritics, so `miscari` found
+nothing at all. See `frontend/e2e/README.md`, which also records what the suite **cannot**
+cover — and the seed debt it named is now paid: the demo tenant carries an exit with no R/D code,
+a handover awaiting the weighbridge, and a partner with no authorization expiry, so the rules
+written around those states are proved on rows rather than on an empty table.
+
+`E2E_CHANNEL=msedge` picks Edge; an empty `E2E_CHANNEL` falls back to Playwright's own Chromium,
+for a machine with no Chromium-family browser at all.
+
+## What is not in this repository
+
+This repo is public. The working notes, the commercial planning, and the **reference corpus** — ten
+completed Anexa 1 sheets received from real clients — live in a separate private repository, because
+they name companies and quote from their filings. Several rules in this codebase are derived from
+that corpus; where that is the case, the code comment cites **how many sheets support the rule**
+rather than which ones.
+
+If a comment refers to something you cannot find, that is why — not because it went missing.
+
 ## Running it locally
 
 **Requirements:** Java 21 (Temurin is fine), Node 20+, PostgreSQL 15+ (developed on 17).
@@ -195,7 +231,10 @@ R13, D5), so the narrowing is visible rather than theoretical.
 
 | What | Where | What to look for |
 |---|---|---|
-| Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not |
+| Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not. Press "Trimite" on an empty form: the three required fields mark themselves and the page scrolls to the first — a banner that marks nothing is the defect this page kept longest |
+| Not knowing the R/D codes | `/cerere-cont` → "Ce se întâmplă cu deșeul" | Twenty-eight tickboxes are folded behind a choice whose first option is "Nu știu — le stabilim împreună". An empty set was always a valid answer; now the form says so |
+| Reading a request | **Clienți** → a request row → "Vezi cererea" | Every answer the client gave, in the order they gave them — including `notes`, the free-text box. An unanswered field shows as an empty dash rather than being skipped; a section nobody filled in collapses to one line |
+| Request → company | **Clienți** → an approved request → "Vezi firma creată" | The row used to end at "Cont creat". It now opens the company it produced |
 | Declaration header | `/cerere-cont` → "Cod CAEN" and "Funcția" | Both optional, and the hint says so: leave them blank and the annual declaration prints the rubric empty rather than a guess. They travel onto the company on approval |
 | Type of generator | `/cerere-cont` → "Tipul de generator" | Producător / importator / comerciant. Tick only "Comerciant" and the form says what follows: no packaging declaration, but the Anexa 1 sheet stays |
 | Requests inbox | **Clienți**, below the company list | "Creează contul" turns a request into a company with its profile and work point |
@@ -210,12 +249,19 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Packaging declaration | **Ambalaje** → "XLS — formatul de depunere" | Two sheets, `Tabelul nr. 1` and `Tabelul nr. 2`, at the same cell addresses as the model. Table 1 is summed from the movements; the material gives the row, the kind of packaging gives the column |
 | Narrowed operations | **Mișcări** → add | No "Predare" in the list; the R/D codes are the five in the profile, not all 28 |
 | Weighed at unloading | **Mișcări** → add, tick the box | "Cantitate" is replaced by "Volum (mc)" — the only measure you have without a scale — and the movement saves with no weight at all |
-| Chapter 2 | **Mișcări** → add | Storage type, treatment method, transport means and destination, under the waste code |
-| Anexa 3 | **Mișcări** or **Evidențe** → row action | Three identical pages, drawn rubric by rubric against the stamped model: one header line, no copy labels — on paper the three copies are a carbon booklet, sorted after signing. The "Destinat:" box carries an X only where the movement was ticked — nothing is derived from the R/D code |
+| Chapter 2 | **Mișcări** → add | Storage type and treatment method under "Depozitare și tratare"; transport means and destination under "Transport" — the form reads as eight named sections, not one list of thirty fields |
+| Anexa 3 | **Mișcări** → the row's ⋯ menu, or **Evidențe** → row action | Three identical pages, drawn rubric by rubric against the stamped model: one header line, no copy labels — on paper the three copies are a carbon booklet, sorted after signing. The "Destinat:" box carries an X only where the movement was ticked — nothing is derived from the R/D code |
 | Exit with no R/D code | **Mișcări**, or **Evidențe** → "Anexa 1 — lunar" | A red **"Fără cod R/D"** badge, not the amber one: the quantity left the site and reaches neither official column, so the sheet cannot be filed as it stands. Amber "De cântărit" is a legitimate wait; red is a gap |
 | Setting a password | `/reseteaza-parola?code=…` — from the invite mail | The page an invited client lands on. Choosing a password is what enables the account; `/parola-uitata` issues a fresh link when the 30-minute code has expired |
 | Handover register | **Evidențe** (default view) | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending |
 | Monthly Anexa 1 | **Evidențe** → "Anexa 1 — lunar" | The running stock, which is the only figure the register cannot show |
+| What the movement does | **Mișcări** → add | A strip at the top of the form names the official documents the quantity will reach — Anexa 1, the art. 48 register, the packaging declaration — and updates as you answer. It reads the same expressions `buildInput` does, so it cannot disagree with what gets saved |
+| Duplicate a movement | **Mișcări** → the row's ⋯ menu → "Duplică mișcarea" | Everything comes across except the date and the document number — the two rubrics that actually differ between two handovers |
+| Compliance status | **Panou** | Green when nothing blocks filing. Otherwise the blockers, each with its consequence and a link: red for an exit with no R/D code (a gap), amber for a line awaiting the weighbridge (a legitimate wait) |
+| From the blocker to the fix | **Panou** → red blocker → "Vezi liniile" | The handover register, filtered to the exits with no R/D code, with the filter named and removable. Each row carries "Completează codul", which opens that movement — the badge used to be a dead end on three screens |
+| Search any table | any table with more than ten rows | The search box appears from ten rows up and works on what is already loaded. Every word must match somewhere, so "hamburger 15 01" finds the row |
+| Keyboard | anywhere | **Ctrl+K** jumps to any screen *and* starts one — type "fișa", "anexa 1" or "inspector" and the screen that prints that document comes up; "predare" offers "Adaugă mișcare", which opens the form on **Mișcări**. Nothing in the palette writes: "regenerează" is deliberately absent, because from a palette you cannot see which year it would rewrite · **/** focuses the current table's search · **N** opens the add form where the account may write |
+| Narrow screens | resize below 1024px | The sidebar becomes a drawer behind a menu button; form grids stack; the movement dialog rises from the bottom edge |
 | **The Anexa 1 form** | **Evidențe** → "Fișa Anexa 1" | A PDF titled "Evidenţa gestiunii deşeurilor generate «year»", one page per waste code: header plus the four chapters, twelve rows and a TOTAL AN each |
 | **The annual declaration** | **Evidențe** → "Declarația anuală" | The centralizator: one line per waste code — opening stock, generated, recovered, disposed, closing stock, and through whom — one page per work point. A row whose exits carry no R/D code is marked `(*)` on the stock, with the reason under the table |
 | Control dossier | **Dosar de control** → download | The ZIP opens with `anexa1-«year».pdf` — the same four-chapter sheet — then `declaratie-anuala-«year».pdf`, and its `README.txt` names the 15 March deadline |
@@ -226,6 +272,13 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Lapsed recipient authorization | **Mișcări** → hand waste to a partner whose authorization expired before that date | An amber **"Autorizație expirată"** badge next to the partner, naming the expiry date. Anexa 3 still prints: the handover happened, and the warning stays off the paper that reaches the inspector |
 | Tonnes for the filing | **Evidențe** → "Anexa 1 — lunar", below the table | The year's totals per waste code in tonnes, because OUG 92/2021 art. 48 alin. (1) asks for tonnes at filing while the sheet itself stays in kg. Nothing printed changes — it saves dividing by 1000 by hand on the day |
 | Designated waste manager | **Clienți** → edit a company | Name, capacity, employee vs. delegated third party, training certificate — OUG 92/2021 art. 23 alin. (4)–(5). Not the contact person, who is the declaration's signature block. Leave it blank and the control dossier's `README.txt` says so out loud, because its absence is itself the finding |
+| Picking a month | **Mișcări** → the "Luna" filter | Two plain selects, month then year, because `<input type="month">` does not exist in Safari or Firefox — there it degrades to a free-text box. The screen opens on the current month, so it no longer fetches the whole history on every visit; "Tot anul" is the way back, and a month with no rows says which month is empty and offers the year |
+| Closing a started form | **Mișcări** → add → type anything → Escape | It asks. On an untouched form it just closes — a question about an empty form is noise. Escape over the question closes only the question: what you typed is still there |
+| Your own company's data | **Setări** → "Datele firmei" | CAEN, the environmental authorization, the designated person, the Anexa 3 series — read-only, because they are edited from **Clienți**, which is platform-admin. Unfilled rubrics show as "Necompletat" rather than being skipped: an empty CAEN prints empty on the annual declaration |
+| Undoing a deactivation | **Setări** or **Parteneri** → deactivate a row, then switch the state filter to "Inactive" | "Reactivează" on the row. Deactivation never deleted anything — old movements quote the row — so it was never meant to be final. The state filter starts on "Active" and stays hidden until something has actually been deactivated |
+| Reading an attachment | **Mișcări** → June 2026 → the "📎 2" cell | It opens the files by name, each a link. It used to be a number and nothing else: the only way to the document ran through the thirty-field edit form — which a **VIEWER** cannot open at all, since "Editează" sits behind `canWrite`. Read-only on purpose: deleting stays in the form, next to uploading, where the confirmation is |
+| Adding a partner | **Parteneri** → "Adaugă partener" | Five named sections instead of a column of fifteen blocks: who they are · what they do · transport · authorization · what prints on Anexa 3. The CUI now sits next to the name, where it used to be separated from it by a question about lorries |
+| Finding your way down **Ambalaje** | **Ambalaje** | A sticky table of contents over the longest page in the app: four large tables plus a 66-cell grid. It sits above the amber "what blocks the declaration" panel, which comes and goes with the month — a contents bar that moved with it would be a different bar on every visit |
 
 ### Tests
 

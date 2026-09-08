@@ -29,6 +29,7 @@ Thumbs.db
 /REUSE_MAP.md
 /docs/prompt-continuare.md
 /docs/plan-executie.md
+/docs/todo-ui-ux.md
 /docs/monetizare.md
 # Auditul de conformitate: enumera abaterile inca nereparate, intr-un repo public.
 # Dupa ce se repara, concluziile intra in status.md ca istoric si fisierul poate fi scos de aici.
@@ -61,3 +62,13 @@ documente oficiale/
 /docs/EcoRegistru-prezentare-specialist.pdf
 /docs/EcoRegistru-prezentare.pdf
 /docs/screenshots/
+
+# Documentul de stadiu si intrebari pentru specialista, cu sursa si scriptul lui:
+# numeste clientii ei si citeaza din fisele primite.
+/docs/EcoRegistru-stadiu-si-intrebari-*.pdf
+/docs/stadiu-si-intrebari-*.html
+/docs/build-pdf-specialist.py
+/docs/proba-p*.png
+
+# Capturile probelor de interfata: se refac la fiecare rulare.
+/frontend/e2e/shots/

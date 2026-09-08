@@ -26,6 +26,38 @@ export const strings = {
     clients: "Clienți",
     settings: "Setări",
     logout: "Deconectare",
+    // Grupurile din bara laterală. Nouă intrări plate nu spun nimic despre ce ține de ce; patru
+    // grupuri de două-trei spun.
+    groupRecords: "Evidență",
+    groupReporting: "Raportare",
+    groupSetup: "Configurare",
+    groupAdmin: "Administrare",
+
+    /**
+     * Cuvintele după care se mai găsește un ecran în paletă (Ctrl+K), pe lângă numele lui.
+     *
+     * <p>Sunt numele **documentelor** și vorbele clientului, nu sinonime de dicționar: nimeni nu
+     * caută „evidențe", toată lumea caută „fișa" sau „anexa 1". Nu se compară cu diacritice — și
+     * textul căutat, și astea trec prin `fold()`.
+     *
+     * <p>„Anexa 1" apare dinadins la două ecrane. Numele scurt înseamnă chiar două documente
+     * (decizia 12): declarația de ambalaje la Ambalaje, fișa din HG 856/2002 la Evidențe. A alege
+     * unul singur ca „adevăratul" ar ascunde celălalt document exact de cine îl caută pe nume;
+     * amândouă apar, cu eticheta lor, iar omul alege.
+     */
+    kwDashboard: "acasă start situație stoc alerte ce am de făcut",
+    kwMovements:
+      "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D",
+    kwEvidences:
+      "anexa 1 fișa de evidență evidența gestiunii deșeurilor generate declarația anuală centralizator HG 856/2002 regenerează tone",
+    kwPackaging:
+      "anexa 1 ambalaje anexa 3 ambalaje Ordinul 794/2012 tabelul 1 tabelul 2 xls pus pe piață",
+    kwDeadlines: "scadențe termene 15 martie 25 februarie 25 ianuarie AFM SIM alerte",
+    kwAuditFile: "arhivă inspector Garda de Mediu control dosar zip",
+    kwPartners: "clienți furnizori colector valorificator transportator șoferi autorizație CUI",
+    kwSettings:
+      "puncte de lucru secții generatori interni șoferii noștri datele firmei CAEN persoana desemnată",
+    kwClients: "firme companii tenant cereri de cont profil de piață",
   },
 
   login: {
@@ -87,7 +119,6 @@ export const strings = {
     statDeadlines: "Termene de făcut",
     statDeadlinesSub: "din care {overdue} depășite",
     statExpiring: "Autorizații care expiră",
-    statExpiringSub: "parteneri cu autorizația aproape expirată",
     // sections
     upcomingTitle: "Termene următoare",
     upcomingEmpty: "Niciun termen deschis pentru anul curent.",
@@ -95,6 +126,38 @@ export const strings = {
     expiringEmpty: "Nicio autorizație de partener aproape de expirare.",
     viewAll: "Vezi toate",
     loadError: "Nu am putut încărca datele panoului.",
+
+    // --- Starea de conformitate: întrebarea la care panoul trebuie să răspundă ---
+    statusTitle: "Starea evidenței pe {year}",
+    statusOk: "Nimic nu blochează documentele",
+    statusOkHint:
+      "Toate ieșirile au cod R/D și cantitate. Fișa de evidență și declarația se pot tipări așa cum sunt.",
+    statusBlocked: "{n} lucruri de lămurit înainte de depunere",
+    // Cele două feluri de a fi „nu gata", cu urmarea fiecăruia.
+    blockerMissingCode: "{n} linii cu ieșiri fără cod R/D",
+    blockerMissingCodeHint:
+      "Cantitatea a plecat de pe amplasament, dar nu intră în nicio coloană oficială. Fișa nu se poate depune așa.",
+    blockerAwaitingWeighing: "{n} linii care așteaptă cântarul",
+    blockerAwaitingWeighingHint:
+      "Ieșiri cântărite la destinatar. Așteptare legitimă, dar cifrele sunt provizorii până vine bonul.",
+    blockerFix: "Vezi liniile",
+
+    // --- Cifrele care contează ---
+    // „Generat" ar fi o afirmație falsă: suma e pe toate mișcările lunii, iar o ieșire nu e o
+    // generare. Iar generarea o deduce motorul din ieșiri (decizia 17), deci n-ar fi nici măcar
+    // suma rândurilor cu operațiunea „Generare".
+    statGenerated: "Cantitate înregistrată în {month}",
+    statGeneratedSub: "kilograme, pe toate mișcările lunii",
+    statStock: "Stoc la zi",
+    // Stocul vine din evidența calculată, care poate fi în urma mișcărilor — de asta scrie
+    // „la ultima lună calculată" și nu „acum".
+    statStockSub: "kilograme, la ultima lună calculată",
+    statDeadlinesNext: "Următorul termen: {label}, în {days} zile",
+    statDeadlinesOverdue: "{n} depășite",
+    statDeadlinesNone: "Niciun termen deschis",
+    statExpiringDays: "expiră în {days} zile",
+    statExpiringPast: "expirată",
+    daysShort: "{n} zile",
   },
 
   movements: {
@@ -103,7 +166,44 @@ export const strings = {
     add: "Adaugă mișcare",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
+    // Linkul din rapoarte a adus un id care nu mai e printre mișcările lunii: ștearsă între timp,
+    // sau o adresă veche. Se spune, în loc să se deschidă un formular gol.
+    movementNotFound: "Mișcarea cerută nu mai există sau a fost ștearsă.",
+    // Reperele formularului lung. Sunt titluri, nu uși: secțiunile nu se pliază, fiindcă jumătate
+    // din ele conțin rubrici obligatorii.
+    sectionWaste: "Deșeul",
+    sectionQuantity: "Cantitatea",
+    sectionOperation: "Operațiunea",
+    sectionHandling: "Depozitare și tratare",
+    sectionTransport: "Transport",
+    sectionRecipient: "Destinatarul",
+    sectionDocument: "Document și observații",
+    sectionAttachments: "Atașamente",
+    // Banda de sus: unde ajunge cantitatea, spusă înainte de salvare.
+    effectTitle: "Ce face mișcarea asta",
+    effectAnexa1: "Intră pe fișa de evidență (Anexa 1)",
+    effectArt48: "Intră în registrul art. 48 — marfă preluată, nu deșeul firmei",
+    effectStock: "Rămâne pe stoc: nicio ieșire, doar generarea",
+    effectRecovered: "Iese ca valorificare, cu codul {code}",
+    effectDisposed: "Iese ca eliminare, cu codul {code}",
+    effectPackaging: "Intră și în declarația de ambalaje (Anexa 1 Ambalaje)",
+    effectAnexa3: "Se poate tipări Anexa 3 pentru predarea asta",
+    effectIncomplete: "Alege codul de deșeu ca să vezi unde ajunge cantitatea.",
     empty: "Nicio mișcare pentru filtrele alese.",
+    emptyHint: "Schimbă luna sau punctul de lucru, ori adaugă prima mișcare a perioadei.",
+    searchPlaceholder: "Caută după cod, partener, punct de lucru, document...",
+    duplicate: "Duplică mișcarea",
+    duplicateTitle: "Mișcare nouă, pornită de la alta",
+    // Urcarea atașamentelor e secvențială și poate dura: fără semn, arată a aplicație blocată.
+    uploadingFile: "Se încarcă fișierul {n} din {total}: {name}",
+    uploadingWait: "Nu închide fereastra până nu se termină.",
+    // Coloana arăta numărul și atât, iar singurul drum către fișier trecea prin formularul de
+    // treizeci de rubrici — pe care un VIEWER nici nu-l poate deschide, fiindcă butonul „Editează"
+    // stă sub `canWrite`. Deci pentru jumătate din roluri atașamentul era o cifră, nu un document.
+    attachmentsView: "Vezi atașamentele",
+    attachmentsDialogTitle: "Atașamentele mișcării",
+    attachmentsDialogHint:
+      "Fișierele se deschid într-un tab nou. Se adaugă și se șterg din editarea mișcării.",
     loadError: "Nu am putut încărca mișcările.",
     // filters
     filterMonth: "Luna",
@@ -112,6 +212,12 @@ export const strings = {
     filterAll: "Toate",
     allMonths: "Toate lunile",
     clearFilters: "Șterge filtrele",
+    // Golul dintr-o lună anume nu se spune ca golul din tot: unul e o listă goală, celălalt e o
+    // firmă fără nicio mișcare. Al doilea îngrijorează pe drept, primul n-are de ce.
+    emptyMonth: "Nicio mișcare în {month}",
+    emptyMonthHint:
+      "Ecranul pornește pe luna curentă. Alege altă lună sau vezi anul întreg — mișcările vechi sunt acolo.",
+    showWholeYear: "Vezi tot anul {year}",
     // columns
     colDate: "Data",
     colWasteCode: "Cod deșeu",
@@ -293,14 +399,55 @@ export const strings = {
     updated: "Mișcare actualizată.",
     deleted: "Mișcare ștearsă.",
     saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
-    confirmDelete: "Sigur ștergi această mișcare?",
+    confirmDeleteTitle: "Ștergi mișcarea?",
+    // Corpul dialogului poartă identitatea rândului; aici rămâne doar urmarea.
+    confirmDelete:
+      "Cantitatea dispare din evidența lunară și din documentele care se tipăresc din ea. Ștergerea nu poate fi anulată.",
     attachmentError: "Fișierul nu a putut fi încărcat.",
+    // Mișcarea s-a salvat, atașamentele nu — două fapte diferite, care înainte se spuneau amândouă
+    // ca „Salvarea a eșuat". Cine citea asta apăsa din nou și înregistra cantitatea a doua oară.
+    attachmentsFailedSaved:
+      "Mișcarea s-a salvat, dar {n} fișier(e) n-au urcat. Au rămas în listă — apasă Salvează încă o dată doar pentru ele.",
     attachmentDeleted: "Atașament șters.",
     noWorkPointHint: "Adaugă întâi un punct de lucru din Setări.",
+    workPointPlaceholder: "Alege punctul de lucru...",
+    // Punctul unei mișcări vechi, dezactivat între timp: rămâne în listă, dar se vede că nu mai e
+    // în uz. Alternativa — să dispară — ar face mișcarea nesalvabilă fără să spună de ce.
+    workPointInactiveSuffix: "(dezactivat)",
   },
 
   settings: {
     title: "Setări",
+    // Cuprinsul lipicios din capul paginii. Patru secțiuni una sub alta, dintre care trei tabele,
+    // fac cea mai lungă pagină de configurare din aplicație.
+    sections: "Pe pagină",
+    company: {
+      title: "Datele firmei",
+      subtitle:
+        "Ce tipăresc documentele oficiale în capul lor: identificarea, autorizația, persoana desemnată.",
+      // Un titlu propriu: aici, sub autorizație, se citește și profilul (coduri R/D, coduri de
+      // deșeu, transport), care în formularul de editare stă în blocul lui.
+      groupAuthorization: "Autorizația de mediu și profilul",
+      // Rubrica există pe firmă (o tipărește Anexa 3, lângă CUI), dar nu se editează din „Clienți",
+      // deci eticheta ei nu e nici acolo. Cea din „Parteneri" e a partenerului, nu a firmei.
+      tradeRegisterNumber: "Nr. Registrul Comerțului",
+      unset: "Necompletat",
+      // Două rubrici își iau aici alt nume decât în formularul de editare. Acolo sunt etichete de
+      // bifă și de select, scrise ca să se citească împreună cu ce urmează („Datorează ceva la
+      // AFM, dar…"); aici stau singure, deasupra unui răspuns, și trebuie să se ție pe picioarele
+      // lor.
+      afm: "Obligație la Fondul pentru mediu",
+      wasteManagerExternal: "Angajat propriu sau terț",
+      until: "până la",
+      expired: "Expirată",
+      wasteCodesCount: "{n} coduri din autorizație",
+      editInClients: "Editează în Clienți",
+      // Nu trimite la o adresă de e-mail: aplicația n-are nicăieri una, iar o adresă inventată aici
+      // ar fi prima care se dovedește falsă. Trimite la om — cel care a deschis contul.
+      readOnlyNote:
+        "Rubricile astea se citesc aici, dar se schimbă din contul care ți-a deschis firma. Pentru o corectură — autorizație reînnoită, altă persoană desemnată — spune-i consultantului tău.",
+      loadError: "Nu am putut încărca datele firmei.",
+    },
     workPoints: {
       title: "Puncte de lucru",
       subtitle: "Locațiile pentru care ții evidența deșeurilor.",
@@ -309,10 +456,14 @@ export const strings = {
       name: "Denumire",
       address: "Adresă",
       empty: "Niciun punct de lucru încă.",
+      searchPlaceholder: "Caută după nume sau adresă...",
+      emptyHint: "Punctul de lucru e locul de unde pleacă deșeul. Fără cel puțin unul, nu se poate înregistra nicio mișcare.",
       active: "Activ",
       inactive: "Inactiv",
       deactivate: "Dezactivează",
-      confirmDeactivate: "Sigur dezactivezi acest punct de lucru?",
+      confirmDeactivateTitle: "Dezactivezi punctul de lucru?",
+      confirmDeactivate:
+        "Nu mai apare la înregistrarea mișcărilor. Cele deja înregistrate rămân neatinse, dar dezactivarea nu poate fi anulată.",
       created: "Punct de lucru adăugat.",
       updated: "Punct de lucru actualizat.",
       deactivated: "Punct de lucru dezactivat.",
@@ -336,10 +487,14 @@ export const strings = {
       vehiclePlaceholder: "ex. CJ 01 ABC",
       vehicleHint: "Mașina cu care vine de obicei. Pe mișcare se poate schimba.",
       empty: "Niciun șofer încă.",
+      searchPlaceholder: "Caută după nume, act sau număr auto...",
+      emptyHint: "Șoferii salvați aici precompletează rubrica de delegat de pe Anexa 3.",
       active: "Activ",
       inactive: "Inactiv",
       deactivate: "Dezactivează",
-      confirmDeactivate: "Sigur dezactivezi acest șofer? Mișcările deja înregistrate nu se schimbă.",
+      confirmDeactivateTitle: "Dezactivezi șoferul?",
+      confirmDeactivate:
+        "Nu mai apare în lista de delegați. Mișcările deja înregistrate nu se schimbă — Anexa 3 tipărește instantaneul de atunci. Dezactivarea nu poate fi anulată.",
       loadError: "Nu am putut încărca șoferii.",
       created: "Șofer adăugat.",
       updated: "Șofer actualizat.",
@@ -359,10 +514,14 @@ export const strings = {
       namePlaceholder: "ex. birouri, producție, cantină",
       description: "Descriere",
       empty: "Niciun generator intern încă.",
+      searchPlaceholder: "Caută după nume sau punct de lucru...",
+      emptyHint: "Secțiile — birouri, producție — se tipăresc în capitolul 2 al fișei de evidență.",
       active: "Activ",
       inactive: "Inactiv",
       deactivate: "Dezactivează",
-      confirmDeactivate: "Sigur dezactivezi acest generator intern?",
+      confirmDeactivateTitle: "Dezactivezi generatorul intern?",
+      confirmDeactivate:
+        "Nu mai apare ca secție la înregistrarea mișcărilor. Cele deja înregistrate rămân neatinse, dar dezactivarea nu poate fi anulată.",
       created: "Generator intern adăugat.",
       updated: "Generator intern actualizat.",
       deactivated: "Generator intern dezactivat.",
@@ -380,6 +539,8 @@ export const strings = {
     addTitle: "Adaugă partener",
     editTitle: "Editează partenerul",
     empty: "Niciun partener încă.",
+    searchPlaceholder: "Caută după nume, CUI, autorizație, adresă...",
+    emptyHint: "Partenerii sunt firmele către care predai sau de la care preiei deșeu, plus transportatorii.",
     loadError: "Nu am putut încărca partenerii.",
     // columns
     name: "Denumire",
@@ -387,6 +548,16 @@ export const strings = {
     type: "Tip",
     authorizationNumber: "Nr. autorizație",
     authorizationExpiry: "Expirare autorizație",
+    // Reperele formularului lung, ca la mișcare și la firmă. Nu se pliază: jumătate din secțiuni
+    // conțin rubrici obligatorii, iar un câmp obligatoriu ascuns sub un titlu închis e un formular
+    // care se refuză fără să spună de ce.
+    sectionIdentity: "Identificare",
+    sectionRole: "Ce face partenerul",
+    sectionCarrier: "Transport",
+    sectionAuthorization: "Autorizația de mediu",
+    sectionAuthorizationHint:
+      "Predarea se face către un operator autorizat (OUG 92/2021, art. 23 alin. (1)). Cu data expirării completată, aplicația anunță cu 60 de zile înainte și marchează predările făcute după ea.",
+    sectionAnexa3: "Date pentru Anexa 3",
     nameSuggestions: "Există deja la tine:",
     nameSuggestionsHint:
       "Ca să nu apară același partener de două ori, cu două grafii. Apasă unul ca să-l deschizi în loc să creezi altul.",
@@ -419,8 +590,10 @@ export const strings = {
     filterCarrier: "Transportatori",
     typeNone: "— doar transportator —",
     typeNoneShort: "Doar transport",
+    // Fără „de mai sus" / „de mai jos": bifa s-a mutat o dată deja (era sub select, iar textul
+    // spunea „mai sus"), și textul a rămas în urmă. Numește rubrica, nu direcția.
     typeNoneHint:
-      "Pentru o firmă care doar transportă: nu face nimic cu deșeul, deci n-are tip. Se poate alege numai cu bifa de mai sus.",
+      "Pentru o firmă care doar transportă: nu face nimic cu deșeul, deci n-are tip. Se poate alege numai bifând „Transportator”.",
     typeRequired:
       "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă.",
     drivers: "Șoferi",
@@ -445,7 +618,9 @@ export const strings = {
     expired: "Expirată",
     expiringSoon: "Expiră curând",
     deactivate: "Dezactivează",
-    confirmDeactivate: "Sigur dezactivezi acest partener? Acțiunea nu poate fi anulată.",
+    confirmDeactivateTitle: "Dezactivezi partenerul?",
+    confirmDeactivate:
+      "Nu mai apare la înregistrarea mișcărilor. Cele deja înregistrate rămân neatinse, dar dezactivarea nu poate fi anulată — nu există reactivare.",
     // feedback
     created: "Partener adăugat.",
     updated: "Partener actualizat.",
@@ -518,6 +693,7 @@ export const strings = {
     colOperationCode: "Operațiune",
     colPartnerName: "Partener",
     emptyHandovers: "Nicio predare pentru filtrele alese.",
+    handoversSearchPlaceholder: "Caută după cod, partener, punct de lucru...",
     handoversLoadError: "Nu am putut încărca predările.",
     ownSite: "pe amplasament propriu",
     // Roșu, nu galben: o ieșire fără cod R/D nu e o rubrică de completat cândva, e o cantitate
@@ -525,16 +701,25 @@ export const strings = {
     missingCode: "Fără cod R/D",
     missingCodeHint:
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
+    // Badge-ul spunea ce e stricat; abia asta duce unde se repară.
+    fixMissingCode: "Completează codul",
+    // Filtrul care leagă panoul de rândurile vinovate. Stă în adresă, deci linkul se poate trimite.
+    onlyMissingCode: "Doar ieșirile fără cod R/D",
+    onlyMissingCodeOff: "Arată toate predările",
+    onlyMissingCodeEmpty: "Nicio ieșire fără cod R/D pentru filtrele alese. Depunerea nu e blocată aici.",
     awaitingWeighing: "De cântărit",
     awaitingWeighingHint:
       "O ieșire din luna asta așteaptă cântarul destinatarului, deci totalurile sunt provizorii.",
     regeneratedCascade: "Evidență regenerată: {count} linii pentru {year} (și anii {years}).",
     // empty state
     empty: "Nu există linii de evidență pentru {year}.",
+    searchPlaceholder: "Caută după cod, denumire sau punct de lucru...",
     emptyHint: "Apasă „Regenerează” pentru a calcula evidența anului {year} din mișcări.",
-    // note about the cache being manually regenerated
+    // Evidența e un cache derivat din mișcări, iar citirea îl reconstruiește când a rămas în
+    // urmă. Butonul rămâne pentru reconstrucția cerută explicit — după o migrare, sau când vrei
+    // să vezi cifra recalculată sub ochii tăi.
     staleNote:
-      "Evidența nu se actualizează singură. După ce adaugi sau ștergi mișcări, apasă „Regenerează”.",
+      "Evidența se recalculează din mișcări ori de câte ori s-a schimbat ceva. „Regenerează” o reconstruiește pe loc și rescrie și anii următori, fiindcă stocul se reportează.",
   },
 
   deadlines: {
@@ -565,6 +750,7 @@ export const strings = {
     notePlaceholder: "ex. depus la ANPM pe 12.03, nr. înregistrare 1234",
     // empty state
     empty: "Niciun termen pentru {year}.",
+    searchPlaceholder: "Caută după tip de raportare sau notă...",
     emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
   },
 
@@ -600,12 +786,22 @@ export const strings = {
 
   clients: {
     title: "Clienți",
+    // Titlurile secțiunilor formularului de firmă. Le citește și „Setări", care arată exact
+    // aceleași rubrici în citire — două nume pentru aceleași grupuri ar fi două hărți ale
+    // aceluiași lucru.
+    groupIdentity: "Identificare",
+    groupAuthorization: "Autorizația de mediu",
+    groupWasteManager: "Persoana desemnată cu gestiunea deșeurilor",
+    groupReporting: "Raportare",
+    groupContact: "Persoana de contact",
     subtitle:
       "Firmele pentru care ții evidența. Creezi firme și inviți utilizatori care primesc pe email un link de setare a parolei.",
     add: "Adaugă firmă",
     addTitle: "Adaugă firmă",
     editTitle: "Editează firma",
     empty: "Nicio firmă încă.",
+    searchPlaceholder: "Caută după nume sau CUI...",
+    emptyHint: "Firmele client se creează de aici, sau dintr-o cerere de cont primită mai jos.",
     loadError: "Nu am putut încărca firmele.",
     onlyPlatformAdmin: "Această secțiune este disponibilă doar administratorului platformei.",
     // columns
@@ -710,6 +906,17 @@ export const strings = {
 
   // Romanian labels for backend enums (constants are English by convention).
   enums: {
+    /**
+     * Rolurile, în românește. Până acum bara laterală tipărea chiar constanta din backend —
+     * `PLATFORM_ADMIN` — sub adresa de email.
+     */
+    role: {
+      PLATFORM_ADMIN: "Administrator platformă",
+      ADMIN: "Administrator",
+      OPERATOR: "Operator",
+      CLIENT_VIEWER: "Vizualizare",
+    },
+
     wasteOperation: {
       GENERATED: "Generare",
       COLLECTED: "Preluare de la terți",
@@ -931,12 +1138,30 @@ export const strings = {
     title: "Cerere de cont EcoRegistru",
     subtitle:
       "Conturile se creează de echipa EcoRegistru, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
+    // Cele trei rânduri din capul paginii. Un prospect care intră pe link nu știe nici unde a
+    // ajuns, nici cât durează, nici ce primește — iar formularul are șase secțiuni, deci
+    // întrebarea „merită să încep?" se pune înainte de prima rubrică, nu după.
+    stepsTitle: "Cum funcționează",
+    step1: "Completezi formularul — câteva minute, doar trei rubrici sunt obligatorii.",
+    step2: "Îl citim și configurăm aplicația pentru activitatea ta.",
+    step3: "Primești datele de acces pe email, în 1–2 zile lucrătoare.",
+    requiredLegend: "Rubricile marcate cu * sunt obligatorii. Restul ne scutesc de un telefon.",
     sectionCompany: "Firma",
     sectionWorkPoint: "Punctul de lucru",
     sectionContact: "Persoana de contact",
     sectionAuthorization: "Autorizația de mediu",
     sectionTransport: "Transport",
     sectionWaste: "Deșeurile",
+    // Rubricile respinse se marchează una câte una, ca pe formularul de mișcare. Bannerul din cap
+    // spunea „verifică rubricile marcate mai jos" fără să marcheze nimic — exact defectul reparat
+    // acolo pe 07.09, rămas aici.
+    errCompanyName: "Scrie denumirea firmei, ca în certificatul de înregistrare.",
+    errCui: "Scrie CUI-ul firmei.",
+    // Aceeași formă pe care o cere `CompanyService` la crearea firmei: un CUI care nu trece pe aici
+    // ar trece de formular și ar cădea abia la aprobare, în mâinile altcuiva.
+    errCuiFormat: "CUI-ul se scrie din 2–10 cifre, cu sau fără „RO” în față. Ex.: RO12345678.",
+    errContactEmail: "Scrie emailul pe care să-ți răspundem.",
+    errContactEmailFormat: "Emailul nu pare complet. Ex.: nume@firma.ro",
     companyName: "Denumirea firmei",
     cui: "CUI",
     cuiPlaceholder: "ex. RO12345678",
@@ -975,6 +1200,17 @@ export const strings = {
     operationCodes: "Ce se întâmplă cu deșeul",
     operationCodesHint:
       "Bifează operațiunile pe care le folosiți. Doar acestea vor apărea în aplicație — poți lăsa necompletat dacă nu știi.",
+    // Cele 28 de bife R/D stăteau deschise în fața cuiva care poate n-a auzit de R13. Necompletat
+    // era deja un răspuns valid — „nu se restrânge nimic" — dar formularul nu spunea asta nicăieri,
+    // deci arăta ca o listă la care ai rămas dator. Acum e o alegere cu două ieșiri, prima onorabilă.
+    operationCodesUnknown: "Nu știu — le stabilim împreună",
+    operationCodesUnknownHint:
+      "Alegerea obișnuită dacă n-ai lucrat cu codurile R/D. Le completăm la configurarea contului, cu autorizația de mediu în față.",
+    operationCodesChoose: "Le știu, le aleg acum",
+    operationCodesChooseHint:
+      "Codurile din autorizația de mediu. Doar cele bifate apar mai târziu la înregistrarea mișcărilor.",
+    operationCodesSelected: "{n} operațiuni alese",
+    operationCodesSelectedOne: "o operațiune aleasă",
     recovery: "Valorificare (R)",
     disposal: "Eliminare (D)",
     wasteCodesText: "Ce deșeuri generați / preluați",
@@ -987,6 +1223,15 @@ export const strings = {
     successTitle: "Cererea a fost trimisă",
     successBody:
       "Echipa EcoRegistru o verifică și îți creează contul. Primești datele de acces pe emailul completat.",
+    // „Am primit cererea" răspunde la ce s-a întâmplat, nu la ce urmează — iar omul tocmai a dat
+    // datele firmei lui unui site pe care nu-l cunoaște. Termenul e cel pe care îl ținem, nu unul
+    // rotund: mai bine două zile promise și una ținută.
+    successNextTitle: "Ce urmează",
+    successNext1: "Îți citim răspunsurile și configurăm aplicația pentru activitatea ta.",
+    successNext2: "Te sunăm sau îți scriem dacă ceva are nevoie de o lămurire.",
+    successNext3: "Primești pe {email} un link pe care îți alegi parola. În 1–2 zile lucrătoare.",
+    successNoEmailFallback: "emailul completat",
+    successSpam: "Dacă nu vezi mesajul, uită-te și în „Spam” — vine de la o adresă nouă pentru tine.",
     submitError: "Trimiterea a eșuat. Verifică datele și încearcă din nou.",
     backToLogin: "Înapoi la autentificare",
     linkFromLogin: "Nu ai cont? Trimite o cerere",
@@ -994,6 +1239,7 @@ export const strings = {
     adminTitle: "Cereri de cont",
     adminSubtitle: "Formularele trimise de clienți. Din ele se creează firmele.",
     adminEmpty: "Nicio cerere.",
+    adminSearchPlaceholder: "Caută după firmă, CUI sau email...",
     adminLoadError: "Nu am putut încărca cererile.",
     colCompany: "Firma",
     colType: "Tip",
@@ -1002,9 +1248,31 @@ export const strings = {
     colWaste: "Deșeuri",
     colDate: "Trimisă",
     colStatus: "Stare",
+    // Tabelul arată șapte coloane dintr-un formular cu douăzeci de rubrici. Restul — adresa
+    // sediului, punctul de lucru, telefonul, autorizația, transportul și mai ales `notes`, rubrica
+    // de text liber în care omul scrie ce nu încape în celelalte — nu se citeau de nicăieri, deși
+    // exact cine creează firma din cerere are nevoie de ele.
+    view: "Vezi cererea",
+    viewTitle: "Cererea trimisă",
+    viewEmptyValue: "—",
+    viewSubmittedAt: "Trimisă la",
+    viewHandledAt: "Rezolvată la",
+    viewNoAnswers: "Nimic completat în această secțiune.",
+    // Rândul devenea „Cont creat" și nu ducea nicăieri, deși firma stă în tabelul de deasupra.
+    openCompany: "Vezi firma creată",
+    openCompanyMissing: "Firma creată nu mai e în listă.",
     approve: "Creează contul",
     reject: "Respinge",
     rejectPrompt: "De ce respingi cererea?",
+    rejectTitle: "Respinge cererea",
+    rejectReasonLabel: "Motivul",
+    rejectReasonPlaceholder: "Ex.: firma are deja cont · datele nu se verifică · duplicat",
+    rejectReasonHint: "Rămâne în cerere, ca urmă de hârtie. Nu se trimite automat clientului.",
+    // Aprobarea creează un tenant real, cu profil, punct de lucru și tot — iar aplicația n-are
+    // ștergere de firmă. Ștergerea unei mișcări întreabă; crearea unei firme nu întreba nimic.
+    confirmApproveTitle: "Creezi contul acestei firme?",
+    confirmApprove:
+      "Se creează firma cu profilul din cerere și punctul de lucru pe care l-a numit. Nu se invită încă niciun utilizator, iar firma nu se poate șterge după.",
     approved: "Firma a fost creată din cerere. Invită acum utilizatorul.",
     rejected: "Cerere respinsă.",
     actionError: "Acțiunea a eșuat. Încearcă din nou.",
@@ -1059,6 +1327,7 @@ export const strings = {
   },
 
   packaging: {
+    searchPlaceholder: "Caută după cod, denumire, partener...",
     title: "Ambalaje",
     subtitle:
       "Tot ce ține de ambalaje, într-un loc. Mișcările pe coduri 15 01 xx sunt registrul; din ele se însumează cele două tabele ale Anexei 1 Ambalaje (Ordinul 794/2012), care se depune la agenția județeană de mediu până pe 25 februarie, pentru anul anterior. Totul în kilograme, cum cere art. 8 din ordin.",
@@ -1070,6 +1339,16 @@ export const strings = {
       "Art. 6 din Ordinul 794/2012 cere raportarea „în format electronic «.xls»”, cu cele două foi. PDF-ul e aceeași declarație, pentru dosarul de control.",
     downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
     saveError: "Cifra nu a putut fi salvată.",
+
+    // --- cuprinsul paginii ---
+    // Patru tabele mari unul sub altul plus grila de suprascriere: cea mai lungă pagină din
+    // aplicație. Etichetele sunt scurte dinadins — bara stă pe un rând, și pe telefon. Titlurile
+    // întregi, cu temeiul legal, rămân pe secțiuni.
+    sections: "Pe pagină",
+    navRegister: "Mișcări",
+    navTable1: "Tabelul 1",
+    navTable2: "Tabelul 2",
+    navAnexa3: "Anexa 3",
 
     // --- registrul ---
     registerTitle: "Mișcări de ambalaje",
@@ -1108,6 +1387,10 @@ export const strings = {
     awaitingWeighing: "{n} mișcări încă de cântărit — cantitatea lor lipsește din ambele tabele.",
     missingOperation: "{n} mișcări fără cod R/D — operatorul apare, operațiunea rămâne goală.",
     fix: "Completează",
+    // Badge-ul „Completează" spune ce lipsește; acțiunea de pe rând duce chiar la mișcarea unde
+    // se completează. Registrul de ambalaje era al treilea raport care numea vinovatul și se
+    // oprea acolo.
+    fixOnMovement: "Completează",
 
     // --- tabelul 1 ---
     table1Title: "Tabel 1. Ambalaje introduse pe piața națională",
@@ -1217,6 +1500,31 @@ export const strings = {
     VALORIFICATOR: "Valorificator — tabelul 2",
   },
 
+  // Zona de atașamente. Erau scrise direct în componentă, singurele din aplicație în afara
+  // fișierului ăstuia, alături de cele trei din combobox.
+  notFound: {
+    title: "Pagina asta nu există",
+    body: "Adresa e greșită, sau pagina s-a mutat de când ai salvat linkul.",
+    toDashboard: "Înapoi la Panou",
+    toLogin: "Mergi la autentificare",
+  },
+
+  fileDropzone: {
+    hint: "Trage fișiere aici sau apasă pentru a alege",
+    limit: "Imagini, PDF, Word, Excel · cel mult {mb} MB per fișier",
+    tooBig: "Prea mari, peste {mb} MB: {files}",
+    remove: "Elimină fișierul",
+  },
+
+  errorBoundary: {
+    title: "Ceva s-a stricat pe ecranul ăsta",
+    body:
+      "Nu s-a pierdut nimic din ce era salvat. Reîncarcă pagina; dacă se repetă, spune-ne pe ce ecran și ce ai apăsat.",
+    details: "Detalii tehnice",
+    reload: "Reîncarcă pagina",
+    toDashboard: "Înapoi la Panou",
+  },
+
   common: {
     loading: "Se încarcă...",
     saving: "Se salvează...",
@@ -1229,5 +1537,59 @@ export const strings = {
     status: "Status",
     actions: "Acțiuni",
     requiredField: "Câmp obligatoriu.",
+    // Citit doar de cititorul de ecran, în locul asteriscului. Vezi `Label`.
+    requiredMarker: "obligatoriu",
+    search: "Caută",
+    // Citite doar de cititorul de ecran, pe cele două select-uri ale lui `MonthInput` — eticheta
+    // vizibilă e una singură, a filtrului.
+    month: "Luna",
+    year: "Anul",
+    wholeYear: "Tot anul",
+    searchPlaceholder: "Caută în listă...",
+    clearSearch: "Golește căutarea",
+    noResults: "Niciun rezultat",
+    noResultsHint: "Niciun rând nu se potrivește cu filtrele puse. Șterge-le ca să vezi tot.",
+    moreActions: "Mai multe acțiuni",
+    // Filtrul activ / inactiv. Numărul celor inactive stă chiar în opțiune: altfel „Inactive" e o
+    // opțiune despre care nu știi dacă are ceva în ea până n-o alegi.
+    stateFilter: "Starea rândurilor",
+    stateActive: "Active",
+    stateInactive: "Inactive ({n})",
+    stateAll: "Toate",
+    reactivate: "Reactivează",
+    reactivated: "Reactivat.",
+    // Paginare
+    previous: "Înapoi",
+    next: "Înainte",
+    // „12–24 din 340"
+    rangeOfTotal: "{from}–{to} din {total}",
+    sortedAsc: "sortat crescător",
+    sortedDesc: "sortat descrescător",
+    // Navigație
+    skipToContent: "Sari la conținut",
+    mainNav: "Navigație principală",
+    openNav: "Deschide meniul de navigație",
+    closeNav: "Închide meniul de navigație",
+    userMenu: "Meniul contului",
+    // Erori de formular
+    fixErrors: "Verifică rubricile marcate mai jos.",
+    // Garda de la închiderea unui formular început. Titlul întreabă, mesajul spune ce se pierde,
+    // iar butonul numește fapta — „Da/Nu" pe un dialog citit în grabă nu spune care e care.
+    discardTitle: "Închizi fără să salvezi?",
+    discardMessage: "Ce ai completat până acum se pierde. Nimic nu se înregistrează.",
+    discardConfirm: "Închide, fără să salvez",
+    // Scurtături
+    commandPalette: "Caută sau sari la",
+    commandPalettePlaceholder: "Sari la un ecran... (Ctrl+K)",
+    goTo: "Navigare",
+    // Al doilea grup al paletei: ce se **începe**, nu unde se ajunge. Cuvintele-cheie poartă
+    // sinonimele pe care le tastează cineva grăbit — „predare" pentru o mișcare, „client" sau
+    // „furnizor" pentru un partener.
+    actionsGroup: "Acțiuni",
+    actionNewMovement: "Adaugă mișcare",
+    actionNewMovementKeywords: "predare generare intrare ieșire nouă înregistrează transport",
+    actionNewPartner: "Adaugă partener",
+    actionNewPartnerKeywords: "client furnizor colector transportator firmă nouă",
+    shortcutHint: "Ctrl+K pentru comenzi · / pentru căutare · N pentru adăugare",
   },
 } as const;

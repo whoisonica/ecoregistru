@@ -88,6 +88,23 @@ public class InternalGeneratorService {
         require(id).setActive(false);
     }
 
+    /**
+     * Desface dezactivarea.
+     *
+     * <p>Nu exista: prima greșeală era definitivă. Un punct de lucru dezactivat din greșeală, un
+     * partener scos la curățenie și regăsit peste o lună — amândouă rămâneau pe ecran, cu badge-ul
+     * „Inactiv", și nu se mai putea face nimic cu ele. Or dezactivarea e dinadins reversibilă: nu
+     * șterge nimic, doar scoate rândul din listele de ales.
+     *
+     * <p>Simetrică pe față cu {@code deactivate}: aceleași verificări de tenant, același răspuns
+     * gol. Nicio unicitate nu se poate strica, fiindcă cea care există — numele secției într-un
+     * punct de lucru — numără și rândurile inactive, deci un nume liber azi n-a fost al nimănui.
+     */
+    @Transactional
+    public void reactivate(UUID id) {
+        require(id).setActive(true);
+    }
+
     private void requireNameFree(UUID workPointId, String name) {
         if (internalGeneratorRepository.existsByWorkPoint_IdAndNameIgnoreCase(workPointId, name.trim())) {
             throw new BusinessException(INTERNAL_GENERATOR_NAME_TAKEN);

@@ -22,6 +22,37 @@ rulează local și are testele verzi.
 > **I**), trei pe textul actelor (**Q**, **Y**, **AA**), iar **AB** și **AC** au devenit alegeri de
 > produs, decise. Blocajele de infrastructură sunt la finalul documentului.
 >
+> **Adăugat 07.09.2026 — interfața.** Ramura `ui-ux-modernizare` (31 de commituri, împinsă pe
+> `origin`) duce cele șaisprezece puncte de UI/UX, șapte defecte găsite probând aplicația în
+> browser, suita care le-a găsit (`frontend/e2e/`, **58 de verificări verzi**) și încă trei defecte
+> găsite recitind ramura — de data asta în primitive, deci pe toate ecranele deodată — plus al
+> patrulea, găsit de utilizator: căutarea cerea diacritice, deci `miscari` nu găsea nimic.
+> **Backendul n-a fost atins**, deci cifrele de mai sus rămân valabile. ⚠️ **Nu e deployată:**
+> merge-ul în `main` și push-ul pe repo-urile split se fac după ce interfața e privită cu ochiul.
+>
+> **Adăugat 07.09.2026 — materialul privat.** Ce ținea `.gitignore` afară nu era salvat nicăieri.
+> E acum în `whoisonica/ecoregistru-docs`, repo **privat**. Vezi „Ce nu se commite" din
+> `prompt-continuare.md`.
+>
+> **Adăugat 07.09.2026 — auditul de interfață.** O citire a frontendului ecran cu ecran a scos
+> **zece defecte**, dintre care unul în backend și cel mai scump din toate: documentele oficiale se
+> puteau tipări dintr-un cache rămas în urmă. Toate zece sunt reparate și probate — secțiunea
+> „Auditul de interfață" de mai jos. **Testele sunt acum 228** (de la 224), migrările rămân la
+> `V31`. Ce a ieșit din aceeași citire și **nu** e un defect — îmbunătățirile de UI/UX, pe ecrane —
+> e în `docs/todo-ui-ux.md`, cu ordinea de atacat și cu lista lucrurilor care par greșite și sunt
+> dinadins așa.
+>
+> **Adăugat 07.09.2026, noaptea — filtrul de lună, datele firmei, reactivarea.** Şase felii din
+> `docs/todo-ui-ux.md`, în ordinea de acolo. Una repară ceva **rupt**: `<input type="month">` nu
+> există în Safari şi Firefox, deci filtrul principal de pe Mişcări era câmp text liber pe Mac. Cu
+> el, ecranul porneşte pe luna curentă (nu mai aduce toate mişcările firmei) şi capătă treapta „tot
+> anul" — care a cerut şi backend, fiindcă `year` fără `month` se ignora în tăcere. Restul erau
+> lucruri care **lipseau**: garda de la închiderea formularului de mişcare, datele firmei în
+> „Setări" (în citire), plasa de sub excepţiile de randare, reactivarea a ce s-a dezactivat, şi
+> formularul de firmă lărgit. **Testele sunt acum 239** (de la 230), migrările rămân la `V31`;
+> suita de interfaţă e la **7 probe, 127 de verificări**. Detaliile şi motivele: secţiunea
+> „Filtrul de lună, datele firmei şi dezactivarea care se poate lua înapoi". ⚠️ Tot nedeployat.
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
@@ -2886,6 +2917,712 @@ după ce se pierde dacă meetingul se termină devreme**: cele două documente d
 în fişier, unde lipseau —, cele două lucruri de confirmat pe Anexa 3 Ambalaje, şi confirmările de
 pus doar dacă mai e timp. Plus ce ducem noi: zece întrebări au devenit trei, şi de ce.
 
+
+### Modernizarea interfeţei — şaisprezece puncte, pe felii (07.09.2026)
+
+La cererea utilizatorului (*„scanează aplicaţia şi spune-mi ce improvement de UI/UX am putea
+face"*, apoi *„să le faci treptat pe toate şi să verifici constant [...] să nu strici nimic sau să
+bagi buguri sau inconsistenţe"*), o trecere completă peste frontend. **Fără temă întunecată**, cerut
+explicit. Ramura: `ui-ux-modernizare`; `main` neatins.
+
+Scanarea a găsit șaisprezece lucruri. Cele care cântăreau, în ordinea în care s-au reparat:
+
+1. **Aplicaţia nu era responsive.** Patru breakpointuri în opt mii de linii, toate pe Panou.
+   Sidebarul era `w-60` fix, fără cale de a-l ascunde — iar omul care înregistrează o predare la
+   cântar, în depozit, e exact utilizatorul de telefon. Acum: sertar sub `lg`, 24 de grile de
+   formular stivuite, `PageHeader` în loc de antetul scris de mână în opt pagini.
+2. **Formularul de mişcare stătea în 512px** cu treizeci de rubrici şi rânduri de câte trei
+   coloane. Acum e `xl`, cu opt secţiuni titrate. **Ordinea rubricilor nu s-a schimbat** — e cea
+   stabilită cu specialista; blocurile s-au mutat prin poziţie, nu rescrise.
+3. **Eroarea de validare nu spunea care rubrică.** `validate()` întorcea un şir pus în capul unui
+   formular care se derulează pe câteva ecrane. Acum întoarce o hartă rubrică → mesaj, cu
+   `aria-describedby` şi derulare la prima greşeală. Regulile sunt neatinse.
+4. **Cele cinci `window.confirm`** nu puteau spune *ce* rând se şterge. Textele s-au rescris ca să
+   spună urmarea — verificată în cod, nu presupusă: `usePartners` şi `useInternalGenerators` spun
+   amândouă că dezactivarea e într-un singur sens, deci niciun mesaj nu promite că se poate desface.
+5. **Tabelele nu scalau.** Unsprezece tabele, niciunul cu căutare, sortare sau paginare.
+6. **Duplicarea mişcării** lipsea: treizeci de predări pe lună însemnau treizeci de deschideri ale
+   unui formular din care aceleaşi douăzeci şi opt de rubrici se rescriau de fiecare dată.
+
+Restul: schelete şi stări goale unificate în toate tabelele · filtrele în bara de adrese
+(`?an=`, `?luna=`, `?punct=`, `?rol=`, `?vedere=`) · panoul care răspunde la „sunt în regulă?" ·
+navigaţia grupată şi contul ca meniu · progres pe urcarea atașamentelor · paletă de comenzi
+(Ctrl+K), `/` şi `N` · tooltip-uri în locul lui `title` · 266 de clase `gray-*` mutate pe tokens.
+
+**Două afirmaţii scrise cu grijă ca să nu mintă.** Suma lunii de pe panou e „cantitate
+înregistrată", nu „generat" — o ieşire nu e o generare, iar generarea o deduce motorul din ieşiri
+(decizia 17). Stocul spune „la ultima lună calculată", fiindcă vine din evidenţa care poate fi în
+urma mişcărilor.
+
+**Verificare:** `tsc --noEmit` curat şi `vite build` verde **după fiecare felie**, nu doar la final.
+**Backendul n-a fost atins**, deci cele 224 de teste rămân cum erau.
+
+#### Auditul de după — inconsistenţa cea mai mare era a mea
+
+La a doua cerere (*„verifică tot şi continuă, dar să fie totul pus la punct"*) am făcut o trecere
+sistematică peste ce livrasem. A ieşit exact defectul pe care îl reproşasem codului: **unsprezece
+tabele şi un singur tabel cu bară de căutare.** Mişcări fusese primul refăcut, restul rămăseseră.
+
+Regula e acum una singură, scrisă într-un loc: fiecare tabel primeşte `TableToolbar` şi
+`TablePagination`; bara apare de la zece rânduri în sus şi rămâne cât timp se caută ceva; antetul
+lipicios e implicit peste tot. Pe un tabel cu patru puncte de lucru nu apare nimic în plus.
+
+Restul auditului:
+
+- 14 şiruri şi componenta `InfoHint`, adăugate speculativ, pe care nu le folosea nimeni
+- `padded` pe `Card`, `label` pe `RowActions`, `setPageSize` pe vedere — API neatins de niciun apelant
+- `bg-white` scăpase de migrarea pe tokens (mapa acoperea doar `bg-gray-*`): unsprezece locuri
+- `Card` se folosea doar pe Panou, deşi Dosarul de control şi cele trei pagini de autentificare
+  aveau aceeaşi cutie scrisă de mână
+- nouă linkuri `text-blue-600` într-un produs al cărui brand e emerald
+- **formularul de autentificare n-avea etichete legate** (`<label>` fără `htmlFor`): nici clicul nu
+  focaliza, nici cititorul de ecran nu ştia ce se cere
+- **cele 66 de câmpuri din grila de suprascriere a Anexei 1 Ambalaje n-aveau nume**: capul de tabel
+  se vede, dar nu se aude
+- indentarea blocului „lunar" din Evidenţe, greşită încă dinainte — derivă de la 56% la 7%
+
+**Două greşeli proprii, reparate în aceeaşi sesiune.** Am rulat Prettier pe fişiere editate;
+proiectul nu-l are configurat, iar implicitul de 80 de coloane a reformatat două fişiere întregi
+contra stilului de ~100 al casei. Am revenit la commit şi am reaplicat prin scripturi — build-ul de
+după a ieşit cu hash identic. A doua: scriptul de tokens a rescris şi numele de clase **din
+comentarii**, care descriau codul vechi; le-am pus la loc.
+
+**La momentul ăsta nu se deschisese niciun ecran:** extensia Chrome nu se conecta, deci verificarea
+era doar compilator, build şi citirea codului. Ce a ieşit când s-au deschis, în secţiunea
+următoare.
+
+
+#### Proba pe browser — şapte defecte pe care compilatorul nu le vedea (07.09.2026)
+
+La a treia cerere (*„deschide şi testează tot, nu punem nimic în prod fără să fie 100% validat"*),
+prima probă adevărată: **backend local** cu profilul `dev` şi datele demo (Postgres 17 era deja
+pornit), **Chrome condus prin Playwright** — extensia nu se conecta, dar `playwright-core` conduce
+Chrome-ul instalat, fără să descarce nimic. Nu s-a atins producţia: totul pe `localhost:8080`.
+
+55 de verificări: cele douăsprezece ecrane deschise şi fotografiate, interacţiunile apăsate una
+câte una, formularul de mişcare umblat, ecranul de 375px măsurat. **Şapte defecte, niciunul vizibil
+din cod** — `tsc` şi `vite build` treceau pe toate:
+
+1. **Căutarea „15 01 02" întorcea coduri 15 01 07.** Potrivirea era pe subşir oriunde în textul
+   rândului, iar „02" se găseşte în „2026" din dată. Reparat în două trepte — prima a scăzut
+   numărul de intruşi de la doi la unul, fiindcă rămânea mişcarea din **02**.06. Fondul: un cod de
+   deşeu e o **expresie**, nu trei cuvinte. Acum se caută întâi expresia întreagă.
+2. **Primul clic pe coloana sortată implicit părea că nu face nimic.** Ciclul avea trei stări, iar
+   pe Mişcări (implicit: dată descrescător) primul clic ducea la „deloc" — unde ordinea de la
+   server e tot descrescătoare după dată. Măsurat: `aria-sort` trecea pe `none`, primul rând
+   rămânea acelaşi. Acum două stări.
+3. **Paleta evidenţia „Mişcări" când tastai „evid"**, fiindcă grupul lui Mişcări e „Evidenţă" şi
+   intra în textul căutat. Apăsai Enter aşteptând Evidenţe şi rămâneai unde erai.
+4. **Trei rubrici din şapte n-aveau marcaj de eroare** — codul de deşeu, punctul de lucru, data.
+   Scriptul care le lega se oprise înainte să scrie; `validate()` le seta, dar nu le afişa nimeni.
+   Bannerul spunea „verifică rubricile marcate mai jos" **fără să marcheze nimic**. Ăsta e felul de
+   defect pe care numai apăsarea butonului îl scoate la iveală.
+5. **„Şterge" din meniul de rând nu se putea apăsa.** `position: sticky` face un context de
+   stivuire propriu, deci meniul rămânea prins în celula lui, iar celulele fixate ale rândurilor de
+   dedesubt se desenau peste el.
+6. **Coloana de acţiuni ieşea din ecran.** Măsurat la 1280px: Mişcări depăşeşte cu 202px, Ambalaje
+   cu 213, Parteneri cu 122. Nu se vedea nici măcar că *există* o coloană de acţiuni. Fixată la
+   marginea din dreapta, în toate cele nouă tabele care au una.
+7. **Panoul se derula lateral cu 110px pe telefon.** O grilă cu o singură coloană foloseşte o pistă
+   `auto`, dimensionată după conţinutul cel mai lat — iar `truncate` nu micşorează lăţimea maximă a
+   textului. 27 de grile au primit `grid-cols-1`, adică `minmax(0, 1fr)`.
+
+Plus rândurile de tabel cu `scroll-mt-12`, ca unul adus la vedere să nu ajungă sub antetul lipicios
+— browserul derulează singur când focusul cade pe un rând nevăzut, adică la navigarea cu Tab.
+
+**Ce spune asta despre feliile de dinainte.** Erau toate „verificate": `tsc --noEmit` curat, build
+verde, cod recitit. Niciuna dintre cele şapte n-a ieşit aşa. Patru cereau apăsarea unui buton, două
+o măsurătoare de geometrie, una o privire pe o captură. Compilatorul spune că programul e
+consistent cu el însuşi, nu că face ce trebuie.
+
+**Suita a rămas în afara repo-ului**, în directorul temporar al sesiunii: patru fişiere `.mjs` şi
+`playwright-core`. Adăugarea unui cadru de teste în proiect e o decizie proprie, nu una de luat din
+mers. *(Decisă în aceeaşi zi, câteva ore mai târziu: suita e acum `frontend/e2e/`.)*
+
+#### Recitirea ramurii — trei defecte, toate în primitive (07.09.2026)
+
+Ramura recitită de la capăt, cu `tsc`, `vite build` şi suita rulate pe ea. Cele şapte de mai sus
+erau fiecare într-un ecran; **astea trei sunt în primitivele pe care le folosesc toate**, deci
+ajungeau pe toate ecranele deodată.
+
+1. **`Dialog` îşi fura singur focusul.** Ascultătorul de taste avea `[open, onClose, busy]` în
+   dependenţe, iar cleanup-ul aceluiaşi efect e cel care dă focusul înapoi elementului de dinaintea
+   deschiderii. Cum `onClose` e scris inline la 11 din 13 apelanţi şi `busy` comută la fiecare
+   salvare, cleanup-ul rula **cu dialogul încă deschis**: apăsai Salvează şi focusul sărea pe
+   butonul din spatele lui. Pe o salvare respinsă de server formularul rămânea deschis cu focusul
+   afară, iar capcana de Tab nu-l mai aducea înapoi — ea prinde doar Shift+Tab din exterior.
+   Reparat rupând efectul în două: scrollul blocat şi focusul redat atârnă acum numai de `open`,
+   iar handlerul citeşte `onClose`/`busy` dintr-un ref, ca în `useHotkey`.
+2. **Escape în comboboxul de cod închidea tot formularul.** Comboboxul apela `preventDefault()`,
+   care nu opreşte propagarea, iar `Dialog` ascultă Escape pe `document`. Deci manevra adăugată
+   dinadins la felia de tastatură nu funcţiona exact în singurul loc unde contează: apăsai Escape
+   ca să scapi de lista de coduri şi pierdeai tot ce scrisesei în cele opt secţiuni. Reparat cu
+   `stopPropagation()`, plus o gardă pe `defaultPrevented` în `Dialog` pentru straturile viitoare.
+   **Proba a fost scrisă întâi şi verificată că pică fără reparaţie** — `{lista: false, dialog:
+   false}` înainte, `{lista: false, dialog: true}` după.
+3. **Sortarea descrescătoare aducea la vârf exact rândurile puse dinadins la coadă.** Trei
+   comparatoare scriau `return 1` pentru rândul fără valoare — cantitatea „De cântărit" pe Mişcări
+   şi în registrul de predări, autorizaţia fără dată pe Parteneri — iar `useTableView` aplica
+   direcţia cu `reverse()` peste rezultatul lor. Deci a doua apăsare pe „Cantitate" scotea în capul
+   listei toate mişcările necântărite, cu trei comentarii în cod care scriau că stau la coadă în
+   ambele sensuri. Reparat cu `missingLast()` în hook, iar direcţia se aplică negând comparatorul:
+   `reverse()` inversa în plus şi ordinea rândurilor egale între ele, adică ordinea de la server.
+
+**De ce n-a prins suita al treilea.** Fiindcă n-are pe ce: seed-ul de demo are **zero** din 34 de
+mişcări fără cantitate şi **zero** din 5 parteneri fără dată de autorizaţie. Verificarea scrisă
+pentru regulă a fost scoasă, nu lăsată să treacă pe gol — garda ei a raportat „0 rânduri fără
+cantitate". 🟡 **De completat seed-ul** cu stările pentru care ecranele au reguli proprii (o mişcare
+cu `weighed_at_unloading`, un partener fără expirare, o ieşire fără cod R/D); atinge backendul, deci
+n-a intrat în ramura de interfaţă.
+
+**Două lucruri ţineau de unealtă, nu de aplicaţie.** `channel: "chrome"` era scris în `lib.mjs`, iar
+maşina pe care s-a făcut recitirea n-are niciun browser din familia Chromium — doar Safari. Suita nu
+putea porni deloc acolo. Acum browserul se alege prin `E2E_CHANNEL`, implicit tot `chrome`, cu
+Chromium-ul lui Playwright ca ieşire de rezervă. Iar `playwright-core` era în manifest dar nu în
+`node_modules`: un checkout de ramură nu atinge dependenţele.
+
+**Suită: 58 de verificări, toate verzi** (55 înainte). `tsc --noEmit` curat, `vite build` verde.
+
+#### Căutarea cerea diacritice — al patrulea defect, găsit de utilizator (07.09.2026)
+
+*„la search dacă scriu miscari nu găsește, că nu are simbolul special."* Şi nu erau rezultate
+parţiale: era **zero**, cu ecranul spunând „Niciun rezultat" pentru un cuvânt care se vede în tabel.
+Măsurat pe browser cu datele demo: `deseuri` → 0 din 5 rânduri, `hartie` → 0 din 13, `sticla` → 0
+din 2, iar în paletă `miscari` şi `evidente` → nimic.
+
+Aplicaţia se foloseşte toată ziua, la introdus date, iar cine scrie repede nu pune diacritice. Deci
+căutarea — lucrul adăugat tocmai ca tabelele să scaleze — nu funcţiona pentru felul obişnuit de a
+tasta.
+
+`fold()` în `lib/utils`: `NFD` desface litera în literă + semn, `\p{Diacritic}` scoate semnul. Se
+aplică **şi** pe textul căutat, **şi** pe ce s-a tastat.
+
+**Trei locuri, nu două.** Al treilea e cel cu urmări asupra datelor, nu doar asupra răbdării:
+sugestiile de nume din Parteneri există ca să nu se creeze un partener de două ori. Cine tasta
+„deseuri" nu vedea „Transport Deşeuri SRL", deci îl adăuga încă o dată — iar duplicatul rămâne în
+nomenclator şi pe documentele tipărite. Celelalte două: `useTableView` (ambele treceri de potrivire)
+şi `CommandPalette` (inclusiv scorul, care pe text nepliat ar fi căzut tot pe ultima treaptă şi ar
+fi stricat ordonarea în tăcere).
+
+**Pliază în plus cedila peste virgulă** — `deşeuri` şi `deșeuri` devin acelaşi lucru — iar codul şi
+datele proiectului le amestecă pe amândouă, cum s-a văzut la auditul de diacritice din aceeaşi zi.
+
+⚠️ **O măsurătoare a mea a fost greşită pe drum, şi merită reţinut de ce.** Prima rulare a raportat
+„hârtie → 12", iar după reparaţie 13 — şi era gata să scriu că plierea a găsit un rând în plus.
+Măsurat însă comportamentul vechi ca lumea, cu reparaţia scoasă: era 13 şi înainte. Cei 12 erau un
+artefact al scriptului de probă, nu un rând. **Plierea nu descoperă rânduri noi**; face doar ca
+scrierea fără diacritice să dea acelaşi răspuns.
+
+Proba e în `3-interactiuni.mjs`, verificată că pică fără reparaţie (`0 vs 5`, `0 vs 13`).
+**Suită: 60 de verificări verzi.**
+
+---
+
+## Auditul de interfaţă — zece defecte reparate, unul în backend (07.09.2026)
+
+La cererea utilizatorului (*„citeşte toate md files şi după analizează aplicaţia pe fiecare ecran
+dacă există buguri sau probleme"*), o citire a întregului frontend ecran cu ecran, apoi
+*„fixează toate bugurile"*. Ce a ieşit e mai jos, în ordinea gravităţii. **Îmbunătăţirile de
+UI/UX** care au ieşit din aceeaşi citire n-au intrat aici: sunt în `docs/todo-ui-ux.md`, pe ecrane,
+cu ordinea de atacat.
+
+### 🔴 Documentele oficiale se puteau tipări dintr-un cache vechi
+
+Singurul defect din backend, şi cel mai scump: `EvidenceCalculator.list()` reconstruia evidenţa
+**doar când anul era gol**. Cache-ul populat şi rămas în urmă trecea neatins — iar prin `list()`
+trec toate: ecranul, panoul, exportul, şi cele **două documente oficiale**. Deci un client care
+înregistra trei predări şi apăsa „Evidenţa gestiunii deşeurilor" primea un PDF fără ele, care arată
+perfect valid şi se depune la agenţie. În acelaşi timp, panoul scria verde „nimic nu blochează
+depunerea" peste o ieşire fără cod R/D înregistrată cu cinci minute înainte. Singura apărare era
+bannerul galben permanent care ruga clientul să ţină minte să apese un buton.
+
+Dosarul de control făcea deja ce trebuie, şi scria de ce (`AuditFileService` regenerează înainte să
+împacheteze — decizia 20). Deci nu era o decizie nouă de produs, era **o inconsecvenţă**: două
+drumuri către acelaşi PDF, din care numai unul recalcula.
+
+Predicatul e acum „ce s-a schimbat de la ultima scriere": `max(updatedAt)` al mişcărilor faţă de
+`min(generatedAt)` al liniilor. Trei lucruri merită reţinute din cum a ieşit:
+
+1. **Interogarea mişcărilor n-are filtru `deletedFalse`.** O ştergere invalidează cache-ul exact ca
+   o editare, iar ştergerea e soft: rândul rămâne, cu `updatedAt` împins.
+2. **Reconstrucţia nu porneşte de la anul cerut.** Stocul se reportează, deci o corecţie pe o
+   mişcare din 2024 lasă **deschiderea lui 2026** greşită, iar a reconstrui 2026 singur l-ar
+   reconstrui pe aceeaşi cifră greşită. Porneşte de la cel mai vechi an cu linii mai vechi decât
+   schimbarea şi merge până la cel cerut. Se **opreşte** acolo, dinadins: anii de după răspund la
+   aceeaşi întrebare când îi deschide cineva. Aia e şi deosebirea de butonul „Regenerează", care
+   cascadează înainte — apăsarea lui e o afirmaţie despre tot dosarul, citirea unui an e o întrebare
+   despre anul ăla.
+3. **`anexa1()` şi `annualDeclaration()` nu mai sunt `readOnly`.** Cheamă `list()` prin
+   auto-invocare, deci rebuild-ul rula în tranzacţia lor; sub `readOnly = true` Hibernate trece pe
+   `FlushMode.MANUAL` şi liniile reconstruite s-ar fi pierdut la commit — documentul ar fi tipărit
+   cifra veche oricum, şi tăcut.
+
+**Probat pe date reale, nu doar la teste:** 777 kg înregistrate fără să se apese „Regenerează" →
+ecranul urcă cu 777, fişa Anexa 1 trece de la 35.258 la 39.825 de octeţi; ştergerea mişcării le
+scoate înapoi. **228 de teste verzi** (de la 224), patru noi în `EvidenceCalculatorIT`: mişcarea
+nouă, ştergerea, corecţia pe un an anterior, şi garda că o citire a unui an neschimbat **nu**
+rescrie nimic.
+
+### 🟠 Nouă defecte de interfaţă
+
+| Ce | Unde era |
+|---|---|
+| **Formularul de firmă nouă moştenea şapte rubrici** de la firma editată înainte — între ele **persoana desemnată**, care se tipăreşte în dosarul de control, şi calitatea care decide ce tabel din Anexa 3 Ambalaje se tipăreşte | `ClientsPage` avea două funcţii de umplere ţinute sincronizate cu mâna, iar cea de adăugare rămăsese în urmă. Acum e una singură, cu `null` = firmă nouă |
+| **A doua încercare după un ataşament căzut crea o mişcare duplicat** | `clientGeneratedId` se genera în `buildInput()`, deci alt UUID la fiecare apăsare. Acum e un `useRef`, stabil cât trăieşte dialogul — la ce serveşte cheia |
+| **Duplicarea păstra data de descărcare veche** | `initial?.unloadDate` în loc de `editing?.` — deci Anexa 3 ieşea cu încărcarea azi şi descărcarea acum şase luni |
+| **Mesajele backendului nu ajungeau la niciuna din cele opt descărcări** | `responseType: "blob"` se aplică şi răspunsului de eroare, deci `apiErrorMessage` citea un `Blob`. „Anexa 3 e formularul pentru nepericuloase…" se afişa ca „Anexa 3 nu a putut fi generată" |
+| **`window.prompt` la respingerea unei cereri; aprobarea nu întreba nimic** | Ultimul dialog nativ rămas după ce cele cinci `window.confirm` fuseseră înlocuite. Iar aprobarea creează un tenant real, ireversibil |
+| **Ataşamentele nu se puteau adăuga de la tastatură** | `<div onClick>` peste un `<input type="file">` cu `display:none` — singura zonă rămasă aşa după runda de accesibilitate |
+| **O adresă greşită dădea ecran alb** | `<Routes>` fără rută `*` nu randează nimic. Plus: login-ul uita unde voiai să ajungi |
+| **„Export PDF" învârtea rotiţa pe documentul oficial** | Amândouă foloseau `exporting === "pdf"`. Butoanele anuale se dezactivau şi după filtrul de lună, deşi documentele acoperă anul |
+| **Trei formate de dată în acelaşi produs**, şi o coloană care se sorta după altă valoare decât cea afişată | `formatDate` era copiată în patru ecrane şi lipsea din trei; registrul de predări arăta descărcarea şi sorta după încărcare |
+
+Plus trei mărunte din aceeaşi citire: panoul aduna `1000 kg + 1 t = 1001` (mişcarea îşi poartă
+unitatea, iar conversia exista doar în motorul de evidenţă); erorile din toast dispăreau în patru
+secunde, adică exact mesajele care de-acum poartă o propoziţie utilă; şi secţiunea Anexa 3 Ambalaje
+oferea puncte de lucru dezactivate, cu filtrul în afara adresei şi butoanele fără rotiţă.
+
+⚠️ **Bannerul galben permanent de pe Evidenţe a fost schimbat**, şi nu din estetică: „Evidenţa nu se
+actualizează singură" devenise o afirmaţie falsă. Un avertisment care e mereu acolo devine tapet în
+trei zile — şi atunci nu mai apără nimic exact în ziua în care ar fi trebuit.
+
+### Cum s-a verificat
+
+`tsc --noEmit` curat, `vite build` verde, **suita e2e trece** (rulată cu Chromium-ul lui Playwright:
+maşina n-are niciun browser Chromium instalat). Peste ea, **22 de verificări scrise anume pentru
+reparaţiile astea**, pe browser adevărat cu datele demo — suita nu le acoperă pe niciuna. Cea mai
+instructivă: toastul de la dosarul de control arată acum *„Dosarul se poate genera pentru cel mult 5
+ani"*, adică **mesajul corectat la punctul 11 al auditului de conformitate**, pe care până azi nu-l
+citise nimeni niciodată.
+
+*(Verificările punctuale n-au intrat în repo: sunt scrise pentru o reparaţie anume, nu pentru o
+regulă care trebuie ţinută. Ce merită păstrat din ele a intrat ca test în backend.)*
+
+
+## Primul contact cu produsul, şi rapoartele care duc undeva (07.09.2026, seara)
+
+Prioritatea 1 şi 2 din lista de îmbunătăţiri de interfaţă, plus un defect de concurenţă găsit în
+timpul probelor — singurul din runda asta care atinge date, nu ecrane.
+
+### 1. Formularul public `/cerere-cont`
+
+Singura pagină pe care o vede cineva **înainte** să fie client, şi singura pe care modernizarea din
+07.09 n-o atinsese deloc.
+
+- **Cele trei rubrici obligatorii se marchează**, cu asterisc plus un cuvânt citit doar de cititorul
+  de ecran — „*" rostit „stea" nu spune nimic. Marcajul a intrat în `Label` ca proprietate, deci e
+  disponibil pentru orice formular, nu scris pe loc aici.
+- **Erorile stau pe rubrici, nu într-un banner**, cu derulare la prima greşită. E fix defectul nr. 4
+  din proba pe browser („bannerul marca nimic"), rămas pe pagina asta după ce s-a reparat pe
+  formularul de mişcare: `FieldError` + `invalidProps` + cârligul `data-invalid` existau deja.
+- **CUI-ul se verifică aici**, cu aceeaşi formă pe care o cere `CompanyService` la creare. Înainte,
+  un CUI stricat trecea de formular şi cădea abia la aprobare, în mâinile altcuiva.
+- **Pagina are identitate** — cele două rânduri de brand ale cardului de login — şi un rând de trei
+  paşi în cap, care răspunde la „merită să încep?" **înainte** de prima rubrică, nu după şase
+  secţiuni.
+- **Cele 28 de bife R/D s-au pliat**, în spatele unei alegeri a cărei primă opţiune e „Nu știu — le
+  stabilim împreună". Setul gol era deja răspunsul „nu s-a răspuns" (decizia 6); ce s-a schimbat e
+  că formularul o spune. Trecerea pe „nu ştiu" **goleşte** ce s-a bifat, altfel ar rămâne în urmă
+  răspunsuri pe care omul crede că le-a retras.
+- **Pagina de mulţumire spune ce urmează**, cu emailul numit şi cu termenul de 1–2 zile lucrătoare.
+  „Am primit cererea" răspunde la ce s-a întâmplat; omul tocmai a dat datele firmei lui unui site pe
+  care nu-l cunoaşte.
+- 🔒 **Honeypot** pe singurul endpoint public de scriere. Rubrica e ascunsă de ochi, de Tab şi de
+  `aria-hidden`, deci un om n-o poate completa nici din greşeală. Backendul **nu scrie nimic şi
+  răspunde tot 202**: un refuz vizibil i-ar spune botului ce câmp să evite data viitoare. Un test
+  ţine ambele jumătăţi, inclusiv că gol nu se citeşte ca verdict.
+
+### 2. Inboxul de cereri — jumătatea care nu se citea
+
+Tabelul arăta şapte coloane dintr-un formular cu douăzeci de rubrici. **Opt câmpuri completate nu se
+citeau de nicăieri**, între ele `notes` — chiar rubrica de text liber în care omul scrie ce nu încape
+în celelalte —, deşi exact cine creează firma din cerere are nevoie de ele.
+
+- **„Vezi cererea"**, pe orice rând indiferent de stare: cererea întreagă, în ordinea secţiunilor pe
+  care le-a parcurs clientul. O rubrică necompletată **se arată goală**, nu se sare — cine creează
+  firma trebuie să vadă că lipseşte, nu să deducă asta. O secţiune fără niciun răspuns se pliază la
+  un rând, fiindcă acolo absenţa e chiar informaţia.
+- **„Vezi firma creată"** pe rândurile aprobate. Rândul devenea „Cont creat" şi nu ducea nicăieri,
+  deşi firma stă în tabelul de deasupra — putea fi al treizecilea rând sau pe altă pagină a listei.
+
+### 3. Badge-ul roşu nu mai e fund de sac
+
+„Fără cod R/D" e informaţia cea mai importantă din aplicaţie şi se vedea pe trei ecrane din care nu
+se putea face nimic.
+
+- **`/miscari?luna=…&miscare=…`** deschide mişcarea cerută direct în formularul de editare.
+  Parametrul se **consumă** la deschidere: lăsat în adresă, un refresh ar redeschide dialogul peste
+  ce lucrezi. ⚠️ Linkul poartă luna lui **`date`**, nu a datei afişate în registru — ecranul Mişcări
+  filtrează pe `date`, iar registrul arată `unloadDate` când o are, deci o predare din 31 martie
+  descărcată pe 2 aprilie s-ar căuta în aprilie şi n-ar fi găsită.
+- **Registrul de predări** primeşte „Completează codul" pe rândul roşu — şi numai pe el. Cel amber
+  („De cântărit") e o aşteptare legitimă, n-are ce repara nimeni azi.
+- **Filtrul `?problema=cod-rd`** pe registrul de predări, cu bannerul care spune că e pus şi butonul
+  care îl scoate. Un filtru venit din altă parte trebuie să se vadă, altfel tabelul pare gol pe
+  nedrept şi omul caută rânduri care există.
+- **Panoul duce acum unde promitea.** Linkul blocajului roşu mergea la vederea lunară, unde rândul e
+  un **agregat** pe (punct de lucru, cod, lună) şi nu se poate deschide nicio mişcare. Duce la
+  registrul filtrat, unde un rând **este** o mişcare.
+- **Vederea lunară** face acelaşi drum prin badge-ul ei, restrâns la luna şi punctul de lucru ale
+  rândului. **Registrul de ambalaje** primeşte coloană de acţiuni, cu condiţia ţinută dinadins
+  identică cu cea care colorează rândul: dacă tabelul semnalează ceva se poate apăsa, dacă nu, nu
+  apare niciun buton care să sugereze că ar fi.
+- `LinkButton` e primitivă nouă: o navigare scrisă ca `<button onClick={navigate}>` nu se deschide
+  în filă nouă şi nu spune cititorului de ecran că duce altundeva. Rapoartele sunt exact cazul în
+  care omul vrea a doua filă — repară acolo, se întoarce la listă aici.
+
+### 4. 🔴 Un defect de concurenţă în decizia 50, găsit de probe
+
+Nu era pe nicio listă. A ieşit fiindcă probele au făcut cache-ul de evidenţă să rămână în urmă —
+starea pe care decizia 50 o repară — iar apoi două ecrane au cerut acelaşi an deodată:
+
+```
+[HTTP 409] GET /api/v1/evidences?year=2026
+Concurrent update conflict: Row was updated or deleted by another transaction
+  : [MonthlyEvidence#7a497ff4-…]
+```
+
+**Ce se întâmplase.** Decizia 50 a făcut din citire o **scriere**: `list()` reconstruieşte anul când
+mişcările s-au mişcat de la ultima scriere. Reparaţia era corectă — se putea depune o fişă fără
+mişcările de ieri — dar a deschis o cursă pe care varianta veche aproape n-o avea, fiindcă
+reconstruia doar când anul era **gol**. `deleteByCompany_IdAndYear` încarcă rândurile înainte să le
+şteargă, deci a doua citire ştergea rânduri pe care prima le înlocuise deja.
+
+**Nu e teoretic:** Panoul şi ecranul Evidenţe cer amândouă anul curent. Două taburi, sau o navigare
+rapidă, sunt destul. Nu se pierde nimic din date — tranzacţia cade întreagă — dar clientul vede un
+raport care nu se deschide.
+
+**Reparaţia**, fără migrare: o secţiune critică per (firmă, an), cu **lacăt consultativ** Postgres
+(`pg_advisory_xact_lock`) şi **verificare dublă**. Nu un lacăt pe rând — nu există rând care să
+însemne „anul din cache", fiindcă reconstrucţia le şterge pe toate; nu unul pe firmă — ar serializa
+ani fără legătură şi ar bloca editările simple de firmă. Prima verificare, fără lacăt, ţine drumul
+obişnuit (cache la zi, cazul de aproape fiecare dată) la două agregate; a doua, sub lacăt, face ca
+aşteptarea la uşă să nu coste şi o reconstrucţie în plus. Postgres eliberează lacătul la commit sau
+rollback, deci o reconstrucţie care aruncă nu-l poate lăsa ţinut. Acelaşi lacăt s-a pus şi pe
+`regenerateYear`: butonul şi citirea rescriu aceleaşi rânduri, deci sunt aceeaşi secţiune critică.
+
+**Proba a fost scrisă întâi şi verificată că pică** — patru cititori pe un an învechit, cu aceeaşi
+excepţie ca în producţie. Nu doi: cu doi, fereastra se poate rata pe o maşină rapidă.
+
+### 5. Datoria care bloca probele, plătită
+
+Seed-ul demo n-avea **niciun** rând în stările pentru care ecranele au reguli proprii — zero din 34
+de mişcări fără cantitate, zero ieşiri fără cod R/D, zero parteneri fără dată de autorizaţie. De asta
+al treilea defect din primitivele reparate pe 07.09 a scăpat şi de suită: verificarea scrisă pentru
+el trecea pe un tabel care n-avea rândul, şi a fost **scoasă** în loc să fie lăsată să treacă pe gol.
+
+`DevDataSeeder` are acum toate trei, aşezate pe plastic la Turda dinadins — seria de hârtie de la
+Cluj (40→30→50→50→30→50.5) e vitrina stocului cumulativ şi rămâne neatinsă. `ApplicationBootIT` le
+numără **pe nume**, nu doar în total: un total care creşte nu spune că stările există.
+
+### 6. Ce a ieşit uitându-mă la capturi, cu toate verificările verzi
+
+Suita trecea, `tsc` era curat. Deschiderea capturilor a scos două lucruri:
+
+- **Coloana de acţiuni a inboxului de cereri se rupea pe două rânduri.** Al treilea buton
+  („Vezi cererea", adăugat mai sus) le frângea pe toate — „Vezi / cererea", „Creează / contul" —,
+  rândurile creşteau în înălţime şi etichetele se citeau greu. `whitespace-nowrap` pe toate trei;
+  coloana e `sticky="right"`, deci poate fi mai lată fără să iasă din îndemână.
+- ⚠️ **Prima reparaţie a fost mai proastă decât defectul.** Am încercat o pictogramă învelită în
+  `Tooltip` — care îşi randează **propriul `<button>`**, deci ieşea buton în buton, HTML invalid.
+  React o spunea în consolă, iar suita citeşte consola, deci a picat pe loc. Nota a rămas în cod, ca
+  să nu se reîncerce. **`Tooltip` nu poate înveli nimic interactiv**, atât.
+
+Şi o gaură în ce se proba, nu în cod: **suita de ecran îngust umbla doar pe cele patru ecrane de
+după autentificare**, deci `/cerere-cont` — rescris cap-coadă chiar azi — n-a fost privit niciodată
+la 375px. Intră acum în ea, cu verificarea că banda de trei paşi (`sm:grid-cols-3`) chiar se
+stivuieşte pe telefon.
+
+E a treia oară când regula de lucru 5 („randează şi uită-te") prinde ce testele nu pot — vezi şi
+rândul TOTAL AN dispărut, şi steluţa de lângă cod de la G6. De data asta nu era un document
+tipărit, ci un ecran: **regula e mai largă decât credeam când s-a scris.**
+
+### Cifrele
+
+- **230 de teste verzi** (de la 228): honeypot-ul, concurenţa evidenţei, cele două stări din seed.
+  Migrări tot până la **`V31`** — reparaţia de concurenţă n-a cerut niciuna, şi ăsta era criteriul.
+- **Suita de interfaţă: 6 probe, 99 de verificări** (de la 5 şi 60). Proba nouă,
+  `6-cerere-si-rapoarte.mjs`, acoperă formularul public, inboxul şi drumul cap-coadă de la blocajul
+  de pe Panou până la mişcarea deschisă. ⚠️ **Scrie o cerere în baza de dev la fiecare rulare** şi
+  nu curăţă după ea — aprobarea ar crea o firmă, iar firmele nu se şterg.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
+### Ce s-a găsit pe drum şi n-a fost reparat
+
+**`MovementsPage.tsx:360` foloseşte `<input type="month">`, pe care Safari nu-l implementează.** Pe
+Mac devine câmp text liber: filtrul principal al celui mai folosit ecran n-are selector, n-are
+validare, şi cere tastat `2026-06` exact. E notat la Prioritatea 3 în `todo-ui-ux.md`, şi acolo e
+prea jos — nu e cizelare, e o funcţie ruptă pe o familie întreagă de browsere, chiar pe maşina de
+dezvoltare. Recomandarea, scrisă şi în lista de îmbunătăţiri: se ia împreună cu al doilea punct de
+la Mişcări (fără filtru de lună se aduc **toate** mişcările, oricâte), fiindcă e aceeaşi reparaţie
+pe aceleaşi trei linii.
+
+## Filtrul de lună, datele firmei şi dezactivarea care se poate lua înapoi (07.09.2026, noaptea)
+
+Trei felii cerute în ordinea din `todo-ui-ux.md`, după ce lista fusese rearanjată: felia „următoare"
+(filtrul de lună), Prioritatea 2 (garda de formular + datele firmei) şi ce urma după ea (plasa de
+sub excepţii, reactivarea, formularul de firmă). **Prima e singura care repară ceva rupt; restul
+sunt lucruri care lipseau.**
+
+### 1. Filtrul de lună de pe Mişcări — o funcţie ruptă pe Safari şi Firefox
+
+`<input type="month">` **nu există în Safari şi Firefox**: degenerează în câmp text liber. Adică pe
+Mac — chiar maşina de dezvoltare — filtrul principal al celui mai folosit ecran n-avea selector,
+n-avea validare şi cerea tastat `2026-06` exact, fără să spună asta nicăieri.
+
+În loc: `MonthInput`, două `<select>` native (luna, apoi anul — cum se citeşte în româneşte).
+Native dinadins: tastatura, cititorul de ecran şi selectorul de pe telefon vin gata făcute, ceea ce
+un calendar scris de mână ar fi trebuit să refacă.
+
+Odată cu el, **a doua jumătate a aceleiaşi reparaţii**: ecranul porneşte pe **luna curentă**. Fără
+lună se aduceau toate mişcările firmei, oricâte — la doi ani × 30 de predări pe lună sunt ~700 de
+rânduri la fiecare deschidere, iar `useTableView` paginează abia **după** ce au venit, deci
+paginarea nu apăra nimic. Luna implicită nu se scrie în adresă, deci `/miscari` rămâne un link
+curat care înseamnă „luna asta", iar `?luna=2026-03` continuă să însemne o lună anume — linkurile
+vechi din rapoarte deschid exact ce deschideau.
+
+**Treapta de mijloc, şi de ce a cerut backend.** „Tot anul" (`?luna=2026`) există fiindcă bara de
+căutare a tabelului caută în ce s-a **adus**: fără ea, o predare de acum trei luni s-ar găsi numai
+nimerindu-i luna din prima. Numai că `year` fără `month` nu însemna nimic în backend — se cerea
+`?year=2026` şi veneau înapoi toate mişcările, din toţi anii. **O filtrare ignorată în tăcere e mai
+rea decât una respinsă**, aşa că `WasteMovementService.list` o interpretează acum: an fără lună =
+anul întreg. Trei teste noi (`MovementListFilterIT`), fără migrare.
+
+Şi ieşirea din luna goală: pe o lună fără rânduri, tabelul spune **„Nicio mişcare în Februarie
+2019"** şi oferă butonul „Vezi tot anul 2019". Fără el, un ecran care porneşte pe luna curentă ar
+arăta „nicio mişcare" unui client care are şapte sute, iar nimic de pe ecran n-ar spune că vina e a
+filtrului, nu a datelor.
+
+### 2. Garda de la închiderea formularului de mişcare
+
+Escape sau un clic pe fundal ştergeau treizeci de rubrici din opt secţiuni, fără o vorbă. E
+jumătatea cealaltă a defectului reparat la Escape-ul din combobox: acolo se pierdea tot fiindcă
+tasta trecea prin listă până la dialog, aici se pierdea fiindcă dialogul făcea exact ce i se cerea.
+
+Formularul „atins" se marchează din `onChange`-ul **formularului**, nu din cele treizeci de
+`setState`: evenimentul urcă din orice rubrică nativă, deci o rubrică adăugată mâine intră singură
+sub gardă. Cele două căi care nu trec prin el — alegerea unui cod din listă şi fişierele lăsate cu
+mausul peste zonă — marchează pe faţă.
+
+**Şi o reparaţie în primitivă, cerută de asta:** `Dialog` ţine acum un **teanc** al dialogurilor
+deschise, iar la Escape şi la capcana de Tab răspunde doar cel de deasupra. Fără el, întrebarea
+„închizi fără să salvezi?" stând peste formular s-ar fi închis odată cu formularul la o singură
+apăsare de Escape — adică exact paguba de care întreabă. `confirm-dialog.tsx` ocolea până acum
+aceeaşi problemă închizându-se înainte de a lansa acţiunea.
+
+### 3. Datele firmei, în Setări
+
+Un ADMIN de firmă nu-şi vedea nicăieri CAEN-ul, autorizaţia de mediu, persoana desemnată sau seria
+Anexei 3 — toate se editează **exclusiv** din „Clienţi", care e ecran de `PLATFORM_ADMIN`. Intra în
+„Setări", singurul loc unde s-ar fi uitat, şi găsea puncte de lucru, secţii şi şoferi.
+
+`CompanyDetailsSection`, **numai citire**: cine poate schimba rubricile rămâne cine era; ce se
+schimbă e că se **văd** — inclusiv golurile, fiindcă un CAEN necompletat se tipăreşte gol pe
+declaraţia anuală, iar asta se află mai bine aici decât din documentul depus. Nota de subsol nu
+trimite la o adresă de e-mail: aplicaţia n-are nicăieri una, iar una inventată aici ar fi prima care
+se dovedeşte falsă — trimite la consultantul care a deschis contul.
+
+Etichetele rubricilor şi titlurile grupelor se citesc din `strings.clients`, adică din ecranul unde
+se **editează** aceleaşi rubrici: două nume pentru „Nr. Registrul Comerţului" ar fi două nume pentru
+acelaşi lucru. Excepţie fac două, care în formular sunt etichete de bifă („Datorează ceva la AFM,
+dar…") şi aici trebuie să stea singure deasupra unui răspuns.
+
+Plus `SectionNav`, cuprinsul lipicios al paginii — patru secţiuni, trei dintre ele tabele cu
+paginare. **Trei defecte ale lui s-au văzut abia pe captură**, cu toate verificările de DOM verzi:
+`overflow-x-auto` pe `<nav>` decupa şi pe verticală, deci banda care acoperă căptuşeala paginii nu
+se vedea şi pe sub bară trecea o dungă de tabel; coloana de acţiuni a tabelelor e şi ea lipită
+(`sticky right-0 z-10`) şi vine **după** bară în DOM, deci la z egal acoperea jumătatea din dreapta;
+iar prima variantă marca secţiunea curentă cu `IntersectionObserver`, care la capătul de jos al
+paginii nu vede niciodată ultima secţiune — clicul pe „Şoferii noştri" ducea acolo lăsând marcajul
+pe „Puncte de lucru". Regula 5, încă o dată: randează şi uită-te la el.
+
+### 4. Plasa de sub excepţii
+
+Orice excepţie de randare demonta tot arborele şi lăsa un `<div id="root">` gol: ecran alb, fără
+meniu, fără mesaj, fără drum înapoi, pe **orice** ecran, pentru un câmp null pe care nu-l aştepta
+nimeni. Cel mai ieftin defect de reparat şi cel mai scump de trăit — omul n-are ce povesti la
+telefon în afară de „s-a albit".
+
+`ErrorBoundary` stă în două locuri, fiindcă apără de două lucruri: în jurul paginii, **sub**
+`Layout`, unde meniul rămâne viu şi se poate merge în altă parte fără reîncărcare (cheia e adresa,
+deci plecarea de pe ecranul căzut şterge mesajul); şi în jurul aplicaţiei întregi, pentru ce cade în
+`Layout` sau în context.
+
+### 5. Dezactivarea se poate lua înapoi
+
+Prima greşeală era definitivă la **punct de lucru, partener, secţie şi şofer**. Dezactivarea nu
+şterge niciun rând — dinadins, fiindcă mişcările vechi îl citează — deci n-avea de ce să fie
+ireversibilă; pur şi simplu nu exista drumul înapoi.
+
+`POST /{id}/reactivate` pe toate patru (ca `/{id}/reopen` de la termene: e o faptă, nu o resursă),
+cu aceleaşi verificări de tenant şi aceleaşi reguli de rol ca dezactivarea. Nicio unicitate nu se
+poate strica: singura care există — numele secţiei într-un punct de lucru — numără şi rândurile
+inactive, deci un nume liber azi n-a fost al nimănui. Şase teste (`ReactivationIT`), pe toate patru
+resursele, fiindcă **simetria e chiar lucrul care se poate strica**: fiecare are propriul controller
+şi propriul serviciu, iar una uitată ar arăta pe ecran ca un buton care nu face nimic.
+
+Pe ecran: butonul „Reactivează" pe rândul inactiv, şi **filtrul activ/inactiv** cerut de mult —
+după un an de folosire, „Parteneri" e un cimitir prin care se caută. Porneşte pe **Active**, cu
+numărul celor scoase chiar în opţiune, şi **nu apare deloc** cât timp n-a fost dezactivat nimic: pe
+un cont nou ar fi un comutator între „tot" şi „tot".
+
+### 6. Formularul de firmă
+
+Al doilea ca mărime din aplicaţie — ~25 de rubrici, inclusiv profilul şi blocul persoanei desemnate
+— şi singurul rămas la 512px după modernizare. Acum `xl`, cu cinci secţiuni titrate: aceleaşi
+grupe, în aceeaşi ordine, ca vederea în citire din „Setări". Rubricile nu s-au schimbat, doar
+aşezarea.
+
+### Cifre
+
+- **239 de teste verzi** (de la 230): `ReactivationIT` (6) şi `MovementListFilterIT` (3). Migrări
+  tot până la **`V31`**, următoarea liberă **`V32`** — nicio felie n-a cerut una.
+- **Suita de interfaţă: 7 probe, 127 de verificări** (de la 6 şi 99). Proba nouă,
+  `7-firma-si-reactivare.mjs`, face drumul întreg al reactivării (creează un şofer, îl dezactivează,
+  îl regăseşte prin filtru, îl reactivează) şi probează garda formularului, inclusiv că Escape peste
+  întrebare închide **doar** întrebarea. ⚠️ Lasă în urmă un şofer dezactivat de probă.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
+## Atașamentele, partenerul, cuprinsul și paleta (08.09.2026)
+
+Cele patru felii din capul secțiunii „Ordinea recomandată" a lui `todo-ui-ux.md`, luate în ordine.
+Niciuna nu repară ceva rupt — sunt lucruri care lipseau — **dar a cincea a ieșit din ele**: proba
+scrisă pentru paletă a scos un defect de reconciliere care ascundea rânduri moarte în listă.
+
+### 1. Atașamentele se văd fără să deschizi editarea
+
+Coloana arăta „📎 2" și atât. Ca să afli *ce* document e acolo trebuia deschis formularul de
+editare, cu treizeci de rubrici — iar un **VIEWER nu-l poate deschide deloc**, fiindcă butonul
+„Editează" stă sub `canWrite`. Adică pe rolul care există tocmai ca să citească, avizul urcat lângă
+o predare era o cifră, nu un document.
+
+Cifra e de-acum un buton care deschide o vedere cu numele fiecărui fișier și un link către el.
+**Numai citire, dinadins:** ștergerea rămâne în formular, lângă urcare, unde e și confirmarea și
+regula de rol. Un coș de gunoi într-o vedere deschisă de oriunde ar fi cea mai ușoară apăsare
+greșită din ecran.
+
+Două amănunte care se pot strica la următoarea atingere: dialogul ține **`id`-ul** mișcării, nu
+obiectul — lista se reîmprospătează sub el, iar un instantaneu ar arăta fișierul care tocmai a
+plecat; și nu e `Tooltip`, fiindcă bula își randează propriul `<button>` și n-ar putea înveli
+linkuri (defectul din 07.09, seara).
+
+### 2. Formularul de partener, pe cinci secțiuni
+
+Era o coloană de cincisprezece blocuri într-un dialog de 512px, deși are secțiuni evidente. Acum
+`xl`, cu **Identificare · Ce face partenerul · Transport · Autorizația de mediu · Date pentru
+Anexa 3** — `FormSection` era deja folosit în trei locuri, deci n-a fost nimic de inventat.
+
+**Ordinea s-a schimbat într-un singur loc, și merită spus de ce:** CUI-ul stătea între bifa de
+transportator și autorizație, adică o identificare ruptă în două de o întrebare despre camioane. A
+urcat lângă denumire. Restul rubricilor sunt exact unde erau.
+
+Trei lucruri mărunte, luate în aceeași felie fiindcă erau în același ecran:
+- comentariul „Transportatorul e o bifă, nu un tip" stătea deasupra blocului de **ambalaje** — se
+  desprinsese de codul lui la o mutare anterioară. A fost pus înapoi peste bifă.
+- `typeNoneHint` spunea „se poate alege numai cu bifa **de mai sus**", iar bifa era dedesubt de
+  când s-a livrat `V28`. Acum numește rubrica, nu direcția — un text care spune „mai sus" se strică
+  la fiecare rearanjare.
+- rândurile de șofer și de punct de lucru erau `flex` fix: trei câmpuri și un buton strânse la ~70px
+  pe telefon. Se stivuiesc sub `sm`.
+
+### 3. Cuprinsul de pe Ambalaje
+
+Patru tabele mari unul sub altul plus grila de 66 de celule: cea mai lungă pagină din aplicație, și
+singura fără nimic care să te ducă între ele. `SectionNav` fusese scris **ca primitivă chiar pentru
+ea** pe 07.09 și era folosit doar în „Setări".
+
+Bara stă deasupra casetei chihlimbarii cu ce blochează declarația, nu sub ea: caseta apare și
+dispare după cum e completată luna, iar un cuprins care sare cu ea ar fi altă bară la fiecare
+deschidere.
+
+Cele trei defecte de lipire ale primitivei (banda decupată, coloana de acțiuni care o acoperea,
+poziția numărată de la marginea conținutului) nu s-au repetat — dar proba le măsoară acum și aici,
+cu `elementFromPoint` în trei puncte pe bară, fiindcă toate trei au trecut de verificările de DOM
+prima oară.
+
+### 4. Ctrl+K găsește documente, și pornește ceva
+
+`Command.keywords` era declarat, **citit la potrivire**, și niciodată completat de nimeni: o funcție
+întreagă, verde la compilare, moartă la rulare. Tastai „fișa" sau „anexa 1" și paleta nu găsea
+nimic, deși propriul docstring promitea „unde vreau să ajung, ce vreau să încep".
+
+Cuvintele stau în bara laterală, lângă ecranul pe care îl descriu — nu într-o a doua listă a
+paletei, care ar fi ajuns să nu mai spună același lucru. Sunt numele **documentelor** și vorbele
+clientului, nu sinonime: „fișa", „anexa 1", „HG 856/2002", „25 februarie", „inspector".
+
+⚠️ **„Anexa 1" duce la două ecrane, dinadins.** Numele scurt înseamnă chiar două documente
+(decizia 12): declarația de ambalaje la Ambalaje, fișa din HG 856/2002 la Evidențe. A alege unul
+ca „adevăratul" ar ascunde celălalt document exact de cine îl caută pe nume.
+
+Și jumătatea cealaltă a promisiunii: două comenzi care **încep** ceva — „Adaugă mișcare", „Adaugă
+partener" — fiecare ducând pe ecranul ei cu formularul deschis, prin `?nou=1` care se consumă la
+deschidere, ca `?miscare=`.
+
+**„Regenerează" nu e printre ele, și n-a fost o scăpare.** Butonul de pe Evidențe e o cerere
+explicită de recalculare pe un an anume (decizia 51), iar dintr-o paletă nu se vede pe care an ar
+cădea. O comandă care rescrie tăcut liniile unui dosar e exact genul de ghicit pe care ecranul ăsta
+nu-l face. Proba verifică și asta: `check("nicio comandă nu recalculează un dosar din paletă")`.
+
+### 🔴 Al cincilea: rânduri moarte în paletă, găsite de propria probă
+
+Prima rulare a probei a raportat pentru „anexa" rezultate care **n-au cuvântul nicăieri** — „Dosar
+de control", „Parteneri". Citit repede, arăta ca o potrivire prea largă: cuvintele-cheie noi ar fi
+fost de vină. Nu erau.
+
+Sortarea pe scor amestecă grupurile între ele. Randarea deschide un `<div>` nou la fiecare
+schimbare de grup, iar cheia lui era **numele grupului** — deci la „anexa" ieșeau grupurile
+`Evidență · Raportare · Evidență`, adică **două surori cu aceeași cheie**. React nu mai putea
+reconcilia, și în listă rămâneau rânduri din randarea dinainte, cu `data-index` duplicat. Se putea
+apăsa pe ele.
+
+Reparat în două locuri, fiindcă sunt două probleme:
+- **grupurile rămân întregi**, în ordinea celui mai bun membru al fiecăruia (`Map`, care ține
+  ordinea inserării, peste lista deja sortată). Primul rând al listei rămâne cea mai bună potrivire
+  — proprietatea de care atârnă Enter — fără ca antetul unui grup să apară de două ori;
+- cheia `<div>`-ului e `id`-ul primei comenzi, unic prin construcție, ca apărare dacă vreodată
+  ordonarea rupe iar grupurile.
+
+⚠️ Defectul e **mai vechi decât felia de azi** — exista de când s-a scris scorul, pe 07.09. Până
+acum nu se vedea fiindcă fără cuvinte-cheie potrivirile cădeau aproape mereu în același grup.
+Cuvintele n-au stricat nimic: au făcut ca un drum rar să devină cel obișnuit.
+
+**Cum s-a prins, și de ce merită reținut:** nu din cod, și nici din captură — pe captură arăta doar
+ca „prea multe rezultate". S-a prins **numărând**: verificarea nu era „găsește Ambalaje și
+Evidențe" (care trecea, din motivul greșit), ci `check("și nimic altceva", rezultate.length === 2)`.
+O probă care întreabă doar dacă ce trebuie e acolo nu poate spune că mai e și altceva.
+
+### Datoria de seed, a doua tranșă
+
+Coloana „📎" avea **zero rânduri din 36**, deci vederea de la punctul 1 s-ar fi probat pe gol —
+exact felul de gol în care s-a ascuns al treilea defect din primitive pe 07.09. `DevDataSeeder` are
+acum două atașamente pe **ieșirea fără cod R/D**: e rândul pe care îl deschide inspectorul, iar
+avizul lui e chiar hârtia după care întreabă. Două, nu unul, ca să se vadă dacă lista chiar le
+enumeră. `ApplicationBootIT` le numără pe nume, ca pe celelalte trei stări.
+
+⚠️ **Nu s-a urcat nimic.** `CLOUDINARY_URL` nu e setat nici local, nici pe dyno, deci în dev nu
+există cale de a crea un atașament prin aplicație. URL-urile arată către cloud-ul public `demo` al
+Cloudinary — se deschid, dar nu sunt documentele firmei. Şi, ca la celelalte, **baza de dev nu se
+re-seedează singură**: pe o bază veche rândurile se adaugă cu un `INSERT` aditiv, scris în
+`frontend/e2e/README.md`.
+
+### Starea
+
+- **239 de teste verzi**, neschimbat ca număr: verificarea de atașamente a intrat în metoda
+  existentă din `ApplicationBootIT`. Migrări tot până la **`V31`**, următoarea liberă **`V32`** —
+  nicio felie n-a cerut una, nici seed-ul.
+- **Suita de interfaţă: 8 probe, 161 de verificări** (de la 7 şi 127). Proba nouă,
+  `8-atasamente-partener-paleta.mjs`, acoperă toate cele patru felii şi e cea care a găsit defectul
+  paletei.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
+**Două verificări scrise greşit, corectate după măsurătoare** — se scriu aici fiindcă amândouă
+păreau defecte ale aplicaţiei: (a) clicul pe „Tabelul 2" nu duce titlul sus, fiindcă ultimele două
+secţiuni intră amândouă în ultimul ecran şi pagina se termină înaintea lor — e chiar ramura „la
+fund" a primitivei, scrisă pe 07.09 după o captură; proba se face pe „Tabelul 1". (b) Cifra din
+capul unei probe nu spune nimic dacă tabelul n-are rândul — vezi datoria de seed de mai sus.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

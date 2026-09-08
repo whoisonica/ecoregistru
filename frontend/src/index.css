@@ -4,6 +4,22 @@
 
 :root {
   color-scheme: light;
+
+  /* Tokens semantice, în canale RGB ca modificatorii de opacitate ai Tailwind (`bg-surface/50`)
+     să funcționeze. Valorile sunt scara de gri pe care aplicația o folosea deja scrisă de mână;
+     mutarea lor aici nu schimbă niciun pixel, dar face ca schimbarea următoare să fie una
+     singură, nu patruzeci. */
+  --surface: 255 255 255; /* alb — cardurile, tabelele, dialogurile */
+  --surface-muted: 249 250 251; /* gray-50 — fundalul paginii, capul de tabel */
+  --surface-sunken: 243 244 246; /* gray-100 — câmpuri dezactivate, zone „adâncite" */
+  --border-subtle: 229 231 235; /* gray-200 — chenarul obișnuit */
+  --border-strong: 209 213 219; /* gray-300 — chenarul câmpurilor de formular */
+  --content: 17 24 39; /* gray-900 — textul principal */
+  /* gray-700 — eticheta unui câmp, titlul unei secțiuni: text care nu e titlu, dar nici estompat.
+     Codul folosea aici gray-600, gray-700 și gray-800 amestecate, pentru aceeași treabă. */
+  --content-strong: 55 65 81;
+  --content-muted: 107 114 128; /* gray-500 — explicații, subtitluri */
+  --content-subtle: 156 163 175; /* gray-400 — text secundar, stări goale */
 }
 
 html,
@@ -13,6 +29,48 @@ body,
 }
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply bg-surface-muted text-content antialiased;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Inelul de focus e aceeași afirmație peste tot, inclusiv pe elementele native pe care nu le
+   îmbracă nicio primitivă (checkbox, radio, link). Fără asta, jumătate din formularele lungi se
+   navighează cu tastatura fără să se vadă unde ești. */
+@layer base {
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-1 ring-offset-surface;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply accent-brand;
+  }
+}
+
+@layer utilities {
+  /* Ascunde conținutul vizual, îl lasă cititoarelor de ecran. Pentru titlurile de secțiune și
+     etichetele pe care designul le spune prin poziție, nu prin cuvinte. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+/* Cine a cerut mai puțină mișcare o primește: animațiile de mai jos sunt decor, nu informație. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

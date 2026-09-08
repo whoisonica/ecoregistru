@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, FileSpreadsheet, FileText, Plus } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, FileText, Package, Pencil, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   downloadPackagingAnexa3,
@@ -22,14 +22,24 @@ import type {
   WasteMovement,
 } from "@/lib/types";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
-import { apiErrorMessage } from "@/lib/api";
+import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { formatDate } from "@/lib/utils";
+import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
+import { Button, LinkButton } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { SectionNav } from "@/components/ui/section-nav";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
+import { TableFallbackRow, TableSkeletonRows } from "@/components/ui/table-fallback";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.packaging;
@@ -57,6 +67,22 @@ const COLUMNS = [
   "hazardousContent",
 ] as const;
 type Column = (typeof COLUMNS)[number];
+
+/**
+ * Numele coloanei, pentru numele accesibil al celulei.
+ *
+ * <p>Grila de suprascriere are șaizeci și șase de câmpuri numerice fără nicio etichetă: un
+ * cititor de ecran anunța „câmp de editare" de șaizeci și șase de ori, fără să spună nici
+ * materialul, nici coloana. Capul de tabel se **vede**, dar nu se aude.
+ */
+const COLUMN_LABELS: Record<Column, string> = {
+  salesPackaging: t.colSales,
+  primaryTotal: t.colPrimary,
+  primaryReusable: t.colPrimaryReusable,
+  secondaryTotal: t.colSecondary,
+  secondaryReusable: t.colSecondaryReusable,
+  hazardousContent: t.colHazardous,
+};
 
 /**
  * Rândurile de material, în ordinea actului, cu cele trei sume intercalate — exact aşa cum le
@@ -121,7 +147,7 @@ export function PackagingPage() {
   const canWrite =
     user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
 
-  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: movements, isLoading: loadingMovements } = usePackagingMovements(year);
   const { data: table1, isLoading: loadingTable1 } = usePackagingTable1(year);
   const { data: handovers } = usePackagingHandovers(year);
@@ -140,6 +166,20 @@ export function PackagingPage() {
   }, [year]);
 
   const rows = table1 ?? [];
+
+  /**
+   * Registrul de mișcări pe coduri 15 01 xx. Fără sortare implicită: vine de la server în ordinea
+   * în care se citește un registru, iar aia rămâne.
+   */
+  const registerView = useTableView(movements ?? [], {
+    searchText: (m: WasteMovement) =>
+      [m.wasteCode, m.wasteCodeName, m.partnerName, m.workPointName].filter(Boolean).join(" "),
+    comparators: {
+      date: (a: WasteMovement, b: WasteMovement) => a.date.localeCompare(b.date),
+      wasteCode: (a: WasteMovement, b: WasteMovement) =>
+        a.wasteCode.localeCompare(b.wasteCode, "ro"),
+    },
+  });
   const rowFor = (material: PackagingMaterial) => rows.find((r) => r.material === material);
 
   const signals = useMemo(() => {
@@ -166,12 +206,32 @@ export function PackagingPage() {
     [unclassified]
   );
 
+  /**
+   * Rândurile care ies din calcul dinadins: marfa preluată de la terţi (Anexa 1 e despre deşeul
+   * propriu) şi ambalajul pe care l-a pus pe piaţă furnizorul. Nu sunt incomplete, sunt în afara
+   * documentului — de aceea nici nu se colorează, nici nu primesc acţiune.
+   */
+  const isExcluded = (m: WasteMovement) =>
+    m.register === "ART_48" || m.packagingOnMarket === false;
+
+  /**
+   * Rândul are ceva de completat **pe mişcare**, deci acţiunea are unde duce.
+   *
+   * <p>Condiţia e ţinută dinadins identică cu cea care colorează rândul: dacă tabelul semnalează
+   * ceva, se poate apăsa; dacă nu semnalează nimic, nu apare niciun buton care să sugereze că ar
+   * fi. Două condiţii apropiate dar diferite ar fi arătat exact ca un defect.
+   */
+  const needsFixing = (m: WasteMovement) =>
+    !isExcluded(m) &&
+    (unclassifiedIds.has(m.id) ||
+      ((m.operation === "RECOVERED" || m.operation === "DISPOSED") && !m.operationCode));
+
   async function handleDownload(format: "xls" | "pdf") {
     setDownloading(format);
     try {
       await downloadPackagingDeclaration(year, format);
     } catch (err) {
-      notify(apiErrorMessage(err, t.downloadError), "error");
+      notify(await apiBlobErrorMessage(err, t.downloadError), "error");
     } finally {
       setDownloading(null);
     }
@@ -224,29 +284,36 @@ export function PackagingPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2">
-            <Button onClick={() => handleDownload("xls")} disabled={downloading != null}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {downloading === "xls" ? strings.common.loading : t.downloadXls}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleDownload("pdf")}
-              disabled={downloading != null}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              {downloading === "pdf" ? strings.common.loading : t.downloadPdf}
-            </Button>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex flex-wrap gap-2">
+              {/* Eticheta rămâne aceeași cât se lucrează: schimbată în „Se încarcă...",
+                  butonul își schimba lățimea sub deget. */}
+              <Button
+                onClick={() => handleDownload("xls")}
+                disabled={downloading != null}
+                loading={downloading === "xls"}
+              >
+                {downloading !== "xls" && <FileSpreadsheet className="mr-2 h-4 w-4" />}
+                {t.downloadXls}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleDownload("pdf")}
+                disabled={downloading != null}
+                loading={downloading === "pdf"}
+              >
+                {downloading !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
+                {t.downloadPdf}
+              </Button>
+            </div>
+            <p className="max-w-sm text-xs text-content-muted sm:text-right">{t.downloadHint}</p>
           </div>
-          <p className="max-w-sm text-right text-xs text-gray-500">{t.downloadHint}</p>
-        </div>
-      </div>
+        }
+      />
 
       <div className="mt-6 w-40">
         <Label htmlFor="pk-year">{t.year}</Label>
@@ -258,6 +325,19 @@ export function PackagingPage() {
           ))}
         </Select>
       </div>
+
+      {/* Cuprinsul stă deasupra semnalelor, nu sub ele: bara e a paginii, iar caseta chihlimbarie
+          apare şi dispare după cum e completată luna — un cuprins care sare cu ea ar fi altă bară
+          la fiecare deschidere. */}
+      <SectionNav
+        label={t.sections}
+        items={[
+          { id: "registru", label: t.navRegister },
+          { id: "tabelul-1", label: t.navTable1 },
+          { id: "tabelul-2", label: t.navTable2 },
+          { id: "anexa-3", label: t.navAnexa3 },
+        ]}
+      />
 
       {/* ---- Ce blochează declaraţia, spus înainte de tabele ---- */}
       {(signals.missingMaterial > 0 ||
@@ -287,27 +367,38 @@ export function PackagingPage() {
       )}
 
       {/* ---- Registrul: mişcările din care iese totul ---- */}
-      <section className="mt-8">
+      <section id="registru" className="mt-8 scroll-mt-20">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">{t.registerTitle}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.registerHint}</p>
+            <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.registerHint}</p>
           </div>
           {canWrite && (
             <Link
               to="/miscari"
-              className="inline-flex h-10 items-center rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="inline-flex h-10 items-center rounded-md border border-line-strong px-4 text-sm font-medium text-content-strong hover:bg-surface-muted"
             >
               <Plus className="mr-2 h-4 w-4" />
               {t.addMovement}
             </Link>
           )}
         </div>
-        <div className="mt-3 overflow-x-auto">
-          <Table>
-            <THead>
+        <TableToolbar
+          view={registerView}
+          placeholder={t.searchPlaceholder}
+          className="mt-3"
+        />
+        <div>
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
-                <TH>{t.date}</TH>
+                <SortableTH
+                  sortKey="date"
+                  sort={registerView.sort}
+                  onSort={registerView.toggleSort}
+                >
+                  {t.date}
+                </SortableTH>
                 <TH>{t.code}</TH>
                 <TH>{t.material}</TH>
                 <TH>{t.kind}</TH>
@@ -317,40 +408,41 @@ export function PackagingPage() {
                 <TH>{t.inAnexa1}</TH>
                 <TH>{t.origin}</TH>
                 <TH>{t.workPoint}</TH>
+                <TH sticky="right" className="text-right">
+                  {strings.common.actions}
+                </TH>
               </TR>
             </THead>
             <TBody>
-              {loadingMovements && (
-                <TR>
-                  <TD colSpan={10}>{strings.common.loading}</TD>
-                </TR>
+              {(loadingMovements || registerView.visible.length === 0) && (
+                <TableFallbackRow
+                  columns={11}
+                  loading={loadingMovements}
+                  icon={Package}
+                  title={
+                    registerView.emptiedBySearch ? strings.common.noResults : t.registerEmpty
+                  }
+                />
               )}
-              {!loadingMovements && (movements ?? []).length === 0 && (
-                <TR>
-                  <TD colSpan={10} className="text-gray-500">
-                    {t.registerEmpty}
-                  </TD>
-                </TR>
-              )}
-              {(movements ?? []).map((m: WasteMovement) => (
+              {registerView.visible.map((m: WasteMovement) => (
                 <TR
                   key={m.id}
                   className={
-                    m.register === "ART_48" || m.packagingOnMarket === false
-                      ? "text-gray-400"
+                    isExcluded(m)
+                      ? "text-content-subtle"
                       : unclassifiedIds.has(m.id)
                         ? "bg-amber-50/60"
                         : undefined
                   }
                 >
-                  <TD className="whitespace-nowrap">{m.date}</TD>
+                  <TD className="whitespace-nowrap">{formatDate(m.date)}</TD>
                   <TD className="whitespace-nowrap font-mono text-xs">{m.wasteCode}</TD>
                   <TD className="whitespace-nowrap">
                     {m.effectivePackagingMaterial ? (
                       <>
                         {materialLabels[m.effectivePackagingMaterial]}
                         {m.packagingMaterial == null && (
-                          <span className="ml-1 text-xs text-gray-400">({t.fromCode})</span>
+                          <span className="ml-1 text-xs text-content-subtle">({t.fromCode})</span>
                         )}
                       </>
                     ) : (
@@ -362,10 +454,10 @@ export function PackagingPage() {
                       <>
                         {categoryLabels[m.packagingCategory]}
                         {m.packagingReusable && (
-                          <span className="ml-1 text-xs text-gray-500">· reutilizabil</span>
+                          <span className="ml-1 text-xs text-content-muted">· reutilizabil</span>
                         )}
                         {m.packagingHazardousContent && (
-                          <span className="ml-1 text-xs text-gray-500">· periculos</span>
+                          <span className="ml-1 text-xs text-content-muted">· periculos</span>
                         )}
                       </>
                     ) : (
@@ -393,15 +485,15 @@ export function PackagingPage() {
                       fiindcă tabul e locul unde omul verifică ce va fi depus. */}
                   <TD className="whitespace-nowrap">
                     {m.packagingOnMarket === false ? (
-                      <Badge variant="muted" title={t.inAnexa1NoHint}>
-                        {t.inAnexa1No}
-                      </Badge>
+                      <Tooltip content={t.inAnexa1NoHint}>
+                        <Badge variant="muted">{t.inAnexa1No}</Badge>
+                      </Tooltip>
                     ) : m.packagingOnMarket == null ? (
-                      <Badge variant="warning" title={t.inAnexa1LegacyHint}>
-                        {t.inAnexa1Legacy}
-                      </Badge>
+                      <Tooltip content={t.inAnexa1LegacyHint}>
+                        <Badge variant="warning">{t.inAnexa1Legacy}</Badge>
+                      </Tooltip>
                     ) : (
-                      <span className="text-xs text-gray-500">{t.inAnexa1Yes}</span>
+                      <span className="text-xs text-content-muted">{t.inAnexa1Yes}</span>
                     )}
                   </TD>
                   {/* Mişcările pe marfă preluată apar în registru fiindcă sunt ambalaj, dar nu
@@ -409,28 +501,44 @@ export function PackagingPage() {
                       să nu pară că lipsesc din calcul dintr-o eroare. */}
                   <TD className="whitespace-nowrap">
                     {m.register === "ART_48" ? (
-                      <Badge variant="muted" title={t.originTakeoverInTab}>
-                        {t.originTakeoverShort}
-                      </Badge>
+                      <Tooltip content={t.originTakeoverInTab}>
+                        <Badge variant="muted">{t.originTakeoverShort}</Badge>
+                      </Tooltip>
                     ) : (
-                      <span className="text-xs text-gray-500">{t.originOwnShort}</span>
+                      <span className="text-xs text-content-muted">{t.originOwnShort}</span>
                     )}
                   </TD>
                   <TD>{m.workPointName}</TD>
+                  {/* Rândul amber spunea ce lipsește și se oprea acolo. Acțiunea apare doar unde
+                      chiar e ceva de completat pe mișcare — un rând care nu hrănește declaraţia
+                      (marfă preluată, ambalaj pus pe piaţă de furnizor) n-are ce repara. */}
+                  <TD sticky="right" className="text-right">
+                    {needsFixing(m) && (
+                      <LinkButton
+                        variant="ghost"
+                        size="sm"
+                        to={`/miscari?luna=${m.date.slice(0, 7)}&miscare=${m.id}`}
+                      >
+                        <Pencil className="mr-1 h-3.5 w-3.5" />
+                        {t.fixOnMovement}
+                      </LinkButton>
+                    )}
+                  </TD>
                 </TR>
               ))}
             </TBody>
           </Table>
+          <TablePagination view={registerView} />
         </div>
       </section>
 
       {/* ---- Tabelul 1, însumat din registrul de mai sus ---- */}
-      <section className="mt-10">
+      <section id="tabelul-1" className="mt-10 scroll-mt-20">
         <h2 className="text-lg font-semibold">{t.table1Title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.table1Hint}</p>
-        <div className="mt-3 overflow-x-auto">
-          <Table>
-            <THead>
+        <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table1Hint}</p>
+        <div className="mt-3">
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
                 <TH>{t.material}</TH>
                 <TH className="text-right">{t.colSales}</TH>
@@ -443,11 +551,7 @@ export function PackagingPage() {
               </TR>
             </THead>
             <TBody>
-              {loadingTable1 && (
-                <TR>
-                  <TD colSpan={8}>{strings.common.loading}</TD>
-                </TR>
-              )}
+              {loadingTable1 && <TableSkeletonRows columns={8} rows={8} />}
               {!loadingTable1 &&
                 MATERIAL_ORDER.map((material) => {
                   const row = rowFor(material);
@@ -463,7 +567,7 @@ export function PackagingPage() {
                           )}
                         </TD>
                         <TD className="text-right">{kg(row?.salesPackaging)}</TD>
-                        <TD className="text-right text-gray-500">{kg(packagedGoodsTotal(row))}</TD>
+                        <TD className="text-right text-content-muted">{kg(packagedGoodsTotal(row))}</TD>
                         <TD className="text-right">{kg(row?.primaryTotal)}</TD>
                         <TD className="text-right">{kg(row?.primaryReusable)}</TD>
                         <TD className="text-right">{kg(row?.secondaryTotal)}</TD>
@@ -491,12 +595,12 @@ export function PackagingPage() {
               {overridesOpen ? t.overrideClose : t.overrideOpen}
             </button>
             {overridesOpen && (
-              <div className="mt-3 rounded-lg border border-gray-200 p-4">
-                <p className="max-w-3xl text-sm text-gray-500">{t.table1Override}</p>
-                <p className="mt-1 text-xs text-gray-400">{t.overrideClear}</p>
-                <div className="mt-3 overflow-x-auto">
-                  <Table>
-                    <THead>
+              <div className="mt-3 rounded-lg border border-line p-4">
+                <p className="max-w-3xl text-sm text-content-muted">{t.table1Override}</p>
+                <p className="mt-1 text-xs text-content-subtle">{t.overrideClear}</p>
+                <div className="mt-3">
+                  <Table stickyHeader>
+                    <THead sticky>
                       <TR>
                         <TH>{t.material}</TH>
                         <TH className="text-right">{t.colSales}</TH>
@@ -519,6 +623,7 @@ export function PackagingPage() {
                                 type="number"
                                 step="0.001"
                                 min="0"
+                                aria-label={`${materialLabels[row.material]} — ${COLUMN_LABELS[column]}`}
                                 className="w-28 text-right"
                                 value={cellValue(row, column)}
                                 onChange={(ev) => edit(row.material, column, ev.target.value)}
@@ -538,12 +643,12 @@ export function PackagingPage() {
       </section>
 
       {/* ---- Tabelul 2, calculat din predări ---- */}
-      <section className="mt-10">
+      <section id="tabelul-2" className="mt-10 scroll-mt-20">
         <h2 className="text-lg font-semibold">{t.table2Title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.table2Hint}</p>
-        <div className="mt-3 overflow-x-auto">
-          <Table>
-            <THead>
+        <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table2Hint}</p>
+        <div className="mt-3">
+          <Table stickyHeader>
+            <THead sticky>
               <TR>
                 <TH>{t.material}</TH>
                 <TH className="text-right">{t.quantity}</TH>
@@ -554,11 +659,7 @@ export function PackagingPage() {
             </THead>
             <TBody>
               {(handovers ?? []).length === 0 && (
-                <TR>
-                  <TD colSpan={5} className="text-gray-500">
-                    {t.noHandovers}
-                  </TD>
-                </TR>
+                <TableFallbackRow columns={5} loading={false} icon={Package} title={t.noHandovers} />
               )}
               {(handovers ?? []).map((row, i) => (
                 <TR key={`${row.material}-${row.operatorCui}-${row.operation}-${i}`}>
@@ -567,7 +668,7 @@ export function PackagingPage() {
                   <TD>
                     {row.operatorName}
                     {row.operatorAddress ? (
-                      <span className="block text-xs text-gray-500">{row.operatorAddress}</span>
+                      <span className="block text-xs text-content-muted">{row.operatorAddress}</span>
                     ) : null}
                   </TD>
                   <TD>{row.operatorCui ?? "—"}</TD>
@@ -594,15 +695,26 @@ export function PackagingPage() {
  */
 function Anexa3Section({ year }: { year: number }) {
   const { data: workPoints } = useWorkPoints();
-  const [workPointId, setWorkPointId] = useState("");
+  /**
+   * Numai punctele **active**. Restul ecranelor filtrează așa de mult (Mișcări, Evidențe); aici
+   * lista le arăta pe toate, deci se putea alege un punct de lucru scos din uz — și, cu
+   * auto-selecția de mai jos, se putea chiar nimeri singură pe el.
+   */
+  const activeWorkPoints = useMemo(
+    () => (workPoints ?? []).filter((w) => w.active),
+    [workPoints]
+  );
+  // În adresă, ca filtrul de an de deasupra: altfel un link către raportul unui punct de lucru
+  // anume nu putea exista, iar alegerea se pierdea la fiecare navigare.
+  const [workPointId, setWorkPointId] = useUrlState("punctA3");
 
   // Cu un singur punct de lucru, alegerea nu e o alegere: se selectează singur, ca butonul de
   // descărcare să fie activ din prima. Cu mai multe, rămâne pe „Toate" până alege omul.
   useEffect(() => {
-    if (!workPointId && workPoints?.length === 1) {
-      setWorkPointId(workPoints[0].id);
+    if (!workPointId && activeWorkPoints.length === 1) {
+      setWorkPointId(activeWorkPoints[0].id);
     }
-  }, [workPoints, workPointId]);
+  }, [activeWorkPoints, workPointId, setWorkPointId]);
   const { data, isLoading } = usePackagingAnexa3(year, workPointId || undefined);
   const { notify } = useToast();
   const [downloading, setDownloading] = useState<"xls" | "pdf" | null>(null);
@@ -612,7 +724,7 @@ function Anexa3Section({ year }: { year: number }) {
     try {
       await downloadPackagingAnexa3(year, workPointId || undefined, format);
     } catch (err) {
-      notify(apiErrorMessage(err, t.anexa3DownloadError), "error");
+      notify(await apiBlobErrorMessage(err, t.anexa3DownloadError), "error");
     } finally {
       setDownloading(null);
     }
@@ -628,48 +740,59 @@ function Anexa3Section({ year }: { year: number }) {
   const missingQuantity = (data?.unclassified ?? []).filter((r) => r.missingQuantity).length;
 
   return (
-    <section className="mt-10">
+    <section id="anexa-3" className="mt-10 scroll-mt-20">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
-          <h2 className="text-lg font-semibold text-gray-900">{t.anexa3Title}</h2>
-          <p className="mt-1 text-sm text-gray-500">{t.anexa3Hint}</p>
+          <h2 className="text-lg font-semibold text-content">{t.anexa3Title}</h2>
+          <p className="mt-1 text-sm text-content-muted">{t.anexa3Hint}</p>
         </div>
         <div className="flex items-end gap-2">
           <div>
             <Label htmlFor="a3-wp">{t.anexa3WorkPoint}</Label>
             <Select id="a3-wp" value={workPointId} onChange={(e) => setWorkPointId(e.target.value)}>
               <option value="">{t.anexa3AllWorkPoints}</option>
-              {(workPoints ?? []).map((wp) => (
+              {activeWorkPoints.map((wp) => (
                 <option key={wp.id} value={wp.id}>
                   {wp.name}
                 </option>
               ))}
             </Select>
           </div>
+          {/* `loading`, ca butoanele de sus: starea `downloading` exista deja, dar nu o citea
+              nimeni, deci un `.xls` care se construiește câteva secunde arăta ca un buton mort. */}
           <Button
             variant="outline"
             disabled={!canDownload || downloading !== null}
+            loading={downloading === "xls"}
             onClick={() => download("xls")}
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {downloading !== "xls" && <FileSpreadsheet className="mr-2 h-4 w-4" />}
             {t.anexa3Download}
           </Button>
           <Button
             variant="outline"
             disabled={!canDownload || downloading !== null}
+            loading={downloading === "pdf"}
             onClick={() => download("pdf")}
           >
-            <FileText className="mr-2 h-4 w-4" />
+            {downloading !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
             PDF
           </Button>
         </div>
       </div>
-      <p className="mt-1 text-xs text-gray-500">{t.anexa3WorkPointHint}</p>
+      <p className="mt-1 text-xs text-content-muted">{t.anexa3WorkPointHint}</p>
       {data?.printable && workPointId === "" && (
         <p className="mt-1 text-xs text-amber-700">{t.anexa3PickWorkPoint}</p>
       )}
 
-      {isLoading && <p className="mt-4 text-sm text-gray-500">{strings.common.loading}</p>}
+      {/* Scheletul ține forma a ce urmează — o casetă de avertisment sau un tabel mic — ca
+          secțiunea să nu sară când vin datele. */}
+      {isLoading && (
+        <div className="mt-4 space-y-2">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+        </div>
+      )}
 
       {/* Profilul n-a spus care tabel se aplică: nu tipărim nimic şi spunem de ce. */}
       {data && !data.printable && (
@@ -687,7 +810,7 @@ function Anexa3Section({ year }: { year: number }) {
 
       {data?.printable && (
         <>
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-sm text-content-strong">
             <span className="font-medium">
               {table2 ? t.anexa3Table2Title : t.anexa3Table1Title}
             </span>
@@ -714,11 +837,11 @@ function Anexa3Section({ year }: { year: number }) {
             </div>
           )}
 
-          <div className="mt-3 overflow-x-auto">
-            <h3 className="text-sm font-semibold text-gray-800">{t.anexa3IntakeTitle}</h3>
-            <p className="mb-2 text-xs text-gray-500">{t.anexa3IntakeHint}</p>
-            <Table>
-              <THead>
+          <div className="mt-3">
+            <h3 className="text-sm font-semibold text-content-strong">{t.anexa3IntakeTitle}</h3>
+            <p className="mb-2 text-xs text-content-muted">{t.anexa3IntakeHint}</p>
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
                   <TH>{t.material}</TH>
                   <TH className="text-right">{t.anexa3ColTotal}</TH>
@@ -729,7 +852,7 @@ function Anexa3Section({ year }: { year: number }) {
               <TBody>
                 {data.intake.length === 0 && (
                   <TR>
-                    <TD colSpan={4} className="text-gray-500">
+                    <TD colSpan={4} className="text-content-muted">
                       {t.anexa3Empty}
                     </TD>
                   </TR>
@@ -746,11 +869,11 @@ function Anexa3Section({ year }: { year: number }) {
             </Table>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <h3 className="text-sm font-semibold text-gray-800">{t.anexa3OutTitle}</h3>
-            {table2 && <p className="mb-2 text-xs text-gray-500">{t.anexa3RecyclingHint}</p>}
-            <Table>
-              <THead>
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-content-strong">{t.anexa3OutTitle}</h3>
+            {table2 && <p className="mb-2 text-xs text-content-muted">{t.anexa3RecyclingHint}</p>}
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
                   <TH>{t.material}</TH>
                   {table2 ? (
@@ -784,14 +907,14 @@ function Anexa3Section({ year }: { year: number }) {
                         <TD>
                           {row.operatorName ?? "—"}
                           {row.operatorCui ? (
-                            <span className="block text-xs text-gray-500">{row.operatorCui}</span>
+                            <span className="block text-xs text-content-muted">{row.operatorCui}</span>
                           ) : null}
                         </TD>
                       </TR>
                     ))}
                 {(table2 ? data.treatments : data.handovers).length === 0 && (
                   <TR>
-                    <TD colSpan={table2 ? 4 : 3} className="text-gray-500">
+                    <TD colSpan={table2 ? 4 : 3} className="text-content-muted">
                       {t.noHandovers}
                     </TD>
                   </TR>
@@ -800,7 +923,7 @@ function Anexa3Section({ year }: { year: number }) {
             </Table>
           </div>
 
-          <p className="mt-3 text-xs text-gray-500">{t.anexa3DownloadHint}</p>
+          <p className="mt-3 text-xs text-content-muted">{t.anexa3DownloadHint}</p>
         </>
       )}
     </section>
@@ -826,7 +949,7 @@ function sumRow(rows: PackagingTable1Row[], label: string, parts: PackagingMater
     (r) => r.hazardousContent,
   ];
   return (
-    <TR className="bg-gray-50">
+    <TR className="bg-surface-muted">
       <TD className="font-semibold">{label}</TD>
       {columns.map((pick, i) => (
         <TD key={i} className="text-right font-semibold">

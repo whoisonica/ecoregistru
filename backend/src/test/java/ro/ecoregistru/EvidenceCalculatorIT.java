@@ -17,8 +17,15 @@ import ro.ecoregistru.service.EvidenceCalculator;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,6 +51,7 @@ class EvidenceCalculatorIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired PartnerRepository partnerRepository;
     @Autowired WasteMovementRepository movementRepository;
+    @Autowired MonthlyEvidenceRepository evidenceRepository;
 
     private UUID tenantId;
     private WorkPoint workPoint;
@@ -200,6 +208,72 @@ class EvidenceCalculatorIT {
         assertStock(byMonth(2026).get(1), "650"); // the correction reached the following year
     }
 
+    /**
+     * The cache is derived data, so reading it has to answer for the movements as they are now.
+     *
+     * <p>Before this, a rebuild happened only when the year was <b>empty</b>. A client who
+     * recorded three handovers and pressed "Evidența gestiunii deșeurilor" got a PDF without them
+     * — every read goes through {@code list}, the two official documents included — and the
+     * dashboard said the file was clean at the same time. The only defence was a permanent banner
+     * asking the client to remember to press a button.
+     */
+    @Test
+    void aMovementRecordedAfterTheLastRebuildReachesTheSheetWithoutPressingAnything() {
+        evidenceCalculator.regenerateYear(2025);
+        assertStock(byMonth(2025).get(12), "600");
+
+        // Recorded the ordinary way: straight onto the movements, nobody pressing "Regenerează".
+        save(LocalDate.of(2025, 7, 3), "40.000", Unit.KG, WasteOperation.GENERATED, null, null);
+
+        assertStock(byMonth(2025).get(7), "540");
+        assertStock(byMonth(2025).get(12), "640");
+    }
+
+    /** A soft delete invalidates the cache exactly as an edit does — the quantity left the sheet. */
+    @Test
+    void deletingAMovementAlsoReachesTheSheet() {
+        evidenceCalculator.regenerateYear(2025);
+
+        WasteMovement december = movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(2025, 12, 1), LocalDate.of(2025, 12, 31))
+                .get(0);
+        december.setDeleted(true);
+        december.setDeletedAt(Instant.now());
+        movementRepository.saveAndFlush(december);
+
+        assertStock(byMonth(2025).get(12), "500"); // the 100 kg generated in December is gone
+    }
+
+    /**
+     * Stock carries, so the rebuild cannot start at the year being read: a correction on 2025
+     * leaves the 2026 opening balance wrong, and rebuilding 2026 alone would rebuild it on that
+     * same wrong figure. It starts at the earliest year whose lines predate the change.
+     */
+    @Test
+    void aCorrectionOnAnEarlierYearReachesTheOpeningStockOfALaterOne() {
+        evidenceCalculator.regenerateYear(2025);
+        evidenceCalculator.regenerateYear(2026); // opens at 600, no 2026 movements
+        assertStock(byMonth(2026).get(1), "600");
+
+        save(LocalDate.of(2025, 6, 4), "50.000", Unit.KG, WasteOperation.GENERATED, null, null);
+
+        // Read 2026 directly. Nobody regenerated 2025, which is where the correction landed.
+        assertStock(byMonth(2026).get(1), "650");
+        assertStock(byMonth(2025).get(12), "650");
+    }
+
+    /** A read of an unchanged year must stay a read: no rewrite, so no new {@code generatedAt}. */
+    @Test
+    void readingAnUnchangedYearDoesNotRewriteIt() {
+        evidenceCalculator.regenerateYear(2025);
+        Instant first = evidenceRepository.findOldestGeneratedAt(tenantId, 2025);
+
+        byMonth(2025);
+        byMonth(2025);
+
+        assertThat(evidenceRepository.findOldestGeneratedAt(tenantId, 2025)).isEqualTo(first);
+    }
+
     @Test
     void regenerateIsIdempotent() {
         evidenceCalculator.regenerateYear(2025);
@@ -207,6 +281,61 @@ class EvidenceCalculatorIT {
         assertThat(second.linesGenerated()).isEqualTo(12);
         assertThat(second.cascadedYears()).isEmpty();
         assertThat(evidenceCalculator.list(2025, null, null)).hasSize(12);
+    }
+
+    /**
+     * Două citiri deodată pe un cache rămas în urmă nu se calcă una pe alta.
+     *
+     * <p>Decizia 50 a făcut din citire o **scriere**: `list()` reconstruiește anul când mișcările
+     * s-au mișcat de la ultima scriere. Asta a fost reparația corectă — se putea depune o fișă fără
+     * mișcările de ieri — dar a deschis o cursă pe care varianta veche aproape n-o avea, fiindcă
+     * reconstruia doar când anul era **gol**. Acum orice pereche de citiri simultane pe un an
+     * învechit intră amândouă în reconstrucție, iar `deleteByCompany_IdAndYear` încarcă entitățile
+     * înainte să le șteargă: a doua șterge rânduri pe care prima le-a înlocuit deja și cade cu
+     * „Row was updated or deleted by another transaction".
+     *
+     * <p>Nu e o cursă teoretică: Panoul și ecranul Evidențe cer amândouă anul curent, iar două
+     * taburi deschise sau o navigare rapidă sunt destul. Ce vede clientul e un ecran care dă eroare
+     * pe o citire — nu se pierde nimic din date, dar raportul nu se deschide.
+     *
+     * <p>Patru cititori, nu doi: cu doi, fereastra se poate rata pe o mașină rapidă.
+     */
+    @Test
+    void twoReadsAtOnceDoNotCollideOverTheRebuild() throws Exception {
+        evidenceCalculator.regenerateYear(2025);
+        // Cache-ul rămâne în urmă exact cum o face folosirea obișnuită: se mai înregistrează o
+        // mișcare, și nimeni nu apasă „Regenerează".
+        save(LocalDate.of(2025, 6, 3), "50.000", Unit.KG, WasteOperation.GENERATED, null, null);
+
+        int readers = 4;
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(readers);
+        List<Future<Integer>> results = new ArrayList<>();
+        for (int i = 0; i < readers; i++) {
+            results.add(pool.submit(() -> {
+                // `TenantContext` e un ThreadLocal: fiecare fir și-l pune singur.
+                TenantContext.set(tenantId);
+                try {
+                    start.await();
+                    return evidenceCalculator.list(2025, null, null).size();
+                } finally {
+                    TenantContext.clear();
+                }
+            }));
+        }
+        start.countDown();
+        try {
+            for (Future<Integer> result : results) {
+                assertThat(result.get(30, TimeUnit.SECONDS)).isEqualTo(12);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+
+        // Și reconstrucția s-a făcut o dată, nu de patru ori: liniile poartă un singur instant.
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2025))
+                .extracting(MonthlyEvidence::getGeneratedAt)
+                .containsOnly(evidenceRepository.findOldestGeneratedAt(tenantId, 2025));
     }
 
     // --- helpers ---

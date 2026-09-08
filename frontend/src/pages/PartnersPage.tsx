@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from "react";
-import { Plus, Pencil, Ban } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Ban, Pencil, Plus, RotateCcw, Users } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   usePartners,
   useCreatePartner,
   useUpdatePartner,
   useDeactivatePartner,
+  useReactivatePartner,
 } from "@/hooks/usePartners";
 import type {
   DriverInput,
@@ -17,15 +18,26 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useHotkey } from "@/hooks/useHotkey";
+import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
+import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { missingLast, useTableView } from "@/hooks/useTableView";
+import { useActiveFilter } from "@/components/ui/active-filter";
+import { fold, formatDate } from "@/lib/utils";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 
 const t = strings.partners;
@@ -43,17 +55,19 @@ type RoleFilter = "" | "client" | "supplier" | "none" | "carrier";
 /** Formats an authorization expiry as a status badge, mirroring backend `expiringSoon`. */
 function ExpiryBadge({ partner }: { partner: Partner }) {
   if (!partner.authorizationExpiry) {
-    return <span className="text-gray-400">{t.noAuthorization}</span>;
+    return <span className="text-content-subtle">{t.noAuthorization}</span>;
   }
   const date = partner.authorizationExpiry;
   const isExpired = new Date(date) < new Date(new Date().toDateString());
   if (isExpired) {
     return <Badge variant="danger">{t.expired}</Badge>;
   }
+  // Data se scrie cum se scrie în România. Aici rămăsese ISO brut — `2026-11-15` lângă
+  // `15.11.2026` pe Mișcări și pe Termene, în același produs.
   if (partner.expiringSoon) {
-    return <Badge variant="warning">{`${t.expiringSoon} · ${date}`}</Badge>;
+    return <Badge variant="warning">{`${t.expiringSoon} · ${formatDate(date)}`}</Badge>;
   }
-  return <Badge variant="success">{date}</Badge>;
+  return <Badge variant="success">{formatDate(date)}</Badge>;
 }
 
 export function PartnersPage() {
@@ -65,7 +79,9 @@ export function PartnersPage() {
   const createMut = useCreatePartner();
   const updateMut = useUpdatePartner();
   const deactivateMut = useDeactivatePartner();
+  const reactivateMut = useReactivatePartner();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
@@ -91,7 +107,8 @@ export function PartnersPage() {
   const [nameError, setNameError] = useState(false);
   const [roleError, setRoleError] = useState(false);
   const [typeError, setTypeError] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("");
+  const [roleFilterRaw, setRoleFilter] = useUrlState("rol");
+  const roleFilter = roleFilterRaw as RoleFilter;
 
   /**
    * Ce parteneri are deja firma, potriviti pe ce s-a tastat. Doua litere e pragul cerut pe
@@ -102,20 +119,52 @@ export function PartnersPage() {
    * Nu e un apel nou: lista partenerilor e deja incarcata pentru tabel, si e a tenantului. La
    * editare nu se sugereaza nimic — partenerul exista deja, iar propriul nume nu e un duplicat.
    */
+  // `fold` aici nu e doar comoditate, ca la căutarea din tabel: sugestia asta există ca să nu se
+  // creeze un partener de două ori. Cine tastează „deseuri" nu vedea „Transport Deșeuri SRL", deci
+  // îl adăuga încă o dată — iar duplicatul rămâne în nomenclator şi pe documentele tipărite.
   const nameSuggestions =
     editing || name.trim().length < 2
       ? []
       : (partners ?? [])
-          .filter((p) => p.name.toLowerCase().includes(name.trim().toLowerCase()))
+          .filter((p) => fold(p.name).includes(fold(name.trim())))
           .slice(0, 5);
 
-  const visiblePartners = (partners ?? []).filter((p) => {
-    if (roleFilter === "client") return p.client;
-    if (roleFilter === "supplier") return p.supplier;
-    if (roleFilter === "none") return !p.client && !p.supplier;
-    if (roleFilter === "carrier") return p.carrier;
-    return true;
+  const filteredByRole = useMemo(
+    () =>
+      (partners ?? []).filter((p) => {
+        if (roleFilter === "client") return p.client;
+        if (roleFilter === "supplier") return p.supplier;
+        if (roleFilter === "none") return !p.client && !p.supplier;
+        if (roleFilter === "carrier") return p.carrier;
+        return true;
+      }),
+    [partners, roleFilter]
+  );
+
+  /**
+   * Filtrul de rol restrânge, apoi vederea caută, sortează și paginează ce a rămas. Ordinea
+   * contează: căutarea peste tot, urmată de filtru, ar arăta un număr de potriviri din care o
+   * parte nici nu se vede.
+   */
+  // Rolul restrânge, apoi starea: „furnizori activi" e întrebarea obișnuită, iar cimitirul de
+  // parteneri scoși din uz nu trebuie să stea în calea ei.
+  const { rows: activePartners, control: activeFilter } = useActiveFilter(filteredByRole);
+  const view = useTableView(activePartners, {
+    searchText: (p) =>
+      [p.name, p.cui, p.authorizationNumber, p.address].filter(Boolean).join(" "),
+    comparators: {
+      name: (a, b) => a.name.localeCompare(b.name, "ro"),
+      cui: (a, b) => (a.cui ?? "").localeCompare(b.cui ?? "", "ro"),
+      // Autorizația fără dată stă la coadă, în ambele sensuri: „nu se știe" nu e nici devreme,
+      // nici târziu. `|| null` păstrează înțelesul de dinainte, în care și șirul gol e o lipsă.
+      authorizationExpiry: missingLast(
+        (p) => p.authorizationExpiry || null,
+        (x, y) => x.localeCompare(y)
+      ),
+    },
+    initialSort: { key: "name", direction: "asc" },
   });
+  const visiblePartners = view.visible;
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -141,6 +190,25 @@ export function PartnersPage() {
     setTypeError(false);
     setDialogOpen(true);
   }
+
+  /**
+   * `?nou=1` — formularul gol, cerut din paletă (Ctrl+K → „Adaugă partener").
+   *
+   * <p>Parametrul se consumă la deschidere, ca `?miscare=` pe Mișcări: lăsat în adresă, un refresh
+   * ar redeschide dialogul peste ce lucrezi. Se consumă și pe un rol care nu poate scrie.
+   *
+   * <p>`openCreate` golește optsprezece rubrici, deci nu se rescrie aici; se ține prin `ref`, ca
+   * ascultătorii din `Dialog` — funcția e alta la fiecare randare, iar în dependențele efectului
+   * l-ar reporni la fiecare tastă.
+   */
+  const openCreateRef = useRef(openCreate);
+  openCreateRef.current = openCreate;
+  const [newParam, setNewParam] = useUrlState("nou");
+  useEffect(() => {
+    if (!newParam) return;
+    setNewParam("");
+    if (canManage) openCreateRef.current();
+  }, [newParam, setNewParam, canManage]);
 
   function openEdit(p: Partner) {
     setEditing(p);
@@ -234,36 +302,61 @@ export function PartnersPage() {
   }
 
   function handleDeactivate(p: Partner) {
-    if (!window.confirm(t.confirmDeactivate)) return;
+    confirm({
+      title: t.confirmDeactivateTitle,
+      message: (
+        <>
+          <strong className="text-content">{p.name}</strong>
+          {p.cui ? ` — CUI ${p.cui}` : ""}. {t.confirmDeactivate}
+        </>
+      ),
+      confirmLabel: t.deactivate,
+      tone: "danger",
+      onConfirm: () => deactivate(p),
+    });
+  }
+
+  function deactivate(p: Partner) {
     deactivateMut.mutate(p.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
     });
   }
 
+  function reactivate(p: Partner) {
+    reactivateMut.mutate(p.id, {
+      onSuccess: () => notify(strings.common.reactivated, "success"),
+      onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
+  // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
+  // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
+  useHotkey("n", openCreate, { enabled: Boolean(canManage) });
+
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        {canManage && (
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t.add}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          canManage && (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t.add}
+            </Button>
+          )
+        }
+      />
 
-      <div className="mt-6 flex flex-wrap items-end gap-3">
+      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="filter-role">{t.filterRole}</Label>
           <Select
             id="filter-role"
             value={roleFilter}
             onChange={(ev) => setRoleFilter(ev.target.value as RoleFilter)}
-            className="w-56"
+            className="w-full sm:w-56"
           >
             <option value="">{t.filterRoleAll}</option>
             <option value="client">{roleLabels.client}</option>
@@ -279,89 +372,121 @@ export function PartnersPage() {
       </div>
 
       <section className="mt-4">
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && (
-          <Table>
-            <THead>
-              <TR>
-                <TH>{t.name}</TH>
-                <TH>{t.cui}</TH>
-                <TH>{t.role}</TH>
-                <TH>{t.type}</TH>
-                <TH>{t.carrierColumn}</TH>
-                <TH>{t.authorizationNumber}</TH>
-                <TH>{t.authorizationExpiry}</TH>
-                <TH>{strings.common.status}</TH>
-                {canManage && <TH className="text-right">{strings.common.actions}</TH>}
-              </TR>
-            </THead>
-            <TBody>
-              {visiblePartners.length === 0 && (
+        {!isError && (
+          <>
+            <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+              {activeFilter}
+            </TableToolbar>
+            <Table stickyHeader>
+              <THead sticky>
                 <TR>
-                  <TD colSpan={canManage ? 9 : 8} className="text-center text-gray-400">
-                    {t.empty}
-                  </TD>
+                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                    {t.name}
+                  </SortableTH>
+                  <SortableTH sortKey="cui" sort={view.sort} onSort={view.toggleSort}>
+                    {t.cui}
+                  </SortableTH>
+                  <TH>{t.role}</TH>
+                  <TH>{t.type}</TH>
+                  <TH>{t.carrierColumn}</TH>
+                  <TH>{t.authorizationNumber}</TH>
+                  <SortableTH
+                    sortKey="authorizationExpiry"
+                    sort={view.sort}
+                    onSort={view.toggleSort}
+                  >
+                    {t.authorizationExpiry}
+                  </SortableTH>
+                  <TH>{strings.common.status}</TH>
+                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
-              )}
-              {visiblePartners.map((p) => (
-                <TR key={p.id}>
-                  <TD className="font-medium text-gray-900">{p.name}</TD>
-                  <TD>{p.cui || "—"}</TD>
-                  <TD>
-                    <PartnerRoleBadge partner={p} />
-                  </TD>
-                  <TD>
-                    {p.type ? (
-                      typeLabels[p.type]
-                    ) : (
-                      <span className="text-gray-500">{t.typeNoneShort}</span>
-                    )}
-                  </TD>
-                  <TD>
-                    {p.carrier ? (
-                      <Badge variant="muted">{t.carrierYes}</Badge>
-                    ) : (
-                      <span className="text-gray-400">{t.carrierNo}</span>
-                    )}
-                  </TD>
-                  <TD>{p.authorizationNumber || "—"}</TD>
-                  <TD>
-                    <ExpiryBadge partner={p} />
-                  </TD>
-                  <TD>
-                    {p.active ? (
-                      <Badge variant="success">{t.active}</Badge>
-                    ) : (
-                      <Badge variant="muted">{t.inactive}</Badge>
-                    )}
-                  </TD>
-                  {canManage && (
-                    <TD className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                          <Pencil className="mr-1 h-3.5 w-3.5" />
-                          {strings.common.edit}
+              </THead>
+              <TBody>
+                {(isLoading || visiblePartners.length === 0) && (
+                  <TableFallbackRow
+                    columns={canManage ? 9 : 8}
+                    loading={isLoading}
+                    icon={Users}
+                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    description={
+                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                    }
+                    action={
+                      canManage && (
+                        <Button onClick={openCreate}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t.add}
                         </Button>
-                        {p.active && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => handleDeactivate(p)}
-                          >
-                            <Ban className="mr-1 h-3.5 w-3.5" />
-                            {t.deactivate}
-                          </Button>
-                        )}
-                      </div>
+                      )
+                    }
+                  />
+                )}
+                {visiblePartners.map((p) => (
+                  <TR key={p.id}>
+                    <TD className="font-medium text-content">{p.name}</TD>
+                    <TD>{p.cui || "—"}</TD>
+                    <TD>
+                      <PartnerRoleBadge partner={p} />
                     </TD>
-                  )}
-                </TR>
-              ))}
-            </TBody>
-          </Table>
+                    <TD>
+                      {p.type ? (
+                        typeLabels[p.type]
+                      ) : (
+                        <span className="text-content-muted">{t.typeNoneShort}</span>
+                      )}
+                    </TD>
+                    <TD>
+                      {p.carrier ? (
+                        <Badge variant="muted">{t.carrierYes}</Badge>
+                      ) : (
+                        <span className="text-content-subtle">{t.carrierNo}</span>
+                      )}
+                    </TD>
+                    <TD>{p.authorizationNumber || "—"}</TD>
+                    <TD>
+                      <ExpiryBadge partner={p} />
+                    </TD>
+                    <TD>
+                      {p.active ? (
+                        <Badge variant="success">{t.active}</Badge>
+                      ) : (
+                        <Badge variant="muted">{t.inactive}</Badge>
+                      )}
+                    </TD>
+                    {canManage && (
+                      <TD sticky="right" className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                            <Pencil className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.edit}
+                          </Button>
+                          {p.active ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => handleDeactivate(p)}
+                            >
+                              <Ban className="mr-1 h-3.5 w-3.5" />
+                              {t.deactivate}
+                            </Button>
+                          ) : (
+                            <Button variant="ghost" size="sm" onClick={() => reactivate(p)}>
+                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                              {strings.common.reactivate}
+                            </Button>
+                          )}
+                        </div>
+                      </TD>
+                    )}
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+            <TablePagination view={view} />
+          </>
         )}
       </section>
 
@@ -369,6 +494,9 @@ export function PartnersPage() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         title={editing ? t.editTitle : t.addTitle}
+        // `xl`, ca formularul de mișcare și cel de firmă. La 512px rândul unui șofer însemna trei
+        // câmpuri și un buton în vreo 120px fiecare, iar punctele de lucru la fel.
+        size="xl"
         footer={
           <>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
@@ -380,332 +508,362 @@ export function PartnersPage() {
           </>
         }
       >
-        <form id="partner-form" onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="p-name">{t.name}</Label>
-            <Input
-              id="p-name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (nameError) setNameError(false);
-              }}
-              autoFocus
-            />
-            {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
-            {nameSuggestions.length > 0 && (
-              <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
-                <p className="text-xs font-medium text-amber-800">{t.nameSuggestions}</p>
-                <ul className="mt-0.5 space-y-0.5">
-                  {nameSuggestions.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        className="text-xs text-amber-900 underline underline-offset-2"
-                        onClick={() => openEdit(p)}
-                      >
-                        {p.name}
-                        {p.cui ? ` — ${p.cui}` : ""}
-                        {!p.active ? ` (${t.inactive})` : ""}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-0.5 text-xs text-amber-700">{t.nameSuggestionsHint}</p>
-              </div>
-            )}
-          </div>
-          <div>
-            <span className="block text-sm font-medium text-gray-700">{t.role}</span>
-            <div className="mt-2 space-y-2">
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600"
-                  checked={isClient}
-                  onChange={(ev) => {
-                    setIsClient(ev.target.checked);
-                    if (roleError) setRoleError(false);
-                  }}
-                />
-                <span>
-                  <span className="font-medium text-emerald-800">{roleLabels.client}</span>
-                  <span className="block text-xs text-gray-500">{roleLabels.clientHint}</span>
-                </span>
-              </label>
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600"
-                  checked={isSupplier}
-                  onChange={(ev) => {
-                    setIsSupplier(ev.target.checked);
-                    if (roleError) setRoleError(false);
-                  }}
-                />
-                <span>
-                  <span className="font-medium text-amber-800">{roleLabels.supplier}</span>
-                  <span className="block text-xs text-gray-500">{roleLabels.supplierHint}</span>
-                </span>
-              </label>
+        {/* Cinci secțiuni titrate, în locul unei coloane de cincisprezece blocuri. Ordinea
+            răspunde la întrebări, nu la istoria în care s-au adăugat rubricile: cine e · ce face ·
+            transportă? · e autorizat? · ce se tipărește pe Anexa 3. CUI-ul a urcat lângă denumire,
+            de unde stătea între bifa de transportator și autorizație — o identificare ruptă în
+            două de o întrebare despre camioane. */}
+        <form id="partner-form" onSubmit={handleSubmit} className="space-y-6">
+          <FormSection title={t.sectionIdentity}>
+            <div>
+              <Label htmlFor="p-name">{t.name}</Label>
+              <Input
+                id="p-name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError(false);
+                }}
+                autoFocus
+              />
+              {nameError && <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>}
+              {nameSuggestions.length > 0 && (
+                <div className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
+                  <p className="text-xs font-medium text-amber-800">{t.nameSuggestions}</p>
+                  <ul className="mt-0.5 space-y-0.5">
+                    {nameSuggestions.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          className="text-xs text-amber-900 underline underline-offset-2"
+                          onClick={() => openEdit(p)}
+                        >
+                          {p.name}
+                          {p.cui ? ` — ${p.cui}` : ""}
+                          {!p.active ? ` (${t.inactive})` : ""}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-0.5 text-xs text-amber-700">{t.nameSuggestionsHint}</p>
+                </div>
+              )}
             </div>
-            {roleError && <p className="mt-1 text-xs text-red-600">{t.roleRequired}</p>}
-          </div>
-          <div>
-            <Label htmlFor="p-type">{t.type}</Label>
-            <Select
-              id="p-type"
-              value={type}
-              onChange={(e) => {
-                setType(e.target.value as PartnerType | "");
-                if (typeError) setTypeError(false);
-              }}
-            >
-              {PARTNER_TYPES.map((pt) => (
-                <option key={pt} value={pt}>
-                  {typeLabels[pt]}
-                </option>
-              ))}
-              <option value="">{t.typeNone}</option>
-            </Select>
-            {!type && <p className="mt-1 text-xs text-gray-500">{t.typeNoneHint}</p>}
-            {typeError && <p className="mt-1 text-xs text-red-600">{t.typeRequired}</p>}
-          </div>
+            <div>
+              <Label htmlFor="p-cui">{t.cui}</Label>
+              <Input
+                id="p-cui"
+                value={cui}
+                onChange={(e) => setCui(e.target.value)}
+                placeholder={t.cuiPlaceholder}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection title={t.sectionRole}>
+            <div>
+              <span className="block text-sm font-medium text-content-strong">{t.role}</span>
+              <div className="mt-2 space-y-2">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-emerald-600"
+                    checked={isClient}
+                    onChange={(ev) => {
+                      setIsClient(ev.target.checked);
+                      if (roleError) setRoleError(false);
+                    }}
+                  />
+                  <span>
+                    <span className="font-medium text-emerald-800">{roleLabels.client}</span>
+                    <span className="block text-xs text-content-muted">{roleLabels.clientHint}</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 rounded border-line-strong text-amber-600"
+                    checked={isSupplier}
+                    onChange={(ev) => {
+                      setIsSupplier(ev.target.checked);
+                      if (roleError) setRoleError(false);
+                    }}
+                  />
+                  <span>
+                    <span className="font-medium text-amber-800">{roleLabels.supplier}</span>
+                    <span className="block text-xs text-content-muted">{roleLabels.supplierHint}</span>
+                  </span>
+                </label>
+              </div>
+              {roleError && <p className="mt-1 text-xs text-red-600">{t.roleRequired}</p>}
+            </div>
+            <div>
+              <Label htmlFor="p-type">{t.type}</Label>
+              <Select
+                id="p-type"
+                value={type}
+                onChange={(e) => {
+                  setType(e.target.value as PartnerType | "");
+                  if (typeError) setTypeError(false);
+                }}
+              >
+                {PARTNER_TYPES.map((pt) => (
+                  <option key={pt} value={pt}>
+                    {typeLabels[pt]}
+                  </option>
+                ))}
+                <option value="">{t.typeNone}</option>
+              </Select>
+              {!type && <p className="mt-1 text-xs text-content-muted">{t.typeNoneHint}</p>}
+              {typeError && <p className="mt-1 text-xs text-red-600">{t.typeRequired}</p>}
+            </div>
+
+            {/* Provenienţa stă aici, nu pe fiecare mişcare: nota 2 a Anexei 3 Ambalaje descrie
+                **sursa**, nu transportul, deci un colector de la care cumperi e colector la fiecare
+                transport (decizia 43). Rubrica de pe mişcare rămâne suprascrierea, pentru „populaţie". */}
+            <div>
+              <Label htmlFor="p-pkg-origin">{strings.packagingOrigin.label}</Label>
+              <Select
+                id="p-pkg-origin"
+                value={packagingOrigin}
+                onChange={(e) => setPackagingOrigin(e.target.value as "" | PackagingOrigin)}
+              >
+                <option value="">{strings.packagingOrigin.none}</option>
+                <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
+                <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
+                <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
+              </Select>
+              <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
+            </div>
+          </FormSection>
 
           {/* Transportatorul e o bifă, nu un tip: aceeași firmă e des și colector, și
               transportator, iar un enum exclusiv ar fi obligat-o să existe de două ori. Licența și
               șoferii apar numai bifat, ca să nu se ceară tuturor date care nu-i privesc. */}
-          <div>
-            <Label htmlFor="p-pkg-origin">{strings.packagingOrigin.label}</Label>
-            <Select
-              id="p-pkg-origin"
-              value={packagingOrigin}
-              onChange={(e) => setPackagingOrigin(e.target.value as "" | PackagingOrigin)}
-            >
-              <option value="">{strings.packagingOrigin.none}</option>
-              <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
-              <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
-              <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
-            </Select>
-            <p className="mt-1 text-xs text-gray-500">{strings.packagingOrigin.hintPartner}</p>
-          </div>
+          <FormSection title={t.sectionCarrier}>
+            <div className="rounded-md border border-line bg-surface-muted p-3">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-line-strong text-sky-600"
+                  checked={isCarrier}
+                  onChange={(ev) => {
+                    setIsCarrier(ev.target.checked);
+                    if (typeError) setTypeError(false);
+                  }}
+                />
+                <span>
+                  <span className="font-medium text-sky-800">{t.carrier}</span>
+                  <span className="block text-xs text-content-muted">{t.carrierHint}</span>
+                </span>
+              </label>
 
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-sky-600"
-                checked={isCarrier}
-                onChange={(ev) => {
-                  setIsCarrier(ev.target.checked);
-                  if (typeError) setTypeError(false);
-                }}
-              />
-              <span>
-                <span className="font-medium text-sky-800">{t.carrier}</span>
-                <span className="block text-xs text-gray-500">{t.carrierHint}</span>
-              </span>
-            </label>
-
-            {isCarrier && (
-              <div className="mt-3 space-y-3 border-t border-gray-200 pt-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
-                    <Input
-                      id="p-licence"
-                      value={transportLicenseNumber}
-                      onChange={(e) => setTransportLicenseNumber(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="p-licence-expiry">{t.transportLicenseExpiry}</Label>
-                    <DateInput
-                      id="p-licence-expiry"
-                      value={transportLicenseExpiry}
-                      onChange={(e) => setTransportLicenseExpiry(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <span className="block text-sm font-medium text-gray-700">{t.drivers}</span>
-                  <p className="mt-0.5 text-xs text-gray-500">{t.driversHint}</p>
-                  <div className="mt-2 space-y-2">
-                    {drivers.map((d, index) => (
-                      <div key={d.id ?? `new-${index}`} className="flex items-end gap-2">
-                        <div className="flex-1">
-                          <Label htmlFor={`p-driver-name-${index}`}>{t.driverName}</Label>
-                          <Input
-                            id={`p-driver-name-${index}`}
-                            value={d.name}
-                            placeholder={t.driverNamePlaceholder}
-                            onChange={(e) =>
-                              setDrivers((prev) =>
-                                prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="w-40">
-                          <Label htmlFor={`p-driver-id-${index}`}>{t.driverIdentification}</Label>
-                          <Input
-                            id={`p-driver-id-${index}`}
-                            value={d.identification ?? ""}
-                            placeholder={t.driverIdentificationPlaceholder}
-                            onChange={(e) =>
-                              setDrivers((prev) =>
-                                prev.map((x, i) =>
-                                  i === index ? { ...x, identification: e.target.value } : x
-                                )
-                              )
-                            }
-                          />
-                        </div>
-                        <div className="w-36">
-                          <Label htmlFor={`p-driver-plate-${index}`}>{t.driverVehicle}</Label>
-                          <Input
-                            id={`p-driver-plate-${index}`}
-                            value={d.vehicleRegistration ?? ""}
-                            placeholder={t.driverVehiclePlaceholder}
-                            onChange={(e) =>
-                              setDrivers((prev) =>
-                                prev.map((x, i) =>
-                                  i === index ? { ...x, vehicleRegistration: e.target.value } : x
-                                )
-                              )
-                            }
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mb-1 text-red-600 hover:bg-red-50"
-                          onClick={() => setDrivers((prev) => prev.filter((_, i) => i !== index))}
-                        >
-                          {t.removeDriver}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() =>
-                      setDrivers((prev) => [
-                        ...prev,
-                        { name: "", identification: "", vehicleRegistration: "" },
-                      ])
-                    }
-                  >
-                    <Plus className="mr-1 h-3.5 w-3.5" />
-                    {t.addDriver}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="p-cui">{t.cui}</Label>
-            <Input
-              id="p-cui"
-              value={cui}
-              onChange={(e) => setCui(e.target.value)}
-              placeholder={t.cuiPlaceholder}
-            />
-          </div>
-          <div>
-            <Label htmlFor="p-auth-number">{t.authorizationNumber}</Label>
-            <Input
-              id="p-auth-number"
-              value={authorizationNumber}
-              onChange={(e) => setAuthorizationNumber(e.target.value)}
-              placeholder={t.authorizationNumberPlaceholder}
-            />
-          </div>
-          <div>
-            <Label htmlFor="p-auth-expiry">{t.authorizationExpiry}</Label>
-            <DateInput
-              id="p-auth-expiry"
-              value={authorizationExpiry}
-              onChange={(e) => setAuthorizationExpiry(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-4 border-t border-gray-200 pt-4">
-            <p className="text-xs text-gray-500">{t.anexa3Hint}</p>
-            <div>
-              <Label htmlFor="p-address">{t.address}</Label>
-              <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-            </div>
-            <div>
-              <span className="block text-sm font-medium text-gray-700">{t.workPoints}</span>
-              <p className="mt-0.5 text-xs text-gray-500">{t.workPointsHint}</p>
-              <div className="mt-2 space-y-2">
-                {workPoints.map((wp, index) => (
-                  <div key={wp.id ?? `new-${index}`} className="flex items-end gap-2">
-                    <div className="w-52">
-                      <Label htmlFor={`p-wp-name-${index}`}>{t.workPointName}</Label>
+              {isCarrier && (
+                <div className="mt-3 space-y-3 border-t border-line pt-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
                       <Input
-                        id={`p-wp-name-${index}`}
-                        value={wp.name ?? ""}
-                        placeholder={t.workPointNamePlaceholder}
-                        onChange={(e) =>
-                          setWorkPoints((prev) =>
-                            prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
-                          )
-                        }
+                        id="p-licence"
+                        value={transportLicenseNumber}
+                        onChange={(e) => setTransportLicenseNumber(e.target.value)}
                       />
                     </div>
-                    <div className="flex-1">
-                      <Label htmlFor={`p-wp-address-${index}`}>{t.workPointAddress}</Label>
-                      <Input
-                        id={`p-wp-address-${index}`}
-                        value={wp.address}
-                        onChange={(e) =>
-                          setWorkPoints((prev) =>
-                            prev.map((x, i) => (i === index ? { ...x, address: e.target.value } : x))
-                          )
-                        }
+                    <div>
+                      <Label htmlFor="p-licence-expiry">{t.transportLicenseExpiry}</Label>
+                      <DateInput
+                        id="p-licence-expiry"
+                        value={transportLicenseExpiry}
+                        onChange={(e) => setTransportLicenseExpiry(e.target.value)}
                       />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
+                    <p className="mt-0.5 text-xs text-content-muted">{t.driversHint}</p>
+                    <div className="mt-2 space-y-2">
+                      {drivers.map((d, index) => (
+                        <div
+                          key={d.id ?? `new-${index}`}
+                          className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                        >
+                          <div className="flex-1">
+                            <Label htmlFor={`p-driver-name-${index}`}>{t.driverName}</Label>
+                            <Input
+                              id={`p-driver-name-${index}`}
+                              value={d.name}
+                              placeholder={t.driverNamePlaceholder}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="w-full sm:w-40">
+                            <Label htmlFor={`p-driver-id-${index}`}>{t.driverIdentification}</Label>
+                            <Input
+                              id={`p-driver-id-${index}`}
+                              value={d.identification ?? ""}
+                              placeholder={t.driverIdentificationPlaceholder}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) =>
+                                    i === index ? { ...x, identification: e.target.value } : x
+                                  )
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="w-full sm:w-36">
+                            <Label htmlFor={`p-driver-plate-${index}`}>{t.driverVehicle}</Label>
+                            <Input
+                              id={`p-driver-plate-${index}`}
+                              value={d.vehicleRegistration ?? ""}
+                              placeholder={t.driverVehiclePlaceholder}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) =>
+                                    i === index ? { ...x, vehicleRegistration: e.target.value } : x
+                                  )
+                                )
+                              }
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
+                            onClick={() => setDrivers((prev) => prev.filter((_, i) => i !== index))}
+                          >
+                            {t.removeDriver}
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="mb-1 text-red-600 hover:bg-red-50"
-                      onClick={() => setWorkPoints((prev) => prev.filter((_, i) => i !== index))}
+                      className="mt-2"
+                      onClick={() =>
+                        setDrivers((prev) => [
+                          ...prev,
+                          { name: "", identification: "", vehicleRegistration: "" },
+                        ])
+                      }
                     >
-                      {t.removeWorkPoint}
+                      <Plus className="mr-1 h-3.5 w-3.5" />
+                      {t.addDriver}
                     </Button>
                   </div>
-                ))}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => setWorkPoints((prev) => [...prev, { name: "", address: "" }])}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                {t.addWorkPoint}
-              </Button>
+                </div>
+              )}
             </div>
+          </FormSection>
+
+          <FormSection title={t.sectionAuthorization} description={t.sectionAuthorizationHint}>
             <div>
-              <Label htmlFor="p-reg">{t.tradeRegisterNumber}</Label>
+              <Label htmlFor="p-auth-number">{t.authorizationNumber}</Label>
               <Input
-                id="p-reg"
-                value={tradeRegisterNumber}
-                onChange={(e) => setTradeRegisterNumber(e.target.value)}
-                placeholder={t.tradeRegisterNumberPlaceholder}
+                id="p-auth-number"
+                value={authorizationNumber}
+                onChange={(e) => setAuthorizationNumber(e.target.value)}
+                placeholder={t.authorizationNumberPlaceholder}
               />
             </div>
-          </div>
+            <div>
+              <Label htmlFor="p-auth-expiry">{t.authorizationExpiry}</Label>
+              <DateInput
+                id="p-auth-expiry"
+                value={authorizationExpiry}
+                onChange={(e) => setAuthorizationExpiry(e.target.value)}
+              />
+            </div>
+          </FormSection>
+
+          {/* „Anexa 3" e HG 1061/2008 — dovada predării — nu anexa nr. 3 a Ordinului 794/2012.
+              Cele două documente poartă același nume scurt (decizia 12), deci hintul rămâne pe
+              secțiune: el spune despre care e vorba. */}
+          <FormSection title={t.sectionAnexa3} description={t.anexa3Hint}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="p-address">{t.address}</Label>
+                <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+              </div>
+              <div>
+                <span className="block text-sm font-medium text-content-strong">{t.workPoints}</span>
+                <p className="mt-0.5 text-xs text-content-muted">{t.workPointsHint}</p>
+                <div className="mt-2 space-y-2">
+                  {workPoints.map((wp, index) => (
+                    <div
+                      key={wp.id ?? `new-${index}`}
+                      className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                    >
+                      <div className="w-full sm:w-52">
+                        <Label htmlFor={`p-wp-name-${index}`}>{t.workPointName}</Label>
+                        <Input
+                          id={`p-wp-name-${index}`}
+                          value={wp.name ?? ""}
+                          placeholder={t.workPointNamePlaceholder}
+                          onChange={(e) =>
+                            setWorkPoints((prev) =>
+                              prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor={`p-wp-address-${index}`}>{t.workPointAddress}</Label>
+                        <Input
+                          id={`p-wp-address-${index}`}
+                          value={wp.address}
+                          onChange={(e) =>
+                            setWorkPoints((prev) =>
+                              prev.map((x, i) => (i === index ? { ...x, address: e.target.value } : x))
+                            )
+                          }
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
+                        onClick={() => setWorkPoints((prev) => prev.filter((_, i) => i !== index))}
+                      >
+                        {t.removeWorkPoint}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setWorkPoints((prev) => [...prev, { name: "", address: "" }])}
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  {t.addWorkPoint}
+                </Button>
+              </div>
+              <div>
+                <Label htmlFor="p-reg">{t.tradeRegisterNumber}</Label>
+                <Input
+                  id="p-reg"
+                  value={tradeRegisterNumber}
+                  onChange={(e) => setTradeRegisterNumber(e.target.value)}
+                  placeholder={t.tradeRegisterNumberPlaceholder}
+                />
+              </div>
+            </div>
+          </FormSection>
         </form>
       </Dialog>
+
+      {confirmDialog}
     </div>
   );
 }

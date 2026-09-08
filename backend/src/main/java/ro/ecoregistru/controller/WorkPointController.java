@@ -47,4 +47,12 @@ public class WorkPointController {
         workPointService.deactivate(id);
         return ResponseEntity.noContent().build();
     }
+
+    /** Desface dezactivarea. POST, ca `/{id}/reopen` de la termene: e o faptă, nu o resursă. */
+    @PostMapping("/{id}/reactivate")
+    @PreAuthorize(CAN_MANAGE)
+    public ResponseEntity<Void> reactivate(@PathVariable UUID id) {
+        workPointService.reactivate(id);
+        return ResponseEntity.noContent().build();
+    }
 }

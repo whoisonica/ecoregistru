@@ -218,10 +218,25 @@ public class WasteMovementService {
         UUID tenantId = TenantContext.require();
         LocalDate fromDate = null;
         LocalDate toDate = null;
-        if (year != null && month != null) {
-            YearMonth ym = YearMonth.of(year, month);
-            fromDate = ym.atDay(1);
-            toDate = ym.atEndOfMonth();
+        /*
+         * Anul fără lună înseamnă anul întreg. Până acum nu însemna nimic: se cerea `?year=2026`
+         * fără lună și veneau înapoi toate mișcările, din toți anii — o filtrare care se ignora în
+         * tăcere, deci mai rea decât una respinsă.
+         *
+         * Ecranul de mișcări are nevoie de treapta asta: filtrul lui pornește pe luna curentă, ca
+         * să nu aducă tot, dar căutarea din bara tabelului lucrează pe rândurile deja aduse — deci
+         * fără „tot anul" nu s-ar putea căuta o predare de acum trei luni fără să nimerești luna
+         * ei din prima.
+         */
+        if (year != null) {
+            if (month != null) {
+                YearMonth ym = YearMonth.of(year, month);
+                fromDate = ym.atDay(1);
+                toDate = ym.atEndOfMonth();
+            } else {
+                fromDate = LocalDate.of(year, 1, 1);
+                toDate = LocalDate.of(year, 12, 31);
+            }
         }
         return movementRepository.findAll(buildFilter(tenantId, workPointId, wasteCodeId, fromDate, toDate))
                 .stream().map(mapper::toResponse).toList();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,12 +22,27 @@ interface ComboboxProps {
   searchPlaceholder?: string;
   emptyText?: string;
   id?: string;
+  /** Numele accesibil, când eticheta vizibilă nu e legată prin `htmlFor`. */
+  "aria-label"?: string;
+  /**
+   * Id-ul mesajului de eroare, când rubrica e greșită. Marchează declanșatorul roșu și îl face
+   * găsibil prin `[data-invalid="true"]`, cârligul după care formularul derulează la prima
+   * rubrică greșită.
+   */
+  invalid?: string;
 }
 
 /**
  * Searchable select: a trigger that opens a popover with a text input and a
  * results list. Data-agnostic — the parent supplies `items` and reacts to
  * `onQueryChange` (debounced here by ~250ms) to fetch them (e.g. waste codes).
+ *
+ * <p><b>Ce s-a reparat pe 07.09.2026.</b> Componenta asta alege codul de deșeu, adică rubrica de
+ * la care pornește tot restul formularului — și se putea folosi doar cu mausul. Nu avea roluri
+ * ARIA (un cititor de ecran anunța „buton", și atât), nu răspundea la săgeți sau Enter, iar „X"-ul
+ * de ștergere era un SVG cu `onClick` **înăuntrul** butonului declanșator: HTML invalid, și o
+ * țintă la care tastatura n-avea cum să ajungă. Acum e un `combobox` cu `listbox`, cu descendent
+ * activ, iar ștergerea e un buton adevărat, alături — nu în burta altuia.
  */
 export function Combobox({
   value,
@@ -40,11 +55,19 @@ export function Combobox({
   searchPlaceholder = "Caută…",
   emptyText = "Niciun rezultat.",
   id,
+  "aria-label": ariaLabel,
+  invalid,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  /** Ce rând e „sub deget" pentru tastatură. -1 = niciunul, deci Enter nu alege nimic. */
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listId = useId();
+  const optionId = (index: number) => `${listId}-opt-${index}`;
 
   // Debounce the query pushed up to the parent so we don't fetch on every keystroke.
   useEffect(() => {
@@ -69,78 +92,196 @@ export function Combobox({
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  function choose(item: ComboboxItem) {
-    onSelect(item);
+  // Rezultatele noi înseamnă altă listă: evidențierea veche ar arăta spre alt rând.
+  //
+  // Cheia e conținutul, nu tabloul: părintele reconstruiește `items` la fiecare randare
+  // (`shownCodes.map(…)`), deci o dependență pe identitatea lui ar reseta evidențierea ori de câte
+  // ori se atinge orice altceva din formular.
+  const itemsKey = items.map((i) => i.id).join("|");
+  useEffect(() => {
+    setActiveIndex(itemsKey.length > 0 ? 0 : -1);
+  }, [itemsKey]);
+
+  // Ține rândul evidențiat în raza vizibilă: cu 842 de coduri, săgeata jos ajunge repede sub
+  // marginea listei, iar fără asta ai naviga în gol. Căutarea e pe `data-index`, nu pe id:
+  // id-urile vin din `useId` și conțin două puncte, pe care un selector CSS le-ar lua drept
+  // pseudo-clasă.
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    listRef.current
+      ?.querySelector(`[data-index="${activeIndex}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, open]);
+
+  function close(focusTrigger = true) {
     setOpen(false);
     setQuery("");
+    setActiveIndex(-1);
+    if (focusTrigger) triggerRef.current?.focus();
+  }
+
+  function choose(item: ComboboxItem) {
+    onSelect(item);
+    close();
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActiveIndex((i) => (items.length === 0 ? -1 : (i + 1) % items.length));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActiveIndex((i) => (items.length === 0 ? -1 : (i - 1 + items.length) % items.length));
+        break;
+      case "Home":
+        if (items.length > 0) {
+          e.preventDefault();
+          setActiveIndex(0);
+        }
+        break;
+      case "End":
+        if (items.length > 0) {
+          e.preventDefault();
+          setActiveIndex(items.length - 1);
+        }
+        break;
+      case "Enter":
+        // `preventDefault` neapărat: comboboxul stă în formulare, iar Enter ar trimite formularul
+        // în loc să aleagă rândul evidențiat.
+        e.preventDefault();
+        if (activeIndex >= 0 && items[activeIndex]) choose(items[activeIndex]);
+        break;
+      case "Escape":
+        // `stopPropagation` neapărat, nu doar `preventDefault`: `Dialog` ascultă Escape pe
+        // `document`, iar comboboxul ăsta alege codul de deșeu într-un formular care stă chiar
+        // într-un dialog. Fără asta, Escape apăsat ca să se închidă lista închidea tot formularul,
+        // cu tot ce era scris în el — adică manevra adăugată aici nu funcționa exact în singurul
+        // loc unde contează.
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+        break;
+      case "Tab":
+        // Tab pleacă mai departe prin formular; lista se închide fără să fure focusul înapoi.
+        close(false);
+        break;
+    }
   }
 
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         id={id}
+        role="combobox"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-controls={open ? listId : undefined}
+        aria-label={ariaLabel}
+        aria-invalid={invalid ? true : undefined}
+        aria-describedby={invalid}
+        data-invalid={invalid ? "true" : undefined}
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          // Săgeata jos deschide lista direct pe primul rând, ca la un <select> nativ.
+          if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50",
-          !value && "text-gray-400"
+          "flex h-10 w-full items-center justify-between rounded-md border bg-surface px-3 py-2 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50",
+          invalid ? "border-red-400" : "border-line-strong",
+          // Loc pentru butonul de ștergere, care stă deasupra și nu mai e copilul acestuia.
+          value ? "pr-16" : "pr-9",
+          !value && "text-content-subtle"
         )}
       >
         <span className="truncate">{value ? value.label : placeholder}</span>
-        <span className="ml-2 flex shrink-0 items-center gap-1">
-          {value && (
-            <X
-              className="h-4 w-4 text-gray-400 hover:text-gray-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(null);
-              }}
-            />
-          )}
-          <ChevronsUpDown className="h-4 w-4 text-gray-400" />
-        </span>
       </button>
 
+      {/* Comenzile din dreapta, ca frați ai declanșatorului: un buton în alt buton e HTML
+          invalid, iar browserul îl repară mutându-l afară — de unde și „X"-ul care nu se putea
+          apăsa cu tastatura. */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
+        {value && !disabled && (
+          <button
+            type="button"
+            onClick={() => {
+              onSelect(null);
+              triggerRef.current?.focus();
+            }}
+            aria-label="Șterge selecția"
+            className="pointer-events-auto rounded text-content-subtle transition-colors hover:text-content-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        <ChevronsUpDown className="h-4 w-4 text-content-subtle" aria-hidden />
+      </div>
+
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-          <div className="border-b border-gray-100 p-2">
+        <div className="absolute z-50 mt-1 w-full animate-slide-up rounded-md border border-line bg-surface shadow-popover">
+          <div className="border-b border-line p-2">
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={onKeyDown}
               placeholder={searchPlaceholder}
-              className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand"
+              aria-label={searchPlaceholder}
+              aria-controls={listId}
+              aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+              className="w-full rounded border border-line px-2 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand"
             />
           </div>
-          <div className="max-h-56 overflow-y-auto py-1">
+          <div
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            aria-busy={loading || undefined}
+            className="max-h-56 overflow-y-auto py-1"
+          >
             {loading && (
-              <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="flex items-center gap-2 px-3 py-2 text-sm text-content-subtle">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Se caută…
               </div>
             )}
             {!loading && items.length === 0 && (
-              <div className="px-3 py-2 text-sm text-gray-400">{emptyText}</div>
+              <div className="px-3 py-2 text-sm text-content-subtle">{emptyText}</div>
             )}
             {!loading &&
-              items.map((item) => (
-                <button
+              items.map((item, index) => (
+                <div
                   key={item.id}
-                  type="button"
+                  id={optionId(index)}
+                  data-index={index}
+                  role="option"
+                  aria-selected={value?.id === item.id}
+                  // Mausul mută evidențierea, ca să nu existe două „rânduri active" deodată:
+                  // unul sub cursor și altul sub tastatură.
+                  onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => choose(item)}
-                  className="flex w-full items-start justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                  className={cn(
+                    "flex w-full cursor-pointer items-start justify-between gap-2 px-3 py-2 text-left text-sm",
+                    index === activeIndex && "bg-surface-muted"
+                  )}
                 >
                   <span>
-                    <span className="block text-gray-900">{item.label}</span>
+                    <span className="block text-content">{item.label}</span>
                     {item.sublabel && (
-                      <span className="block text-xs text-gray-400">{item.sublabel}</span>
+                      <span className="block text-xs text-content-subtle">{item.sublabel}</span>
                     )}
                   </span>
                   {value?.id === item.id && (
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
                   )}
-                </button>
+                </div>
               ))}
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Download, FileText, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Download, FileSpreadsheet, FileText, RefreshCw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import {
@@ -12,14 +13,21 @@ import {
 import type { EvidenceFilters, MovementFilters } from "@/lib/types";
 import { HandoverRegister } from "@/components/HandoverRegister";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
-import { apiErrorMessage } from "@/lib/api";
+import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { formatTonnes } from "@/lib/units";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { SortableTH } from "@/components/ui/table";
+import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
+import { useTableView } from "@/hooks/useTableView";
+import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.evidences;
@@ -51,16 +59,18 @@ export function EvidencesPage() {
     [workPoints]
   );
 
-  const [year, setYear] = useState(() => new Date().getFullYear());
-  const [month, setMonth] = useState(""); // "" = all months
-  const [workPointId, setWorkPointId] = useState(""); // "" = all work points
+  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
+  const [month, setMonth] = useUrlState("luna"); // "" = toate lunile
+  const [workPointId, setWorkPointId] = useUrlState("punct"); // "" = toate punctele
   /**
    * Two views of the same period. "Predări" is the default because it is what the meeting asked
    * the tab to show — quantity, handover date, partner, R/D code, and that is it. The monthly
    * Anexa 1 aggregate stays one click away: the running stock is the one figure that cannot be
    * reconstructed by reading the rows, and it is the one the form is built around.
    */
-  const [view, setView] = useState<"handovers" | "monthly">("handovers");
+  const [viewParam, setViewParam] = useUrlState("vedere", "handovers");
+  const view = viewParam === "monthly" ? "monthly" : "handovers";
+  const setView = setViewParam;
 
   const movementFilters: MovementFilters = useMemo(() => {
     const f: MovementFilters = { year };
@@ -79,7 +89,14 @@ export function EvidencesPage() {
   const { data: evidences, isLoading, isError } = useEvidences(filters);
   const regenerateMut = useRegenerateEvidence();
   const { notify } = useToast();
-  const [exporting, setExporting] = useState<"xlsx" | "pdf" | "declaration" | null>(null);
+  /**
+   * Ce document se pregătește acum. Patru valori, nu trei: „Evidența gestiunii deșeurilor" și
+   * „Export PDF" foloseau amândouă `"pdf"`, deci apăsarea pe al doilea învârtea rotița pe primul —
+   * adică pe documentul oficial, exact confuzia pe care cele două butoane există ca s-o evite.
+   */
+  const [exporting, setExporting] = useState<"anexa1" | "declaration" | "xlsx" | "pdf" | null>(
+    null
+  );
 
   // Stable display order: work point, then month, then waste code.
   const rows = useMemo(() => {
@@ -90,6 +107,22 @@ export function EvidencesPage() {
         a.wasteCode.localeCompare(b.wasteCode, "ro")
     );
   }, [evidences]);
+
+  /**
+   * Vederea lunară poate ajunge la sute de linii: codurile de deșeu × lunile × punctele de lucru.
+   * Nu primește sortare implicită — `rows` vine deja așezat pe punct de lucru, lună și cod, adică
+   * exact ordinea în care se citește fișa, iar o sortare proprie ar strica-o din pornire.
+   */
+  const monthlyView = useTableView(rows, {
+    searchText: (r) => [r.wasteCode, r.wasteCodeName, r.workPointName].join(" "),
+    comparators: {
+      workPointName: (a, b) => a.workPointName.localeCompare(b.workPointName, "ro"),
+      month: (a, b) => a.month - b.month,
+      wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
+      totalGenerated: (a, b) => a.totalGenerated - b.totalGenerated,
+      closingStock: (a, b) => a.closingStock - b.closingStock,
+    },
+  });
 
   function handleRegenerate() {
     regenerateMut.mutate(year, {
@@ -118,6 +151,15 @@ export function EvidencesPage() {
     () => (yearRows ?? []).filter((r) => r.awaitingWeighing),
     [yearRows]
   );
+  /**
+   * Dacă **anul** are ceva de tipărit — nu luna de pe ecran.
+   *
+   * <p>Cele două documente oficiale sunt anuale și acoperă toate cele douăsprezece luni, oricum ar
+   * fi filtrat ecranul. Butoanele se dezactivau pe `rows`, care e filtrat pe lună: alegeai o lună
+   * fără mișcări și nu mai puteai descărca fișa anului, deși anul avea date. Exporturile generice
+   * rămân pe `rows`, fiindcă ele chiar exportă ce se vede.
+   */
+  const hasYearData = (yearRows ?? []).length > 0;
 
   /**
    * Totalul anului per cod de deșeu — ce se încarcă în SIM pe 15 martie, iar OUG 92/2021 art. 48
@@ -159,11 +201,11 @@ export function EvidencesPage() {
   }
 
   async function generateAnexa1() {
-    setExporting("pdf");
+    setExporting("anexa1");
     try {
       await downloadAnexa1Form(filters);
     } catch (err) {
-      notify(apiErrorMessage(err, t.anexa1Error), "error");
+      notify(await apiBlobErrorMessage(err, t.anexa1Error), "error");
     } finally {
       setExporting(null);
     }
@@ -182,7 +224,7 @@ export function EvidencesPage() {
     try {
       await downloadAnnualDeclaration(filters);
     } catch (err) {
-      notify(apiErrorMessage(err, t.annualDeclarationError), "error");
+      notify(await apiBlobErrorMessage(err, t.annualDeclarationError), "error");
     } finally {
       setExporting(null);
     }
@@ -193,7 +235,7 @@ export function EvidencesPage() {
     try {
       await downloadEvidenceExport(filters, format);
     } catch (err) {
-      notify(apiErrorMessage(err, t.exportError), "error");
+      notify(await apiBlobErrorMessage(err, t.exportError), "error");
     } finally {
       setExporting(null);
     }
@@ -212,67 +254,71 @@ export function EvidencesPage() {
           }}
         />
       )}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{t.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* The official form first: it is the one the client actually files. */}
-          <Button
-            onClick={handleAnexa1}
-            disabled={rows.length === 0 || exporting !== null}
-            title={t.anexa1Hint}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {t.anexa1}
-          </Button>
-          {/* The summary that goes in front of it, and the page the authority reads first. */}
-          <Button
-            variant="outline"
-            onClick={handleAnnualDeclaration}
-            disabled={rows.length === 0 || exporting !== null}
-            title={t.annualDeclarationHint}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            {t.annualDeclaration}
-          </Button>
-          {/* Export is read-only: available to every tenant member, viewer included. */}
-          <Button
-            variant="outline"
-            onClick={() => handleExport("xlsx")}
-            disabled={rows.length === 0 || exporting !== null}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {t.exportExcel}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleExport("pdf")}
-            disabled={rows.length === 0 || exporting !== null}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            {t.exportPdf}
-          </Button>
-          {canManage && (
-            <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
-              />
-              {regenerateMut.isPending ? t.regenerating : t.regenerate}
+      <PageHeader
+        title={t.title}
+        description={t.subtitle}
+        actions={
+          <>
+            {/* The official form first: it is the one the client actually files. */}
+            <Button
+              onClick={handleAnexa1}
+              disabled={!hasYearData || exporting !== null}
+              loading={exporting === "anexa1"}
+              title={t.anexa1Hint}
+            >
+              {exporting !== "anexa1" && <FileText className="mr-2 h-4 w-4" />}
+              {t.anexa1}
             </Button>
-          )}
-        </div>
-      </div>
+            {/* The summary that goes in front of it, and the page the authority reads first. */}
+            <Button
+              variant="outline"
+              onClick={handleAnnualDeclaration}
+              disabled={!hasYearData || exporting !== null}
+              loading={exporting === "declaration"}
+              title={t.annualDeclarationHint}
+            >
+              {exporting !== "declaration" && <FileText className="mr-2 h-4 w-4" />}
+              {t.annualDeclaration}
+            </Button>
+            {/* Export is read-only: available to every tenant member, viewer included. */}
+            <Button
+              variant="outline"
+              onClick={() => handleExport("xlsx")}
+              disabled={rows.length === 0 || exporting !== null}
+              loading={exporting === "xlsx"}
+            >
+              {exporting !== "xlsx" && <Download className="mr-2 h-4 w-4" />}
+              {t.exportExcel}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleExport("pdf")}
+              disabled={rows.length === 0 || exporting !== null}
+              loading={exporting === "pdf"}
+            >
+              {exporting !== "pdf" && <Download className="mr-2 h-4 w-4" />}
+              {t.exportPdf}
+            </Button>
+            {canManage && (
+              <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+                />
+                {regenerateMut.isPending ? t.regenerating : t.regenerate}
+              </Button>
+            )}
+          </>
+        }
+      />
 
-      {canManage && (
-        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {t.staleNote}
-        </p>
-      )}
+      {/* Nota nu mai e un avertisment: de când citirea reconstruiește singură un an rămas în urmă
+          (`EvidenceCalculator.list`), „Evidența nu se actualizează singură" era o afirmație falsă
+          scrisă cu galben pe fiecare vizită — iar un avertisment permanent devine tapet exact
+          până în ziua în care ar fi trebuit să apere ceva. */}
+      {canManage && <p className="mt-4 text-sm text-content-muted">{t.staleNote}</p>}
 
       {/* Filters */}
-      <div className="mt-6 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+      <div className="mt-6 inline-flex rounded-lg border border-line bg-surface-muted p-0.5">
         {(["handovers", "monthly"] as const).map((v) => (
           <button
             key={v}
@@ -280,8 +326,8 @@ export function EvidencesPage() {
             onClick={() => setView(v)}
             className={
               view === v
-                ? "rounded-md bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm"
-                : "rounded-md px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+                ? "rounded-md bg-surface px-3 py-1.5 text-sm font-medium text-content shadow-sm"
+                : "rounded-md px-3 py-1.5 text-sm text-content-muted hover:text-content-strong"
             }
           >
             {v === "handovers" ? t.viewHandovers : t.viewMonthly}
@@ -289,14 +335,14 @@ export function EvidencesPage() {
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end gap-3">
+      <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="ev-year">{t.filterYear}</Label>
           <Select
             id="ev-year"
             value={String(year)}
             onChange={(ev) => setYear(Number(ev.target.value))}
-            className="w-32"
+            className="w-full sm:w-32"
           >
             {yearOptions().map((y) => (
               <option key={y} value={y}>
@@ -311,7 +357,7 @@ export function EvidencesPage() {
             id="ev-month"
             value={month}
             onChange={(ev) => setMonth(ev.target.value)}
-            className="w-44"
+            className="w-full sm:w-44"
           >
             <option value="">{t.allMonths}</option>
             {strings.months.map((name, i) => (
@@ -327,7 +373,7 @@ export function EvidencesPage() {
             id="ev-wp"
             value={workPointId}
             onChange={(ev) => setWorkPointId(ev.target.value)}
-            className="w-56"
+            className="w-full sm:w-56"
           >
             <option value="">{t.allWorkPoints}</option>
             {activeWorkPoints.map((w) => (
@@ -344,128 +390,188 @@ export function EvidencesPage() {
 
         {view === "monthly" && (
           <>
-        {isLoading && <p className="text-sm text-gray-500">{strings.common.loading}</p>}
-        {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+            {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-        {!isLoading && !isError && rows.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
-            <p className="text-gray-500">{t.empty.replace("{year}", String(year))}</p>
-            {canManage && (
-              <p className="mt-1 text-sm text-gray-400">
-                {t.emptyHint.replace("{year}", String(year))}
-              </p>
-            )}
-          </div>
-        )}
-
-        {!isLoading && !isError && rows.length > 0 && (
-          <div className="overflow-x-auto">
-            <Table>
-              <THead>
-                <TR>
-                  <TH>{t.colWorkPoint}</TH>
-                  <TH>{t.colMonth}</TH>
-                  <TH>{t.colWasteCode}</TH>
-                  <TH className="text-right">{t.colGenerated}</TH>
-                  <TH className="text-right">{t.colRecovered}</TH>
-                  <TH className="text-right">{t.colDisposed}</TH>
-                  <TH className="text-right">{t.colUnclassified}</TH>
-                  <TH className="text-right">{t.colStock}</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {rows.map((r) => (
-                  <TR key={r.id}>
-                    <TD>{r.workPointName}</TD>
-                    <TD className="whitespace-nowrap">{monthName(r.month)}</TD>
-                    <TD>
-                      <span className="font-medium text-gray-900">{r.wasteCode}</span>
-                      {r.hazardous && (
-                        <Badge variant="danger" className="ml-2">
-                          {t.hazardous}
-                        </Badge>
-                      )}
-                      {r.totalUnclassifiedOut > 0 && (
-                        <Badge variant="danger" className="ml-2" title={t.missingCodeHint}>
-                          {t.missingCode}
-                        </Badge>
-                      )}
-                      {r.awaitingWeighing && (
-                        <Badge variant="warning" className="ml-2" title={t.awaitingWeighingHint}>
-                          {t.awaitingWeighing}
-                        </Badge>
-                      )}
-                      <span className="block max-w-xs truncate text-xs text-gray-400">
-                        {r.wasteCodeName}
-                      </span>
-                    </TD>
-                    <TD className="text-right">{kg(r.totalGenerated)}</TD>
-                    <TD className="text-right">{kg(r.totalRecovered)}</TD>
-                    <TD className="text-right">{kg(r.totalDisposed)}</TD>
-                    <TD
-                      className={`text-right ${
-                        r.totalUnclassifiedOut > 0 ? "font-medium text-red-600" : "text-gray-400"
-                      }`}
-                      title={r.totalUnclassifiedOut > 0 ? t.missingCodeHint : undefined}
-                    >
-                      {kg(r.totalUnclassifiedOut)}
-                    </TD>
-                    <TD
-                      className={`text-right font-medium ${
-                        r.closingStock < 0 ? "text-red-600" : "text-gray-900"
-                      }`}
-                    >
-                      {kg(r.closingStock)}
-                    </TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-          </div>
-        )}
-
-        {/* Ce se încarcă în SIM pe 15 martie, în unitatea pe care o cere actul. Stă lângă
-            evidența în kg, nu în locul ei: fișa și declarația rămân în kilograme pe hârtie. */}
-        {!isLoading && !isError && annualByCode.length > 0 && (
-          <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <h3 className="text-sm font-semibold text-gray-800">
-              {t.tonnesTitle.replace("{year}", String(year))}
-            </h3>
-            <p className="mt-1 text-xs text-gray-500">{t.tonnesHint}</p>
-            <div className="mt-3 overflow-x-auto">
-              <Table>
-                <THead>
-                  <TR>
-                    <TH>{t.colWasteCode}</TH>
-                    <TH className="text-right">{t.colGeneratedTonnes}</TH>
-                    <TH className="text-right">{t.colRecoveredTonnes}</TH>
-                    <TH className="text-right">{t.colDisposedTonnes}</TH>
-                  </TR>
-                </THead>
-                <TBody>
-                  {annualByCode.map((r) => (
-                    <TR key={r.wasteCode}>
-                      <TD>
-                        <span className="font-medium text-gray-900">{r.wasteCode}</span>
-                        {r.hazardous && (
-                          <Badge variant="danger" className="ml-2">
-                            {t.hazardous}
-                          </Badge>
-                        )}
-                        <span className="block max-w-xs truncate text-xs text-gray-400">
-                          {r.wasteCodeName}
-                        </span>
-                      </TD>
-                      <TD className="whitespace-nowrap text-right">{formatTonnes(r.generated)}</TD>
-                      <TD className="whitespace-nowrap text-right">{formatTonnes(r.recovered)}</TD>
-                      <TD className="whitespace-nowrap text-right">{formatTonnes(r.disposed)}</TD>
+            {!isError && (
+              <div>
+                <TableToolbar view={monthlyView} placeholder={t.searchPlaceholder} />
+                <Table stickyHeader>
+                  <THead sticky>
+                    <TR>
+                      <SortableTH
+                        sortKey="workPointName"
+                        sort={monthlyView.sort}
+                        onSort={monthlyView.toggleSort}
+                      >
+                        {t.colWorkPoint}
+                      </SortableTH>
+                      <SortableTH
+                        sortKey="month"
+                        sort={monthlyView.sort}
+                        onSort={monthlyView.toggleSort}
+                      >
+                        {t.colMonth}
+                      </SortableTH>
+                      <SortableTH
+                        sortKey="wasteCode"
+                        sort={monthlyView.sort}
+                        onSort={monthlyView.toggleSort}
+                      >
+                        {t.colWasteCode}
+                      </SortableTH>
+                      <SortableTH
+                        sortKey="totalGenerated"
+                        sort={monthlyView.sort}
+                        onSort={monthlyView.toggleSort}
+                        align="right"
+                      >
+                        {t.colGenerated}
+                      </SortableTH>
+                      <TH className="text-right">{t.colRecovered}</TH>
+                      <TH className="text-right">{t.colDisposed}</TH>
+                      <TH className="text-right">{t.colUnclassified}</TH>
+                      <SortableTH
+                        sortKey="closingStock"
+                        sort={monthlyView.sort}
+                        onSort={monthlyView.toggleSort}
+                        align="right"
+                      >
+                        {t.colStock}
+                      </SortableTH>
                     </TR>
-                  ))}
-                </TBody>
-              </Table>
-            </div>
-          </div>
-        )}
+                  </THead>
+                  <TBody>
+                    {(isLoading || monthlyView.visible.length === 0) && (
+                      <TableFallbackRow
+                        columns={8}
+                        loading={isLoading}
+                        icon={FileSpreadsheet}
+                        title={
+                          monthlyView.emptiedBySearch
+                            ? strings.common.noResults
+                            : t.empty.replace("{year}", String(year))
+                        }
+                        description={canManage ? t.emptyHint.replace("{year}", String(year)) : undefined}
+                        action={
+                          canManage && (
+                            <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>
+                              <RefreshCw
+                                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+                              />
+                              {t.regenerate}
+                            </Button>
+                          )
+                        }
+                      />
+                    )}
+                    {monthlyView.visible.map((r) => (
+                      <TR key={r.id}>
+                        <TD>{r.workPointName}</TD>
+                        <TD className="whitespace-nowrap">{monthName(r.month)}</TD>
+                        <TD>
+                          <span className="font-medium text-content">{r.wasteCode}</span>
+                          {r.hazardous && (
+                            <Badge variant="danger" className="ml-2">
+                              {t.hazardous}
+                            </Badge>
+                          )}
+                          {/* Rândul lunar e un agregat, deci nu poate deschide o mișcare — dar
+                              poate duce la rândurile care îl compun. Badge-ul devine drumul spre
+                              ele, restrâns la exact luna și punctul de lucru ale rândului. */}
+                          {r.totalUnclassifiedOut > 0 && (
+                            <Tooltip content={t.missingCodeHint}>
+                              <Link
+                                to={`/evidente?an=${r.year}&luna=${r.month}&punct=${r.workPointId}&vedere=handovers&problema=cod-rd`}
+                                className="ml-2 inline-block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                              >
+                                <Badge
+                                  variant="danger"
+                                  className="underline decoration-dotted underline-offset-2"
+                                >
+                                  {t.missingCode}
+                                </Badge>
+                              </Link>
+                            </Tooltip>
+                          )}
+                          {r.awaitingWeighing && (
+                            <Tooltip content={t.awaitingWeighingHint}>
+                              <Badge variant="warning" className="ml-2">
+                                {t.awaitingWeighing}
+                              </Badge>
+                            </Tooltip>
+                          )}
+                          <span className="block max-w-xs truncate text-xs text-content-subtle">
+                            {r.wasteCodeName}
+                          </span>
+                        </TD>
+                        <TD className="text-right">{kg(r.totalGenerated)}</TD>
+                        <TD className="text-right">{kg(r.totalRecovered)}</TD>
+                        <TD className="text-right">{kg(r.totalDisposed)}</TD>
+                        <TD
+                          className={`text-right ${
+                            r.totalUnclassifiedOut > 0 ? "font-medium text-red-600" : "text-content-subtle"
+                          }`}
+                          title={r.totalUnclassifiedOut > 0 ? t.missingCodeHint : undefined}
+                        >
+                          {kg(r.totalUnclassifiedOut)}
+                        </TD>
+                        <TD
+                          className={`text-right font-medium ${
+                            r.closingStock < 0 ? "text-red-600" : "text-content"
+                          }`}
+                        >
+                          {kg(r.closingStock)}
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+                <TablePagination view={monthlyView} />
+              </div>
+            )}
+
+            {/* Ce se încarcă în SIM pe 15 martie, în unitatea pe care o cere actul. Stă lângă
+                evidența în kg, nu în locul ei: fișa și declarația rămân în kilograme pe hârtie. */}
+            {!isLoading && annualByCode.length > 0 && (
+              <div className="mt-8 rounded-lg border border-line bg-surface-muted p-4">
+                <h3 className="text-sm font-semibold text-content-strong">
+                  {t.tonnesTitle.replace("{year}", String(year))}
+                </h3>
+                <p className="mt-1 text-xs text-content-muted">{t.tonnesHint}</p>
+                <div className="mt-3">
+                  <Table stickyHeader>
+                    <THead sticky>
+                      <TR>
+                        <TH>{t.colWasteCode}</TH>
+                        <TH className="text-right">{t.colGeneratedTonnes}</TH>
+                        <TH className="text-right">{t.colRecoveredTonnes}</TH>
+                        <TH className="text-right">{t.colDisposedTonnes}</TH>
+                      </TR>
+                    </THead>
+                    <TBody>
+                      {annualByCode.map((r) => (
+                        <TR key={r.wasteCode}>
+                          <TD>
+                            <span className="font-medium text-content">{r.wasteCode}</span>
+                            {r.hazardous && (
+                              <Badge variant="danger" className="ml-2">
+                                {t.hazardous}
+                              </Badge>
+                            )}
+                            <span className="block max-w-xs truncate text-xs text-content-subtle">
+                              {r.wasteCodeName}
+                            </span>
+                          </TD>
+                          <TD className="whitespace-nowrap text-right">{formatTonnes(r.generated)}</TD>
+                          <TD className="whitespace-nowrap text-right">{formatTonnes(r.recovered)}</TD>
+                          <TD className="whitespace-nowrap text-right">{formatTonnes(r.disposed)}</TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              </div>
+            )}
           </>
         )}
       </section>
