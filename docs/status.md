@@ -3485,6 +3485,145 @@ aşezarea.
 - `tsc --noEmit` curat, `vite build` verde.
 - ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
 
+## Atașamentele, partenerul, cuprinsul și paleta (08.09.2026)
+
+Cele patru felii din capul secțiunii „Ordinea recomandată" a lui `todo-ui-ux.md`, luate în ordine.
+Niciuna nu repară ceva rupt — sunt lucruri care lipseau — **dar a cincea a ieșit din ele**: proba
+scrisă pentru paletă a scos un defect de reconciliere care ascundea rânduri moarte în listă.
+
+### 1. Atașamentele se văd fără să deschizi editarea
+
+Coloana arăta „📎 2" și atât. Ca să afli *ce* document e acolo trebuia deschis formularul de
+editare, cu treizeci de rubrici — iar un **VIEWER nu-l poate deschide deloc**, fiindcă butonul
+„Editează" stă sub `canWrite`. Adică pe rolul care există tocmai ca să citească, avizul urcat lângă
+o predare era o cifră, nu un document.
+
+Cifra e de-acum un buton care deschide o vedere cu numele fiecărui fișier și un link către el.
+**Numai citire, dinadins:** ștergerea rămâne în formular, lângă urcare, unde e și confirmarea și
+regula de rol. Un coș de gunoi într-o vedere deschisă de oriunde ar fi cea mai ușoară apăsare
+greșită din ecran.
+
+Două amănunte care se pot strica la următoarea atingere: dialogul ține **`id`-ul** mișcării, nu
+obiectul — lista se reîmprospătează sub el, iar un instantaneu ar arăta fișierul care tocmai a
+plecat; și nu e `Tooltip`, fiindcă bula își randează propriul `<button>` și n-ar putea înveli
+linkuri (defectul din 07.09, seara).
+
+### 2. Formularul de partener, pe cinci secțiuni
+
+Era o coloană de cincisprezece blocuri într-un dialog de 512px, deși are secțiuni evidente. Acum
+`xl`, cu **Identificare · Ce face partenerul · Transport · Autorizația de mediu · Date pentru
+Anexa 3** — `FormSection` era deja folosit în trei locuri, deci n-a fost nimic de inventat.
+
+**Ordinea s-a schimbat într-un singur loc, și merită spus de ce:** CUI-ul stătea între bifa de
+transportator și autorizație, adică o identificare ruptă în două de o întrebare despre camioane. A
+urcat lângă denumire. Restul rubricilor sunt exact unde erau.
+
+Trei lucruri mărunte, luate în aceeași felie fiindcă erau în același ecran:
+- comentariul „Transportatorul e o bifă, nu un tip" stătea deasupra blocului de **ambalaje** — se
+  desprinsese de codul lui la o mutare anterioară. A fost pus înapoi peste bifă.
+- `typeNoneHint` spunea „se poate alege numai cu bifa **de mai sus**", iar bifa era dedesubt de
+  când s-a livrat `V28`. Acum numește rubrica, nu direcția — un text care spune „mai sus" se strică
+  la fiecare rearanjare.
+- rândurile de șofer și de punct de lucru erau `flex` fix: trei câmpuri și un buton strânse la ~70px
+  pe telefon. Se stivuiesc sub `sm`.
+
+### 3. Cuprinsul de pe Ambalaje
+
+Patru tabele mari unul sub altul plus grila de 66 de celule: cea mai lungă pagină din aplicație, și
+singura fără nimic care să te ducă între ele. `SectionNav` fusese scris **ca primitivă chiar pentru
+ea** pe 07.09 și era folosit doar în „Setări".
+
+Bara stă deasupra casetei chihlimbarii cu ce blochează declarația, nu sub ea: caseta apare și
+dispare după cum e completată luna, iar un cuprins care sare cu ea ar fi altă bară la fiecare
+deschidere.
+
+Cele trei defecte de lipire ale primitivei (banda decupată, coloana de acțiuni care o acoperea,
+poziția numărată de la marginea conținutului) nu s-au repetat — dar proba le măsoară acum și aici,
+cu `elementFromPoint` în trei puncte pe bară, fiindcă toate trei au trecut de verificările de DOM
+prima oară.
+
+### 4. Ctrl+K găsește documente, și pornește ceva
+
+`Command.keywords` era declarat, **citit la potrivire**, și niciodată completat de nimeni: o funcție
+întreagă, verde la compilare, moartă la rulare. Tastai „fișa" sau „anexa 1" și paleta nu găsea
+nimic, deși propriul docstring promitea „unde vreau să ajung, ce vreau să încep".
+
+Cuvintele stau în bara laterală, lângă ecranul pe care îl descriu — nu într-o a doua listă a
+paletei, care ar fi ajuns să nu mai spună același lucru. Sunt numele **documentelor** și vorbele
+clientului, nu sinonime: „fișa", „anexa 1", „HG 856/2002", „25 februarie", „inspector".
+
+⚠️ **„Anexa 1" duce la două ecrane, dinadins.** Numele scurt înseamnă chiar două documente
+(decizia 12): declarația de ambalaje la Ambalaje, fișa din HG 856/2002 la Evidențe. A alege unul
+ca „adevăratul" ar ascunde celălalt document exact de cine îl caută pe nume.
+
+Și jumătatea cealaltă a promisiunii: două comenzi care **încep** ceva — „Adaugă mișcare", „Adaugă
+partener" — fiecare ducând pe ecranul ei cu formularul deschis, prin `?nou=1` care se consumă la
+deschidere, ca `?miscare=`.
+
+**„Regenerează" nu e printre ele, și n-a fost o scăpare.** Butonul de pe Evidențe e o cerere
+explicită de recalculare pe un an anume (decizia 51), iar dintr-o paletă nu se vede pe care an ar
+cădea. O comandă care rescrie tăcut liniile unui dosar e exact genul de ghicit pe care ecranul ăsta
+nu-l face. Proba verifică și asta: `check("nicio comandă nu recalculează un dosar din paletă")`.
+
+### 🔴 Al cincilea: rânduri moarte în paletă, găsite de propria probă
+
+Prima rulare a probei a raportat pentru „anexa" rezultate care **n-au cuvântul nicăieri** — „Dosar
+de control", „Parteneri". Citit repede, arăta ca o potrivire prea largă: cuvintele-cheie noi ar fi
+fost de vină. Nu erau.
+
+Sortarea pe scor amestecă grupurile între ele. Randarea deschide un `<div>` nou la fiecare
+schimbare de grup, iar cheia lui era **numele grupului** — deci la „anexa" ieșeau grupurile
+`Evidență · Raportare · Evidență`, adică **două surori cu aceeași cheie**. React nu mai putea
+reconcilia, și în listă rămâneau rânduri din randarea dinainte, cu `data-index` duplicat. Se putea
+apăsa pe ele.
+
+Reparat în două locuri, fiindcă sunt două probleme:
+- **grupurile rămân întregi**, în ordinea celui mai bun membru al fiecăruia (`Map`, care ține
+  ordinea inserării, peste lista deja sortată). Primul rând al listei rămâne cea mai bună potrivire
+  — proprietatea de care atârnă Enter — fără ca antetul unui grup să apară de două ori;
+- cheia `<div>`-ului e `id`-ul primei comenzi, unic prin construcție, ca apărare dacă vreodată
+  ordonarea rupe iar grupurile.
+
+⚠️ Defectul e **mai vechi decât felia de azi** — exista de când s-a scris scorul, pe 07.09. Până
+acum nu se vedea fiindcă fără cuvinte-cheie potrivirile cădeau aproape mereu în același grup.
+Cuvintele n-au stricat nimic: au făcut ca un drum rar să devină cel obișnuit.
+
+**Cum s-a prins, și de ce merită reținut:** nu din cod, și nici din captură — pe captură arăta doar
+ca „prea multe rezultate". S-a prins **numărând**: verificarea nu era „găsește Ambalaje și
+Evidențe" (care trecea, din motivul greșit), ci `check("și nimic altceva", rezultate.length === 2)`.
+O probă care întreabă doar dacă ce trebuie e acolo nu poate spune că mai e și altceva.
+
+### Datoria de seed, a doua tranșă
+
+Coloana „📎" avea **zero rânduri din 36**, deci vederea de la punctul 1 s-ar fi probat pe gol —
+exact felul de gol în care s-a ascuns al treilea defect din primitive pe 07.09. `DevDataSeeder` are
+acum două atașamente pe **ieșirea fără cod R/D**: e rândul pe care îl deschide inspectorul, iar
+avizul lui e chiar hârtia după care întreabă. Două, nu unul, ca să se vadă dacă lista chiar le
+enumeră. `ApplicationBootIT` le numără pe nume, ca pe celelalte trei stări.
+
+⚠️ **Nu s-a urcat nimic.** `CLOUDINARY_URL` nu e setat nici local, nici pe dyno, deci în dev nu
+există cale de a crea un atașament prin aplicație. URL-urile arată către cloud-ul public `demo` al
+Cloudinary — se deschid, dar nu sunt documentele firmei. Şi, ca la celelalte, **baza de dev nu se
+re-seedează singură**: pe o bază veche rândurile se adaugă cu un `INSERT` aditiv, scris în
+`frontend/e2e/README.md`.
+
+### Starea
+
+- **239 de teste verzi**, neschimbat ca număr: verificarea de atașamente a intrat în metoda
+  existentă din `ApplicationBootIT`. Migrări tot până la **`V31`**, următoarea liberă **`V32`** —
+  nicio felie n-a cerut una, nici seed-ul.
+- **Suita de interfaţă: 8 probe, 161 de verificări** (de la 7 şi 127). Proba nouă,
+  `8-atasamente-partener-paleta.mjs`, acoperă toate cele patru felii şi e cea care a găsit defectul
+  paletei.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⚠️ **Tot nedeployat**, ca toată ramura `ui-ux-modernizare`.
+
+**Două verificări scrise greşit, corectate după măsurătoare** — se scriu aici fiindcă amândouă
+păreau defecte ale aplicaţiei: (a) clicul pe „Tabelul 2" nu duce titlul sus, fiindcă ultimele două
+secţiuni intră amândouă în ultimul ecran şi pagina se termină înaintea lor — e chiar ramura „la
+fund" a primitivei, scrisă pe 07.09 după o captură; proba se face pe „Tabelul 1". (b) Cifra din
+capul unei probe nu spune nimic dacă tabelul n-are rândul — vezi datoria de seed de mai sus.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
