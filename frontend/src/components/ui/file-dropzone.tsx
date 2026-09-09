@@ -13,8 +13,16 @@ const ACCEPTED_TYPES = "image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
 /**
  * Cât de mare are voie un fișier. Se verifica nicăieri: se putea pune la coadă o filmare de 500 MB,
  * care se descoperea abia după ce urcarea o pornea, fișier cu fișier, pe conexiunea din depozit.
+ *
+ * A fost 15, adică **peste** zidul adevărat: contul Cloudinary e pe planul Free, unde limita e
+ * 10 MB per asset. Un PDF de 12 MB trecea de aici, trecea și de backend (multipart la 25 MB) și
+ * cădea abia la furnizor — unde nu-l prindea niciun mesaj. Cifra de aici e acum chiar zidul.
+ *
+ * ⚠️ Numărul ăsta e o curtoazie, nu o pază: rulează în browser, deci un `curl` direct pe API nu-l
+ * vede. Pragul care ține e `MAX_ATTACHMENT_BYTES` din `WasteMovementService`, și cele două trebuie
+ * să spună aceeași cifră — altfel dropzone-ul promite ce serverul refuză.
  */
-const MAX_FILE_MB = 15;
+const MAX_FILE_MB = 10;
 
 interface FileDropzoneProps {
   /** Currently staged files (controlled by the parent). */

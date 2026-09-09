@@ -27,8 +27,12 @@ spring:
     baseline-on-migrate: true
   servlet:
     multipart:
-      max-file-size: 25MB
-      max-request-size: 25MB
+      # Plasa de sub verificarea din `WasteMovementService`, nu pragul produsului. Pragul e 10 MB
+      # — limita contului Cloudinary — iar aici stă puțin deasupra lui, ca fișierul să apuce să
+      # ajungă la verificarea noastră și să primească mesajul cu cifra, în loc să fie oprit aici
+      # cu o eroare generică. Era 25MB, adică de două ori și jumătate peste zidul adevărat.
+      max-file-size: 12MB
+      max-request-size: 12MB
   mail:
     protocol: smtp
     port: ${MAIL_PORT:587}

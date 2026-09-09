@@ -17,6 +17,7 @@ import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
+import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.mapper.WasteMovementMapper;
@@ -41,6 +42,19 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WasteMovementService {
+
+    /**
+     * Cât are voie să aibă un atașament. Nu e un prag ales de noi: contul Cloudinary e pe planul
+     * Free, unde limita e <b>10 MB per asset</b> — și pentru {@code image}, unde ajung PDF-urile,
+     * și pentru {@code raw}, unde ajung Word și Excel. Peste ea uploadul cade <i>la furnizor</i>,
+     * după ce a trecut de tot ce e al nostru, iar omul primește o eroare care nu spune nimic.
+     *
+     * <p>Verificarea stă aici, nu doar în dropzone. Până acum singurul gardian era JavaScript-ul
+     * din browser — {@code file-dropzone.tsx}, și acela la 15 MB, adică <i>peste</i> zidul de la
+     * Cloudinary — deci un {@code curl} direct pe API trecea cu orice încăpea în limita de
+     * multipart, iar un fișier de 12 MB trecea chiar și prin interfață ca să cadă la capăt.
+     */
+    public static final long MAX_ATTACHMENT_BYTES = 10L * 1024 * 1024;
 
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
@@ -290,6 +304,9 @@ public class WasteMovementService {
     public AttachmentResponse addAttachment(UUID movementId, MultipartFile file) {
         UUID tenantId = TenantContext.require();
         WasteMovement movement = requireMovement(movementId, tenantId);
+        if (file.getSize() > MAX_ATTACHMENT_BYTES) {
+            throw new BadRequestException(ATTACHMENT_TOO_LARGE);
+        }
 
         var stored = storageService.upload(file, "movements/" + movementId);
         Attachment attachment = Attachment.builder()

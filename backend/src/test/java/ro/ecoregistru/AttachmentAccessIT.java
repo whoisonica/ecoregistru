@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -15,6 +16,8 @@ import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.service.CloudinaryStorageService;
+
+import static ro.ecoregistru.service.WasteMovementService.MAX_ATTACHMENT_BYTES;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -26,8 +29,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -143,6 +149,47 @@ class AttachmentAccessIT {
                 .andExpect(header().string("Content-Disposition", containsString("inline")))
                 .andExpect(header().string("Content-Disposition", containsString("aviz.pdf")))
                 .andExpect(content().bytes(FILE_BYTES));
+    }
+
+    /**
+     * Limita de mărime, pe server — nu în dropzone.
+     *
+     * <p>Până acum singura verificare era în browser, în {@code file-dropzone.tsx}, și era la
+     * 15 MB: peste zidul adevărat, care e limita de 10 MB per asset a contului Cloudinary. Deci
+     * un fișier de 12 MB trecea de interfață, trecea și de multipart (25 MB) și cădea abia la
+     * furnizor, cu o eroare care nu ajungea la om ca mesaj. Iar un {@code curl} direct pe API nu
+     * vedea niciodată verificarea din browser.
+     *
+     * <p>Ce se verifică aici nu e doar codul de răspuns, ci și că storage-ul <b>nu e chemat</b>:
+     * un 400 dat după upload ar fi lăsat fișierul urcat și rândul nescris.
+     */
+    @Test
+    void aFileOverTheLimitIsRefusedBeforeItIsUploaded() throws Exception {
+        var tooBig = new MockMultipartFile("file", "scan.pdf", "application/pdf",
+                new byte[(int) MAX_ATTACHMENT_BYTES + 1]);
+
+        mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(tooBig)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("attachment.too.large")));
+
+        verify(storageService, never()).upload(any(), anyString());
+    }
+
+    /** Iar marginea de sub prag trece — altfel testul de deasupra ar fi trecut și cu totul închis. */
+    @Test
+    void aFileAtTheLimitStillGoesThrough() throws Exception {
+        when(storageService.upload(any(), anyString())).thenReturn(
+                // `url` e NOT NULL din `V1`; Cloudinary întoarce oricum `secure_url` la fiecare
+                // upload. Se scrie în tabel, dar nu iese niciodată prin API — vezi testul de jos.
+                new CloudinaryStorageService.StoredFile("https://res.cloudinary.com/x/y.pdf",
+                        "ecoregistru/movements/x/y", "image", "authenticated", "pdf"));
+        var justUnder = new MockMultipartFile("file", "scan.pdf", "application/pdf",
+                new byte[(int) MAX_ATTACHMENT_BYTES]);
+
+        mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(justUnder)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk());
     }
 
     /**

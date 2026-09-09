@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import ro.ecoregistru.security.TooManyRequests;
 import ro.ecoregistru.security.TooManyRequestsException;
 
@@ -99,6 +100,23 @@ public class AdviceController {
         log.warn("Malformed request body: {}", e.getMostSpecificCause().getMessage());
         return envelope(BAD_REQUEST, "request.malformed",
                 "Cererea conține date invalide sau un cod necunoscut.");
+    }
+
+    /**
+     * Plasa de sub verificarea de mărime din {@code WasteMovementService}, nu în locul ei.
+     *
+     * <p>Serviciul respinge orice trece de 10 MB — limita reală, cea a contului Cloudinary. Limita
+     * de multipart din {@code application.yml} stă puțin deasupra ei, ca fișierul să apuce să
+     * ajungă la verificarea noastră și să primească mesajul care spune cifra. Excepția asta se
+     * aprinde doar pentru ce e atât de mare încât Spring îl oprește înainte de orice controller —
+     * și fără handler ar fi ieșit un 500 raportat la Sentry ca defect, când e o cerere greșită.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Map<String, Object> handleUploadTooLarge(MaxUploadSizeExceededException e) {
+        log.warn("{} {}", ERROR, ErrorMessageEnum.ATTACHMENT_TOO_LARGE.getCode());
+        return envelope(BAD_REQUEST, ErrorMessageEnum.ATTACHMENT_TOO_LARGE.getCode(),
+                ErrorMessageEnum.ATTACHMENT_TOO_LARGE.getMessage());
     }
 
     /**

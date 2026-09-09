@@ -3,10 +3,22 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 09.09.2026, noaptea.** 260 de teste verzi (0 eșecuri) și **11 probe de interfață,
-> 273 de verificări**. Migrări până la **`V32`**, următoarea liberă e **`V33`**. În producție:
-> `ecoregistru-api` la **v42**, `ecoregistru-app` la **v38** — **și `V32` chiar a migrat acolo**,
-> ceea ce până în seara asta nu era adevărat. Colectorul de erori e aprins pe amândouă capetele.
+> **Unde suntem — 09.09.2026, târziu de tot.** 269 de teste verzi (0 eșecuri) și **11 probe de
+> interfață, 273 de verificări**. Migrări până la **`V33`**, următoarea liberă e **`V34`**. În
+> producție: `ecoregistru-api` la **v44**, `ecoregistru-app` la **v39**, cu **`V33` migrat acolo**.
+> **P0 e închis, toate opt.** **11-bis e livrat și pe dyno**, cu probele lângă el: atașamentele nu
+> mai stau la un URL public — nesemnat dă `401`, semnat dă `200`, iar sub prefixul `ecoregistru` nu
+> mai există niciun obiect public. Colectorul de erori e aprins pe amândouă capetele.
+> **Ce ține lansarea pe loc de-acum e P1, adică juridic** — SRL, DPA, termeni. Nu se rezolvă la
+> tastatură.
+>
+> **Adăugat 09.09.2026, târziu de tot.** Trei lucruri pe care nu le-a găsit niciun compilator:
+> deployul lui 11-bis; un **commit pierdut** la deployul dinainte (procedura de subtree lua un
+> singur commit când erau două în așteptare — acum se verifică pe conținut, nu pe hash-uri); și
+> `noopener`, care făcea ca **fiecare atașament să se descarce** în loc să se deschidă. Ultimul a
+> fost găsit de utilizator, deschizând fișierul, după ce toate probele automate spuseseră „gata".
+> Plus limita de mărime, care era afișată la 15 MB peste un zid real de 10.
+> Secțiunea „11-bis pe producție, limita adevărată și tabul care descărca".
 >
 > **Adăugat 09.09.2026, seara — perimetrul de producție.** Prima felie care nu atinge nicio funcție
 > a produsului: șase din cele opt puncte P0 ale lansării — conturile demo scoase din producție (fără
@@ -5098,6 +5110,113 @@ spune că lipsește; nu mai poartă și drumul spre el.
   `target=_blank`) — a fost rescrisă, fiindcă acela era contractul greșit.
 - **Pe aplicația pornită:** același atașament, `401` fără sesiune și `200 · image/jpeg · 109669
   octeți` cu ea — JPEG adevărat, nu o pagină de eroare.
+
+---
+
+## 11-bis pe producție, limita adevărată și tabul care descărca (09.09.2026, târziu de tot)
+
+*Trei lucruri într-o felie, și niciunul n-a fost găsit de compilator. Primul e un deploy; al doilea
+e un commit pierdut la deployul dinainte; al treilea e un defect pe care l-a găsit **utilizatorul,
+deschizând fișierul** — după ce toate probele automate spuseseră că 11-bis e închis.*
+
+### 11-bis e pe dyno, nu doar în `main`
+
+`ecoregistru-api` **v43 → v44** (`d3e7fda`), `ecoregistru-app` **v38 → v39** (`d89a279`). `V33` a
+migrat acolo: *„Successfully applied 1 migration to schema «public», now at version v33"*.
+
+Probele, luate pe producție după deploy — și dintre ele contează **ultima**:
+
+| Ce s-a cerut | Răspuns |
+|---|---|
+| `/movements/{id}/attachments/{aid}/continut`, fără sesiune | **401** |
+| același, cu `Authorization` inventat | **401** |
+| URL brut Cloudinary, nesemnat (cu și fără versiune) | **401** |
+| același, cu semnătura stricată | **401** |
+| același `public_id` pe ruta publică `/upload` | **404** |
+| **URL-ul semnat corect** | **200 · application/pdf** |
+
+Rândul de jos e cel care face proba să însemne ceva: fișierul **este** livrabil, deci cele patru
+`401` sunt despre semnătură, nu despre un fișier lipsă. Aceeași comandă care pe 09.09 dimineața a
+descărcat un document de producție întoarce acum `401`.
+
+Cele două fișiere de probă rămase `type=upload` **au fost șterse** de proprietar, din Consolă.
+Verificat prin Admin API, pe toate cele patru combinații (`image`/`raw` × `upload`/`authenticated`):
+sub prefixul `ecoregistru` nu mai există **niciun** obiect public. Fișierul urcat după deploy apare
+la `image/authenticated`, iar `image/upload` a rămas **0**.
+
+### Procedura de deploy pierduse un commit, în tăcere
+
+`newrepo/main` și `ferepo/main` nu conțineau `5a11865` — commitul care scotea parola conturilor demo
+din cod. Nu se vedea de nicăieri: push-ul mersese, releaseul ieșise, iar probele de pe dyno
+trecuseră, fiindcă niciuna nu se uita la fișierul lipsă. Chiar și verificarea scrisă în procedură —
+`heroku releases` arată hash-ul așteptat — spunea „da": hash-ul *era* corect, doar conținutul era
+incomplet.
+
+Cauza e chiar linia din procedură: `git cherry-pick <tmp-backend>` ia **un singur** commit, vârful.
+Când sunt două în așteptare — și pe 09.09 seara erau două — al doilea dispare fără niciun semn.
+
+Reparat în deployul ăsta, cu cherry-pick de două commituri pe fiecare parte. Și, mai important,
+procedura are acum o verificare **înainte de push**, care nu se uită la commituri, ci la conținut:
+
+```bash
+git diff --stat split-backend  tmp-backend    # doar .gitignore
+git diff --stat split-frontend tmp-frontend   # .gitignore + vite.config.js/.d.ts
+```
+
+Divergența dintre monorepo și repo-urile de deploy e **stabilă și cunoscută**; orice fișier în plus
+în stat înseamnă un commit rămas pe drum. Un commit se poate pierde; o diferență de conținut, nu.
+
+### Limita de mărime: cifra afișată era peste zidul adevărat
+
+Trei etaje, și cel mai strâns era ultimul, iar cel care vorbea cu omul era cel mai larg:
+
+| Etaj | Era | Ce făcea |
+|---|---|---|
+| `file-dropzone.tsx` | 15 MB | singurul gardian — și rulează în browser |
+| `application.yml` (multipart) | 25 MB | nu oprea nimic din ce trecea de dropzone |
+| Cloudinary, plan Free | **10 MB / asset** | zidul adevărat, și nimeni nu-l știa |
+
+Un PDF de 12 MB trecea de dropzone, trecea de backend și cădea **la furnizor**, unde nu-l prindea
+niciun handler — deci omul primea o eroare care nu spunea nimic. Iar pe API direct, fără browser,
+treceau 25 MB: verificarea din dropzone e o curtoazie, nu o pază.
+
+Acum: pragul e **10 MB, verificat pe server** în `WasteMovementService`, **înainte** de upload — un
+`400` dat după ar fi lăsat fișierul urcat și rândul nescris. Dropzone-ul afișează aceeași cifră,
+multipart-ul a coborât la 12 MB ca plasă *sub* care stă verificarea noastră, nu peste ea, iar
+`MaxUploadSizeExceededException` are handler: `400` cu mesaj, în loc de un 500 raportat la Sentry ca
+defect când e o cerere greșită.
+
+### `noopener` făcea ca fiecare atașament să se descarce
+
+Găsit de utilizator, deschizând fișierul din aplicație: în loc să se deschidă în tab, se descărca.
+Toate probele automate ale lui 11-bis trecuseră — fiindcă niciuna nu privea ce face browserul cu
+octeții după ce sosesc.
+
+```js
+const tab = window.open("", "_blank", "noopener,noreferrer");
+```
+
+Specificația HTML spune că, atunci când `noopener` e prezent, `window.open` întoarce **`null`** — n-ai
+cum să primești un mâner către o fereastră de care tocmai te-ai lepădat. Deci `tab` era `null` de
+fiecare dată, ramura `if (tab)` era cod mort, și fiecare atașament ajungea pe calea de rezervă,
+`saveBlob`. Verificat în Chrome, nu dedus din act: cu `noopener` → `null`, fără → obiect.
+
+`tsc` n-avea ce să obiecteze: tipul lui `window.open` chiar include `null`, iar codul trata `null`
+— corect, doar că pentru cazul greșit. Ce voia `noopener` să apere (o pagină străină care citește
+`window.opener`) nu se aplică unei adrese `blob:` din propria origine; e tăiat oricum, explicit, cu
+`tab.opener = null`.
+
+### Proba
+
+- **269 de teste verzi** (erau 267): două noi în `AttachmentAccessIT` — un fișier peste prag
+  întoarce `400` **și storage-ul nu e chemat deloc**, iar unul exact la prag trece. Al doilea nu e
+  decor: fără el, un prag pus din greșeală la zero ar fi trecut testul de deasupra.
+- `tsc --noEmit` curat, `vite build` verde (611,84 kB, de la 610).
+- Pe producție, după deploy: tabelul de `401`/`200` de mai sus.
+- ⚠️ **Suita de interfață n-a fost rulată** pe felia asta — cere stiva pornită și o bază locală.
+  Suita 8 nu deschide atașamentul (verifică doar că dialogul n-are linkuri), deci nicio verificare
+  existentă nu acoperea defectul cu `noopener` și niciuna nu se strică. **De rulat la următoarea
+  atingere de ecran**, cu o verificare nouă care chiar apasă butonul de deschidere.
 
 ---
 
