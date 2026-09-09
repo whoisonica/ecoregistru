@@ -5,7 +5,7 @@ rulează local și are testele verzi.
 
 > **Unde suntem — 09.09.2026.** 239 de teste verzi (0 eșecuri) și **11 probe de interfață, 273 de
 > verificări**. Migrări până la **`V31`**, următoarea liberă e **`V32`**. În producție:
-> `ecoregistru-api` la **v38**, `ecoregistru-app` la **v34**.
+> `ecoregistru-api` la **v39**, `ecoregistru-app` la **v35**.
 >
 > *(Blocul de mai jos, până la linia despre jurnal, s-a scris pe 02.09.2026 și e păstrat pentru
 > continuitate; cifrele lui sunt cele de atunci.)*
@@ -4400,6 +4400,26 @@ dezamorsată**, nu doar rescrisă.
 - Documentele s-au probat pe rând, descărcate şi deschise: fişa Anexa 1 (randată şi privită —
   `16 06 01*` cu asterisc, patru capitole, TOTAL AN, legenda), declaraţia anuală, Anexa 3 de
   transport, Anexa 1 Ambalaje `.xls` şi `.pdf`, cele două rezumate, dosarul ZIP.
+
+### ✅ În producţie (09.09.2026, ora 12:41)
+
+`main` == `origin/main` == `origin/deploy/heroku-split` la **`c2b7276`**; `newrepo/main` la
+**`d0db491`**, `ferepo/main` la **`7bb19a0`**; `ecoregistru-api` **v39**, `ecoregistru-app` **v35**.
+**Backendul a intrat**, dar numai cu `application.yml` — Flyway a scris „Current version of schema
+«public»: 31 · No migration necessary".
+
+Verificat **pe conţinut, cu bundle-ul descărcat în fişier**, nu într-o variabilă de shell (capcana
+din 08.09): toate cele opt şiruri noi sunt acolo — „Nu am putut verifica starea", „Nu am putut citi
+evidenţa", „Alege o firmă ca să vezi ecranul", „expiră azi", „Nimic de regenerat pentru",
+„Înregistrează prima mişcare", „Adaugă primul punct de lucru", „Nu e nimic de verificat pe" — iar
+„expiră în" a rămas, cum trebuie: de la 2 zile în sus e tot forma folosită.
+
+Şi cele două verificări care erau chiar defectele:
+
+```
+/actuator/health  →  {"status":"UP"}      (era DOWN)
+index.html        →  <link rel="icon">     prezent
+```
 
 ### 📋 Ce urmează
 
