@@ -44,6 +44,10 @@ Thumbs.db
 /docs/Analiza-concurenta-software-deseuri.pdf
 /docs/anexa1-*.pdf
 /docs/anexa3-*.pdf
+# Notitele de la meetingul din 23.08.2026, scrise de mana de specialista: sursa lui G7.
+# Documentatia le-a crezut pierdute pana pe 09.09.2026, cand s-au gasit in iCloud. Traiesc
+# in repo-ul privat; regula asta exista ca sa nu ajunga aici daca se copiaza peste clona publica.
+/docs/schite meeting*.pdf
 
 # Build artefacts
 frontend/tsconfig.tsbuildinfo

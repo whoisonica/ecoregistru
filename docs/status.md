@@ -5213,12 +5213,28 @@ fiecare dată, ramura `if (tab)` era cod mort, și fiecare atașament ajungea pe
   decor: fără el, un prag pus din greșeală la zero ar fi trecut testul de deasupra.
 - `tsc --noEmit` curat, `vite build` verde (611,84 kB, de la 610).
 - Pe producție, după deploy: tabelul de `401`/`200` de mai sus.
+- ✅ **Proba omului, cu sesiune reală, pe producție** (09.09.2026, după v45/v40): un atașament urcat
+  din aplicație **s-a deschis în tab**, iar adresa din bară era
+  `blob:https://ecoregistru-app-58d0aa109c07.herokuapp.com/…` — adică exact ramura
+  `tab.location.href = url` din `useAttachmentOpen`. Calea de rezervă n-ar fi lăsat nicio adresă în
+  bară, ci un fișier în Descărcări; deci rândul ăsta e proba care închide defectul cu `noopener`
+  acolo unde contează. Odată cu el, drumul întreg — **urcare → stocare `authenticated` → citire prin
+  endpointul nostru → deschidere în browser** — e probat cap-coadă pe producție, nu doar pe stiva
+  locală. Era singurul lucru pe care nici compilatorul, nici testele, nici suita de interfață nu
+  aveau cum să-l vadă.
 - **Deployat:** 11-bis la `ecoregistru-api` **v44** / `ecoregistru-app` **v39** (cu `V33` migrat);
   limita de mărime și reparația lui `noopener` la **v45** / **v40** (fără migrare).
-- ⚠️ **Limita de 10 MB nu e probată pe producție**: uploadul cere o sesiune, iar parola contului
-  real o știe doar proprietarul. O susțin cele două teste noi și felia deployată; prima încercare
-  de a urca un fișier mai mare o închide, cu mesajul „Fișierul e prea mare. Cel mult 10 MB per
-  fișier."
+- ✅ **Zidul din browser, probat pe producție** (09.09.2026): un PDF de peste 10 MB — `schite
+  meeting andreea 23august 2026.pdf` — **nu s-a pus la coadă deloc**, iar mesajul a fost exact cel
+  din `strings.ts`: „Prea mari, peste 10 MB: …". Deci `MAX_FILE_MB` oprește fișierul **înainte** de
+  orice octet urcat, nu la furnizor, cum se întâmpla la 15 MB.
+- ⚠️ **Zidul de pe server n-a fost atins, și nu poate fi atins din interfață.** Cele două praguri
+  sunt egale (10 MB), deci dropzone-ul refuză fișierul înaintea oricărei cereri — `MAX_ATTACHMENT_BYTES`
+  din `WasteMovementService` nu vede niciodată un fișier prea mare venit prin ecran. **Singurul drum
+  către el e un `curl` cu tokenul de sesiune**, adică exact calea de care pragul de server există în
+  primul rând (cel din browser e curtoazie: un client care nu e browserul nostru nu-l vede). Așteptat
+  acolo: `400` cu „Fișierul e prea mare. Cel mult 10 MB per fișier.", storage-ul nechemat — ce
+  probează azi cele două teste din `AttachmentAccessIT`, dar pe stiva de test, nu pe dyno.
 - ⚠️ **Suita de interfață n-a fost rulată** pe felia asta — cere stiva pornită și o bază locală.
   Suita 8 nu deschide atașamentul (verifică doar că dialogul n-are linkuri), deci nicio verificare
   existentă nu acoperea defectul cu `noopener` și niciuna nu se strică. **De rulat la următoarea
