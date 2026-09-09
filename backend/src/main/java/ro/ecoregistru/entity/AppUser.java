@@ -53,6 +53,19 @@ public class AppUser implements UserDetails {
     @Column(nullable = false)
     boolean enabled;
 
+    /**
+     * P0.4 — the session counter. Every JWT carries the value it was issued with, in the
+     * {@code tv} claim; a request whose claim no longer matches is 401. Bumped when the password
+     * is reset, and the one thing to write when a „sign out everywhere" is ever needed.
+     *
+     * <p>Defaults to 0 so tokens issued before {@code V32} — which carry no claim at all — are
+     * read as version 0 and keep working until they expire on their own. See the migration for
+     * why this is a counter and not a timestamp.
+     */
+    @Builder.Default
+    @Column(name = "token_version", nullable = false)
+    int tokenVersion = 0;
+
     @Column(nullable = false)
     Instant createdAt;
 

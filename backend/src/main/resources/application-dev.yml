@@ -16,6 +16,11 @@ app:
     secret: ZWNvcmVnaXN0cnUtZGV2LXNlY3JldC1rZXktbXVzdC1iZS1sb25nLWVub3VnaC1mb3ItaHMyNTYtYWxnb3JpdGht
   # Seed a demo tenant + sample data on startup (dev only). See DevDataSeeder.
   seed-demo-data: true
+  cors:
+    # Cele două scrieri ale serverului Vite: browserul trimite ca `Origin` exact ce e în bara de
+    # adrese, iar `localhost` și `127.0.0.1` sunt origini diferite pentru el. Suita e2e pornește pe
+    # prima; a doua e pentru cine deschide manual a doua adresă și nu înțelege de ce cade.
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173
 
 logging:
   level:

@@ -4,7 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { ToastProvider } from "@/components/ui/toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { initMonitoring } from "@/lib/monitoring";
 import "./index.css";
+
+// P0.6 — înaintea oricărei randări, ca o excepție din primul render să aibă unde ajunge. Fără
+// `VITE_SENTRY_DSN` nu pornește nimic. Vezi `lib/monitoring.ts`.
+initMonitoring();
 
 const queryClient = new QueryClient({
   defaultOptions: {

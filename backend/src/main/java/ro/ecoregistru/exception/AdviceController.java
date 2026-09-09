@@ -1,8 +1,11 @@
 package ro.ecoregistru.exception;
 
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
@@ -10,6 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ro.ecoregistru.security.TooManyRequests;
+import ro.ecoregistru.security.TooManyRequestsException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,10 +101,34 @@ public class AdviceController {
                 "Cererea conține date invalide sau un cod necunoscut.");
     }
 
+    /**
+     * P0.3, the per-email half. The filter writes its own 429 (it runs before any controller), so
+     * this is only for the limits a service enforces — same envelope, same {@code Retry-After}.
+     */
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<Map<String, Object>> handleTooManyRequests(TooManyRequestsException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(e.getRetryAfterSeconds()))
+                .body(envelope("too-many-requests", TooManyRequests.ERROR_CODE, e.getMessage()));
+    }
+
+    /**
+     * P0.6 — the one branch that means „we did not expect this", and so the only one worth waking
+     * anyone up for. Everything above is a normal answer to a wrong request: a CUI that does not
+     * exist, a form filled in badly, a movement that breaks a rule. Reporting those too would have
+     * buried the 500s under a client's typos within a week — which is why Sentry's own automatic
+     * resolver is ordered out of the way in {@code application.yml} and the report is made here,
+     * explicitly.
+     *
+     * <p>With no {@code SENTRY_DSN} set this call is a no-op, so dev and the tests are unchanged.
+     * Until now the log was the whole story, and {@code ErrorBoundary.tsx} said so in as many
+     * words: „Consola e tot ce avem." True while the only user was the person who wrote it.
+     */
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public Map<String, Object> handleUnexpected(Exception e) {
         log.error("Unexpected error", e);
+        Sentry.captureException(e);
         return envelope(INTERNAL_SERVER_ERROR, "internal.error",
                 "A apărut o eroare neașteptată. Te rugăm să încerci din nou.");
     }

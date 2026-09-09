@@ -210,6 +210,22 @@ Production environment variables: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE
 `JWT_SECRET` (Base64), `CLOUDINARY_URL`, `MAIL_HOST/PORT/USERNAME/PASSWORD/FROM`,
 `FRONTEND_BASE_URL`.
 
+Optional, both with a working default:
+
+| Variable | Default | What it changes |
+|---|---|---|
+| `CORS_ALLOWED_ORIGINS` | `FRONTEND_BASE_URL` | Comma-separated list of origins a browser may call the API from. Matched **exactly** — a different scheme or port is a different origin. Only needed for a second client (own domain, mobile app). |
+| `SENTRY_DSN` · `VITE_SENTRY_DSN` | *(empty)* | Error reporting, one per end. Empty means nothing is initialised and nothing is sent: no extra request, no cookie. Only unhandled 500s are reported, never a handled 4xx. |
+
+Sessions last **8 hours**. Disabling a user, or resetting their password, ends their open sessions
+on the next request — there is no revocation list to maintain, just a counter on the row
+(`app_users.token_version`, `V32`).
+
+The three endpoints reachable without a token — login, password reset, and the intake form — are
+rate limited per IP, and login and reset also per email address. Over the quota they answer `429`
+with `Retry-After`. Behind a proxy the client address is read from the **last** `X-Forwarded-For`
+hop, which is the one Heroku's router appends; the first hop is whatever the caller chose to send.
+
 ### 3. Frontend
 
 ```bash

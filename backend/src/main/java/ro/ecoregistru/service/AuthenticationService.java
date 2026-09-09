@@ -25,6 +25,8 @@ import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.VerificationRecordRepository;
+import ro.ecoregistru.security.RateLimiter;
+import ro.ecoregistru.security.TooManyRequestsException;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -47,11 +49,29 @@ public class AuthenticationService {
     final AuthenticationManager authenticationManager;
     final AppUserRepository appUserRepository;
     final VerificationRecordRepository verificationRecordRepository;
+    final RateLimiter rateLimiter;
 
     private static final int CODE_TTL_MINUTES = 30;
 
+    /**
+     * P0.3, the per-email half. {@code RateLimitFilter} already counted this request against the
+     * caller's IP; here the account itself is counted, so a list of passwords tried against one
+     * address from a hundred addresses is still stopped.
+     *
+     * <p>Only <strong>failed</strong> attempts are counted, and the check comes first: a locked
+     * bucket must not be openable by guessing right on the eleventh try. Counting successes too
+     * would have locked out the one person who knows the password — an office signing in on a
+     * Monday, or the e2e suite, which authenticates as the same user about ten times a run.
+     */
     public AuthenticationResponse login(LoginRequest request) {
-        AppUser user = appUserRepository.findByEmail(request.email().toLowerCase())
+        String email = request.email().toLowerCase();
+        long retryAfter = rateLimiter.tryConsume(RateLimiter.LOGIN_PER_EMAIL, email);
+        if (retryAfter > 0) {
+            log.warn("Rate limit login/email hit for {}", email);
+            throw new TooManyRequestsException(retryAfter);
+        }
+
+        AppUser user = appUserRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(INVALID_CREDENTIALS));
 
         if (!user.isEnabled()) {
@@ -65,11 +85,21 @@ public class AuthenticationService {
             throw new BusinessException(INVALID_CREDENTIALS);
         }
 
+        // The password was right, so this attempt costs nothing: give the token back.
+        rateLimiter.refund(RateLimiter.LOGIN_PER_EMAIL, email);
         return buildAuthResponse(user);
     }
 
     @Transactional(noRollbackFor = EmailException.class)
     public void requestPasswordReset(String email) {
+        // Counted per address as well as per IP (P0.3): this endpoint answers 200 either way, so
+        // a flood aimed at one inbox looks identical to a person who forgot their password twice.
+        // Three an hour is the second, not the first.
+        long retryAfter = rateLimiter.tryConsume(RateLimiter.RESET_PER_EMAIL, email.toLowerCase());
+        if (retryAfter > 0) {
+            log.warn("Rate limit reset/email hit for {}", email.toLowerCase());
+            throw new TooManyRequestsException(retryAfter);
+        }
         // Silent no-op if the account does not exist (avoid leaking which emails are registered).
         appUserRepository.findByEmail(email.toLowerCase()).ifPresent(user -> {
             verificationRecordRepository
@@ -100,6 +130,10 @@ public class AuthenticationService {
 
         AppUser user = record.getUser();
         user.setPassword(passwordEncoder.encode(request.password()));
+        // P0.4 — the new password takes the old sessions with it. Without this, someone who took
+        // the account back by resetting the password would be sharing it with whoever still had a
+        // token: the account stays enabled, so nothing else about it would have changed.
+        user.setTokenVersion(user.getTokenVersion() + 1);
         // Setting a password via the reset link also activates the account. This is what makes
         // the platform-admin invite flow work: invited users start disabled and become usable
         // once they pick their own password. (Harmless for already-enabled users.)

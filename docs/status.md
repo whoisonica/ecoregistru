@@ -3,9 +3,17 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 09.09.2026.** 239 de teste verzi (0 eșecuri) și **11 probe de interfață, 273 de
-> verificări**. Migrări până la **`V31`**, următoarea liberă e **`V32`**. În producție:
-> `ecoregistru-api` la **v39**, `ecoregistru-app` la **v35**.
+> **Unde suntem — 09.09.2026, seara.** 260 de teste verzi (0 eșecuri) și **11 probe de interfață,
+> 273 de verificări**. Migrări până la **`V32`**, următoarea liberă e **`V33`**. În producție:
+> `ecoregistru-api` la **v40**, `ecoregistru-app` la **v35**.
+>
+> **Adăugat 09.09.2026, seara — perimetrul de producție.** Prima felie care nu atinge nicio funcție
+> a produsului: șase din cele opt puncte P0 ale lansării — conturile demo scoase din producție (fără
+> `platform@`, vezi mai jos), CORS pe o singură origine, frână pe cele trei uși publice, sesiuni de
+> 8 ore care se pot revoca (`V32`), Cloudinary setat, colector de erori, și CI care rulează suitele
+> la fiecare push. 🔴 **Rămân deschise `platform@ecoregistru.ro` pe producție** (blocat pe o
+> permisiune, comenzile sunt scrise) **și proba de restaurare a backupului.** Secțiunea
+> „Perimetrul de producție".
 >
 > *(Blocul de mai jos, până la linia despre jurnal, s-a scris pe 02.09.2026 și e păstrat pentru
 > continuitate; cifrele lui sunt cele de atunci.)*
@@ -4476,6 +4484,239 @@ Neschimbat faţă de felia de dimineaţă: `docs/todo-ui-ux.md` — vederea cros
 🟡 tabelele care aduc tot şi paginează în client. **Cele două lucruri pe care le lăsasem deschise —
 Panoul pe un cont gol şi proba seeder-ului pe bază curată — s-au făcut amândouă**, deci lista rămâne
 exact cea de dimineaţă.
+
+---
+
+## Perimetrul de producție — șase din opt puncte P0 (09.09.2026, seara)
+
+Prima felie care nu atinge nicio funcție a produsului. Vine din `docs/todo-lansare.md`, scris în
+aceeași zi după o citire completă a codului, și din constatarea lui: **produsul e ~85% gata și nu el
+ține lansarea pe loc**. Ce ține e perimetrul din jur — securitatea producției, juridicul, canalul —
+adică exact partea în care nu intrase până acum niciun procent din disciplina care se vede peste tot
+în rest.
+
+Lista P0 are opt puncte. **Șase sunt încheiate aici**, două rămân pe o permisiune pe care n-o am
+(vezi la final). Trei dintre cele șase se reparau pe dyno, nu în cod — și tocmai de asta fiecare are
+scrisă și proba, fiindcă un `heroku config:set` nu lasă urmă în git.
+
+### 1. Conturile demo nu mai intră în producție (P0.1, parțial)
+
+Faptul, verificat cu `curl` înainte de orice atingere, nu dedus:
+
+```
+platform@ecoregistru.ro        200
+admin@demo.ro                  200
+operator@demo.ro               200
+viewer@demo.ro                 200
+```
+
+Patru conturi, parola `Parola123` — cea tipărită în `README.md` până pe 09.09 (`5a11865`) și rămasă
+în istoricul unui repo **public**. Nu era o notă teoretică într-un document: era un login funcțional
+către un sistem viu, publicat, iar `platform@ecoregistru.ro` e `PLATFORM_ADMIN`, adică **toate
+firmele**, nu doar tenantul demo.
+
+Cele trei conturi de tenant sunt dezactivate. După:
+
+```
+platform@ecoregistru.ro        200      ← rămas deschis, vezi „Ce n-am putut face"
+admin@demo.ro                  400
+operator@demo.ro               400
+viewer@demo.ro                 400
+```
+
+🔴 **Ce s-a aflat în aceeași trecere, și e mai important decât punctul în sine:** cum au ajuns acolo.
+`DevDataSeeder` e `@Profile("dev")` și `SPRING_PROFILES_ACTIVE` e **gol** pe dyno — deci n-au venit
+prin seeder, ci pe alt drum (cel mai probabil un dump încărcat cândva). Drumul ăla n-a fost găsit,
+deci nu se poate spune că e închis.
+
+### 2. CORS pe o origine, nu pe tot internetul (P0.2)
+
+`Access-Control-Allow-Origin: *` pe un API care se autentifică prin `Authorization: Bearer`, deschis
+către orice pagină de pe internet. Comentariul din chiar fișierul ăla o spunea de la prima zi:
+*„Tighten Access-Control-Allow-Origin before opening the product publicly."*
+
+Lista vine din `app.cors.allowed-origins`, iar valoarea implicită e **chiar `FRONTEND_BASE_URL`** —
+deci producția n-a avut nevoie de nicio variabilă nouă, ceea ce era jumătate din motivul pentru care
+punctul stătea nefăcut. Profilul `dev` adaugă cele două scrieri ale serverului Vite; `localhost` și
+`127.0.0.1` sunt origini diferite pentru browser.
+
+Trei lucruri care par detalii și nu sunt:
+
+* **`Vary: Origin` pe fiecare răspuns, inclusiv pe refuzuri.** Fără el, un cache partajat poate
+  servi răspunsul originii permise — cu tot cu antet — unei pagini de altundeva.
+* **O cerere fără `Origin` trece neatinsă.** curl, sonda de health, un apel server-la-server nu sunt
+  cereri CORS și n-au voie să devină: a le răspunde cu antete CORS e felul în care o „reparație"
+  redeschide ușa în tăcere.
+* **Un preflight de la o origine refuzată primește `403`, nu `200`.** Browserul l-ar bloca oricum,
+  dar un 200 e o minciună pe care n-o citește nimeni — iar în log-uri se vede refuzul.
+
+Probat pe backendul pornit, nu doar în teste:
+
+```
+Origin: http://localhost:5174    → Access-Control-Allow-Origin: http://localhost:5174 · Vary: Origin
+Origin: https://exemplu-strain.ro → (niciun Access-Control-Allow-Origin) · Vary: Origin
+preflight strain: 403 · preflight propriu: 200
+```
+
+⚠️ **Și normalizarea care nu e cosmetică:** o valoare configurată cu slash la final
+(`https://app.exemplu.ro/`) nu s-ar mai fi potrivit niciodată cu antetul `Origin`, care n-are unul.
+Ar fi ieșit ca „aplicația e căzută", pe un antet la care nu se uită nimeni. Se taie la citire, și
+`CorsOriginListTest` o fixează — împreună cu potrivirea **exactă**: `https://ecoregistru.ro` nu
+acceptă `https://ecoregistru.ro.atacator.com`.
+
+### 3. Frână pe cele trei uși publice (P0.3)
+
+Căutat în tot backendul înainte: **nu exista nimic** — nici bucket4j, nici resilience4j, nici o
+numărătoare de încercări eșuate, nici lockout. Brute force pe `/auth/login` era gratuit, cu parola
+minimă de 8 caractere și nicio altă regulă.
+
+Cinci cote, în memorie (un dyno; Redis n-ar aduce nimic acum, iar un limitator care cere Redis ca să
+pornească e un limitator care se stinge):
+
+| Ușa | Pe IP | Pe email |
+|---|---|---|
+| `POST /auth/login` | 60 / 5 min | **10 eșuate** / 15 min |
+| `POST /auth/request-reset-password` | 10 / oră | 3 / oră |
+| `POST /account-requests` | 10 / oră | — |
+
+Două decizii poartă tot punctul:
+
+* **Pe email se numără doar încercările care au eșuat**, iar la o autentificare reușită jetonul se
+  dă înapoi. Altfel s-ar fi blocat exact omul care își știe parola: un birou care intră luni
+  dimineața, sau suita e2e, care se autentifică de vreo zece ori pe rulare ca același utilizator.
+  Verificarea vine **înaintea** consumului, ca o cotă epuizată să nu se poată deschide ghicind
+  corect a unsprezecea oară.
+* **Adresa se citește din ultimul salt din `X-Forwarded-For`, nu din primul.** Reflexul e primul, și
+  pe Heroku e greșit: routerul **adaugă** adresa de la care se conectează, deci primul salt e scris
+  de client. Cu primul, oricine își trimitea propriul antet și primea o găleată nouă la fiecare
+  cerere — adică un limitator care arată că funcționează și nu limitează nimic. `getRemoteAddr()` ar
+  fi fost și mai rău: routerul Heroku e aceeași mână de adrese pentru tot internetul.
+
+Probat pe backendul pornit — a 61-a cerere de pe aceeași adresă:
+
+```
+prima 429 la încercarea 61
+HTTP/1.1 429 · Retry-After: 299
+{"error-type":"too-many-requests","error-code":"too.many.requests",
+ "error-message":"Prea multe încercări. Te rugăm să încerci din nou peste câteva minute."}
+```
+
+Frontendul n-a avut nevoie de nicio linie: plicul de eroare e cel obișnuit, iar cele trei pagini
+publice trec deja prin `apiErrorMessage`. Un `429` nu e `401`, deci nici interceptorul de sesiune
+expirată nu se aprinde pe el.
+
+### 4. Sesiuni de o zi de lucru, care se pot închide (P0.4, `V32`)
+
+`TOKEN_VALIDITY_MS` era **30 de zile**, fără refresh, fără listă de revocare, cu tokenul în
+`localStorage`. Consecința, în propoziția pe care o pune un client înainte să semneze — *ce se
+întâmplă când pleacă un angajat?* — era: **nimic, încă o lună.**
+
+Trei schimbări, și fiecare acoperă ce nu poate cealaltă:
+
+* **8 ore** în loc de 30 de zile. O sesiune trăiește cât o zi de lucru; frontendul duce deja un 401
+  la login cu „sesiunea a expirat" **și** cu adresa de unde s-a căzut, deci costul e o autentificare.
+* **`enabled` se verifică la fiecare cerere.** Asta închide pe loc sesiunea unui cont dezactivat, și
+  e chiar proba din TODO: autentificare → dezactivare → aceeași cerere. Înainte răspundea `200`, încă
+  douăzeci și nouă de zile.
+* **`token_version` (`V32`)** închide ce `enabled` nu poate: o **schimbare de parolă**. Contul rămâne
+  activ, deci nimic din rândul lui nu s-ar fi schimbat — iar tokenul emis cu parola veche ar fi rămas
+  valabil lângă cea nouă, inclusiv la cel de la care tocmai ți-ai luat contul înapoi. Resetarea
+  incrementează contorul; tokenul poartă valoarea de la emitere, în claimul `tv`.
+
+⚠️ **Și capcana migrării, evitată dinadins.** Tokenurile emise **înainte** de `V32` n-au deloc
+claimul `tv`. Sunt citite ca versiunea 0 — valoarea la care s-a migrat fiecare rând — deci nu s-a
+deconectat nimeni la ora la care s-a întâmplat să ruleze Flyway. Un `DEFAULT 1` ar fi făcut exact
+asta, tăcut. `SessionRevocationIT` fixează și cazul ăsta, nu doar cele două reparații.
+
+### 5. Cloudinary, setat (P0.5)
+
+`CLOUDINARY_URL` era gol pe dyno — verificat pe 02.09 și încă gol azi — deci **atașamentele nu urcau
+în producție**, iar ecranul Mișcări le oferea, cu drag-drop cu tot. Primul client care încarcă un
+aviz și nu-l regăsește în dosarul de control nu raportează un defect, ci pierde încrederea.
+Variabila e setată (`ecoregistru-api` v40). ⚠️ **Proba adevărată — un fișier urcat pe producție și
+regăsit în `atasamente/` din arhivă — rămâne de făcut**, și până atunci punctul nu se bifează.
+
+### 6. Colector de erori (P0.6)
+
+`ErrorBoundary.tsx` o scria singur: *„Nu există colector de erori în producție (nici Sentry, nici
+altceva). Consola e tot ce avem."* Adevărat cât timp singurul utilizator era cel care a scris-o. Cu
+clienți, consola e a lor: un defect se află doar dacă cineva sună, și cei mai mulți nu sună.
+
+Sentry pe amândouă capetele, **inert fără DSN** — fără `SENTRY_DSN` / `VITE_SENTRY_DSN` nu se
+inițializează nimic, deci dev-ul, testele și un deploy fără variabilă se comportă identic cu
+înainte. Se aprinde punând variabila.
+
+Ce s-a ales dinadins, și motivul:
+
+* **Nu rezolvatorul automat al lui Sentry, ci o linie în `AdviceController.handleUnexpected`.**
+  Rezolvatorul raportează **fiecare** excepție care iese dintr-un controller — iar aici ies și cele
+  normale: un CUI care nu există, un formular greșit, o mișcare care încalcă o regulă. Într-o
+  săptămână, 400-urile unui client care greșește un CUI ar fi înecat singurul lucru pentru care
+  există colectorul. Se raportează exact ramura care înseamnă „nu ne așteptam la asta".
+* **Fără `send-default-pii`, fără tracing, fără Session Replay, cu parametrii adresei tăiați.**
+  Aplicația e multi-tenant și duce date de client; un raport de defect cu un formular de mișcare în
+  el ar scoate din firmă exact ce apărăm. Replay-ul ar filma ecranul unui client și l-ar trimite la
+  un terț.
+
+### 7. CI care rulează ce aveam deja (P0.7)
+
+260 de teste de backend și 273 de verificări de interfață, și **nimic nu le pornea la push**: toată
+plasa de siguranță a proiectului atârna de disciplina de a o rula cu mâna.
+`.github/workflows/ci.yml` rulează `./gradlew test` pe un job și `tsc --noEmit` + `vite build` pe
+celălalt, la fiecare push și pe fiecare PR.
+
+🔴 **Iar premisa scrisă în TODO era greșită pe jumătate, și adevărul e mai neplăcut.** Nota spunea că
+`build.gradle` declară doar `embedded-postgres-binaries-windows-amd64`, deci suita „nu pornește pe un
+runner Linux". Ba pornea: `embedded-postgres:2.0.7` aduce **transitiv** binarele pentru linux-amd64,
+linux-alpine și darwin-amd64. Numai că le aduce la **14.10.1**, în timp ce declarația explicită
+ridica Windows la **15.6.0** — deci suita ar fi fost verde pe Postgres 14 în CI și pe Postgres 15 pe
+mașina care a scris codul. Diferența aia se vede o singură dată, la o migrare, în cea mai proastă
+săptămână. Toate patru platformele sunt acum fixate la 15.6.0, plus `darwin-arm64v8`, cu care mașina
+de dezvoltare nu mai trece prin Rosetta. Suita rulează verde pe Postgres 15.
+
+Suita e2e **nu** intră în CI, dinadins: conduce un Chrome adevărat peste un backend și un frontend
+pornite, ~7 minute, și cere `E2E_PASSWORD` plus o bază. Rămâne comanda de dinaintea deployului.
+
+### Cum s-a probat, și ce a ieșit din felul în care s-a probat
+
+**260 de teste** (de la 239): `CorsIT` (5), `CorsOriginListTest` (5), `RateLimitIT` (7),
+`SessionRevocationIT` (4). Migrări până la **`V32`**; următoarea liberă **`V33`**.
+
+**Suita de interfață: 11 probe, 273 de verificări, toate verzi** — și de data asta rulată
+**cross-origin de-adevăratelea**: frontendul pe `:5174` chemând direct API-ul pe `:8081`, fără proxy.
+Setarea obișnuită (Vite proxy pe `/api`) e same-origin, deci **n-ar fi atins deloc** codul CORS. Ce
+era gândit ca o ocolire a două servere deja pornite a ieșit o probă mai bună decât cea normală.
+
+⚠️ **Prima rulare a căzut pe 6 din 11 probe, și niciuna nu era o regresie.** Pornisem pe o bază
+**curată**, iar suita se sprijină pe stare **acumulată**: `6-cerere-si-rapoarte.mjs` scrie o cerere
+la fiecare rulare și nu curăță după ea (aprobarea creează o firmă, iar firmele nu se șterg), deci
+baza de dev are patru firme și cincisprezece termene acolo unde una proaspătă are una și zero.
+Verificările au spus-o singure — „există o a doua firmă pe care să se probeze cealaltă ramură —
+(niciuna)", „tenantul demo chiar are termene depășite — 0 depășite". **Gardele de premisă scrise
+pentru regula 9 au funcționat exact invers decât fuseseră gândite** și au arătat că nu premisa
+codului lipsea, ci a probei. Aceeași suită pe baza de dev: 273 din 273.
+
+**`V32` e probată în amândouă felurile** — pe o bază goală (31 de migrări + a 32-a, seed complet) și
+**pe una populată**, cu 5 utilizatori și 39 de mișcări: „Current version of schema «public»: 31 →
+Migrating to version 32 → Successfully applied 1 migration".
+
+`tsc --noEmit` curat, `vite build` verde (610 kB, de la 600 — cele 10 kB sunt SDK-ul Sentry).
+
+### Ce n-am putut face, și de ce
+
+🔴 **`platform@ecoregistru.ro` se autentifică în continuare pe producție cu parola din istoricul
+public.** E jumătatea scumpă a lui P0.1, fiindcă e `PLATFORM_ADMIN`: toate firmele. Cele două căi de
+închidere — scrierea unui hash de parolă nou și promovarea contului real al proprietarului la
+`PLATFORM_ADMIN` — au fost **amândouă blocate** de clasificatorul de securitate al uneltei, corect
+în principiu: sunt scrieri de credențiale și o escaladare de privilegii pe o bază de producție.
+Comenzile sunt scrise, se rulează cu mâna. **Până atunci, punctul e deschis, iar `JWT_SECRET` nu s-a
+rotit** — și n-are rost să se rotească înainte, fiindcă rotirea e a doua jumătate a aceleiași
+reparații.
+
+⬜ **P0.8, proba de restaurare a backupului**, nu s-a atins. Nicăieri în documente nu apare o
+restaurare făcută vreodată, iar trei ani e chiar termenul pe care legea îl cere păstrat
+(OUG 92/2021 art. 48 alin. (5)).
+
 
 ---
 

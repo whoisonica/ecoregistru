@@ -61,6 +61,12 @@ app:
   demo-password: ${DEMO_PASSWORD:}
   # Base URL used in email links (verification, reset).
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+  cors:
+    # Originile de pe care browserul are voie să ceară. Implicit: exact frontendul nostru, deci
+    # producția nu are nevoie de o variabilă nouă — `FRONTEND_BASE_URL` e deja setată acolo.
+    # `CORS_ALLOWED_ORIGINS` acceptă o listă separată prin virgulă, pentru cazul în care apare un
+    # al doilea client (domeniu propriu, aplicație mobilă). Vezi `CorsConfig`.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_BASE_URL:http://localhost:5173}}
   mail:
     from: ${MAIL_FROM:contact@ecoregistru.ro}
   jwt:
@@ -70,6 +76,26 @@ app:
     # Single URL form: cloudinary://<api_key>:<api_secret>@<cloud_name>
     url: ${CLOUDINARY_URL:}
     folder: ${CLOUDINARY_FOLDER:ecoregistru}
+
+sentry:
+  # P0.6 — colectorul de erori. **Gol implicit**: fără DSN, SDK-ul nu trimite nimic și nu pornește
+  # nimic, deci dev-ul, testele și un deploy fără variabilă se comportă exact ca înainte. Se aprinde
+  # cu `heroku config:set SENTRY_DSN=... -a ecoregistru-api`.
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:productie}
+  # Numai erori, nu și urme de performanță: ce lipsea era „aflu că s-a rupt ceva", nu profiling —
+  # iar tracing-ul pe planul gratuit se consumă în câteva zile și lasă erorile pe dinafară.
+  traces-sample-rate: 0
+  # Corpul cererii și antetele NU se trimit. Aplicația e multi-tenant și duce date de client:
+  # un raport de eroare cu un formular de mișcare în el ar scoate din firmă exact ce apărăm.
+  send-default-pii: false
+  # Ordinea cea mai joasă = rezolvatorul automat al lui Sentry nu apucă nimic. Dinadins: el ar
+  # raporta **fiecare** excepție care iese dintr-un controller, iar aici ies și cele normale —
+  # `NotFoundException`, `BusinessException`, validarea unui formular. Într-o săptămână, cele 400-uri
+  # ale unui client care greșește un CUI ar îneca singurul lucru pentru care există colectorul.
+  # Raportarea se face pe o linie, din `AdviceController.handleUnexpected`, adică exact de pe
+  # ramura care înseamnă „nu ne așteptam la asta": 500-urile.
+  exception-resolver-order: 2147483647
 
 management:
   health:
