@@ -309,6 +309,7 @@ export const strings = {
     attachmentsDialogTitle: "Atașamentele mișcării",
     attachmentsDialogHint:
       "Fișierele se deschid într-un tab nou. Se adaugă și se șterg din editarea mișcării.",
+    attachmentOpening: "Se deschide...",
     loadError: "Nu am putut încărca mișcările.",
     // filters
     filterMonth: "Luna",
@@ -516,6 +517,10 @@ export const strings = {
       // fiindcă e singurul fel în care se acordă și el. Restul propoziției nu mai numără nimic.
       "Mișcarea s-a salvat, dar {count}. Ce a rămas e tot în listă — apasă Salvează încă o dată doar pentru asta.",
     attachmentDeleted: "Atașament șters.",
+    // Deschiderea trece de la 11-bis prin backend, deci poate eșua din alt motiv decât urcarea:
+    // sesiune expirată, fișierul șters de la furnizor, rețea. Mesaj separat, ca omul să nu creadă
+    // că a pierdut atașamentul.
+    attachmentOpenError: "Fișierul nu a putut fi deschis.",
     noWorkPointHint: "Adaugă întâi un punct de lucru din Setări.",
     workPointPlaceholder: "Alege punctul de lucru...",
     // Punctul unei mișcări vechi, dezactivat între timp: rămâne în listă, dar se vede că nu mai e

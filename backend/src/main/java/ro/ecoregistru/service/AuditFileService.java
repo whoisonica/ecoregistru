@@ -36,12 +36,7 @@ import ro.ecoregistru.service.export.GenericEvidenceExporter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -83,7 +78,6 @@ public class AuditFileService {
 
     private static final java.time.format.DateTimeFormatter DATE =
             java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy");
-    private static final int ATTACHMENT_TIMEOUT_SECONDS = 15;
     /**
      * How far back a dossier may reach. OUG 92/2021 art. 48 alin. (5): the operator keeps the
      * waste-management evidence "cel putin 3 ani" (12 months for transporters), and that is the
@@ -105,6 +99,7 @@ public class AuditFileService {
     PartnerRepository partnerRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
+    CloudinaryStorageService storageService;
 
     /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
     public byte[] build(int year) {
@@ -200,9 +195,6 @@ public class AuditFileService {
         index.append("Atașamente ale mișcărilor de deșeuri\n");
         index.append("=====================================\n\n");
 
-        HttpClient http = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(ATTACHMENT_TIMEOUT_SECONDS)).build();
-
         int n = 0;
         int downloaded = 0;
         for (WasteMovement m : movements.stream()
@@ -213,16 +205,15 @@ public class AuditFileService {
                         + " · " + safe(m.getDocumentReference());
                 String entryName = prefix + "atasamente/" + n + "-" + fileName(a);
                 index.append(n).append(". ").append(label).append("\n")
-                        .append("   fișier: ").append(fileName(a)).append("\n")
-                        .append("   URL:    ").append(a.getUrl()).append("\n");
+                        .append("   fișier: ").append(fileName(a)).append("\n");
 
-                byte[] bytes = tryDownload(http, a.getUrl());
+                byte[] bytes = tryDownload(a);
                 if (bytes != null) {
                     writeEntry(zip, entryName, bytes);
                     downloaded++;
                     index.append("   inclus în arhivă: da\n");
                 } else {
-                    index.append("   inclus în arhivă: NU (descărcare eșuată — vezi URL)\n");
+                    index.append("   inclus în arhivă: NU (descărcarea a eșuat)\n");
                 }
                 index.append("\n");
             }
@@ -237,18 +228,27 @@ public class AuditFileService {
         writeEntry(zip, prefix + "atasamente/index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
     }
 
-    /** Best-effort binary download; returns null on any failure so the build never breaks. */
-    private byte[] tryDownload(HttpClient http, String url) {
+    /**
+     * Best-effort binary download; returns null on any failure so the build never breaks.
+     *
+     * <p>Since 11-bis the URL is signed here and thrown away — it is not written into index.txt
+     * any more. It used to be, as a fallback for the reader when a download failed, and that line
+     * was a public link to a client's document sitting inside a file the client mails to an
+     * inspector. The archive carries the file itself or says it is missing; it no longer carries
+     * a way in.
+     */
+    private byte[] tryDownload(Attachment a) {
         try {
-            HttpRequest req = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(ATTACHMENT_TIMEOUT_SECONDS)).GET().build();
-            HttpResponse<byte[]> res = http.send(req, HttpResponse.BodyHandlers.ofByteArray());
-            if (res.statusCode() == 200) {
-                return res.body();
-            }
-            log.warn("Attachment download returned {} for {}", res.statusCode(), url);
+            String url = a.getDeliveryType() == null
+                    ? a.getUrl()
+                    : storageService.signedUrl(a.getPublicId(), a.getResourceType(),
+                            a.getDeliveryType(), a.getFormat());
+            return storageService.fetch(url);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Attachment download interrupted for id={}", a.getId());
         } catch (Exception e) {
-            log.warn("Attachment download failed for {}: {}", url, e.getMessage());
+            log.warn("Attachment download failed for id={}: {}", a.getId(), e.getMessage());
         }
         return null;
     }

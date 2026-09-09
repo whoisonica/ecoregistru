@@ -571,9 +571,14 @@ export interface PartnerInput {
 
 // --- Attachments ---
 
+/**
+ * Fără `url`, de la 11-bis: conținutul se cere pe
+ * `/movements/{movementId}/attachments/{id}/continut`, cu sesiune. Backendul nu mai trimite
+ * niciodată adresa de la Cloudinary — pentru un fișier `authenticated` adresa semnată *e* cheia,
+ * și nu expiră.
+ */
 export interface Attachment {
   id: string;
-  url: string;
   fileName: string;
   contentType: string;
 }

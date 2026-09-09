@@ -17,6 +17,7 @@ import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.service.WasteMovementService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -102,6 +103,35 @@ public class WasteMovementController {
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(movementService.addAttachment(id, file));
+    }
+
+    /**
+     * The attachment's bytes, proxied through us — the whole of 11-bis.
+     *
+     * <p>The file used to be fetched straight from Cloudinary by the browser, at a public URL the
+     * API handed out. Reading it now costs a session and membership of the movement's tenant, like
+     * every other read: no session is a 401, another company's attachment a 404. Open to readers
+     * (not gated to {@code CAN_WRITE}) because seeing a document is a read — a CLIENT_VIEWER who
+     * can see the movement can see what is attached to it.
+     *
+     * <p>{@code inline}, not {@code attachment}: the common case is glancing at a handover note,
+     * and a browser can show a PDF or a photo without a trip through the downloads folder.
+     */
+    @GetMapping("/{id}/attachments/{attachmentId}/continut")
+    public ResponseEntity<byte[]> attachmentContent(@PathVariable UUID id,
+                                                    @PathVariable UUID attachmentId) {
+        var content = movementService.attachmentContent(id, attachmentId);
+        ContentDisposition disposition = ContentDisposition.inline()
+                .filename(content.fileName() == null ? "atasament" : content.fileName(),
+                        StandardCharsets.UTF_8)
+                .build();
+        MediaType type = content.contentType() == null
+                ? MediaType.APPLICATION_OCTET_STREAM
+                : MediaType.parseMediaType(content.contentType());
+        return ResponseEntity.ok()
+                .contentType(type)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(content.bytes());
     }
 
     @DeleteMapping("/{id}/attachments/{attachmentId}")

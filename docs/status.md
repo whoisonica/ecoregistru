@@ -5020,6 +5020,87 @@ semnat. E cod, e înaintea juridicului în ordine, și e acolo fiindcă un consu
 
 ---
 
+## 11-bis — atașamentele nu mai stau la un URL public (09.09.2026, târziu de tot)
+
+*Prima felie de cod de după închiderea lui P0, și una pe care P0 a produs-o: proba de livrare a lui
+P0.5 a fost un `curl` gol care a descărcat un document de producție. Punctul era scris în lista de
+lansare ca observație din citit cod; s-a închis ca demonstrație.*
+
+### Ce era
+
+`CloudinaryStorageService.upload` lua `secure_url`, îl scria în `Attachment`, iar
+`AttachmentResponse.url` îl trimitea clientului, care îl punea într-un `<a href>`. Deci fiecare
+atașament era **un link public**: fără autentificare, fără sesiune, **fără nicio verificare de
+tenant**, valabil pe veci. Singura apărare era că adresa e greu de ghicit — iar aplicația e
+multi-tenant și prin ea trec avize, contracte și acte de identitate de șofer; la Etapa 9 intră
+**CNP**, pe borderoul de achiziție la metale.
+
+### Ce e acum
+
+Fișierele urcă `type=authenticated`, pe care Cloudinary refuză să-l livreze fără semnătură, iar
+conținutul se citește printr-un endpoint al nostru —
+`GET /api/v1/movements/{id}/attachments/{aid}/continut` — care trece prin aceeași verificare de
+tenant ca orice altă citire. `AttachmentResponse` **nu mai are câmpul `url`**, iar frontendul cere
+fișierul cu sesiunea omului și îl deschide dintr-un `blob:`.
+
+Adresa semnată se construiește pe server și **se folosește tot acolo**. Nu pleacă spre client, și
+motivul e capcana în jurul căreia e construită felia: pentru un asset `authenticated` **URL-ul
+semnat *este* acreditarea**, și nu expiră. Dacă l-am fi stocat și trimis mai departe — varianta
+comodă, fiindcă Cloudinary îl întoarce gata semnat la upload — am fi refăcut exact gaura pe care o
+înlocuim, cu un `s--…--` în plus.
+
+### Ce s-a măsurat înainte de a se scrie
+
+Trei lucruri, toate pe contul real, fiindcă toate trei ar fi trecut de compilator și ar fi picat în
+producție:
+
+| Ce | Rezultat |
+|---|---|
+| același asset `authenticated`, cerut nesemnat | **401** |
+| același asset, cerut semnat | **200** |
+| `/v1/` pe care îl generează SDK-ul, în loc de versiunea reală | **200** |
+
+Al treilea a ieșit dintr-un test picat, nu dintr-o bănuială: SDK-ul forțează un `/v1/` pe orice
+public id cu slash și adaugă un parametru `?_a=` de analytics. Amândouă sunt inofensive — Cloudinary
+tratează versiunea drept cache-buster, nu drept parte din căutare, iar semnătura se calculează doar
+peste public id și format. Dar „inofensiv" era o deducție, iar un URL care doar *pare* corect nu se
+deosebește de unul corect până când Cloudinary răspunde 401, și atunci e un fișier pe care clientul
+nu-l poate deschide.
+
+⚠️ **Ce nu rezolvă felia asta:** restricția de livrare PDF de la P0.5 e o setare **de cont** și trece
+peste controlul de acces al fișierului. Un asset `authenticated` e blocat de ea exact ca unul public,
+deci bifa aia rămâne pusă. Verificat înainte de a construi pe ipoteza contrară.
+
+### Migrarea, și rândurile vechi
+
+`V33` adaugă `resource_type`, `delivery_type` și `format`, toate nullable — aditivă, ca toate
+celelalte. **NULL e semnalul, nu o scăpare:** înseamnă „asset dinainte de 11-bis", iar codul cade
+înapoi pe `url` pentru el.
+
+⚠️ **Cele două fișiere de pe producție rămân public livrabile.** Sunt probele lui P0.5, duplicate ale
+aceluiași PDF, și stau la `type=upload`; assetul e la Cloudinary, deci nicio migrare nu-l poate muta.
+Se sting urcându-le din nou sau ștergându-le din Console — de făcut cu mâna, e producție.
+
+### Dosarul de control
+
+`AuditFileService` semnează acum URL-ul pe loc și îl aruncă. Nu mai apare în `atasamente/index.txt`,
+unde stătea ca ajutor pentru cititor când o descărcare eșua — adică **un link public către documentul
+unui client, într-o arhivă pe care clientul o trimite unui inspector**. Arhiva poartă fișierul sau
+spune că lipsește; nu mai poartă și drumul spre el.
+
+### Proba
+
+- **267 de teste verzi** (erau 260): 4 în `AttachmentAccessIT` — fără sesiune `401`, alt tenant `404`,
+  proprietarul primește octeții, iar răspunsul mișcării **nu conține niciun `http`** — și 3 în
+  `CloudinaryStorageServiceTest`, care fixează `type=authenticated` la upload și forma URL-ului semnat.
+- **Suita 8 de interfață, verde**, cu două verificări noi: niciun link în dialogul de atașamente și
+  nicio adresă de Cloudinary în tot HTML-ul lui. Cea veche cerea exact pe dos (`<a href>` cu
+  `target=_blank`) — a fost rescrisă, fiindcă acela era contractul greșit.
+- **Pe aplicația pornită:** același atașament, `401` fără sesiune și `200 · image/jpeg · 109669
+  octeți` cu ea — JPEG adevărat, nu o pagină de eroare.
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

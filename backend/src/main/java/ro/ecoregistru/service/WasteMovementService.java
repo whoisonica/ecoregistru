@@ -4,6 +4,7 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
  * Tenant-scoped CRUD for waste movements. Every query is filtered by the current
  * tenant (from TenantContext) so cross-tenant access is impossible.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -294,6 +296,9 @@ public class WasteMovementService {
                 .movement(movement)
                 .url(stored.url())
                 .publicId(stored.publicId())
+                .resourceType(stored.resourceType())
+                .deliveryType(stored.deliveryType())
+                .format(stored.format())
                 .fileName(file.getOriginalFilename())
                 .contentType(file.getContentType())
                 .createdAt(Instant.now())
@@ -309,9 +314,57 @@ public class WasteMovementService {
         requireMovement(movementId, tenantId); // enforces tenant ownership
         Attachment attachment = attachmentRepository.findByIdAndMovement_Id(attachmentId, movementId)
                 .orElseThrow(() -> new NotFoundException(MOVEMENT_NOT_FOUND));
-        storageService.delete(attachment.getPublicId());
+        storageService.delete(attachment.getPublicId(), attachment.getResourceType(),
+                attachment.getDeliveryType());
         attachmentRepository.delete(attachment);
     }
+
+    /**
+     * The bytes of an attachment, for a caller who has already proved they may see the movement.
+     *
+     * <p>This is the whole of 11-bis. Before it, {@code AttachmentResponse} carried Cloudinary's
+     * {@code secure_url} and the browser fetched the file straight from the CDN — no session, no
+     * tenant check, forever, on an application through which handover notes, contracts and
+     * drivers' identity documents pass, and through which CNPs will pass at Etapa 9. The tenant
+     * check now happens here, in the same place and the same way as every other read: {@link
+     * #requireMovement} scopes by {@code TenantContext}, so another company's attachment is a 404
+     * and not a file.
+     */
+    @Transactional(readOnly = true)
+    public AttachmentContent attachmentContent(UUID movementId, UUID attachmentId) {
+        UUID tenantId = TenantContext.require();
+        requireMovement(movementId, tenantId); // enforces tenant ownership
+        Attachment attachment = attachmentRepository.findByIdAndMovement_Id(attachmentId, movementId)
+                .orElseThrow(() -> new NotFoundException(ATTACHMENT_NOT_FOUND));
+        try {
+            return new AttachmentContent(
+                    storageService.fetch(deliveryUrl(attachment)),
+                    attachment.getContentType(),
+                    attachment.getFileName());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(ATTACHMENT_FETCH_FAILED.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Attachment fetch failed for id={}", attachmentId, e);
+            throw new IllegalStateException(ATTACHMENT_FETCH_FAILED.getMessage(), e);
+        }
+    }
+
+    /**
+     * Where to read the file from. Rows uploaded since 11-bis are {@code authenticated} and get a
+     * freshly signed URL; older rows have null coordinates and keep their stored URL, which is
+     * public — that is the migration's own note, and the reason those files are worth re-uploading
+     * rather than left alone.
+     */
+    private String deliveryUrl(Attachment a) {
+        if (a.getDeliveryType() == null) {
+            return a.getUrl();
+        }
+        return storageService.signedUrl(a.getPublicId(), a.getResourceType(),
+                a.getDeliveryType(), a.getFormat());
+    }
+
+    public record AttachmentContent(byte[] bytes, String contentType, String fileName) {}
 
     /**
      * Renders Anexa 3 la HG 1061/2008 for a movement that is already recorded, allocating the

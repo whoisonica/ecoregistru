@@ -88,7 +88,7 @@ public class WasteMovementMapper {
     }
 
     public AttachmentResponse toAttachmentResponse(Attachment a) {
-        return new AttachmentResponse(a.getId(), a.getUrl(), a.getFileName(), a.getContentType());
+        return new AttachmentResponse(a.getId(), a.getFileName(), a.getContentType());
     }
 
     /**

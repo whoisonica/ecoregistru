@@ -68,6 +68,10 @@ public enum ErrorMessageEnum {
     PARTNER_WORK_POINT_MISMATCH("movement.partner.work.point.mismatch", "Punctul de lucru ales nu e al destinatarului. Alege unul dintre punctele lui de lucru."),
     NOT_AWAITING_WEIGHING("movement.weight.not.awaited", "Mișcarea are deja cantitatea înregistrată. Ca s-o schimbi, editeaz-o."),
 
+    // --- Attachments ---
+    ATTACHMENT_NOT_FOUND("attachment.not.found", "Atașamentul nu a fost găsit."),
+    ATTACHMENT_FETCH_FAILED("attachment.fetch.failed", "Fișierul nu a putut fi descărcat. Încearcă din nou peste câteva momente."),
+
     // --- Anexa 3 la HG 1061/2008 (formularul de transport) ---
     ANEXA3_REQUIRES_HANDOVER("anexa3.requires.handover", "Formularul de transport se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care o face."),
     ANEXA3_HAZARDOUS_NOT_ALLOWED("anexa3.hazardous", "Anexa 3 e formularul pentru deșeuri NEpericuloase. Pentru un cod periculos se folosește formularul de expediție/transport din anexa 2 la HG 1061/2008, care nu e încă implementat."),

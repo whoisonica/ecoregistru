@@ -45,22 +45,27 @@ const dialog = await page.evaluate(() => {
   return {
     titlu: d.querySelector("h2,h3")?.textContent.trim() ?? "",
     text: d.textContent,
-    linkuri: [...d.querySelectorAll("a[href]")].map((a) => ({
-      nume: a.textContent.trim(),
-      href: a.getAttribute("href"),
-      tabNou: a.getAttribute("target") === "_blank",
-    })),
+    html: d.innerHTML,
+    // De la 11-bis fișierele sunt butoane, nu linkuri: conținutul vine printr-o cerere cu
+    // sesiune, iar un `<a href>` nu duce cu el antetul `Authorization`.
+    fisiere: [...d.querySelectorAll("li button")].map((b) => b.textContent.trim()),
+    linkuri: [...d.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")),
   };
 });
 check("dialogul se deschide", dialog !== null);
 check("și numește mișcarea, nu doar «atașamente»", /15 01 02|\d{2}\.\d{2}\.2026/.test(dialog?.text ?? ""),
   (dialog?.text ?? "").slice(0, 60));
-check("listează toate fișierele", (dialog?.linkuri ?? []).length === 2,
-  (dialog?.linkuri ?? []).map((l) => l.nume).join(" · "));
+check("listează toate fișierele", (dialog?.fisiere ?? []).length === 2,
+  (dialog?.fisiere ?? []).join(" · "));
 check("fiecare are numele lui, nu «atașament 1»",
-  (dialog?.linkuri ?? []).every((l) => l.nume.length > 3 && !/^atașament/i.test(l.nume)));
-check("și se deschid în tab nou, ca să nu se piardă ecranul",
-  (dialog?.linkuri ?? []).every((l) => l.tabNou && l.href.startsWith("http")));
+  (dialog?.fisiere ?? []).every((n) => n.length > 3 && !/^atașament/i.test(n)));
+// 11-bis, proba care contează pe ecran: adresa fișierului nu mai ajunge în pagină deloc.
+// Înainte era un `href` către Cloudinary — public, fără sesiune, fără verificare de tenant — iar
+// „vezi sursa" era destul ca să iasă din aplicație cu documentul unui client în mână.
+check("niciun link către fișier în dialog", (dialog?.linkuri ?? []).length === 0,
+  (dialog?.linkuri ?? []).join(" · "));
+check("și nicio adresă de Cloudinary în tot dialogul",
+  !/cloudinary|res\.cloudinary/i.test(dialog?.html ?? ""));
 // Numai citire: ștergerea rămâne în formular, lângă urcare, unde e și confirmarea.
 check("nu are buton de ștergere", !/Șterge/.test(dialog?.text ?? ""));
 

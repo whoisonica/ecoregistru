@@ -80,6 +80,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
+import { useAttachmentOpen } from "@/hooks/useAttachment";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -744,6 +745,7 @@ function AttachmentsDialog({
   movement: WasteMovement;
   onClose: () => void;
 }) {
+  const { open: openAttachment, openingId } = useAttachmentOpen();
   return (
     <Dialog
       open
@@ -761,16 +763,20 @@ function AttachmentsDialog({
       <ul className="space-y-1">
         {movement.attachments.map((a) => (
           <li key={a.id}>
-            <a
-              href={a.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 rounded border border-line px-2 py-1.5 text-sm text-brand hover:bg-surface-sunken hover:underline"
+            <button
+              type="button"
+              onClick={() => openAttachment(movement.id, a)}
+              disabled={openingId === a.id}
+              className="flex w-full items-center gap-2 rounded border border-line px-2 py-1.5 text-left text-sm text-brand hover:bg-surface-sunken hover:underline disabled:opacity-60"
             >
               <Paperclip className="h-3.5 w-3.5 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{a.fileName}</span>
-              <ExternalLink className="h-3.5 w-3.5 shrink-0 text-content-subtle" />
-            </a>
+              {openingId === a.id ? (
+                <span className="shrink-0 text-xs text-content-subtle">{t.attachmentOpening}</span>
+              ) : (
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-content-subtle" />
+              )}
+            </button>
           </li>
         ))}
       </ul>
@@ -902,6 +908,7 @@ function MovementFormDialog({
   const updateMut = useUpdateMovement();
   const addAttachmentMut = useAddAttachment();
   const deleteAttachmentMut = useDeleteAttachment();
+  const { open: openAttachment, openingId } = useAttachmentOpen();
   const { data: partners } = usePartners();
   const { data: drivers } = useDrivers();
   const { data: company } = useCurrentCompany();
@@ -2249,15 +2256,15 @@ function MovementFormDialog({
                     key={a.id}
                     className="flex items-center justify-between gap-2 rounded border border-line px-2 py-1 text-sm"
                   >
-                    <a
-                      href={a.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex min-w-0 items-center gap-2 text-brand hover:underline"
+                    <button
+                      type="button"
+                      onClick={() => openAttachment(editing.id, a)}
+                      disabled={openingId === a.id}
+                      className="flex min-w-0 items-center gap-2 text-left text-brand hover:underline disabled:opacity-60"
                     >
                       <Paperclip className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{a.fileName}</span>
-                    </a>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteAttachment(a.id)}
