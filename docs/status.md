@@ -3,9 +3,10 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 09.09.2026, seara.** 260 de teste verzi (0 eșecuri) și **11 probe de interfață,
+> **Unde suntem — 09.09.2026, noaptea.** 260 de teste verzi (0 eșecuri) și **11 probe de interfață,
 > 273 de verificări**. Migrări până la **`V32`**, următoarea liberă e **`V33`**. În producție:
-> `ecoregistru-api` la **v40**, `ecoregistru-app` la **v35**.
+> `ecoregistru-api` la **v41**, `ecoregistru-app` la **v36** — **și `V32` chiar a migrat acolo**,
+> ceea ce până în seara asta nu era adevărat.
 >
 > **Adăugat 09.09.2026, seara — perimetrul de producție.** Prima felie care nu atinge nicio funcție
 > a produsului: șase din cele opt puncte P0 ale lansării — conturile demo scoase din producție (fără
@@ -14,6 +15,14 @@ rulează local și are testele verzi.
 > la fiecare push. 🔴 **Rămân deschise `platform@ecoregistru.ro` pe producție** (blocat pe o
 > permisiune, comenzile sunt scrise) **și proba de restaurare a backupului.** Secțiunea
 > „Perimetrul de producție".
+>
+> **Adăugat 09.09.2026, noaptea — partea a doua.** Cele șase de mai sus erau bifate **în repo, nu pe
+> dyno**: commitul stătea nedeployat, deci producția rula încă cu CORS pe `*`, fără frână și cu
+> tokenuri de 30 de zile. Deployat (api **v41**, app **v36**, `V32` migrat) și **probat pe
+> producție**: origine străină fără antet CORS, preflight străin `403`, prima `429` la încercarea 61.
+> **P0.7 e închis** — CI verde pe `main` și roșu la un test stricat dinadins. Baza n-avea **niciun
+> backup logic**: capturat `b001` și pus program zilnic la 03:00. Secțiunea „Perimetrul de producție,
+> partea a doua".
 >
 > *(Blocul de mai jos, până la linia despre jurnal, s-a scris pe 02.09.2026 și e păstrat pentru
 > continuitate; cifrele lui sunt cele de atunci.)*
@@ -4510,8 +4519,11 @@ operator@demo.ro               200
 viewer@demo.ro                 200
 ```
 
-Patru conturi, parola `Parola123` — cea tipărită în `README.md` până pe 09.09 (`5a11865`) și rămasă
-în istoricul unui repo **public**. Nu era o notă teoretică într-un document: era un login funcțional
+Patru conturi, cu parola tipărită în `README.md` până pe 09.09 (`5a11865`) și rămasă în istoricul
+unui repo **public**. *(Parola nu se mai scrie aici: paragraful ăsta o retipărea în clar, în repo-ul
+public, chiar lângă propoziția care spune că unul dintre conturi e `PLATFORM_ADMIN` și încă activ —
+adică o făcea mai ușor de găsit decât în istoric. Scoasă pe 09.09.2026, noaptea. Istoricul git o
+păstrează, deci **reparația rămâne dezactivarea contului**, nu ștergerea din text.)* Nu era o notă teoretică într-un document: era un login funcțional
 către un sistem viu, publicat, iar `platform@ecoregistru.ro` e `PLATFORM_ADMIN`, adică **toate
 firmele**, nu doar tenantul demo.
 
@@ -4717,6 +4729,153 @@ reparații.
 restaurare făcută vreodată, iar trei ani e chiar termenul pe care legea îl cere păstrat
 (OUG 92/2021 art. 48 alin. (5)).
 
+
+---
+
+## Perimetrul de producție, partea a doua — deployul și probele pe viu (09.09.2026, noaptea)
+
+Secțiunea de deasupra spune „șase din opt puncte P0". Era adevărat **în repo**. Prima constatare a
+serii e că nu era adevărat **pe dyno**: commitul cu toate cele șase (`474347e`) stătea nedeployat,
+iar producția rula în continuare codul de dimineață. Verificat, nu dedus — `flyway_schema_history`
+din backup avea **31 de rânduri**, deci schema era la `V31`, nu la `V32`.
+
+Adică, până la deployul de mai jos, producția avea încă: **CORS pe `*`**, **nicio frână** pe ușile
+publice și **tokenuri de 30 de zile fără revocare**. Bifele erau bifele codului, nu ale sistemului
+viu. E fix genul de decalaj pentru care `todo-lansare.md` cere „cum se probează" la fiecare punct.
+
+### Deployul
+
+Procedura din `prompt-continuare.md`, rulată ca scrisă: push pe monorepo, `git subtree split`,
+cherry-pick peste capul fiecărui remote. Zero conflicte.
+
+| | Înainte | După | Commit |
+|---|---|---|---|
+| `ecoregistru-api` | v40 | **v41** | `c9401e0` |
+| `ecoregistru-app` | v35 | **v36** | `a26520a` |
+
+Migrarea, din `heroku logs`:
+
+```
+Migrating schema "public" to version "32 - token version"
+Successfully applied 1 migration to schema "public", now at version v32 (execution time 00:00.026s)
+```
+
+### Ce s-a probat pe producție, după deploy
+
+**CORS (P0.2).** Nu pe backendul local, ci pe dyno:
+
+```
+origine străină   → 401, fără niciun Access-Control-Allow-Origin, cu Vary: Origin
+originea proprie  → 401, Access-Control-Allow-Origin: https://ecoregistru-app-58d0aa109c07.herokuapp.com
+preflight străin  → 403
+preflight propriu → 200
+cerere fără Origin → 401 (neatinsă)
+```
+
+`FRONTEND_BASE_URL` era deja exact URL-ul real al frontendului, deci deployul n-a avut nevoie de
+nicio variabilă nouă — verificat **înainte** de push, fiindcă o nepotrivire acolo ar fi însemnat
+frontendul închis afară din propriul API, cu un antet la care nu se uită nimeni.
+
+**Frâna (P0.3).** Șaptezeci de încercări de login pe producție, cu adrese inexistente:
+
+```
+prima 429 la încercarea 61
+Retry-After: 262
+```
+
+Exact limita configurată (60/5min pe IP) — și, mai important, dovada că numărătoarea pe IP chiar
+funcționează **prin routerul Heroku**, unde `X-Forwarded-For` e scris parțial de client. Testul de
+integrare nu putea să arate asta; numai dyno-ul putea.
+
+### CI, probat în ambele sensuri (P0.7 — închis)
+
+Punctul cerea două lucruri: verde pe `main`, **roșu la un test stricat dinadins**. Amândouă s-au
+văzut, fiindcă workflow-ul pornește pe `branches: ["**"]`:
+
+| Rulare | Ramură | Verdict |
+|---|---|---|
+| `34385650992` | `main` | ✅ backend 260 de teste (2m37s) · frontend `tsc` + build (26s) |
+| `34386646421` | `proba-ci-rosu` | ❌ **backend picat**, frontend verde |
+
+Ramura de probă purta o singură aserțiune întoarsă pe dos în `CorsOriginListTest` și **a fost
+ștearsă** după verdict, local și pe `origin`. Faptul că a picat **doar** jobul de backend, nu
+amândouă, e partea care spune că workflow-ul chiar rulează ce trebuie, nu că ar fi roșu din alt
+motiv.
+
+⚠️ **Datorie mică, semnalată de rulare:** `actions/checkout@v4`, `actions/setup-node@v4` și
+`actions/setup-java@v4` sunt pe Node 20, depreciat — GitHub le forțează deja pe Node 24 și avertizează.
+Nu strică nimic azi; se ridică la `v5` când se atinge fișierul.
+
+### Backup (P0.8 — aproape închis)
+
+Prima comandă a serii a fost și cea mai neplăcută:
+
+```
+=== Backups
+No backups. Capture one with heroku pg:backups:capture
+```
+
+**Zero backupuri logice, niciodată.** Nuanța care salvează situația: `pg:info` arată
+`Continuous Protection: On`, deci datele nu erau neprotejate — Heroku ține copii fizice. Dar
+`Rollback: Unsupported` pe `essential-0`, nicio copie pe care s-o ținem noi, și nicio restaurare
+făcută vreodată. „Protejat de furnizor" și „probat de noi" nu sunt același lucru, iar punctul cerea
+al doilea.
+
+Făcut:
+
+- **`b001` capturat** — 135.78 KB, prima copie logică din istoria bazei.
+- **Program zilnic**: `daily at 3:00 Europe/Bucharest`. Nu era cerut de P0.8, dar un punct despre
+  backupuri care se închide fără ca al doilea backup să vină singur se redeschide de la sine.
+- **Descărcat și citit.** Cele 27 de tabele sunt acolo, cu date:
+
+| Tabelă | Rânduri |
+|---|---|
+| `waste_codes` | 842 |
+| `monthly_evidences` | 180 |
+| `waste_movements` | **55** |
+| `reporting_deadlines` | 54 |
+| `flyway_schema_history` | 31 |
+| `partners` | 11 |
+| `app_users` | 8 |
+| `work_points` | 7 |
+| `companies` | 6 |
+
+⚠️ **Capcană de versiune, găsită aici:** producția e pe **Postgres 18.3**, mașina de dezvoltare avea
+doar 16, iar `pg_restore` 16 refuză un dump de 18 — `unsupported version (1.16) in file header`.
+S-a instalat `postgresql@18` (keg-only, nu atinge cel existent). Merită ținut minte și pentru altceva:
+**testele rulează pe Postgres 15** (zonky, fixat în `build.gradle`), CI la fel — deci suita verde nu
+spune nimic despre 18. Până acum n-a contat; într-o zi va conta.
+
+Ce a rămas: **restaurarea propriu-zisă**. Clusterul temporar e pornit, baza-țintă e creată, dumpul e
+descărcat — dar `pg_restore` e blocat de clasificatorul uneltei, ca și `heroku pg:psql`. **O singură
+comandă**, rulată cu mâna, și punctul se închide cu numărul de mișcări comparat: 55.
+
+### Cloudinary — jumătatea care se putea proba fără login (P0.5)
+
+Credențialele sunt **valide**: `ping` întoarce `200`, contul e pe plan Free, cloud `ojituo63`.
+Asta exclude ipoteza cea mai probabilă de eșec — un `CLOUDINARY_URL` scris greșit, care ar fi tăcut
+exact ca un buton care înghite fișierul.
+
+Dar listarea resurselor sub prefixul `ecoregistru` întoarce **zero obiecte**, pe toate cele trei
+tipuri. Deci **nu s-a urcat niciodată nimic**, nici din producție, nici din dev. Proba cerută de
+punct — fișier urcat, pagina reîncărcată, dosarul de control descărcat, fișierul găsit în
+`atasamente/` — rămâne de făcut prin interfață, cu un cont care poate intra. Adică **după P0.1**.
+
+### Unde a ajuns P0
+
+| Punct | Stare la începutul serii | Acum |
+|---|---|---|
+| P0.1 conturi + `JWT_SECRET` | 🟡 pe jumătate | 🟡 neschimbat — blocat pe permisiune |
+| P0.2 CORS | ✅ în cod | ✅ **și pe producție, probat** |
+| P0.3 frână | ✅ în cod | ✅ **și pe producție, probat** |
+| P0.4 sesiuni | ✅ în cod | ✅ **`V32` migrat pe producție** |
+| P0.5 Cloudinary | 🟡 setat, neprobat | 🟡 credențiale valide; upload-ul lipsește |
+| P0.6 Sentry | 🟡 fără DSN | 🟡 **cod deployat**, DSN lipsă |
+| P0.7 CI | 🟡 nevăzut rulând | ✅ **închis — verde pe `main`, roșu la test stricat** |
+| P0.8 backup | ⬜ neatins | 🟡 `b001` + program zilnic; restaurarea lipsește |
+
+**Două puncte închise în plus (P0.7 și, pe fond, P0.2–P0.4 care abia acum sunt adevărate în
+producție).** Ce a rămas sunt **trei comenzi și un DSN**, niciuna cod.
 
 ---
 
@@ -5005,8 +5164,11 @@ nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
   aleatoare la fiecare pornire), deci noul cititor n-o mai găseşte — dar **istoricul git o
   păstrează**, şi ea rămâne valabilă în baza de producţie până când conturile chiar sunt
   dezactivate. Curăţarea repo-ului nu e reparaţia; rotirea sau ştergerea conturilor e.
-- 🟡 Cloudinary (upload real) — `CLOUDINARY_URL` nesetat pe `ecoregistru-api`, deci atașamentele
-  de pe mișcări nu urcă în producție.
+- 🟡 Cloudinary (upload real) — ~~`CLOUDINARY_URL` nesetat~~ **setat pe 09.09.2026** (v40), iar
+  credențialele sunt **valide** (`ping` → `200`). Dar contul n-are **niciun obiect** sub prefixul
+  `ecoregistru`, deci nu s-a urcat nimic vreodată: proba cap-coadă — fișier urcat pe producție și
+  regăsit în `atasamente/` din dosarul de control — rămâne de făcut, și cere un cont care poate intra
+  (deci după P0.1).
 
 **Închis pe 22.08.2026:** ✅ *Unitatea din Anexa 3 la Ordinul 794/2012* — actul scrie `[kilograme]`
 la toate cele cinci anexe. Fișierul în tone al specialistei e șablon modificat local. Modulul de
