@@ -4425,8 +4425,8 @@ index.html        →  <link rel="icon">     prezent
 
 Cerut de utilizator după proba pe producţie, şi e a doua jumătate a aceleiaşi poveşti.
 
-`README.md` — repo **public** — avea tabelul „Demo accounts (dev profile, password `Parola123` for
-all)" cu cele patru adrese. Nota „dev profile" descrie **intenţia**, nu realitatea: `status.md` ştia
+`README.md` — repo **public** — avea un tabel „Demo accounts" cu cele patru adrese **şi cu parola
+scrisă în titlul secţiunii**. Nota „dev profile" descrie **intenţia**, nu realitatea: `status.md` ştia
 deja, de pe 24.08, că aceleaşi conturi sunt în baza de **producţie** („De şters sau dezactivat"), iar
 decizia 14 din notele private spune că utilizatorul a hotărât să nu le şteargă cât timp nu există
 clienţi reali. Ce n-a fost pus cap la cap până acum e că tabelul din repo **completa** situaţia aia:
@@ -4434,15 +4434,15 @@ vectorul scris în notă era resetarea de parolă prin domeniul `demo.ro`, care 
 `POST /auth/login` cu parola tipărită în README întorcea **200** direct, iar
 `platform@ecoregistru.ro` e `PLATFORM_ADMIN`, adică toate firmele.
 
-Ce s-a schimbat, ca `grep -rn "Parola123"` să iasă gol pe amândouă repo-urile:
+Ce s-a schimbat, ca un `grep` după ea să iasă gol pe amândouă repo-urile:
 
 | Unde | Ce era | Ce e |
 |---|---|---|
-| `DevDataSeeder` | `static final String DEMO_PASSWORD = "Parola123"` | `@Value("${app.demo-password:}")`; nesetată → una aleatoare pe pornire, scrisă în log |
+| `DevDataSeeder` | un `static final String DEMO_PASSWORD` cu parola scrisă | `@Value("${app.demo-password:}")`; nesetată → una aleatoare pe pornire, scrisă în log |
 | `application.yml` | — | `app.demo-password: ${DEMO_PASSWORD:}`, gol dinadins |
 | `frontend/e2e/lib.mjs` | patru perechi cu parola scrisă | `process.env.E2E_PASSWORD`, şi **refuză să pornească** fără ea |
 | `README.md` (public) | tabelul cu adrese + parola | rolurile, plus cum se setează `DEMO_PASSWORD` |
-| `RegisterSeamIT`, `TenantIsolationIT` | `encode("Parola123")` | `encode(UUID.randomUUID().toString())` — nimeni nu se autentifica cu ea, e umplutură pentru o coloană `NOT NULL` |
+| `RegisterSeamIT`, `TenantIsolationIT` | aceeaşi literală, la `passwordEncoder.encode(...)` | `encode(UUID.randomUUID().toString())` — nimeni nu se autentifica cu ea, e umplutură pentru o coloană `NOT NULL` |
 
 **Adresele au rămas** în seeder şi în teste, dinadins: sunt identităţile pe care `ApplicationBootIT`
 le numără pe nume, iar o adresă fără parolă nu e o credenţială. Ce se commite de-acum e **cine**, nu
@@ -4452,6 +4452,12 @@ Probat pe două baze curate: fără `DEMO_PASSWORD`, seeder-ul scrie „parola c
 asta: …", login-ul cu ea întoarce 200 şi cel cu vechea parolă **400**; cu `DEMO_PASSWORD` setată,
 avertismentul nu mai apare şi merge valoarea dată. Suita: 11 probe, 273 de verificări, verzi cu
 `E2E_PASSWORD`.
+
+⚠️ **Şi jurnalul ăsta a pus-o înapoi de patru ori, la prima scriere** — citând-o, ca să explice ce
+s-a scos. `git status` era curat şi commitul plecase; a prins-o abia `grep`-ul de verificare rulat
+**după** push, pe amândouă repo-urile. Un secret scos din cod se întoarce cel mai uşor prin
+documentul care povesteşte cum a fost scos. **Verificarea se face pe arborele întreg, nu pe fişierele
+pe care crezi că le-ai atins.**
 
 🔴 **Şi ce nu repară asta.** Istoricul git păstrează parola, repo-ul e public şi poate fi deja
 clonat, iar conturile **rămân valabile în producţie**. Curăţarea fişierelor opreşte următorul cititor,
