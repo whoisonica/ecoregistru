@@ -4,8 +4,8 @@ Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intr
 rulează local și are testele verzi.
 
 > **Unde suntem — 09.09.2026.** 239 de teste verzi (0 eșecuri) și **11 probe de interfață, 273 de
-> verificări**. Migrări până la **`V31`**, următoarea liberă e **`V32`**. Versiunile din producție
-> se scriu mai jos, la felia zilei, după deploy — nu înainte.
+> verificări**. Migrări până la **`V31`**, următoarea liberă e **`V32`**. În producție:
+> `ecoregistru-api` la **v38**, `ecoregistru-app` la **v34**.
 >
 > *(Blocul de mai jos, până la linia despre jurnal, s-a scris pe 02.09.2026 și e păstrat pentru
 > continuitate; cifrele lui sunt cele de atunci.)*
@@ -104,7 +104,8 @@ rulează local și are testele verzi.
 > badge-ul singure. 🔒 Ştergerea datelor unui şofer a plecat de pe lista de ecrane pe lista de
 > **întrebări** (**AO**): e o decizie, nu o felie. **Backendul a fost atins** (`DevDataSeeder`,
 > `ApplicationBootIT`), dar nu schema — **239 de teste**, migrări tot până la `V31`. Suita:
-> **11 probe, 273 de verificări**. Detaliile: secţiunea „Numeralul până la capăt".
+> **11 probe, 273 de verificări**. Detaliile: secţiunea „Numeralul până la capăt". ✅ **În
+> producţie**: `ecoregistru-api` **v38**, `ecoregistru-app` **v34**, schema tot la 31.
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
@@ -4189,7 +4190,18 @@ restanță care se plimbă din listă în listă.
 - **Suita de interfață: 11 probe, 273 de verificări** (de la 10 și 245). Proba nouă e
   `frontend/e2e/11-numeralul.mjs`, 26 de verificări.
 - `tsc --noEmit` curat, `vite build` verde.
-- ⏳ **Nu e deployată.**
+- ✅ **În producție** (09.09.2026, ora 11:21). `main` == `origin/main` == `origin/deploy/heroku-split`
+  la **`5ff8ef4`**; `newrepo/main` la **`b18c64e`**, `ferepo/main` la **`19cc534`**;
+  `ecoregistru-api` **v38**, `ecoregistru-app` **v34**. **Backendul a intrat de data asta** — prima
+  oară după patru felii de interfață —, dar fără migrare: Flyway a validat 31 și a rămas la 31.
+  Verificat **pe conținut, nu pe hash**, cu bundle-ul descărcat **în fișier** (capcana din 08.09:
+  596 KB citite într-o variabilă de shell și trecute prin `echo | grep` ies toate „lipsă"). Sunt
+  acolo „Șterge selecția", „Se caută…", „fără cod R/D la ieșire", „cantitatea lipsește din ambele
+  tabele", „Ce a rămas e tot în listă" și „agenția județeană pentru protecția mediului"; **și nu mai
+  sunt** „cantitatea lor lipsește", „cu ieșiri fără cod R/D", „Termene generate:", „o operațiune
+  aleasă" și „Un rând are cifre nesalvate".
+  *(`git reset --hard` a fost din nou de prisos: amândouă ramurile split erau deja la capetele
+  remote. `git rev-parse` înainte de reset, a patra oară la rând.)*
 
 ### 📋 Ce urmează
 
