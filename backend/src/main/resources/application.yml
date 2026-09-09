@@ -67,6 +67,20 @@ app:
     url: ${CLOUDINARY_URL:}
     folder: ${CLOUDINARY_FOLDER:ecoregistru}
 
+management:
+  health:
+    mail:
+      # Indicatorul de mail deschide o conexiune SMTP **reală** la fiecare cerere pe
+      # /actuator/health. Cu MAIL_USERNAME/PASSWORD nesetate (cazul obişnuit în dev) el aruncă
+      # `AuthenticationFailedException`, deci health-ul întorcea `DOWN` pe o aplicaţie perfect
+      # sănătoasă — iar README-ul îl dă drept locul unde se verifică dacă merge.
+      #
+      # În producţie era mai rău decât zgomot: fiecare sondă deschidea un SMTP cu timeout-urile de
+      # 10s de mai sus, iar o indisponibilitate la furnizorul de mail ar fi raportat toată
+      # aplicaţia ca fiind căzută. Mailul e o funcţie a ei (invitaţii, alerte), nu condiţia ca ea
+      # să răspundă la cereri; când chiar nu merge, se vede în `EmailService`, cu eroarea lui.
+      enabled: false
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

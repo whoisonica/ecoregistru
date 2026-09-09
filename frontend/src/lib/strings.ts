@@ -13,6 +13,14 @@ export const strings = {
     noCompanySelected: "Nicio firmă selectată",
     platformAdmin: "Administrator platformă",
     loadCompaniesError: "Nu am putut încărca firmele.",
+    // Ecranul pe care îl vede administratorul de platformă înainte să aleagă o firmă. Până acum
+    // ecranele se randau oricum, cereau date fără `X-Tenant-Id` şi primeau 400 — patru cereri
+    // roşii în consolă la fiecare autentificare —, iar Panoul scria „Eşti la zi" peste ele.
+    // Un ecran de firmă fără firmă n-are ce arăta: se spune asta, şi se arată de unde se alege.
+    pickCompanyTitle: "Alege o firmă ca să vezi ecranul",
+    pickCompanyHint:
+      "Ecranele de evidență sunt ale unei firme anume. Alege una din „Firma curentă”, sus în bara laterală — sau deschide Clienți, de unde se administrează toate.",
+    pickCompanyAction: "Deschide Clienți",
   },
 
   nav: {
@@ -130,6 +138,12 @@ export const strings = {
     // --- Starea de conformitate: întrebarea la care panoul trebuie să răspundă ---
     statusTitle: "Starea evidenței pe {year}",
     statusOk: "Nimic nu blochează documentele",
+    // Aceeaşi grijă ca la bandă, o casetă mai jos: pe un an fără nicio linie, „Fişa de evidenţă şi
+    // declaraţia se pot tipări aşa cum sunt" e adevărat şi nefolositor — se pot tipări **goale**.
+    // Zero blocaje şi zero de raportat sunt două lucruri diferite.
+    statusEmpty: "Nu e nimic de verificat pe {year}",
+    statusEmptyHint:
+      "Evidența anului e goală: nu s-a înregistrat nicio mișcare. Nu e nimic care să blocheze depunerea, dar nici nimic de depus.",
     statusOkHint:
       "Toate ieșirile au cod R/D și cantitate. Fișa de evidență și declarația se pot tipări așa cum sunt.",
     // Cele două feluri de a fi „nu gata", cu urmarea fiecăruia.
@@ -172,6 +186,12 @@ export const strings = {
     statDeadlinesOverdue: "{count}",
     statDeadlinesNone: "Niciun termen deschis",
     statExpiringDays: "expiră în {count}",
+    // Ziua expirării şi cea dinaintea ei se scriu în cuvinte, ca la termene (`daysLabel`):
+    // `countOf` chemat cu 0 dădea „expiră în 0 de zile" — corect gramatical, citit ca o eroare —
+    // iar 1 dădea „expiră în 1 zi" acolo unde restul aplicaţiei scrie „mâine". E chiar greşeala
+    // pe care felia din 09.09 a reparat-o pentru `statDeadlinesNext`, rămasă cu o casetă mai jos.
+    statExpiringToday: "expiră azi",
+    statExpiringTomorrow: "expiră mâine",
     statExpiringPast: "expirată",
 
     // --- Următoarea acțiune ---
@@ -206,6 +226,43 @@ export const strings = {
     nextNothing: "Ești la zi",
     nextNothingHint:
       "Niciun termen deschis apropiat, nicio linie de lămurit și nicio autorizație pe terminate.",
+    // Contul pe care nu s-a înregistrat încă nimic. „Eşti la zi" e **adevărat** acolo — n-are
+    // nimic de făcut din ce ştie aplicaţia —, dar e răspunsul la altă întrebare: cine tocmai a
+    // primit contul întreabă „de unde încep?", iar un verde cu bifă îi spune că a terminat.
+    //
+    // Cele două trepte nu sunt ghicite: o mişcare se înregistrează **pe** un punct de lucru, deci
+    // fără el nu se poate scrie nimic — chiar formularul de mişcare o spune, în `noWorkPointHint`.
+    // Iar evidenţa, fişa şi declaraţiile se calculează **din** mişcări, deci fără prima mişcare
+    // n-are ce raporta. Amândouă sunt dependenţe din cod, nu preferinţe de flux.
+    nextStartWorkPoint: "Adaugă primul punct de lucru",
+    nextStartWorkPointHint:
+      "O mișcare se înregistrează pe un punct de lucru, deci ăsta e primul pas. Adresa lui e cea care ajunge pe fișa de evidență.",
+    nextStartWorkPointCta: "Deschide Setări",
+    nextStartMovement: "Înregistrează prima mișcare",
+    nextStartMovementHint:
+      "Evidența, fișa Anexa 1 și declarațiile se construiesc din mișcări — fiecare intrare și ieșire de deșeu. Până nu e înregistrată una, nu e nimic de raportat.",
+    nextStartMovementCta: "Adaugă mișcare",
+    // A treia stare a benzii, pe lângă „ai de făcut" şi „eşti la zi": **nu se ştie**.
+    //
+    // Garda de dinainte (`nextActionLoading`) acoperea numai cererile în zbor. O cerere **căzută**
+    // iese din `isLoading` cu `data` nedefinit, deci `?? []` dădea liste goale şi banda scria
+    // „Eşti la zi" — probat pe firma demo, cu 9 termene depăşite şi o linie fără cod R/D, cu cele
+    // trei surse răspunzând 500. Un verde fals e cea mai scumpă propoziţie din aplicaţia asta:
+    // clientul închide laptopul liniştit peste o depunere blocată. Tăcerea nu ajunge — ecranul
+    // trebuie să spună că n-a putut citi.
+    nextUnknown: "Nu am putut verifica starea",
+    nextUnknownHint:
+      "Cel puțin una dintre surse nu a răspuns, deci nu se poate spune nici că e ceva de făcut, nici că nu e. Reîncarcă pagina; dacă se repetă, ecranele de mai jos spun care nu răspunde.",
+    nextUnknownCta: "Reîncarcă",
+    // Aceeaşi grijă pentru caseta de conformitate: „Nimic nu blochează documentele" e o afirmaţie
+    // despre linii care n-au fost citite.
+    statusUnknown: "Nu am putut citi evidența",
+    statusUnknownHint:
+      "Lista liniilor de evidență nu a venit, deci nu se poate spune dacă ceva blochează depunerea. Reîncarcă pagina.",
+    statLoadError: "nu s-a putut încărca",
+    // Şi listele de jos afirmau: „Niciun termen deschis" peste o listă care n-a venit e acelaşi
+    // fals ca „Eşti la zi", doar cu litere mai mici. S-a văzut abia pe captura reparaţiei.
+    listLoadError: "Lista nu a putut fi încărcată. Reîncarcă pagina.",
   },
 
   movements: {
@@ -705,6 +762,10 @@ export const strings = {
     loadError: "Nu am putut încărca evidența.",
     regenerateError: "Regenerarea a eșuat. Încearcă din nou.",
     regenerated: "Evidență regenerată: {count} pentru {year}.",
+    // Zero linii nu e o eroare — anul chiar n-are mişcări —, dar „Evidenţă regenerată: 0 de linii"
+    // se citeşte ca una. Aceeaşi gardă pe care Termenele au primit-o pe 09.09 (`generatedNone`),
+    // sărită aici: se vede pe orice firmă nouă, adică la primul contact al oricărui client.
+    regeneratedNone: "Nimic de regenerat pentru {year}: nu există mișcări înregistrate în anul ăsta.",
     // export
     export: "Export",
     // Numele scurt "Anexa 1" a fost cedat declarației de ambalaje (Ordinul 794/2012) pe

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/auth/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute, RequireTenant } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Layout } from "@/components/Layout";
 import { LoginPage } from "@/pages/LoginPage";
@@ -18,7 +18,17 @@ import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
-function AppShell({ children }: { children: React.ReactNode }) {
+function AppShell({
+  children,
+  /**
+   * Ecranul e al unei firme anume, deci n-are ce randa până când administratorul de platformă
+   * alege una. Implicit `true`: aproape toate sunt. Vezi `RequireTenant`.
+   */
+  needsTenant = true,
+}: {
+  children: React.ReactNode;
+  needsTenant?: boolean;
+}) {
   const location = useLocation();
   return (
     <ProtectedRoute>
@@ -26,7 +36,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
         {/* Plasa e **înăuntrul** lui `Layout`: o excepție într-o pagină lasă în picioare antetul
             și meniul, deci se poate merge în altă parte fără reîncărcare. Cheia e adresa, ca
             plecarea de pe ecranul căzut să șteargă mesajul. */}
-        <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>
+        <ErrorBoundary resetKey={location.pathname}>
+          {needsTenant ? <RequireTenant>{children}</RequireTenant> : children}
+        </ErrorBoundary>
       </Layout>
     </ProtectedRoute>
   );
@@ -52,7 +64,16 @@ export default function App() {
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
           <Route path="/ambalaje" element={<AppShell><PackagingPage /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
-          <Route path="/clienti" element={<AppShell><ClientsPage /></AppShell>} />
+          {/* Singurul ecran de sub `AppShell` care **nu** e al unei firme: e chiar cel din care
+              se aleg și se administrează. */}
+          <Route
+            path="/clienti"
+            element={
+              <AppShell needsTenant={false}>
+                <ClientsPage />
+              </AppShell>
+            }
+          />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
           {/* Fără ruta asta, o adresă greșită nu randa nimic: pagină albă, fără meniu și fără
               mesaj, adică o aplicație care pare căzută pentru o literă în plus. */}

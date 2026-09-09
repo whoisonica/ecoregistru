@@ -37,7 +37,15 @@ export function Menu({
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key !== "Escape") return;
+      // `preventDefault` e contractul pe care `Dialog` îl citește: un strat dinăuntru care s-a
+      // ocupat de Escape îl marchează, iar dialogul din jur rămâne deschis (la fel face lista
+      // comboboxului). Fără el, un meniu deschis într-un dialog s-ar închide împreună cu dialogul
+      // de sub el — adică o apăsare ar face două lucruri. Azi nu există combinația, dar `Dialog`
+      // susține dinadins tiparul, iar meniul e o primitivă: cine îl pune într-un dialog mâine
+      // n-are de unde ști că trebuie să repare asta întâi.
+      e.preventDefault();
+      setOpen(false);
     }
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);

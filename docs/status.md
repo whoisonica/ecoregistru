@@ -107,6 +107,28 @@ rulează local și are testele verzi.
 > **11 probe, 273 de verificări**. Detaliile: secţiunea „Numeralul până la capăt". ✅ **În
 > producţie**: `ecoregistru-api` **v38**, `ecoregistru-app` **v34**, schema tot la 31.
 >
+> **Adăugat 09.09.2026, după-amiaza — verdele fals de pe Panou, şi celelalte şapte.** Nu o felie de
+> funcţii, ci **o probă cap-coadă** peste tot ce s-a livrat în 07–09.09, cu suita şi testele deja
+> verzi. Au ieşit **opt defecte**, niciunul găsit de compilator. 🔴 Cel mai scump: Panoul citea
+> numai `isLoading`, deci o cerere **căzută** arăta ca un răspuns gol şi ecranul scria „Eşti la zi"
+> peste ea, fără niciun mesaj de eroare — probat pe firma demo, cu 9 termene depăşite şi o linie fără
+> cod R/D, cu sursele răspunzând 500. Există acum a treia stare, „nu ştiu". Cauza lui în producţie:
+> `PLATFORM_ADMIN` fără firmă aleasă cerea date fără `X-Tenant-Id` şi primea opt `400` la fiecare
+> autentificare; ecranele de firmă stau acum închise până se alege una. Restul: „expiră în **0 de
+> zile**" şi „**0 de linii**" — aceeaşi gardă de zero pe care feliile de dimineaţă o puseseră pe
+> ecranele vecine şi nu pe astea două; „Adaugă cantitatea" rupt pe două rânduri, **al treilea caz**
+> al aceluiaşi defect, reparat de data asta în primitivă; `/actuator/health` care întorcea `DOWN`
+> fiindcă indicatorul de mail deschidea un SMTP real la fiecare sondă; şi lipsa unui favicon, care
+> făcea **proba 6 să cadă** de fiecare dată. Al optulea: „Eşti la zi" pe un cont pe care nu s-a scris
+> încă nimic — îl lăsasem ca **decizie**, dar cei doi paşi erau deja scrişi în cod ca dependenţe
+> (fără punct de lucru nu se poate înregistra nimic, fără mişcări nu e nimic de raportat), deci n-avea
+> ce ghici. ⚠️ **De trei ori, acelaşi defect la trei adâncimi** — bandă, casetă, liste —, şi de
+> fiecare dată văzut pe captura **reparaţiei**, nu a feliei: regula 5 se aplică şi reparaţiilor.
+> **Backendul atins numai la configuraţie** — 239 de teste, schema tot la `V31`; plus prima probă a
+> seeder-ului **pe bază curată** (31 de migrări, 37 de mişcări, toate patru stările, expirarea fixă).
+> Suita: **11 probe, 273 de verificări, toate verzi**. Detaliile şi motivele: secţiunea „Verdele fals
+> de pe Panou".
+>
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
 
@@ -4212,6 +4234,180 @@ paginează în client.
 
 Iar în afara interfeței, neschimbat: 🔵 **modulul de depozit (Etapele 8–11) stă pe pauză până la
 meetingul cu Andreea** — `docs/intrebari-specialist.md`, întrebările **AD** și **AI**.
+
+---
+
+## Verdele fals de pe Panou, şi celelalte şapte găsite probând aplicaţia (09.09.2026, după-amiaza)
+
+Nu e o felie de funcţii: e **o probă cap-coadă cerută de utilizator** peste feliile de interfaţă
+livrate în 07–09.09, plus reparaţiile a ce a ieşit din ea. Suita şi testele erau verzi înainte să
+încep — 10 din 11 probe, 239 de teste, `tsc` curat. Cele opt de mai jos au ieşit din altceva:
+**deschizând aplicaţia, apăsând butoanele, şi făcând cererile să cadă**.
+
+Trei dintre ele sunt acelaşi defect la trei adâncimi: o afirmaţie scrisă peste date care nu există.
+Şi de trei ori s-a văzut **numai pe captura reparaţiei**, nu pe cea a feliei.
+
+### 1. 🔴 „Eşti la zi" scris peste date care n-au venit
+
+Cel mai scump. Panoul citea numai `isLoading`. O cerere **căzută** iese din `isLoading` cu `data`
+nedefinit, iar `?? []` o făcea să arate identic cu un răspuns gol — deci banda scria „Eşti la zi",
+caseta scria „Nimic nu blochează documentele", iar cele două liste de jos „Niciun termen deschis" şi
+„Nicio autorizaţie aproape de expirare". **Fără niciun mesaj de eroare pe ecran.**
+
+Probat pe firma demo, care are 9 termene depăşite şi o linie fără cod R/D, cu `/evidences`,
+`/deadlines` şi `/partners` răspunzând 500:
+
+```
+banda:  „Ești la zi — Niciun termen deschis apropiat, nicio linie de lămurit…"
+starea: „Nimic nu blochează documentele"
+vreun mesaj de eroare pe ecran? false
+```
+
+Garda `nextActionLoading`, scrisă pe 08.09 chiar pentru asta, acoperea **numai cererile în zbor** —
+comentariul ei spune „«Eşti la zi» peste un `partners` neîncărcat ar fi un verde fals", şi avea
+dreptate despre cazul greşit. Există acum a treia stare, `unknown`: gri, „Nu am putut verifica
+starea", cu Reîncarcă. Dalele arată „—" în loc de `0`, iar culoarea stării le cade odată cu cifra:
+un `0` verde pentru „n-am putut citi" e aceeaşi minciună, doar mai scurtă.
+
+⚠️ **Prima reparaţie a fost incompletă, şi s-a văzut tot pe captură.** Cu banda şi caseta reparate,
+cele două liste de jos scriau în continuare „Niciun termen deschis pentru anul curent". Acelaşi fals,
+cu litere mai mici. **Regula 5 încă o dată: reparaţia se randează şi se priveşte, ca şi felia.**
+
+### 2. Administratorul de platformă cerea date fără să aibă firmă
+
+Cauza defectului 1 în producţie, nu într-o probă: `PLATFORM_ADMIN` aterizează după login **fără
+firmă aleasă**, ecranele se randau oricum, cele patru cereri plecau fără `X-Tenant-Id` şi primeau
+`400` — de două ori fiecare, că `retry: 1`. Opt cereri roşii în consolă la fiecare autentificare, şi
+peste ele verdele de mai sus.
+
+`RequireTenant` (în `ProtectedRoute.tsx`) ţine ecranele de firmă închise cât timp nu s-a ales una şi
+spune de unde se alege. **Clienţi** nu trece pe acolo, dinadins: e chiar ecranul din care se aleg.
+Zero cereri de eroare acum, pe toate ecranele.
+
+### 3. „expiră în **0 de zile**"
+
+`countOf` chemat cu `0` pe badge-ul de autorizaţie, în ziua expirării. E **exact** greşeala pe care
+felia din 09.09 o reparase cu o casetă mai sus, pe `statDeadlinesNext` — comentariul de acolo o
+numeşte pe litere: „mai rău, «în 0 zile» chiar în ziua termenului". Lista de parteneri n-a intrat pe
+`daysLabel`, deci a păstrat-o, în forma mai proastă („0 **de** zile"). Scrie „expiră azi" /
+„expiră mâine", ca restul aplicaţiei.
+
+🔴 **Şi spune ceva despre proba 11:** ea verifică *forma* numeralului, iar „0 de zile" e forma
+corectă pentru 0. O probă care păzeşte o regulă nu păzeşte şi domeniul pe care regula se aplică —
+javadocul lui `countOf` scrie „se cheamă doar cu `n >= 1`", iar asta nu o verifică nimeni.
+
+### 4. „Evidenţă regenerată: **0 de linii**"
+
+Aceeaşi zi, acelaşi commit, ecranul vecin: **Termenele** au primit garda de zero (`generatedNone`),
+**Evidenţele** nu. Se vede pe orice firmă fără mişcări, adică la primul contact al oricărui client
+nou. Are acum `regeneratedNone`, care spune ce s-a întâmplat: nu există mişcări în anul ăla.
+
+### 5. „Adaugă cantitatea", rupt pe două rânduri
+
+`scrollHeight 36` într-un `clientHeight 32`, cu pictograma rămasă lângă primul rând. **Al treilea caz
+al aceluiaşi defect** — după coloana de acţiuni din Cereri (07.09) şi cea din Termene (08.09),
+reparate amândouă **local**. Găsit tot pe captură, cu toate verificările de DOM verzi.
+
+`whitespace-nowrap` a intrat de data asta în `buttonVariants`, nu la apelant: toate măsurile
+primitivei sunt înălţimi fixe (`h-8`, `h-10`, `h-12`), deci o etichetă care se rupe nu măreşte
+butonul, îi iese din cutie. Al patrulea caz nu mai are de unde veni. Verificat la 1440px şi 375px că
+niciun buton nu iese din celula lui şi că pagina tot nu derulează lateral.
+
+### 6. `/actuator/health` întorcea `DOWN`
+
+```
+{"status":"DOWN"}
+jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+```
+
+Indicatorul de mail al lui Actuator deschide o conexiune SMTP **reală** la fiecare cerere. În dev,
+fără parolă, cade — deci health-ul raporta o aplicaţie perfect sănătoasă ca fiind căzută, iar
+README-ul îl dă drept locul unde se verifică dacă merge. În producţie era mai mult decât zgomot:
+fiecare sondă deschidea un SMTP cu timeout-urile de 10s din `application.yml`, iar o indisponibilitate
+la furnizorul de mail ar fi raportat tot dyno-ul ca fiind jos. `management.health.mail.enabled: false`
+— mailul e o **funcţie** a aplicaţiei, nu condiţia ca ea să răspundă la cereri.
+
+### 7. Aplicaţia n-avea favicon — şi de-asta cădea proba 6
+
+`index.html` n-avea `<link rel="icon">` şi nu există `public/`, deci Chrome cerea `/favicon.ico`,
+primea 404 şi scria eroarea în consolă. Prima navigare a probei 6 e `/cerere-cont` — singura suită
+care **nu** începe pe `/login` —, deci 404-ul intra în `page.problems` şi făcea proba roşie.
+**De două ori din două**, nu intermitent: „11 probe, toate verzi" nu se reproducea pe o maşină curată.
+
+Iconiţa e inline, ca `data:` URI: un `.ico` ar fi fost primul fişier binar din repo. Şi, dincolo de
+probă, tab-ul era gol pentru prospectul care deschide `/cerere-cont` — chiar pagina pe care felia din
+07.09 i-a dat identitate.
+
+### Mărunţişuri, din acelaşi drum
+
+- **„Rezumat PDF" n-avea nota** care spune că nu se depune; „Rezumat Excel", de deasupra lui, o avea.
+  Un avertisment pus o singură dată păzeşte un rând.
+- **`Menu` nu marca Escape ca tratat.** `Dialog` citeşte `defaultPrevented` tocmai ca un strat
+  dinăuntru să poată închide numai pe el (aşa face lista comboboxului). Azi nu există meniu în
+  dialog, dar meniul e o primitivă: cine îl pune acolo mâine n-are de unde şti că trebuie reparat
+  întâi.
+
+### 8. „Eşti la zi" pe un cont pe care nu s-a scris încă nimic
+
+Îl lăsasem deoparte ca **decizie**, nu felie — „care e primul pas" părea să ţină de fluxul de
+deschidere a contului, care e al consultantului. Greşit: **cei doi paşi sunt scrişi deja în cod**, ca
+dependenţe, nu ca preferinţe. O mişcare se înregistrează **pe** un punct de lucru — chiar formularul
+o spune, în `noWorkPointHint` —, iar evidenţa, fişa şi declaraţiile se calculează **din** mişcări.
+Deci nu e nimic de ghicit; era doar nescris pe ecranul care întreabă „ce fac acum?".
+
+Banda are un ton nou, `start`, în culoarea mărcii şi nu în verde: o bifă verde pe un cont pe care nu
+s-a scris nimic îi spune omului că a terminat. Fără punct de lucru → „Adaugă primul punct de lucru"
+(Setări); cu punct de lucru dar fără nimic înregistrat → „Înregistrează prima mişcare".
+
+Condiţia a doua e o **conjuncţie de trei**, dinadins — zero mişcări luna asta **şi** zero linii de
+evidenţă pe an **şi** zero parteneri. O firmă care lucrează are parteneri şi într-o lună goală, iar
+una cu date numai din anii trecuţi îi are cu atât mai mult; conjuncţia e ce ţine propoziţia adevărată
+pe un cont vechi şi liniştit. Probat pe patru firme: cele două goale o primesc, „Reciclare Verde" nu
+(are termene depăşite, care câştigă, cum trebuie), iar firma demo e neatinsă.
+
+⚠️ **Şi captura a arătat, iar, un strat mai jos.** Cu banda gata, caseta de dedesubt scria pe un an
+fără nicio linie: „Nimic nu blochează documentele — Fişa de evidenţă şi declaraţia se pot tipări aşa
+cum sunt." Adevărat şi nefolositor: se pot tipări **goale**. Zero blocaje şi zero de raportat sunt
+două lucruri diferite, iar acum scrie care dintre ele e. **A treia oară în aceeaşi zi când reparaţia
+cerea privită captura ei, nu doar a feliei.**
+
+### Seed-ul, probat în sfârşit pe o bază curată
+
+`DevDataSeeder` sare când găseşte date, iar baza de dev de pe maşină avea seed-ul vechi plus
+`INSERT`-urile aditive (38–39 de mişcări, nu 37) — deci felia de seed din 09.09 n-avusese niciodată
+o probă cap-coadă, doar `ApplicationBootIT`. S-a făcut pe o bază nouă (`ecoregistru_seedtest`,
+ştearsă după), cu backendul pornit pe `:8081`:
+
+```
+Successfully applied 31 migrations to schema "public", now at version v31
+Seeded 37 sample movements.
+Seeded 2 demo attachments on the movement without an R/D code.
+```
+
+Toate patru stările sunt acolo, numărate prin API: o ieşire fără cod R/D, una care aşteaptă cântarul,
+una cu două ataşamente, şi predarea din **20.08.2026** către un partener cu autorizaţia expirată la
+**15.07.2026**. Amândouă datele fixe, în ordinea cerută — **bomba cu ceas din 19.09 chiar e
+dezamorsată**, nu doar rescrisă.
+
+### Cifre
+
+- **Backendul atins numai la configuraţie** (`application.yml`), nu la cod şi nu la schemă:
+  **239 de teste verzi** (rulate cu `cleanTest test`, 0 eşecuri, 0 erori, 0 sărite), migrări tot până
+  la **`V31`**, următoarea liberă **`V32`**. Plus o probă de seed pe bază curată, pe `:8081`.
+- **Suita de interfaţă: 11 probe, 273 de verificări, toate verzi** — inclusiv proba 6, care cădea
+  înainte de reparaţia 7.
+- `tsc --noEmit` curat, `vite build` verde.
+- Documentele s-au probat pe rând, descărcate şi deschise: fişa Anexa 1 (randată şi privită —
+  `16 06 01*` cu asterisc, patru capitole, TOTAL AN, legenda), declaraţia anuală, Anexa 3 de
+  transport, Anexa 1 Ambalaje `.xls` şi `.pdf`, cele două rezumate, dosarul ZIP.
+
+### 📋 Ce urmează
+
+Neschimbat faţă de felia de dimineaţă: `docs/todo-ui-ux.md` — vederea cross-tenant pentru
+`PLATFORM_ADMIN` · greutatea arhivei din Dosarul de control · „Arată parola" la resetare ·
+🟡 tabelele care aduc tot şi paginează în client. **Cele două lucruri pe care le lăsasem deschise —
+Panoul pe un cont gol şi proba seeder-ului pe bază curată — s-au făcut amândouă**, deci lista rămâne
+exact cea de dimineaţă.
 
 ---
 

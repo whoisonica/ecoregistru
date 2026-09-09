@@ -3,6 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Favicon inline, ca `data:` URI: browserul cere `/favicon.ico` la prima încărcare a
+         oricărei pagini, iar aplicația nu servea nimic acolo — deci 404 în consolă la fiecare
+         vizită, tab gol pentru prospectul care deschide `/cerere-cont`, şi proba 6 roşie pe
+         eroarea aia (singura navigare care începe pe altă pagină decât `/login`).
+         Inline, fiindcă un `.ico` ar fi primul fişier binar din repo şi Vite îl serveşte oricum
+         din `public/` doar cu un director în plus. SVG-ul e „E"-ul mărcii, pe verdele ei. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23047857'/%3E%3Cpath d='M20.5 9.5H12.8v4.6h6.9v3H12.8v4.9h7.7v3H9.5V6.5h11z' fill='%23fff'/%3E%3C/svg%3E"
+    />
     <title>EcoRegistru</title>
   </head>
   <body>

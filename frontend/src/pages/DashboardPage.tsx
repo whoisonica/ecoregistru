@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ChevronRight,
+  HelpCircle,
   Package,
   Plus,
   Scale,
@@ -15,6 +16,7 @@ import { useEvidences } from "@/hooks/useEvidences";
 import { useMovements } from "@/hooks/useMovements";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
+import { useWorkPoints } from "@/hooks/useWorkPoints";
 import type { DeadlineStatus, MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { cn, countOf, formatDate, withCount } from "@/lib/utils";
@@ -54,6 +56,7 @@ function StatTile({
   sub,
   tone,
   loading = false,
+  failed = false,
   children,
 }: {
   icon: typeof Scale;
@@ -62,14 +65,23 @@ function StatTile({
   sub: string;
   tone: "brand" | "amber" | "red";
   loading?: boolean;
+  /**
+   * Sursa n-a răspuns. Se arată „—", nu cifra socotită din lista goală: un `0` mare şi verde
+   * pentru „n-am putut citi" e aceeaşi minciună ca „Eşti la zi" din bandă, doar mai scurtă.
+   */
+  failed?: boolean;
   /** Detaliul care face cifra să însemne ceva — la stoc, chiar codurile care îl poartă. */
   children?: ReactNode;
 }) {
-  const toneClasses = {
-    brand: "bg-brand-muted text-brand",
-    amber: "bg-amber-100 text-amber-700",
-    red: "bg-red-100 text-red-700",
-  }[tone];
+  // O dală căzută nu mai poartă culoarea stării: verdele sau roşul ar spune ceva despre o cifră
+  // care lipseşte.
+  const toneClasses = failed
+    ? "bg-surface-muted text-content-subtle"
+    : {
+        brand: "bg-brand-muted text-brand",
+        amber: "bg-amber-100 text-amber-700",
+        red: "bg-red-100 text-red-700",
+      }[tone];
   return (
     <Card>
       <div className="flex items-center gap-3">
@@ -79,12 +91,19 @@ function StatTile({
         {loading ? (
           <Skeleton className="h-8 w-24" />
         ) : (
-          <div className="truncate text-3xl font-bold text-content">{value}</div>
+          <div
+            className={cn(
+              "truncate text-3xl font-bold",
+              failed ? "text-content-subtle" : "text-content"
+            )}
+          >
+            {failed ? "—" : value}
+          </div>
         )}
       </div>
       <div className="mt-3 text-sm font-medium text-content-muted">{label}</div>
-      <div className="text-xs text-content-subtle">{sub}</div>
-      {!loading && children}
+      <div className="text-xs text-content-subtle">{failed ? t.statLoadError : sub}</div>
+      {!loading && !failed && children}
     </Card>
   );
 }
@@ -151,7 +170,11 @@ function Blocker({
 
 /** Ce anume e de făcut, o singură dată, cu drumul către el. `null` = nu s-a putut încă decide. */
 type NextAction = {
-  tone: "danger" | "warning" | "ok";
+  /**
+   * `unknown` = una dintre surse n-a răspuns; nu se afirmă nici că e ceva, nici că nu e.
+   * `start` = contul e gol; nu e „gata", e „de unde încep".
+   */
+  tone: "danger" | "warning" | "ok" | "start" | "unknown";
   title: string;
   hint: string;
   to: string;
@@ -164,6 +187,11 @@ type NextAction = {
  * <p>Cât timp datele n-au venit toate, banda **tace** — nu arată o afirmație pe jumătate de răspuns.
  * „Ești la zi" scris peste un `partners` încă neîncărcat ar fi exact felul de verde fals pentru care
  * s-a reparat citirea evidenței pe 07.09.
+ *
+ * <p>⚠️ Tăcerea aia acoperea doar cererile **în zbor**. O cerere **căzută** iese din `isLoading` cu
+ * `data` nedefinit, iar `?? []` de mai jos o făcea să arate exact ca un răspuns gol — deci verdele
+ * se scria oricum, peste nimic. De-aia există tonul `unknown`: „nu ştiu" e a treia stare, şi
+ * singura onestă când o sursă n-a răspuns.
  */
 function NextActionBand({ action, loading }: { action: NextAction | null; loading: boolean }) {
   if (loading || !action) {
@@ -194,6 +222,25 @@ function NextActionBand({ action, loading }: { action: NextAction | null; loadin
       link: "text-emerald-700",
       Icon: CheckCircle2,
     },
+    // Culoarea mărcii, nu verdele: e o invitaţie, nu o confirmare. O bifă verde pe un cont pe care
+    // nu s-a scris încă nimic i-ar spune omului că a terminat.
+    start: {
+      box: "border-brand/20 bg-brand-muted",
+      icon: "text-brand",
+      title: "text-brand-900",
+      hint: "text-content-muted",
+      link: "text-brand",
+      Icon: Plus,
+    },
+    // Gri, dinadins: nu e nici alarmă (n-avem de unde şti că e ceva), nici linişte (nici că nu e).
+    unknown: {
+      box: "border-line-strong bg-surface-muted",
+      icon: "text-content-subtle",
+      title: "text-content",
+      hint: "text-content-muted",
+      link: "text-content-muted",
+      Icon: HelpCircle,
+    },
   }[action.tone];
   const { Icon } = tone;
   return (
@@ -214,15 +261,30 @@ function NextActionBand({ action, loading }: { action: NextAction | null; loadin
       </div>
       {/* `whitespace-nowrap`, ca la coloana de acțiuni din Termene: o etichetă de două cuvinte
           ruptă pe două rânduri crește banda și se citește greu (defectul din 07.09 și 08.09). */}
-      <Link
-        to={action.to}
-        className={cn(
-          "shrink-0 whitespace-nowrap text-sm font-medium hover:underline",
-          tone.link
-        )}
-      >
-        {action.cta} →
-      </Link>
+      {action.tone === "unknown" ? (
+        // Aici nu e unde să duci pe cineva: ce lipseşte e răspunsul, nu ecranul. Reîncărcarea e
+        // singura faptă care are sens, deci e un buton, nu un link care ar promite altă pagină.
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className={cn(
+            "shrink-0 whitespace-nowrap text-sm font-medium hover:underline",
+            tone.link
+          )}
+        >
+          {action.cta}
+        </button>
+      ) : (
+        <Link
+          to={action.to}
+          className={cn(
+            "shrink-0 whitespace-nowrap text-sm font-medium hover:underline",
+            tone.link
+          )}
+        >
+          {action.cta} →
+        </Link>
+      )}
     </div>
   );
 }
@@ -235,15 +297,25 @@ export function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const { data: movements, isLoading: loadingMovements } = useMovements({ year, month });
-  const { data: deadlines, isLoading: loadingDeadlines } = useDeadlines(year);
-  const { data: partners, isLoading: loadingPartners } = usePartners();
+  const { data: movements, isLoading: loadingMovements, isError: failedMovements } =
+    useMovements({ year, month });
+  const { data: deadlines, isLoading: loadingDeadlines, isError: failedDeadlines } =
+    useDeadlines(year);
+  const { data: partners, isLoading: loadingPartners, isError: failedPartners } = usePartners();
+  /**
+   * Punctele de lucru, numai ca să se poată deosebi „nu e nimic de făcut" de „nu s-a început încă".
+   * E o listă mică, deja în cache pe Setări și pe formularul de mișcare, deci nu aduce o cerere
+   * nouă la fiecare vizită.
+   */
+  const { data: workPoints, isLoading: loadingWorkPoints, isError: failedWorkPoints } =
+    useWorkPoints();
   /**
    * Evidența anului întreg, nu a lunii: ce blochează depunerea e o întrebare despre an, fiindcă
    * fișa și declarația acoperă anul. O linie fără cod R/D din martie strică depunerea din martie
    * anul viitor, oricât de curată ar fi luna curentă.
    */
-  const { data: evidences, isLoading: loadingEvidences } = useEvidences({ year });
+  const { data: evidences, isLoading: loadingEvidences, isError: failedEvidences } =
+    useEvidences({ year });
 
   const openDeadlines = useMemo(
     () =>
@@ -343,6 +415,18 @@ export function DashboardPage() {
    * ele, iar `documentFor` întoarce `null` tocmai ca să nu promitem unul.
    */
   const nextAction = useMemo<NextAction | null>(() => {
+    // 0. Dacă vreuna dintre cele trei surse n-a răspuns, nu se alege nimic: fiecare ramură de mai
+    //    jos citeşte o listă care ar fi **goală din alt motiv**, iar ultima ramură („Eşti la zi")
+    //    ar transforma o eroare de reţea într-o promisiune. Se spune că nu se ştie.
+    if (failedDeadlines || failedEvidences || failedPartners || failedWorkPoints) {
+      return {
+        tone: "unknown",
+        title: t.nextUnknown,
+        hint: t.nextUnknownHint,
+        to: "/",
+        cta: t.nextUnknownCta,
+      };
+    }
     // 1. Un termen depășit curge deja — nimic din ce e mai jos nu costă mai mult.
     const overdue = openDeadlines.filter((d) => d.status === "OVERDUE");
     if (overdue.length === 1) {
@@ -410,15 +494,52 @@ export function DashboardPage() {
         cta: t.nextWeighingCta,
       };
     }
+    // 6. Nimic de făcut — dar „nimic de făcut" are două înţelesuri, iar verdele le acoperea pe
+    //    amândouă. Un cont pe care nu s-a scris încă nimic nu e la zi: nu e început.
+    if ((workPoints ?? []).length === 0) {
+      return {
+        tone: "start",
+        title: t.nextStartWorkPoint,
+        hint: t.nextStartWorkPointHint,
+        to: "/setari",
+        cta: t.nextStartWorkPointCta,
+      };
+    }
+    // Trei liste goale deodată, nu una: o firmă care lucrează are parteneri chiar şi într-o lună
+    // fără mişcări, iar una cu date numai din anii trecuţi îi are cu atât mai mult. Conjuncţia e
+    // ce ţine propoziţia adevărată pe un cont vechi şi liniştit.
+    if (movementCount === 0 && (evidences ?? []).length === 0 && (partners ?? []).length === 0) {
+      return {
+        tone: "start",
+        title: t.nextStartMovement,
+        hint: t.nextStartMovementHint,
+        to: "/miscari",
+        cta: t.nextStartMovementCta,
+      };
+    }
     return { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/evidente", cta: t.viewAll };
-  }, [openDeadlines, nextDeadline, blockers, expiringPartners]);
+  }, [
+    openDeadlines,
+    nextDeadline,
+    blockers,
+    expiringPartners,
+    failedDeadlines,
+    failedEvidences,
+    failedPartners,
+    failedWorkPoints,
+    workPoints,
+    evidences,
+    partners,
+    movementCount,
+  ]);
 
   /**
    * Banda tace până vin **toate** cele trei surse din care alege. Fără garda asta, un `partners`
    * întârziat ar scrie „Ești la zi" o clipă, peste o autorizație care expiră — o afirmație falsă,
    * din exact motivul pentru care o probă poate trece verde: premisa nu s-a întâmplat încă.
    */
-  const nextActionLoading = loadingDeadlines || loadingEvidences || loadingPartners;
+  const nextActionLoading =
+    loadingDeadlines || loadingEvidences || loadingPartners || loadingWorkPoints || loadingMovements;
 
   return (
     <div>
@@ -463,6 +584,28 @@ export function DashboardPage() {
         {loadingEvidences ? (
           <div className="mt-4 space-y-2">
             <Skeleton className="h-14 w-full rounded-lg" />
+          </div>
+        ) : failedEvidences ? (
+          /* „Nimic nu blochează documentele" e o afirmaţie despre linii; fără linii citite, e o
+             afirmaţie despre nimic. Aceeaşi regulă ca la bandă. */
+          <div className="mt-4 flex items-start gap-3 rounded-lg border border-line-strong bg-surface-muted p-3">
+            <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-content-subtle" aria-hidden />
+            <div>
+              <p className="text-sm font-medium text-content">{t.statusUnknown}</p>
+              <p className="mt-0.5 text-xs text-content-muted">{t.statusUnknownHint}</p>
+            </div>
+          </div>
+        ) : (evidences ?? []).length === 0 ? (
+          /* Verdele spunea „se pot tipări aşa cum sunt" despre o fişă goală. Adevărat, şi
+             nefolositor: zero blocaje şi zero de raportat nu sunt acelaşi lucru. */
+          <div className="mt-4 flex items-start gap-3 rounded-lg border border-line-strong bg-surface-muted p-3">
+            <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-content-subtle" aria-hidden />
+            <div>
+              <p className="text-sm font-medium text-content">
+                {t.statusEmpty.replace("{year}", String(year))}
+              </p>
+              <p className="mt-0.5 text-xs text-content-muted">{t.statusEmptyHint}</p>
+            </div>
           </div>
         ) : blockerCount === 0 ? (
           <div className="mt-4 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
@@ -516,6 +659,7 @@ export function DashboardPage() {
           }
           tone="brand"
           loading={loadingMovements}
+          failed={failedMovements}
         />
         <StatTile
           icon={Scale}
@@ -528,6 +672,7 @@ export function DashboardPage() {
           }
           tone={stock.negative > 0 ? "red" : "brand"}
           loading={loadingEvidences}
+          failed={failedEvidences}
         >
           {stock.top.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-xs">
@@ -567,6 +712,7 @@ export function DashboardPage() {
           }
           tone={overdueCount > 0 ? "red" : openDeadlines.length > 0 ? "amber" : "brand"}
           loading={loadingDeadlines}
+          failed={failedDeadlines}
         />
       </div>
 
@@ -588,6 +734,10 @@ export function DashboardPage() {
           />
           {loadingDeadlines ? (
             <ListSkeleton />
+          ) : failedDeadlines ? (
+            /* „Niciun termen deschis" e tot o afirmaţie: pe o listă care n-a venit, e falsă în
+               acelaşi fel ca verdele de sus, doar cu litere mai mici. */
+            <p className="mt-4 text-sm text-content-subtle">{t.listLoadError}</p>
           ) : openDeadlines.length === 0 ? (
             <p className="mt-4 text-sm text-content-subtle">{t.upcomingEmpty}</p>
           ) : (
@@ -636,6 +786,8 @@ export function DashboardPage() {
           />
           {loadingPartners ? (
             <ListSkeleton />
+          ) : failedPartners ? (
+            <p className="mt-4 text-sm text-content-subtle">{t.listLoadError}</p>
           ) : expiringPartners.length === 0 ? (
             <p className="mt-4 text-sm text-content-subtle">{t.expiringEmpty}</p>
           ) : (
@@ -654,11 +806,18 @@ export function DashboardPage() {
                       variant={days != null && days < 0 ? "danger" : "warning"}
                       className="shrink-0"
                     >
+                      {/* Cele două praguri din capăt se scriu în cuvinte, ca `daysLabel`: `countOf`
+                          e pentru `n >= 1` — javadocul lui o spune —, iar chemat cu 0 scria
+                          „expiră în 0 de zile" chiar în ziua expirării. */}
                       {days == null
                         ? strings.partners.expiringSoon
                         : days < 0
                           ? t.statExpiringPast
-                          : t.statExpiringDays.replace("{count}", countOf(days, "zi", "zile"))}
+                          : days === 0
+                            ? t.statExpiringToday
+                            : days === 1
+                              ? t.statExpiringTomorrow
+                              : t.statExpiringDays.replace("{count}", countOf(days, "zi", "zile"))}
                     </Badge>
                   </li>
                 );

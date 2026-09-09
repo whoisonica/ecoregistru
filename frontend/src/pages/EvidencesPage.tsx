@@ -132,11 +132,18 @@ export function EvidencesPage() {
         notify(
           // Stock carries across years, so a regeneration rebuilds the later ones too — say so,
           // otherwise the line count looks wrong for the year that was asked for.
-          withCount(
-            res.cascadedYears.length > 0 ? t.regeneratedCascade : t.regenerated,
-            res.linesGenerated,
-            "linie",
-            "linii"
+          //
+          // Zero linii are șir propriu, ca la Termene (`generatedNone`): nu e o eroare — anul chiar
+          // n-are mișcări —, dar „Evidență regenerată: 0 de linii" se citește ca una. Se vede pe
+          // orice firmă nouă, deci la primul contact al oricărui client.
+          (res.linesGenerated === 0
+            ? t.regeneratedNone
+            : withCount(
+                res.cascadedYears.length > 0 ? t.regeneratedCascade : t.regenerated,
+                res.linesGenerated,
+                "linie",
+                "linii"
+              )
           )
             .replace("{year}", String(res.year))
             .replace("{years}", res.cascadedYears.join(", ")),
@@ -301,8 +308,12 @@ export function EvidencesPage() {
               >
                 {t.exportExcel}
               </MenuItem>
+              {/* Nota stă pe amândouă, nu doar pe prima: sunt două fișiere de același fel, iar
+                  cine se uită la al doilea vedea doar „Rezumat PDF" — adică exact cuvântul care
+                  nu spune că nu se depune. Un avertisment pus o singură dată păzește un rând. */}
               <MenuItem
                 icon={Download}
+                hint={t.exportsHint}
                 onClick={() => handleExport("pdf")}
                 disabled={rows.length === 0 || exporting !== null}
               >
