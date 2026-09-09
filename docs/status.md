@@ -5213,6 +5213,12 @@ fiecare dată, ramura `if (tab)` era cod mort, și fiecare atașament ajungea pe
   decor: fără el, un prag pus din greșeală la zero ar fi trecut testul de deasupra.
 - `tsc --noEmit` curat, `vite build` verde (611,84 kB, de la 610).
 - Pe producție, după deploy: tabelul de `401`/`200` de mai sus.
+- **Deployat:** 11-bis la `ecoregistru-api` **v44** / `ecoregistru-app` **v39** (cu `V33` migrat);
+  limita de mărime și reparația lui `noopener` la **v45** / **v40** (fără migrare).
+- ⚠️ **Limita de 10 MB nu e probată pe producție**: uploadul cere o sesiune, iar parola contului
+  real o știe doar proprietarul. O susțin cele două teste noi și felia deployată; prima încercare
+  de a urca un fișier mai mare o închide, cu mesajul „Fișierul e prea mare. Cel mult 10 MB per
+  fișier."
 - ⚠️ **Suita de interfață n-a fost rulată** pe felia asta — cere stiva pornită și o bază locală.
   Suita 8 nu deschide atașamentul (verifică doar că dialogul n-are linkuri), deci nicio verificare
   existentă nu acoperea defectul cu `noopener` și niciuna nu se strică. **De rulat la următoarea
