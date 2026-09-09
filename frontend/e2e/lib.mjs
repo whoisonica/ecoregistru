@@ -18,11 +18,39 @@ export const CHANNEL = process.env.E2E_CHANNEL ?? "chrome";
 /** Lângă suită, nu în directorul din care s-a pornit comanda. Gitignored. */
 export const SHOTS = path.join(path.dirname(fileURLToPath(import.meta.url)), "shots");
 
+/**
+ * Parola conturilor demo, din mediu — **nu** din fişierul ăsta.
+ *
+ * <p>Stătea scrisă aici, într-un repo public, alături de cele patru adrese. Pe 09.09.2026 s-a
+ * dovedit că aceleaşi conturi există şi în baza de **producţie**: repo-ul dădea oricui un login de
+ * `PLATFORM_ADMIN` peste toate firmele. O parolă de probă e o parolă de probă doar cât timp nu
+ * ajunge nicăieri real; commisă, e o credenţială.
+ *
+ * <p>Aceeaşi valoare ca `DEMO_PASSWORD` din terminalul backendului — seeder-ul creează conturile cu
+ * ea. Fără ea, `DevDataSeeder` generează una aleatoare la pornire şi o scrie în log; suita nu poate
+ * ghici, deci cade aici, cu instrucţiunea, nu peste zece verificări.
+ */
+const PASSWORD = process.env.E2E_PASSWORD;
+if (!PASSWORD) {
+  console.error(
+    [
+      "E2E_PASSWORD lipseşte. Porneşte backendul cu DEMO_PASSWORD=<ceva> şi rulează suita cu",
+      "aceeaşi valoare:",
+      "",
+      "  cd backend  && SPRING_PROFILES_ACTIVE=dev DEMO_PASSWORD=<ceva> ./gradlew bootRun",
+      "  cd frontend && E2E_PASSWORD=<ceva> npm run e2e",
+      "",
+      "Pe o bază deja seedată, parola e cea cu care s-au creat conturile atunci.",
+    ].join("\n")
+  );
+  process.exit(2);
+}
+
 export const ACCOUNTS = {
-  admin: { email: "admin@demo.ro", password: "Parola123" },
-  operator: { email: "operator@demo.ro", password: "Parola123" },
-  viewer: { email: "viewer@demo.ro", password: "Parola123" },
-  platform: { email: "platform@ecoregistru.ro", password: "Parola123" },
+  admin: { email: "admin@demo.ro", password: PASSWORD },
+  operator: { email: "operator@demo.ro", password: PASSWORD },
+  viewer: { email: "viewer@demo.ro", password: PASSWORD },
+  platform: { email: "platform@ecoregistru.ro", password: PASSWORD },
 };
 
 /** Zgomot cunoscut, care nu spune nimic despre ce testăm. */

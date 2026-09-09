@@ -21,14 +21,24 @@ de dev**. Probele scriu în baza locală, nu în producţie.
 
 ```bash
 # într-un terminal
-cd backend && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+cd backend && SPRING_PROFILES_ACTIVE=dev DEMO_PASSWORD=<ceva> ./gradlew bootRun
 
 # în altul
 cd frontend && npm run dev
 
-# în al treilea
-cd frontend && npm run e2e
+# în al treilea — aceeaşi valoare ca DEMO_PASSWORD
+cd frontend && E2E_PASSWORD=<ceva> npm run e2e
 ```
+
+⚠️ **Parola conturilor demo nu mai e scrisă în repo** (09.09.2026): stătea în `lib.mjs` şi în
+`README.md`-ul public, iar aceleaşi conturi există şi în baza de **producţie** — deci repo-ul dădea
+oricui un login de `PLATFORM_ADMIN`. Vine acum din mediu, în amândouă terminalele. Fără
+`E2E_PASSWORD`, suita **refuză să pornească** şi scrie ce să setezi, în loc să cadă pe zece
+verificări de autentificare.
+
+Pe o bază **deja seedată** parola nu se schimbă retroactiv: `DevDataSeeder` sare când găseşte date,
+deci `E2E_PASSWORD` e cea cu care s-au creat conturile atunci. Pe una nouă, dacă `DEMO_PASSWORD` nu
+e setată, seeder-ul generează una şi o scrie în log — atunci copiaz-o de acolo.
 
 O singură suită:
 

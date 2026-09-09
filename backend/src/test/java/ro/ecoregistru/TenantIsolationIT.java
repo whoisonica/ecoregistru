@@ -67,7 +67,7 @@ class TenantIsolationIT {
                 .name("Tenant B SRL").cui("ROB" + suffix).type(CompanyType.GENERATOR)
                 .active(true).createdAt(Instant.now()).build());
         AppUser userB = appUserRepository.save(AppUser.builder()
-                .email("admin+" + suffix + "@tenantb.ro").password(passwordEncoder.encode("Parola123"))
+                .email("admin+" + suffix + "@tenantb.ro").password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.ADMIN).company(companyB).enabled(true).createdAt(Instant.now()).build());
         tokenB = jwtService.generateToken(userB);
         WorkPoint wpB = workPointRepository.save(WorkPoint.builder()

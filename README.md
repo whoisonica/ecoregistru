@@ -220,14 +220,31 @@ npm run dev
 
 Runs on `http://localhost:5173`, proxying `/api` to `:8080`.
 
-### Demo accounts (dev profile, password `Parola123` for all)
+### Demo accounts (dev profile)
 
-| Email                     | Role           | Tenant             |
-|---------------------------|----------------|--------------------|
-| platform@ecoregistru.ro   | PLATFORM_ADMIN | — (global)         |
-| admin@demo.ro             | ADMIN          | Demo Reciclare SRL |
-| operator@demo.ro          | OPERATOR       | Demo Reciclare SRL |
-| viewer@demo.ro            | CLIENT_VIEWER  | Demo Reciclare SRL |
+The seed creates four accounts — a `PLATFORM_ADMIN` with no tenant, and an `ADMIN`, an `OPERATOR`
+and a `CLIENT_VIEWER` of "Demo Reciclare SRL". **The password is not in this repository.** Set
+`DEMO_PASSWORD` and it is used for all four; leave it unset and a random one is generated on every
+boot and written to the log:
+
+```
+DEMO_PASSWORD nu e setată — parola conturilor demo pe pornirea asta: 8Qb2…
+```
+
+The addresses are printed by the seeder on the same line it logs the password.
+
+Why it is not written down: this repository is public, and on 09.09.2026 the same accounts turned
+out to exist in the **production** database as well — so a table here was handing any reader a
+working platform-admin login to a live system. A fixture password is only a fixture password while
+it cannot reach anything real.
+
+The interface suite needs a password it knows in advance, so it takes the same value from
+`E2E_PASSWORD` and refuses to start without it:
+
+```bash
+cd backend  && SPRING_PROFILES_ACTIVE=dev DEMO_PASSWORD=<ceva> ./gradlew bootRun
+cd frontend && E2E_PASSWORD=<ceva> npm run e2e
+```
 
 The dev seed is deliberately rich: 3 work points, 5 partners and 34 movements across 6 months,
 so the cumulative stock actually carries over and the evidence screens have something to show.

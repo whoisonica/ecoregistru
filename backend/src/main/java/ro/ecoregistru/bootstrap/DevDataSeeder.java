@@ -3,8 +3,10 @@ package ro.ecoregistru.bootstrap;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,9 +17,11 @@ import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
@@ -26,11 +30,15 @@ import java.util.UUID;
  * Seeds a demo tenant + sample data so the app is demonstrable immediately.
  * Dev profile only, and only if the DB has no users yet (idempotent).
  *
- * Demo credentials (password for all): Parola123
- *   platform@ecoregistru.ro  -> PLATFORM_ADMIN (no tenant; use X-Tenant-Id to act on a tenant)
- *   admin@demo.ro            -> ADMIN of "Demo Reciclare SRL"
- *   operator@demo.ro         -> OPERATOR
- *   viewer@demo.ro           -> CLIENT_VIEWER
+ * Demo roles: PLATFORM_ADMIN (no tenant; uses X-Tenant-Id to act on one), ADMIN and OPERATOR of
+ * "Demo Reciclare SRL", and a CLIENT_VIEWER of the same.
+ *
+ * <p>The password is <b>not</b> in this file. It comes from {@code DEMO_PASSWORD}; when that is
+ * unset a random one is generated per boot and written to the log. The literal that used to sit
+ * here was published in a public repository, and on 09.09.2026 these accounts turned out to exist
+ * in the production database too — so the repo was handing anyone a working PLATFORM_ADMIN login.
+ * A fixture password is only a fixture password while it cannot reach anything real; committed, it
+ * is a credential.
  *
  * The movements span six months (Feb–Jul 2026) across three work points so the
  * monthly evidence shows cumulative stock carrying over month to month.
@@ -43,7 +51,6 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DevDataSeeder implements CommandLineRunner {
 
-    static final String DEMO_PASSWORD = "Parola123";
 
     CompanyRepository companyRepository;
     AppUserRepository appUserRepository;
@@ -55,6 +62,17 @@ public class DevDataSeeder implements CommandLineRunner {
     AttachmentRepository attachmentRepository;
     PasswordEncoder passwordEncoder;
 
+    /**
+     * Parola conturilor demo, din mediu. Goală = se generează una la fiecare pornire şi se scrie
+     * în log — deci ştie doar cine se uită la consola propriului server.
+     */
+    // `@NonFinal` fiindcă `@FieldDefaults(makeFinal = true)` de pe clasă l-ar face final, iar
+    // `@RequiredArgsConstructor` l-ar cere atunci în constructor — unde Spring ar căuta un bean de
+    // tip String şi ar cădea la pornire. Injectat pe câmp, îl completează `@Value`.
+    @NonFinal
+    @Value("${app.demo-password:}")
+    String configuredPassword;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -64,7 +82,8 @@ public class DevDataSeeder implements CommandLineRunner {
         }
         log.info("Seeding demo data (dev profile)...");
 
-        String encoded = passwordEncoder.encode(DEMO_PASSWORD);
+        String demoPassword = resolveDemoPassword();
+        String encoded = passwordEncoder.encode(demoPassword);
 
         // Platform admin (global, no tenant)
         appUserRepository.save(AppUser.builder()
@@ -145,7 +164,7 @@ public class DevDataSeeder implements CommandLineRunner {
                 collector, carrier, metalRecycler, ecoValor, expiredAuth,
                 birouri, productie);
 
-        log.info("Demo data seeded. Login with admin@demo.ro / {}", DEMO_PASSWORD);
+        log.info("Demo data seeded. Login with admin@demo.ro / {}", demoPassword);
     }
 
     /**
@@ -430,5 +449,24 @@ public class DevDataSeeder implements CommandLineRunner {
                 .enabled(true)
                 .createdAt(Instant.now())
                 .build();
+    }
+
+    /**
+     * Parola cu care se creează conturile demo.
+     *
+     * <p>Din {@code DEMO_PASSWORD} când e setată — aşa rulează suita de interfaţă, care are nevoie
+     * de una ştiută dinainte. Altfel una aleatoare, generată la pornire şi scrisă în log: profilul
+     * `dev` trebuie să pornească fără nicio pregătire, dar nu cu o parolă pe care o ştie toată
+     * lumea care a citit repo-ul.
+     */
+    private String resolveDemoPassword() {
+        if (configuredPassword != null && !configuredPassword.isBlank()) {
+            return configuredPassword;
+        }
+        byte[] bytes = new byte[12];
+        new SecureRandom().nextBytes(bytes);
+        String generated = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        log.warn("DEMO_PASSWORD nu e setată — parola conturilor demo pe pornirea asta: {}", generated);
+        return generated;
     }
 }

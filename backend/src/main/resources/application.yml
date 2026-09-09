@@ -55,6 +55,10 @@ spring:
           writetimeout: 10000
 
 app:
+  # Parola conturilor demo (profilul `dev`). Goală dinadins: nicio parolă nu se commite, fiindcă
+  # repo-ul e public. Nesetată, `DevDataSeeder` generează una la fiecare pornire și o scrie în log;
+  # suita de interfață o primește prin `DEMO_PASSWORD`, aceeași valoare în amândouă terminalele.
+  demo-password: ${DEMO_PASSWORD:}
   # Base URL used in email links (verification, reset).
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
   mail:

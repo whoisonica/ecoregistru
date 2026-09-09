@@ -4421,6 +4421,48 @@ evidenţa", „Alege o firmă ca să vezi ecranul", „expiră azi", „Nimic de
 index.html        →  <link rel="icon">     prezent
 ```
 
+### Parola conturilor demo a ieşit din repo
+
+Cerut de utilizator după proba pe producţie, şi e a doua jumătate a aceleiaşi poveşti.
+
+`README.md` — repo **public** — avea tabelul „Demo accounts (dev profile, password `Parola123` for
+all)" cu cele patru adrese. Nota „dev profile" descrie **intenţia**, nu realitatea: `status.md` ştia
+deja, de pe 24.08, că aceleaşi conturi sunt în baza de **producţie** („De şters sau dezactivat"), iar
+decizia 14 din notele private spune că utilizatorul a hotărât să nu le şteargă cât timp nu există
+clienţi reali. Ce n-a fost pus cap la cap până acum e că tabelul din repo **completa** situaţia aia:
+vectorul scris în notă era resetarea de parolă prin domeniul `demo.ro`, care nu e al nostru — dar
+`POST /auth/login` cu parola tipărită în README întorcea **200** direct, iar
+`platform@ecoregistru.ro` e `PLATFORM_ADMIN`, adică toate firmele.
+
+Ce s-a schimbat, ca `grep -rn "Parola123"` să iasă gol pe amândouă repo-urile:
+
+| Unde | Ce era | Ce e |
+|---|---|---|
+| `DevDataSeeder` | `static final String DEMO_PASSWORD = "Parola123"` | `@Value("${app.demo-password:}")`; nesetată → una aleatoare pe pornire, scrisă în log |
+| `application.yml` | — | `app.demo-password: ${DEMO_PASSWORD:}`, gol dinadins |
+| `frontend/e2e/lib.mjs` | patru perechi cu parola scrisă | `process.env.E2E_PASSWORD`, şi **refuză să pornească** fără ea |
+| `README.md` (public) | tabelul cu adrese + parola | rolurile, plus cum se setează `DEMO_PASSWORD` |
+| `RegisterSeamIT`, `TenantIsolationIT` | `encode("Parola123")` | `encode(UUID.randomUUID().toString())` — nimeni nu se autentifica cu ea, e umplutură pentru o coloană `NOT NULL` |
+
+**Adresele au rămas** în seeder şi în teste, dinadins: sunt identităţile pe care `ApplicationBootIT`
+le numără pe nume, iar o adresă fără parolă nu e o credenţială. Ce se commite de-acum e **cine**, nu
+**cum intri**.
+
+Probat pe două baze curate: fără `DEMO_PASSWORD`, seeder-ul scrie „parola conturilor demo pe pornirea
+asta: …", login-ul cu ea întoarce 200 şi cel cu vechea parolă **400**; cu `DEMO_PASSWORD` setată,
+avertismentul nu mai apare şi merge valoarea dată. Suita: 11 probe, 273 de verificări, verzi cu
+`E2E_PASSWORD`.
+
+🔴 **Şi ce nu repară asta.** Istoricul git păstrează parola, repo-ul e public şi poate fi deja
+clonat, iar conturile **rămân valabile în producţie**. Curăţarea fişierelor opreşte următorul cititor,
+nu pe cel de ieri. Reparaţia adevărată e rotirea sau dezactivarea conturilor, şi ea n-a fost făcută —
+rămâne pe lista de blocaje, unde stă din 24.08.
+
+⚠️ **Şi o capcană de mediu, nu de cod:** după procedura de deploy (`git checkout` / `reset --hard` pe
+subtree-uri) serverul Vite pornit dinainte rămâne cu graful vechi şi întoarce `500` pe `main.tsx`
+(„Failed to resolve import"). Toate cele 11 probe au căzut la login din motivul ăsta, nu din cod.
+**După un deploy, reporneşte `npm run dev` înainte să rulezi suita.**
+
 ### 📋 Ce urmează
 
 Neschimbat faţă de felia de dimineaţă: `docs/todo-ui-ux.md` — vederea cross-tenant pentru
@@ -4708,6 +4750,14 @@ nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
   şi `SPRING_PROFILES_ACTIVE` e gol — au ajuns acolo altfel. Cât timp mailul nu pleca era inofensiv;
   de pe 24.08 nu mai e: **`demo.ro` nu e domeniul nostru**, deci cine îl controlează poate cere o
   resetare și intra în producție ca ADMIN pe tenantul demo. De șters sau dezactivat.
+  🔴 **Verificat pe 09.09.2026, şi e mai simplu de-atât:** nu e nevoie de nicio resetare —
+  `POST /auth/login` cu parola care stătea scrisă în `README.md` întorcea **200** pe producţie, iar
+  `platform@ecoregistru.ro` e `PLATFORM_ADMIN`, adică toate firmele. Repo-ul e **public**, deci
+  tabelul de conturi demo era un login funcţional către un sistem viu, publicat.
+  **Parola a ieşit din repo în aceeaşi zi** (vine din `DEMO_PASSWORD`, iar nesetată se generează una
+  aleatoare la fiecare pornire), deci noul cititor n-o mai găseşte — dar **istoricul git o
+  păstrează**, şi ea rămâne valabilă în baza de producţie până când conturile chiar sunt
+  dezactivate. Curăţarea repo-ului nu e reparaţia; rotirea sau ştergerea conturilor e.
 - 🟡 Cloudinary (upload real) — `CLOUDINARY_URL` nesetat pe `ecoregistru-api`, deci atașamentele
   de pe mișcări nu urcă în producție.
 

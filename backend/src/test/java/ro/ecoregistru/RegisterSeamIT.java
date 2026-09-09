@@ -90,7 +90,7 @@ class RegisterSeamIT {
                 .name("Generator Pur SRL").cui("ROG" + suffix).type(CompanyType.GENERATOR)
                 .active(true).createdAt(Instant.now()).build());
         AppUser generatorAdmin = appUserRepository.save(AppUser.builder()
-                .email("admin+" + suffix + "@generator.ro").password(passwordEncoder.encode("Parola123"))
+                .email("admin+" + suffix + "@generator.ro").password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.ADMIN).company(generator).enabled(true).createdAt(Instant.now()).build());
         generatorToken = jwtService.generateToken(generatorAdmin);
         generatorWorkPointId = workPointRepository.save(WorkPoint.builder()
