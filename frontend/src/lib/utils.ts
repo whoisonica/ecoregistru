@@ -69,3 +69,19 @@ export function countOf(n: number, one: string, many: string): string {
   const needsDe = lastTwo === 0 || lastTwo >= 20;
   return needsDe ? `${n} de ${many}` : `${n} ${many}`;
 }
+
+/**
+ * Un şir din `strings.ts` cu numeralul deja acordat pus în locul lui `{count}`.
+ *
+ * <p>Convenţia care iese de aici, şi care ţine cât timp e respectată peste tot:
+ * **`{count}` e un grup nominal** („3 mişcări"), construit de `countOf`; **`{n}` e o cifră goală**
+ * — un ordinal („fişierul 2 din 5") sau un număr între paranteze („Inactive (4)"), unde nu urmează
+ * niciun substantiv de acordat. Cine scrie un şir nou alege placeholderul după asta, iar cine
+ * caută `{count}` găseşte toate locurile în care regula de limbă chiar se aplică.
+ *
+ * <p>Exista înainte de felia asta o singură cale prin `countOf`, chemată de şase ori pe Panou şi
+ * o dată în `deadlines.ts`; restul ecranelor înlocuiau cifra direct şi scriau „1 mişcări".
+ */
+export function withCount(template: string, n: number, one: string, many: string): string {
+  return template.replace("{count}", countOf(n, one, many));
+}

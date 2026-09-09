@@ -17,7 +17,7 @@ import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import type { DeadlineStatus, MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
-import { cn, countOf, formatDate } from "@/lib/utils";
+import { cn, countOf, formatDate, withCount } from "@/lib/utils";
 import { daysLabel, daysUntil, documentFor } from "@/lib/deadlines";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -523,7 +523,7 @@ export function DashboardPage() {
           label={t.statStock}
           sub={
             stock.negative > 0
-              ? t.statStockNegative.replace("{n}", String(stock.negative))
+              ? withCount(t.statStockNegative, stock.negative, "cod", "coduri")
               : t.statStockSub
           }
           tone={stock.negative > 0 ? "red" : "brand"}
@@ -546,7 +546,7 @@ export function DashboardPage() {
               ))}
               {stock.rest > 0 && (
                 <li className="text-content-subtle">
-                  {t.statStockMore.replace("{n}", String(stock.rest))}
+                  {withCount(t.statStockMore, stock.rest, "cod", "coduri")}
                 </li>
               )}
             </ul>
@@ -558,11 +558,11 @@ export function DashboardPage() {
           label={t.statDeadlines}
           sub={
             overdueCount > 0
-              ? t.statDeadlinesOverdue.replace("{n}", String(overdueCount))
+              ? withCount(t.statDeadlinesOverdue, overdueCount, "termen depășit", "termene depășite")
               : nextDeadline
                 ? t.statDeadlinesNext
                     .replace("{label}", strings.enums.reportType[nextDeadline.reportType])
-                    .replace("{days}", String(daysUntil(nextDeadline.dueDate)))
+                    .replace("{days}", daysLabel(nextDeadline) ?? "")
                 : t.statDeadlinesNone
           }
           tone={overdueCount > 0 ? "red" : openDeadlines.length > 0 ? "amber" : "brand"}

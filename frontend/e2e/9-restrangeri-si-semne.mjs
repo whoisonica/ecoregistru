@@ -192,7 +192,10 @@ check("nu mai scrie suma peste coduri", !/390/.test(stoc?.text ?? ""), (stoc?.te
 check("primele trei coduri se numesc, cu kilogramele lor",
   (stoc?.linii ?? []).slice(0, 3).join(" | ") === "20 01 40170 kg | 15 01 02110 kg | 20 03 0160 kg",
   (stoc?.linii ?? []).join(" | "));
-check("iar restul se numără, nu se ascunde", /și încă 1/.test((stoc?.linii ?? []).join(" ")));
+// „și încă 1 cod" de la felia de numeral din 09.09 — înainte era doar cifra. Se cere substantivul
+// pe față: fără el, o formă greșită („și încă 1 coduri") ar trece neatinsă.
+check("iar restul se numără, nu se ascunde", /și încă 1 cod\b/.test((stoc?.linii ?? []).join(" ")),
+  (stoc?.linii ?? []).at(-1));
 await shot(page, "9-panou-stoc");
 
 // -------------------------------- 4. TERMENELE SPUN CÂTE ZILE MAI SUNT, ŞI DUC LA DOCUMENT

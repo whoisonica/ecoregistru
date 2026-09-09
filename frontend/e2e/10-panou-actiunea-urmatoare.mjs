@@ -70,7 +70,10 @@ const dala = await page.evaluate(() => {
   );
   return t?.parentElement?.textContent.replace(/\s+/g, " ").trim() ?? "";
 });
-const depasite = Number(/(\d+) depășite/.exec(dala)?.[1] ?? 0);
+// „3 termene depășite" de la felia de numeral din 09.09 — înainte scria „3 depășite". Regexul
+// prinde amândouă formele de plural, plus singularul: cu un singur termen depășit dala scrie
+// „1 termen depășit", iar o probă care cere „depășite" ar trece de la sine pe zero.
+const depasite = Number(/(\d+)(?: de)? termen[e]? depășit/.exec(dala)?.[1] ?? 0);
 check("tenantul demo chiar are termene depășite, deci ramura se probează pe date, nu pe gol",
   depasite > 0, depasite + " depășite");
 check("banda le numește pe ele, nu cântarul sau autorizațiile",

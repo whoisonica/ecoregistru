@@ -9,9 +9,11 @@ import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.AttachmentRepository;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
@@ -42,6 +44,9 @@ class ApplicationBootIT {
     @Autowired
     AttachmentRepository attachmentRepository;
 
+    @Autowired
+    PartnerRepository partnerRepository;
+
     @Test
     void contextLoadsAndSeedApplied() {
         // Flyway V4 reloaded the full European List of Waste over V2's 10 placeholders.
@@ -64,7 +69,7 @@ class ApplicationBootIT {
         UUID demoTenantId = companyRepository.findAll().stream()
                 .filter(c -> "Demo Reciclare SRL".equals(c.getName()))
                 .findFirst().orElseThrow().getId();
-        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(36);
+        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(37);
 
         /*
          * Cele două rânduri adăugate pe 07.09.2026, și de ce sunt numărate pe nume, nu doar în
@@ -84,6 +89,36 @@ class ApplicationBootIT {
                 .anySatisfy(m -> {
                     assertThat(m.isWeighedAtUnloading()).isTrue();
                     assertThat(m.getQuantity()).isNull();
+                });
+        /*
+         * A patra stare, mutată aici pe 09.09.2026 din `INSERT`-ul aditiv care trăia în
+         * `frontend/e2e/README.md`: o predare către un partener a cărui autorizație expirase
+         * **înainte** de data predării. E starea pe care o semnalează badge-ul „Autorizație
+         * expirată", iar de pe 08.09 badge-ul duce la fișa partenerului — un drum care se proba pe
+         * gol cât timp rândul exista numai pe baza unei mașini.
+         *
+         * Numărată pe nume, ca celelalte: comparația e între data mișcării și expirarea
+         * partenerului, deci un rând cu partenerul potrivit dar cu data greșită n-ar aprinde
+         * nimic și ar trece la fel de tăcut ca lipsa lui.
+         */
+        // Partenerul se citește **întreg**, din repository, nu prin `m.getPartner()`: asocierea e
+        // leneșă, iar în afara unei tranzacții citirea unui câmp de pe proxy aruncă
+        // `LazyInitializationException` — cum a și aruncat prima variantă a verificării ăsteia.
+        // Din proxy se poate lua doar id-ul, fără să se încarce nimic; pe el se face potrivirea.
+        var expiredPartner = partnerRepository.findAll().stream()
+                .filter(p -> "Salubritate Municipală SA".equals(p.getName()))
+                .findFirst().orElseThrow();
+        LocalDate expiry = expiredPartner.getAuthorizationExpiry();
+        assertThat(expiry)
+                .as("partenerul demo cu autorizația căzută are chiar o dată, și e în trecut")
+                .isNotNull()
+                .isBefore(LocalDate.now());
+        assertThat(demoMovements)
+                .as("o predare către un partener cu autorizația deja expirată la data ei")
+                .anySatisfy(m -> {
+                    assertThat(m.getPartner()).isNotNull();
+                    assertThat(m.getPartner().getId()).isEqualTo(expiredPartner.getId());
+                    assertThat(expiry).isBefore(m.getDate());
                 });
 
         /*

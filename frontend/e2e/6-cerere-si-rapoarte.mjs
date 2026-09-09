@@ -157,7 +157,10 @@ await page.goto(BASE + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
 const panel = await page.textContent("body");
 // Cele două blocaje au acum rânduri în seed-ul demo, deci se probează pe date, nu pe gol.
-check("panoul numără ieșirile fără cod R/D", /lini(e|i) cu ieșiri fără cod R\/D/.test(panel), "");
+// „1 linie fără cod R/D la ieșire", de la felia de numeral din 09.09: complementul zicea „ieșiri"
+// și pe un rând singur. Regexul prinde amândouă formele de plural, plus singularul.
+check("panoul numără ieșirile fără cod R/D",
+  /lini(e|i) fără cod R\/D la ieșire/.test(panel), "");
 check("și le ține separate de cele care așteaptă cântarul", /lini(e|i) care așteaptă cântarul/.test(panel), "");
 
 const fixHref = await page.$$eval("a", (a) =>

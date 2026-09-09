@@ -24,7 +24,7 @@ import type {
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { formatDate } from "@/lib/utils";
+import { formatDate, withCount } from "@/lib/utils";
 import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -126,8 +126,12 @@ function sumOver(
   return total;
 }
 
-function fill(template: string, n: number) {
-  return template.replace("{n}", String(n));
+/**
+ * Semnalele de pe ecranul de ambalaje numără toate acelaşi lucru — mişcări —, deci substantivul
+ * stă aici o dată, nu la fiecare apel. Restul numărătorilor din pagină trec prin `withCount`.
+ */
+function countMovements(template: string, n: number) {
+  return withCount(template, n, "mișcare", "mișcări");
 }
 
 /**
@@ -426,16 +430,16 @@ export function PackagingPage() {
           </h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
             {signals.missingMaterial > 0 && (
-              <li>{fill(t.blockedMissingMaterial, signals.missingMaterial)}</li>
+              <li>{countMovements(t.blockedMissingMaterial, signals.missingMaterial)}</li>
             )}
             {signals.missingCategory > 0 && (
-              <li>{fill(t.blockedMissingCategory, signals.missingCategory)}</li>
+              <li>{countMovements(t.blockedMissingCategory, signals.missingCategory)}</li>
             )}
             {signals.missingOperation > 0 && (
-              <li>{fill(t.missingOperation, signals.missingOperation)}</li>
+              <li>{countMovements(t.missingOperation, signals.missingOperation)}</li>
             )}
             {signals.awaitingWeighing > 0 && (
-              <li>{fill(t.awaitingWeighing, signals.awaitingWeighing)}</li>
+              <li>{countMovements(t.awaitingWeighing, signals.awaitingWeighing)}</li>
             )}
           </ul>
         </section>
@@ -723,7 +727,7 @@ export function PackagingPage() {
                     rând nesalvat poate fi derulat afară din ochi — aici se vede oricum. */}
                 {dirtyRows > 0 && (
                   <p className="mt-2 text-xs text-amber-700">
-                    {dirtyRows === 1 ? t.overrideUnsavedRow : fill(t.overrideUnsavedRows, dirtyRows)}
+                    {withCount(t.overrideUnsavedRows, dirtyRows, "rând", "rânduri")}
                   </p>
                 )}
               </div>
@@ -912,16 +916,18 @@ function Anexa3Section({ year }: { year: number }) {
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
               <p className="font-medium">{t.anexa3UnclassifiedTitle}</p>
               {missingOrigin > 0 && (
-                <p className="mt-1">{t.anexa3MissingOrigin.replace("{n}", String(missingOrigin))}</p>
+                <p className="mt-1">
+                  {withCount(t.anexa3MissingOrigin, missingOrigin, "preluare", "preluări")}
+                </p>
               )}
               {missingMaterial > 0 && (
                 <p className="mt-1">
-                  {t.anexa3MissingMaterialCount.replace("{n}", String(missingMaterial))}
+                  {withCount(t.anexa3MissingMaterialCount, missingMaterial, "preluare", "preluări")}
                 </p>
               )}
               {missingQuantity > 0 && (
                 <p className="mt-1">
-                  {t.anexa3MissingQuantity.replace("{n}", String(missingQuantity))}
+                  {countMovements(t.anexa3MissingQuantity, missingQuantity)}
                 </p>
               )}
             </div>
@@ -1022,9 +1028,7 @@ function Anexa3Section({ year }: { year: number }) {
 
 /** Art. 4 alin. (3): toţi depun la agenţia din raza punctului de lucru, comerciantul la ANPM. */
 function addresseeOf(d: PackagingAnexa3): string {
-  return d.role === "COMERCIANT"
-    ? "ANPM"
-    : "agenţia judeţeană pentru protecţia mediului din raza punctului de lucru";
+  return d.role === "COMERCIANT" ? t.anexa3AddresseeAnpm : t.anexa3AddresseeLocal;
 }
 
 /** Un rând de sumă din formular — Total plastic, Total metal, TOTAL. */

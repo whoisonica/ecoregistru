@@ -3,9 +3,12 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 02.09.2026.** 175 de teste verzi (0 eșecuri). Migrări până la **`V28`**, următoarea
-> liberă e **`V29`**. În producție: `ecoregistru-api` la **v31** (`84e6efe`), `ecoregistru-app` la
-> **v26** (`0182ef4`); `main`, `origin/main` și `origin/deploy/heroku-split` sunt la `7ae9ee3`.
+> **Unde suntem — 09.09.2026.** 239 de teste verzi (0 eșecuri) și **11 probe de interfață, 273 de
+> verificări**. Migrări până la **`V31`**, următoarea liberă e **`V32`**. Versiunile din producție
+> se scriu mai jos, la felia zilei, după deploy — nu înainte.
+>
+> *(Blocul de mai jos, până la linia despre jurnal, s-a scris pe 02.09.2026 și e păstrat pentru
+> continuitate; cifrele lui sunt cele de atunci.)*
 >
 > **Livrat:** fundația · nomenclatorul LED (842 coduri) · motorul de evidență cu stoc cumulativ ·
 > termene, alerte și dosar de control · modulul de generatori complet (G1–G8) cu cele patru
@@ -75,6 +78,9 @@ rulează local și are testele verzi.
 > de limbă veche pe toate ecranele:** „1 linii", „pe 1 mişcări" — româna cere trei forme, iar de la
 > 20 în sus „de linii". `countOf` în `lib/utils`; backendul o reparase deja pe 06.09, la mail.
 > **Backendul n-a fost atins** — migrări tot până la `V31`. Suita: **10 probe, 228 de verificări**.
+> Detaliile: secţiunea „Propoziţia care lipsea de pe Panou". ✅ **În producţie**:
+> `ecoregistru-app` **v32**, `ecoregistru-api` neschimbat la v37.
+>
 > **Adăugat 08.09.2026, seara târziu — sugestia care nu mai mută covorul, şi badge-ul care duce
 > undeva.** Sugestia de duplicat de la Parteneri comuta pe tăcute la fişa existentă, aruncând tot ce
 > completasei; acum se **spune** că s-a comutat, cu drum înapoi, iar pe un formular început se
@@ -85,7 +91,20 @@ rulează local și are testele verzi.
 > ✅ **În producţie**: `ecoregistru-app` **v33**. Detaliile: secţiunea „Sugestia care nu mai mută
 > covorul".
 >
-> Detaliile: secţiunea „Propoziţia care lipsea de pe Panou". ✅ **În producţie**: `ecoregistru-app` **v32**, `ecoregistru-api` neschimbat la v37.
+> **Adăugat 09.09.2026 — numeralul până la capăt, şirurile din primitive şi seed-ul mutat acasă.**
+> Restul listei din `docs/todo-ui-ux.md`: patru puncte, dintre care unul n-a fost construit, ci
+> **mutat**. Optsprezece şiruri trec acum prin `withCount`, iar din felie a ieşit **convenţia**
+> `{count}` (grup nominal acordat) vs `{n}` (cifră goală), care face regula găsibilă. 🔴 **Şi
+> captura a scos al doilea fel de dezacord**, cel de după substantiv: „1 mişcare — cantitatea
+> **lor** lipseşte", „1 fişier **n-au** urcat" — verbul şi pronumele se acordă şi ele. Şirurile
+> hardcodate au ieşit din primitive (`combobox.tsx`, plus una găsită pe deasupra în `PackagingPage`);
+> **primitivele n-au acum niciun literal românesc**. Seed-ul a treia tranşă a intrat în
+> `DevDataSeeder` — 37 de mişcări, nu 36 —, iar mutarea a scos **o bombă cu ceas**: o dată fixă şi
+> una relativă care trebuiau să rămână în aceeaşi ordine s-ar fi inversat pe 19.09.2026, stingând
+> badge-ul singure. 🔒 Ştergerea datelor unui şofer a plecat de pe lista de ecrane pe lista de
+> **întrebări** (**AO**): e o decizie, nu o felie. **Backendul a fost atins** (`DevDataSeeder`,
+> `ApplicationBootIT`), dar nu schema — **239 de teste**, migrări tot până la `V31`. Suita:
+> **11 probe, 273 de verificări**. Detaliile: secţiunea „Numeralul până la capăt".
 >
 > *Jurnalul de mai jos e cronologic și **nu se rescrie**: o intrare descrie ce era adevărat în ziua
 > ei. Când o cifră din el diferă de blocul ăsta, blocul ăsta are dreptate.*
@@ -4035,6 +4054,152 @@ interfaţă. Rămâne restanţă, scrisă în `e2e/README.md`.
 
 `docs/todo-ui-ux.md`: şirurile hardcodate din `combobox.tsx` · 🔒 ştergerea datelor unui şofer (o
 **decizie**, nu o felie) · 🟡 numeralul pe restul ecranelor · 🟡 mutarea seed-ului în `DevDataSeeder`.
+
+---
+
+## Numeralul până la capăt, șirurile din primitive și seed-ul mutat acasă (09.09.2026)
+
+Restul listei din `todo-ui-ux.md`: patru puncte, dintre care unul n-a fost construit, ci **mutat**.
+Niciunul nu adaugă o funcție — toate patru sting datorii scrise cu mâna noastră, în zile diferite.
+
+### 1. Numeralul, pe restul ecranelor — și al doilea fel de dezacord
+
+Pe 08.09 s-a reparat „1 linii" **pe Panou și pe zilele rămase**, cu `countOf` din `lib/utils`.
+Restul ecranelor rămăsese, notat ca „o trecere de o oră". A ieșit mai mult decât o trecere.
+
+**Ce s-a schimbat.** Optsprezece șiruri de pe Ambalaje, Evidențe, Termene, Mișcări, Setări și
+cererea de cont trec acum prin **`withCount(template, n, singular, plural)`**, un înveliș subțire
+peste `countOf` care așază numeralul acordat într-un `{count}`. Din el a ieșit și **convenția care
+lipsea**, scrisă în javadoc:
+
+> **`{count}` e un grup nominal acordat** („3 mișcări"), construit de `countOf`. **`{n}` e o cifră
+> goală** — un ordinal („fișierul 2 din 5"), un număr între paranteze („Inactive (4)") —, acolo
+> unde nu urmează niciun substantiv de acordat.
+
+Convenția e ce face regula găsibilă: cine caută `{count}` găsește **toate** locurile în care regula
+chiar se aplică, fără să citească fiecare șir. Două perechi de șiruri „unul / mai multe"
+(`operationCodesSelectedOne`, `overrideUnsavedRow`) au dispărut: acopereau corect 1 și 2, dar
+scriau „20 rânduri" fără „de" — exact treapta pe care o pereche fixă n-o poate prinde. Un șir mort
+a ieșit și el (`statusBlocked`, nefolosit de nicăieri).
+
+Trei locuri au cerut mai mult decât o înlocuire:
+
+- **Dala de termene de pe Panou** scria „{n} depășite" — aici trebuie să se acorde și
+  **adjectivul**, nu doar substantivul, deci toată sintagma a intrat în perechea dată lui `countOf`
+  („1 termen depășit" · „20 de termene depășite"), iar șirul a rămas un slot gol.
+- **„Următorul termen: X, în {days} zile"** socotea zilele a treia oară, cu mâna. Cheamă acum
+  `daysLabel`, care le scrie o singură dată pentru toată aplicația — deci a primit pe gratis și
+  „azi"/„mâine" în cuvinte, în locul lui „în 0 zile", care era adevărat și se citea ca nimic.
+- **Generarea termenelor** raporta „Termene generate: 1 noi". Zero are acum șir propriu: „0 de
+  termene noi" e corect gramatical și se citește ca o eroare.
+
+🔴 **Și captura a scos al doilea fel de dezacord, cel de după substantiv.** Cu toate numărătorile
+reparate, cu `tsc` curat și cu proba nouă verde, ecranul de Ambalaje scria **„1 mișcare încă de
+cântărit — cantitatea LOR lipsește"**, iar cel de Mișcări „1 fișier **N-AU** urcat". Substantivul
+se acordase; verbul și pronumele din jurul lui, nu.
+
+Două tratamente, după unde încape acordul:
+
+| Unde | Ce s-a făcut |
+|---|---|
+| verbul stă lipit de numeral | intră **în perechea** dată lui `countOf`: „1 fișier n-a urcat" · „2 fișiere n-au urcat" |
+| pronumele e departe, în altă propoziție | propoziția se **rescrie fără el**: „cantitatea lor lipsește" → „cantitatea lipsește" |
+
+**Vezi decizia 66.** Și reține forma pe care o ia lecția a doua oară: pe 08.09 „randează și uită-te
+la el" a prins substantivul; pe 09.09, cu substantivul reparat, aceeași privire a prins cuvântul de
+alături. **O regulă de limbă nu se termină la cuvântul pe care l-ai reparat.**
+
+### 2. Proba 11 — prima care nu caută un text anume
+
+Celelalte zece probe întreabă dacă un anume text e pe ecran. Aici n-are cum să meargă: un șir scris
+mâine ar trece pe lângă orice listă fixă — exact cum au trecut cele de pe Ambalaje pe lângă felia
+din 08.09. Deci `11-numeralul.mjs` **citește tot ce scrie pe ecran**, culege perechile «număr +
+substantiv cunoscut» și verifică forma fiecăreia, pe opt ecrane. Un ecran adăugat mâine intră singur
+sub regulă; un substantiv nou se trece în lista `SUBSTANTIVE` și de-atunci e păzit peste tot.
+
+Trei lucruri de reținut din felul în care e scrisă:
+
+- **Regula e scrisă a doua oară în probă, dinadins.** Dacă ar chema `countOf`, amândouă ar greși la
+  fel și n-ar mai fi o probă — ar fi o oglindă.
+- **Garda e pe ecran, nu pe total.** Prima variantă trecea verde cu „0 numărători citite" pe patru
+  ecrane din opt: căuta Evidențele și Ambalajele pe `an=2025`, unde datele demo nu sunt, și
+  Mișcările pe luna curentă, care e goală. Regula 9 din `todo-ui-ux.md`, a treia oară: **o
+  verificare poate trece fiindcă premisa ei nu s-a întâmplat.** Acum fiecare ecran despre care se
+  știe că numără ceva trebuie să întoarcă cel puțin o pereche, iar anul se citește din ceas, nu se
+  scrie de mână — altfel proba ar începe să treacă pe gol la 1 ianuarie.
+- **Euristica de acord se probează pe ea însăși.** Cele trei verificări de la început îi dau chiar
+  propoziția găsită pe captură („1 mișcare … cantitatea lor lipsește"), forma reparată și un plural
+  adevărat. Fără ele, o euristică prea îngustă ar raporta „nicio problemă" și n-am ști de ce.
+
+### 3. Șirurile hardcodate au ieșit din primitive
+
+Cele cinci din `combobox.tsx` („Selectează…", „Caută…", „Niciun rezultat.", „Se caută…", „Șterge
+selecția") sunt în `strings.common`. **Nu s-au topit** peste `searchPlaceholder` / `noResults` de
+acolo, deși seamănă: alea sunt ale barei de căutare a unui **tabel**, care caută în rândurile deja
+aduse, iar astea ale unei liste care caută **la server**. Un singur șir pentru amândouă ar fi legat
+două ecrane care n-au de ce să se miște împreună.
+
+O trecere peste tot frontendul, cu diacriticele drept cârlig, a mai găsit unul: destinatarul Anexei
+3 din `PackagingPage` („agenția județeană pentru protecția mediului din raza punctului de lucru" /
+„ANPM"), scris în pagină. A ieșit și el. **Primitivele n-au acum niciun literal românesc** — singurul
+rămas în tot frontendul e un mesaj de consolă din `ErrorBoundary`, care nu se vede pe ecran.
+
+### 4. Seed-ul mutat acasă — și bomba cu ceas de sub el
+
+Predarea către un partener cu autorizația expirată **înainte** de data predării trăia din 08.09 ca
+`INSERT` aditiv în `frontend/e2e/README.md`: exista pe discul unei mașini, nu pe o bază proaspătă. E
+acum în `DevDataSeeder`, a patra stare numărată **pe nume** de `ApplicationBootIT`. Seed-ul demo are
+37 de mișcări, nu 36.
+
+Rândul stă pe hârtia de la Cluj și e de **1 kg** — nu pe plasticul de la Turda, lângă celelalte două
+stări, fiindcă acolo ar muta chiar cifrele negative pe care e verificată dala de stoc; și nu de
+120 kg, fiindcă prima variantă a dus stocul unui cod fix la zero și a căzut proba 9.
+
+🔴 **Mutarea a scos la iveală o bombă cu ceas.** Rândul are dată **fixă** (20.08.2026), dar
+partenerul avea expirarea scrisă **relativ**: `LocalDate.now().minusDays(30)`. Amândouă erau
+adevărate în ziua în care s-a scris `INSERT`-ul. Pe **19.09.2026** a doua ar fi încetat să fie —
+expirarea ar fi trecut peste data predării, badge-ul „Autorizație expirată" s-ar fi stins, iar proba
+drumului ar fi trecut degaba, fără ca nimeni să atingă nimic și fără niciun mesaj care să spună de
+ce. Expirarea partenerului e acum tot o dată fixă (15.07.2026).
+
+**Lecția, scrisă ca regulă:** o dată relativă și una fixă care trebuie să rămână în aceeași ordine
+sunt un defect care se aprinde singur, într-o zi anume. Ori amândouă relative, ori amândouă fixe —
+o afirmație care leagă două date n-are voie să depindă de ziua în care se citește. **Vezi decizia 67.**
+
+⚠️ Prima variantă a verificării din `ApplicationBootIT` a aruncat `LazyInitializationException`:
+citea `m.getPartner().getAuthorizationExpiry()` pe un proxy leneș, în afara unei tranzacții.
+Partenerul se citește acum întreg din repository; din proxy se ia doar id-ul, care nu încarcă nimic.
+
+### 5. Ștergerea datelor unui șofer a plecat de pe lista de ecrane
+
+Rămăsese deschisă din 08.09, după nota de retenție. Nu e o felie de interfață și n-are ce căuta pe o
+listă de ecrane: e o **decizie**, între două obligații care se bat cap în cap — evidența trebuie să
+rămână cum a fost depusă, iar datele nu se țin peste termenul de păstrare. A trecut pe lista de
+întrebări ca **AO**, cu întrebarea adevărată scrisă pe față: nu „adăugăm un buton de ștergere", ci
+**ce se șterge** — fișa șoferului (și mișcările rămân cu instantaneul, decizia 30), sau și
+instantaneele, caz în care un document deja tipărit nu se mai poate reproduce identic.
+
+Dacă răspunsul specialistei e „nimeni n-a cerut vreodată", **asta** e decizia — scrisă, nu o
+restanță care se plimbă din listă în listă.
+
+### Starea
+
+- **Backendul a fost atins** — `DevDataSeeder` și `ApplicationBootIT` —, dar nu schema: **239 de
+  teste verzi**, 0 eșecuri. Migrări tot până la **`V31`**, următoarea liberă **`V32`**.
+- **Suita de interfață: 11 probe, 273 de verificări** (de la 10 și 245). Proba nouă e
+  `frontend/e2e/11-numeralul.mjs`, 26 de verificări.
+- `tsc --noEmit` curat, `vite build` verde.
+- ⏳ **Nu e deployată.**
+
+### 📋 Ce urmează
+
+`docs/todo-ui-ux.md` a rămas cu ce **nu** e cosmetic: vederea cross-tenant pentru `PLATFORM_ADMIN`
+(singura care aduce bani — `monetizare.md` o numește diferențiatorul canalului de consultanți) ·
+greutatea arhivei din Dosarul de control · „Arată parola" la resetare · 🟡 tabelele care aduc tot și
+paginează în client.
+
+Iar în afara interfeței, neschimbat: 🔵 **modulul de depozit (Etapele 8–11) stă pe pauză până la
+meetingul cu Andreea** — `docs/intrebari-specialist.md`, întrebările **AD** și **AI**.
 
 ---
 

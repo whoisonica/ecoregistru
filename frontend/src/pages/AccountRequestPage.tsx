@@ -6,6 +6,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -589,11 +590,14 @@ export function AccountRequestPage() {
                 <span>
                   <span className="font-medium text-content-strong">{t.operationCodesChoose}</span>
                   <span className="mt-0.5 block text-xs text-content-muted">
-                    {operationCodes.length === 1
-                      ? t.operationCodesSelectedOne
-                      : operationCodes.length > 1
-                        ? t.operationCodesSelected.replace("{n}", String(operationCodes.length))
-                        : t.operationCodesChooseHint}
+                    {operationCodes.length > 0
+                      ? withCount(
+                          t.operationCodesSelected,
+                          operationCodes.length,
+                          "operațiune aleasă",
+                          "operațiuni alese"
+                        )
+                      : t.operationCodesChooseHint}
                   </span>
                 </span>
               </label>

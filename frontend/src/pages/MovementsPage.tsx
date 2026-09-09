@@ -51,7 +51,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -1398,7 +1398,7 @@ function MovementFormDialog({
       // trebuie citit întâi e că mișcarea **e** salvată.
       const detail = apiErrorMessage(firstError, "");
       notify(
-        t.attachmentsFailedSaved.replace("{n}", String(failed.length)) +
+        withCount(t.attachmentsFailedSaved, failed.length, "fișier n-a urcat", "fișiere n-au urcat") +
           (detail ? ` (${detail})` : ""),
         "error"
       );

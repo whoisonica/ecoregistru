@@ -116,8 +116,13 @@ public class DevDataSeeder implements CommandLineRunner {
                 "AUT-2024-777", LocalDate.now().plusYears(2), PartnerType.COLLECTOR, true, false));
         Partner ecoValor = partnerRepository.save(partner(company, "Eco Valorificare SA", "RO99887766",
                 "AUT-2025-012", LocalDate.now().plusMonths(6), PartnerType.COLLECTOR, true, true));
-        partnerRepository.save(partner(company, "Salubritate Municipală SA", "RO33445566",
-                "AUT-2022-042", LocalDate.now().minusDays(30), PartnerType.COLLECTOR,
+        // Expirarea e o **dată fixă**, nu `now().minusDays(30)` ca înainte, fiindcă de ea atârnă
+        // acum două afirmații deodată: că fișa partenerului e roșie *azi*, și că predarea din
+        // 20.08.2026 de mai jos s-a făcut *după* ce autorizația căzuse. Cu o dată care se mișcă
+        // odată cu ziua de azi, a doua ar fi încetat să fie adevărată pe 19.09.2026 — fără ca
+        // nimeni să atingă nimic, și fără ca vreo probă să spună de ce.
+        Partner expiredAuth = partnerRepository.save(partner(company, "Salubritate Municipală SA", "RO33445566",
+                "AUT-2022-042", d(7, 15), PartnerType.COLLECTOR,
                 false, true)); // expired -> red badge
         // A partner whose authorization expiry nobody filled in. Blank is not "expired": it means
         // we do not know, and every rule in the application treats it that way — no badge at the
@@ -137,7 +142,7 @@ public class DevDataSeeder implements CommandLineRunner {
 
         seedMovements(company, operator.getId(),
                 wpCluj, wpTurda, wpDepozit,
-                collector, carrier, metalRecycler, ecoValor,
+                collector, carrier, metalRecycler, ecoValor, expiredAuth,
                 birouri, productie);
 
         log.info("Demo data seeded. Login with admin@demo.ro / {}", DEMO_PASSWORD);
@@ -151,6 +156,7 @@ public class DevDataSeeder implements CommandLineRunner {
     private void seedMovements(Company company, UUID createdBy,
                                WorkPoint wpCluj, WorkPoint wpTurda, WorkPoint wpDepozit,
                                Partner collector, Partner carrier, Partner metalRecycler, Partner ecoValor,
+                               Partner expiredAuth,
                                InternalGenerator birouri, InternalGenerator productie) {
         WasteCode paper = wasteCodeRepository.findByCode("20 01 01").orElse(null);
         WasteCode plastic = wasteCodeRepository.findByCode("15 01 02").orElse(null);
@@ -278,6 +284,25 @@ public class DevDataSeeder implements CommandLineRunner {
                 "Aviz nr. 391", createdBy);
         awaiting.setWeighedAtUnloading(true);
         ms.add(section(awaiting, productie));
+
+        // Predare către un partener a cărui autorizație **expirase înainte de data predării** —
+        // starea din decizia 36, pe care badge-ul „Autorizație expirată" o semnalează pe Mișcări și
+        // din care duce, de pe 08.09.2026, la fișa partenerului. Zero rânduri din 37 o aveau, deci
+        // proba drumului se făcea pe gol; a trăit până azi ca `INSERT` aditiv în `e2e/README.md`,
+        // adică nu exista pe o bază proaspătă.
+        //
+        // ⚠️ **Un kilogram, dinadins.** Prima variantă a rândului ăstuia punea 120 și a dus stocul
+        // unui cod fix la zero: dala „Coduri cu stoc" a trecut de la 4 la 3 și proba 9 a căzut —
+        // cea care fixează chiar cifra aia. Un rând de seed adăugat pentru o probă n-are voie să
+        // miște datele pe care se sprijină alta.
+        //
+        // Data e **după** seria de hârtie de la Cluj (Feb–Iul), nu în ea: vitrina stocului
+        // cumulativ (40→30→50→50→30→50.5) rămâne exact cum se citește mai sus, iar rândul ăsta
+        // deschide o lună nouă. Nu stă pe plasticul de la Turda, lângă celelalte două stări,
+        // fiindcă acolo ar muta chiar cifrele negative pe care dala de stoc e verificată.
+        ms.add(mv(company, wpCluj, d(8, 20), paper, "1.000",
+                WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, expiredAuth,
+                "Aviz nr. 402", createdBy));
 
         wasteMovementRepository.saveAll(ms);
         log.info("Seeded {} sample movements.", ms.size());

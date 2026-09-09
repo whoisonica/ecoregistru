@@ -1,6 +1,7 @@
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { strings } from "@/lib/strings";
+import { withCount } from "@/lib/utils";
 import type { MonthlyEvidence } from "@/lib/types";
 
 const t = strings.awaitingWeighing;
@@ -45,7 +46,7 @@ export function AwaitingWeighingDialog({
     >
       <div className="space-y-3">
         <p className="text-sm text-content-strong">
-          {t.body.replace("{count}", String(lines.length))}
+          {withCount(t.body, lines.length, "linie", "linii")}
         </p>
         <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           {shown.map((l) => (
@@ -54,7 +55,7 @@ export function AwaitingWeighingDialog({
             </li>
           ))}
           {rest > 0 && (
-            <li className="text-amber-700">{t.andMore.replace("{count}", String(rest))}</li>
+            <li className="text-amber-700">{withCount(t.andMore, rest, "linie", "linii")}</li>
           )}
         </ul>
         <p className="text-xs text-content-muted">{t.hint}</p>

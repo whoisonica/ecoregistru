@@ -135,7 +135,7 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Ten suites, 245
+download — against the local dev server and a backend on the `dev` profile. Eleven suites, 273
 checks: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
@@ -150,7 +150,10 @@ an account that takes waste over from third parties and of no other — proved o
 tenant, because a narrowing that hides the field from everyone passes a one-sided check just as
 easily as the right one does — and the dashboard's next-action band names the most expensive thing
 still open, proved on two tenants because a band that always said the same sentence would pass a
-single-tenant check just as well.
+single-tenant check just as well. The eleventh suite is the only one that does not look for a
+particular string: it reads everything on eight screens, collects every «number + known noun» pair,
+and checks the form of each against Romanian's three — `1 linie` · `2 linii` · `20 de linii` — so a
+string written tomorrow falls under the rule without anyone adding a check for it.
 
 They exist because on 07.09.2026, after sixteen UI slices that all passed `tsc --noEmit` and
 `vite build`, the first real run found **seven defects** — four of them needed a button pressed. A
@@ -158,8 +161,9 @@ review the same day found three more, in the primitives rather than the screens,
 every screen at once — and the user found a fourth: search demanded diacritics, so `miscari` found
 nothing at all. See `frontend/e2e/README.md`, which also records what the suite **cannot**
 cover — and the seed debt it named is now paid: the demo tenant carries an exit with no R/D code,
-a handover awaiting the weighbridge, and a partner with no authorization expiry, so the rules
-written around those states are proved on rows rather than on an empty table.
+a handover awaiting the weighbridge, a partner with no authorization expiry, a movement with two
+attachments, and a handover to a partner whose authorization had already lapsed on the day, so the
+rules written around those states are proved on rows rather than on an empty table.
 
 `E2E_CHANNEL=msedge` picks Edge; an empty `E2E_CHANNEL` falls back to Playwright's own Chromium,
 for a machine with no Chromium-family browser at all.

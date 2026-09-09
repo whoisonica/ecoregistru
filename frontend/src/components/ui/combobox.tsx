@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Loader2, X } from "lucide-react";
+import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 
 export interface ComboboxItem {
@@ -32,6 +33,8 @@ interface ComboboxProps {
   invalid?: string;
 }
 
+const t = strings.common;
+
 /**
  * Searchable select: a trigger that opens a popover with a text input and a
  * results list. Data-agnostic — the parent supplies `items` and reacts to
@@ -51,9 +54,9 @@ export function Combobox({
   items,
   loading = false,
   disabled = false,
-  placeholder = "Selectează…",
-  searchPlaceholder = "Caută…",
-  emptyText = "Niciun rezultat.",
+  placeholder = t.comboboxPlaceholder,
+  searchPlaceholder = t.comboboxSearchPlaceholder,
+  emptyText = t.comboboxEmpty,
   id,
   "aria-label": ariaLabel,
   invalid,
@@ -215,7 +218,7 @@ export function Combobox({
               onSelect(null);
               triggerRef.current?.focus();
             }}
-            aria-label="Șterge selecția"
+            aria-label={t.comboboxClear}
             className="pointer-events-auto rounded text-content-subtle transition-colors hover:text-content-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             <X className="h-4 w-4" />
@@ -249,7 +252,7 @@ export function Combobox({
             {loading && (
               <div className="flex items-center gap-2 px-3 py-2 text-sm text-content-subtle">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                Se caută…
+                {t.comboboxSearching}
               </div>
             )}
             {!loading && items.length === 0 && (

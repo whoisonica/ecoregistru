@@ -1,6 +1,6 @@
 # Probe de interfaţă
 
-Nouă suite, 200 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
+Unsprezece suite, 273 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
 
 **De ce există.** Pe 07.09.2026, după şaisprezece felii de UI/UX toate „verzi" — `tsc --noEmit`
 curat, `vite build` verde, cod recitit — prima rulare adevărată a scos **şapte defecte**. Patru
@@ -83,6 +83,9 @@ ramură nu atinge `node_modules`.
 
 | `9-restrangeri-si-semne.mjs` | Provenienţa ambalajelor se cere **numai** pe un cont care preia de la terţi — probat pe amândouă tipurile, comutând tenantul ca administrator de platformă, fiindcă o restrângere care ascunde tuturor e la fel de greşită ca una care nu ascunde nimănui. Grila de suprascriere de pe Ambalaje: „nesalvat" cât s-a tastat, „salvat" după ieşirea din celulă, cifra regăsită după reîncărcare, apoi **golită la loc** ca proba să nu lase nimic în urmă. Panoul numără coduri cu stoc, nu kilograme adunate peste coduri, şi numeşte primele trei. Termenele: zilele rămase pe fiecare rând, depăşirea scrisă ca depăşire, linkul către documentul care stinge termenul — **pe anul raportat**, nu pe anul termenului — şi absenţa lui la contribuţiile AFM, pentru care nu tipărim nimic; plus înălţimea butonului de acţiune, fiindcă a şasea coloană l-a rupt pe două rânduri prima oară. Nota de retenţie a actului de identitate, în amândouă locurile unde se tastează. |
 
+| `10-panou-actiunea-urmatoare.mjs` | Banda „Următoarea acţiune" din capul Panoului: **tace** până vin toate cele trei surse (un „Eşti la zi" peste `partners` neîncărcat ar fi un verde fals), alege cel mai scump lucru deschis dintre cele cinci, şi **duce chiar unde numeşte** — pe anul **raportat** la termene, nu pe anul termenului. Nu ţine locul casetei de blocaje: amândouă trebuie să rămână. Plus badge-ul „Autorizaţie expirată" de pe Mişcări, care duce la fişa partenerului prin `?partener=`, consumat la deschidere. |
+| `11-numeralul.mjs` | Numeralul românesc, pe **toate** ecranele deodată, şi singura probă care nu caută un text anume: citeşte tot ce scrie pe ecran, culege perechile «număr + substantiv cunoscut» şi verifică forma fiecăreia (`1 linie` · `2 linii` · `20 de linii`). Un ecran adăugat mâine intră singur sub regulă; un substantiv nou se trece în lista `SUBSTANTIVE` şi de-atunci e păzit peste tot. Regula e scrisă a doua oară în probă, dinadins — dacă ar chema `countOf`, amândouă ar greşi la fel şi n-ar mai fi o probă. Garda: fiecare ecran despre care se ştie că numără ceva trebuie să întoarcă cel puţin o pereche. |
+
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 
 ---
@@ -136,28 +139,25 @@ Cloudinary — se deschid, dar nu sunt documentele firmei.
 **Pe 08.09, seara, a treia:** o predare către un partener a cărui autorizaţie **expirase înainte de
 data predării** — starea din decizia 36, pe care badge-ul „Autorizaţie expirată" o semnalează şi din
 care duce acum la fişa partenerului. Zero rânduri din 37 o aveau, deci proba drumului s-ar fi făcut
-pe gol. Aditiv arată aşa (partenerul demo `Salubritate Municipală SA` expiră pe 08.08.2026):
+pe gol.
 
-```sql
-insert into waste_movements (id, company_id, work_point_id, date, waste_code_id, quantity, unit,
-                             operation, operation_code, partner_id, register, weighed_at_unloading,
-                             deleted, created_by, created_at, updated_at)
-select gen_random_uuid(), m.company_id, m.work_point_id, date '2026-08-20', m.waste_code_id, 1,
-       'KG', 'DISPOSED', 'D5', p.id, 'ANEXA_1', false, false, m.created_by, now(), now()
-from waste_movements m
-cross join partners p
-where p.name = 'Salubritate Municipală SA' and m.deleted = false
-order by m.created_at limit 1;
-```
+✅ **Mutată în `DevDataSeeder` pe 09.09.2026**, de unde trăia ca `INSERT` aditiv chiar în fişierul
+ăsta. Acum e a patra stare numărată **pe nume** de `ApplicationBootIT`, ca celelalte trei, iar
+seed-ul demo are 37 de mişcări, nu 36. Cine face o bază proaspătă o primeşte din prima; nu mai e
+nimic de lipit cu mâna.
 
 ⚠️ **Cantitatea e 1 kg dinadins.** Prima variantă punea 120 şi a dus stocul unui cod fix la zero,
 deci dala „Coduri cu stoc" a trecut de la 4 la 3 şi **proba 9 a căzut** — cea care fixează chiar
 cifra aia. Un rând de seed adăugat pentru o probă nu trebuie să mişte datele pe care se sprijină
 alta; când o face, se vede — dar numai dacă suita se rulează **întreagă**.
 
-🟡 **Nu e în `DevDataSeeder`**, ca celelalte două — seeder-ul e backend, iar felia care a cerut-o a
-fost de interfaţă. Rămâne restanţă: cine atinge următoarea oară backendul o mută acolo, ca starea
-să existe şi pe o bază proaspătă, nu numai pe cea cu `INSERT`-ul de mai sus.
+⚠️ **Şi mutarea a scos la iveală o bombă cu ceas.** Rândul are dată fixă (20.08.2026), dar
+partenerul avea expirarea scrisă **relativ**, `now().minusDays(30)`. Amândouă erau adevărate în ziua
+în care s-a scris `INSERT`-ul, şi pe 19.09.2026 a doua ar fi încetat să fie — expirarea ar fi
+depăşit data predării, badge-ul s-ar fi stins şi proba ar fi trecut degeaba, fără ca nimeni să
+atingă nimic. Expirarea partenerului e acum tot o dată fixă (15.07.2026). **O dată relativă şi una
+fixă care trebuie să rămână în aceeaşi ordine sunt un defect care se aprinde singur, într-o zi
+anume.**
 
 ⚠️ **Baza de dev nu se re-seedează singură.** Seeder-ul rulează doar pe bază goală, deci o bază
 făcută înainte de 07.09 n-are rândurile astea, iar probele care se sprijină pe ele trec pe gol fără

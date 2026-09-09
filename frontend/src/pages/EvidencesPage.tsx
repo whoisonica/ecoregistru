@@ -15,6 +15,7 @@ import { HandoverRegister } from "@/components/HandoverRegister";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { withCount } from "@/lib/utils";
 import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { formatTonnes } from "@/lib/units";
 import { Button } from "@/components/ui/button";
@@ -131,8 +132,12 @@ export function EvidencesPage() {
         notify(
           // Stock carries across years, so a regeneration rebuilds the later ones too — say so,
           // otherwise the line count looks wrong for the year that was asked for.
-          (res.cascadedYears.length > 0 ? t.regeneratedCascade : t.regenerated)
-            .replace("{count}", String(res.linesGenerated))
+          withCount(
+            res.cascadedYears.length > 0 ? t.regeneratedCascade : t.regenerated,
+            res.linesGenerated,
+            "linie",
+            "linii"
+          )
             .replace("{year}", String(res.year))
             .replace("{years}", res.cascadedYears.join(", ")),
           "success"

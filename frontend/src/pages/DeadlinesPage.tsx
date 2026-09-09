@@ -11,7 +11,7 @@ import {
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, withCount } from "@/lib/utils";
 import { daysLabel, documentFor } from "@/lib/deadlines";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
@@ -78,9 +78,12 @@ export function DeadlinesPage() {
     regenerateMut.mutate(year, {
       onSuccess: (res) =>
         notify(
-          t.generated
-            .replace("{count}", String(res.generated))
-            .replace("{year}", String(res.year)),
+          // Zero termene noi nu e o eroare — calendarul era deja complet —, dar „S-au generat 0 de
+          // termene noi" se citește ca una.
+          (res.generated === 0
+            ? t.generatedNone
+            : withCount(t.generated, res.generated, "termen nou", "termene noi")
+          ).replace("{year}", String(res.year)),
           "success"
         ),
       onError: (err) => notify(apiErrorMessage(err, t.generateError), "error"),

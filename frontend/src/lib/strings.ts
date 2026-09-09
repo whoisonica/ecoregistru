@@ -132,9 +132,10 @@ export const strings = {
     statusOk: "Nimic nu blochează documentele",
     statusOkHint:
       "Toate ieșirile au cod R/D și cantitate. Fișa de evidență și declarația se pot tipări așa cum sunt.",
-    statusBlocked: "{n} lucruri de lămurit înainte de depunere",
     // Cele două feluri de a fi „nu gata", cu urmarea fiecăruia.
-    blockerMissingCode: "{count} cu ieșiri fără cod R/D",
+    // Complementul se acordă și el: „1 linie cu ieșiri" era corect la plural și fals la singular.
+    // Rescris fără număr în el, ca să nu mai depindă de cifră.
+    blockerMissingCode: "{count} fără cod R/D la ieșire",
     blockerMissingCodeHint:
       "Cantitatea a plecat de pe amplasament, dar nu intră în nicio coloană oficială. Fișa nu se poate depune așa.",
     blockerAwaitingWeighing: "{count} care așteaptă cântarul",
@@ -159,10 +160,16 @@ export const strings = {
     // Stocul vine din evidența calculată, care poate fi în urma mișcărilor — de asta scrie
     // „la ultima lună calculată" și nu „acum".
     statStockSub: "la ultima lună calculată; kilogramele stau pe cod",
-    statStockNegative: "{n} cu stoc negativ — ieșiri neacoperite",
-    statStockMore: "și încă {n}",
-    statDeadlinesNext: "Următorul termen: {label}, în {days} zile",
-    statDeadlinesOverdue: "{n} depășite",
+    statStockNegative: "{count} cu stoc negativ — ieșiri neacoperite",
+    statStockMore: "și încă {count}",
+    // Zilele nu se mai socotesc aici: `daysLabel` le scrie o singură dată pentru toată aplicația,
+    // cu „azi" și „mâine" în cuvinte și cu acordul numeralului. Șirul ăsta spunea „în 1 zile" — și,
+    // mai rău, „în 0 zile" chiar în ziua termenului.
+    statDeadlinesNext: "Următorul termen: {label}, {days}",
+    // Slot gol dinadins: aici trebuie să se acorde și **adjectivul**, nu doar substantivul, deci
+    // toată sintagma intră în perechea dată lui `countOf` („1 termen depășit" · „2 termene
+    // depășite" · „20 de termene depășite").
+    statDeadlinesOverdue: "{count}",
     statDeadlinesNone: "Niciun termen deschis",
     statExpiringDays: "expiră în {count}",
     statExpiringPast: "expirată",
@@ -448,7 +455,9 @@ export const strings = {
     // Mișcarea s-a salvat, atașamentele nu — două fapte diferite, care înainte se spuneau amândouă
     // ca „Salvarea a eșuat". Cine citea asta apăsa din nou și înregistra cantitatea a doua oară.
     attachmentsFailedSaved:
-      "Mișcarea s-a salvat, dar {n} fișier(e) n-au urcat. Au rămas în listă — apasă Salvează încă o dată doar pentru ele.",
+      // Verbul stă în perechea dată lui `countOf` („1 fișier n-a urcat" · „2 fișiere n-au urcat"),
+      // fiindcă e singurul fel în care se acordă și el. Restul propoziției nu mai numără nimic.
+      "Mișcarea s-a salvat, dar {count}. Ce a rămas e tot în listă — apasă Salvează încă o dată doar pentru asta.",
     attachmentDeleted: "Atașament șters.",
     noWorkPointHint: "Adaugă întâi un punct de lucru din Setări.",
     workPointPlaceholder: "Alege punctul de lucru...",
@@ -481,7 +490,7 @@ export const strings = {
       wasteManagerExternal: "Angajat propriu sau terț",
       until: "până la",
       expired: "Expirată",
-      wasteCodesCount: "{n} coduri din autorizație",
+      wasteCodesCount: "{count} din autorizație",
       editInClients: "Editează în Clienți",
       // Nu trimite la o adresă de e-mail: aplicația n-are nicăieri una, iar o adresă inventată aici
       // ar fi prima care se dovedește falsă. Trimite la om — cel care a deschis contul.
@@ -695,7 +704,7 @@ export const strings = {
     regenerating: "Se regenerează...",
     loadError: "Nu am putut încărca evidența.",
     regenerateError: "Regenerarea a eșuat. Încearcă din nou.",
-    regenerated: "Evidență regenerată: {count} linii pentru {year}.",
+    regenerated: "Evidență regenerată: {count} pentru {year}.",
     // export
     export: "Export",
     // Numele scurt "Anexa 1" a fost cedat declarației de ambalaje (Ordinul 794/2012) pe
@@ -775,7 +784,7 @@ export const strings = {
     awaitingWeighing: "De cântărit",
     awaitingWeighingHint:
       "O ieșire din luna asta așteaptă cântarul destinatarului, deci totalurile sunt provizorii.",
-    regeneratedCascade: "Evidență regenerată: {count} linii pentru {year} (și anii {years}).",
+    regeneratedCascade: "Evidență regenerată: {count} pentru {year} (și anii {years}).",
     // empty state
     empty: "Nu există linii de evidență pentru {year}.",
     searchPlaceholder: "Caută după cod, denumire sau punct de lucru...",
@@ -793,7 +802,11 @@ export const strings = {
       "Calendarul obligațiilor de raportare pe firmă: SIM anual și, pentru firmele cu obligație, AFM lunar.",
     generate: "Generează termenele",
     generating: "Se generează...",
-    generated: "Termene generate: {count} noi pentru {year}.",
+    // „Termene generate: 1 noi" — substantivul și adjectivul intră amândouă în `countOf`, iar
+    // prefixul dispare ca să nu se spună „termene" de două ori. Zero are șir propriu: „0 de
+    // termene noi" e corect gramatical și se citește ca o eroare.
+    generated: "Calendarul {year}: {count}.",
+    generatedNone: "Toate termenele pentru {year} existau deja.",
     generateError: "Generarea termenelor a eșuat. Încearcă din nou.",
     loadError: "Nu am putut încărca termenele.",
     // filters
@@ -1286,8 +1299,9 @@ export const strings = {
     operationCodesChoose: "Le știu, le aleg acum",
     operationCodesChooseHint:
       "Codurile din autorizația de mediu. Doar cele bifate apar mai târziu la înregistrarea mișcărilor.",
-    operationCodesSelected: "{n} operațiuni alese",
-    operationCodesSelectedOne: "o operațiune aleasă",
+    // Perechea „…SelectedOne / …Selected" a dispărut: `countOf` acoperă și forma de la 20 în sus,
+    // pe care două șiruri fixe n-o puteau prinde („20 operațiuni alese").
+    operationCodesSelected: "{count}",
     recovery: "Valorificare (R)",
     disposal: "Eliminare (D)",
     wasteCodesText: "Ce deșeuri generați / preluați",
@@ -1396,7 +1410,7 @@ export const strings = {
    */
   awaitingWeighing: {
     title: "Ai cantități care încă nu au venit de la destinatar",
-    body: "{count} linii din documentul pe care îl generezi așteaptă cântarul de la destinatar („se cântărește la descărcare”). Pe hârtie, cantitatea lor va lipsi, iar stocul nu se închide pe rândurile astea.",
+    body: "{count} din documentul pe care îl generezi așteaptă cântarul de la destinatar („se cântărește la descărcare”). Pe hârtie, cantitatea va lipsi, iar stocul nu se închide acolo.",
     andMore: "și încă {count}",
     hint: "Poți completa cifra din Mișcări → „Adaugă cantitatea”, pe rândurile marcate „De cântărit”. Sau generează acum, dacă documentul e o ciornă de lucru.",
     generateAnyway: "Generează oricum",
@@ -1458,11 +1472,11 @@ export const strings = {
     // --- semnale ---
     blockedTitle: "Nu intră în declarație",
     blockedMissingMaterial:
-      "{n} mișcări fără materialul ambalajului. Codul nu îl decide singur: 15 01 04 acoperă și aluminiul, și oțelul; 15 01 02 și PET-ul, și navetele. Alege-l pe mișcare.",
+      "{count} fără materialul ambalajului. Codul nu îl decide singur: 15 01 04 acoperă și aluminiul, și oțelul; 15 01 02 și PET-ul, și navetele. Alege-l pe mișcare.",
     blockedMissingCategory:
-      "{n} mișcări fără felul ambalajului (desfacere / primar / secundar și de transport), deci n-au coloană în tabelul 1.",
-    awaitingWeighing: "{n} mișcări încă de cântărit — cantitatea lor lipsește din ambele tabele.",
-    missingOperation: "{n} mișcări fără cod R/D — operatorul apare, operațiunea rămâne goală.",
+      "{count} fără felul ambalajului (desfacere / primar / secundar și de transport) — fără el nu există coloană în tabelul 1.",
+    awaitingWeighing: "{count} încă de cântărit — cantitatea lipsește din ambele tabele.",
+    missingOperation: "{count} fără cod R/D — operatorul apare, operațiunea rămâne goală.",
     fix: "Completează",
     // Badge-ul „Completează" spune ce lipsește; acțiunea de pe rând duce chiar la mișcarea unde
     // se completează. Registrul de ambalaje era al treilea raport care numea vinovatul și se
@@ -1489,8 +1503,10 @@ export const strings = {
     overrideDirty: "nesalvat",
     overrideSaving: "se salvează…",
     overrideSaved: "salvat",
-    overrideUnsavedRows: "{n} rânduri au cifre nesalvate. Ieși din celulă ca să plece.",
-    overrideUnsavedRow: "Un rând are cifre nesalvate. Ieși din celulă ca să plece.",
+    // Un singur șir pentru toate numerele: perechea de dinainte scria corect 1 și 2, dar „20
+    // rânduri au cifre nesalvate", fără „de". Verbul stă la plural pentru orice n > 1 și e forma
+    // în care `countOf` îl lasă oricum.
+    overrideUnsavedRows: "{count} cu cifre nesalvate. Ieși din celulă ca să plece.",
 
     // --- tabelul 2 ---
     table2Title: "Tabelul 2. Deșeuri de ambalaje gestionate",
@@ -1528,6 +1544,11 @@ export const strings = {
       "Ordinul 794/2012 art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2” — tabelul 1 pentru colectori și comercianți, tabelul 2 pentru reciclatori și valorificatori. Care anume ține de calitatea firmei, pe care numai tu o știi. Până răspunzi, nu tipărim nimic: un formular depus ar afirma în locul tău o calitate juridică.",
     anexa3RoleMissingAction: "Completează calitatea în profilul firmei",
     anexa3Addressee: "Se depune la",
+    // Cei doi destinatari din art. 4 alin. (3): toți depun la agenția din raza punctului de lucru,
+    // comerciantul la ANPM. Stăteau scriși în pagină, singurul text vizibil rămas afară din
+    // fișierul ăsta după mutarea celor din `combobox.tsx`.
+    anexa3AddresseeAnpm: "ANPM",
+    anexa3AddresseeLocal: "agenția județeană pentru protecția mediului din raza punctului de lucru",
     anexa3Table1Title: "Tabelul 1 — colectori și comercianți",
     anexa3Table2Title: "Tabelul 2 — reciclatori și valorificatori",
     anexa3IntakeTitle: "Cantitatea preluată",
@@ -1548,11 +1569,11 @@ export const strings = {
       "Nicio preluare de ambalaje în anul ales. Anexa 3 se completează din mișcări cu operațiunea „Preluare” pe coduri 15 01 xx.",
     anexa3UnclassifiedTitle: "Nu intră în tabel",
     anexa3MissingOrigin:
-      "{n} preluări fără proveniență. Răspunde o dată pe partener, în Parteneri — sau pe mișcare, dacă marfa vine de la populație.",
+      "{count} fără proveniență. Răspunde o dată pe partener, în Parteneri — sau pe mișcare, dacă marfa vine de la populație.",
     anexa3MissingMaterialCount:
-      "{n} preluări fără materialul ambalajului. Codul nu îl decide singur.",
+      "{count} fără materialul ambalajului. Codul nu îl decide singur.",
     anexa3MissingQuantity:
-      "{n} mişcări încă de cântărit. Nu au kilograme, deci nu intră în niciun tabel — completează cantitatea când vine cifra de la cântar.",
+      "{count} încă de cântărit. Fără kilograme nu intră în niciun tabel — completează cantitatea când vine cifra de la cântar.",
     anexa3Download: "Descarcă Anexa 3",
     anexa3DownloadHint:
       "Același art. 6 ca la Anexa 1: „.xls” protejat pentru depunere, plus exemplarul pe hârtie. Se tipărește un singur tabel — cel care ți se aplică.",
@@ -1649,6 +1670,25 @@ export const strings = {
     searchPlaceholder: "Caută în listă...",
     clearSearch: "Golește căutarea",
     noResults: "Niciun rezultat",
+
+    /**
+     * Textele lui `Combobox` — rubrica de la care pornește formularul de mișcare (codul de
+     * deșeu) și cea care adaugă coduri pe profilul firmei.
+     *
+     * <p>Stăteau scrise în componentă, singurele rămase acolo după ce `file-dropzone.tsx` s-a
+     * mutat pe 07.09.2026. Nu erau greșite — dar README-ul spune că toată interfața stă aici, iar
+     * o excepție netrecută în listă e felul în care regula se pierde.
+     *
+     * <p>Nu se topesc peste `searchPlaceholder` / `noResults` de mai sus: alea sunt ale barei de
+     * căutare dintr-un tabel („Caută în listă…", peste rândurile aduse), astea sunt ale unei liste
+     * care se caută **la server**. Un singur șir pentru amândouă ar lega două ecrane care n-au de
+     * ce să se miște împreună.
+     */
+    comboboxPlaceholder: "Selectează…",
+    comboboxSearchPlaceholder: "Caută…",
+    comboboxEmpty: "Niciun rezultat.",
+    comboboxSearching: "Se caută…",
+    comboboxClear: "Șterge selecția",
     noResultsHint: "Niciun rând nu se potrivește cu filtrele puse. Șterge-le ca să vezi tot.",
     moreActions: "Mai multe acțiuni",
     // Filtrul activ / inactiv. Numărul celor inactive stă chiar în opțiune: altfel „Inactive" e o
