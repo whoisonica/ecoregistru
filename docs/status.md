@@ -5,8 +5,8 @@ rulează local și are testele verzi.
 
 > **Unde suntem — 09.09.2026, noaptea.** 260 de teste verzi (0 eșecuri) și **11 probe de interfață,
 > 273 de verificări**. Migrări până la **`V32`**, următoarea liberă e **`V33`**. În producție:
-> `ecoregistru-api` la **v41**, `ecoregistru-app` la **v36** — **și `V32` chiar a migrat acolo**,
-> ceea ce până în seara asta nu era adevărat.
+> `ecoregistru-api` la **v42**, `ecoregistru-app` la **v38** — **și `V32` chiar a migrat acolo**,
+> ceea ce până în seara asta nu era adevărat. Colectorul de erori e aprins pe amândouă capetele.
 >
 > **Adăugat 09.09.2026, seara — perimetrul de producție.** Prima felie care nu atinge nicio funcție
 > a produsului: șase din cele opt puncte P0 ale lansării — conturile demo scoase din producție (fără
@@ -4861,6 +4861,28 @@ tipuri. Deci **nu s-a urcat niciodată nimic**, nici din producție, nici din de
 punct — fișier urcat, pagina reîncărcată, dosarul de control descărcat, fișierul găsit în
 `atasamente/` — rămâne de făcut prin interfață, cu un cont care poate intra. Adică **după P0.1**.
 
+### Colectorul de erori, aprins (P0.6)
+
+Codul era deployat de la v41, dar inert: fără DSN nu se inițializează nimic. Puse amândouă —
+`SENTRY_DSN` pe `ecoregistru-api` (**v42**) și `VITE_SENTRY_DSN` pe `ecoregistru-app` (v37).
+
+⚠️ **Frontendul a avut nevoie de un rebuild, nu de un restart.** `VITE_*` se coace **în build**, deci
+`config:set` singur ar fi lăsat bundle-ul vechi în producție, cu variabila setată și colectorul mort
+— exact tipul de reparație care arată făcută și nu e. Un commit gol pe repo-ul split a forțat
+reconstrucția (**v38**), iar proba e că **cheia publică a DSN-ului se găsește chiar în
+`/assets/index-*.js` servit de producție**.
+
+**Ingestia e probată, nu doar configurată:** câte un eveniment marcat („P0.6 — proba de ingestie…
+se poate șterge") trimis prin API-ul de envelope în fiecare proiect, **`HTTP 200`** de la amândouă.
+
+⚠️ Ce încă **nu** s-a văzut: un **500 adevărat**, ridicat de aplicație și trecut prin
+`AdviceController.handleUnexpected`. Lanțul e complet pe hârtie — cod deployat, DSN valid, ingestie
+confirmată — dar veriga dintre o excepție reală și raport rămâne neprobată până la prima.
+
+⚠️ Regiunea de ingestie e **UE** (`de.sentry.io`), potrivit pentru un produs de conformitate din
+România. De scris în politica de confidențialitate: Sentry e **subîmputernicit**, chiar dacă nu
+primește date personale — fără `sendDefaultPii`, fără Session Replay, cu parametrii adresei tăiați.
+
 ### Unde a ajuns P0
 
 | Punct | Stare la începutul serii | Acum |
@@ -4870,12 +4892,13 @@ punct — fișier urcat, pagina reîncărcată, dosarul de control descărcat, f
 | P0.3 frână | ✅ în cod | ✅ **și pe producție, probat** |
 | P0.4 sesiuni | ✅ în cod | ✅ **`V32` migrat pe producție** |
 | P0.5 Cloudinary | 🟡 setat, neprobat | 🟡 credențiale valide; upload-ul lipsește |
-| P0.6 Sentry | 🟡 fără DSN | 🟡 **cod deployat**, DSN lipsă |
+| P0.6 Sentry | 🟡 fără DSN | ✅ **aprins pe amândouă capetele, ingestie probată** |
 | P0.7 CI | 🟡 nevăzut rulând | ✅ **închis — verde pe `main`, roșu la test stricat** |
 | P0.8 backup | ⬜ neatins | 🟡 `b001` + program zilnic; restaurarea lipsește |
 
-**Două puncte închise în plus (P0.7 și, pe fond, P0.2–P0.4 care abia acum sunt adevărate în
-producție).** Ce a rămas sunt **trei comenzi și un DSN**, niciuna cod.
+**Trei puncte închise în plus (P0.6, P0.7 și, pe fond, P0.2–P0.4, care abia acum sunt adevărate în
+producție).** Ce a rămas: **P0.1** — singura gaură deschisă — plus două comenzi blocate de
+clasificator (P0.8) și proba de atașament, care oricum așteaptă P0.1. Niciuna nu e cod.
 
 ---
 
