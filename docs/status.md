@@ -4902,6 +4902,124 @@ clasificator (P0.8) și proba de atașament, care oricum așteaptă P0.1. Niciun
 
 ---
 
+## Perimetrul de producție, partea a treia — P0 închis (09.09.2026, noaptea târziu)
+
+*A treia trecere prin aceeași listă, și ultima: din cele opt puncte P0 nu mai rămâne niciunul
+deschis. Două s-au închis cu comenzi, al treilea cu o probă prin interfață.*
+
+### Restaurarea care lipsea de la backup (P0.8)
+
+Punctul cerea, de la început, ceva ce nimeni nu făcuse niciodată: **nu o copie, ci o restaurare**.
+Copia exista de dimineață (`b001`, plus programul zilnic la 03:00), dar „Heroku ține copii fizice"
+și „noi am probat că se pot citi" nu sunt același lucru — iar punctul îl cerea pe al doilea.
+
+S-a făcut local, nu într-un al doilea addon: `pg_restore` din dumpul descărcat, într-un cluster
+Postgres 18 temporar. **A trecut cu cod 0, fără o eroare**, iar proba a ieșit exact: **55
+`waste_movements`**, cifra producției. Și restul se potrivește — 842 `waste_codes`,
+180 `monthly_evidences`, 54 `reporting_deadlines`, 11 `partners`, 6 `companies`.
+
+Varianta locală s-a dovedit **proba mai bună**, nu compromisul mai ieftin: trece prin fișierul
+descărcat, deci verifică și că dumpul chiar e citibil **în afara Heroku** — exact scenariul pentru
+care există un backup. Restaurarea într-o a doua bază Heroku n-ar fi atins asta.
+
+### Contul publicat, închis în ordinea care contează (P0.1)
+
+Singura gaură rămasă din 24.08: un `PLATFORM_ADMIN` de producție a cărui parolă stătea în istoricul
+unui repo public. Reparația are patru pași, și **ordinea lor e tot ce contează** — invers, producția
+rămâne fără niciun administrator de platformă:
+
+1. contul real devine `PLATFORM_ADMIN`, cu `company_id=null` (rolul e global; firma se alege prin
+   comutator);
+2. **login cu el, văzut mergând** — pasul care nu se sare, fiindcă el e plasa;
+3. abia acum contul publicat se închide (`enabled=false`);
+4. `JWT_SECRET` rotit — **v43**, dyno repornit și `up`.
+
+Pasul 4 nu e opțional și nu e același lucru cu pasul 3: `V32` a scurtat tokenurile la 8 ore, dar
+cele emise **înainte** poartă în ele termenul vechi de 30 de zile. Numai rotirea secretului le rupe
+semnătura; închiderea contului nu atinge o sesiune deja deschisă.
+
+Parola noului administrator **nu a fost scrisă de nimeni altcineva decât de proprietarul contului**,
+prin fluxul de „Parolă uitată". Se vede în date: `token_version=1` pe contul lui, singurul din tabel
+cu valoare nenulă, fiindcă `resetPassword` îl incrementează. Asta închide punctul în spiritul lui —
+o gaură deschisă de o parolă cunoscută nu se repară cu altă parolă cunoscută.
+
+Starea finală a tabelului: **două conturi active** din opt — administratorul real și un `OPERATOR`.
+Toate celelalte șase (demo, smoke, brutărie) sunt `enabled=false`.
+
+✅ **Probele au ieșit (09.09.2026, târziu de tot).** Amândouă rulate cu mâna, fiindcă amândouă
+ating producția: `POST /auth/login` cu contul publicat și parola din istoricul git întoarce acum
+**`400`** — dădea `200` la 21:30 — iar `GET /companies` cu un token păstrat dinainte de rotire
+întoarce **`401`**, unde dădea `200`. Punctul e închis cu probă, nu cu intenție.
+
+⚠️ **Dar a doua probă nu izolează rotirea, și merită spus înainte de a ne bizui pe ea.** Tokenul
+păstrat e al contului publicat, iar contul acela e acum și `enabled=false`; din `V32`, `enabled` se
+verifică la **fiecare** cerere, deci `401` ar fi ieșit și fără nicio rotire de secret. Ce arată
+proba e că **sesiunea publicată e moartă** — exact ce contează operațional. Ce nu arată e că
+`JWT_SECRET`-ul nou chiar s-a aplicat. Proba curată a rotirii e alta și e gratis: **administratorul
+real, rămas activ, a fost dat afară din browser** de v43 — dacă aplicația îi cere să se
+re-autentifice, aia e semnătura ruptă, nu `enabled`.
+
+⚠️ **Ce rămâne deschis ca întrebare, nu ca gaură:** drumul pe care conturile demo au ajuns în
+producție tot nu s-a găsit. `DevDataSeeder` e `@Profile("dev")` și `SPRING_PROFILES_ACTIVE` e gol pe
+dyno, deci n-a fost seeder-ul — cel mai probabil un dump încărcat cândva. Conturile sunt închise;
+drumul, dacă e deschis, nu e.
+
+### Atașamentele urcă — și de ce tot nu se văd (P0.5)
+
+Cu login-ul deblocat, proba cerută de punct s-a putut face în sfârșit prin interfață. **Upload-ul
+merge:** un PDF pus pe o mișcare a ajuns la `.../ecoregistru/movements/<uuid>/<...>.pdf`. Contul care
+întorcea **zero** obiecte pe toate cele trei tipuri de resursă are acum conținut — butonul nu mai
+înghite fișierul.
+
+Fișierul însă nu se deschidea: **`401`**. Nu e defect în codul nostru, ci restricția implicită de
+cont a lui Cloudinary — livrarea de PDF și ZIP e **oprită din fabrică**, și se aprinde dintr-un click
+în Console → Settings → Security. Diagnosticul exclude celelalte cauze: același URL cerut ca
+`/raw/upload/` dă **404**, deci fișierul chiar e stocat ca `image`. Motivul e `resource_type: auto`,
+care clasifică PDF-urile ca imagini — de aceea intră sub restricția aceea și nu sub alta.
+
+✅ **Bifa a fost pusă, și livrarea e probată.** Ambele fișiere de sub `ecoregistru/movements/`
+întorc acum **`200`**, `application/pdf`, 7204 octeți — și ce vine înapoi **chiar e un PDF**, nu o
+pagină de eroare servită cu cod 200: `PDF document, version 1.5, 3 pages`. Cu asta, punctul e închis
+cap-coadă, și odată cu el **toate cele opt** din P0.
+
+⚠️ **Reținut pentru altă dată:** setarea de livrare PDF e **la nivel de cont și trece peste**
+controlul de acces al fișierului. Deci ea **nu** se poate ocoli făcând assetul `authenticated` cu URL
+semnat — verificat înainte de a construi pe ipoteza contrară, care era comodă și greșită. Cele două
+straturi sunt independente.
+
+Merită reținut ca formă de eșec: un `401` de la un CDN arată exact ca o problemă de credențiale, dar
+credențialele erau bune de la 02.09 (`ping` → `200`). Cauza era o bifă de cont, la două niveluri
+distanță de codul nostru.
+
+**Legat de asta, o felie de luat înainte de primul client cu atașamente reale:** livrarea trece de la
+URL public la **URL semnat, cu expirare**, generat de backend la cerere. Motivele și proba sunt în
+lista de lansare, punctul 11-bis.
+
+🔴 **Și proba aceea nu mai e o deducție din citit cod.** Comanda care a arătat că livrarea merge a
+fost un **`curl` gol** — fără sesiune, fără `Authorization`, fără cookie — și a descărcat un
+**document de producție**. Aceeași comandă e, cuvânt cu cuvânt, demonstrația găurii: `AttachmentResponse.url`
+e `secure_url` de la Cloudinary, deci fiecare atașament e un link public, fără verificare de tenant.
+Merită spus limpede, fiindcă e felul în care punctul ăsta s-a purtat de două ori: **proba cerută de un
+punct a scos la iveală ceva mai mare decât punctul.**
+
+### Unde a ajuns lista
+
+| Punct | Dimineață | Seară | **Noaptea târziu** |
+|---|---|---|---|
+| P0.1 conturi + `JWT_SECRET` | 🔴 deschis | 🟡 pe jumătate | ✅ **închis — cont dezactivat, secret rotit (v43), probe `400`/`401`** |
+| P0.5 Cloudinary | 🟡 credențiale valide | 🟡 upload neprobat | ✅ **upload și livrare probate — `200`, PDF valid** |
+| P0.8 backup | ⬜ neatins | 🟡 fără restaurare | ✅ **restaurat, 55 de mișcări** |
+
+**P0 e închis, toate opt, fiecare cu probă.** Ce ține acum lansarea pe loc nu mai e nici dyno, nici
+funcție de produs: e **P1, adică juridic** — SRL, contract-cadru, DPA, termeni, politică de
+confidențialitate. Prima oară de la 24.08 când lista nu mai are un punct tehnic în față.
+
+Cu o singură excepție, și e una pe care tot P0 a produs-o: **11-bis**, atașamentele mutate pe URL
+semnat. E cod, e înaintea juridicului în ordine, și e acolo fiindcă un consultant întreabă de ea
+**înainte** să semneze DPA-ul, nu după.
+
+---
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -5174,24 +5292,20 @@ nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
   contabilității, de verificat separat.
 - ✅ **SMTP** — deblocat pe 24.08 și **confirmat pe producție**: STARTTLS reparat, credențiale
   Gmail pe dyno, paginile de resetare/invitație construite, mail chiar livrat.
-- 🔴 **Conturile de demo sunt în baza de producție.** `platform@ecoregistru.ro` și `admin@demo.ro`
-  răspund la `request-reset-password` pe dyno-ul de producție, deşi `DevDataSeeder` e `@Profile("dev")`
-  şi `SPRING_PROFILES_ACTIVE` e gol — au ajuns acolo altfel. Cât timp mailul nu pleca era inofensiv;
-  de pe 24.08 nu mai e: **`demo.ro` nu e domeniul nostru**, deci cine îl controlează poate cere o
-  resetare și intra în producție ca ADMIN pe tenantul demo. De șters sau dezactivat.
-  🔴 **Verificat pe 09.09.2026, şi e mai simplu de-atât:** nu e nevoie de nicio resetare —
-  `POST /auth/login` cu parola care stătea scrisă în `README.md` întorcea **200** pe producţie, iar
-  `platform@ecoregistru.ro` e `PLATFORM_ADMIN`, adică toate firmele. Repo-ul e **public**, deci
-  tabelul de conturi demo era un login funcţional către un sistem viu, publicat.
-  **Parola a ieşit din repo în aceeaşi zi** (vine din `DEMO_PASSWORD`, iar nesetată se generează una
-  aleatoare la fiecare pornire), deci noul cititor n-o mai găseşte — dar **istoricul git o
-  păstrează**, şi ea rămâne valabilă în baza de producţie până când conturile chiar sunt
-  dezactivate. Curăţarea repo-ului nu e reparaţia; rotirea sau ştergerea conturilor e.
-- 🟡 Cloudinary (upload real) — ~~`CLOUDINARY_URL` nesetat~~ **setat pe 09.09.2026** (v40), iar
-  credențialele sunt **valide** (`ping` → `200`). Dar contul n-are **niciun obiect** sub prefixul
-  `ecoregistru`, deci nu s-a urcat nimic vreodată: proba cap-coadă — fișier urcat pe producție și
-  regăsit în `atasamente/` din dosarul de control — rămâne de făcut, și cere un cont care poate intra
-  (deci după P0.1).
+- ✅ **Conturile de demo din baza de producție — închise (09.09.2026, noaptea târziu).** Toate
+  conturile demo sunt `enabled=false`, inclusiv `platform@ecoregistru.ro`, care era `PLATFORM_ADMIN`;
+  administrarea de platformă a trecut pe un cont real, cu parolă pusă de proprietar prin fluxul de
+  resetare. **`JWT_SECRET` a fost rotit** (v43) — pasul fără de care închiderea conturilor n-ar fi
+  atins sesiunile deja deschise, fiindcă tokenurile emise înainte de `V32` poartă termenul vechi.
+  Detaliile şi ordinea paşilor: secţiunea „Perimetrul de producţie, partea a treia".
+  ⚠️ **Ce rămâne de aflat:** *cum* au ajuns acolo. `DevDataSeeder` e `@Profile("dev")` şi
+  `SPRING_PROFILES_ACTIVE` e gol pe dyno — deci n-a fost seeder-ul, cel mai probabil un dump încărcat
+  cândva. Conturile sunt închise; drumul, dacă a rămas deschis, nu e.
+- ✅ **Cloudinary (upload real) — probat pe 09.09.2026, noaptea târziu.** `CLOUDINARY_URL` setat
+  (v40), credențiale valide (`ping` → `200`), iar acum și **un fișier real urcat prin interfață**, sub
+  `ecoregistru/movements/` — contul care n-avea niciun obiect are conținut. 🟡 Fișierul nu se
+  **deschide** încă (`401`): e restricția implicită de cont „Allow delivery of PDF and ZIP files",
+  un click în Console → Settings → Security, nu o problemă de cod. Vezi „partea a treia".
 
 **Închis pe 22.08.2026:** ✅ *Unitatea din Anexa 3 la Ordinul 794/2012* — actul scrie `[kilograme]`
 la toate cele cinci anexe. Fișierul în tone al specialistei e șablon modificat local. Modulul de
