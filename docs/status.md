@@ -5854,6 +5854,29 @@ Deci suita presupune o bază **acumulată**, cum e cea de dezvoltare a proprieta
 scrie cereri de cont şi nu curăţă după ea, iar a doua firmă se naşte din aprobarea uneia. Nu e un
 defect al probelor, e o dependenţă nescrisă — acum scrisă, şi în `prompt-continuare.md`.
 
+### Deployat şi probat pe producţie, în aceeaşi noapte
+
+✅ **`ecoregistru-app` v43** (`5da9620`), 11.09.2026, 01:09. **Backendul n-a fost atins deloc** —
+garda a arătat vârful `tmp-backend` identic cu ce e pe dyno, deci `ecoregistru-api` rămâne la **v47**,
+fără release. Pe frontend, garda de conţinut a ieşit exact divergenţa stabilă (`.gitignore` + cele
+două artefacte vite) şi un singur commit în aşteptare.
+
+**Proba pe conţinut, nu pe hash:** bundle-ul servit de dyno conţine „Termeni şi condiţii de
+utilizare", „Politica de confidenţialitate", „confirmi că ai citit", „ONSIA S.R.L." şi
+„11 septembrie 2026"; `/termeni` şi `/confidentialitate` → **200**. Apoi **16 verificări cu browserul
+pe producţie, toate trec**: paginile se deschid **fără sesiune** şi nu aruncă în login, 16 capitole =
+16 intrări în cuprins, ancora derulează, marcajul e consumat, cele două tabele sunt acolo, pe 375px
+pagina nu depăşeşte (0px), subsolul de pe login duce unde scrie, iar cererea de cont îşi are rândul
+cu amândouă trimiterile. Partea cu sesiune lipseşte dinadins — conturile demo sunt închise pe
+producţie de pe 09.09, iar aici se proba tocmai ce vede un om **fără** cont.
+
+📌 **Data a ieşit corectă din prima fiindcă deployul a căzut în aceeaşi zi:** `LEGAL_DATE` spune
+**11 septembrie 2026**, care e chiar ziua publicării. De aici înainte, când textul se schimbă, se
+schimbă şi ea — în `legal.ts` **şi** în cele două fişiere din `juridic/`.
+
+⬜ **Ce nu s-a schimbat prin deploy:** textele sunt publicate, dar **necitite de avocat**. P1.9
+rămâne cum era — avocat, semnături — doar că acum ce se citeşte e şi ce se vede.
+
 ⚠️ **Şi o notă de mediu, care a costat un sfert de oră:** serverul de dev care rula de dinainte era
 într-o stare stricată — `500` pe `/src/main.tsx`, „Failed to resolve import `@/components/ui/toast`",
 pentru un fişier care există şi pe care `tsc` şi `vite build` îl rezolvă fără să clipească. Nu era
