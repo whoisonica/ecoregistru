@@ -180,6 +180,38 @@ public class AuthenticationService {
         return user;
     }
 
+    /**
+     * P1.12 — send the invite again, to a user who never used the first one.
+     *
+     * <p>Same three steps as {@code inviteUser} minus creating the account: drop whatever
+     * unconfirmed link is outstanding (so the old one in the old mail stops working — two live
+     * links to one account is one more than anybody needs), mint a new code, mail it.
+     *
+     * <p>Counted against {@link RateLimiter#RESET_PER_EMAIL} like a self-service reset, and for
+     * the same reason: the thing being protected is the invitee's inbox, and it does not care
+     * that this request came from an authenticated admin rather than from a form. Three an hour.
+     *
+     * <p>Whether the account is even in a state to be re-invited is decided by the caller —
+     * {@code CompanyUserService}, which knows the tenant. This method only sends.
+     */
+    @Transactional(noRollbackFor = EmailException.class)
+    public void resendInvite(AppUser user) {
+        long retryAfter = rateLimiter.tryConsume(RateLimiter.RESET_PER_EMAIL, user.getEmail().toLowerCase());
+        if (retryAfter > 0) {
+            log.warn("Rate limit resend-invite hit for {}", user.getEmail());
+            throw new TooManyRequestsException(retryAfter);
+        }
+        verificationRecordRepository
+                .deleteByUserAndVerificationRecordTypeAndConfirmedFalse(user, RESET_PASSWORD);
+        String code = newCode();
+        saveRecord(user, code, RESET_PASSWORD);
+        try {
+            emailService.sendPasswordResetEmail(user, code);
+        } catch (EmailException e) {
+            log.error("Failed to resend invite email to {}", user.getEmail(), e);
+        }
+    }
+
     // --- helpers ---
 
     private void saveRecord(AppUser user, String code, ro.ecoregistru.enums.VerificationRecordType type) {

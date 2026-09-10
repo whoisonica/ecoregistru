@@ -40,6 +40,15 @@ public enum ErrorMessageEnum {
     COMPANY_CUI_ALREADY_EXISTS("company.cui.exists", "Există deja o firmă cu acest CUI."),
     INVALID_INVITE_ROLE("invite.role.invalid", "Rol invalid pentru invitație. Alege Administrator, Operator sau Vizualizare."),
 
+    // --- Utilizatorii firmei (P1.12) ---
+    CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),
+    LAST_ADMIN("user.last.admin", "E singurul administrator activ al firmei. Fă întâi pe altcineva administrator, apoi revino."),
+    USER_NOT_PENDING("user.not.pending", "Invitația se retrimite doar unui cont care n-a intrat încă. Contul ăsta are deja parolă."),
+    USER_NOT_DEACTIVATED("user.not.deactivated", "Contul nu e dezactivat, deci n-are ce reactiva."),
+    USER_ALREADY_DEACTIVATED("user.already.deactivated", "Contul e deja dezactivat."),
+    USER_STILL_PENDING("user.still.pending", "Contul n-a intrat încă în aplicație. Anulează invitația, nu-l dezactiva."),
+    USER_NOT_INVITATION("user.not.invitation", "Contul a fost folosit, deci nu mai e o invitație de anulat. Dezactivează-l."),
+
     // --- WorkPoint ---
     WORK_POINT_NOT_FOUND("work.point.not.found", "Punctul de lucru nu a fost găsit."),
 

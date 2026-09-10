@@ -13,4 +13,7 @@ public interface VerificationRecordRepository extends JpaRepository<Verification
     Optional<VerificationRecord> findByCodeAndVerificationRecordType(String code, VerificationRecordType type);
 
     void deleteByUserAndVerificationRecordTypeAndConfirmedFalse(AppUser user, VerificationRecordType type);
+
+    /** P1.12 — everything belonging to a user, so a cancelled invitation leaves nothing behind. */
+    void deleteByUser(AppUser user);
 }

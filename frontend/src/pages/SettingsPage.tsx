@@ -30,6 +30,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
+import { CompanyUsersSection } from "@/components/CompanyUsersSection";
 import { SectionNav } from "@/components/ui/section-nav";
 
 const t = strings.settings.workPoints;
@@ -153,6 +154,9 @@ export function SettingsPage() {
           { id: "puncte-de-lucru", label: t.title },
           { id: "generatori-interni", label: strings.settings.internalGenerators.title },
           { id: "soferi", label: strings.settings.drivers.title },
+          // Doar pentru cine chiar are secțiunea: un link care duce la nimic e mai rău
+          // decât un link care lipsește.
+          ...(canManage ? [{ id: "utilizatori", label: strings.settings.users.title }] : []),
         ]}
       />
 
@@ -248,6 +252,8 @@ export function SettingsPage() {
       <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
 
       <OwnDriversSection canManage={canManage} />
+
+      <CompanyUsersSection canManage={canManage} />
 
       <Dialog
         open={dialogOpen}

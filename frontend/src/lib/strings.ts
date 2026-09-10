@@ -645,6 +645,61 @@ export const strings = {
       loadError: "Nu am putut încărca generatorii interni.",
       noWorkPoints: "Adaugă întâi un punct de lucru.",
     },
+    users: {
+      title: "Utilizatorii firmei",
+      subtitle:
+        "Cine are acces în contul firmei și ce poate face. Invitatul primește pe email un link cu care își pune singur parola — nimeni de aici nu-i vede și nu-i alege parola.",
+      invite: "Invită utilizator",
+      inviteTitle: "Invită un utilizator",
+      inviteHint:
+        "Primește un email cu un link valabil 30 de minute, din care își alege parola. Până atunci contul apare „În așteptare” și nu se poate autentifica.",
+      email: "Email",
+      emailPlaceholder: "ex. maria@firma.ro",
+      firstName: "Prenume",
+      lastName: "Nume",
+      role: "Rol",
+      name: "Nume",
+      status: "Stare",
+      you: "tu",
+      statusActive: "Activ",
+      statusPending: "În așteptare",
+      statusDeactivated: "Dezactivat",
+      // Rândul de sub tabel: ce înseamnă fiecare rol, o dată, în loc de trei tooltipuri.
+      roleLegend:
+        "Administrator: tot, inclusiv utilizatorii și datele firmei. Operator: înregistrează mișcări și tipărește documente. Vizualizare: doar citește.",
+      resend: "Retrimite invitația",
+      // Etichetele de pe rând sunt scurte fiindcă stau amândouă în coloana lipită la dreapta, iar
+      // pe telefon perechea lungă măsura 352px într-un container de 341 — adică acoperea complet
+      // emailul, numele, rolul și starea. Textul întreg rămâne în `aria-label` și în confirmare.
+      resendShort: "Retrimite",
+      cancelInviteShort: "Anulează",
+      resent: "Invitația a plecat din nou.",
+      resendError: "Nu am putut retrimite invitația.",
+      changeRole: "Schimbă rolul",
+      changeRoleTitle: "Schimbă rolul",
+      roleChanged: "Rol actualizat.",
+      deactivate: "Dezactivează",
+      confirmDeactivateTitle: "Dezactivezi contul?",
+      // Spune exact cele trei lucruri pe care le întreabă cineva înainte să apese: ce se
+      // întâmplă acum, ce se întâmplă cu ce a scris omul, și dacă se poate lua înapoi.
+      confirmDeactivate:
+        "Sesiunile deschise se închid imediat și nu se mai poate autentifica. Mișcările și documentele pe care le-a înregistrat rămân neatinse, cu numele lui. Se poate reactiva oricând.",
+      cancelInvite: "Anulează invitația",
+      confirmCancelTitle: "Anulezi invitația?",
+      // Spune și că se poate relua, fiindcă asta e frica reală: „am greșit adresa, acum ce fac".
+      confirmCancel:
+        "Linkul trimis se stinge și contul dispare de tot — n-a fost folosit, deci nu se pierde nimic din ce e înregistrat. Adresa rămâne liberă, deci poți invita din nou.",
+      cancelled: "Invitație anulată.",
+      deactivated: "Cont dezactivat.",
+      reactivated: "Cont reactivat.",
+      invited: "Invitația a plecat.",
+      inviteError: "Nu am putut trimite invitația.",
+      empty: "Niciun utilizator încă.",
+      emptyHint: "Invită-ți colegii ca să înregistreze mișcări fără să folosiți același cont.",
+      searchPlaceholder: "Caută după nume, email sau rol...",
+      loadError: "Nu am putut încărca utilizatorii.",
+      saveError: "Operațiunea a eșuat. Încearcă din nou.",
+    },
   },
 
   partners: {

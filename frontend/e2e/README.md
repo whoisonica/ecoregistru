@@ -1,6 +1,6 @@
 # Probe de interfaţă
 
-Unsprezece suite, 273 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
+Unsprezece suite, 281 de verificări, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea.
 
 **De ce există.** Pe 07.09.2026, după şaisprezece felii de UI/UX toate „verzi" — `tsc --noEmit`
 curat, `vite build` verde, cod recitit — prima rulare adevărată a scos **şapte defecte**. Patru

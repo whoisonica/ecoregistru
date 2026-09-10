@@ -111,9 +111,7 @@ public class CompanyService {
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         AppUser user = authenticationService.inviteUser(
                 company, request.email(), request.role(), request.firstName(), request.lastName());
-        return new CompanyUserResponse(
-                user.getId(), user.getEmail(), user.getRole(),
-                user.getFirstName(), user.getLastName(), user.isEnabled());
+        return CompanyUserResponse.from(user);
     }
 
     private void applyEditableFields(Company company, CompanyRequest request) {

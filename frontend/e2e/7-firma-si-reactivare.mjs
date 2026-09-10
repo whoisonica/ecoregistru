@@ -44,11 +44,14 @@ check(
 );
 check("golurile se spun, nu se ascund", (firma?.text ?? "").includes("Necompletat"));
 
-// Cuprinsul: patru secțiuni, dintre care trei tabele cu paginare.
+// Cuprinsul: cinci secțiuni, dintre care patru tabele cu paginare. A cincea — „Utilizatorii
+// firmei" — a venit cu P1.12 și **apare doar pentru ADMIN / PLATFORM_ADMIN**, fiindcă endpointul
+// e 403 pentru ceilalți; proba rulează ca admin, deci o vede. Numărul e scris aici dinadins: un
+// `length > 0` ar fi trecut și dacă jumătate din cuprins dispărea.
 const cuprins = await page.$$eval("nav[aria-label] a[href^='#']", (as) =>
   as.map((a) => ({ href: a.getAttribute("href"), text: a.textContent.trim() }))
 );
-check("pagina are cuprins", cuprins.length === 4, cuprins.map((c) => c.text).join(" · "));
+check("pagina are cuprins", cuprins.length === 5, cuprins.map((c) => c.text).join(" · "));
 check(
   "fiecare intrare din cuprins are ținta ei",
   await page.evaluate((hrefs) => hrefs.every((h) => !!document.querySelector(h)),
@@ -107,6 +110,12 @@ check("rândul dezactivat iese din listă", (await randSofer()) === null);
 
 await page.selectOption("#soferi select[aria-label*='Starea']", "inactive");
 await page.waitForTimeout(400);
+// Restrânge la şoferul de probă înainte de a-l căuta. Fără asta proba depindea de **câţi** şoferi
+// inactivi s-au adunat în baza locală: suita lasă în urmă câte unul la fiecare rulare (nu există
+// ştergere de şofer, doar dezactivare), iar la a 26-a rulare rândul căutat a trecut pe pagina a
+// doua şi proba a căzut — deşi ecranul era neschimbat. Căutarea o face independentă de vechime.
+await page.fill("#soferi input[type='search']", NUME);
+await page.waitForTimeout(400);
 const inactiv = await randSofer();
 check("„Inactive” îl aduce înapoi la vedere", !!inactiv, inactiv?.butoane?.join(" · "));
 check("și îi oferă „Reactivează”", (inactiv?.butoane ?? []).some((b) => b.includes("Reactivează")));
@@ -134,6 +143,69 @@ await page.evaluate(() => {
 await page.waitForTimeout(600);
 
 await shot(page, "setari_datele_firmei");
+
+// ------------------------------------------------------ UTILIZATORII FIRMEI (P1.12)
+// Drumul întreg al unei invitații, **apăsând butoanele**, nu citind DOM-ul: invită → rândul apare
+// „În aşteptare" cu exact cele două acţiuni care i se potrivesc → anulează → rândul dispare, deci
+// datele rămân cum au fost găsite.
+//
+// De ce apasă, nu doar se uită: pe 09.09.2026 un atașament **se descărca** în loc să se deschidă,
+// și tot ce era automat a rămas verde, fiindcă nicio probă nu apăsa butonul. Aceeași gaură ar fi
+// aici, unde fiecare stare are alt set de butoane și ele nu se pot vedea din tipuri.
+const EMAIL_PROBA = `proba.ui.${Date.now()}@client.ro`;
+await page.click("#utilizatori button");            // „Invită utilizator"
+await page.waitForTimeout(500);
+await page.fill("#cu-email", EMAIL_PROBA);
+await page.click('button[type="submit"][form="company-invite-form"]');
+await page.waitForTimeout(1000);
+
+const randUtilizator = async (email) =>
+  page.evaluate((e) => {
+    const tr = [...document.querySelectorAll("#utilizatori tbody tr")].find((r) =>
+      r.textContent.includes(e)
+    );
+    if (!tr) return null;
+    return {
+      text: tr.textContent,
+      butoane: [...tr.querySelectorAll("button")].map((b) => b.textContent.trim()),
+    };
+  }, email);
+
+const invitat = await randUtilizator(EMAIL_PROBA);
+check("invitatul apare în listă", !!invitat, invitat?.text?.slice(0, 60));
+check("și e „În așteptare”", (invitat?.text ?? "").includes("În așteptare"));
+// Cele două care i se potrivesc, și **nu** „Dezactivează": o invitație nu se dezactivează —
+// serverul refuză (`user.still.pending`), fiindcă drumul înapoi ar fi starea stricată pe care
+// `V34` o previne. Butonul nici nu trebuie oferit.
+check(
+  "are „Retrimite” și „Anulează”, nu „Dezactivează”",
+  (invitat?.butoane ?? []).some((b) => b.includes("Retrimite")) &&
+    (invitat?.butoane ?? []).some((b) => b.includes("Anulează")) &&
+    !(invitat?.butoane ?? []).some((b) => b.includes("Dezactivează")),
+  (invitat?.butoane ?? []).join(" · ")
+);
+
+// Rândul propriu nu-și oferă nici rolul, nici dezactivarea: serverul le refuză oricum
+// (`user.cannot.manage.self`), iar un control care nu poate reuși e mai rău decât o etichetă.
+const eu = await randUtilizator("admin@demo.ro");
+check("rândul propriu e marcat „(tu)”", (eu?.text ?? "").includes("(tu)"), eu?.text?.slice(0, 40));
+check("și n-are butoane de acțiune", (eu?.butoane ?? []).length === 0, (eu?.butoane ?? []).join(" · "));
+
+await page.evaluate((e) => {
+  const tr = [...document.querySelectorAll("#utilizatori tbody tr")].find((r) => r.textContent.includes(e));
+  [...tr.querySelectorAll("button")].find((b) => b.textContent.includes("Anulează")).click();
+}, EMAIL_PROBA);
+await page.waitForTimeout(400);
+const confirmare = await page.evaluate(() => document.querySelector('div[role="dialog"]')?.textContent ?? "");
+check("anularea întreabă întâi", confirmare.includes("Anulezi invitația?"), confirmare.slice(0, 60));
+await page.evaluate(() => {
+  const dlg = document.querySelector('div[role="dialog"]');
+  [...dlg.querySelectorAll("button")].find((b) => b.textContent.includes("Anulează invitația")).click();
+});
+await page.waitForTimeout(1000);
+check("rândul dispare de tot", (await randUtilizator(EMAIL_PROBA)) === null);
+
+await shot(page, "setari_utilizatori");
 
 // ------------------------------------------- GARDA DE LA ÎNCHIDEREA FORMULARULUI
 await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });

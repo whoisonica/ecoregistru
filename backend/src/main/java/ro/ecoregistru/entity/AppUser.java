@@ -66,6 +66,21 @@ public class AppUser implements UserDetails {
     @Column(name = "token_version", nullable = false)
     int tokenVersion = 0;
 
+    /**
+     * P1.12 — when the account was switched off, or null if it never was.
+     *
+     * <p>Exists to split the two meanings {@code enabled = false} carried on its own: an invited
+     * user who has not set a password yet (null here) and one an admin switched off (set here).
+     * Without the split the users list cannot tell "În aşteptare" from "Dezactivat", and
+     * "Reactivează" on an invited user would enable an account whose password is the random,
+     * unusable one from {@code inviteUser} — active-looking forever, and unable to sign in ever.
+     *
+     * <p>Cleared on reactivation, so the pair (enabled, deactivatedAt) has exactly three
+     * reachable states. See {@code V34}.
+     */
+    @Column(name = "deactivated_at")
+    Instant deactivatedAt;
+
     @Column(nullable = false)
     Instant createdAt;
 

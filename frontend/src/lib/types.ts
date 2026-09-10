@@ -240,6 +240,16 @@ export interface InviteUserInput {
   lastName?: string | null;
 }
 
+/**
+ * Cele trei stări în care poate fi un membru al firmei, deduse pe server din perechea
+ * (`enabled`, `deactivatedAt`) — vezi `V34`.
+ *
+ * `PENDING_INVITE` și `DEACTIVATED` erau, până la P1.12, același `enabled: false`. Ecranul are
+ * nevoie să le deosebească: la primul se retrimite invitația, la al doilea se reactivează, și
+ * niciuna dintre acțiuni n-are sens la celălalt.
+ */
+export type CompanyUserStatus = "ACTIVE" | "PENDING_INVITE" | "DEACTIVATED";
+
 /** Mirrors backend CompanyUserResponse. */
 export interface CompanyUser {
   id: string;
@@ -247,7 +257,11 @@ export interface CompanyUser {
   role: InviteRole;
   firstName: string | null;
   lastName: string | null;
+  /** Păstrat pentru compatibilitate; ecranele noi citesc `status`, care spune mai mult. */
   enabled: boolean;
+  status: CompanyUserStatus;
+  createdAt: string;
+  deactivatedAt: string | null;
 }
 
 // --- Work points ---
