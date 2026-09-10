@@ -5587,7 +5587,7 @@ complet, şi e mai cinstit scris aici decât descoperit la un control:
 (**P3.3, P3.4, P3.5**): formularul de aprobare (anexa nr. 1), drumul aprobării spus pe ecran, şi
 buletinele de analiză. Doar ultimul aşteaptă un răspuns de la specialistă — **AL** — iar primul stă
 pe el, fiindcă pct. VIII al formularului **e** un buletin de analiză. Ce ţine de practică, şi numai
-aia, s-a scris ca întrebări noi: **AO** (aprobarea, la ghişeu) şi **AP** (ISU-ul şi ruta).
+aia, s-a scris ca întrebări noi: **AR** (aprobarea, la ghişeu — renumerotată din AO, coliziune cu ştergerea şoferului), **AP** (ISU-ul şi ruta) şi **AQ** (pragul de 1 t/an, „categorie" nedefinită în act).
 
 
 ## Ce urmează — plan revizuit (22.08.2026)
