@@ -245,6 +245,50 @@ public class WasteMovement {
     @Column(name = "anexa3_unit", length = 10)
     Unit anexa3Unit;
 
+    // --- Anexa 2 la HG 1061/2008: transportul deşeurilor periculoase (V35) ---
+
+    /**
+     * "Formular de expediţie/transport deşeuri periculoase nr.*1)".
+     *
+     * <p><b>Typed, never allocated</b> — the one field of this form that behaves the opposite way
+     * to {@link #anexa3Number}. The note under the official model says it in as many words:
+     * <em>"Număr înscris de către agenţia judeţeană pentru protecţia mediului."</em> The filled
+     * copy we were given carries 1047, which is the agency's count, not the company's. If we
+     * generated one, we would print an invented number onto an official form.
+     */
+    @Column(name = "anexa2_number", length = 30)
+    String anexa2Number;
+
+    /**
+     * "Nr. formularului de aprobare al transportului*)" — the approval from anexa nr. 1, which
+     * art. 7 requires for every transport above 1 t/an of the same category. Blank below the
+     * threshold, where art. 6 alin. (1) removes the approval altogether.
+     */
+    @Column(name = "anexa2_approval_number", length = 60)
+    String anexa2ApprovalNumber;
+
+    /** "Numar şi tip de ambalaje utilizate pentru transportul deşeurilor periculoase". */
+    @Column(name = "anexa2_packaging")
+    String anexa2Packaging;
+
+    /**
+     * The "Deşeuri periculoase &lt; 1t/an" tick. Three states, and the third is the point:
+     * {@code null} means nobody has decided, so the form prints what the yearly total for this
+     * code proposes; {@code true}/{@code false} is the client's own answer and is printed as
+     * given.
+     *
+     * <p>It is asked rather than derived because the act leaves the measuring stick undefined. The
+     * threshold is written "din aceeaşi <b>categorie</b> de deşeuri periculoase" (art. 5, 7, 15
+     * alin. (1)), and art. 2 sends the definitions to "anexa nr. I A la OUG nr. 78/2000" — an act
+     * repealed twice over. Cumulating per six-digit code is the closest defensible reading, but if
+     * "categorie" is wider it <em>underestimates</em>, and underestimating is the one direction
+     * that costs: it skips the approval of art. 7, a 10.000–20.000 lei contravention under art. 25
+     * alin. (2) lit. b). So the figure is shown, the tick is proposed, and the decision stays with
+     * the person who signs the form.
+     */
+    @Column(name = "anexa2_below_one_ton")
+    Boolean anexa2BelowOneTon;
+
     // --- Anexa 1 Ambalaje (Ordinul 794/2012), tabelul 1 ---
 
     /**

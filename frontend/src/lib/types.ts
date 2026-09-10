@@ -662,6 +662,14 @@ export interface WasteMovement {
   anexa3Number: number | null;
   /** Null = the company's standing choice, and failing that the unit the quantity was recorded in. */
   anexa3Unit: Unit | null;
+  // --- Anexa 2 (transportul deşeurilor periculoase) ---
+  /** Îl scrie APM-ul, nu noi — nota *1) a modelului. Se tastează, gol implicit. */
+  anexa2Number: string | null;
+  /** Nr. formularului de aprobare (anexa 1), cerut de art. 7 peste 1 t/an. */
+  anexa2ApprovalNumber: string | null;
+  anexa2Packaging: string | null;
+  /** Null = nu s-a răspuns: formularul tipăreşte ce propune cumulul anual pe cod. */
+  anexa2BelowOneTon: boolean | null;
   // --- Anexa 1 Ambalaje ---
   /** Bifa „ambalaj pus de noi pe piaţa naţională". Null = mişcare de dinaintea întrebării. */
   packagingOnMarket: boolean | null;
@@ -722,6 +730,11 @@ export interface WasteMovementInput {
   transportDestinations?: TransportDestination[];
   /** The unit this one form prints in; null keeps the company setting. */
   anexa3Unit?: Unit | null;
+  // --- Anexa 2: se cer doar pe un cod periculos predat unui partener ---
+  anexa2Number?: string | null;
+  anexa2ApprovalNumber?: string | null;
+  anexa2Packaging?: string | null;
+  anexa2BelowOneTon?: boolean | null;
   // --- Anexa 1 Ambalaje: se cer doar pe coduri 15 01 xx ---
   packagingOnMarket?: boolean | null;
   packagingMaterial?: PackagingMaterial | null;
@@ -730,6 +743,28 @@ export interface WasteMovementInput {
   packagingHazardousContent?: boolean | null;
   /** Suprascrie provenienţa partenerului. Singurul loc unde se poate spune „populaţie". */
   packagingOrigin?: PackagingOrigin | null;
+}
+
+/**
+ * Ce stă în spatele bifei „< 1t/an" de pe Anexa 2 — cifrele, nu doar răspunsul.
+ *
+ * Actul nu defineşte „aceeaşi categorie de deşeuri periculoase" (art. 2 trimite la un act
+ * abrogat), deci propunerea se face pe cod, se arată cu tonajul lângă ea şi rămâne editabilă.
+ * `groupWarning` e singurul caz în care citirea mai largă ar schimba răspunsul.
+ */
+export interface Anexa2Threshold {
+  year: number;
+  wasteCode: string;
+  generatedTons: number;
+  groupCode: string;
+  groupTons: number;
+  /** Ce propune cumulul pe cod. */
+  belowOneTon: boolean;
+  /** Ce a ales clientul; null = n-a ales nimeni. */
+  chosen: boolean | null;
+  /** Ce va tipări formularul. */
+  effectiveBelowOneTon: boolean;
+  groupWarning: boolean;
 }
 
 /** Filters for the movements list query; empty fields are omitted from the request. */

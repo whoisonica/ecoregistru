@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ro.ecoregistru.controller.request.RecordWeightRequest;
 import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.AttachmentResponse;
+import ro.ecoregistru.controller.response.Anexa2ThresholdResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.service.WasteMovementService;
 
@@ -88,6 +89,36 @@ public class WasteMovementController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(body);
+    }
+
+    /**
+     * Anexa 2 la HG 1061/2008, the hazardous-waste consignment form, as a PDF.
+     *
+     * <p><b>Not gated to {@code CAN_WRITE}</b>, and the difference from {@code anexa3} above is not
+     * an oversight: that endpoint allocates the form's number on first use, which is a write.
+     * This one allocates nothing — the number of this form is written by the county agency, not by
+     * us — so printing it is a read, like fetching an attachment.
+     */
+    @GetMapping("/{id}/anexa2")
+    public ResponseEntity<byte[]> anexa2(@PathVariable UUID id) {
+        byte[] body = movementService.renderAnexa2(id);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("anexa2-" + id + ".pdf")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
+    /**
+     * The yearly total the "&lt; 1t/an" tick is proposed from, so the screen can show the figure
+     * next to the tick instead of ticking it silently. See {@code Anexa2ThresholdCalculator} for
+     * why the proposal never becomes a decision.
+     */
+    @GetMapping("/{id}/anexa2/prag")
+    public Anexa2ThresholdResponse anexa2Threshold(@PathVariable UUID id) {
+        return movementService.anexa2Threshold(id);
     }
 
     @DeleteMapping("/{id}")

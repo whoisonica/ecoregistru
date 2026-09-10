@@ -293,6 +293,7 @@ export const strings = {
     effectDisposed: "Iese ca eliminare, cu codul {code}",
     effectPackaging: "Intră și în declarația de ambalaje (Anexa 1 Ambalaje)",
     effectAnexa3: "Se poate tipări Anexa 3 pentru predarea asta",
+    effectAnexa2: "Se poate tipări Anexa 2 (transport periculos) pentru predarea asta",
     effectIncomplete: "Alege codul de deșeu ca să vezi unde ajunge cantitatea.",
     empty: "Nicio mișcare pentru filtrele alese.",
     emptyHint: "Schimbă luna sau punctul de lucru, ori adaugă prima mișcare a perioadei.",
@@ -466,6 +467,51 @@ export const strings = {
     anexa3Download: "Anexa 3",
     anexa3Downloading: "Se generează...",
     anexa3Error: "Formularul nu a putut fi generat.",
+
+    // --- Anexa 2 — transportul deșeurilor periculoase (HG 1061/2008) ---
+    // Art. 8: „Expeditorul completează, semnează și ștampilează formularul". Prima citire, făcută
+    // pe un exemplar completat, dedusese contrariul — că îl dă colectorul. De aceea propoziția din
+    // hint spune cine îl completează: e singurul lucru pe care un client nu-l ghicește corect.
+    anexa2Section: "Anexa 2 — transport deșeuri periculoase",
+    anexa2SectionHint:
+      "Formularul de expediție/transport (HG 1061/2008). Art. 8 spune că îl completează, semnează și ștampilează expeditorul — adică tu.",
+    anexa2NeedsPartner:
+      "Anexa 2 (formularul de transport periculos) apare după ce alegi partenerul care preia deșeul — fără destinatar, formularul n-are ce tipări.",
+    anexa2Number: "Nr. formularului",
+    anexa2NumberHint:
+      "Îl dă agenția județeană pentru protecția mediului, nu aplicația — nota *1) a modelului. Lasă-l gol dacă n-ai primit unul; nu inventăm un număr pe un formular oficial.",
+    anexa2ApprovalNumber: "Nr. formularului de aprobare",
+    anexa2ApprovalNumberHint:
+      "Aprobarea transportului (anexa 1 la același act), cerută de art. 7 peste 1 t/an. Sub prag rămâne gol: art. 6 alin. (1) scoate tocmai aprobarea.",
+    anexa2Packaging: "Număr și tip de ambalaje",
+    anexa2PackagingPlaceholder: "ex. 2 butoaie metalice de 200 l",
+    anexa2Threshold: "Cantitatea generată într-un an",
+    anexa2ThresholdFollows: "Cum reiese din evidență ({proposal})",
+    anexa2ThresholdFollowsUnknown: "Cum reiese din evidență",
+    anexa2ThresholdAfterSave:
+      "Cifra apare după ce salvezi mișcarea: pragul se citește din evidența anului, pe codul ăsta.",
+
+    anexa2Below: "Sub 1 t/an (fără aprobare)",
+    anexa2Above: "Peste 1 t/an (cu aprobare)",
+    // Cifra stă lângă bifă fiindcă bifa singură ar fi o decizie luată în tăcere pe un cuvânt pe
+    // care actul nu-l definește: art. 2 trimite „categoria" la un act abrogat.
+    anexa2ThresholdProposed:
+      "{tons} t generate în {year} pe {code}. Bifa e propusă din cifra asta, pe cod — actul nu definește „aceeași categorie de deșeuri periculoase”, așa că rămâne alegerea ta.",
+    anexa2GroupWarning:
+      "⚠️ Pe grupa {group} cumulul anului e {tons} t, adică peste prag. Dacă „categoria” din act înseamnă grupa, nu codul, atunci transportul are nevoie de aprobare (art. 7) — iar lipsa ei e contravenție de 10.000–20.000 lei.",
+    anexa2Copies3:
+      "Sub prag formularul iese în 3 exemplare (art. 15 alin. (2)): unul la tine, unul la destinatar, unul la transportator. Destinatarul depune și el unul la agenție — art. 6 alin. (2).",
+    anexa2Copies6:
+      "Peste prag formularul iese în 6 exemplare (art. 12): cele trei părți, agenția care a aprobat transportul, ISU-ul județului tău și agenția județului tău. Un exemplar îl duci tu la ISU, pentru autorizarea rutei (art. 4 alin. (8) lit. b)) — notificarea de 48 de ore o face ISU-ul mai departe, nu tu (art. 14).",
+    anexa2EmptyColumns:
+      "Cantitatea primită, cea recepționată, cea respinsă și data primirii ies goale, intenționat: sunt declarațiile transportatorului și destinatarului, semnate la primirea deșeurilor (art. 9 și 10). Se completează pe hârtie, de ei.",
+    anexa2ApprovalMissing:
+      "Peste 1 t/an transportul are nevoie și de formularul de aprobare din anexa 1, iar drumul lui e lung: îl completezi tu (art. 4 alin. (2)), îl semnează destinatarul, apoi merge la agenția din raza instalației LUI — nu a ta — care are 7 zile lucrătoare de răspuns (art. 4 alin. (5)). Aplicația nu-l generează încă.",
+    anexa2Medical:
+      "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul.",
+    anexa2Download: "Anexa 2",
+    anexa2Downloading: "Se generează...",
+    anexa2Error: "Formularul nu a putut fi generat.",
     unloadDate: "Data descărcării",
     transportPartner: "Transportator",
     partnerWorkPoint: "Punctul de lucru al destinatarului",

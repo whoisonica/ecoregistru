@@ -80,7 +80,9 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
+import { canPrintAnexa2, useAnexa2Download, useAnexa2Threshold } from "@/hooks/useAnexa2";
 import { useAttachmentOpen } from "@/hooks/useAttachment";
+import { formatTonnesValue } from "@/lib/units";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -291,6 +293,7 @@ export function MovementsPage() {
     ? `${strings.months[Number(monthFilter.slice(5)) - 1]} ${monthFilter.slice(0, 4)}`
     : monthFilter;
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
+  const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } = useAnexa2Download();
 
   /**
    * Mișcarea pe care o cere adresa, deschisă direct în formularul de editare.
@@ -680,6 +683,19 @@ export function MovementsPage() {
                                 onClick={() => downloadAnexa3(m)}
                               >
                                 {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
+                              </RowAction>
+                            )}
+                            {/* Perechea: același transport, celălalt fel de deșeu. Butonul de
+                                Anexa 2 apare exact unde nu apare cel de Anexa 3. */}
+                            {canPrintAnexa2(m) && (
+                              <RowAction
+                                icon={FileText}
+                                disabled={downloadingAnexa2Id === m.id}
+                                onClick={() => downloadAnexa2(m)}
+                              >
+                                {downloadingAnexa2Id === m.id
+                                  ? t.anexa2Downloading
+                                  : t.anexa2Download}
                               </RowAction>
                             )}
                             <RowAction icon={Trash2} tone="danger" onClick={() => handleDelete(m)}>
@@ -1091,6 +1107,23 @@ function MovementFormDialog({
   const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>(
     initial?.transportDestinations ?? []
   );
+  // --- Anexa 2, cele patru rubrici pe care formularul de transport periculos le cere în plus ---
+  // `editing?`, nu `initial?`, la numărul formularului: numărul îl dă agenția pentru **un**
+  // transport, deci duplicând o predare ai duplica numărul altcuiva pe o hârtie nouă.
+  const [anexa2Number, setAnexa2Number] = useState(editing?.anexa2Number ?? "");
+  const [anexa2ApprovalNumber, setAnexa2ApprovalNumber] = useState(
+    editing?.anexa2ApprovalNumber ?? ""
+  );
+  const [anexa2Packaging, setAnexa2Packaging] = useState(initial?.anexa2Packaging ?? "");
+  /**
+   * Bifa „< 1t/an", în trei stări. `""` înseamnă „cum reiese din evidență" și e implicitul: atunci
+   * formularul tipărește ce propune cumulul anual pe cod, iar propunerea se mișcă singură când mai
+   * intră mișcări. `"true"`/`"false"` e răspunsul omului, și el bate propunerea — actul nu
+   * definește „aceeași categorie", deci ultimul cuvânt e al celui care semnează.
+   */
+  const [anexa2BelowOneTon, setAnexa2BelowOneTon] = useState<"" | "true" | "false">(
+    initial?.anexa2BelowOneTon == null ? "" : initial.anexa2BelowOneTon ? "true" : "false"
+  );
   // Adevărat cât timp bifele sunt ale noastre, nu ale lui: atunci scrie sub ele de unde vin.
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [notes, setNotes] = useState(initial?.notes ?? "");
@@ -1204,10 +1237,32 @@ function MovementFormDialog({
   const isPackagingCode = (wasteCode?.label ?? "").startsWith("15 01");
   const suggestedMaterial = suggestedPackagingMaterial(wasteCode?.label ?? "");
 
-  const showAnexa3Section =
-    isExit(effectiveOperation) &&
-    Boolean(partnerId) &&
-    wasteCode?.sublabel !== t.hazardous;
+  /**
+   * Cele două formulare de transport din HG 1061/2008 sunt aceeași întrebare cu răspuns opus:
+   * anexa 3 pentru nepericuloase, anexa 2 pentru periculoase. Blocul de transport e comun —
+   * transportator, delegat, mașină, cele cinci bife — și doar rubricile proprii diferă.
+   */
+  const isHazardousCode = wasteCode?.sublabel === t.hazardous;
+  // Capitolul 18: art. 24 dă formularul transportatorului, pe rută. Nu e o variantă a Anexei 2,
+  // e alt flux — deci nu se oferă, se explică.
+  const isMedicalCode = isHazardousCode && (wasteCode?.label ?? "").startsWith("18");
+  const showTransportSection = isExit(effectiveOperation) && Boolean(partnerId);
+  const showAnexa3Section = showTransportSection && !isHazardousCode;
+  const showAnexa2Section = showTransportSection && isHazardousCode && !isMedicalCode;
+
+  /**
+   * Cifra din spatele bifei „< 1t/an" — cerută numai pentru o mișcare deja salvată, fiindcă pragul
+   * se citește din evidența anului și n-are ce răspunde pentru una care încă nu există.
+   */
+  const { data: anexa2Threshold } = useAnexa2Threshold(editing?.id, showAnexa2Section);
+  /**
+   * Ce va tipări formularul: răspunsul omului dacă l-a dat, altfel propunerea. `null` înseamnă că
+   * încă nu știm niciuna — mișcare nesalvată — și atunci ecranul nu inventează un răspuns.
+   */
+  const anexa2Effective =
+    anexa2BelowOneTon === ""
+      ? (anexa2Threshold?.belowOneTon ?? null)
+      : anexa2BelowOneTon === "true";
 
   const profileCodes = company?.authorizedOperationCodes ?? [];
   const codeOptions =
@@ -1249,6 +1304,7 @@ function MovementFormDialog({
     }
     if (isPackagingCode && packagingOnMarket !== false) out.push(t.effectPackaging);
     if (showAnexa3Section) out.push(t.effectAnexa3);
+    if (showAnexa2Section) out.push(t.effectAnexa2);
     return out;
   }, [
     wasteCode,
@@ -1261,6 +1317,7 @@ function MovementFormDialog({
     isPackagingCode,
     packagingOnMarket,
     showAnexa3Section,
+    showAnexa2Section,
   ]);
 
   const isSaving =
@@ -1338,6 +1395,10 @@ function MovementFormDialog({
       driverIdentification: driverIdentification.trim() || null,
       vehicleRegistration: vehicleRegistration.trim() || null,
       transportDestinations,
+      anexa2Number: anexa2Number.trim() || null,
+      anexa2ApprovalNumber: anexa2ApprovalNumber.trim() || null,
+      anexa2Packaging: anexa2Packaging.trim() || null,
+      anexa2BelowOneTon: anexa2BelowOneTon === "" ? null : anexa2BelowOneTon === "true",
       // Backendul le ignoră pe orice alt cod, dar nu i le trimitem degeaba.
       packagingOnMarket: isPackagingCode ? packagingOnMarket : null,
       packagingMaterial: isPackagingCode ? packagingMaterial || null : null,
@@ -2053,19 +2114,39 @@ function MovementFormDialog({
 
         {/* Anexa 3 e dovada predării, deci n-are cum să existe fără destinatar. Până acum condiţia
             era tăcută: alegeai codul, secţiunea nu apărea, şi nu scria nicăieri de ce. */}
-        {requiresCode && !showAnexa3Section && wasteCode?.sublabel !== t.hazardous && (
+        {requiresCode && !showTransportSection && (
           <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">
-            {t.anexa3NeedsPartner}
+            {isHazardousCode ? t.anexa2NeedsPartner : t.anexa3NeedsPartner}
           </p>
         )}
 
-        {showAnexa3Section && (
+        {/* Clinicile sunt clienți-țintă, iar art. 24 le scoate din formularul ăsta. Se spune aici,
+            pe ecran, nu la control. */}
+        {showTransportSection && isMedicalCode && (
+          <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">
+            {t.anexa2Medical}
+          </p>
+        )}
+
+        {showTransportSection && (
           <div className="space-y-3 rounded-md border border-line bg-surface-muted p-3">
             <div>
-              <span className="text-sm font-semibold text-content-strong">{t.anexa3Section}</span>
-              <p className="text-xs text-content-muted">{t.anexa3SectionHint}</p>
+              <span className="text-sm font-semibold text-content-strong">
+                {showAnexa2Section ? t.anexa2Section : t.anexa3Section}
+              </span>
+              <p className="text-xs text-content-muted">
+                {showAnexa2Section ? t.anexa2SectionHint : t.anexa3SectionHint}
+              </p>
             </div>
-            <p className="text-xs text-content-muted">{t.anexa3Copies}</p>
+            <p className="text-xs text-content-muted">
+              {!showAnexa2Section
+                ? t.anexa3Copies
+                : anexa2Effective === null
+                  ? t.anexa2ThresholdAfterSave
+                  : anexa2Effective
+                    ? t.anexa2Copies3
+                    : t.anexa2Copies6}
+            </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
                   Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr
@@ -2083,6 +2164,20 @@ function MovementFormDialog({
                   onChange={(ev) => setUnloadDate(ev.target.value)}
                 />
               </div>
+              {showAnexa2Section ? (
+                /* Anexa 2 n-are unitate de ales: rubricile ei scriu „în tone" chiar pe formular.
+                   În locul ei stă numărul, singurul câmp al acestui formular pe care nu-l alocăm
+                   noi — îl scrie agenția (nota *1) a modelului). */
+                <div>
+                  <Label htmlFor="mv-anexa2-number">{t.anexa2Number}</Label>
+                  <Input
+                    id="mv-anexa2-number"
+                    value={anexa2Number}
+                    onChange={(ev) => setAnexa2Number(ev.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-content-muted">{t.anexa2NumberHint}</p>
+                </div>
+              ) : (
               <div>
                 <Label htmlFor="mv-anexa3-unit">{t.anexa3Unit}</Label>
                 <Select
@@ -2096,6 +2191,7 @@ function MovementFormDialog({
                 </Select>
                 <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
               </div>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Transportatorul și șoferul stau alături: alegerea firmei decide ce șoferi se
@@ -2222,6 +2318,79 @@ function MovementFormDialog({
                 ))}
               </div>
             </div>
+            {showAnexa2Section && (
+              <div className="space-y-3 border-t border-line pt-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="mv-anexa2-threshold">{t.anexa2Threshold}</Label>
+                    <Select
+                      id="mv-anexa2-threshold"
+                      value={anexa2BelowOneTon}
+                      onChange={(ev) =>
+                        setAnexa2BelowOneTon(ev.target.value as "" | "true" | "false")
+                      }
+                    >
+                      {/* Implicitul e „cum reiese din evidență", nu o bifă pusă de noi: cumulul se
+                          mișcă singur când mai intră mișcări pe cod, iar o bifă înghețată azi ar
+                          rămâne sub prag și după ce anul îl trece. */}
+                      <option value="">
+                        {anexa2Threshold
+                          ? t.anexa2ThresholdFollows.replace(
+                              "{proposal}",
+                              anexa2Threshold.belowOneTon ? t.anexa2Below : t.anexa2Above
+                            )
+                          : t.anexa2ThresholdFollowsUnknown}
+                      </option>
+                      <option value="true">{t.anexa2Below}</option>
+                      <option value="false">{t.anexa2Above}</option>
+                    </Select>
+                    <p className="mt-1 text-xs text-content-muted">
+                      {anexa2Threshold
+                        ? t.anexa2ThresholdProposed
+                            .replace("{tons}", formatTonnesValue(anexa2Threshold.generatedTons))
+                            .replace("{year}", String(anexa2Threshold.year))
+                            .replace("{code}", anexa2Threshold.wasteCode)
+                        : t.anexa2ThresholdAfterSave}
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="mv-anexa2-approval">{t.anexa2ApprovalNumber}</Label>
+                    <Input
+                      id="mv-anexa2-approval"
+                      value={anexa2ApprovalNumber}
+                      onChange={(ev) => setAnexa2ApprovalNumber(ev.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-content-muted">{t.anexa2ApprovalNumberHint}</p>
+                  </div>
+                </div>
+                {/* Singurul caz în care cuvântul nedefinit din act schimbă răspunsul: pe cod ești
+                    sub prag, pe grupă ești peste. Se avertizează, nu se decide. */}
+                {anexa2Threshold?.groupWarning && (
+                  <p className="rounded-md border border-line bg-surface-sunken px-3 py-2 text-xs text-content-strong">
+                    {t.anexa2GroupWarning
+                      .replace("{group}", anexa2Threshold.groupCode)
+                      .replace("{tons}", formatTonnesValue(anexa2Threshold.groupTons))}
+                  </p>
+                )}
+                {/* Peste prag hârtia noastră nu e de ajuns, și e mai bine spus aici decât aflat la
+                    control: mai trebuie aprobarea din anexa 1 și notificarea ISU. */}
+                {anexa2Effective === false && (
+                  <p className="rounded-md border border-line bg-surface-sunken px-3 py-2 text-xs text-content-strong">
+                    {t.anexa2ApprovalMissing}
+                  </p>
+                )}
+                <div>
+                  <Label htmlFor="mv-anexa2-packaging">{t.anexa2Packaging}</Label>
+                  <Input
+                    id="mv-anexa2-packaging"
+                    value={anexa2Packaging}
+                    onChange={(ev) => setAnexa2Packaging(ev.target.value)}
+                    placeholder={t.anexa2PackagingPlaceholder}
+                  />
+                </div>
+                <p className="text-xs text-content-muted">{t.anexa2EmptyColumns}</p>
+              </div>
+            )}
           </div>
         )}
 

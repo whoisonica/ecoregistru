@@ -94,6 +94,14 @@ public record WasteMovementResponse(
         /** Null means "as the company chose, and failing that as the quantity was recorded". */
         Unit anexa3Unit,
 
+        // --- Anexa 2 ---
+        /** Typed by the client; the agency owns this number, so nothing allocates it. */
+        String anexa2Number,
+        String anexa2ApprovalNumber,
+        String anexa2Packaging,
+        /** Null means "not decided": the form prints what the yearly total proposes. */
+        Boolean anexa2BelowOneTon,
+
         // --- Anexa 1 Ambalaje ---
         /** Null on rows that predate the question; they behave as true. */
         Boolean packagingOnMarket,

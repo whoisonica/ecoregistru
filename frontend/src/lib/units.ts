@@ -40,5 +40,14 @@ const tonnesFormat = new Intl.NumberFormat("ro-RO", {
 
 /** Cantitatea în tone, formatată pentru afișare. Primește kilograme. */
 export function formatTonnes(kilograms: number): string {
-  return tonnesFormat.format(kgToTonnes(kilograms));
+  return formatTonnesValue(kgToTonnes(kilograms));
+}
+
+/**
+ * Aceeași formatare, pentru o cifră care e **deja** în tone — cum vine pragul de 1 t/an al
+ * Anexei 2, calculat pe server. Trece prin același `Intl` ca `formatTonnes`, ca „0,840" să arate
+ * la fel oriunde apare.
+ */
+export function formatTonnesValue(tonnes: number): string {
+  return tonnesFormat.format(tonnes);
 }

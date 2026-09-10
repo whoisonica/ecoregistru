@@ -67,6 +67,23 @@ public record WasteMovementRequest(
          */
         Unit anexa3Unit,
 
+        // --- Anexa 2 la HG 1061/2008: transportul deşeurilor periculoase ---
+
+        /**
+         * The form's own number, as the agency writes it. Typed, never allocated — the note under
+         * the official model reserves it for the county environmental agency.
+         */
+        String anexa2Number,
+        /** "Nr. formularului de aprobare al transportului", required above 1 t/an by art. 7. */
+        String anexa2ApprovalNumber,
+        /** "Numar şi tip de ambalaje utilizate pentru transportul deşeurilor periculoase". */
+        String anexa2Packaging,
+        /**
+         * The "&lt; 1t/an" tick. Null leaves it to the yearly total for this code, which is what
+         * the screen proposes; a value is the client's own answer and is printed as given.
+         */
+        Boolean anexa2BelowOneTon,
+
         // --- Anexa 1 Ambalaje (Ordinul 794/2012), tabelul 1 ---
 
         /**

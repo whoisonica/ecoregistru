@@ -84,7 +84,16 @@ public enum ErrorMessageEnum {
 
     // --- Anexa 3 la HG 1061/2008 (formularul de transport) ---
     ANEXA3_REQUIRES_HANDOVER("anexa3.requires.handover", "Formularul de transport se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care o face."),
-    ANEXA3_HAZARDOUS_NOT_ALLOWED("anexa3.hazardous", "Anexa 3 e formularul pentru deșeuri NEpericuloase. Pentru un cod periculos se folosește formularul de expediție/transport din anexa 2 la HG 1061/2008, care nu e încă implementat."),
+    ANEXA3_HAZARDOUS_NOT_ALLOWED("anexa3.hazardous", "Anexa 3 e formularul pentru deșeuri NEpericuloase. Pentru un cod periculos se folosește formularul de expediție/transport din anexa 2 la HG 1061/2008 — butonul „Anexa 2” de pe aceeași mișcare."),
+
+    // --- Anexa 2 la HG 1061/2008 (transportul deşeurilor periculoase) ---
+    ANEXA2_REQUIRES_HANDOVER("anexa2.requires.handover", "Formularul de expediție/transport se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care o face."),
+    ANEXA2_NOT_HAZARDOUS("anexa2.not.hazardous", "Anexa 2 e formularul pentru deșeuri PERICULOASE. Pentru un cod nepericulos se folosește formularul de încărcare-descărcare din anexa 3 la HG 1061/2008."),
+    // Art. 24: la deşeurile periculoase din activitatea medicală formularul îl întocmeşte
+    // transportatorul — „chiar dacă acesta este şi destinatar" — pe cantitatea cumulată a unei rute, cu
+    // o anexă a expeditorilor. E alt flux, nu o variantă a acestuia, iar clinicile sunt clienţi-ţintă:
+    // refuzul le spune pe ecran ce ar afla altfel la control.
+    ANEXA2_MEDICAL_WASTE("anexa2.medical", "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 din HG 1061/2008 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul, deci nu-l generăm în locul lui."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),

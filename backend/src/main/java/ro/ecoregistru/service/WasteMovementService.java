@@ -66,6 +66,8 @@ public class WasteMovementService {
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
     ro.ecoregistru.service.export.Anexa3FormGenerator anexa3FormGenerator;
+    ro.ecoregistru.service.export.Anexa2FormGenerator anexa2FormGenerator;
+    Anexa2ThresholdCalculator anexa2ThresholdCalculator;
     WasteMovementMapper mapper;
 
     @Transactional
@@ -115,6 +117,10 @@ public class WasteMovementService {
                 .unloadDate(request.unloadDate())
                 .partnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner))
                 .anexa3Unit(request.anexa3Unit())
+                .anexa2Number(request.anexa2Number())
+                .anexa2ApprovalNumber(request.anexa2ApprovalNumber())
+                .anexa2Packaging(request.anexa2Packaging())
+                .anexa2BelowOneTon(request.anexa2BelowOneTon())
                 // Ambalaje: cele trei rubrici ale tabelului 1 călătoresc pe mişcare, dar numai pe
                 // un cod 15 01 xx. Pe orice alt cod se ignoră, ca să nu rămână un răspuns agăţat
                 // de o mişcare pe care declaraţia n-o citeşte niciodată.
@@ -180,6 +186,10 @@ public class WasteMovementService {
         movement.setUnloadDate(request.unloadDate());
         movement.setPartnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner));
         movement.setAnexa3Unit(request.anexa3Unit());
+        movement.setAnexa2Number(request.anexa2Number());
+        movement.setAnexa2ApprovalNumber(request.anexa2ApprovalNumber());
+        movement.setAnexa2Packaging(request.anexa2Packaging());
+        movement.setAnexa2BelowOneTon(request.anexa2BelowOneTon());
         movement.setPackagingOnMarket(packagingOnly(wasteCode, request.packagingOnMarket()));
         movement.setPackagingMaterial(packagingOnly(wasteCode, request.packagingMaterial()));
         movement.setPackagingCategory(packagingOnly(wasteCode, request.packagingCategory()));
@@ -423,6 +433,81 @@ public class WasteMovementService {
             movement.setAnexa3Series(company.getAnexa3Series());
         }
         return anexa3FormGenerator.render(movement, company);
+    }
+
+    /**
+     * Anexa 2 la HG 1061/2008, the hazardous-waste consignment form, as a PDF.
+     *
+     * <p>The mirror image of {@link #renderAnexa3(UUID)}, refusal for refusal — and deliberately
+     * so, because the two forms are the two halves of the same question and a client who lands on
+     * the wrong one should be told which is right, not told "no".
+     *
+     * <p><b>Three refusals, and each one says "this is the wrong document":</b>
+     * <ul>
+     *   <li><b>No handover.</b> The form names an expeditor and a destinatar and records a
+     *       consignment; without a recipient there is nothing to consign.</li>
+     *   <li><b>A non-hazardous code.</b> The title says <em>periculoase</em>. This is the same
+     *       refusal Anexa 3 makes in the other direction, and as of this slice both of them can
+     *       finally name a form that exists.</li>
+     *   <li><b>Medical waste.</b> Art. 24 is not a variant of this flow, it is a different one: the
+     *       <em>carrier</em> draws the forms up — "chiar dacă acesta este şi destinatar" — on the
+     *       cumulated quantity of one round through an area, with a schedule of the individual
+     *       expeditors attached. A clinic that printed this form as expeditor would be holding a
+     *       document nobody asked it for. We do not produce the art. 24 one either: it belongs to
+     *       the carrier and is built from a route we do not record.</li>
+     * </ul>
+     *
+     * <p><b>Nothing is allocated here</b>, which is the one structural difference from Anexa 3.
+     * There is no number to hand out: the model reserves it for the county agency. So this method
+     * writes nothing to the movement, and a reprint is simply the same PDF again.
+     */
+    @Transactional
+    public byte[] renderAnexa2(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WasteMovement movement = requireMovement(id, tenantId);
+        Company company = requireCompany(tenantId);
+
+        if (!movement.getOperation().isExit() || movement.getPartner() == null) {
+            throw new BusinessException(ANEXA2_REQUIRES_HANDOVER);
+        }
+        if (!movement.getWasteCode().isHazardous()) {
+            throw new BusinessException(ANEXA2_NOT_HAZARDOUS);
+        }
+        if (isMedicalWaste(movement)) {
+            throw new BusinessException(ANEXA2_MEDICAL_WASTE);
+        }
+        return anexa2FormGenerator.render(movement, company,
+                anexa2ThresholdCalculator.belowOneTon(movement));
+    }
+
+    /**
+     * What the "&lt; 1t/an" tick is proposed from, for the screen to show beside it.
+     *
+     * <p>Read-only and computed on demand rather than stored: the total moves whenever a movement
+     * on the same code is recorded, edited or deleted, so a figure frozen onto this row would go
+     * quietly stale — and stale in the direction that costs, since a total can only grow through
+     * the threshold, never back.
+     */
+    @Transactional
+    public ro.ecoregistru.controller.response.Anexa2ThresholdResponse anexa2Threshold(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WasteMovement movement = requireMovement(id, tenantId);
+        return anexa2ThresholdCalculator.forMovement(movement);
+    }
+
+    /**
+     * Whether this is hazardous waste from medical activity, which art. 24 routes away from this
+     * form altogether.
+     *
+     * <p>Chapter 18 of the nomenclator is "deşeuri rezultate din activităţi de îngrijire a
+     * sănătăţii umane sau veterinare şi/sau din cercetări conexe", so a hazardous code in it is
+     * exactly the subject of art. 24. Matching on the chapter rather than on a list of codes is
+     * deliberate: a list would have to be maintained against the nomenclator, and forgetting one
+     * would print the wrong document for a clinic.
+     */
+    private boolean isMedicalWaste(WasteMovement movement) {
+        String code = movement.getWasteCode().getCode();
+        return code != null && code.startsWith("18");
     }
 
     // --- helpers ---

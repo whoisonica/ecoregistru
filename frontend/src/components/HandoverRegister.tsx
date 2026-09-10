@@ -1,6 +1,7 @@
 import { ArrowRightLeft, FileText, Pencil } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
+import { canPrintAnexa2, useAnexa2Download } from "@/hooks/useAnexa2";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
@@ -34,6 +35,8 @@ const e = strings.enums;
 export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   const { data: movements, isLoading, isError } = useMovements(filters);
   const { download, downloadingId } = useAnexa3Download();
+  const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } =
+    useAnexa2Download();
 
   /**
    * „Arată-mi doar ce blochează depunerea", trimis prin adresă de pe Panou.
@@ -213,6 +216,19 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                       >
                         <FileText className="mr-1 h-3.5 w-3.5" />
                         {downloadingId === mv.id ? m.anexa3Downloading : m.anexa3Download}
+                      </Button>
+                    )}
+                    {/* Codul periculos e refuzat pe Anexa 3 și trimis aici — de pe 10.09.2026
+                        mesajul acela numește un formular care există. */}
+                    {canPrintAnexa2(mv) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={downloadingAnexa2Id === mv.id}
+                        onClick={() => downloadAnexa2(mv)}
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        {downloadingAnexa2Id === mv.id ? m.anexa2Downloading : m.anexa2Download}
                       </Button>
                     )}
                   </div>
