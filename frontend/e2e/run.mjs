@@ -20,6 +20,7 @@ const suites = [
   ["9-restrangeri-si-semne.mjs", "rubrica restrânsă, grila care spune că a salvat, stocul pe coduri, termenele"],
   ["10-panou-actiunea-urmatoare.mjs", "banda «următoarea acțiune» din capul Panoului"],
   ["11-numeralul.mjs", "numeralul românesc, pe toate ecranele deodată"],
+  ["12-pagini-legale.mjs", "termenii și politica: se deschid fără cont, și se ajunge la ele"],
 ];
 
 const only = process.argv[2];

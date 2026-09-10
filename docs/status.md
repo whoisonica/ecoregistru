@@ -5760,6 +5760,106 @@ Rândul de conformitate din `todo-lansare.md` a **coborât**, de la 92% la 88% �
 ceva, ci fiindcă procentul se măsura faţă de un act pre-2023. **Un procent calculat faţă de versiunea
 greşită a legii e mai rău decât niciun procent.**
 
+## P1.10 — termenii şi politica, pe ecran (11.09.2026, noaptea)
+
+Ultima felie de **cod** din P1. Textele se scriseseră în aceeaşi zi, în repo-ul privat
+(`ecoregistru-docs/docs/juridic/`), şi rămăseseră acolo: aplicaţia n-avea nici `/termeni`, nici
+`/confidentialitate`, nici un link către ele de nicăieri. Căutate în tot frontendul, ieşeau zero
+rezultate — exact ce scria punctul 10 din `todo-lansare.md`.
+
+**Ce s-a construit:** două rute publice, un subsol care duce la ele de pe fiecare ecran la care se
+ajunge fără cont, şi rândul de sub butonul cererii de cont.
+
+### Unde stă textul, şi de ce nu în `strings.ts`
+
+`strings.ts` are 1.900 de linii şi îşi spune rostul în capul fişierului: text de interfaţă, ţinut
+laolaltă ca să poată fi extras într-un i18n mai târziu. Cele două documente n-au aceeaşi natură —
+sunt **acte**, se schimbă când se schimbă contractul sau legea, şi modificarea lor se anunţă cu
+**30 de zile înainte** (cap. 14 din termeni). Puse acolo, ar fi îngropat sub 340 de linii de text
+juridic etichetele care chiar se schimbă odată cu ecranele.
+
+Aşa că textul stă în **`lib/legal.ts`**, ca date tipate — capitole cu blocuri (`p`, `h3`, `list`,
+`table`, `note`) — iar în `strings.ts` a rămas doar **rama**: cuprinsul, cele două linkuri din
+subsol, copyrightul, propoziţia de la cererea de cont.
+
+**Randarea are un marcaj de rând scris în casă**, trei semne: `**îngroşat**`, `` `cod` `` şi
+`[text](adresă)`. O bibliotecă de markdown pentru trei semne ar fi însemnat un pachet nou în manifest
+şi `dangerouslySetInnerHTML` pe un text pe care oricum îl scriem noi; aici textul rămâne text —
+nimic nu se transformă în HTML, deci nu are ce injecta nimeni. ⚠️ **Şi de aici o probă care nu era
+evidentă:** dacă marcajul se strică, nu cade nimic — apar asteriscurile în pagină, şi le vede
+clientul, nu compilatorul. Proba 12 verifică pe amândouă documentele că nu rămâne **niciun** `**` şi
+niciun `](http` în textul randat.
+
+### Cele două documente sunt publice, restul setului nu
+
+În `juridic/` sunt patru fişiere. În aplicaţie au intrat **două** — termenii şi politica, care se
+publică prin definiţie. Contractul-cadru (cu grila de preţ) şi DPA-ul rămân în repo-ul privat, unde
+le e locul.
+
+### Ce s-a corectat în text pe drum
+
+Politica avea, la capitolul „Cui transmitem datele", **acelaşi paragraf scris de două ori**, cu două
+numărători care se contraziceau („pentru primele trei" într-unul, „aceşti furnizori" în celălalt) —
+un rest de editare din ziua în care a fost scrisă. A rămas o singură propoziţie, cu furnizorii
+numiţi: **Heroku, Sentry şi Cloudinary** au societate-mamă în SUA, primele două stochează în Uniune,
+la a treia transferul e acoperit de clauzele contractuale standard. Reparat **în amândouă locurile**,
+şi în sursă, şi pe ecran. Proba 12 numără ocurenţele, ca să nu se întoarcă.
+
+Şi s-a completat **data**: `«___» 2026` din drafturi a devenit **11 septembrie 2026**, într-o singură
+constantă (`LEGAL_DATE`) pentru amândouă documentele. ⚠️ **E o dată cu efect juridic** — de la ea
+curg cele 30 de zile de preaviz la o modificare — deci **se pune ziua publicării**: dacă deployul
+ajunge în altă zi, se schimbă constanta şi cele două rânduri din `juridic/`.
+
+### Ce s-a atins pe ecranele existente
+
+Subsolul (`LegalFooter`) e pe **login**, **parolă uitată**, **resetare de parolă**, **cererea de
+cont** (şi pe ecranul ei de confirmare), **404** şi pe cele două documente însele; în varianta
+scurtă, în josul barei laterale din aplicaţie — cine e deja înăuntru caută politica tot de acolo, nu
+de pe pagina de login din care a ieşit acum două luni.
+
+La cererea de cont, sub buton, e o propoziţie cu cele două trimiteri. 📌 **Nu e casetă de bifat, şi e
+o decizie:** cererea nu deschide un cont, iar acceptarea propriu-zisă se face la semnarea
+contractului (cap. 2 din termeni). O bifă acolo ar fi cerut consimţământ pentru ceva ce încă nu s-a
+întâmplat.
+
+**Cuprinsul e pe două coloane CSS, nu pe o grilă** — o grilă umple pe rând, deci coloana din stânga
+ar fi ieşit 1, 3, 5, 7. Pe singurul ecran din aplicaţie unde numărul capitolului chiar se foloseşte
+(„cap. 12"), o numerotare care sare e o greşeală care se vede.
+
+### Probele
+
+**Proba 12** (`12-pagini-legale.mjs`, nouă, înregistrată în `run.mjs`): **22 de verificări, toate
+trec**. Ce acoperă, dincolo de „se deschide": că paginile răspund **fără sesiune** şi nu aruncă în
+login; că cele 16 capitole şi cele 16 intrări din cuprins sunt aceleaşi; că `/termeni#raspundere`
+chiar derulează la capitol (ancorele sunt un contract cu cine dă linkul pe mail); că marcajul s-a
+consumat; că pe **375px** tabelele derulează în containerul lor şi pagina **nu** depăşeşte (0px); şi
+că fiecare drum către ele — subsolul de pe login, rândul de la cererea de cont, bara laterală cu
+sesiune — duce unde scrie.
+
+`tsc --noEmit` curat, `vite build` verde.
+
+⚠️ **Şi suita întreagă a scos ceva care nu are legătură cu felia, dar merită ştiut înainte de
+următoarea rulare: 6 din 12 probe cad pe o bază de date proaspăt seedată.** Nu pe cod — pe **date**.
+`2-tabele`, `4-formular`, `7-firma-si-reactivare`, `9-restrangeri-si-semne`, `10-panou` şi
+`11-numeralul` cer lucruri pe care `DevDataSeeder` nu le pune: **o a doua firmă**, un cont de
+**generator pur**, termene **depăşite**, rânduri **AFM**. Pe o bază virgină ies „1 firme",
+„niciun cont de generator", „0 depăşite", „0 rânduri".
+
+**Cum s-a stabilit că nu e regresie, şi metoda merită refolosită:** `git stash push -- frontend/src`,
+aceleaşi şase probe pe **aceeaşi** bază, **aceleaşi şase căderi, cuvânt cu cuvânt** — deci cauza e
+baza, nu modificarea. `git stash pop`, şi mai departe. *Când o probă cade lângă o schimbare, întrebarea
+nu e „ce am stricat", ci „cade şi fără mine?" — şi are un răspuns de un minut.*
+
+Deci suita presupune o bază **acumulată**, cum e cea de dezvoltare a proprietarului: proba 6 chiar
+scrie cereri de cont şi nu curăţă după ea, iar a doua firmă se naşte din aprobarea uneia. Nu e un
+defect al probelor, e o dependenţă nescrisă — acum scrisă, şi în `prompt-continuare.md`.
+
+⚠️ **Şi o notă de mediu, care a costat un sfert de oră:** serverul de dev care rula de dinainte era
+într-o stare stricată — `500` pe `/src/main.tsx`, „Failed to resolve import `@/components/ui/toast`",
+pentru un fişier care există şi pe care `tsc` şi `vite build` îl rezolvă fără să clipească. Nu era
+codul nou: era graful de module al unui Vite pornit demult. **Repornit, totul a trecut din prima.**
+Când o probă cade pe ceva ce compilatorul spune că e în regulă, întâi se reporneşte serverul.
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru

@@ -1785,6 +1785,28 @@ export const strings = {
     toLogin: "Mergi la autentificare",
   },
 
+  /**
+   * Doar ce ține de **rama** celor două documente publice — cuprinsul, linkurile din subsol,
+   * rândul de copyright. **Textul documentelor nu e aici**, ci în `lib/legal.ts`: aici stau
+   * etichete care se schimbă odată cu ecranul, acolo stau documente care se schimbă odată cu
+   * contractul și se anunță cu 30 de zile înainte.
+   */
+  legal: {
+    contents: "Cuprins",
+    termsLink: "Termeni și condiții",
+    privacyLink: "Confidențialitate",
+    contactEmail: "whoecom@gmail.com",
+    copyright: "© 2026 ONSIA S.R.L. · CUI 51779887",
+    // Sub butonul de trimitere al cererii de cont. Nu e casetă de bifat: cererea nu deschide un
+    // cont, iar acceptarea propriu-zisă se face la semnarea contractului (cap. 2 din termeni).
+    // O bifă aici ar cere un consimțământ pentru ceva ce încă nu s-a întâmplat.
+    accountRequestNotice: "Trimițând cererea, confirmi că ai citit {termeni} și {confidentialitate}.",
+    // Etichetele de **înăuntrul** propoziției. Nu se refolosesc cele din subsol („Termeni și
+    // condiții"), fiindcă acolo sunt titluri de pagină, iar aici sunt complement direct.
+    accountRequestTermsLabel: "termenii și condițiile",
+    accountRequestPrivacyLabel: "politica de confidențialitate",
+  },
+
   fileDropzone: {
     hint: "Trage fișiere aici sau apasă pentru a alege",
     limit: "Imagini, PDF, Word, Excel · cel mult {mb} MB per fișier",

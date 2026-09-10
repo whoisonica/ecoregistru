@@ -28,6 +28,7 @@ import {
   useNavigationCommands,
 } from "@/components/CommandPalette";
 import { useHotkey } from "@/hooks/useHotkey";
+import { LegalFooter } from "@/components/LegalFooter";
 import type { ReactNode } from "react";
 
 interface NavItem {
@@ -425,6 +426,9 @@ export function Layout({ children }: { children: ReactNode }) {
         <p className="hidden px-5 pb-3 text-[11px] leading-relaxed text-content-subtle lg:block">
           {strings.common.shortcutHint}
         </p>
+        {/* Subsolul aplicației. Cine e deja înăuntru caută politica tot de aici, nu de pe pagina
+            de login din care a ieșit acum două luni. */}
+        <LegalFooter variant="compact" className="px-5 pb-3" />
         <div className="border-t border-line p-3">
           <UserMenu email={user?.email} role={user?.role} onLogout={handleLogout} />
         </div>

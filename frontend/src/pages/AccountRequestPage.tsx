@@ -17,6 +17,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { FormSection } from "@/components/ui/form-section";
 import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { MarketRolePicker } from "@/components/CompanyProfileFields";
+import { LegalFooter, LegalNotice } from "@/components/LegalFooter";
 
 const t = strings.accountRequest;
 const typeLabels = strings.enums.companyType;
@@ -291,6 +292,8 @@ export function AccountRequestPage() {
         <Link to="/login" className="mt-6 text-center text-sm text-brand hover:underline">
           {t.backToLogin}
         </Link>
+
+        <LegalFooter className="mt-10" />
       </div>
     );
   }
@@ -659,15 +662,21 @@ export function AccountRequestPage() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-          <Link to="/login" className="text-sm text-brand hover:underline">
-            {t.backToLogin}
-          </Link>
-          <Button type="submit" loading={submitMut.isPending}>
-            {submitMut.isPending ? t.submitting : t.submit}
-          </Button>
+        <div className="border-t border-line pt-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link to="/login" className="text-sm text-brand hover:underline">
+              {t.backToLogin}
+            </Link>
+            <Button type="submit" loading={submitMut.isPending}>
+              {submitMut.isPending ? t.submitting : t.submit}
+            </Button>
+          </div>
+          {/* Sub buton, nu deasupra lui: se citește în drum spre apăsare. */}
+          <LegalNotice className="mt-3" />
         </div>
       </form>
+
+      <LegalFooter className="mt-10" />
     </div>
   );
 }

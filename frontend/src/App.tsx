@@ -7,6 +7,8 @@ import { LoginPage } from "@/pages/LoginPage";
 import { AccountRequestPage } from "@/pages/AccountRequestPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { TermsPage } from "@/pages/TermsPage";
+import { PrivacyPage } from "@/pages/PrivacyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { MovementsPage } from "@/pages/MovementsPage";
 import { EvidencesPage } from "@/pages/EvidencesPage";
@@ -57,6 +59,11 @@ export default function App() {
               so the paths are a contract with the backend, not a choice of the router. */}
           <Route path="/parola-uitata" element={<ForgotPasswordPage />} />
           <Route path="/reseteaza-parola" element={<ResetPasswordPage />} />
+          {/* Publice și **fără sesiune**, dinadins: un consultant cere politica înainte de demo,
+              adică înainte să aibă cont. Un document pe care trebuie să te autentifici ca să-l
+              citești nu e publicat. Adresele sunt cele scrise în documentele din `juridic/`. */}
+          <Route path="/termeni" element={<TermsPage />} />
+          <Route path="/confidentialitate" element={<PrivacyPage />} />
           <Route path="/" element={<AppShell><DashboardPage /></AppShell>} />
           <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />

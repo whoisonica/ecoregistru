@@ -3,6 +3,7 @@ import { Compass } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LegalFooter } from "@/components/LegalFooter";
 import { strings } from "@/lib/strings";
 
 const t = strings.notFound;
@@ -24,7 +25,7 @@ export function NotFoundPage() {
   const location = useLocation();
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <Card className="w-full max-w-md p-8 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted">
           <Compass className="h-6 w-6 text-content-subtle" aria-hidden />
@@ -40,6 +41,7 @@ export function NotFoundPage() {
           <Button>{user ? t.toDashboard : t.toLogin}</Button>
         </Link>
       </Card>
+      <LegalFooter />
     </div>
   );
 }

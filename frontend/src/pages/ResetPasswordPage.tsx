@@ -5,6 +5,7 @@ import { api, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LegalFooter } from "@/components/LegalFooter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -51,7 +52,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex h-full items-center justify-center p-4">
+    <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
       <Card className="w-full max-w-sm p-8">
         <div className="mb-6 text-center">
           <div className="text-2xl font-bold text-brand">{strings.appName}</div>
@@ -119,6 +120,7 @@ export function ResetPasswordPage() {
           </>
         )}
       </Card>
+      <LegalFooter />
     </div>
   );
 }
