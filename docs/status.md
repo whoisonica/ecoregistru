@@ -3,16 +3,20 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 10.09.2026.** 288 de teste verzi (0 eșecuri) și **11 probe de interfață, 281 de
-> verificări**. Migrări până la **`V34`**, următoarea liberă e **`V35`**. În producție:
-> `ecoregistru-api` la **v46**, `ecoregistru-app` la **v41**, cu **`V34` migrat acolo**.
+> **Unde suntem — 10.09.2026.** 300 de teste verzi (0 eșecuri) și **11 probe de interfață, 281 de
+> verificări**. Migrări până la **`V35`**, următoarea liberă e **`V36`**. În producție:
+> `ecoregistru-api` la **v47**, `ecoregistru-app` la **v42**, cu **`V35` migrat acolo**.
 > **P0 e închis, toate opt.** **11-bis și 11-ter sunt livrate și pe dyno**, cu probele lângă ele:
 > atașamentele nu mai stau la un URL public — nesemnat dă `401`, semnat dă `200`, iar sub prefixul
 > `ecoregistru` nu mai există niciun obiect public; atașamentul urcă și **se deschide în tab**.
 > Colectorul de erori e aprins pe amândouă capetele.
-> ✅ **`V34` (P1.12 — utilizatorii firmei) e deployată**, cu `V34` migrată pe dyno. Repo-ul și
-> producția sunt din nou la același conținut.
-> ⬜ **Rămâne de mers pe ecran cu sesiune reală** — drumul din `todo-lansare.md`, punctul 12.
+> ✅ **`V34` (P1.12 — utilizatorii firmei) e deployată**, cu `V34` migrată pe dyno.
+> ✅ **`V35` (Anexa 2 — transportul deşeurilor periculoase) e deployată pe 10.09** (api v47, app v42,
+> „now at version v35" în loguri; endpoint `/anexa2` → 401, bundle conţine „Anexa 2"). Modulul de
+> generatori tipăreşte acum **şase** documente oficiale. Repo-ul și producția sunt din nou la același
+> conținut.
+> ⬜ **Rămâne de mers pe ecran cu sesiune reală** — P1.12 (punctul 12) şi Anexa 2 (P3.2) din
+> `todo-lansare.md`. Codul e verificat automat (300 de teste, PDF randat), dar drumul pe ecran nu.
 > **Ce ține lansarea pe loc de-acum e P1, adică juridic** — SRL, DPA, termeni. Nu se rezolvă la
 > tastatură.
 >
@@ -5564,6 +5568,21 @@ pe registrul de predări şi în meniul rândului din Evidenţe.
 ⬜ **Neprobat pe ecran cu sesiune reală** — suita de interfaţă cere backendul dev şi parola
 conturilor demo, care nu mai stă în repo. Până atunci felia e **construită şi probată automat**, nu
 probată pe ecran. *Deployat nu înseamnă probat; compilat cu atât mai puţin.*
+
+> ✅ **Deployată pe 10.09.2026, 16:50.** `ecoregistru-api` **v46 → v47** (`0f87c3c`),
+> `ecoregistru-app` **v41 → v42** (`ee1c246`), prin procedura de subtree, fără `--force`. **`V35`
+> migrată pe dyno** — „Migrating schema public to version 35 - anexa2 hazardous transport →
+> Successfully applied 1 migration, now at version v35". Garda de conţinut de la pasul 3 a trecut
+> curat pe amândouă părţile (backend doar `.gitignore`, frontend `.gitignore` + cele două artefacte
+> vite), deci **niciun commit rămas pe drum**. Verificat pe conţinut, nu pe hash: endpoint
+> `/movements/<id>/anexa2` → **401** (ruta există), iar bundle-ul servit conţine „Anexa 2".
+> ⬜ Proba pe ecran (P3.2) rămâne singura de făcut — cu sesiune reală de `ADMIN`, pe stiva locală.
+> **Verificarea de dinainte de deploy** (10.09, în această sesiune): cod recitit rubrică cu rubrică
+> faţă de `surse-oficiale.md` §4.1, **12/12 teste V35** (citit din `TEST-*.xml`, nu din exit code),
+> PDF randat pe date reale şi **privit** (regula 5) — conform, o pagină per exemplar, `13 02 08*` cu
+> asterisc, `0,015` cu virgulă zecimală, cele 4 rubrici ale destinatarului goale — plus refuzurile
+> probate pe dyno-ul local: cod nepericulos → `400` (Anexa 3), cap. 18 medical → `400` (art. 24),
+> fără destinatar → `400`; şi cele două praguri: `< 1t/an` → **3 pagini**, `> 1t/an` → **6**.
 
 ### Ce rămâne, după felia asta
 
