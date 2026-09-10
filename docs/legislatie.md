@@ -248,6 +248,9 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 | Anexa 1 cap. 3 și 4 — cantitate + operaţie + operator | `operationCode` + `partner` pe mişcare | ✅ |
 | **Fişa oficială Anexa 1 tipărită** (antet + cele 4 capitole) | `Anexa1SheetBuilder` + `Anexa1FormGenerator` | ✅ |
 | Anexa 3 la HG 1061/2008 — formularul de transport | `Anexa3FormGenerator` | ✅ |
+| Anexa 2 la HG 1061/2008 — expediţie/transport deşeuri **periculoase** | `Anexa2FormGenerator` + `Anexa2ThresholdCalculator` (pragul de 1 t/an) | ✅ *(10.09.2026, `V35`)* |
+| Aprobarea transportului periculos — anexa 1 la HG 1061/2008, art. 7 peste 1 t/an | numărul ei se tastează pe Anexa 2; formularul îl **completează expeditorul** (art. 4 alin. (2)), dar pct. VIII cere compoziţia chimică — un buletin de analiză | ⬜ nu-l generăm; vezi `surse-oficiale.md` §4.2 |
+| Deşeurile periculoase din activitatea medicală (art. 24) | refuz explicit pe Anexa 2, cu explicaţia | ⛔ alt flux, al transportatorului |
 | Cantitate necunoscută la predare (cântărire la destinatar) | `weighedAtUnloading`, cantitate nullable, linie provizorie | ✅ |
 | Registrul art. 48 OUG 92/2021 | `Reception` / `Delivery` — schemă, fără ecrane | 🔜 Etapa 8 |
 | Declaraţia anuală (foaia „raportare deseuri generate”) | `AnnualDeclarationBuilder` + `AnnualDeclarationGenerator` — un rând per cod, o pagină per punct de lucru | ✅ |

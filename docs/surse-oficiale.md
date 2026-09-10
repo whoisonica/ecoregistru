@@ -558,15 +558,24 @@ dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
 | Anexă | Ce e | Îl generăm? |
 |---|---|---|
 | **nr. 1** | Formular pentru **aprobarea** transportului deşeurilor periculoase | ❌ nu |
-| **nr. 2** | Formular de **expediţie/transport deşeuri periculoase** | ❌ nu |
+| **nr. 2** | Formular de **expediţie/transport deşeuri periculoase** | ✅ da *(10.09.2026)* — model în §4.1 |
 | **nr. 3** | Formular de **încărcare-descărcare deşeuri nepericuloase** | ✅ da |
 
-> ✅ Mesajul `ANEXA3_HAZARDOUS_NOT_ALLOWED` trimite corect la anexa 2 pentru un cod periculos.
-> 🟠 **Dar nu punem nimic în loc.** Un generator obişnuit *are* coduri periculoase — un service auto
-> are ulei uzat (`13 02 xx*`) şi filtre, o clinică are `18 01 03*`, un birou are tuburi fluorescente
-> (`20 01 21*`). Pentru ei ţinem fişa corect şi nu putem tipări niciun document de transport. Şi e
-> mai mult decât un formular: transportul periculos cere **aprobare prealabilă** (anexa 1), adică o
-> procedură, nu o pagină. Vezi `audit-conformitate.md` pct. 6 şi întrebarea **AI**.
+> ✅ Mesajul `ANEXA3_HAZARDOUS_NOT_ALLOWED` trimite corect la anexa 2 pentru un cod periculos —
+> iar de pe **10.09.2026** trimite la un formular care **există**: `Anexa2FormGenerator`, migrarea
+> `V35`. Regulile şi modelul verbatim sunt în **§4.1** de mai jos.
+>
+> 🟠 ~~**Dar nu punem nimic în loc.**~~ *(adevărat până pe 10.09.2026, păstrat fiindcă spune de ce
+> felia era cea mai valoroasă rămasă)* Un generator obişnuit *are* coduri periculoase — un service
+> auto are ulei uzat (`13 02 xx*`) şi filtre, o clinică are `18 01 03*`, un birou are tuburi
+> fluorescente (`20 01 21*`). Pentru ei ţineam fişa corect şi nu puteam tipări niciun document de
+> transport.
+>
+> ⬜ **Ce tot nu generăm, şi nu e o scăpare:** **aprobarea prealabilă** din anexa nr. 1, cerută de
+> art. 7 peste 1 t/an — o procedură la APM, cu 7 zile lucrătoare (art. 4 alin. (5)), nu o pagină.
+> Numărul ei se tastează pe formular, iar ecranul spune ce mai lipseşte când bifa cade peste prag.
+> ⛔ Şi fluxul art. 24 al **deşeurilor medicale**, care e al transportatorului. Vezi
+> `audit-conformitate.md` pct. 6.
 
 Formularul de încărcare-descărcare deșeuri nepericuloase (anexa nr. 3) — câmpuri:
 
@@ -630,6 +639,389 @@ produs pe 23.08:
   `documente oficiale/Anexa 3_model.pdf` şi `ANEXA 3 model_CARTON.docx`.
 - **„Cele 4 tabele”** = cele patru capitole ale fişei **Anexa 1 la HG 856/2002**, per cod de deşeu
   şi per an. Model: `documente oficiale/deseuri generate_Cluj_2025_Iuhos Lorena.pdf`.
+
+
+### 4.1 ANEXA Nr. 2 — formularul de expediţie/transport deşeuri periculoase (citit pe 10.09.2026)
+
+Sursă: aceeaşi, [DetaliiDocument/97706](https://legislatie.just.ro/Public/DetaliiDocument/97706),
+**forma consolidată la 23.01.2026**. Actul reproduce formularul **în facsimil**, ca HG 856/2002 la
+fişă — deci forma nu trebuia cerută de la nimeni, şi asta a închis întrebarea **AI**.
+
+⚠️ **Lecţia care a costat o zi:** pe 10.09 dimineaţa, din **exemplarul completat** (TEMPO PAM,
+13.01.2022, în repo-ul privat) s-a dedus că formularul îl emite colectorul, fiindcă purta numărul
+1047. **Art. 8 spune contrariul, textual.** Un exemplar completat arată **cum se completează în
+practică** — e preţios exact pentru asta — dar **nu spune cine e obligat**, şi poate fi neconform cu
+modelul: celui primit îi lipsesc trei rubrici (tipul mijloacelor de transport, ambalajele,
+observaţiile) şi scurtează legenda semnăturii destinatarului. **Se construieşte după act.**
+
+#### Regulile, pe articole
+
+| Ce | Unde | Text |
+|---|---|---|
+| **Cine completează** | **art. 8** | „**Expeditorul** completează, semnează şi ştampilează formularul de expediţie/transport deşeuri periculoase" |
+| Cine e expeditorul | art. 4 alin. (1) | „de la generator sau deţinător, denumit în continuare **expeditor**" |
+| Transportatorul | art. 9 alin. (1) | „**semnează şi ştampilează** […] la primirea deşeurilor" |
+| Destinatarul | art. 10 alin. (1) | „la primirea deşeurilor […] **semnează şi ştampilează** […] confirmând acceptarea" |
+| **Sub 1 t/an: fără aprobare** | **art. 6 alin. (1)** | formularul „**nu trebuie să conţină aprobarea** agenţiei pentru protecţia mediului" |
+| Sub 1 t/an: ce se scrie | art. 15 alin. (1) | „se **precizează clar**" că deşeurile sunt generate în cantitate mai mică de 1 t/an |
+| **Sub 1 t/an: 3 exemplare** | **art. 15 alin. (2)** | o copie la expeditor, una la destinatar, una la transportator |
+| Sub 1 t/an, totuşi la APM | **art. 6 alin. (2)** | destinatarul depune un exemplar la agenţie — cele „3 exemplare" spun cine **păstrează**, nu cine **primeşte** |
+| Peste 1 t/an | art. 7 | transportul e însoţit de formularul de expediţie **şi de formularul pentru aprobare** (anexa nr. 1) |
+| **Peste 1 t/an: 6 exemplare** | art. 12 + art. 4 alin. (10) | expeditor, destinatar, transportator, APM care a aprobat, **ISU** al judeţului expeditorului, APM al judeţului expeditorului |
+| Termen de aprobare | art. 4 alin. (5) | APM judeţean, **7 zile lucrătoare** |
+| Valabilitatea aprobării | art. 5 | un transport, sau mai multe — atunci **2 ani** |
+| Şi când e aceeaşi firmă | art. 4 alin. (11) | regulile se aplică şi dacă expeditor, transportator şi destinatar sunt **acelaşi operator** |
+| Proba păstrată | art. 10 alin. (2) | destinatarul prelevează o probă din fiecare transport, **cel puţin 3 luni** |
+| După operaţie | art. 13 | destinatarul semnează din nou, copie la expeditor + APM-ul expeditorului + APM-ul instalaţiei |
+| Formularul aprobat, la **ISU** | **art. 4 alin. (8) lit. b)** | îl duce **expeditorul**, la ISU-ul judeţului său, „pentru **autorizarea rutei** transportului" |
+| Notificarea de **48 de ore** | art. 14 alin. (1) | o face **ISU-ul**, nu clientul: anunţă celelalte ISU-uri judeţene şi inspectoratele de poliţie de pe traseu |
+| ⛔ **Deşeurile medicale** | **art. 24** | **transportatorul** — „chiar dacă acesta este şi destinatar" — întocmeşte formularele, cu „cantitatea cumulată […] pe un transport dintr-o anumită zonă" şi „o anexă cu expeditorii şi cantităţile individuale" |
+| Sancţiuni | art. 25 alin. (2) | lit. b) nerespectarea **art. 8**: **10.000–20.000 lei** · lit. c) art. 9, 10, 12, 15(2): **5.000–10.000 lei** |
+
+⚠️ **Art. 2 trimite definiţiile la „anexa nr. I A la OUG nr. 78/2000" — act abrogat.** Deci
+„**aceeaşi categorie** de deşeuri periculoase", cuvântul pe care stă pragul de 1 t/an (art. 5, 7,
+15(1)), **nu e definit nicăieri**: lanţul de definiţii e rupt. Riscul e asimetric — cumulul pe cod
+subestimează dacă „categorie" e mai larg, iar subestimarea sare peste aprobare (art. 7 → amenda de
+la lit. b); supraestimarea cere doar o aprobare în plus. Regula proiectului: **unde actul tace,
+câmpul se propune, nu se impune.**
+
+⚠️ Singura schimbare din 2026: **art. 25 alin. (3) a fost anulat** — confiscarea mijlocului de
+transport (Sentinţa nr. 225/F-CONT/27.09.2024, Curtea de Apel Piteşti, M. Of. nr. 51/23.01.2026).
+**Nu atinge formularele**; e doar motivul pentru care consolidarea poartă data 23.01.2026.
+
+#### Modelul, verbatim din act
+
+```
+             Formular de expediție/transport deșeuri periculoase
+
+                                nr.*1) |_|_|_|_|_|
+
+
+                                    - model -
+
+Denumirea deșeurilor periculoase*2)   |_|_|_|_|_|_|_|_|_|_|
+Cod deșeuri periculoase               Deșeuri periculoase < 1t/an               Nr. formularului de aprobare
+|_|_|_|_|_|                           |_|                                       al transportului*)
+                                      Deșeuri periculoase > 1t/an               |_|_|_|_|_|
+                                      |_|
+Nr. de înregistrare al expeditorului  Nr. de înregistrare al transportatorului  Nr. de înregistrare al destinatarului
+|_|_|_|_|_|                           |_|_|_|_|_|                               |_|_|_|_|_|
+În calitate de:                       În calitate de:                           În calitate de operator
+Generator |_|                         Nume delegat:                             economic care realizează
+Operator economic care                Nr. de înmatriculare mijloc               operația de:
+realizează operația de:               transport:                                Colectare |_|
+Colectare  |_|                                                                  Stocare temporară |_|
+Stocare temporară |_|                                                           Tratare |_|
+                                                                                Valorificare |_|
+                                                                                Eliminare |_|
+Cantitatea predată în tone            Cantitatea primită în tone                Cantitatea recepționată în tone
+|_|_|_|_|_|                           |_|_|_|_|_|                               |_|_|_|_|_|
+                                                                                Cantitatea respinsă în tone
+                                                                                |_|_|_|_|_|
+Data predării (zi, lună, an)          Data predării (zi, lună, an)              Data primirii (zi, lună, an)
+|_|_|_|_|_|_|                         |_|_|_|_|_|_|                             |_|_|_|_|_|_|
+Denumirea societății, sediul,         Denumirea societății, sediul,             Denumirea societății, sediul,
+cod unic de identificare              cod unic de identificare                  cod unic de identificare
+|_|_|_|_|_|                           |_|_|_|_|_|                               |_|_|_|_|_|
+Semnatura și ștampila                 Semnatura și ștampila                     Semnatura și ștampila
+(asigurare pentru o declarație        (asigurare pentru transport               (asigurare pentru preluare
+corectă)                              regulamentar)                             în vederea unei colectări sau
+ .............................         .......................                   stocări temporare, tratare/
+                                                                                valorificare/eliminare
+                                                                                conform prevederilor legale)
+                                                                                .............................
+ Tipul mijloacelor de transport:
+Numar și tip de ambalaje utilizate pentru transportul deșeurilor periculoase:
+Observații:
+___________
+*1) Număr înscris de către agenția județeană pentru protecția mediului.
+*2) Conform Hotărârii Guvernului nr. 856/2002 privind evidența gestiunii deșeurilor și pentru aprobarea listei cuprinzand deșeurile, inclusiv deșeurile periculoase, cu completările ulterioare.
+        Notă
+        *) Nu este necesară aprobare pentru cantităţi < 1t/an.
+```
+
+**Cele două note ale modelului sunt cele care decid două câmpuri din aplicaţie:**
+
+* `*1)` — „**Număr înscris de către agenţia judeţeană pentru protecţia mediului**". 🔴 Deci numărul
+  formularului **nu se alocă de noi**, spre deosebire de `anexa3Number` (`max+1` pe firmă). Câmp
+  tastat, gol implicit: altfel tipărim un număr inventat pe un formular oficial.
+* `*2)` — denumirile vin din **HG 856/2002**, nomenclatorul pe care îl avem; asteriscul stă **numai
+  în coloana de cod** (§1, `WasteCodeLabel.official`).
+
+**„Nr. de înregistrare" ×3 = codul unic de înregistrare.** Anexa 2 nu-l defineşte, dar blocul de
+identificare de dedesubt scrie de trei ori „cod unic de identificare", pentru aceleaşi trei părţi.
+Se ia din `Company.cui` şi `Partner.cui`; niciun câmp nou.
+
+**Patru rubrici se tipăresc goale, deliberat:** `Cantitatea primită`, `Cantitatea recepţionată`,
+`Cantitatea respinsă` şi `Data primirii`. Expeditorul completează formularul (art. 8), dar acelea
+sunt declaraţiile transportatorului şi destinatarului, care semnează **la primirea** deşeurilor
+(art. 9(1), art. 10(1)). Exemplarul primit le are completate fiindcă a fost umplut **după** transport;
+dacă l-am copia, am tipări declaraţia altcuiva. Precedentul e la Anexa 3 — cantitatea cântărită la
+descărcare e rubrică goală.
+
+#### Cum se citeşte pagina, dacă trebuie recitită
+
+`curl` simplu întoarce **`403`**; cu un `User-Agent` de browser vine pagina întreagă, iar anexele
+**nu** sunt trunchiate (spre deosebire de OUG 196/2005 — §10.2). Textul stă în `<span class="S_PAR">`
+cu spaţierea coloanelor păstrată, deci facsimilul se reface tăind **doar tagurile cunoscute**:
+
+```bash
+curl -s -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126.0" \
+  "https://legislatie.just.ro/Public/DetaliiDocument/97706" -o hg1061.html
+```
+
+⚠️ **Capcana, şi e exact pe rubrica pragului:** un `re.sub(r'<[^>]+>', '', …)` **mănâncă
+`< 1t/an`** — `<` deschide un tag fals şi înghite tot până la următorul `>`. Se pierd caseta
+„Deşeuri periculoase < 1t/an |_|", titlul „Nr. formularului de aprobare al transportului*)" şi
+coada notei `*)`. Prima extragere de pe 10.09 a păţit-o, şi a arătat ca o trunchiere a portalului.
+Se taie cu o listă de taguri (`</?(?:span|a|br|p|div|sup|b|i|font|table|tr|td|tbody)\b[^>]*>|<!--.*?-->`),
+nu cu `<[^>]+>`.
+
+---
+
+
+### 4.2 ANEXA Nr. 1 — formularul pentru aprobarea transportului (citit pe 10.09.2026)
+
+Cerut de **art. 7** pentru fiecare transport de peste 1 t/an din aceeaşi categorie. **Nu îl
+generăm** — dar modelul lui e tot în facsimil în act, deci se poate construi oricând, iar ce
+împiedică azi nu e informaţia, ci datele. Notat aici ca să nu fie recitit a treia oară.
+
+#### Drumul hârtiei, pe articole — şi nu e ce pare
+
+| Pasul | Cine | Unde scrie |
+|---|---|---|
+| 1. completează formularul | **expeditorul** (clientul nostru) | art. 4 alin. (2) |
+| 2. îl trimite destinatarului, semnat şi ştampilat | expeditorul | art. 4 alin. (3) |
+| 3. acceptă sau cere lămuriri; dacă acceptă, semnează şi ştampilează | destinatarul | art. 4 alin. (4) |
+| 4. merge la **APM-ul din raza instalaţiei destinatarului** — nu a expeditorului | destinatarul | art. 4 alin. (5) |
+| 5. **7 zile lucrătoare** de la primirea tuturor informaţiilor | APM | art. 4 alin. (5) |
+| 6. semnează şi ştampilează, după ce verifică operaţiile şi regimul ariilor protejate / Natura 2000 | APM | art. 4 alin. (7) |
+| 7. îl trimite înapoi expeditorului **şi** APM-ului expeditorului | APM-ul instalaţiei | art. 4 alin. (8) lit. a) |
+| 8. **îl duce la ISU-ul judeţului său, pentru autorizarea rutei** | **expeditorul** | art. 4 alin. (8) lit. b) |
+| 9. anunţă, cu **48 de ore** înainte, celelalte ISU-uri şi poliţiile de pe traseu | **ISU-ul**, nu clientul | art. 14 alin. (1) |
+
+🔴 **Pasul 9 a fost scris greşit în prima variantă a documentaţiei de azi** — ca o obligaţie a
+clientului, „notificarea ISU cu 48 de ore", şi ajunsese şi într-un text de pe ecran. Art. 14 alin. (1)
+spune contrariul: notificarea o face **inspectoratul**, după ce primeşte formularele. Obligaţia
+clientului e pasul 8, care e alt lucru şi în alt moment. Aceeaşi lecţie ca dimineaţă, a treia oară
+în aceeaşi zi: **citeşte articolul, nu rezumatul lui.**
+
+⚠️ Valabilitatea: art. 5 — o aprobare pe **un** transport, sau pe mai multe, şi atunci **2 ani** de
+la acordare.
+
+#### De ce nu e o felie mică: pct. VIII
+
+Modelul are opt secţiuni. I–IV (expeditor, transportator, destinatar, amplasamentul instalaţiei),
+V (ce se aprobă: un transport sau mai multe, plus cele cinci operaţii), VI (numărul de transporturi
+planificate) şi VII (cantitatea planificată, **în tone**) se completează din modelul nostru de date,
+aproape rubrică-la-rubrică cu Anexa 2.
+
+**Pct. VIII cere compoziţia chimică a deşeului: 38 de parametri numerotaţi** — arseniu, plumb,
+cadmiu, crom-VI, cupru, nichel, mercur, seleniu, staniu, stibiu, taliu, telur, sulfuri, cloruri,
+fluoruri, bromuri, ioduri, nitriţi, fenoli, PCB/PCT, CCO, pH, conductibilitate, punct de topire, de
+inflamabilitate, putere calorică ş.a.m.d. — plus 10 rânduri libere de „alţi parametri".
+
+🔴 **Aia nu e o rubrică de completat, e un buletin de analiză.** Nu-l putem calcula, nu-l putem
+deduce şi nu-l putem inventa. Deci felia „formularul de aprobare" **stă pe** întrebarea **AL**
+(buletinele de analiză, OUG 92/2021 art. 48 alin. (2)) — iar pct. VIII e chiar răspunsul parţial la
+ea: actul spune **ce parametri**, nu spune per ce se face buletinul şi cât se ţine.
+
+⚠️ **Şi aici lanţul de definiţii e rupt, a doua oară în acelaşi act:** pct. V lit. C trimite
+operaţia la *„anexele nr. IA, II A şi, respectiv, II B din Ordonanţa de urgenţă a Guvernului
+nr. 78/2000"* — abrogată. Codurile R/D şi-au păstrat numerotarea prin Legea 211/2011 şi OUG 92/2021,
+deci se tipăreşte codul pe care îl avem deja pe mişcare; e o decizie a noastră, scrisă, nu o
+întrebare.
+
+#### Modelul, verbatim din act
+
+```
+Formular pentru aprobarea transportului deșeurilor periculoase
+          nr.*1) |_|_|_|_|_|
+___________
+  *1) Număr înscris de agenția județeană pentru protecția mediului în a cărei rază teritorială se află instalația de tratare/valorificare/eliminare.
+               - model -
+
+
+    I. Date privind expeditorul/generatorul deșeurilor periculoase
+    Societatea ...................................................
+    Sediul .......... nr. ........, cod poștal ........, localitatea ........
+    Persoana responsabilă ...................................................
+    Telefon ................. fax ............. e-mail ......................
+    Autorizație de mediu nr. |_|_|_|_|_|
+    Data la care expiră autorizația de mediu |_|_|_|_|_|_|
+    Cod unic de înregistrare |_|_|_|_|_|_|
+
+    II. Date privind transportatorul deșeurilor periculoase
+    Societatea .............................................................
+    Sediul ........... nr. ......., cod poștal ......., localitatea ........
+    Persoana responsabilă ..................................................
+    Telefon .................. fax ............. e-mail ....................
+    Licența de transport mărfuri periculoase nr. .........
+    Data la care expiră licența de transport mărfuri periculoase ...........
+    Autorizație de mediu nr. |_|_|_|_|_|
+    Data la care expiră autorizația de mediu |_|_|_|_|_|_|
+    Cod unic de înregistrare |_|_|_|_|_|_|
+    Nr. de înmatriculare mijloc de transport ...............................
+    Delegat (nume, prenume, funcție) .......................................
+
+    III. Date privind destinatarul deșeurilor periculoase
+    Societatea .............................................................
+    Sediul ......... nr. ........, cod poștal ........., localitatea .......
+    Persoana responsabilă ..................................................
+    Telefon ................... fax ............. e-mail ...................
+    Cod unic de înregistrare |_|_|_|_|_|_|
+
+    IV. Date privind amplasamentul instalației de tratare/valorificare/eliminare
+    Denumirea ...............................................................
+    Sediul ......... nr. ......., cod poștal ......., localitatea ...........
+    Persoana responsabilă ...................................................
+    Telefon .................... fax............. e-mail ....................
+    Autorizație de mediu nr. |_|_|_|_|_|
+    Data la care expiră autorizația de mediu |_|_|_|_|_|_|
+
+    V. Aprobare pentru:
+
+    A. (i) un singur transport                                |_|
+    (îi) mai multe transporturi                               |_|
+    Data la care expiră aprobarea                       |_|_|_|_|_|_|
+
+    B. (i) colectare                                          |_|
+    (îi) stocare temporară                                    |_|
+    (iii) tratare                                             |_|
+    (iv) valorificare                                         |_|
+    (v) eliminare                                             |_|
+
+    C. Operația de colectare/stocare temporară/tratare/valorificare/eliminare
+    nr. ....... (conform anexelor nr. IA, II A și, respectiv, II B din
+    Ordonanța de urgență a Guvernului nr. 78/2000 privind regimul deșeurilor,
+    aprobată cu modificări și completări prin Legea nr. 426/2001, cu
+    modificările și completările ulterioare)
+
+   VI. Numărul total de transporturi planificate:
+
+   VII. Cantitatea de deșeuri planificată a fi transportată (în tone)
+                                                               |_|_|_|_|_| t
+
+   VIII. Denumirea și compoziția chimică a deșeurilor:
+
+   - Denumirea deșeurilor (conform Hotărârii Guvernului nr. 856/2002 privind
+   evidența gestiunii deșeurilor și pentru aprobarea listei cuprinzând
+   deșeurile, inclusiv deșeurile periculoase, cu completările ulterioare)
+                                                               |_|_|_|_|_|
+   - Codul deșeurilor (conform Hotărârii Guvernului nr. 856/2002,
+     cu completările ulterioare)                               |_|_|_|_|_|
+   - Conținutul deșeurilor în:
+
+    1. Arseniu                                       |_|_|_|_|_|      mg/l
+    2. Plumb                                         |_|_|_|_|_|      mg/l
+    3. Cadmiu                                        |_|_|_|_|_|      mg/l
+    4. Crom-Vl                                       |_|_|_|_|_|      mg/l
+    5. Cupru                                         |_|_|_|_|_|      mg/l
+    6. Nichel                                        |_|_|_|_|_|      mg/l
+    7. Mercur                                        |_|_|_|_|_|      mg/l
+    8. Seleniu                                       |_|_|_|_|_|      mg/l
+    9. Staniu                                        |_|_|_|_|_|      mg/l
+    10. Stibiu                                       |_|_|_|_|_|      mg/l
+    11. Taliu                                        |_|_|_|_|_|      mg/l
+    12. Telur                                        |_|_|_|_|_|      mg/l
+    13. Sulfuri                                      |_|_|_|_|_|      mg/l
+    14. Cloruri                                      |_|_|_|_|_|      mg/l
+    15. Fluoruri                                     |_|_|_|_|_|      mg/l
+    16. Bromuri                                      |_|_|_|_|_|      Greu %
+    17. Ioduri                                       |_|_|_|_|_|      Greu %
+    18. Nitriti                                      |_|_|_|_|_|      Greu %
+    19. Fenoli                                       |_|_|_|_|_|      mg/l
+    20. PCB/PCT                                      |_|_|_|_|_|      mg/l
+    21. Consum Chimic de Oxigen (CCO)                |_|_|_|_|_|      mg/l
+    22. Valoare pH                                   |_|_|_|_|_|      mg/l
+    23. Conductibilitate                             |_|_|_|_|_|      S/cm
+    24. Materiale lipofile greu volatile             |_|_|_|_|_|      mg/l
+    25. Componența extractibilă a substanței de bază |_|_|_|_|_|      Greu %
+    26. Materiale lipofile extractibile              |_|_|_|_|_|      Greu %
+    27. Pierderi la calcinare                        |_|_|_|_|_|      Greu %
+    28. Componența dizolvabilă în apă                |_|_|_|_|_|      Greu %
+    29. Conținut de apă                              |_|_|_|_|_|      %
+    30. Rezistența la forfecare                      |_|_|_|_|_|      kN/m"
+    31. Deformare axială                             |_|_|_|_|_|      %
+    32. Rezistența la presare uniaxială              |_|_|_|_|_|      kN/m"
+    33. Punct de topire                              |_|_|_|_|_|      °C
+    34. Punct de inflamabilitate                     |_|_|_|_|_|      °C
+    35. Punct de condensare/domeniu de condens       |_|_|_|_|_|      °C
+    36. Putere calorică                              |_|_|_|_|_|      kJ/k
+    37. Emisie de gaze prin reacții ulterioare       |_|_|_|_|_|
+        a) în contact cu ambalajul                   |_|_|_|_|_|
+        b) în contact cu aerul                       |_|_|_|_|_|
+        c) în contact cu roca de sare                |_|_|_|_|_|
+        d) la temperatura de °C ...............      |_|_|_|_|_|
+    38. Menționarea componentelor periculoase        |_|_|_|_|_|
+        a) ale deșeurilor                            |_|_|_|_|_|
+        b) ale produselor rezultate din              |_|_|_|_|_|
+           valorificarea/eliminarea deșeurilor
+
+        Alți parametri                               valoare     dimensiune
+    39. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    40. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    41. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    42. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    43. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    44. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    45. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    46. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    47. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+    48. |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|        |_|_|_|_|_|   |_|_|_|_|_|
+
+    49. Alte mențiuni                 |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+
+    NOTĂ: La completarea pct. 38-49 se au în vedere prevederile art. 8 din
+    Hotărârea Guvernului nr. 856/2002, cu completările ulterioare.
+
+    IX. Modalități de transport |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+    X. Tipuri de ambalare |_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|_|
+    XI. Declarația expeditorului/generatorului:
+
+    Declar pe propria răspundere că datele și informațiile de mai sus sunt
+    complete și corecte. Declar, de asemenea, că îmi asum obligațiile
+    contractuale stabilite conform legii.
+
+         Nume            Semnatura/Ștampila             Data
+    ................    ......................     ...............
+
+    XII. Acceptarea transportului de către destinatar
+    Suntem de acord să preluăm deșeurile declarate.
+    Asigurăm că deșeurile vor fi tratate/valorificate/eliminate în
+    instalația noastră, conform legii.
+
+         Nume            Semnatura/Ștampila             Data
+    ................    ......................     ...............
+
+    XIII. Autorizarea transportului deșeurilor de către agenția județeană
+    pentru protecția mediului în a cărei rază teritorială are loc colectarea/
+    stocarea temporară/tratarea/valorificarea/eliminarea deșeurilor.
+    Agenția pentru Protecția Mediului (județul) autorizează
+
+         Nume            Semnatura/Ștampila             Data
+    ................    ......................     ...............
+     Condiții specifice |_|  nu   |_| da
+
+    Dacă se impun condiții specifice, acestea se trec pe verso.
+    XIV. Autorizarea rutei de transport de către Inspectoratul pentru
+    Situații de Urgență
+    Pentru transportul deșeurilor periculoase trebuie utilizată următoarea
+    rută: ............................
+    Dacă această rută nu poate fi utilizată din motive obiective, va fi
+    utilizată urmatoarea rută:
+Nume
+.............
+Semnatura/Ștampila
+.......................
+Data
+...............
+```
+
+Nota `*1)` a acestui formular e **altfel** decât a Anexei 2: numărul îl înscrie „agenţia judeţeană
+pentru protecţia mediului **în a cărei rază teritorială se află instalaţia** de
+tratare/valorificare/eliminare" — adică a destinatarului, nu a noastră. Acelaşi principiu: nu-l
+alocăm noi.
 
 ---
 

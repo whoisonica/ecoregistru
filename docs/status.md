@@ -5369,7 +5369,226 @@ retrimitere → parolă → dezactivare dintr-o altă sesiune. E scris pas cu pa
 la punctul 12. Până atunci, felia e **deployată**, nu **probată pe producție** — regula 2 se aplică
 la fel și când tot ce e automat e verde.
 
+
 ---
+
+## Anexa 2 la HG 1061/2008 — blocajul care nu exista (10.09.2026)
+
+Zero cod. O felie de citit, şi merită scrisă fiindcă a stat pe listă **de pe 02.09** ca „blocată pe
+specialistă" (întrebarea **AI**) — pe o premisă falsă.
+
+**Ce se credea:** că HG 1061/2008 descrie conţinutul, nu forma, ca art. 48 din OUG 92/2021, deci
+formularul de expediţie/transport deşeuri periculoase nu se poate construi fără un exemplar
+completat, iar a-l inventa ar încălca regula pe care stă tot proiectul.
+
+**Ce e:** actul **reproduce anexa nr. 2 în facsimil**, exact ca HG 856/2002 la fişă. Rubricile,
+ordinea lor, cele trei coloane, cele patru cantităţi, cele două note de subsol — toate erau în text,
+la aceeaşi adresă pe care documentaţia o citează din 22.08. Nu lipsea nimic.
+
+### Cele trei lucruri pe care le-a răsturnat citirea actului
+
+**1. 🔴 Cine emite hârtia — răspunsul era invers.** Dimineaţa sosise un exemplar completat (TEMPO
+PAM → ALPIN RECYCLING, `08 01 17*`, 13.01.2022), iar din el s-a dedus că formularul îl emite
+**colectorul**: era completat de el şi purta numărul 1047, prea mare pentru o firmă mică. **Art. 8
+spune textual că expeditorul completează, semnează şi ştampilează.** Numărul mare are altă
+explicaţie, tot din act — nota `*1)` a modelului: *„Număr înscris de către agenţia judeţeană pentru
+protecţia mediului."* Consecinţa nu e teoretică: dacă rămânea deducţia din exemplar, felia devenea
+**S** (o notă pe ecran, „ţi-l dă colectorul") în loc de **M** (un generator de PDF pentru clientul
+nostru) — adică exact clienţii-ţintă din `monetizare.md` ar fi rămas fără document.
+
+**2. 🔴 Numărul nu se alocă de noi.** E opusul a ce face codul pentru Anexa 3, unde `anexa3Number`
+se ia `max+1` pe firmă. Aici câmpul se tastează şi implicit rămâne gol, altfel tipărim un număr
+inventat pe un formular oficial.
+
+**3. 🔴 Exemplarul primit nu e conform modelului.** Îi lipsesc trei rubrici — `Tipul mijloacelor de
+transport`, `Numar şi tip de ambalaje`, `Observaţii` — şi scurtează legenda semnăturii
+destinatarului (sare peste „tratare/"). Rămâne valoros pentru **practică** (ce se lasă gol, că un
+colector poate fi şi transportator), dar **nu e sursă de formă**.
+
+Şi patru rubrici trebuie să iasă **goale** din imprimantă — `Cantitatea primită`, `recepţionată`,
+`respinsă`, `Data primirii`: expeditorul completează formularul, dar acelea sunt declaraţiile
+transportatorului şi destinatarului, care semnează *la primirea* deşeurilor (art. 9(1), 10(1)).
+Exemplarul le are completate cu `0.002` fiindcă a fost umplut **după** transport. Precedentul există
+deja în cod: la Anexa 3, cantitatea cântărită la descărcare e rubrică goală.
+
+### Ce s-a scris, şi unde
+
+`surse-oficiale.md` **§4.1**: regulile pe articole (cine completează, pragul de 1 t/an şi aprobarea,
+3 exemplare sub prag / 6 peste, termenele, sancţiunile — inclusiv `art. 25(2) lit. b)`,
+**10.000–20.000 lei**, care e şi argumentul comercial), **modelul verbatim**, şi ce înseamnă cele
+două note. Analiza pe exemplar, cu ce e privat în ea, rămâne în `anexa2-model-completat.md`.
+
+⚠️ **Două capcane de citire, amândouă de reţinut:**
+
+* `curl` simplu pe Portalul Legislativ întoarce **`403`**; cu `User-Agent` de browser vine pagina
+  întreagă, iar anexele **nu** sunt trunchiate (OUG 196/2005 e cazul în care sunt — §10.2).
+* un `re.sub(r'<[^>]+>', '', …)` pe HTML **mănâncă `< 1t/an`**: `<` deschide un tag fals. Se pierd
+  caseta pragului, titlul „Nr. formularului de aprobare al transportului*)" şi coada notei — adică
+  **exact rubricile pe care stă felia**, şi arată ca o trunchiere a sursei, nu ca un bug al nostru.
+  Prima extragere a păţit-o. Se taie cu o listă de taguri cunoscute, nu cu `<[^>]+>`.
+
+### Ce rămâne deschis, şi de ce nu blochează
+
+Un singur necunoscut de drept: **„aceeaşi categorie de deşeuri periculoase"**, cuvântul pe care stă
+pragul de 1 t/an, **nu e definit** — art. 2 trimite la „anexa nr. I A la OUG nr. 78/2000", act
+abrogat, deci lanţul de definiţii e rupt şi nicio sursă publică nu-l reface. Riscul e **asimetric**:
+cumulul pe cod subestimează dacă „categorie" e mai larg (grupa de patru cifre, capitolul), iar
+subestimarea sare peste aprobarea din art. 7. Deci şi implicitul e asimetric — bifa se **propune**
+din cumulul pe cod, cu cifra la vedere, rămâne editabilă, şi se avertizează când cumulul pe grupă
+trece de 1 t. **Unde actul tace, câmpul se propune, nu se impune.**
+
+⛔ **În afara feliei, explicit: deşeurile medicale.** Art. 24 face un **flux diferit**, nu o variantă
+— transportatorul întocmeşte formularele „chiar dacă acesta este şi destinatar", pe cantitate
+cumulată pe rută, cu o anexă de expeditori. Clinicile sunt clienţi-ţintă în `monetizare.md`, deci
+lucrul ăsta se spune **în interfaţă**, nu se află la control.
+
+**Lecţia, în aceeaşi haină ca cea din 09.09:** proba corectă pe stratul ales nu spune nimic despre
+stratul la care nu te-ai uitat. Aici stratul ales a fost **practica** (un exemplar completat), iar
+cel neatins **actul**. Şi e a doua oară în două zile că lista „blocate pe specialistă" ascundea ceva
+ce se putea citi singur — pe 04.09 erau şase decizii travestite în întrebări, pe 10.09 un facsimil
+pe care nimeni nu-l deschisese. **Înainte de a mai aştepta un răspuns, se reciteşte actul.**
+
+---
+
+## Anexa 2 — transportul deşeurilor periculoase, construit după act (10.09.2026)
+
+Ultima gaură funcţională mare din modulul de generatori. Un service auto cu ulei uzat, un birou cu
+tuburi fluorescente, un atelier cu vopsele — până azi ţineam fişa corect pentru ei şi **nu puteam
+tipări nimic** pentru transport. Mesajul de refuz al Anexei 3 numea anexa 2 şi adăuga „care nu e
+încă implementat"; propoziţia aia nu mai există.
+
+**Migrarea `V35`**, aditivă: patru coloane pe `waste_movements`. Următoarea liberă e `V36`.
+
+### Ce nu s-a mai adăugat, fiindcă exista
+
+Formularul cere douăzeci şi ceva de rubrici şi **cinci** dintre ele n-aveau unde sta. Restul se
+completează din model:
+
+| Rubrica din anexa 2 | De unde vine |
+|---|---|
+| Denumirea şi codul | `WasteCode`, cu asteriscul pus de `WasteCodeLabel.official` |
+| Cele cinci casete ale destinatarului | `transportDestinations` — **deja un `Set`**, fiindcă Anexa 3 lua două bife |
+| Nume delegat, nr. înmatriculare | `driverName`, `driverIdentification`, `vehicleRegistration` |
+| Nr. de înregistrare ×3 | `Company.cui`, `Partner.cui` — anexa nu defineşte rubrica, dar blocul de identificare de dedesubt scrie de trei ori „cod unic de identificare", pentru aceleaşi trei părţi |
+| Tipul mijloacelor de transport | `transportMeans` — **e aceeaşi întrebare** ca nota 4 din Anexa 1 cap. 2, deci nu se pune a doua oară |
+| Cantitatea predată în tone | `quantity`, convertită exact; anexa scrie „în tone" în chiar rubrică, deci n-are unitate de ales ca Anexa 3 |
+| Observaţii | `documentReference`, ca la Anexa 3 — aceeaşi rubrică, acelaşi câmp |
+
+Cele patru noi: numărul formularului, numărul aprobării, ambalajele, şi bifa pragului.
+
+### Cele trei lucruri pe care le-a decis actul, nu noi
+
+**1. 🔴 Numărul NU se alocă.** `anexa3Number` se ia `max+1` pe firmă, cu index unic. Aici, nota
+`*1)` a modelului: *„Număr înscris de către agenţia judeţeană pentru protecţia mediului."* Deci
+câmp tastat, gol implicit, `varchar` şi nu `integer` — ce scrie APM-ul e un şir, nu o secvenţă a
+noastră. Un test îl ţine: după generare, `anexa2Number` e în continuare `null`.
+
+**2. 🔴 Patru rubrici ies goale, intenţionat** — `Cantitatea primită`, `recepţionată`, `respinsă`
+şi `Data primirii`. Expeditorul completează formularul (art. 8), dar acelea sunt declaraţiile
+transportatorului şi destinatarului, semnate **la primirea** deşeurilor (art. 9(1), 10(1)).
+Exemplarul primit le are completate cu `0.002` fiindcă a fost umplut **după** transport; dacă îl
+copiam, tipăream declaraţia altcuiva. Testul verifică şi că cifra pe care o ştim apare **o singură
+dată** pe pagină.
+
+**3. Câte exemplare — 3 sau 6, calculat din prag.** Art. 15 alin. (2) sub 1 t/an: expeditor,
+destinatar, transportator. Art. 12 cu art. 4 alin. (10) peste: cele trei părţi, APM-ul care a
+aprobat, **ISU**-ul judeţului expeditorului şi APM-ul lui. Identice şi nenumite pe hârtie, ca la
+Anexa 3 — cine ia care exemplar scrie pe ecran, unde nu costă nimic.
+
+### Pragul: singurul loc unde puteam greşi, şi cum e aşezat
+
+„1 t/an" e scris de trei ori ca „din aceeaşi **categorie** de deşeuri periculoase", iar **actul nu
+defineşte categoria**: art. 2 trimite la „anexa nr. I A la OUG nr. 78/2000", abrogat de două ori de
+atunci. Lanţul e rupt şi nicio sursă publică nu-l reface.
+
+Riscul e **asimetric**. Cumulul pe cod e citirea cea mai îngustă; dacă „categorie" e mai lat
+(grupa de patru cifre, capitolul), cumulul pe cod **subestimează**, bifa cade pe „< 1t/an", iar
+transportul pleacă fără aprobarea din art. 7 — contravenţie de **10.000–20.000 lei**
+(art. 25 alin. (2) lit. b). Invers se cere o aprobare în plus şi atât.
+
+Deci: se **propune** din cumulul pe cod, cu cifra la vedere („0,840 t generate în 2026 pe
+`20 01 21*`"), câmpul are **trei stări** (`null` = cum reiese din evidenţă, iar propunerea se mişcă
+singură când mai intră mişcări; `true`/`false` = răspunsul omului, care bate propunerea), şi se
+**avertizează** când pe grupă cumulul trece de 1 t, fără să blocheze. `Anexa2ThresholdCalculator`
+citeşte **evidenţa**, nu o interogare proprie: definiţia lui „generat" e a lui `EvidenceCalculator`
+şi include generarea nescrisă de nimeni (`V24`) — un client care înregistrează doar predări are
+totuşi generare, iar un `sum(GENERATED)` naiv i-ar raporta zero, adică ar greşi exact în direcţia
+care costă.
+
+⚠️ **Anul calendaristic e tot alegerea noastră**, nu a actului. E singura coerentă cu restul
+evidenţei; scrisă lângă cifră, ca să se vadă pe ce interval s-a cumulat.
+
+### Ce refuză formularul, şi de ce fiecare refuz numeşte alt document
+
+Trei, în oglindă cu Anexa 3 — un client care nimereşte formularul greşit trebuie să afle **care e
+cel bun**, nu „nu":
+
+* **fără destinatar** — formularul descrie o expediţie;
+* **cod nepericulos** → Anexa 3. Perechea refuzului vechi, care de azi numeşte un formular care
+  există;
+* ⛔ **capitolul 18 — deşeurile medicale.** Art. 24 nu e o variantă, e alt flux: formularele le
+  întocmeşte **transportatorul**, „chiar dacă acesta este şi destinatar", pe cantitatea cumulată a
+  unei rute, cu o anexă a expeditorilor. Nu-l generăm nici pe acela: e al transportatorului şi se
+  construieşte dintr-o rută pe care n-o înregistrăm. Clinicile sunt clienţi-ţintă în
+  `monetizare.md`, deci refuzul o spune **pe ecran**, nu la control.
+
+Se citeşte **capitolul**, nu o listă de coduri: o listă ar trebui ţinută la zi faţă de nomenclator,
+iar un cod uitat ar tipări documentul greşit tocmai pentru o clinică.
+
+### Ce a găsit privirea pe PDF, şi nu compilatorul
+
+Randat şi **privit** (regula 5). Prima variantă, cu toate rubricile completate, îşi trecea **ultima
+linie de subsol pe pagina a doua**: trei exemplare ieşeau pe şase coli. Testele existente nu-l
+prindeau — foloseau mişcări scurte, care încăpeau. Reparat prin marginile şi înălţimile minime ale
+casetelor, şi ţinut de un test nou care completează **fiecare** rubrică liberă şi cere „o pagină pe
+exemplar".
+
+Tot din privit: cantitatea se tipăreşte cu **virgulă zecimală**. Pe Anexa 2 nu e o nimicnicie —
+totul e în tone, deci aproape orice cantitate a unui generator are zecimale (exemplarul primit
+scrie „0,002"). 🟠 **Anexa 3 tipăreşte în continuare punct**; e în producţie şi cifrele ei sunt de
+obicei kilograme întregi, deci a rămas o diferenţă cosmetică de reparat separat, nu în felia asta.
+
+**Gate-ul:** endpointul de tipărire **nu** e `CAN_WRITE`, spre deosebire de cel de Anexa 3. Acolo
+prima generare alocă numărul, adică scrie; aici nu se alocă nimic, deci tipărirea e o citire.
+
+### Interfaţa
+
+Blocul de transport a devenit comun celor două formulare — transportator, delegat, maşină, cele
+cinci bife sunt aceleaşi rubrici pe amândouă — iar ce diferă se schimbă în el: titlul, propoziţia
+despre exemplare, şi rubricile proprii. Butonul „Anexa 2" apare exact unde nu apare cel de Anexa 3:
+pe registrul de predări şi în meniul rândului din Evidenţe.
+
+**300 de teste verzi** (de la 288: douăsprezece noi, în `Anexa2FormIT`), 0 eşecuri, 0 sărite.
+`tsc --noEmit` curat, `vite build` verde.
+
+⬜ **Neprobat pe ecran cu sesiune reală** — suita de interfaţă cere backendul dev şi parola
+conturilor demo, care nu mai stă în repo. Până atunci felia e **construită şi probată automat**, nu
+probată pe ecran. *Deployat nu înseamnă probat; compilat cu atât mai puţin.*
+
+### Ce rămâne, după felia asta
+
+Modulul de generatori are **şase** documente, nu cinci. Dar transportul periculos nu e închis
+complet, şi e mai cinstit scris aici decât descoperit la un control:
+
+* ⬜ **Anexa nr. 1 — formularul de aprobare** cerut de art. 7 peste 1 t/an. Îl bifăm şi îi tipărim
+  numărul, dar nu-l producem. **Modelul e tot în facsimil în act** (citit şi el azi,
+  `surse-oficiale.md` §4.2), deci nu informaţia lipseşte: **pct. VIII cere compoziţia chimică a
+  deşeului, 38 de parametri** — adică un buletin de analiză, pe care nu-l putem calcula. Felia stă
+  pe **AL**.
+* 🔴 **Şi aici prima scriere de azi a greşit, a treia oară în aceeaşi zi.** Notasem „notificarea ISU
+  cu 48 de ore" ca obligaţie a clientului, şi ajunsese şi într-un text de pe ecran. **Art. 14
+  alin. (1) spune că notificarea o face ISU-ul**, către celelalte inspectorate şi poliţiile de pe
+  traseu. Ce face clientul e pasul dinainte: **duce formularul aprobat la ISU-ul judeţului său,
+  pentru autorizarea rutei** (art. 4 alin. (8) lit. b)). Corectat în cod şi în documentaţie; drumul
+  întreg, pe nouă paşi, e în `surse-oficiale.md` §4.2. *Rezumatul propriu nu ţine loc de articol.*
+* ⛔ **Fluxul art. 24** al deşeurilor medicale, care e al transportatorului.
+
+**Cele trei lucruri de luat în continuare** sunt scrise ca puncte proprii în `todo-lansare.md`
+(**P3.3, P3.4, P3.5**): formularul de aprobare (anexa nr. 1), drumul aprobării spus pe ecran, şi
+buletinele de analiză. Doar ultimul aşteaptă un răspuns de la specialistă — **AL** — iar primul stă
+pe el, fiindcă pct. VIII al formularului **e** un buletin de analiză. Ce ţine de practică, şi numai
+aia, s-a scris ca întrebări noi: **AO** (aprobarea, la ghişeu) şi **AP** (ISU-ul şi ruta).
+
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
@@ -5617,10 +5836,13 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
 - ✅ ~~**Două abateri confirmate**~~ — **reparate în aceeaşi zi**, împreună cu alte patru puncte la
   care actul răspundea singur. Vezi secţiunea „Reparaţiile auditului care nu depindeau de nimeni".
   Rămân **opt** puncte, toate blocate pe răspunsurile **AE–AN**.
-- 🔴 **N-avem niciun model de formular anexa 2 la HG 1061/2008** — transportul deşeurilor
-  **periculoase** (întrebarea **AI**). E acelaşi tip de blocaj ca AD, din acelaşi motiv: refuzăm să
-  inventăm un formular oficial. Deosebirea e că aici nu blochează o etapă viitoare, ci lasă o gaură
-  în modulul **deja livrat** — un generator cu ulei uzat sau tuburi fluorescente n-are ce tipări.
+- ✅ ~~**N-avem niciun model de formular anexa 2 la HG 1061/2008**~~ — **închis pe 10.09.2026**
+  (întrebarea **AI**). Premisa era falsă: actul **reproduce formularul în facsimil**, ca HG 856/2002
+  la fişă, deci forma nu trebuia cerută de la nimeni. Modelul e acum în repo, verbatim, cu regulile
+  pe articole lângă el — `surse-oficiale.md` §4.1. Gaura din modulul **deja livrat** rămâne (un
+  generator cu ulei uzat sau tuburi fluorescente tot n-are ce tipări), dar e de-acum **cod de scris**,
+  nu blocaj: `todo-lansare.md` P3.2. Vezi felia „Anexa 2 la HG 1061/2008 — blocajul care nu
+  exista (10.09.2026)".
 - 🔴 **N-avem niciun model de registru art. 48** (întrebarea **AD**, deschisă 02.09.2026). Tot
   corpusul primit e despre fișa de gestiune, declarația anuală, Anexa 3 și ambalaje. Despre evidența
   cronologică lunară a mărfii preluate de la terți — nimic.
