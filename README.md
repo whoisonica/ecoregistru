@@ -7,7 +7,9 @@ of the inspection file.
 Romanian waste operators are legally required to keep monthly waste-management records
 (HG 856/2002) and to file SIM/AFM reports. Most still do it in spreadsheets — error-prone,
 impossible to audit, and painful when an inspection arrives. Missing or incorrect records
-carry fines of 20,000–40,000 RON (OUG 92/2021).
+carry fines of 40,000–60,000 RON for legal entities (OUG 92/2021 art. 62 alin. (1) lit. a),
+for breaches of art. 48). Waste that has value and whose provenance cannot be proven is
+confiscated outright, not fined (art. 64 alin. (1^1)).
 
 Built solo, end to end: architecture, backend, frontend and tests. Domain requirements
 validated with compliance-reporting specialists.

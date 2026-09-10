@@ -13,6 +13,13 @@
 > Completat pe **02.09.2026** cu citirea integrală a corpusului de formulare completate: cele cinci
 > nomenclatoare verificate valoare cu valoare faţă de cod (§1.2), şase constatări noi din practică
 > (§1.3, punctele 6–10) şi notele tipărite pe declaraţia de ambalaje (§5.3).
+>
+> ⚠️ **Recitit pe 10.09.2026 pe forma consolidată a OUG 92/2021 — versiunea de la 11.07.2026.**
+> §2 e rescris de la capăt: §2.1 (art. 48), plus §2.4–§2.7, noi. **Citatul din art. 48 alin. (1)
+> care stătea aici era textul dinainte de 12.01.2023** — exact greşeala pe care documentul ăsta
+> există ca s-o prevină. Un citat verbatim îmbătrâneşte; **data accesării nu e o formalitate, e
+> termenul lui de valabilitate.** Regula nouă: la fiecare recitire se ia forma consolidată, nu
+> forma de bază, şi se notează versiunea, nu doar ziua în care am deschis pagina.
 
 ---
 
@@ -300,21 +307,47 @@ Romania. Diferenţa contează: Hamburger tratează efectiv (balotează), Panemar
 
 ## 2. OUG 92/2021 privind regimul deșeurilor — legea-cadru
 
-Sursă: [legislatie.just.ro/Public/DetaliiDocument/245846](https://legislatie.just.ro/Public/DetaliiDocument/245846);
-text integral folosit pentru anexe:
-[PDF Monitorul Oficial](https://ecoteca.ro/wp-content/uploads/2022/01/92_OG_2021_RegimulDeseurilor_10ian2022.pdf).
-Accesat 22.08.2026.
+Sursă: [legislatie.just.ro/Public/DetaliiDocument/245846](https://legislatie.just.ro/Public/DetaliiDocument/245846),
+**forma consolidată**. Accesat 10.09.2026; **versiunea în vigoare: 11.07.2026**.
+
+⚠️ **Cum s-a învechit secţiunea asta, ca să nu se repete.** Până pe 10.09.2026, citatele de mai jos
+veneau dintr-un [PDF republicat pe ecoteca.ro](https://ecoteca.ro/wp-content/uploads/2022/01/92_OG_2021_RegimulDeseurilor_10ian2022.pdf)
+datat **10 ianuarie 2022** — gazdă secundară *şi* text pre-2023. Actul fusese modificat de şase ori
+de atunci. Formularea „accesat 22.08.2026" arăta proaspăt şi nu era: data spunea când am deschis
+fişierul, nu ce versiune era în el.
+
+**Istoricul modificărilor, complet la 10.09.2026** (din forma consolidată):
+
+| În vigoare de la | Act modificator |
+|---|---|
+| **11-07-2026** | **Legea nr. 26 din 11 martie 2026** (M.Of. 189/11.03.2026) — adaugă **art. 34¹** şi redenumeşte ANPM → **ANMAP** |
+| 15-12-2023 | OUG nr. 114 din 14 decembrie 2023 |
+| 03-11-2023 | OUG nr. 96 din 2 noiembrie 2023 |
+| 12-01-2023 | Legea nr. 17 din 6 ianuarie 2023 (legea de aprobare a OUG 92/2021) |
+| 30-09-2022 | OUG nr. 133 din 29 septembrie 2022 |
+| 07-04-2022 | OUG nr. 38 din 6 aprilie 2022 |
+
+> 🆕 **ANPM se numeşte de la 11.07.2026 „Agenţia Naţională pentru Mediu şi Arii Protejate" —
+> ANMAP.** Nota de la finalul actului: *„În întreg cuprinsul Ordonanţei de urgenţă a Guvernului
+> nr. 92/2021 [...] denumirea «Agenţia Naţională pentru Protecţia Mediului» (ANPM) se înlocuieşte cu
+> denumirea «Agenţia Naţională pentru Mediu şi Arii Protejate» (ANMAP)"* — art. IV din Legea
+> 26/2026, aplicat în 44 de locuri în textul consolidat.
+>
+> ⚠️ **Redenumirea e în OUG 92/2021. Nu e un `sed` peste tot proiectul.** Dacă Ordinul 794/2012 şi
+> HG 856/2002 n-au fost redenumite la rândul lor, formularele tipărite după ele trebuie să păstreze
+> numele din **actul care le cere**, nu din legea-cadru. E o verificare separată, per act — vezi
+> `todo-lansare.md` P3.8.
 
 ### 2.1 ARTICOLUL 48 — Păstrarea evidenţei
 
-**Alin. (1)** — cine, ce, până când:
+**Alin. (1)** — cine, ce, până când. *Text curent, luat pe 10.09.2026 din forma consolidată:*
 
 > Producătorii de deşeuri nepericuloase, unităţile şi întreprinderile prevăzute la art. 34,
 > producătorii de deşeuri periculoase şi unităţile şi întreprinderile care colectează sau transportă
-> deşeuri periculoase, nepericuloase cu titlu profesional sau acţionează în calitate de comercianţi
-> şi de brokeri de deşeuri periculoase şi nepericuloase ţin o **evidenţă cronologică lunară
-> tabelară** şi o pun la dispoziţia agenţiei judeţene pentru protecţia mediului în format letric, la
-> cerere, şi electronic în sistemul pus la dispoziţie de APM **până la 15 martie anul următor
+> deşeuri periculoase, nepericuloase cu titlu profesional **ori** acţionează în calitate de
+> comercianţi şi de brokeri de deşeuri periculoase şi nepericuloase ţin o **evidenţă cronologică
+> lunară**, **o publică în format tabelar** şi o pun la dispoziţia agenţiei judeţene pentru protecţia
+> mediului **electronic în sistemul pus la dispoziţie de ANMAP**, **până la 15 martie anul următor
 > raportării**, precum şi la cerere autorităţilor competente de control, după:
 >
 > a) codul deşeului potrivit art. 7 alin. (1), **cantitatea în tone**, natura şi originea deşeurilor
@@ -323,6 +356,22 @@ Accesat 22.08.2026.
 > b) destinaţia, frecvenţa colectării, modul de transport şi metoda de tratare prevăzută pentru
 > deşeuri, atunci când este relevant; şi
 > c) **cantitatea de deşeuri în tone** încredinţată spre eliminare.
+
+> 🔴 **Citatul de mai sus a fost greşit în fişierul ăsta de la 22.08.2026 până la 10.09.2026.**
+> Ce stătea aici era partea introductivă **dinainte de 12.01.2023**, modificată de Legea 17/2023
+> art. I pct. 23. Ce s-a schimbat, cuvânt cu cuvânt:
+>
+> | Textul vechi (până la 12.01.2023) | Textul în vigoare |
+> |---|---|
+> | „ţin o evidenţă cronologică lunară **tabelară**" | „ţin o evidenţă cronologică lunară, **o publică în format tabelar**" |
+> | „o pun la dispoziţia agenţiei [...] **în format letric, la cerere**, şi electronic" | „o pun la dispoziţia agenţiei [...] **electronic**" (letricul a dispărut) |
+> | „în sistemul pus la dispoziţie de **APM**" | „în sistemul pus la dispoziţie de **ANMAP**" (era ANPM; redenumit 11.07.2026) |
+>
+> **Ce contează pentru cod, şi ce nu.** Cele trei lit. a)–c), termenul de 15 martie şi tonele sunt
+> **neschimbate** — deci nimic din ce s-a construit pe ele nu e greşit. Ce se schimbă e o nuanţă de
+> obligaţie: „**o publică** în format tabelar" e mai mult decât „o ţine tabelară", iar depunerea nu
+> mai are variantă pe hârtie. Nu ştim încă dacă „publică" înseamnă ceva peste încărcarea în sistem —
+> e practică, nu text, şi nu blochează nimic.
 
 **Alin. (4)** — termenul **autorității**:
 
@@ -484,6 +533,247 @@ D15 Stocarea înaintea oricărei operaţiuni numerotate de la D1 la D14 (excluz�
 > dat la D1 este literalmente „depozite de deşeuri".** E o judecată de încadrare, nu un fapt
 > verificabil. Nu se propune ca valoare implicită în formular fără confirmare explicită. Rămâne
 > întrebare deschisă.
+
+---
+
+### 2.3b Anexele 3 şi 7, reverificate pe forma consolidată (10.09.2026)
+
+✅ **Neschimbate.** Cele 13 coduri R şi cele 15 coduri D de mai sus au fost comparate cuvânt cu
+cuvânt cu forma consolidată la 11.07.2026: **identice**, inclusiv exemplele din paranteze şi nota
+că D11 e interzisă. Niciuna dintre cele şase modificări ale actului n-a atins anexele 3 sau 7.
+`WasteOperationCode` rămâne corect şi complet, iar tot ce tipăresc formularele pe „Operaţia" e bun.
+
+*Notat aici fiindcă jumătate din valoarea unei reverificări e lista lucrurilor care nu trebuie
+atinse. Anexele erau singurul lucru citit din PDF-ul pre-2023, deci singurul care putea fi vechi.*
+
+---
+
+### 2.4 ARTICOLUL 62 — sancţiunile. Cifra din materialul de vânzare era greşită
+
+*Citit prima dată pe 10.09.2026. Nu fusese niciodată citat aici.*
+
+**Alin. (1) lit. a)** — încălcarea evidenţei:
+
+> cu amendă de la **5.000 lei la 15.000 lei, pentru persoanele fizice**, şi de la **40.000 lei la
+> 60.000 lei, pentru persoanele juridice**, în cazul încălcării dispoziţiilor art. 8 alin. (1), (2)
+> şi (4), art. 12 alin. (11) şi (12), art. 13 alin. (3), art. 15 alin. (1), alin. (2) lit. a) şi b)
+> şi alin. (3), art. 16 alin. (1)-(3) şi (6), **art. 17 alin. (3)**, (4), (6) şi (7), art. 20
+> alin. (1) şi (2), art. 22 alin. (3) şi (4), **art. 23**, art. 24 alin. (1), **art. 27 alin. (1)**,
+> art. 28 alin. (1), (4) şi (5), **art. 29**, **31**, art. 34 alin. (1) şi (5), **art. 36
+> alin. (2)**, art. 44 alin. (1) şi (3), **art. 48 alin. (1), (2), (5) şi (6)** şi art. 61 alin. (4);
+
+**Alin. (1) lit. e)** — raportările:
+
+> cu amendă de la **5.000 lei la 10.000 lei, pentru persoanele juridice**, în cazul încălcării
+> dispoziţiilor art. 32 alin. (1) şi (2) şi **art. 49 alin. (9), (11), (12) şi (15)**.
+
+**Alin. (1) lit. b)** — abandonarea, incendierea, îngroparea (art. 20 alin. (3)-(6)) şi
+reclasificarea prin diluare (art. 11): **30.000–45.000 lei** persoane fizice, **50.000–70.000 lei**
+persoane juridice.
+
+**Alin. (3)** — cine verifică cifrele pe care le depune clientul:
+
+> Constatarea corectitudinii datelor transmise ANMAP şi agenţiilor judeţene pentru protecţia
+> mediului potrivit dispoziţiilor art. 48 alin. (1) se realizează de către comisari din cadrul
+> **Gărzii Naţionale de Mediu**.
+
+> 🔴 **Consecinţa, şi e în materialul de vânzare.** `legislatie.md` şi `monetizare.md` scriau
+> **20.000–40.000 lei** pentru lipsa evidenţei. Cifra corectă pentru o **persoană juridică** e
+> **40.000–60.000 lei**. Nu s-a învechit între timp: s-a schimbat pe **12-01-2023** prin Legea
+> 17/2023 art. I pct. 27, deci nota a fost greşită **din ziua în care a fost scrisă** (22.08.2026).
+> Reparat în ambele fişiere pe 10.09.2026, plus în `README.md`-ul repo-ului public, care o scria în
+> engleză. Amenda reală e **mai mare**, deci argumentul comercial se întăreşte, nu se strică.
+>
+> 📌 **Şi mai util decât cifra: lista de la lit. a) e harta obligaţiilor clientului.** Fiecare
+> articol îngroşat acolo e ceva ce aplicaţia ori ştie deja, ori ar putea spune în dosarul de
+> control. Vezi §2.6.
+
+**Art. 64 alin. (1¹)** — confiscarea, adăugată la deşeurile care au valoare:
+
+> În cazul nerespectării dispoziţiilor art. 20 alin. (4) se aplică sancţiunea contravenţională
+> complementară de confiscare a deşeurilor care au valoare, deţinute, păstrate în afara spaţiilor
+> autorizate **şi/sau a căror provenienţă nu este dovedită**, în condiţiile legii.
+
+> 💰 **„Provenienţa dovedită" e literalmente produsul.** Un registru ţinut la zi e dovada de
+> provenienţă; fără el, marfa cu valoare se confiscă, nu se amendează. E cel mai direct argument
+> comercial din tot actul şi merită pe pagina publică (`todo-lansare.md` P2.16).
+
+---
+
+### 2.5 ARTICOLUL 49 alin. (9) — al doilea termen anual: **30 aprilie**
+
+*Găsit pe 10.09.2026. Nu exista în calendarul aplicaţiei.*
+
+> Titularii pe numele cărora au fost emise autorizaţii de construire şi/sau desfiinţări **şi
+> producătorii şi deţinătorii de uleiuri uzate** trebuie să raporteze anual APM, **până la 30
+> aprilie a anului următor celui pentru care se raportează**, conformarea cu art. 17 alin. (7) şi
+> măsurile adoptate potrivit art. 31 alin. (1).
+
+Ce se raportează, pe cele două categorii:
+
+- **titularul de autorizaţie de construire/desfiinţare** → conformarea cu **art. 17 alin. (7)**:
+  atingerea unui nivel de pregătire pentru reutilizare, reciclare şi alte operaţiuni de valorificare
+  materială de **minimum 70% din masa deşeurilor nepericuloase** din construcţii şi desfiinţări
+  (excepţie: `17 05 04`, materiale geologice naturale);
+- **producătorul/deţinătorul de uleiuri uzate** → măsurile de la **art. 31 alin. (1)**: colectare
+  separată în recipiente închise etanş, tratare cu prioritate prin regenerare, neamestecare, stocare
+  în spaţii împrejmuite şi securizate.
+
+**Sancţiune:** art. 62 alin. (1) lit. e) — **5.000–10.000 lei** pentru persoane juridice.
+
+> 🔴 **Pe cine loveşte, la noi.** `DeadlineService` generează 15 martie, 25 ianuarie, 25 februarie şi
+> cadenţele AFM. **30 aprilie nu există** — nici în `ReportType`, nici în vreun document până azi.
+> Iar „deţinător de uleiuri uzate" e chiar clientul-tip: `13 02 08*` e codul din seed **şi** din
+> exemplul de Anexa 2 pe care s-a construit modulul ieri.
+>
+> ✅ **Semnalul e derivabil din date, nu trebuie întrebat.** Dacă firma are mişcări pe coduri de ulei
+> uzat, are termenul — la fel cum `PACKAGING_ANNUAL` se generează doar la un profil care pune
+> ambalaje pe piaţă. Regula rămâne cea din `ReportType`: **o alertă e o afirmaţie**, deci se
+> generează pe semnal pozitiv, nu pe tăcere. Felia: `todo-lansare.md` **P3.7**.
+
+**Art. 31 alin. (3)** — obligaţia de fond, care explică de ce e nevoie de raportare:
+
+> Producătorii şi deţinătorii de uleiuri uzate, cu excepţia persoanelor fizice, sunt obligaţi să
+> predea **întreaga cantitate** numai operatorilor economici autorizaţi să desfăşoare activităţi de
+> colectare, valorificare şi/sau de eliminare a uleiurilor uzate.
+
+*Notă: HG 235/2007 privind gestionarea uleiurilor uzate a fost **abrogată** de art. 71 alin. (1)
+lit. b) din OUG 92/2021, iar orice trimitere la ea se consideră făcută la OUG 92/2021 (alin. (2)).
+Deci regimul uleiurilor uzate e în întregime în art. 31–32.*
+
+---
+
+### 2.6 ARTICOLUL 34¹ — lista publică a operatorilor autorizaţi (**nou, în vigoare 11.07.2026**)
+
+*Adăugat de art. I din Legea nr. 26 din 11 martie 2026. Are patru luni.*
+
+> **(1)** Agenţia Naţională pentru Mediu şi Arii Protejate are obligaţia de a publica pe pagina
+> proprie de internet **o listă actualizată a tuturor operatorilor economici autorizaţi** pentru
+> activităţi de gestionare a deşeurilor. Lista va cuprinde: denumirea operatorului economic, **codul
+> fiscal**, tipul activităţilor autorizate, **documentul integral al autorizaţiei** de mediu sau,
+> după caz, al autorizaţiei integrate de mediu deţinute, precum şi **statusul vizei anuale**
+> aplicate, respectiv seria şi data deciziei privind viza anuală emisă pentru autorizaţia
+> respectivă.
+>
+> **(2)** Actualizarea listei prevăzute la alin. (1) se realizează în termen de **maximum 10 zile
+> lucrătoare** de la emiterea, modificarea, suspendarea sau anularea oricărei autorizaţii de
+> mediu/autorizaţii integrate de mediu în domeniul gestionării deşeurilor ori de la emiterea unei
+> decizii de viză anuală sau de neacordare a vizei anuale.
+
+**Art. III din Legea 26/2026** (normă tranzitorie, nu intră în corpul OUG):
+
+> (1) În termen de **60 de zile** de la data intrării în vigoare a prezentei legi, Agenţia Naţională
+> pentru Mediu şi Arii Protejate elaborează **procedura** privind modalitatea de publicare şi
+> actualizare a listei prevăzute la art. 34¹ [...] în vederea asigurării **accesibilităţii online,
+> publice şi deschise**, a datelor privind autorizaţiile de mediu/autorizaţiile integrate de mediu,
+> inclusiv prin utilizarea **Sistemului integrat de mediu** sau a altor platforme informatice.
+> (2) Procedura prevăzută la alin. (1) se aprobă prin ordin al autorităţii publice centrale pentru
+> protecţia mediului.
+
+**Şi o a doua listă publică, pentru uleiuri — art. 31 alin. (4):**
+
+> APM publică pe site-ul propriu lista cu operatorii economici autorizaţi să desfăşoare activităţi de
+> salubritate, colectare, valorificare şi/sau de eliminare a uleiurilor uzate.
+
+> 🟠 **Asta e sursa care lipsea la întrebarea AH.** Azi aplicaţia avertizează despre autorizaţia
+> destinatarului **din ce a tastat clientul** (audit pct. 5, construit 04.09) — o dată pe care n-o
+> verifică nimeni. De pe 11.07.2026 există un registru public de verificat, cu **CUI-ul** ca cheie
+> de potrivire cu `Partner`.
+>
+> ⚠️ **Şi conţine un câmp pe care nu-l modelăm deloc: viza anuală.** O autorizaţie poate fi în
+> termen şi viza refuzată — caz în care operatorul nu mai poate primi deşeu legal, iar
+> `Partner.authorizationExpiry` din model spune „e bună". Nu e o nuanţă: art. 34¹ alin. (2) pune
+> suspendarea şi anularea în acelaşi rând cu viza, deci sunt evenimente aşteptate, nu excepţii.
+>
+> ⏳ **Cele 60 de zile ale ANMAP s-au împlinit pe ~09.09.2026** — adică ieri. Primul pas al feliei e
+> să ne uităm dacă lista şi ordinul chiar există. Felia: `todo-lansare.md` **P3.9**.
+
+---
+
+### 2.7 ARTICOLUL 29 alin. (2) — un document de transport pe care nu-l ştiam
+
+*Găsit pe 10.09.2026, la o zi după ce s-a construit Anexa 2 la HG 1061/2008 pentru exact acelaşi
+transport.*
+
+> Transferul deşeurilor periculoase pe teritoriul naţional trebuie să fie însoţit de **documentul de
+> identificare prevăzut în anexa IB la Regulamentul (CE) nr. 1.013/2006**, cu modificările şi
+> completările ulterioare.
+
+Şi alineatul de dinainte, care e obligaţia de ambalare-etichetare:
+
+> **(1)** Producătorii şi deţinătorii de deşeuri sunt obligaţi să se asigure că pe durata efectuării
+> operaţiunilor de colectare, transport şi stocare a deşeurilor periculoase, acestea sunt **ambalate
+> şi etichetate** potrivit prevederilor Regulamentului (CE) nr. 1.272/2008 [CLP].
+
+Iar temeiul HG-ului 1061/2008 e chiar în act, la **art. 27 alin. (3)**:
+
+> Modalitatea de reglementare a transferului deşeurilor periculoase pe teritoriul naţional este
+> reglementată prin hotărâre a Guvernului.
+
+> 🟡 **Ce nu ştim, şi de ce nu ghicim.** „1013/2006" apare de **zero ori** în tot proiectul. Art. 29
+> e în lista sancţionată cu **40.000–60.000 lei** (§2.4). Textul e neechivoc că documentul trebuie
+> să însoţească transferul; ce **nu** se poate citi din act e dacă în practică documentul din anexa
+> IB se suprapune peste formularul de expediţie din anexa 2 la HG 1061/2008 (acelaşi transport,
+> acelaşi drum) sau se cumulează cu el.
+>
+> Asta e exact forma unei întrebări de practică, nu de text — deci **întrebarea AS**, în
+> `intrebari-specialist.md`. Până la răspuns nu generăm nimic: a inventa un al doilea formular
+> oficial e fix ce nu facem.
+
+---
+
+### 2.8 Obligaţii ale clientului pe care actul le cere şi dosarul de control nu le numeşte
+
+*Toate citite pe 10.09.2026, toate în lista sancţionată de art. 62 alin. (1) lit. a) cu
+**40.000–60.000 lei** pentru persoane juridice. Niciuna nu era pomenită în vreun document.*
+
+**Art. 17 alin. (3)** — colectarea separată, obligaţie a **oricărui** producător şi deţinător:
+
+> Producătorii de deşeuri şi deţinătorii de deşeuri cu condiţia respectării prevederilor art. 16
+> alin. (1) şi (4) introduc colectarea separată **cel puţin pentru hârtie, metal, plastic şi
+> sticlă**, iar **până la data de 1 ianuarie 2025 şi pentru textile**.
+
+**Art. 36 alin. (1)–(2)** — înregistrarea celor care nu se autorizează:
+
+> **(1)** ANMAP ţine un registru cu următoarele tipuri de operatori economici, care nu se supun
+> autorizării: a) operatorii economici care **transportă deşeuri nepericuloase în sistem
+> profesional**; b) **comercianţii** care nu intră fizic în posesia deşeurilor sau **brokerii**.
+> **(2)** Operatorii economici prevăzuţi la alin. (1) sunt obligaţi să se **înscrie în registrul**
+> ţinut de ANMAP.
+
+**Art. 8 alin. (4)** — caracterizarea deşeului periculos, care **restrânge întrebarea AL**:
+
+> În scopul determinării posibilităţilor de amestecare, a metodelor de pregătire prealabilă,
+> reciclare, valorificare şi eliminare a deşeurilor, producătorii şi deţinătorii de deşeuri persoane
+> juridice sunt obligaţi să **efectueze şi să deţină o caracterizare a deşeurilor periculoase
+> generate din propria activitate** şi a deşeurilor care pot fi considerate periculoase din cauza
+> originii sau compoziţiei [...]
+
+**Art. 8 alin. (2)** — codurile-oglindă:
+
+> În cazul unui tip de deşeu care se încadrează [...] sub două coduri diferite în funcţie de posibila
+> prezenţă a unor caracteristici periculoase - **codurile marcate cu asterisc**, încadrarea ca deşeu
+> **nepericulos** se realizează [...] **numai în baza unei analize a originii, testelor, buletinelor
+> de analiză** şi a altor documente relevante [...]
+
+**Art. 27 alin. (1)** — şi ăsta e temeiul textual al întregului produs:
+
+> [...] astfel încât să se poată asigura un grad ridicat de protecţie a mediului şi a sănătăţii
+> populaţiei potrivit prevederilor art. 21, incluzând **asigurarea trasabilităţii de la locul de
+> generare la destinaţia finală, pentru a îndeplini prevederile art. 48**.
+
+> 📌 **Trei consecinţe.**
+> 1. **AL se restrânge la jumătate.** Art. 8 alin. (4) spune că obligaţia e o caracterizare a
+>    **deşeurilor generate din propria activitate**, iar scopul enumerat (amestecare, pregătire,
+>    reciclare, valorificare, eliminare) e o proprietate a **tipului de deşeu**, nu a unei curse.
+>    Deci „per ce" e în act: **per cod**, nu per transport. Ce rămâne de întrebat e doar **cât se
+>    păstrează** — actul tace, şi aia chiar e practica inspectorului.
+> 2. **Art. 8 alin. (2) e o regulă verificabilă, nu o notă.** Dacă un cod-oglindă e declarat
+>    nepericulos fără buletin, încadrarea e nelegală prin construcţie. Aplicaţia ştie ambele lucruri
+>    (codul are pereche cu asterisc; există sau nu un buletin ataşat) — deci poate să o spună.
+> 3. **Art. 17 alin. (3) şi art. 36 alin. (2) sunt rubrici de dosar**, în acelaşi tipar cu persoana
+>    desemnată de la art. 23 alin. (4): **absenţa unei obligaţii legale e ea însăşi constatarea.**
+>    Nu cer ecrane noi, cer o propoziţie în dosarul de control.
 
 ---
 

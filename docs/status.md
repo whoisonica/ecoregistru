@@ -20,6 +20,16 @@ rulează local și are testele verzi.
 > **Ce ține lansarea pe loc de-acum e P1, adică juridic** — SRL, DPA, termeni. Nu se rezolvă la
 > tastatură.
 >
+> 🔴 **Adăugat 10.09.2026, seara — legea-cadru recitită la versiunea în vigoare.** Un export
+> consolidat al OUG 92/2021 (versiunea de la **11.07.2026**) a arătat că `surse-oficiale.md` §2 se
+> sprijinea pe un text **pre-2023**. Patru lucruri: **amenda din materialul de vânzare era greșită**
+> (20.000–40.000 → **40.000–60.000 lei**, schimbată acum trei ani și jumătate — reparată inclusiv în
+> `README.md`-ul public); **un termen legal lipsea de tot** (**30 aprilie**, art. 49(9), uleiuri uzate
+> și construcții); **art. 34¹**, nou din 11.07.2026, creează registrul public de operatori autorizați
+> cu **viza anuală**; și **ANPM se numește ANMAP**. **Zero cod schimbat** — opt fișiere de
+> documentație, trei felii noi (`todo-lansare.md` P3.7–P3.9) și o întrebare nouă (**AS**).
+> Secțiunea „Legea-cadru, recitită la versiunea în vigoare".
+>
 > **Adăugat 09.09.2026, târziu de tot.** Trei lucruri pe care nu le-a găsit niciun compilator:
 > deployul lui 11-bis; un **commit pierdut** la deployul dinainte (procedura de subtree lua un
 > singur commit când erau două în așteptare — acum se verifică pe conținut, nu pe hash-uri); și
@@ -5609,6 +5619,147 @@ pe el, fiindcă pct. VIII al formularului **e** un buletin de analiză. Ce ţine
 aia, s-a scris ca întrebări noi: **AR** (aprobarea, la ghişeu — renumerotată din AO, coliziune cu ştergerea şoferului), **AP** (ISU-ul şi ruta) şi **AQ** (pragul de 1 t/an, „categorie" nedefinită în act).
 
 
+## Legea-cadru, recitită la versiunea în vigoare — patru lucruri greşite sau lipsă (10.09.2026, seara)
+
+**Punctul de plecare a fost un document primit pe WhatsApp:** un export Sintact al OUG 92/2021,
+**forma consolidată, versiunea de la 11 iulie 2026**. Adică mai nouă decât tot ce era scris în
+proiect. L-am extras, l-am citit integral, am recitit toate cele 16 `.md` din cele patru repo-uri şi
+le-am comparat cu actul. Fiecare constatare de mai jos e verificată **de două ori**: în export şi pe
+[Portalul Legislativ](https://legislatie.just.ro/Public/DetaliiDocument/245846), forma consolidată —
+care dau acelaşi text cuvânt cu cuvânt.
+
+### De ce a fost nevoie: „sursă primară" înseamnă două lucruri, nu unul
+
+`surse-oficiale.md` §2 se sprijinea, din 22.08.2026, pe un **PDF republicat pe ecoteca.ro, datat
+10 ianuarie 2022**. Gazdă secundară *şi* text pre-2023. Actul fusese modificat de **şase** ori între
+timp — ultima dată cu patru luni înainte. Nota „accesat 22.08.2026" arăta proaspăt şi nu era: data
+spunea **când am deschis fişierul**, nu **ce versiune era în el**.
+
+> **Lecţia, şi e a treia oară în două zile că are aceeaşi formă:** *un citat verbatim îmbătrâneşte.
+> Data accesării nu e o formalitate — e termenul lui de valabilitate.* Bifasem gazda potrivită şi
+> crezusem că am bifat şi versiunea. Regula nouă, scrisă în capul lui `surse-oficiale.md`: la fiecare
+> recitire se ia **forma consolidată**, nu forma de bază, şi se notează **versiunea**, nu ziua.
+
+### Ce a ieşit, în ordinea a ce costă
+
+**1. 🔴 Amenda din materialul de vânzare era greşită — şi mai mică decât realitatea.**
+`legislatie.md`, `monetizare.md` şi **`README.md`-ul repo-ului public** scriau 20.000–40.000 lei
+pentru lipsa evidenţei. **Art. 62 alin. (1) lit. a)** spune **40.000–60.000 lei pentru persoanele
+juridice** (5.000–15.000 pentru persoane fizice), pentru încălcarea art. 48 alin. (1), (2), (5) şi
+(6). Nu s-a învechit între timp: cifra s-a schimbat pe **12-01-2023**, prin Legea 17/2023 art. I
+pct. 27 — **cu trei ani şi jumătate înainte** ca noi s-o scriem. Reparată în toate trei.
+
+Şi un argument mai tare decât amenda, nefolosit până acum: **art. 64 alin. (1¹)** prevede
+**confiscarea** deşeurilor *care au valoare*, ţinute în afara spaţiilor autorizate **şi/sau a căror
+provenienţă nu este dovedită**. Pentru un client care vinde deşeu, riscul nu e o amendă — e marfa.
+Iar „provenienţa dovedită" e literalmente ce produce registrul.
+
+**2. 🔴 Un termen legal lipsea de tot din calendar: 30 aprilie.** **Art. 49 alin. (9)**: titularii de
+autorizaţii de construire/desfiinţare **şi producătorii şi deţinătorii de uleiuri uzate** raportează
+anual la APM, până la 30 aprilie, conformarea cu art. 17(7) şi măsurile de la art. 31(1). Sancţiune:
+art. 62 alin. (1) lit. e), 5.000–10.000 lei. „30 aprilie" nu apărea în **niciun** `.md`, iar
+`DeadlineService` generează doar 15 martie, 25 ianuarie, 25 februarie şi cadenţele AFM.
+
+Şi loveşte exact clientul-tip: `13 02 08*` — ulei de motor — e codul din `DevDataSeeder` **şi** din
+exemplul pe care s-a construit Anexa 2 cu o zi înainte. Semnalul e **derivabil din date**, deci nu e
+o întrebare pentru nimeni: e o felie. `todo-lansare.md` **P3.7**.
+
+**3. 🟠 Un articol nou, de patru luni, care transformă o întrebare deschisă într-o funcţie.**
+**Art. 34¹**, adăugat de **Legea nr. 26 din 11 martie 2026** şi în vigoare de **11.07.2026**: ANMAP
+publică online lista **tuturor** operatorilor autorizaţi — denumire, **CUI**, activităţi autorizate,
+**documentul integral al autorizaţiei**, şi **statusul vizei anuale**, actualizată în 10 zile
+lucrătoare de la orice emitere, modificare, suspendare sau anulare.
+
+Punctul 5 al auditului din 02.09 („nimeni nu verifică autorizaţia partenerului") s-a rezolvat pe
+04.09 cu un avertisment construit **din ce a tastat clientul**. Acum există o sursă publică, iar
+CUI-ul din `Partner` e cheia de potrivire gata făcută. 🔴 **Şi aduce un câmp pe care modelul nu-l are
+deloc: viza anuală** — o autorizaţie poate fi în termen şi viza refuzată, caz în care
+`authorizationExpiry` spune senin „e bună". Întrebarea **AH** nu mai e „e destul un avertisment", ci
+„te uiţi în practică la viza anuală?". `todo-lansare.md` **P3.9**.
+
+**4. 🟡 ANPM se numeşte ANMAP.** Art. IV din aceeaşi Lege 26/2026 înlocuieşte în tot cuprinsul actului
+„Agenţia Naţională pentru Protecţia Mediului" cu **„Agenţia Naţională pentru Mediu şi Arii
+Protejate"** — 44 de locuri în textul consolidat. Aplicaţia scrie ANPM în şapte fişiere de cod şi în
+vreo 30 de locuri în documente. Ironia: `legislatie.md` linkuia deja către `anmap.gov.ro`, fără ca
+nimeni să observe că instituţia se redenumise.
+
+⚠️ **Şi nu e un `sed`** — asta e tot punctul feliei P3.8. Redenumirea e făcută **în OUG 92/2021**. Un
+formular tipărit după Ordinul 794/2012 sau HG 856/2002 trebuie să poarte numele din **actul care îl
+cere**. Un `sed` global ne-ar face documentele neconforme — fix categoria de greşeală pe care
+auditul din 02.09 a găsit-o la „anexa nr. 2" în loc de „nr. 7".
+
+### Şi o întrebare nouă, care e chiar o întrebare
+
+**AS** — **art. 29 alin. (2)**: *„Transferul deşeurilor periculoase pe teritoriul naţional trebuie să
+fie însoţit de documentul de identificare prevăzut în anexa IB la Regulamentul (CE) nr. 1.013/2006."*
+„1013/2006" apare de **zero ori** în tot proiectul, iar art. 29 e în lista sancţionată cu
+40.000–60.000 lei. Am construit ieri formularul de expediţie din anexa 2 la HG 1061/2008 — acelaşi
+transport, acelaşi drum, alt act, şi niciunul nu-l pomeneşte pe celălalt. **Ce spune actul** e
+neechivoc; ce **nu** se poate citi din act e dacă cele două documente se suprapun sau se cumulează.
+Deci întrebare de practică, nu de text. Până la răspuns nu generăm nimic — a inventa un al doilea
+formular oficial pe o presupunere e exact ce nu facem.
+
+### Ce a închis actul singur
+
+* **Jumătate din AL.** **Art. 8 alin. (4)** cere „o caracterizare a deşeurilor periculoase **generate
+  din propria activitate**", *în scopul determinării posibilităţilor de amestecare, a metodelor de
+  pregătire prealabilă, reciclare, valorificare şi eliminare* — scopuri care sunt proprietăţi ale
+  **tipului de deşeu**, nu ale unei curse. Deci „per ce" e în act: **per cod**. Rămâne doar **cât se
+  păstrează**, şi aia chiar e practica inspectorului.
+* **O regulă verificabilă, construibilă fără niciun răspuns.** **Art. 8 alin. (2)**: la
+  codurile-oglindă, încadrarea ca **nepericulos** se face „numai în baza unei analize a originii,
+  testelor, buletinelor de analiză". Aplicaţia ştie şi codul, şi dacă are buletin ataşat.
+* **Temeiul textual al întregului produs**, de citat în vânzare — **art. 27 alin. (1)**: obligaţia
+  include „asigurarea **trasabilităţii de la locul de generare la destinaţia finală, pentru a
+  îndeplini prevederile art. 48**".
+* **Două obligaţii nenumite nicăieri**, ambele sancţionate cu 40.000–60.000 lei şi ambele rubrici de
+  dosar de control în tiparul persoanei desemnate: **art. 17 alin. (3)** — colectare separată cel
+  puţin hârtie, metal, plastic, sticlă, iar de la 1 ianuarie 2025 **şi textile**, pentru orice
+  producător/deţinător; **art. 36 alin. (2)** — transportatorii profesionişti de nepericuloase şi
+  comercianţii/brokerii care nu intră fizic în posesie se **înscriu în registrul ANMAP**.
+* **Actul nu pomeneşte SIATD, e-Transport sau HG 1061/2008** — niciodată. Incertitudinea din
+  `legislatie.md` §5 despre SIATD rămâne întemeiată: nu vine din legea-cadru.
+
+### ✅ Ce s-a verificat şi e corect — a nu se atinge
+
+Jumătate din valoarea unei reverificări e lista asta, şi de data asta e lungă:
+
+* **Anexele 3 şi 7 — R1–R13 şi D1–D15 — sunt neschimbate**, comparate cuvânt cu cuvânt cu forma
+  consolidată, inclusiv exemplele din paranteze şi nota că D11 e interzisă. Niciuna dintre cele şase
+  modificări n-a atins anexele. `WasteOperationCode` rămâne corect şi complet, şi tot ce tipăresc
+  formularele pe „Operaţia" e bun. **Anexele erau singurul lucru citit din PDF-ul pre-2023, deci
+  singurul care putea fi vechi — şi nu era.**
+* **Art. 48: termenul de 15 martie, cele trei litere a)–c) şi tonele** — neschimbate. Nimic construit
+  pe ele nu e greşit. Partea introductivă **s-a** schimbat pe 12.01.2023 („ţine o evidenţă cronologică
+  lunară, **o publică în format tabelar**", fără varianta „în format letric, la cerere"), deci
+  **citatul verbatim din `surse-oficiale.md` era vechi** şi a fost înlocuit — dar schimbarea nu atinge
+  cod. Comparaţia cuvânt cu cuvânt e acolo, în §2.1.
+* **Art. 48 alin. (2), (5), (6)** — buletinele, cei 3 ani şi 12 luni la transportatori, documentele
+  justificative: identice. Dosarul de control rămâne dimensionat corect.
+* **Art. 23 alin. (4)–(5)** — persoana desemnată (`V29`, 04.09): neschimbat.
+* **Istoricul modificărilor e complet şi se opreşte aici:** Legea 26/2026 (11.07.2026), OUG 114/2023,
+  OUG 96/2023, Legea 17/2023, OUG 133/2022, OUG 38/2022. În rest, înţelegerea actului din proiect e
+  la zi.
+
+### Ce s-a schimbat pe disc
+
+**Zero cod.** Opt fişiere de documentaţie, în două repo-uri:
+
+| Fişier | Ce |
+|---|---|
+| `ecoregistru/docs/surse-oficiale.md` | §2 rescris: art. 48 alin. (1) înlocuit cu textul curent + comparaţia, istoricul modificărilor, şi **§2.3b–§2.8 noi** (anexele reverificate, art. 62, art. 49(9), art. 34¹, art. 29(2), obligaţiile nenumite) |
+| `ecoregistru/docs/legislatie.md` | amenda corectată, ANMAP, art. 34¹, 30 aprilie, art. 29(2), art. 17(3)/36(2); două rânduri din gap analysis redeschise (`ReportingDeadline`, `Partner`); patru întrebări închise în §4 |
+| `ecoregistru/README.md` | amenda, în engleză, pe repo-ul **public** |
+| `ecoregistru-docs/docs/monetizare.md` | ancora de amendă + argumentul confiscării |
+| `ecoregistru-docs/docs/audit-conformitate.md` | harta de triaj extinsă cu punctele 15–20 + **„Runda a treia"** |
+| `ecoregistru-docs/docs/intrebari-specialist.md` | **AS** nouă · **AL** restrânsă la jumătate · **AH** cu întrebarea schimbată |
+| `ecoregistru-docs/docs/todo-lansare.md` | **P3.7, P3.8, P3.9** noi · P3.5 micşorată · conformitatea coborâtă 92% → 88% |
+| `ecoregistru/docs/status.md` | secţiunea asta |
+
+Rândul de conformitate din `todo-lansare.md` a **coborât**, de la 92% la 88% — nu fiindcă s-a stricat
+ceva, ci fiindcă procentul se măsura faţă de un act pre-2023. **Un procent calculat faţă de versiunea
+greşită a legii e mai rău decât niciun procent.**
+
 ## Ce urmează — plan revizuit (22.08.2026)
 
 Ordinea e dictată de **risc de rework**, nu de valoare vizibilă. Exportul oficial e ultimul lucru
@@ -5870,6 +6021,21 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
   pentru fișă. Formatul nu se poate citi din act. Ecranele Etapei 8 se pot construi și fără model —
   schema există din `V5` — dar **exportul ar fi ghicit**, iar asta contrazice regula pe care stă tot
   proiectul: nu inventează formate oficiale. De cerut **înainte** de Etapa 8, nu în timpul ei.
+- 🟡 **Al doilea document la transportul intern de deşeu periculos** (întrebarea **AS**, deschisă
+  10.09.2026). **Art. 29 alin. (2) din OUG 92/2021** cere ca transferul de deşeuri periculoase pe
+  teritoriul naţional să fie însoţit de **documentul de identificare din anexa IB la Regulamentul
+  (CE) nr. 1.013/2006**. Noi tocmai am construit formularul de expediţie din anexa 2 la HG 1061/2008
+  — acelaşi transport, alt act, şi niciunul nu-l pomeneşte pe celălalt. Art. 29 e sancţionat cu
+  **40.000–60.000 lei**. Ce spune actul e neechivoc; **dacă cele două se suprapun sau se cumulează**
+  nu se poate citi de nicăieri, deci e practică. Până la răspuns **nu generăm nimic**.
+- ⏳ **Lista publică de operatori autorizaţi de la art. 34¹** — ANMAP avea 60 de zile de la 11.07.2026
+  să elaboreze procedura de publicare (art. III din Legea 26/2026), termen împlinit pe **~09.09.2026**.
+  Nu e blocaj: primul pas al feliei P3.9 e chiar să ne uităm dacă lista şi ordinul există. Dacă nu,
+  felia stă cu o dată de reverificare — nu se scrapează o pagină care se va schimba.
+- 🟢 **AL s-a înjumătăţit pe 10.09.2026.** Art. 8 alin. (4) spune că obligaţia e o caracterizare a
+  deşeurilor periculoase **generate din propria activitate**, iar scopurile enumerate sunt proprietăţi
+  ale tipului de deşeu — deci **„per ce" e per cod**, scris în act. Mai aşteaptă de la specialistă
+  doar **cât se păstrează**.
 
 *Verificate pe dyno la 02.09.2026: `CLOUDINARY_URL` și `SPRING_PROFILES_ACTIVE` continuă să fie
 nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
