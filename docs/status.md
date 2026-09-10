@@ -5,13 +5,14 @@ rulează local și are testele verzi.
 
 > **Unde suntem — 10.09.2026.** 288 de teste verzi (0 eșecuri) și **11 probe de interfață, 281 de
 > verificări**. Migrări până la **`V34`**, următoarea liberă e **`V35`**. În producție:
-> `ecoregistru-api` la **v45**, `ecoregistru-app` la **v40**, cu **`V33` migrat acolo**.
+> `ecoregistru-api` la **v46**, `ecoregistru-app` la **v41**, cu **`V34` migrat acolo**.
 > **P0 e închis, toate opt.** **11-bis și 11-ter sunt livrate și pe dyno**, cu probele lângă ele:
 > atașamentele nu mai stau la un URL public — nesemnat dă `401`, semnat dă `200`, iar sub prefixul
 > `ecoregistru` nu mai există niciun obiect public; atașamentul urcă și **se deschide în tab**.
 > Colectorul de erori e aprins pe amândouă capetele.
-> ⬜ **`V34` (P1.12 — utilizatorii firmei) e livrată în cod, dar NU pe dyno.** E singurul lucru din
-> repo care e înaintea producției.
+> ✅ **`V34` (P1.12 — utilizatorii firmei) e deployată**, cu `V34` migrată pe dyno. Repo-ul și
+> producția sunt din nou la același conținut.
+> ⬜ **Rămâne de mers pe ecran cu sesiune reală** — drumul din `todo-lansare.md`, punctul 12.
 > **Ce ține lansarea pe loc de-acum e P1, adică juridic** — SRL, DPA, termeni. Nu se rezolvă la
 > tastatură.
 >
@@ -5347,8 +5348,26 @@ se repare fantoma în loc de defect.
   `204`, dezactivarea unui invitat `400 user.still.pending`, anulare `204`, adresa liberă din nou
   `200`, autodezactivare `400 user.cannot.manage.self`, operator pe listă `403`.
 
-⬜ **Nu e pe producție.** `V34` nu e migrată pe dyno, deci bifa din `todo-lansare.md` rămâne pusă doar
-pe „livrat în cod" — regula 2: ce se probează pe dyno se bifează pe dyno.
+### Deploy — 10.09.2026, 11:47
+
+`ecoregistru-api` **v46** (`6c6011f`), `ecoregistru-app` **v41** (`4b990ad`). Flyway pe dyno:
+*„Migrating schema public to version 34 - user deactivation"*, aplicată în 13 ms, iar aplicația a
+pornit după ea (`State changed from starting to up`). `GET /api/v1/users` fără token dă **401**,
+deci ruta există și e închisă.
+
+⚠️ **Garda de conținut de la pasul 3 a trecut curat de două ori** — backend doar `.gitignore`,
+frontend `.gitignore` + cele două artefacte vite, adică exact divergențele stabile. Deci nu era
+niciun commit rămas pe drum de la deployul anterior.
+
+**Și încă un pas peste hash:** bundle-ul servit de producție (`index-C0OdtWkd.js`) a fost descărcat
+și căutat în el — conține „Utilizatorii firmei", „Retrimite invitația" și `resend-invite`. Lecția
+din 09.09 spune că un hash corect nu garantează conținut complet; singurul lucru care garantează
+e conținutul.
+
+⬜ **Ce nu s-a probat încă:** drumul pe ecran cu sesiune reală de `ADMIN` — invitație →
+retrimitere → parolă → dezactivare dintr-o altă sesiune. E scris pas cu pas în `todo-lansare.md`,
+la punctul 12. Până atunci, felia e **deployată**, nu **probată pe producție** — regula 2 se aplică
+la fel și când tot ce e automat e verde.
 
 ---
 
