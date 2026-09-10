@@ -3,12 +3,15 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 09.09.2026, târziu de tot.** 269 de teste verzi (0 eșecuri) și **11 probe de
-> interfață, 273 de verificări**. Migrări până la **`V33`**, următoarea liberă e **`V34`**. În
-> producție: `ecoregistru-api` la **v44**, `ecoregistru-app` la **v39**, cu **`V33` migrat acolo**.
-> **P0 e închis, toate opt.** **11-bis e livrat și pe dyno**, cu probele lângă el: atașamentele nu
-> mai stau la un URL public — nesemnat dă `401`, semnat dă `200`, iar sub prefixul `ecoregistru` nu
-> mai există niciun obiect public. Colectorul de erori e aprins pe amândouă capetele.
+> **Unde suntem — 10.09.2026.** 288 de teste verzi (0 eșecuri) și **11 probe de interfață, 281 de
+> verificări**. Migrări până la **`V34`**, următoarea liberă e **`V35`**. În producție:
+> `ecoregistru-api` la **v45**, `ecoregistru-app` la **v40**, cu **`V33` migrat acolo**.
+> **P0 e închis, toate opt.** **11-bis și 11-ter sunt livrate și pe dyno**, cu probele lângă ele:
+> atașamentele nu mai stau la un URL public — nesemnat dă `401`, semnat dă `200`, iar sub prefixul
+> `ecoregistru` nu mai există niciun obiect public; atașamentul urcă și **se deschide în tab**.
+> Colectorul de erori e aprins pe amândouă capetele.
+> ⬜ **`V34` (P1.12 — utilizatorii firmei) e livrată în cod, dar NU pe dyno.** E singurul lucru din
+> repo care e înaintea producției.
 > **Ce ține lansarea pe loc de-acum e P1, adică juridic** — SRL, DPA, termeni. Nu se rezolvă la
 > tastatură.
 >
@@ -5239,6 +5242,113 @@ fiecare dată, ramura `if (tab)` era cod mort, și fiecare atașament ajungea pe
   Suita 8 nu deschide atașamentul (verifică doar că dialogul n-are linkuri), deci nicio verificare
   existentă nu acoperea defectul cu `noopener` și niciuna nu se strică. **De rulat la următoarea
   atingere de ecran**, cu o verificare nouă care chiar apasă butonul de deschidere.
+
+---
+
+## P1.12 — o firmă își administrează utilizatorii (10.09.2026)
+
+**Ce era.** `CompanyController` avea `POST /{id}/users` — invitație, platform-only, și atât. Nu se
+listau, nu se retrimitea invitația, nu se dezactiva nimeni. O firmă cu trei angajați lovește asta în
+ziua întâi, iar singurul drum era să ne sune.
+
+**Ce e acum.** Controller nou, `/api/v1/users`, **tenant-scoped** — spre deosebire de
+`CompanyController`, care e global prin construcție. Nu există id de firmă în nicio cale: firma e cea
+din sesiune, deci un `ADMIN` de client ajunge exact la colegii lui și la nimeni altcineva.
+Administratorul de platformă ajunge la același ecran prin comutatorul de firme, deci e **o singură
+implementare**, nu o copie de client a uneia de personal. Ecranul e o secțiune în **Setări**, lângă
+punctele de lucru și șoferi — sunt același fel de lucru: date pe care firma și le ține singură.
+
+### Cele trei stări, și de ce a fost nevoie de o migrare
+
+`enabled = false` purta **două înțelesuri** pe aceeași coloană: „invitat, n-a apăsat încă linkul și
+n-are parolă" și „dezactivat de administrator". Câtă vreme singura operație era invitația,
+ambiguitatea nu se vedea nicăieri. Ecranul o scoate la iveală de două ori:
+
+* **lista** n-ar fi avut ce scrie în dreptul rândului — două stări opuse, aceeași valoare în bază;
+* **„Reactivează"** pe un invitat i-ar fi pus `enabled = true` peste parola aleatoare pe care
+  `inviteUser` o generează. Un rând care scrie **Activ** și nu se poate autentifica niciodată, fără
+  ca nimic de pe ecran să spună de ce.
+
+`V34` adaugă `deactivated_at` — o dată, nu un boolean, fiindcă răspunde și la „de când", care e prima
+întrebare pusă când pleacă un angajat. Starea se citește din pereche, într-un singur loc
+(`CompanyUserResponse.from`), deci nu e o a treia coloană care poate să nu fie de acord cu primele două.
+
+### 🔴 Ce a scos la iveală proba pe serverul viu — încă o dată, altul decât ce vedeau testele
+
+Prima versiune lăsa un invitat să fie **dezactivat**. Cele 17 teste treceau, `tsc` era curat,
+`vite build` verde. Dar drumul înapoi construia **exact rândul stricat pe care `V34` există ca să-l
+prevină**, mutat cu un pas mai încolo: invitat → dezactivat → reactivat = Activ, peste o parolă pe
+care n-a văzut-o nimeni.
+
+Reparat **prin construcție, nu cu încă o verificare**: o invitație nu se dezactivează, se **anulează**.
+`DELETE /users/{id}/invitation` chiar șterge rândul — singurul loc din aplicație unde se șterge ceva,
+și se poate **doar** aici, fiindcă un cont în care nu s-a intrat niciodată nu e `created_by` la nicio
+mișcare, evidență sau atașament. Ce câștigi e adresa liberă înapoi, adică fix ce vrei după o greșeală
+de tastare, fiindcă `inviteUser` refuză un email care există deja. Cu asta, **„Dezactivat" se atinge
+numai din „Activ"**, deci oricine e acolo are parolă — invariantul e adevărat prin drumuri, nu prin
+grijă.
+
+Modelul e cel scris pe 09.09 și repetat acum: *o felie se poate proba corect și complet pe stratul pe
+care l-ai ales, și să fie greșită pe cel la care nu te-ai uitat.* Aici stratul nevăzut n-a fost
+browserul, ci **spațiul stărilor**.
+
+### Gardele — ce poate o firmă să-și facă singură, și nu poate
+
+| Ce | Cum e oprit |
+|---|---|
+| Îți dezactivezi sau îți retrogradezi **propriul** cont | refuzat. Sesiunea moare la cererea următoare, deci greșeala n-ar fi reparabilă din aplicație — ar trebui să ne sune cineva |
+| Dezactivezi sau retrogradezi **ultimul `ADMIN` activ** | numărat, nu sperat. Firma ar rămâne fără nimeni care să invite, să promoveze sau să reactiveze |
+| Un admin **invitat**, care n-a pus parola, ținut drept acoperire | nu contează: numărătoarea e a celor `enabled`. Nu poate lăsa pe nimeni înapoi |
+| `PLATFORM_ADMIN` atins dintr-un tenant | **structural imposibil**: are `company = null`, iar toate căutările sunt scoped pe firmă. Nu e o verificare care se poate uita |
+| `PLATFORM_ADMIN` acordat | refuzat pe intrare, aceeași regulă pe care invitația o are de la început |
+| Utilizatorul altei firme | **404**, nu 403 — răspunsul nu confirmă că id-ul e real în altă parte |
+
+**Dezactivarea incrementează contorul de sesiuni**, deși `enabled` singur ar închide sesiunea (P0.4 îl
+verifică la fiecare cerere). Motivul e **drumul înapoi**, nu cel înainte: tokenurile trăiesc 30 de
+zile, deci cineva dezactivat luni și reactivat miercuri ar regăsi valabil fiecare token emis înainte
+de luni — inclusiv cel de pe laptopul care a fost motivul dezactivării. Reactivarea dă înapoi contul,
+nu sesiunile vechi.
+
+**Retrimiterea invitației** refolosește fluxul de resetare, ca invitația inițială: stinge linkul
+neconfirmat rămas (două linkuri vii pentru un cont e cu unul mai mult decât trebuie), face unul nou,
+trimite mailul. E numărată la aceeași frână ca resetarea de sine (`RESET_PER_EMAIL`, trei pe oră) —
+căsuța protejată e a invitatului, și nu-i pasă că cererea a venit de la un administrator autentificat.
+Se retrimite **doar** unui cont care n-a intrat niciodată: pe unul cu parolă, ar fi însemnat un
+administrator care poate emite un link de resetare pentru contul viu al unui coleg, adică altă
+funcționalitate, și mai proastă.
+
+### Ce a ieșit la privitul ecranului, nu din DOM
+
+Pe **375px**, coloana de acțiuni — lipită la dreapta — măsura **352px într-un container de 341**,
+deci acoperea complet emailul, numele, rolul și starea: un tabel din care se vedeau numai butoane
+roșii, fără să știi al cui e rândul. Cauza: „Retrimite invitația" și „Anulează invitația" una lângă
+alta. Etichetele de pe rând s-au scurtat la „Retrimite" / „Anulează" (textul întreg rămâne în
+`aria-label` și în confirmare) → **241px**, în linie cu celelalte secțiuni (puncte de lucru 265,
+șoferi 85). ⚠️ Prima captură arăta același defect **și** ca artefact: `scrollIntoViewIfNeeded()`
+derulase containerul orizontal ca să aducă în cadru coloana lipită. Măsurat cu `scrollLeft`, ca să nu
+se repare fantoma în loc de defect.
+
+### Probe
+
+* **288 de teste** (erau 269) — `CompanyUsersIT`, 19 verificări, fiecare gardă cu testul ei.
+  ⚠️ Prima versiune a clasei **se otrăvea singură**: un test lăsa în urmă un al doilea `ADMIN` activ
+  pe firma demo, ceea ce dezarma garda de „ultim administrator" în testele următoare — care atunci
+  chiar dezactivau `admin@demo.ro`, și tot restul clasei ieșea 401/403 din motive care n-aveau
+  legătură cu ce testau. Reparat dându-le **firmă proprie**, nu curățenie după.
+* `tsc --noEmit` curat, `vite build` verde (621,94 kB).
+* **Suita de interfață verde**, cu **7 verificări noi** care chiar apasă butoanele: invitat →
+  „În așteptare" cu exact cele două acțiuni potrivite și **fără** „Dezactivează" → rândul propriu
+  marcat „(tu)" și fără butoane → „Anulează" întreabă → rândul dispare. Regula de pe 09.09, aplicată:
+  ce nu apasă un buton n-a probat butonul.
+  ⚠️ Suita 7 mai avea o **bombă cu ceas** care a explodat acum: lasă în urmă câte un șofer inactiv la
+  fiecare rulare, iar la a 26-a rândul căutat a trecut de pagina de 25 și proba a căzut cu ecranul
+  neschimbat. Verificarea se restrânge acum prin căutare, deci nu mai depinde de vechimea bazei.
+* Pe serverul local pornit: drumul întreg prin `curl` — invitație → `PENDING_INVITE`, retrimitere
+  `204`, dezactivarea unui invitat `400 user.still.pending`, anulare `204`, adresa liberă din nou
+  `200`, autodezactivare `400 user.cannot.manage.self`, operator pe listă `403`.
+
+⬜ **Nu e pe producție.** `V34` nu e migrată pe dyno, deci bifa din `todo-lansare.md` rămâne pusă doar
+pe „livrat în cod" — regula 2: ce se probează pe dyno se bifează pe dyno.
 
 ---
 
