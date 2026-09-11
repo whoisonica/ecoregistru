@@ -3,7 +3,16 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 12.09.2026.** ✅ **P3.1 e construit: căutarea, sortarea și paginarea s-au mutat
+> **Unde suntem — 12.09.2026.** ✅ **P1.11 — jurnalul de audit e construit** (secţiunea „P1.11 —
+> jurnalul de audit"): cine, ce, când, prins în interceptorul de flush al lui Hibernate ca să nu
+> poată fi uitat de niciun drum de scriere, cu ecran în **Setări** numai pentru administratori.
+> **368 de teste, 0 eșecuri**, **`V39`** (prima liberă `V40`), migrarea probată şi pe baza de dev
+> acumulată. ⬜ **Nedeployat**; proba de ecran (`e2e/15-jurnal-audit.mjs`) e **scrisă şi nerulată**.
+> 🔴 **Un defect pe care numai proba l-a găsit:** ştergerile nu lăsau nicio urmă, în timp ce
+> modificările lăsau — vezi „defectul pe care numai proba l-a putut găsi". Odată cu felia, **anexa
+> B.6 a DPA-ului trece la timpul prezent**.
+>
+> ✅ **P3.1 e construit: căutarea, sortarea și paginarea s-au mutat
 > la server** — singurul punct din listă care se strica fără ca nimeni să atingă nimic. Atinse:
 > Mișcări, registrul de predări și Panoul (care își cere acum cele două cifre socotite, nu adunate
 > din rânduri). **359 de teste, 0 eșecuri**, **fără migrare** — schema rămâne la `V38`.
@@ -6583,6 +6592,111 @@ predări) plus Panoul. Celelalte tabele — parteneri, șoferi, puncte de lucru,
 contului. `useTableView` rămâne unde e, lângă sora ei de la distanță, cu aceeași față către
 `TableToolbar`, `SortableHeader` și `TablePagination` — niciunul dintre ele nu știe pe care se
 sprijină ecranul.
+
+## P1.11 — jurnalul de audit: cine, ce, când (12.09.2026)
+
+Aplicaţia nu putea răspunde la *„cine a modificat cantitatea asta şi când"*. Singura urmă era
+`created_by` + `created_at` pe mişcare — adică **autorul primei scrieri** —, iar o fişă de evidenţă
+se depune pe baza rândurilor de după toate modificările, nu a celor de la naştere. Pe un produs a
+cărui promisiune e apărarea la control, asta e şi igienă, şi argument de vânzare: concurenţa vinde
+„garanţie amenzi", noi putem vinde trasabilitatea care o face verificabilă. Şi era o promisiune deja
+scrisă: anexa B.6 a DPA-ului anunţa jurnalul ca *planificat*.
+
+### Unde stă prinderea, şi de ce nu în servicii
+
+În **interceptorul de flush al lui Hibernate**, nu într-un apel scris de mână în fiecare serviciu
+care salvează ceva. Apelul de mână e corect până în ziua în care cineva adaugă al şaselea drum de
+editare şi nu ştie că trebuie scris — o regulă ţinută prin disciplină, nu prin construcţie, exact
+tiparul pe care proiectul ăsta l-a plătit de câteva ori. Interceptorul vede **orice** scriere,
+inclusiv pe cele care vin prin cascadă.
+
+Peste el, o **listă albă** de zece tipuri: mişcări, firma, parteneri şi punctele lor de lucru,
+puncte de lucru, generatori interni, şoferi, buletine de analiză, ataşamente, conturi. Nu o listă
+neagră — auditul e o promisiune făcută în DPA, deci ce intră în el trebuie să fie o **alegere**, nu
+un rest. `MonthlyEvidence` lipseşte dinadins: e un cache recalculabil, iar un an regenerat ar scrie
+mii de rânduri despre o apăsare de buton. Fapta aceea se scrie **o dată**, pe faţă, din
+`EvidenceCalculator`: „Anul 2026 · 137 de linii".
+
+### Cele patru lucruri pe care felia le-a ales
+
+- **Verbe, nu diferenţe de câmpuri.** Ştergerea e moale peste tot în aplicaţie (mişcările vechi
+  citează rândul), iar dezactivarea la fel — amândouă ies din bază ca un UPDATE pe un boolean.
+  Scrise aşa, ar fi fost adevărate şi **de negăsit**: nimeni nu caută „deleted: false → true",
+  toată lumea caută „cine a şters". Deci `DELETE`, `DEACTIVATE`, `REACTIVATE` sunt fapte proprii.
+- **Eticheta se scrie atunci, nu se rezolvă la citire.** Un rând şters nu mai poate fi întrebat cum
+  îl chema — iar ştergerea e tocmai fapta despre care se întreabă cel mai des.
+- **Autorul e copiat, nu referit.** Adresa şi rolul sunt instantanee: un cont se dezactivează, se
+  redenumeşte, îşi schimbă rolul, iar la un control contează cine a fost **atunci**.
+- **Identificatori la scriere, nume la citire.** În mijlocul unui flush, `getPartner().getName()`
+  ar iniţializa un proxy exact când sesiunea e cel mai puţin dispusă s-o facă; aşa că jurnalul scrie
+  `partener: 3f2a… → 91bc…`, iar ecranul ridică cele douăzeci şi cinci de identificatori ai paginii
+  cu **o interogare per tabelă** şi scrie „partener: Hamburger → Eco Valorificare". Fără pasul ăsta
+  felia ar fi fost corectă şi necitită de nimeni.
+
+### 🔴 Defectul pe care numai proba l-a putut găsi
+
+Rândurile se scriu **înainte de commit**, în aceeaşi tranzacţie: ori modificarea şi urma ei, ori
+niciuna. Iar sincronizarea care le scrie trebuie **înregistrată cât timp tranzacţia încă rulează**.
+
+Prima variantă o înregistra la prima prindere. Mergea pentru creări (`onSave` se cheamă la
+`persist`, deci devreme) şi pentru orice modificare urmată de o interogare — care forţează un flush.
+Şi **nu mergea deloc** pentru o tranzacţie care doar schimbă un rând deja încărcat şi se termină:
+acolo verificarea de „murdărie" se face la commit, adică **după** ce sincronizările au trecut.
+Ştergerea moale a unei mişcări e exact aşa, şi nu lăsa nicio urmă — în timp ce modificarea de
+cantitate, care se întâmplă să citească ceva după ea, lăsa. Un jurnal care înregistrează nouă fapte
+din zece e mai rău decât unul care lipseşte, fiindcă îl crezi.
+
+Reparat mutând înarmarea la **încărcare**: orice tranzacţie care are ce modifica a citit mai întâi
+rândul. Şi `writePending()` începe cu un `flush()` propriu, ca verificarea de murdărie să treacă
+prin interceptor înainte ca lista să fie citită.
+
+📌 Şi a doua oară aceeaşi clasă de lecţie, mai mică: proba cerea „exact un câmp schimbat" şi a
+primit `["quantity", "version"]`. Contorul de blocare optimistă creşte la fiecare scriere şi n-are
+ce căuta pe un rând de jurnal. Fără asertarea strictă, ar fi apărut pe **fiecare** modificare din
+aplicaţie, pentru totdeauna.
+
+### Ecranul
+
+**Setări → Jurnal de audit**, numai pentru administratori — rândurile numesc oameni: întrebarea e
+despre date, răspunsul e despre un coleg. Un operator primeşte **403**, nu un tabel gol, şi nu vede
+nici măcar secţiunea.
+
+Paginat la server din prima zi, refolosind `useRemoteTableView` de la P3.1: e singura tabelă din
+aplicaţie despre care se ştie de la început că **numai creşte**. Faptele, tipurile şi rubricile se
+scriu în româneşte. ⚠️ Dicţionarul de rubrici e **parţial, dinadins**: o traducere pentru fiecare
+dintre cele ~90 de coloane ar fi o listă pe care nimeni n-o ţine la zi, iar prima rubrică adăugată
+mâine ar apărea ca un gol. Ce lipseşte se afişează cu numele din model — mai puţin plăcut decât
+româneşte şi infinit mai bun decât nimic.
+
+### Probele
+
+**368 de teste, 0 eşecuri** (erau 359). Cele 9 noi sunt `AuditLogIT`, şi niciuna nu verifică „se
+scrie un rând": creare cu autor şi etichetă, modificarea cantităţii **cu amândouă valorile**,
+partenerul citit cu numele şi nu cu identificatorul, ştergerea scrisă ca ştergere, dezactivarea şi
+reactivarea ca fapte proprii, **o scriere respinsă care nu lasă urmă**, regenerarea ca un rând şi nu
+o mie, uşa închisă pentru operator, şi marginea firmei.
+`V39` = `audit_log`, deci prima liberă e **`V40`**. `tsc --noEmit` curat, `vite build` verde
+(673,07 kB).
+
+✅ **Migrarea probată şi pe baza de dev acumulată**, nu doar pe cea din teste: pornire curată,
+*„Migrating schema public to version 39 - audit log → Successfully applied 4 migrations, now at
+version v39"* (baza locală rămăsese la `V35`). Tabela are cele trei indexuri şi cele două chei.
+
+⬜ **Proba de ecran e scrisă şi NERULATĂ** — `e2e/15-jurnal-audit.mjs`, a patra din teanc, lângă 13,
+14 şi cea pentru buletine. Face o modificare adevărată prin API şi cere apoi jurnalului s-o
+povestească; cere `E2E_PASSWORD`, adică parola cu care a fost seedată baza de dev, pe care sesiunea
+asta n-o are. ⚠️ Lasă în urmă o mişcare ştearsă, pe anul 2033, ales ca să nu atingă nimic din ce
+citesc celelalte probe.
+
+### Ce s-a schimbat pe lângă cod
+
+**Anexa B.6 a DPA-ului se scrie de-acum la timpul prezent.** Era singurul loc din setul juridic care
+promitea ceva viitor; acum descrie ce există, inclusiv ce **nu** există încă — ştergerea la termen
+se face la cererea clientului, nu automat. Şi A.5 are o categorie nouă de date, fiindcă jurnalul
+ţine adresa de e-mail a autorului: un registru de trasabilitate e el însuşi o prelucrare.
+📌 **Politica de confidenţialitate rămâne neatinsă**, şi asta e o decizie, nu o scăpare: jurnalul e
+date ale clientului, prelucrate la instrucţiunea lui, deci locul lui e în DPA — unde suntem
+împuternicit —, nu în politica prin care suntem operator.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

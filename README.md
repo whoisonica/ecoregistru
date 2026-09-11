@@ -69,6 +69,16 @@ between requests, which shows one row on two pages and another on none. Sortable
 whitelist, and anything outside it falls back to the default order rather than being refused: a stale
 bookmark should open a table, not an error.
 
+**An audit journal that cannot be forgotten.** Who changed what, and when, over the writes that
+reach a filed document or concern a person. It is captured in Hibernate's flush interceptor rather
+than by a call written into each service — a rule kept by discipline is a rule that the sixth edit
+path will not know about — and bounded by an explicit allowlist of ten types, because an audit trail
+is a promise made in a data-processing agreement, not a debug log: what goes in has to be a choice
+rather than a remainder. Soft deletes and deactivations are written as **deeds**, not as a boolean
+flipping: nobody searches a journal for "deleted: false → true". Rows are written in the same
+transaction as the change they describe, so a refused write leaves no trace and a successful one
+cannot fail to leave one. Nothing in the application can edit or remove a row.
+
 **Deadlines and alerts.** Automatic generation of **four annual filing deadlines** and of the AFM
 contributions a company actually owes — each on the cadence OUG 196/2005 art. 11 gives it: monthly
 for the 2% withheld at source, quarterly for the circular-economy contribution, annually for
