@@ -3,7 +3,7 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 11.09.2026, seara.** **327 teste verzi** (0 eșecuri) și **14 suite de interfață**:
+> **Unde suntem — 11.09.2026, noaptea.** **335 teste verzi** (0 eșecuri) și **14 suite de interfață**:
 > 303 verificări rulate (probele 1–12) plus **25 scrise și nerulate încă** (probele 13 și 14 — cer
 > servere pornite). În producție: `ecoregistru-api` la **v48**, `ecoregistru-app` la **v44**, cu
 > **`V37` migrat acolo** (11.09.2026, 12:02). Schema e la **`V37`** și în repo, deci următoarea
@@ -35,6 +35,9 @@ rulează local și are testele verzi.
 > nu tu (art. 14)"*; `/api/v1/movements/1/anexa2` fără token → **401**, `/actuator/health` → **200**;
 > `Started EcoRegistruApplication in 9.102 seconds`.
 > ⬜ **Ce rămâne neprobat pe ecran cu sesiune reală: probele 13 și 14** — deployat nu înseamnă probat.
+> 🔴 **Și după deploy, o recitire a legii-cadru a scos al patrulea termen anual: 31 mai** (art. 44
+> alin. (3), amendă 40.000–60.000 lei). **Construit în aceeași seară** — `APM_ANNUAL_MAY`, 8 teste
+> noi, **fără migrare**. Secțiunea „G-10". **Nedeployat**: pe producție e codul de la 12:02.
 > ⚠️ **De ținut minte, fără legătură cu felia:** înainte de swap, dyno-ul vechi a scris **73 de
 > `Error R14 (Memory quota exceeded)`**, ultimul la 09:02:48 UTC; cel nou a pornit curat. Nu e
 > regresie din ziua asta, dar e un prag de care ne apropiem.
@@ -6203,6 +6206,99 @@ care va fi înlocuit de altul când apare procedura. Rămâne cu dată de reveri
 **`V37`, aditivă** — o coloană nullable, niciun rând şters. `tsc` curat, `vite build` verde.
 ✅ **Deployat pe 11.09.2026, 12:02:** api **v48** (`70f3e30`), app **v44** (`dd6f6bd`), `V36` şi `V37`
 migrate pe producţie într-o singură pornire („now at version v37").
+
+## G-10 — al patrulea termen anual, și de unde a ieșit (11.09.2026, noaptea)
+
+Felia asta n-a ieșit dintr-o listă de lucru, ci dintr-o **întrebare pusă înainte de a pune cifre pe
+hârtie**: „mai e ceva de închis, în actul oficial, înainte să scriem la ce procent e modulul?".
+Răspunsul a fost da, și e cel mai scump punct găsit până acum.
+
+### Ce spune actul
+
+**OUG 92/2021 art. 44 alin. (3):** programul de prevenire și reducere a cantităților de deșeuri
+**se publică pe pagina de internet a persoanei juridice** și **se transmite anual agenției
+județene, inclusiv progresul înregistrat, până la 31 mai anul următor raportării**. Obligația de la
+alin. (1) e a persoanei juridice cu activitate comercială sau industrială **pentru care autoritatea
+a emis o autorizație de mediu/autorizație integrată**, pe rezultatele unui audit de deșeuri.
+
+**Sancțiunea: art. 62 alin. (1) lit. a) — 40.000–60.000 lei.** Alineatele (1) și (3) sunt amândouă
+în enumerare, citite cuvânt cu cuvânt: **aceeași cifră ca lipsa evidenței**, și de șase ori cât
+termenul de 30 aprilie construit cu câteva ore înainte.
+
+🔴 **Unde stătea ascuns, și ăsta e tot rostul secțiunii.** Art. 44 era **deja transcris în
+`surse-oficiale.md`**, la §2.4, în lista de amenzi a art. 62. Transcris, niciodată citit ca
+obligație. E a doua oară în două zile când un termen legal stă într-un text scris de noi: 30
+aprilie era în același paragraf. **O enumerare copiată din act nu e o listă de obligații verificate
+— e o listă de obligații necitite**, până când cineva o parcurge articol cu articol.
+
+### Semnalul: prima dată când nu trebuie nici întrebat, nici derivat
+
+La G-3 alegerea era grea (uleiurile se derivă, construcțiile se întreabă) fiindcă datele conțineau
+doar ceva *corelat* cu obligația. Aici articolul leagă obligația de un fapt pe care profilul îl
+ține deja: **autoritatea a emis firmei o autorizație de mediu**, iar `Company.environmentalAuthNumber`
+e chiar rubrica aia. Nu e proxy, e condiția din text. Deci: **nicio întrebare nouă, nicio migrare.**
+
+⚠️ **Expirarea nu se citește, dinadins.** Raportarea e a anului raportat, iar o autorizație stinsă
+între timp nu șterge ce se datora cât a ținut — a citi `environmentalAuthExpiry` ar tăcea exact
+pentru clientul rămas în urmă. Decizia e scrisă în `ReportType` și pinuită de un test.
+
+⚠️ **Și rubrica goală nu e un răspuns:** `isBlank`, nu `!= null`. Un șir de spații ajunge în bază
+dintr-un formular atins și șters, și ar aprinde un termen pe o autorizație inexistentă.
+
+### Alin. (3) cere două lucruri, și numai unul se poate păzi
+
+Programul se **transmite** la agenție (termen în calendar) **și se publică pe site-ul firmei**. Un
+site nu se poate observa din aplicație — deci jumătatea aia se **numește** în dosarul de control și
+se predă clientului, pe tiparul art. 17 alin. (3): ce nu putem constata, nu concluzionăm. Dosarul
+are de-acum **cinci** obligații în blocul „ALTE OBLIGAȚII", nu patru, iar a cincea e o constatare
+când firma are autorizație (o numește) și o notă când n-are.
+
+📌 Tot atunci a intrat și **art. 36 alin. (3)** — operatorii care *repară* produse se înscriu și ei
+într-un registru ANMAP. ⚠️ Alt registru, și **în afara** listei de amenzi din antetul blocului, deci
+e scris ca paragraf separat: o obligație strecurată sub o cifră care nu e a ei ar fi o afirmație
+falsă în apărarea clientului.
+
+### Probele
+
+**335 de teste, 0 eșecuri** (erau 327), rulate cu `./gradlew cleanTest test` și numărate din
+`TEST-*.xml`. Cele 8 noi: **5 în `DeadlineIT`** — autorizația creează termenul pe 31.05, lipsa ei nu
+creează nimic, un șir de spații nu e autorizație, o autorizație **expirată** îl creează totuși
+(decizia scrisă ca probă), și un singur rând, idempotent — și **3 în `AuditFileIT`**: constatarea
+numește autorizația găsită, firma fără autorizație primește obligația *numită*, iar registrul de
+reparații e verificat că stă în afara cifrei de 40.000–60.000.
+
+`tsc` curat, `vite build` verde. **Zero migrări** — `report_type` e `VARCHAR(20)`, iar
+`APM_ANNUAL_MAY` încape; numele e pozițional din motivul ăsta, nu din stil.
+
+### Ce a mai scos aceeași citire, fără o linie de cod
+
+🔴 **Regulamentul citat de art. 29 alin. (2) e abrogat de aproape patru luni.** Legea română cere,
+la transport intern de periculos, „documentul de identificare prevăzut în anexa IB la Regulamentul
+(CE) nr. 1.013/2006". **Art. 85 din Regulamentul (UE) 2024/1157**: actul se abrogă de la 20.05.2024,
+iar dispozițiile lui ies din aplicare la **21.05.2026**; trimiterile se citesc la regulamentul nou,
+prin tabelul de corespondență din anexa XIII, unde „Anexele IA, IB și IC → Anexele IA, IB și IC".
+Dar **anexa IC a regulamentului nou spune că de la 21.05.2026 documentele se transmit electronic**
+(art. 27), hârtia rămânând doar pentru transferurile cu țări terțe — iar anexa IB se numește, în
+propriul titlu, *document de circulație pentru transferuri **transfrontaliere***. Deci **nu e nimic
+de tipărit**, și decizia veche („nu generăm nimic la G-9") stă acum pe un motiv citit, nu pe o
+necunoscută. Întrebarea rămasă e alta: cere autoritatea documentul electronic pentru un transport
+intern, când legea română trimite la un act abrogat?
+
+⚠️ **Lecția, și e a treia de același fel în două zile:** *„cu modificările și completările
+ulterioare" nu spune că actul citat mai există.* O trimitere îmbătrânește singură, fără să se
+schimbe o literă în legea care o poartă — se verifică în fișa actului citat, nu în actul care
+citează. ⚠️ **Și o notă de mediu:** `eur-lex.europa.eu` întoarce în sesiune o provocare AWS WAF
+(`202` + JS) și nu se poate citi nici cu `curl`, nici cu unealta de web; textele oficiale se iau
+prin **CELLAR**, depozitul Oficiului pentru Publicații (`publications.europa.eu/resource/celex/...`
+cu negociere de conținut: `Accept: application/xhtml+xml`, `Accept-Language: ro`).
+
+🟢 **Și G-7 s-a deblocat, tot din act.** Art. 48 alin. (2) cere „**să dețină**" buletinele de
+analiză — obligație continuă, fără termen —, iar alin. (5) pune podeaua evidenței la **3 ani**
+(12 luni la transportatori). „Cât se păstrează" nu mai e o întrebare pentru specialistă; ce rămâne
+e **frecvența reanalizei**, care e altă întrebare. ⚠️ Tot acolo, o lărgire pe care n-o citisem:
+art. 8 alin. (4) cere caracterizarea nu doar pentru codurile cu asterisc, ci și pentru „deșeurile
+care **pot fi considerate periculoase din cauza originii sau compoziției**" — perechea-oglindă de
+la G-4 e un subset al obligației, nu toată.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

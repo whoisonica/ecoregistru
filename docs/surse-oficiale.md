@@ -754,6 +754,52 @@ Iar temeiul HG-ului 1061/2008 e chiar în act, la **art. 27 alin. (3)**:
 > `intrebari-specialist.md`. Până la răspuns nu generăm nimic: a inventa un al doilea formular
 > oficial e fix ce nu facem.
 
+#### 🔴 11.09.2026 — regulamentul citat de art. 29 alin. (2) **e abrogat de aproape patru luni**
+
+*Citit direct în textele oficiale ale Uniunii, prin **CELLAR** (depozitul Oficiului pentru
+Publicaţii, `publications.europa.eu`), fiindcă `eur-lex.europa.eu` întoarce în sesiune o provocare
+AWS WAF (`202` + JS) şi nu se poate citi nici cu `curl`, nici cu unealta de web.*
+
+**Regulamentul (UE) 2024/1157, art. 85 — „Abrogare şi dispoziţii tranzitorii":**
+
+> (1) Regulamentul (CE) nr. 1013/2006 **se abrogă de la 20 mai 2024**.
+> (2) Cu toate acestea, dispoziţiile din Regulamentul (CE) nr. 1013/2006 **continuă să se aplice
+> până la 21 mai 2026**, cu excepţia: (a) articolului 30 […]; (b) articolului 37, care continuă să
+> se aplice până la 21 mai 2027; (c) articolului 51 […] până la 31 decembrie 2025.
+> […]
+> (8) **Trimiterile la Regulamentul (CE) nr. 1013/2006 care se abrogă se interpretează ca trimiteri
+> la prezentul regulament** şi se citesc în conformitate cu tabelul de corespondenţă din anexa XIII.
+
+Şi **art. 86 alin. (2)**: regulamentul nou **se aplică de la 21 mai 2026**. Fişa oficială a actului
+vechi (CELEX `32006R1013`) poartă `END-OF-VALIDITY = 2027-05-21`, dar data aia e carve-out-ul de la
+art. 85(2)(b) — **articolul 37**, nu regimul general.
+
+**Ce urmează din asta, în ordine:**
+
+| Ce | Unde scrie |
+|---|---|
+| Trimiterea din OUG 92/2021 art. 29(2) e la un act **ieşit din aplicare din 21.05.2026** | art. 85(1)–(2) din Reg. 2024/1157 |
+| Se citeşte ca trimitere la regulamentul **nou**, prin tabelul de corespondenţă | art. 85(8) + anexa XIII |
+| Documentul **îşi păstrează numărul**: „Anexele IA, IB şi IC → Anexele IA, IB şi IC" | anexa XIII, tabelul de corespondenţă |
+| Anexa IB se numeşte, în chiar titlul ei, *„Document de circulaţie pentru circulaţia/transferurile **transfrontaliere** de deşeuri"* | anexa IB la Reg. 1013/2006, forma consolidată RO |
+| **De la 21 mai 2026 documentele se transmit ELECTRONIC** (art. 27); hârtia rămâne doar pentru transferurile care implică ţări terţe | anexa IC la Reg. 2024/1157 |
+| Transportul **exclusiv intern** rămâne al statului membru — fostul art. 33 e acum **art. 36** | art. 36 din Reg. 2024/1157 |
+
+🟢 **Ce se închide din AS:** decizia „nu generăm nimic" nu mai stă pe o necunoscută, ci pe un motiv
+citit în act — **documentul nu se mai tipăreşte deloc** după 21.05.2026, se depune electronic, şi e
+prin propriul titlu un document transfrontalier. Un formular tipărit de noi ar fi un obiect care nu
+mai există în dreptul Uniunii.
+
+🟡 **Ce rămâne de întrebat, şi e altă întrebare decât cea veche:** pentru un transport **intern**,
+autoritatea chiar aşteaptă documentul electronic de circulaţie, în condiţiile în care legea română
+trimite la un regulament abrogat, iar regimul intern e lăsat de Uniune în seama statului membru
+(adică HG 1061/2008, cu temei în art. 27 alin. (3))?
+
+⚠️ **Şi lecţia, a treia de acelaşi fel în două zile:** *„cu modificările şi completările
+ulterioare" dintr-o lege română nu spune că actul citat mai există.* Trimiterea îmbătrâneşte
+singură, fără să se schimbe o literă în legea care o poartă. Se verifică la sursă, în fişa actului
+citat, nu în actul care citează.
+
 ---
 
 ### 2.8 Obligaţii ale clientului pe care actul le cere şi dosarul de control nu le numeşte
@@ -811,6 +857,76 @@ Iar temeiul HG-ului 1061/2008 e chiar în act, la **art. 27 alin. (3)**:
 > 3. **Art. 17 alin. (3) şi art. 36 alin. (2) sunt rubrici de dosar**, în acelaşi tipar cu persoana
 >    desemnată de la art. 23 alin. (4): **absenţa unei obligaţii legale e ea însăşi constatarea.**
 >    Nu cer ecrane noi, cer o propoziţie în dosarul de control.
+
+---
+
+### 2.9 ARTICOLUL 44 alin. (3) — al patrulea termen anual: **31 mai** (găsit 11.09.2026)
+
+*Şi de data asta articolul era deja transcris în fişierul ăsta — la §2.4, în lista de amenzi a
+art. 62. Transcris, niciodată citit ca obligaţie. **A doua oară în două zile când un termen legal
+stă ascuns într-un text pe care îl scrisesem noi.***
+
+> **Art. 44 alin. (1):** Persoana juridică ce exercită o activitate de natură comercială sau
+> industrială, **pentru care autoritatea competentă pentru protecţia mediului a emis o autorizaţie
+> de mediu/autorizaţie integrată de mediu**, având în vedere rezultatele unui **audit de deşeuri**,
+> este obligată să întocmească şi să implementeze un **program de prevenire şi reducere a
+> cantităţilor de deşeuri** generate din activitatea proprie […] şi să adopte măsuri de reducere a
+> periculozităţii deşeurilor.
+>
+> **(2)** Programul […] se poate elabora şi de către o terţă persoană/asociaţie profesională.
+>
+> **(3)** Programul […] **se publică pe pagina de internet a persoanei juridice** şi **se transmite
+> anual agenţiei judeţene pentru protecţia mediului, inclusiv progresul înregistrat, până la 31 mai
+> anul următor raportării**.
+
+**Sancţiunea: art. 62 alin. (1) lit. a) — 40.000–60.000 lei** pentru persoane juridice. Alineatele
+(1) **şi** (3) sunt amândouă în listă, verificate cuvânt cu cuvânt în enumerarea articolului: aceeaşi
+cifră ca lipsa evidenţei, şi **de şase ori** cât termenul de 30 aprilie.
+
+📌 **Semnalul e deja în profil, şi e pozitiv în sensul strict al regulii noastre.** Articolul nu
+leagă obligaţia de o activitate pe care am deduce-o, ci de faptul că **autoritatea a emis firmei o
+autorizaţie de mediu** — iar `Company.environmentalAuthNumber` e chiar rubrica aia. Nu se întreabă
+nimic nou şi nu se derivă nimic din tăcere.
+
+⚠️ **Alin. (3) cere DOUĂ lucruri, nu unul**, şi numai unul se poate păzi din aplicaţie: transmiterea
+la agenţie e termen în calendar (`APM_ANNUAL_MAY`), iar **publicarea pe site-ul propriu** nu se
+poate observa de aici — se numeşte în dosarul de control şi se predă clientului, nu se presupune.
+
+⚠️ **Expirarea autorizaţiei nu se citeşte**, şi e o decizie: raportarea e a anului raportat, iar o
+autorizaţie stinsă între timp nu şterge ce se datora cât a ţinut. A citi `environmentalAuthExpiry`
+aici ar tăcea exact pentru clientul rămas în urmă.
+
+**Unde e în cod:** `ReportType.APM_ANNUAL_MAY`, `DeadlineService.mayDeadline()`,
+`AuditFileService.otherObligationsNote()` (a cincea obligaţie). **Fără migrare** — coloana
+`report_type` e `VARCHAR(20)` şi valoarea încape, iar semnalul exista deja.
+
+---
+
+### 2.10 Două lucruri mărunte, din aceeaşi citire (11.09.2026)
+
+**Art. 36 alin. (3)** — pe lângă cele trei categorii din alin. (1)–(2), se mai înscriu într-un
+registru ţinut de ANMAP **operatorii economici care desfăşoară activităţi de reparare a
+produselor**. ⚠️ **Alt registru şi, atenţie, în afara listei de la art. 62 alin. (1) lit. a)** —
+deci se numeşte în dosar, dar nu sub cifra de 40.000–60.000 lei.
+
+**Art. 48 alin. (2) şi (5)**, pentru jumătatea deschisă a lui **AL** (cât se păstrează buletinele
+de analiză):
+
+> **(2)** Producătorii şi deţinătorii de deşeuri periculoase sunt obligaţi **să deţină** buletinele
+> de analiză care caracterizează deşeurile periculoase şi să le transmită, la cerere, autorităţilor.
+>
+> **(5)** Operatorii economici prevăzuţi la alin. (1) sunt obligaţi să păstreze evidenţa gestiunii
+> deşeurilor **cel puţin 3 ani**, cu excepţia celor care desfăşoară activităţi de transport, care
+> trebuie să păstreze evidenţa timp de cel puţin **12 luni**.
+
+🟢 **Deci „cât se păstrează" nu mai e o întrebare pentru specialistă:** obligaţia de la alin. (2) e
+**continuă şi fără termen** („să deţină"), iar podeaua celor 3 ani e scrisă în act. Ce rămâne de
+practică e **frecvenţa reanalizei** — cât de des trebuie refăcut buletinul —, care e altă întrebare
+decât cea din listă. **G-7 se poate construi.**
+
+⚠️ **Şi o lărgire a lui art. 8 alin. (4) pe care n-o citisem:** caracterizarea nu e cerută doar
+pentru codurile cu asterisc, ci şi pentru *„deşeurile care **pot fi considerate periculoase din
+cauza originii sau compoziţiei**"*. Perechea-oglindă de la §3.4 e un subset al obligaţiei, nu tot ea.
 
 ---
 
