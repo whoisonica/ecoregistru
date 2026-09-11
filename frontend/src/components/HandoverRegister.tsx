@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ArrowRightLeft, FileText, Pencil } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
@@ -11,7 +12,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
-import { missingLast, useTableView } from "@/hooks/useTableView";
+import { useRemoteTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useUrlState } from "@/hooks/useUrlState";
 
@@ -33,7 +34,6 @@ const e = strings.enums;
  * nothing to prove to anyone.
  */
 export function HandoverRegister({ filters }: { filters: MovementFilters }) {
-  const { data: movements, isLoading, isError } = useMovements(filters);
   const { download, downloadingId } = useAnexa3Download();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } =
     useAnexa2Download();
@@ -49,11 +49,35 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   const [problem, setProblem] = useUrlState("problema");
   const onlyMissingCode = problem === "cod-rd";
 
-  const exits = (movements ?? []).filter(
-    (mv) => mv.operation === "RECOVERED" || mv.operation === "DISPOSED"
-      || mv.operation === "UNCLASSIFIED_OUT"
+  /**
+   * Cele două întrebări ale registrului se pun **bazei de date**, nu rândurilor aduse (P3.1).
+   *
+   * <p>Până acum se cereau toate mișcările lunii și se păstrau ieșirile din ele. Cu lista pe
+   * pagini asta ar fi însemnat prima pagină de **mișcări**, din care se alegeau apoi câte ieșiri
+   * se nimeriseră pe ea — un registru cu zece rânduri când firma are o sută, și cu o paginare care
+   * ar fi numărat altceva decât ce se vede.
+   *
+   * <p>`leftSite` nu e „are nevoie de cod R/D": o ieșire fără cod a plecat și ea de pe amplasament,
+   * și e tocmai rândul pe care îl caută filtrul de dedesubt.
+   */
+  const serverFilters = useMemo<MovementFilters>(
+    () => ({ ...filters, leftSite: true, missingOperationCode: onlyMissingCode }),
+    [filters, onlyMissingCode]
   );
-  const rows = onlyMissingCode ? exits.filter((mv) => !mv.operationCode) : exits;
+
+  /**
+   * Căutarea, sortarea și paginarea se fac la server, ca pe Mișcări.
+   *
+   * <p>Cheia de sortare a primei coloane e `handoverDate`, nu `date`: coloana arată descărcarea
+   * când se știe și data mișcării altfel, iar serverul sortează după aceeași expresie. Sortarea
+   * după `date` ar fi așezat rândurile altfel decât cifrele scrise în ele.
+   */
+  const table = useRemoteTableView<WasteMovement>({
+    initialSort: { key: "handoverDate", direction: "desc" },
+    resetOn: serverFilters,
+  });
+  const { data: movements, isLoading, isError } = useMovements(serverFilters, table.params);
+  const view = table.bind(movements);
 
   /**
    * Ziua pe care o poartă rândul: descărcarea când se știe, altfel data mișcării. Coloana o
@@ -72,31 +96,6 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
    */
   const editHref = (mv: WasteMovement) =>
     `/miscari?luna=${mv.date.slice(0, 7)}&miscare=${mv.id}`;
-
-  const view = useTableView(rows, {
-    searchText: (mv) =>
-      [
-        mv.wasteCode,
-        mv.wasteCodeName,
-        mv.partnerName,
-        mv.workPointName,
-        mv.operationCode,
-        formatDate(handoverDate(mv)),
-      ]
-        .filter(Boolean)
-        .join(" "),
-    comparators: {
-      date: (a, b) => handoverDate(a).localeCompare(handoverDate(b)),
-      wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
-      // „De cântărit" stă la coadă în ambele sensuri, ca pe Mișcări: e o cantitate nespusă.
-      quantity: missingLast(
-        (a) => a.quantity,
-        (x, y) => x - y
-      ),
-      partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
-    },
-    initialSort: { key: "date", direction: "desc" },
-  });
 
   if (isError) return <p className="text-sm text-red-600">{t.handoversLoadError}</p>;
 
@@ -122,7 +121,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
         <Table stickyHeader>
           <THead sticky>
             <TR>
-              <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>
+              <SortableTH sortKey="handoverDate" sort={view.sort} onSort={view.toggleSort}>
                 {t.colHandoverDate}
               </SortableTH>
               <SortableTH sortKey="wasteCode" sort={view.sort} onSort={view.toggleSort}>

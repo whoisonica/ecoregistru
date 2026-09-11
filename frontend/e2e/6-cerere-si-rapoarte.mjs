@@ -222,7 +222,10 @@ const firstMovement = await page.evaluate(async () => {
     headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
   });
   if (!res.ok) return null;
-  const list = await res.json();
+  // De la P3.1 lista vine paginată: rândurile stau în `content`, nu în rădăcină. Scris aşa,
+  // `list.length` era `undefined` şi toată bucata de mai jos se sărea în tăcere — o probă care
+  // trece fiindcă nu probează nimic.
+  const list = (await res.json()).content;
   return list.length ? { id: list[0].id, date: list[0].date } : null;
 });
 if (firstMovement) {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fold } from "@/lib/utils";
 
 /**
@@ -215,4 +215,151 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): T
     // Adevărat când căutarea a golit lista, dar existau rânduri: alt gol, alt mesaj.
     emptiedBySearch: rows.length > 0 && sorted.length === 0,
   };
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Aceeași vedere, dar tăiată de server
+ * ---------------------------------------------------------------------------------------------- */
+
+/** O pagină venită de la server: rândurile ei și numerele care descriu întregul. */
+export interface PageSlice<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** Ce se pune în cerere. Numele sunt cele ale parametrilor de pe API. */
+export interface RemoteTableParams {
+  search: string;
+  page: number;
+  size: number;
+  sort: string | null;
+  asc: boolean;
+}
+
+export interface RemoteTable<T> {
+  /**
+   * Ce se trimite serverului. Se dă hook-ului de date, iar cheia de cache a interogării se
+   * compune din el — deci o tastă apăsată în căutare e o cerere nouă, nu o filtrare locală.
+   */
+  params: RemoteTableParams;
+  /** Pagina primită, îmbrăcată în aceeași `TableView` pe care o știu bara, antetul și paginarea. */
+  bind: (slice: PageSlice<T> | undefined) => TableView<T>;
+}
+
+/**
+ * O valoare care rămâne în urmă cu `delay` milisecunde.
+ *
+ * <p>Există pentru un singur motiv: căutarea de pe server pleacă la fiecare tastă, iar cine
+ * tastează „hamburger" ar trimite nouă cereri ca să citească răspunsul ultimeia. Caseta rămâne
+ * instantanee — se întârzie **cererea**, nu litera de pe ecran.
+ */
+function useDebounced<T>(value: T, delay: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return settled;
+}
+
+/**
+ * Căutare, sortare și paginare **pe server**, cu aceeași față ca varianta din memorie.
+ *
+ * <p>De ce există, în două propoziții: {@link useTableView} lucrează pe rândurile deja aduse, ceea
+ * ce merge cât timp clientul are o lună de date și nu mai merge la doi ani — e singurul punct din
+ * listă care se strică fără ca nimeni să atingă nimic. Aici tabelul cere o pagină, iar baza de date
+ * face căutarea și sortarea.
+ *
+ * <p>**Și le face pe toate trei, nu doar paginarea.** O casetă de căutare care caută numai în cele
+ * 25 de rânduri de pe ecran răspunde sigur pe sine și greșit — e mai rea decât lipsa ei. Regulile
+ * căutării sunt aceleași ca aici (expresia întâi, apoi cuvintele, fără diacritice); perechea lor pe
+ * server e `FoldedSearch.java`, iar cele două se citesc împreună.
+ *
+ * <p>Întoarce aceeași `TableView` ca sora ei din memorie, ca `TableToolbar`, `SortableHeader` și
+ * `TablePagination` să nu știe pe care dintre ele se sprijină ecranul.
+ */
+export function useRemoteTableView<T>(options: {
+  pageSize?: number;
+  initialSort?: SortState;
+  /**
+   * Filtrele proprii ale paginii — luna, punctul de lucru. Când se schimbă, se sare înapoi la
+   * prima pagină: altfel, venind de pe pagina 4 a lunii trecute, ai nimeri într-o lună care are
+   * două pagini și ai vedea un tabel gol, cu răspunsul „nu e nimic aici" pentru o întrebare pe
+   * care n-ai pus-o.
+   */
+  resetOn?: unknown;
+} = {}): RemoteTable<T> {
+  const pageSize = options.pageSize ?? 25;
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState | null>(options.initialSort ?? null);
+  const [page, setPage] = useState(0);
+  const debouncedQuery = useDebounced(query, 250);
+
+  const resetOn = options.resetOn;
+  useEffect(() => {
+    setPage(0);
+  }, [resetOn]);
+
+  /**
+   * Câte rânduri are tabelul când nu se caută nimic.
+   *
+   * <p>Nu e un moft: pragul de la care se arată caseta de căutare se citește din el, iar în timpul
+   * unei căutări serverul nu mai spune întregul, ci potrivirile. Fără ținerea minte de aici,
+   * caseta ar dispărea de sub degetul care tocmai a tastat în ea.
+   */
+  const unfilteredTotal = useRef(0);
+
+  const params: RemoteTableParams = useMemo(
+    () => ({
+      search: debouncedQuery.trim(),
+      page,
+      size: pageSize,
+      sort: sort?.key ?? null,
+      asc: sort?.direction === "asc",
+    }),
+    [debouncedQuery, page, pageSize, sort]
+  );
+
+  function toggleSort(key: string) {
+    setPage(0);
+    setSort((current) =>
+      current?.key === key
+        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    );
+  }
+
+  function search(next: string) {
+    setQuery(next);
+    setPage(0);
+  }
+
+  function bind(slice: PageSlice<T> | undefined): TableView<T> {
+    const matchCount = slice?.totalElements ?? 0;
+    if (slice && params.search === "") {
+      unfilteredTotal.current = slice.totalElements;
+    }
+    const totalCount = params.search === "" ? matchCount : unfilteredTotal.current;
+    return {
+      query,
+      search,
+      sort,
+      toggleSort,
+      page,
+      setPage,
+      pageCount: Math.max(1, slice?.totalPages ?? 1),
+      pageSize,
+      visible: slice?.content ?? [],
+      matchCount,
+      totalCount,
+      // Ca la varianta din memorie: alt gol, alt mesaj. „Nicio potrivire" doar dacă era ceva de
+      // potrivit — altfel tabelul e gol pur și simplu, iar despre asta vorbește filtrul de sus.
+      emptiedBySearch: query !== "" && matchCount === 0 && totalCount > 0,
+    };
+  }
+
+  return { params, bind };
 }

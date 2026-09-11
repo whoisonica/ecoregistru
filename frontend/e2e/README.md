@@ -195,6 +195,13 @@ select gen_random_uuid(), m.id,
 from waste_movements m where m.operation = 'UNCLASSIFIED_OUT';
 ```
 
+**⚠️ Lista de mişcări vine paginată de pe 12.09.2026 (P3.1).** Cine cere `/api/v1/movements` dintr-o
+probă ia rândurile din **`content`**, nu din rădăcină, şi pune `size=` când caută prin tot seed-ul —
+implicitul e 25. Scris greşit, nu cade nimic: `list.length` e `undefined`, condiţia e falsă, şi bucata
+se sare în tăcere. Exact aşa a stat proba 6 până a fost prinsă. Iar căutarea şi sortarea sunt acum
+cereri, nu filtrări locale — aşteptările de după o tastare în `[data-table-search]` ţin cont de cele
+250 ms de întârziere plus drumul până la bază.
+
 **Ce rămâne cu adevărat neprobabil aici:** ce se **tipăreşte**. Un PDF randat nu se citeşte din DOM
 — pentru feliile care ating documente oficiale, regula rămâne cea din `todo-ui-ux.md`: randează
 pagina şi uită-te la ea.

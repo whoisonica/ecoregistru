@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ro.ecoregistru.controller.request.RecordWeightRequest;
 import ro.ecoregistru.controller.request.WasteMovementRequest;
-import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.Anexa2ThresholdResponse;
+import ro.ecoregistru.controller.response.AttachmentResponse;
+import ro.ecoregistru.controller.response.MovementSummaryResponse;
+import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.service.WasteMovementService;
 
@@ -35,13 +37,51 @@ public class WasteMovementController {
 
     WasteMovementService movementService;
 
+    /**
+     * One page of movements, searched and sorted by the database.
+     *
+     * <p>The response is a {@link PageResponse}, not a bare array: the table under it has to know
+     * how many pages there are and how many rows matched, and neither can be counted from a slice.
+     * Everything except {@code year} has a working default, so {@code GET /api/v1/movements} on its
+     * own still means something — the newest twenty-five rows.
+     *
+     * @param search text typed in the table toolbar; matched the way the toolbar used to match in
+     *               the browser — see {@link ro.ecoregistru.repository.FoldedSearch}
+     * @param leftSite             only what took waste off the site — the handover register's
+     *                             question, and not the same as „needs an R/D code"
+     * @param missingOperationCode only the rows without an R/D code: „arată-mi ce blochează
+     *                             depunerea", sent from the dashboard
+     * @param sort   a column key from the table header; anything unknown falls back to the default
+     *               order rather than being refused, because a stale bookmark should open a table,
+     *               not an error
+     */
     @GetMapping
-    public List<WasteMovementResponse> list(
+    public PageResponse<WasteMovementResponse> list(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) UUID workPointId,
-            @RequestParam(required = false) UUID wasteCodeId) {
-        return movementService.list(year, month, workPointId, wasteCodeId);
+            @RequestParam(required = false) UUID wasteCodeId,
+            @RequestParam(defaultValue = "false") boolean leftSite,
+            @RequestParam(defaultValue = "false") boolean missingOperationCode,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "false") boolean asc) {
+        return movementService.list(year, month, workPointId, wasteCodeId, leftSite,
+                missingOperationCode, search, page, size, sort, asc);
+    }
+
+    /**
+     * The month's two figures for the dashboard: how many movements, and how many kilograms.
+     *
+     * <p>A route of its own, above {@code /{id}}, because it is an aggregate and not a row —
+     * asking the list for it would mean asking for every movement of the month, which is what
+     * paging was built to stop.
+     */
+    @GetMapping("/summary")
+    public MovementSummaryResponse summary(@RequestParam int year, @RequestParam int month) {
+        return movementService.summary(year, month);
     }
 
     @GetMapping("/{id}")

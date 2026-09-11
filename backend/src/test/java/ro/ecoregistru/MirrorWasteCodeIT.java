@@ -253,12 +253,19 @@ class MirrorWasteCodeIT {
         return objectMapper.readTree(created);
     }
 
+    /**
+     * Rândul așa cum îl vede ecranul, căutat în lista paginată (P3.1).
+     *
+     * <p>Pagina se cere mare dinadins: proba e despre badge-ul de pe rând, nu despre paginare, iar
+     * implicitul de 25 ar fi făcut-o să cadă când seed-ul crește sub ea.
+     */
     private JsonNode read(UUID movementId) throws Exception {
         String rows = mockMvc.perform(get("/api/v1/movements")
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .param("size", "200"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        for (JsonNode row : objectMapper.readTree(rows)) {
+        for (JsonNode row : objectMapper.readTree(rows).get("content")) {
             if (row.get("id").asText().equals(movementId.toString())) {
                 return row;
             }

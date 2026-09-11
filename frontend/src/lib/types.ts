@@ -806,6 +806,27 @@ export interface MovementFilters {
   month?: number; // 1-12
   workPointId?: string;
   wasteCodeId?: string;
+  /**
+   * Numai ce a plecat de pe amplasament — întrebarea registrului de predări.
+   *
+   * <p>Nu e „are nevoie de cod R/D": o ieșire fără cod (`UNCLASSIFIED_OUT`) a plecat și ea, și e
+   * tocmai rândul pe care îl caută cineva care vrea să-l repare.
+   */
+  leftSite?: boolean;
+  /** Numai rândurile fără cod R/D — „arată-mi ce blochează depunerea", trimis de pe Panou. */
+  missingOperationCode?: boolean;
+}
+
+/**
+ * Mirrors backend MovementSummaryResponse — cele două cifre ale Panoului despre o lună.
+ *
+ * <p>De când lista vine pe pagini, ele nu se mai pot aduna din rândurile primite: o pagină nu e
+ * luna. Cantitatea vine **în kilograme**, normalizată în baza de date, fiindcă fiecare mișcare își
+ * poartă unitatea.
+ */
+export interface MovementSummary {
+  movements: number;
+  quantityKg: number;
 }
 
 // --- Monthly evidence (regenerable cache aggregated from movements) ---

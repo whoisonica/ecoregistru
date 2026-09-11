@@ -30,11 +30,14 @@ await login(page, "admin");
 // cu destinatar, şi ieşită prin valorificare sau eliminare. Se caută în date, nu se ţine un id
 // scris în probă: seed-ul se poate schimba, condiţia nu.
 const target = await page.evaluate(async () => {
-  const res = await fetch("/api/v1/movements", {
+  // `size=200` şi `content`: de la P3.1 lista vine paginată, iar implicitul de 25 de rânduri ar
+  // căuta mişcarea periculoasă doar printre cele mai noi — proba ar spune „nu există" despre un
+  // seed care o are.
+  const res = await fetch("/api/v1/movements?size=200", {
     headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
   });
   if (!res.ok) return null;
-  const list = await res.json();
+  const list = (await res.json()).content;
   const m = list.find(
     (x) =>
       x.hazardous &&

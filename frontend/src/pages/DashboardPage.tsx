@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useEvidences } from "@/hooks/useEvidences";
-import { useMovements } from "@/hooks/useMovements";
+import { useMovementSummary } from "@/hooks/useMovements";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
@@ -297,8 +297,16 @@ export function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const { data: movements, isLoading: loadingMovements, isError: failedMovements } =
-    useMovements({ year, month });
+  /**
+   * Cele două cifre ale lunii se **cer socotite**, nu se adună din rânduri (P3.1).
+   *
+   * <p>Panoul cerea până acum toate mișcările lunii ca să le numere și să le adune. De când lista
+   * vine pe pagini, aceeași adunare ar fi adunat 25 de rânduri și ar fi scris rezultatul sub
+   * „luna aceasta" — un total mai mic decât adevărul, care nu spune că e mai mic. Serverul
+   * socotește peste luna întreagă, în kilograme.
+   */
+  const { data: summary, isLoading: loadingMovements, isError: failedMovements } =
+    useMovementSummary(year, month);
   const { data: deadlines, isLoading: loadingDeadlines, isError: failedDeadlines } =
     useDeadlines(year);
   const { data: partners, isLoading: loadingPartners, isError: failedPartners } = usePartners();
@@ -345,19 +353,12 @@ export function DashboardPage() {
   /**
    * Kilogramele lunii — cifra pe care o caută cineva, spre deosebire de numărul de rânduri.
    *
-   * <p>⚠️ **Fiecare mișcare își poartă unitatea.** Suma aduna `quantity` brut, deci o mișcare de
-   * 1000 kg și una de 1 tonă ieșeau ca `1001` — aceeași cantitate numărată o dată corect și o dată
-   * de o mie de ori mai mic. Motorul de evidență normalizează la kilograme de mult (`KG_PER_TON`
-   * în `EvidenceCalculator`); panoul citea mișcările direct și rămăsese fără conversia aia.
+   * <p>⚠️ **Fiecare mișcare își poartă unitatea**, deci suma nu e o adunare de `quantity`: o
+   * mișcare de 1000 kg și una de 1 tonă sunt aceeași cantitate, iar adunarea brută le dădea ca
+   * `1001`. Normalizarea se face acum în interogare, cu același factor ca `EvidenceCalculator`, și
+   * nu mai poate rămâne în urmă aici.
    */
-  const generatedThisMonth = useMemo(
-    () =>
-      (movements ?? []).reduce(
-        (sum, m) => sum + (m.quantity ?? 0) * (m.unit === "TONS" ? 1000 : 1),
-        0
-      ),
-    [movements]
-  );
+  const generatedThisMonth = summary?.quantityKg ?? 0;
   /**
    * Stocul, **pe coduri**. Până pe 08.09.2026 cifra era suma închiderilor peste toate codurile —
    * hârtie plus ulei uzat plus menajer, adică o cantitate care nu există fizic nicăieri. Mai rău:
@@ -400,7 +401,7 @@ export function DashboardPage() {
   }, [evidences]);
 
   /** Câte mișcări s-au înregistrat luna asta — cifra care spune dacă evidența se ține la zi. */
-  const movementCount = movements?.length ?? 0;
+  const movementCount = summary?.movements ?? 0;
 
   const monthLabel = strings.months[month - 1];
 

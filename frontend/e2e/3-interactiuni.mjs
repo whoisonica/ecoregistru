@@ -28,11 +28,16 @@ const AN = new Date().getFullYear();
 const MISCARI = `${BASE}/miscari?luna=${AN}`;
 
 // ---------------------------------------------------------------- CĂUTARE
+//
+// ⚠️ Aşteptările de aici sunt mai lungi de când căutarea, sortarea şi paginarea se fac la server
+// (P3.1): între tasta apăsată şi rândurile de pe ecran stau 250 ms de aşteptare a tastaturii plus
+// un drum dus-întors până la bază. Cu 300 ms, cum erau scrise cât totul se întâmpla în browser,
+// proba ar fi citit tabelul dinainte şi ar fi picat când şi când, fără ca nimic să fie stricat.
 await page.goto(MISCARI, { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
 const before = await rows();
 await page.fill("[data-table-search]", "15 01 02");
-await page.waitForTimeout(300);
+await page.waitForTimeout(800);
 const after = await rows();
 check("căutare restrânge", after > 0 && after < before, `${before} → ${after} rânduri`);
 
@@ -42,7 +47,7 @@ check("toate rezultatele se potrivesc", codes.every((c) => c.includes("15 01 02"
 // Escape golește căutarea
 await page.focus("[data-table-search]");
 await page.keyboard.press("Escape");
-await page.waitForTimeout(300);
+await page.waitForTimeout(800);
 check("Escape golește căutarea", (await rows()) === before, `înapoi la ${await rows()}`);
 
 // Diacriticele nu contează: cine tastează repede scrie „deseuri", nu „deșeuri". Până la `fold`
@@ -50,9 +55,9 @@ check("Escape golește căutarea", (await rows()) === before, `înapoi la ${awai
 // „Niciun rezultat" pentru un cuvânt care se vede în tabel.
 const searchCount = async (q) => {
   await page.fill("[data-table-search]", "");
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(800);
   await page.fill("[data-table-search]", q);
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(800);
   const cells = await page.$$eval("tbody tr", (rs) => rs.map((x) => x.textContent));
   return cells.filter((t) => !t.includes("Niciun rezultat")).length;
 };
@@ -65,21 +70,21 @@ for (const [fara, cu] of [
   check(`„${fara}" găsește cât „${cu}"`, a === b && a > 0, `${a} vs ${b} rânduri`);
 }
 await page.fill("[data-table-search]", "");
-await page.waitForTimeout(300);
+await page.waitForTimeout(800);
 
 // Căutare fără rezultate → starea goală potrivită
 await page.fill("[data-table-search]", "zzzznuexista");
-await page.waitForTimeout(300);
+await page.waitForTimeout(800);
 const emptyText = await page.textContent("tbody");
 check("gol din căutare are alt mesaj", emptyText.includes("Niciun rezultat"), JSON.stringify(emptyText.trim().slice(0, 40)));
 await page.fill("[data-table-search]", "");
-await page.waitForTimeout(300);
+await page.waitForTimeout(800);
 
 // ---------------------------------------------------------------- SORTARE
 const dateHeader = await page.$('th[aria-sort] button');
 const sortBefore = await page.getAttribute("th[aria-sort]", "aria-sort");
 await dateHeader.click();
-await page.waitForTimeout(200);
+await page.waitForTimeout(700);
 const sortAfter = await page.getAttribute("th[aria-sort]", "aria-sort");
 check("sortarea schimbă aria-sort", sortAfter === "ascending", `${sortBefore} → ${sortAfter}`);
 

@@ -54,6 +54,38 @@ public interface WasteMovementRepository
                                         @Param("to") LocalDate to);
 
     /**
+     * The two figures the dashboard shows about a month: how many movements were recorded and how
+     * much they weigh together, in kilograms.
+     *
+     * <p>An aggregate rather than a fetch, and that is the whole point of it. The dashboard used to
+     * ask for every movement of the month and add them up in the browser; since the list is paged
+     * (P3.1) that would have added up one page and presented the result as the month's total.
+     *
+     * <p>The conversion is in the query because the unit is on the row: a company that records some
+     * loads in kg and some in tonnes has no single factor to apply afterwards. Rows still waiting
+     * for the recipient's weighbridge have no quantity; {@code sum} skips them, which is the same
+     * thing the screen says about them — „de cântărit", not zero.
+     */
+    @Query("""
+            select count(m) as movements,
+                   coalesce(sum(case when m.unit = ro.ecoregistru.enums.Unit.TONS
+                                     then m.quantity * 1000 else m.quantity end), 0) as quantityKg
+            from WasteMovement m
+            where m.company.id = :companyId and m.deleted = false
+              and m.date between :from and :to
+            """)
+    MovementTotals summarise(@Param("companyId") UUID companyId,
+                             @Param("from") LocalDate from,
+                             @Param("to") LocalDate to);
+
+    /** The shape {@link #summarise} returns; the names are the aliases of its select list. */
+    interface MovementTotals {
+        long getMovements();
+
+        java.math.BigDecimal getQuantityKg();
+    }
+
+    /**
      * The last time anything dated on or before {@code until} changed. Feeds the staleness check
      * that decides whether the cached evidence of a year still describes the movements.
      *

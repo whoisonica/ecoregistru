@@ -117,16 +117,26 @@ class MovementListFilterIT {
         return UUID.fromString(objectMapper.readTree(created).get("id").asText());
     }
 
+    /**
+     * Cere o pagină destul de mare cât să încapă tot ce filtrul lasă să treacă.
+     *
+     * <p>Proba asta e despre ce **înseamnă** `year` și `month`, nu despre paginare — iar de când
+     * lista vine pe pagini, implicitul de 25 ar fi făcut-o să cadă din alt motiv decât cel probat:
+     * mișcările ei sunt din 2024–2025, deci stau la coada unei liste ordonate descrescător după
+     * dată, în spatele celor din seed. Paginarea își are proba ei, `MovementPagingIT`.
+     */
     private List<UUID> list(String... params) throws Exception {
-        var request = get("/api/v1/movements").header("Authorization", "Bearer " + token);
+        var request = get("/api/v1/movements")
+                .header("Authorization", "Bearer " + token)
+                .param("size", "200");
         for (int i = 0; i < params.length; i += 2) {
             request = request.param(params[i], params[i + 1]);
         }
-        JsonNode rows = objectMapper.readTree(mockMvc.perform(request)
+        JsonNode page = objectMapper.readTree(mockMvc.perform(request)
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString());
         List<UUID> ids = new ArrayList<>();
-        for (JsonNode row : rows) ids.add(UUID.fromString(row.get("id").asText()));
+        for (JsonNode row : page.get("content")) ids.add(UUID.fromString(row.get("id").asText()));
         return ids;
     }
 }

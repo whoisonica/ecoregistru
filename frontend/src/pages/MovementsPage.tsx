@@ -19,6 +19,7 @@ import { useDrivers } from "@/hooks/useDrivers";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import {
+  useMovement,
   useMovements,
   useCreateMovement,
   useUpdateMovement,
@@ -75,7 +76,7 @@ import {
   TableToolbar,
 } from "@/components/ui/table-toolbar";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
-import { missingLast, useTableView } from "@/hooks/useTableView";
+import { useRemoteTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
@@ -225,43 +226,26 @@ export function MovementsPage() {
     return f;
   }, [monthFilter, workPointFilter]);
 
-  const { data: movements, isLoading, isError } = useMovements(filters);
-  const rows = useMemo(() => movements ?? [], [movements]);
   /**
-   * Căutarea, sortarea și paginarea lucrează pe rândurile deja aduse. Filtrele de sus rămân ce
-   * erau — ele restrâng *cererea*, pe an și pe punct de lucru; astea de aici așază ce a venit.
+   * Căutarea, sortarea și paginarea se fac **la server** (P3.1).
    *
-   * <p>Textul în care se caută sunt coloanele pe care le-ar tasta cineva: codul, denumirea,
-   * partenerul, secția, punctul de lucru, numărul documentului. Nu tot obiectul — o potrivire pe
-   * un id nu ajută pe nimeni.
+   * <p>Până acum se făceau aici, peste rândurile deja aduse — ceea ce mergea cât timp un client
+   * avea o lună de date și nu mai mergea la doi ani. Ecranul se apăra cu filtrul de lună, dar era
+   * o apărare de bunăvoie: `?luna=2026` aducea anul întreg, iar un import de istoric l-ar fi
+   * atins din ziua întâi.
+   *
+   * <p>Filtrele de sus rămân ce erau: ele spun *ce se caută* — luna sau anul, punctul de lucru.
+   * Coloanele care sortează poartă aceleași chei ca înainte; lista lor e și pe server, ca un
+   * `?sort=` scris de mână să nu poată sorta după coloane pe care ecranul nu le arată.
    */
-  const view = useTableView(rows, {
-    searchText: (m) =>
-      [
-        m.wasteCode,
-        m.wasteCodeName,
-        m.partnerName,
-        m.internalGeneratorName,
-        m.workPointName,
-        m.documentReference,
-        formatDate(m.date),
-      ]
-        .filter(Boolean)
-        .join(" "),
-    comparators: {
-      date: (a, b) => a.date.localeCompare(b.date),
-      wasteCode: (a, b) => a.wasteCode.localeCompare(b.wasteCode, "ro"),
-      // Cantitatea lipsă („de cântărit") stă la coadă în ambele sensuri: nu e nici mică, nici
-      // mare, e nespusă, și n-are ce căuta amestecată printre cifre.
-      quantity: missingLast(
-        (m) => m.quantity,
-        (x, y) => x - y
-      ),
-      partnerName: (a, b) => (a.partnerName ?? "").localeCompare(b.partnerName ?? "", "ro"),
-      workPointName: (a, b) => a.workPointName.localeCompare(b.workPointName, "ro"),
-    },
+  const table = useRemoteTableView<WasteMovement>({
     initialSort: { key: "date", direction: "desc" },
+    resetOn: filters,
   });
+  const { data: movements, isLoading, isError } = useMovements(filters, table.params);
+  const view = table.bind(movements);
+  /** Rândurile paginii aduse. Nu mai e „tot ce are firma" — vezi mai sus. */
+  const rows = view.visible;
   const deleteMut = useDeleteMovement();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
@@ -307,25 +291,32 @@ export function MovementsPage() {
    * peste ce lucrezi, iar butonul Înapoi n-ar mai închide nimic.
    */
   const [focusId, setFocusId] = useUrlState("miscare");
+  /**
+   * Mișcarea cerută prin adresă se cere **anume**, după id, nu se caută printre rândurile aduse.
+   *
+   * <p>De când lista vine pe pagini, „nu e printre cele aduse" nu mai înseamnă „nu există": rândul
+   * pe care îl numește un raport poate fi pe pagina a treia. Căutarea în pagină ar fi răspuns
+   * „mișcarea nu mai există" tocmai rândurilor pentru care linkul a fost făcut.
+   */
+  const focused = useMovement(focusId || null);
   useEffect(() => {
     if (!focusId) return;
-    const found = rows.find((mv) => mv.id === focusId);
-    if (found) {
+    if (focused.data) {
       // Aceleași trei atribuiri ca `openEdit`, scrise aici ca efectul să nu atârne de o funcție
       // rescrisă la fiecare randare — exact felul de dependență care fura focusul din `Dialog`.
-      setEditing(found);
+      setEditing(focused.data);
       setDuplicating(null);
       setDialogOpen(true);
       setFocusId("");
       return;
     }
-    // Nu e printre rândurile aduse, iar aducerea s-a terminat: mișcarea a fost ștearsă între timp,
-    // sau linkul e vechi. Se spune, nu se deschide un formular gol.
-    if (!isLoading && movements) {
+    // Serverul a spus că nu e: ștearsă între timp, sau link vechi. Se spune, nu se deschide un
+    // formular gol.
+    if (focused.isError) {
       notify(t.movementNotFound, "error");
       setFocusId("");
     }
-  }, [focusId, rows, isLoading, movements, setFocusId, notify]);
+  }, [focusId, focused.data, focused.isError, setFocusId, notify]);
 
   /**
    * `?nou=1` — formularul gol, cerut din paletă (Ctrl+K → „Adaugă mișcare").
