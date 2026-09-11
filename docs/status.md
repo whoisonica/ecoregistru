@@ -7,8 +7,11 @@ rulează local și are testele verzi.
 > la server** — singurul punct din listă care se strica fără ca nimeni să atingă nimic. Atinse:
 > Mișcări, registrul de predări și Panoul (care își cere acum cele două cifre socotite, nu adunate
 > din rânduri). **359 de teste, 0 eșecuri**, **fără migrare** — schema rămâne la `V38`.
-> ⬜ **Nedeployat**, și neprobat pe ecran cu sesiune reală. Secțiunea „P3.1 — căutarea, sortarea și
-> paginarea au trecut la server". ⚠️ **Proba 6 sărea în tăcere** o bucată întreagă fiindcă citea
+> ✅ **DEPLOYAT pe 12.09.2026, 01:32** — `ecoregistru-api` **v50** (`9c93aa1a`), `ecoregistru-app`
+> **v46** (`6ba2be1e`), fără migrare (*„Schema is up to date"*), pornire în 8,9 s. Probe pe dyno:
+> `/summary` fără token → **401**, `/actuator/health` → **200**, iar bundle-ul servit conține cele
+> cinci şiruri noi. ⬜ **Neprobat pe ecran cu sesiune reală.** Secțiunea „P3.1 — căutarea, sortarea
+> și paginarea au trecut la server". ⚠️ **Proba 6 sărea în tăcere** o bucată întreagă fiindcă citea
 > lista paginată ca pe un tablou — reparată odată cu felia.
 >
 > *(Rândurile de mai jos sunt nota de pe 11.09, păstrată ca istoric — cifrele ei sunt cele de
@@ -6557,7 +6560,24 @@ despre un seed care o are.
 250 ms de întârziere plus un drum până la bază. Cele 300 ms scrise cât totul se întâmpla în browser
 ar fi citit tabelul dinainte — o probă care pică din când în când, fără ca nimic să fie stricat.
 
-⬜ **Nedeployat.** Și: felia a atins **cele două ecrane care citesc mișcări** (Mișcări, registrul de
+✅ **DEPLOYAT pe 12.09.2026, 01:32** — `ecoregistru-api` **v50** (`9c93aa1a`), `ecoregistru-app`
+**v46** (`6ba2be1e`). **Nicio migrare**, și logul o spune singur: *„Current version of schema
+\"public\": 38 → Schema \"public\" is up to date. No migration necessary"*, pornire în **8,9 s**.
+⚠️ **Garda de conținut s-a citit iar la `^^` pe frontend** — erau **două** commituri în așteptare
+(jurnalul de pe 11.09, care atinsese `frontend/e2e/README.md`, plus felia asta). La un nivel garda
+„iese murdară" fără să fie nimic greșit; la `^^` a ieșit exact divergența stabilă (`.gitignore` +
+`vite.config.js`/`.d.ts`). Backendul avea unul singur și a ieșit curat de prima dată.
+**Probe pe dyno, pe conținut și nu pe hash:** `/actuator/health` → **200**; `/api/v1/movements`
+și `/api/v1/movements/summary` fără token → **401** amândouă (ruta nouă există și e închisă); iar
+bundle-ul servit (`/assets/index-BsEB6ndp.js`, 734.365 octeți) conține **`movements/summary`**,
+**`missingOperationCode`**, **`leftSite`**, **`handoverDate`** și **`totalElements`** — adică
+exact cele cinci lucruri pe care felia le-a adăugat pe sârmă.
+
+⬜ **Neprobat pe ecran cu sesiune reală.** *Deployat nu înseamnă probat* — iar aici e chiar felia
+care schimbă felul în care se poartă cel mai deschis ecran: paginile, caseta de căutare și antetele
+care sortează cer o privire, nu un `curl`.
+
+Felia a atins **cele două ecrane care citesc mișcări** (Mișcări, registrul de
 predări) plus Panoul. Celelalte tabele — parteneri, șoferi, puncte de lucru, evidența lunară — aduc
 în continuare tot și paginează în browser, și e în regulă: sunt liste care nu cresc cu vechimea
 contului. `useTableView` rămâne unde e, lângă sora ei de la distanță, cu aceeași față către
