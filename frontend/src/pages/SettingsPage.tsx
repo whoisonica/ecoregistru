@@ -32,6 +32,7 @@ import { OwnDriversSection } from "@/components/OwnDriversSection";
 import { AnalysisBulletinsSection } from "@/components/AnalysisBulletinsSection";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
 import { CompanyUsersSection } from "@/components/CompanyUsersSection";
+import { AuditLogSection } from "@/components/AuditLogSection";
 import { SectionNav } from "@/components/ui/section-nav";
 
 const t = strings.settings.workPoints;
@@ -158,7 +159,12 @@ export function SettingsPage() {
           { id: "buletine-analiza", label: strings.settings.bulletins.title },
           // Doar pentru cine chiar are secțiunea: un link care duce la nimic e mai rău
           // decât un link care lipsește.
-          ...(canManage ? [{ id: "utilizatori", label: strings.settings.users.title }] : []),
+          ...(canManage
+            ? [
+                { id: "utilizatori", label: strings.settings.users.title },
+                { id: "jurnal-audit", label: strings.settings.audit.title },
+              ]
+            : []),
         ]}
       />
 
@@ -258,6 +264,8 @@ export function SettingsPage() {
       <AnalysisBulletinsSection canManage={canManage} />
 
       <CompanyUsersSection canManage={canManage} />
+
+      <AuditLogSection canManage={canManage} />
 
       <Dialog
         open={dialogOpen}

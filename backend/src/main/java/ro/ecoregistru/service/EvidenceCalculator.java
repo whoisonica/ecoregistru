@@ -70,6 +70,7 @@ public class EvidenceCalculator {
     CompanyRepository companyRepository;
     ro.ecoregistru.service.export.Anexa1SheetBuilder anexa1SheetBuilder;
     ro.ecoregistru.repository.InternalGeneratorRepository internalGeneratorRepository;
+    ro.ecoregistru.audit.AuditWriter auditWriter;
     ro.ecoregistru.service.export.AnnualDeclarationBuilder annualDeclarationBuilder;
 
     /** Groups movements by the (work point, waste code) an evidence line is scoped to. */
@@ -108,6 +109,22 @@ public class EvidenceCalculator {
                 cascaded.add(later);
             }
         }
+        /*
+         * Regenerarea se scrie în jurnal ca UN rând, nu ca o mie (P1.11).
+         *
+         * <p>`MonthlyEvidence` lipseşte dinadins din lista albă a interceptorului: e un cache
+         * recalculabil, iar o regenerare de an ar scrie mii de intrări despre o singură apăsare de
+         * buton — exact felul de zgomot care face un jurnal de necitit. Fapta adevărată e asta:
+         * cine a cerut recalcularea, pe ce an, şi câte linii au ieşit.
+         *
+         * <p>⚠️ Dosarul de control regenerează şi el, înainte de a împacheta, deci descărcarea unui
+         * dosar de cinci ani lasă cinci rânduri aici. Nu e o scăpare: dacă cifrele dintr-o fişă
+         * depusă s-au schimbat, momentul recalculării e chiar ce se caută.
+         */
+        auditWriter.record("MonthlyEvidence", null, ro.ecoregistru.enums.AuditAction.REGENERATE,
+                "Anul " + year + " · " + lines + (lines == 1 ? " linie" : " linii")
+                        + (cascaded.isEmpty() ? "" : " · plus " + cascaded));
+
         return new EvidenceRegenerationResponse(year, lines, cascaded);
     }
 

@@ -730,6 +730,40 @@ export const strings = {
       deactivated: "Șofer dezactivat.",
       saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
     },
+    /**
+     * P1.11 — jurnalul de audit.
+     *
+     * <p>Subtitlul spune ce **nu** e, fiindcă ăsta e felul în care oamenii înțeleg greșit un jurnal:
+     * nu e un log al bazei de date, e lista faptelor care ating ce se depune la autoritate sau ce
+     * privește o persoană.
+     */
+    audit: {
+      title: "Jurnal de audit",
+      subtitle:
+        "Cine a modificat ce și când — peste datele care ajung pe documentele depuse și peste cele care privesc o persoană. Se scrie singur, nu se poate șterge și nu se poate rescrie. Recalcularea evidenței apare ca o singură faptă, nu ca mii de rânduri.",
+      colWhen: "Când",
+      colWho: "Cine",
+      colWhat: "Ce",
+      colAction: "Faptă",
+      colChanges: "Modificări",
+      allTypes: "Toate tipurile",
+      filterType: "Tipul înregistrării",
+      searchPlaceholder: "Caută după cine, ce sau ce s-a schimbat...",
+      empty: "Nicio faptă înregistrată încă.",
+      emptyHint:
+        "Jurnalul pornește de la prima modificare făcută după ce a fost pus în funcțiune. Ce s-a întâmplat înainte nu poate fi reconstituit.",
+      loadError: "Nu am putut încărca jurnalul.",
+      noChanges: "—",
+      /** Un rând al cărui autor nu mai are cont. Adresa rămâne scrisă; contul, nu. */
+      deletedActor: "cont șters",
+      /** Valoarea goală, în lista de modificări: „(gol) → 7,5" se citește mai bine decât „ → 7,5". */
+      emptyValue: "(gol)",
+      changeArrow: "→",
+      /** Câte fapte se văd sub un rând înainte să se strângă. */
+      moreChanges: "+{count} încă",
+      retention:
+        "Jurnalul se păstrează cât evidența pe care o descrie — cel puțin 3 ani (OUG 92/2021, art. 48 alin. (5)).",
+    },
     bulletins: {
       title: "Buletine de analiză",
       subtitle:
@@ -1288,6 +1322,78 @@ export const strings = {
       OPERATOR: "Operator",
       CLIENT_VIEWER: "Vizualizare",
     },
+
+    /** P1.11 — faptele din jurnalul de audit, ca verbe. */
+    auditAction: {
+      CREATE: "Creare",
+      UPDATE: "Modificare",
+      DELETE: "Ștergere",
+      DEACTIVATE: "Dezactivare",
+      REACTIVATE: "Reactivare",
+      REGENERATE: "Recalculare",
+    },
+
+    /**
+     * Ce fel de înregistrare a fost atinsă. Cheile sunt numele claselor din backend, fiindcă exact
+     * așa le scrie jurnalul — traducerea se face aici, o singură dată.
+     */
+    auditEntity: {
+      WasteMovement: "Mișcare",
+      Company: "Datele firmei",
+      Partner: "Partener",
+      PartnerWorkPoint: "Punct de lucru al partenerului",
+      WorkPoint: "Punct de lucru",
+      InternalGenerator: "Generator intern",
+      Driver: "Șofer",
+      AnalysisBulletin: "Buletin de analiză",
+      Attachment: "Atașament",
+      AppUser: "Utilizator",
+      MonthlyEvidence: "Evidența lunară",
+    } as Record<string, string>,
+
+    /**
+     * Numele rubricilor, pentru lista de modificări.
+     *
+     * <p>⚠️ Dicționarul e **parțial, dinadins**, și ce lipsește se afișează așa cum e scris în
+     * model. Alternativa — o traducere pentru fiecare dintre cele ~90 de coloane ale aplicației —
+     * ar fi o listă pe care nimeni n-o ține la zi, iar prima rubrică adăugată mâine ar apărea aici
+     * ca un gol. Un nume englezesc e mai puțin plăcut decât unul românesc și infinit mai bun decât
+     * niciunul: aici sunt cele pe care cineva chiar le caută după un control.
+     */
+    auditField: {
+      quantity: "Cantitate",
+      unit: "Unitate",
+      date: "Data",
+      unloadDate: "Data descărcării",
+      wasteCode: "Cod de deșeu",
+      operation: "Operațiune",
+      operationCode: "Cod R/D",
+      partner: "Partener",
+      transportPartner: "Transportator",
+      workPoint: "Punct de lucru",
+      internalGenerator: "Generator intern",
+      partnerWorkPoint: "Punctul de lucru al partenerului",
+      documentReference: "Document",
+      register: "Registru",
+      notes: "Observații",
+      deleted: "Șters",
+      active: "Activ",
+      enabled: "Cont activ",
+      role: "Rol",
+      email: "E-mail",
+      name: "Denumire",
+      cui: "CUI",
+      authorizationNumber: "Autorizație",
+      authorizationExpiry: "Expirarea autorizației",
+      environmentalAuthNumber: "Autorizație de mediu",
+      caenCode: "Cod CAEN",
+      identification: "Act de identitate",
+      vehicleRegistration: "Număr de înmatriculare",
+      driverName: "Șofer",
+      laboratory: "Laborator",
+      issueDate: "Data buletinului",
+      fileName: "Fișier",
+    } as Record<string, string>,
 
     wasteOperation: {
       GENERATED: "Generare",

@@ -829,6 +829,55 @@ export interface MovementSummary {
   quantityKg: number;
 }
 
+// --- Audit log (P1.11) ---
+
+/** Mirrors backend AuditAction. Verbe, nu diferenţe de câmpuri — vezi `AuditAction.java`. */
+export type AuditAction =
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "DEACTIVATE"
+  | "REACTIVATE"
+  | "REGENERATE";
+
+/** O rubrică schimbată. `from` lipsește când câmpul era gol. */
+export interface AuditChange {
+  /** Numele câmpului din model — `quantity`, `partner`, `operationCode`. */
+  field: string;
+  from: string | null;
+  to: string | null;
+}
+
+/**
+ * Mirrors backend AuditLogResponse — un rând de jurnal.
+ *
+ * <p>`actorEmail` e un **instantaneu**: cine a fost atunci, nu cine e acum. Un cont se
+ * dezactivează, se redenumește, își schimbă adresa — iar la un control contează cine a făcut fapta
+ * în ziua în care a făcut-o.
+ */
+export interface AuditLogEntry {
+  id: string;
+  /** Numele clasei din backend: `WasteMovement`, `Partner`, … Se traduce la afișare. */
+  entityType: string;
+  entityId: string | null;
+  action: AuditAction;
+  /** Cum se numea rândul atunci. Rămâne și după ștergere — de-aia e scris, nu rezolvat. */
+  label: string | null;
+  changes: AuditChange[];
+  actorId: string | null;
+  actorEmail: string | null;
+  /** Rolul de atunci. `Role` stă în `auth/AuthContext`, unde e definit o singură dată. */
+  actorRole: import("@/auth/AuthContext").Role | null;
+  occurredAt: string;
+}
+
+export interface AuditLogFilters {
+  /** Filtrul din capul ecranului. Gol = tot. */
+  entityType?: string;
+  /** Drumul invers: tot ce s-a întâmplat cu un singur rând. */
+  entityId?: string;
+}
+
 // --- Monthly evidence (regenerable cache aggregated from movements) ---
 
 /**

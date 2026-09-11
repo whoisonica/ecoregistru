@@ -23,6 +23,7 @@ const suites = [
   ["12-pagini-legale.mjs", "termenii și politica: se deschid fără cont, și se ajunge la ele"],
   ["13-drumul-aprobarii.mjs", "cei nouă pași ai aprobării, și cine face fiecare"],
   ["14-codul-oglinda.mjs", "codul-oglindă declarat nepericulos fără document justificativ"],
+  ["15-jurnal-audit.mjs", "cine a modificat cantitatea asta, şi ce spune ecranul despre asta"],
 ];
 
 const only = process.argv[2];
