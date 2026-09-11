@@ -1026,9 +1026,13 @@ function Anexa3Section({ year }: { year: number }) {
   );
 }
 
-/** Art. 4 alin. (3): toţi depun la agenţia din raza punctului de lucru, comerciantul la ANPM. */
+/**
+ * Art. 4 alin. (3): toţi depun la agenţia din raza punctului de lucru, comerciantul la agenţia
+ * naţională — care din 11.07.2026 se numeşte ANMAP, nu ANPM. Motivul pentru care scriem numele nou
+ * deşi Ordinul 794/2012 îl scrie pe cel vechi e în `strings.ts`, lângă şir.
+ */
 function addresseeOf(d: PackagingAnexa3): string {
-  return d.role === "COMERCIANT" ? t.anexa3AddresseeAnpm : t.anexa3AddresseeLocal;
+  return d.role === "COMERCIANT" ? t.anexa3AddresseeAnmap : t.anexa3AddresseeLocal;
 }
 
 /** Un rând de sumă din formular — Total plastic, Total metal, TOTAL. */

@@ -149,7 +149,11 @@ public class AccountRequestService {
                 // consultant themselves — so it is filled in with the client afterwards, in
                 // Setări, rather than guessed from the contact person, who is somebody else.
                 // Until then the audit dossier says out loud that it is missing.
-                null, null, null, null));
+                null, null, null, null,
+                // Nor is the building-permit question (art. 49 alin. (9)): it decides whether an
+                // alert is sent, so it is answered by someone, never defaulted. Null until then,
+                // which generates nothing — the rule of ReportType.
+                null));
 
         Company company = companyRepository.getReferenceById(created.id());
         if (request.getWorkPointName() != null || request.getWorkPointAddress() != null) {

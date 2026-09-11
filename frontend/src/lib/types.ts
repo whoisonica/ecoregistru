@@ -134,6 +134,8 @@ export interface Company {
   wasteManagerRole?: string | null;
   wasteManagerExternal?: boolean | null;
   wasteManagerTraining?: string | null;
+  /** Titulară de autorizaţie de construire/desfiinţare (art. 49 alin. (9)); null = nu s-a răspuns. */
+  constructionPermitHolder?: boolean | null;
 }
 
 /** Create/update payload for a company (PLATFORM_ADMIN only). */
@@ -173,6 +175,8 @@ export interface CompanyInput {
   wasteManagerRole?: string | null;
   wasteManagerExternal?: boolean | null;
   wasteManagerTraining?: string | null;
+  /** Titulară de autorizaţie de construire/desfiinţare (art. 49 alin. (9)); null = nu s-a răspuns. */
+  constructionPermitHolder?: boolean | null;
 }
 
 // --- Account requests (the intake form) ---
@@ -623,6 +627,14 @@ export interface WasteMovement {
   storageType: StorageType | null;
   /** Anexa 1 cap. 2 "Tratare: Modul". */
   treatmentMethod: TreatmentMethod | null;
+  /**
+   * Mișcarea stă pe un cod-oglindă declarat nepericulos și n-are niciun atașament — OUG 92/2021
+   * art. 8 alin. (2), care admite încadrarea ca nepericulos numai pe bază de analiză a originii,
+   * teste sau buletine. Avertisment, niciodată refuz; nu se tipărește pe niciun formular.
+   */
+  mirrorClassificationUnproven: boolean;
+  /** Codurile periculoase perechi, separate prin virgulă. Null = codul nu e oglindă. */
+  mirrorOf: string | null;
   /** Anexa 1 cap. 2 "Transport: Mijlocul". */
   transportMeans: TransportMeans | null;
   /** Anexa 1 cap. 2 "Transport: Destinaţia". */
@@ -837,6 +849,9 @@ export type ReportType =
   | "AFM_QUARTERLY"
   | "AFM_ANNUAL"
   | "PACKAGING_ANNUAL"
+  // 30 aprilie, OUG 92/2021 art. 49 alin. (9) — uleiuri uzate şi deşeuri din construcţii. Lipsea
+  // din calendar cu totul până pe 10.09.2026, şi nu doar din tipul ăsta.
+  | "APM_ANNUAL_APRIL"
   | "OTHER";
 
 export type DeadlineStatus = "UPCOMING" | "DONE" | "OVERDUE";

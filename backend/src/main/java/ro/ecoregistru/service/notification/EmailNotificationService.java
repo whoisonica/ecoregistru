@@ -117,6 +117,11 @@ public class EmailNotificationService implements NotificationService {
                     + "și notificarea că obiectivele se îndeplinesc individual";
             case PACKAGING_ANNUAL -> "Anexa 1 Ambalaje (anual, 25 februarie) — la agenția "
                     + "județeană de mediu";
+            // Două obligații pe un singur rând, ca la AFM_ANNUAL: aceeași zi, același destinatar.
+            // Eticheta le numește pe amândouă, fiindcă firma care primește alerta poate să datoreze
+            // doar una din ele și trebuie să vadă care.
+            case APM_ANNUAL_APRIL -> "Raportare anuală la APM (30 aprilie) — uleiuri uzate "
+                    + "(art. 31) și deșeuri din construcții (art. 17 alin. (7))";
             case OTHER -> "Raportare";
         };
     }

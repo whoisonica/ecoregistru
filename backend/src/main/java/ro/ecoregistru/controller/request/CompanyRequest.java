@@ -80,5 +80,11 @@ public record CompanyRequest(
         String wasteManagerName,
         String wasteManagerRole,
         Boolean wasteManagerExternal,
-        String wasteManagerTraining
+        String wasteManagerTraining,
+
+        /**
+         * Whether the company holds a building or demolition permit — the profile half of the
+         * 30 April deadline (OUG 92/2021 art. 49 alin. (9)). Null means unanswered.
+         */
+        Boolean constructionPermitHolder
 ) {}

@@ -158,6 +158,9 @@ public class CompanyService {
         // "an employee, not a third party". Only the client may turn one into the other.
         company.setWasteManagerExternal(request.wasteManagerExternal());
         company.setWasteManagerTraining(blankToNull(request.wasteManagerTraining()));
+        // Same three-state contract as wasteManagerExternal: null is "nobody asked", and it is not
+        // the same as a "no". The 30 April deadline reads only the TRUE.
+        company.setConstructionPermitHolder(request.constructionPermitHolder());
         company.setTradeRegisterNumber(blankToNull(request.tradeRegisterNumber()));
         company.setAnexa3Series(blankToNull(request.anexa3Series()));
         company.setTransportMeans(blankToNull(request.transportMeans()));
@@ -199,6 +202,7 @@ public class CompanyService {
                 c.getPackagingOperatorRole(),
                 c.getCaenCode(), c.getAnexa3Unit(), c.getContactRole(),
                 c.getWasteManagerName(), c.getWasteManagerRole(),
-                c.getWasteManagerExternal(), c.getWasteManagerTraining());
+                c.getWasteManagerExternal(), c.getWasteManagerTraining(),
+                c.getConstructionPermitHolder());
     }
 }

@@ -37,6 +37,23 @@ public interface WasteMovementRepository
             UUID companyId, LocalDate from, LocalDate to);
 
     /**
+     * The distinct six-digit waste codes a tenant recorded in a date range — the input of a signal
+     * that asks "does this company handle X?", such as the used-oil half of the 30 April deadline
+     * (OUG 92/2021 art. 49 alin. (9)).
+     *
+     * <p>A projection rather than a movement fetch: the question is about the <em>set</em> of
+     * codes, and a company with three years of movements would otherwise load thousands of rows to
+     * answer it. Deleted movements are excluded — a code that exists only on a deleted row is not
+     * something the company handles.
+     */
+    @Query("select distinct m.wasteCode.code from WasteMovement m "
+            + "where m.company.id = :companyId and m.deleted = false "
+            + "and m.date between :from and :to")
+    List<String> findDistinctWasteCodes(@Param("companyId") UUID companyId,
+                                        @Param("from") LocalDate from,
+                                        @Param("to") LocalDate to);
+
+    /**
      * The last time anything dated on or before {@code until} changed. Feeds the staleness check
      * that decides whether the cached evidence of a year still describes the movements.
      *

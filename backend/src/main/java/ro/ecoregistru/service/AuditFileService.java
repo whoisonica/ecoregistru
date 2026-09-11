@@ -32,6 +32,8 @@ import ro.ecoregistru.service.export.Anexa1FormGenerator;
 import ro.ecoregistru.service.export.AnnualDeclarationGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.GenericEvidenceExporter;
+import ro.ecoregistru.util.UsedOilCodes;
+import ro.ecoregistru.util.WasteCodeLabel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -332,7 +334,7 @@ public class AuditFileService {
     /**
      * The cover note. It names the Anexa 1 sheet first because that is the regulated document of
      * the bundle, and it prints its filing deadline: 15 March of the following year, a legal term
-     * (OUG 92/2021 art. 48 alin. (1)), not an ANPM custom.
+     * (OUG 92/2021 art. 48 alin. (1)), not an ANMAP custom.
      *
      * <p>A dossier covering several years repeats the content block once per year, under the
      * folder that holds it, and says up front why three is the number that matters.
@@ -389,6 +391,7 @@ public class AuditFileService {
 
         sb.append(marketRoleNote(company))
                 .append(wasteManagerNote(company))
+                .append(otherObligationsNote(evidenceByYear))
                 .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
                 .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
@@ -495,6 +498,118 @@ public class AuditFileService {
                     .append("               de perfecționare recunoscut la nivel național.\n");
         }
         return sb.append("\n").toString();
+    }
+
+    /**
+     * Four obligations of OUG 92/2021 that an inspection checks, that the dossier used to pass
+     * over in silence, and that sit in the same sanctioned list as the evidence itself:
+     * art. 62 alin. (1) lit. a), 40.000–60.000 lei for a legal person. Read on 10.09.2026, from
+     * {@code docs/surse-oficiale.md} §2.8.
+     *
+     * <p>Same principle as {@link #wasteManagerNote}: the absence of a legal obligation is itself
+     * the finding, so the block speaks instead of staying quiet. The difference is what it can
+     * claim. Two of the four the application can <em>check</em> against the evidence it holds, and
+     * those print as findings, naming the codes they found; the other two it can only <em>name</em>,
+     * because nothing in the movements decides them.
+     *
+     * <p><b>Why art. 17 alin. (3) is not derived, though it looks derivable.</b> The temptation is
+     * to list which of paper, metal, plastic, glass and textiles already appear in the evidence.
+     * But a fraction missing from the evidence does not mean it is not collected separately — most
+     * often it means the client generates none of it — and a fraction present does not prove the
+     * separate collection the article is about, which happens on site and not in a register.
+     * Neither direction carries information, and the rule from {@code ReportType} holds here too:
+     * an alert is a statement. So the obligation is named in full, with its own date for textiles,
+     * and nothing is concluded.
+     */
+    private String otherObligationsNote(Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+        List<MonthlyEvidenceResponse> lines = evidenceByYear.values().stream()
+                .filter(java.util.Objects::nonNull)
+                .flatMap(List::stream)
+                .toList();
+        List<String> hazardous = lines.stream()
+                .filter(MonthlyEvidenceResponse::hazardous)
+                .map(l -> WasteCodeLabel.official(l.wasteCode(), true))
+                .distinct()
+                .sorted()
+                .toList();
+        List<String> oils = UsedOilCodes
+                .among(lines.stream().map(MonthlyEvidenceResponse::wasteCode).toList())
+                .stream()
+                .map(code -> WasteCodeLabel.official(code, true))
+                .sorted()
+                .toList();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("ALTE OBLIGAȚII PE CARE LE VERIFICĂ INSPECTORUL\n")
+                .append("Toate patru sunt în aceeași listă sancționată ca evidența de mai sus — OUG 92/2021,\n")
+                .append("art. 62 alin. (1) lit. a): 40.000–60.000 lei pentru persoane juridice. Dosarul le\n")
+                .append("numește ca să nu fie aflate la control; dovada lor nu stă în evidență.\n\n");
+
+        sb.append("  1. Colectarea separată — art. 17 alin. (3)\n")
+                .append("     Orice producător și deținător de deșeuri introduce colectarea separată cel\n")
+                .append("     puțin pentru hârtie, metal, plastic și sticlă, iar de la 1 ianuarie 2025 și\n")
+                .append("     pentru textile. Se verifică pe teren, la fracții, nu în registru — de aceea\n")
+                .append("     aplicația o numește, dar nu o constată.\n\n");
+
+        sb.append("  2. Înscrierea în registrul ANMAP — art. 36 alin. (1)–(2)\n")
+                .append("     Trei feluri de operatori NU se autorizează, dar sunt obligați să se înscrie\n")
+                .append("     în registrul ținut de agenție: cei care transportă deșeuri nepericuloase în\n")
+                .append("     sistem profesional, comercianții care nu intră fizic în posesia deșeurilor și\n")
+                .append("     brokerii. Dacă firma face una din cele trei, înscrierea se dovedește separat.\n\n");
+
+        sb.append("  3. Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)\n");
+        if (hazardous.isEmpty()) {
+            sb.append("     Producătorii și deținătorii persoane juridice sunt obligați să efectueze și să\n")
+                    .append("     dețină o caracterizare a deșeurilor periculoase generate din propria\n")
+                    .append("     activitate. În anii din dosar nu apare niciun cod periculos, deci obligația\n")
+                    .append("     nu se activează pe aceste date.\n\n");
+        } else {
+            sb.append("     Obligatorie, și te privește: în anii din dosar apar ")
+                    .append(hazardous.size()).append(" coduri periculoase.\n")
+                    .append(wrapped("     ", "Codurile: " + String.join(", ", hazardous) + "."))
+                    .append("     Art. 8 alin. (4) cere o caracterizare a deșeurilor periculoase generate din\n")
+                    .append("     propria activitate — per cod de deșeu, fiindcă scopurile pe care le enumeră\n")
+                    .append("     (amestecare, pregătire, reciclare, valorificare, eliminare) sunt proprietăți\n")
+                    .append("     ale tipului de deșeu, nu ale unui transport. Aplicația nu ține încă\n")
+                    .append("     buletinele de analiză: se păstrează la dosar, pe hârtie, lângă acesta.\n\n");
+        }
+
+        sb.append("  4. Predarea uleiurilor uzate — art. 31 alin. (3)\n");
+        if (oils.isEmpty()) {
+            sb.append("     Producătorii și deținătorii de uleiuri uzate, cu excepția persoanelor fizice,\n")
+                    .append("     predau ÎNTREAGA cantitate numai operatorilor autorizați pentru colectarea,\n")
+                    .append("     valorificarea sau eliminarea lor. În anii din dosar nu apare niciun cod de\n")
+                    .append("     ulei uzat, deci obligația nu se activează pe aceste date.\n\n");
+        } else {
+            sb.append("     Te privește: în anii din dosar apar mișcări pe coduri de ulei uzat.\n")
+                    .append(wrapped("     ", "Codurile: " + String.join(", ", oils) + "."))
+                    .append("     Art. 31 alin. (3) cere ca ÎNTREAGA cantitate să fie predată numai operatorilor\n")
+                    .append("     autorizați pentru colectarea, valorificarea sau eliminarea uleiurilor uzate —\n")
+                    .append("     nu o parte din ea. Autorizațiile partenerilor prin care au plecat sunt în\n")
+                    .append("     autorizatii-parteneri.pdf, din acest dosar.\n\n");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * A line that may be long — a list of codes — folded under a fixed indent so README.txt stays
+     * readable on paper, which is where it is read.
+     */
+    private static String wrapped(String indent, String text) {
+        int width = 78 - indent.length();
+        StringBuilder sb = new StringBuilder();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split(" ")) {
+            if (line.length() > 0 && line.length() + 1 + word.length() > width) {
+                sb.append(indent).append(line).append("\n");
+                line.setLength(0);
+            }
+            line.append(line.length() > 0 ? " " : "").append(word);
+        }
+        if (line.length() > 0) {
+            sb.append(indent).append(line).append("\n");
+        }
+        return sb.toString();
     }
 
     private static String marketRole(MarketRole role) {

@@ -175,6 +175,21 @@ export function CompanyDetailsSection() {
               <Field label={c.wasteManagerTraining} value={company.wasteManagerTraining} />
             </Group>
 
+            {/* O singură rubrică, dar propriul ei grup: nu e o preferință de formular, e o
+                obligație a firmei, și din ea pleacă (sau nu) alerta de 30 aprilie. */}
+            <Group title={c.groupObligations}>
+              <Field
+                label={c.constructionPermitHolder}
+                value={
+                  company.constructionPermitHolder == null
+                    ? null
+                    : company.constructionPermitHolder
+                      ? c.constructionPermitHolderYes
+                      : c.constructionPermitHolderNo
+                }
+              />
+            </Group>
+
             <Group title={c.groupReporting}>
               <Field label={c.anexa3Series} value={company.anexa3Series} />
               <Field

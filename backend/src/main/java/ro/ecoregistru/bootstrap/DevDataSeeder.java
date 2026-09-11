@@ -208,7 +208,7 @@ public class DevDataSeeder implements CommandLineRunner {
         // and cap. 4 of Anexa 1 report, next to the operator's name. Handovers to a plain collector
         // are R13 ("stocarea deşeurilor înaintea oricărei operaţiuni R1-R12"): the collector holds
         // the waste until someone else recovers it. Handovers straight to a recycler carry that
-        // recycler's own operation. See docs/intrebari-specialist.md — whether ANPM expects R13 or
+        // recycler's own operation. See docs/intrebari-specialist.md — whether ANMAP expects R13 or
         // the final operation in this common case is the one open question here.
 
         // ---- Paper (20 01 01) at Cluj — the carry-over showcase ----

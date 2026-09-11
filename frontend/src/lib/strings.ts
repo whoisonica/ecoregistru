@@ -407,6 +407,17 @@ export const strings = {
         expiryFormatted ? ` expirase la ${expiryFormatted}` : " expirase"
       }, adică înainte de data acestei predări. Legea cere predarea către un operator autorizat (OUG 92/2021, art. 23 alin. (1)), iar predarea nu te descarcă de răspundere (art. 24 alin. (1)). Formularul se tipărește oricum — documentul consemnează ce s-a întâmplat. Verifică dacă partenerul are o autorizație reînnoită și actualizeaz-o în fișa lui.`,
 
+    // --- Codul-oglindă declarat nepericulos (OUG 92/2021 art. 8 alin. (2)) ---
+    // Singurul avertisment din modul care se uită la o ÎNCADRARE, nu la o rubrică goală: restul
+    // spun „lipsește un câmp", ăsta spune „ai afirmat ceva ce actul cere să fie dovedit". De aceea
+    // nu blochează și nu se tipărește nicăieri — e o întrebare pusă clientului, nu o constatare
+    // pusă în mâna inspectorului.
+    mirrorCode: "Cod-oglindă",
+    // Primește codurile periculoase perechi, așa cum le-a scris Decizia 2014/955/UE în chiar numele
+    // codului nepericulos — deci nu e o listă de-a noastră, e textul actului citit înapoi.
+    mirrorCodeHint: (pair: string | null) =>
+      `Codul ăsta are pereche periculoasă${pair ? ` (${pair})` : ""}: același deșeu se încadrează sub două coduri, după cum are sau nu caracteristici periculoase. Încadrarea ca nepericulos se face „numai în baza unei analize a originii, testelor, buletinelor de analiză și a altor documente relevante” (OUG 92/2021, art. 8 alin. (2)), iar la mișcarea asta nu e atașat niciun document. Mișcarea rămâne înregistrată și formularele se tipăresc — atașează buletinul sau analiza care susține încadrarea, ca la un control să iasă din dosar.`,
+
     // --- Provenienţa deşeului la ieşire ---
     // Se arată doar la conturile care pot prelua de la terţi. Fiecare opţiune îşi spune efectul,
     // fiindcă alegerea nu schimbă un câmp, ci pe ce formular oficial ajunge cantitatea.
@@ -505,8 +516,64 @@ export const strings = {
       "Peste prag formularul iese în 6 exemplare (art. 12): cele trei părți, agenția care a aprobat transportul, ISU-ul județului tău și agenția județului tău. Un exemplar îl duci tu la ISU, pentru autorizarea rutei (art. 4 alin. (8) lit. b)) — notificarea de 48 de ore o face ISU-ul mai departe, nu tu (art. 14).",
     anexa2EmptyColumns:
       "Cantitatea primită, cea recepționată, cea respinsă și data primirii ies goale, intenționat: sunt declarațiile transportatorului și destinatarului, semnate la primirea deșeurilor (art. 9 și 10). Se completează pe hârtie, de ei.",
+    // --- Drumul aprobării, spus pe ecran (HG 1061/2008, art. 4, 5, 7 și 14) ---
+    // Peste prag e singurul loc din aplicație unde clientul poate crede că a terminat când n-a
+    // terminat: îi tipărim rubrica „nr. formularului de aprobare" și nu-i spunem nimic despre cum
+    // se obține. Pașii se scriu întregi, cu **cine** face fiecare, fiindcă asta e partea pe care
+    // un client n-o ghicește corect — hârtia trece prin patru mâini înainte să se întoarcă la el.
     anexa2ApprovalMissing:
-      "Peste 1 t/an transportul are nevoie și de formularul de aprobare din anexa 1, iar drumul lui e lung: îl completezi tu (art. 4 alin. (2)), îl semnează destinatarul, apoi merge la agenția din raza instalației LUI — nu a ta — care are 7 zile lucrătoare de răspuns (art. 4 alin. (5)). Aplicația nu-l generează încă.",
+      "Peste 1 t/an transportul are nevoie și de formularul de aprobare din anexa 1 (art. 7). Aplicația nu-l generează încă — iar drumul lui e mai lung decât pare, și nu e tot al tău:",
+    anexa2ApprovalRoadTitle: "Drumul formularului de aprobare, pas cu pas",
+    anexa2ApprovalRoad: [
+      { who: "Tu", what: "completezi formularul din anexa 1", basis: "art. 4 alin. (2)" },
+      {
+        who: "Tu",
+        what: "îl trimiți destinatarului, semnat și ștampilat",
+        basis: "art. 4 alin. (3)",
+      },
+      {
+        who: "Destinatarul",
+        what: "acceptă sau cere lămuriri; dacă acceptă, semnează și ștampilează",
+        basis: "art. 4 alin. (4)",
+      },
+      {
+        who: "Destinatarul",
+        what: "îl duce la agenția de mediu din raza instalației LUI — nu a ta",
+        basis: "art. 4 alin. (5)",
+      },
+      {
+        who: "Agenția",
+        what: "are 7 zile lucrătoare de la primirea tuturor informațiilor",
+        basis: "art. 4 alin. (5)",
+      },
+      {
+        who: "Agenția",
+        what: "semnează, după ce verifică operațiile și regimul ariilor protejate / Natura 2000",
+        basis: "art. 4 alin. (7)",
+      },
+      {
+        who: "Agenția instalației",
+        what: "îl trimite înapoi ție și agenției din județul tău",
+        basis: "art. 4 alin. (8) lit. a)",
+      },
+      {
+        who: "Tu",
+        what: "îl duci la ISU-ul județului tău, pentru autorizarea rutei",
+        basis: "art. 4 alin. (8) lit. b)",
+      },
+      {
+        who: "ISU-ul",
+        what: "anunță, cu 48 de ore înainte, celelalte ISU-uri și polițiile de pe traseu",
+        basis: "art. 14 alin. (1)",
+      },
+    ],
+    // Pasul 9 e capcana: prima variantă a documentației noastre l-a scris ca obligație a
+    // clientului, și greșeala ajunsese pe ecran. Dacă noi am confundat-o citind actul, clientul o
+    // confundă sigur — deci se spune pe față, nu se lasă dedus din tabel.
+    anexa2ApprovalRoadMine:
+      "Din cei nouă pași, ai tăi sunt trei: 1, 2 și 8. Notificarea de 48 de ore (pasul 9) o face ISU-ul după ce primește formularele, nu tu — e partea cel mai des confundată.",
+    anexa2ApprovalValidity:
+      "Nu reiei drumul la fiecare cursă: art. 5 — aprobarea poate fi dată pentru un singur transport sau pentru mai multe, iar în al doilea caz e valabilă 2 ani de la acordare.",
     anexa2Medical:
       "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul.",
     anexa2Download: "Anexa 2",
@@ -992,7 +1059,7 @@ export const strings = {
     // complete dialog
     completeTitle: "Marchează termenul ca finalizat",
     noteLabel: "Notă (opțional)",
-    notePlaceholder: "ex. depus la ANPM pe 12.03, nr. înregistrare 1234",
+    notePlaceholder: "ex. depus la ANMAP pe 12.03, nr. înregistrare 1234",
     // empty state
     empty: "Niciun termen pentru {year}.",
     searchPlaceholder: "Caută după tip de raportare sau notă...",
@@ -1050,6 +1117,9 @@ export const strings = {
     groupAuthorization: "Autorizația de mediu",
     groupWasteManager: "Persoana desemnată cu gestiunea deșeurilor",
     groupReporting: "Raportare",
+    // Nu „Raportare": acolo sunt rubricile care schimbă ce se **tipărește** (seria, unitatea).
+    // Asta schimbă ce se **anunță** — e o obligație a firmei, nu o preferință de formular.
+    groupObligations: "Obligații de raportare",
     groupContact: "Persoana de contact",
     subtitle:
       "Firmele pentru care ții evidența. Creezi firme și inviți utilizatori care primesc pe email un link de setare a parolei.",
@@ -1119,6 +1189,17 @@ export const strings = {
     wasteManagerTrainingPlaceholder: "program, număr și dată",
     wasteManagerTrainingHint:
       "Art. 23 alin. (5) cere ca persoana să fie instruită prin programe recunoscute la nivel național. Actul nu impune forma dovezii, deci se scrie liber.",
+
+    // Rubrica de care atârnă jumătate din termenul de 30 aprilie. Se **întreabă**, nu se deduce:
+    // capitolul 17 al nomenclatorului apare la oricine mișcă moloz, iar obligația e a titularului
+    // autorizației — un transportator ar primi o alertă pentru o raportare care nu e a lui.
+    // Cealaltă jumătate, uleiurile uzate, se citește din mișcări și nu cere nicio rubrică.
+    constructionPermitHolder: "Titulară de autorizație de construire/desființare",
+    constructionPermitHolderUnset: "— nu s-a răspuns —",
+    constructionPermitHolderNo: "Nu",
+    constructionPermitHolderYes: "Da",
+    constructionPermitHolderHint:
+      "OUG 92/2021, art. 49 alin. (9): titularii de autorizații de construire și/sau desființare raportează anual la APM, până la 30 aprilie, conformarea cu ținta de 70% la deșeurile din construcții (art. 17 alin. (7)). Sancțiune: 5.000–10.000 lei. Fără răspuns nu se generează nicio alertă — o alertă falsă e mai rea decât una lipsă.",
 
     // status / badges
     active: "Activ",
@@ -1345,6 +1426,14 @@ export const strings = {
       // Ordinul 794/2012 art. 6, la agenția județeană — nu la AFM. Construiam documentul de la
       // `V22`, dar nu pleca nicio alertă pentru el (punctul 3 al auditului).
       PACKAGING_ANNUAL: "Anexa 1 Ambalaje (anual, 25 februarie) — la agenția județeană de mediu",
+      // 30 aprilie — al doilea termen anual la APM, găsit abia pe 10.09.2026 la recitirea legii-
+      // cadru pe forma consolidată. Lipsea din calendar cu totul: aveam 15 martie, 25 ianuarie,
+      // 25 februarie și cadențele AFM, iar un client cu un butoi de ulei uzat afla din tăcerea
+      // noastră că aprilie n-are nimic. Două obligații pe un rând, ca la `AFM_ANNUAL`: aceeași zi,
+      // același destinatar — iar eticheta le numește pe amândouă, fiindcă firma poate datora doar
+      // una din ele și trebuie să vadă care.
+      APM_ANNUAL_APRIL:
+        "Raportare anuală la APM (30 aprilie) — uleiuri uzate (art. 31) și deșeuri din construcții (art. 17 alin. (7))",
       OTHER: "Altă raportare",
     },
     deadlineStatus: {
@@ -1712,9 +1801,17 @@ export const strings = {
     anexa3RoleMissingAction: "Completează calitatea în profilul firmei",
     anexa3Addressee: "Se depune la",
     // Cei doi destinatari din art. 4 alin. (3): toți depun la agenția din raza punctului de lucru,
-    // comerciantul la ANPM. Stăteau scriși în pagină, singurul text vizibil rămas afară din
-    // fișierul ăsta după mutarea celor din `combobox.tsx`.
-    anexa3AddresseeAnpm: "ANPM",
+    // comerciantul la agenția națională. Stăteau scriși în pagină, singurul text vizibil rămas
+    // afară din fișierul ăsta după mutarea celor din `combobox.tsx`.
+    //
+    // ⚠️ Scrie ANMAP, deși Ordinul 794/2012 scrie „Agenţia Naţională pentru Protecţia Mediului" —
+    // și e o decizie, nu o scăpare (G-5, verificat act cu act pe 11.09.2026). Redenumirea e făcută
+    // de art. IV din Legea 26/2026 „în întreg cuprinsul OUG 92/2021", deci NU atinge Ordinul
+    // 794/2012, care n-a fost modificat niciodată după 2015. Regula pe care am ales-o: unde citim
+    // actul, numele actului; unde îi spunem clientului unde să se ducă, numele instituției de azi.
+    // Aici e al doilea caz — rândul ăsta nu ajunge pe niciun formular, fiindcă modelul Anexei 3
+    // n-are rubrică de destinatar; se citește doar pe ecran, de un om care va căuta „ANMAP".
+    anexa3AddresseeAnmap: "ANMAP",
     anexa3AddresseeLocal: "agenția județeană pentru protecția mediului din raza punctului de lucru",
     anexa3Table1Title: "Tabelul 1 — colectori și comercianți",
     anexa3Table2Title: "Tabelul 2 — reciclatori și valorificatori",
@@ -1771,7 +1868,7 @@ export const strings = {
       "Decide care tabel al Anexei 3 se depune (Ordinul 794/2012, art. 4 alin. (1)): colectorii și comercianții completează tabelul 1, reciclatorii și valorificatorii tabelul 2. Se cere doar operatorilor care preiau deșeuri de ambalaje de la terți; un generator obișnuit o lasă goală.",
     none: "— nu se aplică / nu s-a răspuns —",
     COLECTOR: "Colector — tabelul 1",
-    COMERCIANT: "Comerciant — tabelul 1, depus la ANPM",
+    COMERCIANT: "Comerciant — tabelul 1, depus la ANMAP",
     RECICLATOR: "Reciclator — tabelul 2",
     VALORIFICATOR: "Valorificator — tabelul 2",
   },

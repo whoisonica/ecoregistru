@@ -66,12 +66,24 @@ public enum PackagingOperatorRole {
 
     /**
      * Where the report goes. Art. 4 alin. (3): everyone but the trader files at the county agency
-     * in whose area the work point lies; the trader files at ANPM. Printed on the screen, not on
-     * the form — the form has no rubric for it.
+     * in whose area the work point lies; the trader files at the national agency. Printed on the
+     * screen, not on the form — the form has no rubric for it.
+     *
+     * <p><b>ANMAP, not ANPM</b>, and that is a decision taken act by act on 11.09.2026 (G-5). The
+     * rename comes from art. IV of Legea 26/2026, which replaces the name <i>"în întreg cuprinsul
+     * Ordonanţei de urgenţă a Guvernului nr. 92/2021"</i> — so it does <em>not</em> reach Ordinul
+     * 794/2012, which was never amended after 2015 and still writes "Agenţia Naţională pentru
+     * Protecţia Mediului". The rule we settled on: where we quote the act, the act's own name;
+     * where we tell the client where to go, the institution's name today. This string is the second
+     * case — nothing in this module prints the agency name on paper, because none of the five
+     * annexes of Ordinul 794/2012 has a rubric for the addressee.
+     *
+     * <p>⚠️ Nothing calls this today; the screen reads {@code anexa3AddresseeAnmap} from
+     * {@code strings.ts}. It is kept because the two must not drift apart when one of them is used.
      */
     public String addressee() {
         return this == COMERCIANT
-                ? "ANPM"
+                ? "ANMAP"
                 : "agenţia judeţeană pentru protecţia mediului din raza punctului de lucru";
     }
 }

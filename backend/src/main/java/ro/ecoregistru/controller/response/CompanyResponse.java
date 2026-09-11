@@ -60,5 +60,8 @@ public record CompanyResponse(
         String wasteManagerName,
         String wasteManagerRole,
         Boolean wasteManagerExternal,
-        String wasteManagerTraining
+        String wasteManagerTraining,
+
+        /** Holder of a building/demolition permit (art. 49 alin. (9)); null while unanswered. */
+        Boolean constructionPermitHolder
 ) {}

@@ -15,7 +15,9 @@ import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ReportingDeadlineRepository;
+import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.util.UsedOilCodes;
 
 import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
@@ -44,6 +46,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
  *  - PACKAGING_ANNUAL — 25 February, the packaging report of Ordinul 794/2012 art. 6, at the
  *    county environmental agency. Only for a company whose profile says it puts packaging on the
  *    national market; an unanswered profile gets nothing. See {@link #packagingDeadline}.
+ *  - APM_ANNUAL_APRIL — 30 April, the second annual APM filing (OUG 92/2021 art. 49 alin. (9)):
+ *    used oils and construction waste. Only for a company one of whose two halves signals;
+ *    see {@link #aprilDeadline}.
  *
  * Generation is additive and idempotent (unique on company+type+due_date): it never deletes,
  * so completion state and warning flags survive a re-run. Effective status (OVERDUE) is derived
@@ -56,6 +61,7 @@ public class DeadlineService {
 
     ReportingDeadlineRepository deadlineRepository;
     CompanyRepository companyRepository;
+    WasteMovementRepository movementRepository;
 
     @Transactional(readOnly = true)
     public List<DeadlineResponse> list(int year) {
@@ -85,6 +91,7 @@ public class DeadlineService {
 
         created += afmDeadlines(company, year);
         created += packagingDeadline(company, year);
+        created += aprilDeadline(company, year);
 
         return new DeadlineGenerationResponse(year, created);
     }
@@ -107,6 +114,46 @@ public class DeadlineService {
         }
         return createIfMissing(company, ReportType.PACKAGING_ANNUAL,
                 LocalDate.of(year, Month.FEBRUARY, 25));
+    }
+
+    /**
+     * The second annual APM filing, due <b>30 April</b> for the previous calendar year —
+     * OUG 92/2021 art. 49 alin. (9). Missing from the calendar entirely until 10.09.2026, when the
+     * framework act was re-read on its consolidated form.
+     *
+     * <p>Two categories owe it, and either one alone creates the deadline:
+     *
+     * <ul>
+     *   <li><b>holders of used oils</b>, who report the measures of art. 31 alin. (1) — read from
+     *       the movements of the reported year, because a used-oil code <em>is</em> the fact;</li>
+     *   <li><b>holders of a building or demolition permit</b>, who report conformity with
+     *       art. 17 alin. (7), the 70% target — read from the profile, because chapter 17 appears
+     *       for anyone who hauls rubble while the obligation belongs to the permit holder.</li>
+     * </ul>
+     *
+     * <p><b>The year looked at is {@code year - 1}</b>, not {@code year}: the article says "până la
+     * 30 aprilie a anului următor celui pentru care se raportează", so the deadline falling in
+     * April {@code year} reports {@code year - 1} — the same relation {@link ReportType#SIM_ANNUAL}
+     * has with its 15 March. Reading the current year instead would put the reminder one year
+     * early for a company that has just started handling oil, and miss one that stopped.
+     *
+     * <p>Both signals are positive-only: a company with no oil code and an unanswered profile gets
+     * nothing. That is the rule of {@link ReportType}, and here it has teeth — a wrong reminder on
+     * this date sends a client to prepare a report that is not theirs.
+     */
+    private int aprilDeadline(Company company, int year) {
+        int reported = year - 1;
+        boolean holdsUsedOils = !UsedOilCodes.among(movementRepository.findDistinctWasteCodes(
+                company.getId(),
+                LocalDate.of(reported, 1, 1),
+                LocalDate.of(reported, 12, 31))).isEmpty();
+        boolean holdsPermit = Boolean.TRUE.equals(company.getConstructionPermitHolder());
+
+        if (!holdsUsedOils && !holdsPermit) {
+            return 0;
+        }
+        return createIfMissing(company, ReportType.APM_ANNUAL_APRIL,
+                LocalDate.of(year, Month.APRIL, 30));
     }
 
     @Transactional

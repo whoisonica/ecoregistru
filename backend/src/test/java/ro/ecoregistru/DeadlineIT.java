@@ -18,15 +18,24 @@ import ro.ecoregistru.enums.DeadlineStatus;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.entity.WasteCode;
+import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.entity.WorkPoint;
+import ro.ecoregistru.enums.Unit;
+import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ReportingDeadlineRepository;
+import ro.ecoregistru.repository.WasteCodeRepository;
+import ro.ecoregistru.repository.WasteMovementRepository;
+import ro.ecoregistru.repository.WorkPointRepository;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -49,6 +58,9 @@ class DeadlineIT {
     @Autowired CompanyRepository companyRepository;
     @Autowired AppUserRepository appUserRepository;
     @Autowired ReportingDeadlineRepository deadlineRepository;
+    @Autowired WorkPointRepository workPointRepository;
+    @Autowired WasteCodeRepository wasteCodeRepository;
+    @Autowired WasteMovementRepository movementRepository;
 
     /** Fresh tenant so deadline counts are deterministic regardless of other test methods. */
     private TenantFixture newTenant(boolean afmObligation, AfmContribution... contributions) {
@@ -271,6 +283,140 @@ class DeadlineIT {
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL')]").doesNotExist());
+    }
+
+    // ---------- Termenul de 30 aprilie — OUG 92/2021 art. 49 alin. (9) ----------
+
+    /**
+     * Half one: a used-oil code in the evidence is the fact, so it needs no question. The reported
+     * year is the one <em>before</em> the deadline — "până la 30 aprilie a anului următor celui
+     * pentru care se raportează" — so a 2026 movement produces the 30.04.2027 deadline, and the
+     * test asserts on that year precisely because reading the wrong one would still look right in
+     * a single-year check.
+     */
+    @Test
+    void aUsedOilMovementCreatesThe30AprilDeadlineOfTheFollowingYear() throws Exception {
+        TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$[?(@.reportType == 'APM_ANNUAL_APRIL' && @.dueDate == '2027-04-30')]")
+                        .exists());
+
+        // And not in the year of the movement itself: 30.04.2026 would report 2025, which this
+        // company has no movements in.
+        regenerate(t.token, 2026);
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+    }
+
+    /**
+     * And the direction that matters more. A company that moves waste but no oil gets nothing —
+     * a reminder on this date sends a client to prepare a report that is not theirs, and a false
+     * alert is exactly what {@code V21} spent a migration removing.
+     */
+    @Test
+    void aCompanyWithoutOilAndWithoutAPermitGetsNo30April() throws Exception {
+        // Hârtie şi carton: nowhere near chapter 13.
+        TenantFixture t = newTenantWithMovementOn("20 01 01", 2026);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+    }
+
+    /**
+     * The other half: the building permit is asked, not derived — chapter 17 appears for anyone who
+     * hauls rubble while the obligation belongs to the permit holder. Either half alone is enough,
+     * so this company has the deadline with no oil anywhere.
+     */
+    @Test
+    void aBuildingPermitHolderGetsThe30AprilDeadlineWithoutAnyOil() throws Exception {
+        TenantFixture t = newTenantWithMovementOn("20 01 01", 2026);
+        setConstructionPermitHolder(t, Boolean.TRUE);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$[?(@.reportType == 'APM_ANNUAL_APRIL' && @.dueDate == '2027-04-30')]")
+                        .exists());
+    }
+
+    /**
+     * Three states, and the two that generate nothing are asserted separately on purpose: an
+     * explicit "no" and an unanswered profile behave the same, and a later refactor that read the
+     * field as a plain boolean would keep passing a test written only for {@code null}.
+     */
+    @Test
+    void neitherAnsweredNoNorUnansweredCreatesTheConstructionHalf() throws Exception {
+        TenantFixture answeredNo = newTenantWithMovementOn("20 01 01", 2026);
+        setConstructionPermitHolder(answeredNo, Boolean.FALSE);
+        regenerate(answeredNo.token, 2027);
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + answeredNo.token))
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+
+        TenantFixture unanswered = newTenantWithMovementOn("20 01 01", 2026);
+        setConstructionPermitHolder(unanswered, null);
+        regenerate(unanswered.token, 2027);
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + unanswered.token))
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+    }
+
+    /** Both halves signalling still produce one row, not two: same day, same recipient. */
+    @Test
+    void bothHalvesTogetherStillProduceOneRow() throws Exception {
+        TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
+        setConstructionPermitHolder(t, Boolean.TRUE);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                // hasSize pe rezultatul filtrului, nu `.length()`: `.length()` s-ar aplica
+                // fiecărui obiect găsit și ar număra câmpurile lui, nu rândurile.
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]", hasSize(1)));
+    }
+
+    /** Generation stays idempotent with the new rule: a second run creates nothing. */
+    @Test
+    void the30AprilDeadlineIsNotRecreatedOnASecondRun() throws Exception {
+        TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
+        regenerate(t.token, 2027);
+        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.generated", is(0)));
+    }
+
+    private TenantFixture newTenantWithMovementOn(String code, int year) {
+        TenantFixture t = newTenant(false);
+        WorkPoint wp = workPointRepository.save(WorkPoint.builder()
+                .company(t.company).name("PL-" + UUID.randomUUID().toString().substring(0, 6))
+                .active(true).createdAt(Instant.now()).build());
+        WasteCode wasteCode = wasteCodeRepository.findByCode(code).orElseThrow();
+        movementRepository.save(WasteMovement.builder()
+                .company(t.company).workPoint(wp).date(LocalDate.of(year, 4, 15))
+                .wasteCode(wasteCode).quantity(new java.math.BigDecimal("15.000")).unit(Unit.KG)
+                .operation(WasteOperation.GENERATED).deleted(false)
+                .createdBy(UUID.randomUUID()).build());
+        return t;
+    }
+
+    private void setConstructionPermitHolder(TenantFixture t, Boolean value) {
+        Company company = companyRepository.findById(t.company.getId()).orElseThrow();
+        company.setConstructionPermitHolder(value);
+        companyRepository.save(company);
     }
 
     private TenantFixture newTenantWithRoles(MarketRole... roles) {

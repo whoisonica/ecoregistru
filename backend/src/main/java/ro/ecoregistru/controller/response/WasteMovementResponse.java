@@ -32,6 +32,21 @@ public record WasteMovementResponse(
         String wasteCode,
         String wasteCodeName,
         boolean hazardous,
+        /**
+         * True when this movement rides on a <b>mirror code declared non-hazardous</b> and carries
+         * no attachment — OUG 92/2021 art. 8 alin. (2), which allows that classification
+         * <em>only</em> on the strength of an origin analysis, tests or a laboratory report.
+         *
+         * <p>It is the one place in the module where the application can catch a wrong
+         * <em>classification</em> rather than a missing field, and it is a warning, never a
+         * refusal: the movement happened, and the paper may well exist outside the application.
+         *
+         * <p>See {@code WasteMovementMapper#mirrorClassificationUnproven} for the three
+         * restrictions, and {@code WasteCode#getMirrorOf()} for where the pair comes from.
+         */
+        boolean mirrorClassificationUnproven,
+        /** The hazardous codes the waste code names, so the screen can say which pair it warns about. */
+        String mirrorOf,
         /** Null while the recipient has not weighed the load yet. */
         BigDecimal quantity,
         boolean weighedAtUnloading,

@@ -11,7 +11,7 @@ public enum ReportType {
      * the portal is where it goes, not what has to be prepared. One date, one filing, one deadline:
      * a second entry for "Anexa 1" would put two reminders on the same day for the same act.
      *
-     * <p>15 March is a legal term, not an ANPM custom — OUG 92/2021 art. 48 alin. (1) writes it.
+     * <p>15 March is a legal term, not an ANMAP custom — OUG 92/2021 art. 48 alin. (1) writes it.
      */
     SIM_ANNUAL,
 
@@ -62,6 +62,34 @@ public enum ReportType {
      * a false one is exactly what {@code V21} spent a migration removing.
      */
     PACKAGING_ANNUAL,
+
+    /**
+     * The yearly filing due on <b>30 April</b> at APM, for the previous calendar year —
+     * OUG 92/2021 art. 49 alin. (9). Sanctioned by art. 62 alin. (1) lit. e),
+     * 5.000–10.000 lei for a legal person.
+     *
+     * <p>Found on 10.09.2026, when the framework act was re-read on its consolidated form. It did
+     * not exist anywhere: not in this enum, not in {@code DeadlineService}, not in any document we
+     * produce. The calendar had 15 March, 25 January, 25 February and the AFM cadences, and a
+     * client with a barrel of used oil was told, by our silence, that April held nothing.
+     *
+     * <p><b>Two obligations, one row</b> — the same shape as {@link #AFM_ANNUAL}, and for the same
+     * reason: they fall on one date, at one recipient, and a second row would put two reminders on
+     * the same day at the same address, which is the noise {@code V21} was built to stop. The
+     * label names both: used oils (the measures of art. 31 alin. (1)) and construction waste
+     * (conformity with art. 17 alin. (7), the 70% target).
+     *
+     * <p><b>The two halves are signalled differently, and that asymmetry is deliberate.</b> The
+     * oils half is read from the movements — {@link ro.ecoregistru.util.UsedOilCodes} — because a
+     * used-oil code in the evidence <em>is</em> the fact. The construction half is a profile
+     * question ({@code Company.constructionPermitHolder}), because chapter 17 appears for anyone
+     * who hauls rubble while the obligation belongs to the permit holder. Either half alone
+     * creates the deadline; an unanswered profile contributes nothing.
+     *
+     * <p>No document is printed for it, so the deadline carries no link — the report goes into
+     * APM's own system, and a link to a document we do not build would promise more than we hold.
+     */
+    APM_ANNUAL_APRIL,
 
     OTHER
 }

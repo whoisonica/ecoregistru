@@ -31,6 +31,8 @@ public class WasteMovementMapper {
                 m.getWasteCode().getCode(),
                 m.getWasteCode().getName(),
                 m.getWasteCode().isHazardous(),
+                mirrorClassificationUnproven(m),
+                m.getWasteCode().getMirrorOf(),
                 m.getQuantity(),
                 m.isWeighedAtUnloading(),
                 m.getVolumeM3(),
@@ -124,5 +126,40 @@ public class WasteMovementMapper {
         return partner.getAuthorizationExpiry() != null
                 && m.getDate() != null
                 && partner.getAuthorizationExpiry().isBefore(m.getDate());
+    }
+
+    /**
+     * A mirror code declared non-hazardous, with nothing attached to justify it — G-4, built
+     * 11.09.2026.
+     *
+     * <p>OUG 92/2021 art. 8 alin. (2): where the same waste falls under two codes depending on the
+     * possible presence of hazardous properties, classifying it as <b>non-hazardous</b> is allowed
+     * <i>"numai în baza unei analize a originii, testelor, buletinelor de analiză şi a altor
+     * documente relevante"</i>. Every other check in this module looks for a missing field; this one
+     * looks at a claim the client has made, which is why it exists at all — it is the kind of thing
+     * an inspector goes looking for, because a mirror code declared non-hazardous makes disposal
+     * cheaper.
+     *
+     * <p>Three deliberate restrictions:
+     * <ul>
+     *   <li><b>Mirror codes only.</b> {@code mirrorOf} is null for 681 of the 842 codes, and always
+     *       null on a hazardous one — the article conditions the classification <em>as
+     *       non-hazardous</em>, so a code declared hazardous needs nothing proved.</li>
+     *   <li><b>Any attachment counts.</b> The application cannot read a PDF and decide whether it is
+     *       a laboratory report, and pretending otherwise would turn a warning into a lie. A
+     *       document attached to the movement is taken as the client's answer; the warning asks
+     *       "where is it?", not "is it the right one?". When G-7 attaches reports to a <b>code</b>,
+     *       this moves to that source and becomes the sharper question.</li>
+     *   <li><b>All operations, not just exits.</b> Unlike the expired-authorization warning, this
+     *       one is not about a handover: the classification travels with the waste from the moment
+     *       it is written down, and it is the holder who answers for it (art. 8 alin. (1)).</li>
+     * </ul>
+     *
+     * <p>It constată, nu blochează — same family as the expired authorization above, and shown on
+     * screen only. It must never be printed on an official form: Anexa 1 and Anexa 3 carry what the
+     * act asks for, not our reading of it.
+     */
+    private boolean mirrorClassificationUnproven(WasteMovement m) {
+        return m.getWasteCode().getMirrorOf() != null && m.getAttachments().isEmpty();
     }
 }

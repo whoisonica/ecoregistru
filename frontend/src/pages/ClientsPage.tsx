@@ -96,6 +96,9 @@ export function ClientsPage() {
   const [wasteManagerRole, setWasteManagerRole] = useState("");
   const [wasteManagerExternal, setWasteManagerExternal] = useState<"" | "yes" | "no">("");
   const [wasteManagerTraining, setWasteManagerTraining] = useState("");
+  // Trei stări, ca `wasteManagerExternal`: "" nu e „Nu", e „nimeni n-a întrebat" — iar din asta
+  // atârnă dacă pleacă sau nu alerta de 30 aprilie.
+  const [constructionPermitHolder, setConstructionPermitHolder] = useState<"" | "yes" | "no">("");
   // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
   const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
   const [formError, setFormError] = useState<false | "name" | "cui">(false);
@@ -168,6 +171,9 @@ export function ClientsPage() {
       c?.wasteManagerExternal == null ? "" : c.wasteManagerExternal ? "yes" : "no",
     );
     setWasteManagerTraining(c?.wasteManagerTraining ?? "");
+    setConstructionPermitHolder(
+      c?.constructionPermitHolder == null ? "" : c.constructionPermitHolder ? "yes" : "no"
+    );
     setProfile(
       c
         ? {
@@ -242,6 +248,8 @@ export function ClientsPage() {
       // "" rămâne null: „nu s-a răspuns" nu e același lucru cu „angajat propriu".
       wasteManagerExternal: wasteManagerExternal === "" ? null : wasteManagerExternal === "yes",
       wasteManagerTraining: wasteManagerTraining.trim() || null,
+      constructionPermitHolder:
+        constructionPermitHolder === "" ? null : constructionPermitHolder === "yes",
       authorizedOperationCodes: profile.authorizedOperationCodes,
       marketRoles: profile.marketRoles,
       authorizedWasteCodeIds: profile.authorizedWasteCodes.map((w) => w.id),
@@ -546,6 +554,29 @@ export function ClientsPage() {
                   placeholder={t.wasteManagerTrainingPlaceholder}
                 />
                 <p className="mt-1 text-xs text-content-muted">{t.wasteManagerTrainingHint}</p>
+              </div>
+            </div>
+          </FormSection>
+
+          {/* Jumătatea de profil a termenului de 30 aprilie (art. 49 alin. (9)). Stă aici, lângă
+              raportare, fiindcă asta e: o întrebare al cărei singur efect e o alertă. Cealaltă
+              jumătate — uleiurile uzate — se citește din mișcări şi n-are rubrică. */}
+          <FormSection title={t.groupObligations}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="c-construction-permit">{t.constructionPermitHolder}</Label>
+                <Select
+                  id="c-construction-permit"
+                  value={constructionPermitHolder}
+                  onChange={(e) =>
+                    setConstructionPermitHolder(e.target.value as "" | "yes" | "no")
+                  }
+                >
+                  <option value="">{t.constructionPermitHolderUnset}</option>
+                  <option value="no">{t.constructionPermitHolderNo}</option>
+                  <option value="yes">{t.constructionPermitHolderYes}</option>
+                </Select>
+                <p className="mt-1 text-xs text-content-muted">{t.constructionPermitHolderHint}</p>
               </div>
             </div>
           </FormSection>

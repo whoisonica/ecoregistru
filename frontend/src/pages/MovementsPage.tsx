@@ -546,6 +546,17 @@ export function MovementsPage() {
                       <span className="block max-w-xs truncate text-xs text-content-subtle">
                         {m.wasteCodeName}
                       </span>
+                      {/* Galben, ca „Autorizație expirată”: rândul nu e greșit, dar poartă o
+                          afirmație pe care actul cere s-o susții cu o hârtie. Stă lângă cod, nu
+                          lângă partener, fiindcă ce se pune la îndoială e încadrarea, nu predarea
+                          — și de aceea apare și pe intrări, și pe generări. */}
+                      {m.mirrorClassificationUnproven && (
+                        <Tooltip content={t.mirrorCodeHint(m.mirrorOf)}>
+                          <Badge variant="warning" className="mt-0.5 block w-fit">
+                            {t.mirrorCode}
+                          </Badge>
+                        </Tooltip>
+                      )}
                       {(m.storageType || m.treatmentMethod) && (
                         <span className="mt-0.5 block text-xs text-content-muted">
                           {[
@@ -2373,11 +2384,27 @@ function MovementFormDialog({
                   </p>
                 )}
                 {/* Peste prag hârtia noastră nu e de ajuns, și e mai bine spus aici decât aflat la
-                    control: mai trebuie aprobarea din anexa 1 și notificarea ISU. */}
+                    control: mai trebuie aprobarea din anexa 1, iar ea trece prin patru mâini.
+                    Pașii se numerotează cu `who` scos în față — cine face fiecare pas e chiar
+                    informația care lipsea, nu lista în sine. */}
                 {anexa2Effective === false && (
-                  <p className="rounded-md border border-line bg-surface-sunken px-3 py-2 text-xs text-content-strong">
-                    {t.anexa2ApprovalMissing}
-                  </p>
+                  <div
+                    data-testid="anexa2-approval-road"
+                    className="space-y-2 rounded-md border border-line bg-surface-sunken px-3 py-2 text-xs text-content-strong"
+                  >
+                    <p>{t.anexa2ApprovalMissing}</p>
+                    <p className="font-medium">{t.anexa2ApprovalRoadTitle}</p>
+                    <ol className="list-decimal space-y-1 pl-5">
+                      {t.anexa2ApprovalRoad.map((step, i) => (
+                        <li key={i}>
+                          <span className="font-medium">{step.who}</span> {step.what}{" "}
+                          <span className="text-content-muted">({step.basis})</span>
+                        </li>
+                      ))}
+                    </ol>
+                    <p>{t.anexa2ApprovalRoadMine}</p>
+                    <p className="text-content-muted">{t.anexa2ApprovalValidity}</p>
+                  </div>
                 )}
                 <div>
                   <Label htmlFor="mv-anexa2-packaging">{t.anexa2Packaging}</Label>

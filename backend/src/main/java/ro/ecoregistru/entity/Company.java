@@ -108,6 +108,27 @@ public class Company {
     String wasteManagerTraining;
 
     /**
+     * Whether the company holds a building or demolition permit in its own name — the first of the
+     * two categories OUG 92/2021 art. 49 alin. (9) puts on the <b>30 April</b> reporting deadline
+     * (conformity with art. 17 alin. (7), the 70% target for construction and demolition waste).
+     *
+     * <p><b>Three states, and the third one matters.</b> {@code null} means nobody has answered and
+     * generates nothing; {@code false} is an answer that also generates nothing. They behave the
+     * same today and mean different things, which the profile screen shows — one is an empty
+     * rubric, the other a reply.
+     *
+     * <p><b>Why this is asked and not derived</b>, unlike the other half of the same deadline.
+     * A company holding used oils is visible in its movements — {@link
+     * ro.ecoregistru.util.UsedOilCodes} reads it — because a used-oil code <em>is</em> the fact.
+     * Chapter 17 is not: its 38 codes appear for anyone who moves rubble, while the obligation
+     * belongs to the permit holder. Deriving it would send a haulier a reminder for a report that
+     * is not his, which is the false alert {@code V21} spent a migration removing. An alert is a
+     * claim: positive signal, never silence.
+     */
+    @Column(name = "construction_permit_holder")
+    Boolean constructionPermitHolder;
+
+    /**
      * The unit printed on this company's Anexa 3 forms, or {@code null} for "whatever the movement
      * was recorded in" — which is what every account did before V19, so an unanswered profile keeps
      * behaving exactly as it did.

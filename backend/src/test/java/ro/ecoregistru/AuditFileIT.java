@@ -262,6 +262,118 @@ class AuditFileIT {
         assertThat(workPointNames).containsOnly("PL-UNIC-" + suffix);
     }
 
+    // --- G-2: the four obligations the dossier used to pass over in silence ---
+
+    /**
+     * OUG 92/2021 art. 62 alin. (1) lit. a) sanctions four obligations with the same
+     * 40.000–60.000 lei as the evidence itself, and until 11.09.2026 the dossier named none of
+     * them. Same pattern as the designated person: a gap must be visible as a gap.
+     */
+    @Test
+    void theReadmeNamesTheFourObligationsThatCarryTheSameFine() throws Exception {
+        String readme = flat(readmeOfDemo2026());
+
+        assertThat(readme)
+                .contains("ALTE OBLIGAȚII PE CARE LE VERIFICĂ INSPECTORUL")
+                .contains("art. 62 alin. (1) lit. a): 40.000–60.000 lei")
+                .contains("Colectarea separată — art. 17 alin. (3)")
+                .contains("Înscrierea în registrul ANMAP — art. 36 alin. (1)–(2)")
+                .contains("Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)")
+                .contains("Predarea uleiurilor uzate — art. 31 alin. (3)");
+    }
+
+    /**
+     * The separate collection of art. 17 alin. (3) stays a statement of the obligation and
+     * concludes nothing: it happens on site, and neither the presence nor the absence of a
+     * fraction in the evidence says whether it is done.
+     */
+    @Test
+    void separateCollectionNamesTheTextileDateAndDrawsNoConclusion() throws Exception {
+        assertThat(flat(readmeOfDemo2026()))
+                .contains("hârtie, metal, plastic și sticlă")
+                .contains("de la 1 ianuarie 2025 și pentru textile");
+    }
+
+    /**
+     * The demo tenant hands over waste oils on {@code 13 02 08*} in April 2026, so both derived
+     * obligations turn from a general note into a finding that names the code it found — with the
+     * asterisk, the way an official form spells it.
+     */
+    @Test
+    void theDerivedObligationsNameTheCodesTheyFound() throws Exception {
+        String readme = flat(readmeOfDemo2026());
+
+        // art. 8 alin. (4): a characterisation per code, and the dossier says per code.
+        assertThat(readme)
+                .contains("Obligatorie, și te privește")
+                .contains("per cod de deșeu")
+                .contains("13 02 08*");
+        // art. 31 alin. (3): the ENTIRE quantity, and where the recipients' authorisations sit.
+        assertThat(readme)
+                .contains("Te privește: în anii din dosar apar mișcări pe coduri de ulei uzat")
+                .contains("ÎNTREAGA cantitate")
+                .contains("autorizatii-parteneri.pdf");
+    }
+
+    /**
+     * And the other direction, which is the one that matters: a tenant with neither a hazardous
+     * code nor an oil code is told the two obligations do not activate on its data, rather than
+     * being handed an assertion it has to disprove. An alert is a statement — the rule
+     * {@code ReportType} keeps, and the reason V21 exists.
+     */
+    @Test
+    void aTenantWithNoHazardousAndNoOilCodesIsToldSo() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company other = companyRepository.save(Company.builder()
+                .name("Fără ulei SRL").cui("ROU" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        AppUser otherUser = appUserRepository.save(AppUser.builder()
+                .email("faraulei+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(other).enabled(true).createdAt(Instant.now()).build());
+        WorkPoint wp = workPointRepository.save(WorkPoint.builder()
+                .company(other).name("PL-" + suffix).active(true).createdAt(Instant.now()).build());
+        // Hârtie şi carton: non-hazardous, and nowhere near chapter 13.
+        WasteCode paper = wasteCodeRepository.findByCode("20 01 01").orElseThrow();
+        movementRepository.save(WasteMovement.builder()
+                .company(other).workPoint(wp).date(LocalDate.of(2026, 3, 10)).wasteCode(paper)
+                .quantity(new BigDecimal("100.000")).unit(Unit.KG).operation(WasteOperation.GENERATED)
+                .deleted(false).createdBy(otherUser.getId()).build());
+
+        String otherToken = jwtService.generateToken(otherUser);
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+        assertThat(flat(readme))
+                .contains("nu apare niciun cod periculos")
+                .contains("nu apare niciun cod de ulei uzat")
+                // The obligations are still named — only the conclusion changes.
+                .contains("Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)")
+                .contains("Predarea uleiurilor uzate — art. 31 alin. (3)")
+                .doesNotContain("Te privește");
+    }
+
+    private String readmeOfDemo2026() throws Exception {
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        return new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * README.txt is wrapped to fit paper, so a sentence of it may sit on two lines. What these
+     * tests are about is what the dossier says, not where it breaks — assert on the flattened
+     * text and the wrap stays free to change.
+     */
+    private static String flat(String readme) {
+        return readme.replaceAll("\\s+", " ");
+    }
+
     private List<String> zipEntryNames(byte[] zipBytes) throws Exception {
         List<String> names = new ArrayList<>();
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
