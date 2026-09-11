@@ -5,9 +5,9 @@ rulează local și are testele verzi.
 
 > **Unde suntem — 11.09.2026, seara.** **327 teste verzi** (0 eșecuri) și **14 suite de interfață**:
 > 303 verificări rulate (probele 1–12) plus **25 scrise și nerulate încă** (probele 13 și 14 — cer
-> servere pornite). În producție: `ecoregistru-api` la **v47**, `ecoregistru-app` la **v43**
-> (P1.10), cu **`V35` migrat acolo**. Local schema e la **`V37`** (codurile-oglindă), deci
-> următoarea liberă e **`V38`**.
+> servere pornite). În producție: `ecoregistru-api` la **v48**, `ecoregistru-app` la **v44**, cu
+> **`V37` migrat acolo** (11.09.2026, 12:02). Schema e la **`V37`** și în repo, deci următoarea
+> liberă e **`V38`**.
 > ✅ **Grupul 1 al modulului de generatori e închis: G-4 și G-5 sunt gata** (11.09, seara).
 > **G-4** — un cod-oglindă declarat nepericulos fără document justificativ e semnalat în registru
 > (`V37`, 11 teste). **G-5** — redenumirea ANPM→ANMAP, verificată **act cu act**, cu răspunsul în
@@ -24,7 +24,20 @@ rulează local și are testele verzi.
 > ✅ **G-3 e închis cu probe** (11.09): **termenul de 30 aprilie** e în calendar (`APM_ANNUAL_APRIL`,
 > **`V36`**), cu jumătatea de uleiuri derivată din mișcări și cea de construcții întrebată în profil.
 > Secțiunea „G-3".
-> ⬜ **Nimic din ziua asta nu e pe dyno** — producția e la `V35`, `api` v47, `app` v43.
+> ✅ **DEPLOYAT pe 11.09.2026, 12:02** — `ecoregistru-api` **v48** (`70f3e30`), `ecoregistru-app`
+> **v44** (`dd6f6bd`), **`V36` și `V37` migrate pe producție** („Successfully applied 2 migrations
+> […] now at version v37"). Garda de conținut a trecut curat pe amândouă părțile: backend doar
+> `.gitignore`, frontend `.gitignore` + cele două artefacte Vite. ⚠️ **Frontendul avea două
+> commituri în așteptare, nu unul** — cherry-pick-ul le-a luat pe amândouă, în ordine; garda se
+> citește la `tmp-frontend^^`, nu la `^`, când sunt două.
+> **Probe pe dyno:** bundle-ul servit conține „Cod-oglindă", „Drumul formularului de aprobare",
+> „30 aprilie" și **„ANMAP" de două ori, „ANPM" zero**; pasul 9 spune verbatim *„ISU-ul mai departe,
+> nu tu (art. 14)"*; `/api/v1/movements/1/anexa2` fără token → **401**, `/actuator/health` → **200**;
+> `Started EcoRegistruApplication in 9.102 seconds`.
+> ⬜ **Ce rămâne neprobat pe ecran cu sesiune reală: probele 13 și 14** — deployat nu înseamnă probat.
+> ⚠️ **De ținut minte, fără legătură cu felia:** înainte de swap, dyno-ul vechi a scris **73 de
+> `Error R14 (Memory quota exceeded)`**, ultimul la 09:02:48 UTC; cel nou a pornit curat. Nu e
+> regresie din ziua asta, dar e un prag de care ne apropiem.
 >
 > *(Rândurile de mai jos sunt nota de pe 10.09, păstrată ca istoric — cifrele ei sunt cele de atunci.)*
 >
@@ -6087,7 +6100,7 @@ fie exhaustive prin construcţie**, nu prin memento.
 de filtru se cere cu `hasSize`.
 
 **`V36`, aditivă**, o singură coloană nullable; niciun rând existent nu se atinge. `tsc` curat,
-`vite build` verde. **Nedeployat — pe producţie e `V35`.**
+`vite build` verde. ✅ **Deployată pe 11.09.2026, 12:02** (api v48) — vezi antetul.
 
 ## G-4, G-5 şi pasul întâi al lui G-6 — grupul 1 închis (11.09.2026, seara)
 
@@ -6140,7 +6153,8 @@ avertismentul se mută pe sursa aia şi devine întrebarea ascuţită.
 o reîncărcare a nomenclatorului sau o regulă rescrisă mai îngust cade în build, nu la client — şi
 unul pinuieşte **marginile de formulare**, adică exact ce ar fi ratat regula îngustă. **Suita
 backend: 327 de teste, 0 eşecuri** (erau 316). Proba de interfaţă e **scrisă şi nerulată**:
-`e2e/14-codul-oglinda.mjs`, 12 verificări, îşi scrie singură mişcările şi le şterge.
+`e2e/14-codul-oglinda.mjs`, 12 verificări, îşi scrie singură mişcările şi le şterge. ✅ **`V37` e pe
+producţie din 11.09.2026, 12:02** (api v48, app v44); badge-ul „Cod-oglindă" e în bundle-ul servit.
 
 ### G-5 — ANPM → ANMAP, verificat act cu act, şi inventarul care era greşit
 
@@ -6187,7 +6201,8 @@ cele două câmpuri pentru care ne-ar folosi: **CUI-ul** (cheia de potrivire cu 
 care va fi înlocuit de altul când apare procedura. Rămâne cu dată de reverificare, lunar.
 
 **`V37`, aditivă** — o coloană nullable, niciun rând şters. `tsc` curat, `vite build` verde.
-**Nedeployat — pe producţie e `V35`.**
+✅ **Deployat pe 11.09.2026, 12:02:** api **v48** (`70f3e30`), app **v44** (`dd6f6bd`), `V36` şi `V37`
+migrate pe producţie într-o singură pornire („now at version v37").
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
