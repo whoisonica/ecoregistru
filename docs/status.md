@@ -37,14 +37,15 @@ rulează local și are testele verzi.
 > ⬜ **Ce rămâne neprobat pe ecran cu sesiune reală: probele 13 și 14** — deployat nu înseamnă probat.
 > 🔴 **Și după deploy, o recitire a legii-cadru a scos al patrulea termen anual: 31 mai** (art. 44
 > alin. (3), amendă 40.000–60.000 lei). **Construit în aceeași seară** — `APM_ANNUAL_MAY`, 8 teste
-> noi, **fără migrare**. Secțiunea „G-10". **Nedeployat**: pe producție e codul de la 12:02.
+> noi, **fără migrare**. Secțiunea „G-10". ✅ **Deployat pe 11.09, 16:33**, odată cu G-7.
 > ✅ **Și G-7 e construit, tot în noaptea aceea — ultima felie de cod a modulului.** Buletinele de
 > analiză se leagă de **cod**, nu de mișcare (art. 8 alin. (4)): `V38`, ecran în **Setări**, fișiere
 > în dosarul de control grupate pe cod, iar punctul 3 al blocului „ALTE OBLIGAȚII" a trecut de la a
 > numi obligația la a o **constata** — „Buletine încărcate: 1 din 3. LIPSESC pentru: …". Tot atunci,
 > **G-4 și-a mutat sursa** pe buletin, cum era prevăzut, **fără** să scoată atașamentul de pe mișcare:
 > art. 8 alin. (2) numește două feluri de dovadă, nu unul. **346 de teste, 0 eșecuri** (erau 335),
-> `V38` e următoarea migrare, iar prima liberă devine **`V39`**. Secțiunea „G-7". ⬜ **Nedeployat.**
+> `V38` e migrată **pe producție** (11.09, 16:33 — api **v49**, app **v45**), iar prima liberă devine
+> **`V39`**. Secțiunea „G-7".
 > **Din modulul de generatori nu mai rămâne nicio felie de cod care să nu depindă de altcineva:**
 > G-8 stă pe pct. VIII (38 de parametri chimici = un buletin de laborator), G-6 e blocată de stat.
 > ⚠️ **De ținut minte, fără legătură cu felia:** înainte de swap, dyno-ul vechi a scris **73 de
@@ -6416,7 +6417,23 @@ listă fixată de mână ar fi trecut pe „lipsesc", adică din motivul greșit
 cererea **înaintea** validării noastre, deci clientul primea un mesaj de framework în locul celui
 care spune de ce fișierul e chiar obiectul. Parametrul e `required = false`, iar refuzul e al nostru.
 
-`tsc --noEmit` curat, `vite build` verde (666,46 kB). ⬜ **Nedeployat la scrierea rândului.**
+`tsc --noEmit` curat, `vite build` verde (666,46 kB).
+
+✅ **DEPLOYAT pe 11.09.2026, 16:33** — `ecoregistru-api` **v49** (`ba732477`), `ecoregistru-app`
+**v45** (`17b2e0a9`), **`V38` migrată pe dyno**: *„Migrating schema public to version 38 - analysis
+bulletins → Successfully applied 1 migration, now at version v38"*, pornire în 18,9 s. Odată cu ea a
+intrat şi **G-10**, care stătea nedeployat de seara trecută.
+⚠️ **Garda de conţinut s-a citit la `^^`, nu la `^`** — erau **două** commituri de cod în aşteptare
+pe fiecare parte (G-10 şi G-7), iar la un nivel garda „iese murdară" fără să fie ceva greşit. La
+`^^` a ieşit exact divergenţa stabilă: backend doar `.gitignore`, frontend `.gitignore` + cele două
+artefacte Vite. Cherry-pick la amândouă, în ordine.
+**Probe pe dyno, pe conţinut şi nu pe hash:** `/api/v1/analysis-bulletins` fără token → **401**
+(ruta există şi e închisă), `/actuator/health` → **200**, iar bundle-ul servit
+(`/assets/index-BE66neaE.js`) conţine „Buletine de analiză", „Caracterizarea deșeurilor
+periculoase", „Data buletinului" şi `analysis-bulletins` — plus „31 mai" şi „Programul de prevenire",
+adică şi felia de ieri.
+⬜ **Ce rămâne neprobat pe ecran, cu sesiune reală: cele trei probe de interfaţă** — 13 (drumul
+aprobării), 14 (codul-oglindă) şi una nouă, pentru buletine. *Deployat nu înseamnă probat.*
 
 📌 **Ce a ieșit pe lângă:** mecanica „deschide fișierul în tab cu sesiunea omului" — tabul cerut
 înainte de `await`, și lecția cu `noopener` care făcea ca fiecare fișier să se **descarce** — s-a
