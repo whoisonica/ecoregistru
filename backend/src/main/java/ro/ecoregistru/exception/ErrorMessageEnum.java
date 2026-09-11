@@ -82,6 +82,13 @@ public enum ErrorMessageEnum {
     ATTACHMENT_FETCH_FAILED("attachment.fetch.failed", "Fișierul nu a putut fi descărcat. Încearcă din nou peste câteva momente."),
     ATTACHMENT_TOO_LARGE("attachment.too.large", "Fișierul e prea mare. Cel mult 10 MB per fișier."),
 
+    // --- Buletine de analiză (OUG 92/2021 art. 8 alin. (4) și art. 48 alin. (2)) ---
+    BULLETIN_NOT_FOUND("bulletin.not.found", "Buletinul de analiză nu a fost găsit."),
+    BULLETIN_FILE_REQUIRED("bulletin.file.required", "Încarcă buletinul de analiză. Art. 48 alin. (2) cere să deții documentul, nu doar să declari că există."),
+    BULLETIN_LABORATORY_REQUIRED("bulletin.laboratory.required", "Scrie laboratorul care a emis buletinul."),
+    BULLETIN_ISSUE_DATE_REQUIRED("bulletin.issue.date.required", "Scrie data buletinului — cea de pe hârtia emisă de laborator."),
+    BULLETIN_ISSUE_DATE_IN_FUTURE("bulletin.issue.date.future", "Data buletinului e în viitor. Se trece data de pe hârtia emisă de laborator."),
+
     // --- Anexa 3 la HG 1061/2008 (formularul de transport) ---
     ANEXA3_REQUIRES_HANDOVER("anexa3.requires.handover", "Formularul de transport se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care o face."),
     ANEXA3_HAZARDOUS_NOT_ALLOWED("anexa3.hazardous", "Anexa 3 e formularul pentru deșeuri NEpericuloase. Pentru un cod periculos se folosește formularul de expediție/transport din anexa 2 la HG 1061/2008 — butonul „Anexa 2” de pe aceeași mișcare."),

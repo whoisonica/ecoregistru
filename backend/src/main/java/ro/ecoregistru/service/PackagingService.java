@@ -19,6 +19,7 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.repository.PackagingMarketEntryRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
+import ro.ecoregistru.repository.AnalysisBulletinRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.PackagingDeclaration;
@@ -35,6 +36,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import ro.ecoregistru.exception.BusinessException;
@@ -66,6 +68,7 @@ public class PackagingService {
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
     WasteMovementMapper movementMapper;
+    AnalysisBulletinRepository bulletinRepository;
     PackagingDeclarationBuilder builder;
     PackagingDeclarationGenerator pdfGenerator;
     PackagingDeclarationXlsGenerator xlsGenerator;
@@ -84,10 +87,13 @@ public class PackagingService {
      */
     @Transactional(readOnly = true)
     public List<WasteMovementResponse> movements(int year) {
-        return yearMovements(TenantContext.require(), year).stream()
+        UUID tenantId = TenantContext.require();
+        // Once for the page, not per row — same reason as on the movements screen.
+        Set<String> covered = Set.copyOf(bulletinRepository.findCoveredWasteCodes(tenantId));
+        return yearMovements(tenantId, year).stream()
                 .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
                 .sorted(Comparator.comparing(WasteMovement::getDate).reversed())
-                .map(movementMapper::toResponse)
+                .map(m -> movementMapper.toResponse(m, covered))
                 .toList();
     }
 

@@ -601,6 +601,27 @@ export interface Attachment {
   contentType: string;
 }
 
+// --- Analysis bulletins (G-7) ---
+
+/**
+ * Un buletin de analiză, legat de **cod**, nu de mișcare — OUG 92/2021 art. 8 alin. (4).
+ *
+ * Fără `url`, ca `Attachment` și din același motiv (11-bis): conținutul se cere pe
+ * `/analysis-bulletins/{id}/continut`, cu sesiune și verificare de firmă.
+ */
+export interface AnalysisBulletin {
+  id: string;
+  wasteCodeId: string;
+  /** Codul cu asteriscul pe care actul i-l dă când e periculos. */
+  wasteCode: string;
+  wasteCodeName: string;
+  hazardous: boolean;
+  /** Data de pe hârtia laboratorului, nu ziua încărcării. */
+  issueDate: string;
+  laboratory: string;
+  fileName: string | null;
+}
+
 // --- Waste movements ---
 
 export interface WasteMovement {

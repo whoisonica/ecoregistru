@@ -12,9 +12,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
+import ro.ecoregistru.entity.AnalysisBulletin;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Attachment;
 import ro.ecoregistru.entity.WasteCode;
+import ro.ecoregistru.repository.AnalysisBulletinRepository;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.AttachmentRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
@@ -22,6 +24,7 @@ import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
@@ -59,12 +62,18 @@ class MirrorWasteCodeIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired WasteMovementRepository movementRepository;
     @Autowired AttachmentRepository attachmentRepository;
+    @Autowired AnalysisBulletinRepository bulletinRepository;
 
     private String token;
     private UUID workPointId;
 
     @BeforeEach
     void setUp() {
+        // Jumătate din probele de aici afirmă că avertismentul e APRINS, adică tocmai că firma nu
+        // deține dovada. Un buletin lăsat în urmă de proba care îl încarcă ar stinge avertismentul
+        // în toate celelalte, și ele ar cădea din motivul greșit.
+        bulletinRepository.deleteAll();
+
         AppUser admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
         token = jwtService.generateToken(admin);
         workPointId = workPointRepository.findAllByCompany_Id(admin.getCompany().getId()).get(0).getId();
@@ -165,6 +174,37 @@ class MirrorWasteCodeIT {
                 .fileName("buletin-analiza.pdf").contentType("application/pdf")
                 .createdAt(Instant.now()).build());
 
+        assertThat(read(id).get("mirrorClassificationUnproven").asBoolean()).isFalse();
+    }
+
+    /**
+     * G-7 mută sursa tare a răspunsului: un <b>buletin de analiză pe cod</b> stinge avertismentul
+     * pe <em>orice</em> mișcare a acelui cod, inclusiv pe una fără niciun atașament.
+     *
+     * <p>Asta e dovada pe care art. 8 alin. (2) o numește pe litere („buletinelor de analiză"), și
+     * e legată acolo unde o cere art. 8 alin. (4) — de codul de deșeu, nu de o cursă. Atașamentul
+     * de pe mișcare rămâne valabil alături, fiindcă aceeași frază admite „alte documente
+     * relevante"; testul de deasupra îl ține pe loc.
+     */
+    @Test
+    void anAnalysisBulletinOnTheCodeAnswersItForEveryMovement() throws Exception {
+        WasteCode mirror = wasteCodeRepository.findByCode("17 05 04").orElseThrow();
+        UUID id = UUID.fromString(createMovement("17 05 04").get("id").asText());
+        assertThat(read(id).get("mirrorClassificationUnproven").asBoolean()).isTrue();
+
+        AppUser admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
+        bulletinRepository.save(AnalysisBulletin.builder()
+                .company(admin.getCompany())
+                .wasteCode(mirror)
+                .issueDate(LocalDate.now().minusMonths(1))
+                .laboratory("Laborator Alfa")
+                .url("https://res.cloudinary.com/x/image/authenticated/s--sig--/v1/b.pdf")
+                .publicId("ecoregistru/bulletins/b")
+                .resourceType("image").deliveryType("authenticated").format("pdf")
+                .fileName("buletin.pdf").contentType("application/pdf")
+                .createdAt(Instant.now()).build());
+
+        // Aceeași mișcare, neatinsă: ce s-a schimbat e că firma deține acum caracterizarea codului.
         assertThat(read(id).get("mirrorClassificationUnproven").asBoolean()).isFalse();
     }
 

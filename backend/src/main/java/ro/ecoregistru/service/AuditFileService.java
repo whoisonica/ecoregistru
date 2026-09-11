@@ -24,6 +24,8 @@ import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.NotFoundException;
+import ro.ecoregistru.entity.AnalysisBulletin;
+import ro.ecoregistru.repository.AnalysisBulletinRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -101,6 +103,7 @@ public class AuditFileService {
     PartnerRepository partnerRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
+    AnalysisBulletinRepository bulletinRepository;
     CloudinaryStorageService storageService;
 
     /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
@@ -130,6 +133,16 @@ public class AuditFileService {
         List<Partner> partners = partnerRepository.findAllByCompany_Id(tenantId);
         int firstYear = year - years + 1;
 
+        // Read once, used twice, like the evidence below: the README reports coverage per
+        // hazardous code, and the files themselves go into the archive.
+        //
+        // At the root, not under a year — and that is the act talking, not a layout preference.
+        // A bulletin characterises a waste code, and art. 48 alin. (2) obliges the holder to keep
+        // holding it: it has no reporting year to belong to, exactly like the partner
+        // authorizations beside it. Filing a copy under every year would say the opposite.
+        List<AnalysisBulletin> bulletins =
+                bulletinRepository.findAllByCompany_IdOrderByIssueDateDescCreatedAtDesc(tenantId);
+
         // Read once, used twice: the README says how many evidence lines each year actually has,
         // and the exports print them.
         //
@@ -149,7 +162,8 @@ public class AuditFileService {
              ZipOutputStream zip = new ZipOutputStream(out)) {
 
             writeEntry(zip, "README.txt",
-                    readme(company, firstYear, year, evidenceByYear).getBytes(StandardCharsets.UTF_8));
+                    readme(company, firstYear, year, evidenceByYear, bulletins)
+                            .getBytes(StandardCharsets.UTF_8));
             for (int y = firstYear; y <= year; y++) {
                 // A single year stays where it always was; several would collide on the file
                 // names, so each gets a folder named after it.
@@ -157,6 +171,7 @@ public class AuditFileService {
             }
             writeEntry(zip, "autorizatii-parteneri.pdf",
                     partnerAuthorizationsPdf(company.getName(), partners));
+            writeBulletins(zip, bulletins);
 
             zip.finish();
             return out.toByteArray();
@@ -228,6 +243,107 @@ public class AuditFileService {
                     .append(downloaded).append(" incluse în arhivă.\n");
         }
         writeEntry(zip, prefix + "atasamente/index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    // --- analysis bulletins ---
+
+    /**
+     * The analysis bulletins, at the root of the archive, with an index that reads like the
+     * attachment one — OUG 92/2021 art. 8 alin. (4) and art. 48 alin. (2).
+     *
+     * <p>Grouped by waste code rather than listed flat, because that is the question an inspection
+     * asks: <em>for this code, do you hold the characterisation?</em> Several bulletins on one code
+     * are its history — a re-analysis does not delete the earlier one, since a sheet filed in an
+     * earlier year rested on it — so the newest is named first and the rest follow under it.
+     *
+     * <p>Written even when empty, and that is deliberate: an absent folder reads as a feature
+     * nobody used, while a folder saying "nu există niciun buletin încărcat" is the finding. Same
+     * principle as {@link #wasteManagerNote}.
+     */
+    private void writeBulletins(ZipOutputStream zip, List<AnalysisBulletin> bulletins)
+            throws IOException {
+        StringBuilder index = new StringBuilder();
+        index.append("Buletine de analiză — caracterizarea deșeurilor periculoase\n");
+        index.append("===========================================================\n\n");
+        index.append("Temei: OUG 92/2021, art. 8 alin. (4) — producătorii și deținătorii persoane\n");
+        index.append("juridice efectuează și dețin o caracterizare a deșeurilor periculoase generate\n");
+        index.append("din propria activitate — și art. 48 alin. (2), care cere ca buletinele să fie\n");
+        index.append("DEȚINUTE și transmise la cerere autorităților.\n\n");
+
+        if (bulletins.isEmpty()) {
+            index.append("Nu există niciun buletin de analiză încărcat în aplicație.\n\n")
+                    .append("Dacă firma generează deșeuri periculoase, caracterizarea e obligatorie per cod\n")
+                    .append("de deșeu, iar buletinele se păstrează la dosar. Vezi punctul 3 din README.txt.\n");
+            writeEntry(zip, "buletine-analiza/index.txt",
+                    index.toString().getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+
+        Map<String, List<AnalysisBulletin>> byCode = new LinkedHashMap<>();
+        for (AnalysisBulletin b : bulletins) {
+            byCode.computeIfAbsent(b.getWasteCode().getCode(), k -> new java.util.ArrayList<>()).add(b);
+        }
+
+        int n = 0;
+        int downloaded = 0;
+        for (Map.Entry<String, List<AnalysisBulletin>> entry : byCode.entrySet()) {
+            List<AnalysisBulletin> forCode = entry.getValue();
+            String label = WasteCodeLabel.official(entry.getKey(),
+                    forCode.get(0).getWasteCode().isHazardous());
+            index.append("Cod ").append(label).append(" — ")
+                    .append(forCode.get(0).getWasteCode().getName()).append("\n");
+            for (int i = 0; i < forCode.size(); i++) {
+                AnalysisBulletin b = forCode.get(i);
+                n++;
+                String entryName = "buletine-analiza/" + n + "-" + bulletinFileName(b);
+                index.append("  ").append(i == 0 ? "cel mai recent" : "anterior     ").append(" : ")
+                        .append(b.getIssueDate().format(DATE))
+                        .append(" · ").append(b.getLaboratory()).append("\n")
+                        .append("                   fișier: ").append(bulletinFileName(b)).append("\n");
+
+                byte[] bytes = tryDownloadBulletin(b);
+                if (bytes != null) {
+                    writeEntry(zip, entryName, bytes);
+                    downloaded++;
+                    index.append("                   inclus în arhivă: da\n");
+                } else {
+                    index.append("                   inclus în arhivă: NU (descărcarea a eșuat)\n");
+                }
+            }
+            index.append("\n");
+        }
+        index.append("Total: ").append(n).append(" buletine pe ").append(byCode.size())
+                .append(" coduri, ").append(downloaded).append(" incluse în arhivă.\n");
+        writeEntry(zip, "buletine-analiza/index.txt",
+                index.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Best-effort, like {@link #tryDownload}: a failed download is reported, never fatal. */
+    private byte[] tryDownloadBulletin(AnalysisBulletin b) {
+        try {
+            String url = b.getDeliveryType() == null
+                    ? b.getUrl()
+                    : storageService.signedUrl(b.getPublicId(), b.getResourceType(),
+                            b.getDeliveryType(), b.getFormat());
+            return storageService.fetch(url);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Bulletin download interrupted for id={}", b.getId());
+        } catch (Exception e) {
+            log.warn("Bulletin download failed for id={}: {}", b.getId(), e.getMessage());
+        }
+        return null;
+    }
+
+    /** A filesystem-safe name, built from the code and the issue date when the file has none. */
+    private static String bulletinFileName(AnalysisBulletin b) {
+        String name = b.getFileName();
+        if (name == null || name.isBlank()) {
+            name = "buletin-" + b.getWasteCode().getCode().replace(" ", "")
+                    + "-" + b.getIssueDate()
+                    + (b.getFormat() == null || b.getFormat().isBlank() ? "" : "." + b.getFormat());
+        }
+        return name.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
     /**
@@ -340,7 +456,8 @@ public class AuditFileService {
      * folder that holds it, and says up front why three is the number that matters.
      */
     private String readme(Company company, int firstYear, int lastYear,
-                          Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+                          Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear,
+                          List<AnalysisBulletin> bulletins) {
         boolean single = firstYear == lastYear;
         StringBuilder sb = new StringBuilder();
         sb.append("DOSAR DE CONTROL — ").append(company.getName()).append("\n");
@@ -381,17 +498,22 @@ public class AuditFileService {
             sb.append("\n");
         }
 
+        sb.append(single ? "La rădăcina arhivei:\n" : "La rădăcina arhivei, o singură dată:\n");
         if (!single) {
-            sb.append("La rădăcina arhivei, o singură dată:\n")
-                    .append(entry("autorizatii-parteneri.pdf",
-                            "autorizațiile partenerilor și statusul lor",
-                            "(status citit la data generării, nu pe an)"))
-                    .append("\n");
+            sb.append(entry("autorizatii-parteneri.pdf",
+                    "autorizațiile partenerilor și statusul lor",
+                    "(status citit la data generării, nu pe an)"));
         }
+        // Not under a year, whatever the span: a bulletin characterises a code and art. 48
+        // alin. (2) obliges the holder to keep holding it — it has no reporting year.
+        sb.append(entry("buletine-analiza/",
+                        "buletinele de analiză care caracterizează deșeurile",
+                        "periculoase, grupate pe cod (+ index.txt)"))
+                .append("\n");
 
         sb.append(marketRoleNote(company))
                 .append(wasteManagerNote(company))
-                .append(otherObligationsNote(company, evidenceByYear))
+                .append(otherObligationsNote(company, evidenceByYear, bulletins))
                 .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
                 .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
@@ -530,16 +652,25 @@ public class AuditFileService {
      * and nothing is concluded.
      */
     private String otherObligationsNote(Company company,
-            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear,
+            List<AnalysisBulletin> bulletins) {
         List<MonthlyEvidenceResponse> lines = evidenceByYear.values().stream()
                 .filter(java.util.Objects::nonNull)
                 .flatMap(List::stream)
                 .toList();
-        List<String> hazardous = lines.stream()
+        // Raw codes, not labels: this set is compared against the bulletins, and the asterisk is
+        // added only where the text is printed.
+        List<String> hazardousCodes = lines.stream()
                 .filter(MonthlyEvidenceResponse::hazardous)
-                .map(l -> WasteCodeLabel.official(l.wasteCode(), true))
+                .map(MonthlyEvidenceResponse::wasteCode)
                 .distinct()
                 .sorted()
+                .toList();
+        Set<String> covered = bulletins.stream()
+                .map(b -> b.getWasteCode().getCode())
+                .collect(java.util.stream.Collectors.toSet());
+        List<String> hazardous = hazardousCodes.stream()
+                .map(code -> WasteCodeLabel.official(code, true))
                 .toList();
         List<String> oils = UsedOilCodes
                 .among(lines.stream().map(MonthlyEvidenceResponse::wasteCode).toList())
@@ -573,16 +704,47 @@ public class AuditFileService {
             sb.append("     Producătorii și deținătorii persoane juridice sunt obligați să efectueze și să\n")
                     .append("     dețină o caracterizare a deșeurilor periculoase generate din propria\n")
                     .append("     activitate. În anii din dosar nu apare niciun cod periculos, deci obligația\n")
-                    .append("     nu se activează pe aceste date.\n\n");
+                    .append("     nu se activează pe aceste date.\n");
+            if (!bulletins.isEmpty()) {
+                sb.append("     Dosarul conține totuși ").append(bulletins.size())
+                        .append(" buletine încărcate — vezi buletine-analiza/.\n");
+            }
+            sb.append("\n");
         } else {
+            // The finding G-7 made possible. Until 11.09.2026 this block named the obligation and
+            // then admitted "aplicația nu ține încă buletinele de analiză" — it could say what was
+            // required but not whether it had been done. Now the bulletins hang off the code, so
+            // the dossier reports coverage per code, and the gap is visible as a gap.
+            List<String> missing = hazardousCodes.stream()
+                    .filter(code -> !covered.contains(code))
+                    .map(code -> WasteCodeLabel.official(code, true))
+                    .toList();
+            int haveCount = hazardous.size() - missing.size();
             sb.append("     Obligatorie, și te privește: în anii din dosar apar ")
                     .append(hazardous.size()).append(" coduri periculoase.\n")
                     .append(wrapped("     ", "Codurile: " + String.join(", ", hazardous) + "."))
                     .append("     Art. 8 alin. (4) cere o caracterizare a deșeurilor periculoase generate din\n")
                     .append("     propria activitate — per cod de deșeu, fiindcă scopurile pe care le enumeră\n")
                     .append("     (amestecare, pregătire, reciclare, valorificare, eliminare) sunt proprietăți\n")
-                    .append("     ale tipului de deșeu, nu ale unui transport. Aplicația nu ține încă\n")
-                    .append("     buletinele de analiză: se păstrează la dosar, pe hârtie, lângă acesta.\n\n");
+                    .append("     ale tipului de deșeu, nu ale unui transport.\n");
+            if (missing.isEmpty()) {
+                sb.append("     ✓ Ai buletin de analiză încărcat pentru toate cele ").append(haveCount)
+                        .append(". Fișierele sunt în buletine-analiza/,\n")
+                        .append("       grupate pe cod, cu data și laboratorul fiecăruia.\n");
+            } else {
+                sb.append("     Buletine încărcate: ").append(haveCount).append(" din ")
+                        .append(hazardous.size()).append(".\n")
+                        .append(wrapped("     ", "LIPSESC pentru: " + String.join(", ", missing) + "."))
+                        .append("     Art. 48 alin. (2) cere să DEȚII buletinele și să le transmiți la cerere.\n")
+                        .append("     Dacă le ai pe hârtie, încarcă-le în aplicație (Setări → Buletine de\n")
+                        .append("     analiză) ca să iasă în dosar odată cu restul; dacă nu le ai, sunt de\n")
+                        .append("     cerut laboratorului înainte de control.\n");
+            }
+            // The act dates the evidence, not the bulletin, and the one thing it does not say is
+            // how often the analysis must be redone. We do not invent that term.
+            sb.append("     ⓘ Buletinul nu are termen de valabilitate scris în act: art. 48 alin. (2) cere\n")
+                    .append("       să-l deții, iar cât de des trebuie refăcută analiza pentru același cod ține\n")
+                    .append("       de practica inspectorului. Aplicația păstrează istoricul, nu-l expiră.\n\n");
         }
 
         sb.append("  4. Predarea uleiurilor uzate — art. 31 alin. (3)\n");
