@@ -337,6 +337,28 @@ fişierul, nu ce versiune era în el.
 > HG 856/2002 n-au fost redenumite la rândul lor, formularele tipărite după ele trebuie să păstreze
 > numele din **actul care le cere**, nu din legea-cadru. E o verificare separată, per act — vezi
 > `todo-lansare.md` P3.8.
+>
+> ✅ **Verificarea s-a făcut pe 11.09.2026, şi a răspuns în amândouă capetele** (felia G-5):
+>
+> | Actul | Redenumit? | Ce urmează din asta |
+> |---|---|---|
+> | **OUG 92/2021** | **da**, art. IV din Legea 26/2026, „în întreg cuprinsul" | tot ce citează legea-cadru spune **ANMAP** |
+> | **Ordinul 794/2012** | **nu** — neatins de vreo modificare, scrie şi azi „Agenţia Naţională pentru Protecţia Mediului" (art. 2 alin. (2), art. 9) | actul rămâne cu numele lui |
+> | **HG 856/2002** | **irelevant** — nu numeşte nicio agenţie: peste tot scrie „autoritatea publică centrală de protecţie a mediului" şi „autorităţile publice teritoriale" | nimic de schimbat |
+>
+> 🔴 **Şi inventarul feliei era greşit exact pe partea care o făcea grea.** Cele două locuri notate
+> „ajunge pe hârtie? **da**" **nu ajung pe hârtie**: `PackagingOperatorRole.addressee()` n-are azi
+> niciun apel, iar `anexa3AddresseeAnpm` se randează în `PackagingPage`, pe ecran. **Niciunul dintre
+> cele şase documente oficiale pe care le tipărim nu poartă numele agenţiei** — modelele n-au
+> rubrică de destinatar. Deci întreaga dilemă „numele actului sau numele de azi?" se juca pe patru
+> şiruri de ecran, nu pe hârtie.
+>
+> ✅ **Regula aleasă, şi e generală:** *unde citim actul, numele din act; unde îi spunem clientului
+> unde să se ducă, numele instituţiei de azi.* Pe ecran scrie **ANMAP** (destinatarul Anexei 3
+> Ambalaje, eticheta comerciantului, exemplul din nota de termen), fiindcă omul care citeşte rândul
+> va căuta „ANMAP" — site-ul e `anmap.gov.ro`. Citatele din Ordinul 794/2012 rămân cum le scrie
+> ordinul. Dacă vreodată un formular chiar capătă rubrică de destinatar, regula spune singură ce se
+> tipăreşte în ea.
 
 ### 2.1 ARTICOLUL 48 — Păstrarea evidenţei
 
@@ -685,8 +707,20 @@ Deci regimul uleiurilor uzate e în întregime în art. 31–32.*
 > `Partner.authorizationExpiry` din model spune „e bună". Nu e o nuanţă: art. 34¹ alin. (2) pune
 > suspendarea şi anularea în acelaşi rând cu viza, deci sunt evenimente aşteptate, nu excepţii.
 >
-> ⏳ **Cele 60 de zile ale ANMAP s-au împlinit pe ~09.09.2026** — adică ieri. Primul pas al feliei e
-> să ne uităm dacă lista şi ordinul chiar există. Felia: `todo-lansare.md` **P3.9**.
+> ⏳ ~~**Cele 60 de zile ale ANMAP s-au împlinit pe ~09.09.2026** — adică ieri. Primul pas al feliei
+> e să ne uităm dacă lista şi ordinul chiar există.~~
+>
+> 🔴 **Ne-am uitat, pe 11.09.2026: nu există nici lista, nici ordinul.** `anmap.gov.ro` are un meniu
+> „Autorizaţii" cu două intrări — *Listă autorizaţii de mediu 01.01.2024–31.07.2025* şi
+> *Centralizator 01.08.2025 – prezent* —, iar centralizatorul e un **tabel HTML** cu: titlu, data
+> postării, link, categorie, autoritate emitentă, adresa PDF-ului, **denumire titular**, judeţ,
+> localitate, tip document, data emiterii, număr act. **Nu e lista de la art. 34¹**, şi îi lipsesc
+> exact cele două câmpuri pentru care ne-ar folosi: **CUI-ul** (cheia de potrivire cu `Partner`) şi
+> **statusul vizei anuale**. Nici ordinul de ministru de la art. III alin. (2) nu e publicat.
+> **Deci felia nu se poate dimensiona azi**, şi asta e chiar răspunsul pasului întâi: nu se
+> scrapează un tabel care va fi înlocuit de altul, cu altă formă, când apare procedura.
+> ⏳ **De reverificat**, şi n-are rost mai des de o dată pe lună. Felia: `todo-lansare.md` **P3.9**,
+> `todo-generator.md` **G-6**.
 
 ---
 
@@ -771,6 +805,9 @@ Iar temeiul HG-ului 1061/2008 e chiar în act, la **art. 27 alin. (3)**:
 > 2. **Art. 8 alin. (2) e o regulă verificabilă, nu o notă.** Dacă un cod-oglindă e declarat
 >    nepericulos fără buletin, încadrarea e nelegală prin construcţie. Aplicaţia ştie ambele lucruri
 >    (codul are pereche cu asterisc; există sau nu un buletin ataşat) — deci poate să o spună.
+>    ✅ **Construită pe 11.09.2026** (felia G-4): `V37` pune perechea în nomenclator, iar registrul
+>    de mişcări poartă badge-ul „Cod-oglindă". Ce a ieşit din construcţie şi merită ştiut e mai jos,
+>    la **§3.4**: perechea e derivabilă din numele oficial, dar **nu după o frază**.
 > 3. **Art. 17 alin. (3) şi art. 36 alin. (2) sunt rubrici de dosar**, în acelaşi tipar cu persoana
 >    desemnată de la art. 23 alin. (4): **absenţa unei obligaţii legale e ea însăşi constatarea.**
 >    Nu cer ecrane noi, cer o propoziţie în dosarul de control.
@@ -834,6 +871,49 @@ obținute din surse independente, se validează reciproc.
 
 > **Compatibilitate:** un client cu documente vechi poate avea hârtii pe `13 03 05*`. Dacă apare
 > cazul, se tratează ca alias istoric către `13 03 06*` — nu se reintroduce în nomenclator.
+
+---
+
+### 3.4 Perechile-oglindă: **161** din 842, derivate din numele oficial (11.09.2026)
+
+Art. 8 alin. (2) din OUG 92/2021 vorbeşte despre „un tip de deşeu care se încadrează sub două coduri
+diferite". Modelul nostru n-avea perechea deloc — `WasteCode` ţine un `hazardous` izolat. Dar
+**perechea e în chiar numele codului nepericulos**, aşa cum îl scrie Decizia 2014/955/UE:
+
+```
+17 05 04,pământ și pietre, altele decât cele specificate la 17 05 03,false
+18 01 01,obiecte ascuțite (cu excepția 18 01 03),false
+```
+
+Deci nu trebuie cerută nimănui şi nu se tastează: se extrage o dată, la migrare (`V37`).
+
+🔴 **Şi aici e ce merită ţinut minte, fiindcă e o lecţie de acelaşi fel cu celelalte din fişierul
+ăsta: regula nu e a unei fraze, e a codului citat.** Nota care a cerut felia se sprijinea pe
+formularea „**altele decât cele specificate la**" — 138 de rânduri în CSV. Numărate una câte una:
+
+| Regula | Câte prinde | Ce scapă |
+|---|---|---|
+| fraza „altele decât cele specificate la" | **130** *(din 138: şapte sunt ele însele periculoase, iar `03 03 11` citează un cod nepericulos)* | 31 de oglinzi adevărate |
+| „numele citează un cod periculos" | **161** | — |
+
+Cele 31 în plus sunt scrise de act în alte patru feluri, pentru exact acelaşi lucru: „altele decât
+cele **menţionate** la" (`01 04 08`), „**alte particule** decât cele specificate la" (`10 09 12`),
+„(**cu excepţia** X)" (`16 06 04`, `18 01 01`, `18 02 01`) şi „**exclusiv** praful de cazan
+specificat la" (`10 01 01`). **Toate 161 au fost citite pe rând: zero fals-pozitive.** Şi printre
+cele 31 stau **obiectele ascuţite din cap. 18** — locul unde o încadrare greşită costă cel mai mult.
+
+📌 **Filtrul „codul citat e periculos" îşi câştigă locul pe un singur rând din 842**, şi merită
+numit: `03 03 11` (nămoluri de la epurarea efluenţilor) citează `03 03 10`, care e **nepericulos**.
+Fără filtru, clientul ar fi primit un avertisment pentru o încadrare pe care actul n-o condiţionează
+de nimic — adică fix alerta falsă pe care `V21` a costat o migrare s-o scoată.
+
+⚠️ Jumătatea periculoasă a unei oglinzi **nu** e oglindă, oricât ar semăna numele (`16 01 21*`
+poartă chiar fraza). Art. 8 alin. (2) condiţionează încadrarea *ca nepericulos*; cine a declarat
+periculos n-are ce dovedi.
+
+**Unde e în cod:** `V37__mirror_waste_codes.sql` (coloana `waste_codes.mirror_of`),
+`WasteMovementMapper.mirrorClassificationUnproven`, proba `MirrorWasteCodeIT` (11 teste, dintre care
+unul pinuieşte cifra 161 şi unul marginile de formulare).
 
 ---
 

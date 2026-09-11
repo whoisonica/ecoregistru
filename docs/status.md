@@ -3,7 +3,32 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 10.09.2026.** 300 de teste verzi (0 eșecuri) și **11 probe de interfață, 281 de
+> **Unde suntem — 11.09.2026, seara.** **327 teste verzi** (0 eșecuri) și **14 suite de interfață**:
+> 303 verificări rulate (probele 1–12) plus **25 scrise și nerulate încă** (probele 13 și 14 — cer
+> servere pornite). În producție: `ecoregistru-api` la **v47**, `ecoregistru-app` la **v43**
+> (P1.10), cu **`V35` migrat acolo**. Local schema e la **`V37`** (codurile-oglindă), deci
+> următoarea liberă e **`V38`**.
+> ✅ **Grupul 1 al modulului de generatori e închis: G-4 și G-5 sunt gata** (11.09, seara).
+> **G-4** — un cod-oglindă declarat nepericulos fără document justificativ e semnalat în registru
+> (`V37`, 11 teste). **G-5** — redenumirea ANPM→ANMAP, verificată **act cu act**, cu răspunsul în
+> amândouă capetele. **G-6 pasul 1** — lista publică de la art. 34¹ **nu există încă**, nici ordinul
+> de ministru; felia rămâne nedimensionabilă, cu dată de reverificare. Secțiunea „G-4, G-5 și pasul
+> întâi al lui G-6".
+> ✅ **G-2 e închis cu probe** (11.09): dosarul de control numește cele patru obligații de
+> 40.000–60.000 lei pe care le tăcea, iar două dintre ele sunt **constatări** — se citesc din
+> evidență și numesc codurile găsite. Semnalul „ulei uzat" e scris o singură dată
+> (`util/UsedOilCodes.java`), fiindcă îl cer două articole diferite; **G-3 îl are deja gata.**
+> 🟡 **G-1 e construit, nu probat** (11.09): cei nouă pași ai aprobării apar peste prag, cu autorul
+> fiecăruia, iar pasul 9 spune **ISU**, nu client. Proba de interfață e scrisă și **nerulată** —
+> `e2e/13-drumul-aprobarii.mjs`. Secțiunea „G-1 și G-2".
+> ✅ **G-3 e închis cu probe** (11.09): **termenul de 30 aprilie** e în calendar (`APM_ANNUAL_APRIL`,
+> **`V36`**), cu jumătatea de uleiuri derivată din mișcări și cea de construcții întrebată în profil.
+> Secțiunea „G-3".
+> ⬜ **Nimic din ziua asta nu e pe dyno** — producția e la `V35`, `api` v47, `app` v43.
+>
+> *(Rândurile de mai jos sunt nota de pe 10.09, păstrată ca istoric — cifrele ei sunt cele de atunci.)*
+>
+> **Unde eram — 10.09.2026.** 300 de teste verzi (0 eșecuri) și **11 probe de interfață, 281 de
 > verificări**. Migrări până la **`V35`**, următoarea liberă e **`V36`**. În producție:
 > `ecoregistru-api` la **v47**, `ecoregistru-app` la **v42**, cu **`V35` migrat acolo**.
 > **P0 e închis, toate opt.** **11-bis și 11-ter sunt livrate și pe dyno**, cu probele lângă ele:
@@ -5882,6 +5907,287 @@ rămâne cum era — avocat, semnături — doar că acum ce se citeşte e şi c
 pentru un fişier care există şi pe care `tsc` şi `vite build` îl rezolvă fără să clipească. Nu era
 codul nou: era graful de module al unui Vite pornit demult. **Repornit, totul a trecut din prima.**
 Când o probă cade pe ceva ce compilatorul spune că e în regulă, întâi se reporneşte serverul.
+
+## G-1 şi G-2 — ce spune ecranul peste prag, şi ce tăcea dosarul (11.09.2026)
+
+Primele două felii din `todo-generator.md`, luate împreună fiindcă sunt acelaşi fel de lucru: **text
+pe tipare deja probate**. Niciuna nu repară ceva rupt — `tsc` era verde şi înainte, dosarul se
+genera şi înainte. Ce se putea strica aici e o **afirmaţie**.
+
+### G-1 — cei nouă paşi ai aprobării
+
+Peste 1 t/an, art. 7 din HG 1061/2008 cere şi formularul de aprobare din anexa 1. Ecranul îi
+tipărea clientului rubrica „nr. formularului de aprobare" şi îi spunea, într-un paragraf, primii
+cinci paşi. Restul — că hârtia se întoarce la el **şi** la agenţia lui, că **el** o duce la ISU
+pentru autorizarea rutei, şi ce se întâmplă după — nu apărea nicăieri. E singurul loc din aplicaţie
+unde clientul poate crede că a terminat când n-a terminat.
+
+Acum apar toţi nouă, fiecare cu **cine** îl face şi cu articolul lui, şi numai peste prag: sub prag
+art. 6 alin. (1) scoate tocmai aprobarea, iar nouă paşi arătaţi cuiva care n-are nevoie de ei sunt
+exact felul de alertă falsă pentru care s-a scris `V21`.
+
+**Textul stă ca date, nu ca frază.** `anexa2ApprovalRoad` din `strings.ts` e o listă de nouă
+`{who, what, basis}`. Forma nu e stilistică: un pas nu se **poate** scrie fără să spună cine îl
+face, adică fix greşeala pe care felia o repară. Un paragraf lung ar fi permis-o din nou la prima
+rescriere.
+
+🔴 **Pasul 9 rămâne capcana, şi e scris de două ori.** Art. 14 alin. (1) dă notificarea de 48 de ore
+**ISU-ului**, nu clientului — documentaţia noastră a scris invers pe 10.09 şi greşeala ajunsese pe
+ecran. Lista îl numeşte pe autor, iar sub ea un rând spune pe faţă: *din cei nouă paşi, ai tăi sunt
+trei: 1, 2 şi 8.* Plus valabilitatea din art. 5 — 2 ani, când aprobarea acoperă mai multe
+transporturi — ca să nu se reia drumul la fiecare cursă.
+
+⬜ **Proba de interfaţă e scrisă şi NERULATĂ:** `e2e/13-drumul-aprobarii.mjs`, 13 verificări. Cere
+backend şi frontend pornite, şi sesiunea n-a avut niciunul. **Construit nu înseamnă probat** — e
+aceeaşi distincţie ca „deployat nu înseamnă probat", şi rândul din „definiţia de generator complet"
+rămâne galben până la prima rulare verde. Două dintre cele 13 sunt scrise în sens contrar dinadins:
+că pasul 9 **numeşte ISU-ul**, şi că **nu începe cu „Tu"**. Un text care ar aluneca înapoi la
+varianta greşită ar trece o verificare scrisă doar pe „conţine 48 de ore".
+
+### G-2 — cele patru obligaţii pe care dosarul tăcea
+
+Ieşite din recitirea legii-cadru pe 10.09 (`surse-oficiale.md` §2.8). Toate patru sunt în **aceeaşi
+listă sancţionată ca evidenţa însăşi** — art. 62 alin. (1) lit. a), 40.000–60.000 lei — şi niciuna
+nu era pomenită în vreun document pe care îl producem: colectarea separată (art. 17 alin. (3)),
+înscrierea în registrul ANMAP (art. 36 alin. (1)–(2)), caracterizarea deşeurilor periculoase
+(art. 8 alin. (4)) şi predarea uleiurilor uzate (art. 31 alin. (3)).
+
+Tiparul era deja scris şi probat de la persoana desemnată: **absenţa unei obligaţii legale e ea
+însăşi constatarea.** `otherObligationsNote()` stă lângă `wasteManagerNote()` şi face acelaşi lucru.
+
+**Două din patru nu sunt note, sunt constatări.** Art. 8 alin. (4) şi art. 31 alin. (3) se citesc
+din evidenţa dosarului şi **numesc codurile găsite**, cu asterisc, cum le scrie un formular oficial.
+Pe firma demo: `13 02 08*, 16 06 01*` la periculoase, şi numai `13 02 08*` la uleiuri. Bateriile de
+plumb sunt periculoase şi nu sunt ulei — diferenţa dintre cele două rânduri e chiar proba că lista
+nu s-a lăţit peste ce spune.
+
+🔴 **Şi una care arăta derivabilă, şi nu e.** Tentaţia la art. 17 alin. (3) era să listăm care din
+hârtie/metal/plastic/sticlă/textile apar deja în evidenţă. Dar o fracţie **lipsă** nu înseamnă că nu
+se colectează separat — cel mai des înseamnă că firma n-o generează — iar una **prezentă** nu
+dovedeşte colectarea separată, care se întâmplă pe amplasament, nu în registru. **Niciun sens nu
+poartă informaţie**, deci obligaţia se numeşte întreagă şi nu se concluzionează nimic. Motivul e
+scris în Javadoc, nu doar aici: altfel cineva o „îmbunătăţeşte" peste şase luni.
+
+### Unealta care a ieşit pe lângă: `UsedOilCodes`
+
+Semnalul „firma deţine uleiuri uzate" e cerut de **două obligaţii din locuri diferite ale aceluiaşi
+act**: art. 31 alin. (3) (predarea întregii cantităţi, aici) şi art. 49 alin. (9) (raportarea de
+**30 aprilie**, G-3). Două copii ar diverge, iar o divergenţă aici mută **cine primeşte o
+afirmaţie** — deci lista e scrisă o singură dată, în `util/UsedOilCodes.java`.
+
+⚠️ **Ce e înăuntru şi ce e afară e o decizie a noastră, scrisă — actul nu dă coduri.** OUG 92/2021
+vorbeşte despre uleiuri, nu despre coduri, iar HG 235/2007, care le guverna, e abrogată de art. 71
+alin. (1) lit. b). Înăuntru: 13 01, 13 02, 13 03, 13 04, 13 08, plus `13 05 06` şi 12 01 06–12 01 10.
+**Afară, şi ăsta e tot conţinutul deciziei:** **13 07** — benzina, motorina şi păcura sunt
+combustibili, n-au fost niciodată uleiuri în serviciu — şi restul lui **13 05**, care e ce *reţine*
+separatorul (nisipuri, nămoluri, ape uleioase), nu uleiul însuşi. Nota veche din `todo-generator.md`
+spunea „capitolul 13 întreg"; util-ul e mai îngust, dinadins.
+
+Direcţia în care are voie să cadă îndoiala e fixată de regula din `ReportType`: **o alertă e o
+afirmaţie**, făcută pe semnal pozitiv, nu pe tăcere. Un nămol de separator pe `13 05 02` nu face
+singur o firmă deţinătoare de ulei — iar dacă firma chiar are ulei, are şi un cod de ulei.
+
+### Probele
+
+**310 teste, 0 eşecuri** (erau 300), rulate cu `./gradlew cleanTest test` — forţat, nu din cache;
+cifra e citită din `build/test-results/test/TEST-*.xml`, nu din codul de ieşire. Cele 10 noi:
+
+- **6 în `UsedOilCodesTest`**, care pin-uiesc exact cele două margini de judecată (13 07 afară,
+  din 13 05 doar 06) — nu lista întreagă, care e o căutare, ci locurile unde un cititor de mai
+  târziu ar lărgi din greşeală;
+- **4 în `AuditFileIT`**, dintre care unul pe o firmă **fără** cod periculos şi fără ulei: dosarul ei
+  spune „nu se activează pe aceste date" în loc să afirme ceva ce clientul ar trebui să dezmintă.
+  Ăsta e testul care contează din cele patru.
+
+⚠️ **Şi o notă de scris teste, de la prima cădere:** aserţiunea căzuse pe „nu apare niciun cod de
+ulei uzat" — text **corect**, dar întrerupt de un rând, fiindcă README.txt se rupe la 78 de coloane
+ca să se citească pe hârtie. Propoziţia se verifică pe textul aplatizat; **aşezarea în pagină nu se
+pin-uiază într-un test**, altfel prima reformatare o sparge.
+
+`tsc --noEmit` curat, `vite build` verde. **Zero migrări** — nicio schimbare de schemă în felia asta.
+
+## G-3 — termenul de 30 aprilie, şi de ce cele două jumătăţi ale lui se citesc altfel (11.09.2026)
+
+Al treilea termen anual al aplicaţiei, şi primul găsit **într-un act pe care îl citiserăm deja**.
+OUG 92/2021 **art. 49 alin. (9)** cere o raportare la APM până la **30 aprilie** a anului următor
+celui raportat, de la două categorii: titularii de autorizaţii de construire/desfiinţare şi
+**producătorii şi deţinătorii de uleiuri uzate**. Sancţiune: art. 62 alin. (1) lit. e),
+**5.000–10.000 lei**.
+
+Calendarul avea 15 martie, 25 ianuarie, 25 februarie şi cadenţele AFM. Aprilie nu era nicăieri — nici
+în `ReportType`, nici în `DeadlineService`, nici în vreun document. Un client cu un butoi de ulei
+uzat afla din **tăcerea noastră** că luna aia n-are nimic, iar tăcerea e mai rea decât o alertă prea
+tare: la 15 martie omul e prevenit, la 30 aprilie nu era.
+
+### Un rând, nu două
+
+Două obligaţii cad în aceeaşi zi la acelaşi destinatar. Modelul exista deja — `AFM_ANNUAL` face
+exact asta pe 25 ianuarie — şi motivul lui ţine şi aici: două rânduri ar pune două alerte în aceeaşi
+zi la aceeaşi adresă, adică zgomotul pe care `V21` a costat o migrare să-l stingă. Un rând, şi o
+etichetă care le numeşte pe amândouă, fiindcă firma poate datora doar una din ele şi trebuie să vadă
+care.
+
+### 🔴 Jumătăţile se semnalează diferit, şi asta e tot conţinutul feliei
+
+Felia fusese scrisă cu decizia lăsată deschisă: *„de decis dacă se generează pe cod sau se întreabă
+în profil."* S-a decis pe regula din `ReportType` — **o alertă e o afirmaţie** — şi răspunsul e
+diferit pentru cele două jumătăţi ale aceluiaşi articol:
+
+| Jumătatea | Semnalul | De ce |
+|---|---|---|
+| **uleiuri uzate** (art. 31 alin. (1)) | **derivat din mişcări**, `UsedOilCodes` | un cod de ulei uzat în evidenţă **chiar e** faptul: „deţinător de uleiuri uzate" nu înseamnă altceva |
+| **construcţii** (art. 17 alin. (7)) | **întrebat în profil**, `construction_permit_holder` | capitolul 17 are 38 de coduri şi apare la **oricine mişcă moloz**; obligaţia e a **titularului autorizaţiei**, care e alt om |
+
+Derivarea jumătăţii de construcţii ar fi trimis un transportator de moloz să pregătească o raportare
+care nu e a lui. Simetria ar fi arătat mai curat în cod şi ar fi fost greşită — iar asta e a doua
+oară în aceeaşi zi când întrebarea „se poate deriva?" are răspuns **da pentru un caz şi nu pentru
+vecinul lui** (prima a fost art. 17 alin. (3) la G-2). Ce le desparte e acelaşi lucru de fiecare
+dată: **datele conţin faptul, sau doar ceva corelat cu el?**
+
+Coloana e `BOOLEAN NULL`, cu **trei stări**, ca `waste_manager_external`: `null` = nimeni n-a
+întrebat, `false` = s-a răspuns „nu". Se comportă la fel azi şi înseamnă lucruri diferite — iar
+diferenţa se vede în ecranul de profil, unde una e o rubrică goală şi cealaltă un răspuns.
+
+### Anul citit e `an − 1`
+
+Actul spune „până la 30 aprilie a anului **următor** celui pentru care se raportează" — aceeaşi
+relaţie pe care o are 15 martie cu evidenţa lui. Deci termenul din aprilie {an} se uită la mişcările
+din {an−1}: o mişcare pe ulei în 2026 dă **30.04.2027**, nu 30.04.2026.
+
+⚠️ **Şi proba e scrisă în amândouă sensurile**, fiindcă citirea anului greşit ar fi arătat perfect
+într-o verificare pe un singur an: testul cere termenul în 2027 **şi** cere să NU existe în 2026,
+unde ar raporta un 2025 în care firma n-are nimic.
+
+### Ce a ţinut `ReportType` la zi, şi n-a fost disciplina
+
+Punctul 13 al auditului de conformitate a fost exact defectul „o enumerare rămasă în urmă", iar felia
+purta avertismentul scris. N-a fost nevoie de el: **`switch`-ul exhaustiv** din
+`EmailNotificationService` a refuzat să compileze fără cazul nou, iar `strings.enums.reportType` e
+indexat pe tipul `ReportType`, deci `tsc` ar fi căzut la fel. Ambele capete sunt închise **de
+compilator**. Nota din felie rămâne utilă pentru cine adaugă un tip fără să treacă prin ele, dar
+lecţia de aici e alta: **când o enumerare trebuie ţinută la zi în două locuri, merită ca amândouă să
+fie exhaustive prin construcţie**, nu prin memento.
+
+### Probele
+
+**316 teste, 0 eşecuri** (erau 310). Cele 6 noi, în `DeadlineIT`, şi ce probează fiecare:
+
+- mişcarea pe ulei creează termenul, **în anul următor**, şi nu în anul mişcării;
+- o firmă cu mişcări, dar fără ulei şi fără autorizaţie, **nu primeşte nimic** — direcţia care
+  contează, fiindcă aici o alertă falsă trimite omul să pregătească raportarea altcuiva;
+- titularul de autorizaţie îl primeşte **fără niciun ulei** — jumătăţile sunt independente;
+- `false` **şi** `null` sunt probate separat: se comportă la fel azi, şi o rescriere care ar citi
+  câmpul ca `boolean` simplu ar trece un test scris doar pe `null`;
+- amândouă jumătăţile deodată dau **un singur rând**;
+- a doua rulare a generării creează **zero** — idempotenţa nu s-a stricat.
+
+⚠️ **O aserţiune a căzut întâi, şi merită ştiut de ce:**
+`jsonPath("$[?(...)].length()")` nu numără rândurile filtrului — se aplică **fiecărui obiect găsit**
+şi numără câmpurile lui (a ieşit `6`, adică rubricile unui `DeadlineResponse`). Mărimea unui rezultat
+de filtru se cere cu `hasSize`.
+
+**`V36`, aditivă**, o singură coloană nullable; niciun rând existent nu se atinge. `tsc` curat,
+`vite build` verde. **Nedeployat — pe producţie e `V35`.**
+
+## G-4, G-5 şi pasul întâi al lui G-6 — grupul 1 închis (11.09.2026, seara)
+
+Trei felii luate într-o sesiune, legate de un singur lucru: **fiecare a răspuns altfel decât se
+aştepta nota care a cerut-o.** Nu în sensul că nota era proastă — în sensul că o presupunere scrisă
+într-un TODO arată la fel cu un fapt verificat, şi se deosebesc numai dacă te uiţi.
+
+### G-4 — codul-oglindă, şi regula care era mai largă decât fraza
+
+**OUG 92/2021 art. 8 alin. (2)**: acelaşi deşeu se încadrează sub două coduri, după cum are sau nu
+caracteristici periculoase, iar încadrarea ca **nepericulos** se face *„numai în baza unei analize a
+originii, testelor, buletinelor de analiză şi a altor documente relevante"*.
+
+E **singurul loc din modul unde aplicaţia se uită la o încadrare, nu la o rubrică goală** — restul
+avertismentelor spun „lipseşte un câmp", ăsta spune „ai afirmat ceva ce actul cere să fie dovedit".
+Şi e chiar genul de lucru pe care îl caută un inspector, fiindcă un cod-oglindă declarat nepericulos
+ieftineşte eliminarea.
+
+Modelul n-avea perechea deloc: `WasteCode` ţine un `hazardous` izolat. Dar **perechea e în numele
+codului**, aşa cum îl scrie Decizia 2014/955/UE — deci se extrage o dată, la migrare, şi nu se cere
+nimănui. `V37` adaugă `waste_codes.mirror_of` şi îl umple cu un singur `UPDATE`.
+
+🔴 **Şi aici e ce merită ţinut minte.** Felia presupunea formularea „**altele decât cele specificate
+la**" — 138 de rânduri în CSV. Regula scrisă pe fraza aia ar fi prins **130** de oglinzi şi ar fi
+**trecut toate probele evidente**. Regula corectă e a **codului citat**, nu a frazei: *un cod
+nepericulos al cărui nume numeşte un cod periculos*. Prinde **161**. Cele 31 în plus sunt acelaşi
+lucru scris altfel — „altele decât cele **menţionate** la", „**alte particule** decât", „(**cu
+excepţia** X)", „**exclusiv** praful de cazan specificat la" — şi printre ele stau `18 01 01` şi
+`18 02 01`, **obiectele ascuţite din deşeurile medicale**, adică exact locul unde o încadrare
+greşită costă cel mai mult. Toate 161 au fost citite pe rând: **zero fals-pozitive**. Detaliul, cu
+tabelul celor două reguli, e în `surse-oficiale.md` **§3.4**.
+
+📌 **Filtrul „codul citat e periculos" îşi câştigă locul pe un singur rând din 842**, şi e bine că
+se ştie care: `03 03 11` citează `03 03 10`, **nepericulos**. Fără filtru, clientul primea un
+avertisment pentru o încadrare pe care actul n-o condiţionează de nimic — alerta falsă pe care `V21`
+a costat o migrare s-o scoată.
+
+**Ce se vede:** badge galben „Cod-oglindă" în registrul de mişcări, **în celula codului**, nu lângă
+partener — ce se pune la îndoială e încadrarea, nu predarea; şi de aceea apare şi pe intrări, şi pe
+generări, spre deosebire de „Autorizaţie expirată", care e numai pe ieşiri. **Constată, nu
+blochează**, şi nu se tipăreşte pe niciun formular: hârtia ajunge la inspector, iar o notă de-a
+noastră pe ea ar fi propria noastră acuzaţie pusă în dosarul clientului.
+
+⚠️ **Orice atașament stinge avertismentul, şi asta e o decizie, nu o scăpare.** Aplicaţia nu poate
+citi un PDF ca să spună dacă e buletin de analiză, şi nu se preface că poate. Întrebarea pe care o
+pune e „**unde e hârtia?**", nu „e hârtia potrivită?". Când **G-7** va lega buletinul de **cod**,
+avertismentul se mută pe sursa aia şi devine întrebarea ascuţită.
+
+**Probe: 11 teste noi, toate verzi** (`MirrorWasteCodeIT`), din care unul pinuieşte **cifra 161** —
+o reîncărcare a nomenclatorului sau o regulă rescrisă mai îngust cade în build, nu la client — şi
+unul pinuieşte **marginile de formulare**, adică exact ce ar fi ratat regula îngustă. **Suita
+backend: 327 de teste, 0 eşecuri** (erau 316). Proba de interfaţă e **scrisă şi nerulată**:
+`e2e/14-codul-oglinda.mjs`, 12 verificări, îşi scrie singură mişcările şi le şterge.
+
+### G-5 — ANPM → ANMAP, verificat act cu act, şi inventarul care era greşit
+
+Felia stătea pe o teamă corectă: **un formular tipărit poartă numele din actul care îl cere**, nu
+din legea-cadru. Redenumirea e făcută de art. IV din Legea 26/2026 *„în întreg cuprinsul Ordonanţei
+de urgenţă a Guvernului nr. 92/2021"* — deci nu se revarsă singură peste alte acte.
+
+Verificarea, pe Portalul Legislativ, 11.09.2026:
+
+| Actul | Redenumit? |
+|---|---|
+| **OUG 92/2021** | **da** — 44 de locuri în textul consolidat |
+| **Ordinul 794/2012** | **nu** — nicio modificare, scrie şi azi „Agenţia Naţională pentru Protecţia Mediului" |
+| **HG 856/2002** | **nu numeşte nicio agenţie** — peste tot „autoritatea publică centrală de protecţie a mediului" |
+
+🔴 **Şi inventarul feliei era greşit exact pe partea care o făcea grea.** Cele două locuri notate
+„ajunge pe hârtie? **da**" **nu ajung pe hârtie**: `PackagingOperatorRole.addressee()` n-are azi
+niciun apel, iar `anexa3AddresseeAnpm` se randează în `PackagingPage`. **Niciunul dintre cele şase
+documente oficiale nu poartă numele agenţiei** — modelele n-au rubrică de destinatar. Deci toată
+dilema se juca pe **patru şiruri de ecran**.
+
+✅ **Regula aleasă, şi e generală:** *unde citim actul, numele din act; unde îi spunem clientului
+unde să se ducă, numele instituţiei de azi.* Pe ecran scrie **ANMAP** — omul care citeşte rândul va
+căuta „ANMAP", iar site-ul e `anmap.gov.ro`. Comentariile care citează Ordinul 794/2012 rămân cum le
+scrie ordinul. Motivul e scris lângă şir, în `strings.ts` şi în `PackagingOperatorRole.addressee()`,
+nu doar aici — dacă un formular capătă vreodată rubrică de destinatar, regula spune singură ce se
+tipăreşte în ea.
+
+⚠️ **Migrarea `V31` a rămas neatinsă, deşi are „ANPM" într-un comentariu.** O migrare aplicată nu se
+editează: Flyway îi ţine suma de control, iar o schimbare de comentariu ar rupe validarea pe orice
+bază unde a rulat deja. Istoria unui act se scrie în documentaţie, nu peste el.
+
+### G-6, pasul întâi — lista de la art. 34¹ nu există încă
+
+Zece minute, ca să nu se estimeze o felie pe o presupunere. **Răspuns: nu există nici lista, nici
+ordinul.** `anmap.gov.ro` are un meniu „Autorizaţii" cu două intrări, iar centralizatorul e un tabel
+HTML cu titlu, dată, link, categorie, autoritate emitentă, PDF, **denumire titular**, judeţ,
+localitate, tip document, dată şi număr de act. **Nu e lista de la art. 34¹**, şi îi lipsesc exact
+cele două câmpuri pentru care ne-ar folosi: **CUI-ul** (cheia de potrivire cu `Partner`) şi
+**statusul vizei anuale**. Ordinul de ministru de la art. III alin. (2) — termen împlinit pe
+~09.09.2026 — nu e publicat.
+
+**Deci felia nu se poate dimensiona**, şi ăsta e chiar rezultatul util: nu se scrapează un tabel
+care va fi înlocuit de altul când apare procedura. Rămâne cu dată de reverificare, lunar.
+
+**`V37`, aditivă** — o coloană nullable, niciun rând şters. `tsc` curat, `vite build` verde.
+**Nedeployat — pe producţie e `V35`.**
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
