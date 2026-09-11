@@ -6,8 +6,9 @@ rulează local și are testele verzi.
 > **Unde suntem — 12.09.2026.** ✅ **P1.11 — jurnalul de audit e construit** (secţiunea „P1.11 —
 > jurnalul de audit"): cine, ce, când, prins în interceptorul de flush al lui Hibernate ca să nu
 > poată fi uitat de niciun drum de scriere, cu ecran în **Setări** numai pentru administratori.
-> **368 de teste, 0 eșecuri**, **`V39`** (prima liberă `V40`), migrarea probată şi pe baza de dev
-> acumulată. ⬜ **Nedeployat**; proba de ecran (`e2e/15-jurnal-audit.mjs`) e **scrisă şi nerulată**.
+> **368 de teste, 0 eșecuri**, **`V39`** (prima liberă `V40`). ✅ **Deployat pe 12.09, 02:09** —
+> `api` **v51**, `app` **v47**, `V39` migrată pe producţie; migrarea fusese probată întâi pe baza de
+> dev acumulată. ⬜ Proba de ecran (`e2e/15-jurnal-audit.mjs`) e **scrisă şi nerulată**.
 > 🔴 **Un defect pe care numai proba l-a găsit:** ştergerile nu lăsau nicio urmă, în timp ce
 > modificările lăsau — vezi „defectul pe care numai proba l-a putut găsi". Odată cu felia, **anexa
 > B.6 a DPA-ului trece la timpul prezent**.
@@ -6681,6 +6682,24 @@ o mie, uşa închisă pentru operator, şi marginea firmei.
 ✅ **Migrarea probată şi pe baza de dev acumulată**, nu doar pe cea din teste: pornire curată,
 *„Migrating schema public to version 39 - audit log → Successfully applied 4 migrations, now at
 version v39"* (baza locală rămăsese la `V35`). Tabela are cele trei indexuri şi cele două chei.
+
+✅ **DEPLOYAT pe 12.09.2026, 02:09** — `ecoregistru-api` **v51** (`f9ac93af`), `ecoregistru-app`
+**v47** (`1d54ddae`), **`V39` migrată pe producţie**: *„Migrating schema \"public\" to version
+\"39 - audit log\" → Successfully applied 1 migration, now at version v39"*, pornire în **12,2 s**.
+Garda de conţinut a trecut curat la `^` pe amândouă părţile — un singur commit în aşteptare de
+fiecare parte, spre deosebire de felia dinainte.
+**Probe pe dyno, pe conţinut:** `/api/v1/audit-log` fără token → **401** (ruta există şi e închisă),
+`/actuator/health` → **200**, iar bundle-ul servit (`/assets/index-CvtEltuW.js`, 740.426 octeţi)
+conţine „Jurnal de audit", `audit-log`, „Dezactivare", „Recalculare", ancora `jurnal-audit` şi
+trimiterea la art. 48 alin. (5). Niciun `Error R14` pe dyno-ul nou.
+
+⬜ **Şi o jumătate de drum care lipseşte, scrisă aici ca să nu se uite.** API-ul răspunde la
+`?entityId=`, adică la *„tot ce s-a întâmplat cu rândul ăsta"* — proba 15 o foloseşte —, dar
+**ecranul n-are încă butonul care o cheamă**. Azi se ajunge acolo căutând în jurnal după eticheta
+mişcării; mâine ar trebui să fie o acţiune „Istoric" pe rândul din Mişcări, care deschide jurnalul
+filtrat pe acea mişcare. E felia care închide chiar întrebarea din care s-a născut asta, şi e mică:
+un parametru de adresă citit de secţiune, plus un link. N-a intrat aici fiindcă e un drum de ecran,
+şi drumurile de ecran se probează privindu-le — nu la capătul unei nopţi.
 
 ⬜ **Proba de ecran e scrisă şi NERULATĂ** — `e2e/15-jurnal-audit.mjs`, a patra din teanc, lângă 13,
 14 şi cea pentru buletine. Face o modificare adevărată prin API şi cere apoi jurnalului s-o
