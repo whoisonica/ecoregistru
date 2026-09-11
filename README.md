@@ -78,6 +78,18 @@ sheet, the partner authorizations once, and every movement attachment. It regene
 evidence before packing: the cache is derived from movements, and a client who never pressed
 "Regenerate" would otherwise be handed a bundle of empty official forms.
 
+**It reports rather than recites.** Five obligations an inspection checks — separate collection, the
+ANMAP register, the characterisation of hazardous waste, used oils, the prevention programme — sit in
+the same sanctioned list as the evidence itself (art. 62(1)(a), 40,000–60,000 RON), and the dossier
+used to pass over them in silence. Three of the five it can now *check* against what it holds and
+prints as findings, naming the codes or the permit it found; the other two it can only *name*,
+because nothing in the data decides them — and saying which is which is the point. The
+characterisation is the sharpest: analysis bulletins attach to a **waste code**, not to a movement
+(art. 8(4) describes a kind of waste, not a lorry run), so the dossier reports coverage per code —
+"1 of 3, missing for 13 02 08*" — instead of restating the obligation. They carry no expiry date:
+art. 48(2) says *hold* them, and how often an analysis must be redone is inspector practice, not
+something in the act to be guessed at and then printed in a file an inspector reads.
+
 **Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `CLIENT_VIEWER`, enforced at endpoint level.
 
 Current status and the feature-by-feature log: [`docs/status.md`](docs/status.md).

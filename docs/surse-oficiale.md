@@ -922,7 +922,12 @@ de analiză):
 🟢 **Deci „cât se păstrează" nu mai e o întrebare pentru specialistă:** obligaţia de la alin. (2) e
 **continuă şi fără termen** („să deţină"), iar podeaua celor 3 ani e scrisă în act. Ce rămâne de
 practică e **frecvenţa reanalizei** — cât de des trebuie refăcut buletinul —, care e altă întrebare
-decât cea din listă. **G-7 se poate construi.**
+decât cea din listă. ~~**G-7 se poate construi.**~~ ✅ **Construită pe 11.09.2026** (`V38`): buletinul
+se leagă de **cod**, iar dosarul de control **constată per cod** — „Buletine încărcate: 1 din 3.
+LIPSESC pentru: …" —, în loc să numească obligaţia şi să se oprească.
+⚠️ **Tabela nu are dată de expirare, şi tocmai fiindcă întrebarea de mai sus e deschisă:** actul nu
+dă niciun termen buletinului, iar a inventa unul ar însemna să-l tipărim într-un dosar citit de un
+inspector. Când vine răspunsul la frecvenţa reanalizei, coloana se adaugă **aditiv**.
 
 ⚠️ **Şi o lărgire a lui art. 8 alin. (4) pe care n-o citisem:** caracterizarea nu e cerută doar
 pentru codurile cu asterisc, ci şi pentru *„deşeurile care **pot fi considerate periculoase din

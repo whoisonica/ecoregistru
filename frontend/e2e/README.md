@@ -5,6 +5,16 @@ rulate** (probele 1–12) plus **25 scrise şi nerulate încă** — proba 13 (d
 verificări) şi proba 14 (codul-oglindă, 12), amândouă scrise pe 11.09.2026 în sesiuni fără server
 pornit. Rândul ăsta se schimbă la prima rulare verde, nu înainte.
 
+⬜ **Şi una lipseşte cu totul: buletinele de analiză (G-7, 11.09.2026).** Felia s-a livrat cu 11
+teste de backend şi **fără probă de ecran** — ecranul din **Setări → Buletine de analiză** n-a fost
+deschis niciodată de o suită. Ce ar avea de verificat, şi e scris aici ca să nu se piardă: că
+încărcarea cere **toate patru** rubricile (cod, dată, laborator, fişier) şi le marchează pe cele
+lipsă; că **o dată în viitor** e refuzată cu mesajul ei; că al doilea buletin pe acelaşi cod apare ca
+**istoric**, nu îl înlocuieşte pe primul; şi — cea care leagă felia de G-4 — că după încărcarea unui
+buletin pe un cod-oglindă **badge-ul „Cod-oglindă" se stinge** pe o mişcare a acelui cod care **n-are
+niciun ataşament**. Ultima e cea care contează: e singura care probează mutarea sursei, iar backendul
+o ţine deja (`MirrorWasteCodeIT`), deci proba de ecran verifică drumul, nu regula.
+
 **De ce există.** Pe 07.09.2026, după şaisprezece felii de UI/UX toate „verzi" — `tsc --noEmit`
 curat, `vite build` verde, cod recitit — prima rulare adevărată a scos **şapte defecte**. Patru
 cereau apăsarea unui buton, două o măsurătoare de geometrie, unul o privire pe o captură.

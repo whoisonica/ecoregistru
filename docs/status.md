@@ -3,11 +3,14 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 11.09.2026, noaptea.** **335 teste verzi** (0 eșecuri) și **14 suite de interfață**:
-> 303 verificări rulate (probele 1–12) plus **25 scrise și nerulate încă** (probele 13 și 14 — cer
-> servere pornite). În producție: `ecoregistru-api` la **v48**, `ecoregistru-app` la **v44**, cu
-> **`V37` migrat acolo** (11.09.2026, 12:02). Schema e la **`V37`** și în repo, deci următoarea
-> liberă e **`V38`**.
+> **Unde suntem — 11.09.2026, noaptea târziu.** **346 teste verzi** (0 eșecuri) și **14 suite de
+> interfață**: 303 verificări rulate (probele 1–12) plus **25 scrise și nerulate încă** (probele 13
+> și 14 — cer servere pornite), iar una lipsește cu totul, pentru buletine. În producție:
+> `ecoregistru-api` la **v49**, `ecoregistru-app` la **v45**, cu **`V38` migrat acolo**
+> (11.09.2026, 16:33). Schema e la **`V38`** și în repo, deci următoarea liberă e **`V39`**.
+> 🟢 **Cu G-7, modulul de generatori nu mai are felii de cod** — ce a rămas e o hârtie de laborator
+> (G-8), un registru pe care statul nu l-a publicat (G-6), trei probe de ecran și o întrebare de
+> practică. Ce ține lansarea pe loc rămâne **P1 juridic**.
 > ✅ **Grupul 1 al modulului de generatori e închis: G-4 și G-5 sunt gata** (11.09, seara).
 > **G-4** — un cod-oglindă declarat nepericulos fără document justificativ e semnalat în registru
 > (`V37`, 11 teste). **G-5** — redenumirea ANPM→ANMAP, verificată **act cu act**, cu răspunsul în
