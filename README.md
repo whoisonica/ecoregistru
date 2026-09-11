@@ -59,10 +59,16 @@ stock nor by a recorded generation is reported as generated too — the form's o
 handover would otherwise get a sheet reading zero generated and a negative balance.
 Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
 
-**Deadlines and alerts.** Automatic generation of the annual filing deadline and of the AFM
+**Deadlines and alerts.** Automatic generation of **four annual filing deadlines** and of the AFM
 contributions a company actually owes — each on the cadence OUG 196/2005 art. 11 gives it: monthly
 for the 2% withheld at source, quarterly for the circular-economy contribution, annually for
-packaging. A single boolean would have sent a company with a yearly obligation eleven wrong alerts
+packaging. The annual terms are 15 March (the evidence itself, OUG 92/2021 art. 48(1)), 25 February
+(the packaging report, Ordinul 794/2012 art. 6), **30 April** (used oils and construction waste,
+art. 49(9)) and **31 May** (the waste prevention programme, art. 44(3)) — the last two found by
+re-reading the framework act on its consolidated form, in September 2026, after they had been
+missing from the calendar for a year. Each is generated only on a **positive** signal: a used-oil
+code in the evidence, a recorded environmental permit, an answered profile. A company that owes
+none of them is told nothing, because an alert is a claim. A single boolean would have sent a company with a yearly obligation eleven wrong alerts
 a year. A daily cross-tenant scheduler emails T-7 / T-1 reminders with per-company deduplication.
 
 **Inspection file.** `GET /api/v1/audit-file?year=&years=` streams a ZIP covering one to five years
@@ -128,7 +134,7 @@ Ordinul 794/2012 anexa 3 (the annual packaging report of collectors and traders)
 Where the law is quoted, it is quoted verbatim with a link to the primary source and the date it was
 read: [`docs/surse-oficiale.md`](docs/surse-oficiale.md). Where the text does not settle a question,
 the question is written down and asked rather than guessed, and no default is offered in the form.
-None of the official portals (SIM/ANPM, AFM-online, SIATD) exposes a public third-party submission
+None of the official portals (SIM/ANMAP, AFM-online, SIATD) exposes a public third-party submission
 API, so the product model is "we prepare, you submit": the app produces the reports, the client
 uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 

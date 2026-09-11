@@ -38,6 +38,15 @@ rulează local și are testele verzi.
 > 🔴 **Și după deploy, o recitire a legii-cadru a scos al patrulea termen anual: 31 mai** (art. 44
 > alin. (3), amendă 40.000–60.000 lei). **Construit în aceeași seară** — `APM_ANNUAL_MAY`, 8 teste
 > noi, **fără migrare**. Secțiunea „G-10". **Nedeployat**: pe producție e codul de la 12:02.
+> ✅ **Și G-7 e construit, tot în noaptea aceea — ultima felie de cod a modulului.** Buletinele de
+> analiză se leagă de **cod**, nu de mișcare (art. 8 alin. (4)): `V38`, ecran în **Setări**, fișiere
+> în dosarul de control grupate pe cod, iar punctul 3 al blocului „ALTE OBLIGAȚII" a trecut de la a
+> numi obligația la a o **constata** — „Buletine încărcate: 1 din 3. LIPSESC pentru: …". Tot atunci,
+> **G-4 și-a mutat sursa** pe buletin, cum era prevăzut, **fără** să scoată atașamentul de pe mișcare:
+> art. 8 alin. (2) numește două feluri de dovadă, nu unul. **346 de teste, 0 eșecuri** (erau 335),
+> `V38` e următoarea migrare, iar prima liberă devine **`V39`**. Secțiunea „G-7". ⬜ **Nedeployat.**
+> **Din modulul de generatori nu mai rămâne nicio felie de cod care să nu depindă de altcineva:**
+> G-8 stă pe pct. VIII (38 de parametri chimici = un buletin de laborator), G-6 e blocată de stat.
 > ⚠️ **De ținut minte, fără legătură cu felia:** înainte de swap, dyno-ul vechi a scris **73 de
 > `Error R14 (Memory quota exceeded)`**, ultimul la 09:02:48 UTC; cel nou a pornit curat. Nu e
 > regresie din ziua asta, dar e un prag de care ne apropiem.
@@ -6299,6 +6308,120 @@ e **frecvența reanalizei**, care e altă întrebare. ⚠️ Tot acolo, o lărgi
 art. 8 alin. (4) cere caracterizarea nu doar pentru codurile cu asterisc, ci și pentru „deșeurile
 care **pot fi considerate periculoase din cauza originii sau compoziției**" — perechea-oglindă de
 la G-4 e un subset al obligației, nu toată.
+
+## G-7 — buletinele de analiză, legate de cod (11.09.2026, noaptea)
+
+Ultima felie de cod a modulului de generatori, și singura care mai aștepta ceva de la cineva — până
+pe 11.09, când actul a răspuns în locul specialistei. E și felia care schimbă ce **poate spune**
+dosarul de control: până acum numea obligația, iar apoi recunoștea, în propriile cuvinte, că nu o
+poate verifica.
+
+### Ce cerea, și de ce „per cod" nu mai era o întrebare
+
+**Art. 8 alin. (4)**: producătorii și deținătorii persoane juridice sunt obligați „să efectueze și
+să dețină **o caracterizare a deșeurilor periculoase generate din propria activitate**". Scopurile
+pe care articolul le enumeră — amestecare, pregătire prealabilă, reciclare, valorificare, eliminare
+— sunt proprietăți ale **tipului de deșeu**, nu ale unei curse. Deci cheia e (firmă, cod), și asta
+a închis jumătatea „per ce" a întrebării **AL** încă de pe 10.09.
+
+**Art. 48 alin. (2)** cere ca buletinele să fie **deținute** și transmise la cerere. Obligație
+continuă, fără termen — iar art. 48 alin. (5) pune podeaua evidenței la 3 ani. Cu asta s-a închis
+și jumătatea „cât se păstrează", pe 11.09.
+
+### Ce era, și cât de tăcut era
+
+Se putea atașa orice fișier la o **mișcare** (11-bis), dar nimic nu lega un buletin de un **cod** și
+nimic nu semnala absența lui. La un client cu coduri periculoase dosarul era incomplet legal **fără
+să se vadă** — iar README-ul lui o spunea pe față, la punctul 3: *„Aplicația nu ține încă buletinele
+de analiză: se păstrează la dosar, pe hârtie, lângă acesta."* Propoziția aia nu mai există.
+
+### Ce s-a construit
+
+`V38` adaugă `analysis_bulletins`: (firmă, cod), data buletinului, laboratorul, plus cele cinci
+coordonate de stocare ale unui atașament. Ecran nou în **Setări → Buletine de analiză**; fișierul
+intră în dosarul de control, la rădăcină, grupat pe cod.
+
+**Trei decizii care nu sunt evidente, toate scrise în migrare și în entitate:**
+
+| Ce | De ce |
+|---|---|
+| **Fișierul e obligatoriu** | Art. 48 alin. (2) cere să **deții** hârtia, nu să declari că există. Un rând fără fișier ar fi o afirmație tipărită într-un dosar pe care îl citește un inspector, cu nimic în spate. |
+| **Nu există dată de expirare** | Actul nu dă niciun termen buletinului, iar **cât de des trebuie refăcută analiza** e singura jumătate rămasă din **AL** — practica inspectorului. O coloană „valabil până la" ar fi fost un termen ghicit, tipărit apoi într-un dosar. Când vine răspunsul, se adaugă aditiv. |
+| **Mai multe buletine pe un cod sunt istoricul lui** | O reanaliză nu șterge buletinul vechi: o fișă depusă în 2025 s-a sprijinit pe el, iar art. 48 alin. (5) cere păstrarea evidenței. Cel mai recent răspunde la „ai caracterizarea?"; restul rămân, iar dosarul le numără. Deci **fără unicitate** pe (firmă, cod). |
+
+⚠️ **Data în viitor e refuzată.** E data de pe hârtia laboratorului, iar o analiză nu s-a putut face
+mâine — altfel dosarul ar purta o dată pe care inspectorul o vede singur că e imposibilă.
+
+### Ce spune dosarul de-acum, și e chiar felia
+
+Punctul 3 al blocului „ALTE OBLIGAȚII" a trecut de la a **numi** obligația la a o **constata**, per
+cod:
+
+```
+  3. Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)
+     Obligatorie, și te privește: în anii din dosar apar 3 coduri periculoase.
+     Codurile: 05 01 08*, 13 02 08*, 16 06 01*.
+     [...]
+     Buletine încărcate: 1 din 3.
+     LIPSESC pentru: 13 02 08*, 16 06 01*.
+```
+
+Plus folderul `buletine-analiza/`, cu index grupat pe cod. **Se scrie chiar gol**, deliberat: un
+folder absent se citește ca o funcție pe care n-a folosit-o nimeni, iar unul care spune „nu există
+niciun buletin încărcat" e constatarea — același principiu ca la persoana desemnată.
+
+⚠️ **La rădăcină, nu sub un an**, și asta e actul, nu o preferință de așezare: un buletin
+caracterizează un cod și art. 48 alin. (2) cere să fie **deținut** în continuare — n-are an de
+raportare de care să aparțină, exact ca autorizațiile partenerilor de lângă el.
+
+### Și G-4 și-a mutat sursa, cum era prevăzut
+
+Felia codurilor-oglindă spunea, din 11.09 dimineața: *„Când G-7 leagă buletinul de cod,
+avertismentul se mută acolo."* S-a mutat — dar **nu prin înlocuire**, și motivul e tot în act.
+Art. 8 alin. (2) admite încadrarea ca nepericulos „în baza unei analize a originii, testelor,
+buletinelor de analiză **şi a altor documente relevante**". Sunt două surse, fiindcă articolul
+numește două:
+
+- un **buletin pe cod** stinge avertismentul pe *orice* mișcare a acelui cod — dovada pe care
+  articolul o numește, legată unde o cere art. 8 alin. (4);
+- un **atașament pe mișcare** rămâne valabil alături, fiindcă „alte documente relevante" e chiar
+  fraza următoare. A-l scoate ar fi îngustat regula peste ce spune actul și ar fi aprins badge-ul
+  pe mișcări deja documentate.
+
+⚠️ **Niciuna nu e verificare**, și rămâne scris: aplicația nu poate citi un PDF ca să spună dacă e
+buletin. Întrebarea rămâne „unde e hârtia?", nu „e hârtia potrivită?" — G-7 i-a dat jumătății tari a
+răspunsului un loc unde să stea, nu o cale de a o controla.
+
+📌 **Setul de coduri acoperite se citește o dată per cerere, nu per rând.** Mapper-ul rulează pe
+fiecare mișcare, iar o interogare per rând ar fi fost un N+1 pe cel mai deschis ecran din aplicație.
+
+### Probele
+
+**346 de teste, 0 eșecuri** (erau 335), rulate cu `cleanTest test` și numărate din `TEST-*.xml`.
+Cele 11 noi: **10 în `AnalysisBulletinIT`** — cele trei refuzuri (fișier, laborator, dată în viitor),
+listarea pe cod, istoricul care nu se înlocuiește, izolarea de tenant pe fișier, și patru pe dosar
+(lipsa numită, acoperirea completă, folderul scris gol, fișierul ajuns în arhivă) — plus **1 în
+`MirrorWasteCodeIT`**, care pinuiește chiar mutarea: un buletin pe cod stinge badge-ul pe o mișcare
+**fără niciun atașament**.
+
+⚠️ **Două probe s-au otrăvit singure înainte de a fi corecte, și amândouă merită ținute minte.**
+Prima: testele împart tenantul demo, iar buletinele lăsate de o probă deveneau premisa alteia —
+aceeași capcană ca la `CompanyUsersIT` pe 10.09, reparată la fel, cu golire în `@BeforeEach` și o
+**gardă care afirmă premisa** („zero buletine înainte de fiecare test"). A doua e mai instructivă:
+proba de „acoperire completă" fusese scrisă presupunând **un singur** cod periculos, iar seed-ul
+demo are **trei**. Acum citește codurile din dosarul însuși și încarcă buletin pentru fiecare — o
+listă fixată de mână ar fi trecut pe „lipsesc", adică din motivul greșit.
+
+⚠️ **Și un 500 care trebuia să fie 400:** `@RequestParam("file")` obligatoriu face Spring să respingă
+cererea **înaintea** validării noastre, deci clientul primea un mesaj de framework în locul celui
+care spune de ce fișierul e chiar obiectul. Parametrul e `required = false`, iar refuzul e al nostru.
+
+`tsc --noEmit` curat, `vite build` verde (666,46 kB). ⬜ **Nedeployat la scrierea rândului.**
+
+📌 **Ce a ieșit pe lângă:** mecanica „deschide fișierul în tab cu sesiunea omului" — tabul cerut
+înainte de `await`, și lecția cu `noopener` care făcea ca fiecare fișier să se **descarce** — s-a
+mutat în `lib/openFileInTab`, fiindcă o folosesc acum două ecrane. Două copii ar fi fost două ocazii
+ca numai una să fie reparată.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
