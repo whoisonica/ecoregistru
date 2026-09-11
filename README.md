@@ -59,6 +59,16 @@ stock nor by a recorded generation is reported as generated too — the form's o
 handover would otherwise get a sheet reading zero generated and a negative balance.
 Exports to `.xlsx` (Apache POI) and `.pdf` (OpenPDF).
 
+**The movement list is paged, searched and sorted by the database.** Not paging alone, and that is
+the design: a search box that only looks inside the twenty-five rows on screen answers confidently
+and wrongly, so the three moved together, with the browser's rules carried over word for word —
+diacritics folded away, the typed phrase winning over its words, and every word having to *begin* a
+word of the row, so that "02" does not match the 2026 of a date. The ordering is always total (a
+created-at tiebreaker), because two rows tied on the sorted column are otherwise free to swap places
+between requests, which shows one row on two pages and another on none. Sortable columns are a
+whitelist, and anything outside it falls back to the default order rather than being refused: a stale
+bookmark should open a table, not an error.
+
 **Deadlines and alerts.** Automatic generation of **four annual filing deadlines** and of the AFM
 contributions a company actually owes — each on the cadence OUG 196/2005 art. 11 gives it: monthly
 for the 2% withheld at source, quarterly for the circular-economy contribution, annually for

@@ -3,7 +3,18 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 11.09.2026, noaptea târziu.** **346 teste verzi** (0 eșecuri) și **14 suite de
+> **Unde suntem — 12.09.2026.** ✅ **P3.1 e construit: căutarea, sortarea și paginarea s-au mutat
+> la server** — singurul punct din listă care se strica fără ca nimeni să atingă nimic. Atinse:
+> Mișcări, registrul de predări și Panoul (care își cere acum cele două cifre socotite, nu adunate
+> din rânduri). **359 de teste, 0 eșecuri**, **fără migrare** — schema rămâne la `V38`.
+> ⬜ **Nedeployat**, și neprobat pe ecran cu sesiune reală. Secțiunea „P3.1 — căutarea, sortarea și
+> paginarea au trecut la server". ⚠️ **Proba 6 sărea în tăcere** o bucată întreagă fiindcă citea
+> lista paginată ca pe un tablou — reparată odată cu felia.
+>
+> *(Rândurile de mai jos sunt nota de pe 11.09, păstrată ca istoric — cifrele ei sunt cele de
+> atunci.)*
+>
+> **Unde eram — 11.09.2026, noaptea târziu.** **346 teste verzi** (0 eșecuri) și **14 suite de
 > interfață**: 303 verificări rulate (probele 1–12) plus **25 scrise și nerulate încă** (probele 13
 > și 14 — cer servere pornite), iar una lipsește cu totul, pentru buletine. În producție:
 > `ecoregistru-api` la **v49**, `ecoregistru-app` la **v45**, cu **`V38` migrat acolo**
@@ -6442,6 +6453,116 @@ aprobării), 14 (codul-oglindă) şi una nouă, pentru buletine. *Deployat nu î
 înainte de `await`, și lecția cu `noopener` care făcea ca fiecare fișier să se **descarce** — s-a
 mutat în `lib/openFileInTab`, fiindcă o folosesc acum două ecrane. Două copii ar fi fost două ocazii
 ca numai una să fie reparată.
+
+## P3.1 — căutarea, sortarea și paginarea au trecut la server (12.09.2026)
+
+Singurul punct din toată lista care se strica **fără ca nimeni să atingă nimic**: backendul întorcea
+tot ce lăsau filtrele să treacă, iar browserul făcea restul. Mergea cât timp un client avea o lună
+de date; al doilea an al primului client îl atinge, iar un import de istoric l-ar fi atins din ziua
+întâi. Ecranul se apăra cu filtrul de lună — dar era o apărare de bunăvoie: `?luna=2026` aducea
+anul întreg, iar „tot anul" e chiar treapta pe care o oferă filtrul.
+
+### Ce s-a mutat, și de ce toate trei deodată
+
+Nu doar paginarea. **O casetă de căutare care caută numai în cele 25 de rânduri aduse răspunde
+sigur pe sine și greșit** — e mai rea decât lipsa ei, fiindcă „Niciun rezultat" devine o afirmație
+falsă despre firmă, nu despre pagină. La fel sortarea: apeși pe antet și se așază pagina, nu lista.
+Deci s-au mutat toate trei, în aceeași felie.
+
+Regulile căutării sunt **aceleași**, nu unele apropiate — `FoldedSearch.java` le poartă cuvânt cu
+cuvânt din `useTableView.ts`, și se citesc împreună:
+
+1. **Diacriticele nu contează** — aceeași împăturire ca `Diacritics.fold` și ca `V17`, cele șapte
+   litere românești în amândouă ortografiile (virgulă dedesubt și sedilă).
+2. **Expresia învinge.** Dacă ceva se potrivește cu textul tastat ca un singur șir, numai acelea se
+   arată; căutarea pe cuvinte e rezerva, nu o adăugire. „15 01 02" e un cod, nu trei numere. De aia
+   sunt două interogări și nu un `OR`: un `OR` ar fi îngropat potrivirea exactă printre cele largi.
+3. **Un cuvânt trebuie să înceapă un cuvânt.** Altfel „02" prinde „2026" din dată — greșeala
+   reparată pe 07.09, când o căutare după un cod de deșeu întorcea alt cod de deșeu. E singurul loc
+   care cere `regexp_like`, fiindcă `LIKE` nu poate spune „început de cuvânt".
+
+### Cele șase locuri unde s-a **ales**, nu s-a scris ce venea la mână
+
+- **`PageResponse`, nu `Page`-ul lui Spring.** Acela serializează douăzeci de câmpuri, jumătate
+  despre `Pageable`-ul din care a ieșit, iar forma lui JSON e declarat instabilă între versiuni
+  (Boot 3 scrie chiar un avertisment). Ecranul are nevoie de patru numere; patru numere spune
+  contractul.
+- **Ordinea e totală, sau paginile nu descriu aceeași listă.** `createdAt` închide orice sortare:
+  două rânduri egale pe coloana sortată sunt libere să-și schimbe locul între două cereri, iar
+  atunci unul apare pe pagina 1 **și** pe pagina 2, iar altul nu apare niciodată. Proba nu numără
+  lungimi — adună paginile și verifică **reuniunea**.
+- **`NULLS LAST` scris de mână, ca o coloană 0/1 dinaintea celei adevărate.** Nu din gust:
+  `Sort.Order.nullsLast()` e **ignorat în tăcere** când interogarea se construiește dintr-un
+  `Specification` — `QueryUtils.toJpaOrder` citește direcția și lasă tratarea nulurilor. Compilează,
+  rulează, și „De cântărit" iese prima. Găsit de test, singurul loc unde putea fi găsit.
+- **Sortarea are o listă albă de coloane.** Un `?sort=` care ajunge într-o cale JPA e un fel de a
+  sorta după — și deci de a afla despre — coloane pe care ecranul nu le arată niciodată. Ce nu e pe
+  listă **nu e refuzat**, ci cade pe ordinea implicită: un semn vechi din bara de adrese trebuie să
+  deschidă un tabel, nu o eroare. La fel `size`, care se îndoaie la 200.
+- **`handoverDate` e o expresie, nu o coloană.** Registrul de predări arată descărcarea când se știe
+  și data mișcării altfel, într-o singură coloană. Sortarea după `unloadDate` brut ar fi trimis la
+  coadă tocmai rândurile care **au** o dată scrisă în ele.
+- **`leftSite` nu e `isExit()`.** `isExit()` răspunde la „are nevoie de cod R/D?", iar
+  `UNCLASSIFIED_OUT` tocmai n-are unul. Registrul întreabă altceva — ce a plecat pe poartă — și
+  rândurile fără cod sunt exact cele căutate de cine vrea să le repare. Două întrebări apropiate,
+  cu răspunsuri diferite, ținute separat dinadins.
+
+### Ce a cerut felia pe lângă tabelul însuși
+
+- **`GET /api/v1/movements/{id}`, cerut anume pentru `?miscare=…`.** De când lista vine pe pagini,
+  „nu e printre rândurile aduse" nu mai înseamnă „nu există": rândul pe care îl numește un raport
+  poate fi pe pagina a treia. Căutarea în pagină ar fi răspuns *„mișcarea nu mai există"* tocmai
+  rândurilor pentru care linkul a fost făcut.
+- **`GET /api/v1/movements/summary?year=&month=`, pentru Panou.** Panoul cerea toate mișcările lunii
+  ca să le numere și să le adune. Cu 25 de rânduri pe pagină, aceeași adunare ar fi scris totalul
+  **unei pagini** sub titlul „luna aceasta" — un număr mai mic decât adevărul, care nu spune că e
+  mai mic. Suma se face acum în interogare și **în kilograme**, fiindcă fiecare mișcare își poartă
+  unitatea: 1000 kg și 1 tonă adunate brut dau `1001`. Mișcările plecate fără cântar se numără ca
+  mișcări și nu adaugă un zero la kilograme — „de cântărit" nu e o cantitate.
+- **Întârziere de 250 ms pe casetă, și rândurile vechi rămân pe ecran.** Cine tastează „hamburger"
+  ar trimite nouă cereri ca să citească răspunsul ultimei. Se întârzie **cererea**, nu litera de pe
+  ecran; iar `keepPreviousData` ține tabelul plin cât vine pagina nouă, ca ecranul să nu clipească
+  la fiecare tastă.
+- **Filtrele de sus resetează pagina.** Venind de pe pagina 4 a lunii trecute într-o lună care are
+  două pagini, ai fi văzut un tabel gol — „nu e nimic aici" ca răspuns la o întrebare pe care n-ai
+  pus-o.
+
+### Probele
+
+**359 de teste, 0 eșecuri** (erau 346). Cele 13 noi sunt `MovementPagingIT` și niciuna nu numără
+rânduri de dragul lor: reuniunea paginilor, pagina de dincolo de capăt (goală, **nu** 400 — un rând
+șters de altcineva scurtează tabelul sub tine), diacriticele, expresia care învinge cuvintele,
+cuvântul care trebuie să înceapă un cuvânt, mișcarea fără partener rămasă găsibilă după codul ei
+(joinurile sunt **LEFT**; un INNER ar fi ascuns exact rândurile cu cel mai puțin scris pe ele),
+lipsa la coadă în ambele sensuri, îndoirea lui `size` și a unui `?sort=` necunoscut, cele două
+filtre ale registrului, sortarea după ce arată coloana, și cele două cifre ale Panoului.
+**Fără migrare** — schema rămâne la `V38`.
+
+⚠️ **Trei dintre ele picau când felia a fost reluată**, toate pe același helper: firma demo e
+`BOTH`, deci la o ieșire serverul nu poate deduce de unde vine deșeul și întreabă
+(`movement.register.required`). Proba cerea o predare fără să spună registrul. Reparat în probă, nu
+în server — serverul avea dreptate.
+
+`tsc --noEmit` curat, `vite build` verde (667,08 kB).
+
+### Și o gaură în ce se proba
+
+**Proba 6 citea `list.length` pe un răspuns care de-acum e `{ content: […] }`** — `undefined`, deci
+falsy, deci tot drumul „adresa deschide mișcarea cerută" se **sărea în tăcere**. O probă care trece
+fiindcă nu probează nimic e mai rea decât una care lipsește. Reparată; proba 13 cere acum `size=200`,
+altfel ar fi căutat mișcarea periculoasă doar printre cele mai noi 25 și ar fi spus „nu există"
+despre un seed care o are.
+
+Și aşteptările din proba 3 s-au lungit: între tasta apăsată şi rândurile de pe ecran stau acum
+250 ms de întârziere plus un drum până la bază. Cele 300 ms scrise cât totul se întâmpla în browser
+ar fi citit tabelul dinainte — o probă care pică din când în când, fără ca nimic să fie stricat.
+
+⬜ **Nedeployat.** Și: felia a atins **cele două ecrane care citesc mișcări** (Mișcări, registrul de
+predări) plus Panoul. Celelalte tabele — parteneri, șoferi, puncte de lucru, evidența lunară — aduc
+în continuare tot și paginează în browser, și e în regulă: sunt liste care nu cresc cu vechimea
+contului. `useTableView` rămâne unde e, lângă sora ei de la distanță, cu aceeași față către
+`TableToolbar`, `SortableHeader` și `TablePagination` — niciunul dintre ele nu știe pe care se
+sprijină ecranul.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 
