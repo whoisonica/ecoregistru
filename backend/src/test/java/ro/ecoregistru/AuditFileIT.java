@@ -356,6 +356,68 @@ class AuditFileIT {
                 .doesNotContain("Te privește");
     }
 
+    // --- G-10: a cincea obligație, art. 44 — programul de prevenire ---
+
+    /**
+     * Art. 44 alin. (1) și (3) sunt în aceeași listă de amenzi ca evidența însăși
+     * (art. 62 alin. (1) lit. a), 40.000–60.000 lei), și până pe 11.09.2026 nu erau nicăieri —
+     * nici în dosar, nici în calendar. Firma demo are autorizație de mediu în profil, deci
+     * propoziția e o <b>constatare</b> și numește autorizația pe care s-a sprijinit.
+     */
+    @Test
+    void thePreventionProgrammeIsNamedAndTheFindingNamesThePermit() throws Exception {
+        String readme = flat(readmeOfDemo2026());
+
+        assertThat(readme)
+                .contains("Toate cinci sunt în aceeași listă sancționată")
+                .contains("Programul de prevenire și reducere a deșeurilor — art. 44 alin. (1) și (3)")
+                .contains("firma are autorizație de mediu (APM-CJ-123)")
+                // Cele două jumătăți ale lui alin. (3) se spun separat: una e în calendar,
+                // cealaltă nu se poate verifica din aplicație și rămâne a clientului.
+                .contains("până la 31 mai")
+                .contains("publicarea pe site nu se poate verifica de aici");
+    }
+
+    /**
+     * Și cealaltă jumătate a articolului, cea pe care nu o putem observa: o firmă fără număr de
+     * autorizație de mediu în profil primește obligația <em>numită</em>, nu o afirmație despre ea.
+     * Aceeași regulă ca la codurile periculoase și la uleiuri.
+     */
+    @Test
+    void aCompanyWithoutAnEnvironmentalPermitIsToldTheObligationDoesNotActivate() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company other = companyRepository.save(Company.builder()
+                .name("Fără autorizație SRL").cui("ROA" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        AppUser otherUser = appUserRepository.save(AppUser.builder()
+                .email("faraautorizatie+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(other).enabled(true).createdAt(Instant.now()).build());
+
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(otherUser)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        assertThat(flat(new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8)))
+                .contains("Programul de prevenire și reducere a deșeurilor — art. 44 alin. (1) și (3)")
+                .contains("nu e trecut niciun număr de autorizație de mediu")
+                .doesNotContain("firma are autorizație de mediu");
+    }
+
+    /**
+     * Alin. (3) al art. 36 cere o înscriere în plus — operatorii care repară produse — dar în alt
+     * registru și <b>fără</b> să fie în lista de amenzi din antetul blocului. Proba ține cele două
+     * lucruri despărțite: dosarul o numește, și nu o strecoară sub cifra de 40.000–60.000 lei.
+     */
+    @Test
+    void theRepairRegistryIsNamedAsASeparateParagraphOutsideTheFineList() throws Exception {
+        assertThat(flat(readmeOfDemo2026()))
+                .contains("operatorii care REPARĂ produse")
+                .contains("fără")
+                .contains("în lista de amenzi de mai sus");
+    }
+
     private String readmeOfDemo2026() throws Exception {
         byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
                         .param("year", "2026")

@@ -91,5 +91,43 @@ public enum ReportType {
      */
     APM_ANNUAL_APRIL,
 
+    /**
+     * The yearly filing due on <b>31 May</b> at the county environmental agency, for the previous
+     * calendar year — OUG 92/2021 art. 44 alin. (3): the <b>waste prevention and reduction
+     * programme</b>, together with the progress made on it. Sanctioned by art. 62 alin. (1)
+     * lit. a), <b>40.000–60.000 lei</b> for a legal person — the same bucket as the evidence
+     * itself, and six times the fine of {@link #APM_ANNUAL_APRIL}.
+     *
+     * <p>Found on 11.09.2026, reading the consolidated act again after the April deadline shipped.
+     * The article was <em>already quoted</em> in our own {@code surse-oficiale.md}, inside the list
+     * of fines of art. 62 — transcribed, never read as an obligation. That is the second time a
+     * legal term hid in plain sight in a document we had written ourselves.
+     *
+     * <p><b>Who owes it:</b> a legal person carrying on a commercial or industrial activity
+     * <em>for which the environmental authority issued an environmental or integrated environmental
+     * permit</em>. The signal is therefore read from the profile the client already filled in —
+     * {@code Company.environmentalAuthNumber} — and it is a <b>positive</b> one in the strict sense
+     * of this enum: the permit number is not a proxy for the fact, it <em>is</em> the fact the
+     * article conditions the obligation on. A company with no permit number recorded gets nothing.
+     *
+     * <p><b>Expiry is deliberately not consulted.</b> The obligation belongs to the reported year,
+     * so a permit that lapsed since does not remove the filing owed for the years it covered;
+     * reading {@code environmentalAuthExpiry} here would silence the reminder exactly for the
+     * client who most needs it.
+     *
+     * <p><b>The year reported is {@code year - 1}</b> — "până la 31 mai anul următor raportării",
+     * the same relation 15 March and 30 April have with theirs.
+     *
+     * <p>Art. 44 alin. (3) carries a <b>second</b> obligation the deadline cannot watch: the
+     * programme is also <em>published on the company's own website</em>. A website is not
+     * something this application can observe, so that half is named in the audit file instead —
+     * {@code AuditFileService.otherObligationsNote} — and not concluded from anything.
+     *
+     * <p>The name is positional, like {@link #APM_ANNUAL_APRIL}, and not for style: the stored
+     * column is {@code VARCHAR(20)}, so {@code PREVENTION_PROGRAM_ANNUAL} would not fit. What the
+     * client reads is the label, which names the document.
+     */
+    APM_ANNUAL_MAY,
+
     OTHER
 }

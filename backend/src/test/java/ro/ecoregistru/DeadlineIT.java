@@ -399,6 +399,107 @@ class DeadlineIT {
                 .andExpect(jsonPath("$.generated", is(0)));
     }
 
+    // ---------- Termenul de 31 mai — OUG 92/2021 art. 44 alin. (3) ----------
+
+    /**
+     * Al patrulea termen anual, găsit pe 11.09.2026. Semnalul e cel mai curat din cele trei
+     * termene de APM: art. 44 alin. (1) leagă obligația de persoana juridică <em>pentru care
+     * autoritatea a emis o autorizație de mediu</em>, iar numărul autorizației e deja în profil —
+     * nu e corelat cu faptul, e chiar condiția din articol. Anul raportat e cel dinainte
+     * („până la 31 mai anul următor raportării"), deci se cere și direcția inversă: termenul
+     * NU apare în anul autorizației, ci în următorul.
+     */
+    @Test
+    void anEnvironmentalPermitCreatesThe31MayDeadline() throws Exception {
+        TenantFixture t = newTenant(false);
+        setEnvironmentalPermit(t, "AM 214/12.03.2024", LocalDate.of(2029, 3, 12));
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$[?(@.reportType == 'APM_ANNUAL_MAY' && @.dueDate == '2027-05-31')]")
+                        .exists());
+    }
+
+    /**
+     * Direcția care contează, ca peste tot în calendarul ăsta: o firmă fără autorizație de mediu
+     * în profil nu primește nimic. Programul de prevenire e al titularului de autorizație, iar o
+     * alertă falsă aici trimite clientul să pregătească un document care nu e al lui.
+     */
+    @Test
+    void aCompanyWithoutAnEnvironmentalPermitGetsNo31May() throws Exception {
+        TenantFixture t = newTenant(false);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_MAY')]").doesNotExist());
+    }
+
+    /**
+     * Rubrica goală nu e un răspuns. Un șir de spații ajunge în bază la fel de ușor ca un
+     * {@code null} — dintr-un formular trimis cu rubrica atinsă și ștearsă — și ar aprinde un
+     * termen pe o autorizație care nu există. Proba pinuiește {@code isBlank}, nu
+     * {@code != null}: o rescriere care ar verifica doar nulitatea ar trece un test scris pe el.
+     */
+    @Test
+    void aBlankPermitNumberIsNotAPermit() throws Exception {
+        TenantFixture t = newTenant(false);
+        setEnvironmentalPermit(t, "   ", null);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_MAY')]").doesNotExist());
+    }
+
+    /**
+     * Și decizia inversă, scrisă ca probă fiindcă altfel se „repară" mai târziu: o autorizație
+     * <b>expirată</b> ține termenul aprins. Raportarea e a anului raportat, iar o autorizație
+     * stinsă între timp nu șterge ce se datora cât a ținut — a citi expirarea aici ar tăcea exact
+     * pentru clientul rămas în urmă.
+     */
+    @Test
+    void anExpiredPermitStillCreatesThe31MayDeadline() throws Exception {
+        TenantFixture t = newTenant(false);
+        setEnvironmentalPermit(t, "AM 9/01.02.2019", LocalDate.of(2024, 2, 1));
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(
+                        "$[?(@.reportType == 'APM_ANNUAL_MAY' && @.dueDate == '2027-05-31')]")
+                        .exists());
+    }
+
+    /** Un singur rând, și generarea rămâne idempotentă: a doua rulare creează zero. */
+    @Test
+    void the31MayDeadlineIsOneRowAndIsNotRecreated() throws Exception {
+        TenantFixture t = newTenant(false);
+        setEnvironmentalPermit(t, "AM 214/12.03.2024", null);
+        regenerate(t.token, 2027);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_MAY')]", hasSize(1)));
+        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2027")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.generated", is(0)));
+    }
+
+    private void setEnvironmentalPermit(TenantFixture t, String number, LocalDate expiry) {
+        Company company = companyRepository.findById(t.company.getId()).orElseThrow();
+        company.setEnvironmentalAuthNumber(number);
+        company.setEnvironmentalAuthExpiry(expiry);
+        companyRepository.save(company);
+    }
+
     private TenantFixture newTenantWithMovementOn(String code, int year) {
         TenantFixture t = newTenant(false);
         WorkPoint wp = workPointRepository.save(WorkPoint.builder()

@@ -1434,6 +1434,11 @@ export const strings = {
       // una din ele și trebuie să vadă care.
       APM_ANNUAL_APRIL:
         "Raportare anuală la APM (30 aprilie) — uleiuri uzate (art. 31) și deșeuri din construcții (art. 17 alin. (7))",
+      // 31 mai — al patrulea termen anual, găsit pe 11.09.2026. Eticheta numeşte documentul, nu
+      // articolul: programul de prevenire nu seamănă cu nimic altceva din calendar, iar clientul
+      // trebuie să vadă din rând ce anume pregăteşte. Semnalul e autorizaţia de mediu din profil.
+      APM_ANNUAL_MAY:
+        "Programul de prevenire și reducere a deșeurilor (anual, 31 mai) — la agenția județeană de mediu",
       OTHER: "Altă raportare",
     },
     deadlineStatus: {

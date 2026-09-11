@@ -852,6 +852,10 @@ export type ReportType =
   // 30 aprilie, OUG 92/2021 art. 49 alin. (9) — uleiuri uzate şi deşeuri din construcţii. Lipsea
   // din calendar cu totul până pe 10.09.2026, şi nu doar din tipul ăsta.
   | "APM_ANNUAL_APRIL"
+  // 31 mai, OUG 92/2021 art. 44 alin. (3) — programul de prevenire şi reducere a cantităţilor de
+  // deşeuri, plus progresul pe el. Al patrulea termen anual, găsit pe 11.09.2026; amenda e cea
+  // mare, 40.000–60.000 lei, fiindcă art. 44 alin. (1) şi (3) sunt în lista de la art. 62(1)(a).
+  | "APM_ANNUAL_MAY"
   | "OTHER";
 
 export type DeadlineStatus = "UPCOMING" | "DONE" | "OVERDUE";

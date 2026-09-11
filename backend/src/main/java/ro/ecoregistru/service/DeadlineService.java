@@ -92,6 +92,7 @@ public class DeadlineService {
         created += afmDeadlines(company, year);
         created += packagingDeadline(company, year);
         created += aprilDeadline(company, year);
+        created += mayDeadline(company, year);
 
         return new DeadlineGenerationResponse(year, created);
     }
@@ -154,6 +155,41 @@ public class DeadlineService {
         }
         return createIfMissing(company, ReportType.APM_ANNUAL_APRIL,
                 LocalDate.of(year, Month.APRIL, 30));
+    }
+
+    /**
+     * The third annual APM filing, due <b>31 May</b> for the previous calendar year —
+     * OUG 92/2021 art. 44 alin. (3), the waste prevention and reduction programme together with
+     * the progress made on it. Sanctioned by art. 62 alin. (1) lit. a), <b>40.000–60.000 lei</b>:
+     * the same bucket as the evidence itself, and six times what 30 April costs.
+     *
+     * <p>Found on 11.09.2026 in the consolidated act, after the April deadline had shipped. It is
+     * the fourth annual term of the calendar and it was missing entirely, exactly like the third
+     * one was a day earlier.
+     *
+     * <p><b>The signal is the permit the client already recorded.</b> Art. 44 alin. (1) binds the
+     * legal person "pentru care autoritatea competentă pentru protecția mediului a emis o
+     * autorizație de mediu/autorizație integrată de mediu", so a recorded permit number is not
+     * correlated with the obligation — it is the condition the article writes. That makes this the
+     * cleanest positive signal of the three annual APM terms: no new profile question, no
+     * derivation from movements, nothing inferred from silence.
+     *
+     * <p><b>Expiry is not read, and that is a decision.</b> The filing belongs to the reported
+     * year; a permit that has lapsed since does not cancel what was owed while it ran. Consulting
+     * {@code environmentalAuthExpiry} would mute the reminder for precisely the client who is
+     * behind on it.
+     *
+     * <p>Like {@link #aprilDeadline}, the year looked at is {@code year - 1} — "până la 31 mai
+     * anul următor raportării" — and the row carries no document link, because the programme is
+     * written by the client (or a third party, alin. (2)), not printed by us.
+     */
+    private int mayDeadline(Company company, int year) {
+        String permit = company.getEnvironmentalAuthNumber();
+        if (permit == null || permit.isBlank()) {
+            return 0;
+        }
+        return createIfMissing(company, ReportType.APM_ANNUAL_MAY,
+                LocalDate.of(year, Month.MAY, 31));
     }
 
     @Transactional

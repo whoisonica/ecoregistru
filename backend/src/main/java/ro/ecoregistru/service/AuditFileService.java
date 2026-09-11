@@ -391,7 +391,7 @@ public class AuditFileService {
 
         sb.append(marketRoleNote(company))
                 .append(wasteManagerNote(company))
-                .append(otherObligationsNote(evidenceByYear))
+                .append(otherObligationsNote(company, evidenceByYear))
                 .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
                 .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
@@ -501,16 +501,24 @@ public class AuditFileService {
     }
 
     /**
-     * Four obligations of OUG 92/2021 that an inspection checks, that the dossier used to pass
+     * Five obligations of OUG 92/2021 that an inspection checks, that the dossier used to pass
      * over in silence, and that sit in the same sanctioned list as the evidence itself:
-     * art. 62 alin. (1) lit. a), 40.000–60.000 lei for a legal person. Read on 10.09.2026, from
-     * {@code docs/surse-oficiale.md} §2.8.
+     * art. 62 alin. (1) lit. a), 40.000–60.000 lei for a legal person. Four read on 10.09.2026
+     * from {@code docs/surse-oficiale.md} §2.8; the fifth — art. 44 — on 11.09.2026, from the
+     * consolidated act.
      *
      * <p>Same principle as {@link #wasteManagerNote}: the absence of a legal obligation is itself
      * the finding, so the block speaks instead of staying quiet. The difference is what it can
-     * claim. Two of the four the application can <em>check</em> against the evidence it holds, and
-     * those print as findings, naming the codes they found; the other two it can only <em>name</em>,
-     * because nothing in the movements decides them.
+     * claim. Three of the five the application can <em>check</em> against what it holds, and those
+     * print as findings, naming the codes or the permit they found; the other two it can only
+     * <em>name</em>, because nothing in the data decides them.
+     *
+     * <p><b>The fifth is half a finding, deliberately.</b> Art. 44 alin. (3) requires two separate
+     * things: the programme is <em>published on the company's own website</em> and <em>transmitted
+     * annually to the county agency by 31 May</em>. The second half is watched — it is
+     * {@link ro.ecoregistru.enums.ReportType#APM_ANNUAL_MAY} in the calendar. The first half is a
+     * website, which this application cannot observe, so it is named and handed back rather than
+     * guessed at. Splitting them keeps the block honest about which half we actually cover.
      *
      * <p><b>Why art. 17 alin. (3) is not derived, though it looks derivable.</b> The temptation is
      * to list which of paper, metal, plastic, glass and textiles already appear in the evidence.
@@ -521,7 +529,8 @@ public class AuditFileService {
      * an alert is a statement. So the obligation is named in full, with its own date for textiles,
      * and nothing is concluded.
      */
-    private String otherObligationsNote(Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+    private String otherObligationsNote(Company company,
+            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
         List<MonthlyEvidenceResponse> lines = evidenceByYear.values().stream()
                 .filter(java.util.Objects::nonNull)
                 .flatMap(List::stream)
@@ -541,7 +550,7 @@ public class AuditFileService {
 
         StringBuilder sb = new StringBuilder();
         sb.append("ALTE OBLIGAȚII PE CARE LE VERIFICĂ INSPECTORUL\n")
-                .append("Toate patru sunt în aceeași listă sancționată ca evidența de mai sus — OUG 92/2021,\n")
+                .append("Toate cinci sunt în aceeași listă sancționată ca evidența de mai sus — OUG 92/2021,\n")
                 .append("art. 62 alin. (1) lit. a): 40.000–60.000 lei pentru persoane juridice. Dosarul le\n")
                 .append("numește ca să nu fie aflate la control; dovada lor nu stă în evidență.\n\n");
 
@@ -555,7 +564,9 @@ public class AuditFileService {
                 .append("     Trei feluri de operatori NU se autorizează, dar sunt obligați să se înscrie\n")
                 .append("     în registrul ținut de agenție: cei care transportă deșeuri nepericuloase în\n")
                 .append("     sistem profesional, comercianții care nu intră fizic în posesia deșeurilor și\n")
-                .append("     brokerii. Dacă firma face una din cele trei, înscrierea se dovedește separat.\n\n");
+                .append("     brokerii. Dacă firma face una din cele trei, înscrierea se dovedește separat.\n")
+                .append("     Alin. (3) al aceluiași articol mai cere o înscriere, în alt registru și fără\n")
+                .append("     să fie în lista de amenzi de mai sus: operatorii care REPARĂ produse.\n\n");
 
         sb.append("  3. Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)\n");
         if (hazardous.isEmpty()) {
@@ -587,6 +598,27 @@ public class AuditFileService {
                     .append("     autorizați pentru colectarea, valorificarea sau eliminarea uleiurilor uzate —\n")
                     .append("     nu o parte din ea. Autorizațiile partenerilor prin care au plecat sunt în\n")
                     .append("     autorizatii-parteneri.pdf, din acest dosar.\n\n");
+        }
+
+        sb.append("  5. Programul de prevenire și reducere a deșeurilor — art. 44 alin. (1) și (3)\n");
+        String permit = company.getEnvironmentalAuthNumber();
+        if (permit == null || permit.isBlank()) {
+            sb.append("     Persoana juridică cu activitate comercială sau industrială PENTRU CARE s-a emis\n")
+                    .append("     o autorizație de mediu întocmește un program de prevenire și reducere a\n")
+                    .append("     cantităților de deșeuri, îl publică pe propriul site și îl transmite anual\n")
+                    .append("     agenției județene, cu progresul, până la 31 mai. În profilul firmei nu e\n")
+                    .append("     trecut niciun număr de autorizație de mediu, deci obligația nu se activează\n")
+                    .append("     pe aceste date.\n\n");
+        } else {
+            sb.append("     Te privește: firma are autorizație de mediu (")
+                    .append(permit).append(").\n")
+                    .append("     Art. 44 alin. (1) cere un program de prevenire și reducere a cantităților de\n")
+                    .append("     deșeuri generate, întocmit pe rezultatele unui audit de deșeuri, și măsuri de\n")
+                    .append("     reducere a periculozității. Poate fi elaborat și de un terț (alin. (2)).\n")
+                    .append("     Alin. (3) cere DOUĂ lucruri, nu unul: programul se PUBLICĂ pe pagina proprie\n")
+                    .append("     de internet a firmei ȘI se TRANSMITE anual agenției județene, cu progresul\n")
+                    .append("     înregistrat, până la 31 mai anul următor. Termenul din 31 mai e în calendarul\n")
+                    .append("     aplicației; publicarea pe site nu se poate verifica de aici și rămâne a ta.\n\n");
         }
         return sb.toString();
     }

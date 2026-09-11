@@ -122,6 +122,11 @@ public class EmailNotificationService implements NotificationService {
             // doar una din ele și trebuie să vadă care.
             case APM_ANNUAL_APRIL -> "Raportare anuală la APM (30 aprilie) — uleiuri uzate "
                     + "(art. 31) și deșeuri din construcții (art. 17 alin. (7))";
+            // Al patrulea termen anual, găsit pe 11.09.2026. Eticheta numește documentul, nu
+            // articolul: clientul trebuie să știe ce pregătește, iar programul de prevenire nu
+            // seamănă cu nimic altceva din calendar.
+            case APM_ANNUAL_MAY -> "Programul de prevenire și reducere a cantităților de deșeuri "
+                    + "(anual, 31 mai) — la agenția județeană de mediu, cu progresul înregistrat";
             case OTHER -> "Raportare";
         };
     }
