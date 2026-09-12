@@ -25,7 +25,10 @@ rulează local și are testele verzi.
 > lista paginată ca pe un tablou — reparată odată cu felia.
 >
 > 🔬 **Auditul QA de dinaintea lansării — P0 închis integral** (secţiunea „Auditul QA de dinaintea
-> lansării"). **368 → 448 de teste, 49 de clase, 0 eşecuri, 0 dezactivate.** Auditul n-a atins nicio
+> lansării"). **368 → 448 de teste, 49 de clase, 0 eşecuri, 0 dezactivate**, iar cele şase
+> reparaţii sunt **pe producţie** — `api` **v52** (`81d5c116`), 12.09 ora 13:02, fără migrare.
+> Proba e una dintre ele: `GET /api/v1/auth/login` → **405**, unde până azi ieşea 500 cu alertă
+> Sentry. Auditul n-a atins nicio
 > linie de production code; **reparaţiile s-au făcut după el**, iar cele opt teste `@Disabled` care
 > afirmau comportamentul corect sunt acum active şi trec. Probate: izolarea între clienţi pe toată
 > matricea resursă × verb, comutatorul de tenant, **autorizarea pe roluri**, sesiunile, securitatea
