@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.enums.PackagingOrigin;
@@ -38,7 +39,7 @@ public record PartnerRequest(
          * The partner's work points, replacing the list wholesale on save. Empty clears it — this
          * is a small, fully visible list on one screen, so "what you see is what is stored".
          */
-        List<PartnerWorkPointRequest> workPoints,
+        @Valid List<PartnerWorkPointRequest> workPoints,
         String tradeRegisterNumber,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
@@ -47,5 +48,5 @@ public record PartnerRequest(
          * alone, so a client of this API that does not know about the list cannot wipe it by
          * omission.
          */
-        List<DriverRequest> drivers
+        @Valid List<DriverRequest> drivers
 ) {}

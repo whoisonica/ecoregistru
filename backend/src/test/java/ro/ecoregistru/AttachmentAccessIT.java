@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasLength;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
@@ -190,6 +192,112 @@ class AttachmentAccessIT {
         mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(justUnder)
                         .header("Authorization", "Bearer " + tokenA))
                 .andExpect(status().isOk());
+    }
+
+    // ---------- P0.5 · ce intră ca nume şi ca tip de fişier ----------
+
+    /**
+     * Numele fişierului vine de la client şi ajunge în antetul {@code Content-Disposition}. Un nume
+     * cu CR/LF în el ar putea, pe un cod care lipeşte antetele cu mâna, să deschidă un al doilea
+     * antet — răspunsul spart în două. Aici se probează că nu se poate.
+     */
+    @Test
+    void aHostileFileNameCannotBreakTheContentDispositionHeader() throws Exception {
+        UUID hostile = attachmentRepository.save(Attachment.builder()
+                .movement(movementRepository.findById(movementA).orElseThrow())
+                .url("https://res.cloudinary.com/x/y.pdf").publicId("ecoregistru/movements/hostile")
+                .resourceType("image").deliveryType("authenticated").format("pdf")
+                .fileName("../../etc/passwd\r\nX-Injected: da")
+                .contentType("application/pdf")
+                .createdAt(Instant.now()).build()).getId();
+
+        String header = mockMvc.perform(
+                        get("/api/v1/movements/" + movementA + "/attachments/" + hostile + "/continut")
+                                .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getHeader("Content-Disposition");
+
+        // Ce contează e că octeţii de CR/LF nu ajung în antet ca octeţi: Spring îi codifică
+        // (`=0D=0A` în forma Q, `%0D%0A` în `filename*`), deci rămân text în interiorul valorii şi
+        // nu deschid un al doilea antet. Şirul „X-Injected" se vede — codificat, adică inert.
+        assertThat(header).doesNotContain("\r").doesNotContain("\n");
+        assertThat(header).contains("=0D=0A");
+        // Iar drumul nu ajunge nici măcar aici: numele se curăţă la urcare — proba, în testul
+        // de mai jos, prin API.
+    }
+
+    /**
+     * Coloana {@code file_name} e {@code VARCHAR(255)} din {@code V1}, iar numele vine de la client
+     * fără nicio verificare. Aşteptat: o cerere respinsă cu 4xx, nu o excepţie de bază de date
+     * raportată ca defect de server — acelaşi tipar ca BUG-003.
+     */
+    @Test
+    void anOverLongFileNameIsTruncatedAndNotCrashed() throws Exception {
+        when(storageService.upload(any(), anyString())).thenReturn(
+                new CloudinaryStorageService.StoredFile("https://res.cloudinary.com/x/y.pdf",
+                        "ecoregistru/movements/x/y", "image", "authenticated", "pdf"));
+        var longName = new MockMultipartFile("file", "a".repeat(300) + ".pdf",
+                "application/pdf", "x".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(longName)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileName").value(hasLength(255)));
+    }
+
+    /** Şi drumul se lasă la uşă: rubrica e un nume de fişier, nu o cale. */
+    @Test
+    void aPathInTheFileNameIsReducedToItsLastSegment() throws Exception {
+        when(storageService.upload(any(), anyString())).thenReturn(
+                new CloudinaryStorageService.StoredFile("https://res.cloudinary.com/x/y.pdf",
+                        "ecoregistru/movements/x/y", "image", "authenticated", "pdf"));
+        var traversal = new MockMultipartFile("file", "../../etc/passwd",
+                "application/pdf", "x".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(traversal)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileName").value("passwd"));
+    }
+
+    /**
+     * Tipul de conţinut vine tot de la client şi se păstrează ca atare, iar la descărcare trece
+     * prin {@code MediaType.parseMediaType}. Un tip care nu e un tip valid nu trebuie să strice
+     * descărcarea — nici a lui, nici a nimănui.
+     */
+    @Test
+    void aContentTypeThatIsNotAMediaTypeDoesNotBreakTheDownload() throws Exception {
+        UUID bogus = attachmentRepository.save(Attachment.builder()
+                .movement(movementRepository.findById(movementA).orElseThrow())
+                .url("https://res.cloudinary.com/x/y.pdf").publicId("ecoregistru/movements/bogus")
+                .resourceType("image").deliveryType("authenticated").format("pdf")
+                .fileName("aviz.pdf").contentType("nu e un;; tip")
+                .createdAt(Instant.now()).build()).getId();
+
+        mockMvc.perform(get("/api/v1/movements/" + movementA + "/attachments/" + bogus + "/continut")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk());
+    }
+
+    /**
+     * Fişierul e servit {@code inline}, iar tipul cu care se serveşte îl declară cel care l-a urcat.
+     * Un fişier declarat {@code text/html} ar fi, astfel, o pagină a noastră scrisă de altcineva şi
+     * rulată pe originea API-ului. Aşteptat: nu se serveşte ca HTML.
+     */
+    @Test
+    void aFileDeclaredAsHtmlIsNotServedAsHtml() throws Exception {
+        UUID html = attachmentRepository.save(Attachment.builder()
+                .movement(movementRepository.findById(movementA).orElseThrow())
+                .url("https://res.cloudinary.com/x/y.pdf").publicId("ecoregistru/movements/html")
+                .resourceType("image").deliveryType("authenticated").format("pdf")
+                .fileName("aviz.html").contentType("text/html")
+                .createdAt(Instant.now()).build()).getId();
+
+        mockMvc.perform(get("/api/v1/movements/" + movementA + "/attachments/" + html + "/continut")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("application/octet-stream"))
+                .andExpect(header().string("Content-Disposition", containsString("attachment")));
     }
 
     /**

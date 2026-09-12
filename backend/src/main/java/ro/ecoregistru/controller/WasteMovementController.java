@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -192,17 +193,50 @@ public class WasteMovementController {
     public ResponseEntity<byte[]> attachmentContent(@PathVariable UUID id,
                                                     @PathVariable UUID attachmentId) {
         var content = movementService.attachmentContent(id, attachmentId);
-        ContentDisposition disposition = ContentDisposition.inline()
+        MediaType type = safeInlineType(content.contentType());
+        // Doar ce se poate arăta fără să ruleze nimic rămâne `inline`; restul se descarcă.
+        ContentDisposition disposition = (type == MediaType.APPLICATION_OCTET_STREAM
+                        ? ContentDisposition.attachment()
+                        : ContentDisposition.inline())
                 .filename(content.fileName() == null ? "atasament" : content.fileName(),
                         StandardCharsets.UTF_8)
                 .build();
-        MediaType type = content.contentType() == null
-                ? MediaType.APPLICATION_OCTET_STREAM
-                : MediaType.parseMediaType(content.contentType());
         return ResponseEntity.ok()
                 .contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(content.bytes());
+    }
+
+    /**
+     * BUG-006. Tipul de conţinut al unui ataşament e <b>declarat de cine îl urcă</b> şi se păstra
+     * ca atare, iar aici era crezut pe cuvânt. Două lucruri ieşeau din asta:
+     *
+     * <ul>
+     *   <li>un tip care nu e un tip — {@code parseMediaType} arunca, deci o descărcare cădea cu
+     *       <b>500</b>, iar rândul rămânea nedescărcabil pentru totdeauna;</li>
+     *   <li>un fişier declarat {@code text/html} era servit {@code inline} ca HTML, de pe originea
+     *       API-ului: o pagină a noastră, scrisă de altcineva. {@code image/svg+xml} e acelaşi
+     *       lucru cu alt nume — un SVG poate purta script.</li>
+     * </ul>
+     *
+     * <p>Deci: se arată {@code inline} numai ce se poate arăta fără să ruleze nimic — PDF şi
+     * imaginile rastru, adică exact avizul şi poza de la cântar, cazurile pentru care {@code inline}
+     * a fost ales. Orice altceva (docx, xls, csv, txt, tipuri stricate, tipuri necunoscute) se
+     * descarcă în loc să se deschidă. Nimic nu se refuză: fişierul iese întreg, doar nu se execută.
+     */
+    private static MediaType safeInlineType(String declared) {
+        if (declared == null) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+        MediaType type;
+        try {
+            type = MediaType.parseMediaType(declared);
+        } catch (InvalidMediaTypeException e) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+        boolean safe = MediaType.APPLICATION_PDF.equalsTypeAndSubtype(type)
+                || (type.getType().equals("image") && !type.getSubtype().contains("svg"));
+        return safe ? type : MediaType.APPLICATION_OCTET_STREAM;
     }
 
     @DeleteMapping("/{id}/attachments/{attachmentId}")

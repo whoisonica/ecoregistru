@@ -539,13 +539,36 @@ public class WasteMovementService {
                 .resourceType(stored.resourceType())
                 .deliveryType(stored.deliveryType())
                 .format(stored.format())
-                .fileName(file.getOriginalFilename())
+                .fileName(safeFileName(file.getOriginalFilename()))
                 .contentType(file.getContentType())
                 .createdAt(Instant.now())
                 .build();
         movement.getAttachments().add(attachment);
         attachmentRepository.save(attachment);
         return mapper.toAttachmentResponse(attachment);
+    }
+
+    /**
+     * BUG-005. Numele fişierului vine de la client şi nu e verificat nicăieri: coloana
+     * {@code file_name} e {@code VARCHAR(255)} din {@code V1}, deci un nume de 300 de caractere —
+     * pe care un scaner îl produce fără rea intenţie — se oprea abia în lungimea coloanei, adică
+     * <b>500 + alertă Sentry</b> după ce fişierul urcase deja la furnizor.
+     *
+     * <p>Se păstrează doar numele, nu şi drumul: un {@code ../../etc/passwd} devine {@code passwd}.
+     * Nu fiindcă ar ajunge undeva pe disc — fişierul se urcă la Cloudinary sub o cale pe care o
+     * scriem noi —, ci fiindcă rubrica asta e un <em>nume de fişier</em>, iar ce se scrie în ea
+     * ajunge în antetul de descărcare şi pe ecran.
+     *
+     * <p>Trunchiere, nu refuz: numele e metadată de afişare, iar un om care a scanat un aviz n-are
+     * ce învăţa dintr-o eroare despre lungimea unei coloane.
+     */
+    static String safeFileName(String original) {
+        if (original == null || original.isBlank()) {
+            return null;
+        }
+        String name = original.replace('\\', '/');
+        name = name.substring(name.lastIndexOf('/') + 1);
+        return name.length() > 255 ? name.substring(0, 255) : name;
     }
 
     @Transactional

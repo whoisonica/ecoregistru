@@ -9,10 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import ro.ecoregistru.security.TooManyRequests;
 import ro.ecoregistru.security.TooManyRequestsException;
@@ -100,6 +103,47 @@ public class AdviceController {
         log.warn("Malformed request body: {}", e.getMostSpecificCause().getMessage());
         return envelope(BAD_REQUEST, "request.malformed",
                 "Cererea conține date invalide sau un cod necunoscut.");
+    }
+
+    /**
+     * BUG-001. Trei greşeli de client pe care Spring le aruncă înainte de orice controller: un
+     * {@code @RequestParam} obligatoriu care lipseşte, un verb care nu există pe calea cerută, şi
+     * un UUID stricat în cale. Fără handlerele astea cădeau toate în plasa de la urmă, adică
+     * <b>500 + Sentry</b> pentru o cerere pe care serverul a înţeles-o perfect şi a respins-o
+     * corect. Costul real nu era codul de răspuns, ci canalul de erori: aplicaţia are patru
+     * resurse fără citire după id, deci patru căi pe care un client cinstit greşeşte verbul, iar
+     * un scaner care plimbă verbe peste API umplea singur colectorul aprins pentru lansare.
+     *
+     * <p>Niciunul nu cheamă Sentry, şi toate trei păstrează mesajul generic — proprietatea că un
+     * răspuns de eroare nu scurge numele excepţiei sau o urmă de stivă e probată separat
+     * ({@code ApiErrorContractIT}) şi nu se strică aici.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public Map<String, Object> handleMissingParameter(MissingServletRequestParameterException e) {
+        log.warn("Missing request parameter: {}", e.getParameterName());
+        return envelope(BAD_REQUEST, "request.parameter.missing",
+                "Cererea nu conține toți parametrii necesari.");
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Map<String, Object> handleParameterTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.warn("Invalid request parameter: {}", e.getName());
+        return envelope(BAD_REQUEST, "request.parameter.invalid",
+                "Cererea conține un parametru într-un format invalid.");
+    }
+
+    /**
+     * ponytail: fără antetul {@code Allow}. RFC 9110 îl cere la 405, dar niciun client al nostru
+     * nu-l citeşte; se adaugă din {@code e.getSupportedMethods()} dacă apare unul care-l foloseşte.
+     */
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public Map<String, Object> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
+        log.warn("Method not allowed: {}", e.getMethod());
+        return envelope(BAD_REQUEST, "request.method.not.allowed",
+                "Metoda HTTP nu este permisă pe această adresă.");
     }
 
     /**

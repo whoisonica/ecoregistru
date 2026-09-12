@@ -101,6 +101,30 @@ public class AuditInterceptor implements Interceptor {
                     "deletedAt", "deletedBy", "deactivatedAt");
 
     /**
+     * Ce se scrie ca faptă, dar fără valori. <b>BUG-002.</b>
+     *
+     * <p>Rubrica de şofer a Anexei 3 la HG 1061/2008 e una singură — „serie CI sau CNP" — deci
+     * câmpul e liber şi ţine, în practică, un CNP. Auditarea lui scria perechea întreagă
+     * {@code vechi → nou} într-o tabelă din care {@link ro.ecoregistru.repository.AuditLogRepository}
+     * nu are, dinadins, drum de ştergere — şi pe care căutarea liberă o parcurge, deci jurnalul
+     * răspundea la o căutare după CNP. Trei lucruri se adunau: valoarea <b>veche</b> supravieţuia
+     * corecturii (iar un CNP tastat greşit e al altcuiva), nu se putea şterge la o cerere art. 17
+     * GDPR, şi devenea index de persoane.
+     *
+     * <p><b>De ce redactare şi nu {@link #IGNORED_FIELDS}:</b> acolo s-ar pierde fapta. „Cine a
+     * schimbat datele de identificare ale şoferului şi când" e o întrebare de control, iar
+     * răspunsul la ea nu are nevoie de valoare. Un test cere explicit ca fapta să rămână scrisă,
+     * ca reparaţia asta să nu fie refăcută prin scoaterea şoferului de pe lista auditată.
+     *
+     * <p>Un {@code null} rămâne {@code null}: „câmpul era gol" nu e o dată personală, şi e
+     * diferenţa dintre o completare şi o corectare.
+     */
+    private static final Set<String> REDACTED_FIELDS = Set.of("identification", "driverIdentification");
+
+    /** Ce se scrie în locul valorii unui câmp redactat. */
+    private static final String REDACTED = "•••";
+
+    /**
      * Nu prinde nimic — înarmează.
      *
      * <p>⚠️ <b>Şi e singurul loc în care se poate face, lucru care a costat o probă.</b> Scrierea
@@ -146,7 +170,10 @@ public class AuditInterceptor implements Interceptor {
             String before = format(previousState[i]);
             String after = format(currentState[i]);
             if (!java.util.Objects.equals(before, after)) {
-                changes.add(new PendingAudit.FieldChange(propertyNames[i], before, after));
+                boolean redact = REDACTED_FIELDS.contains(propertyNames[i]);
+                changes.add(new PendingAudit.FieldChange(propertyNames[i],
+                        redact ? redacted(before) : before,
+                        redact ? redacted(after) : after));
             }
         }
         if (changes.isEmpty()) {
@@ -163,6 +190,11 @@ public class AuditInterceptor implements Interceptor {
             capture(new PendingAudit(typeOf(entity), asUuid(id), AuditAction.DELETE,
                     label(entity, state, propertyNames), List.of()));
         }
+    }
+
+    /** Valoarea unui câmp redactat: gol rămâne gol, orice altceva devine {@value #REDACTED}. */
+    private static String redacted(String value) {
+        return value == null ? null : REDACTED;
     }
 
     /** Pune fapta în listă şi se asigură că cineva o va scrie înainte de commit. */

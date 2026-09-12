@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -62,9 +63,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (JwtException e) {
-            // Expired, malformed, or signed with another key. Debug, not warn: this is what a
-            // month-old browser tab looks like, not an attack worth a line in production logs.
+        } catch (JwtException | UsernameNotFoundException e) {
+            // Expired, malformed, signed with another key — sau numind un cont care nu mai există.
+            // Debug, not warn: this is what a month-old browser tab looks like, not an attack worth
+            // a line in production logs.
+            //
+            // BUG-004: `UsernameNotFoundException` lipsea din prindere, iar ea nu e o `JwtException`.
+            // Cum e aruncată dintr-un filtru, scăpa de tot lanţul: nu ajungea la `AdviceController`
+            // (care stă după DispatcherServlet), deci ieşea pagina de eroare a containerului, cu 500
+            // şi HTML, acolo unde frontendul aşteaptă plicul de 401 ca să spună „sesiunea a expirat".
+            // Rândul dispare de sub sesiune la o invitaţie anulată — singurul „remove" din aplicaţie
+            // care chiar şterge.
             log.debug("Rejected JWT: {}", e.getMessage());
         }
         filterChain.doFilter(request, response);

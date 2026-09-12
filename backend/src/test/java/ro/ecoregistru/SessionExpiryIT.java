@@ -12,10 +12,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
+import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.repository.AppUserRepository;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
+import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.hamcrest.Matchers.is;
@@ -75,6 +79,85 @@ class SessionExpiryIT {
 
         mockMvc.perform(get("/api/v1/work-points")
                         .header("Authorization", "Bearer " + expired))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$['error-code']", is("session.expired")));
+    }
+
+    /**
+     * P0.4. Un token nu e o legitimaţie citită, e una <b>verificată</b>: acelaşi corp, semnat cu
+     * altă cheie, e o hârtie scrisă de altcineva. Proba contează fiindcă eşecul ei nu s-ar vedea —
+     * o bibliotecă JWT configurată prost (algoritmul citit din antetul tokenului, {@code alg: none}
+     * acceptat) trece testul „expirat" şi pe cel „stricat", şi cade numai aici.
+     */
+    @Test
+    void aTokenSignedWithAnotherKeyIsRejected() throws Exception {
+        // O cheie străină, de mărimea cerută de HS256, care nu e a noastră.
+        SecretKey foreign = Keys.hmacShaKeyFor(
+                "o-cheie-cu-totul-strains-de-32-de-octeti".getBytes(StandardCharsets.UTF_8));
+        String forged = Jwts.builder()
+                .subject("admin@demo.ro")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 3_600_000L))
+                .signWith(foreign)
+                .compact();
+
+        mockMvc.perform(get("/api/v1/work-points")
+                        .header("Authorization", "Bearer " + forged))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$['error-code']", is("session.expired")));
+    }
+
+    /**
+     * Atacul care ar conta dacă semnătura n-ar fi verificată: iau tokenul meu bun, îi rescriu
+     * <b>numai</b> încărcătura ca să numească contul de platformă, şi las semnătura veche
+     * neatinsă. E o escaladare de la ADMIN într-o firmă la {@code PLATFORM_ADMIN} peste tot,
+     * scrisă cu un editor de text.
+     */
+    @Test
+    void aPayloadEditedToNameSomebodyElseIsRejected() throws Exception {
+        String mine = jwtService.generateToken(
+                appUserRepository.findByEmail("admin@demo.ro").orElseThrow());
+        String[] parts = mine.split("\\.");
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+
+        String claims = new String(decoder.decode(parts[1]), StandardCharsets.UTF_8)
+                .replace("admin@demo.ro", "platform@ecoregistru.ro");
+        String tampered = parts[0] + "."
+                + encoder.encodeToString(claims.getBytes(StandardCharsets.UTF_8)) + "."
+                + parts[2];
+
+        mockMvc.perform(get("/api/v1/work-points")
+                        .header("Authorization", "Bearer " + tampered))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$['error-code']", is("session.expired")));
+    }
+
+    /**
+     * Rândul dispare de sub sesiune. O invitaţie anulată chiar se şterge — e singurul „remove" din
+     * aplicaţie care nu e soft delete — deci întrebarea nu e teoretică: ce se întâmplă cu un token
+     * care numeşte un cont inexistent. Trebuie să fie 401, nu 500 din căutarea care nu găseşte.
+     */
+    @Test
+    void aTokenForAnAccountThatNoLongerExistsIsUnauthorized() throws Exception {
+        AppUser admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        AppUser doomed = appUserRepository.save(AppUser.builder()
+                .email("sters+" + suffix + "@demo.ro").password("x")
+                .role(admin.getRole()).company(admin.getCompany()).enabled(true)
+                .createdAt(java.time.Instant.now()).build());
+        String token = jwtService.generateToken(doomed);
+
+        // Sesiunea e bună cât timp contul există...
+        mockMvc.perform(get("/api/v1/work-points")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        appUserRepository.delete(doomed);
+
+        // ...şi se închide în clipa în care rândul nu mai e.
+        mockMvc.perform(get("/api/v1/work-points")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$['error-code']", is("session.expired")));
     }
