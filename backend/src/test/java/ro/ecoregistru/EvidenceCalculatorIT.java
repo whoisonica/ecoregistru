@@ -90,6 +90,8 @@ class EvidenceCalculatorIT {
         save(LocalDate.of(2025, 1, 10), "2.000", Unit.TONS, WasteOperation.GENERATED, null, null);
         save(LocalDate.of(2025, 1, 20), "500.000", Unit.KG, WasteOperation.COLLECTED, null, null);
         save(LocalDate.of(2025, 2, 5), "1.000", Unit.TONS, WasteOperation.RECOVERED, WasteOperationCode.R3, collector);
+        //       -700 of the collected goods passed on, R3, art. 48    -> not in Anexa 1 either
+        art48Exit(LocalDate.of(2025, 2, 18), "700.000");
         save(LocalDate.of(2025, 3, 8), "200.000", Unit.KG, WasteOperation.DISPOSED, WasteOperationCode.D5, null);
         save(LocalDate.of(2025, 4, 8), "300.000", Unit.KG, WasteOperation.UNCLASSIFIED_OUT, null, collector);
         save(LocalDate.of(2025, 12, 15), "100.000", Unit.KG, WasteOperation.GENERATED, null, null);
@@ -338,7 +340,34 @@ class EvidenceCalculatorIT {
                 .containsOnly(evidenceRepository.findOldestGeneratedAt(tenantId, 2025));
     }
 
+    /**
+     * The exit side of the seam, and the half the entry side cannot guard: a takeover touches no
+     * column of Anexa 1 anyway, so dropping the register filter would not move a figure. An exit
+     * off the art. 48 register is a subtraction — it would take February to 300 and every month
+     * after it with it, which is a stock the company never had.
+     */
+    @Test
+    void goodsPassedOnFromTheArt48RegisterNeverLeaveTheAnexa1Stock() {
+        evidenceCalculator.regenerateYear(2025);
+
+        assertStock(byMonth(2025).get(2), "1000");
+        assertThat(byMonth(2025).get(2).totalRecovered()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("1000"));
+    }
+
     // --- helpers ---
+
+    /** Same as {@link #save} but off the art. 48 register: goods taken over and passed on. */
+    private void art48Exit(LocalDate date, String qty) {
+        movementRepository.save(WasteMovement.builder()
+                .company(companyRepository.getReferenceById(tenantId))
+                .workPoint(workPoint).date(date).wasteCode(code)
+                .quantity(new BigDecimal(qty)).unit(Unit.KG)
+                .operation(WasteOperation.RECOVERED).operationCode(WasteOperationCode.R3)
+                .partner(collector).register(WasteRegister.ART_48)
+                .deleted(false).createdBy(creatorId).build());
+    }
+
 
     private Map<Integer, MonthlyEvidenceResponse> byMonth(int year) {
         return evidenceCalculator.list(year, null, workPoint.getId()).stream()

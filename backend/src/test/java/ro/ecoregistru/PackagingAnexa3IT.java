@@ -36,6 +36,7 @@ import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.PackagingService;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.PackagingAnexa3;
+import ro.ecoregistru.service.export.PackagingDeclaration;
 
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
@@ -560,6 +561,31 @@ class PackagingAnexa3IT {
         });
     }
 
+    /**
+     * The incident of 25.08.2026, as a regression test: 300 kg of 15 01 01 taken over from a shop
+     * and passed on to a recycler used to show up in tabelul 1 of Anexa 1 Ambalaje — that is, this
+     * company declared, to the authority, that it had put someone else's cardboard on the national
+     * market. Anexa 3 is where those kilograms belong; the declaration of own packaging must not
+     * see them at all, in any of its three lists.
+     */
+    @Test
+    void goodsTakenOverAndPassedOnAreNotDeclaredAsOwnPackaging() throws Exception {
+        takeover("15 01 01", "300", generatorSource.getId(), null);
+        exit("15 01 01", "300", recipient.getId(), "R3");
+
+        PackagingDeclaration declaration = declaration();
+
+        assertThat(declaration.handoverRows()).isEmpty();
+        assertThat(declaration.unclassified()).isEmpty();
+        assertThat(declaration.marketRows())
+                .filteredOn(r -> r.material() == PackagingMaterial.HARTIE_CARTON)
+                .allSatisfy(r -> {
+                    assertThat(r.salesPackaging()).isNull();
+                    assertThat(r.primaryTotal()).isNull();
+                    assertThat(r.secondaryTotal()).isNull();
+                });
+    }
+
     /** Art. 6 asks for the paper copy beside the file, so the PDF is half a legal requirement. */
     @Test
     void thePaperCopyRenders() throws Exception {
@@ -574,6 +600,15 @@ class PackagingAnexa3IT {
         TenantContext.set(tenantId);
         try {
             return packagingService.anexa3(YEAR, workPointId);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private PackagingDeclaration declaration() {
+        TenantContext.set(tenantId);
+        try {
+            return packagingService.declaration(YEAR);
         } finally {
             TenantContext.clear();
         }

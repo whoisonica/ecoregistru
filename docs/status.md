@@ -24,6 +24,14 @@ rulează local și are testele verzi.
 > și paginarea au trecut la server". ⚠️ **Proba 6 sărea în tăcere** o bucată întreagă fiindcă citea
 > lista paginată ca pe un tablou — reparată odată cu felia.
 >
+> 🔬 **Auditul QA de dinaintea lansării — P0 închis integral** (secţiunea „Auditul QA de dinaintea
+> lansării"). **368 → 448 de teste, 49 de clase, 0 eşecuri, 0 dezactivate.** Auditul n-a atins nicio
+> linie de production code; **reparaţiile s-au făcut după el**, iar cele opt teste `@Disabled` care
+> afirmau comportamentul corect sunt acum active şi trec. Probate: izolarea între clienţi pe toată
+> matricea resursă × verb, comutatorul de tenant, **autorizarea pe roluri**, sesiunile, securitatea
+> fişierelor, datele sensibile şi seam-ul Anexa 1 / art. 48 — **toate ţin**. Şase defecte găsite,
+> **toate reparate**, niciunul nu trece o graniţă de acces.
+>
 > *(Rândurile de mai jos sunt nota de pe 11.09, păstrată ca istoric — cifrele ei sunt cele de
 > atunci.)*
 >
@@ -6716,6 +6724,131 @@ se face la cererea clientului, nu automat. Şi A.5 are o categorie nouă de date
 📌 **Politica de confidenţialitate rămâne neatinsă**, şi asta e o decizie, nu o scăpare: jurnalul e
 date ale clientului, prelucrate la instrucţiunea lui, deci locul lui e în DPA — unde suntem
 împuternicit —, nu în politica prin care suntem operator.
+
+## Auditul QA de dinaintea lansării — ce s-a probat (12.09.2026)
+
+Aplicaţia e în producţie din 24.08 şi n-are încă niciun client. Întrebarea la care trebuie să
+răspundă auditul nu e „merge?", ci **„dacă un client e verificat de autorităţi, ce poate merge prost
+şi putem dovedi că nu se întâmplă?"**. Diferenţa dintre cele două e toată munca de mai jos: cod
+care arăta corect la citire, dar n-avea nicio probă în spate.
+
+**Regula sub care a rulat, de la început: production code-ul nu se atinge.** Un test care cade
+înseamnă un defect documentat, nu o reparaţie improvizată la ora două noaptea, lângă felia care
+tocmai a ieşit. **Zero linii de cod de producţie modificate, zero migrări, nicio bază atinsă.**
+
+| | Înainte | După audit | După reparaţii |
+|---|---|---|---|
+| Teste backend | 368 | 417 | **448** |
+| Clase de test | 42 | 47 | **49** |
+| Eşecuri | 0 | 0 | **0** |
+| Dezactivate | 0 | 8 *(fiecare legată de un defect documentat)* | **0** *(activate la reparare)* |
+
+⚠️ **Cifrele sunt citite din `build/test-results/test/*.xml` după `./gradlew cleanTest test`, nu din
+codul de ieşire** — capcana s-a repetat şi aici: `BUILD SUCCESSFUL` cu task `UP-TO-DATE`, fără să
+fi rulat nimic.
+
+### Ce s-a probat
+
+**Izolarea între clienţi, pe toată matricea resursă × verb.** `TenantIsolationIT` avea patru teste,
+o resursă şi un verb, pe o aplicaţie cu şaisprezece controllere. Clasa nouă construieşte doi
+tenanţi complet populaţi, cu nume deliberat foarte diferite (o scurgere se vede în corpul
+răspunsului fără să ştim ce câmp a scăpat-o), şi atacă fiecare resursă cu tokenul celuilalt: citire
+după id, opt liste, scrieri care trimit prin **corpul** cererii la entităţile celuilalt, ştergeri,
+reactivări, documente, fişiere, şi dosarul de control **despachetat şi citit**. Aşteptarea e peste
+tot `404`, nu `403` — un 403 confirmă că identificatorul e valid, ceea ce e deja o scurgere.
+**După fiecare scriere refuzată se citeşte rândul din baza de date şi se compară valoarea**, fiindcă
+un 404 care totuşi scrie e mai rău decât un 200 cinstit: nimeni nu-l caută.
+
+**Comutatorul de tenant al administratorului de platformă.** Singurul loc unde cineva trece legitim
+dintr-o firmă în alta, deci singurul unde „date rămase din firma dinainte" e un scenariu real: A→B→A
+cu conţinutul citit la fiecare pas, plus marginile antetului — lipsă, stricat, necunoscut, şi
+trimis de cine n-are voie să-l folosească.
+
+**Autorizarea pe roluri.** Patru roluri, trei praguri, iar pragurile sunt şiruri de caractere
+duplicate în treisprezece controllere — **nu există un loc unic unde regula se citeşte**, deci nici
+unul unde se poate verifica prin citire. Un endpoint nou scris fără adnotare nu strică nimic vizibil
+şi nu cade niciun test existent: e pur şi simplu deschis. Aşa că fiecare endpoint gatuit a fost
+cerut cu fiecare rol de dedesubt, prin stiva HTTP reală.
+
+🔵 **Şi partea care desparte proba de teatru: controalele negative.** Fără ele, toate refuzurile de
+mai sus ar fi la fel de verzi pe o aplicaţie care refuză tot — un filtru stricat, o adnotare pusă
+din greşeală pe clasă — iar raportul ar spune „autorizare corectă" despre un produs inutilizabil.
+Deci se probează şi reversul: rolul de citire **chiar citeşte**, operatorul trece cu *exact aceeaşi
+cerere* pe care celălalt a primit-o refuzată, administratorul firmei îşi administrează oamenii.
+
+**Cel mai util test al feliei** nu e niciunul dintre refuzuri: e cel care ia un token emis cât omul
+era operator şi îl foloseşte **după** retrogradare. Rolul călătoreşte în token ca un claim, dar
+autorizarea citeşte rândul utilizatorului la fiecare cerere — altfel o retrogradare ar intra în
+vigoare peste cel mult treizeci de zile, adică deloc. Acum e pironit.
+
+**Datele sensibile.** `Driver.identification` e câmp liber care poate ţine **CNP** — formularul din
+HG 1061/2008 are o singură rubrică, „serie CI sau CNP". Întrebarea nu e dacă valoarea există (se
+tipăreşte pe formular), ci **dacă se multiplică**: fiecare copie în plus e un loc din care trebuie
+ştearsă la o cerere de ştergere. S-au cercetat mesajele de eroare, răspunsurile de validare,
+**logurile** (probate cu ieşirea aplicaţiei prinsă, fiindcă pe Heroku logurile pleacă la un colector
+extern, cu alt termen de păstrare şi alţi cititori) şi configuraţia colectorului de erori.
+
+### Rezultatul
+
+**Izolarea şi autorizarea ţin peste tot.** Golul era de dovadă, nu de implementare — ceea ce e
+rezultatul bun, dar nu era garantat, fiindcă disciplina nu se vede din cod: fiecare serviciu chema
+`TenantContext.require()` şi înainte, şi totuşi nimeni nu probase ce se întâmplă la `PUT`-ul pe
+rândul altcuiva.
+
+🔴 **Şase defecte confirmate, şi niciunul nu trece o graniţă de acces.** Trei sunt greşeli de client
+raportate ca defecte de server — cod de răspuns greşit şi zgomot în colectorul de erori tocmai
+aprins pentru lansare. Unul e o dată personală scrisă unde nu-i era locul, înăuntrul aceleiaşi
+firme. Unul e o excepţie care scăpa de tot lanţul de filtre, deci ieşea 500 cu HTML acolo unde
+frontendul aşteaptă plicul de 401. Şi unul e conţinut al clientului servit `inline` cu tipul pe care
+şi l-a declarat singur. **Trei dintre ele au fost găsite de teste care căutau altceva** — modulele
+de sesiuni şi de fişiere.
+
+✅ **Toate şase sunt reparate** (12.09, după încheierea fazei de audit, la cererea proprietarului),
+iar cele opt teste `@Disabled` care afirmau comportamentul corect **sunt acum active şi trec**:
+fiecare reparaţie e probată de testul scris înaintea ei, nu de unul scris după. Cel mai scump la
+amânat era cel cu data personală — după primul client, aceeaşi reparaţie ar fi cerut şi o migrare
+peste date reale, într-o tabelă proiectată dinadins să nu se poată rescrie. Detaliile, reproducerea
+şi reparaţiile stau în documentele de audit din repo-ul privat.
+
+✅ **Şi seam-ul Anexa 1 / art. 48 a ieşit din listă — PASS.** Invariantul (*marfa preluată de la
+terţi nu ajunge niciodată în Anexa 1*) e apărat de patru filtre scrise de mână, în patru cititori
+independenţi ai mişcărilor brute. Cele patru au fost **scoase temporar din cod** ca să se probeze că
+testele chiar cad — şi aşa s-a văzut că `EvidenceCalculatorIT` rămânea **verde fără filtru**:
+fixture-ul ei n-avea nicio preluare care să **scadă** ceva. Un rând de fixture a reparat asta, iar
+cele zece teste de stoc ale clasei sunt de-acum gardienii filtrului. *Un test de excludere se
+probează scoţând excluderea, nu citind codul.*
+
+✅ **Şi identitatea stocului e probată — PASS.** `StockIdentityIT`, 11 teste, pe formula **reală**:
+cinci termeni plus generarea dedusă din `V24`, nu cea cu patru pe care o presupunea promptul de
+audit. Aceeaşi metodă ca la seam: termenul dedus a fost **scos din cod**, iar suita a răspuns —
+au căzut exact cele patru teste care sunt despre el.
+🔴 **Şi proba negativă a scos o legătură pe care n-o scria niciun document:** dedusul alimentează
+**pragul de 1 t/an al Anexei 2**. Cu el scos, formularul tipărea 3 exemplare în loc de 6, iar
+`generatedTons` cădea de la 0,84 la 0. E comportamentul corect — deşeul chiar a plecat de pe
+amplasament — dar o regulă introdusă ca înlesnire de raportare decide azi dacă un client are nevoie
+de **formularul de aprobare** de la art. 7. Scris ca să nu fie „simplificată" de cineva care nu ştie
+ce mai atârnă de ea.
+📌 **Şi al doilea tipar identic cu cel de la seam:** `EvidenceCalculatorIT`, clasa proprie a
+motorului, **a rămas verde** cu dedusul scos — gardienii regulii erau iar în clasele documentelor.
+
+✅ **Şi prospeţimea documentului — PASS.** `EvidenceFreshnessIT` duce proba prin **documentul
+tipărit**, nu prin cache, fiindcă exact acolo e capcana scrisă în javadoc: sub `readOnly = true`
+liniile reconstruite s-ar pierde la commit şi fişa ar tipări cifrele vechi **tăcut**. O mişcare
+înregistrată sau ştearsă după ultima reconstrucţie ajunge pe fişă fără ca cineva să apese ceva,
+fişa şi declaraţia anuală se reîmprospătează **împreună**, iar o corecţie pe un an închis mută
+stocul de deschidere **tipărit** al anului următor.
+
+🔴 **În aceeaşi clasă, un gol care nu era pe nicio listă: idempotenţa pe `clientGeneratedId` era
+complet neprobată.** E contractul scris pentru mobil din prima zi — un telefon cu semnal prost
+retrimite, asta e regula, nu excepţia — iar cu ramura scoasă din serviciu, din **448 de teste**
+cădeau **două, amândouă scrise atunci**. A treia oară aceeaşi formă, după filtrul de registru şi
+termenul dedus: *o regulă corectă, cu comentariul ei lângă ea, şi nimic care să cadă dacă dispare.*
+📌 Testul pironeşte şi o decizie tăcută: la retrimitere se întoarce mişcarea **stocată**, nu se
+rescrie cu corpul nou — o corecţie se face prin `PUT`, care trece prin jurnalul de audit.
+
+⬜ **Ce a mai rămas de probat:** constrângerile bazei, lost update pe aceeaşi mişcare, conţinutul
+documentelor oficiale (valori cunoscute → text extras din PDF), trasabilitatea şi performanţa. Plus
+probele de ecran, care cer servere pornite şi o bază acumulată.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

@@ -127,6 +127,10 @@ class AnnualDeclarationIT {
         save(cluj, paper, LocalDate.of(YEAR, 9, 3), "50.000", WasteOperation.RECOVERED, WasteOperationCode.R13, recycler);
         // ...and a takeover, which belongs to the art. 48 register and to no line of this sheet.
         save(cluj, paper, LocalDate.of(YEAR, 5, 6), "200.000", WasteOperation.COLLECTED, null, collector);
+        // ...and the other end of the same 200 kg: passed on to a recycler. An exit off the art. 48
+        // register looks exactly like handing over own waste, which is why the register is stored
+        // rather than derived — and why every figure above must stay the same with this row here.
+        art48Exit(cluj, paper, LocalDate.of(YEAR, 7, 8), "200.000", WasteOperationCode.R3, recycler);
 
         // PL Cluj / household: 200 generated − 150 (D5) − 20 with no code at all = 30
         save(cluj, household, LocalDate.of(YEAR, 3, 4), "200.000", WasteOperation.GENERATED, null, null);
@@ -231,6 +235,23 @@ class AnnualDeclarationIT {
     }
 
     /**
+     * The other half of the seam, and the one the sheet cannot get right by accident: goods taken
+     * over in May and passed on in July are art. 48 business at both ends. Were the exit counted,
+     * "Valorificat" would read 550 and the closing stock would go to −50 — a negative stock on a
+     * sheet filed with the authority, produced by counting a handover the company never generated.
+     */
+    @Test
+    void passingOnGoodsTakenOverReachesNoLineOfTheSheet() {
+        AnnualDeclaration.Row paperRow = row("PL Cluj", paper.getCode());
+
+        assertThat(paperRow.recovered()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("350"));
+        assertThat(paperRow.closingStock()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("150"));
+        assertThat(paperRow.recoveredThrough()).isEqualTo("R3 - Colector SRL; R13 - Reciclator SRL");
+    }
+
+    /**
      * The 20 kg that left in November with no R/D code are in neither official column, so the row
      * does not add up on its face. It is marked and explained rather than absorbed into one of the
      * two columns — putting it in either would be inventing an operation nobody recorded.
@@ -323,6 +344,18 @@ class AnnualDeclarationIT {
                 .company(company).name(name).cui(cui.substring(0, Math.min(cui.length(), 12)))
                 .type(PartnerType.COLLECTOR).supplier(true)
                 .active(true).createdAt(Instant.now()).build());
+    }
+
+    /** Same as {@link #save} but off the art. 48 register: goods taken over and passed on. */
+    private void art48Exit(WorkPoint workPoint, WasteCode code, LocalDate date, String qty,
+                           WasteOperationCode operationCode, Partner partner) {
+        movementRepository.save(WasteMovement.builder()
+                .company(companyRepository.getReferenceById(tenantId))
+                .workPoint(workPoint).date(date).wasteCode(code)
+                .quantity(new BigDecimal(qty)).unit(Unit.KG)
+                .operation(WasteOperation.RECOVERED).operationCode(operationCode).partner(partner)
+                .register(WasteRegister.ART_48)
+                .deleted(false).createdBy(creatorId).build());
     }
 
     private void save(WorkPoint workPoint, WasteCode code, LocalDate date, String qty,

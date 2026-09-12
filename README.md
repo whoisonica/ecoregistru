@@ -29,8 +29,13 @@ Code, comments and commits are in English; the UI is in Romanian
 
 **Multi-tenancy that actually isolates.** Every table carries a `company_id`; a request-scoped
 `TenantContext` populated by a `TenantFilter` scopes every query. Platform admins switch tenant
-through an `X-Tenant-Id` header. A dedicated `TenantIsolationIT` suite asserts that no endpoint
-ever returns another tenant's rows — the test I care most about in this codebase.
+through an `X-Tenant-Id` header. Three dedicated suites attack that boundary rather than assume it:
+one walks the whole resource × verb matrix with two fully populated tenants, one exercises the
+platform admin's tenant switch (A→B→A, plus a missing, malformed or borrowed header), and one
+sweeps every guarded endpoint with every role beneath it. Refusals expect `404`, never `403` — a
+403 confirms the id is real — and **every refused write is followed by a read of the other tenant's
+row from the database**, because a 404 that still writes is worse than an honest 200. These are the
+tests I care most about in this codebase.
 
 **Versioned schema, no surprises.** Flyway migrations with a real version history and
 `ddl-auto=none` — the database is never shaped by Hibernate at runtime.
@@ -382,10 +387,21 @@ cd backend
 ./gradlew.bat test
 ```
 
-Integration tests cover tenant isolation, evidence calculation, export correctness, movement
-validation, company management and the four official documents the app prints — the HG 856/2002
-record sheet, the annual declaration, the HG 1061/2008 transport form, and the packaging
-declaration of Ordinul 794/2012.
+448 tests across 49 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+than service calls. They cover tenant isolation, role authorization, session handling, evidence
+calculation, export correctness, movement validation, company management and the official documents
+the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport
+form, and the packaging declaration of Ordinul 794/2012.
+
+The pre-launch QA audit added six suites and found six defects, each one first written as a
+`@Disabled` test asserting the **correct** behaviour, then enabled by its fix — so every repair is
+proved by a test written before it rather than after. None of the six crossed an access boundary.
+
+Three of those suites were validated the only way an exclusion can be: **by removing the rule from
+the production code and confirming the tests actually fail.** That is how the register filter, the
+implied-generation term and the `clientGeneratedId` idempotency turned out to have had no test that
+would notice their disappearance — each one correct, each one commented, none of them load-bearing.
+A comment explaining a rule is not evidence the rule is still there.
 
 ---
 
