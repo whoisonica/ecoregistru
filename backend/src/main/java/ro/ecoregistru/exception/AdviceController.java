@@ -2,6 +2,7 @@ package ro.ecoregistru.exception;
 
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import ro.ecoregistru.security.TooManyRequests;
 import ro.ecoregistru.security.TooManyRequestsException;
 
+import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -144,6 +146,40 @@ public class AdviceController {
         log.warn("Method not allowed: {}", e.getMethod());
         return envelope(BAD_REQUEST, "request.method.not.allowed",
                 "Metoda HTTP nu este permisă pe această adresă.");
+    }
+
+    /**
+     * BUG-009. O lună 13 sau un an pe care calendarul nu-l ţine: parametrul e un {@code int} bun,
+     * deci trece de conversia lui Spring, şi se strică abia la {@code YearMonth.of}/{@code LocalDate.of}.
+     * Toate datele stocate sunt {@code LocalDate} valide prin tip, deci excepţia vine numai din cerere.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(DateTimeException.class)
+    public Map<String, Object> handleInvalidDate(DateTimeException e) {
+        log.warn("Invalid date parameter: {}", e.getMessage());
+        return envelope(BAD_REQUEST, "request.parameter.invalid",
+                "Cererea conține un parametru într-un format invalid.");
+    }
+
+    /**
+     * BUG-008. Verificarea din service ({@code existsBy...} apoi {@code save}) nu e atomică: două
+     * cereri pe acelaşi CUI sau acelaşi email trec amândouă de ea, iar a doua e oprită de indexul
+     * unic al bazei. Pentru cele două unicităţi cunoscute, clientul primeşte exact codul pe care
+     * l-ar fi primit de la service. Orice altă încălcare de integritate rămâne neaşteptată — o
+     * lungime de coloană depăşită e un defect al nostru (BUG-003, BUG-005), nu o greşeală de client.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleIntegrityViolation(DataIntegrityViolationException e) {
+        String cause = String.valueOf(e.getMostSpecificCause().getMessage());
+        ErrorMessageEnum known = cause.contains("companies_cui_key") ? ErrorMessageEnum.COMPANY_CUI_ALREADY_EXISTS
+                : cause.contains("app_users_email_key") ? ErrorMessageEnum.ACCOUNT_ALREADY_EXISTS
+                : null;
+        if (known == null) {
+            return ResponseEntity.internalServerError().body(handleUnexpected(e));
+        }
+        log.warn("{} {} (unique constraint race)", ERROR, known.getCode());
+        return ResponseEntity.unprocessableEntity()
+                .body(envelope(UNPROCESSABLE_ENTITY, known.getCode(), known.getMessage()));
     }
 
     /**

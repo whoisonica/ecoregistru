@@ -2163,6 +2163,7 @@ function MovementFormDialog({
                 <DateInput
                   id="mv-unload"
                   value={unloadDate}
+                  min={date}
                   onChange={(ev) => setUnloadDate(ev.target.value)}
                 />
               </div>

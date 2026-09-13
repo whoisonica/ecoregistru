@@ -104,6 +104,7 @@ public class WasteMovementService {
         validateOperationCode(request);
         validateAgainstProfile(request, company);
         validateQuantity(request);
+        validateDates(request);
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
 
@@ -175,6 +176,7 @@ public class WasteMovementService {
         validateOperationCode(request);
         validateAgainstProfile(request, company);
         validateQuantity(request);
+        validateDates(request);
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
 
@@ -799,6 +801,16 @@ public class WasteMovementService {
      * put a made-up number both on an official transport form and in the Anexa 1 stock, so the
      * quantity simply stays empty and the evidence line says it is provisional.
      */
+    /**
+     * BUG-010. Anexa 3 tipăreşte data mişcării în blocul de încărcare şi {@code unloadDate} în cel
+     * de descărcare; un transport descărcat înainte de a fi încărcat nu există. Aceeaşi zi e voie.
+     */
+    private void validateDates(WasteMovementRequest request) {
+        if (request.unloadDate() != null && request.unloadDate().isBefore(request.date())) {
+            throw new BusinessException(UNLOAD_BEFORE_LOAD);
+        }
+    }
+
     private void validateQuantity(WasteMovementRequest request) {
         if (request.weighedAtUnloading()) {
             // Somebody has to do the weighing, and it is the party taking the waste over.

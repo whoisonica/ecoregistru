@@ -5,7 +5,7 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
-import org.springframework.orm.jpa.EntityManagerFactoryUtils;
+import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -117,6 +117,8 @@ public class AuditWriter {
         auditLogRepository.saveAll(rows);
     }
 
+    private static final HibernateJpaDialect JPA_DIALECT = new HibernateJpaDialect();
+
     /**
      * BUG-007. {@link EntityManager#flush()} pe câmpul brut, dintr-un {@code beforeCommit}, nu
      * trece prin traducerea de excepţii JPA→Spring — aia se leagă de bean-uri {@code @Repository},
@@ -126,12 +128,18 @@ public class AuditWriter {
      * plasa generică: 500 + Sentry pentru un conflict pe care API-ul ştia deja să răspundă cu 409.
      * Cum flush-ul ăsta rulează pe orice scriere, traducerea de aici acoperă orice altă excepţie de
      * persistenţă cu acelaşi drum, nu doar cazul găsit.
+     *
+     * <p>BUG-008. Prin {@code HibernateJpaDialect}, nu direct prin {@code EntityManagerFactoryUtils}:
+     * utilitarul nu citeşte SQLState-ul, deci un {@code INSERT} care pierde cursa pe un index unic
+     * (două firme cu acelaşi CUI) ieşea {@code JpaSystemException} generic, nu
+     * {@code DataIntegrityViolationException}. Dialectul face traducerea după cod şi cade singur pe
+     * utilitar pentru rest — conflictul de versiune de mai sus rămâne 409.
      */
     private void flush() {
         try {
             entityManager.flush();
         } catch (RuntimeException e) {
-            DataAccessException translated = EntityManagerFactoryUtils.convertJpaAccessExceptionIfPossible(e);
+            DataAccessException translated = JPA_DIALECT.translateExceptionIfPossible(e);
             throw translated != null ? translated : e;
         }
     }
