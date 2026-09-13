@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static ro.ecoregistru.Golden.flat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -64,8 +66,10 @@ class Anexa2FormIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired WorkPointRepository workPointRepository;
     @Autowired PartnerRepository partnerRepository;
+    @Autowired CompanyRepository companyRepository;
 
     private String token;
+    private UUID tenantId;
     private UUID workPointId;
     private UUID hazardousCodeId;
     private UUID partnerId;
@@ -74,7 +78,7 @@ class Anexa2FormIT {
     void setUp() {
         AppUser admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
         token = jwtService.generateToken(admin);
-        UUID tenantId = admin.getCompany().getId();
+        tenantId = admin.getCompany().getId();
         workPointId = workPointRepository.findAllByCompany_Id(tenantId).get(0).getId();
         // Ulei de motor uzat: the service-garage case that made this the biggest hole left in the
         // generator module.
@@ -283,6 +287,52 @@ class Anexa2FormIT {
                 """.formatted(partnerId), longNamed);
 
         assertThat(pageCount(pdfOf(id))).isEqualTo(3);
+    }
+
+    /**
+     * P1.12 — every value under its own rubric, read off the printed page. The tests above ask
+     * whether a value is <em>somewhere</em> on the form; a CUI printed under the wrong party, a tick
+     * on the wrong side of the threshold or the handover date in the recipient's box would pass
+     * every one of them. Here each value is pinned to the rubric printed right before it.
+     */
+    @Test
+    void everyValueIsPrintedUnderItsOwnRubric() throws Exception {
+        UUID id = createMovement("""
+                  "operation": "DISPOSED", "register": "ANEXA_1", "operationCode": "D5",
+                  "partnerId": "%s", "quantity": 1234.5, "transportMeans": "AS",
+                  "transportDestinations": ["TRATARE"],
+                  "driverName": "Musat Liviu", "driverIdentification": "CJ 157812",
+                  "vehicleRegistration": "CJ 09 ECO", "anexa2Number": "1047",
+                  "anexa2ApprovalNumber": "APM CJ 118/2026",
+                  "anexa2Packaging": "4 butoaie", "documentReference": "aviz 1406"
+                """.formatted(partnerId), hazardousCodeId);
+        String sender = companyRepository.findById(tenantId).orElseThrow().getCui();
+        String recipient = partnerRepository.findById(partnerId).orElseThrow().getCui();
+
+        byte[] pdf = pdfOf(id);
+        String page = flat(firstPage(pdf));
+
+        assertThat(page).contains(flat("nr.*1) 1047"));
+        assertThat(page).contains(flat("Cod deşeuri periculoase 13 02 08*"));
+        // 1234,5 kg is over the threshold on its own: the tick is on "> 1t/an", and six copies.
+        assertThat(page).contains(flat("< 1t/an |_| Deşeuri periculoase > 1t/an |X|"));
+        assertThat(pageCount(pdf)).isEqualTo(6);
+        assertThat(page).contains(flat("transportului*) APM CJ 118/2026"));
+        // No carrier named, so the sender hauls it and its CUI stands in both first boxes.
+        assertThat(page).contains(flat("expeditorului " + sender
+                + " Nr. de înregistrare al transportatorului " + sender
+                + " Nr. de înregistrare al destinatarului " + recipient));
+        assertThat(page).contains(flat("În calitate de: Generator |X|"));
+        assertThat(page).contains(flat("Nume delegat: Musat Liviu CJ 157812"
+                + " Nr. de înmatriculare mijloc transport: CJ 09 ECO"));
+        assertThat(page).contains(flat("Colectare |_| Stocare temporară |_| Tratare |X|"
+                + " Valorificare |_| Eliminare |_|"));
+        // In tonnes with a comma, under "predată" — and the rubric after it is still blank.
+        assertThat(page).contains(flat("Cantitatea predată în tone 1,2345"
+                + " Cantitatea primită în tone ________________"));
+        assertThat(page).contains(flat("an) 05 . 07 . 2026 Data primirii (zi, lună, an) ________________"));
+        assertThat(page).contains(flat("Tipul mijloacelor de transport: Autospeciale"));
+        assertThat(page).contains(flat("periculoase: 4 butoaie Observaţii: aviz 1406"));
     }
 
     // ---------- The three refusals, each naming the right document ----------

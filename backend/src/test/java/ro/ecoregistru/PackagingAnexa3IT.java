@@ -47,6 +47,9 @@ import java.util.UUID;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static ro.ecoregistru.Golden.cells;
+import static ro.ecoregistru.Golden.flat;
+import static ro.ecoregistru.Golden.rowOf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -592,6 +595,94 @@ class PackagingAnexa3IT {
         takeover("15 01 01", "300", generatorSource.getId(), null);
 
         assertThat(render(ExportFormat.PDF)).startsWith("%PDF".getBytes());
+    }
+
+    // ------------------------------------------------------------------ P1.12, as printed
+
+    /**
+     * Two provenances and one operator for hârtie carton, a hazardous takeover for oţel, and two
+     * exits that tabelul 1 folds into one operator line and tabelul 2 splits into recycled and
+     * recovered by other means. Every figure a different number, so the TOTAL rows — every column
+     * filled — cannot match with two columns swapped.
+     */
+    private void goldenFixture() throws Exception {
+        takeover("15 01 01", "500", generatorSource.getId(), null);
+        takeover("15 01 01", "200", collectorSource.getId(), null);
+        takeoverOfMaterial("15 01 10", "90", "OTEL");
+        exit("15 01 01", "300", recipient.getId(), "R3");
+        exit("15 01 01", "150", recipient.getId(), "R1");
+    }
+
+    /**
+     * P1.12 — the sheet cell by cell, both tables. Every older test here reads the DTO or one total
+     * cell; none walked a block, so a provenance line printed in the operator's columns, or a total
+     * written one column over, would have passed.
+     */
+    @Test
+    void theSpreadsheetPrintsEveryCellInItsPlace() throws Exception {
+        goldenFixture();
+        String paper = PackagingMaterial.HARTIE_CARTON.getOfficialLabel();
+        String steel = PackagingMaterial.OTEL.getOfficialLabel();
+        String legalPerson = PackagingOrigin.GENERATOR_PJ.getOfficialLabel();
+        String collector = PackagingOrigin.COLECTOR.getOfficialLabel();
+        String operator = recipient.getName() + " (" + recipient.getCui() + ")";
+
+        // Tabelul 1: total · din care periculoase · provenienţa · cantitatea ieşită · operatorul
+        try (Workbook wb = new HSSFWorkbook(new ByteArrayInputStream(render(ExportFormat.XLS)))) {
+            Sheet sh = wb.getSheetAt(0);
+            int block = rowOf(sh, paper);
+            assertThat(cells(sh, block, 2, 6)).containsExactly(500d, "", legalPerson, "", "");
+            assertThat(cells(sh, block + 1, 2, 6)).containsExactly(200d, "", collector, "", "");
+            assertThat(cells(sh, block + 2, 2, 6)).containsExactly("", "", "", 450d, operator);
+            assertThat(cells(sh, block + 3, 1, 6))
+                    .containsExactly("total " + paper.toLowerCase(), 700d, "", "", 450d, "");
+            assertThat(cells(sh, rowOf(sh, steel), 2, 6)).containsExactly(90d, 90d, legalPerson, "", "");
+            assertThat(cells(sh, rowOf(sh, "total metal"), 2, 6)).containsExactly(90d, 90d, "", "", "");
+            assertThat(cells(sh, rowOf(sh, "TOTAL ambalaje"), 2, 6)).containsExactly(790d, 90d, "", 450d, "");
+        }
+
+        company.setPackagingOperatorRole(PackagingOperatorRole.RECICLATOR);
+        companyRepository.save(company);
+
+        // Tabelul 2: … · cantitatea reciclată · valorificată prin alte metode · metoda
+        try (Workbook wb = new HSSFWorkbook(new ByteArrayInputStream(render(ExportFormat.XLS)))) {
+            Sheet sh = wb.getSheetAt(0);
+            int block = rowOf(sh, paper);
+            assertThat(cells(sh, block, 2, 6)).containsExactly(500d, "", legalPerson, "", "");
+            assertThat(cells(sh, block + 1, 2, 6)).containsExactly(200d, "", collector, "", "");
+            assertThat(cells(sh, block + 2, 2, 6)).containsExactly("", "", "", 300d, 150d);
+            assertThat((String) cells(sh, block + 2, 7, 7).get(0)).contains("R3").contains("R1");
+            assertThat(cells(sh, block + 3, 2, 7)).containsExactly(700d, "", "", 300d, 150d, "");
+            assertThat(cells(sh, rowOf(sh, "total metal"), 2, 7)).containsExactly(90d, 90d, "", "", "", "");
+            assertThat(cells(sh, rowOf(sh, "TOTAL ambalaje"), 2, 7))
+                    .containsExactly(790d, 90d, "", 300d, 150d, "");
+        }
+    }
+
+    /** Art. 6 asks for the paper copy beside the file, so the PDF gets the same proof, on its own. */
+    @Test
+    void thePaperCopyPrintsEveryFigureInItsPlace() throws Exception {
+        goldenFixture();
+        String paper = PackagingMaterial.HARTIE_CARTON.getOfficialLabel();
+        String block = paper + " 500.000 " + PackagingOrigin.GENERATOR_PJ.getOfficialLabel()
+                + " 200.000 " + PackagingOrigin.COLECTOR.getOfficialLabel();
+        String steel = PackagingMaterial.OTEL.getOfficialLabel() + " 90.000 90.000 "
+                + PackagingOrigin.GENERATOR_PJ.getOfficialLabel() + " total metal 90.000 90.000";
+
+        String t1 = flat(Golden.pdfText(render(ExportFormat.PDF)));
+        assertThat(t1).contains(flat(block + " 450.000 " + recipient.getName()
+                + " (" + recipient.getCui() + ") total " + paper.toLowerCase() + " 700.000 450.000"));
+        assertThat(t1).contains(flat(steel));
+        assertThat(t1).contains(flat("TOTAL ambalaje 790.000 90.000 450.000"));
+
+        company.setPackagingOperatorRole(PackagingOperatorRole.RECICLATOR);
+        companyRepository.save(company);
+
+        String t2 = flat(Golden.pdfText(render(ExportFormat.PDF)));
+        assertThat(t2).contains(flat(block + " 300.000 150.000"));
+        assertThat(t2).contains(flat("total " + paper.toLowerCase() + " 700.000 300.000 150.000"));
+        assertThat(t2).contains(flat(steel));
+        assertThat(t2).contains(flat("TOTAL ambalaje 790.000 90.000 300.000 150.000"));
     }
 
     // ------------------------------------------------------------------ helpers

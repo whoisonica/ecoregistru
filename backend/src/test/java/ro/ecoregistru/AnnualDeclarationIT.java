@@ -19,6 +19,7 @@ import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.EvidenceCalculator;
 import ro.ecoregistru.service.export.Anexa1Sheet;
 import ro.ecoregistru.service.export.AnnualDeclaration;
+import ro.ecoregistru.util.WasteCodeLabel;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static ro.ecoregistru.Golden.flat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -304,7 +306,31 @@ class AnnualDeclarationIT {
         assertThat(secondPage()).doesNotContain("R/D");    // PL Turda has nothing unclassified
     }
 
+    /**
+     * P1.12 — the rows as printed, not as {@link AnnualDeclaration.Row} holds them. Every test above
+     * reads the DTO; nothing read a figure off the page, so a generator writing "Valorificat" into
+     * the "Eliminat" column would have filed a wrong declaration with the whole suite green. Whole
+     * rows, code to "eliminat prin", so a moved column cannot match anywhere else on the page.
+     */
+    @Test
+    void thePrintedRowsCarryEachFigureInItsColumn() throws Exception {
+        // cod + tip · stoc la 01.01 · generat · valorificat · eliminat · stoc · valorificat prin · eliminat prin
+        String cluj = flat(firstPage());
+        assertThat(cluj).contains(flat(printed(paper)
+                + " 100.000 400.000 350.000 0.000 150.000 R3 - Colector SRL; R13 - Reciclator SRL -"));
+        assertThat(cluj).contains(flat(printed(household)
+                + " 0.000 200.000 0.000 150.000 30.000 (*) - D5 - Salubritate SRL"));
+
+        assertThat(flat(secondPage())).contains(flat(printed(paper)
+                + " 0.000 60.000 0.000 0.000 60.000 - -"));
+    }
+
     // --- helpers ---
+
+    /** The first two cells of a row: the code as the act spells it, then its name. */
+    private static String printed(WasteCode code) {
+        return WasteCodeLabel.official(code.getCode(), code.isHazardous()) + code.getName();
+    }
 
     private AnnualDeclaration.Row row(String workPointName, String wasteCode) {
         return evidenceCalculator.annualDeclaration(YEAR, null).stream()

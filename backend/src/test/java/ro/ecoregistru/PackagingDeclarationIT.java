@@ -34,6 +34,9 @@ import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static ro.ecoregistru.Golden.cells;
+import static ro.ecoregistru.Golden.flat;
+import static ro.ecoregistru.Golden.rowOf;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -467,13 +470,77 @@ class PackagingDeclarationIT {
         int pages = reader.getNumberOfPages();
         reader.close();
 
-        // Only what the extractor can see: OpenPDF's text extractor walks the page content but
-        // not the cells of a PdfPTable, so the tables are checked on the model above and on a
-        // rendered page by eye (docs/status.md), not by grepping bytes here.
+        // The figures in the tables are read off this page in thePaperCopyPrintsEveryColumnInItsPlace.
         assertThat(text).contains("ANEXA Nr. 1");
         assertThat(text).contains("Tabel 1.");
         assertThat(text).contains("Se completeaz");   // nota 1 of tabelul 2
         assertThat(pages).isEqualTo(1);
+    }
+
+    /**
+     * P1.12 — one material with all seven columns filled, each with a different figure, so a column
+     * printed in its neighbour's place cannot pass. Oţel comes from a stated figure because a
+     * movement fills at most two or three of them; hârtie carton comes from a handover, so tabelul
+     * 2 and the TOTAL row carry a computed row too.
+     *
+     * <p>Col. 2 is not typed: "Total (col. 3+5)" is 700 + 450.
+     */
+    private void goldenFixture() throws Exception {
+        handover("15 01 01", "300", collector.getId(), "R13", "SECONDARY", null);
+        override("OTEL", """
+                "salesPackaging": 1111, "primaryTotal": 700, "primaryReusable": 300,
+                "secondaryTotal": 450, "secondaryReusable": 120, "hazardousContent": 60""");
+    }
+
+    @Test
+    void theSpreadsheetPrintsEveryColumnInItsPlace() throws Exception {
+        goldenFixture();
+
+        byte[] xls = mockMvc.perform(get("/api/v1/packaging/anexa1?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        try (Workbook wb = new HSSFWorkbook(new ByteArrayInputStream(xls))) {
+            var t1 = wb.getSheetAt(0);
+            // col. 1 desfacere · 2 total · 3 primare · 4 din care reutilizabil · 5 secundare · 6 din care reutilizabil · 7 periculos
+            assertThat(cells(t1, rowOf(t1, PackagingMaterial.OTEL.getOfficialLabel()), 2, 8))
+                    .containsExactly(1111d, 1150d, 700d, 300d, 450d, 120d, 60d);
+            assertThat(cells(t1, rowOf(t1, "Total metal"), 2, 8))
+                    .containsExactly(1111d, 1150d, 700d, 300d, 450d, 120d, 60d);
+            assertThat(cells(t1, rowOf(t1, PackagingMaterial.HARTIE_CARTON.getOfficialLabel()), 2, 8))
+                    .containsExactly("", 300d, "", "", 300d, "", "");
+            assertThat(cells(t1, rowOf(t1, "TOTAL:"), 2, 8))
+                    .containsExactly(1111d, 1450d, 700d, 300d, 750d, 120d, 60d);
+
+            var t2 = wb.getSheetAt(1);
+            assertThat(cells(t2, rowOf(t2, PackagingMaterial.HARTIE_CARTON.getOfficialLabel()), 2, 5))
+                    .containsExactly(300d, "Colector Ambalaje SRL, P.L. Ilfov, Şos. de Centură 2-8",
+                            collector.getCui(), "R13");
+            assertThat(cells(t2, rowOf(t2, "TOTAL:"), 2, 2)).containsExactly(300d);
+        }
+    }
+
+    /** Art. 6 asks for the paper copy beside the file, so the PDF gets the same proof, on its own. */
+    @Test
+    void thePaperCopyPrintsEveryColumnInItsPlace() throws Exception {
+        goldenFixture();
+
+        byte[] pdf = mockMvc.perform(get("/api/v1/packaging/anexa1?year=" + YEAR + "&format=pdf")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        String text = flat(Golden.pdfText(pdf));
+
+        String steel = " 1111.000 1150.000 700.000 300.000 450.000 120.000 60.000";
+        assertThat(text).contains(flat(PackagingMaterial.OTEL.getOfficialLabel() + steel
+                + " Total metal" + steel));
+        // Empty cells leave no trace in the extracted text, so the TOTAL row — every column
+        // filled, no two alike — is what pins the order of the columns on paper.
+        assertThat(text).contains(flat("TOTAL: 1111.000 1450.000 700.000 300.000 750.000 120.000 60.000"));
+        assertThat(text).contains(flat(PackagingMaterial.HARTIE_CARTON.getOfficialLabel()
+                + " 300.000 Colector Ambalaje SRL, P.L. Ilfov, Şos. de Centură 2-8 "
+                + collector.getCui() + " R13 TOTAL: 300.000"));
     }
 
     // ---------- helpers ----------

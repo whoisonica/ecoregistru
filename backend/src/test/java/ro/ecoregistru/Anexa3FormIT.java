@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static ro.ecoregistru.Golden.flat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -306,6 +307,48 @@ class Anexa3FormIT {
         }
         assertThat(text.getTextFromPage(1)).isEqualTo(text.getTextFromPage(3));
         reader.close();
+    }
+
+    /**
+     * P1.12 — every value under its own rubric, read off the printed page. The two dates are the
+     * sharpest case: they print side by side as two bare dates, so only their order says which is
+     * the loading and which the unloading — exactly what BUG-010 was about.
+     */
+    @Test
+    void everyValueIsPrintedUnderItsOwnRubric() throws Exception {
+        UUID id = createMovement("""
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s",
+                  "quantity": 1234.5, "anexa3Unit": "TONS", "volumeM3": 17, "unloadDate": "2026-07-06",
+                  "driverName": "Musat Liviu", "driverIdentification": "RK 157812",
+                  "vehicleRegistration": "B69BMA", "transportDestinations": ["COLECTARE", "VALORIFICARE"],
+                  "documentReference": "aviz 1406/11.01"
+                """.formatted(partnerId), wasteCodeId);
+
+        byte[] pdf = mockMvc.perform(get("/api/v1/movements/" + id + "/anexa3")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        com.lowagie.text.pdf.PdfReader reader = new com.lowagie.text.pdf.PdfReader(pdf);
+        String page = flat(new com.lowagie.text.pdf.parser.PdfTextExtractor(reader).getTextFromPage(1));
+        reader.close();
+
+        Integer number = movementRepository.findById(id).orElseThrow().getAnexa3Number();
+        ro.ecoregistru.entity.WasteCode code = wasteCodeRepository.findById(wasteCodeId).orElseThrow();
+        ro.ecoregistru.entity.Partner recipient = partnerRepository.findById(partnerId).orElseThrow();
+
+        assertThat(page).contains(flat("ANEXA 3 Serie şi număr: Nr: " + number + " / 05 . 07 . 2026"));
+        assertThat(page).contains(flat("Nume si prenume: Musat Liviu RK 157812"
+                + " Nr.inmatr.mij.trans: B69BMA"));
+        assertThat(page).contains(flat("Data Încărcare 05.07.2026 Descărcare 06.07.2026"));
+        assertThat(page).contains(flat("Categorii deşeuri " + code.getName() + " Cod: " + code.getCode()));
+        assertThat(page).contains(flat("Destinat: colectării |X| stocării temporare |_|"
+                + " tratării |_| valorificării |X| eliminării |_|"));
+        // Recorded as 1234,5 kg, printed in the unit chosen for this transport: the point moves
+        // three places and nothing is rounded.
+        assertThat(page).contains(flat("Cantitate tone 1.2345 mc 17"));
+        assertThat(page).contains(flat("Date de identificare destinatar " + recipient.getName()
+                + " " + recipient.getCui()));
+        assertThat(page).contains(flat("Observaţii aviz 1406/11.01"));
     }
 
     /**
