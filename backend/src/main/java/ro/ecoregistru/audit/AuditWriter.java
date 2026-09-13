@@ -4,6 +4,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.orm.jpa.EntityManagerFactoryUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -86,7 +88,7 @@ public class AuditWriter {
     }
 
     void writePending() {
-        entityManager.flush();
+        flush();
         List<PendingAudit> pending = AuditCapture.drain();
         if (pending.isEmpty()) {
             return;
@@ -113,6 +115,25 @@ public class AuditWriter {
                         .build())
                 .toList();
         auditLogRepository.saveAll(rows);
+    }
+
+    /**
+     * BUG-007. {@link EntityManager#flush()} pe câmpul brut, dintr-un {@code beforeCommit}, nu
+     * trece prin traducerea de excepţii JPA→Spring — aia se leagă de bean-uri {@code @Repository},
+     * iar clasa asta e un {@code @Component} simplu. Fără linia asta, un conflict real de versiune
+     * ieşea ca {@code jakarta.persistence.OptimisticLockException}, netratat de
+     * {@code AdviceController.handleOptimisticLock()} (care prinde tipul Spring), şi cădea în
+     * plasa generică: 500 + Sentry pentru un conflict pe care API-ul ştia deja să răspundă cu 409.
+     * Cum flush-ul ăsta rulează pe orice scriere, traducerea de aici acoperă orice altă excepţie de
+     * persistenţă cu acelaşi drum, nu doar cazul găsit.
+     */
+    private void flush() {
+        try {
+            entityManager.flush();
+        } catch (RuntimeException e) {
+            DataAccessException translated = EntityManagerFactoryUtils.convertJpaAccessExceptionIfPossible(e);
+            throw translated != null ? translated : e;
+        }
     }
 
     /**
