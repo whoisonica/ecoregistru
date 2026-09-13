@@ -3,7 +3,14 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 13.09.2026, seara.** 🔬 **Auditul QA a mai închis trei module** — P1.8 (scrierea
+> **Unde suntem — 13.09.2026, noaptea.** 🔬 **Auditul QA a închis P1.12** — conținutul tipărit al
+> tuturor celor șase documente oficiale e citit acum din **documentul însuși** (PDF și `.xls`), nu din
+> datele din spatele lui: fișa, declarația anuală, Anexa 2, Anexa 3, Anexa 1 Ambalaje și Anexa 3
+> Ambalaje. Șapte teste noi, în clase existente; fiecare a căzut când coloana pe care o apără a fost
+> inversată în generator. **Niciun defect, nicio linie de cod de producție, nimic de deployat.**
+> **466 de teste, 52 de clase, 0 eșecuri, 0 dezactivate.**
+>
+> **Unde eram — 13.09.2026, seara.** 🔬 **Auditul QA a mai închis trei module** — P1.8 (scrierea
 > în timpul unei regenerări), P1.9 (constrângerile unice sub coliziune) și P2.14 (restul validării),
 > plus primul test care citește cifrele din **PDF-ul tipărit** al Anexei 1, nu din DTO. Au ieșit
 > **trei defecte**, toate reparate în aceeași seară: o coliziune pe CUI/email dădea 500 în loc de 422
@@ -6861,9 +6868,16 @@ termenul dedus: *o regulă corectă, cu comentariul ei lângă ea, şi nimic car
 📌 Testul pironeşte şi o decizie tăcută: la retrimitere se întoarce mişcarea **stocată**, nu se
 rescrie cu corpul nou — o corecţie se face prin `PUT`, care trece prin jurnalul de audit.
 
-⬜ **Ce a mai rămas de probat:** constrângerile bazei, lost update pe aceeaşi mişcare, conţinutul
-documentelor oficiale (valori cunoscute → text extras din PDF), trasabilitatea şi performanţa. Plus
-probele de ecran, care cer servere pornite şi o bază acumulată.
+✅ **Şi conţinutul documentelor oficiale — PASS (13.09.2026).** Toate cele şase documente sunt
+citite din ce se tipăreşte: fişa şi declaraţia rând cu rând, Anexa 2 şi Anexa 3 rubrică cu rubrică,
+cele două anexe de ambalaje celulă cu celulă în `.xls` şi rând cu rând în PDF. Cifrele de intrare
+sunt toate diferite între ele, ca o coloană mutată să nu-şi poată găsi cifra în altă parte a paginii.
+Proba negativă, pe fiecare generator: o coloană inversată → testul lui cade. Niciun defect — dar
+până atunci testele documentelor citeau mai ales datele din spate, iar de pe pagină verificau
+titluri, câteva valori izolate şi o singură celulă de `.xls`: nimic care să cadă la o coloană mutată.
+
+⬜ **Ce a mai rămas de probat:** trasabilitatea (cerinţă legală → test) şi performanţa. Plus probele
+de ecran, care cer servere pornite şi o bază acumulată.
 
 ## Ce urmează — plan revizuit (22.08.2026)
 

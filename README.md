@@ -387,15 +387,17 @@ cd backend
 ./gradlew.bat test
 ```
 
-448 tests across 49 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+466 tests across 52 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport
 form, and the packaging declaration of Ordinul 794/2012.
 
-The pre-launch QA audit added six suites and found six defects, each one first written as a
+The pre-launch QA audit added ten suites and found ten defects, each one first written as a
 `@Disabled` test asserting the **correct** behaviour, then enabled by its fix — so every repair is
-proved by a test written before it rather than after. None of the six crossed an access boundary.
+proved by a test written before it rather than after. None of the ten crossed an access boundary. Every official document is also checked as printed —
+figures read back out of the PDF and the `.xls`, not out of the data behind them — and each of those
+checks was shown to fail when its column was swapped in the generator.
 
 Three of those suites were validated the only way an exclusion can be: **by removing the rule from
 the production code and confirming the tests actually fail.** That is how the register filter, the
