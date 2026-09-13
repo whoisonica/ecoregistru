@@ -40,23 +40,52 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CORS is handled by CorsConfig
+                .cors(cors -> {})
+
+                // CSRF is not needed for this stateless JWT API
                 .csrf(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
+                        // CORS preflight requests must always be allowed
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Public authentication endpoints
                         .requestMatchers(WHITELIST).permitAll()
-                        // The intake form: the only public write in the application. It
-                        // creates a request, not an account. POST only, so reading the
-                        // requests stays PLATFORM_ADMIN.
-                        .requestMatchers(HttpMethod.POST, "/api/v1/account-requests").permitAll()
-                        .anyRequest().authenticated())
-                // 401 for "no valid session", not the default 403. The frontend needs to tell an
-                // expired session (send the user to /login, say why) from a forbidden action
-                // (leave them where they are). Access denied for an authenticated user stays 403.
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
-                .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
+
+                        // Public intake form
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/account-requests"
+                        ).permitAll()
+
+                        // Everything else requires authentication
+                        .anyRequest().authenticated()
+                )
+
+                // Return 401 when there is no valid authentication
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(authenticationEntryPoint)
+                )
+
+                // JWT API → stateless sessions
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(STATELESS)
+                )
+
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                // Tenant resolution must run after authentication is established.
-                .addFilterAfter(new TenantFilter(), JwtAuthenticationFilter.class);
+
+                // Authenticate JWT before Spring's username/password filter
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
+                // Resolve tenant after JWT authentication
+                .addFilterAfter(
+                        new TenantFilter(),
+                        JwtAuthenticationFilter.class
+                );
 
         return http.build();
     }
