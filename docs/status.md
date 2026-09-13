@@ -32,8 +32,10 @@ rulează local și are testele verzi.
 > linie de production code; **reparaţiile s-au făcut după el**, iar cele opt teste `@Disabled` care
 > afirmau comportamentul corect sunt acum active şi trec. Probate: izolarea între clienţi pe toată
 > matricea resursă × verb, comutatorul de tenant, **autorizarea pe roluri**, sesiunile, securitatea
-> fişierelor, datele sensibile şi seam-ul Anexa 1 / art. 48 — **toate ţin**. Şase defecte găsite,
-> **toate reparate**, niciunul nu trece o graniţă de acces.
+> fişierelor, datele sensibile şi seam-ul Anexa 1 / art. 48 — **toate ţin**. ~~Şase defecte găsite,
+> toate reparate~~ → **13.09.2026: şapte**, toate reparate, niciunul nu trece o graniţă de acces.
+> Continuarea auditului la concurenţă a mai găsit unul, reparat şi deployat în aceeaşi sesiune —
+> `api` **v53** (`94cc3c2`), fără migrare. **449 de teste, 50 de clase, 0 eşecuri, 0 dezactivate.**
 >
 > *(Rândurile de mai jos sunt nota de pe 11.09, păstrată ca istoric — cifrele ei sunt cele de
 > atunci.)*
