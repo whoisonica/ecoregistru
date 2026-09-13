@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import ro.ecoregistru.controller.response.EvidenceRegenerationResponse;
 import ro.ecoregistru.controller.response.MonthlyEvidenceResponse;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
@@ -26,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -52,6 +56,7 @@ class EvidenceCalculatorIT {
     @Autowired PartnerRepository partnerRepository;
     @Autowired WasteMovementRepository movementRepository;
     @Autowired MonthlyEvidenceRepository evidenceRepository;
+    @Autowired PlatformTransactionManager transactionManager;
 
     private UUID tenantId;
     private WorkPoint workPoint;
@@ -338,6 +343,105 @@ class EvidenceCalculatorIT {
         assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2025))
                 .extracting(MonthlyEvidence::getGeneratedAt)
                 .containsOnly(evidenceRepository.findOldestGeneratedAt(tenantId, 2025));
+    }
+
+    /**
+     * P1.8, ultima bucată rămasă din concurenţă: o scriere care ajunge chiar în timpul unei
+     * regenerări, nu doar două regenerări care se calcă pe picioare
+     * ({@link #twoReadsAtOnceDoNotCollideOverTheRebuild}).
+     *
+     * <p><b>De ce nu e o probă de coliziune: {@code WasteMovementService} nu ia niciodată
+     * lacătul de regenerare.</b> Scrierea unei mişcări şi reconstrucţia evidenţei n-au nicio
+     * resursă comună de blocat — verificat direct în cod, {@code WasteMovementService} n-are
+     * nicio referinţă la {@code EvidenceCalculator} sau la {@code lockForRebuild}. Deci proba nu
+     * e despre cine câştigă un conflict (n-are cum să fie unul), ci despre <b>independenţă</b>:
+     * o regenerare care aşteaptă la uşa lacătului — cazul obişnuit fiind coliziunea cu o altă
+     * regenerare, deja probată mai sus — nu trebuie să ţină o scriere obişnuită în loc. Dacă
+     * cele două ar cădea vreodată pe aceeaşi resursă, scrierea de mai jos ar aştepta şi ea cât
+     * regenerarea, iar testul ar cădea pe cronometru, nu pe o afirmaţie ghicită.
+     *
+     * <p>Lacătul e ţinut deschis de un fir de test, la fel ca la BUG-007, dar pe advisory lock,
+     * nu pe un rând al mişcării. Regenerarea, pornită într-un al doilea fir, se blochează la
+     * {@code lockForRebuild} exact ca în {@link #twoReadsAtOnceDoNotCollideOverTheRebuild}.
+     * Scrierea porneşte <b>după</b> aceea, cât regenerarea încă aşteaptă, şi trebuie să se
+     * termine imediat. Abia atunci se eliberează lacătul — iar fiindcă scrierea a comis prima,
+     * cifra pe care regenerarea o citeşte e cea nouă, nu una rămasă în urmă.
+     */
+    @Test
+    void aMovementWriteIsNeverBlockedByARegenerationWaitingOnTheLock() throws Exception {
+        evidenceCalculator.regenerateYear(2025);
+        UUID movementId = movementRepository
+                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 31))
+                .stream().filter(m -> m.getOperation() == WasteOperation.GENERATED)
+                .findFirst().orElseThrow()
+                .getId();
+
+        CountDownLatch lockHeld = new CountDownLatch(1);
+        CountDownLatch releaseLock = new CountDownLatch(1);
+        AtomicReference<Throwable> lockerFailure = new AtomicReference<>();
+        Thread locker = new Thread(() -> {
+            TransactionTemplate tt = new TransactionTemplate(transactionManager);
+            try {
+                tt.executeWithoutResult(status -> {
+                    evidenceRepository.lockForRebuild(tenantId, 2025);
+                    lockHeld.countDown();
+                    await(releaseLock);
+                });
+            } catch (Throwable t) {
+                lockerFailure.set(t);
+            }
+        });
+        locker.start();
+        assertThat(lockHeld.await(10, TimeUnit.SECONDS)).as("lacătul a fost luat").isTrue();
+
+        AtomicReference<Throwable> regenFailure = new AtomicReference<>();
+        AtomicReference<EvidenceRegenerationResponse> regenResult = new AtomicReference<>();
+        Thread regenerator = new Thread(() -> {
+            TenantContext.set(tenantId);
+            try {
+                regenResult.set(evidenceCalculator.regenerateYear(2025));
+            } catch (Throwable t) {
+                regenFailure.set(t);
+            } finally {
+                TenantContext.clear();
+            }
+        });
+        regenerator.start();
+        // Timp să ajungă regeneratorul la `lockForRebuild` şi să se blocheze pe el — pe embedded
+        // Postgres, câteva milisecunde; 500 e generos, ca la BUG-007.
+        Thread.sleep(500);
+
+        long startNanos = System.nanoTime();
+        TransactionTemplate writeTt = new TransactionTemplate(transactionManager);
+        writeTt.executeWithoutResult(status ->
+                movementRepository.findById(movementId).orElseThrow()
+                        .setQuantity(new BigDecimal("9.999"))); // TONS, ca la creare — 9999 KG
+        long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000;
+        assertThat(elapsedMs).as("scrierea nu trebuia să aştepte lacătul de regenerare")
+                .isLessThan(2000);
+
+        releaseLock.countDown();
+        regenerator.join(10_000);
+        locker.join(10_000);
+
+        assertThat(lockerFailure.get()).as("firul care ţinea lacătul nu trebuia să pice").isNull();
+        assertThat(regenFailure.get()).as("regenerarea nu trebuia să pice").isNull();
+        assertThat(regenResult.get()).isNotNull();
+
+        // Scrierea a comis înainte ca regenerarea, eliberată, să-şi citească mişcările — deci
+        // cifra nouă e cea care ajunge în evidenţă, nu una rămasă în urmă.
+        assertThat(byMonth(2025).get(1).totalGenerated()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("9999"));
+    }
+
+    private void await(CountDownLatch latch) {
+        try {
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     /**

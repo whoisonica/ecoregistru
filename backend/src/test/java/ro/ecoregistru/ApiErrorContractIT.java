@@ -11,7 +11,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.WasteMovementRepository;
 
 import java.util.UUID;
 
@@ -55,12 +57,14 @@ class ApiErrorContractIT {
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired AppUserRepository appUserRepository;
+    @Autowired WasteMovementRepository movementRepository;
 
     private String token;
+    private AppUser admin;
 
     @BeforeEach
     void setUp() {
-        AppUser admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
+        admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
         token = jwtService.generateToken(admin);
     }
 
@@ -212,5 +216,100 @@ class ApiErrorContractIT {
         mockMvc.perform(get("/api/v1/movements/nu-e-un-uuid")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // P2.14, restul — valori pe care calendarul sau cântarul nu le pot ţine
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * O lună sau un an care nu există în calendar. Aşteptat <b>400</b>.
+     *
+     * <p>{@code month} şi {@code year} sunt {@code int}, deci trec de conversia lui Spring —
+     * {@code 13} e un număr perfect bun. Se strică abia în serviciu, la {@code YearMonth.of} /
+     * {@code LocalDate.of}, care aruncă {@code DateTimeException}; pentru ea nu există handler.
+     * Panoul cere {@code /movements/summary} la fiecare deschidere, deci un parametru de adresă
+     * greşit e o singură tastă distanţă.
+     *
+     * <p>13.09.2026: <b>500</b> pe toate trei, fiecare cu {@code DateTimeException} → BUG-009.
+     */
+    @Test
+    void aMonthOrAYearTheCalendarCannotHoldIsABadRequest() throws Exception {
+        String[] urls = {
+                "/api/v1/movements/summary?year=2026&month=13",
+                "/api/v1/movements?year=2026&month=0",
+                "/api/v1/deadlines?year=1000000000",
+        };
+        for (String url : urls) {
+            mockMvc.perform(get(url).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    /**
+     * Cantitate negativă sau zero, pe cele trei drumuri pe care intră o cifră. Aşteptat <b>422</b>
+     * şi nimic scris. Pironeşte adnotările ({@code @DecimalMin} exclusiv, {@code @Positive},
+     * {@code @PositiveOrZero}) — o cantitate negativă ar scădea din stocul tipărit pe fişă.
+     */
+    @Test
+    void aQuantityThatIsNotPositiveIsRefusedAndNothingIsWritten() throws Exception {
+        mockMvc.perform(postMovement("5", "2026-07-05", null)).andExpect(status().isOk()); // controlul
+        long before = movementCount();
+        for (String quantity : new String[]{"-5", "0"}) {
+            mockMvc.perform(postMovement(quantity, "2026-07-05", null))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+        mockMvc.perform(post("/api/v1/movements/" + UUID.randomUUID() + "/weight")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":-1}"))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(put("/api/v1/packaging/market")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"material\":\"PET\",\"year\":2026,\"salesPackaging\":-1}"))
+                .andExpect(status().isUnprocessableEntity());
+        org.junit.jupiter.api.Assertions.assertEquals(before, movementCount());
+    }
+
+    /**
+     * Descărcare înainte de încărcare. Aşteptat: refuz (<b>4xx</b>) şi nimic scris.
+     *
+     * <p>{@code unloadDate} ajunge tipărită pe Anexa 3 la HG 1061/2008 şi e data după care se
+     * ordonează registrul de predări. Un transport descărcat pe 1 iulie şi încărcat pe 5 iulie nu
+     * există; formularul care-l poartă e unul pe care nu-l poate apăra nimeni la un control.
+     *
+     * <p>13.09.2026: <b>200</b>, rândul se scrie — nicio comparaţie între cele două date, nici în
+     * serviciu, nici pe ecran → BUG-010.
+     */
+    @Test
+    void anUnloadingBeforeTheLoadingIsRefused() throws Exception {
+        // Controlul: acelaşi corp, descărcat a doua zi, trece. Fără el, un refuz venit din alt
+        // motiv (codul de operaţie, registrul) ar face testul verde — primul draft chiar aşa era.
+        mockMvc.perform(postMovement("5", "2026-07-05", "2026-07-06"))
+                .andExpect(status().isOk());
+        long before = movementCount();
+        mockMvc.perform(postMovement("5", "2026-07-05", "2026-07-01"))
+                .andExpect(status().is4xxClientError());
+        org.junit.jupiter.api.Assertions.assertEquals(before, movementCount());
+    }
+
+    private long movementCount() {
+        return movementRepository.findAllByCompany_IdAndDeletedFalse(admin.getCompany().getId()).size();
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder postMovement(
+            String quantity, String date, String unloadDate) {
+        WasteMovement seeded = movementRepository
+                .findAllByCompany_IdAndDeletedFalse(admin.getCompany().getId()).get(0);
+        String body = """
+                {"workPointId":"%s","date":"%s","wasteCodeId":"%s","quantity":%s,"unit":"KG",
+                 "operation":"RECOVERED","operationCode":"R3","register":"ANEXA_1","unloadDate":%s}"""
+                .formatted(seeded.getWorkPoint().getId(), date, seeded.getWasteCode().getId(), quantity,
+                        unloadDate == null ? "null" : "\"" + unloadDate + "\"");
+        return post("/api/v1/movements")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body);
     }
 }
