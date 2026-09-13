@@ -3,7 +3,17 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 12.09.2026.** ✅ **P1.11 — jurnalul de audit e construit** (secţiunea „P1.11 —
+> **Unde suntem — 13.09.2026, seara.** 🔬 **Auditul QA a mai închis trei module** — P1.8 (scrierea
+> în timpul unei regenerări), P1.9 (constrângerile unice sub coliziune) și P2.14 (restul validării),
+> plus primul test care citește cifrele din **PDF-ul tipărit** al Anexei 1, nu din DTO. Au ieșit
+> **trei defecte**, toate reparate în aceeași seară: o coliziune pe CUI/email dădea 500 în loc de 422
+> (cauza reală era tot flush-ul jurnalului de audit, ca la BUG-007), o lună 13 dădea 500 în loc de
+> 400, iar o **descărcare datată înaintea încărcării** se scria și ajungea pe Anexa 3 — acum e
+> refuzată, și pe ecran, și în API. **459 de teste, 52 de clase, 0 eșecuri, 0 dezactivate.**
+> ✅ **Deployat 13.09, 22:49** — `api` **v56** (`b59b93f`), `app` **v49** (`068ee1b`), fără migrare
+> (`V39`). Probat pe dyno cu sesiune reală: cele trei cereri → `400`, controlul → `200`.
+>
+> **Unde eram — 12.09.2026.** ✅ **P1.11 — jurnalul de audit e construit** (secţiunea „P1.11 —
 > jurnalul de audit"): cine, ce, când, prins în interceptorul de flush al lui Hibernate ca să nu
 > poată fi uitat de niciun drum de scriere, cu ecran în **Setări** numai pentru administratori.
 > **368 de teste, 0 eșecuri**, **`V39`** (prima liberă `V40`). ✅ **Deployat pe 12.09, 02:09** —
