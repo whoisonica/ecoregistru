@@ -8,6 +8,7 @@ rulează local și are testele verzi.
 > răspunde 404 în loc de 500, fiecare rută a aplicației e citită din Spring și verificată că cere
 > rolul potrivit și sesiune, iar preflight-ul `OPTIONS` e probat că nu ajunge la niciun controller.
 > Matricea cerință legală → test e scrisă. **478 de teste, 55 de clase, 0 eșecuri, 0 dezactivate.**
+> ✅ **Deployat 13.09, 23:40** — `api` **v57** (`f1fea1e`), fără migrare (`V39`); `app` rămâne **v49**.
 >
 > **Unde eram — 13.09.2026, noaptea.** 🔬 **Auditul QA a închis P1.12** — conținutul tipărit al
 > tuturor celor șase documente oficiale e citit acum din **documentul însuși** (PDF și `.xls`), nu din
