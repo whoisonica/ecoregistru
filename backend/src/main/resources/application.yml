@@ -116,7 +116,14 @@ management:
       enabled: false
 
 springdoc:
+  # BUG-011 — documentaţia API-ului e oprită în producţie. Pornită, `/v3/api-docs` publica fără
+  # sesiune harta celor ~70 de endpointuri, cu parametri şi forme de corp: nu dă acces la nimic, dar
+  # e recon gratuit. Profilul `dev` o porneşte la loc, iar `SecurityConfiguration` lasă căile
+  # publice numai cât ea e pornită. `ApiDocsExposureIT` citeşte fişierul ăsta, nu doar contextul.
+  api-docs:
+    enabled: false
   swagger-ui:
+    enabled: false
     path: /swagger-ui.html
 
 logging:

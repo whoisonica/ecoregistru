@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import ro.ecoregistru.security.TooManyRequests;
 import ro.ecoregistru.security.TooManyRequestsException;
 
@@ -41,6 +42,19 @@ public class AdviceController {
     public Map<String, Object> handleNotFound(NotFoundException e) {
         log.warn("{} {}", ERROR, e.getError().getCode());
         return envelope(NOT_FOUND, e.getError().getCode(), e.getError().getMessage());
+    }
+
+    /**
+     * BUG-012. O adresă pe care nu stă nimic: un link vechi, o adresă tastată greşit, un scaner. Spring
+     * aruncă {@code NoResourceFoundException}, iar fără handler ea cădea în plasa de la urmă — 500 şi
+     * alertă în Sentry. Găsit închizând documentaţia API-ului (BUG-011), unde căile rămâneau fără
+     * nimic în spate. Mesajul nu repetă adresa cerută.
+     */
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Map<String, Object> handleNoResource(NoResourceFoundException e) {
+        log.warn("No resource: {}", e.getResourcePath());
+        return envelope(NOT_FOUND, "request.path.not.found", "Adresa cerută nu există.");
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)

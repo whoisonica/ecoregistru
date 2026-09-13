@@ -3,6 +3,7 @@ package ro.ecoregistru.config;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,14 +32,27 @@ public class SecurityConfiguration {
     /** Publicly reachable endpoints (no auth). Everything else requires a valid token. */
     private static final String[] WHITELIST = {
             "/api/v1/auth/**",
-            "/actuator/health",
+            "/actuator/health"
+    };
+
+    /**
+     * BUG-011: public only while the docs are switched on, which is the {@code dev} profile alone.
+     * With the docs off these paths fall under {@code authenticated()}, so a stranger gets 401 rather
+     * than a map of the API, and a signed-in user gets 404.
+     */
+    private static final String[] API_DOCS = {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**"
     };
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            @Value("${springdoc.api-docs.enabled:true}") boolean apiDocsEnabled) throws Exception {
+        if (apiDocsEnabled) {
+            http.authorizeHttpRequests(auth -> auth.requestMatchers(API_DOCS).permitAll());
+        }
         http
                 // CORS is handled by CorsConfig
                 .cors(cors -> {})

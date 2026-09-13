@@ -218,6 +218,21 @@ class ApiErrorContractIT {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * BUG-012. O adresă care nu există, cu sesiune. Aşteptat <b>404</b>.
+     *
+     * <p>Aceeaşi familie ca cele trei de mai sus, găsită la BUG-011: Spring aruncă
+     * {@code NoResourceFoundException}, iar fără handler ea cădea în plasa de la urmă — 500 şi
+     * alertă în Sentry pentru un link vechi sau o adresă tastată greşit.
+     */
+    @Test
+    void anUnknownPathIsANotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/nu-exista")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(not(containsString("NoResourceFound"))));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // P2.14, restul — valori pe care calendarul sau cântarul nu le pot ţine
     // ─────────────────────────────────────────────────────────────────────────
