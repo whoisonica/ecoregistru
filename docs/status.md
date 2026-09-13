@@ -3,7 +3,13 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 13.09.2026, noaptea.** 🔬 **Auditul QA a închis P1.12** — conținutul tipărit al
+> **Unde suntem — 13.09.2026, noaptea târziu.** 🔬 **Auditul QA a închis perimetrul și P1.13.**
+> Documentația API-ului e oprită în producție (pornită doar pe profilul `dev`), o adresă inexistentă
+> răspunde 404 în loc de 500, fiecare rută a aplicației e citită din Spring și verificată că cere
+> rolul potrivit și sesiune, iar preflight-ul `OPTIONS` e probat că nu ajunge la niciun controller.
+> Matricea cerință legală → test e scrisă. **478 de teste, 55 de clase, 0 eșecuri, 0 dezactivate.**
+>
+> **Unde eram — 13.09.2026, noaptea.** 🔬 **Auditul QA a închis P1.12** — conținutul tipărit al
 > tuturor celor șase documente oficiale e citit acum din **documentul însuși** (PDF și `.xls`), nu din
 > datele din spatele lui: fișa, declarația anuală, Anexa 2, Anexa 3, Anexa 1 Ambalaje și Anexa 3
 > Ambalaje. Șapte teste noi, în clase existente; fiecare a căzut când coloana pe care o apără a fost

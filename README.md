@@ -387,7 +387,7 @@ cd backend
 ./gradlew.bat test
 ```
 
-466 tests across 52 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+478 tests across 55 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport
