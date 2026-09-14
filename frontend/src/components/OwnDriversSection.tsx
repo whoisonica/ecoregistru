@@ -51,6 +51,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   const [editing, setEditing] = useState<Driver | null>(null);
   const [name, setName] = useState("");
   const [identification, setIdentification] = useState("");
+  const [cnp, setCnp] = useState("");
   const [vehicleRegistration, setVehicleRegistration] = useState("");
   const [nameError, setNameError] = useState(false);
 
@@ -66,6 +67,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     setEditing(null);
     setName("");
     setIdentification("");
+    setCnp("");
     setVehicleRegistration("");
     setNameError(false);
     setDialogOpen(true);
@@ -75,6 +77,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     setEditing(d);
     setName(d.name);
     setIdentification(d.identification ?? "");
+    setCnp(d.cnp ?? "");
     setVehicleRegistration(d.vehicleRegistration ?? "");
     setNameError(false);
     setDialogOpen(true);
@@ -89,6 +92,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     const input = {
       name: name.trim(),
       identification: identification.trim() || null,
+      cnp: cnp.trim() || null,
       vehicleRegistration: vehicleRegistration.trim() || null,
     };
     try {
@@ -302,6 +306,17 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
               placeholder={t.identificationPlaceholder}
             />
             <p className="mt-1 text-xs text-content-muted">{t.identificationHint}</p>
+          </div>
+          <div>
+            <Label htmlFor="d-cnp">{strings.common.cnp}</Label>
+            <Input
+              id="d-cnp"
+              inputMode="numeric"
+              maxLength={13}
+              value={cnp}
+              onChange={(e) => setCnp(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-content-muted">{strings.common.cnpHint}</p>
           </div>
           <div>
             <Label htmlFor="d-vehicle">{t.vehicle}</Label>

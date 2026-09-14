@@ -137,6 +137,21 @@ public class WasteMovementController {
     }
 
     /**
+     * Avizul de însoţire a mărfii, as a PDF. A read, like Anexa 2: nothing is allocated.
+     */
+    @GetMapping("/{id}/aviz")
+    public ResponseEntity<byte[]> aviz(@PathVariable UUID id) {
+        byte[] body = movementService.renderAviz(id);
+        ContentDisposition disposition = ContentDisposition.inline()
+                .filename("aviz-" + id + ".pdf")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
+    /**
      * Anexa 2 la HG 1061/2008, the hazardous-waste consignment form, as a PDF.
      *
      * <p><b>Not gated to {@code CAN_WRITE}</b>, and the difference from {@code anexa3} above is not

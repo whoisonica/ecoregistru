@@ -107,7 +107,8 @@ public interface WasteMovementRepository
      * Include şi mişcările şterse moale: o dată personală nu devine mai puţin personală la ştergere.
      */
     @Modifying
-    @Query("update WasteMovement m set m.driverName = null, m.driverIdentification = null "
-            + "where m.date < :cutoff and (m.driverName is not null or m.driverIdentification is not null)")
+    @Query("update WasteMovement m set m.driverName = null, m.driverIdentification = null, "
+            + "m.driverCnp = null where m.date < :cutoff and (m.driverName is not null "
+            + "or m.driverIdentification is not null or m.driverCnp is not null)")
     int clearDriverDataBefore(@Param("cutoff") LocalDate cutoff);
 }

@@ -15,5 +15,6 @@ public record DriverRequest(
         UUID id,
         @Size(max = 255) String name,
         @Size(max = 100) String identification,
+        @ro.ecoregistru.util.ValidCnp String cnp,
         @Size(max = 50) String vehicleRegistration
 ) {}

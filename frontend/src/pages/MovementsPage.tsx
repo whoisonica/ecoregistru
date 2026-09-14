@@ -81,7 +81,12 @@ import { useRemoteTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
-import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
+import {
+  canPrintAnexa3,
+  canPrintAviz,
+  useAnexa3Download,
+  useAvizDownload,
+} from "@/hooks/useAnexa3";
 import { canPrintAnexa2, useAnexa2Download, useAnexa2Threshold } from "@/hooks/useAnexa2";
 import { useAttachmentOpen } from "@/hooks/useAttachment";
 import { formatTonnesValue } from "@/lib/units";
@@ -294,6 +299,7 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
     ? `${strings.months[Number(monthFilter.slice(5)) - 1]} ${monthFilter.slice(0, 4)}`
     : monthFilter;
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
+  const { download: downloadAviz, downloadingId: downloadingAvizId } = useAvizDownload();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } = useAnexa2Download();
   const { data: company } = useCurrentCompany();
   const isGeneration = register === "ANEXA_1";
@@ -737,6 +743,15 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                                 {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
                               </RowAction>
                             )}
+                            {canPrintAviz(m) && (
+                              <RowAction
+                                icon={FileText}
+                                disabled={downloadingAvizId === m.id}
+                                onClick={() => downloadAviz(m)}
+                              >
+                                {downloadingAvizId === m.id ? t.avizDownloading : t.avizDownload}
+                              </RowAction>
+                            )}
                             {/* Perechea: același transport, celălalt fel de deșeu. Butonul de
                                 Anexa 2 apare exact unde nu apare cel de Anexa 3. */}
                             {canPrintAnexa2(m, company?.type) && (
@@ -1132,6 +1147,7 @@ function MovementFormDialog({
   // `editing?`, nu `initial?`: la duplicare, data descărcării e una din cele care **chiar** diferă
   // între două transporturi, ca data și numărul documentului. Duplicând o predare din martie o
   // porneai cu încărcarea azi și descărcarea în martie — pe un formular semnat de destinatar.
+  const [loadDate, setLoadDate] = useState(editing?.loadDate ?? "");
   const [unloadDate, setUnloadDate] = useState(editing?.unloadDate ?? "");
   // Null = "ca la firmă": alegerea de pe firmă (V19), iar în lipsa ei unitatea mișcării.
   const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">(initial?.anexa3Unit ?? "");
@@ -1140,6 +1156,7 @@ function MovementFormDialog({
   const [driverIdentification, setDriverIdentification] = useState(
     initial?.driverIdentification ?? ""
   );
+  const [driverCnp, setDriverCnp] = useState(initial?.driverCnp ?? "");
   const [vehicleRegistration, setVehicleRegistration] = useState(
     initial?.vehicleRegistration ?? ""
   );
@@ -1443,12 +1460,14 @@ function MovementFormDialog({
       internalGeneratorId: internalGeneratorId || null,
       documentReference: documentReference.trim() || null,
       notes: notes.trim() || null,
+      loadDate: loadDate || null,
       unloadDate: unloadDate || null,
       partnerWorkPointId: partnerWorkPointId || null,
       anexa3Unit: anexa3Unit || null,
       transportPartnerId: transportPartnerId || null,
       driverName: driverName.trim() || null,
       driverIdentification: driverIdentification.trim() || null,
+      driverCnp: driverCnp.trim() || null,
       vehicleRegistration: vehicleRegistration.trim() || null,
       transportDestinations,
       anexa2Number: anexa2Number.trim() || null,
@@ -2182,11 +2201,15 @@ function MovementFormDialog({
             )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
-                  Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr
-                  e tot ce ne trebuie. Se arată ca să se vadă ce se tipărește. */}
+                  Încărcarea se alege de pe 15.09.2026 (specialista); goală, se tipărește data
+                  mișcării, ca înainte. */}
               <div>
                 <Label htmlFor="mv-load">{t.loadDate}</Label>
-                <DateInput id="mv-load" value={date} disabled className="bg-surface-sunken text-content-muted" />
+                <DateInput
+                  id="mv-load"
+                  value={loadDate}
+                  onChange={(ev) => setLoadDate(ev.target.value)}
+                />
                 <p className="mt-1 text-xs text-content-muted">{t.loadDateHint}</p>
               </div>
               <div>
@@ -2194,7 +2217,7 @@ function MovementFormDialog({
                 <DateInput
                   id="mv-unload"
                   value={unloadDate}
-                  min={date}
+                  min={loadDate || date}
                   onChange={(ev) => setUnloadDate(ev.target.value)}
                 />
               </div>
@@ -2277,6 +2300,7 @@ function MovementFormDialog({
                     if (picked) {
                       setDriverName(picked.name);
                       setDriverIdentification(picked.identification ?? "");
+                      setDriverCnp(picked.cnp ?? "");
                       setVehicleRegistration(picked.vehicleRegistration ?? "");
                     }
                   }}
@@ -2299,7 +2323,7 @@ function MovementFormDialog({
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <Label htmlFor="mv-driver">{t.driverName}</Label>
                 <Input
@@ -2315,6 +2339,16 @@ function MovementFormDialog({
                   value={driverIdentification}
                   onChange={(ev) => setDriverIdentification(ev.target.value)}
                   placeholder={t.driverIdentificationPlaceholder}
+                />
+              </div>
+              <div>
+                <Label htmlFor="mv-driver-cnp">{strings.common.cnp}</Label>
+                <Input
+                  id="mv-driver-cnp"
+                  inputMode="numeric"
+                  maxLength={13}
+                  value={driverCnp}
+                  onChange={(ev) => setDriverCnp(ev.target.value)}
                 />
               </div>
               <div>

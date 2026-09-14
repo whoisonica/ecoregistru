@@ -180,9 +180,21 @@ public class WasteMovement {
 
     // --- Anexa 3 la HG 1061/2008: the transport form printed from this movement ---
 
-    /** "Data descărcării". {@link #date} is the loading date the form asks for above it. */
+    /**
+     * "Data încărcării", when it differs from {@link #date} (V42, cerută de specialistă pe
+     * 15.09.2026). Null prints the movement date — see {@link #loadingDate()}.
+     */
+    @Column(name = "load_date")
+    LocalDate loadDate;
+
+    /** "Data descărcării". */
     @Column(name = "unload_date")
     LocalDate unloadDate;
+
+    /** The loading date the transport documents print: the one typed, else the movement date. */
+    public LocalDate loadingDate() {
+        return loadDate != null ? loadDate : date;
+    }
 
     /**
      * Which of the recipient's work points took the load. Null means "the one they have", which is
@@ -205,13 +217,19 @@ public class WasteMovement {
     String driverName;
 
     /**
-     * How the driver is identified on the paper — an ID series and number, or a CNP. One free-text
-     * rubric rather than a CNP column on purpose: a structured CNP would pull in the GDPR regime
-     * that OUG 31/2011 imposes on the borderou de achiziţie (Etapa 9), and nothing here needs the
-     * number as data.
+     * How the driver is identified on Anexa 3 — the ID series and number. The CNP has had its own
+     * column since V42 ({@link #driverCnp}), because the aviz prints both.
      */
     @Column(name = "driver_identification", length = 100)
     String driverIdentification;
+
+    /**
+     * CNP-ul delegatului, tipărit pe avizul de însoţire (V42, specialista, 15.09.2026). Rubrică
+     * proprie, validată cu cifra de control; aceleaşi reguli ca {@link #driverIdentification}:
+     * ascuns în jurnalul de audit şi şters după termenul de păstrare.
+     */
+    @Column(name = "driver_cnp", length = 13)
+    String driverCnp;
 
     @Column(name = "vehicle_registration", length = 50)
     String vehicleRegistration;

@@ -80,7 +80,7 @@ public enum ErrorMessageEnum {
     // --- WasteMovement ---
     MOVEMENT_NOT_FOUND("movement.not.found", "Înregistrarea de deșeu nu a fost găsită."),
     INVALID_QUANTITY("movement.quantity.invalid", "Cantitatea trebuie să fie mai mare decât zero."),
-    UNLOAD_BEFORE_LOAD("movement.unload.before.load", "Data descărcării nu poate fi înaintea datei încărcării (data mișcării)."),
+    UNLOAD_BEFORE_LOAD("movement.unload.before.load", "Data descărcării nu poate fi înaintea datei încărcării."),
     QUANTITY_REQUIRED("movement.quantity.required", "Cantitatea e obligatorie. Dacă o cântărește destinatarul la descărcare, bifează „Se cântărește la descărcare” și lasă câmpul gol."),
     WEIGHING_NEEDS_RECIPIENT("movement.weighing.recipient", "Cântărirea la descărcare o face destinatarul: alege partenerul care preia deșeul."),
     PARTNER_WORK_POINT_MISMATCH("movement.partner.work.point.mismatch", "Punctul de lucru ales nu e al destinatarului. Alege unul dintre punctele lui de lucru."),
@@ -94,6 +94,7 @@ public enum ErrorMessageEnum {
 
     // --- Anexa 3 la HG 1061/2008 (formularul de transport) ---
     ANEXA3_REQUIRES_HANDOVER("anexa3.requires.handover", "Formularul de transport se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care o face."),
+    AVIZ_REQUIRES_HANDOVER("aviz.requires.handover", "Avizul de însoțire se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care preia deșeul."),
     ANEXA3_HAZARDOUS_NOT_ALLOWED("anexa3.hazardous", "Anexa 3 e formularul pentru deșeuri NEpericuloase. Pentru un cod periculos se folosește formularul de expediție/transport din anexa 2 la HG 1061/2008 — butonul „Anexa 2” de pe aceeași mișcare."),
 
     // --- Anexa 2 la HG 1061/2008 (transportul deşeurilor periculoase) ---

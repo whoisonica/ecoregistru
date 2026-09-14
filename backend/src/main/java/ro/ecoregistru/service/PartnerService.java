@@ -70,11 +70,10 @@ public class PartnerService {
                 .packagingOrigin(request.packagingOrigin())
                 .address(request.address())
                 .tradeRegisterNumber(request.tradeRegisterNumber())
-                .transportLicenseNumber(request.transportLicenseNumber())
-                .transportLicenseExpiry(request.transportLicenseExpiry())
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
+        applyLicence(partner, request);
         applyWorkPoints(partner, request);
         applyDrivers(partner, request);
         partnerRepository.save(partner);
@@ -103,9 +102,19 @@ public class PartnerService {
         applyWorkPoints(partner, request);
         applyDrivers(partner, request);
         partner.setTradeRegisterNumber(request.tradeRegisterNumber());
-        partner.setTransportLicenseNumber(request.transportLicenseNumber());
-        partner.setTransportLicenseExpiry(request.transportLicenseExpiry());
+        applyLicence(partner, request);
         return toResponse(partner);
+    }
+
+    /**
+     * Licenţa de transport numai la un transportator cu vehicule peste 3,5 t (specialista,
+     * 15.09.2026). Altfel se goleşte, ca Anexa 3 să nu tipărească o licenţă rămasă de pe vremuri.
+     */
+    private void applyLicence(Partner partner, PartnerRequest request) {
+        boolean heavy = request.carrier() && request.heavyVehicles();
+        partner.setHeavyVehicles(heavy);
+        partner.setTransportLicenseNumber(heavy ? blankToNull(request.transportLicenseNumber()) : null);
+        partner.setTransportLicenseExpiry(heavy ? request.transportLicenseExpiry() : null);
     }
 
     @Transactional
@@ -225,6 +234,7 @@ public class PartnerService {
             }
             driver.setName(wanted.name().trim());
             driver.setIdentification(blankToNull(wanted.identification()));
+            driver.setCnp(blankToNull(wanted.cnp()));
             driver.setVehicleRegistration(blankToNull(wanted.vehicleRegistration()));
             kept.add(driver);
         }
@@ -251,11 +261,12 @@ public class PartnerService {
                         .map(wp -> new PartnerWorkPointResponse(wp.getId(), wp.getName(),
                                 wp.getAddress()))
                         .toList(),
-                p.getTradeRegisterNumber(),
+                p.getTradeRegisterNumber(), p.isHeavyVehicles(),
                 p.getTransportLicenseNumber(), p.getTransportLicenseExpiry(),
                 p.getDrivers().stream()
                         .map(d -> new DriverResponse(d.getId(), p.getId(), p.getName(), d.getName(),
-                                d.getIdentification(), d.getVehicleRegistration(), d.isActive()))
+                                d.getIdentification(), d.getCnp(), d.getVehicleRegistration(),
+                                d.isActive()))
                         .toList());
     }
 }

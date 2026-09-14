@@ -94,6 +94,7 @@ public record WasteMovementResponse(
         UUID clientGeneratedId,
 
         // --- Anexa 3 ---
+        LocalDate loadDate,
         LocalDate unloadDate,
         UUID partnerWorkPointId,
         String partnerWorkPointLabel,
@@ -101,6 +102,7 @@ public record WasteMovementResponse(
         String transportPartnerName,
         String driverName,
         String driverIdentification,
+        String driverCnp,
         String vehicleRegistration,
         Set<TransportDestination> transportDestinations,
         /** Set once the form has been generated; a reprint keeps the same series and number. */

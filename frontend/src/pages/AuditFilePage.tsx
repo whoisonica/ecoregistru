@@ -142,6 +142,10 @@ export function AuditFilePage() {
               <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
               <span className="font-medium text-content-strong">{t.contentAnnualDeclaration}</span>
             </li>
+            <li className="flex items-start gap-2">
+              <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+              <span className="font-medium text-content-strong">{t.contentPackaging}</span>
+            </li>
             <li className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4 text-brand" />
               {t.contentEvidence}

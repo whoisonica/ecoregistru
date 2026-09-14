@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
+import { openPdfInTab } from "@/lib/openFileInTab";
 import type {
   PackagingAnexa3,
   PackagingHandoverRow,
@@ -85,11 +86,15 @@ export function useSavePackagingMarket() {
  * exemplarul pe hârtie cerut de același articol, și dosarul de control.
  */
 export async function downloadPackagingDeclaration(year: number, format: "xls" | "pdf" = "xls") {
-  const res = await api.get("/api/v1/packaging/anexa1", {
-    params: { year, format },
-    responseType: "blob",
-  });
-  saveBlob(res.data as Blob, `anexa1-ambalaje-${year}.${format}`);
+  const fetchFile = async () =>
+    (await api.get("/api/v1/packaging/anexa1", { params: { year, format }, responseType: "blob" }))
+      .data as Blob;
+  // PDF-ul se deschide în tab, ca să se poată tipări fără descărcare; `.xls`-ul e pentru depunere.
+  if (format === "pdf") {
+    await openPdfInTab(fetchFile, `anexa1-ambalaje-${year}.pdf`);
+  } else {
+    saveBlob(await fetchFile(), `anexa1-ambalaje-${year}.${format}`);
+  }
 }
 
 /**
@@ -123,9 +128,16 @@ export async function downloadPackagingAnexa3(
   workPointId?: string,
   format: "xls" | "pdf" = "xls"
 ) {
-  const res = await api.get("/api/v1/packaging/anexa3/download", {
-    params: workPointId ? { year, workPointId, format } : { year, format },
-    responseType: "blob",
-  });
-  saveBlob(res.data as Blob, `anexa3-ambalaje-${year}.${format}`);
+  const fetchFile = async () =>
+    (
+      await api.get("/api/v1/packaging/anexa3/download", {
+        params: workPointId ? { year, workPointId, format } : { year, format },
+        responseType: "blob",
+      })
+    ).data as Blob;
+  if (format === "pdf") {
+    await openPdfInTab(fetchFile, `anexa3-ambalaje-${year}.pdf`);
+  } else {
+    saveBlob(await fetchFile(), `anexa3-ambalaje-${year}.${format}`);
+  }
 }

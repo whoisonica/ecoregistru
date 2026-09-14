@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
+import { openPdfInTab } from "@/lib/openFileInTab";
 import type { EvidenceFilters, EvidenceRegenerationResponse, MonthlyEvidence } from "@/lib/types";
 
 /**
@@ -58,23 +59,28 @@ export async function downloadAnexa1Form(filters: EvidenceFilters): Promise<void
   const params: Record<string, string | number> = { year: filters.year };
   if (filters.workPointId) params.workPointId = filters.workPointId;
 
-  const res = await api.get("/api/v1/evidences/anexa1", { params, responseType: "blob" });
-  saveBlob(res.data as Blob, `evidenta-gestiunii-deseurilor-${filters.year}.pdf`);
+  await openPdfInTab(
+    async () =>
+      (await api.get("/api/v1/evidences/anexa1", { params, responseType: "blob" })).data as Blob,
+    `evidenta-gestiunii-deseurilor-${filters.year}.pdf`
+  );
 }
 
 /**
- * The annual declaration — the summary page in front of the record sheets: one line per waste
- * code, one page per work point. Same figures as the fişa, folded to the year.
+ * „Evidența gestiunii deșeurilor centralizată" (fosta declarație anuală, redenumită pe 15.09.2026)
+ * — the summary page in front of the record sheets: one line per waste code, one page per work
+ * point. Same figures as the fişa, folded to the year.
  */
 export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promise<void> {
   const params: Record<string, string | number> = { year: filters.year };
   if (filters.workPointId) params.workPointId = filters.workPointId;
 
-  const res = await api.get("/api/v1/evidences/declaratie-anuala", {
-    params,
-    responseType: "blob",
-  });
-  saveBlob(res.data as Blob, `declaratie-anuala-${filters.year}.pdf`);
+  await openPdfInTab(
+    async () =>
+      (await api.get("/api/v1/evidences/declaratie-anuala", { params, responseType: "blob" }))
+        .data as Blob,
+    `evidenta-centralizata-${filters.year}.pdf`
+  );
 }
 
 export async function downloadEvidenceExport(
@@ -85,6 +91,11 @@ export async function downloadEvidenceExport(
   if (filters.month != null) params.month = filters.month;
   if (filters.workPointId) params.workPointId = filters.workPointId;
 
-  const res = await api.get("/api/v1/evidences/export", { params, responseType: "blob" });
-  saveBlob(res.data as Blob, `evidenta-${filters.year}.${format}`);
+  const fetchFile = async () =>
+    (await api.get("/api/v1/evidences/export", { params, responseType: "blob" })).data as Blob;
+  if (format === "pdf") {
+    await openPdfInTab(fetchFile, `evidenta-${filters.year}.pdf`);
+  } else {
+    saveBlob(await fetchFile(), `evidenta-${filters.year}.${format}`);
+  }
 }

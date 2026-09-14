@@ -37,6 +37,7 @@ public record PartnerResponse(
         String address,
         List<PartnerWorkPointResponse> workPoints,
         String tradeRegisterNumber,
+        boolean heavyVehicles,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
         List<DriverResponse> drivers

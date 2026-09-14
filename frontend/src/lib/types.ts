@@ -548,6 +548,8 @@ export interface Partner {
    */
   workPoints: PartnerWorkPoint[];
   tradeRegisterNumber: string | null;
+  /** Vehicule peste 3,5 t — numai atunci are licență de transport (V42). */
+  heavyVehicles: boolean;
   transportLicenseNumber: string | null;
   transportLicenseExpiry: string | null; // yyyy-MM-dd
   /** Poate face transportul. Independent de `type`: mai toți transportatorii sunt și colectori. */
@@ -580,6 +582,8 @@ export interface Driver {
   partnerName: string | null;
   name: string;
   identification: string | null;
+  /** Pentru avizul de însoțire (V42). */
+  cnp: string | null;
   vehicleRegistration: string | null;
   active: boolean;
 }
@@ -589,6 +593,7 @@ export interface DriverInput {
   id?: string;
   name: string;
   identification?: string | null;
+  cnp?: string | null;
   vehicleRegistration?: string | null;
 }
 
@@ -620,6 +625,7 @@ export interface PartnerInput {
   /** Lista se înlocuiește la salvare cu ce e pe ecran; omisă, rămâne cum era. */
   workPoints?: PartnerWorkPointInput[];
   tradeRegisterNumber?: string | null;
+  heavyVehicles?: boolean;
   transportLicenseNumber?: string | null;
   transportLicenseExpiry?: string | null; // yyyy-MM-dd
   /** Lista se înlocuiește la salvare cu ce e pe ecran; omisă, rămâne cum era. */
@@ -698,6 +704,8 @@ export interface WasteMovement {
   attachments: Attachment[];
   clientGeneratedId: string | null;
   // --- Anexa 3 la HG 1061/2008 ---
+  /** Data încărcării; null = data mișcării (V42). */
+  loadDate: string | null; // yyyy-MM-dd
   unloadDate: string | null; // yyyy-MM-dd
   /** La care punct de lucru al destinatarului a ajuns marfa; null = singurul, dacă are unul. */
   partnerWorkPointId: string | null;
@@ -706,6 +714,7 @@ export interface WasteMovement {
   transportPartnerName: string | null;
   driverName: string | null;
   driverIdentification: string | null;
+  driverCnp: string | null;
   vehicleRegistration: string | null;
   transportDestinations: TransportDestination[];
   /** Set once the form has been generated; a reprint keeps the same series and number. */
@@ -772,11 +781,13 @@ export interface WasteMovementInput {
   documentReference?: string | null;
   notes?: string | null;
   // --- Anexa 3 ---
+  loadDate?: string | null; // yyyy-MM-dd
   unloadDate?: string | null; // yyyy-MM-dd
   partnerWorkPointId?: string | null;
   transportPartnerId?: string | null;
   driverName?: string | null;
   driverIdentification?: string | null;
+  driverCnp?: string | null;
   vehicleRegistration?: string | null;
   transportDestinations?: TransportDestination[];
   /** The unit this one form prints in; null keeps the company setting. */

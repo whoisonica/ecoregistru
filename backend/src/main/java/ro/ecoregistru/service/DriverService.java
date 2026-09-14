@@ -58,6 +58,7 @@ public class DriverService {
                 .company(companyRepository.getReferenceById(tenantId))
                 .name(name)
                 .identification(blankToNull(request.identification()))
+                .cnp(blankToNull(request.cnp()))
                 .vehicleRegistration(blankToNull(request.vehicleRegistration()))
                 .active(true)
                 .createdAt(Instant.now())
@@ -71,6 +72,7 @@ public class DriverService {
         Driver driver = requireOwn(id);
         driver.setName(requireName(request));
         driver.setIdentification(blankToNull(request.identification()));
+        driver.setCnp(blankToNull(request.cnp()));
         driver.setVehicleRegistration(blankToNull(request.vehicleRegistration()));
         return toResponse(driver);
     }
@@ -144,6 +146,7 @@ public class DriverService {
         return new DriverResponse(d.getId(),
                 partner == null ? null : partner.getId(),
                 partner == null ? null : partner.getName(),
-                d.getName(), d.getIdentification(), d.getVehicleRegistration(), d.isActive());
+                d.getName(), d.getIdentification(), d.getCnp(), d.getVehicleRegistration(),
+                d.isActive());
     }
 }

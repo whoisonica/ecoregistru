@@ -47,6 +47,8 @@ public record PartnerRequest(
          */
         @Valid List<PartnerWorkPointRequest> workPoints,
         String tradeRegisterNumber,
+        /** Vehicule peste 3,5 t; fără bifă (sau fără {@code carrier}) licenţa se ignoră. */
+        boolean heavyVehicles,
         String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
         /**

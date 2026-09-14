@@ -91,7 +91,7 @@ public class EvidenceController {
         byte[] body = annualDeclarationGenerator.render(
                 evidenceCalculator.annualDeclaration(year, workPointId));
         ContentDisposition disposition = ContentDisposition.attachment()
-                .filename("declaratie-anuala-" + year + ".pdf")
+                .filename("evidenta-centralizata-" + year + ".pdf")
                 .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)

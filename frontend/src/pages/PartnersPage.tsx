@@ -123,6 +123,8 @@ export function PartnersPage() {
   const [packagingOrigin, setPackagingOrigin] = useState<"" | PackagingOrigin>("");
   const [drivers, setDrivers] = useState<DriverInput[]>([]);
   const [tradeRegisterNumber, setTradeRegisterNumber] = useState("");
+  // Vehicule peste 3,5 t: numai atunci se cere licența de transport (specialista, 15.09.2026).
+  const [heavyVehicles, setHeavyVehicles] = useState(false);
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
   const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
   /**
@@ -236,6 +238,7 @@ export function PartnersPage() {
     setAddress("");
     setWorkPoints([]);
     setTradeRegisterNumber("");
+    setHeavyVehicles(false);
     setTransportLicenseNumber("");
     setTransportLicenseExpiry("");
     setNameError(false);
@@ -313,6 +316,7 @@ export function PartnersPage() {
       id: d.id,
       name: d.name,
       identification: d.identification ?? "",
+      cnp: d.cnp ?? "",
       vehicleRegistration: d.vehicleRegistration ?? "",
     })));
     setAddress(p.address ?? "");
@@ -322,6 +326,7 @@ export function PartnersPage() {
       address: wp.address,
     })));
     setTradeRegisterNumber(p.tradeRegisterNumber ?? "");
+    setHeavyVehicles(p.heavyVehicles);
     setTransportLicenseNumber(p.transportLicenseNumber ?? "");
     setTransportLicenseExpiry(p.transportLicenseExpiry ?? "");
     setNameError(false);
@@ -366,8 +371,9 @@ export function PartnersPage() {
         .filter((wp) => wp.address.trim() !== "")
         .map((wp) => ({ id: wp.id, name: wp.name?.trim() || null, address: wp.address.trim() })),
       tradeRegisterNumber: tradeRegisterNumber.trim() || null,
-      transportLicenseNumber: transportLicenseNumber.trim() || null,
-      transportLicenseExpiry: transportLicenseExpiry || null,
+      heavyVehicles: isCarrier && heavyVehicles,
+      transportLicenseNumber: heavyVehicles ? transportLicenseNumber.trim() || null : null,
+      transportLicenseExpiry: heavyVehicles ? transportLicenseExpiry || null : null,
       // Un rând fără nume nu e un delegat. Restul rubricilor pot lipsi: pe formular se scriu de
       // mână oricum, iar aici sunt doar ce se precompletează.
       drivers: drivers
@@ -376,6 +382,7 @@ export function PartnersPage() {
           id: d.id,
           name: d.name.trim(),
           identification: d.identification?.trim() || null,
+          cnp: d.cnp?.trim() || null,
           vehicleRegistration: d.vehicleRegistration?.trim() || null,
         })),
     };
@@ -832,24 +839,39 @@ export function PartnersPage() {
 
               {isCarrier && (
                 <div className="mt-3 space-y-3 border-t border-line pt-3">
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
-                      <Input
-                        id="p-licence"
-                        value={transportLicenseNumber}
-                        onChange={(e) => setTransportLicenseNumber(e.target.value)}
-                      />
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      id="p-heavy-vehicles"
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 rounded border-line-strong text-sky-600"
+                      checked={heavyVehicles}
+                      onChange={(ev) => setHeavyVehicles(ev.target.checked)}
+                    />
+                    <span>
+                      <span className="font-medium text-content-strong">{t.heavyVehicles}</span>
+                      <span className="block text-xs text-content-muted">{t.heavyVehiclesHint}</span>
+                    </span>
+                  </label>
+                  {heavyVehicles && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
+                        <Input
+                          id="p-licence"
+                          value={transportLicenseNumber}
+                          onChange={(e) => setTransportLicenseNumber(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="p-licence-expiry">{t.transportLicenseExpiry}</Label>
+                        <DateInput
+                          id="p-licence-expiry"
+                          value={transportLicenseExpiry}
+                          onChange={(e) => setTransportLicenseExpiry(e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="p-licence-expiry">{t.transportLicenseExpiry}</Label>
-                      <DateInput
-                        id="p-licence-expiry"
-                        value={transportLicenseExpiry}
-                        onChange={(e) => setTransportLicenseExpiry(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                  )}
                   <div>
                     <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
                     <p className="mt-0.5 text-xs text-content-muted">{t.driversHint}</p>
@@ -860,9 +882,11 @@ export function PartnersPage() {
                       {drivers.map((d, index) => (
                         <div
                           key={d.id ?? `new-${index}`}
-                          className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                          className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
                         >
-                          <div className="flex-1">
+                          {/* Numele pe rândul lui: cu CNP-ul (15.09.2026), patru rubrici într-un
+                              rând îl strângeau la câțiva pixeli. */}
+                          <div className="w-full sm:basis-full">
                             <Label htmlFor={`p-driver-name-${index}`}>{t.driverName}</Label>
                             <Input
                               id={`p-driver-name-${index}`}
@@ -886,6 +910,20 @@ export function PartnersPage() {
                                   prev.map((x, i) =>
                                     i === index ? { ...x, identification: e.target.value } : x
                                   )
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="w-full sm:w-36">
+                            <Label htmlFor={`p-driver-cnp-${index}`}>{strings.common.cnp}</Label>
+                            <Input
+                              id={`p-driver-cnp-${index}`}
+                              inputMode="numeric"
+                              maxLength={13}
+                              value={d.cnp ?? ""}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) => (i === index ? { ...x, cnp: e.target.value } : x))
                                 )
                               }
                             />
@@ -925,7 +963,7 @@ export function PartnersPage() {
                       onClick={() =>
                         setDrivers((prev) => [
                           ...prev,
-                          { name: "", identification: "", vehicleRegistration: "" },
+                          { name: "", identification: "", cnp: "", vehicleRegistration: "" },
                         ])
                       }
                     >

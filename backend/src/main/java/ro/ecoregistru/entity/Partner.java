@@ -110,6 +110,13 @@ public class Partner {
     @Builder.Default
     List<Driver> drivers = new ArrayList<>();
 
+    /**
+     * Transportă cu vehicule peste 3,5 t (V42). Numai atunci se cere licenţa de transport — răspunsul
+     * specialistei din 15.09.2026. Nebifat, licenţa se goleşte la salvare.
+     */
+    @Column(name = "heavy_vehicles", nullable = false)
+    boolean heavyVehicles;
+
     /** "Licenţa de transport mărfuri nepericuloase nr." + its expiry, for the carrier column. */
     @Column(name = "transport_license_number")
     String transportLicenseNumber;

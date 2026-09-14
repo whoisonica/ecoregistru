@@ -61,7 +61,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
  *   - README.txt describing the contents and generation date,
  *   - "Evidenta gestiunii deseurilor generate" (HG 856/2002, anexa 1): four chapters per
  *     waste code, one page each,
- *   - the annual declaration: the same year folded to one line per waste code, per work point,
+ *   - "Evidenta gestiunii deseurilor centralizata" (the former annual declaration): the same year
+ *     folded to one line per waste code, per work point,
+ *   - Anexa 1 Ambalaje (.xls + .pdf), when the company puts packaging on the market,
  *   - the generic evidence summary in both xlsx and pdf,
  *   - a PDF summary of partner authorizations (with expiry status),
  *   - atasamente/index.txt listing every movement attachment, and the attachment files
@@ -93,8 +95,8 @@ public class AuditFileService {
      * out empty, and README.txt names it as such instead of shipping a blank official sheet.
      */
     private static final int MAX_YEARS = 5;
-    /** Width of the file-name column in README.txt, wide enough for "2026/declaratie-anuala-2026.pdf". */
-    private static final int NAME_COLUMN = 31;
+    /** Width of the file-name column in README.txt, wide enough for "2026/evidenta-centralizata-2026.pdf". */
+    private static final int NAME_COLUMN = 35;
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
@@ -105,6 +107,7 @@ public class AuditFileService {
     CompanyRepository companyRepository;
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
+    PackagingService packagingService;
 
     /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
     public byte[] build(int year) {
@@ -182,9 +185,19 @@ public class AuditFileService {
                 anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
         // The summary page that goes in front of those sheets: same figures, folded to the
         // year, which is what the authority reads before it opens the twelve-row detail.
-        writeEntry(zip, prefix + "declaratie-anuala-" + year + ".pdf",
+        // „Evidenţa gestiunii deşeurilor centralizată" — numele cerut de specialistă pe 15.09.2026
+        // pentru ce se numea până atunci „declaraţia anuală".
+        writeEntry(zip, prefix + "evidenta-centralizata-" + year + ".pdf",
                 annualDeclarationGenerator.render(
                         evidenceCalculator.annualDeclaration(year, null)));
+        // Anexa 1 Ambalaje lipsea din dosar (specialista, 15.09.2026). Numai la firma care pune
+        // ambalaje pe piaţă: un comerciant n-o depune, iar la un profil nerăspuns nu ghicim.
+        if (MarketRole.putsPackagingOnMarket(company.getMarketRoles())) {
+            writeEntry(zip, prefix + "anexa1-ambalaje-" + year + ".xls",
+                    packagingService.render(year, ExportFormat.XLS));
+            writeEntry(zip, prefix + "anexa1-ambalaje-" + year + ".pdf",
+                    packagingService.render(year, ExportFormat.PDF));
+        }
         writeEntry(zip, prefix + "evidenta-" + year + ".xlsx",
                 evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence));
         writeEntry(zip, prefix + "evidenta-" + year + ".pdf",
@@ -386,10 +399,17 @@ public class AuditFileService {
                             "(HG 856/2002, anexa 1) — fișa oficială, cu cele patru",
                             "capitole, o pagină per cod de deșeu.",
                             "Termen de depunere: 15 martie " + (year + 1) + "."))
-                    .append(entry(prefix + "declaratie-anuala-" + year + ".pdf",
-                            "centralizatorul anual — un rând per cod de deșeu,",
-                            "cu stoc inițial, generat, valorificat, eliminat,",
-                            "stoc final și prin cine. O pagină per punct de lucru."))
+                    .append(entry(prefix + "evidenta-centralizata-" + year + ".pdf",
+                            "Evidența gestiunii deșeurilor centralizată — un rând",
+                            "per cod de deșeu, cu stoc inițial, generat, valorificat,",
+                            "eliminat, stoc final și prin cine. O pagină per punct de lucru."));
+            if (MarketRole.putsPackagingOnMarket(company.getMarketRoles())) {
+                sb.append(entry(prefix + "anexa1-ambalaje-" + year + ".xls / .pdf",
+                        "Anexa 1 Ambalaje (Ordinul 794/2012) — declarația de",
+                        "ambalaje: .xls pentru depunere, PDF pe hârtie.",
+                        "Termen: 25 februarie " + (year + 1) + "."));
+            }
+            sb
                     .append(entry(prefix + "evidenta-" + year + ".xlsx / .pdf",
                             "același an ca tabel de lucru (rezumat neoficial)"));
             if (single) {

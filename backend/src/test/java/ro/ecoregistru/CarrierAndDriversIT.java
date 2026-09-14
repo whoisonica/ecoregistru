@@ -211,7 +211,7 @@ class CarrierAndDriversIT {
         String carrierId = createPartnerReturningId("""
                 "name": "Trans Greu SA", "carrier": true, "supplier": true,
                 "cui": "RO12345678", "address": "Str. Depozitelor nr. 4, Cluj-Napoca",
-                "tradeRegisterNumber": "J12/999/2019",
+                "tradeRegisterNumber": "J12/999/2019", "heavyVehicles": true,
                 "transportLicenseNumber": "LIC 4417/2025", "transportLicenseExpiry": "2027-03-31",
                 "drivers": [{"name": "Ion Popescu", "identification": "CJ 123456",
                              "vehicleRegistration": "CJ 01 ABC"}]
@@ -274,6 +274,30 @@ class CarrierAndDriversIT {
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{" + fields + "}");
+    }
+
+    /**
+     * Licenţa de transport numai peste 3,5 t (specialista, 15.09.2026, V42). Fără bifă, o licenţă
+     * trimisă nu se păstrează — altfel Anexa 3 ar tipări-o la un transportator care n-are nevoie de ea.
+     */
+    @Test
+    void theLicenceIsKeptOnlyForACarrierWithVehiclesOverThreeAndAHalfTonnes() throws Exception {
+        mockMvc.perform(createPartner("""
+                        "name": "Duba Mica SRL", "carrier": true, "supplier": true,
+                        "transportLicenseNumber": "LIC 1/2025", "transportLicenseExpiry": "2027-01-01"
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.heavyVehicles", is(false)))
+                .andExpect(jsonPath("$.transportLicenseNumber").value(nullValue()))
+                .andExpect(jsonPath("$.transportLicenseExpiry").value(nullValue()));
+
+        mockMvc.perform(createPartner("""
+                        "name": "Camion Mare SRL", "carrier": true, "supplier": true, "heavyVehicles": true,
+                        "transportLicenseNumber": "LIC 2/2025", "transportLicenseExpiry": "2027-01-01"
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.heavyVehicles", is(true)))
+                .andExpect(jsonPath("$.transportLicenseNumber", is("LIC 2/2025")));
     }
 
     private String createPartnerReturningId(String fields) throws Exception {

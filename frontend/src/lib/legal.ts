@@ -107,7 +107,7 @@ export const TERMS: LegalDoc = {
           kind: "p",
           text:
             "WasteHouse vă ajută să **țineți evidența** gestiunii deșeurilor și **pregătește documentele** " +
-            "cerute de legislația română: fișa de evidență a gestiunii deșeurilor, declarația anuală, " +
+            "cerute de legislația română: fișa de evidență a gestiunii deșeurilor, evidența centralizată," +
             "formularele de transport al deșeurilor (inclusiv cele pentru deșeuri periculoase), declarațiile " +
             "de ambalaje și celelalte documente pe care aplicația le pune la dispoziție la un moment dat.",
         },

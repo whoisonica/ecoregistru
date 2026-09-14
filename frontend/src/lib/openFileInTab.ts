@@ -33,6 +33,24 @@ export function openBlobInTab(tab: Window | null, blob: Blob, fallbackName: stri
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+/**
+ * Un PDF generat de server, deschis în tab în loc să se descarce — cererea specialistei din
+ * 15.09.2026: „e enervant la 100 de anexe 3 să le tot downloadezi". Vizualizatorul browserului are
+ * tipărirea și salvarea, deci niciuna nu se pierde.
+ *
+ * <p>Tabul se deschide **sincron**, înainte de primul `await` (vezi mai sus). Dacă cererea cade,
+ * tabul gol se închide și eroarea urcă la ecran, care o arată ca până acum.
+ */
+export async function openPdfInTab(fetchPdf: () => Promise<Blob>, fallbackName: string) {
+  const tab = openBlankTab();
+  try {
+    openBlobInTab(tab, await fetchPdf(), fallbackName);
+  } catch (err) {
+    tab?.close();
+    throw err;
+  }
+}
+
 /** Tabul gol, deschis pe gestul utilizatorului. Vezi de ce, mai sus. */
 export function openBlankTab(): Window | null {
   const tab = window.open("", "_blank");

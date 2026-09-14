@@ -117,7 +117,8 @@ public class AuditInterceptor implements Interceptor {
      * <p>Un {@code null} rămâne {@code null}: „câmpul era gol" nu e o dată personală, şi e
      * diferenţa dintre o completare şi o corectare.
      */
-    private static final Set<String> REDACTED_FIELDS = Set.of("identification", "driverIdentification");
+    private static final Set<String> REDACTED_FIELDS =
+            Set.of("identification", "driverIdentification", "cnp", "driverCnp");
 
     /** Ce se scrie în locul valorii unui câmp redactat. */
     private static final String REDACTED = "•••";

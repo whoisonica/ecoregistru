@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, apiBlobErrorMessage } from "@/lib/api";
-import { saveBlob } from "@/lib/download";
+import { openPdfInTab } from "@/lib/openFileInTab";
 import type { Anexa2Threshold, CompanyType, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { useToast } from "@/components/ui/toast";
@@ -46,8 +46,11 @@ export function useAnexa2Download() {
   async function download(m: WasteMovement) {
     setDownloadingId(m.id);
     try {
-      const res = await api.get(`/api/v1/movements/${m.id}/anexa2`, { responseType: "blob" });
-      saveBlob(res.data as Blob, `anexa2-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`);
+      await openPdfInTab(
+        async () =>
+          (await api.get(`/api/v1/movements/${m.id}/anexa2`, { responseType: "blob" })).data as Blob,
+        `anexa2-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`
+      );
     } catch (err) {
       notify(await apiBlobErrorMessage(err, strings.movements.anexa2Error), "error");
     } finally {

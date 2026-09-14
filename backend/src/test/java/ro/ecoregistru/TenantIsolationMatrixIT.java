@@ -347,6 +347,7 @@ class TenantIsolationMatrixIT {
                 "/api/v1/movements/" + b.movement().getId() + "/anexa3",
                 "/api/v1/movements/" + b.movement().getId() + "/anexa2",
                 "/api/v1/movements/" + b.movement().getId() + "/anexa2/prag",
+                "/api/v1/movements/" + b.movement().getId() + "/aviz",
         };
         for (String url : urls) {
             mockMvc.perform(as(get(url), a))

@@ -59,6 +59,13 @@ public class Driver {
     @Column(length = 100)
     String identification;
 
+    /**
+     * CNP-ul, pentru avizul de însoţire a mărfii (V42, specialista, 15.09.2026). Rubrică proprie,
+     * validată cu cifra de control; ascuns în jurnalul de audit ca {@link #identification}.
+     */
+    @Column(length = 13)
+    String cnp;
+
     /** The truck he usually comes with. "Usually": on the movement it stays editable. */
     @Column(name = "vehicle_registration", length = 50)
     String vehicleRegistration;

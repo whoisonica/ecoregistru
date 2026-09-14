@@ -61,7 +61,7 @@ export const strings = {
     kwMovements:
       "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D",
     kwEvidences:
-      "anexa 1 fișa de evidență evidența gestiunii deșeurilor generate declarația anuală centralizator HG 856/2002 regenerează tone",
+      "anexa 1 fișa de evidență evidența gestiunii deșeurilor generate centralizată declarația anuală centralizator HG 856/2002 regenerează tone",
     kwPackaging:
       "anexa 1 ambalaje anexa 3 ambalaje Ordinul 794/2012 tabelul 1 tabelul 2 xls pus pe piață",
     kwDeadlines: "scadențe termene 15 martie 25 februarie 25 ianuarie AFM SIM alerte",
@@ -470,19 +470,21 @@ export const strings = {
     recordWeightSaved: "Cantitatea a fost înregistrată.",
     recordWeightError: "Cantitatea nu a putut fi înregistrată.",
     loadDate: "Data încărcării",
-    loadDateHint: "Este data mișcării, de mai sus — pe formular sunt același lucru.",
+    loadDateHint: "Goală, se tipărește data mișcării.",
     anexa3Unit: "Unitatea tipărită",
     anexa3UnitCompany: "Ca la firmă",
     anexa3UnitHint:
       "Actul are „tone”, dar evidența se ține în kilograme. Cifra se convertește la tipărire, deci cifra și unitatea de pe hârtie sunt mereu de acord.",
-    // Cele trei exemplare nu se mai numesc *pe hârtie* (02.09.2026): modelul n-are așa ceva, iar
-    // pe hârtie sunt un carnet cu indigo — aceeași filă de trei ori, sortată după semnare. Cine ce
-    // exemplar ia rămâne scris aici, unde nu costă nimic.
+    // Un singur exemplar în PDF de pe 15.09.2026, la cererea specialistei; cine ce exemplar ia
+    // rămâne scris aici, unde nu costă nimic.
     anexa3Copies:
-      "Formularul iese în 3 exemplare identice, ca pe carnet: unul rămâne la tine (expeditor), unul la destinatar, unul la transportator.",
+      "Formularul se deschide într-un exemplar; tipărește-l de câte ori ai nevoie: pentru tine (expeditor), destinatar și transportator.",
     anexa3Download: "Anexa 3",
     anexa3Downloading: "Se generează...",
     anexa3Error: "Formularul nu a putut fi generat.",
+    avizDownload: "Aviz de însoțire",
+    avizDownloading: "Se generează...",
+    avizError: "Avizul nu a putut fi generat.",
 
     // --- Anexa 2 — transportul deșeurilor periculoase (HG 1061/2008) ---
     // Art. 8: „Expeditorul completează, semnează și ștampilează formularul". Prima citire, făcută
@@ -610,9 +612,8 @@ export const strings = {
       "N-ai șoferi proprii configurați. Se adaugă în Setări, sub punctele de lucru.",
     driverName: "Delegat (șofer)",
     driverIdentification: "Act de identitate",
-    // AO, 14.09.2026 — specialista a lăsat decizia la noi, „cu atenție la GDPR": seria actului ajunge,
-    // CNP-ul nu se cere pe formular și nu se scrie.
-    driverIdentificationPlaceholder: "serie și nr. CI — nu CNP",
+    // Seria actului pe Anexa 3; CNP-ul are rubrica lui din 15.09.2026, pentru avizul de însoțire.
+    driverIdentificationPlaceholder: "serie și nr. CI",
     vehicleRegistration: "Nr. înmatriculare",
     transportDestinations: "Destinat:",
     destinationsPrefilled:
@@ -715,13 +716,11 @@ export const strings = {
       name: "Nume",
       namePlaceholder: "ex. Ion Popescu",
       identification: "Act de identitate",
-      identificationPlaceholder: "ex. CJ 123456 — nu CNP",
-      // Rubrica de pe Anexa 3 se numește doar „Date de identificare delegat” și nu cere nimic
-      // anume, deci indicația noastră e cea mai mică variantă care o completează. Textul de
-      // dinainte oferea și CNP-ul ca opțiune la fel de bună — o invitație de a scrie mai mult
-      // decât are formularul nevoie, pe o hârtie care pleacă la destinatar.
+      identificationPlaceholder: "ex. CJ 123456",
+      // Seria actului rămâne în rubrica ei, tipărită pe Anexa 3; CNP-ul are rubrica lui de pe
+      // 15.09.2026, fiindcă avizul de însoțire îl tipărește.
       identificationHint:
-        "Ce se scrie pe formular la „Date de identificare delegat”: seria și numărul actului de identitate. Nu scrie CNP-ul — formularul nu-l cere, iar rubrica se tipărește pe Anexa 3 și pleacă la destinatar. Rămâne editabil pe fiecare mișcare.",
+        "Ce se scrie pe Anexa 3 la „Date de identificare delegat”: seria și numărul actului de identitate. CNP-ul are rubrica lui, mai jos. Rămâne editabil pe fiecare mișcare.",
       vehicle: "Nr. înmatriculare uzual",
       vehiclePlaceholder: "ex. CJ 01 ABC",
       vehicleHint: "Mașina cu care vine de obicei. Pe mișcare se poate schimba.",
@@ -940,6 +939,8 @@ export const strings = {
     tradeRegisterNumberPlaceholder: "ex. J12/1351/2011",
     transportLicenseNumber: "Licență de transport mărfuri",
     transportLicenseExpiry: "Expiră licența",
+    heavyVehicles: "Transportă cu vehicule peste 3,5 tone",
+    heavyVehiclesHint: "Licența de transport mărfuri se cere numai peste 3,5 tone.",
     anexa3Hint:
       "Datele astea se tipăresc pe Anexa 3 când îi predai deșeu sau când el face transportul.",
     // --- Transportator (V28) ---
@@ -964,7 +965,7 @@ export const strings = {
     driverName: "Nume",
     driverNamePlaceholder: "ex. Ion Popescu",
     driverIdentification: "Act de identitate",
-    driverIdentificationPlaceholder: "ex. CJ 123456 — nu CNP",
+    driverIdentificationPlaceholder: "ex. CJ 123456",
     driverVehicle: "Nr. înmatriculare uzual",
     driverVehiclePlaceholder: "ex. CJ 01 ABC",
     addDriver: "Adaugă șofer",
@@ -1012,10 +1013,11 @@ export const strings = {
     anexa1Hint:
       "Formularul oficial (HG 856/2002, anexa 1): antet + cele 4 capitole, o pagină per cod de deșeu.",
     anexa1Error: "Evidența gestiunii deșeurilor nu a putut fi generată.",
-    annualDeclaration: "Declarația anuală",
+    // Fosta „Declarația anuală", redenumită la cererea specialistei pe 15.09.2026.
+    annualDeclaration: "Evidența gestiunii deșeurilor centralizată",
     annualDeclarationHint:
-      "Centralizatorul anual: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
-    annualDeclarationError: "Declarația anuală nu a putut fi generată.",
+      "Centralizatorul anului: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
+    annualDeclarationError: "Evidența centralizată nu a putut fi generată.",
 
     // --- Cifra pentru depunere, în tone (OUG 92/2021 art. 48 alin. (1)) ---
     // Evidența rămâne în kg peste tot, inclusiv pe hârtie; asta e doar ajutorul de la încărcare.
@@ -1165,7 +1167,9 @@ export const strings = {
     contentAnexa1:
       "Evidența gestiunii deșeurilor generate (HG 856/2002, anexa 1): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
     contentAnnualDeclaration:
-      "Declarația anuală (centralizatorul): un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
+      "Evidența gestiunii deșeurilor centralizată: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
+    contentPackaging:
+      "Anexa 1 Ambalaje (Ordinul 794/2012), .xls și PDF — numai dacă firma pune ambalaje pe piață (producător sau importator).",
     contentEvidence: "Același an ca tabel de lucru (Excel + PDF)",
     contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
     contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
@@ -1246,7 +1250,7 @@ export const strings = {
       "Actul scrie „tone”, dar unele firme lucrează în kg. Cantitatea se convertește la tipărire, deci cifra și unitatea de pe formular sunt mereu de acord.",
     contactRole: "Funcția persoanei de contact",
     contactRolePlaceholder: "ex. Manager Mediu",
-    contactRoleHint: "Se tipărește la „Întocmit / Funcția” pe declarația anuală.",
+    contactRoleHint: "Se tipărește la „Întocmit / Funcția” pe evidența centralizată.",
 
     // --- Persoana desemnată cu gestiunea deșeurilor (OUG 92/2021 art. 23 alin. (4)-(5)) ---
     // Bloc separat dinadins: se confundă ușor cu persoana de contact de mai sus, dar aceea e
@@ -1254,7 +1258,7 @@ export const strings = {
     // poartă certificat de instruire. Inspectorul o cere printre primele lucruri.
     wasteManagerTitle: "Persoana desemnată cu gestiunea deșeurilor",
     wasteManagerHint:
-      "Cerută de OUG 92/2021, art. 23 alin. (4): titularul unei autorizații de mediu desemnează o persoană dintre angajați sau deleagă obligația unei terțe persoane — de exemplu consultantul de mediu. Nu e persoana de contact de mai sus: aceea semnează declarația anuală. Necompletată, dosarul de control o va marca lipsă.",
+      "Cerută de OUG 92/2021, art. 23 alin. (4): titularul unei autorizații de mediu desemnează o persoană dintre angajați sau deleagă obligația unei terțe persoane — de exemplu consultantul de mediu. Nu e persoana de contact de mai sus: aceea semnează evidența centralizată. Necompletată, dosarul de control o va marca lipsă.",
     wasteManagerName: "Nume",
     wasteManagerNamePlaceholder: "ex. Popescu Andrei",
     wasteManagerRole: "Calitatea",
@@ -2134,7 +2138,9 @@ export const strings = {
      * unui şofer nu-l scoate din documentele tipărite.
      */
     driversPrivacy:
-      "Date personale: se țin doar pentru rubrica „Date de identificare delegat” de pe Anexa 3 și se tipăresc pe ea. Scrie strict seria și numărul actului, nu CNP-ul. Rămân cât timp se păstrează evidența: cel puțin 3 ani (OUG 92/2021, art. 48 alin. (5)). După aceea, numele și actul de identitate se șterg singure de pe mișcări, la începutul fiecărui an. Fișa unui șofer dezactivat se poate șterge definitiv oricând; mișcările își păstrează până atunci datele de pe formularul tipărit.",
+      "Date personale: se țin doar pentru documentele de transport și se tipăresc pe ele — actul de identitate pe Anexa 3, CNP-ul pe avizul de însoțire. Rămân cât timp se păstrează evidența: cel puțin 3 ani (OUG 92/2021, art. 48 alin. (5)). După aceea, numele, actul de identitate și CNP-ul se șterg singure de pe mișcări, la începutul fiecărui an. Fișa unui șofer dezactivat se poate șterge definitiv oricând; mișcările își păstrează până atunci datele de pe documentele tipărite.",
+    cnp: "CNP",
+    cnpHint: "Se tipărește pe avizul de însoțire. Se verifică cifra de control, ca un CNP greșit să nu intre.",
     loading: "Se încarcă...",
     saving: "Se salvează...",
     save: "Salvează",

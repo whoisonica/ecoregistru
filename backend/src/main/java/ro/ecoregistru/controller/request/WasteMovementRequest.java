@@ -53,12 +53,15 @@ public record WasteMovementRequest(
         String notes,
 
         // --- Anexa 3 la HG 1061/2008: filled in when the transport form is going to be printed ---
+        /** "Data încărcării"; null = the movement date. */
+        LocalDate loadDate,
         LocalDate unloadDate,
         /** Which of the recipient's work points received the load; null = the only one. */
         UUID partnerWorkPointId,
         UUID transportPartnerId,
         String driverName,
         String driverIdentification,
+        @ro.ecoregistru.util.ValidCnp String driverCnp,
         String vehicleRegistration,
         Set<TransportDestination> transportDestinations,
         /**

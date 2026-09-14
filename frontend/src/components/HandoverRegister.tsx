@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import { ArrowRightLeft, FileText, Pencil } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
-import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
+import {
+  canPrintAnexa3,
+  canPrintAviz,
+  useAnexa3Download,
+  useAvizDownload,
+} from "@/hooks/useAnexa3";
 import { canPrintAnexa2, useAnexa2Download } from "@/hooks/useAnexa2";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
@@ -36,6 +41,7 @@ const e = strings.enums;
  */
 export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   const { download, downloadingId } = useAnexa3Download();
+  const { download: downloadAviz, downloadingId: downloadingAvizId } = useAvizDownload();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } =
     useAnexa2Download();
   const { data: company } = useCurrentCompany();
@@ -217,6 +223,17 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                       >
                         <FileText className="mr-1 h-3.5 w-3.5" />
                         {downloadingId === mv.id ? m.anexa3Downloading : m.anexa3Download}
+                      </Button>
+                    )}
+                    {canPrintAviz(mv) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={downloadingAvizId === mv.id}
+                        onClick={() => downloadAviz(mv)}
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        {downloadingAvizId === mv.id ? m.avizDownloading : m.avizDownload}
                       </Button>
                     )}
                     {/* Codul periculos e refuzat pe Anexa 3 și trimis aici — de pe 10.09.2026

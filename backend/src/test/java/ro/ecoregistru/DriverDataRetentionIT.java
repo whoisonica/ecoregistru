@@ -85,10 +85,12 @@ class DriverDataRetentionIT {
         WasteMovement oldAfter = movementRepository.findById(old.getId()).orElseThrow();
         assertThat(oldAfter.getDriverName()).isNull();
         assertThat(oldAfter.getDriverIdentification()).isNull();
+        assertThat(oldAfter.getDriverCnp()).isNull();
         assertThat(oldAfter.getVehicleRegistration()).isEqualTo("CJ 01 ABC");
         WasteMovement keptAfter = movementRepository.findById(kept.getId()).orElseThrow();
         assertThat(keptAfter.getDriverName()).isEqualTo("Ion Popescu");
         assertThat(keptAfter.getDriverIdentification()).isEqualTo("CJ 123456");
+        assertThat(keptAfter.getDriverCnp()).isEqualTo("1900101123457");
     }
 
     /** Un şofer activ nu se şterge; dezactivat, da — şi dispare de tot. */
@@ -141,6 +143,7 @@ class DriverDataRetentionIT {
                 .wasteCode(wasteCodeRepository.findByCode("20 01 01").orElseThrow())
                 .quantity(new BigDecimal("10.000")).unit(Unit.KG).operation(WasteOperation.GENERATED)
                 .driverName("Ion Popescu").driverIdentification("CJ 123456")
+                .driverCnp("1900101123457")
                 .vehicleRegistration("CJ 01 ABC")
                 .deleted(false).createdBy(admin.getId()).build());
     }

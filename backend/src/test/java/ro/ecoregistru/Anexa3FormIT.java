@@ -293,20 +293,102 @@ class Anexa3FormIT {
                 .andReturn().getResponse().getContentAsByteArray();
 
         com.lowagie.text.pdf.PdfReader reader = new com.lowagie.text.pdf.PdfReader(pdf);
-        assertThat(reader.getNumberOfPages()).isEqualTo(3);
-        com.lowagie.text.pdf.parser.PdfTextExtractor text =
-                new com.lowagie.text.pdf.parser.PdfTextExtractor(reader);
-        for (int page = 1; page <= 3; page++) {
-            // ASCII only: PdfTextExtractor decodes the Cp1250 page back through Latin-1, so "ă"
-            // comes out as "ª" here even though the printed page is correct. Nothing to fix in the
-            // form — the same artefact is why the older assertions were ASCII too.
-            assertThat(text.getTextFromPage(page))
-                    .contains("ANEXA 3")
-                    .contains("Serie")
-                    .doesNotContain("Exemplarul");
-        }
-        assertThat(text.getTextFromPage(1)).isEqualTo(text.getTextFromPage(3));
+        // Una, nu trei — specialista, 15.09.2026: „anexa 3 transport să fie doar 1 bucată".
+        assertThat(reader.getNumberOfPages()).isEqualTo(1);
+        // ASCII only: PdfTextExtractor decodes the Cp1250 page back through Latin-1, so "ă"
+        // comes out as "ª" here even though the printed page is correct.
+        assertThat(new com.lowagie.text.pdf.parser.PdfTextExtractor(reader).getTextFromPage(1))
+                .contains("ANEXA 3")
+                .contains("Serie")
+                .doesNotContain("Exemplarul");
         reader.close();
+    }
+
+    /**
+     * Data încărcării se alege (V42). Tastată, ea stă în blocul de încărcare în locul datei
+     * mişcării; descărcarea nu poate veni înaintea ei, chiar dacă vine după data mişcării.
+     */
+    @Test
+    void aTypedLoadDateIsPrintedAndBoundsTheUnloadDate() throws Exception {
+        mockMvc.perform(movement("""
+                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                          "partnerId": "%s", "quantity": 10,
+                          "loadDate": "2026-07-08", "unloadDate": "2026-07-07"
+                        """.formatted(partnerId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("movement.unload.before.load")));
+
+        UUID id = createMovement("""
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                  "partnerId": "%s", "quantity": 10,
+                  "loadDate": "2026-07-08", "unloadDate": "2026-07-09"
+                """.formatted(partnerId), wasteCodeId);
+
+        byte[] pdf = mockMvc.perform(get("/api/v1/movements/" + id + "/anexa3")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        String page = Golden.flat(Golden.pdfText(pdf));
+        assertThat(page).contains("08.07.2026").contains("09.07.2026");
+    }
+
+    /**
+     * Avizul de însoţire (specialista, 15.09.2026): cele şase secţiuni ale modelului primit, cu
+     * numărul luat din referinţa documentului. Merge şi pe un cod periculos, unde Anexa 3 refuză.
+     */
+    @Test
+    void theAvizCarriesTheHandoverAndItsNumber() throws Exception {
+        UUID id = createMovement("""
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s",
+                  "quantity": 7800, "driverName": "Bozar Bogdan", "driverIdentification": "SM 847849",
+                  "driverCnp": "1900101123457",
+                  "vehicleRegistration": "SM74ALP", "documentReference": "AVZ-A 14"
+                """.formatted(partnerId), wasteCodeId);
+
+        byte[] pdf = mockMvc.perform(get("/api/v1/movements/" + id + "/aviz")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String page = Golden.flat(Golden.pdfText(pdf));
+        assertThat(page)
+                .contains(Golden.flat("AVIZ DE"))
+                .contains(Golden.flat("AVZ-A 14"))
+                .contains(Golden.flat("05.07.2026"))
+                .contains(Golden.flat("Bozar Bogdan | CNP 1900101123457 | SM 847849"))
+                .contains(Golden.flat("SM74ALP"))
+                .contains(Golden.flat("20 01 01"))
+                .contains(Golden.flat("7.800,000"));
+    }
+
+    /**
+     * CNP-ul se verifică cu cifra de control: o cifră greşită nu dă un CNP invalid, dă al altcuiva.
+     * Valorile sunt inventate.
+     */
+    @Test
+    void aDriverCnpWithAWrongControlDigitIsRefused() throws Exception {
+        mockMvc.perform(movement("""
+                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                          "partnerId": "%s", "quantity": 10, "driverCnp": "1900101123450"
+                        """.formatted(partnerId)))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(movement("""
+                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                          "partnerId": "%s", "quantity": 10, "driverCnp": "1900101123457"
+                        """.formatted(partnerId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.driverCnp", is("1900101123457")));
+    }
+
+    /** Fără destinatar nu e nicio predare de însoţit. */
+    @Test
+    void theAvizNeedsAHandover() throws Exception {
+        UUID id = createMovement("\"operation\": \"GENERATED\", \"quantity\": 5", wasteCodeId);
+
+        mockMvc.perform(get("/api/v1/movements/" + id + "/aviz")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("aviz.requires.handover")));
     }
 
     /**

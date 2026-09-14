@@ -103,30 +103,18 @@ public class Anexa3FormGenerator {
     }
 
     /**
-     * How many copies the PDF carries. HG 1061/2008 art. 20 alin. (2) asks for three — the
-     * specialist named the parties on 24.08.2026 (answer A3.3): "în 3 exemplare pentru generator,
-     * colector şi transportator" — and printing all three in one PDF spares the client three trips
-     * to the printer.
-     *
-     * <p>They are <b>identical and unlabelled</b>, which is the change of 02.09.2026. We used to
-     * write "Exemplarul 2 din 3 — destinatar (colector)" into the header; no model has such a line,
-     * and on paper the three copies are a carbon booklet — the same sheet three times, sorted after
-     * signing, not before. Who keeps which is in the screen's hint, where it costs nothing, rather
-     * than printed onto an official form.
+     * One page. HG 1061/2008 art. 20 alin. (2) asks for three copies, and until 15.09.2026 the PDF
+     * carried all three; the specialist asked for one ("anexa 3 transport să fie doar 1 bucată,
+     * nu 3"): the sheet is printed as many times as needed, and a month of a hundred forms no
+     * longer comes out as three hundred pages. The copies were identical and unlabelled anyway
+     * (02.09.2026), so nothing printed on the form is lost.
      */
-    private static final int COPIES = 3;
-
     public byte[] render(WasteMovement movement, Company sender) {
         Document doc = new Document(PageSize.A4, 28, 28, 28, 28);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
             doc.open();
-            for (int copy = 0; copy < COPIES; copy++) {
-                if (copy > 0) {
-                    doc.newPage();
-                }
-                addForm(doc, movement, sender);
-            }
+            addForm(doc, movement, sender);
             doc.close();
             return out.toByteArray();
         } catch (IOException ex) {
@@ -225,7 +213,7 @@ public class Anexa3FormGenerator {
         Paragraph heading = block("Data");
 
         Paragraph loading = block("Încărcare");
-        addLines(loading, date(m.getDate()));
+        addLines(loading, date(m.loadingDate()));
 
         Paragraph unloading = block("Descărcare");
         addLines(unloading, date(m.getUnloadDate()));

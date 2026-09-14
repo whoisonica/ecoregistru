@@ -143,7 +143,7 @@ class AuditFileIT {
                 "2024/evidenta-gestiunii-deseurilor-2024.pdf",
                 "2025/evidenta-gestiunii-deseurilor-2025.pdf",
                 "2026/evidenta-gestiunii-deseurilor-2026.pdf",
-                "2026/declaratie-anuala-2026.pdf",
+                "2026/evidenta-centralizata-2026.pdf",
                 "2026/evidenta-2026.xlsx",
                 "2026/atasamente/index.txt",
                 // One snapshot for the whole dossier: the status is read against today, not
@@ -466,6 +466,48 @@ class AuditFileIT {
                 .contains("OUG 92/2021, art. 23 alin. (4)")
                 .contains("Alin. (5) cere ca ea să fie instruită")
                 .doesNotContain("- Nume :");
+    }
+
+    /**
+     * Anexa 1 Ambalaje lipsea din dosar (specialista, 15.09.2026). Intră la firma care pune ambalaje
+     * pe piaţă, în amândouă formele cerute de art. 6; comerciantul n-o depune, deci nu o primeşte.
+     */
+    @Test
+    void thePackagingDeclarationIsInTheDossierOfWhoeverPutsPackagingOnTheMarket() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company producer = companyRepository.save(Company.builder()
+                .name("Producător SRL").cui("ROP" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now())
+                .marketRoles(new java.util.LinkedHashSet<>(List.of(ro.ecoregistru.enums.MarketRole.PRODUCER)))
+                .build());
+        Company trader = companyRepository.save(Company.builder()
+                .name("Comerciant SRL").cui("ROT" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now())
+                .marketRoles(new java.util.LinkedHashSet<>(List.of(ro.ecoregistru.enums.MarketRole.TRADER)))
+                .build());
+
+        byte[] producerZip = dossierOf(producer, "p" + suffix);
+        assertThat(zipEntryNames(producerZip))
+                .contains("anexa1-ambalaje-2026.xls", "anexa1-ambalaje-2026.pdf",
+                        "evidenta-centralizata-2026.pdf");
+        assertThat(new String(readEntryBytes(producerZip, "anexa1-ambalaje-2026.pdf"), 0, 5))
+                .isEqualTo("%PDF-");
+        assertThat(new String(readEntryBytes(producerZip, "README.txt"), StandardCharsets.UTF_8))
+                .contains("Anexa 1 Ambalaje (Ordinul 794/2012)");
+
+        assertThat(zipEntryNames(dossierOf(trader, "t" + suffix)))
+                .noneMatch(name -> name.startsWith("anexa1-ambalaje"));
+    }
+
+    private byte[] dossierOf(Company company, String suffix) throws Exception {
+        AppUser user = appUserRepository.save(AppUser.builder()
+                .email("dosar+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
+        return mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
     }
 
     private String readmeOf(Company company, String suffix) throws Exception {

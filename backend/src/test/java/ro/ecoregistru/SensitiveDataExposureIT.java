@@ -124,6 +124,28 @@ class SensitiveDataExposureIT {
     }
 
     /**
+     * CNP-ul are rubrica lui din V42 (avizul de însoţire) şi aceeaşi regulă: fapta rămâne în jurnal,
+     * valorile nu. Valorile sunt inventate, cu cifra de control corectă — rubrica o verifică.
+     */
+    @Test
+    void theDriversCnpFieldNeverReachesTheAuditLog() throws Exception {
+        UUID driverId = createDriverWithCnp();
+        for (String cnp : new String[]{"1900101123457", "2851231400011"}) {
+            mockMvc.perform(put("/api/v1/drivers/" + driverId)
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"name":"Ion Popescu","cnp":"%s"}""".formatted(cnp)))
+                    .andExpect(status().isOk());
+        }
+
+        assertThat(changesFor("Driver", driverId))
+                .contains("cnp")
+                .doesNotContain("1900101123457")
+                .doesNotContain("2851231400011");
+    }
+
+    /**
      * Acelaşi câmp, celălalt loc: pe mişcare, unde se completează pentru un transport anume.
      * E drumul mai des umblat dintre cele două — şoferii din nomenclator se editează rar, iar
      * rubrica de pe formular se completează la fiecare transport.

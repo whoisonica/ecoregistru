@@ -13,6 +13,7 @@ public record DriverResponse(
         String partnerName,
         String name,
         String identification,
+        String cnp,
         String vehicleRegistration,
         boolean active
 ) {}

@@ -214,9 +214,9 @@ const antet = await page.evaluate(() => {
 check("antetul nu mai are cinci butoane deodată", antet.butoane.length <= 4,
   antet.butoane.length + ": " + antet.butoane.join(" | "));
 check("cele două documente oficiale au rămas afară",
-  antet.butoane.some((b) => /Evidența gestiunii/.test(b)) &&
-    antet.butoane.some((b) => /Declarația anuală/.test(b)),
-  antet.butoane.filter((b) => /Evidența gestiunii|Declarația anuală/.test(b)).join(" | "));
+  antet.butoane.some((b) => /Evidența gestiunii deșeurilor generate/.test(b)) &&
+    antet.butoane.some((b) => /Evidența gestiunii deșeurilor centralizată/.test(b)),
+  antet.butoane.filter((b) => /Evidența gestiunii/.test(b)).join(" | "));
 check("iar exporturile generice au intrat în meniu",
   antet.butoane.some((b) => /Alte descărcări/.test(b)) &&
     !antet.butoane.some((b) => /^Rezumat (Excel|PDF)$/.test(b)));

@@ -78,6 +78,7 @@ public class WasteMovementService {
     CloudinaryStorageService storageService;
     ro.ecoregistru.service.export.Anexa3FormGenerator anexa3FormGenerator;
     ro.ecoregistru.service.export.Anexa2FormGenerator anexa2FormGenerator;
+    ro.ecoregistru.service.export.AvizGenerator avizGenerator;
     Anexa2ThresholdCalculator anexa2ThresholdCalculator;
     WasteMovementMapper mapper;
 
@@ -126,6 +127,7 @@ public class WasteMovementService {
                 .operationCode(request.operationCode())
                 .partner(partner)
                 .internalGenerator(internalGenerator)
+                .loadDate(request.loadDate())
                 .unloadDate(request.unloadDate())
                 .partnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner))
                 .anexa3Unit(request.anexa3Unit())
@@ -146,6 +148,7 @@ public class WasteMovementService {
                 .transportPartner(carrier)
                 .driverName(request.driverName())
                 .driverIdentification(request.driverIdentification())
+                .driverCnp(blankToNull(request.driverCnp()))
                 .vehicleRegistration(request.vehicleRegistration())
                 .transportDestinations(request.transportDestinations() == null
                         ? new java.util.LinkedHashSet<>()
@@ -196,6 +199,7 @@ public class WasteMovementService {
         movement.setOperationCode(request.operationCode());
         movement.setPartner(partner);
         movement.setInternalGenerator(internalGenerator);
+        movement.setLoadDate(request.loadDate());
         movement.setUnloadDate(request.unloadDate());
         movement.setPartnerWorkPoint(resolvePartnerWorkPoint(request, tenantId, partner));
         movement.setAnexa3Unit(request.anexa3Unit());
@@ -213,6 +217,7 @@ public class WasteMovementService {
         movement.setTransportPartner(carrier);
         movement.setDriverName(request.driverName());
         movement.setDriverIdentification(request.driverIdentification());
+        movement.setDriverCnp(blankToNull(request.driverCnp()));
         movement.setVehicleRegistration(request.vehicleRegistration());
         movement.setTransportDestinations(request.transportDestinations() == null
                 ? new java.util.LinkedHashSet<>()
@@ -675,6 +680,21 @@ public class WasteMovementService {
     }
 
     /**
+     * Avizul de însoţire a mărfii (specialista, 15.09.2026). Aceeaşi predare ca la Anexa 3, dar
+     * pentru orice cod, periculos inclusiv: avizul însoţeşte marfa, nu descrie deşeul. Nu alocă
+     * nimic — numărul e referinţa documentului, scrisă de client — deci e o citire.
+     */
+    @Transactional(readOnly = true)
+    public byte[] renderAviz(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WasteMovement movement = requireMovement(id, tenantId);
+        if (!movement.getOperation().isExit() || movement.getPartner() == null) {
+            throw new BusinessException(AVIZ_REQUIRES_HANDOVER);
+        }
+        return avizGenerator.render(movement, requireCompany(tenantId));
+    }
+
+    /**
      * Anexa 2 la HG 1061/2008, the hazardous-waste consignment form, as a PDF.
      *
      * <p>The mirror image of {@link #renderAnexa3(UUID)}, refusal for refusal — and deliberately
@@ -809,11 +829,16 @@ public class WasteMovementService {
      * quantity simply stays empty and the evidence line says it is provisional.
      */
     /**
-     * BUG-010. Anexa 3 tipăreşte data mişcării în blocul de încărcare şi {@code unloadDate} în cel
-     * de descărcare; un transport descărcat înainte de a fi încărcat nu există. Aceeaşi zi e voie.
+     * BUG-010. Anexa 3 tipăreşte data încărcării (tastată, altfel data mişcării) şi
+     * {@code unloadDate}; un transport descărcat înainte de a fi încărcat nu există. Aceeaşi zi e voie.
      */
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
     private void validateDates(WasteMovementRequest request) {
-        if (request.unloadDate() != null && request.unloadDate().isBefore(request.date())) {
+        LocalDate loaded = request.loadDate() != null ? request.loadDate() : request.date();
+        if (request.unloadDate() != null && request.unloadDate().isBefore(loaded)) {
             throw new BusinessException(UNLOAD_BEFORE_LOAD);
         }
     }
