@@ -1,8 +1,13 @@
 # Probe de interfaţă
 
-Şaisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
-Ultima rulare completă, 14.09.2026, pe o bază locală nouă: **„✓ 15 probe, toate trec", exit 0**;
-proba 16 (buletinele) scrisă după, verde, cu proba negativă trecută.
+Cincisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
+Ultima rulare completă, 14.09.2026, pe o bază locală nouă: **„✓ 15 probe, toate trec", exit 0**.
+Proba 16 (buletinele) a fost ştearsă în aceeaşi seară, odată cu buletinele.
+
+⬜ **Nerulate pe feliile din 14.09.2026, seara–noaptea:** contul de consultant (P2.13, felia 1),
+„Ieşiri" în loc de „Mişcări" la generatori, Anexa 2 ascunsă la generatori, viza anuală a partenerului
+şi ştergerea definitivă a şoferului. Probele existente au fost scrise pe conturi de colector şi pe
+eticheta „Mişcări"; pe un cont de generator textul s-a schimbat.
 
 ⚠️ **Codul de ieşire al runnerului e de încredere** — probat pe 14.09 cu două căderi reale (exit 1).
 „Exit 0 deşi a căzut ceva", notat în aceeaşi zi, nu s-a mai reprodus; cauza cea mai probabilă e o
@@ -13,7 +18,10 @@ comandă trecută printr-un pipe, care întoarce codul ultimei comenzi, nu al su
 nerezolvat şi pagina rămâne albă, iar fiecare probă cade la login pe `#login-email`. Se reporneşte
 `npm run dev`. Aşa a arătat pe 14.09 ca o cădere a probelor 4 şi 14.
 
-✅ **Buletinele de analiză (G-7) au probă din 14.09.2026 — `16-buletine.mjs`**, pe tot ce se decide
+🗑️ **Istoric — buletinele de analiză (G-7) au fost scoase din aplicaţie pe 14.09.2026, seara, iar
+`16-buletine.mjs` odată cu ele.** Paragrafele de mai jos descriu proba cât a existat.
+
+~~✅~~ **Buletinele de analiză (G-7) au avut probă din 14.09.2026 — `16-buletine.mjs`**, pe tot ce se decide
 înainte de urcare. ⬜ **Două verificări rămân nerulate, şi proba le scrie ca atare:** istoricul şi
 stingerea badge-ului cer o încărcare reuşită, iar fişierul urcă direct la Cloudinary — fără
 `CLOUDINARY_URL` pe backendul local nu există cale. ✅ **Acceptate de proprietar la închiderea auditului

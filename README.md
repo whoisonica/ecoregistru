@@ -105,19 +105,18 @@ sheet, the partner authorizations once, and every movement attachment. It regene
 evidence before packing: the cache is derived from movements, and a client who never pressed
 "Regenerate" would otherwise be handed a bundle of empty official forms.
 
-**It reports rather than recites.** Five obligations an inspection checks — separate collection, the
-ANMAP register, the characterisation of hazardous waste, used oils, the prevention programme — sit in
-the same sanctioned list as the evidence itself (art. 62(1)(a), 40,000–60,000 RON), and the dossier
-used to pass over them in silence. Three of the five it can now *check* against what it holds and
-prints as findings, naming the codes or the permit it found; the other two it can only *name*,
-because nothing in the data decides them — and saying which is which is the point. The
-characterisation is the sharpest: analysis bulletins attach to a **waste code**, not to a movement
-(art. 8(4) describes a kind of waste, not a lorry run), so the dossier reports coverage per code —
-"1 of 3, missing for 13 02 08*" — instead of restating the obligation. They carry no expiry date:
-art. 48(2) says *hold* them, and how often an analysis must be redone is inspector practice, not
-something in the act to be guessed at and then printed in a file an inspector reads.
+**It reports rather than recites.** Four obligations an inspection checks — separate collection, the
+ANMAP register, used oils, the prevention programme — sit in the same sanctioned list as the evidence
+itself (art. 62(1)(a), 40,000–60,000 RON), and the dossier used to pass over them in silence. Two of
+the four it can *check* against what it holds and prints as findings, naming the codes or the permit
+it found; the other two it can only *name*, because nothing in the data decides them — and saying
+which is which is the point. A fifth, the analysis bulletins that characterise hazardous waste, was
+built and then removed on 14.09.2026 on the environmental specialist's advice: a generator does not
+file them, and the rules are being rewritten.
 
-**Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `CLIENT_VIEWER`, enforced at endpoint level.
+**Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `CLIENT_VIEWER` / `CONSULTANT`, enforced at
+endpoint level. A consultant belongs to a consultancy (`V40`) and may pick only the companies that
+consultancy manages; any other `X-Tenant-Id` answers exactly like an id that does not exist.
 
 Current status and the feature-by-feature log: [`docs/status.md`](docs/status.md).
 
@@ -380,7 +379,11 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Unofficial exports | **Evidențe** → "Alte descărcări" | The two official documents stay in the header; the generic exports moved into a menu that says what they are. They print "unofficial summary" on themselves, so five equally prominent buttons claimed all five were the same kind of thing — and squeezed the page title onto three lines |
 | A partner you may already have | **Parteneri** → "Adaugă partener" → type two letters of a name you already use | The duplicate suggestion used to swap the dialog into edit mode silently, throwing away everything typed — the only sign was the title. It still switches, because that is what you wanted; it now says so, and offers the way back with the name you typed restored. Fill in more than the name first and it asks before switching |
 | A recipient whose authorization had lapsed | **Mișcări** → a handover with the amber "Autorizație expirată" badge | The badge told you to update the partner's record and led nowhere. It is a link now, carrying the expiry date on screen rather than behind a hover — it cannot be a tooltip, because a tooltip renders its own button and could not wrap a link |
-| Why a driver's ID papers are held | **Setări** → "Șoferii noștri", and a carrier's own form | A retention note where the field is typed: it is held for the "Date de identificare delegat" rubric of Anexa 3 and printed on it; it stays as long as the record must be kept (OUG 92/2021 art. 48 alin. (5) — at least three years, twelve months for carriers); and deactivating a driver does not remove them from movements already recorded, which keep the snapshot of the day |
+| Why a driver's ID papers are held | **Setări** → "Șoferii noștri", and a carrier's own form | A retention note where the field is typed: it is held for the "Date de identificare delegat" rubric of Anexa 3 and printed on it, and it asks for the ID series, not the CNP. Movements keep the snapshot of the day for as long as the record must be kept (OUG 92/2021 art. 48 alin. (5), at least three years); after three full calendar years a daily job clears the driver's name and ID from them |
+| Deleting one of our drivers | **Setări** → "Șoferii noștri" → deactivate, then "Șterge definitiv" | The record goes for good, but only once deactivated, so one wrong click cannot be final. Movements are not touched: they hold their own copy, because the Anexa 3 must print the same while the record is kept |
+| The partner's annual visa | **Parteneri** → edit → authorization | Issue date of the original authorization, the visa decision (number, date) and the visa period, typed from the decision; the screen proposes the issue anniversary. The handover badge, the 60-day alert, the Anexa 3 rubric and the dossier all read whichever comes first, the expiry or the end of the visa |
+| A generator's movements | log in on a **generator** account | The menu, title, button and dialog read **"Ieșiri"**: a generator only records what leaves. No Anexa 2 button either: that form is the collector's, and the API refuses it for a generator with `anexa2.collectors.only` |
+| A consultancy | **Clienți** → "Cabinete" (platform admin) · "Echipa cabinetului" (consultant) | The platform creates a consultancy and invites its first consultant; the consultant invites colleagues and creates companies, which join the consultancy. A consultant's company list holds only that consultancy's companies, and moving a company between consultancies is left to the platform |
 
 ### Tests
 
@@ -389,7 +392,7 @@ cd backend
 ./gradlew.bat test
 ```
 
-496 tests across 56 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+509 tests across 58 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport
