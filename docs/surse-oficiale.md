@@ -722,6 +722,90 @@ Deci regimul uleiurilor uzate e în întregime în art. 31–32.*
 > ⏳ **De reverificat**, şi n-are rost mai des de o dată pe lună. Felia: `todo-lansare.md` **P3.9**,
 > `todo-generator.md` **G-6**.
 
+### 2.6-bis Viza anuală a autorizaţiei de mediu — ce spune actul (verificat 14.09.2026)
+
+*Pornit de la răspunsul specialistei la **AH** (14.09.2026): „se ţine viza, nu data de expirare;
+e valabilă 1 an de la data autorizaţiei". Citit pe Portalul Legislativ, **forma consolidată**:
+OUG 195/2005 la versiunea din **07.04.2022** (ultima din istoric; nicio modificare a art. 16–17 după
+18.11.2019), [doc. 67634](https://legislatie.just.ro/Public/DetaliiDocument/67634); Procedura aprobată
+prin Ordinul 1150/2020 la versiunea din **09.01.2023** (Ordinul 3.309/2022, ultima din istoric),
+[doc. 226703](https://legislatie.just.ro/Public/DetaliiDocument/226703).*
+
+**OUG 195/2005, art. 16** (introdus de Legea 219/2019, în vigoare din 18.11.2019):
+
+> **(2)** Abrogat.
+> **(2^1)** Autorizaţia de mediu şi autorizaţia integrată de mediu **îşi păstrează valabilitatea pe
+> toată perioada în care beneficiarii lor obţin viza anuală.**
+> **(2^6)** În cazul în care [...] Agenţia Naţională pentru Protecţia Mediului constată că **nu a fost
+> solicitată sau obţinută viza anuală, se aplică dispoziţiile art. 17 alin. (3) şi (4).**
+
+**Art. 17 alin. (3)–(4)** — ce înseamnă lipsa vizei, în trepte, nu dintr-odată:
+
+> **(3)** [...] autorizaţia de mediu [...] **se suspendă** de către autoritatea emitentă [...] după o
+> notificare prealabilă prin care se poate acorda un termen de cel mult 60 de zile [...]. Suspendarea
+> se menţine până la eliminarea cauzelor, dar nu mai mult de 6 luni. **Pe perioada suspendării,
+> desfăşurarea [...] activităţii este interzisă.**
+> **(4)** În cazul în care nu s-au îndeplinit condiţiile stabilite prin actul de suspendare, [...]
+> dispune, după expirarea termenului de suspendare, **anularea** [...] autorizaţiei.
+
+**Legea 219/2019, art. II** (reprodus în notă la art. 16) — ⚠️ **data de expirare NU a dispărut peste tot:**
+
+> **(1)** Obţinerea vizei anuale este obligatorie atât pentru autorizaţiile [...] emise la data intrării
+> în vigoare a prezentei legi, cât şi pentru cele emise ulterior.
+> **(2)** Valabilitatea autorizaţiilor [...] emise la data intrării în vigoare a prezentei legi **se poate
+> modifica la cererea titularilor**, în sensul menţinerii valabilităţii [...] pe toată perioada în care
+> titularul obţine viza anuală.
+> **(3)** În cazul în care titularul **nu solicită modificarea valabilităţii** [...], acesta este obligat
+> ca, înainte cu cel puţin 6 luni de la expirarea valabilităţii actului de reglementare, să solicite
+> emiterea unei noi autorizaţii [...], **chiar dacă pe parcursul termenului de valabilitate a obţinut
+> viza anuală.**
+
+Vechiul art. 16 dădea **5 ani** autorizaţiei de mediu şi **10 ani** celei integrate. Deci o autorizaţie
+de mediu de dinainte de 18.11.2019 nemodificată a expirat cel târziu în noiembrie 2024 — azi nu mai
+contează —, dar **o autorizaţie integrată de mediu** (depozite, incineratoare, instalaţii mari) emisă
+între 2009 şi 2019 şi nemodificată **poate avea încă o dată de expirare, până în noiembrie 2029.**
+
+**Procedura (Ordinul 1150/2020), art. 5 alin. (4)–(6)** — de unde se socoteşte „anul":
+
+> **(4)** Termenul în care titularul activităţii solicită aplicarea vizei anuale este de **maximum 90 de
+> zile şi de minimum 60 de zile înainte de ziua şi luna corespunzătoare zilei şi lunii în care a fost
+> emisă autorizaţia** pe care acesta o deţine. În cazul în care autorizaţia [...] a fost revizuită,
+> termenul de 60 de zile se va calcula în funcţie de ziua şi luna în care a fost emisă **autorizaţia
+> iniţială**.
+> **(5)** Pentru autorizaţia [...] revizuită, titularul solicită aplicarea vizei în anul imediat următor
+> revizuirii [...].
+> **(6)** Pentru solicitările transmise în termen mai scurt [...], autoritatea [...] decide dacă este
+> posibilă derularea procedurii [...] până la data corespunzătoare zilei şi lunii în care a fost emisă
+> autorizaţia [...] iniţială sau este necesară aplicarea prevederilor art. 17 alin. (3) şi (4) [...].
+
+**Art. 6 alin. (6)** — respingerea: după notificare (max. 60 de zile) şi suspendare, „[...] emite
+decizia motivată de respingere a vizei anuale [...]. **Autorizaţia [...] îşi pierde valabilitatea**, iar
+titularul are obligaţia de a solicita emiterea unei noi autorizaţii". **Art. 7:** decizia (model în
+anexa nr. 4) „**devine anexă la autorizaţie** şi face parte integrantă din aceasta".
+
+**Anexa nr. 4, modelul deciziei:**
+
+> DECIZIE **Nr. ...... din .............** [...] **Articolul 1** Începând cu data comunicării prezentei
+> decizii **se aplică viza pentru perioada ...............** / se respinge viza, pentru Autorizaţia de
+> mediu [...] nr. ...... din .................. a titularului [...].
+
+**Ce rezultă, pe rubrici** (şi e mai precis decât „1 an de la data autorizaţiei"):
+
+1. **Ziua şi luna emiterii autorizaţiei iniţiale** sunt ancora anului de viză — **nu** data deciziei de
+   viză şi nici data unei revizuiri. Asta confirmă răspunsul Andreei.
+2. **Decizia de viză are număr, dată şi „perioada"** pentru care se aplică. Perioada e scrisă de
+   agenţie pe decizie, deci **se tastează de pe hârtie, nu se calculează** — aplicaţia o poate doar
+   **propune** din aniversare. Sunt aceleaşi câmpuri pe care art. 34¹ din OUG 92/2021 le cere în lista
+   publică („seria şi data deciziei privind viza anuală").
+3. **Data de expirare rămâne ca rubrică opţională**, pentru autorizaţiile integrate de dinainte de
+   18.11.2019 nemodificate (Legea 219/2019 art. II alin. (3)). Nu se şterge.
+4. **Lipsa vizei nu anulează autorizaţia de drept, în ziua aniversării** — duce la suspendare (activitate
+   interzisă), apoi la anulare, fiecare printr-un act al agenţiei. Deci pe ecran e **avertisment**, nu
+   verdict: „perioada vizei a trecut şi nu e trecută o viză nouă — verifică". Aceeaşi linie ca la AH.
+5. **Termenul titularului** (60–90 de zile înainte de aniversare) e al **partenerului**, nu al clientului
+   nostru. Devine termen propriu al clientului doar pe **autorizaţia firmei lui** (`Company`), dacă o are.
+
+
 ---
 
 ### 2.7 ARTICOLUL 29 alin. (2) — un document de transport pe care nu-l ştiam
