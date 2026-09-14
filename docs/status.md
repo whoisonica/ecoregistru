@@ -30,6 +30,10 @@ rulează local și are testele verzi.
 > probă Playwright pe aplicația pornită a trecut **16 din 16**, fără erori în consolă: avizul, Anexa 3 și
 > evidența centralizată se deschid ca `blob:` într-un tab, bifa ascunde licența, CNP-ul apare în cele
 > trei formulare, iar dosarul numește Anexa 1 Ambalaje. Suita de ecran 1–15 **nu** a fost rulată.
+> ✅ **Deployat 15.09.2026, 00:01:** monorepo `fd845ad`, `api` **v69** (`7f15c4c`, „now at version v42”,
+> pornire 9,2 s, nicio eroare în loguri), `app` **v57** (`302c769`). Bundle-ul servit are „Aviz de
+> însoțire”, „Evidența gestiunii deșeurilor centralizată” și bifa de 3,5 t; „Declarația anuală” apare
+> de zero ori. `/movements/{id}/aviz` fără token → 401.
 >
 > **Unde eram — 14.09.2026, 22:55.** 🗂️ **Mișcările sunt acum pe două ecrane, după registru**
 > (decizia proprietarului, în locul lui „Ieșiri”): **„Generare”** (`/generare`, `ANEXA_1` — deșeul firmei,
