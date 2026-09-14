@@ -56,11 +56,19 @@ class EndpointGuardInventoryIT {
             "AccountRequestController.submit"                 // formularul public de cerere de cont
     );
 
-    /** Cele patru praguri ale aplicaţiei. Un şir scris greşit ar refuza tot sau ar lăsa tot. */
+    /**
+     * Pragurile aplicaţiei. Un şir scris greşit ar refuza tot sau ar lăsa tot.
+     *
+     * <p>P2.13 a adăugat {@code CONSULTANT} în cele două praguri de firmă — un consultant lucrează
+     * într-o firmă a cabinetului lui ca un administrator al ei — plus două praguri noi: al
+     * directorului de firme (platformă sau consultant) şi al echipei de cabinet (numai consultant).
+     */
     private static final Set<String> KNOWN_GUARDS = Set.of(
             "hasAuthority('PLATFORM_ADMIN')",
-            "hasAnyAuthority('PLATFORM_ADMIN','ADMIN','OPERATOR')",
-            "hasAnyAuthority('PLATFORM_ADMIN','ADMIN')"
+            "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')",
+            "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')",
+            "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT')",
+            "hasAuthority('CONSULTANT')"
     );
 
     private static final Set<RequestMethod> WRITES =

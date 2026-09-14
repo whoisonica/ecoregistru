@@ -1,13 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, tokenStore, tenantStore, userStore, clearSession } from "@/lib/api";
 
-export type Role = "PLATFORM_ADMIN" | "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
+export type Role = "PLATFORM_ADMIN" | "CONSULTANT" | "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
 
 export interface AuthUser {
   email: string;
   role: Role;
   tenantId: string | null;
   tenantName: string | null;
+  /** P2.13 — cabinetul unui consultant; lipsește la sesiunile salvate înainte de el. */
+  consultancyName?: string | null;
 }
 
 interface AuthContextValue {
@@ -19,7 +21,7 @@ interface AuthContextValue {
    * the user to reload the page. For a scoped user it is simply their own company.
    */
   tenantId: string | null;
-  /** PLATFORM_ADMIN only: point the session at another company. `null` = none selected. */
+  /** PLATFORM_ADMIN and CONSULTANT: point the session at another company. `null` = none selected. */
   switchTenant: (id: string | null) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -30,6 +32,7 @@ interface AuthResponse {
   role: Role;
   tenantId: string | null;
   tenantName: string | null;
+  consultancyName: string | null;
   email: string;
 }
 
@@ -58,10 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: data.role,
       tenantId: data.tenantId,
       tenantName: data.tenantName,
+      consultancyName: data.consultancyName,
     };
     userStore.set(JSON.stringify(authUser));
+    // Fără firmă în răspuns, se șterge și firma rămasă în browser: altfel un consultant care se
+    // autentifică după altcineva ar porni pe firma aleasă de acela — iar serverul ar refuza-o, dar
+    // ecranele ar crede că e aleasă una.
     if (data.tenantId) {
       tenantStore.set(data.tenantId);
+    } else {
+      tenantStore.clear();
     }
     setUser(authUser);
     setTenantId(data.tenantId);

@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import ro.ecoregistru.controller.request.AssignConsultancyRequest;
 import ro.ecoregistru.controller.request.CompanyRequest;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.response.CompanyResponse;
@@ -17,10 +18,14 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Platform-level company (tenant) directory + management. The only global (NOT tenant-scoped)
- * domain endpoints: PLATFORM_ADMIN lists every tenant to drive the tenant switcher (X-Tenant-Id),
- * creates/edits companies, and invites users onto them. A deliberate, documented exception to the
- * "everything is tenant-scoped" rule — hence the strict role gate on every method.
+ * Company (tenant) directory + management. The only global (NOT tenant-scoped) domain endpoints:
+ * they drive the tenant switcher (X-Tenant-Id) and create/edit companies and invite users onto
+ * them. A deliberate, documented exception to the "everything is tenant-scoped" rule — hence the
+ * strict role gate on every method.
+ *
+ * <p>P2.13: a {@code CONSULTANT} reaches the same endpoints, and {@code CompanyService} narrows
+ * every one of them to their consultancy's companies. Moving a company between consultancies stays
+ * with the platform admin.
  */
 @RestController
 @RequestMapping("/api/v1/companies")
@@ -29,11 +34,12 @@ import java.util.UUID;
 public class CompanyController {
 
     static final String PLATFORM_ONLY = "hasAuthority('PLATFORM_ADMIN')";
+    static final String MULTI_COMPANY = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT')";
 
     CompanyService companyService;
 
     @GetMapping
-    @PreAuthorize(PLATFORM_ONLY)
+    @PreAuthorize(MULTI_COMPANY)
     public List<CompanyResponse> list() {
         return companyService.listAll();
     }
@@ -49,21 +55,29 @@ public class CompanyController {
     }
 
     @PostMapping
-    @PreAuthorize(PLATFORM_ONLY)
+    @PreAuthorize(MULTI_COMPANY)
     public ResponseEntity<CompanyResponse> create(@RequestBody @Valid CompanyRequest request) {
         return ResponseEntity.ok(companyService.create(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize(PLATFORM_ONLY)
+    @PreAuthorize(MULTI_COMPANY)
     public CompanyResponse update(@PathVariable UUID id, @RequestBody @Valid CompanyRequest request) {
         return companyService.update(id, request);
     }
 
     @PostMapping("/{id}/users")
-    @PreAuthorize(PLATFORM_ONLY)
+    @PreAuthorize(MULTI_COMPANY)
     public ResponseEntity<CompanyUserResponse> inviteUser(
             @PathVariable UUID id, @RequestBody @Valid InviteUserRequest request) {
         return ResponseEntity.ok(companyService.inviteUser(id, request));
+    }
+
+    /** P2.13 — which consultancy manages the company; {@code null} makes it a direct client. */
+    @PutMapping("/{id}/consultancy")
+    @PreAuthorize(PLATFORM_ONLY)
+    public CompanyResponse assignConsultancy(
+            @PathVariable UUID id, @RequestBody AssignConsultancyRequest request) {
+        return companyService.assignConsultancy(id, request.consultancyId());
     }
 }

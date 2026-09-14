@@ -63,5 +63,9 @@ public record CompanyResponse(
         String wasteManagerTraining,
 
         /** Holder of a building/demolition permit (art. 49 alin. (9)); null while unanswered. */
-        Boolean constructionPermitHolder
+        Boolean constructionPermitHolder,
+
+        /** P2.13 — the consultancy managing the company; both null for a direct client. */
+        UUID consultancyId,
+        String consultancyName
 ) {}

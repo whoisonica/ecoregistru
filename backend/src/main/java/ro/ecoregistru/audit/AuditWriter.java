@@ -19,6 +19,7 @@ import ro.ecoregistru.repository.AuditLogRepository;
 import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -95,26 +96,62 @@ public class AuditWriter {
         }
         UUID tenantId = TenantContext.get();
         AppUser actor = currentUserOrNull();
-        if (tenantId == null || actor == null) {
+        if (actor == null) {
             return;
         }
-        Company company = entityManager.getReference(Company.class, tenantId);
         Instant now = Instant.now();
-        List<AuditLog> rows = pending.stream()
-                .map(entry -> AuditLog.builder()
-                        .company(company)
-                        .entityType(entry.entityType())
-                        .entityId(entry.entityId())
-                        .action(entry.action())
-                        .label(entry.label())
-                        .changes(AuditChangeCodec.write(entry.changes()))
-                        .actorId(actor.getId())
-                        .actorEmail(actor.getEmail())
-                        .actorRole(actor.getRole())
-                        .occurredAt(now)
-                        .build())
-                .toList();
+        List<AuditLog> rows = new ArrayList<>();
+        for (PendingAudit entry : pending) {
+            UUID companyId = journalOf(entry, tenantId);
+            if (companyId == null) {
+                continue;
+            }
+            rows.add(AuditLog.builder()
+                    .company(entityManager.getReference(Company.class, companyId))
+                    .entityType(entry.entityType())
+                    .entityId(entry.entityId())
+                    .action(entry.action())
+                    .label(entry.label())
+                    .changes(AuditChangeCodec.write(entry.changes()))
+                    .actorId(actor.getId())
+                    .actorEmail(actor.getEmail())
+                    .actorRole(actor.getRole())
+                    .occurredAt(now)
+                    .build());
+        }
         auditLogRepository.saveAll(rows);
+    }
+
+    /**
+     * În jurnalul cărei firme intră fapta — sau {@code null}, dacă în al niciuneia.
+     *
+     * <p>Până la P2.13 răspunsul era mereu „firma selectată", şi era greşit pentru cele două tipuri
+     * care nu sunt ale firmei selectate. Cine lucrează pe mai multe firme — platforma, şi de-acum
+     * consultantul — creează firma Wolfram stând pe Xenon, iar „Creare · Wolfram SRL" ajungea în
+     * jurnalul lui Xenon, citit de adminul lui Xenon. Probat de
+     * {@code ConsultantAccessIT.factsAboutACompanyOrAConsultantNeverLandInTheSelectedCompanysJournal}.
+     *
+     * <ul>
+     *   <li><b>O firmă</b> se scrie în jurnalul ei. Asta scrie şi faptele făcute fără firmă selectată,
+     *       care înainte se pierdeau.</li>
+     *   <li><b>Un cont</b> se scrie în jurnalul firmei lui. Un cont de cabinet nu e al niciunei firme,
+     *       deci nu se scrie nicăieri — jurnalul e al unei firme, cu {@code company_id NOT NULL}. Un
+     *       cont care nu mai există (invitaţia anulată, singura ştergere reală) a fost şters dintr-un
+     *       ecran de firmă, deci rămâne firma selectată.</li>
+     *   <li><b>Orice altceva</b> e o înregistrare de firmă, făcută pe firma selectată.</li>
+     * </ul>
+     */
+    private UUID journalOf(PendingAudit entry, UUID tenantId) {
+        if ("Company".equals(entry.entityType())) {
+            return entry.entityId();
+        }
+        if ("AppUser".equals(entry.entityType()) && entry.entityId() != null) {
+            AppUser user = entityManager.find(AppUser.class, entry.entityId());
+            if (user != null) {
+                return user.getCompany() == null ? null : user.getCompany().getId();
+            }
+        }
+        return tenantId;
     }
 
     private static final HibernateJpaDialect JPA_DIALECT = new HibernateJpaDialect();

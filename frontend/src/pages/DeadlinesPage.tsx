@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { RefreshCw, Check, ChevronRight, RotateCcw, CalendarClock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
+import { canWrite } from "@/lib/roles";
 import {
   useDeadlines,
   useRegenerateDeadlines,
@@ -46,7 +47,7 @@ const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
 export function DeadlinesPage() {
   const { user } = useAuth();
   const canManage =
-    user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
+    canWrite(user?.role);
 
   const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: deadlines, isLoading, isError } = useDeadlines(year);

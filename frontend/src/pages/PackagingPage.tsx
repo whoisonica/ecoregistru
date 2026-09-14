@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, FileSpreadsheet, FileText, Package, Pencil, Plus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { canWrite as roleCanWrite } from "@/lib/roles";
 import {
   downloadPackagingAnexa3,
   downloadPackagingDeclaration,
@@ -165,7 +166,7 @@ function RowStatus({ state, dirty }: { state?: "saving" | "saved"; dirty: boolea
 export function PackagingPage() {
   const { user } = useAuth();
   const canWrite =
-    user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
+    roleCanWrite(user?.role);
 
   const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: movements, isLoading: loadingMovements } = usePackagingMovements(year);

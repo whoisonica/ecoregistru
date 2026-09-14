@@ -34,7 +34,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EvidenceController {
 
-    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','ADMIN','OPERATOR')";
+    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;

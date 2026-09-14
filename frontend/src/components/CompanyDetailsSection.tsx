@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Building2, ExternalLink } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useCurrentCompany } from "@/hooks/useCompanies";
+import { isMultiCompany } from "@/lib/roles";
 import { strings } from "@/lib/strings";
 import { formatDate, withCount } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,8 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 export function CompanyDetailsSection() {
   const { user } = useAuth();
   const { data: company, isLoading, isError } = useCurrentCompany();
-  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
+  // Numele rămâne, dar înseamnă „cine editează din Clienți": platforma și, de la P2.13, consultantul.
+  const isPlatformAdmin = isMultiCompany(user?.role);
 
   if (isError) {
     return (

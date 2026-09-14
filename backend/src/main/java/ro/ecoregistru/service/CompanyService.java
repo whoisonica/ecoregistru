@@ -11,13 +11,17 @@ import ro.ecoregistru.controller.response.CompanyResponse;
 import ro.ecoregistru.controller.response.CompanyUserResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.entity.Consultancy;
+import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.controller.response.WasteCodeResponse;
 import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.ConsultancyRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
+import ro.ecoregistru.security.SecurityUtils;
 import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
@@ -29,13 +33,24 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_CUI_ALREADY_EXISTS;
+import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_CUI_UNAVAILABLE;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.INVALID_CUI;
 
 /**
- * Platform-level company (tenant) management. All operations here are global, NOT tenant-scoped —
- * a deliberate exception to the "everything is tenant-scoped" rule. Access is gated to
- * PLATFORM_ADMIN at the controller; never expose these to normal, tenant-scoped users.
+ * Company (tenant) management, above the tenant rather than inside one — a deliberate exception to
+ * the "everything is tenant-scoped" rule. Two callers, gated at the controller:
+ *
+ * <ul>
+ *   <li>{@code PLATFORM_ADMIN} — every company, and the only one who moves a company between
+ *       consultancies.</li>
+ *   <li>{@code CONSULTANT} (P2.13) — the companies of their own consultancy, and nothing else. A
+ *       company they create joins that consultancy; an id outside it is a 404, never a 403, so the
+ *       answer does not confirm that the id exists somewhere.</li>
+ * </ul>
+ *
+ * Never expose these to the tenant-scoped roles.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,12 +61,17 @@ public class CompanyService {
     private static final Pattern CUI_PATTERN = Pattern.compile("^(RO)?\\d{2,10}$");
 
     CompanyRepository companyRepository;
+    ConsultancyRepository consultancyRepository;
     WasteCodeRepository wasteCodeRepository;
     AuthenticationService authenticationService;
 
     @Transactional(readOnly = true)
     public List<CompanyResponse> listAll() {
-        return companyRepository.findAll().stream()
+        AppUser me = SecurityUtils.currentUser();
+        List<Company> companies = me.getRole() == Role.CONSULTANT
+                ? companyRepository.findAllByConsultancy_Id(consultancyIdOf(me))
+                : companyRepository.findAll();
+        return companies.stream()
                 .sorted(Comparator.comparing(Company::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(this::toResponse)
                 .toList();
@@ -68,15 +88,22 @@ public class CompanyService {
 
     @Transactional
     public CompanyResponse create(CompanyRequest request) {
+        AppUser me = SecurityUtils.currentUser();
         String cui = normalizeCui(request.cui());
         if (companyRepository.existsByCui(cui)) {
-            throw new UnprocessableEntityException(COMPANY_CUI_ALREADY_EXISTS);
+            throw cuiTaken(me);
         }
         Company company = Company.builder()
                 .name(request.name().trim())
                 .cui(cui)
                 .type(request.type())
                 .afmObligation(request.afmObligation())
+                // A consultant's new company joins their consultancy — the only way they could
+                // ever select it afterwards. The platform admin creates direct clients, and
+                // assigns a consultancy separately.
+                .consultancy(me.getRole() == Role.CONSULTANT
+                        ? consultancyRepository.getReferenceById(consultancyIdOf(me))
+                        : null)
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
@@ -87,11 +114,11 @@ public class CompanyService {
 
     @Transactional
     public CompanyResponse update(UUID id, CompanyRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        AppUser me = SecurityUtils.currentUser();
+        Company company = requireManaged(id, me);
         String cui = normalizeCui(request.cui());
         if (!cui.equals(company.getCui()) && companyRepository.existsByCui(cui)) {
-            throw new UnprocessableEntityException(COMPANY_CUI_ALREADY_EXISTS);
+            throw cuiTaken(me);
         }
         company.setName(request.name().trim());
         company.setCui(cui);
@@ -107,11 +134,52 @@ public class CompanyService {
      */
     @Transactional
     public CompanyUserResponse inviteUser(UUID companyId, InviteUserRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        Company company = requireManaged(companyId, SecurityUtils.currentUser());
         AppUser user = authenticationService.inviteUser(
                 company, request.email(), request.role(), request.firstName(), request.lastName());
         return CompanyUserResponse.from(user);
+    }
+
+    /**
+     * P2.13 — hand a company to a consultancy, move it to another, or ({@code null}) take it back to
+     * a direct client. Platform admin only: it decides who can read the company's records, so it is
+     * never something a consultancy does to itself.
+     */
+    @Transactional
+    public CompanyResponse assignConsultancy(UUID companyId, UUID consultancyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        Consultancy consultancy = consultancyId == null ? null
+                : consultancyRepository.findById(consultancyId)
+                        .orElseThrow(() -> new NotFoundException(CONSULTANCY_NOT_FOUND));
+        company.setConsultancy(consultancy);
+        return toResponse(company);
+    }
+
+    /** A company the caller may manage: any for the platform admin, their portfolio for a consultant. */
+    private Company requireManaged(UUID id, AppUser me) {
+        return (me.getRole() == Role.CONSULTANT
+                ? companyRepository.findByIdAndConsultancy_Id(id, consultancyIdOf(me))
+                : companyRepository.findById(id))
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+    }
+
+    /**
+     * The platform admin is told plainly. A consultant is told something that stays true whoever
+     * holds the CUI: the company may be another consultancy's client, and naming that would be the
+     * one leak between consultancies this endpoint could still make.
+     */
+    private UnprocessableEntityException cuiTaken(AppUser me) {
+        return new UnprocessableEntityException(
+                me.getRole() == Role.CONSULTANT ? COMPANY_CUI_UNAVAILABLE : COMPANY_CUI_ALREADY_EXISTS);
+    }
+
+    private static UUID consultancyIdOf(AppUser consultant) {
+        // V40 guarantees a consultant has one; failing closed if the guarantee ever breaks.
+        if (consultant.getConsultancy() == null) {
+            throw new NotFoundException(CONSULTANCY_NOT_FOUND);
+        }
+        return consultant.getConsultancy().getId();
     }
 
     private void applyEditableFields(Company company, CompanyRequest request) {
@@ -168,8 +236,11 @@ public class CompanyService {
         company.setTransportLicenseExpiry(request.transportLicenseExpiry());
     }
 
-    /** Normalizes a CUI to upper-case, no spaces, and validates its shape. */
-    private String normalizeCui(String raw) {
+    /**
+     * Normalizes a CUI to upper-case, no spaces, and validates its shape. Package-visible: a
+     * consultancy's CUI is the same kind of code ({@code ConsultancyService}).
+     */
+    static String normalizeCui(String raw) {
         String cui = raw == null ? "" : raw.replaceAll("\\s", "").toUpperCase();
         if (!CUI_PATTERN.matcher(cui).matches()) {
             throw new BusinessException(INVALID_CUI);
@@ -186,6 +257,7 @@ public class CompanyService {
     }
 
     private CompanyResponse toResponse(Company c) {
+        Consultancy consultancy = c.getConsultancy();
         return new CompanyResponse(
                 c.getId(), c.getName(), c.getCui(), c.getType(), c.isActive(), c.isAfmObligation(),
                 c.getEnvironmentalAuthNumber(), c.getEnvironmentalAuthExpiry(), c.getAddress(),
@@ -203,6 +275,8 @@ public class CompanyService {
                 c.getCaenCode(), c.getAnexa3Unit(), c.getContactRole(),
                 c.getWasteManagerName(), c.getWasteManagerRole(),
                 c.getWasteManagerExternal(), c.getWasteManagerTraining(),
-                c.getConstructionPermitHolder());
+                c.getConstructionPermitHolder(),
+                consultancy == null ? null : consultancy.getId(),
+                consultancy == null ? null : consultancy.getName());
     }
 }

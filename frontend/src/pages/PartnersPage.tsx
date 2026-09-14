@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Ban, Pencil, Plus, RotateCcw, Users } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { canWrite } from "@/lib/roles";
 import {
   usePartners,
   useCreatePartner,
@@ -74,7 +75,7 @@ function ExpiryBadge({ partner }: { partner: Partner }) {
 export function PartnersPage() {
   const { user } = useAuth();
   const canManage =
-    user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
+    canWrite(user?.role);
 
   const { data: partners, isLoading, isError } = usePartners();
   const { data: company } = useCurrentCompany();

@@ -32,7 +32,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
 
-    static final String CAN_MANAGE = "hasAnyAuthority('PLATFORM_ADMIN','ADMIN')";
+    static final String CAN_MANAGE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
 
     CompanyUserService companyUserService;
 

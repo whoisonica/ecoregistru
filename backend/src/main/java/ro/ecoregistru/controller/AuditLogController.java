@@ -28,7 +28,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuditLogController {
 
-    static final String CAN_READ = "hasAnyAuthority('PLATFORM_ADMIN','ADMIN')";
+    static final String CAN_READ = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
 
     AuditLogService auditLogService;
 

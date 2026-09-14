@@ -3,9 +3,10 @@ import { api } from "@/lib/api";
 import type { Company, CompanyInput, CompanyUser, InviteUserInput } from "@/lib/types";
 
 /**
- * Companies (tenants) — platform-admin only. The list drives the tenant switcher AND the
- * client-management screen. The endpoint is 403 for any other role, so the list query MUST
- * receive `enabled` (the caller's role check) to avoid firing it. Mutations invalidate the list.
+ * Companies (tenants) — platform admin and consultant. The list drives the tenant switcher AND the
+ * client-management screen; for a consultant the server narrows it to their consultancy. The
+ * endpoint is 403 for any other role, so the list query MUST receive `enabled` (the caller's role
+ * check) to avoid firing it. Mutations invalidate the list.
  */
 export const companiesKey = ["companies"] as const;
 
@@ -49,6 +50,22 @@ export function useUpdateCompany() {
     mutationFn: async ({ id, input }: { id: string; input: CompanyInput }) =>
       (await api.put<Company>(`/api/v1/companies/${id}`, input)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: companiesKey }),
+  });
+}
+
+/**
+ * P2.13 — mută firma într-un cabinet, sau (`null`) o face client direct. Numai platforma. Schimbă
+ * și numărul de firme al cabinetelor, deci se reîmprospătează și lista lor.
+ */
+export function useAssignConsultancy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, consultancyId }: { id: string; consultancyId: string | null }) =>
+      (await api.put<Company>(`/api/v1/companies/${id}/consultancy`, { consultancyId })).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: companiesKey });
+      qc.invalidateQueries({ queryKey: ["consultancies"] });
+    },
   });
 }
 

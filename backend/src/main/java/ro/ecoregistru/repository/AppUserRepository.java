@@ -19,6 +19,14 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
     /** P1.12 — every member of a tenant, whatever their state. Drives the users screen. */
     List<AppUser> findAllByCompany_Id(UUID companyId);
 
+    /** P2.13 — the consultants of a consultancy, whatever their state. */
+    List<AppUser> findAllByConsultancy_Id(UUID consultancyId);
+
+    /** P2.13 — one colleague; a user of another consultancy comes back empty, hence 404. */
+    Optional<AppUser> findByIdAndConsultancy_Id(UUID id, UUID consultancyId);
+
+    long countByConsultancy_Id(UUID consultancyId);
+
     /**
      * P1.12 — one member of a tenant. Scoped by company on purpose: an id from another tenant
      * comes back empty and the service turns that into 404, so the endpoint never confirms that

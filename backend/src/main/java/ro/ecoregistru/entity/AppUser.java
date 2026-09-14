@@ -41,10 +41,19 @@ public class AppUser implements UserDetails {
     @Column(nullable = false)
     Role role;
 
-    /** Tenant. Null only for PLATFORM_ADMIN. */
+    /** Tenant. Null only for PLATFORM_ADMIN and CONSULTANT. */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "company_id")
     Company company;
+
+    /**
+     * P2.13 — the consultancy of a CONSULTANT, null for every other role. Eager like
+     * {@link #company}: {@code TenantFilter} reads it on every request. The pairing is enforced by
+     * the database ({@code V40}), not only here.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "consultancy_id")
+    Consultancy consultancy;
 
     String firstName;
     String lastName;

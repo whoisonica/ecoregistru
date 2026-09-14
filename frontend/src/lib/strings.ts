@@ -65,7 +65,7 @@ export const strings = {
     kwPartners: "clienți furnizori colector valorificator transportator șoferi autorizație CUI",
     kwSettings:
       "puncte de lucru secții generatori interni șoferii noștri datele firmei CAEN persoana desemnată",
-    kwClients: "firme companii tenant cereri de cont profil de piață",
+    kwClients: "firme companii tenant cereri de cont profil de piață cabinet consultanți echipa",
   },
 
   login: {
@@ -1198,7 +1198,21 @@ export const strings = {
     searchPlaceholder: "Caută după nume sau CUI...",
     emptyHint: "Firmele client se creează de aici, sau dintr-o cerere de cont primită mai jos.",
     loadError: "Nu am putut încărca firmele.",
-    onlyPlatformAdmin: "Această secțiune este disponibilă doar administratorului platformei.",
+    onlyPlatformAdmin: "Această secțiune este disponibilă administratorului platformei și consultanților.",
+    // P2.13 — ce vede consultantul. Fără „cererile de cont de mai jos": inboxul e al platformei.
+    subtitleConsultant:
+      "Firmele cabinetului tău. Adaugi o firmă și îi inviți oamenii; o firmă adăugată de aici intră direct în cabinet și o poți alege din „Firma curentă”.",
+    emptyHintConsultant: "Adaugă prima firmă pe care o gestionezi.",
+    consultancy: "Cabinet",
+    directClient: "Client direct",
+    assignConsultancy: "Cabinet",
+    assignTitle: "Cabinetul firmei {company}",
+    // Spune urmarea, nu doar acțiunea: cine câștigă acces și cine îl pierde, și de când.
+    assignHint:
+      "Consultanții cabinetului ales văd firma și lucrează pe ea; cei ai cabinetului de dinainte nu o mai văd de la cererea următoare. „Client direct” o scoate din orice cabinet.",
+    assignNone: "— client direct —",
+    assigned: "Cabinetul firmei a fost schimbat.",
+    assignError: "Nu am putut schimba cabinetul.",
     // columns
     name: "Denumire",
     cui: "CUI",
@@ -1294,6 +1308,47 @@ export const strings = {
       "Utilizatorul primește un email cu link de setare a parolei. Contul devine activ după ce își setează parola.",
   },
 
+  /** P2.13 — cabinetele de consultanță, pe ecranul Clienți al platformei. */
+  consultancies: {
+    title: "Cabinete de consultanță",
+    subtitle:
+      "Firmele de consultanță care țin evidența pentru clienții lor. Creezi cabinetul și îi inviți primul consultant; de acolo își administrează singuri echipa și firmele. O firmă existentă se mută într-un cabinet din rândul ei, mai sus.",
+    add: "Adaugă cabinet",
+    addTitle: "Adaugă cabinet",
+    name: "Denumire",
+    namePlaceholder: "ex. EcoConsult SRL",
+    cui: "CUI",
+    cuiPlaceholder: "ex. RO12345678",
+    companies: "Firme",
+    consultants: "Consultanți",
+    searchPlaceholder: "Caută după nume sau CUI...",
+    empty: "Niciun cabinet încă.",
+    emptyHint: "Un cabinet se creează după ce contractul cu el e semnat.",
+    loadError: "Nu am putut încărca cabinetele.",
+    created: "Cabinet adăugat.",
+    saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
+    invite: "Invită consultant",
+    inviteTitle: "Invită un consultant în {consultancy}",
+    invited: "Consultant invitat. Primește pe email linkul de setare a parolei.",
+    inviteError: "Invitația a eșuat. Verifică datele și încearcă din nou.",
+  },
+
+  /** P2.13 — echipa cabinetului, pe ecranul Clienți al consultantului. */
+  consultancyTeam: {
+    title: "Echipa cabinetului",
+    subtitle:
+      "Colegii care lucrează pe firmele cabinetului. Toți au aceleași drepturi: văd toate firmele cabinetului, adaugă firme și invită colegi.",
+    invite: "Invită coleg",
+    inviteTitle: "Invită un coleg",
+    empty: "Niciun coleg încă.",
+    emptyHint: "Colegii invitați primesc pe email un link din care își aleg parola.",
+    loadError: "Nu am putut încărca echipa.",
+    invited: "Coleg invitat. Primește pe email linkul de setare a parolei.",
+    // Ca la utilizatorii firmei, plus singurul lucru care diferă: pierde toate firmele deodată.
+    confirmDeactivate:
+      "Sesiunile deschise se închid imediat și nu mai vede nicio firmă a cabinetului. Ce a înregistrat rămâne neatins, cu numele lui. Se poate reactiva oricând.",
+  },
+
   // Romanian month names (index 0 = January), for display of the `month` field.
   months: [
     "Ianuarie",
@@ -1318,6 +1373,7 @@ export const strings = {
      */
     role: {
       PLATFORM_ADMIN: "Administrator platformă",
+      CONSULTANT: "Consultant",
       ADMIN: "Administrator",
       OPERATOR: "Operator",
       CLIENT_VIEWER: "Vizualizare",

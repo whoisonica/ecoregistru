@@ -136,9 +136,12 @@ export interface Company {
   wasteManagerTraining?: string | null;
   /** Titulară de autorizaţie de construire/desfiinţare (art. 49 alin. (9)); null = nu s-a răspuns. */
   constructionPermitHolder?: boolean | null;
+  /** P2.13 — cabinetul care gestionează firma; amândouă null la un client direct. */
+  consultancyId?: string | null;
+  consultancyName?: string | null;
 }
 
-/** Create/update payload for a company (PLATFORM_ADMIN only). */
+/** Create/update payload for a company (PLATFORM_ADMIN and CONSULTANT). */
 export interface CompanyInput {
   name: string;
   cui: string;
@@ -234,7 +237,31 @@ export interface AccountRequest extends Omit<AccountRequestInput, "website"> {
   createdAt: string;
 }
 
-/** Tenant roles that can be invited (never PLATFORM_ADMIN). */
+// --- Cabinete de consultanță (P2.13) ---
+
+/** Mirrors backend ConsultancyResponse. `companyCount` e și cifra pe care se facturează. */
+export interface Consultancy {
+  id: string;
+  name: string;
+  cui: string;
+  companyCount: number;
+  consultantCount: number;
+  createdAt: string;
+}
+
+export interface ConsultancyInput {
+  name: string;
+  cui: string;
+}
+
+/** Fără rol: într-un cabinet toți sunt consultanți, cu aceleași drepturi. */
+export interface InviteConsultantInput {
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
+/** Tenant roles that can be invited (never PLATFORM_ADMIN, never CONSULTANT). */
 export type InviteRole = "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
 
 export interface InviteUserInput {

@@ -233,6 +233,14 @@ public class Company {
     @Column(name = "anexa3_series", length = 20)
     String anexa3Series;
 
+    /**
+     * P2.13 — the consultancy that manages this company, or null for a direct client. Decides which
+     * consultants may select it; only the platform admin moves a company between consultancies.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "consultancy_id")
+    Consultancy consultancy;
+
     @Column(nullable = false)
     boolean active;
 

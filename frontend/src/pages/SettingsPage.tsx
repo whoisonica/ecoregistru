@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Ban, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { canManage as roleCanManage } from "@/lib/roles";
 import {
   useWorkPoints,
   useCreateWorkPoint,
@@ -39,7 +40,7 @@ const t = strings.settings.workPoints;
 
 export function SettingsPage() {
   const { user } = useAuth();
-  const canManage = user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN";
+  const canManage = roleCanManage(user?.role);
 
   const { data: workPoints, isLoading, isError } = useWorkPoints();
   const createMut = useCreateWorkPoint();

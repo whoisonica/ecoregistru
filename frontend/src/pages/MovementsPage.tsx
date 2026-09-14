@@ -13,6 +13,7 @@ import {
   Truck,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { canWrite as roleCanWrite } from "@/lib/roles";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
 import { useDrivers } from "@/hooks/useDrivers";
@@ -187,7 +188,7 @@ function todayIso() {
 export function MovementsPage() {
   const { user } = useAuth();
   const canWrite =
-    user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR";
+    roleCanWrite(user?.role);
 
   const { data: workPoints } = useWorkPoints();
   const activeWorkPoints = useMemo(

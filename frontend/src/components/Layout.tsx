@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { companiesKey, useCompanies } from "@/hooks/useCompanies";
+import { canWrite, isMultiCompany } from "@/lib/roles";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
 import { BrandName } from "@/components/BrandName";
@@ -51,8 +52,8 @@ interface NavGroup {
   /** Lipsește la primul grup: Panoul stă singur, fără titlu peste el. */
   label?: string;
   items: NavItem[];
-  /** Grupul se vede numai de către administratorul platformei. */
-  platformAdminOnly?: boolean;
+  /** Grupul se vede numai de cine lucrează pe mai multe firme: platforma și consultantul. */
+  multiCompanyOnly?: boolean;
 }
 
 /**
@@ -112,23 +113,39 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: strings.nav.groupAdmin,
-    platformAdminOnly: true,
+    multiCompanyOnly: true,
     items: [{ to: "/clienti", label: strings.nav.clients, icon: Building2, keywords: strings.nav.kwClients }],
   },
 ];
 
 /**
  * Current-company block under the app name. Normal users see their company name (read-only).
- * PLATFORM_ADMIN gets a tenant switcher that sets X-Tenant-Id (via `switchTenant`) and drops the
- * cached data of the company being left.
+ * PLATFORM_ADMIN and CONSULTANT get a tenant switcher that sets X-Tenant-Id (via `switchTenant`)
+ * and drops the cached data of the company being left. A consultant's list is their consultancy's.
  */
 function CompanyBlock() {
   const { user, tenantId, switchTenant } = useAuth();
-  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
+  const multiCompany = isMultiCompany(user?.role);
   const queryClient = useQueryClient();
-  const { data: companies, isError } = useCompanies(!!isPlatformAdmin);
+  const { data: companies, isError } = useCompanies(multiCompany);
 
-  if (!isPlatformAdmin) {
+  /**
+   * P2.13 — firma aleasă care nu mai e în listă se uită.
+   *
+   * <p>Firma stă în browser între sesiuni. Pentru platformă lista e toată, deci nu avea cum să
+   * lipsească; pentru un consultant lipsește exact când firma a fost mutată în alt cabinet. Serverul
+   * o refuză oricum (`tenant.required`), dar ecranele ar crede că e aleasă una și ar arăta erori în
+   * loc de „Alege o firmă".
+   */
+  useEffect(() => {
+    if (!multiCompany || !companies || !tenantId) return;
+    if (!companies.some((c) => c.id === tenantId)) {
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== companiesKey[0] });
+      switchTenant(null);
+    }
+  }, [multiCompany, companies, tenantId, switchTenant, queryClient]);
+
+  if (!multiCompany) {
     return (
       <div className="rounded-md bg-brand-muted px-3 py-2">
         <div className="text-[11px] font-medium uppercase tracking-wide text-brand/70">
@@ -294,8 +311,7 @@ export function Layout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
-  const groups = navGroups.filter((g) => !g.platformAdminOnly || isPlatformAdmin);
+  const groups = navGroups.filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role));
 
   function handleLogout() {
     logout();
@@ -305,9 +321,7 @@ export function Layout({ children }: { children: ReactNode }) {
   // Locurile întâi, apoi ce se poate începe: ordinea grupurilor din paletă e ordinea în care au
   // venit comenzile, iar „unde ajung" e întrebarea de zece ori mai deasă decât „ce încep".
   const navCommands = useNavigationCommands(groups);
-  const actionCommands = useActionCommands(
-    user?.role === "PLATFORM_ADMIN" || user?.role === "ADMIN" || user?.role === "OPERATOR"
-  );
+  const actionCommands = useActionCommands(canWrite(user?.role));
   const commands = useMemo(
     () => [...navCommands, ...actionCommands],
     [navCommands, actionCommands]

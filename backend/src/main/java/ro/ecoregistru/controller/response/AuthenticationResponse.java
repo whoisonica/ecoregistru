@@ -11,5 +11,7 @@ public record AuthenticationResponse(
         Role role,
         UUID tenantId,
         String tenantName,
+        /** P2.13 — set for a CONSULTANT, who has no tenant of their own until they pick one. */
+        String consultancyName,
         String email
 ) {}

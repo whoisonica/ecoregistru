@@ -38,7 +38,14 @@ public enum ErrorMessageEnum {
     COMPANY_NOT_FOUND("company.not.found", "Firma nu a fost găsită."),
     INVALID_CUI("company.cui.invalid", "CUI invalid. Introdu un cod fiscal valid (ex. RO12345678 sau 12345678)."),
     COMPANY_CUI_ALREADY_EXISTS("company.cui.exists", "Există deja o firmă cu acest CUI."),
+    // P2.13 — what a consultant is told instead of COMPANY_CUI_ALREADY_EXISTS. The firm may be a
+    // client of another consultancy; the message must not say whose, and moving it is ours to do.
+    COMPANY_CUI_UNAVAILABLE("company.cui.unavailable", "Firma cu acest CUI nu poate fi adăugată din contul tău. Scrie-ne la contact@wastehouse.ro și o rezolvăm."),
     INVALID_INVITE_ROLE("invite.role.invalid", "Rol invalid pentru invitație. Alege Administrator, Operator sau Vizualizare."),
+
+    // --- Cabinete de consultanță (P2.13) ---
+    CONSULTANCY_NOT_FOUND("consultancy.not.found", "Cabinetul nu a fost găsit."),
+    CONSULTANCY_CUI_ALREADY_EXISTS("consultancy.cui.exists", "Există deja un cabinet cu acest CUI."),
 
     // --- Utilizatorii firmei (P1.12) ---
     CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),

@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.security.TenantFilter;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -28,6 +29,8 @@ public class SecurityConfiguration {
     final AuthenticationProvider authenticationProvider;
     final JwtAuthenticationFilter jwtAuthenticationFilter;
     final RestAuthenticationEntryPoint authenticationEntryPoint;
+    /** For {@link TenantFilter}: whether a consultant's consultancy manages the requested tenant. */
+    final CompanyRepository companyRepository;
 
     /** Publicly reachable endpoints (no auth). Everything else requires a valid token. */
     private static final String[] WHITELIST = {
@@ -97,7 +100,7 @@ public class SecurityConfiguration {
 
                 // Resolve tenant after JWT authentication
                 .addFilterAfter(
-                        new TenantFilter(),
+                        new TenantFilter(companyRepository),
                         JwtAuthenticationFilter.class
                 );
 

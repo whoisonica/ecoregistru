@@ -17,6 +17,7 @@ import ro.ecoregistru.controller.request.ResetPasswordRequest;
 import ro.ecoregistru.controller.response.AuthenticationResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.VerificationRecord;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.exception.BusinessException;
@@ -150,9 +151,26 @@ public class AuthenticationService {
      */
     @Transactional(noRollbackFor = EmailException.class)
     public AppUser inviteUser(Company company, String rawEmail, Role role, String firstName, String lastName) {
-        if (role == Role.PLATFORM_ADMIN) {
+        // CONSULTANT is refused as well: a consultant belongs to a consultancy, not to a firm, and
+        // V40 would refuse the row anyway — as a 500 rather than as this sentence.
+        if (role == Role.PLATFORM_ADMIN || role == Role.CONSULTANT) {
             throw new BusinessException(INVALID_INVITE_ROLE);
         }
+        return invite(role, company, null, rawEmail, firstName, lastName);
+    }
+
+    /**
+     * P2.13 — invite a consultant onto a consultancy. The same account-and-reset-link mechanism as
+     * {@link #inviteUser}; only the owner of the account differs.
+     */
+    @Transactional(noRollbackFor = EmailException.class)
+    public AppUser inviteConsultant(Consultancy consultancy, String rawEmail, String firstName, String lastName) {
+        return invite(Role.CONSULTANT, null, consultancy, rawEmail, firstName, lastName);
+    }
+
+    /** Exactly one of {@code company} and {@code consultancy} is set — see V40. */
+    private AppUser invite(Role role, Company company, Consultancy consultancy,
+                           String rawEmail, String firstName, String lastName) {
         String email = rawEmail.toLowerCase();
         if (appUserRepository.existsByEmail(email)) {
             throw new UnprocessableEntityException(ACCOUNT_ALREADY_EXISTS);
@@ -163,6 +181,7 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(newCode())) // random & unusable until the reset link is used
                 .role(role)
                 .company(company)
+                .consultancy(consultancy)
                 .firstName(firstName)
                 .lastName(lastName)
                 .enabled(false)
@@ -237,6 +256,7 @@ public class AuthenticationService {
                 .role(user.getRole())
                 .tenantId(user.getCompany() != null ? user.getCompany().getId() : null)
                 .tenantName(user.getCompany() != null ? user.getCompany().getName() : null)
+                .consultancyName(user.getConsultancy() != null ? user.getConsultancy().getName() : null)
                 .email(user.getEmail())
                 .build();
     }

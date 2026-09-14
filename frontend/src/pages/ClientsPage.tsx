@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { Building2, Pencil, Plus, UserPlus } from "lucide-react";
+import { Briefcase, Building2, Pencil, Plus, UserPlus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
+import { isMultiCompany } from "@/lib/roles";
+import { AssignConsultancyDialog, ConsultanciesSection } from "@/components/ConsultanciesSection";
+import { ConsultancyTeamSection } from "@/components/ConsultancyTeamSection";
 import {
   useCompanies,
   useCreateCompany,
@@ -57,8 +60,12 @@ const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
 export function ClientsPage() {
   const { user } = useAuth();
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
+  // P2.13 — consultantul ajunge și el aici: aceleași firme, restrânse de server la cabinetul lui.
+  const isConsultant = user?.role === "CONSULTANT";
+  const multiCompany = isMultiCompany(user?.role);
 
-  const { data: companies, isLoading, isError } = useCompanies(!!isPlatformAdmin);
+  const { data: companies, isLoading, isError } = useCompanies(multiCompany);
+  const [assigning, setAssigning] = useState<Company | null>(null);
   const createMut = useCreateCompany();
   const updateMut = useUpdateCompany();
   const inviteMut = useInviteUser();
@@ -123,7 +130,7 @@ export function ClientsPage() {
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
-  if (!isPlatformAdmin) {
+  if (!multiCompany) {
     return (
       <div>
         <PageHeader title={t.title} description={t.onlyPlatformAdmin} />
@@ -307,7 +314,7 @@ export function ClientsPage() {
     <div>
       <PageHeader
         title={t.title}
-        description={t.subtitle}
+        description={isConsultant ? t.subtitleConsultant : t.subtitle}
         actions={
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
@@ -332,6 +339,7 @@ export function ClientsPage() {
                     {t.cui}
                   </SortableTH>
                   <TH>{t.type}</TH>
+                  {isPlatformAdmin && <TH>{t.consultancy}</TH>}
                   <TH>{t.afm}</TH>
                   <TH>{strings.common.status}</TH>
                   <TH sticky="right" className="text-right">{strings.common.actions}</TH>
@@ -340,12 +348,16 @@ export function ClientsPage() {
               <TBody>
                 {(isLoading || view.visible.length === 0) && (
                   <TableFallbackRow
-                    columns={6}
+                    columns={isPlatformAdmin ? 7 : 6}
                     loading={isLoading}
                     icon={Building2}
                     title={view.emptiedBySearch ? strings.common.noResults : t.empty}
                     description={
-                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                      view.emptiedBySearch
+                        ? strings.common.noResultsHint
+                        : isConsultant
+                          ? t.emptyHintConsultant
+                          : t.emptyHint
                     }
                     action={
                       <Button onClick={openCreate}>
@@ -360,6 +372,13 @@ export function ClientsPage() {
                     <TD className="font-medium text-content">{c.name}</TD>
                     <TD>{c.cui}</TD>
                     <TD>{typeLabels[c.type]}</TD>
+                    {isPlatformAdmin && (
+                      <TD>
+                        {c.consultancyName ?? (
+                          <span className="text-content-subtle">{t.directClient}</span>
+                        )}
+                      </TD>
+                    )}
                     <TD>
                       {c.afmObligation ? (
                         <Badge variant="warning">{t.afmYes}</Badge>
@@ -376,6 +395,12 @@ export function ClientsPage() {
                     </TD>
                     <TD sticky="right" className="text-right">
                       <div className="flex justify-end gap-1">
+                        {isPlatformAdmin && (
+                          <Button variant="ghost" size="sm" onClick={() => setAssigning(c)}>
+                            <Briefcase className="mr-1 h-3.5 w-3.5" />
+                            {t.assignConsultancy}
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
                           <UserPlus className="mr-1 h-3.5 w-3.5" />
                           {t.invite}
@@ -783,7 +808,17 @@ export function ClientsPage() {
         </form>
       </Dialog>
 
-      <AccountRequestsSection enabled={isPlatformAdmin} onOpenCompany={openCompanyById} />
+      {/* Inboxul cererilor publice și cabinetele sunt ale platformei; echipa, a consultantului. */}
+      {isPlatformAdmin && (
+        <>
+          <AccountRequestsSection enabled onOpenCompany={openCompanyById} />
+          <ConsultanciesSection />
+        </>
+      )}
+      {isConsultant && <ConsultancyTeamSection />}
+      {assigning && (
+        <AssignConsultancyDialog company={assigning} onClose={() => setAssigning(null)} />
+      )}
     </div>
   );
 }

@@ -199,7 +199,8 @@ public class CompanyUserService {
      */
     @Transactional
     public CompanyUserResponse changeRole(UUID id, Role role) {
-        if (role == Role.PLATFORM_ADMIN) {
+        // CONSULTANT for the same reason as the invite: that account is a consultancy's, not a firm's.
+        if (role == Role.PLATFORM_ADMIN || role == Role.CONSULTANT) {
             throw new BusinessException(INVALID_INVITE_ROLE);
         }
         AppUser user = require(id);

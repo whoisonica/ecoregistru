@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { strings } from "@/lib/strings";
 import { REDIRECT_PARAM } from "@/lib/api";
+import { isMultiCompany } from "@/lib/roles";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkButton } from "@/components/ui/button";
 import type { ReactNode } from "react";
@@ -50,7 +51,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
  */
 export function RequireTenant({ children }: { children: ReactNode }) {
   const { user, tenantId } = useAuth();
-  if (user?.role === "PLATFORM_ADMIN" && !tenantId) {
+  // P2.13: și consultantul pornește fără firmă — lucrează pe mai multe, deci alege.
+  if (isMultiCompany(user?.role) && !tenantId) {
     return (
       <EmptyState
         className="mt-6"
