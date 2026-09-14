@@ -3,7 +3,31 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> 📜 **15.09.2026, după deploy — AD închisă în act și „Evidența cronologică” construită (necommis).**
+> **Unde suntem — 15.09.2026, 01:03.** 💳 **Abonamentele F1 și „Evidența cronologică” sunt pe producție.**
+> ✅ Monorepo `e0442b1`, `api` **v70** (`d245632`, „now at version v43”, pornire 13 s, nicio eroare în
+> loguri), `app` **v58** (`6be31ee`). Bundle-ul servit are „Evidența cronologică” și „Creează abonamentul”.
+> `/subscriptions/founders` și `/evidences/registru-cronologic` fără token → 401. Garda de conținut a
+> ieșit exact pe divergența stabilă; `deploy/heroku-split` sincronizat. **Suita completă: 542 de teste
+> în 61 de clase, 0 eșecuri** (din XML), `tsc` curat. Pe ecran, logat, **nu** a fost verificat.
+>
+> **Abonamentele, felia F1** (planul e în repo-ul privat):
+> - `V43__subscriptions.sql`: numai tabela `subscriptions`. Firma **sau** cabinetul (CHECK), pachetul,
+>   starea, prețurile copiate din grilă la creare, fondator, data de start. Facturile și cardul vin în
+>   migrările feliilor următoare.
+> - `BillingCalculator`, funcție pură: liniile și totalul unei perioade. Perioada începe în ziua de start
+>   și ține până în ziua dinaintea ei din luna următoare, la preț întreg, numărată de la
+>   `startedAt.plusMonths(n)`. O firmă adăugată în cabinet se plătește din perioada următoare.
+> - `/api/v1/subscriptions/{company|consultancy}/{id}` (GET, PUT, DELETE) și `/founders`, `PLATFORM_ONLY`.
+> - Gărzi împotriva plății duble: firmă de cabinet fără abonament propriu
+>   (`subscription.company.in.consultancy`), iar o firmă cu abonament propriu nu se mută într-un cabinet
+>   (`company.has.own.subscription`).
+> - Ecran: **Clienți** → butonul „Abonament” pe rândul unei firme directe și al unui cabinet
+>   (`SubscriptionDialog`). Încă nu există o listă a tuturor abonamentelor și nu se emite nicio factură.
+> - Probe: `BillingCalculatorTest` 10, `SubscriptionIT` 8. Proba negativă a scos trei reguli și au căzut
+>   exact cele trei teste ale lor.
+> - ⚠️ DELETE pe abonament n-are încă gardă; o primește odată cu facturile.
+
+> 📜 **15.09.2026, noaptea — AD închisă în act și „Evidența cronologică” construită** (✅ pe producție la 01:03, mai sus).
 > Art. 48 alin. (1) prescrie conținutul (lit. a–c) și „cronologic lunar, tabelar”, nu un formular. Alin. (3)
 > trimite la o procedură prin ordin, pe care n-am găsit-o. Alin. (7) + AG: datele se tastează în SIM
 > („Colectare/Tratare”). Citatele sunt în `surse-oficiale.md` §2.1-bis. Pe baza lor:
@@ -21,7 +45,7 @@ rulează local și are testele verzi.
 > registru, stocul inițial și refuzul, scoase pe rând din cod, au doborât fiecare exact testele lor.
 > `tsc` e curat. Pe ecran **nu** a fost verificat.
 
-> **Unde suntem — 15.09.2026, noaptea.** 👩‍🔬 **Cererile specialistei din 15.09, în cod** (`V42`):
+> **Unde eram — 15.09.2026, noaptea.** 👩‍🔬 **Cererile specialistei din 15.09, în cod** (`V42`):
 > - **Licența de transport numai peste 3,5 t:** la parteneri, sub „Transportator”, bifa „Transportă cu
 >   vehicule peste 3,5 tone” (`partners.heavy_vehicles`). Licența apare și se păstrează numai bifat;
 >   nebifat, serverul o golește (`PartnerService.applyLicence`). Partenerii care aveau licență pornesc
