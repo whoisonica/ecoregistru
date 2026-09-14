@@ -26,6 +26,7 @@ import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.entity.AnalysisBulletin;
 import ro.ecoregistru.repository.AnalysisBulletinRepository;
+import ro.ecoregistru.repository.AttachmentRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -52,6 +53,7 @@ import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static ro.ecoregistru.exception.ErrorMessageEnum.AUDIT_FILE_YEARS_UNSUPPORTED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
@@ -104,6 +106,7 @@ public class AuditFileService {
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
     AnalysisBulletinRepository bulletinRepository;
+    AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
 
     /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
@@ -201,13 +204,19 @@ public class AuditFileService {
         writeEntry(zip, prefix + "evidenta-" + year + ".pdf",
                 evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence));
 
-        writeAttachments(zip, prefix, movements);
+        writeAttachments(zip, prefix, movements, attachmentRepository.findAllOfLiveMovementsBetween(
+                tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
     }
 
     // --- attachments ---
 
-    private void writeAttachments(ZipOutputStream zip, String prefix, List<WasteMovement> movements)
-            throws IOException {
+    private void writeAttachments(ZipOutputStream zip, String prefix, List<WasteMovement> movements,
+                                  List<Attachment> attachments) throws IOException {
+        // Read once for the year, not through `m.getAttachments()`: the regeneration just before
+        // flushes a hundred-odd writes, and after it Hibernate stopped batching that lazy
+        // collection — one select per movement (BUG-016, measured in `PerformanceIT`).
+        Map<UUID, List<Attachment>> attachmentsByMovement = attachments.stream()
+                .collect(groupingBy(a -> a.getMovement().getId()));
         StringBuilder index = new StringBuilder();
         index.append("Atașamente ale mișcărilor de deșeuri\n");
         index.append("=====================================\n\n");
@@ -216,7 +225,7 @@ public class AuditFileService {
         int downloaded = 0;
         for (WasteMovement m : movements.stream()
                 .sorted(Comparator.comparing(WasteMovement::getDate)).toList()) {
-            for (Attachment a : m.getAttachments()) {
+            for (Attachment a : attachmentsByMovement.getOrDefault(m.getId(), List.of())) {
                 n++;
                 String label = m.getDate().format(DATE) + " · " + m.getWasteCode().getCode()
                         + " · " + safe(m.getDocumentReference());

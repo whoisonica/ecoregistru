@@ -20,6 +20,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
+        # P2.16 (BUG-016): o colecție lazy citită pe fiecare rând (ataşamentele şi destinaţiile unei
+        # mişcări, punctele şi şoferii unui partener) se aduce pentru până la 100 de rânduri într-o
+        # singură interogare, nu câte una pe rând. Fără linia asta, o pagină de 50 de mişcări costa
+        # 114 interogări în loc de 34 — probat în `PerformanceIT`.
+        default_batch_fetch_size: 100
     open-in-view: false
   flyway:
     enabled: true
