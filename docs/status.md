@@ -3,7 +3,35 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 15.09.2026, 01:03.** 💳 **Abonamentele F1 și „Evidența cronologică” sunt pe producție.**
+> **Unde suntem — 15.09.2026, 01:52.** 💳 **Abonamentele F2 (facturi FGO, transfer) sunt pe producție,
+> legate de contul de TEST FGO.**
+> ✅ Monorepo `d41f99c`, `api` **v71** (`14c2af3`, „now at version v44”, pornire 11 s), config **v72**
+> (cheile FGO de test), `app` **v60** (`270fa5a`). Bundle-ul servit are „Date de facturare” și „Emite
+> facturile scadente acum”. Garda de conținut a ieșit exact pe divergența stabilă. **Suita completă:
+> 557 de teste în 64 de clase, 0 eșecuri** (din XML), `tsc` curat.
+> - **`V44__subscription_invoices.sql`:** datele de facturare pe `subscriptions` (email, județ,
+>   localitate, adresă) și `subscription_invoices`, cu UNIQUE (`subscription_id`, `period_start`) și
+>   stările DRAFT → ISSUED → PAID.
+> - **`FgoClient`** (API FGO v7):
+>   - `emitere` și `getstatus`, JSON, hash SHA-1 cu majuscule, o cerere pe secundă;
+>   - la un `IdExtern` repetat, FGO răspunde `Success:false` cu factura existentă, tratată drept emisă.
+> - **`BillingRunService`** + **`BillingScheduler`** (06:30, Europe/Bucharest) și
+>   `POST /api/v1/subscriptions/billing/run`: rezervă rândul → emite cu `IdExtern` = id-ul rândului →
+>   citește plățile → PAST_DUE / ACTIVE. Fără chei FGO nu face nimic.
+> - **Garda de DELETE** lipsă din F1 e pusă (`subscription.has.invoices`).
+> - **Frontend:** dialogul „Abonament” are datele de facturare (județele din nomenclatorul FGO),
+>   lista facturilor cu PDF și butonul de emitere.
+> - **Probe:**
+>   - `FgoClientTest` 6, `BillingPeriodTest` 3, `BillingRunIT` 7;
+>   - proba negativă pe fiecare regulă separat: adresa lipsă și DELETE au picat exact testul lor;
+>     fără verificarea de perioadă cad 5, fiindcă UNIQUE-ul oprește rularea;
+>   - `FgoLiveTest` pe api-testuat, cu codul nostru: emitere, getstatus și `IdExtern` repetat, fără
+>     dublură. Încasarea pusă manual în FGO a fost citită corect (389/389).
+> - ⚠️ Facturile emise din producție sunt **de test** până la cheia reală. Înainte de ea se șterg din
+>   `subscription_invoices`.
+> - Pe ecran, logat, **nu** a fost verificat de sesiune; testul pe Demo e al proprietarului.
+>
+> **15.09.2026, 01:03.** 💳 **Abonamentele F1 și „Evidența cronologică” sunt pe producție.**
 > ✅ Monorepo `e0442b1`, `api` **v70** (`d245632`, „now at version v43”, pornire 13 s, nicio eroare în
 > loguri), `app` **v58** (`6be31ee`). Bundle-ul servit are „Evidența cronologică” și „Creează abonamentul”.
 > `/subscriptions/founders` și `/evidences/registru-cronologic` fără token → 401. Garda de conținut a
