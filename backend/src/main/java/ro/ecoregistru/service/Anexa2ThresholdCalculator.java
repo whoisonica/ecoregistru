@@ -45,6 +45,16 @@ import java.util.function.Predicate;
  * A client who records only handovers has a real generated total and a naive
  * {@code sum(GENERATED)} would report zero for them, i.e. it would underestimate, in the one
  * direction that costs. Reading the engine also means the tick and the fişa can never disagree.
+ *
+ * <p><b>⚠️ What hangs on that, before anyone "simplifies" it.</b> Because the implied generation is
+ * counted, a rule introduced to make the fişa readable decides two legal things on this form:
+ * whether the transport needs the agency's approval (art. 7, above 1 t/an) and whether the form
+ * prints three copies or six. Proved in the QA audit (P1.10, 12.09.2026) by taking the implied term
+ * out of {@link EvidenceCalculator}: {@code Anexa2FormIT.aboveOneTonneTheFormPrintsSixCopies} printed
+ * three, and {@code theThresholdIsProposedWithTheFiguresBehindIt} fell from 0.84 t to zero. So
+ * reading only the recorded generation here, or changing how V24 infers it, moves a legal threshold
+ * without touching this class. How "aceeaşi categorie" cumulates is still an open question to the
+ * specialist (AQ).
  */
 @Service
 @RequiredArgsConstructor

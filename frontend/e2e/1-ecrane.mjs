@@ -12,6 +12,20 @@ const SCREENS = [
   ["/setari", "Setări", "table"],
 ];
 
+// QA-TRACE punctul 18: agenţia se numeşte ANMAP din 11.07.2026 (Legea 26/2026 art. IV). Un şir de
+// ecran care alunecă înapoi la „ANPM" nu cade la niciun test de backend, iar lista de mai sus citeşte
+// deja fiecare ecran — deci verificarea stă aici, pe tot textul, nu pe un şir anume.
+//
+// ⚠️ `innerText`, nu `textContent`. `textContent` lipeşte nodurile fără niciun separator, deci eticheta
+// „Termene ANPM" din bara laterală ajungea „Termene ANPMDosar de control" — iar `\b` nu vede graniţă
+// între M şi D. Prima variantă a verificării a trecut verde exact aşa, cu „ANPM" pe ecran; a prins-o
+// proba negativă (14.09.2026). `innerText` pune rând nou între blocuri, adică textul aşa cum se citeşte.
+async function anpm(page) {
+  const text = await page.evaluate(() => document.body.innerText).catch(() => null);
+  if (text === null) page.problems.push("textul ecranului nu s-a putut citi — verificarea „ANPM” n-a rulat");
+  else if (/\bANPM\b/.test(text)) page.problems.push("ecranul scrie „ANPM” — numele e ANMAP din 11.07.2026");
+}
+
 const browser = await launch();
 let failures = 0;
 
@@ -28,6 +42,7 @@ console.log("=== ADMIN, desktop 1440x900 ===");
     if (!has) page.problems.push(`lipsește <${must}> pe ecran`);
     const title = await page.textContent("h1").catch(() => null);
     if (!title || !title.trim()) page.problems.push("titlul paginii e gol");
+    await anpm(page);
     await shot(page, "admin" + path.replace(/\//g, "_"));
     failures += report(`${name} (${path}) — titlu: ${JSON.stringify((title || "").trim())}`, page.problems);
   }
@@ -57,6 +72,7 @@ console.log("=== Pagini publice ===");
     await page.goto(BASE + path, { waitUntil: "networkidle" });
     await page.waitForTimeout(400);
     if (!(await page.$("h1"))) page.problems.push("lipsește h1");
+    await anpm(page);
     await shot(page, "public" + path.replace(/\//g, "_"));
     failures += report(`${name} (${path})`, page.problems);
   }

@@ -307,6 +307,29 @@ class AnnualDeclarationIT {
     }
 
     /**
+     * QA-TRACE point 2 — the hazard asterisk of HG 856/2002 art. 4 alin. (3), on this document too.
+     * The fişa and Anexa 2 each had an assertion on it; this sheet spells the code through the same
+     * {@link WasteCodeLabel#official}, and nothing would have noticed it stop. The row tests above
+     * compare against the same helper, so a generator that dropped the star would still match them.
+     * Both codes are named here rather than taken from the fixture, whose first code happens to be
+     * hazardous.
+     */
+    @Test
+    void aHazardousCodeCarriesItsAsteriskAndAPlainOneDoesNot() throws Exception {
+        WasteCode oil = wasteCodeRepository.findByCode("13 02 08").orElseThrow();
+        WasteCode municipal = wasteCodeRepository.findByCode("20 01 01").orElseThrow();
+        assertThat(oil.isHazardous()).isTrue();
+        assertThat(municipal.isHazardous()).isFalse();
+        save(turda, oil, LocalDate.of(YEAR, 8, 20), "12.000", WasteOperation.GENERATED, null, null);
+        save(turda, municipal, LocalDate.of(YEAR, 8, 21), "8.000", WasteOperation.GENERATED, null, null);
+
+        String turdaPage = flat(secondPage());
+        assertThat(turdaPage).contains(flat("13 02 08*"));
+        assertThat(turdaPage).contains(flat("20 01 01"));
+        assertThat(turdaPage).doesNotContain(flat("20 01 01*"));
+    }
+
+    /**
      * P1.12 — the rows as printed, not as {@link AnnualDeclaration.Row} holds them. Every test above
      * reads the DTO; nothing read a figure off the page, so a generator writing "Valorificat" into
      * the "Eliminat" column would have filed a wrong declaration with the whole suite green. Whole

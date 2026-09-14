@@ -17,6 +17,11 @@ import ro.ecoregistru.audit.PendingAudit;
 import ro.ecoregistru.controller.response.AuditLogResponse;
 import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.entity.AuditLog;
+import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.entity.InternalGenerator;
+import ro.ecoregistru.entity.Partner;
+import ro.ecoregistru.entity.PartnerWorkPoint;
+import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.security.TenantContext;
 
@@ -75,7 +80,7 @@ public class AuditLogService {
         Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
 
         var rows = auditLogRepository.findAll(spec, pageable);
-        Map<UUID, String> names = resolveNames(rows.getContent());
+        Map<UUID, String> names = resolveNames(rows.getContent(), tenantId);
         return PageResponse.of(rows, row -> toResponse(row, names));
     }
 
@@ -173,7 +178,17 @@ public class AuditLogService {
             "partnerWorkPoint", "partnerWorkPoint",
             "company", "company");
 
-    private Map<UUID, String> resolveNames(List<AuditLog> rows) {
+    /**
+     * Numele se caută numai în firma care citeşte — codurile de deşeu sunt excepţia, fiindcă
+     * nomenclatorul e comun.
+     *
+     * <p>Până pe 14.09.2026 căutările erau nescopate (UNCONFIRMED-002 din auditul QA). Nu era o
+     * scurgere azi: rândurile citite sunt ale firmei, iar scrierile ei nu pot referi entităţile
+     * altcuiva. Dar bariera era <b>derivată</b> — ţinea cât timp niciun drum nu scria un id străin
+     * în jurnal —, iar o felie viitoare o putea pierde fără ca nimic să cadă. Acum e în interogare:
+     * un identificator al altei firme rămâne identificator, nu devine numele ei.
+     */
+    private Map<UUID, String> resolveNames(List<AuditLog> rows, UUID tenantId) {
         Map<String, Set<UUID>> idsByKind = new HashMap<>();
         for (AuditLog row : rows) {
             for (PendingAudit.FieldChange change : AuditChangeCodec.read(row.getChanges())) {
@@ -188,16 +203,21 @@ public class AuditLogService {
         Map<UUID, String> names = new HashMap<>();
         lookup(names, idsByKind.get("wasteCode"), wasteCodeRepository::findAllById,
                 c -> c.getId(), c -> c.getCode());
-        lookup(names, idsByKind.get("partner"), partnerRepository::findAllById,
-                p -> p.getId(), p -> p.getName());
-        lookup(names, idsByKind.get("workPoint"), workPointRepository::findAllById,
-                w -> w.getId(), w -> w.getName());
-        lookup(names, idsByKind.get("internalGenerator"), internalGeneratorRepository::findAllById,
-                g -> g.getId(), g -> g.getName());
-        lookup(names, idsByKind.get("partnerWorkPoint"), partnerWorkPointRepository::findAllById,
-                w -> w.getId(), w -> w.getName());
-        lookup(names, idsByKind.get("company"), companyRepository::findAllById,
-                c -> c.getId(), c -> c.getName());
+        lookup(names, idsByKind.get("partner"),
+                ids -> partnerRepository.findAllByIdInAndCompany_Id(ids, tenantId),
+                Partner::getId, Partner::getName);
+        lookup(names, idsByKind.get("workPoint"),
+                ids -> workPointRepository.findAllByIdInAndCompany_Id(ids, tenantId),
+                WorkPoint::getId, WorkPoint::getName);
+        lookup(names, idsByKind.get("internalGenerator"),
+                ids -> internalGeneratorRepository.findAllByIdInAndCompany_Id(ids, tenantId),
+                InternalGenerator::getId, InternalGenerator::getName);
+        lookup(names, idsByKind.get("partnerWorkPoint"),
+                ids -> partnerWorkPointRepository.findAllByIdInAndPartner_Company_Id(ids, tenantId),
+                PartnerWorkPoint::getId, PartnerWorkPoint::getName);
+        lookup(names, idsByKind.get("company"),
+                ids -> ids.contains(tenantId) ? companyRepository.findAllById(List.of(tenantId)) : List.of(),
+                Company::getId, Company::getName);
         return names;
     }
 
@@ -215,7 +235,7 @@ public class AuditLogService {
 
     /** O interogare per tabelă, nu una per rând: o pagină de jurnal costă cel mult şase. */
     private <T> void lookup(Map<UUID, String> names, Set<UUID> ids,
-                            Function<Iterable<UUID>, List<T>> finder,
+                            Function<Set<UUID>, List<T>> finder,
                             Function<T, UUID> idOf, Function<T, String> nameOf) {
         if (ids == null || ids.isEmpty()) {
             return;

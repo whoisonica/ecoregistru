@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import ro.ecoregistru.audit.AuditChangeCodec;
+import ro.ecoregistru.audit.PendingAudit;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
@@ -22,9 +24,12 @@ import ro.ecoregistru.service.CloudinaryStorageService;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static ro.ecoregistru.Golden.flat;
+import static ro.ecoregistru.Golden.pdfText;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -34,6 +39,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -79,6 +85,11 @@ class TenantIsolationMatrixIT {
     @Autowired DriverRepository driverRepository;
     @Autowired InternalGeneratorRepository internalGeneratorRepository;
     @Autowired AnalysisBulletinRepository analysisBulletinRepository;
+    @Autowired ReportingDeadlineRepository deadlineRepository;
+    @Autowired MonthlyEvidenceRepository evidenceRepository;
+    @Autowired PackagingMarketEntryRepository marketEntryRepository;
+    @Autowired PartnerWorkPointRepository partnerWorkPointRepository;
+    @Autowired AuditLogRepository auditLogRepository;
 
     @MockBean CloudinaryStorageService storageService;
 
@@ -443,6 +454,219 @@ class TenantIsolationMatrixIT {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Termenele, evidenţa şi ambalajele — rândurile rămase ⬜ în matricea din QA-PLAN.md
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Închiderea şi redeschiderea unui termen al celuilalt. Lista era probată; drumul cu id în cale
+     * nu — iar un termen închis de altcineva e o alertă care nu mai pleacă, adică o amendă.
+     */
+    @Test
+    void anotherTenantsDeadlineCannotBeCompletedOrReopened() throws Exception {
+        int next = LocalDate.now().getYear() + 1;
+        ReportingDeadline open = deadline(b, ReportType.SIM_ANNUAL, LocalDate.of(next, 3, 15),
+                DeadlineStatus.UPCOMING, null);
+        ReportingDeadline done = deadline(b, ReportType.PACKAGING_ANNUAL, LocalDate.of(next, 2, 25),
+                DeadlineStatus.DONE, "Depus de Beta");
+
+        mockMvc.perform(as(post("/api/v1/deadlines/" + open.getId() + "/complete"), a)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"note":"Inchis de Alfa"}
+                                """))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(as(post("/api/v1/deadlines/" + done.getId() + "/reopen"), a))
+                .andExpect(status().isNotFound());
+
+        ReportingDeadline stillOpen = deadlineRepository.findById(open.getId()).orElseThrow();
+        assertThat(stillOpen.getStatus()).isEqualTo(DeadlineStatus.UPCOMING);
+        assertThat(stillOpen.getCompletedAt()).isNull();
+        assertThat(stillOpen.getCompletionNote()).isNull();
+        ReportingDeadline stillDone = deadlineRepository.findById(done.getId()).orElseThrow();
+        assertThat(stillDone.getStatus()).isEqualTo(DeadlineStatus.DONE);
+        assertThat(stillDone.getCompletionNote()).isEqualTo("Depus de Beta");
+
+        // Controlul: aceeaşi cerere, cu tokenul proprietarului, trece — deci 404-ul de mai sus e
+        // graniţa firmei, nu o cale greşită sau un id care nu există.
+        mockMvc.perform(as(post("/api/v1/deadlines/" + done.getId() + "/reopen"), b))
+                .andExpect(status().isOk());
+    }
+
+    /**
+     * Evidenţa. N-are id în cale, dar are {@code workPointId} în parametri — pe listă şi pe cele două
+     * documente care se depun. Punctul de lucru al lui B trebuie să dea un document gol, nu fişa lui;
+     * iar regenerarea lui A nu are voie să atingă rândurile lui B, fiindcă o regenerare şterge şi
+     * rescrie.
+     */
+    @Test
+    void theEvidenceOfAnotherTenantIsNeverReadAndNeverRewritten() throws Exception {
+        String year = String.valueOf(LocalDate.now().getYear());
+        String foreignWorkPoint = b.workPoint().getId().toString();
+        mockMvc.perform(as(post("/api/v1/evidences/regenerate").param("year", year), b))
+                .andExpect(status().isOk());
+        List<UUID> before = evidenceIds(b, year);
+        assertThat(before).as("B are ce să scape: evidenţa celor 42 kg").isNotEmpty();
+
+        mockMvc.perform(as(get("/api/v1/evidences").param("year", year)
+                        .param("workPointId", foreignWorkPoint), a))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0))
+                .andExpect(content().string(not(containsString("Beta"))));
+
+        for (String document : new String[]{"/api/v1/evidences/anexa1", "/api/v1/evidences/declaratie-anuala"}) {
+            byte[] foreign = mockMvc.perform(as(get(document).param("year", year)
+                            .param("workPointId", foreignWorkPoint), a))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsByteArray();
+            assertThat(pdfText(foreign)).as(document + " cerut pe punctul de lucru al lui B")
+                    .doesNotContain("Beta");
+
+            // Controlul: fără filtru, documentul lui A chiar poartă un punct de lucru tipărit —
+            // altfel un PDF gol ar trece verificarea de mai sus la fel de bine.
+            byte[] own = mockMvc.perform(as(get(document).param("year", year), a))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsByteArray();
+            assertThat(flat(pdfText(own))).as(document + " al lui A")
+                    .contains(flat("PL Alfa"))
+                    .doesNotContain("Beta");
+        }
+
+        mockMvc.perform(as(post("/api/v1/evidences/regenerate").param("year", year), a))
+                .andExpect(status().isOk());
+        assertThat(evidenceIds(b, year))
+                .as("regenerarea lui A nu şterge şi nu rescrie niciun rând al lui B")
+                .containsExactlyInAnyOrderElementsOf(before);
+    }
+
+    /**
+     * Ambalajele. Toate cele nouă rute citesc anul din {@code TenantContext}, două primesc şi un
+     * punct de lucru, iar una scrie: suprascrierea tabelului 1, care se depune la autoritate.
+     * Cifrele lui B sunt alese cu zecimale ({@code 777.123}, {@code 4321.987}), ca să nu poată
+     * apărea din întâmplare într-un identificator.
+     */
+    @Test
+    void thePackagingOfAnotherTenantIsNeverReadAndNeverRewritten() throws Exception {
+        int yearValue = LocalDate.now().getYear();
+        String year = String.valueOf(yearValue);
+        WasteMovement packaging = movementRepository.save(WasteMovement.builder()
+                .company(b.company()).workPoint(b.workPoint()).date(LocalDate.now())
+                .wasteCode(wasteCodeRepository.findByCode("15 01 01").orElseThrow())
+                .quantity(new BigDecimal("777.123")).unit(Unit.KG).operation(WasteOperation.GENERATED)
+                .packagingOnMarket(true).packagingCategory(PackagingCategory.SECONDARY)
+                .deleted(false).createdBy(b.admin().getId()).build());
+        PackagingMarketEntry override = marketEntryRepository.save(PackagingMarketEntry.builder()
+                .company(b.company()).year(yearValue).material(PackagingMaterial.HARTIE_CARTON)
+                .secondaryTotal(new BigDecimal("4321.987")).updatedAt(Instant.now()).build());
+
+        // Controlul: B îşi vede rândurile, deci detectorul de mai jos chiar le-ar prinde.
+        mockMvc.perform(as(get("/api/v1/packaging/movements").param("year", year), b))
+                .andExpect(content().string(containsString(packaging.getId().toString())));
+        mockMvc.perform(as(get("/api/v1/packaging/market").param("year", year), b))
+                .andExpect(content().string(containsString("4321.987")));
+
+        for (String path : new String[]{"/movements", "/table1", "/handovers", "/unclassified", "/market", "/anexa3"}) {
+            mockMvc.perform(as(get("/api/v1/packaging" + path).param("year", year), a))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(not(containsString(packaging.getId().toString()))))
+                    .andExpect(content().string(not(containsString("777.123"))))
+                    .andExpect(content().string(not(containsString("4321.987"))))
+                    .andExpect(content().string(not(containsString("Beta"))));
+        }
+
+        for (String path : new String[]{"/anexa3", "/anexa3/download"}) {
+            mockMvc.perform(as(get("/api/v1/packaging" + path).param("year", year)
+                            .param("workPointId", b.workPoint().getId().toString()), a))
+                    .andExpect(status().isNotFound());
+        }
+
+        byte[] declaration = mockMvc.perform(as(get("/api/v1/packaging/anexa1")
+                        .param("year", year).param("format", "pdf"), a))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(flat(pdfText(declaration)))
+                .doesNotContain("Beta")
+                .doesNotContain("4321")
+                .doesNotContain("777");
+
+        // Scrierea: A îşi pune o suprascriere pe acelaşi material şi an, apoi o goleşte — ramura care
+        // şterge. Rândul lui B trebuie să rămână, cu cifra lui.
+        mockMvc.perform(as(put("/api/v1/packaging/market"), a)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"material":"HARTIE_CARTON","year":%d,"secondaryTotal":1}
+                                """.formatted(yearValue)))
+                .andExpect(status().isOk());
+        mockMvc.perform(as(put("/api/v1/packaging/market"), a)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"material":"HARTIE_CARTON","year":%d}
+                                """.formatted(yearValue)))
+                .andExpect(status().isOk());
+
+        assertThat(marketEntryRepository.findById(override.getId()).orElseThrow().getSecondaryTotal())
+                .isEqualByComparingTo("4321.987");
+        assertThat(marketEntryRepository.findAllByCompany_IdAndYear(a.company().getId(), yearValue))
+                .as("A şi-a golit propria suprascriere")
+                .isEmpty();
+    }
+
+    /**
+     * UNCONFIRMED-002. Jurnalul scrie identificatori şi pune numele la citire. Niciun drum al
+     * aplicaţiei nu poate scrie azi un id străin într-un rând de jurnal — de aceea rândul se scrie
+     * aici direct în bază: proba e despre ce se întâmplă <em>dacă</em> ajunge acolo. Numele celuilalt
+     * nu are voie să apară; identificatorul rămâne identificator.
+     */
+    @Test
+    void theJournalNeverNamesAnotherTenantsRows() throws Exception {
+        PartnerWorkPoint ourDepot = partnerWorkPointRepository.save(PartnerWorkPoint.builder()
+                .partner(a.partner()).name("Depozit Alfa").address("Str. Depozitului 1")
+                .active(true).createdAt(Instant.now()).build());
+        PartnerWorkPoint theirDepot = partnerWorkPointRepository.save(PartnerWorkPoint.builder()
+                .partner(b.partner()).name("Depozit Beta").address("Str. Depozitului 2")
+                .active(true).createdAt(Instant.now()).build());
+        auditLogRepository.save(AuditLog.builder()
+                .company(a.company()).entityType("WasteMovement").entityId(a.movement().getId())
+                .action(AuditAction.UPDATE).label("Mişcare Alfa")
+                .changes(AuditChangeCodec.write(List.of(
+                        change("partner", a.partner().getId(), b.partner().getId()),
+                        change("workPoint", a.workPoint().getId(), b.workPoint().getId()),
+                        change("internalGenerator", a.generator().getId(), b.generator().getId()),
+                        change("partnerWorkPoint", ourDepot.getId(), theirDepot.getId()),
+                        change("company", a.company().getId(), b.company().getId()))))
+                .actorId(a.admin().getId()).actorEmail(a.admin().getEmail()).actorRole(Role.ADMIN)
+                .occurredAt(Instant.now()).build());
+
+        String body = mockMvc.perform(as(get("/api/v1/audit-log")
+                        .param("entityId", a.movement().getId().toString()), a))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(body).as("controlul: identificatorii lui A chiar se rezolvă în nume")
+                .contains("Partener Alfa", "PL Alfa", "Generator Alfa", "Depozit Alfa", "Alfa Salubritate SRL");
+        assertThat(body).as("niciun nume al lui B").doesNotContain("Beta");
+        assertThat(body).as("identificatorul străin se afişează ca atare")
+                .contains(b.partner().getId().toString(), b.company().getId().toString());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private ReportingDeadline deadline(Tenant t, ReportType type, LocalDate dueDate,
+                                       DeadlineStatus status, String note) {
+        return deadlineRepository.save(ReportingDeadline.builder()
+                .company(t.company()).reportType(type).dueDate(dueDate).status(status)
+                .completedAt(status == DeadlineStatus.DONE ? Instant.now() : null)
+                .completionNote(note).warned7Days(false).warned1Day(false)
+                .createdAt(Instant.now()).build());
+    }
+
+    private List<UUID> evidenceIds(Tenant t, String year) {
+        return evidenceRepository.findByCompany_IdAndYear(t.company().getId(), Integer.parseInt(year))
+                .stream().map(MonthlyEvidence::getId).toList();
+    }
+
+    private static PendingAudit.FieldChange change(String field, UUID from, UUID to) {
+        return new PendingAudit.FieldChange(field, from.toString(), to.toString());
+    }
 
     private String movementJson(UUID workPointId, UUID partnerId, UUID generatorId) {
         return """

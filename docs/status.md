@@ -3,7 +3,17 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 14.09.2026, 12:40.** 🔬 **Auditul QA a închis golurile din `QA-TRACE.md`, P2.15
+> **Unde suntem — 14.09.2026, după-amiaza.** 🔬 **Auditul QA și-a completat matricea de izolare între
+> firme** — termenele (închidere, redeschidere), evidența (lista, fișa și declarația cerute cu punctul de
+> lucru al altei firme, plus regenerarea) și ambalajele (toate citirile, anexa 3 și suprascrierea
+> tabelului 1) nu aveau încă test, deși codul era corect. Jurnalul de audit își caută acum numele
+> numai în firma care citește, nu doar prin construcție. Plus: asteriscul de periculozitate pe
+> declarația anuală, textul mesajului de la dosar și „ANPM" pe ecrane — ultimul verificat pe toate
+> ecranele din proba de interfață 1. Fiecare regulă a fost **scoasă din cod** ca să se vadă testul
+> căzând. **496 de teste, 56 de clase, 0 eșecuri, 0 dezactivate.** ⬜ Necommis, nedeployat —
+> producția rămâne `api` **v59**, `app` **v50**.
+>
+> **Unde eram — 14.09.2026, 12:40.** 🔬 **Auditul QA a închis golurile din `QA-TRACE.md`, P2.15
 > (ecranul) și P2.16 (performanța).** Dimineața: cele 6 goluri ale matricei cerință → test, închise
 > fiecare cu proba negativă; probele de ecran 13/14/15 rulate prima dată, cu **BUG-013/014/015**
 > găsite și reparate (api **v58**, app **v50**, 11:51). Apoi suita de interfață 1–15 verde, plus proba

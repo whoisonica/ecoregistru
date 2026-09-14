@@ -32,6 +32,8 @@ import java.util.zip.ZipInputStream;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -203,7 +205,14 @@ class AuditFileIT {
                         .param("year", "2026")
                         .param("years", "6")
                         .header("Authorization", "Bearer " + adminToken))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                // QA-TRACE point 11: the text, not only the code. It used to read "cel mult 3 ani",
+                // presenting art. 48 alin. (5)'s floor as a ceiling — wrong twice, since the range
+                // had grown to five. Five is our limit; three is the law's minimum.
+                .andExpect(jsonPath("$['error-message']", containsString("cel mult 5 ani")))
+                .andExpect(jsonPath("$['error-message']", containsString("3 ani")))
+                .andExpect(jsonPath("$['error-message']", containsString("art. 48 alin. (5)")))
+                .andExpect(jsonPath("$['error-message']", not(containsString("cel mult 3"))));
     }
 
     @Test
