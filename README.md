@@ -180,8 +180,8 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Eleven suites, 273
-checks: every screen opens clean, the action column stays reachable when a table scrolls, search
+download — against the local dev server and a backend on the `dev` profile. Sixteen suites, all run
+green on 14.09.2026: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
 it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started

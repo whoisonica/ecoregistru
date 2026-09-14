@@ -16,7 +16,9 @@ nerezolvat şi pagina rămâne albă, iar fiecare probă cade la login pe `#logi
 ✅ **Buletinele de analiză (G-7) au probă din 14.09.2026 — `16-buletine.mjs`**, pe tot ce se decide
 înainte de urcare. ⬜ **Două verificări rămân nerulate, şi proba le scrie ca atare:** istoricul şi
 stingerea badge-ului cer o încărcare reuşită, iar fişierul urcă direct la Cloudinary — fără
-`CLOUDINARY_URL` pe backendul local nu există cale. Textul de mai jos e lista de pe 11.09.
+`CLOUDINARY_URL` pe backendul local nu există cale. ✅ **Acceptate de proprietar la închiderea auditului
+QA (14.09.2026):** regula badge-ului e ţinută de `MirrorWasteCodeIT`, iar pe ecran lipseşte doar drumul
+de după urcare. Se rulează dacă apare `CLOUDINARY_URL` în mediul de dev. Textul de mai jos e lista de pe 11.09.
 
 Felia s-a livrat cu 11
 teste de backend şi **fără probă de ecran** — ecranul din **Setări → Buletine de analiză** n-a fost

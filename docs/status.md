@@ -23,7 +23,9 @@ rulează local și are testele verzi.
 > iar dosarul de control câte una pe mișcare. Reparat cu `default_batch_fetch_size` și o interogare pe
 > an în `AuditFileService`: acum 10/10, 5/5, 152/152. **491 de teste, 56 de clase, 0 eșecuri,
 > 0 dezactivate.** ✅ **Deployat 14.09, 12:38** — `api` **v59** (`b7e998e`), fără migrare (`V39`);
-> `app` rămâne **v50**. ⬜ Deschis: UNCONFIRMED-004 (dosarul construit în memorie, candidat pentru R14).
+> `app` rămâne **v50**. ~~⬜ Deschis: UNCONFIRMED-004 (dosarul construit în memorie, candidat pentru R14).~~
+> ✅ Închis 14.09 după-amiaza: heap-ul e plafonat la 300 MB, iar episodul R14 din 11.09 n-a avut nicio
+> cerere de dosar — memoria depășită era din afara heap-ului.
 >
 > **Unde eram — 13.09.2026, noaptea târziu.** 🔬 **Auditul QA a închis perimetrul și P1.13.**
 > Documentația API-ului e oprită în producție (pornită doar pe profilul `dev`), o adresă inexistentă
