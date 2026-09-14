@@ -215,14 +215,17 @@ export function CompanyDetailsSection() {
                     : p.empty
                 }
               />
-              <Field
-                label={strings.packagingOperatorRole.label}
-                value={
-                  company.packagingOperatorRole
-                    ? strings.packagingOperatorRole[company.packagingOperatorRole]
-                    : p.empty
-                }
-              />
+              {/* Calitatea decide tabelul Anexei 3 Ambalaje, pe care un generator n-o depune. */}
+              {company.type !== "GENERATOR" && (
+                <Field
+                  label={strings.packagingOperatorRole.label}
+                  value={
+                    company.packagingOperatorRole
+                      ? strings.packagingOperatorRole[company.packagingOperatorRole]
+                      : p.empty
+                  }
+                />
+              )}
             </Group>
 
             <Group title={c.groupContact}>

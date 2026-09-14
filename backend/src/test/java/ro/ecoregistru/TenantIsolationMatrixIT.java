@@ -551,7 +551,7 @@ class TenantIsolationMatrixIT {
         mockMvc.perform(as(get("/api/v1/packaging/market").param("year", year), b))
                 .andExpect(content().string(containsString("4321.987")));
 
-        for (String path : new String[]{"/movements", "/table1", "/handovers", "/unclassified", "/market", "/anexa3"}) {
+        for (String path : new String[]{"/movements", "/table1", "/handovers", "/unclassified", "/market"}) {
             mockMvc.perform(as(get("/api/v1/packaging" + path).param("year", year), a))
                     .andExpect(status().isOk())
                     .andExpect(content().string(not(containsString(packaging.getId().toString()))))
@@ -560,10 +560,29 @@ class TenantIsolationMatrixIT {
                     .andExpect(content().string(not(containsString("Beta"))));
         }
 
-        for (String path : new String[]{"/anexa3", "/anexa3/download"}) {
-            mockMvc.perform(as(get("/api/v1/packaging" + path).param("year", year)
-                            .param("workPointId", b.workPoint().getId().toString()), a))
-                    .andExpect(status().isNotFound());
+        // Anexa 3 Ambalaje e refuzată unui generator din 15.09.2026 (specialista: generatorii au doar
+        // ieşiri), iar refuzul ăla ar trece înaintea graniţei şi ar ascunde-o. Graniţa se probează deci
+        // pe un A care chiar ajunge la document.
+        Company alfa = a.company();
+        CompanyType before = alfa.getType();
+        try {
+            alfa.setType(CompanyType.COLLECTOR);
+            companyRepository.save(alfa);
+
+            mockMvc.perform(as(get("/api/v1/packaging/anexa3").param("year", year), a))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(not(containsString(packaging.getId().toString()))))
+                    .andExpect(content().string(not(containsString("777.123"))))
+                    .andExpect(content().string(not(containsString("Beta"))));
+
+            for (String path : new String[]{"/anexa3", "/anexa3/download"}) {
+                mockMvc.perform(as(get("/api/v1/packaging" + path).param("year", year)
+                                .param("workPointId", b.workPoint().getId().toString()), a))
+                        .andExpect(status().isNotFound());
+            }
+        } finally {
+            alfa.setType(before);
+            companyRepository.save(alfa);
         }
 
         byte[] declaration = mockMvc.perform(as(get("/api/v1/packaging/anexa1")

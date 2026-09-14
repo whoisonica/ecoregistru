@@ -106,6 +106,8 @@ public enum ErrorMessageEnum {
     ANEXA2_MEDICAL_WASTE("anexa2.medical", "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 din HG 1061/2008 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul, deci nu-l generăm în locul lui."),
     // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori".
     ANEXA2_COLLECTORS_ONLY("anexa2.collectors.only", "Anexa 2 (formularul de transport pentru deșeuri periculoase) o întocmește colectorul care preia deșeul. Contul e de generator, deci formularul nu se tipărește de aici."),
+    // Aceeași seară: „generatorii au doar ieșiri" — deci n-au ambalaje preluate de la terți de raportat.
+    ANEXA3_PACKAGING_COLLECTORS_ONLY("anexa3.packaging.collectors.only", "Anexa 3 la Ordinul 794/2012 raportează ambalajele preluate de la terți, deci o depun colectorii, comercianții și reciclatorii. Contul e de generator, deci raportul nu se întocmește de aici."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),

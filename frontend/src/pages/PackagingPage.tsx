@@ -23,6 +23,7 @@ import type {
   WasteMovement,
 } from "@/lib/types";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
+import { useCurrentCompany } from "@/hooks/useCompanies";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate, withCount } from "@/lib/utils";
@@ -167,6 +168,10 @@ export function PackagingPage() {
   const { user } = useAuth();
   const canWrite =
     roleCanWrite(user?.role);
+  // Anexa 3 raportează ce s-a preluat de la terți, iar generatorii au doar ieșiri (specialista,
+  // 14.09.2026). Cât timp firma nu s-a încărcat, secțiunea nu apare — ca butonul Anexei 2.
+  const { data: company } = useCurrentCompany();
+  const takesOver = company != null && company.type !== "GENERATOR";
 
   const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: movements, isLoading: loadingMovements } = usePackagingMovements(year);
@@ -415,7 +420,7 @@ export function PackagingPage() {
           { id: "registru", label: t.navRegister },
           { id: "tabelul-1", label: t.navTable1 },
           { id: "tabelul-2", label: t.navTable2 },
-          { id: "anexa-3", label: t.navAnexa3 },
+          ...(takesOver ? [{ id: "anexa-3", label: t.navAnexa3 }] : []),
         ]}
       />
 
@@ -775,7 +780,7 @@ export function PackagingPage() {
         </div>
       </section>
 
-      <Anexa3Section year={year} />
+      {takesOver && <Anexa3Section year={year} />}
     </div>
   );
 }

@@ -632,6 +632,9 @@ export function ClientsPage() {
                 <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
               </div>
             </div>
+            {/* Calitatea decide tabelul Anexei 3 Ambalaje — ambalaje preluate de la terți, pe care un
+                generator nu le are (specialista, 14.09.2026). */}
+            {type !== "GENERATOR" && (
             <div>
               <Label htmlFor="c-pkg-role">{strings.packagingOperatorRole.label}</Label>
               <Select
@@ -651,6 +654,7 @@ export function ClientsPage() {
               </Select>
               <p className="mt-1 text-xs text-content-muted">{strings.packagingOperatorRole.hint}</p>
             </div>
+            )}
             <div className="rounded-md border border-line bg-surface-muted p-3">
               <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
               <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>

@@ -50,7 +50,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static ro.ecoregistru.Golden.cells;
 import static ro.ecoregistru.Golden.flat;
 import static ro.ecoregistru.Golden.rowOf;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -139,6 +142,41 @@ class PackagingAnexa3IT {
                 .company(company).name("Reciclator Hartie SA").cui("RO333" + suffix.substring(0, 3))
                 .type(PartnerType.RECOVERER).client(true).active(true)
                 .createdAt(Instant.now()).build());
+    }
+
+    // ------------------------------------------------------------------ who files it
+
+    /**
+     * Specialista, 14.09.2026: generatorii au doar ieşiri. Acelaşi cont, care la colector primeşte
+     * raportul, e refuzat cu codul lui imediat ce firma e generator, pe previzualizare şi pe descărcare.
+     */
+    @Test
+    void aGeneratorAccountGetsNoAnexa3() throws Exception {
+        CompanyType before = company.getType();
+        try {
+            company.setType(CompanyType.GENERATOR);
+            companyRepository.save(company);
+
+            mockMvc.perform(get("/api/v1/packaging/anexa3")
+                            .param("year", String.valueOf(YEAR))
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$['error-code']", is("anexa3.packaging.collectors.only")));
+            mockMvc.perform(get("/api/v1/packaging/anexa3/download")
+                            .param("year", String.valueOf(YEAR))
+                            .param("format", "xls")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$['error-code']", is("anexa3.packaging.collectors.only")));
+        } finally {
+            company.setType(before);
+            companyRepository.save(company);
+        }
+        // Controlul pozitiv: înapoi la tipul de colector, aceeaşi cerere trece.
+        mockMvc.perform(get("/api/v1/packaging/anexa3")
+                        .param("year", String.valueOf(YEAR))
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
     }
 
     // ------------------------------------------------------------------ the left half
