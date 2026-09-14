@@ -276,7 +276,8 @@ public class WasteMovementService {
     @Transactional(readOnly = true)
     public PageResponse<WasteMovementResponse> list(Integer year, Integer month, UUID workPointId,
                                                     UUID wasteCodeId, boolean leftSite,
-                                                    boolean missingOperationCode, String search,
+                                                    boolean missingOperationCode, WasteRegister register,
+                                                    String search,
                                                     int page, int size, String sortKey, boolean ascending) {
         UUID tenantId = TenantContext.require();
         LocalDate fromDate = null;
@@ -303,7 +304,7 @@ public class WasteMovementService {
         }
 
         Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, wasteCodeId,
-                fromDate, toDate, leftSite, missingOperationCode);
+                fromDate, toDate, leftSite, missingOperationCode, register);
         Specification<WasteMovement> spec = ordered(withSearch(filter, search), sortKey, ascending);
         Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
 
@@ -468,7 +469,8 @@ public class WasteMovementService {
      */
     private Specification<WasteMovement> buildFilter(UUID tenantId, UUID workPointId,
                                                      UUID wasteCodeId, LocalDate fromDate, LocalDate toDate,
-                                                     boolean leftSite, boolean missingOperationCode) {
+                                                     boolean leftSite, boolean missingOperationCode,
+                                                     WasteRegister register) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
             predicates.add(cb.equal(root.get("company").get("id"), tenantId));
@@ -500,6 +502,10 @@ public class WasteMovementService {
             // „Arată-mi doar ce blochează depunerea", trimis prin adresă de pe Panou.
             if (missingOperationCode) {
                 predicates.add(cb.isNull(root.get("operationCode")));
+            }
+            // Ecranul „Generare" (Anexa 1) și „Intrări și ieșiri" (art. 48) — proprietarul, 14.09.2026.
+            if (register != null) {
+                predicates.add(cb.equal(root.get("register"), register));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

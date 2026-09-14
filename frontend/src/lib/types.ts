@@ -831,6 +831,8 @@ export interface MovementFilters {
    * tocmai rândul pe care îl caută cineva care vrea să-l repare.
    */
   leftSite?: boolean;
+  /** Numai rândurile unui registru — ecranul „Generare" (Anexa 1) sau „Intrări și ieșiri" (art. 48). */
+  register?: WasteRegister;
   /** Numai rândurile fără cod R/D — „arată-mi ce blochează depunerea", trimis de pe Panou. */
   missingOperationCode?: boolean;
 }

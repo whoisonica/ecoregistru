@@ -22,6 +22,7 @@ import { companiesKey, useCompanies, useCurrentCompany } from "@/hooks/useCompan
 import { canWrite, isMultiCompany } from "@/lib/roles";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
+import { MOVEMENTS_PATH, registersFor } from "@/lib/movementScreens";
 import { BrandName } from "@/components/BrandName";
 import { cn } from "@/lib/utils";
 import {
@@ -311,21 +312,24 @@ export function Layout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  // Un generator n-are intrări de la terți, deci ecranul lui se numește după ce are: ieșiri
-  // (specialista, 14.09.2026). Firma se cere doar când există una aleasă.
+  // Mișcările se văd după registru: „Generare" la generator, „Intrări și ieșiri" la colector,
+  // amândouă la „Generator și colector" (proprietarul, 14.09.2026). Până se știe firma rămâne o
+  // singură intrare, „Mișcări", care duce pe ecranul potrivit. Firma se cere doar când există una aleasă.
   const { data: company } = useCurrentCompany(!isMultiCompany(user?.role) || Boolean(tenantId));
   const groups = navGroups
     .filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role))
-    .map((g) =>
-      company?.type === "GENERATOR"
-        ? {
-            ...g,
-            items: g.items.map((i) =>
-              i.to === "/miscari" ? { ...i, label: strings.nav.movementsGenerator } : i
-            ),
-          }
-        : g
-    );
+    .map((g) => ({
+      ...g,
+      items: g.items.flatMap((i) =>
+        i.to === "/miscari" && company
+          ? registersFor(company.type).map((r) => ({
+              ...i,
+              to: MOVEMENTS_PATH[r],
+              label: r === "ANEXA_1" ? strings.nav.movementsGenerator : strings.nav.movementsCollector,
+            }))
+          : [i]
+      ),
+    }));
 
   function handleLogout() {
     logout();

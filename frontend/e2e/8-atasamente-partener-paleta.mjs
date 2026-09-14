@@ -263,7 +263,8 @@ const dupaActiune = await page.evaluate(() => ({
   adresa: location.search,
   dialog: !!document.querySelector('div[role="dialog"][aria-modal="true"]'),
 }));
-check("acțiunea duce pe Mișcări", dupaActiune.cale === "/miscari", dupaActiune.cale);
+// Firma demo e „Generator și colector", deci `/miscari?nou=1` ajunge pe primul ei ecran, „Generare".
+check("acțiunea duce pe Generare", dupaActiune.cale === "/generare", dupaActiune.cale);
 check("cu formularul deschis", dupaActiune.dialog);
 check("iar `?nou=1` se consumă", !dupaActiune.adresa.includes("nou"), dupaActiune.adresa || "(gol)");
 

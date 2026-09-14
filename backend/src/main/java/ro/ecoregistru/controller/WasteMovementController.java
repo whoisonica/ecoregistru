@@ -19,6 +19,7 @@ import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.MovementSummaryResponse;
 import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
+import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.service.WasteMovementService;
 
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,9 @@ public class WasteMovementController {
      *                             question, and not the same as „needs an R/D code"
      * @param missingOperationCode only the rows without an R/D code: „arată-mi ce blochează
      *                             depunerea", sent from the dashboard
-     * @param sort   a column key from the table header; anything unknown falls back to the default
+     * @param register             only one register's rows: „Generare" asks for {@code ANEXA_1},
+     *                             „Intrări și ieșiri" for {@code ART_48}
+     * @param sort  a column key from the table header; anything unknown falls back to the default
      *               order rather than being refused, because a stale bookmark should open a table,
      *               not an error
      */
@@ -64,13 +67,14 @@ public class WasteMovementController {
             @RequestParam(required = false) UUID wasteCodeId,
             @RequestParam(defaultValue = "false") boolean leftSite,
             @RequestParam(defaultValue = "false") boolean missingOperationCode,
+            @RequestParam(required = false) WasteRegister register,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "false") boolean asc) {
         return movementService.list(year, month, workPointId, wasteCodeId, leftSite,
-                missingOperationCode, search, page, size, sort, asc);
+                missingOperationCode, register, search, page, size, sort, asc);
     }
 
     /**

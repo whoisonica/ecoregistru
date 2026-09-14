@@ -46,6 +46,7 @@ export function useMovements(filters: MovementFilters, table: RemoteTableParams)
       if (filters.wasteCodeId) params.wasteCodeId = filters.wasteCodeId;
       if (filters.leftSite) params.leftSite = true;
       if (filters.missingOperationCode) params.missingOperationCode = true;
+      if (filters.register) params.register = filters.register;
       if (table.search) params.search = table.search;
       if (table.sort) {
         params.sort = table.sort;

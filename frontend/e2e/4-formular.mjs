@@ -15,11 +15,12 @@ const check = (n, ok, d = "") => {
 // jos cer un rând adevărat: pe o bază nouă, într-o lună fără mişcări, primul rând e mesajul de gol
 // (o singură celulă) şi `td:nth-child(2)` se aştepta 30 s până cădea — 14.09.2026, de două ori.
 const AN = new Date().getFullYear();
-await page.goto(BASE + `/miscari?luna=${AN}`, { waitUntil: "networkidle" });
+// Ecranul „Generare": rândurile seedate sunt aproape toate deşeul firmei demo (Anexa 1).
+await page.goto(BASE + `/generare?luna=${AN}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
 
 // ------------------------------------------------------------ SECȚIUNI
-await page.click('button:has-text("Adaugă mișcare")');
+await page.click('button:has-text("Adaugă generare")');
 await page.waitForTimeout(600);
 const sections = await page.$$eval('div[role="dialog"] section h3', (h) => h.map((x) => x.textContent.trim()));
 check("formularul are secțiuni titrate", sections.length === 8, sections.join(" · "));

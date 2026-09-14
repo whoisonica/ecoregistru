@@ -27,8 +27,10 @@ export const strings = {
     packaging: "Ambalaje",
     dashboard: "Panou",
     movements: "Mișcări",
-    // La un generator nu intră nimic de la terți: ecranul se numește după ce are (specialista, 14.09.2026).
-    movementsGenerator: "Ieșiri",
+    // Două ecrane, după registru (proprietarul, 14.09.2026): generatorul vede „Generare", colectorul
+    // „Intrări și ieșiri", iar „Generator și colector" pe amândouă. Vezi `lib/movementScreens.ts`.
+    movementsGenerator: "Generare",
+    movementsCollector: "Intrări și ieșiri",
     evidences: "Evidențe",
     partners: "Parteneri",
     deadlines: "Termene",
@@ -268,18 +270,23 @@ export const strings = {
   },
 
   movements: {
-    title: "Mișcări de deșeuri",
-    subtitle: "Intrările și ieșirile de deșeuri, pe puncte de lucru și luni.",
+    // „Intrări și ieșiri" — registrul art. 48: marfa preluată de la terți și ce pleacă din ea.
+    title: "Intrări și ieșiri de deșeuri",
+    subtitle: "Deșeurile preluate de la terți și cele predate mai departe (registrul art. 48), pe puncte de lucru și luni.",
     add: "Adaugă mișcare",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
-    // Specialista, 14.09.2026: „la generatori mișcări va fi redenumit în ieșiri". Rămâne același
-    // ecran și aceeași adresă; se schimbă doar cum îi spune omul care nu preia deșeu de la nimeni.
-    generatorTitle: "Ieșiri de deșeuri",
-    generatorSubtitle: "Deșeurile generate și predate, pe puncte de lucru și luni.",
-    generatorAdd: "Adaugă ieșire",
-    generatorAddTitle: "Adaugă ieșire",
-    generatorEditTitle: "Editează ieșirea",
+    // Colectorul pur nu vede „Generare" (proprietarul, 14.09.2026), dar legea îi cere Anexa 1 pentru
+    // deșeul propriu (HG 856/2002 art. 2 alin. (1)) — deci ecranul spune unde se trece.
+    collectorOwnWasteHint:
+      "Deșeul generat în activitatea proprie a firmei (de exemplu, refuzul de la sortare) intră pe fișa Anexa 1 și se înregistrează la „Generare”. Ecranul apare când firma e de tipul „Generator și colector”.",
+    // „Generare" — Anexa 1: deșeul firmei și ce se întâmplă cu el. Pe 14.09.2026 specialista a
+    // cerut „Ieșiri"; proprietarul l-a numit în aceeași seară după ce se înregistrează: generarea.
+    generatorTitle: "Generare de deșeuri",
+    generatorSubtitle: "Deșeurile generate de firmă și ce se întâmplă cu ele, pentru fișa Anexa 1 și rapoartele de generator.",
+    generatorAdd: "Adaugă generare",
+    generatorAddTitle: "Adaugă generare",
+    generatorEditTitle: "Editează generarea",
     // Linkul din rapoarte a adus un id care nu mai e printre mișcările lunii: ștearsă între timp,
     // sau o adresă veche. Se spune, în loc să se deschidă un formular gol.
     movementNotFound: "Mișcarea cerută nu mai există sau a fost ștearsă.",
@@ -430,17 +437,6 @@ export const strings = {
     // --- Provenienţa deşeului la ieşire ---
     // Se arată doar la conturile care pot prelua de la terţi. Fiecare opţiune îşi spune efectul,
     // fiindcă alegerea nu schimbă un câmp, ci pe ce formular oficial ajunge cantitatea.
-    originTitle: "Proveniența deșeului",
-    originHint:
-      "De răspunsul ăsta atârnă pe ce formular ajunge cantitatea. Nu se poate deduce din operațiune: și deșeul tău, și marfa preluată se valorifică cu același cod R.",
-    originOwn: "Generat în activitatea proprie",
-    originOwnEffect:
-      "Intră în Evidența gestiunii deșeurilor generate și, dacă e cod 15 01 xx, în Anexa 1 Ambalaje — tabelul 1 ca ambalaj pus de tine pe piață, tabelul 2 dacă l-ai predat cuiva.",
-    originTakeover: "Preluat de la terți",
-    originTakeoverEffect:
-      "Intră în registrul cronologic art. 48 și în raportarea colectorilor (Anexa 3 la Ordinul 794/2012, încă neconstruită). NU intră în Anexa 1 și nici în evidența gestiunii — nu e deșeul tău.",
-    originRequired:
-      "Alege proveniența: fără ea, cantitatea ar intra automat în Anexa 1 ca deșeu propriu.",
     originCollected:
       "Preluare de la terți: intră automat în registrul cronologic art. 48, niciodată în Anexa 1.",
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { MOVEMENTS_PATH, registersFor } from "@/lib/movementScreens";
 import {
   ArrowRight,
   Copy,
@@ -30,7 +31,6 @@ import {
   useDeleteAttachment,
 } from "@/hooks/useMovements";
 import type {
-  CompanyType,
   PackagingCategory,
   PackagingMaterial,
   PackagingOrigin,
@@ -53,7 +53,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
-import { cn, formatDate, withCount } from "@/lib/utils";
+import { formatDate, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -117,20 +117,18 @@ function suggestedPackagingMaterial(codeLabel: string): PackagingMaterial | null
 
 /**
  * Which operations the account may record, by company type — the same rule the backend enforces
- * through CompanyType.allowedOperations(). A plain generator has no art. 48 register, so it never
- * takes waste over; a collector keeps Anexa 1 too (art. 2 alin. (1)), so it never loses GENERATED.
- * UNCLASSIFIED_OUT is in no list: it is the state of legacy rows, written by a migration.
+ * through CompanyType.allowedOperations() — here narrowed by the screen: „Generare" records the
+ * company's own waste (Anexa 1), „Intrări și ieșiri" the goods taken over from third parties
+ * (art. 48). UNCLASSIFIED_OUT is in no list: it is the state of legacy rows, written by a migration.
  */
-function operationsFor(type: CompanyType | undefined): WasteOperation[] {
-  // La un generator rămâne o singură opţiune, fiindcă mişcarea lui porneşte mereu de la generare:
-  // ce se întâmplă cu deşeul după se alege mai jos, sub transport. Cererea specialistei, 25.08.2026:
+function operationsFor(screen: WasteRegister): WasteOperation[] {
+  // Pe „Generare" rămâne o singură opţiune, fiindcă mişcarea porneşte mereu de la generare: ce se
+  // întâmplă cu deşeul după se alege mai jos, sub transport. Cererea specialistei, 25.08.2026:
   // „aici, la operaţiune, trebuie să rămână Generator [...] şi după, mai jos, trebuie pus în tab cu
   // Valorificare/Eliminare [...] după ce alegi la Transport spre Valorificare să apară următoarele
-  // taburi cu codurile". Un cont care poate prelua de la terţi păstrează şi ieşirea directă: marfa
-  // preluată n-a fost generată de el, deci nu se poate scrie ca generare urmată de predare.
-  return type && type !== "GENERATOR"
-    ? ["GENERATED", "COLLECTED", "RECOVERED", "DISPOSED"]
-    : ["GENERATED"];
+  // taburi cu codurile". Pe „Intrări și ieșiri" ieşirea e directă: marfa preluată n-a fost generată
+  // de firmă, deci nu se poate scrie ca generare urmată de predare.
+  return screen === "ANEXA_1" ? ["GENERATED"] : ["COLLECTED", "RECOVERED", "DISPOSED"];
 }
 
 /**
@@ -138,7 +136,7 @@ function operationsFor(type: CompanyType | undefined): WasteOperation[] {
  */
 type FieldErrors = Partial<
   Record<
-    "workPointId" | "date" | "wasteCode" | "quantity" | "partnerId" | "operationCode" | "register" | "form",
+    "workPointId" | "date" | "wasteCode" | "quantity" | "partnerId" | "operationCode" | "form",
     string
   >
 >;
@@ -185,7 +183,24 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function MovementsPage() {
+/**
+ * `/miscari`, adresa de dinainte de cele două ecrane. Linkurile vechi — din rapoarte, de pe Panou,
+ * din paletă — duc tot aici, deci se trimit mai departe cu tot cu parametri: pe ecranul mișcării
+ * numite în `?miscare=`, altfel pe primul ecran al firmei.
+ */
+export function MovementsRedirect() {
+  const location = useLocation();
+  const { data: company, isLoading } = useCurrentCompany();
+  const [focusId] = useUrlState("miscare");
+  const focused = useMovement(focusId || null);
+  if (isLoading || (focusId && focused.isLoading)) return null;
+  const visible = registersFor(company?.type);
+  const target =
+    focused.data && visible.includes(focused.data.register) ? focused.data.register : visible[0];
+  return <Navigate replace to={MOVEMENTS_PATH[target] + location.search} />;
+}
+
+export function MovementsPage({ register }: { register: WasteRegister }) {
   const { user } = useAuth();
   const canWrite =
     roleCanWrite(user?.role);
@@ -224,8 +239,9 @@ export function MovementsPage() {
     f.year = Number(y);
     if (m) f.month = Number(m);
     if (workPointFilter) f.workPointId = workPointFilter;
+    f.register = register;
     return f;
-  }, [monthFilter, workPointFilter]);
+  }, [monthFilter, workPointFilter, register]);
 
   /**
    * Căutarea, sortarea și paginarea se fac **la server** (P3.1).
@@ -280,7 +296,9 @@ export function MovementsPage() {
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } = useAnexa2Download();
   const { data: company } = useCurrentCompany();
-  const isGenerator = company?.type === "GENERATOR";
+  const isGeneration = register === "ANEXA_1";
+  const location = useLocation();
+  const navigate = useNavigate();
 
   /**
    * Mișcarea pe care o cere adresa, deschisă direct în formularul de editare.
@@ -305,6 +323,13 @@ export function MovementsPage() {
   useEffect(() => {
     if (!focusId) return;
     if (focused.data) {
+      // Rândul numit e al celuilalt ecran (o firmă „Generator și colector"): se deschide acolo, cu
+      // tot cu parametri, ca formularul să pornească pe registrul lui.
+      const own = focused.data.register;
+      if (own !== register && registersFor(company?.type).includes(own)) {
+        navigate(MOVEMENTS_PATH[own] + location.search, { replace: true });
+        return;
+      }
       // Aceleași trei atribuiri ca `openEdit`, scrise aici ca efectul să nu atârne de o funcție
       // rescrisă la fiecare randare — exact felul de dependență care fura focusul din `Dialog`.
       setEditing(focused.data);
@@ -319,7 +344,17 @@ export function MovementsPage() {
       notify(t.movementNotFound, "error");
       setFocusId("");
     }
-  }, [focusId, focused.data, focused.isError, setFocusId, notify]);
+  }, [
+    focusId,
+    focused.data,
+    focused.isError,
+    setFocusId,
+    notify,
+    register,
+    company?.type,
+    navigate,
+    location.search,
+  ]);
 
   /**
    * `?nou=1` — formularul gol, cerut din paletă (Ctrl+K → „Adaugă mișcare").
@@ -393,20 +428,32 @@ export function MovementsPage() {
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
   useHotkey("n", openCreate, { enabled: Boolean(canWrite && activeWorkPoints.length > 0) });
 
+  // Ecranul celuilalt tip de firmă, deschis dintr-un link sau o adresă scrisă de mână.
+  const visibleRegisters = registersFor(company?.type);
+  if (company && !visibleRegisters.includes(register)) {
+    return <Navigate replace to={MOVEMENTS_PATH[visibleRegisters[0]] + location.search} />;
+  }
+
   return (
     <div>
       <PageHeader
-        title={isGenerator ? t.generatorTitle : t.title}
-        description={isGenerator ? t.generatorSubtitle : t.subtitle}
+        title={isGeneration ? t.generatorTitle : t.title}
+        description={isGeneration ? t.generatorSubtitle : t.subtitle}
         actions={
           canWrite && (
             <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
               <Plus className="mr-2 h-4 w-4" />
-              {isGenerator ? t.generatorAdd : t.add}
+              {isGeneration ? t.generatorAdd : t.add}
             </Button>
           )
         }
       />
+
+      {company?.type === "COLLECTOR" && (
+        <p className="mt-4 rounded-md border border-line bg-surface-muted px-3 py-2 text-sm text-content-strong">
+          {t.collectorOwnWasteHint}
+        </p>
+      )}
 
       {canWrite && activeWorkPoints.length === 0 && (
         <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -736,6 +783,7 @@ export function MovementsPage() {
           duplicateOf={duplicating}
           workPoints={activeWorkPoints.map((w) => ({ id: w.id, name: w.name }))}
           defaultWorkPointId={workPointFilter || activeWorkPoints[0]?.id}
+          screen={register}
           onClose={() => setDialogOpen(false)}
         />
       )}
@@ -906,6 +954,8 @@ interface MovementFormDialogProps {
   duplicateOf?: WasteMovement | null;
   workPoints: { id: string; name: string }[];
   defaultWorkPointId?: string;
+  /** Ecranul din care s-a deschis — și deci registrul în care intră cantitatea. */
+  screen: WasteRegister;
   onClose: () => void;
 }
 
@@ -914,6 +964,7 @@ function MovementFormDialog({
   duplicateOf,
   workPoints,
   defaultWorkPointId,
+  screen,
   onClose,
 }: MovementFormDialogProps) {
   /**
@@ -1019,7 +1070,9 @@ function MovementFormDialog({
   const initialOwnExit =
     initial != null && isExit(initial.operation) && initial.register !== "ART_48";
   const [operation, setOperation] = useState<WasteOperation>(
-    initialOwnExit ? "GENERATED" : (initial?.operation ?? "GENERATED")
+    initialOwnExit
+      ? "GENERATED"
+      : (initial?.operation ?? (screen === "ANEXA_1" ? "GENERATED" : "COLLECTED"))
   );
   const [fate, setFate] = useState<ExitOperation | "">(
     initialOwnExit ? (initial.operation as ExitOperation) : ""
@@ -1027,7 +1080,6 @@ function MovementFormDialog({
   const [physicalState, setPhysicalState] = useState<PhysicalState | "">(
     initial?.physicalState ?? ""
   );
-  const [register, setRegister] = useState<WasteRegister | "">(initial?.register ?? "");
   const [operationCode, setOperationCode] = useState<WasteOperationCode | "">(
     initial?.operationCode ?? ""
   );
@@ -1190,7 +1242,11 @@ function MovementFormDialog({
     sublabel: w.hazardous ? t.hazardous : undefined,
   }));
 
-  const operations = operationsFor(company?.type);
+  // O mișcare veche poate purta o operațiune pe care ecranul n-o mai oferă (generarea unui colector
+  // pur, de dinainte de cele două ecrane): rămâne în listă, ca rândul să se poată salva neschimbat.
+  const offered = operationsFor(screen);
+  const operations =
+    offered.includes(operation) || operation === "UNCLASSIFIED_OUT" ? offered : [operation, ...offered];
   /**
    * Operaţiunea care se salvează: jumătatea de jos o suprascrie pe cea de sus. „Generare +
    * transport spre valorificare" pleacă pe server ca {@code RECOVERED} — fişa n-are coloană de
@@ -1211,16 +1267,20 @@ function MovementFormDialog({
   const showsFate = operation === "GENERATED" || operation === "UNCLASSIFIED_OUT";
 
   /**
-   * Provenienţa deşeului la ieşire. Se întreabă doar la conturile care pot prelua de la terţi:
-   * la un generator pur n-ar avea sens, fiindcă tot ce iese e al lui. Fără ea, aceeaşi valorificare
-   * cădea automat pe Anexa 1, deci marfa altcuiva se declara ca pusă pe piaţă de firmă.
-   *
-   * <p>Şi nu se mai întreabă când ieşirea vine din blocul de sub transport: acolo răspunsul e deja
-   * dat sus, fiindcă „Generare" înseamnă chiar deşeul firmei. Întrebarea rămâne unde e ambiguu —
-   * la ieşirea directă, care poate fi şi marfă preluată.
+   * Registrul unei ieşiri. Până pe 14.09.2026 formularul întreba provenienţa la ieşirea directă a
+   * unui cont care preia de la terţi; de atunci o spune ecranul: „Generare" e deşeul firmei
+   * (Anexa 1), „Intrări şi ieşiri" e marfa preluată (art. 48). Generarea rămâne pe Anexa 1 oriunde
+   * s-ar edita, iar o linie veche fără cod îşi păstrează registrul ei. Fără registru, aceeaşi
+   * valorificare ar cădea pe Anexa 1, deci marfa altcuiva s-ar declara ca deşeul firmei.
+   * La preluare nu se trimite nimic: backendul o forţează pe art. 48.
    */
-  const asksOrigin =
-    requiresCode && company != null && company.type !== "GENERATOR" && !showsFate;
+  const screenRegister: WasteRegister | null = !requiresCode
+    ? null
+    : operation === "GENERATED"
+      ? "ANEXA_1"
+      : operation === "UNCLASSIFIED_OUT"
+        ? (initial?.register ?? null)
+        : screen;
   const familyCodes =
     effectiveOperation === "RECOVERED"
       ? R_CODES
@@ -1293,12 +1353,8 @@ function MovementFormDialog({
   const effects = useMemo(() => {
     if (!wasteCode) return [];
     const out: string[] = [];
-    // Registrul, calculat exact ca în `buildInput`.
-    const effectiveRegister = asksOrigin
-      ? register || null
-      : requiresCode && operation === "GENERATED"
-        ? "ANEXA_1"
-        : null;
+    // Registrul, același pe care îl trimite `buildInput`.
+    const effectiveRegister = screenRegister;
     if (effectiveRegister === "ANEXA_1") out.push(t.effectAnexa1);
     // La preluare registrul îl forțează backendul, deci nu se citește din `register`.
     if (effectiveRegister === "ART_48" || operation === "COLLECTED") out.push(t.effectArt48);
@@ -1317,8 +1373,7 @@ function MovementFormDialog({
     return out;
   }, [
     wasteCode,
-    asksOrigin,
-    register,
+    screenRegister,
     requiresCode,
     operation,
     effectiveOperation,
@@ -1359,7 +1414,6 @@ function MovementFormDialog({
       errs.operationCode = t.recoveryCodeRequired;
     if (effectiveOperation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
       errs.operationCode = t.disposalCodeRequired;
-    if (asksOrigin && !register) errs.register = t.originRequired;
     if (isLegacyExit) errs.form = t.legacyExitHint;
     return errs;
   }
@@ -1382,16 +1436,9 @@ function MovementFormDialog({
       wasteDestination: wasteDestination || null,
       // Backend rejects operationCode on non-R/D operations, so only send it when relevant.
       operationCode: requiresCode ? (operationCode as WasteOperationCode) : null,
-      // Numai la ieşire şi numai unde s-a întrebat. La preluare backendul o forţează pe art. 48,
-      // iar la generare pe Anexa 1 — două capete fixate de lege, nu de ecran.
-      // Când ieşirea s-a ales sub transport, provenienţa e deja spusă sus — „Generare" e chiar
-      // deşeul firmei — şi se trimite explicit, fiindcă backendul cere registrul la orice ieşire
-      // de pe un cont care ţine şi art. 48 (decizia 23). Nu se ghiceşte nimic: e alegerea omului.
-      register: asksOrigin
-        ? (register as WasteRegister)
-        : requiresCode && operation === "GENERATED"
-          ? "ANEXA_1"
-          : null,
+      // Numai la ieşire, şi explicit, fiindcă backendul cere registrul la orice ieşire de pe un cont
+      // care ţine şi art. 48 (decizia 23). Nu se ghiceşte nimic: îl spune ecranul ales de om.
+      register: screenRegister,
       partnerId: partnerId || null,
       internalGeneratorId: internalGeneratorId || null,
       documentReference: documentReference.trim() || null,
@@ -1523,12 +1570,12 @@ function MovementFormDialog({
       onClose={requestClose}
       title={
         editing
-          ? company?.type === "GENERATOR"
+          ? screen === "ANEXA_1"
             ? t.generatorEditTitle
             : t.editTitle
           : duplicateOf
             ? t.duplicateTitle
-            : company?.type === "GENERATOR"
+            : screen === "ANEXA_1"
               ? t.generatorAddTitle
               : t.addTitle
       }
@@ -1753,56 +1800,6 @@ function MovementFormDialog({
               </Select>
             </div>
           </div>
-
-          {asksOrigin && (
-            <div
-              role="radiogroup"
-              aria-labelledby="mv-register-title"
-              className={cn(
-                "rounded-md border p-3",
-                errors.register ? "border-red-400 bg-red-50/40" : "border-line-strong"
-              )}
-              {...invalidProps("mv-register-err", errors.register)}
-              tabIndex={errors.register ? -1 : undefined}
-            >
-              <span id="mv-register-title" className="text-sm font-medium text-content-strong">
-                {t.originTitle}
-                <span className="text-red-600"> *</span>
-              </span>
-              <p className="mt-1 text-xs text-content-muted">{t.originHint}</p>
-              <div className="mt-2 space-y-2">
-                {/* Fiecare opţiune îşi spune efectul: alegerea nu schimbă un câmp, ci pe ce formular
-                    oficial ajunge cantitatea. */}
-                <label className="flex cursor-pointer gap-2">
-                  <input
-                    type="radio"
-                    name="mv-register"
-                    className="mt-1 h-4 w-4 shrink-0"
-                    checked={register === "ANEXA_1"}
-                    onChange={() => setRegister("ANEXA_1")}
-                  />
-                  <span>
-                    <span className="text-sm font-medium">{t.originOwn}</span>
-                    <span className="block text-xs text-content-muted">{t.originOwnEffect}</span>
-                  </span>
-                </label>
-                <label className="flex cursor-pointer gap-2">
-                  <input
-                    type="radio"
-                    name="mv-register"
-                    className="mt-1 h-4 w-4 shrink-0"
-                    checked={register === "ART_48"}
-                    onChange={() => setRegister("ART_48")}
-                  />
-                  <span>
-                    <span className="text-sm font-medium">{t.originTakeover}</span>
-                    <span className="block text-xs text-content-muted">{t.originTakeoverEffect}</span>
-                  </span>
-                </label>
-              </div>
-              <FieldError id="mv-register-err" message={errors.register} />
-            </div>
-          )}
 
           {operation === "COLLECTED" && (
             <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">

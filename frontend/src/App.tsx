@@ -10,7 +10,7 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
-import { MovementsPage } from "@/pages/MovementsPage";
+import { MovementsPage, MovementsRedirect } from "@/pages/MovementsPage";
 import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
@@ -65,7 +65,11 @@ export default function App() {
           <Route path="/termeni" element={<TermsPage />} />
           <Route path="/confidentialitate" element={<PrivacyPage />} />
           <Route path="/" element={<AppShell><DashboardPage /></AppShell>} />
-          <Route path="/miscari" element={<AppShell><MovementsPage /></AppShell>} />
+          {/* Două ecrane, după registru; `/miscari` e adresa veche și trimite pe cel potrivit. Cheile
+              țin ecranele separate: fără ele React ar păstra starea unuia când treci pe celălalt. */}
+          <Route path="/miscari" element={<AppShell><MovementsRedirect /></AppShell>} />
+          <Route path="/generare" element={<AppShell><MovementsPage key="anexa1" register="ANEXA_1" /></AppShell>} />
+          <Route path="/intrari-iesiri" element={<AppShell><MovementsPage key="art48" register="ART_48" /></AppShell>} />
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />

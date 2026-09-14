@@ -301,6 +301,38 @@ class MovementPagingIT {
 
     // ---------- helpers ----------
 
+    /**
+     * „Generare" și „Intrări și ieșiri" sunt același tabel filtrat pe registru (proprietarul,
+     * 14.09.2026). Firma demo e `BOTH`, deci are rânduri în amândouă — iar fiecare ecran trebuie
+     * să le vadă numai pe ale lui. Fără filtru vin toate trei, ca înainte.
+     */
+    @Test
+    void registerSplitsGenerationFromTakeovers() throws Exception {
+        String year = "2010";
+        UUID generated = create(year + "-02-01", "20 01 01", null, null);
+        UUID wasteCodeId = wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId();
+        UUID collected = createdId("""
+                {
+                  "workPointId": "%s", "date": "%s-02-02", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 4.000, "physicalState": "SOLID",
+                  "operation": "COLLECTED", "partnerId": "%s"
+                }
+                """.formatted(workPointId, year, wasteCodeId, partnerId));
+        UUID passedOn = createdId("""
+                {
+                  "workPointId": "%s", "date": "%s-02-03", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 4.000, "physicalState": "SOLID",
+                  "operation": "RECOVERED", "operationCode": "R13",
+                  "partnerId": "%s", "register": "ART_48"
+                }
+                """.formatted(workPointId, year, wasteCodeId, partnerId));
+
+        assertThat(idsOf(page("year", year, "register", "ANEXA_1"))).containsExactly(generated);
+        assertThat(idsOf(page("year", year, "register", "ART_48")))
+                .containsExactlyInAnyOrder(collected, passedOn);
+        assertThat(idsOf(page("year", year))).containsExactlyInAnyOrder(generated, collected, passedOn);
+    }
+
     private UUID create(String date, String code, UUID partner, String docRef) throws Exception {
         return create(date, code, partner, docRef, "5.000");
     }
