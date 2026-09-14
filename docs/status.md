@@ -11,7 +11,12 @@ rulează local și are testele verzi.
 > dyno (api **v61**), deci linkurile din mailuri duc deja pe domeniu. **Neatinse dinadins**, fiindcă nu
 > ajung la client: pachetul `ro.ecoregistru`, migrările aplicate (Flyway le ține suma de control),
 > numele bazei, folderul Cloudinary, conturile demo din dev, aplicațiile Heroku și repo-urile.
-> **496 de teste, 56 de clase, 0 eșecuri**, `tsc` curat, `vite build` verde. ⬜ Nedeployat.
+> **496 de teste, 56 de clase, 0 eșecuri**, `tsc` curat, `vite build` verde. ✅ **Deployat 14.09, 16:48** —
+> `api` **v64** (`338c5f7`), `app` **v51** (`399371a`, a luat și cele trei commituri `e2e/` rămase), plus
+> `app` **v52** (`55f3953`) pentru adresa din subsolul paginilor publice, rămasă pe Gmail. Fără migrare
+> (`V39`). Mailul pleacă de-acum de la `contact@wastehouse.ro` (`MAIL_*` pe cPanel, api v62–v63), cu
+> numele afișat „WasteHouse" — probat cu o resetare de parolă pe dyno. Bundle-ul servit: „EcoRegistru" de
+> zero ori, `whoecom@gmail.com` de zero ori.
 >
 > **Unde eram — 14.09.2026, după-amiaza.** 🔬 **Auditul QA și-a completat matricea de izolare între
 > firme** — termenele (închidere, redeschidere), evidența (lista, fișa și declarația cerute cu punctul de
