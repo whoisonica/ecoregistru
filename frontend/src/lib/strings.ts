@@ -2037,7 +2037,7 @@ export const strings = {
     contents: "Cuprins",
     termsLink: "Termeni și condiții",
     privacyLink: "Confidențialitate",
-    contactEmail: "whoecom@gmail.com",
+    contactEmail: "contact@wastehouse.ro",
     copyright: "© 2026 ONSIA S.R.L. · CUI 51779887",
     // Sub butonul de trimitere al cererii de cont. Nu e casetă de bifat: cererea nu deschide un
     // cont, iar acceptarea propriu-zisă se face la semnarea contractului (cap. 2 din termeni).
