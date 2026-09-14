@@ -337,6 +337,25 @@ export interface BillingRunResult {
   paid: number;
 }
 
+/**
+ * Mirrors backend BillingResponse: abonamentul contului, cum îl vede clientul pe `/abonament`. Fără
+ * prețurile grilei și numai facturile emise în FGO, fără erorile lor.
+ */
+export interface BillingAccount {
+  clientName: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  startedAt: string; // yyyy-MM-dd
+  founder: boolean;
+  nextInvoice: InvoicePreview;
+  /** Unde pleacă facturile: emailul de facturare sau, lipsă, cel de contact al firmei. */
+  billingEmail: string | null;
+  billingCounty: string | null;
+  billingCity: string | null;
+  billingAddress: string | null;
+  invoices: Omit<SubscriptionInvoice, "amountPaid" | "lastError">[];
+}
+
 /** Cine plătește: o firmă directă sau un cabinet. Firmele unui cabinet n-au abonament propriu. */
 export interface SubscriptionOwner {
   kind: "company" | "consultancy";

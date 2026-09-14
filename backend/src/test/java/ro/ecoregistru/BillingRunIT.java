@@ -8,18 +8,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 import ro.ecoregistru.config.JwtService;
+import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.Subscription;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.InvoiceStatus;
+import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.ConsultancyRepository;
 import ro.ecoregistru.repository.SubscriptionInvoiceRepository;
 import ro.ecoregistru.repository.SubscriptionRepository;
 import ro.ecoregistru.service.BillingRunService;
@@ -35,12 +42,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,9 +61,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * F2 din plata-abonamente.md — rularea zilnică a facturării, cu FGO înlocuit de un mock. Ce acceptă
  * FGO de fapt se probează pe api-testuat, cu cheia; aici e ce ține de noi: o singură factură pe
  * perioadă oricâte rulări ar fi, reluarea cu același `IdExtern` după o cădere, datele de facturare
- * lipsă oprite înainte de FGO, starea abonamentului din plăți.
+ * lipsă oprite înainte de FGO, starea abonamentului din plăți, mailul cu factura (§9.4) și ce vede
+ * clientul pe `/abonament`.
  *
- * <p>Toate testele rulează pe aceeași bază, deci fiecare își caută factura după firma lui.
+ * <p>Toate testele rulează pe aceeași bază, deci fiecare își caută factura după firma lui, iar mailul
+ * după adresa de facturare, unică pe firmă.
  */
 @SpringBootTest
 @ActiveProfiles("dev")
@@ -59,14 +74,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BillingRunIT {
 
     static final LocalDate START = LocalDate.of(2026, 10, 17);
+    static final String INVOICE_MAIL = "mail/subscription_invoice";
 
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
+    @Autowired PasswordEncoder passwordEncoder;
     @Autowired AppUserRepository appUserRepository;
     @Autowired CompanyRepository companyRepository;
+    @Autowired ConsultancyRepository consultancyRepository;
     @Autowired SubscriptionRepository subscriptionRepository;
     @Autowired SubscriptionInvoiceRepository invoiceRepository;
     @Autowired BillingRunService billing;
+    @Autowired TemplateEngine templateEngine;
 
     @MockBean EmailService emailService;
     @MockBean FgoClient fgo;
@@ -195,13 +214,153 @@ class BillingRunIT {
         Subscription s = subscription(company, true);
         billing.run(START);
 
-        String platformToken = jwtService.generateToken(
-                appUserRepository.findByEmail("platform@ecoregistru.ro").orElseThrow());
         mockMvc.perform(delete("/api/v1/subscriptions/company/" + company.getId())
-                        .header("Authorization", "Bearer " + platformToken))
+                        .header("Authorization", "Bearer " + platformToken()))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error-code", is("subscription.has.invoices")));
         assertThat(subscriptionRepository.findById(s.getId())).isPresent();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // §9.4 — mailul cu factura, trimis de aplicație
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void theIssuedInvoiceIsMailedOnceWithItsNumberInTheSubject() {
+        Company company = company();
+        Subscription s = subscription(company, true);
+
+        billing.run(START);
+        billing.run(START.plusDays(1));
+
+        SubscriptionInvoice invoice = invoices(s).get(0);
+        verify(emailService, times(1)).send(eq(billingEmail(company)), contains("WH " + invoice.getFgoNumar()),
+                eq(INVOICE_MAIL), any());
+        assertThat(invoice.getEmailedAt()).isNotNull();
+    }
+
+    /** Șablonul randat de-adevăratelea: EmailService e mock, deci altfel o expresie greșită cade abia în producție. */
+    @Test
+    void theInvoiceMailCarriesTheNumberTheTotalAndThePdfLink() {
+        Company company = company();
+        Subscription s = subscription(company, true);
+        billing.run(START);
+        SubscriptionInvoice invoice = invoices(s).get(0);
+
+        ArgumentCaptor<Context> context = ArgumentCaptor.forClass(Context.class);
+        verify(emailService).send(eq(billingEmail(company)), any(), eq(INVOICE_MAIL), context.capture());
+        String html = templateEngine.process(INVOICE_MAIL, context.getValue());
+
+        assertThat(html).contains("WH " + invoice.getFgoNumar(), company.getName(), "389 lei",
+                "17.10.2026 – 16.11.2026", "27.10.2026", invoice.getFgoLink(), "/abonament");
+        assertThat(html).doesNotContain("Plătește online");
+    }
+
+    /** Serverul de mail cade: factura rămâne nemarcată și pleacă la rularea următoare. */
+    @Test
+    void aMailThatFailsIsSentAgainOnTheNextRun() {
+        Company company = company();
+        Subscription s = subscription(company, true);
+        String to = billingEmail(company);
+        doThrow(new RuntimeException("SMTP indisponibil")).doNothing()
+                .when(emailService).send(eq(to), any(), eq(INVOICE_MAIL), any());
+
+        billing.run(START);
+        assertThat(invoices(s).get(0).getEmailedAt()).isNull();
+
+        billing.run(START.plusDays(1));
+        assertThat(invoices(s).get(0).getEmailedAt()).isNotNull();
+        verify(emailService, times(2)).send(eq(to), any(), eq(INVOICE_MAIL), any());
+    }
+
+    /** Fără email de facturare și fără emailul de contact al firmei, factura așteaptă o adresă. */
+    @Test
+    void withoutAnEmailTheInvoiceWaitsUntilOneIsSet() {
+        Company company = company();
+        Subscription s = subscription(company, true, null);
+
+        billing.run(START);
+        assertThat(invoices(s).get(0).getStatus()).isEqualTo(InvoiceStatus.ISSUED);
+        assertThat(invoices(s).get(0).getEmailedAt()).isNull();
+
+        Subscription reloaded = subscriptionRepository.findById(s.getId()).orElseThrow();
+        reloaded.setBillingEmail(billingEmail(company));
+        subscriptionRepository.save(reloaded);
+        billing.run(START.plusDays(1));
+
+        assertThat(invoices(s).get(0).getEmailedAt()).isNotNull();
+        verify(emailService, times(1)).send(eq(billingEmail(company)), any(), eq(INVOICE_MAIL), any());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // /abonament — ce vede cine plătește
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void anAdminSeesTheirCompanysIssuedInvoices() throws Exception {
+        Company company = company();
+        Subscription s = subscription(company, true);
+        billing.run(START);
+        String numar = invoices(s).get(0).getFgoNumar();
+
+        mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(admin(company))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientName", is(company.getName())))
+                .andExpect(jsonPath("$.plan", is("GENERATOR")))
+                .andExpect(jsonPath("$.billingEmail", is(billingEmail(company))))
+                .andExpect(jsonPath("$.nextInvoice.total").exists())
+                .andExpect(jsonPath("$.invoices", hasSize(1)))
+                .andExpect(jsonPath("$.invoices[0].fgoNumar", is(numar)))
+                .andExpect(jsonPath("$.invoices[0].fgoLink").exists());
+    }
+
+    /** O factură neemisă e a noastră, cu tot cu eroarea FGO de pe ea: clientul nu le vede. */
+    @Test
+    void anInvoiceNotYetIssuedAndItsErrorStayWithThePlatform() throws Exception {
+        Company company = company();
+        subscription(company, false);
+        billing.run(START);
+
+        mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(admin(company))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.invoices", hasSize(0)))
+                .andExpect(content().string(not(containsString("Lipsesc"))));
+    }
+
+    /** Consultantul plătește abonamentul cabinetului; firma din cabinet n-are ce plăti; operatorul n-are acces. */
+    @Test
+    void theCabinetPaysForItsCompanies() throws Exception {
+        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
+                .name("Cabinet " + suffix()).cui(cui()).createdAt(Instant.now()).build());
+        subscriptionRepository.save(Subscription.builder()
+                .consultancy(cabinet)
+                .plan(SubscriptionPlan.CONSULTANCY)
+                .status(SubscriptionStatus.PENDING)
+                .monthlyPrice(SubscriptionPlan.CONSULTANCY.monthlyPrice())
+                .implementationFee(SubscriptionPlan.CONSULTANCY.implementationFee())
+                .companyPriceTier1(SubscriptionPlan.COMPANY_PRICE_TIER1)
+                .companyPriceTier2(SubscriptionPlan.COMPANY_PRICE_TIER2)
+                .companyPriceTier3(SubscriptionPlan.COMPANY_PRICE_TIER3)
+                .packagingCompanyPrice(SubscriptionPlan.PACKAGING_COMPANY_PRICE)
+                .startedAt(START)
+                .createdAt(Instant.now())
+                .build());
+        Company managed = company();
+        managed.setConsultancy(cabinet);
+        companyRepository.save(managed);
+
+        AppUser consultant = user(Role.CONSULTANT, null, cabinet);
+        mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(consultant)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientName", is(cabinet.getName())))
+                .andExpect(jsonPath("$.plan", is("CONSULTANCY")));
+
+        mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(admin(managed))))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/billing")
+                        .header("Authorization", "Bearer " + token(user(Role.OPERATOR, managed, null))))
+                .andExpect(status().isForbidden());
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -220,12 +379,20 @@ class BillingRunIT {
 
     private Company company() {
         return companyRepository.save(Company.builder()
-                .name("Firma " + UUID.randomUUID().toString().substring(0, 8))
-                .cui(String.valueOf(ThreadLocalRandom.current().nextLong(10_000_000L, 99_999_999L)))
+                .name("Firma " + suffix())
+                .cui(cui())
                 .type(CompanyType.GENERATOR).active(true).createdAt(Instant.now()).build());
     }
 
+    private static String billingEmail(Company company) {
+        return "facturi+" + company.getCui() + "@firma.ro";
+    }
+
     private Subscription subscription(Company company, boolean withAddress) {
+        return subscription(company, withAddress, billingEmail(company));
+    }
+
+    private Subscription subscription(Company company, boolean withAddress, String billingEmail) {
         Subscription.SubscriptionBuilder b = Subscription.builder()
                 .company(company)
                 .plan(SubscriptionPlan.GENERATOR)
@@ -235,10 +402,38 @@ class BillingRunIT {
                 .extraWorkPointPrice(SubscriptionPlan.EXTRA_WORK_POINT_PRICE)
                 .startedAt(START)
                 .createdAt(Instant.now())
-                .billingEmail("facturi@firma.ro");
+                .billingEmail(billingEmail);
         if (withAddress) {
             b.billingCounty("Cluj").billingCity("Cluj-Napoca").billingAddress("Str. Memorandumului nr. 1");
         }
         return subscriptionRepository.save(b.build());
+    }
+
+    private AppUser admin(Company company) {
+        return user(Role.ADMIN, company, null);
+    }
+
+    private AppUser user(Role role, Company company, Consultancy consultancy) {
+        return appUserRepository.save(AppUser.builder()
+                .email(role.name().toLowerCase() + "+" + suffix() + "@firma.ro")
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(role).company(company).consultancy(consultancy)
+                .enabled(true).createdAt(Instant.now()).build());
+    }
+
+    private String token(AppUser user) {
+        return jwtService.generateToken(user);
+    }
+
+    private String platformToken() {
+        return token(appUserRepository.findByEmail("platform@ecoregistru.ro").orElseThrow());
+    }
+
+    private static String cui() {
+        return String.valueOf(ThreadLocalRandom.current().nextLong(10_000_000L, 99_999_999L));
+    }
+
+    private static String suffix() {
+        return UUID.randomUUID().toString().substring(0, 8);
     }
 }

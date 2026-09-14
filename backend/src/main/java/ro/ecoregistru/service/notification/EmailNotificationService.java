@@ -3,14 +3,20 @@ package ro.ecoregistru.service.notification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
+import ro.ecoregistru.entity.SubscriptionInvoice;
+import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.service.EmailService;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -28,6 +34,11 @@ public class EmailNotificationService implements NotificationService {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     EmailService emailService;
+
+    // Not final, so Lombok leaves it out of the constructor (see EmailService).
+    @NonFinal
+    @Value("${app.frontend-base-url}")
+    String frontendBaseUrl;
 
     @Override
     public void sendDeadlineReminder(ReportingDeadline deadline, List<String> recipientEmails, long daysUntil) {
@@ -70,6 +81,36 @@ public class EmailNotificationService implements NotificationService {
             ctx.setVariable("whenText", whenExpiry(daysUntil));
             emailService.send(to, subject, "mail/partner_authorization_expiring", ctx);
         }
+    }
+
+    /**
+     * §9.4 of plata-abonamente.md — the invoice goes out from our address, not from FGO's: one sender
+     * for everything about paying. The subject carries the number, which is what the client writes
+     * on the transfer.
+     */
+    @Override
+    public void sendSubscriptionInvoice(SubscriptionInvoice invoice, String clientName, String recipientEmail) {
+        String number = invoice.getFgoSerie() + " " + invoice.getFgoNumar();
+        Context ctx = new Context(Locale.of("ro"));
+        ctx.setVariable("clientName", clientName);
+        ctx.setVariable("number", number);
+        ctx.setVariable("period", invoice.getPeriodStart().format(DATE) + " – " + invoice.getPeriodEnd().format(DATE));
+        ctx.setVariable("total", lei(invoice.getTotal()));
+        ctx.setVariable("dueDate", invoice.getDueDate() == null ? null : invoice.getDueDate().format(DATE));
+        ctx.setVariable("paid", invoice.getStatus() == InvoiceStatus.PAID);
+        ctx.setVariable("pdfUrl", invoice.getFgoLink());
+        ctx.setVariable("payUrl", invoice.getFgoLinkPlata());
+        ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
+        emailService.send(recipientEmail, "Factura " + number + " — abonamentul WasteHouse",
+                "mail/subscription_invoice", ctx);
+    }
+
+    /** "389 lei", "1.234,50 lei". */
+    private static String lei(BigDecimal amount) {
+        NumberFormat format = NumberFormat.getNumberInstance(Locale.of("ro"));
+        format.setMinimumFractionDigits(amount.stripTrailingZeros().scale() > 0 ? 2 : 0);
+        format.setMaximumFractionDigits(2);
+        return format.format(amount) + " lei";
     }
 
     /** Human phrasing of the remaining time, used in the subject and body. */

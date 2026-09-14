@@ -20,4 +20,8 @@ public interface SubscriptionInvoiceRepository extends JpaRepository<Subscriptio
 
     @Query("select i.id from SubscriptionInvoice i where i.status = :status order by i.createdAt")
     List<UUID> findIdsByStatus(@Param("status") InvoiceStatus status);
+
+    /** Issued in FGO (paid or not) and not yet mailed to the client. */
+    @Query("select i.id from SubscriptionInvoice i where i.issuedAt is not null and i.emailedAt is null order by i.createdAt")
+    List<UUID> findIdsToEmail();
 }

@@ -6,11 +6,14 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.SubscriptionRequest;
+import ro.ecoregistru.controller.response.BillingResponse;
 import ro.ecoregistru.controller.response.SubscriptionInvoiceResponse;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
+import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.Subscription;
+import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
@@ -23,6 +26,7 @@ import ro.ecoregistru.repository.SubscriptionRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -103,6 +107,38 @@ public class SubscriptionService {
     public void deleteForConsultancy(UUID consultancyId) {
         requireConsultancy(consultancyId);
         subscriptionRepository.findByConsultancy_Id(consultancyId).ifPresent(this::delete);
+    }
+
+    /**
+     * The subscription an account pays, for {@code /abonament}: a consultant sees the cabinet's, an
+     * admin their own company's, the platform the company it has chosen. A company of a cabinet has
+     * none of its own, since the cabinet pays for it.
+     */
+    @Transactional(readOnly = true)
+    public Optional<BillingResponse> forAccount(AppUser user, UUID tenantId, LocalDate today) {
+        Optional<Subscription> found = switch (user.getRole()) {
+            case CONSULTANT -> Optional.ofNullable(user.getConsultancy())
+                    .flatMap(c -> subscriptionRepository.findByConsultancy_Id(c.getId()));
+            case PLATFORM_ADMIN -> Optional.ofNullable(tenantId).flatMap(subscriptionRepository::findByCompany_Id);
+            default -> Optional.ofNullable(user.getCompany())
+                    .flatMap(c -> subscriptionRepository.findByCompany_Id(c.getId()));
+        };
+        return found.map(s -> toBillingResponse(s, today));
+    }
+
+    /** The next invoice is the first one until the start date, then the one after the current period. */
+    private BillingResponse toBillingResponse(Subscription s, LocalDate today) {
+        int next = today.isBefore(s.getStartedAt()) ? 0 : BillingCalculator.periodOn(s.getStartedAt(), today) + 1;
+        List<BillingResponse.IssuedInvoice> invoices = invoiceRepository
+                .findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()).stream()
+                .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
+                .map(i -> new BillingResponse.IssuedInvoice(i.getId(), i.getPeriodStart(), i.getPeriodEnd(),
+                        i.getTotal(), i.getStatus(), i.getDueDate(), i.getFgoSerie(), i.getFgoNumar(),
+                        i.getFgoLink(), i.getFgoLinkPlata(), i.getPaidAt()))
+                .toList();
+        return new BillingResponse(BillingRunService.clientName(s), s.getPlan(), s.getStatus(), s.getStartedAt(),
+                s.isFounder(), invoiceFor(s, next), BillingRunService.recipient(s),
+                s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices);
     }
 
     @Transactional(readOnly = true)

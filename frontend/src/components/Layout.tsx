@@ -15,11 +15,12 @@ import {
   Menu,
   X,
   ChevronUp,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { companiesKey, useCompanies, useCurrentCompany } from "@/hooks/useCompanies";
-import { canWrite, isMultiCompany } from "@/lib/roles";
+import { canManage as roleCanManage, canWrite, isMultiCompany } from "@/lib/roles";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
 import { MOVEMENTS_PATH, registersFor } from "@/lib/movementScreens";
@@ -47,6 +48,8 @@ interface NavItem {
    * nicăieri în bară — e text de căutat, nu de citit.
    */
   keywords?: string;
+  /** Numai pentru cine administrează: abonamentul îl plătește adminul firmei sau consultantul. */
+  manageOnly?: boolean;
 }
 
 interface NavGroup {
@@ -110,6 +113,13 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },
       { to: "/setari", label: strings.nav.settings, icon: Settings, keywords: strings.nav.kwSettings },
+      {
+        to: "/abonament",
+        label: strings.nav.billing,
+        icon: Receipt,
+        keywords: strings.nav.kwBilling,
+        manageOnly: true,
+      },
     ],
   },
   {
@@ -320,7 +330,7 @@ export function Layout({ children }: { children: ReactNode }) {
     .filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role))
     .map((g) => ({
       ...g,
-      items: g.items.flatMap((i) =>
+      items: g.items.filter((i) => !i.manageOnly || roleCanManage(user?.role)).flatMap((i) =>
         i.to === "/miscari" && company
           ? registersFor(company.type).map((r) => ({
               ...i,

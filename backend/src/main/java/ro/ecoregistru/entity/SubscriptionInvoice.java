@@ -67,6 +67,9 @@ public class SubscriptionInvoice {
     Instant issuedAt;
     Instant paidAt;
 
+    /** When the invoice was mailed to the client (V45); null until the mail actually left. */
+    Instant emailedAt;
+
     @Column(nullable = false)
     Instant createdAt;
 }

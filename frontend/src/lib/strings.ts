@@ -70,6 +70,8 @@ export const strings = {
     kwSettings:
       "puncte de lucru secții generatori interni șoferii noștri datele firmei CAEN persoana desemnată",
     kwClients: "firme companii tenant cereri de cont profil de piață cabinet consultanți echipa",
+    billing: "Abonament",
+    kwBilling: "facturi factură plată plătește transfer pachet preț FGO scadență restanță",
   },
 
   login: {
@@ -1336,6 +1338,34 @@ export const strings = {
     inviteTitle: "Invită un consultant în {consultancy}",
     invited: "Consultant invitat. Primește pe email linkul de setare a parolei.",
     inviteError: "Invitația a eșuat. Verifică datele și încearcă din nou.",
+  },
+
+  /** Plata abonamentelor, F2 — abonamentul și facturile, pentru cine le plătește (`/abonament`). */
+  billing: {
+    title: "Abonament",
+    subtitle: "Pachetul tău, facturile emise și cum se plătesc.",
+    none: "Contul ăsta n-are un abonament de plătit. Dacă firma e gestionată de un cabinet de consultanță, abonamentul e al cabinetului.",
+    loadError: "Nu am putut încărca abonamentul.",
+    plan: "Pachet",
+    founder: "client fondator",
+    startedAt: "Început pe",
+    payment:
+      "Factura se emite în prima zi a fiecărei perioade și vine pe email. Plata se face prin transfer bancar în 10 zile, în contul scris pe factură; la detalii plată treci seria și numărul facturii.",
+    nextInvoice: "Următoarea factură ({from} – {to})",
+    nextInvoiceHint:
+      "Calculată pe ce e activ azi. Punctele de lucru sau firmele se numără din nou în prima zi a perioadei.",
+    billingData: "Date de facturare",
+    billingEmail: "Facturile vin pe",
+    billingAddress: "Adresă",
+    billingDataHint: "Ca să schimbi datele de facturare, scrie-ne la contact@wastehouse.ro.",
+    invoices: "Facturi",
+    noInvoices: "Nicio factură emisă încă.",
+    number: "Factura",
+    period: "Perioada",
+    due: "Scadență",
+    paidOn: "plătită {date}",
+    document: "Document",
+    pay: "Plătește online",
   },
 
   /** Plata abonamentelor, F1 — pachetul și prețul unui client, pe ecranul Clienți al platformei. */

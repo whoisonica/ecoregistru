@@ -18,6 +18,7 @@ import { AuditFilePage } from "@/pages/AuditFilePage";
 import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { BillingPage } from "@/pages/BillingPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 function AppShell({
@@ -86,6 +87,16 @@ export default function App() {
             }
           />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
+          {/* Fără firmă aleasă: abonamentul unui consultant e al cabinetului, nu al firmei din
+              comutator. Adresa e scrisă și în mailul cu factura (`EmailNotificationService`). */}
+          <Route
+            path="/abonament"
+            element={
+              <AppShell needsTenant={false}>
+                <BillingPage />
+              </AppShell>
+            }
+          />
           {/* Fără ruta asta, o adresă greșită nu randa nimic: pagină albă, fără meniu și fără
               mesaj, adică o aplicație care pare căzută pentru o literă în plus. */}
           <Route path="*" element={<NotFoundPage />} />

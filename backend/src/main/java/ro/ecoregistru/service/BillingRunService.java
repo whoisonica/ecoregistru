@@ -16,6 +16,7 @@ import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.repository.SubscriptionInvoiceRepository;
 import ro.ecoregistru.repository.SubscriptionRepository;
+import ro.ecoregistru.service.notification.NotificationService;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -33,13 +34,15 @@ import java.util.UUID;
  *       with the lines counted now. Run twice, the second run finds the row and reserves nothing.</li>
  *   <li><b>Issue.</b> Every DRAFT goes to FGO with its own id as {@code IdExtern}; a failure leaves the
  *       row DRAFT with the reason, and the next run retries the same id.</li>
+ *   <li><b>Mail.</b> Every issued invoice not yet mailed goes to the client from our address, with
+ *       FGO's PDF link (§9.4). Marked only once sent, so a failed mail is sent again next run.</li>
  *   <li><b>Read payments.</b> Every ISSUED invoice is asked for its paid amount. FGO matches the
  *       transfer to the invoice from the bank statement; we only read the result.</li>
  *   <li><b>Status.</b> An unpaid invoice past its due date makes the subscription PAST_DUE; a paid one
  *       makes it ACTIVE. Nothing is restricted here: read-only is F4.</li>
  * </ol>
  *
- * <p>Each step commits on its own, and FGO is never called inside a transaction.
+ * <p>Each step commits on its own, and neither FGO nor the mail server is called inside a transaction.
  */
 @Slf4j
 @Service
@@ -58,6 +61,7 @@ public class BillingRunService {
     SubscriptionRepository subscriptionRepository;
     SubscriptionInvoiceRepository invoiceRepository;
     SubscriptionService subscriptionService;
+    NotificationService notificationService;
     FgoClient fgo;
     TransactionTemplate tx;
     ObjectMapper objectMapper;
@@ -77,6 +81,10 @@ public class BillingRunService {
             } else {
                 failed++;
             }
+        }
+
+        for (UUID id : invoiceRepository.findIdsToEmail()) {
+            mail(id);
         }
 
         int paid = 0;
@@ -151,6 +159,31 @@ public class BillingRunService {
         }
     }
 
+    private record Notice(SubscriptionInvoice invoice, String clientName, String to) {}
+
+    /**
+     * Without an address the invoice is left unmarked too: the email added later still gets it. The
+     * detached invoice is only read for its own columns, never for the subscription.
+     */
+    private void mail(UUID invoiceId) {
+        try {
+            Notice notice = tx.execute(status -> {
+                SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
+                Subscription s = invoice.getSubscription();
+                return new Notice(invoice, clientName(s), recipient(s));
+            });
+            if (notice.to() == null) {
+                log.warn("Factura {} nu poate fi trimisă: abonamentul n-are email de facturare.", invoiceId);
+                return;
+            }
+            notificationService.sendSubscriptionInvoice(notice.invoice(), notice.clientName(), notice.to());
+            tx.executeWithoutResult(status -> invoiceRepository.findById(invoiceId)
+                    .ifPresent(invoice -> invoice.setEmailedAt(Instant.now())));
+        } catch (RuntimeException e) {
+            log.error("Factura {} n-a putut fi trimisă pe email: {}", invoiceId, e.getMessage());
+        }
+    }
+
     private boolean readPayment(UUID invoiceId) {
         try {
             SubscriptionInvoice snapshot = invoiceRepository.findById(invoiceId).orElseThrow();
@@ -203,11 +236,23 @@ public class BillingRunService {
                     + ". Completează-le în dialogul Abonament.");
         }
         Company company = s.getCompany();
-        String name = company != null ? company.getName() : s.getConsultancy().getName();
         String cui = company != null ? company.getCui() : s.getConsultancy().getCui();
-        String email = !isBlank(s.getBillingEmail()) ? s.getBillingEmail()
-                : company != null ? company.getContactEmail() : null;
-        return new FgoClient.Buyer(name, cui, email, s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress());
+        return new FgoClient.Buyer(clientName(s), cui, recipient(s), s.getBillingCounty(), s.getBillingCity(),
+                s.getBillingAddress());
+    }
+
+    /** The direct company or the cabinet. Needs an open transaction: the owner is lazy. */
+    static String clientName(Subscription s) {
+        return s.getCompany() != null ? s.getCompany().getName() : s.getConsultancy().getName();
+    }
+
+    /** Where invoices go: the billing email, else the company's contact email. A cabinet has no other. */
+    static String recipient(Subscription s) {
+        if (!isBlank(s.getBillingEmail())) {
+            return s.getBillingEmail();
+        }
+        Company company = s.getCompany();
+        return company != null && !isBlank(company.getContactEmail()) ? company.getContactEmail() : null;
     }
 
     private static boolean isBlank(String value) {

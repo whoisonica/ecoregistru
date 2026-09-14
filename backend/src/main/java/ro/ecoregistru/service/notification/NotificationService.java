@@ -2,6 +2,7 @@ package ro.ecoregistru.service.notification;
 
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
+import ro.ecoregistru.entity.SubscriptionInvoice;
 
 import java.util.List;
 
@@ -35,4 +36,13 @@ public interface NotificationService {
      *                          unmarked, so the warning is retried tomorrow.
      */
     void sendPartnerAuthorizationWarning(Partner partner, List<String> recipientEmails, long daysUntil);
+
+    /**
+     * Sends an issued subscription invoice to whoever pays it, with FGO's PDF link (§9.4 of
+     * plata-abonamente.md: the application sends it, not FGO).
+     *
+     * @throws RuntimeException if delivery fails — the caller must then leave the invoice unmarked,
+     *                          so it is sent again on the next run.
+     */
+    void sendSubscriptionInvoice(SubscriptionInvoice invoice, String clientName, String recipientEmail);
 }

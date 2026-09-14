@@ -1,6 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { BillingRunResult, Subscription, SubscriptionInput, SubscriptionOwner } from "@/lib/types";
+import type {
+  BillingAccount,
+  BillingRunResult,
+  Subscription,
+  SubscriptionInput,
+  SubscriptionOwner,
+} from "@/lib/types";
+
+/**
+ * F2 — abonamentul pe care îl plătește contul, pe `/abonament`: al cabinetului pentru un consultant,
+ * al firmei pentru administratorul ei. 204 (nimic de plătit) devine `null`.
+ */
+export function useBillingAccount() {
+  return useQuery({
+    queryKey: ["billing"],
+    queryFn: async () => {
+      const res = await api.get<BillingAccount>("/api/v1/billing");
+      return res.status === 204 ? null : res.data;
+    },
+  });
+}
 
 /**
  * Plata abonamentelor, F1 — abonamentul unei firme directe sau al unui cabinet. Numai platforma.

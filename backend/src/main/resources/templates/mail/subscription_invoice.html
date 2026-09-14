@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+<div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+    <h2 style="color: #047857;">Factura <span th:text="${number}">WH 1</span> pentru abonamentul WasteHouse</h2>
+    <p>Bună ziua,</p>
+    <p>Ți-am emis factura pentru abonamentul WasteHouse:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Client</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${clientName}">Firma SRL</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Factura</td>
+            <td style="padding: 8px 0;" th:text="${number}">WH 1</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Perioada</td>
+            <td style="padding: 8px 0;" th:text="${period}">17.10.2026 – 16.11.2026</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Total</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${total}">99 lei</td>
+        </tr>
+        <tr th:if="${dueDate != null and !paid}">
+            <td style="padding: 8px 0; color: #6b7280;">Scadență</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${dueDate}">27.10.2026</td>
+        </tr>
+        <tr th:if="${paid}">
+            <td style="padding: 8px 0; color: #6b7280;">Stare</td>
+            <td style="padding: 8px 0; font-weight: bold;">Plătită</td>
+        </tr>
+    </table>
+    <p th:if="${pdfUrl}">
+        <a th:href="${pdfUrl}" href="#"
+           style="display: inline-block; background: #047857; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none;">Descarcă factura (PDF)</a>
+        <a th:if="${payUrl != null and !paid}" th:href="${payUrl}" href="#"
+           style="display: inline-block; margin-left: 8px; color: #047857;">Plătește online</a>
+    </p>
+    <p th:if="${!paid}" style="font-size: 13px; color: #6b7280;">
+        Plata se face prin transfer bancar, în contul scris pe factură. La detalii plată trece seria și
+        numărul facturii (<span th:text="${number}">WH 1</span>), ca plata să fie legată de ea.
+    </p>
+    <p style="font-size: 13px; color: #6b7280;">
+        Toate facturile tale sunt și în aplicație, la <a th:href="${accountUrl}" href="#" style="color: #047857;">Abonament</a>.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
+    <p style="font-size: 12px; color: #9ca3af;">WasteHouse — evidența și raportarea gestiunii deșeurilor.</p>
+</div>
+</body>
+</html>
