@@ -3,7 +3,18 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 13.09.2026, noaptea târziu.** 🔬 **Auditul QA a închis perimetrul și P1.13.**
+> **Unde suntem — 14.09.2026, 12:40.** 🔬 **Auditul QA a închis golurile din `QA-TRACE.md`, P2.15
+> (ecranul) și P2.16 (performanța).** Dimineața: cele 6 goluri ale matricei cerință → test, închise
+> fiecare cu proba negativă; probele de ecran 13/14/15 rulate prima dată, cu **BUG-013/014/015**
+> găsite și reparate (api **v58**, app **v50**, 11:51). Apoi suita de interfață 1–15 verde, plus proba
+> 16 (buletinele). La prânz, **P2.16**: o probă care numără interogările a găsit **BUG-016** — lista
+> de mișcări costa 2 interogări pe rând (34 la o pagină de 10, 114 la una de 50), partenerii la fel,
+> iar dosarul de control câte una pe mișcare. Reparat cu `default_batch_fetch_size` și o interogare pe
+> an în `AuditFileService`: acum 10/10, 5/5, 152/152. **491 de teste, 56 de clase, 0 eșecuri,
+> 0 dezactivate.** ✅ **Deployat 14.09, 12:38** — `api` **v59** (`b7e998e`), fără migrare (`V39`);
+> `app` rămâne **v50**. ⬜ Deschis: UNCONFIRMED-004 (dosarul construit în memorie, candidat pentru R14).
+>
+> **Unde eram — 13.09.2026, noaptea târziu.** 🔬 **Auditul QA a închis perimetrul și P1.13.**
 > Documentația API-ului e oprită în producție (pornită doar pe profilul `dev`), o adresă inexistentă
 > răspunde 404 în loc de 500, fiecare rută a aplicației e citită din Spring și verificată că cere
 > rolul potrivit și sesiune, iar preflight-ul `OPTIONS` e probat că nu ajunge la niciun controller.
