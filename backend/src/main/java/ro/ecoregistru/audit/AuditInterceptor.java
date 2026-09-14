@@ -62,7 +62,6 @@ public class AuditInterceptor implements Interceptor {
             WorkPoint.class,
             InternalGenerator.class,
             Driver.class,
-            AnalysisBulletin.class,
             Attachment.class,
             AppUser.class);
 
@@ -81,7 +80,6 @@ public class AuditInterceptor implements Interceptor {
             WorkPoint.class, List.of("name"),
             InternalGenerator.class, List.of("name"),
             Driver.class, List.of("name"),
-            AnalysisBulletin.class, List.of("issueDate", "laboratory"),
             Attachment.class, List.of("fileName"),
             AppUser.class, List.of("email"));
 

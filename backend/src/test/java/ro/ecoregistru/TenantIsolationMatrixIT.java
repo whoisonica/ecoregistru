@@ -84,7 +84,6 @@ class TenantIsolationMatrixIT {
     @Autowired PartnerRepository partnerRepository;
     @Autowired DriverRepository driverRepository;
     @Autowired InternalGeneratorRepository internalGeneratorRepository;
-    @Autowired AnalysisBulletinRepository analysisBulletinRepository;
     @Autowired ReportingDeadlineRepository deadlineRepository;
     @Autowired MonthlyEvidenceRepository evidenceRepository;
     @Autowired PackagingMarketEntryRepository marketEntryRepository;
@@ -100,7 +99,7 @@ class TenantIsolationMatrixIT {
     /** Tot ce are nevoie un tenant ca să fie atacat pe fiecare resursă. */
     private record Tenant(Company company, AppUser admin, String token, WorkPoint workPoint,
                           Partner partner, Driver driver, InternalGenerator generator,
-                          WasteMovement movement, AnalysisBulletin bulletin) {}
+                          WasteMovement movement) {}
 
     @BeforeEach
     void setUp() {
@@ -109,14 +108,13 @@ class TenantIsolationMatrixIT {
         // Numele sunt deliberat foarte diferite: o scurgere se vede în corpul răspunsului fără să
         // fie nevoie să ştim ce câmp a scăpat-o.
         a = buildTenant("Alfa Salubritate SRL", "PL Alfa", "Partener Alfa", "Sofer Alfa",
-                "Generator Alfa", "Laborator Alfa", code);
+                "Generator Alfa", code);
         b = buildTenant("Beta Reciclare SRL", "PL Beta", "Partener Beta", "Sofer Beta",
-                "Generator Beta", "Laborator Beta", code);
+                "Generator Beta", code);
     }
 
     private Tenant buildTenant(String companyName, String workPointName, String partnerName,
-                               String driverName, String generatorName, String laboratory,
-                               WasteCode code) {
+                               String driverName, String generatorName, WasteCode code) {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         Company company = companyRepository.save(Company.builder()
                 .name(companyName).cui("RO" + suffix).type(CompanyType.GENERATOR)
@@ -140,15 +138,8 @@ class TenantIsolationMatrixIT {
                 .company(company).workPoint(workPoint).date(LocalDate.now()).wasteCode(code)
                 .quantity(new BigDecimal("42.000")).unit(Unit.KG).operation(WasteOperation.GENERATED)
                 .deleted(false).createdBy(admin.getId()).build());
-        AnalysisBulletin bulletin = analysisBulletinRepository.save(AnalysisBulletin.builder()
-                .company(company).wasteCode(code).issueDate(LocalDate.now()).laboratory(laboratory)
-                .url("https://res.cloudinary.com/x/authenticated/b.pdf")
-                .publicId("ecoregistru/bulletins/" + suffix)
-                .resourceType("image").deliveryType("authenticated").format("pdf")
-                .fileName("buletin.pdf").contentType("application/pdf")
-                .createdAt(Instant.now()).createdBy(admin.getId()).build());
         return new Tenant(company, admin, jwtService.generateToken(admin), workPoint, partner,
-                driver, generator, movement, bulletin);
+                driver, generator, movement);
     }
 
     private MockHttpServletRequestBuilder as(MockHttpServletRequestBuilder req, Tenant t) {
@@ -164,7 +155,7 @@ class TenantIsolationMatrixIT {
      * oricare dintre ele e acelaşi defect şi are aceeaşi gravitate — iar aşa lista se poate
      * extinde cu o linie când apare o resursă nouă.
      *
-     * <p>Lista e scurtă fiindcă aplicaţia n-are citire după id decât pe două resurse: partenerii,
+     * <p>Lista e scurtă fiindcă aplicaţia n-are citire după id decât pe mişcări: partenerii,
      * punctele de lucru, şoferii şi generatorii interni se citesc numai prin listă. Pentru ele,
      * atacul pe id se probează mai jos, pe {@code PUT} şi {@code DELETE}.
      */
@@ -172,7 +163,6 @@ class TenantIsolationMatrixIT {
     void readingAnotherTenantsRowByIdIsAlwaysANotFound() throws Exception {
         String[] urls = {
                 "/api/v1/movements/" + b.movement().getId(),
-                "/api/v1/analysis-bulletins/" + b.bulletin().getId() + "/continut",
         };
         for (String url : urls) {
             mockMvc.perform(as(get(url), a))
@@ -193,7 +183,6 @@ class TenantIsolationMatrixIT {
                 "/api/v1/work-points",
                 "/api/v1/drivers",
                 "/api/v1/internal-generators",
-                "/api/v1/analysis-bulletins",
                 "/api/v1/deadlines?year=" + LocalDate.now().getYear(),
                 "/api/v1/audit-log",
         };
@@ -315,7 +304,6 @@ class TenantIsolationMatrixIT {
                 "/api/v1/drivers/" + b.driver().getId(),
                 "/api/v1/internal-generators/" + b.generator().getId(),
                 "/api/v1/movements/" + b.movement().getId(),
-                "/api/v1/analysis-bulletins/" + b.bulletin().getId(),
         };
         for (String url : urls) {
             mockMvc.perform(as(delete(url), a)).andExpect(status().isNotFound());
@@ -326,7 +314,6 @@ class TenantIsolationMatrixIT {
         assertThat(driverRepository.findById(b.driver().getId()).orElseThrow().isActive()).isTrue();
         assertThat(internalGeneratorRepository.findById(b.generator().getId()).orElseThrow().isActive()).isTrue();
         assertThat(movementRepository.findById(b.movement().getId()).orElseThrow().isDeleted()).isFalse();
-        assertThat(analysisBulletinRepository.findById(b.bulletin().getId())).isPresent();
     }
 
     /**
@@ -385,7 +372,7 @@ class TenantIsolationMatrixIT {
     /**
      * Dosarul de control. Nu poartă id în cale — iese din {@code TenantContext} —, deci proba nu e
      * un cod de răspuns, ci <b>conţinutul</b>: un zip întreg cu evidenţa, autorizaţiile
-     * partenerilor şi buletinele. Dacă tenantul s-ar amesteca aici, ar fi cea mai completă
+     * partenerilor. Dacă tenantul s-ar amesteca aici, ar fi cea mai completă
      * scurgere posibilă din aplicaţie, şi ar pleca direct spre un inspector.
      *
      * <p>Se despachetează şi se citeşte {@code README.txt}, singura intrare în text simplu:

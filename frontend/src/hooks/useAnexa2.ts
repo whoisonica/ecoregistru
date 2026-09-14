@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, apiBlobErrorMessage } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
-import type { Anexa2Threshold, WasteMovement } from "@/lib/types";
+import type { Anexa2Threshold, CompanyType, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { useToast } from "@/components/ui/toast";
 
@@ -16,8 +16,12 @@ import { useToast } from "@/components/ui/toast";
  * dacă acesta este și destinatar" — pe cantitatea cumulată a unei rute, cu o anexă a expeditorilor.
  * Butonul nu se oferă pe capitolul 18, iar backendul refuză oricum: e alt document, nu o variantă.
  */
-export function canPrintAnexa2(m: WasteMovement): boolean {
+export function canPrintAnexa2(m: WasteMovement, companyType: CompanyType | undefined): boolean {
   return (
+    // Numai la colectori — specialista, 14.09.2026. Cât timp firma nu s-a încărcat, butonul nu apare:
+    // unul care dispare după o secundă e mai rău decât unul care apare.
+    companyType != null &&
+    companyType !== "GENERATOR" &&
     m.hazardous &&
     !isMedicalWaste(m) &&
     m.partnerId != null &&

@@ -287,7 +287,6 @@ class AuditFileIT {
                 .contains("art. 62 alin. (1) lit. a): 40.000–60.000 lei")
                 .contains("Colectarea separată — art. 17 alin. (3)")
                 .contains("Înscrierea în registrul ANMAP — art. 36 alin. (1)–(2)")
-                .contains("Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)")
                 .contains("Predarea uleiurilor uzate — art. 31 alin. (3)");
     }
 
@@ -312,11 +311,12 @@ class AuditFileIT {
     void theDerivedObligationsNameTheCodesTheyFound() throws Exception {
         String readme = flat(readmeOfDemo2026());
 
-        // art. 8 alin. (4): a characterisation per code, and the dossier says per code.
+        // The characterisation of art. 8 alin. (4) left the dossier on 14.09.2026 with the analysis
+        // bulletins (the specialist: a generator is not asked for them). Nothing may still tell the
+        // client it concerns them, nor point at a folder that is no longer written.
         assertThat(readme)
-                .contains("Obligatorie, și te privește")
-                .contains("per cod de deșeu")
-                .contains("13 02 08*");
+                .doesNotContain("Caracterizarea deșeurilor periculoase")
+                .doesNotContain("buletine-analiza");
         // art. 31 alin. (3): the ENTIRE quantity, and where the recipients' authorisations sit.
         assertThat(readme)
                 .contains("Te privește: în anii din dosar apar mișcări pe coduri de ulei uzat")
@@ -357,10 +357,8 @@ class AuditFileIT {
 
         String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
         assertThat(flat(readme))
-                .contains("nu apare niciun cod periculos")
                 .contains("nu apare niciun cod de ulei uzat")
                 // The obligations are still named — only the conclusion changes.
-                .contains("Caracterizarea deșeurilor periculoase generate — art. 8 alin. (4)")
                 .contains("Predarea uleiurilor uzate — art. 31 alin. (3)")
                 .doesNotContain("Te privește");
     }
@@ -378,7 +376,7 @@ class AuditFileIT {
         String readme = flat(readmeOfDemo2026());
 
         assertThat(readme)
-                .contains("Toate cinci sunt în aceeași listă sancționată")
+                .contains("Toate patru sunt în aceeași listă sancționată")
                 .contains("Programul de prevenire și reducere a deșeurilor — art. 44 alin. (1) și (3)")
                 .contains("firma are autorizație de mediu (APM-CJ-123)")
                 // Cele două jumătăți ale lui alin. (3) se spun separat: una e în calendar,

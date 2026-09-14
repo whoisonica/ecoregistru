@@ -75,7 +75,6 @@ public class WasteMovementService {
     PartnerWorkPointRepository partnerWorkPointRepository;
     InternalGeneratorRepository internalGeneratorRepository;
     AttachmentRepository attachmentRepository;
-    AnalysisBulletinRepository bulletinRepository;
     CloudinaryStorageService storageService;
     ro.ecoregistru.service.export.Anexa3FormGenerator anexa3FormGenerator;
     ro.ecoregistru.service.export.Anexa2FormGenerator anexa2FormGenerator;
@@ -91,7 +90,7 @@ public class WasteMovementService {
             var existing = movementRepository
                     .findByCompany_IdAndClientGeneratedId(tenantId, request.clientGeneratedId());
             if (existing.isPresent()) {
-                return mapper.toResponse(existing.get(), codesWithBulletin(tenantId));
+                return mapper.toResponse(existing.get());
             }
         }
 
@@ -159,7 +158,7 @@ public class WasteMovementService {
                 .build();
 
         movementRepository.save(movement);
-        return mapper.toResponse(movement, codesWithBulletin(tenantId));
+        return mapper.toResponse(movement);
     }
 
     @Transactional
@@ -221,7 +220,7 @@ public class WasteMovementService {
         movement.setDocumentReference(request.documentReference());
         movement.setNotes(request.notes());
 
-        return mapper.toResponse(movement, codesWithBulletin(tenantId));
+        return mapper.toResponse(movement);
     }
 
     /**
@@ -250,7 +249,7 @@ public class WasteMovementService {
         if (request.unit() != null) {
             movement.setUnit(request.unit());
         }
-        return mapper.toResponse(movement, codesWithBulletin(tenantId));
+        return mapper.toResponse(movement);
     }
 
     /**
@@ -308,11 +307,7 @@ public class WasteMovementService {
         Specification<WasteMovement> spec = ordered(withSearch(filter, search), sortKey, ascending);
         Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
 
-        // Read once for the whole page, not per row: the mirror-code badge asks whether this
-        // tenant holds an analysis bulletin for the code, and a query per row would be an N+1 on
-        // the most-opened screen in the application.
-        Set<String> covered = codesWithBulletin(tenantId);
-        return PageResponse.of(movementRepository.findAll(spec, pageable), m -> mapper.toResponse(m, covered));
+        return PageResponse.of(movementRepository.findAll(spec, pageable), mapper::toResponse);
     }
 
     /**
@@ -513,7 +508,7 @@ public class WasteMovementService {
     @Transactional(readOnly = true)
     public WasteMovementResponse get(UUID id) {
         UUID tenantId = TenantContext.require();
-        return mapper.toResponse(requireMovement(id, tenantId), codesWithBulletin(tenantId));
+        return mapper.toResponse(requireMovement(id, tenantId));
     }
 
     @Transactional
@@ -705,6 +700,12 @@ public class WasteMovementService {
         WasteMovement movement = requireMovement(id, tenantId);
         Company company = requireCompany(tenantId);
 
+        // Numai la colectori — răspunsul specialistei din 14.09.2026: „anexa 2 o păstrăm doar pentru
+        // colectori". Art. 8 numeşte expeditorul; decizia urmează practica ei, iar temeiul e scris în
+        // intrebari-specialist.md. Refuzul vine primul, fiindcă nu depinde de mişcare.
+        if (!company.getType().keepsArt48Register()) {
+            throw new BusinessException(ANEXA2_COLLECTORS_ONLY);
+        }
         if (!movement.getOperation().isExit() || movement.getPartner() == null) {
             throw new BusinessException(ANEXA2_REQUIRES_HANDOVER);
         }
@@ -979,17 +980,6 @@ public class WasteMovementService {
             throw new BusinessException(ART48_REGISTER_NOT_ENABLED);
         }
         return register;
-    }
-
-    /**
-     * The waste codes this tenant holds an analysis bulletin for — the clean source of the
-     * mirror-code check since G-7 (OUG 92/2021 art. 8 alin. (2) and alin. (4)).
-     *
-     * <p>Returned as a set and read once per request, never per row. On the single-movement paths
-     * it is one small indexed query; on {@link #list} it is one for the whole page.
-     */
-    private Set<String> codesWithBulletin(UUID tenantId) {
-        return Set.copyOf(bulletinRepository.findCoveredWasteCodes(tenantId));
     }
 
 }

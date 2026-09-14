@@ -10,18 +10,11 @@ import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.enums.PackagingMaterial;
 
 import java.util.List;
-import java.util.Set;
 
 @Component
 public class WasteMovementMapper {
 
-    /**
-     * @param codesWithBulletin the waste codes this tenant holds an analysis bulletin for, read
-     *                          once by the caller. Passed in rather than looked up here: the mapper
-     *                          runs per row, and a query per row would be an N+1 on the busiest
-     *                          screen in the application.
-     */
-    public WasteMovementResponse toResponse(WasteMovement m, Set<String> codesWithBulletin) {
+    public WasteMovementResponse toResponse(WasteMovement m) {
         Partner partner = m.getPartner();
         Partner carrier = m.getTransportPartner();
         InternalGenerator section = m.getInternalGenerator();
@@ -38,7 +31,7 @@ public class WasteMovementMapper {
                 m.getWasteCode().getCode(),
                 m.getWasteCode().getName(),
                 m.getWasteCode().isHazardous(),
-                mirrorClassificationUnproven(m, codesWithBulletin),
+                mirrorClassificationUnproven(m),
                 m.getWasteCode().getMirrorOf(),
                 m.getQuantity(),
                 m.isWeighedAtUnloading(),
@@ -152,17 +145,12 @@ public class WasteMovementMapper {
      *   <li><b>Mirror codes only.</b> {@code mirrorOf} is null for 681 of the 842 codes, and always
      *       null on a hazardous one — the article conditions the classification <em>as
      *       non-hazardous</em>, so a code declared hazardous needs nothing proved.</li>
-     *   <li><b>Two things clear it, and the article is why there are two.</b> An <b>analysis
-     *       bulletin on this code</b> (felia G-7, 11.09.2026) is the proof the article names, and
-     *       the clean source: it hangs off the code, exactly as art. 8 alin. (4) asks. An
-     *       <b>attachment on the movement</b> is the weaker one, and it stays — the same sentence
-     *       admits "alte documente relevante", and a supplier declaration or an origin note is one.
-     *       Dropping it when G-7 arrived would have narrowed the rule past what the act says, and
-     *       would have lit the badge on movements that were already documented.</li>
-     *   <li><b>Neither is verification.</b> The application cannot read a PDF and decide whether it
-     *       is a laboratory report, and pretending otherwise would turn a warning into a lie. The
-     *       question stays "where is the paper?", not "is it the right paper?" — G-7 gave the
-     *       strong half of the answer somewhere to live, not a way to check it.</li>
+     *   <li><b>An attachment on the movement clears it.</b> The same sentence admits "alte
+     *       documente relevante", and a laboratory report, a supplier declaration or an origin note
+     *       is one. The application cannot read a PDF and decide which it is, so the question stays
+     *       "where is the paper?", not "is it the right paper?". Until 14.09.2026 an analysis
+     *       bulletin held on the code cleared it too (G-7); the bulletins were removed on the
+     *       specialist's advice, so the movement's own paper is the only source left.</li>
      *   <li><b>All operations, not just exits.</b> Unlike the expired-authorization warning, this
      *       one is not about a handover: the classification travels with the waste from the moment
      *       it is written down, and it is the holder who answers for it (art. 8 alin. (1)).</li>
@@ -172,9 +160,7 @@ public class WasteMovementMapper {
      * screen only. It must never be printed on an official form: Anexa 1 and Anexa 3 carry what the
      * act asks for, not our reading of it.
      */
-    private boolean mirrorClassificationUnproven(WasteMovement m, Set<String> codesWithBulletin) {
-        return m.getWasteCode().getMirrorOf() != null
-                && m.getAttachments().isEmpty()
-                && !codesWithBulletin.contains(m.getWasteCode().getCode());
+    private boolean mirrorClassificationUnproven(WasteMovement m) {
+        return m.getWasteCode().getMirrorOf() != null && m.getAttachments().isEmpty();
     }
 }

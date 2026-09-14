@@ -30,7 +30,6 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
-import { AnalysisBulletinsSection } from "@/components/AnalysisBulletinsSection";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
 import { CompanyUsersSection } from "@/components/CompanyUsersSection";
 import { AuditLogSection } from "@/components/AuditLogSection";
@@ -157,7 +156,6 @@ export function SettingsPage() {
           { id: "puncte-de-lucru", label: t.title },
           { id: "generatori-interni", label: strings.settings.internalGenerators.title },
           { id: "soferi", label: strings.settings.drivers.title },
-          { id: "buletine-analiza", label: strings.settings.bulletins.title },
           // Doar pentru cine chiar are secțiunea: un link care duce la nimic e mai rău
           // decât un link care lipsește.
           ...(canManage
@@ -261,8 +259,6 @@ export function SettingsPage() {
       <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
 
       <OwnDriversSection canManage={canManage} />
-
-      <AnalysisBulletinsSection canManage={canManage} />
 
       <CompanyUsersSection canManage={canManage} />
 

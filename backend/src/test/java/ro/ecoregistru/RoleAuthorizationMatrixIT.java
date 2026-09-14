@@ -77,7 +77,6 @@ class RoleAuthorizationMatrixIT {
     @Autowired PartnerRepository partnerRepository;
     @Autowired DriverRepository driverRepository;
     @Autowired InternalGeneratorRepository internalGeneratorRepository;
-    @Autowired AnalysisBulletinRepository analysisBulletinRepository;
 
     @MockBean CloudinaryStorageService storageService;
 
@@ -98,7 +97,6 @@ class RoleAuthorizationMatrixIT {
     private Driver driver;
     private InternalGenerator generator;
     private WasteMovement movement;
-    private AnalysisBulletin bulletin;
     private UUID wasteCodeId;
 
     /** Toţi trei în <b>aceeaşi</b> firmă: aici nu se probează graniţa dintre firme, ci cea dintre roluri. */
@@ -135,13 +133,6 @@ class RoleAuthorizationMatrixIT {
                 .company(company).workPoint(workPoint).date(LocalDate.now()).wasteCode(code)
                 .quantity(new BigDecimal("42.000")).unit(Unit.KG).operation(WasteOperation.GENERATED)
                 .deleted(false).createdBy(admin.getId()).build());
-        bulletin = analysisBulletinRepository.save(AnalysisBulletin.builder()
-                .company(company).wasteCode(code).issueDate(LocalDate.now()).laboratory("Laborator Roluri")
-                .url("https://res.cloudinary.com/x/authenticated/b.pdf")
-                .publicId("ecoregistru/bulletins/" + suffix)
-                .resourceType("image").deliveryType("authenticated").format("pdf")
-                .fileName("buletin.pdf").contentType("application/pdf")
-                .createdAt(Instant.now()).createdBy(admin.getId()).build());
     }
 
     private AppUser user(String email, Role role) {
@@ -205,7 +196,6 @@ class RoleAuthorizationMatrixIT {
         assertThat(partnerRepository.findById(partner.getId()).orElseThrow().isActive()).isTrue();
         assertThat(driverRepository.findById(driver.getId()).orElseThrow().isActive()).isTrue();
         assertThat(internalGeneratorRepository.findById(generator.getId()).orElseThrow().isActive()).isTrue();
-        assertThat(analysisBulletinRepository.findById(bulletin.getId())).isPresent();
 
         // Fişierele nici măcar nu pleacă spre furnizorul de stocare: refuzul e înainte de serviciu,
         // nu o curăţenie după. Altfel ar rămâne obiecte plătite şi orfane la fiecare încercare.
@@ -249,7 +239,6 @@ class RoleAuthorizationMatrixIT {
                 "/api/v1/work-points",
                 "/api/v1/drivers",
                 "/api/v1/internal-generators",
-                "/api/v1/analysis-bulletins",
                 "/api/v1/waste-codes?q=15",
                 "/api/v1/companies/current",
                 "/api/v1/deadlines?year=" + LocalDate.now().getYear(),
@@ -502,13 +491,6 @@ class RoleAuthorizationMatrixIT {
                 new Call("DELETE /internal-generators/{id}", () -> delete("/api/v1/internal-generators/" + generator.getId())),
                 new Call("POST /internal-generators/{id}/reactivate",
                         () -> post("/api/v1/internal-generators/" + generator.getId() + "/reactivate")),
-
-                new Call("POST /analysis-bulletins", () -> multipart("/api/v1/analysis-bulletins")
-                        .file(new MockMultipartFile("file", "buletin.pdf", "application/pdf", "%PDF-1.4".getBytes()))
-                        .param("wasteCodeId", wasteCodeId.toString())
-                        .param("issueDate", LocalDate.now().toString())
-                        .param("laboratory", "Laborator Nou")),
-                new Call("DELETE /analysis-bulletins/{id}", () -> delete("/api/v1/analysis-bulletins/" + bulletin.getId())),
 
                 new Call("POST /deadlines/regenerate", () -> post("/api/v1/deadlines/regenerate").param("year", String.valueOf(year))),
                 new Call("POST /deadlines/{id}/complete", () -> post("/api/v1/deadlines/" + any + "/complete")),

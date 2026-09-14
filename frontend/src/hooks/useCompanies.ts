@@ -27,10 +27,11 @@ export function useCompanies(enabled: boolean) {
  */
 export const currentCompanyKey = ["company", "current"] as const;
 
-export function useCurrentCompany() {
+export function useCurrentCompany(enabled = true) {
   return useQuery({
     queryKey: currentCompanyKey,
     queryFn: async () => (await api.get<Company>("/api/v1/companies/current")).data,
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

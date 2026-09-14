@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * Jurnalul de audit al firmei curente — P1.11.
  *
- * <p>Tenant-scoped prin construcţie, ca {@code /users} şi {@code /analysis-bulletins}: nu există
+ * <p>Tenant-scoped prin construcţie, ca {@code /users}: nu există
  * niciun id de firmă în cale, deci un ADMIN ajunge exact la jurnalul firmei lui.
  *
  * <p><b>Numai citire, şi numai pentru administratori.</b> Nu există POST, PUT sau DELETE — un

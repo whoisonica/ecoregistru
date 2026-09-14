@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { companiesKey, useCompanies } from "@/hooks/useCompanies";
+import { companiesKey, useCompanies, useCurrentCompany } from "@/hooks/useCompanies";
 import { canWrite, isMultiCompany } from "@/lib/roles";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
@@ -311,7 +311,21 @@ export function Layout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  const groups = navGroups.filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role));
+  // Un generator n-are intrări de la terți, deci ecranul lui se numește după ce are: ieșiri
+  // (specialista, 14.09.2026). Firma se cere doar când există una aleasă.
+  const { data: company } = useCurrentCompany(!isMultiCompany(user?.role) || Boolean(tenantId));
+  const groups = navGroups
+    .filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role))
+    .map((g) =>
+      company?.type === "GENERATOR"
+        ? {
+            ...g,
+            items: g.items.map((i) =>
+              i.to === "/miscari" ? { ...i, label: strings.nav.movementsGenerator } : i
+            ),
+          }
+        : g
+    );
 
   function handleLogout() {
     logout();

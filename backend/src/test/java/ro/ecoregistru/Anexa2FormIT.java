@@ -404,6 +404,34 @@ class Anexa2FormIT {
                 .andExpect(jsonPath("$['error-code']", is("anexa2.medical")));
     }
 
+    /**
+     * Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori". Aceeaşi mişcare, care la un
+     * colector tipăreşte formularul, e refuzată cu codul ei imediat ce firma e generator.
+     */
+    @Test
+    void aGeneratorAccountDoesNotPrintTheForm() throws Exception {
+        UUID id = createMovement("""
+                  "operation": "DISPOSED", "register": "ANEXA_1", "operationCode": "D5",
+                  "partnerId": "%s", "quantity": 25
+                """.formatted(partnerId), hazardousCodeId);
+        var company = companyRepository.findById(tenantId).orElseThrow();
+        var before = company.getType();
+        try {
+            company.setType(ro.ecoregistru.enums.CompanyType.GENERATOR);
+            companyRepository.save(company);
+
+            mockMvc.perform(get("/api/v1/movements/" + id + "/anexa2")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$['error-code']", is("anexa2.collectors.only")));
+        } finally {
+            company.setType(before);
+            companyRepository.save(company);
+        }
+        // Controlul pozitiv: înapoi la tipul demo, aceeaşi mişcare tipăreşte.
+        assertThat(new String(pdfOf(id), 0, 5)).isEqualTo("%PDF-");
+    }
+
     // ---------- helpers ----------
 
     private byte[] pdfOf(UUID id) throws Exception {

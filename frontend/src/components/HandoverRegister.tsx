@@ -3,6 +3,7 @@ import { ArrowRightLeft, FileText, Pencil } from "lucide-react";
 import { useMovements } from "@/hooks/useMovements";
 import { canPrintAnexa3, useAnexa3Download } from "@/hooks/useAnexa3";
 import { canPrintAnexa2, useAnexa2Download } from "@/hooks/useAnexa2";
+import { useCurrentCompany } from "@/hooks/useCompanies";
 import type { MovementFilters, WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
@@ -37,6 +38,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
   const { download, downloadingId } = useAnexa3Download();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } =
     useAnexa2Download();
+  const { data: company } = useCurrentCompany();
 
   /**
    * „Arată-mi doar ce blochează depunerea", trimis prin adresă de pe Panou.
@@ -219,7 +221,7 @@ export function HandoverRegister({ filters }: { filters: MovementFilters }) {
                     )}
                     {/* Codul periculos e refuzat pe Anexa 3 și trimis aici — de pe 10.09.2026
                         mesajul acela numește un formular care există. */}
-                    {canPrintAnexa2(mv) && (
+                    {canPrintAnexa2(mv, company?.type) && (
                       <Button
                         variant="ghost"
                         size="sm"

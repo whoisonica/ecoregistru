@@ -3,7 +3,18 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 14.09.2026, seara.** 🏷️ **EcoRegistru devine WasteHouse.** Aplicația stă pe
+> **Unde suntem — 14.09.2026, noaptea.** 👩‍🔬 **Răspunsurile specialistei, puse în cod.**
+> **Contul de consultant (P2.13, felia 1)** e validat de ea și pe producție: `api` **v65** (`V40` migrată),
+> `app` **v53**. **Anexa 2 rămâne numai la colectori:** serverul refuză formularul pentru un cont de
+> generator, cu codul `anexa2.collectors.only`, iar ecranul nu mai oferă butonul. Regula e probată
+> negativ: scoasă din cod, a căzut exact testul ei (14 teste, 1 eșec). La generatori, **„Mișcări”
+> se numește „Ieșiri”**: meniu, titlu, buton, formular. **Buletinele de analiză (G-7) sunt scoase**, la
+> cererea ei: ecranul din Setări, punctul 3 și folderul din dosarul de control, sursa care stingea
+> avertismentul pe codul-oglindă. **Tabela `analysis_bulletins` rămâne în bază** (`V38` e aplicată și
+> nu se editează). **502 teste, 56 de clase, 0 eșecuri**, `tsc` curat, `vite build` verde. ⬜ **Nedeployat.**
+> Viza anuală a partenerului (AH) are textul actului verificat în `surse-oficiale.md` §2.6-bis.
+>
+> **Unde eram — 14.09.2026, seara.** 🏷️ **EcoRegistru devine WasteHouse.** Aplicația stă pe
 > **app.wastehouse.ro**, pagina produsului pe **wastehouse.ro**. Pe ecran: numele, semnul (săgeata de pe
 > landing) în favicon și lângă nume pe cele nouă locuri unde se afișa, titlul paginii; în mailuri:
 > subsolul celor trei șabloane și subiectul resetării; termenii și politica publicate, cu contactul

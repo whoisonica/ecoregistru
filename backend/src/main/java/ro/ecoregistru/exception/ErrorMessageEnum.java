@@ -90,12 +90,6 @@ public enum ErrorMessageEnum {
     ATTACHMENT_FETCH_FAILED("attachment.fetch.failed", "Fișierul nu a putut fi descărcat. Încearcă din nou peste câteva momente."),
     ATTACHMENT_TOO_LARGE("attachment.too.large", "Fișierul e prea mare. Cel mult 10 MB per fișier."),
 
-    // --- Buletine de analiză (OUG 92/2021 art. 8 alin. (4) și art. 48 alin. (2)) ---
-    BULLETIN_NOT_FOUND("bulletin.not.found", "Buletinul de analiză nu a fost găsit."),
-    BULLETIN_FILE_REQUIRED("bulletin.file.required", "Încarcă buletinul de analiză. Art. 48 alin. (2) cere să deții documentul, nu doar să declari că există."),
-    BULLETIN_LABORATORY_REQUIRED("bulletin.laboratory.required", "Scrie laboratorul care a emis buletinul."),
-    BULLETIN_ISSUE_DATE_REQUIRED("bulletin.issue.date.required", "Scrie data buletinului — cea de pe hârtia emisă de laborator."),
-    BULLETIN_ISSUE_DATE_IN_FUTURE("bulletin.issue.date.future", "Data buletinului e în viitor. Se trece data de pe hârtia emisă de laborator."),
 
     // --- Anexa 3 la HG 1061/2008 (formularul de transport) ---
     ANEXA3_REQUIRES_HANDOVER("anexa3.requires.handover", "Formularul de transport se generează pentru un deșeu predat unui partener: alege valorificare sau eliminare și partenerul care o face."),
@@ -109,6 +103,8 @@ public enum ErrorMessageEnum {
     // o anexă a expeditorilor. E alt flux, nu o variantă a acestuia, iar clinicile sunt clienţi-ţintă:
     // refuzul le spune pe ecran ce ar afla altfel la control.
     ANEXA2_MEDICAL_WASTE("anexa2.medical", "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 din HG 1061/2008 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul, deci nu-l generăm în locul lui."),
+    // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori".
+    ANEXA2_COLLECTORS_ONLY("anexa2.collectors.only", "Anexa 2 (formularul de transport pentru deșeuri periculoase) o întocmește colectorul care preia deșeul. Contul e de generator, deci formularul nu se tipărește de aici."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),

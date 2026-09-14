@@ -27,6 +27,8 @@ export const strings = {
     packaging: "Ambalaje",
     dashboard: "Panou",
     movements: "Mișcări",
+    // La un generator nu intră nimic de la terți: ecranul se numește după ce are (specialista, 14.09.2026).
+    movementsGenerator: "Ieșiri",
     evidences: "Evidențe",
     partners: "Parteneri",
     deadlines: "Termene",
@@ -271,6 +273,13 @@ export const strings = {
     add: "Adaugă mișcare",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
+    // Specialista, 14.09.2026: „la generatori mișcări va fi redenumit în ieșiri". Rămâne același
+    // ecran și aceeași adresă; se schimbă doar cum îi spune omul care nu preia deșeu de la nimeni.
+    generatorTitle: "Ieșiri de deșeuri",
+    generatorSubtitle: "Deșeurile generate și predate, pe puncte de lucru și luni.",
+    generatorAdd: "Adaugă ieșire",
+    generatorAddTitle: "Adaugă ieșire",
+    generatorEditTitle: "Editează ieșirea",
     // Linkul din rapoarte a adus un id care nu mai e printre mișcările lunii: ștearsă între timp,
     // sau o adresă veche. Se spune, în loc să se deschidă un formular gol.
     movementNotFound: "Mișcarea cerută nu mai există sau a fost ștearsă.",
@@ -576,6 +585,9 @@ export const strings = {
       "Nu reiei drumul la fiecare cursă: art. 5 — aprobarea poate fi dată pentru un singur transport sau pentru mai multe, iar în al doilea caz e valabilă 2 ani de la acordare.",
     anexa2Medical:
       "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul.",
+    // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori".
+    anexa2ByCollector:
+      "Deșeu periculos: formularul de transport (Anexa 2) îl întocmește colectorul care preia deșeul.",
     anexa2Download: "Anexa 2",
     anexa2Downloading: "Se generează...",
     anexa2Error: "Formularul nu a putut fi generat.",
@@ -763,40 +775,6 @@ export const strings = {
       moreChanges: "+{count} încă",
       retention:
         "Jurnalul se păstrează cât evidența pe care o descrie — cel puțin 3 ani (OUG 92/2021, art. 48 alin. (5)).",
-    },
-    bulletins: {
-      title: "Buletine de analiză",
-      subtitle:
-        "Caracterizarea deșeurilor periculoase, pe cod de deșeu — OUG 92/2021, art. 8 alin. (4). Art. 48 alin. (2) cere să deții buletinele și să le transmiți la cerere. Se atașează codului, nu unei mișcări, fiindcă analiza descrie tipul de deșeu, nu un transport. Intră în dosarul de control, grupate pe cod.",
-      add: "Încarcă buletin",
-      addTitle: "Încarcă buletin de analiză",
-      wasteCode: "Cod de deșeu",
-      wasteCodeHint:
-        "Codul pe care îl caracterizează analiza. Un buletin nou pe același cod nu îl înlocuiește pe cel vechi — rămâne ca istoric.",
-      issueDate: "Data buletinului",
-      issueDateHint: "Data de pe hârtia emisă de laborator, nu ziua încărcării.",
-      laboratory: "Laborator",
-      laboratoryPlaceholder: "ex. Laborator Analize Mediu SRL",
-      file: "Fișierul buletinului",
-      fileHint: "PDF sau fotografie, cel mult 10 MB.",
-      openFile: "Deschide",
-      empty: "Niciun buletin încărcat.",
-      emptyHint:
-        "Dacă firma generează deșeuri periculoase, caracterizarea e obligatorie per cod. Dosarul de control spune care coduri o cer și pentru care lipsește.",
-      searchPlaceholder: "Caută după cod, denumire sau laborator...",
-      latest: "Cel mai recent",
-      history: "Anterior",
-      delete: "Șterge",
-      confirmDeleteTitle: "Ștergi buletinul?",
-      confirmDelete:
-        "Se șterge din aplicație și din dosarul de control. Evidența gestiunii rămâne neatinsă — buletinul nu e citat de nicio mișcare și de niciun formular tipărit.",
-      created: "Buletin încărcat.",
-      deleted: "Buletin șters.",
-      saveError: "Încărcarea a eșuat. Verifică datele și încearcă din nou.",
-      loadError: "Nu am putut încărca buletinele.",
-      openError: "Fișierul nu a putut fi deschis.",
-      noValidity:
-        "Buletinul nu are termen de valabilitate scris în act: art. 48 alin. (2) cere să-l deții, iar cât de des se reface analiza pentru același cod ține de practica inspectorului.",
     },
     internalGenerators: {
       title: "Generatori interni",

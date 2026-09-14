@@ -279,6 +279,8 @@ export function MovementsPage() {
     : monthFilter;
   const { download: downloadAnexa3, downloadingId } = useAnexa3Download();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } = useAnexa2Download();
+  const { data: company } = useCurrentCompany();
+  const isGenerator = company?.type === "GENERATOR";
 
   /**
    * Mișcarea pe care o cere adresa, deschisă direct în formularul de editare.
@@ -394,13 +396,13 @@ export function MovementsPage() {
   return (
     <div>
       <PageHeader
-        title={t.title}
-        description={t.subtitle}
+        title={isGenerator ? t.generatorTitle : t.title}
+        description={isGenerator ? t.generatorSubtitle : t.subtitle}
         actions={
           canWrite && (
             <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
               <Plus className="mr-2 h-4 w-4" />
-              {t.add}
+              {isGenerator ? t.generatorAdd : t.add}
             </Button>
           )
         }
@@ -690,7 +692,7 @@ export function MovementsPage() {
                             )}
                             {/* Perechea: același transport, celălalt fel de deșeu. Butonul de
                                 Anexa 2 apare exact unde nu apare cel de Anexa 3. */}
-                            {canPrintAnexa2(m) && (
+                            {canPrintAnexa2(m, company?.type) && (
                               <RowAction
                                 icon={FileText}
                                 disabled={downloadingAnexa2Id === m.id}
@@ -1251,7 +1253,11 @@ function MovementFormDialog({
   const isMedicalCode = isHazardousCode && (wasteCode?.label ?? "").startsWith("18");
   const showTransportSection = isExit(effectiveOperation) && Boolean(partnerId);
   const showAnexa3Section = showTransportSection && !isHazardousCode;
-  const showAnexa2Section = showTransportSection && isHazardousCode && !isMedicalCode;
+  // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori". La un generator blocul de
+  // transport rămâne — șoferul și mașina se țin oricum —, dar fără rubricile formularului.
+  const collectorForms = company != null && company.type !== "GENERATOR";
+  const showAnexa2Section =
+    showTransportSection && isHazardousCode && !isMedicalCode && collectorForms;
 
   /**
    * Cifra din spatele bifei „< 1t/an" — cerută numai pentru o mișcare deja salvată, fiindcă pragul
@@ -1515,7 +1521,17 @@ function MovementFormDialog({
       open
       size="xl"
       onClose={requestClose}
-      title={editing ? t.editTitle : duplicateOf ? t.duplicateTitle : t.addTitle}
+      title={
+        editing
+          ? company?.type === "GENERATOR"
+            ? t.generatorEditTitle
+            : t.editTitle
+          : duplicateOf
+            ? t.duplicateTitle
+            : company?.type === "GENERATOR"
+              ? t.generatorAddTitle
+              : t.addTitle
+      }
       busy={isSaving}
       footer={
         <>
@@ -2119,7 +2135,11 @@ function MovementFormDialog({
             era tăcută: alegeai codul, secţiunea nu apărea, şi nu scria nicăieri de ce. */}
         {requiresCode && !showTransportSection && (
           <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">
-            {isHazardousCode ? t.anexa2NeedsPartner : t.anexa3NeedsPartner}
+            {isHazardousCode
+              ? collectorForms
+                ? t.anexa2NeedsPartner
+                : t.anexa2ByCollector
+              : t.anexa3NeedsPartner}
           </p>
         )}
 
@@ -2135,21 +2155,34 @@ function MovementFormDialog({
           <div className="space-y-3 rounded-md border border-line bg-surface-muted p-3">
             <div>
               <span className="text-sm font-semibold text-content-strong">
-                {showAnexa2Section ? t.anexa2Section : t.anexa3Section}
+                {showAnexa2Section
+                  ? t.anexa2Section
+                  : isHazardousCode
+                    ? t.sectionTransport
+                    : t.anexa3Section}
               </span>
               <p className="text-xs text-content-muted">
-                {showAnexa2Section ? t.anexa2SectionHint : t.anexa3SectionHint}
+                {showAnexa2Section
+                  ? t.anexa2SectionHint
+                  : isHazardousCode
+                    ? isMedicalCode
+                      ? ""
+                      : t.anexa2ByCollector
+                    : t.anexa3SectionHint}
               </p>
             </div>
-            <p className="text-xs text-content-muted">
-              {!showAnexa2Section
-                ? t.anexa3Copies
-                : anexa2Effective === null
-                  ? t.anexa2ThresholdAfterSave
-                  : anexa2Effective
-                    ? t.anexa2Copies3
-                    : t.anexa2Copies6}
-            </p>
+            {/* Numărul de exemplare e al unui formular; fără formular, n-are ce spune. */}
+            {(showAnexa2Section || !isHazardousCode) && (
+              <p className="text-xs text-content-muted">
+                {!showAnexa2Section
+                  ? t.anexa3Copies
+                  : anexa2Effective === null
+                    ? t.anexa2ThresholdAfterSave
+                    : anexa2Effective
+                      ? t.anexa2Copies3
+                      : t.anexa2Copies6}
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
                   Încărcarea nu e un câmp propriu: e data mișcării, și o singură sursă de adevăr

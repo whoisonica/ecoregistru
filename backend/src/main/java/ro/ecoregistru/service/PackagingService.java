@@ -19,7 +19,6 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.repository.PackagingMarketEntryRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
-import ro.ecoregistru.repository.AnalysisBulletinRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.PackagingDeclaration;
@@ -68,7 +67,6 @@ public class PackagingService {
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
     WasteMovementMapper movementMapper;
-    AnalysisBulletinRepository bulletinRepository;
     PackagingDeclarationBuilder builder;
     PackagingDeclarationGenerator pdfGenerator;
     PackagingDeclarationXlsGenerator xlsGenerator;
@@ -88,12 +86,10 @@ public class PackagingService {
     @Transactional(readOnly = true)
     public List<WasteMovementResponse> movements(int year) {
         UUID tenantId = TenantContext.require();
-        // Once for the page, not per row — same reason as on the movements screen.
-        Set<String> covered = Set.copyOf(bulletinRepository.findCoveredWasteCodes(tenantId));
         return yearMovements(tenantId, year).stream()
                 .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
                 .sorted(Comparator.comparing(WasteMovement::getDate).reversed())
-                .map(m -> movementMapper.toResponse(m, covered))
+                .map(movementMapper::toResponse)
                 .toList();
     }
 
