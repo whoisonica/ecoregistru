@@ -291,12 +291,50 @@ export interface Subscription {
   startedAt: string; // yyyy-MM-dd
   firstInvoice: InvoicePreview;
   monthlyInvoice: InvoicePreview;
+  billingEmail: string | null;
+  billingCounty: string | null;
+  billingCity: string | null;
+  billingAddress: string | null;
+  invoices: SubscriptionInvoice[];
+}
+
+/** F2 — DRAFT: rezervată, încă neemisă în FGO (sau emiterea a căzut, vezi `lastError`). */
+export type InvoiceStatus = "DRAFT" | "ISSUED" | "PAID";
+
+/** Mirrors backend SubscriptionInvoiceResponse. */
+export interface SubscriptionInvoice {
+  id: string;
+  periodStart: string; // yyyy-MM-dd
+  periodEnd: string; // yyyy-MM-dd
+  total: number;
+  status: InvoiceStatus;
+  dueDate: string | null;
+  fgoSerie: string | null;
+  fgoNumar: string | null;
+  fgoLink: string | null;
+  fgoLinkPlata: string | null;
+  amountPaid: number | null;
+  lastError: string | null;
+  paidAt: string | null;
 }
 
 export interface SubscriptionInput {
   plan: SubscriptionPlan;
   founder: boolean;
   startedAt: string; // yyyy-MM-dd
+  billingEmail: string | null;
+  billingCounty: string | null;
+  billingCity: string | null;
+  billingAddress: string | null;
+}
+
+/** Mirrors backend BillingRunService.Result. */
+export interface BillingRunResult {
+  configured: boolean;
+  reserved: number;
+  issued: number;
+  failed: number;
+  paid: number;
 }
 
 /** Cine plătește: o firmă directă sau un cabinet. Firmele unui cabinet n-au abonament propriu. */

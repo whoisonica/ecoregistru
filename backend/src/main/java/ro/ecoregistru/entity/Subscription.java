@@ -77,6 +77,18 @@ public class Subscription {
     @Column(nullable = false)
     LocalDate startedAt;
 
+    // --- F2: who the invoice is addressed to (V44). Name and CUI come from the company or cabinet. ---
+
+    /** Falls back to the company's contact email; a cabinet has none of its own. */
+    String billingEmail;
+
+    /** As FGO's county nomenclature spells it ("Bucuresti", "Cluj"). */
+    String billingCounty;
+
+    String billingCity;
+
+    String billingAddress;
+
     @Column(nullable = false)
     Instant createdAt;
 }

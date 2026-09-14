@@ -9,8 +9,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.SubscriptionRequest;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
+import ro.ecoregistru.service.BillingRunService;
 import ro.ecoregistru.service.SubscriptionService;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class SubscriptionController {
     static final String PLATFORM_ONLY = "hasAuthority('PLATFORM_ADMIN')";
 
     SubscriptionService subscriptionService;
+    BillingRunService billingRunService;
 
     @GetMapping("/company/{id}")
     @PreAuthorize(PLATFORM_ONLY)
@@ -71,6 +74,16 @@ public class SubscriptionController {
     @PreAuthorize(PLATFORM_ONLY)
     public long founders() {
         return subscriptionService.founderCount();
+    }
+
+    /**
+     * F2 — the daily invoicing run, now, instead of waiting for 06:30. The same run the scheduler
+     * does, so pressing it twice issues nothing twice.
+     */
+    @PostMapping("/billing/run")
+    @PreAuthorize(PLATFORM_ONLY)
+    public BillingRunService.Result runBilling() {
+        return billingRunService.run(LocalDate.now(BillingRunService.ZONE));
     }
 
     private static ResponseEntity<SubscriptionResponse> orNoContent(Optional<SubscriptionResponse> s) {

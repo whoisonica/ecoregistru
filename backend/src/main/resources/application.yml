@@ -85,6 +85,23 @@ app:
     # Single URL form: cloudinary://<api_key>:<api_secret>@<cloud_name>
     url: ${CLOUDINARY_URL:}
     folder: ${CLOUDINARY_FOLDER:ecoregistru}
+  # Plata abonamentelor, F2 — facturile prin API-ul FGO v7. **Oprită implicit**: fără cod unic, cheie
+  # și serie, `BillingRunService` nu rezervă și nu emite nimic. Adresa implicită e mediul de test
+  # (`api-testuat`), ca o cheie pusă din greșeală să nu emită facturi reale; producția o schimbă
+  # explicit, cu `FGO_BASE_URL=https://api.fgo.ro/v1`.
+  fgo:
+    base-url: ${FGO_BASE_URL:https://api-testuat.fgo.ro/v1}
+    cod-unic: ${FGO_COD_UNIC:}
+    private-key: ${FGO_PRIVATE_KEY:}
+    serie: ${FGO_SERIE:}
+    # ONSIA e neplătitoare de TVA. De confirmat cu FGO (plata-abonamente.md §1.1).
+    cota-tva: ${FGO_COTA_TVA:0}
+    tip-factura: ${FGO_TIP_FACTURA:Factura}
+    platforma-url: ${FGO_PLATFORMA_URL:${FRONTEND_BASE_URL:http://localhost:5173}}
+    # FGO primește o cerere pe secundă.
+    min-interval-ms: ${FGO_MIN_INTERVAL_MS:1000}
+  billing:
+    cron: ${BILLING_CRON:0 30 6 * * *}
 
 sentry:
   # P0.6 — colectorul de erori. **Gol implicit**: fără DSN, SDK-ul nu trimite nimic și nu pornește

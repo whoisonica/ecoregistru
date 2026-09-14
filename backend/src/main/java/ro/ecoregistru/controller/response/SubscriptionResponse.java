@@ -6,11 +6,14 @@ import ro.ecoregistru.service.BillingCalculator.Invoice;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * F1 — a subscription with the two invoices it produces, computed on today's counts: the first
  * period (with the implementation) and the one after it.
+ *
+ * <p>F2 — plus its billing data and the invoices already reserved or issued, newest first.
  */
 public record SubscriptionResponse(
         UUID id,
@@ -26,5 +29,10 @@ public record SubscriptionResponse(
         boolean founder,
         LocalDate startedAt,
         Invoice firstInvoice,
-        Invoice monthlyInvoice
+        Invoice monthlyInvoice,
+        String billingEmail,
+        String billingCounty,
+        String billingCity,
+        String billingAddress,
+        List<SubscriptionInvoiceResponse> invoices
 ) {}

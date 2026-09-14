@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Subscription, SubscriptionInput, SubscriptionOwner } from "@/lib/types";
+import type { BillingRunResult, Subscription, SubscriptionInput, SubscriptionOwner } from "@/lib/types";
 
 /**
  * Plata abonamentelor, F1 — abonamentul unei firme directe sau al unui cabinet. Numai platforma.
@@ -36,6 +36,17 @@ export function useSaveSubscription(owner: SubscriptionOwner) {
     onSuccess: (saved) => {
       qc.setQueryData(subscriptionKey(owner), saved);
       qc.invalidateQueries({ queryKey: foundersKey });
+    },
+  });
+}
+
+/** F2 — rularea zilnică a facturării, acum. De două ori la rând nu emite nimic de două ori. */
+export function useRunBilling() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => (await api.post<BillingRunResult>("/api/v1/subscriptions/billing/run")).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subscriptions"] });
     },
   });
 }

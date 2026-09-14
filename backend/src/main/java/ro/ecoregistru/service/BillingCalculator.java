@@ -4,6 +4,7 @@ import ro.ecoregistru.entity.Subscription;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +37,24 @@ public final class BillingCalculator {
     /** The first day of the given period; period 0 starts on the subscription's start date. */
     public static LocalDate periodStart(Subscription s, int period) {
         return s.getStartedAt().plusMonths(period);
+    }
+
+    /**
+     * The period {@code day} falls in, or 0 before the start. A month is not a fixed length, so the
+     * estimate from whole months is corrected both ways: started on 31.01, 28.02 is already period 1.
+     */
+    public static int periodOn(LocalDate startedAt, LocalDate day) {
+        if (day.isBefore(startedAt)) {
+            return 0;
+        }
+        int period = (int) ChronoUnit.MONTHS.between(startedAt, day);
+        while (!startedAt.plusMonths(period + 1).isAfter(day)) {
+            period++;
+        }
+        while (period > 0 && startedAt.plusMonths(period).isAfter(day)) {
+            period--;
+        }
+        return period;
     }
 
     /**
