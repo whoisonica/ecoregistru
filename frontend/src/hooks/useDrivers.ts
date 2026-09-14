@@ -50,6 +50,20 @@ export function useDeactivateDriver() {
 }
 
 /**
+ * Șterge definitiv fișa unui șofer al nostru, deja dezactivat — AO, 14.09.2026. Mișcările păstrează
+ * instantaneul lor până la termenul de păstrare a evidenței; fișa pleacă acum.
+ */
+export function useDeleteDriver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/v1/drivers/${id}/definitiv`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: driversKey }),
+  });
+}
+
+/**
  * Desface dezactivarea. Vezi `reactivate` din backend: dezactivarea nu șterge nimic, dar până acum
  * nu se putea lua înapoi — prima greșeală era definitivă.
  */

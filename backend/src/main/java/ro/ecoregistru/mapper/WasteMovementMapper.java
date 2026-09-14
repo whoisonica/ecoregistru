@@ -49,7 +49,7 @@ public class WasteMovementMapper {
                 partner != null ? partner.getId() : null,
                 partner != null ? partner.getName() : null,
                 authorizationExpiredAtHandover(m, partner),
-                partner != null ? partner.getAuthorizationExpiry() : null,
+                partner != null ? partner.authorizationValidUntil() : null,
                 section != null ? section.getId() : null,
                 section != null ? section.getName() : null,
                 m.getDocumentReference(),
@@ -111,7 +111,8 @@ public class WasteMovementMapper {
      * <p>Three deliberate restrictions:
      * <ul>
      *   <li><b>Exits only.</b> An intake or a generation has no recipient to be authorized.</li>
-     *   <li><b>A recorded expiry only.</b> A blank field means the client has not filled it in;
+     *   <li><b>A recorded date only</b> — the expiry or the end of the annual visa, whichever comes
+     *       first (V41, {@link Partner#authorizationValidUntil()}). A blank field means the client has not filled it in;
      *       regula de lucru 1 says a gap must be visible as a gap, not converted into a finding
      *       against the client.</li>
      *   <li><b>Strictly before the movement date.</b> An authorization valid <em>on</em> its expiry
@@ -123,9 +124,8 @@ public class WasteMovementMapper {
         if (partner == null || !m.getOperation().isExit()) {
             return false;
         }
-        return partner.getAuthorizationExpiry() != null
-                && m.getDate() != null
-                && partner.getAuthorizationExpiry().isBefore(m.getDate());
+        java.time.LocalDate validUntil = partner.authorizationValidUntil();
+        return validUntil != null && m.getDate() != null && validUntil.isBefore(m.getDate());
     }
 
     /**

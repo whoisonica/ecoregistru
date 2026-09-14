@@ -530,6 +530,14 @@ export interface Partner {
   cui: string | null;
   authorizationNumber: string | null;
   authorizationExpiry: string | null; // yyyy-MM-dd
+  /** Ziua emiterii autorizației inițiale — ancora anului de viză (V41). */
+  authorizationIssueDate: string | null;
+  visaDecisionNumber: string | null;
+  visaDecisionDate: string | null;
+  /** Ultima zi a perioadei scrise pe decizia de viză. */
+  visaValidUntil: string | null;
+  /** Data care vine prima dintre expirare și sfârșitul vizei — pe ea se citesc avertismentele. */
+  authorizationValidUntil: string | null;
   /** Ce face cu deșeul. null = firmă de transport pură — vezi `carrier`. */
   type: PartnerType | null;
   // --- What Anexa 3 prints about them, as recipient or as carrier ---
@@ -596,6 +604,10 @@ export interface PartnerInput {
   cui?: string | null;
   authorizationNumber?: string | null;
   authorizationExpiry?: string | null; // yyyy-MM-dd
+  authorizationIssueDate?: string | null;
+  visaDecisionNumber?: string | null;
+  visaDecisionDate?: string | null;
+  visaValidUntil?: string | null;
   /** null e permis doar împreună cu `carrier`; backendul refuză un partener fără niciunul. */
   type: PartnerType | null;
   /** At least one of the two is required; the backend rejects a partner with no role. */

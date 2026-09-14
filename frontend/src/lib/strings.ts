@@ -614,7 +614,9 @@ export const strings = {
       "N-ai șoferi proprii configurați. Se adaugă în Setări, sub punctele de lucru.",
     driverName: "Delegat (șofer)",
     driverIdentification: "Act de identitate",
-    driverIdentificationPlaceholder: "ex. serie și nr. CI",
+    // AO, 14.09.2026 — specialista a lăsat decizia la noi, „cu atenție la GDPR": seria actului ajunge,
+    // CNP-ul nu se cere pe formular și nu se scrie.
+    driverIdentificationPlaceholder: "serie și nr. CI — nu CNP",
     vehicleRegistration: "Nr. înmatriculare",
     transportDestinations: "Destinat:",
     destinationsPrefilled:
@@ -717,13 +719,13 @@ export const strings = {
       name: "Nume",
       namePlaceholder: "ex. Ion Popescu",
       identification: "Act de identitate",
-      identificationPlaceholder: "ex. CJ 123456",
+      identificationPlaceholder: "ex. CJ 123456 — nu CNP",
       // Rubrica de pe Anexa 3 se numește doar „Date de identificare delegat” și nu cere nimic
       // anume, deci indicația noastră e cea mai mică variantă care o completează. Textul de
       // dinainte oferea și CNP-ul ca opțiune la fel de bună — o invitație de a scrie mai mult
       // decât are formularul nevoie, pe o hârtie care pleacă la destinatar.
       identificationHint:
-        "Ce se scrie pe formular la „Date de identificare delegat”: de regulă seria și numărul actului de identitate. Scrie cât mai puțin — rubrica se tipărește pe Anexa 3. Rămâne editabil pe fiecare mișcare.",
+        "Ce se scrie pe formular la „Date de identificare delegat”: seria și numărul actului de identitate. Nu scrie CNP-ul — formularul nu-l cere, iar rubrica se tipărește pe Anexa 3 și pleacă la destinatar. Rămâne editabil pe fiecare mișcare.",
       vehicle: "Nr. înmatriculare uzual",
       vehiclePlaceholder: "ex. CJ 01 ABC",
       vehicleHint: "Mașina cu care vine de obicei. Pe mișcare se poate schimba.",
@@ -735,7 +737,13 @@ export const strings = {
       deactivate: "Dezactivează",
       confirmDeactivateTitle: "Dezactivezi șoferul?",
       confirmDeactivate:
-        "Nu mai apare în lista de delegați. Mișcările deja înregistrate nu se schimbă — Anexa 3 tipărește instantaneul de atunci. Dezactivarea nu poate fi anulată.",
+        "Nu mai apare în lista de delegați. Mișcările deja înregistrate nu se schimbă — Anexa 3 tipărește instantaneul de atunci. Îl poți reactiva oricând, sau îi poți șterge fișa după dezactivare.",
+      // AO, 14.09.2026: specialista a lăsat decizia la noi, „cu atenție la GDPR".
+      delete: "Șterge definitiv",
+      confirmDeleteTitle: "Ștergi definitiv fișa șoferului?",
+      confirmDelete:
+        "Fișa lui dispare din aplicație. Mișcările deja înregistrate își păstrează numele și actul tipărite pe Anexa 3 până la termenul de păstrare a evidenței (cel puțin 3 ani, OUG 92/2021, art. 48 alin. (5)); după el, numele și actul de identitate se șterg singure și de pe ele. Ștergerea nu se poate anula.",
+      deleted: "Fișa șoferului a fost ștearsă.",
       loadError: "Nu am putut încărca șoferii.",
       created: "Șofer adăugat.",
       updated: "Șofer actualizat.",
@@ -878,6 +886,20 @@ export const strings = {
     type: "Tip",
     authorizationNumber: "Nr. autorizație",
     authorizationExpiry: "Expirare autorizație",
+    authorizationValidUntil: "Valabilă până la",
+    // V41 — viza anuală. Răspunsul specialistei la AH (14.09.2026): „am viza din locul datei".
+    authorizationIssueDate: "Data emiterii autorizației inițiale",
+    authorizationIssueDateHint:
+      "Ziua și luna ei deschid anul de viză; la o autorizație revizuită contează tot cea inițială (Ordinul 1150/2020, art. 5 alin. (4)).",
+    visaDecisionNumber: "Decizia de viză anuală nr.",
+    visaDecisionDate: "Data deciziei",
+    visaValidUntil: "Viza aplicată până la",
+    visaValidUntilHint:
+      "Cum scrie pe decizie: „se aplică viza pentru perioada …”. Perioada o dă agenția, deci se trece de pe hârtie.",
+    visaValidUntilSuggest: "Propune {date}",
+    authorizationExpiryOptional: "Data expirării (numai la autorizațiile cu termen)",
+    authorizationExpiryOptionalHint:
+      "Autorizațiile de azi nu mai expiră: rămân valabile cât se obține viza anuală (OUG 195/2005, art. 16 alin. (2^1)). Termen mai au doar cele de dinainte de 18.11.2019, nemodificate (Legea 219/2019, art. II).",
     // Reperele formularului lung, ca la mișcare și la firmă. Nu se pliază: jumătate din secțiuni
     // conțin rubrici obligatorii, iar un câmp obligatoriu ascuns sub un titlu închis e un formular
     // care se refuză fără să spună de ce.
@@ -886,7 +908,7 @@ export const strings = {
     sectionCarrier: "Transport",
     sectionAuthorization: "Autorizația de mediu",
     sectionAuthorizationHint:
-      "Predarea se face către un operator autorizat (OUG 92/2021, art. 23 alin. (1)). Cu data expirării completată, aplicația anunță cu 60 de zile înainte și marchează predările făcute după ea.",
+      "Predarea se face către un operator autorizat (OUG 92/2021, art. 23 alin. (1)), iar autorizația rămâne valabilă cât se obține viza anuală. Cu perioada vizei sau data expirării completată, aplicația anunță cu 60 de zile înainte și marchează predările făcute după. Dacă le ai pe amândouă, contează cea care vine prima.",
     sectionAnexa3: "Date pentru Anexa 3",
     // Sugestia de duplicat ducea la fişa existentă pe tăcute: acelaşi dialog devenea „Editează",
     // iar tot ce completasei dispărea. Comutarea rămâne fapta bună — sugestia există tocmai ca să
@@ -946,7 +968,7 @@ export const strings = {
     driverName: "Nume",
     driverNamePlaceholder: "ex. Ion Popescu",
     driverIdentification: "Act de identitate",
-    driverIdentificationPlaceholder: "ex. CJ 123456",
+    driverIdentificationPlaceholder: "ex. CJ 123456 — nu CNP",
     driverVehicle: "Nr. înmatriculare uzual",
     driverVehiclePlaceholder: "ex. CJ 01 ABC",
     addDriver: "Adaugă șofer",
@@ -1419,6 +1441,10 @@ export const strings = {
       cui: "CUI",
       authorizationNumber: "Autorizație",
       authorizationExpiry: "Expirarea autorizației",
+      authorizationIssueDate: "Emiterea autorizației",
+      visaDecisionNumber: "Decizia de viză",
+      visaDecisionDate: "Data deciziei de viză",
+      visaValidUntil: "Viza până la",
       environmentalAuthNumber: "Autorizație de mediu",
       caenCode: "Cod CAEN",
       identification: "Act de identitate",
@@ -2112,7 +2138,7 @@ export const strings = {
      * unui şofer nu-l scoate din documentele tipărite.
      */
     driversPrivacy:
-      "Date personale: se țin doar pentru rubrica „Date de identificare delegat” de pe Anexa 3 și se tipăresc pe ea. Scrie strict ce se completează pe formular — de regulă seria și numărul actului. Rămân cât timp se păstrează evidența: cel puțin 3 ani, 12 luni la transportatori (OUG 92/2021, art. 48 alin. (5)). Mișcările deja înregistrate păstrează datele de atunci, deci dezactivarea unui șofer nu îl scoate din ele.",
+      "Date personale: se țin doar pentru rubrica „Date de identificare delegat” de pe Anexa 3 și se tipăresc pe ea. Scrie strict seria și numărul actului, nu CNP-ul. Rămân cât timp se păstrează evidența: cel puțin 3 ani (OUG 92/2021, art. 48 alin. (5)). După aceea, numele și actul de identitate se șterg singure de pe mișcări, la începutul fiecărui an. Fișa unui șofer dezactivat se poate șterge definitiv oricând; mișcările își păstrează până atunci datele de pe formularul tipărit.",
     loading: "Se încarcă...",
     saving: "Se salvează...",
     save: "Salvează",

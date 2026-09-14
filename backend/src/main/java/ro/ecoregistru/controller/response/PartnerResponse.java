@@ -13,6 +13,12 @@ public record PartnerResponse(
         String cui,
         String authorizationNumber,
         LocalDate authorizationExpiry,
+        LocalDate authorizationIssueDate,
+        String visaDecisionNumber,
+        LocalDate visaDecisionDate,
+        LocalDate visaValidUntil,
+        /** The earlier of the expiry and the end of the visa — the date every warning reads (V41). */
+        LocalDate authorizationValidUntil,
         /** What they do with the waste; null means a pure haulage firm — see {@code carrier}. */
         PartnerType type,
         /** We hand waste over to them and we invoice them. */
@@ -24,7 +30,7 @@ public record PartnerResponse(
         boolean active,
         /** Provenienţa they represent on anexa 3 ambalaje; null while unanswered. */
         PackagingOrigin packagingOrigin,
-        /** True when the authorization expires within 60 days (drives the UI badge). */
+        /** True when {@code authorizationValidUntil} is within 60 days (drives the UI badge). */
         boolean expiringSoon,
 
         // --- What Anexa 3 prints about them ---

@@ -74,19 +74,23 @@ public class PartnerAuthorizationAlertScheduler {
      */
     @Transactional
     public void dispatchWarnings(LocalDate today) {
-        List<Partner> candidates = partnerRepository.findAllByActiveTrueAndAuthorizationExpiryBetween(
+        List<Partner> candidates = partnerRepository.findWarningCandidates(
                 today, today.plusDays(WARNING_WINDOW_DAYS));
 
         int sent = 0;
         for (Partner partner : candidates) {
-            // Deduplication is by value, not by event: we warn once per expiry date, so renewing
-            // the authorization re-arms the alert on its own. See V30.
-            if (partner.getAuthorizationExpiry().equals(partner.getAuthorizationWarningSentFor())) {
+            // The date that decides is the earlier of the expiry and the end of the annual visa
+            // (V41). A candidate brought in by one date can already have lapsed on the other, and a
+            // mail about a date that no longer matters is noise.
+            LocalDate validUntil = partner.authorizationValidUntil();
+            // Deduplication is by value, not by event: we warn once per date, so renewing the
+            // authorization or the visa re-arms the alert on its own. See V30.
+            if (validUntil.isBefore(today) || validUntil.equals(partner.getAuthorizationWarningSentFor())) {
                 continue;
             }
-            long daysUntil = ChronoUnit.DAYS.between(today, partner.getAuthorizationExpiry());
+            long daysUntil = ChronoUnit.DAYS.between(today, validUntil);
             if (notify(partner, daysUntil)) {
-                partner.setAuthorizationWarningSentFor(partner.getAuthorizationExpiry());
+                partner.setAuthorizationWarningSentFor(validUntil);
                 sent++;
             }
         }

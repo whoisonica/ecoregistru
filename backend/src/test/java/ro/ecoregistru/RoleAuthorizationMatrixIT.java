@@ -483,6 +483,7 @@ class RoleAuthorizationMatrixIT {
                                 {"name":"Redenumit de viewer","identification":"XX999"}""")),
                 new Call("DELETE /drivers/{id}", () -> delete("/api/v1/drivers/" + driver.getId())),
                 new Call("POST /drivers/{id}/reactivate", () -> post("/api/v1/drivers/" + driver.getId() + "/reactivate")),
+                new Call("DELETE /drivers/{id}/definitiv", () -> delete("/api/v1/drivers/" + driver.getId() + "/definitiv")),
 
                 new Call("POST /internal-generators", () -> post("/api/v1/internal-generators")
                         .contentType(MediaType.APPLICATION_JSON).content(generatorJson("Generator Nou"))),

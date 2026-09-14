@@ -53,6 +53,14 @@ public class DriverController {
         return ResponseEntity.noContent().build();
     }
 
+    /** AO — ştergerea definitivă a fişei unui şofer deja dezactivat. */
+    @DeleteMapping("/{id}/definitiv")
+    @PreAuthorize(CAN_WRITE)
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        driverService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
     /** Desface dezactivarea. POST, ca `/{id}/reopen` de la termene: e o faptă, nu o resursă. */
     @PostMapping("/{id}/reactivate")
     @PreAuthorize(CAN_WRITE)

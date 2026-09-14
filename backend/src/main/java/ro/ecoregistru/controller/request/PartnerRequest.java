@@ -21,6 +21,12 @@ public record PartnerRequest(
         String cui,
         String authorizationNumber,
         LocalDate authorizationExpiry,
+        /** Ziua emiterii autorizaţiei iniţiale — ancora anului de viză (V41). */
+        LocalDate authorizationIssueDate,
+        String visaDecisionNumber,
+        LocalDate visaDecisionDate,
+        /** Ultima zi a perioadei scrise pe decizia de viză. */
+        LocalDate visaValidUntil,
         PartnerType type,
         boolean client,
         boolean supplier,

@@ -56,10 +56,11 @@ type RoleFilter = "" | "client" | "supplier" | "none" | "carrier";
 
 /** Formats an authorization expiry as a status badge, mirroring backend `expiringSoon`. */
 function ExpiryBadge({ partner }: { partner: Partner }) {
-  if (!partner.authorizationExpiry) {
+  // V41: data care vine prima dintre expirare și sfârșitul vizei anuale.
+  if (!partner.authorizationValidUntil) {
     return <span className="text-content-subtle">{t.noAuthorization}</span>;
   }
-  const date = partner.authorizationExpiry;
+  const date = partner.authorizationValidUntil;
   const isExpired = new Date(date) < new Date(new Date().toDateString());
   if (isExpired) {
     return <Badge variant="danger">{t.expired}</Badge>;
@@ -70,6 +71,19 @@ function ExpiryBadge({ partner }: { partner: Partner }) {
     return <Badge variant="warning">{`${t.expiringSoon} · ${formatDate(date)}`}</Badge>;
   }
   return <Badge variant="success">{formatDate(date)}</Badge>;
+}
+
+/**
+ * Aniversarea emiterii care vine după `after` — propunerea pentru perioada vizei. Procedura
+ * (Ordinul 1150/2020, art. 5 alin. (4)) socotește anul de viză de la ziua și luna emiterii. Doar
+ * propunere: perioada o scrie agenția pe decizie. 29 februarie cade pe 28 în anii fără el.
+ */
+function nextAnniversary(issueDate: string, after: string): string {
+  const month = issueDate.slice(5, 7);
+  const day = month === "02" && issueDate.slice(8, 10) === "29" ? "28" : issueDate.slice(8, 10);
+  const year = Number(after.slice(0, 4));
+  const sameYear = `${year}-${month}-${day}`;
+  return sameYear > after ? sameYear : `${year + 1}-${month}-${day}`;
 }
 
 export function PartnersPage() {
@@ -92,6 +106,10 @@ export function PartnersPage() {
   const [cui, setCui] = useState("");
   const [authorizationNumber, setAuthorizationNumber] = useState("");
   const [authorizationExpiry, setAuthorizationExpiry] = useState("");
+  const [authorizationIssueDate, setAuthorizationIssueDate] = useState("");
+  const [visaDecisionNumber, setVisaDecisionNumber] = useState("");
+  const [visaDecisionDate, setVisaDecisionDate] = useState("");
+  const [visaValidUntil, setVisaValidUntil] = useState("");
   // "" = „doar transportator": o firmă de transport pură nu face nimic cu deșeul, deci n-are tip.
   const [type, setType] = useState<PartnerType | "">("COLLECTOR");
   const [isClient, setIsClient] = useState(false);
@@ -148,6 +166,10 @@ export function PartnersPage() {
       address ||
       authorizationNumber ||
       authorizationExpiry ||
+      authorizationIssueDate ||
+      visaDecisionNumber ||
+      visaDecisionDate ||
+      visaValidUntil ||
       tradeRegisterNumber ||
       transportLicenseNumber ||
       transportLicenseExpiry ||
@@ -185,7 +207,7 @@ export function PartnersPage() {
       // Autorizația fără dată stă la coadă, în ambele sensuri: „nu se știe" nu e nici devreme,
       // nici târziu. `|| null` păstrează înțelesul de dinainte, în care și șirul gol e o lipsă.
       authorizationExpiry: missingLast(
-        (p) => p.authorizationExpiry || null,
+        (p) => p.authorizationValidUntil || null,
         (x, y) => x.localeCompare(y)
       ),
     },
@@ -201,6 +223,10 @@ export function PartnersPage() {
     setCui("");
     setAuthorizationNumber("");
     setAuthorizationExpiry("");
+    setAuthorizationIssueDate("");
+    setVisaDecisionNumber("");
+    setVisaDecisionDate("");
+    setVisaValidUntil("");
     setType("COLLECTOR");
     setIsClient(false);
     setIsSupplier(true);
@@ -274,6 +300,10 @@ export function PartnersPage() {
     setCui(p.cui ?? "");
     setAuthorizationNumber(p.authorizationNumber ?? "");
     setAuthorizationExpiry(p.authorizationExpiry ?? "");
+    setAuthorizationIssueDate(p.authorizationIssueDate ?? "");
+    setVisaDecisionNumber(p.visaDecisionNumber ?? "");
+    setVisaDecisionDate(p.visaDecisionDate ?? "");
+    setVisaValidUntil(p.visaValidUntil ?? "");
     setType(p.type ?? "");
     setIsClient(p.client);
     setIsSupplier(p.supplier);
@@ -321,6 +351,10 @@ export function PartnersPage() {
       cui: cui.trim() || null,
       authorizationNumber: authorizationNumber.trim() || null,
       authorizationExpiry: authorizationExpiry || null,
+      authorizationIssueDate: authorizationIssueDate || null,
+      visaDecisionNumber: visaDecisionNumber.trim() || null,
+      visaDecisionDate: visaDecisionDate || null,
+      visaValidUntil: visaValidUntil || null,
       type: type || null,
       client: isClient,
       supplier: isSupplier,
@@ -506,7 +540,7 @@ export function PartnersPage() {
                     sort={view.sort}
                     onSort={view.toggleSort}
                   >
-                    {t.authorizationExpiry}
+                    {t.authorizationValidUntil}
                   </SortableTH>
                   <TH>{strings.common.status}</TH>
                   {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
@@ -915,12 +949,66 @@ export function PartnersPage() {
               />
             </div>
             <div>
-              <Label htmlFor="p-auth-expiry">{t.authorizationExpiry}</Label>
+              <Label htmlFor="p-auth-issue">{t.authorizationIssueDate}</Label>
+              <DateInput
+                id="p-auth-issue"
+                value={authorizationIssueDate}
+                onChange={(e) => setAuthorizationIssueDate(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-content-muted">{t.authorizationIssueDateHint}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="p-visa-number">{t.visaDecisionNumber}</Label>
+                <Input
+                  id="p-visa-number"
+                  value={visaDecisionNumber}
+                  onChange={(e) => setVisaDecisionNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="p-visa-date">{t.visaDecisionDate}</Label>
+                <DateInput
+                  id="p-visa-date"
+                  value={visaDecisionDate}
+                  onChange={(e) => setVisaDecisionDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="p-visa-until">{t.visaValidUntil}</Label>
+              <DateInput
+                id="p-visa-until"
+                value={visaValidUntil}
+                onChange={(e) => setVisaValidUntil(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-content-muted">{t.visaValidUntilHint}</p>
+              {authorizationIssueDate && !visaValidUntil && (() => {
+                const proposal = nextAnniversary(
+                  authorizationIssueDate,
+                  visaDecisionDate || new Date().toISOString().slice(0, 10)
+                );
+                return (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1"
+                    onClick={() => setVisaValidUntil(proposal)}
+                  >
+                    {t.visaValidUntilSuggest.replace("{date}", formatDate(proposal))}
+                  </Button>
+                );
+              })()}
+            </div>
+            <div>
+              <Label htmlFor="p-auth-expiry">{t.authorizationExpiryOptional}</Label>
               <DateInput
                 id="p-auth-expiry"
                 value={authorizationExpiry}
                 onChange={(e) => setAuthorizationExpiry(e.target.value)}
               />
+              <p className="mt-1 text-xs text-content-muted">{t.authorizationExpiryOptionalHint}</p>
             </div>
           </FormSection>
 

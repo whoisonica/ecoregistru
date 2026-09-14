@@ -2,6 +2,7 @@ package ro.ecoregistru.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.WasteMovement;
@@ -98,4 +99,15 @@ public interface WasteMovementRepository
     @Query("select max(m.updatedAt) from WasteMovement m "
             + "where m.company.id = :companyId and m.date <= :until")
     Instant findLastChangeUpTo(@Param("companyId") UUID companyId, @Param("until") LocalDate until);
+
+    /**
+     * AO — numele şi actul de identitate ale delegatului, şterse de pe mişcările mai vechi decât
+     * termenul de păstrare (OUG 92/2021 art. 48 alin. (5): cel puţin 3 ani). Numărul maşinii rămâne.
+     * Actualizare în bloc, deci fără rânduri de jurnal de audit; jobul scrie în log câte a atins.
+     * Include şi mişcările şterse moale: o dată personală nu devine mai puţin personală la ştergere.
+     */
+    @Modifying
+    @Query("update WasteMovement m set m.driverName = null, m.driverIdentification = null "
+            + "where m.date < :cutoff and (m.driverName is not null or m.driverIdentification is not null)")
+    int clearDriverDataBefore(@Param("cutoff") LocalDate cutoff);
 }

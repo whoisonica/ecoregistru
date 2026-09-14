@@ -280,10 +280,11 @@ public class AuditFileService {
             title.setSpacingAfter(10f);
             doc.add(title);
 
-            String[] cols = {"Denumire", "CUI", "Tip", "Nr. autorizație", "Expirare", "Status"};
+            String[] cols = {"Denumire", "CUI", "Tip", "Nr. autorizație", "Viză anuală",
+                    "Valabilă până la", "Status"};
             PdfPTable table = new PdfPTable(cols.length);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{26, 14, 16, 16, 14, 14});
+            table.setWidths(new float[]{22, 12, 13, 14, 15, 11, 13});
 
             Font headFont = new Font(Font.HELVETICA, 8, Font.BOLD);
             Font bodyFont = new Font(Font.HELVETICA, 8, Font.NORMAL);
@@ -301,8 +302,9 @@ public class AuditFileService {
                 cell(table, safe(p.getCui()), bodyFont);
                 cell(table, partnerType(p.getType()), bodyFont);
                 cell(table, safe(p.getAuthorizationNumber()), bodyFont);
-                cell(table, p.getAuthorizationExpiry() != null
-                        ? p.getAuthorizationExpiry().format(DATE) : "—", bodyFont);
+                cell(table, visaText(p), bodyFont);
+                cell(table, p.authorizationValidUntil() != null
+                        ? p.authorizationValidUntil().format(DATE) : "—", bodyFont);
                 cell(table, statusText(p, today), bodyFont);
             }
 
@@ -318,7 +320,7 @@ public class AuditFileService {
         if (!p.isActive()) {
             return "Inactiv";
         }
-        LocalDate expiry = p.getAuthorizationExpiry();
+        LocalDate expiry = p.authorizationValidUntil();
         if (expiry == null) {
             return "Activ";
         }
@@ -330,6 +332,15 @@ public class AuditFileService {
             return "Expiră în " + days + " zile";
         }
         return "Activ";
+    }
+
+    /** Decizia de viză cum o scrie agenţia: numărul şi data, sau o liniuţă când nu e tastată (V41). */
+    private static String visaText(Partner p) {
+        if (p.getVisaDecisionNumber() == null && p.getVisaDecisionDate() == null) {
+            return "—";
+        }
+        return (p.getVisaDecisionNumber() == null ? "" : "nr. " + p.getVisaDecisionNumber())
+                + (p.getVisaDecisionDate() == null ? "" : " din " + p.getVisaDecisionDate().format(DATE));
     }
 
     private static void cell(PdfPTable table, String value, Font font) {

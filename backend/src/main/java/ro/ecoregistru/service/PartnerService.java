@@ -59,6 +59,10 @@ public class PartnerService {
                 .cui(request.cui())
                 .authorizationNumber(request.authorizationNumber())
                 .authorizationExpiry(request.authorizationExpiry())
+                .authorizationIssueDate(request.authorizationIssueDate())
+                .visaDecisionNumber(blankToNull(request.visaDecisionNumber()))
+                .visaDecisionDate(request.visaDecisionDate())
+                .visaValidUntil(request.visaValidUntil())
                 .type(request.type())
                 .client(request.client())
                 .supplier(request.supplier())
@@ -86,6 +90,10 @@ public class PartnerService {
         partner.setCui(request.cui());
         partner.setAuthorizationNumber(request.authorizationNumber());
         partner.setAuthorizationExpiry(request.authorizationExpiry());
+        partner.setAuthorizationIssueDate(request.authorizationIssueDate());
+        partner.setVisaDecisionNumber(blankToNull(request.visaDecisionNumber()));
+        partner.setVisaDecisionDate(request.visaDecisionDate());
+        partner.setVisaValidUntil(request.visaValidUntil());
         partner.setType(request.type());
         partner.setClient(request.client());
         partner.setSupplier(request.supplier());
@@ -229,11 +237,14 @@ public class PartnerService {
     }
 
     private PartnerResponse toResponse(Partner p) {
-        boolean expiringSoon = p.getAuthorizationExpiry() != null
-                && !p.getAuthorizationExpiry().isAfter(LocalDate.now().plusDays(EXPIRY_WARNING_DAYS));
+        LocalDate validUntil = p.authorizationValidUntil();
+        boolean expiringSoon = validUntil != null
+                && !validUntil.isAfter(LocalDate.now().plusDays(EXPIRY_WARNING_DAYS));
         return new PartnerResponse(
                 p.getId(), p.getName(), p.getCui(), p.getAuthorizationNumber(),
-                p.getAuthorizationExpiry(), p.getType(), p.isClient(), p.isSupplier(),
+                p.getAuthorizationExpiry(), p.getAuthorizationIssueDate(), p.getVisaDecisionNumber(),
+                p.getVisaDecisionDate(), p.getVisaValidUntil(), validUntil,
+                p.getType(), p.isClient(), p.isSupplier(),
                 p.isCarrier(), p.isActive(), p.getPackagingOrigin(), expiringSoon,
                 p.getAddress(),
                 p.getWorkPoints().stream()

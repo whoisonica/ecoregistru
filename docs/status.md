@@ -13,6 +13,14 @@ rulează local și are testele verzi.
 > avertismentul pe codul-oglindă. **Tabela `analysis_bulletins` rămâne în bază** (`V38` e aplicată și
 > nu se editează). **502 teste, 56 de clase, 0 eșecuri**, `tsc` curat, `vite build` verde. ⬜ **Nedeployat.**
 > Viza anuală a partenerului (AH) are textul actului verificat în `surse-oficiale.md` §2.6-bis.
+> **Tot în noaptea asta: AH și AO construite.** `V41` adaugă pe partener data emiterii autorizației
+> inițiale, decizia de viză (număr, dată) și perioada vizei. Avertismentul de la predare, alerta de 60
+> de zile, rubrica de pe Anexa 3 și PDF-ul din dosar citesc **data care vine prima** dintre expirare și
+> viză. **AO:** fișa unui șofer al firmei se șterge definitiv numai după dezactivare
+> (`DELETE /drivers/{id}/definitiv`). Numele și actul de identitate se șterg singure de pe mișcări după
+> trei ani calendaristici întregi (`DriverDataRetentionScheduler`). Probe negative: viza ignorată (cad 3
+> teste), verificarea „activ” scoasă și termenul mutat cu un an (cad exact cele două teste).
+> **509 teste, 58 de clase, 0 eșecuri**, `tsc` curat, `vite build` verde. ⬜ Nedeployat.
 >
 > **Unde eram — 14.09.2026, seara.** 🏷️ **EcoRegistru devine WasteHouse.** Aplicația stă pe
 > **app.wastehouse.ro**, pagina produsului pe **wastehouse.ro**. Pe ecran: numele, semnul (săgeata de pe

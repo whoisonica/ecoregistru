@@ -56,7 +56,7 @@ public class EmailNotificationService implements NotificationService {
      */
     @Override
     public void sendPartnerAuthorizationWarning(Partner partner, List<String> recipientEmails, long daysUntil) {
-        String expiryDate = partner.getAuthorizationExpiry().format(DATE);
+        String expiryDate = partner.authorizationValidUntil().format(DATE);
         String subject = "Autorizația de mediu a partenerului " + partner.getName()
                 + " expiră (" + whenExpiry(daysUntil) + ")";
 

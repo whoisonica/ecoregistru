@@ -340,7 +340,10 @@ public class Anexa3FormGenerator {
         if (recipient != null) {
             addLines(recipientAuth, recipient.getAuthorizationNumber());
             recipientAuth.add(text("Data la care expiră autorizaţia de mediu", label));
-            addLines(recipientAuth, date(recipient.getAuthorizationExpiry()));
+            // Specialista, 14.09.2026: „am viza din locul datei". O autorizaţie de azi rămâne valabilă
+            // cât se obţine viza (OUG 195/2005 art. 16 alin. (2^1)), deci rubrica primeşte data care
+            // vine prima dintre expirare şi sfârşitul vizei. V41.
+            addLines(recipientAuth, date(recipient.authorizationValidUntil()));
         }
         recipientAuth.add(text("Semnătura şi ştampila", label));
 

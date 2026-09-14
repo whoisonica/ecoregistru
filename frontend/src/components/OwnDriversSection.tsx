@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
-import { Ban, UserCircle, Pencil, Plus, RotateCcw } from "lucide-react";
+import { Ban, UserCircle, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import {
   useDrivers,
   useCreateDriver,
   useUpdateDriver,
   useDeactivateDriver,
   useReactivateDriver,
+  useDeleteDriver,
 } from "@/hooks/useDrivers";
 import type { Driver } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -40,6 +41,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   const updateMut = useUpdateDriver();
   const deactivateMut = useDeactivateDriver();
   const reactivateMut = useReactivateDriver();
+  const deleteMut = useDeleteDriver();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
@@ -122,6 +124,28 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     deactivateMut.mutate(d.id, {
       onSuccess: () => notify(t.deactivated, "success"),
       onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+    });
+  }
+
+  /**
+   * AO — ștergerea fișei. Numai după dezactivare, ca un clic greșit să nu fie ireversibil. Mișcările
+   * nu se ating: Anexa 3 tipărește instantaneul de atunci până la termenul de păstrare.
+   */
+  function handleDelete(d: Driver) {
+    confirm({
+      title: t.confirmDeleteTitle,
+      message: (
+        <>
+          <strong className="text-content">{d.name}</strong>. {t.confirmDelete}
+        </>
+      ),
+      confirmLabel: t.delete,
+      tone: "danger",
+      onConfirm: () =>
+        deleteMut.mutate(d.id, {
+          onSuccess: () => notify(t.deleted, "success"),
+          onError: (err) => notify(apiErrorMessage(err, t.saveError), "error"),
+        }),
     });
   }
 
@@ -212,10 +236,21 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
                             {t.deactivate}
                           </Button>
                         ) : (
-                          <Button variant="ghost" size="sm" onClick={() => reactivate(d)}>
-                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                            {strings.common.reactivate}
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => reactivate(d)}>
+                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                              {strings.common.reactivate}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => handleDelete(d)}
+                            >
+                              <Trash2 className="mr-1 h-3.5 w-3.5" />
+                              {t.delete}
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TD>

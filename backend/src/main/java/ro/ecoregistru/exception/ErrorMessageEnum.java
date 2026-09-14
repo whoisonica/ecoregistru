@@ -64,6 +64,7 @@ public enum ErrorMessageEnum {
     DRIVER_NOT_FOUND("driver.not.found", "Șoferul nu a fost găsit."),
     DRIVER_NAME_REQUIRED("driver.name.required", "Scrie numele șoferului."),
     DRIVER_BELONGS_TO_PARTNER("driver.belongs.to.partner", "Șoferul ăsta e al unui transportator: editează-l în fișa partenerului."),
+    DRIVER_DELETE_REQUIRES_DEACTIVATION("driver.delete.requires.deactivation", "Dezactivează întâi șoferul. Ștergerea fișei e definitivă, deci se face doar pentru un șofer scos deja din listă."),
     PARTNER_TYPE_REQUIRED("partner.type.required", "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă."),
     PARTNER_ROLE_REQUIRED("partner.role.required", "Alege rolul partenerului: client (îi predai deșeu și îi facturezi tu), furnizor (îți prestează serviciul și îți facturează el) sau ambele."),
 

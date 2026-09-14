@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_BELONGS_TO_PARTNER;
+import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_DELETE_REQUIRES_DEACTIVATION;
 import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_NAME_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_NOT_FOUND;
 
@@ -81,6 +82,23 @@ public class DriverService {
     @Transactional
     public void deactivate(UUID id) {
         requireOwn(id).setActive(false);
+    }
+
+    /**
+     * Şterge definitiv fişa unui şofer al nostru — AO, 14.09.2026: specialista a lăsat decizia la
+     * noi, „cu atenţie la GDPR". Numai după dezactivare, ca un clic greşit să nu fie ireversibil.
+     *
+     * <p>Mişcările nu se ating: ţin instantaneul lor ca text, nu o cheie spre fişă, iar Anexa 3
+     * trebuie să iasă la fel cât se păstrează evidenţa. De pe ele datele şoferului pleacă separat, la
+     * termen — {@link DriverDataRetentionScheduler}.
+     */
+    @Transactional
+    public void delete(UUID id) {
+        Driver driver = requireOwn(id);
+        if (driver.isActive()) {
+            throw new BusinessException(DRIVER_DELETE_REQUIRES_DEACTIVATION);
+        }
+        driverRepository.delete(driver);
     }
 
     /**

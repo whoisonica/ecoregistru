@@ -794,7 +794,7 @@ export function DashboardPage() {
           ) : (
             <ul className="mt-3 divide-y divide-line">
               {expiringPartners.slice(0, 5).map((p) => {
-                const days = p.authorizationExpiry ? daysUntil(p.authorizationExpiry) : null;
+                const days = p.authorizationValidUntil ? daysUntil(p.authorizationValidUntil) : null;
                 return (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-2.5">
                     <div className="min-w-0 flex-1">

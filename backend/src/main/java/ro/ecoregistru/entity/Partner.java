@@ -134,6 +134,44 @@ public class Partner {
     LocalDate authorizationWarningSentFor;
 
     /**
+     * Ziua emiterii autorizaţiei iniţiale (V41) — ancora anului de viză: Procedura aprobată prin
+     * Ordinul 1150/2020, art. 5 alin. (4), socoteşte termenul „de ziua şi luna în care a fost emisă
+     * autorizaţia", iar la una revizuită tot de a celei iniţiale. Din ea ecranul propune perioada.
+     */
+    @Column(name = "authorization_issue_date")
+    LocalDate authorizationIssueDate;
+
+    /** Numărul deciziei de aplicare a vizei anuale (anexa nr. 4 la procedură). */
+    @Column(name = "visa_decision_number", length = 100)
+    String visaDecisionNumber;
+
+    @Column(name = "visa_decision_date")
+    LocalDate visaDecisionDate;
+
+    /**
+     * Ultima zi a perioadei pentru care s-a aplicat viza — „se aplică viza pentru perioada ..." din
+     * decizie. Se tastează de pe hârtie: perioada o scrie agenţia.
+     */
+    @Column(name = "visa_valid_until")
+    LocalDate visaValidUntil;
+
+    /**
+     * Până când e valabilă autorizaţia, după ce ştim: data care vine prima dintre expirare şi
+     * sfârşitul vizei. OUG 195/2005 art. 16 alin. (2^1) ţine autorizaţia valabilă cât se obţine
+     * viza, iar Legea 219/2019 art. II alin. (3) lasă o expirare autorizaţiilor vechi nemodificate —
+     * deci pot exista amândouă. Null când nu ştim niciuna: o lipsă nu e o constatare.
+     */
+    public LocalDate authorizationValidUntil() {
+        if (authorizationExpiry == null) {
+            return visaValidUntil;
+        }
+        if (visaValidUntil == null) {
+            return authorizationExpiry;
+        }
+        return authorizationExpiry.isBefore(visaValidUntil) ? authorizationExpiry : visaValidUntil;
+    }
+
+    /**
      * What they do with the waste. Nullable since V28: a pure haulage firm does nothing with it,
      * it moves it, and typing it "Colector" would be a guessed value on a printed rubric — the
      * audit file prints the column, and the Anexa 3 "Destinat:" ticks are prefilled from it. Null

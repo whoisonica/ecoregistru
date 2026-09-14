@@ -1,6 +1,8 @@
 package ro.ecoregistru.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.Partner;
 
 import java.time.LocalDate;
@@ -29,6 +31,12 @@ public interface PartnerRepository extends JpaRepository<Partner, UUID> {
      * deliberately <em>not</em> a candidate: a warning about it prevents nothing, and it is already
      * visible in two other places (the partner-list badge and the handover warning of decision 36).
      * See V30 for the full reasoning.
+     *
+     * <p>Since V41 either date can bring a partner into the window — the expiry or the end of the
+     * annual visa. The caller still decides on {@code Partner.authorizationValidUntil()}, the one
+     * that comes first.
      */
-    List<Partner> findAllByActiveTrueAndAuthorizationExpiryBetween(LocalDate from, LocalDate to);
+    @Query("select p from Partner p where p.active = true and ("
+            + "p.authorizationExpiry between :from and :to or p.visaValidUntil between :from and :to)")
+    List<Partner> findWarningCandidates(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }
