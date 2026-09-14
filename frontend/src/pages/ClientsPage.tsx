@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { Briefcase, Building2, Pencil, Plus, UserPlus } from "lucide-react";
+import { Briefcase, Building2, Pencil, Plus, Receipt, UserPlus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { isMultiCompany } from "@/lib/roles";
 import { AssignConsultancyDialog, ConsultanciesSection } from "@/components/ConsultanciesSection";
+import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { ConsultancyTeamSection } from "@/components/ConsultancyTeamSection";
 import {
   useCompanies,
@@ -66,6 +67,7 @@ export function ClientsPage() {
 
   const { data: companies, isLoading, isError } = useCompanies(multiCompany);
   const [assigning, setAssigning] = useState<Company | null>(null);
+  const [billing, setBilling] = useState<Company | null>(null);
   const createMut = useCreateCompany();
   const updateMut = useUpdateCompany();
   const inviteMut = useInviteUser();
@@ -399,6 +401,13 @@ export function ClientsPage() {
                           <Button variant="ghost" size="sm" onClick={() => setAssigning(c)}>
                             <Briefcase className="mr-1 h-3.5 w-3.5" />
                             {t.assignConsultancy}
+                          </Button>
+                        )}
+                        {/* O firmă dintr-un cabinet n-are abonament propriu: o plătește cabinetul. */}
+                        {isPlatformAdmin && !c.consultancyId && (
+                          <Button variant="ghost" size="sm" onClick={() => setBilling(c)}>
+                            <Receipt className="mr-1 h-3.5 w-3.5" />
+                            {strings.subscriptions.action}
                           </Button>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
@@ -822,6 +831,12 @@ export function ClientsPage() {
       {isConsultant && <ConsultancyTeamSection />}
       {assigning && (
         <AssignConsultancyDialog company={assigning} onClose={() => setAssigning(null)} />
+      )}
+      {billing && (
+        <SubscriptionDialog
+          owner={{ kind: "company", id: billing.id, name: billing.name }}
+          onClose={() => setBilling(null)}
+        />
       )}
     </div>
   );

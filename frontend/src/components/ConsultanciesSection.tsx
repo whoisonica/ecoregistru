@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { Briefcase, Plus, UserPlus } from "lucide-react";
+import { Briefcase, Plus, Receipt, UserPlus } from "lucide-react";
+import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import {
   useConsultancies,
   useCreateConsultancy,
@@ -43,6 +44,7 @@ export function ConsultanciesSection() {
   const [formError, setFormError] = useState<false | "name" | "cui">(false);
 
   const [inviting, setInviting] = useState<Consultancy | null>(null);
+  const [billing, setBilling] = useState<Consultancy | null>(null);
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -156,10 +158,16 @@ export function ConsultanciesSection() {
                   <TD>{c.companyCount}</TD>
                   <TD>{c.consultantCount}</TD>
                   <TD sticky="right" className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
-                      <UserPlus className="mr-1 h-3.5 w-3.5" />
-                      {t.invite}
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="sm" onClick={() => setBilling(c)}>
+                        <Receipt className="mr-1 h-3.5 w-3.5" />
+                        {strings.subscriptions.action}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
+                        <UserPlus className="mr-1 h-3.5 w-3.5" />
+                        {t.invite}
+                      </Button>
+                    </div>
                   </TD>
                 </TR>
               ))}
@@ -266,6 +274,13 @@ export function ConsultanciesSection() {
           </div>
         </form>
       </Dialog>
+
+      {billing && (
+        <SubscriptionDialog
+          owner={{ kind: "consultancy", id: billing.id, name: billing.name }}
+          onClose={() => setBilling(null)}
+        />
+      )}
     </section>
   );
 }

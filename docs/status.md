@@ -3,6 +3,24 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> 📜 **15.09.2026, după deploy — AD închisă în act și „Evidența cronologică” construită (necommis).**
+> Art. 48 alin. (1) prescrie conținutul (lit. a–c) și „cronologic lunar, tabelar”, nu un formular. Alin. (3)
+> trimite la o procedură prin ordin, pe care n-am găsit-o. Alin. (7) + AG: datele se tastează în SIM
+> („Colectare/Tratare”). Citatele sunt în `surse-oficiale.md` §2.1-bis. Pe baza lor:
+> `Art48RegisterBuilder` / `Art48RegisterGenerator` / `Art48RegisterService` și
+> `GET /evidences/registru-cronologic?year&workPointId&format=xlsx|pdf`. Documentul are patru tabele:
+> - cronologic, în kg și t;
+> - Cap. 1 pe cod, în t, cu stocul inițial calculat din anii anteriori;
+> - Cap. 2 A pe destinatar, cu cod R;
+> - Cap. 2 B pe destinatar, cu cod D.
+>
+> Generatorul primește `art48.register.collectors.only`. Pe ecranul „Intrări și ieșiri” sunt două butoane,
+> pe anul din filtru. Fără migrare.
+> Probe: `Art48RegisterIT` 5/5, pe rânduri întregi. Suita completă are **541 de teste în 61 de clase,
+> 0 eșecuri** (din XML), cu tot cu felia de abonamente din sesiunea paralelă. Probe negative: filtrul de
+> registru, stocul inițial și refuzul, scoase pe rând din cod, au doborât fiecare exact testele lor.
+> `tsc` e curat. Pe ecran **nu** a fost verificat.
+
 > **Unde suntem — 15.09.2026, noaptea.** 👩‍🔬 **Cererile specialistei din 15.09, în cod** (`V42`):
 > - **Licența de transport numai peste 3,5 t:** la parteneri, sub „Transportator”, bifa „Transportă cu
 >   vehicule peste 3,5 tone” (`partners.heavy_vehicles`). Licența apare și se păstrează numai bifat;
@@ -34,6 +52,11 @@ rulează local și are testele verzi.
 > pornire 9,2 s, nicio eroare în loguri), `app` **v57** (`302c769`). Bundle-ul servit are „Aviz de
 > însoțire”, „Evidența gestiunii deșeurilor centralizată” și bifa de 3,5 t; „Declarația anuală” apare
 > de zero ori. `/movements/{id}/aviz` fără token → 401.
+> 🌐 **Pagina publică `wastehouse.ro` e live și indexabilă din 15.09.2026, ~00:40**, cu prețurile
+> publicate (grila și raționamentul stau în repo-ul privat, `monetizare.md`). Rescrisă în aceeași
+> noapte: alb + un singur verde, Inter, vinde pe probleme, cu bucăți de interfață desenate în HTML după
+> ecranele reale și textele din `strings.ts` — nu capturi, ca să nu poarte date ale vreunui client.
+> Sursa e `../wastehouse-landing/index.html`, în afara oricărui repo.
 >
 > **Unde eram — 14.09.2026, 22:55.** 🗂️ **Mișcările sunt acum pe două ecrane, după registru**
 > (decizia proprietarului, în locul lui „Ieșiri”): **„Generare”** (`/generare`, `ANEXA_1` — deșeul firmei,
@@ -7255,7 +7278,12 @@ Verificate pe Portalul Legislativ, cu citate verbatim în `surse-oficiale.md` §
   generator cu ulei uzat sau tuburi fluorescente tot n-are ce tipări), dar e de-acum **cod de scris**,
   nu blocaj: `todo-lansare.md` P3.2. Vezi felia „Anexa 2 la HG 1061/2008 — blocajul care nu
   exista (10.09.2026)".
-- 🔴 **N-avem niciun model de registru art. 48** (întrebarea **AD**, deschisă 02.09.2026). Tot
+- ✅ **AD s-a închis pe 15.09.2026, în act.** Nu există un model de cerut. Art. 48 alin. (1) e obligația
+  tuturor și prescrie doar „cronologic lunar, tabelar”, pe lit. a)–c). Alin. (3) trimite la o procedură
+  prin ordin, pe care n-am găsit-o, iar alin. (7) + AG spun că datele se tastează în SIM (chestionarul
+  „Colectare/Tratare”). Exportul registrului `ART_48` nu mai e blocat. Citatele sunt în `surse-oficiale.md` §2.1-bis.
+  Textul de mai jos e istoric.
+- ~~🔴 **N-avem niciun model de registru art. 48**~~ (întrebarea **AD**, deschisă 02.09.2026). Tot
   corpusul primit e despre fișa de gestiune, declarația anuală, Anexa 3 și ambalaje. Despre evidența
   cronologică lunară a mărfii preluate de la terți — nimic.
   **De ce contează:** OUG 92/2021 art. 48 alin. (1) descrie **conținutul** (lit. a–c) și spune că se

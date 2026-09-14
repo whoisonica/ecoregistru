@@ -49,9 +49,8 @@ import java.util.Map;
  * in {@code waste_movements}. The depot module (Etapa 8) will move them into the
  * {@code receptions} / {@code deliveries} tables that {@code V5} created empty, and when it does,
  * only the two queries at the top of {@link #build} change; everything below them works on the
- * aggregated rows. That is deliberate. This document is buildable now because its <em>form</em> is
- * legible from the act and from a filled model, while the art. 48 register's is not (question AD),
- * and the two should not be held hostage to each other.
+ * aggregated rows. That is deliberate: the art. 48 chronological record ({@link Art48RegisterBuilder})
+ * reads the same rows, and neither document should be held hostage to the move.
  */
 @Component
 public class PackagingAnexa3Builder {

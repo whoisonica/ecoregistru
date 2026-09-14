@@ -83,6 +83,28 @@ export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promi
   );
 }
 
+/**
+ * Evidența cronologică lunară a deșeurilor preluate de la terți (OUG 92/2021 art. 48 alin. (1)) —
+ * tabelul cronologic plus totalurile anului în forma chestionarului SIM „Colectare/Tratare”.
+ * `.xlsx` ca să copiezi în portal, PDF pentru control. Pe anul întreg: evidența e anuală.
+ */
+export async function downloadArt48Register(
+  year: number,
+  workPointId: string | undefined,
+  format: "xlsx" | "pdf"
+): Promise<void> {
+  const params: Record<string, string | number> = { year, format };
+  if (workPointId) params.workPointId = workPointId;
+  const fetchFile = async () =>
+    (await api.get("/api/v1/evidences/registru-cronologic", { params, responseType: "blob" }))
+      .data as Blob;
+  if (format === "pdf") {
+    await openPdfInTab(fetchFile, `evidenta-cronologica-${year}.pdf`);
+  } else {
+    saveBlob(await fetchFile(), `evidenta-cronologica-${year}.xlsx`);
+  }
+}
+
 export async function downloadEvidenceExport(
   filters: EvidenceFilters,
   format: "xlsx" | "pdf"

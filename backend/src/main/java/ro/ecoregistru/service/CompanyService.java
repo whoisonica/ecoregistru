@@ -20,6 +20,7 @@ import ro.ecoregistru.controller.response.WasteCodeResponse;
 import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ConsultancyRepository;
+import ro.ecoregistru.repository.SubscriptionRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.security.SecurityUtils;
 import ro.ecoregistru.security.TenantContext;
@@ -33,6 +34,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_CUI_ALREADY_EXISTS;
+import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_HAS_OWN_SUBSCRIPTION;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_CUI_UNAVAILABLE;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
@@ -62,6 +64,7 @@ public class CompanyService {
 
     CompanyRepository companyRepository;
     ConsultancyRepository consultancyRepository;
+    SubscriptionRepository subscriptionRepository;
     WasteCodeRepository wasteCodeRepository;
     AuthenticationService authenticationService;
 
@@ -152,6 +155,10 @@ public class CompanyService {
         Consultancy consultancy = consultancyId == null ? null
                 : consultancyRepository.findById(consultancyId)
                         .orElseThrow(() -> new NotFoundException(CONSULTANCY_NOT_FOUND));
+        // A consultancy pays for its companies; a company that also pays for itself would be billed twice.
+        if (consultancy != null && subscriptionRepository.existsByCompany_Id(companyId)) {
+            throw new UnprocessableEntityException(COMPANY_HAS_OWN_SUBSCRIPTION);
+        }
         company.setConsultancy(consultancy);
         return toResponse(company);
     }

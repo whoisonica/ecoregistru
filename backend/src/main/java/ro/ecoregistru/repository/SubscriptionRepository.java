@@ -1,0 +1,19 @@
+package ro.ecoregistru.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ro.ecoregistru.entity.Subscription;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface SubscriptionRepository extends JpaRepository<Subscription, UUID> {
+
+    Optional<Subscription> findByCompany_Id(UUID companyId);
+
+    Optional<Subscription> findByConsultancy_Id(UUID consultancyId);
+
+    boolean existsByCompany_Id(UUID companyId);
+
+    /** „X din 30" next to the founder box. */
+    long countByFounderTrue();
+}

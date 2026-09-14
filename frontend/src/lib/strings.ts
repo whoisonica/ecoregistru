@@ -274,6 +274,11 @@ export const strings = {
     title: "Intrări și ieșiri de deșeuri",
     subtitle: "Deșeurile preluate de la terți și cele predate mai departe (registrul art. 48), pe puncte de lucru și luni.",
     add: "Adaugă mișcare",
+    // Evidența art. 48 (AD închisă 15.09.2026): pe anul din filtru, xlsx pentru portal, PDF pentru control.
+    art48Xlsx: "Evidența cronologică (.xlsx)",
+    art48Pdf: "Evidența cronologică (PDF)",
+    art48Hint: "Anul {year}: tabelul cronologic și totalurile pentru chestionarul SIM „Colectare/Tratare”, în tone.",
+    art48Error: "Evidența cronologică nu s-a putut genera.",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
     // Colectorul pur nu vede „Generare" (proprietarul, 14.09.2026), dar legea îi cere Anexa 1 pentru
@@ -1331,6 +1336,46 @@ export const strings = {
     inviteTitle: "Invită un consultant în {consultancy}",
     invited: "Consultant invitat. Primește pe email linkul de setare a parolei.",
     inviteError: "Invitația a eșuat. Verifică datele și încearcă din nou.",
+  },
+
+  /** Plata abonamentelor, F1 — pachetul și prețul unui client, pe ecranul Clienți al platformei. */
+  subscriptions: {
+    action: "Abonament",
+    title: "Abonament — {name}",
+    hint: "Prețul se copiază din grilă când creezi abonamentul și nu se mai schimbă singur, doar dacă muți clientul pe alt pachet. Deocamdată nu se emite nicio factură.",
+    none: "Clientul n-are abonament: nu e facturat și nu e restricționat.",
+    plan: "Pachet",
+    plans: {
+      GENERATOR: "Generator",
+      GENERATOR_PACKAGING: "Generator + Ambalaje",
+      FULL_SERVICE: "Serviciu complet",
+      CONSULTANCY: "Abonament de cabinet",
+    },
+    planHint: "Colectorii intră pe Generator: modulul de depozit nu se facturează încă.",
+    startedAt: "Data de start",
+    startedAtHint:
+      "Ziua de la care se facturează. Fiecare lună se plătește întreagă, din ziua asta până în ziua dinaintea ei din luna următoare.",
+    founder: "Client fondator: implementare gratuită, preț blocat 2 ani",
+    founderCount: "{n} din 30 folosite",
+    status: {
+      PENDING: "Așteaptă prima plată",
+      ACTIVE: "Activ",
+      PAST_DUE: "Restant",
+      READ_ONLY: "Doar citire",
+      CANCELLED: "Oprit",
+    },
+    firstInvoice: "Prima factură ({period})",
+    monthlyInvoice: "Apoi lunar ({period})",
+    total: "Total",
+    previewHint:
+      "Calculat pe punctele de lucru sau firmele active de azi. La facturare se numără la începutul fiecărei perioade, deci o firmă adăugată în cabinet se plătește din perioada următoare.",
+    create: "Creează abonamentul",
+    saved: "Abonament salvat.",
+    saveError: "Abonamentul nu a putut fi salvat.",
+    remove: "Șterge abonamentul",
+    removed: "Abonament șters. Clientul nu mai e facturat.",
+    removeError: "Abonamentul nu a putut fi șters.",
+    loadError: "Nu am putut încărca abonamentul.",
   },
 
   /** P2.13 — echipa cabinetului, pe ecranul Clienți al consultantului. */

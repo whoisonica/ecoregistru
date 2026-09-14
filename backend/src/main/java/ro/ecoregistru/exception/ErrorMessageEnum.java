@@ -47,6 +47,11 @@ public enum ErrorMessageEnum {
     CONSULTANCY_NOT_FOUND("consultancy.not.found", "Cabinetul nu a fost găsit."),
     CONSULTANCY_CUI_ALREADY_EXISTS("consultancy.cui.exists", "Există deja un cabinet cu acest CUI."),
 
+    // --- Abonamente (plata-abonamente.md, F1) ---
+    SUBSCRIPTION_COMPANY_IN_CONSULTANCY("subscription.company.in.consultancy", "Firma e în portofoliul unui cabinet, iar abonamentul îl plătește cabinetul. Scoate-o întâi din cabinet."),
+    SUBSCRIPTION_PLAN_MISMATCH("subscription.plan.mismatch", "Abonamentul de cabinet se pune numai pe un cabinet, iar celelalte pachete numai pe o firmă."),
+    COMPANY_HAS_OWN_SUBSCRIPTION("company.has.own.subscription", "Firma are abonament propriu. Șterge-l întâi, altfel ar plăti de două ori: o dată ea, o dată cabinetul."),
+
     // --- Utilizatorii firmei (P1.12) ---
     CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),
     LAST_ADMIN("user.last.admin", "E singurul administrator activ al firmei. Fă întâi pe altcineva administrator, apoi revino."),
@@ -109,6 +114,8 @@ public enum ErrorMessageEnum {
     ANEXA2_COLLECTORS_ONLY("anexa2.collectors.only", "Anexa 2 (formularul de transport pentru deșeuri periculoase) o întocmește colectorul care preia deșeul. Contul e de generator, deci formularul nu se tipărește de aici."),
     // Aceeași seară: „generatorii au doar ieșiri" — deci n-au ambalaje preluate de la terți de raportat.
     ANEXA3_PACKAGING_COLLECTORS_ONLY("anexa3.packaging.collectors.only", "Anexa 3 la Ordinul 794/2012 raportează ambalajele preluate de la terți, deci o depun colectorii, comercianții și reciclatorii. Contul e de generator, deci raportul nu se întocmește de aici."),
+    // 15.09.2026, AD închisă: evidența art. 48 a mărfii preluate e a celor care preiau; generatorul o ține pe fișa Anexa 1.
+    ART48_REGISTER_COLLECTORS_ONLY("art48.register.collectors.only", "Evidența cronologică a deșeurilor preluate de la terți o țin firmele care preiau deșeu. Contul e de generator: evidența lui e fișa Anexa 1, de pe ecranul „Generare”."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),

@@ -14,6 +14,9 @@ public interface WorkPointRepository extends JpaRepository<WorkPoint, UUID> {
 
     List<WorkPoint> findAllByCompany_IdAndActiveTrue(UUID companyId);
 
+    /** What a direct subscription bills on: every active work point after the first. */
+    long countByCompany_IdAndActiveTrue(UUID companyId);
+
     Optional<WorkPoint> findByIdAndCompany_Id(UUID id, UUID companyId);
 
     List<WorkPoint> findAllByIdInAndCompany_Id(Collection<UUID> ids, UUID companyId);

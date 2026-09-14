@@ -41,6 +41,7 @@ public class EvidenceController {
     ro.ecoregistru.service.export.Anexa1FormGenerator anexa1FormGenerator;
     ro.ecoregistru.service.export.AnnualDeclarationGenerator annualDeclarationGenerator;
     CompanyRepository companyRepository;
+    ro.ecoregistru.service.Art48RegisterService art48RegisterService;
 
     @GetMapping
     public List<MonthlyEvidenceResponse> list(
@@ -95,6 +96,27 @@ public class EvidenceController {
                 .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
+    /**
+     * The chronological monthly record of waste taken over from third parties (OUG 92/2021 art. 48
+     * alin. (1)): the table itself, then the year's totals in the shape of the SIM "Colectare/Tratare"
+     * questionnaire. xlsx to copy from, pdf to print. Refused for a pure generator.
+     */
+    @GetMapping("/registru-cronologic")
+    public ResponseEntity<byte[]> art48Register(
+            @RequestParam int year,
+            @RequestParam(required = false) UUID workPointId,
+            @RequestParam(defaultValue = "xlsx") String format) {
+        ExportFormat exportFormat = ExportFormat.fromParam(format);
+        byte[] body = art48RegisterService.render(year, workPointId, exportFormat);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("evidenta-cronologica-" + year + "." + exportFormat.getExtension())
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(exportFormat.getContentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(body);
     }

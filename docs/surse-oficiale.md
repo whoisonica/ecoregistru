@@ -416,11 +416,68 @@ fişierul, nu ce versiune era în el.
 > 2. **15 martie e termen legal**, nu cutumă ANPM. Închide C3.
 > 3. Evidența lunară se ține în kg (practica fișei Anexa 1), dar **raportarea de la art. 48 e în
 >    tone**. Conversia trebuie să existe într-un singur loc în cod, nu presărată prin export.
-> 4. 🔴 **Articolul descrie conţinutul, nu forma — şi n-are anexă cu facsimil.** Lit. a)–c) spun ce
->    date trebuie să conţină evidenţa cronologică, iar depunerea se face „în sistemul pus la
->    dispoziţie de APM". Spre deosebire de HG 856/2002, care reproduce modelul fişei în anexa nr. 1,
->    **aici nu există un formular de reprodus**. Deci formatul registrului art. 48 nu se poate citi
->    din act: e nevoie de un exemplar completat. Vezi întrebarea **AD** — nu avem niciunul.
+> 4. ~~🔴 **Articolul descrie conţinutul, nu forma — şi n-are anexă cu facsimil.** [...] e nevoie de
+>    un exemplar completat. Vezi întrebarea **AD** — nu avem niciunul.~~ **Închis pe 15.09.2026, pe
+>    text — vezi §2.1-bis.** Premisa „formatul există, doar că nu-l avem" era falsă.
+
+**Alin. (3)** și **alin. (7)** — *lipseau din secțiunea asta până pe 15.09.2026, și erau exact
+alineatele care răspundeau la AD. Luate pe 15.09.2026 din forma consolidată la 11.07.2026:*
+
+> (3) ANMAP elaborează **procedura de raportare** a datelor şi informaţiilor prevăzute la alin. (1) în
+> termen de 180 de zile de la data intrării în vigoare a prezentei ordonanţe de urgenţă, care va fi
+> aprobată prin ordin al conducătorului autorităţii publice centrale pentru protecţia mediului.
+>
+> (7) ANMAP instituie un **registru electronic** sau registre coordonate pentru a înregistra datele
+> privind deşeurile prevăzute la alin. (1) care acoperă întregul teritoriu geografic.
+
+### 2.1-bis De ce AD se închide fără exemplar (15.09.2026)
+
+**1. „Registrul art. 48" nu e un document al colectorului — e obligația tuturor.** Alin. (1) îi
+numește pe **producătorii de deșeuri** (generatorii) înaintea colectorilor. Pentru un generator,
+evidența de la art. 48 e fișa din anexa nr. 1 la HG 856/2002, iar cele 15 martie le depune deja.
+Pentru colector, HG 856/2002 art. 2 alin. (2) cere doar ca evidența mărfii colectate să fie
+„raportată la solicitare”. **Nu dă niciun model**, pentru că actul are doar două anexe (nr. 1 fișa, nr. 2 lista).
+Numele intern „registrul art. 48" pentru `WasteRegister.ART_48` e o prescurtare de-a noastră, nu un
+titlu din act. De asta nu l-a recunoscut specialista.
+
+**2. Singura formă prescrisă e cea din alin. (1): „cronologică lunară", „format tabelar", pe lit.
+a)–c).** Alin. (3) trimite restul la o **procedură aprobată prin ordin**. Ordinul n-a fost găsit (Portalul
+Legislativ, căutare 15.09.2026). Nu afirmăm că nu există, doar că nu l-am găsit. Ce există sigur e alin. (7): **registrul
+electronic al ANMAP**, adică aplicația SIM „Statistica Deșeurilor", unde datele se **tastează** (AG,
+confirmat de specialistă pe 14.09: „nu există upload”). **Forma oficială e deci ecranul
+portalului, nu o hârtie.** N-avem ce facsimil să reproducem, fiindcă nu există unul.
+
+**3. Ghidul MMAP din 20.09.2023** (aprobat prin Ordinul nr. 2.436/2023, M.Of. 880 bis/29.09.2023,
+[legislatie.just.ro/Public/DetaliiDocument/276420](https://legislatie.just.ro/Public/DetaliiDocument/276420))
+**nu schimbă nimic**. E o compilație de texte existente: pct. 745–756 reiau art. 48, iar „Anexa nr. 5 —
+Evidența gestiunii deșeurilor" e fișa din HG 856/2002. ⚠️ Pct. 745 citează **textul de dinainte de
+12.01.2023** („în format letric, la cerere"), deci nu se citează din ghid, ci din OUG.
+
+**4. Ce cere portalul de la un colector.** Chestionarul **„Colectare/Tratare"**, după *SIM
+Statistica Deșeurilor — Ghid de utilizare*, ANPM, ianuarie 2014, pp. 34–52
+([anmap.gov.ro/…/SIM.SD.GhidPublic.pdf](https://anmap.gov.ro/documents/27459/69882411/SIM.SD.GhidPublic.pdf)):
+
+| Tabel | Pe rând | Rubrici |
+|---|---|---|
+| Cap. 1 · T1 Colectarea deșeurilor | un cod de deșeu | sursa colectării (listă), stoc la începutul anului, cantitate colectată, valorificat din colectat, eliminat din colectat, stoc la sfârșitul anului, cod R, cod D |
+| Cap. 1 · T2 Dezmembrare | un cod | aceleași |
+| Cap. 1 · T3 Generare fără colectat | un cod | aceleași, pentru deșeul propriu |
+| Cap. 2 · A Valorificare | unitate × cod × R | unitatea care preia (după CUI; localitate, județ, SIRUTA se completează singure), cod, cantitate preluată, cod R |
+| Cap. 2 · B Eliminare | unitate × cod × D | la fel, cu cod D |
+
+Cantitățile se trec **în tone**. Corelațiile `REC_001`/`REC_002` cer, pe fiecare cod, stoc inițial +
+colectat = valorificat + eliminat + stoc final, iar orice cod din Cap. 1 trebuie să apară și în Cap. 2.
+⚠️ **Ghidul e din 2014, iar aplicația a fost refăcută** (termen de intrare în producție ~01.05.2025,
+proiectul „servicii publice de mediu digitalizate”). Rubricile de mai sus sunt **conținutul**
+chestionarului, verificat pe singura sursă oficială publică. Aranjarea exactă pe ecranul de azi nu se poate
+verifica fără cont.
+
+**Consecința pentru cod.** Tot ce cer lit. a)–c) și chestionarul se află deja pe `WasteMovement`: dată
+(cronologic), cod, cantitate, `operation`, `operationCode` (R/D), `partner` (nume, CUI, adresă),
+`transportMeans`, `treatmentMethod`, `wasteDestination`, plus stocul, care se deduce. Lipsește doar
+„sursa colectării", o listă a portalului pe care ghidul n-o tipărește. Exportul registrului `ART_48`
+**nu inventează un formular oficial**: e tabelul cronologic lunar cerut de alin. (1), plus totalurile
+anuale așezate ca în tabelele de mai sus, ca ajutor de copiat în portal.
 
 **Alin. (2)** — buletinele de analiză. *Citat adăugat 02.09.2026 (audit, pct. 9).*
 

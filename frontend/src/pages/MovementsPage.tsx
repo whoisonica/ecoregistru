@@ -19,6 +19,7 @@ import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
 import { useDrivers } from "@/hooks/useDrivers";
 import { useCurrentCompany } from "@/hooks/useCompanies";
+import { downloadArt48Register } from "@/hooks/useEvidences";
 import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import {
   useMovement,
@@ -382,6 +383,22 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
     setDialogOpen(true);
   }, [newParam, setNewParam, canWrite]);
 
+  /**
+   * Evidența art. 48 pe **anul** din filtru, nu pe lună: evidența se depune pe an, iar stocul de
+   * început vine din anii dinainte. Punctul de lucru ales se păstrează.
+   */
+  const [art48Busy, setArt48Busy] = useState<"xlsx" | "pdf" | null>(null);
+  async function downloadArt48(format: "xlsx" | "pdf") {
+    setArt48Busy(format);
+    try {
+      await downloadArt48Register(filters.year!, workPointFilter || undefined, format);
+    } catch (err) {
+      notify(apiErrorMessage(err, t.art48Error), "error");
+    } finally {
+      setArt48Busy(null);
+    }
+  }
+
   function openCreate() {
     setEditing(null);
     setDuplicating(null);
@@ -446,12 +463,36 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
         title={isGeneration ? t.generatorTitle : t.title}
         description={isGeneration ? t.generatorSubtitle : t.subtitle}
         actions={
-          canWrite && (
-            <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
-              <Plus className="mr-2 h-4 w-4" />
-              {isGeneration ? t.generatorAdd : t.add}
-            </Button>
-          )
+          <>
+            {!isGeneration && (
+              <>
+                <Button
+                  variant="outline"
+                  loading={art48Busy === "xlsx"}
+                  disabled={art48Busy != null}
+                  onClick={() => downloadArt48("xlsx")}
+                  title={t.art48Hint.replace("{year}", String(filters.year))}
+                >
+                  {t.art48Xlsx}
+                </Button>
+                <Button
+                  variant="outline"
+                  loading={art48Busy === "pdf"}
+                  disabled={art48Busy != null}
+                  onClick={() => downloadArt48("pdf")}
+                  title={t.art48Hint.replace("{year}", String(filters.year))}
+                >
+                  {t.art48Pdf}
+                </Button>
+              </>
+            )}
+            {canWrite && (
+              <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
+                <Plus className="mr-2 h-4 w-4" />
+                {isGeneration ? t.generatorAdd : t.add}
+              </Button>
+            )}
+          </>
         }
       />
 

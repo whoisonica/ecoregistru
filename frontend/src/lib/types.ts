@@ -254,6 +254,58 @@ export interface ConsultancyInput {
   cui: string;
 }
 
+// --- Abonamente (plata-abonamente.md, F1) ---
+
+export type SubscriptionPlan = "GENERATOR" | "GENERATOR_PACKAGING" | "FULL_SERVICE" | "CONSULTANCY";
+export type SubscriptionStatus = "PENDING" | "ACTIVE" | "PAST_DUE" | "READ_ONLY" | "CANCELLED";
+
+/** Mirrors backend BillingCalculator.Line. Lei, fără TVA. */
+export interface InvoiceLine {
+  label: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+/** O perioadă: din ziua de start până în ziua dinaintea aceleiași date din luna următoare, inclusiv. */
+export interface InvoicePreview {
+  from: string; // yyyy-MM-dd
+  to: string; // yyyy-MM-dd
+  lines: InvoiceLine[];
+  total: number;
+}
+
+/** Mirrors backend SubscriptionResponse. Prețurile sunt cele copiate din grilă la creare. */
+export interface Subscription {
+  id: string;
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  monthlyPrice: number;
+  implementationFee: number;
+  extraWorkPointPrice: number | null;
+  companyPriceTier1: number | null;
+  companyPriceTier2: number | null;
+  companyPriceTier3: number | null;
+  packagingCompanyPrice: number | null;
+  founder: boolean;
+  startedAt: string; // yyyy-MM-dd
+  firstInvoice: InvoicePreview;
+  monthlyInvoice: InvoicePreview;
+}
+
+export interface SubscriptionInput {
+  plan: SubscriptionPlan;
+  founder: boolean;
+  startedAt: string; // yyyy-MM-dd
+}
+
+/** Cine plătește: o firmă directă sau un cabinet. Firmele unui cabinet n-au abonament propriu. */
+export interface SubscriptionOwner {
+  kind: "company" | "consultancy";
+  id: string;
+  name: string;
+}
+
 /** Fără rol: într-un cabinet toți sunt consultanți, cu aceleași drepturi. */
 export interface InviteConsultantInput {
   email: string;
