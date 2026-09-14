@@ -11,7 +11,11 @@ const check = (n, ok, d = "") => {
   if (!ok) fails++;
 };
 
-await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });
+// Pe **tot anul**, ca proba 3. Ecranul porneşte pe luna curentă, iar duplicarea şi ştergerea de mai
+// jos cer un rând adevărat: pe o bază nouă, într-o lună fără mişcări, primul rând e mesajul de gol
+// (o singură celulă) şi `td:nth-child(2)` se aştepta 30 s până cădea — 14.09.2026, de două ori.
+const AN = new Date().getFullYear();
+await page.goto(BASE + `/miscari?luna=${AN}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
 
 // ------------------------------------------------------------ SECȚIUNI
@@ -70,6 +74,14 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(400);
 
 // ------------------------------------------------------------ DUPLICARE
+// Garda: proba are pe ce duplica. Fără ea, un tabel gol dădea un timeout, nu un motiv.
+const dataRows = await page.$$eval("tbody tr", (r) => r.filter((x) => x.children.length > 1).length);
+check("tabelul are mişcări pe care să le duplice", dataRows > 0, `${dataRows} rânduri pe ${AN}`);
+if (dataRows === 0) {
+  await browser.close();
+  console.log(`\nREZULTAT: ${fails} eșecuri`);
+  process.exit(1);
+}
 const firstRowCode = await page.textContent("tbody tr:first-child td:nth-child(2)");
 await clickAt(page, "tbody tr:first-child td:last-child button[aria-haspopup='menu']");
 await page.waitForTimeout(300);

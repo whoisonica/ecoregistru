@@ -1,11 +1,24 @@
 # Probe de interfaţă
 
-Paisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea: **303 verificări
-rulate** (probele 1–12) plus **25 scrise şi nerulate încă** — proba 13 (drumul aprobării, 13
-verificări) şi proba 14 (codul-oglindă, 12), amândouă scrise pe 11.09.2026 în sesiuni fără server
-pornit. Rândul ăsta se schimbă la prima rulare verde, nu înainte.
+Şaisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
+Ultima rulare completă, 14.09.2026, pe o bază locală nouă: **„✓ 15 probe, toate trec", exit 0**;
+proba 16 (buletinele) scrisă după, verde, cu proba negativă trecută.
 
-⬜ **Şi una lipseşte cu totul: buletinele de analiză (G-7, 11.09.2026).** Felia s-a livrat cu 11
+⚠️ **Codul de ieşire al runnerului e de încredere** — probat pe 14.09 cu două căderi reale (exit 1).
+„Exit 0 deşi a căzut ceva", notat în aceeaşi zi, nu s-a mai reprodus; cauza cea mai probabilă e o
+comandă trecută printr-un pipe, care întoarce codul ultimei comenzi, nu al suitei.
+
+⚠️ **Un Vite pornit dinaintea unui deploy prin subtree serveşte 500 după el.** Checkout-ul pe
+`split-backend` scoate `frontend/` din arborele de lucru pentru o clipă; Vite ţine minte importul
+nerezolvat şi pagina rămâne albă, iar fiecare probă cade la login pe `#login-email`. Se reporneşte
+`npm run dev`. Aşa a arătat pe 14.09 ca o cădere a probelor 4 şi 14.
+
+✅ **Buletinele de analiză (G-7) au probă din 14.09.2026 — `16-buletine.mjs`**, pe tot ce se decide
+înainte de urcare. ⬜ **Două verificări rămân nerulate, şi proba le scrie ca atare:** istoricul şi
+stingerea badge-ului cer o încărcare reuşită, iar fişierul urcă direct la Cloudinary — fără
+`CLOUDINARY_URL` pe backendul local nu există cale. Textul de mai jos e lista de pe 11.09.
+
+Felia s-a livrat cu 11
 teste de backend şi **fără probă de ecran** — ecranul din **Setări → Buletine de analiză** n-a fost
 deschis niciodată de o suită. Ce ar avea de verificat, şi e scris aici ca să nu se piardă: că
 încărcarea cere **toate patru** rubricile (cod, dată, laborator, fişier) şi le marchează pe cele
@@ -97,7 +110,7 @@ ramură nu atinge `node_modules`.
 | `1-ecrane.mjs` | Cele douăsprezece ecrane se deschid, au titlu şi tabel, fără erori de consolă, excepţii sau răspunsuri HTTP ≥ 400. Trei roluri: admin, administrator de platformă, public. |
 | `2-tabele.mjs` | Coloana de acţiuni rămâne vizibilă şi după ce tabelul se derulează la capăt pe orizontală. La 1280px, Mişcări depăşeşte lăţimea cu ~200px. |
 | `3-interactiuni.mjs` | Căutarea restrânge şi **toate** rezultatele se potrivesc; `deseuri` găseşte cât `deșeuri`; Escape o goleşte; golul din căutare are alt mesaj decât golul din lipsă de date. Sortarea schimbă `aria-sort` **şi** ordinea rândurilor. Paginarea. Filtrele în adresă, inclusiv după navigare. Ctrl+K, `/`, `N`. |
-| `4-formular.mjs` | Cele opt secţiuni, lăţimea dialogului, banda de efect. Trimiterea unui formular gol marchează rubricile şi le leagă de mesaje prin `aria-describedby`. Duplicarea aduce codul, pune data de azi, goleşte documentul. Confirmarea de ştergere numeşte rândul — şi **anulează**, nu şterge. |
+| `4-formular.mjs` | Cele opt secţiuni, lăţimea dialogului, banda de efect. Trimiterea unui formular gol marchează rubricile şi le leagă de mesaje prin `aria-describedby`. Duplicarea aduce codul, pune data de azi, goleşte documentul. Confirmarea de ştergere numeşte rândul — şi **anulează**, nu şterge. Deschide Mişcări pe **anul curent** (`?luna=AN`, ca proba 3): pe luna curentă, într-o lună fără mişcări, primul rând e mesajul de gol şi duplicarea aştepta 30 s până cădea (14.09.2026). O gardă spune acum „0 rânduri" în loc de timeout. |
 | `5-telefon.mjs` | La 375px: nicio pagină nu se derulează lateral — **inclusiv `/cerere-cont`, probat înainte de autentificare**, fiindcă aşa îl vede prospectul —, banda de trei paşi se stivuieşte, sertarul se deschide din buton şi se închide la navigare şi cu Escape, dialogul urcă de la marginea de jos, grilele de formular sunt pe o coloană. |
 | `6-cerere-si-rapoarte.mjs` | Formularul public: marcajele de obligatoriu, erorile pe rubrici cu derulare la prima greşită, CUI-ul respins cu forma cerută, lista de coduri R/D pliată, pagina de mulţumire cu emailul şi termenul. Inboxul: dialogul citeşte toate rubricile, inclusiv textul liber, iar cele necompletate se **arată** goale. Drumul cap-coadă de la blocajul roşu de pe Panou, prin registrul filtrat, până la mişcarea deschisă. ⚠️ **Scrie o cerere** în baza de dev la fiecare rulare, cu CUI unic; nu curăţă după ea, fiindcă aprobarea ar crea o firmă şi firmele nu se şterg. |
 | `7-firma-si-reactivare.mjs` | „Datele firmei" din Setări: cele cinci grupe, rubricile care se tipăresc pe documente, golurile spuse ca goluri, şi cuprinsul paginii cu ţinta fiecărei intrări. Drumul întreg al reactivării: creează un şofer, îl dezactivează prin confirmare, verifică faptul că **iese din listă** şi că filtrul de stare abia acum apare, îl regăseşte prin „Inactive", îl reactivează. Garda formularului de mişcare: neatins se închide direct, atins întreabă, iar Escape peste întrebare închide **doar** întrebarea, cu ce s-a scris neatins. ⚠️ **Lasă în urmă un şofer dezactivat** la fiecare rulare. |
@@ -108,7 +121,8 @@ ramură nu atinge `node_modules`.
 | `15-jurnal-audit.mjs` | ✅ **Rulată prima dată pe 14.09.2026** — şi a găsit la prima rulare **BUG-013** (un `PUT` scria două rânduri `UPDATE`), reparat. Jurnalul de audit (P1.11): face o modificare adevărată prin API — creează o mişcare, îi schimbă cantitatea, o şterge — şi cere apoi jurnalului s-o povestească: cele trei fapte, cea mai nouă prima, ştergerea scrisă **ca ştergere**, modificarea cu numele rubricii şi cu amândouă valorile, `updatedAt`/`version` absente, autorul şi eticheta pe fiecare rând. Apoi ecranul din Setări: secţiunea, cuprinsul, faptele în româneşte (**şi niciun `DELETE`/`WasteMovement` scăpat pe ecran**), termenul de păstrare. La final, uşa: un operator primeşte **403**, nu un tabel gol, şi nu vede nici secţiunea. ⚠️ **Lasă în urmă o mişcare ştearsă** la fiecare rulare, pe anul 2033 — ales ca să nu atingă nimic din ce citesc celelalte probe. |
 | `12-pagini-legale.mjs` | Termenii şi politica de confidenţialitate se deschid **fără cont**, au datele şi rubricile firmei, iar subsolul duce la ele de pe fiecare pagină publică şi din bara laterală. |
 | `13-drumul-aprobarii.mjs` | ✅ **Rulată prima dată pe 14.09.2026, verde**, şi probată negativ: cu pasul 9 atribuit clientului (`who: "Tu"`) cad exact cele două verificări scrise pentru asta. Cei nouă paşi ai aprobării din HG 1061/2008 apar **numai** peste pragul de 1 t/an, fiecare cu autorul lui, iar pasul 9 numeşte **ISU-ul** şi nu începe cu „Tu" — două verificări scrise în sens contrar dinadins, fiindcă un text alunecat înapoi la varianta greşită ar trece una scrisă doar pe „conţine 48 de ore". |
-| `14-codul-oglinda.mjs` | ✅ **Rulată prima dată pe 14.09.2026** — a găsit **BUG-014**: explicaţia insignei nu se deschidea la atingere pe telefon, iar pe desktop clicul o închidea (hover-ul şi `focus` o deschideau, clicul o comuta la loc). Are acum verificări separate pentru hover, clic şi atingere (`hasTouch`), iar curăţenia rulează şi când proba cade la mijloc. Badge-ul „Cod-oglindă" apare pe mişcarea fără atașament şi **nu** pe un cod obişnuit, stă în celula codului (se pune la îndoială încadrarea, nu predarea), iar motivul citează art. 8 alin. (2), numeşte perechea periculoasă şi spune că mişcarea rămâne înregistrată. ⚠️ **Îşi scrie singură cele două mişcări şi le şterge la sfârşit** — nu se sprijină pe seed. |
+| `14-codul-oglinda.mjs` | ✅ **Rulată prima dată pe 14.09.2026** — a găsit **BUG-014**: explicaţia insignei nu se deschidea la atingere pe telefon, iar pe desktop clicul o închidea (hover-ul şi `focus` o deschideau, clicul o comuta la loc). Are acum verificări separate pentru hover, clic şi atingere (`hasTouch`), iar curăţenia rulează şi când proba cade la mijloc. Badge-ul „Cod-oglindă" apare pe mişcarea fără atașament şi **nu** pe un cod obişnuit, stă în celula codului (se pune la îndoială încadrarea, nu predarea), iar motivul citează art. 8 alin. (2), numeşte perechea periculoasă şi spune că mişcarea rămâne înregistrată. ⚠️ **Îşi scrie singură cele două mişcări şi le şterge la sfârşit** — nu se sprijină pe seed. Tipăreşte verdictul din 14.09 („✓ proba 14 trece."); fără el, rularea completă o arăta „fără verdict" deşi trecuse. |
+| `16-buletine.mjs` | ✅ **Scrisă şi rulată pe 14.09.2026, verde — 22 de verificări, 2 nerulate şi scrise ca atare.** Buletinele de analiză din Setări (G-7): formularul gol marchează **toate patru** rubricile, fiecare legată de mesajul ei, şi nu pleacă la server; **controlul** — laboratorul completat îşi pierde marcajul, celelalte trei nu. Rubrica de dată are `max` = azi. Prin API: data în viitor, fişierul lipsă şi laboratorul gol sunt refuzate **fiecare cu codul lui**, iar controlul pozitiv (aceeaşi cerere, data de azi) nu mai e refuzat pentru dată; nimic scris. Cititorul vede lista, nu vede butonul, şi ia **403** pe lângă ecran. **Proba negativă:** verificarea laboratorului scoasă din `AnalysisBulletinsSection` → cad exact cele două verificări despre ea. ⬜ **Nerulate:** „Anterior" pe al doilea buletin şi stingerea badge-ului „Cod-oglindă" — cer Cloudinary. Local, controlul pozitiv ia **500** la urcare (clientul Cloudinary gol), nu un mesaj: pe producţie cheia există. Nu scrie nimic în bază. |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 

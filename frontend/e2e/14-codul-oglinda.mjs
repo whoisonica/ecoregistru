@@ -195,4 +195,8 @@ const cleaned = await page.evaluate(async ([a, b]) => {
 check("curăţenie: mişcările de probă s-au şters", cleaned === true);
 
 await browser.close();
+// Verdictul scris, ca la celelalte probe. Fără el, rularea completă din 14.09 a arătat proba asta ca
+// „fără verdict" deşi trecuse — cine citea jurnalul nu avea de unde şti.
+console.log("");
+console.log(fails === 0 ? "✓ proba 14 trece." : `REZULTAT: ${fails} eșecuri`);
 process.exit(fails > 0 ? 1 : 0);

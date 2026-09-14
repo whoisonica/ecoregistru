@@ -24,6 +24,7 @@ const suites = [
   ["13-drumul-aprobarii.mjs", "cei nouă pași ai aprobării, și cine face fiecare"],
   ["14-codul-oglinda.mjs", "codul-oglindă declarat nepericulos fără document justificativ"],
   ["15-jurnal-audit.mjs", "cine a modificat cantitatea asta, şi ce spune ecranul despre asta"],
+  ["16-buletine.mjs", "buletinele de analiză: rubricile cerute, data, uşa cititorului"],
 ];
 
 const only = process.argv[2];
