@@ -27,6 +27,8 @@ export function Tooltip({ content, children, className }: TooltipProps) {
   const [coords, setCoords] = useState<{ top: number; left: number; below: boolean } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
+  /** Adevărat cât bula e deschisă de hover sau focus și clicul care urmează încă n-a venit. */
+  const openedBy = useRef(false);
   const id = useId();
 
   const place = useCallback(() => {
@@ -84,16 +86,38 @@ export function Tooltip({ content, children, className }: TooltipProps) {
         // browser, nu trebuie scrise. `type="button"` fiindcă unele insigne stau în formulare,
         // iar implicitul ar trimite formularul.
         className="inline-flex cursor-help items-center rounded text-left"
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
+        onMouseEnter={() => {
+          openedBy.current = true;
+          setOpen(true);
+        }}
+        onMouseLeave={() => {
+          openedBy.current = false;
+          setOpen(false);
+        }}
+        onFocus={() => {
+          openedBy.current = true;
+          setOpen(true);
+        }}
+        onBlur={() => {
+          openedBy.current = false;
+          setOpen(false);
+        }}
         onClick={(e) => {
           // Pe touch nu există hover: apăsarea e singurul fel de a cere explicația. Nu lăsăm
           // evenimentul să urce, ca o bulă dintr-un rând de tabel să nu deschidă și rândul.
           e.preventDefault();
           e.stopPropagation();
-          setOpen((o) => !o);
+          // BUG-014. Clicul nu vine niciodată singur: mausul trece întâi peste buton, iar la o
+          // atingere browserul trimite și el `mouseenter` și `focus` înaintea lui `click`. Un
+          // simplu comutator închidea deci bula chiar în clipa în care o deschisese — pe desktop
+          // clicul o stingea, iar pe telefon nu apărea deloc. Clicul care urmează deschiderii o
+          // lasă deschisă; abia al doilea o închide.
+          if (openedBy.current) {
+            openedBy.current = false;
+            setOpen(true);
+          } else {
+            setOpen((o) => !o);
+          }
         }}
       >
         {children}

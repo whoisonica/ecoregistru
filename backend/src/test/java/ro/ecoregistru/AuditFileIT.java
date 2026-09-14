@@ -418,6 +418,61 @@ class AuditFileIT {
                 .contains("în lista de amenzi de mai sus");
     }
 
+    // --- QA-TRACE G3: persoana desemnată, OUG 92/2021 art. 23 alin. (4)–(5) ---
+
+    /**
+     * The block the inspector asks for first. Until now {@code AuditFileIT} only named the pattern in
+     * a comment: the block could have vanished and the dossier would have gone quiet about it.
+     */
+    @Test
+    void theDesignatedPersonIsPrintedWithEverythingTheProfileHolds() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company company = companyRepository.save(Company.builder()
+                .name("Cu gestionar SRL").cui("ROG" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now())
+                .wasteManagerName("Ioana Pop").wasteManagerRole("inginer de mediu")
+                .wasteManagerExternal(true).wasteManagerTraining("program recunoscut ANC, 2025")
+                .build());
+
+        assertThat(flat(readmeOf(company, suffix)))
+                .contains("Persoana desemnată cu gestiunea deșeurilor (OUG 92/2021, art. 23 alin. (4)):")
+                .contains("- Nume : Ioana Pop")
+                .contains("- Calitate: inginer de mediu")
+                .contains("- Delegată unei terțe persoane (art. 23 alin. (4), a doua variantă).")
+                .contains("- Instruire: program recunoscut ANC, 2025")
+                .doesNotContain("Persoana desemnată cu gestiunea deșeurilor: NECOMPLETATĂ")
+                .doesNotContain("Instruire: NECOMPLETATĂ");
+    }
+
+    /** The gap is the finding: an empty profile speaks, with the article, instead of staying quiet. */
+    @Test
+    void aMissingDesignatedPersonIsWrittenAsMissingWithItsArticle() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company company = companyRepository.save(Company.builder()
+                .name("Fără gestionar SRL").cui("ROF" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now())
+                .wasteManagerName("   ")
+                .build());
+
+        assertThat(flat(readmeOf(company, suffix)))
+                .contains("Persoana desemnată cu gestiunea deșeurilor: NECOMPLETATĂ.")
+                .contains("OUG 92/2021, art. 23 alin. (4)")
+                .contains("Alin. (5) cere ca ea să fie instruită")
+                .doesNotContain("- Nume :");
+    }
+
+    private String readmeOf(Company company, String suffix) throws Exception {
+        AppUser user = appUserRepository.save(AppUser.builder()
+                .email("gestionar+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        return new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+    }
+
     private String readmeOfDemo2026() throws Exception {
         byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
                         .param("year", "2026")

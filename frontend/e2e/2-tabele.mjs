@@ -6,8 +6,21 @@ const browser = await launch();
 const page = await newPage(browser, { width: 1280, height: 800 });
 await login(page, "admin");
 
+// Mişcări deschide implicit luna curentă. Proba mergea pe bazele de lucru fiindcă acolo luna curentă
+// avea mereu ceva — rânduri lăsate de alte probe; pe o bază curată, din prima zi a unei luni fără
+// mişcări, tabelul arăta doar starea goală şi proba cădea cu o excepţie. Se alege luna celei mai noi
+// mişcări, citită din API. Lista vine deja cu cea mai nouă întâi; un `sort=` în adresă e ignorat
+// (verificat 14.09: `asc`, `desc` şi nimic dau acelaşi prim rând), deci nu se trimite.
+const lunaCuDate = await page.evaluate(async () => {
+  const res = await fetch("/api/v1/movements?size=1", {
+    headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
+  });
+  const cea = (await res.json()).content?.[0];
+  return cea ? cea.date.slice(0, 7) : null;
+});
+
 let bad = 0;
-for (const [route, name] of [["/miscari", "miscari"], ["/parteneri", "parteneri"]]) {
+for (const [route, name] of [[`/miscari${lunaCuDate ? "?luna=" + lunaCuDate : ""}`, "miscari"], ["/parteneri", "parteneri"]]) {
   await page.goto(BASE + route, { waitUntil: "networkidle" });
   await page.waitForTimeout(700);
 
@@ -34,6 +47,12 @@ for (const [route, name] of [["/miscari", "miscari"], ["/parteneri", "parteneri"
       latime: Math.round(r.width),
     };
   });
+
+  if (check.eroare) {
+    bad++;
+    console.log(`  FAIL ${route} — ${check.eroare}`);
+    continue;
+  }
 
   // Și la scrollLeft = 0: celula trebuie să fie tot pe margine.
   await page.evaluate(() => {

@@ -387,6 +387,117 @@ class Anexa1FormIT {
         assertThat(pages).doesNotContain("20 01 01*");
     }
 
+    // --- QA-TRACE G1, G2, G5: the closed lists the sheet prints and the codes cap. 3–4 cite ---
+
+    /**
+     * The five notes of cap. 2, as the sheet prints them — HG 856/2002 anexa nr. 1, notele 1–5,
+     * transcribed in {@code docs/surse-oficiale.md} §1.1 and checked by hand on 02.09.2026. Until
+     * now nothing held them: a value dropped from the generator's legend or from an enum would have
+     * gone out on every sheet filed.
+     *
+     * <p>⚠️ Nota 5 prints "haldă"; the transcription in surse-oficiale.md reads "halda", and the text
+     * on legislatie.just.ro drops diacritics throughout the note ("tratare chimica"), so it cannot
+     * settle it. Pinned as printed today; the question is open, not answered by this test.
+     */
+    private static final String[] CHAPTER_TWO_NOTES = {
+            "1) Tipul de stocare: RM - recipient metalic; RP - recipient de plastic; BZ - bazin decantor; "
+                    + "CT - container transportabil; CF - container fix; S - saci; PD - platformă de deshidratare; "
+                    + "VN - în vrac, neacoperit; VA - în vrac, incintă acoperită; RL - recipient din lemn; A - altele.",
+            "2) Modul de tratare: TM - tratare mecanică; TC - tratare chimică; TMC - tratare mecano-chimică; "
+                    + "TB - tratare biochimică; D - deshidratare; TT - tratare termică; A - altele.",
+            "3) Scopul tratării: V - pentru valorificare; E - în vederea eliminării.",
+            "4) Mijlocul de transport: AS - autospeciale; AN - auto nespecial; H - transport hidraulic; "
+                    + "CF - cale ferată; A - altele.",
+            "5) Destinaţia: DO - depozitul de gunoi al oraşului/comunei; HP - haldă proprie; "
+                    + "HC - haldă industrială comună; I - incinerarea în scopul eliminării; "
+                    + "Vr - valorificare prin agenţi economici autorizaţi; "
+                    + "P - utilizare materială sau energetică în propria întreprindere; "
+                    + "Ve - valorificare energetică prin agenţi economici autorizaţi; A - altele.",
+    };
+
+    /** G1 (B6): every note, whole and in order, on the printed sheet. */
+    @Test
+    void theFiveNotesOfChapterTwoArePrintedWholeAndInOrder() throws Exception {
+        String pages = Golden.flat(allPagesText());
+        for (String note : CHAPTER_TWO_NOTES) {
+            assertThat(pages).contains(Golden.flat(note));
+        }
+    }
+
+    /**
+     * G1 (B6), the other half: the values the screen offers are the letters the notes print, each
+     * with the note's own wording. Nota 3 is the one deliberate gap — {@code TreatmentPurpose} keeps
+     * only V, see its javadoc — so there the enum must be inside the note, not equal to it.
+     */
+    @Test
+    void everyChapterTwoNomenclatorIsTheListItsNotePrints() {
+        assertNomenclator(CHAPTER_TWO_NOTES[0], ro.ecoregistru.enums.StorageType.values(),
+                ro.ecoregistru.enums.StorageType::getOfficialLabel, true);
+        assertNomenclator(CHAPTER_TWO_NOTES[1], ro.ecoregistru.enums.TreatmentMethod.values(),
+                ro.ecoregistru.enums.TreatmentMethod::getOfficialLabel, true);
+        assertNomenclator(CHAPTER_TWO_NOTES[2], ro.ecoregistru.enums.TreatmentPurpose.values(),
+                ro.ecoregistru.enums.TreatmentPurpose::getOfficialLabel, false);
+        assertNomenclator(CHAPTER_TWO_NOTES[3], ro.ecoregistru.enums.TransportMeans.values(),
+                ro.ecoregistru.enums.TransportMeans::getOfficialLabel, true);
+        assertNomenclator(CHAPTER_TWO_NOTES[4], ro.ecoregistru.enums.WasteDestination.values(),
+                ro.ecoregistru.enums.WasteDestination::getOfficialLabel, true);
+    }
+
+    private static <E extends Enum<E>> void assertNomenclator(String note, E[] values,
+            java.util.function.Function<E, String> label, boolean exact) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:: |; )([A-Za-z]+) - ").matcher(note);
+        List<String> printed = new java.util.ArrayList<>();
+        while (m.find()) {
+            printed.add(m.group(1));
+        }
+        List<String> offered = java.util.Arrays.stream(values).map(Enum::name).toList();
+        if (exact) {
+            assertThat(offered).as(note).containsExactlyInAnyOrderElementsOf(printed);
+        } else {
+            assertThat(printed).as(note).containsAll(offered);
+        }
+        for (E value : values) {
+            assertThat(note).contains(value.name() + " - " + label.apply(value).toLowerCase(java.util.Locale.ROOT));
+        }
+    }
+
+    /**
+     * G5 (point 12): nota 2 in the act's order, D before TT — the one deviation the conformity audit
+     * found in the notes, repaired on 02.09.2026. Written both ways, so a legend slipping back to the
+     * old order fails here by name and not only as "the note is not on the page".
+     */
+    @Test
+    void noteTwoKeepsDehydrationBeforeThermalTreatmentAsTheActDoes() throws Exception {
+        String pages = Golden.flat(allPagesText());
+        assertThat(pages).contains(Golden.flat("TB - tratare biochimică; D - deshidratare; TT - tratare termică; A - altele."));
+        assertThat(pages).doesNotContain(Golden.flat("TT - tratare termică; D - deshidratare"));
+    }
+
+    /**
+     * G2 (B7): cap. 3 and cap. 4 cite annexes 3 and 7 of OUG 92/2021 — R1–R13 and D1–D15, 28 codes.
+     * Many tests use a few of them; none used all, so a code gone from the list could no longer be
+     * chosen and nothing would fail. The family decides the chapter and the "Scopul" letter.
+     */
+    @Test
+    void theOperationCodesAreTheThirteenRecoveriesAndFifteenDisposalsOfTheAnnexes() {
+        List<String> expected = new java.util.ArrayList<>();
+        for (int i = 1; i <= 13; i++) {
+            expected.add("R" + i);
+        }
+        for (int i = 1; i <= 15; i++) {
+            expected.add("D" + i);
+        }
+        var codes = ro.ecoregistru.enums.WasteOperationCode.values();
+        assertThat(java.util.Arrays.stream(codes).map(Enum::name).toList()).containsExactlyElementsOf(expected);
+        assertThat(codes).allSatisfy(c -> {
+            boolean recovery = c.name().startsWith("R");
+            assertThat(c.isRecovery()).as(c.name()).isEqualTo(recovery);
+            assertThat(c.isDisposal()).as(c.name()).isEqualTo(!recovery);
+            assertThat(c.treatmentPurpose()).as(c.name())
+                    .isEqualTo(recovery ? ro.ecoregistru.enums.TreatmentPurpose.V : null);
+        });
+    }
+
     /** Every page joined, for assertions that do not care which sheet a code landed on. */
     private String allPagesText() throws Exception {
         byte[] pdf = renderPdf();

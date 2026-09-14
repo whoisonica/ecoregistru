@@ -8,8 +8,11 @@ import lombok.Getter;
  * <pre>
  * 2) Modul de tratare:
  *    TM - Tratare Mecanică;  TC - Tratare Chimică;  TMC - Tratare Mecano-Chimică;
- *    TB - Tratare Biochimică;  TT - Tratare Termică;  D - Deshidratare;  A - Altele.
+ *    TB - Tratare Biochimică;  D - Deshidratare;  TT - Tratare Termică;  A - Altele.
  * </pre>
+ *
+ * <p>The constants below are not in the note's order (TT before D); nothing reads their order. The
+ * printed legend is, and {@code Anexa1FormIT} pins it — audit point 12.
  *
  * <p>{@code D} here is <em>deshidratare</em>, not a disposal code. The collision is the form's,
  * not ours: cap. 2 nota 2 uses a one-letter abbreviation that happens to match the D family of

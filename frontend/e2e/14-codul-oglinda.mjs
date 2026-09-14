@@ -88,6 +88,25 @@ if (!setup) {
   process.exit(1);
 }
 
+// Curăţenia se face şi când proba cade la mijloc. Prima rulare de pe 14.09 a căzut înainte de
+// ştergere, iar cele 3 kg rămase pe `17 05 04` au mutat dala „Coduri cu stoc" a probei 9 de la 4 la 5.
+let cleanedUp = false;
+async function cleanup() {
+  if (cleanedUp) return true;
+  cleanedUp = true;
+  return page.evaluate(async ([a, b]) => {
+    const auth = { Authorization: "Bearer " + localStorage.getItem("eco_token") };
+    const del = async (id) => (await fetch("/api/v1/movements/" + id, { method: "DELETE", headers: auth })).ok;
+    return (await del(a)) && (await del(b));
+  }, [setup.mirrorId, setup.plainId]).catch(() => false);
+}
+process.on("uncaughtException", async (err) => {
+  console.log("  FAIL proba s-a oprit: " + err.message.split("\n")[0]);
+  await cleanup();
+  await browser.close();
+  process.exit(1);
+});
+
 // Capătul de API, înainte de ecran: dacă răspunsul n-o spune, badge-ul n-are de unde s-o ia.
 check("API: mişcarea pe cod-oglindă fără atașament e semnalată", setup.flagged === true);
 check("API: perechea periculoasă e numită", setup.pair === "17 05 03", "mirrorOf = " + setup.pair);
@@ -117,9 +136,46 @@ check("ecran: badge-ul apare o singură dată pe rând", mirrorBadges === 1, `ba
 // Motivul. `Tooltip` îşi randează bula într-un portal, numai cât e deschisă, deci se apasă
 // declanşatorul şi se citeşte `[role="tooltip"]` — pe touch apăsarea e oricum singurul drum.
 // `clickAt` fiindcă antetul lipicios al tabelului interceptează clicurile derulate de Playwright.
-await clickAt(page, `tr:has-text("${MIRROR}") button:has-text("Cod-oglindă")`);
+// `clickAt` citeşte selectorul cu `document.querySelector`, care nu ştie `:has-text` (e sintaxă
+// Playwright) — deci butonul se găseşte în pagină şi se marchează, iar clicul merge pe marcaj.
+const marked = await page.evaluate((code) => {
+  const row = [...document.querySelectorAll("tr")].find((tr) => tr.textContent.includes(code));
+  const btn = row && [...row.querySelectorAll("button")].find((b) => b.textContent.includes("Cod-oglindă"));
+  if (btn) btn.setAttribute("data-e2e-mirror", "");
+  return Boolean(btn);
+}, MIRROR);
+check("ecran: badge-ul e un buton care se poate apăsa", marked);
+// Pe desktop, mausul ajunge întâi deasupra (hover deschide) şi abia apoi apasă. Proba cerea bula
+// prin clic şi n-o găsea: hover-ul o deschidea, clicul o comuta la loc. Motivul se citeşte aici din
+// hover, iar clicul şi atingerea au verificările lor, mai jos.
+await page.locator("[data-e2e-mirror]").hover();
 await page.waitForTimeout(300);
 const hint = (await page.locator('[role="tooltip"]').first().textContent()) ?? "";
+
+await clickAt(page, "[data-e2e-mirror]");
+await page.waitForTimeout(300);
+check("desktop: clicul pe badge lasă explicaţia deschisă",
+  (await page.locator('[role="tooltip"]').count()) > 0);
+await page.mouse.move(0, 0);
+
+// Pe telefon nu există hover — atingerea e singurul drum, exact cazul pentru care `Tooltip` a
+// înlocuit `title`. Browserul trimite însă şi `mouseenter` înaintea lui `click` la o atingere.
+{
+  const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const phone = await touch.newPage();
+  await login(phone, "admin");
+  await phone.goto(BASE + `/miscari?luna=${today.slice(0, 7)}`, { waitUntil: "networkidle" });
+  await phone.waitForTimeout(1200);
+  const badge = phone.locator("button", { hasText: "Cod-oglindă" }).filter({ visible: true }).first();
+  const found = (await badge.count()) > 0;
+  check("telefon: badge-ul se vede", found);
+  if (found) {
+    await badge.tap();
+    await phone.waitForTimeout(400);
+    check("telefon: atingerea deschide explicaţia", (await phone.locator('[role="tooltip"]').count()) > 0);
+  }
+  await touch.close();
+}
 check("motiv: citează articolul", hint.includes("art. 8 alin. (2)"));
 check("motiv: numeşte perechea periculoasă", hint.includes("17 05 03"), hint.slice(0, 70) + "…");
 // Cele două jumătăţi ale regulii „constată, nu blochează": mişcarea rămâne, formularele se

@@ -120,6 +120,20 @@ class AuditLogIT {
     }
 
     /**
+     * O modificare, un rând. Găsit de proba de ecran 15 (P2.15): un singur `PUT` pe cantitate lăsa
+     * în jurnal **două** rânduri `UPDATE` identice, la aceeaşi secundă. Proba de mai sus nu-l putea
+     * vedea — citeşte doar cel mai nou rând, nu câte sunt.
+     */
+    @Test
+    void oneChangeIsWrittenOnceNotOncePerFlush() throws Exception {
+        UUID id = createMovement("2031-02-06", "5.000", null);
+        updateMovement(id, "2031-02-06", "7.500", null);
+
+        assertThat(entriesFor(id)).extracting(r -> r.get("action").asText())
+                .containsExactly("UPDATE", "CREATE");
+    }
+
+    /**
      * Câmpurile care trimit la alt rând se citesc cu numele, nu cu identificatorul.
      *
      * <p>Jurnalul le scrie ca `uuid` — în mijlocul unui flush, numele nu se poate lua fără să
@@ -211,6 +225,26 @@ class AuditLogIT {
         assertThat(rows).hasSize(before + 1);
         assertThat(rows.get(0).get("action").asText()).isEqualTo("REGENERATE");
         assertThat(rows.get(0).get("label").asText()).contains("Anul 2031");
+    }
+
+    /**
+     * BUG-015, găsit de proba de ecran 11: eticheta regenerării scria „96 linii". Anul 2026 al
+     * firmei demo are zeci de linii, deci aici forma cu „de" chiar se cere — sub 20 ar fi trecut şi
+     * greşit. Regula e scrisă a doua oară în test, dinadins, ca să nu greşească la fel cu codul.
+     */
+    @Test
+    void theRegenerationLabelAgreesTheNumeral() throws Exception {
+        JsonNode res = objectMapper.readTree(mockMvc.perform(post("/api/v1/evidences/regenerate")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .param("year", "2026"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+        int n = res.get("linesGenerated").asInt();
+        assertThat(n).as("garda: proba cere un an cu cel puţin 20 de linii").isGreaterThanOrEqualTo(20);
+        String expected = n % 100 == 0 || n % 100 >= 20 ? n + " de linii" : n + " linii";
+
+        assertThat(entriesOfType("MonthlyEvidence").get(0).get("label").asText())
+                .contains("Anul 2026 · " + expected);
     }
 
     /** Rândurile numesc oameni, deci jurnalul e al administratorului. */

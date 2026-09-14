@@ -122,10 +122,23 @@ public class EvidenceCalculator {
          * depusă s-au schimbat, momentul recalculării e chiar ce se caută.
          */
         auditWriter.record("MonthlyEvidence", null, ro.ecoregistru.enums.AuditAction.REGENERATE,
-                "Anul " + year + " · " + lines + (lines == 1 ? " linie" : " linii")
+                "Anul " + year + " · " + linesLabel(lines)
                         + (cascaded.isEmpty() ? "" : " · plus " + cascaded));
 
         return new EvidenceRegenerationResponse(year, lines, cascaded);
+    }
+
+    /**
+     * <b>BUG-015.</b> Numeralul românesc, aceeaşi regulă ca {@code countOf} din frontend: „1 linie",
+     * „2 linii", dar „20 de linii" / „96 de linii" — de la 20 în sus, şi la sute rotunde, cere „de".
+     * Eticheta ajunge pe ecranul jurnalului, unde proba de ecran 11 citeşte tot textul paginii.
+     */
+    static String linesLabel(int lines) {
+        if (lines == 1) {
+            return "1 linie";
+        }
+        int lastTwo = Math.abs(lines) % 100;
+        return lines + ((lastTwo == 0 || lastTwo >= 20) ? " de linii" : " linii");
     }
 
     /** Rebuilds one year in isolation; returns how many lines it wrote. */

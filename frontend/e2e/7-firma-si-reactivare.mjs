@@ -34,7 +34,9 @@ const firma = await page.evaluate(() => {
   const rubrici = [...sec.querySelectorAll("dt")].map((d) => d.textContent.trim());
   return { titluri, rubrici, text: sec.textContent };
 });
-check("are cele cinci grupe", firma?.titluri.length === 5, (firma?.titluri ?? []).join(" · "));
+// Șase: la cele cinci din 07.09 s-au adăugat „Persoana desemnată" (V29, art. 23 alin. (4)) și
+// „Obligații de raportare" (G-1…G-5, 11.09). Numărul rămâne exact, dinadins.
+check("are cele șase grupe", firma?.titluri.length === 6, (firma?.titluri ?? []).join(" · "));
 check(
   "arată rubricile care se tipăresc pe documente",
   ["CUI", "Cod CAEN", "Nr. autorizație de mediu"].every((r) =>
@@ -51,7 +53,9 @@ check("golurile se spun, nu se ascund", (firma?.text ?? "").includes("Necompleta
 const cuprins = await page.$$eval("nav[aria-label] a[href^='#']", (as) =>
   as.map((a) => ({ href: a.getAttribute("href"), text: a.textContent.trim() }))
 );
-check("pagina are cuprins", cuprins.length === 5, cuprins.map((c) => c.text).join(" · "));
+// Șapte, de la „Buletine de analiză" (G-7, 11.09) și „Jurnal de audit" (P1.11, 12.09) — amândouă
+// tot numai pentru cine le poate citi; proba rulează ca admin.
+check("pagina are cuprins", cuprins.length === 7, cuprins.map((c) => c.text).join(" · "));
 check(
   "fiecare intrare din cuprins are ținta ei",
   await page.evaluate((hrefs) => hrefs.every((h) => !!document.querySelector(h)),
@@ -114,8 +118,12 @@ await page.waitForTimeout(400);
 // inactivi s-au adunat în baza locală: suita lasă în urmă câte unul la fiecare rulare (nu există
 // ştergere de şofer, doar dezactivare), iar la a 26-a rulare rândul căutat a trecut pe pagina a
 // doua şi proba a căzut — deşi ecranul era neschimbat. Căutarea o face independentă de vechime.
-await page.fill("#soferi input[type='search']", NUME);
-await page.waitForTimeout(400);
+// Caseta apare însă numai de la 10 rânduri în sus (regula din `TableToolbar`): pe o bază proaspătă
+// nu există, iar `fill` aştepta 30 s după ea. Sub prag rândul e oricum pe prima pagină.
+if (await page.$("#soferi input[type='search']")) {
+  await page.fill("#soferi input[type='search']", NUME);
+  await page.waitForTimeout(400);
+}
 const inactiv = await randSofer();
 check("„Inactive” îl aduce înapoi la vedere", !!inactiv, inactiv?.butoane?.join(" · "));
 check("și îi oferă „Reactivează”", (inactiv?.butoane ?? []).some((b) => b.includes("Reactivează")));
