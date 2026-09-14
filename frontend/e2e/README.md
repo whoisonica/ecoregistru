@@ -5,9 +5,14 @@ Ultima rulare completă, 14.09.2026, pe o bază locală nouă: **„✓ 15 probe
 Proba 16 (buletinele) a fost ştearsă în aceeaşi seară, odată cu buletinele.
 
 ⬜ **Nerulate pe feliile din 14.09.2026, seara–noaptea:** contul de consultant (P2.13, felia 1),
-„Ieşiri" în loc de „Mişcări" la generatori, Anexa 2 ascunsă la generatori, viza anuală a partenerului
-şi ştergerea definitivă a şoferului. Probele existente au fost scrise pe conturi de colector şi pe
-eticheta „Mişcări"; pe un cont de generator textul s-a schimbat.
+ecranele „Generare” (`/generare`) şi „Intrări şi ieşiri” (`/intrari-iesiri`) care au înlocuit
+„Mişcări”, Anexa 2 şi Anexa 3 Ambalaje ascunse la generatori, viza anuală a partenerului şi ştergerea
+definitivă a şoferului. **`4-formular` şi `8-atasamente-partener-paleta` sunt mutate pe adresele noi**
+(`/generare?luna=AN`, butonul „Adaugă generare”, `/miscari?nou=1` → `/generare` pe firma demo `BOTH`),
+dar n-au rulat după schimbare. Celelalte probe deschid tot `/miscari`, iar redirectul păstrează
+query-ul (`?luna=`, `?miscare=`). ⚠️ **1, 5 și 11 caută însă textul vechi pe ecran** („Mișcări”,
+„Adaugă mișcare”), iar titlul și butonul ecranului s-au schimbat. Șirurile vechi au rămas doar în
+câteva locuri (paleta Ctrl+K, panoul), deci e probabil ca acestea să cadă. Se află abia la rulare.
 
 ⚠️ **Codul de ieşire al runnerului e de încredere** — probat pe 14.09 cu două căderi reale (exit 1).
 „Exit 0 deşi a căzut ceva", notat în aceeaşi zi, nu s-a mai reprodus; cauza cea mai probabilă e o

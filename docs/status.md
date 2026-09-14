@@ -3,7 +3,58 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 14.09.2026, noaptea.** 👩‍🔬 **Răspunsurile specialistei, puse în cod.**
+> **Unde suntem — 15.09.2026, noaptea.** 👩‍🔬 **Cererile specialistei din 15.09, în cod** (`V42`):
+> - **Licența de transport numai peste 3,5 t:** la parteneri, sub „Transportator”, bifa „Transportă cu
+>   vehicule peste 3,5 tone” (`partners.heavy_vehicles`). Licența apare și se păstrează numai bifat;
+>   nebifat, serverul o golește (`PartnerService.applyLicence`). Partenerii care aveau licență pornesc
+>   bifați.
+> - **Data încărcării pe Anexa 3** (`waste_movements.load_date`). Goală, se tipărește data mișcării.
+>   Descărcarea nu poate fi înaintea ei.
+> - **Avizul de însoțire a mărfii** (`AvizGenerator`, `GET /movements/{id}/aviz`), după modelul primit.
+>   Are șase secțiuni. Numărul avizului e referința documentului de pe mișcare, iar aplicația nu alocă
+>   serii. E o citire, deci nu cere `CAN_WRITE`, și merge pe orice predare, periculoasă inclusiv.
+> - **CNP-ul șoferului**, rubrică proprie (`drivers.cnp`, `waste_movements.driver_cnp`), verificată cu
+>   cifra de control (`@ValidCnp`), tipărită pe aviz („nume | CNP | CI”). Are aceleași garanții ca actul
+>   de identitate: `REDACTED_FIELDS` în jurnalul de audit, ștergerea automată după trei ani și ștergerea
+>   odată cu fișa șoferului.
+> - **PDF-urile se deschid în tab, nu se descarcă** (`openPdfInTab`): Anexa 3, Anexa 2, avizul, cele
+>   două evidențe, rezumatul și anexele de ambalaje în PDF. `.xls` și dosarul rămân descărcări.
+> - **„Declarația anuală” se numește „Evidența gestiunii deșeurilor centralizată”**
+>   (`evidenta-centralizata-AAAA.pdf`). Titlul tipărit și adresa API rămân.
+> - **Dosarul primește Anexa 1 Ambalaje** (`.xls` + PDF) la firma care pune ambalaje pe piață.
+> - **Anexa 3 transport: o singură pagină**, nu trei.
+>
+> Probe: **518 teste, 58 de clase, 0 eșecuri** (din XML). Probe negative pentru cele trei reguli de
+> excludere noi: licența fără bifă, Anexa 1 Ambalaje la comerciant și CNP-ul în jurnal. Scoasă din cod,
+> fiecare regulă a doborât exact testul ei. `V42` s-a aplicat pe o bază locală acumulată (V39 → V42). O
+> probă Playwright pe aplicația pornită a trecut **16 din 16**, fără erori în consolă: avizul, Anexa 3 și
+> evidența centralizată se deschid ca `blob:` într-un tab, bifa ascunde licența, CNP-ul apare în cele
+> trei formulare, iar dosarul numește Anexa 1 Ambalaje. Suita de ecran 1–15 **nu** a fost rulată.
+>
+> **Unde eram — 14.09.2026, 22:55.** 🗂️ **Mișcările sunt acum pe două ecrane, după registru**
+> (decizia proprietarului, în locul lui „Ieșiri”): **„Generare”** (`/generare`, `ANEXA_1` — deșeul firmei,
+> fișa și rapoartele de generator) și **„Intrări și ieșiri”** (`/intrari-iesiri`, `ART_48` — marfa preluată
+> de la terți). `GENERATOR` vede primul ecran, `COLLECTOR` doar al doilea, iar `BOTH` le vede pe amândouă
+> (`frontend/src/lib/movementScreens.ts`). `/miscari` a rămas adresă de redirect către primul ecran al
+> firmei, cu tot cu `?miscare=` și `?nou=1`. **Radioul „Proveniența” e scos:** registrul îl dă ecranul.
+> Pe backend s-a adăugat doar filtrul `?register=` pe `GET /movements`, probat negativ (scos predicatul,
+> cade testul din `MovementPagingIT`). ⚠️ **Colectorul pur nu vede „Generare”**, deși HG 856/2002 art. 2
+> alin. (1) îi cere Anexa 1 pentru deșeul propriu. Proprietarul a ales așa, după avertisment: o firmă cu
+> deșeu propriu se trece pe `BOTH`, iar ecranul colectorului afișează o notă cu asta. Probele de ecran 4 și 8
+> sunt modificate pentru adresele noi, **dar nerulate**. **511 teste, 58 de clase, 0 eșecuri** (din XML,
+> 14.09, 22:45). ✅ **Deployat 14.09, 22:55:** monorepo `ae809de`, `api` **v68** (`71fedfe`, fără migrare,
+> schema rămâne `V41`), `app` **v56** (`b2fee4e`).
+>
+> **Unde eram — 14.09.2026, 22:28.** 📦 **Anexa 3 Ambalaje (ambalajele preluate de la terți, `V31`) e
+> ascunsă la generatori.** API-ul refuză previzualizarea și descărcarea cu
+> `anexa3.packaging.collectors.only` (`PackagingService.anexa3()`). Pe ecran, secțiunea și calitatea
+> pentru ambalaje nu mai apar. ⚠️ Refuzul nou a spart `TenantIsolationMatrixIT`: tenanții matricei sunt
+> `GENERATOR`, deci refuzul se aplica înaintea graniței și o ascundea. Blocul Anexei 3 rulează acum cu
+> firma A trecută pe `COLLECTOR`. **O regulă nouă pe `CompanyType` se verifică și în matricea de izolare.**
+> **510 teste, 58 de clase, 0 eșecuri.** ✅ **Deployat 14.09, 22:28:** `api` **v67** (`ec814d7`, fără
+> migrare), `app` **v55** (`ca7e8d4`).
+>
+> **Unde eram — 14.09.2026, 21:32.** 👩‍🔬 **Răspunsurile specialistei, puse în cod.**
 > **Contul de consultant (P2.13, felia 1)** e validat de ea și pe producție: `api` **v65** (`V40` migrată),
 > `app` **v53**. **Anexa 2 rămâne numai la colectori:** serverul refuză formularul pentru un cont de
 > generator, cu codul `anexa2.collectors.only`, iar ecranul nu mai oferă butonul. Regula e probată
