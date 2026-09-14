@@ -1,6 +1,7 @@
 import { Fragment, useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { strings } from "@/lib/strings";
+import { BrandName } from "@/components/BrandName";
 import { LEGAL_DATE, type LegalBlock, type LegalDoc } from "@/lib/legal";
 import { LegalFooter } from "@/components/LegalFooter";
 
@@ -132,7 +133,7 @@ export function LegalDocument({ doc }: { doc: LegalDoc }) {
       <div className="mx-auto max-w-3xl px-4 py-10">
         <header className="text-center">
           <Link to="/login" className="inline-block">
-            <div className="text-2xl font-bold text-brand">{strings.appName}</div>
+            <div className="text-2xl font-bold text-brand"><BrandName /></div>
             <div className="text-sm text-content-muted">{strings.tagline}</div>
           </Link>
         </header>

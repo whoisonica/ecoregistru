@@ -43,7 +43,7 @@ public class EmailService {
         Context ctx = new Context(Locale.of("ro"));
         ctx.setVariable("firstName", user.getFirstName() != null ? user.getFirstName() : "");
         ctx.setVariable("resetUrl", frontendBaseUrl + "/reseteaza-parola?code=" + code);
-        send(user.getEmail(), "Resetare parolă — EcoRegistru", "mail/forgot_password", ctx);
+        send(user.getEmail(), "Resetare parolă — WasteHouse", "mail/forgot_password", ctx);
     }
 
     public void send(String to, String subject, String templateName, Context context) {
@@ -51,7 +51,7 @@ public class EmailService {
             String html = templateEngine.process(templateName, context);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-            helper.setFrom(from);
+            helper.setFrom(from, "WasteHouse");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(html, true);

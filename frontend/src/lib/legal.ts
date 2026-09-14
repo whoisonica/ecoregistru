@@ -42,7 +42,7 @@ export interface LegalDoc {
  * de la ea curg cele 30 de zile de preaviz la o modificare (cap. 14 din termeni). Dacă deployul
  * ajunge în altă zi, se schimbă aici — într-un singur loc, pentru amândouă documentele.
  */
-export const LEGAL_DATE = "11 septembrie 2026";
+export const LEGAL_DATE = "14 septembrie 2026";
 
 const COMPANY =
   "**ONSIA S.R.L.**, societate română cu sediul în sat Sântandrei, comuna Sântandrei, " +
@@ -58,8 +58,8 @@ export const TERMS: LegalDoc = {
       id: "cine-ofera-serviciul",
       heading: "1. Cine oferă serviciul",
       blocks: [
-        { kind: "p", text: "**EcoRegistru** este o aplicație pusă la dispoziție de " + COMPANY },
-        { kind: "p", text: "Contact: **whoecom@gmail.com**." },
+        { kind: "p", text: "**WasteHouse** (app.wastehouse.ro) este o aplicație pusă la dispoziție de " + COMPANY },
+        { kind: "p", text: "Contact: **contact@wastehouse.ro**." },
       ],
     },
     {
@@ -87,7 +87,7 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "EcoRegistru este un serviciu **destinat exclusiv profesioniștilor** — operatori economici, " +
+            "WasteHouse este un serviciu **destinat exclusiv profesioniștilor** — operatori economici, " +
             "consultanți de mediu și alte entități care au obligații legale de evidență a gestiunii deșeurilor.",
         },
         {
@@ -106,7 +106,7 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "EcoRegistru vă ajută să **țineți evidența** gestiunii deșeurilor și **pregătește documentele** " +
+            "WasteHouse vă ajută să **țineți evidența** gestiunii deșeurilor și **pregătește documentele** " +
             "cerute de legislația română: fișa de evidență a gestiunii deșeurilor, declarația anuală, " +
             "formularele de transport al deșeurilor (inclusiv cele pentru deșeuri periculoase), declarațiile " +
             "de ambalaje și celelalte documente pe care aplicația le pune la dispoziție la un moment dat.",
@@ -121,7 +121,7 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "**5.1. Nu transmitem nimic autorităților.** EcoRegistru **nu are** și nu poate avea o conexiune " +
+            "**5.1. Nu transmitem nimic autorităților.** WasteHouse **nu are** și nu poate avea o conexiune " +
             "automată cu Sistemul Integrat de Mediu, cu ANMAP, cu AFM sau cu orice alt sistem al autorităților " +
             "publice, fiindcă autoritățile române nu pun la dispoziția terților o astfel de interfață. " +
             "**Documentele le depuneți dumneavoastră.** Aplicația vi le pregătește în forma cerută; drumul până " +
@@ -225,7 +225,7 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "Aplicația, codul, structura ei, machetele documentelor și marca EcoRegistru ne aparțin. Primiți un " +
+            "Aplicația, codul, structura ei, machetele documentelor și marca WasteHouse ne aparțin. Primiți un " +
             "drept de utilizare neexclusiv, netransferabil, pe durata abonamentului. Atât — nimic din ce e al " +
             "nostru nu vă este transferat.",
         },
@@ -335,7 +335,7 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "Pentru orice întrebare despre acești termeni: **whoecom@gmail.com**, sau ONSIA S.R.L., sat " +
+            "Pentru orice întrebare despre acești termeni: **contact@wastehouse.ro**, sau ONSIA S.R.L., sat " +
             "Sântandrei, comuna Sântandrei, Str. Făcliei nr. 79, județul Bihor.",
         },
       ],
@@ -351,18 +351,17 @@ export const PRIVACY: LegalDoc = {
       id: "cine-suntem",
       heading: "Cine suntem",
       blocks: [
-        { kind: "p", text: COMPANY.replace(/\.$/, "") + ", operatorul aplicației **EcoRegistru**." },
+        { kind: "p", text: COMPANY.replace(/\.$/, "") + ", operatorul aplicației **WasteHouse**." },
         {
           kind: "p",
           text:
-            "**Contact pentru orice chestiune privind datele personale:** **whoecom@gmail.com** — adresa " +
-            "înregistrată a societății.",
+            "**Contact pentru orice chestiune privind datele personale:** **contact@wastehouse.ro**.",
         },
         {
           kind: "p",
           text:
             "E-mailurile trimise automat de aplicație — invitații, resetare de parolă, alerte — pleacă de la " +
-            "`contact@ecoregistru.ro`. Cererile privind datele personale se trimit la adresa de mai sus.",
+            "aceeași adresă.",
         },
         {
           kind: "p",
@@ -571,7 +570,7 @@ export const PRIVACY: LegalDoc = {
         {
           kind: "p",
           text:
-            "**Cum le exercitați:** scrieți la **whoecom@gmail.com**. Răspundem în **cel mult o lună** de la " +
+            "**Cum le exercitați:** scrieți la **contact@wastehouse.ro**. Răspundem în **cel mult o lună** de la " +
             "primirea cererii. Dacă cererea e complexă, termenul se poate prelungi cu două luni, și vă anunțăm " +
             "în prima lună de ce.",
         },

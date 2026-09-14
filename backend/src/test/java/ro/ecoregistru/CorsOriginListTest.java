@@ -29,8 +29,8 @@ class CorsOriginListTest {
 
     @Test
     void aTrailingSlashInTheConfiguredValueStillMatches() throws Exception {
-        assertThat(allowOriginFor("https://app.ecoregistru.ro/", "https://app.ecoregistru.ro"))
-                .isEqualTo("https://app.ecoregistru.ro");
+        assertThat(allowOriginFor("https://app.wastehouse.ro/", "https://app.wastehouse.ro"))
+                .isEqualTo("https://app.wastehouse.ro");
     }
 
     @Test
@@ -42,19 +42,19 @@ class CorsOriginListTest {
     /** An unset variable means „no browser may call this", not „every browser may". */
     @Test
     void anEmptyListAllowsNothing() throws Exception {
-        assertThat(allowOriginFor("", "https://app.ecoregistru.ro")).isNull();
+        assertThat(allowOriginFor("", "https://app.wastehouse.ro")).isNull();
     }
 
     @Test
     void aDifferentSchemeOrPortIsADifferentOrigin() throws Exception {
-        assertThat(allowOriginFor("https://app.ecoregistru.ro", "http://app.ecoregistru.ro")).isNull();
+        assertThat(allowOriginFor("https://app.wastehouse.ro", "http://app.wastehouse.ro")).isNull();
         assertThat(allowOriginFor("http://localhost:5173", "http://localhost:4173")).isNull();
     }
 
     /** Prefix matching would hand the API to anyone who registers the domain plus a suffix. */
     @Test
     void aLongerHostThatStartsTheSameIsNotAllowed() throws Exception {
-        assertThat(allowOriginFor("https://ecoregistru.ro", "https://ecoregistru.ro.atacator.com"))
+        assertThat(allowOriginFor("https://wastehouse.ro", "https://wastehouse.ro.atacator.com"))
                 .isNull();
     }
 }

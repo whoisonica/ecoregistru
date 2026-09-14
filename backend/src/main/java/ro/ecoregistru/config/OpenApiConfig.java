@@ -14,10 +14,10 @@ public class OpenApiConfig {
     private static final String BEARER = "bearerAuth";
 
     @Bean
-    public OpenAPI ecoRegistruOpenApi() {
+    public OpenAPI wasteHouseOpenApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("EcoRegistru API")
+                        .title("WasteHouse API")
                         .version("v1")
                         .description("API pentru evidența și raportarea gestiunii deșeurilor."))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER))

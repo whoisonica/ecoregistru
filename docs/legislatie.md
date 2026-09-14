@@ -1,4 +1,4 @@
-# Documentul de reguli — legislație deșeuri (EcoRegistru)
+# Documentul de reguli — legislație deșeuri (WasteHouse, fost EcoRegistru)
 
 > **Scop:** sursa de adevăr pentru CE cere legea, ca să nu codăm rapoarte pe presupuneri.
 > **Regula de aur (din planul de proiect):** un raport greșit = client amendat = business mort.

@@ -23,7 +23,7 @@ await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
 await page.waitForTimeout(400);
 
 const brand = await page.textContent("header");
-check("pagina spune al cui e", /EcoRegistru/.test(brand ?? ""), (brand ?? "").trim().slice(0, 40));
+check("pagina spune al cui e", /WasteHouse/.test(brand ?? ""), (brand ?? "").trim().slice(0, 40));
 
 const steps = await page.$$eval("ol li", (li) => li.length);
 check("scrie ce urmează după trimitere", steps >= 3, steps + " pași");

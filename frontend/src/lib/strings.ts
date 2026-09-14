@@ -3,7 +3,7 @@
  * extracted into an i18n framework later without hunting through components.
  */
 export const strings = {
-  appName: "EcoRegistru",
+  appName: "WasteHouse",
   tagline: "Evidența și raportarea gestiunii deșeurilor",
 
   header: {
@@ -87,7 +87,7 @@ export const strings = {
   resetPassword: {
     title: "Alege-ți parola",
     subtitle:
-      "Dacă ai fost invitat în EcoRegistru, parola pe care o pui acum îți activează contul.",
+      "Dacă ai fost invitat în WasteHouse, parola pe care o pui acum îți activează contul.",
     password: "Parolă nouă",
     confirmPassword: "Confirmă parola",
     rules: "Minim 8 caractere, cu literă mare, literă mică și cifră.",
@@ -1626,9 +1626,9 @@ export const strings = {
       "Am păstrat ce completaseși și am pus la loc în formular. Verifică datele înainte de trimitere.",
     draftDiscard: "Șterge și începe de la zero",
     // Public page
-    title: "Cerere de cont EcoRegistru",
+    title: "Cerere de cont WasteHouse",
     subtitle:
-      "Conturile se creează de echipa EcoRegistru, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
+      "Conturile se creează de echipa WasteHouse, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
     // Cele trei rânduri din capul paginii. Un prospect care intră pe link nu știe nici unde a
     // ajuns, nici cât durează, nici ce primește — iar formularul are șase secțiuni, deci
     // întrebarea „merită să încep?" se pune înainte de prima rubrică, nu după.
@@ -1714,7 +1714,7 @@ export const strings = {
     submitting: "Se trimite...",
     successTitle: "Cererea a fost trimisă",
     successBody:
-      "Echipa EcoRegistru o verifică și îți creează contul. Primești datele de acces pe emailul completat.",
+      "Echipa WasteHouse o verifică și îți creează contul. Primești datele de acces pe emailul completat.",
     // „Am primit cererea" răspunde la ce s-a întâmplat, nu la ce urmează — iar omul tocmai a dat
     // datele firmei lui unui site pe care nu-l cunoaște. Termenul e cel pe care îl ținem, nu unul
     // rotund: mai bine două zile promise și una ținută.

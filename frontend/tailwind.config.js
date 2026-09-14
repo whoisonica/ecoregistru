@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // EcoRegistru brand: emerald. `DEFAULT`, `fg` și `muted` există de la început și sunt
+        // Paleta ecranelor: emerald (semnul mărcii WasteHouse are culorile lui, în `BrandName`). `DEFAULT`, `fg` și `muted` există de la început și sunt
         // folosite peste tot (`bg-brand`, `text-brand-fg`, `bg-brand-muted`) — nu se ating.
         // Scara 50–950 e adăugată ca stările (hover, apăsat, chenar) să nu mai fie emerald-uri
         // alese pe loc în câte o clasă.

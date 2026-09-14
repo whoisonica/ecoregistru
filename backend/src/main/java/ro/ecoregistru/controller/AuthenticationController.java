@@ -16,7 +16,7 @@ import ro.ecoregistru.service.AuthenticationService;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationController {
 
-    // No /register endpoint, on purpose. EcoRegistru is a closed register: an account exists
+    // No /register endpoint, on purpose. WasteHouse is a closed register: an account exists
     // because support created the company and invited the user onto it, from the intake form the
     // client filled in (POST /api/v1/companies, POST /api/v1/companies/{id}/users). A disabled
     // self-registration endpoint would still have been one configuration flag away from open.

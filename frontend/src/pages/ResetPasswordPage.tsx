@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { BrandName } from "@/components/BrandName";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LegalFooter } from "@/components/LegalFooter";
@@ -55,7 +56,7 @@ export function ResetPasswordPage() {
     <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
       <Card className="w-full max-w-sm p-8">
         <div className="mb-6 text-center">
-          <div className="text-2xl font-bold text-brand">{strings.appName}</div>
+          <div className="text-2xl font-bold text-brand"><BrandName /></div>
           <div className="text-sm text-content-muted">{strings.tagline}</div>
         </div>
 

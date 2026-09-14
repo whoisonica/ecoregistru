@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Consola rămâne, fiindcă e ce citește cine dezvoltă, cu tot cu componenta din care a venit.
-    console.error("[EcoRegistru] excepție de randare:", error, info.componentStack);
+    console.error("[WasteHouse] excepție de randare:", error, info.componentStack);
     // Şi, de pe 09.09.2026 (P0.6), pleacă și în afară. Nota de aici spunea până azi „Consola e tot
     // ce avem, și e destul" — adevărat cât timp consola era a noastră. Consola unui client nu ne
     // spune nimic: el nu sună, ci renunță. Fără DSN, linia asta nu face nimic.

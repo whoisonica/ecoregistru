@@ -6,6 +6,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { BrandName } from "@/components/BrandName";
 import { withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -261,7 +262,7 @@ export function AccountRequestPage() {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
         <div className="text-center">
-          <div className="text-xl font-bold text-brand">{strings.appName}</div>
+          <div className="text-xl font-bold text-brand"><BrandName /></div>
           <CheckCircle2 className="mx-auto mt-6 h-12 w-12 text-emerald-600" />
           <h1 className="mt-4 text-2xl font-bold text-content">{t.successTitle}</h1>
           <p className="mt-2 text-sm text-content-strong">{t.successBody}</p>
@@ -303,7 +304,7 @@ export function AccountRequestPage() {
       {/* Cele două rânduri de brand pe care le are cardul de login. Fără ele, un prospect care
           intră pe link vede un formular lung fără să știe al cui e. */}
       <header className="text-center">
-        <div className="text-2xl font-bold text-brand">{strings.appName}</div>
+        <div className="text-2xl font-bold text-brand"><BrandName /></div>
         <div className="text-sm text-content-muted">{strings.tagline}</div>
       </header>
 

@@ -17,7 +17,7 @@ import java.util.UUID;
 /**
  * What a prospective client answered on the intake form, before an account exists.
  *
- * <p>EcoRegistru is a closed register: there is no self-registration, so this is the only way in.
+ * <p>WasteHouse is a closed register: there is no self-registration, so this is the only way in.
  * A request is not a login and grants nothing — it sits here until a PLATFORM_ADMIN turns it into
  * a {@link Company}, and it is kept afterwards as the paper trail behind that account's profile.
  *

@@ -184,7 +184,7 @@ export interface CompanyInput {
 export type AccountRequestStatus = "NEW" | "APPROVED" | "REJECTED";
 
 /**
- * What a prospective client answers before an account exists. EcoRegistru is a closed register:
+ * What a prospective client answers before an account exists. WasteHouse is a closed register:
  * this is the only way in, and submitting it creates a request, never a login.
  */
 export interface AccountRequestInput {

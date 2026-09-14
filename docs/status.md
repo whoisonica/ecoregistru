@@ -3,7 +3,17 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **Unde suntem — 14.09.2026, după-amiaza.** 🔬 **Auditul QA și-a completat matricea de izolare între
+> **Unde suntem — 14.09.2026, seara.** 🏷️ **EcoRegistru devine WasteHouse.** Aplicația stă pe
+> **app.wastehouse.ro**, pagina produsului pe **wastehouse.ro**. Pe ecran: numele, semnul (săgeata de pe
+> landing) în favicon și lângă nume pe cele nouă locuri unde se afișa, titlul paginii; în mailuri:
+> subsolul celor trei șabloane și subiectul resetării; termenii și politica publicate, cu contactul
+> **contact@wastehouse.ro** și data mutată pe 14 septembrie 2026. `FRONTEND_BASE_URL` e schimbat pe
+> dyno (api **v61**), deci linkurile din mailuri duc deja pe domeniu. **Neatinse dinadins**, fiindcă nu
+> ajung la client: pachetul `ro.ecoregistru`, migrările aplicate (Flyway le ține suma de control),
+> numele bazei, folderul Cloudinary, conturile demo din dev, aplicațiile Heroku și repo-urile.
+> **496 de teste, 56 de clase, 0 eșecuri**, `tsc` curat, `vite build` verde. ⬜ Nedeployat.
+>
+> **Unde eram — 14.09.2026, după-amiaza.** 🔬 **Auditul QA și-a completat matricea de izolare între
 > firme** — termenele (închidere, redeschidere), evidența (lista, fișa și declarația cerute cu punctul de
 > lucru al altei firme, plus regenerarea) și ambalajele (toate citirile, anexa 3 și suprascrierea
 > tabelului 1) nu aveau încă test, deși codul era corect. Jurnalul de audit își caută acum numele

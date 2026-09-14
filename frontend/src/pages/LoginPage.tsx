@@ -7,6 +7,7 @@ import { LegalFooter } from "@/components/LegalFooter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
+import { BrandName } from "@/components/BrandName";
 import { apiErrorMessage, LOGIN_EXPIRED_PARAM, REDIRECT_PARAM } from "@/lib/api";
 
 export function LoginPage() {
@@ -49,7 +50,7 @@ export function LoginPage() {
     <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
       <Card className="w-full max-w-sm p-8">
         <div className="mb-6 text-center">
-          <div className="text-2xl font-bold text-brand">{strings.appName}</div>
+          <div className="text-2xl font-bold text-brand"><BrandName /></div>
           <div className="text-sm text-content-muted">{strings.tagline}</div>
         </div>
         <h1 className="mb-4 text-lg font-semibold">{strings.login.title}</h1>

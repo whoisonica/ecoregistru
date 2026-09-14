@@ -21,6 +21,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { companiesKey, useCompanies } from "@/hooks/useCompanies";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
+import { BrandName } from "@/components/BrandName";
 import { cn } from "@/lib/utils";
 import {
   CommandPalette,
@@ -351,7 +352,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <Menu className="h-5 w-5" />
         </button>
         <div className="min-w-0">
-          <div className="truncate font-bold text-brand">{strings.appName}</div>
+          <div className="truncate font-bold text-brand"><BrandName /></div>
         </div>
       </header>
 
@@ -375,7 +376,7 @@ export function Layout({ children }: { children: ReactNode }) {
       >
         <div className="flex items-start justify-between px-5 py-5">
           <div className="min-w-0">
-            <div className="text-lg font-bold text-brand">{strings.appName}</div>
+            <div className="text-lg font-bold text-brand"><BrandName /></div>
             <div className="text-xs text-content-subtle">{strings.tagline}</div>
           </div>
           <button
