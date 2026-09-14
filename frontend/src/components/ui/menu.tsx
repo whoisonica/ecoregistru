@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { ChevronDown, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { strings } from "@/lib/strings";
@@ -29,7 +36,41 @@ export function Menu({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<CSSProperties>({ visibility: "hidden" });
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  /* Caseta e `fixed`, poziționată după buton, nu `absolute` în rând. Tabelele stau într-un
+     `overflow-x-auto`, care taie tot ce iese din el: pe un tabel cu un singur rând, din meniul
+     „⋯" se vedea doar primul rând, iar „Aviz de însoțire", „Anexa 2" și „Șterge" rămâneau
+     ascunse (văzut pe producție, 15.09.2026). Se deschide în sus când jos nu mai încape. */
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current || !boxRef.current) return;
+    const b = buttonRef.current.getBoundingClientRect();
+    const h = boxRef.current.offsetHeight;
+    const gap = 4;
+    const top = b.bottom + gap + h > window.innerHeight && b.top - gap - h > 0
+      ? b.top - gap - h
+      : b.bottom + gap;
+    setPos(
+      align === "right"
+        ? { top, right: window.innerWidth - b.right }
+        : { top, left: b.left }
+    );
+  }, [open, align]);
+
+  useEffect(() => {
+    if (!open) return;
+    // Poziția e calculată o dată; la derulare sau la redimensionare caseta s-ar desprinde de buton.
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -64,8 +105,12 @@ export function Menu({
   return (
     <div ref={ref} className="relative inline-block text-left">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setPos({ visibility: "hidden" });
+          setOpen((o) => !o);
+        }}
         disabled={disabled}
         aria-label={label ? undefined : strings.common.moreActions}
         aria-haspopup="menu"
@@ -93,11 +138,10 @@ export function Menu({
       </button>
       {open && (
         <div
+          ref={boxRef}
           role="menu"
-          className={cn(
-            "absolute z-30 mt-1 w-64 animate-slide-up overflow-hidden rounded-md border border-line bg-surface py-1 shadow-popover",
-            align === "right" ? "right-0" : "left-0"
-          )}
+          style={pos}
+          className="fixed z-30 w-64 animate-slide-up overflow-hidden rounded-md border border-line bg-surface py-1 shadow-popover"
           onClick={() => setOpen(false)}
         >
           {children}
