@@ -10,8 +10,9 @@ rulează local și are testele verzi.
 > numai în firma care citește, nu doar prin construcție. Plus: asteriscul de periculozitate pe
 > declarația anuală, textul mesajului de la dosar și „ANPM" pe ecrane — ultimul verificat pe toate
 > ecranele din proba de interfață 1. Fiecare regulă a fost **scoasă din cod** ca să se vadă testul
-> căzând. **496 de teste, 56 de clase, 0 eșecuri, 0 dezactivate.** ⬜ Necommis, nedeployat —
-> producția rămâne `api` **v59**, `app` **v50**.
+> căzând. **496 de teste, 56 de clase, 0 eșecuri, 0 dezactivate.** ✅ **Deployat 14.09, 16:05** —
+> `api` **v60** (`11e1e22`), fără migrare (`V39`); `app` rămâne **v50**. Cu asta, **auditul QA de
+> dinaintea lansării e închis**.
 >
 > **Unde eram — 14.09.2026, 12:40.** 🔬 **Auditul QA a închis golurile din `QA-TRACE.md`, P2.15
 > (ecranul) și P2.16 (performanța).** Dimineața: cele 6 goluri ale matricei cerință → test, închise
