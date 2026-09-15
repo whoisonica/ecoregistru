@@ -93,6 +93,19 @@ class DriverDataRetentionIT {
         assertThat(keptAfter.getDriverCnp()).isEqualTo("1900101123457");
     }
 
+    /**
+     * 15.09.2026 — prin intrarea programată. Pe producție {@code runDaily} ocolea tranzacția lui
+     * {@code purge} (apel din aceeași clasă) și UPDATE-ul cădea în fiecare noapte.
+     */
+    @Test
+    void theScheduledEntryPointActuallyClears() {
+        WasteMovement old = movement(LocalDate.of(LocalDate.now().getYear() - 5, 3, 1));
+
+        scheduler.runDaily();
+
+        assertThat(movementRepository.findById(old.getId()).orElseThrow().getDriverName()).isNull();
+    }
+
     /** Un şofer activ nu se şterge; dezactivat, da — şi dispare de tot. */
     @Test
     void onlyADeactivatedDriverIsDeletedForGood() throws Exception {

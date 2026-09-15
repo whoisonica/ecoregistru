@@ -41,7 +41,14 @@ public class DeadlineAlertScheduler {
     AppUserRepository appUserRepository;
     NotificationService notificationService;
 
-    /** Daily at 07:00 (server time). Cron is overridable via app.alerts.deadline-cron. */
+    /**
+     * Daily at 07:00 (server time). Cron is overridable via app.alerts.deadline-cron.
+     *
+     * <p>Transactional here as well: the call below is a self-invocation and bypasses the proxy, so
+     * without it the warned flags were set on detached entities and never saved — the same reminder
+     * went out every day of the window.
+     */
+    @Transactional
     @Scheduled(cron = "${app.alerts.deadline-cron:0 0 7 * * *}")
     public void runDailyDeadlineReminders() {
         dispatchReminders(LocalDate.now());

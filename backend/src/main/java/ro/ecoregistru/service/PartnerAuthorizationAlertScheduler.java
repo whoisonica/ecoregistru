@@ -58,7 +58,13 @@ public class PartnerAuthorizationAlertScheduler {
     AppUserRepository appUserRepository;
     NotificationService notificationService;
 
-    /** Daily at 07:15 (server time), just after the deadline reminders. Cron is overridable. */
+    /**
+     * Daily at 07:15 (server time), just after the deadline reminders. Cron is overridable.
+     *
+     * <p>Transactional here as well, for the reason given on {@link DeadlineAlertScheduler}: a
+     * self-invocation skips the proxy, and the sent-for date would never be saved.
+     */
+    @Transactional
     @Scheduled(cron = "${app.alerts.partner-authorization-cron:0 15 7 * * *}")
     public void runDailyAuthorizationWarnings() {
         dispatchWarnings(LocalDate.now());

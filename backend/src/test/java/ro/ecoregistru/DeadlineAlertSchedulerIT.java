@@ -128,6 +128,20 @@ class DeadlineAlertSchedulerIT {
         assertThat(reload(done.getId()).isWarned1Day()).isFalse();
     }
 
+    /**
+     * 15.09.2026 — prin intrarea programată, nu prin metoda de test: acolo apelul intern ocolea
+     * tranzacția și fanionul nu se salva, deci mementoul pleca din nou în fiecare zi.
+     */
+    @Test
+    void theScheduledEntryPointSavesTheFlag() {
+        Company c = companyWithUser();
+        ReportingDeadline d = deadline(c, LocalDate.now().plusDays(5), DeadlineStatus.UPCOMING, false, false);
+
+        scheduler.runDailyDeadlineReminders();
+
+        assertThat(reload(d.getId()).isWarned7Days()).isTrue();
+    }
+
     @Test
     void doesNotMarkWhenDeliveryFails() {
         Mockito.doThrow(new RuntimeException("smtp down"))

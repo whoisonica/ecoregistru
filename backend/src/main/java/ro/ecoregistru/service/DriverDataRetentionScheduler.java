@@ -38,7 +38,14 @@ public class DriverDataRetentionScheduler {
 
     WasteMovementRepository movementRepository;
 
-    /** Zilnic la 03:30; lucrează efectiv o singură dată pe an, pe 1 ianuarie, restul zilelor atinge 0. */
+    /**
+     * Zilnic la 03:30; lucrează efectiv o singură dată pe an, pe 1 ianuarie, restul zilelor atinge 0.
+     *
+     * <p>{@code @Transactional} stă și aici, nu doar pe {@link #purge}: apelul de mai jos e din aceeași
+     * clasă și ocolește proxy-ul, deci tranzacția lui {@code purge} nu se deschide. Pe producție
+     * UPDATE-ul a căzut așa în fiecare noapte („Executing an update/delete query”), până la 15.09.2026.
+     */
+    @Transactional
     @Scheduled(cron = "${app.retention.driver-data-cron:0 30 3 * * *}")
     public void runDaily() {
         purge(LocalDate.now());

@@ -45,7 +45,8 @@ public class ConsultantDigestScheduler {
     AppUserRepository appUserRepository;
     NotificationService notificationService;
 
-    /** Zilnic la 07:30, după alertele firmelor (07:00) și ale partenerilor (07:15). */
+    /** Zilnic la 07:30, după alertele firmelor (07:00) și ale partenerilor (07:15). Tranzacția stă și aici: apelul intern ocolește proxy-ul. */
+    @Transactional(readOnly = true)
     @Scheduled(cron = "${app.alerts.consultant-digest-cron:0 30 7 * * *}", zone = "Europe/Bucharest")
     public void runDailyDigest() {
         dispatch(LocalDate.now());
