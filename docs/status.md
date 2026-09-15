@@ -3,6 +3,33 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, ~14:30 — „primele 3 la 100%”: două defecte de producție reparate, probele de ecran și de ops făcute.**
+> Ramura `feat/branding-cabinet` peste `main` `3feb80f`, **2 commituri, fără migrare, doar backend**; suita completă
+> **687 de teste în 85 de clase, 0 eșecuri, 3 sărite** (din XML). Ramura de deploy `deploy-be-1509` peste `newrepo/main`
+> `6784d9f`, garda pe divergența stabilă (`.gitignore` + `SecurityConfiguration.java`). ⬜ Push de la proprietar.
+> - **Schedulerele fără tranzacție (găsit în logurile api v81).** Metoda `@Scheduled` chema o metodă `@Transactional` din
+>   aceeași clasă, deci proxy-ul era ocolit. `DriverDataRetentionScheduler` cădea în fiecare noapte cu
+>   `TransactionRequiredException` (ștergerea datelor șoferilor, AO, nu rula), iar la `DeadlineAlertScheduler` și
+>   `PartnerAuthorizationAlertScheduler` fanioanele se puneau pe entități detașate — același mementou ar fi plecat zilnic.
+>   Testele treceau fiindcă chemau direct metoda tranzacțională. Reparat cu `@Transactional` pe intrarea programată (și la
+>   `ConsultantDigestScheduler`, `readOnly`). `ScheduledTransactionBoundaryTest` scanează toate componentele și cade pe un
+>   `@Scheduled` fără tranzacție într-o clasă cu tranzacții; `DeadlineAlertSchedulerIT` și `DriverDataRetentionIT` au câte
+>   un test prin intrarea reală. Proba negativă: fără reparație cad exact cele 3.
+> - **Mailul de invitație.** Invitația (utilizator de firmă, consultant, retrimitere) pleca drept „Resetare parolă”, cu
+>   „Dacă nu tu ai făcut cererea, ignoră” și 30 de minute. Acum `EmailService.sendInviteEmail` + `mail/invite`, subiect
+>   „Invitație în WasteHouse — {firmă/cabinet}”, cod valabil `INVITE_TTL_DAYS = 7`; resetarea rămâne 30 de minute, pagina
+>   și endpointul sunt aceleași. `ConsultancyOverviewIT` citește expirarea din bază și randează șablonul. Proba negativă:
+>   exact cele 4 teste de invitație cad. Capcana: `<span th:text>7</span> zile` nu conține „7 zile”.
+> - **Probe pe producție (api v82, sesiunea administratorului de platformă, cu extensia Chrome):**
+>   - `POST /api/v1/platform/sentry-probe` → 500 generic; issue `JAVA-SPRING-BOOT-3` în Sentry. Veriga din P0.6 e închisă.
+>   - invitația unui consultant de probă a ajuns în Inbox pe Gmail, de la `contact@wastehouse.ro` — SMTP-ul merge după
+>     rotirea secretelor;
+>   - importul pe Demo: `verificare` 200 fără erori, `import` 2 mișcări noi, același fișier din nou 0 noi / 2 existente;
+>   - R14: zero în ultimele ~1500 de linii de log; ANMAP tot fără lista art. 34¹ (P3.9).
+> - ⬜ **Rămase:** contul de consultant de probă (`Cabinet Proba WH SRL`) are nevoie de parolă, pusă de proprietar, apoi
+>   `/cabinet` și antetul P2.14 văzute pe ecran; cabinetul, consultantul și cele 2 mișcări „Probă import 15.09” de pe Demo
+>   se șterg după verificări. `todo-lansare.md` din repo-ul de docs nu e adus la zi din sesiunea asta (izolare).
+
 > **15.09.2026, 13:54 — ✅ semnul WasteHouse („Bucla-casă”) peste tot, pe producție:** `ecoregistru-api` **v82**
 > (`6784d9f`), `ecoregistru-app` **v66** (`73360dd`), monorepo `0b2bcf4`. **683 de teste, 84 de clase, 0 eșecuri, 3 sărite.**
 > Fără migrare (schema `V48`). Alb pe `#047857`, pătrat rotunjit; înlocuiește săgeata diagonală din aplicație și bucla
