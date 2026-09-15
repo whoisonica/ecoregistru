@@ -24,8 +24,10 @@ import java.util.UUID;
  * docs/surse-oficiale.md §1.1. It belongs to the art. 48 register by construction, which is why it
  * carries no register discriminator of its own.
  *
- * <p>Etapa 2 creates the seam only. The screens that write here are Etapa 8, and the COLLECTED
- * movements recorded before then move into this table once, at that point.
+ * <p>Etapa 2 created the seam only. <b>Nothing writes here, and nothing will as planned (P3.6, 15.09.2026):</b>
+ * art. 48 was built on {@code waste_movements} (the ART_48 register), and the depot module weighs through
+ * {@code WeighingOperation} (V46). The table stays because a migration is not undone; the entity stays for
+ * {@code RegisterSeamIT}. Do not read it as a working feature.
  */
 @Getter
 @Setter

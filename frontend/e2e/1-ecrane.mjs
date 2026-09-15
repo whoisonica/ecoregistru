@@ -4,6 +4,8 @@ import { launch, newPage, login, shot, report, BASE } from "./lib.mjs";
 const SCREENS = [
   ["/", "Panou", "h1"],
   ["/miscari", "Mișcări", "table"],
+  ["/intrari-iesiri", "Intrări și ieșiri", "table"],
+  ["/import", "Import din Excel", "h1"],
   ["/evidente", "Evidențe", "table"],
   ["/parteneri", "Parteneri", "table"],
   ["/termene", "Termene", "table"],
