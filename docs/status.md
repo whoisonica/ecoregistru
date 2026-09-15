@@ -3,6 +3,16 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, 23:54 — ✅ pe producție: două reparații găsite la analiza codului.** `ecoregistru-api` **v92**
+> (`7e09df0`, fără migrare, schema `V48`); frontendul e neschimbat (app v73); monorepo `c0d4584`. (1) Linia unei operațiuni
+> de cântar nu se mai modifică, nu se mai cântărește și nu se mai șterge prin `/api/v1/movements/{id}`
+> (`weighing.line.edited.through.operation`). Până acum un operator putea atinge o linie finalizată fără aprobare și fără
+> motiv. Tot aici, lista de mișcări arată acum aceleași rânduri pe care le adună totalurile (filtrul de operațiune e în
+> `buildFilter`). (2) `AnafClient` nu mai ține firele de cerere în coadă după un apel lent: lacătul așteaptă cel mult 5 s,
+> apoi răspunde 503. `WeighingOperationStatusIT` +2, `AnafClientTest` +1, fiecare probat negativ; suita **738 de teste,
+> 91 de clase, 0 eșecuri, 3 sărite**. Garda backend e exactă înainte și după cherry-pick. Pe producție: `Schema "public" is up
+> to date` și `Started EcoRegistruApplication` pe v92 (20:54:31 UTC), `health` `UP`.
+>
 > **15.09.2026, 23:02 — ✅ pe producție: direcția interfeței „Cântar” (C1–C4).**
 > `ecoregistru-api` **v91** (`0d7a8f5`, fără migrare, schema `V48`), `ecoregistru-app` **v73** (`24a5e2d`); monorepo `dc6f555`
 > (`feat/ui-cantar` `823e366` + status), `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe amândouă
