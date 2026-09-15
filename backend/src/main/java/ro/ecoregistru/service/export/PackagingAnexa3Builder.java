@@ -63,8 +63,7 @@ public class PackagingAnexa3Builder {
                                  int year,
                                  List<WasteMovement> movements) {
 
-        List<WasteMovement> scoped = movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ART_48)
+        List<WasteMovement> scoped = WasteRegister.ART_48.select(movements).stream()
                 .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
                 .filter(m -> workPoint == null || sameWorkPoint(m, workPoint))
                 .sorted(Comparator.comparing(WasteMovement::getDate))

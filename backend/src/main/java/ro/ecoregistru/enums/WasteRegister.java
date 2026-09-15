@@ -1,5 +1,10 @@
 package ro.ecoregistru.enums;
 
+import ro.ecoregistru.entity.WasteMovement;
+
+import java.util.Collection;
+import java.util.List;
+
 /**
  * Which legal register a quantity belongs to. The two are distinct obligations with distinct
  * formats and distinct addressees, and a quantity belongs to exactly one of them.
@@ -17,5 +22,16 @@ package ro.ecoregistru.enums;
  */
 public enum WasteRegister {
     ANEXA_1,
-    ART_48
+    ART_48;
+
+    /**
+     * R1 (QA-FINAL-REPORT §5) — the one place a list of movements is cut down to a register. Every
+     * reader that adds up or prints movements goes through here, and {@code RegisterSelectionInventoryTest}
+     * fails on a reader that takes a movement list and never calls it: before, a fifth builder written
+     * without the filter would have mixed goods taken over from third parties into Anexa 1, and no test
+     * would have noticed.
+     */
+    public List<WasteMovement> select(Collection<WasteMovement> movements) {
+        return movements.stream().filter(m -> m.getRegister() == this).toList();
+    }
 }

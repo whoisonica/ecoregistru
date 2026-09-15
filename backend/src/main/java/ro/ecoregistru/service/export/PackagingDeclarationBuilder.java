@@ -60,8 +60,7 @@ public class PackagingDeclarationBuilder {
                                       List<PackagingMarketEntry> entries,
                                       List<WasteMovement> movements) {
 
-        List<WasteMovement> packaging = movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
+        List<WasteMovement> packaging = WasteRegister.ANEXA_1.select(movements).stream()
                 .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
                 .filter(PackagingDeclarationBuilder::putOnMarketByUs)
                 .sorted(Comparator.comparing(WasteMovement::getDate))
