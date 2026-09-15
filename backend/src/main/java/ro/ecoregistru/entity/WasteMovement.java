@@ -388,6 +388,10 @@ public class WasteMovement {
     @JoinColumn(name = "weighing_operation_id")
     WeighingOperation weighingOperation;
 
+    /** Poziția liniei în operațiune, de la 1; cântărirea e succesivă, deci ordinea contează. */
+    @Column(name = "line_no")
+    Integer lineNo;
+
     /** Sortimentul; codul LER al liniei e al lui. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "article_id")

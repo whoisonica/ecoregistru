@@ -20,6 +20,12 @@ public interface WasteMovementRepository
 
     List<WasteMovement> findAllByCompany_IdAndDeletedFalse(UUID companyId);
 
+    /** Liniile unei operațiuni de depozit, în ordinea cântăririi. */
+    List<WasteMovement> findAllByWeighingOperation_IdOrderByLineNoAsc(UUID operationId);
+
+    /** Liniile mai multor operațiuni dintr-o singură interogare, pentru listă. */
+    List<WasteMovement> findAllByWeighingOperation_IdInOrderByLineNoAsc(java.util.Collection<UUID> operationIds);
+
     /** Idempotency lookup for (future) offline sync. */
     Optional<WasteMovement> findByCompany_IdAndClientGeneratedId(UUID companyId, UUID clientGeneratedId);
 

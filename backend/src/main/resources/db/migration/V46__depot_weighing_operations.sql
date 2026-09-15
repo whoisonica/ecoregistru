@@ -152,6 +152,9 @@ CREATE INDEX idx_weighing_operations_person ON weighing_operations (natural_pers
 
 ALTER TABLE waste_movements ADD COLUMN weighing_operation_id UUID REFERENCES weighing_operations (id);
 ALTER TABLE waste_movements ADD COLUMN article_id UUID REFERENCES waste_articles (id);
+-- Ordinea liniilor în operațiune: cântărirea e succesivă (tara unei linii e brutul celei de dinainte),
+-- deci ordinea e parte din dovadă, nu o sortare de ecran.
+ALTER TABLE waste_movements ADD COLUMN line_no INTEGER;
 ALTER TABLE waste_movements ADD COLUMN gross_kg NUMERIC(14,3);
 ALTER TABLE waste_movements ADD COLUMN tare_kg NUMERIC(14,3);
 ALTER TABLE waste_movements ADD COLUMN net_kg NUMERIC(14,3);

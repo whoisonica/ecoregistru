@@ -1,0 +1,68 @@
+package ro.ecoregistru.controller;
+
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import ro.ecoregistru.controller.request.WeighingCancelRequest;
+import ro.ecoregistru.controller.request.WeighingLinesRequest;
+import ro.ecoregistru.controller.request.WeighingOperationRequest;
+import ro.ecoregistru.controller.response.WeighingOperationResponse;
+import ro.ecoregistru.service.WeighingOperationService;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Operațiunile de depozit (V46). Oricine scrie creează și cântărește ce e în lucru; finalizarea și
+ * anularea sunt ale celor care aprobă (decizia proprietarului, 15.09.2026: admin și consultant).
+ * Serviciul verifică același lucru. Vezi {@link WeighingOperationService}.
+ */
+@RestController
+@RequestMapping("/api/v1/weighing-operations")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class WeighingOperationController {
+
+    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
+    static final String CAN_APPROVE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
+
+    WeighingOperationService service;
+
+    @GetMapping
+    public List<WeighingOperationResponse> list() {
+        return service.list();
+    }
+
+    @GetMapping("/{id}")
+    public WeighingOperationResponse get(@PathVariable UUID id) {
+        return service.get(id);
+    }
+
+    @PostMapping
+    @PreAuthorize(CAN_WRITE)
+    public WeighingOperationResponse create(@RequestBody WeighingOperationRequest request) {
+        return service.create(request);
+    }
+
+    /** Tot formularul odată: liniile trimise le înlocuiesc pe cele salvate. */
+    @PutMapping("/{id}/lines")
+    @PreAuthorize(CAN_WRITE)
+    public WeighingOperationResponse replaceLines(@PathVariable UUID id, @RequestBody WeighingLinesRequest request) {
+        return service.replaceLines(id, request);
+    }
+
+    /** POST, ca `/{id}/reactivate` de la șoferi: e o faptă, nu o resursă. */
+    @PostMapping("/{id}/finalize")
+    @PreAuthorize(CAN_APPROVE)
+    public WeighingOperationResponse finalizeOperation(@PathVariable UUID id) {
+        return service.finalizeOperation(id);
+    }
+
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize(CAN_APPROVE)
+    public WeighingOperationResponse cancel(@PathVariable UUID id, @RequestBody WeighingCancelRequest request) {
+        return service.cancel(id, request.reason());
+    }
+}

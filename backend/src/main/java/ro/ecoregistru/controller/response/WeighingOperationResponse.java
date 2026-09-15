@@ -1,13 +1,16 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PackagingOrigin;
+import ro.ecoregistru.enums.WasteOperationCode;
 import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.enums.WeighingOperationType;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
-/** Capul operațiunii. Fără CNP: persoana fizică apare doar cu numele. */
+/** Capul operațiunii, cu liniile. Fără CNP: persoana fizică apare doar cu numele. */
 public record WeighingOperationResponse(
         UUID id,
         WeighingOperationType type,
@@ -24,5 +27,23 @@ public record WeighingOperationResponse(
         String vehicleRegistration,
         String orderNumber,
         WeighingOperationStatus status,
-        String notes) {
+        String notes,
+        BigDecimal grossKg,
+        BigDecimal tareKg,
+        List<Line> lines) {
+
+    /** O linie de cântar. {@code finalKg} e ce intră în stoc și în registre. */
+    public record Line(UUID id,
+                       int lineNo,
+                       UUID articleId,
+                       String articleName,
+                       String wasteCode,
+                       BigDecimal grossKg,
+                       BigDecimal tareKg,
+                       BigDecimal netKg,
+                       BigDecimal finalKg,
+                       BigDecimal unitPrice,
+                       BigDecimal totalValue,
+                       WasteOperationCode operationCode) {
+    }
 }

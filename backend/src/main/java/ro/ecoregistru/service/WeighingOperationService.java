@@ -5,15 +5,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
 import ro.ecoregistru.controller.response.WeighingOperationResponse;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.NaturalPerson;
 import ro.ecoregistru.entity.Partner;
+import ro.ecoregistru.entity.WasteArticle;
+import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WeighingOperation;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.PackagingOrigin;
+import ro.ecoregistru.enums.Unit;
+import ro.ecoregistru.enums.WasteOperation;
+import ro.ecoregistru.enums.WasteOperationCode;
+import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.enums.WeighingOperationType;
 import ro.ecoregistru.exception.BusinessException;
@@ -22,22 +29,34 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.DriverRepository;
 import ro.ecoregistru.repository.NaturalPersonRepository;
 import ro.ecoregistru.repository.PartnerRepository;
+import ro.ecoregistru.repository.WasteArticleRepository;
+import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WeighingOperationRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.SecurityUtils;
 import ro.ecoregistru.security.TenantContext;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 
 /**
- * Operațiunile de depozit (V46, D1.2): capul numerotat. Liniile, cântarul, stările și plata vin
- * în punctele următoare ale feliei.
+ * Operațiunile de depozit (V46): capul numerotat (D1.2) și cântarul pe linii (D1.4). Stările și
+ * plata vin în punctele următoare ale feliei.
  *
  * <p><b>Numerotarea</b> e pe firmă și pe tip, fără goluri la creările obișnuite: maximul + 1, sub un
  * lacăt consultativ ținut până la commit ({@link WeighingOperationRepository#lockNumbering}).
+ *
+ * <p><b>Liniile</b> sunt {@link WasteMovement}-uri în registrul art. 48, ca stocul și registrele să le
+ * citească fără rescriere. Se salvează tot formularul odată: cât timp operațiunea e în lucru,
+ * liniile vechi se șterg și se scriu cele trimise. Nu se pierde nimic numărat, fiindcă o linie de
+ * operațiune în lucru nu contează nicăieri (D1.3).
  */
 @Service
 @RequiredArgsConstructor
@@ -45,6 +64,8 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 public class WeighingOperationService {
 
     WeighingOperationRepository operationRepository;
+    WasteMovementRepository movementRepository;
+    WasteArticleRepository articleRepository;
     CompanyRepository companyRepository;
     WorkPointRepository workPointRepository;
     PartnerRepository partnerRepository;
@@ -104,21 +125,231 @@ public class WeighingOperationService {
                 .createdBy(SecurityUtils.currentUser().getId())
                 .build();
         operationRepository.save(operation);
-        return toResponse(operation);
+        return toResponse(operation, List.of());
     }
+
+    /**
+     * D1.4 — cântarul. Totul se validează înainte să se atingă ceva, apoi liniile vechi se șterg și
+     * se scriu cele noi, în ordinea trimisă.
+     */
+    @Transactional
+    public WeighingOperationResponse replaceLines(UUID id, WeighingLinesRequest request) {
+        UUID tenantId = TenantContext.require();
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
+            throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
+        }
+        requireNonNegative(request.grossKg());
+        requireNonNegative(request.tareKg());
+        if (request.grossKg() != null && request.tareKg() != null
+                && request.tareKg().compareTo(request.grossKg()) >= 0) {
+            throw new BusinessException(WEIGHING_OPERATION_TARE_ABOVE_GROSS);
+        }
+        if (request.lines() == null || request.lines().isEmpty()) {
+            throw new BusinessException(WEIGHING_LINES_REQUIRED);
+        }
+
+        UUID userId = SecurityUtils.currentUser().getId();
+        List<WasteMovement> lines = new ArrayList<>();
+        for (int i = 0; i < request.lines().size(); i++) {
+            lines.add(line(operation, request.lines().get(i), i + 1, tenantId, userId));
+        }
+
+        operation.setGrossKg(request.grossKg());
+        operation.setTareKg(request.tareKg());
+        movementRepository.deleteAll(movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
+        movementRepository.flush();
+        movementRepository.saveAll(lines);
+        return toResponse(operation, lines);
+    }
+
+    /**
+     * D1.5 — finalizarea: din acest moment liniile intră în stoc și în registre (D1.3) și nu se mai
+     * modifică. O fac doar cei care aprobă (decizia proprietarului, 15.09.2026: admin și consultant);
+     * operatorul de la cântar introduce, dar nu dă drumul în registre.
+     */
+    @Transactional
+    public WeighingOperationResponse finalizeOperation(UUID id) {
+        UUID tenantId = TenantContext.require();
+        var user = SecurityUtils.currentUser();
+        requireApprover(user);
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
+            throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
+        }
+        List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
+        if (lines.isEmpty()) {
+            throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
+        }
+        operation.setStatus(WeighingOperationStatus.FINALIZED);
+        operation.setFinalizedAt(java.time.Instant.now());
+        operation.setFinalizedBy(user.getId());
+        operationRepository.saveAndFlush(operation);
+        return toResponse(operation, lines);
+    }
+
+    /**
+     * D1.5 — anularea: cere motiv, păstrează cine și când, nu șterge nimic. Merge și pe o operațiune
+     * finalizată (documentul justificativ nu se șterge, se anulează — Legea 82/1991); liniile ies
+     * atunci din stoc și din registre, iar cache-ul de evidență o vede prin {@code updatedAt}.
+     */
+    @Transactional
+    public WeighingOperationResponse cancel(UUID id, String reason) {
+        UUID tenantId = TenantContext.require();
+        var user = SecurityUtils.currentUser();
+        requireApprover(user);
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (operation.getStatus() == WeighingOperationStatus.CANCELLED) {
+            throw new BusinessException(WEIGHING_OPERATION_ALREADY_CANCELLED);
+        }
+        String motive = blankToNull(reason);
+        if (motive == null) {
+            throw new BusinessException(WEIGHING_OPERATION_CANCEL_REASON_REQUIRED);
+        }
+        operation.setStatus(WeighingOperationStatus.CANCELLED);
+        operation.setCancelledAt(java.time.Instant.now());
+        operation.setCancelledBy(user.getId());
+        operation.setCancelReason(motive);
+        operationRepository.saveAndFlush(operation);
+        return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
+    }
+
+    /** Controllerul are aceeași regulă; aici e jumătatea care ține și fără HTTP. */
+    private static void requireApprover(ro.ecoregistru.entity.AppUser user) {
+        if (!APPROVERS.contains(user.getRole())) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Doar administratorul sau consultantul finalizează și anulează operațiuni.");
+        }
+    }
+
+    private static final java.util.Set<ro.ecoregistru.enums.Role> APPROVERS = java.util.EnumSet.of(
+            ro.ecoregistru.enums.Role.PLATFORM_ADMIN, ro.ecoregistru.enums.Role.ADMIN,
+            ro.ecoregistru.enums.Role.CONSULTANT);
 
     @Transactional(readOnly = true)
     public WeighingOperationResponse get(UUID id) {
         UUID tenantId = TenantContext.require();
-        return toResponse(operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND)));
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
     }
 
     @Transactional(readOnly = true)
     public List<WeighingOperationResponse> list() {
         UUID tenantId = TenantContext.require();
-        return operationRepository.findAllByCompany_IdOrderByDateDescNumberDesc(tenantId).stream()
-                .map(WeighingOperationService::toResponse).toList();
+        List<WeighingOperation> operations =
+                operationRepository.findAllByCompany_IdOrderByDateDescNumberDesc(tenantId);
+        Map<UUID, List<WasteMovement>> lines = operations.isEmpty() ? Map.of()
+                : movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
+                                operations.stream().map(WeighingOperation::getId).toList())
+                        .stream().collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
+        return operations.stream()
+                .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of())))
+                .toList();
+    }
+
+    private WasteMovement line(WeighingOperation operation, WeighingLinesRequest.Line line, int lineNo,
+                               UUID tenantId, UUID userId) {
+        if (line.articleId() == null) {
+            throw new BusinessException(WEIGHING_LINE_ARTICLE_REQUIRED);
+        }
+        WasteArticle article = articleRepository.findByIdAndCompany_Id(line.articleId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WASTE_ARTICLE_NOT_FOUND));
+        BigDecimal net = resolveNet(line);
+        BigDecimal finalKg = line.finalKg() == null ? net : line.finalKg();
+        if (finalKg.signum() <= 0) {
+            throw new BusinessException(WEIGHING_LINE_FINAL_NOT_POSITIVE);
+        }
+        if (finalKg.compareTo(net) > 0) {
+            throw new BusinessException(WEIGHING_LINE_FINAL_ABOVE_NET);
+        }
+        if (line.unitPrice() != null && line.unitPrice().signum() < 0) {
+            throw new BusinessException(WEIGHING_LINE_PRICE_NEGATIVE);
+        }
+
+        return WasteMovement.builder()
+                .company(operation.getCompany())
+                .workPoint(operation.getWorkPoint())
+                .date(operation.getDate())
+                .wasteCode(article.getWasteCode())
+                .article(article)
+                .quantity(finalKg)
+                .unit(Unit.KG)
+                .operation(resolveOperation(operation, line.operationCode()))
+                .register(WasteRegister.ART_48)
+                .operationCode(line.operationCode())
+                .partner(operation.getPartner())
+                .driverName(operation.getDriverName())
+                .vehicleRegistration(operation.getVehicleRegistration())
+                .weighingOperation(operation)
+                .lineNo(lineNo)
+                .grossKg(line.grossKg())
+                .tareKg(line.tareKg())
+                .netKg(net)
+                .unitPrice(line.unitPrice())
+                .totalValue(line.unitPrice() == null ? null
+                        : finalKg.multiply(line.unitPrice()).setScale(2, RoundingMode.HALF_UP))
+                .notes(blankToNull(line.notes()))
+                .deleted(false)
+                .createdBy(userId)
+                .build();
+    }
+
+    /**
+     * Neto e brut − tara când amândouă sunt cântărite; altfel se trece direct. Dacă vin toate trei,
+     * trebuie să se potrivească: un neto scris peste o cântărire care spune altceva e o greșeală de
+     * tastare, nu o alegere.
+     */
+    private static BigDecimal resolveNet(WeighingLinesRequest.Line line) {
+        requireNonNegative(line.grossKg());
+        requireNonNegative(line.tareKg());
+        if (line.grossKg() != null && line.tareKg() != null) {
+            BigDecimal net = line.grossKg().subtract(line.tareKg());
+            if (net.signum() <= 0) {
+                throw new BusinessException(WEIGHING_LINE_NET_NOT_POSITIVE);
+            }
+            if (line.netKg() != null && line.netKg().compareTo(net) != 0) {
+                throw new BusinessException(WEIGHING_LINE_NET_MISMATCH);
+            }
+            return net;
+        }
+        if (line.netKg() == null) {
+            throw new BusinessException(WEIGHING_LINE_NET_REQUIRED);
+        }
+        if (line.netKg().signum() <= 0) {
+            throw new BusinessException(WEIGHING_LINE_NET_NOT_POSITIVE);
+        }
+        return line.netKg();
+    }
+
+    /**
+     * Intrarea e o preluare, fără cod. Ieșirea poartă pe fiecare linie codul R/D (decizia
+     * proprietarului, 15.09.2026), iar familia codului dă operația, ca la mișcarea obișnuită.
+     */
+    private static WasteOperation resolveOperation(WeighingOperation operation, WasteOperationCode code) {
+        if (operation.getType() == WeighingOperationType.IN) {
+            if (code != null) {
+                throw new BusinessException(OPERATION_CODE_NOT_ALLOWED);
+            }
+            return WasteOperation.COLLECTED;
+        }
+        if (code == null) {
+            throw new BusinessException(WEIGHING_LINE_OPERATION_CODE_REQUIRED);
+        }
+        var allowed = operation.getCompany().getAuthorizedOperationCodes();
+        if (allowed != null && !allowed.isEmpty() && !allowed.contains(code)) {
+            throw new BusinessException(OPERATION_CODE_NOT_IN_PROFILE);
+        }
+        return code.isRecovery() ? WasteOperation.RECOVERED : WasteOperation.DISPOSED;
+    }
+
+    private static void requireNonNegative(BigDecimal weight) {
+        if (weight != null && weight.signum() < 0) {
+            throw new BusinessException(WEIGHING_LINE_WEIGHT_NEGATIVE);
+        }
     }
 
     private static WeighingOperationType requireAvailableType(WeighingOperationType type) {
@@ -156,7 +387,7 @@ public class WeighingOperationService {
         return value == null || value.trim().isEmpty() ? null : value.trim();
     }
 
-    private static WeighingOperationResponse toResponse(WeighingOperation o) {
+    private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> lines) {
         Partner partner = o.getPartner();
         NaturalPerson person = o.getNaturalPerson();
         return new WeighingOperationResponse(o.getId(), o.getType(), o.getNumber(), o.getDate(),
@@ -164,6 +395,15 @@ public class WeighingOperationService {
                 partner == null ? null : partner.getId(), partner == null ? null : partner.getName(),
                 person == null ? null : person.getId(), person == null ? null : person.getName(),
                 o.getOrigin(), o.getDriverName(), o.getVehicleRegistration(), o.getOrderNumber(),
-                o.getStatus(), o.getNotes());
+                o.getStatus(), o.getNotes(), o.getGrossKg(), o.getTareKg(),
+                lines.stream().map(WeighingOperationService::toLine).toList());
+    }
+
+    private static WeighingOperationResponse.Line toLine(WasteMovement m) {
+        WasteArticle article = m.getArticle();
+        return new WeighingOperationResponse.Line(m.getId(), m.getLineNo() == null ? 0 : m.getLineNo(),
+                article == null ? null : article.getId(), article == null ? null : article.getName(),
+                m.getWasteCode().getCode(), m.getGrossKg(), m.getTareKg(), m.getNetKg(), m.getQuantity(),
+                m.getUnitPrice(), m.getTotalValue(), m.getOperationCode());
     }
 }
