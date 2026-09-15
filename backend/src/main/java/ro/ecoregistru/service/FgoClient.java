@@ -9,10 +9,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,7 +23,7 @@ import java.util.Map;
 
 /**
  * The FGO invoicing API v7 (<a href="https://api-testuat.fgo.ro/v1/testing.html">documentation</a>),
- * only the calls F2 needs: issue an invoice and read whether it was paid.
+ * only the calls billing needs: issue an invoice, read whether it was paid, and record a card payment.
  *
  * <p>Every request is a raw JSON body, authenticated by an uppercase SHA-1 of the company's CUI, the
  * private key and one more value: the buyer's name when issuing, the invoice number otherwise. FGO
@@ -48,6 +51,8 @@ public class FgoClient {
         }
     }
 
+    private static final DateTimeFormatter FGO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private final RestClient http;
     private final String codUnic;
     private final String privateKey;
@@ -56,6 +61,7 @@ public class FgoClient {
     private final BigDecimal cotaTva;
     private final String platformaUrl;
     private final long minIntervalMs;
+    private final String tipIncasareCard;
     private long lastCallAt;
 
     @Autowired
@@ -66,13 +72,19 @@ public class FgoClient {
                      @Value("${app.fgo.tip-factura:Factura}") String tipFactura,
                      @Value("${app.fgo.cota-tva:0}") BigDecimal cotaTva,
                      @Value("${app.fgo.platforma-url}") String platformaUrl,
-                     @Value("${app.fgo.min-interval-ms:1000}") long minIntervalMs) {
+                     @Value("${app.fgo.min-interval-ms:1000}") long minIntervalMs,
+                     @Value("${app.fgo.tip-incasare-card:Banca}") String tipIncasareCard) {
         this(RestClient.builder().baseUrl(baseUrl).requestFactory(timeouts()).build(),
-                codUnic, privateKey, serie, tipFactura, cotaTva, platformaUrl, minIntervalMs);
+                codUnic, privateKey, serie, tipFactura, cotaTva, platformaUrl, minIntervalMs, tipIncasareCard);
     }
 
     FgoClient(RestClient http, String codUnic, String privateKey, String serie, String tipFactura,
               BigDecimal cotaTva, String platformaUrl, long minIntervalMs) {
+        this(http, codUnic, privateKey, serie, tipFactura, cotaTva, platformaUrl, minIntervalMs, "Banca");
+    }
+
+    FgoClient(RestClient http, String codUnic, String privateKey, String serie, String tipFactura,
+              BigDecimal cotaTva, String platformaUrl, long minIntervalMs, String tipIncasareCard) {
         this.http = http;
         this.codUnic = codUnic;
         this.privateKey = privateKey;
@@ -81,6 +93,7 @@ public class FgoClient {
         this.cotaTva = cotaTva;
         this.platformaUrl = platformaUrl;
         this.minIntervalMs = minIntervalMs;
+        this.tipIncasareCard = tipIncasareCard;
     }
 
     public boolean isConfigured() {
@@ -153,6 +166,24 @@ public class FgoClient {
         JsonNode invoice = post("/factura/getstatus", body).path("Factura");
         return new Status(new BigDecimal(invoice.path("Valoare").asText("0")),
                 new BigDecimal(invoice.path("ValoareAchitata").asText("0")));
+    }
+
+    /**
+     * F3 — records a card payment on an issued invoice ({@code factura/incasare}, Premium and Enterprise
+     * only). FGO has no „card" payment type; the money reaches the bank from Netopia, so the type comes
+     * from {@code app.fgo.tip-incasare-card}, "Banca" by default.
+     */
+    public void collect(String invoiceSerie, String invoiceNumar, BigDecimal amount, LocalDateTime paidAt) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("CodUnic", codUnic);
+        body.put("Hash", hash(codUnic, privateKey, invoiceNumar));
+        body.put("PlatformaUrl", platformaUrl);
+        body.put("SerieFactura", invoiceSerie);
+        body.put("NumarFactura", invoiceNumar);
+        body.put("TipIncasare", tipIncasareCard);
+        body.put("SumaIncasata", amount.setScale(2, RoundingMode.HALF_UP).toPlainString());
+        body.put("DataIncasare", paidAt.format(FGO_DATE_TIME));
+        post("/factura/incasare", body);
     }
 
     /** Uppercase hex SHA-1 of the concatenated parts, as FGO computes it. */

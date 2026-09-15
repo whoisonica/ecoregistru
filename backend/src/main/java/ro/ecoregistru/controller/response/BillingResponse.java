@@ -1,6 +1,7 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.InvoiceStatus;
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.service.BillingCalculator.Invoice;
@@ -30,7 +31,17 @@ public record BillingResponse(
         String billingCounty,
         String billingCity,
         String billingAddress,
-        List<IssuedInvoice> invoices
+        List<IssuedInvoice> invoices,
+        /* F3 */
+        SubscriptionPaymentMethod paymentMethod,
+        String cardPanMasked,
+        String cardExpiry,
+        /** Whether „Plătește cu cardul" can start: Netopia's keys are on the server. */
+        boolean cardPaymentAvailable,
+        /* F4 */
+        LocalDate endsOn,
+        /** The day the account turns read-only if the oldest unpaid invoice stays unpaid; null when off or nothing is late. */
+        LocalDate readOnlyOn
 ) {
     public record IssuedInvoice(
             UUID id,
@@ -43,6 +54,8 @@ public record BillingResponse(
             String fgoNumar,
             String fgoLink,
             String fgoLinkPlata,
-            Instant paidAt
+            Instant paidAt,
+            SubscriptionPaymentMethod paidBy,
+            String lastCardError
     ) {}
 }

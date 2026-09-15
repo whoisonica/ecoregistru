@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, FileSpreadsheet, FileText, RefreshCw } from "lucide-react";
-import { useAuth } from "@/auth/AuthContext";
-import { canWrite } from "@/lib/roles";
+import { useCanWrite } from "@/hooks/useBillingAccess";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import {
   downloadAnexa1Form,
@@ -52,9 +51,7 @@ function yearOptions(): number[] {
 }
 
 export function EvidencesPage() {
-  const { user } = useAuth();
-  const canManage =
-    canWrite(user?.role);
+  const canManage = useCanWrite();
 
   const { data: workPoints } = useWorkPoints();
   const activeWorkPoints = useMemo(

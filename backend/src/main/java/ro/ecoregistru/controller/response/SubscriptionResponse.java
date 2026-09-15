@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.response;
 
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.service.BillingCalculator.Invoice;
@@ -34,5 +35,10 @@ public record SubscriptionResponse(
         String billingCounty,
         String billingCity,
         String billingAddress,
-        List<SubscriptionInvoiceResponse> invoices
+        List<SubscriptionInvoiceResponse> invoices,
+        /* F3/F4 — the card as the client sees it (never the token), and the last day of a stopped one. */
+        SubscriptionPaymentMethod paymentMethod,
+        String cardPanMasked,
+        String cardExpiry,
+        LocalDate endsOn
 ) {}

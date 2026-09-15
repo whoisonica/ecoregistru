@@ -53,6 +53,13 @@ public enum ErrorMessageEnum {
     COMPANY_HAS_OWN_SUBSCRIPTION("company.has.own.subscription", "Firma are abonament propriu. Șterge-l întâi, altfel ar plăti de două ori: o dată ea, o dată cabinetul."),
     // F2 — a subscription with invoices is the only link between them and FGO.
     SUBSCRIPTION_HAS_INVOICES("subscription.has.invoices", "Abonamentul are deja facturi și nu se mai poate șterge, altfel se pierde legătura cu ele în FGO."),
+    // F3 — cardul.
+    SUBSCRIPTION_NOT_FOUND("subscription.not.found", "Contul ăsta n-are un abonament de plătit."),
+    INVOICE_NOT_FOUND("invoice.not.found", "Factura nu a fost găsită."),
+    INVOICE_NOT_PAYABLE("invoice.not.payable", "Factura e deja plătită sau nu e încă emisă."),
+    CARD_PAYMENT_UNAVAILABLE("card.payment.unavailable", "Plata cu cardul nu e disponibilă acum. Poți plăti prin transfer, în contul de pe factură, sau încearcă mai târziu."),
+    // F4, §9.3 — oprirea.
+    SUBSCRIPTION_ALREADY_CANCELLED("subscription.already.cancelled", "Abonamentul e deja oprit."),
 
     // --- Utilizatorii firmei (P1.12) ---
     CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),

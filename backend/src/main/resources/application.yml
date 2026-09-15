@@ -100,12 +100,24 @@ app:
     platforma-url: ${FGO_PLATFORMA_URL:${FRONTEND_BASE_URL:http://localhost:5173}}
     # FGO primește o cerere pe secundă.
     min-interval-ms: ${FGO_MIN_INTERVAL_MS:1000}
-  # F3 — Netopia. Fără cheia publică și semnătura POS, orice notificare de plată e refuzată.
+    # F3 — tipul încasării cu cardul în `factura/incasare`. FGO n-are „Card" în nomenclator (verificat
+    # 15.09.2026: Banca, Retur Casa, Voucher, Bon, Plata Speciala, Chitanta); banii vin de la Netopia în bancă.
+    tip-incasare-card: ${FGO_TIP_INCASARE_CARD:Banca}
+  # F3 — Netopia. Fără cheia publică și semnătura POS, orice notificare de plată e refuzată; fără cheia API
+  # și adresa de notificare, plata cu cardul nu pornește. Adresa implicită e sandboxul.
   netopia:
+    base-url: ${NETOPIA_BASE_URL:https://secure-sandbox.netopia-payments.com}
+    api-key: ${NETOPIA_API_KEY:}
     pos-signature: ${NETOPIA_POS_SIGNATURE:}
     public-key: ${NETOPIA_PUBLIC_KEY:}
+    # Unde trimite Netopia rezultatul. Host-ul API-ului, NU app.wastehouse.ro: acolo un POST primește
+    # SPA-ul cu 200 și notificarea se pierde fără niciun semn (15.09.2026).
+    notify-url: ${NETOPIA_NOTIFY_URL:}
   billing:
     cron: ${BILLING_CRON:0 30 6 * * *}
+    # F4, §9.6 — doar-citirea la 15 zile după scadență și mementourile care o pomenesc. **Oprită implicit**
+    # până când contractul spune același lucru; o pornește proprietarul.
+    read-only-enabled: ${APP_BILLING_READ_ONLY_ENABLED:false}
 
 sentry:
   # P0.6 — colectorul de erori. **Gol implicit**: fără DSN, SDK-ul nu trimite nimic și nu pornește

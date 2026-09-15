@@ -48,6 +48,16 @@ public interface NotificationService {
     void sendSubscriptionInvoice(SubscriptionInvoice invoice, String clientName, String recipientEmail);
 
     /**
+     * A reminder about an issued invoice: overdue, read-only soon, read-only, or a refused card debit.
+     *
+     * @param reason Netopia's refusal, for {@link BillingReminder#CARD_FAILED}; null otherwise
+     * @throws RuntimeException if delivery fails — the caller must then leave the invoice unmarked,
+     *                          so the reminder is sent again on the next run.
+     */
+    void sendBillingReminder(SubscriptionInvoice invoice, String clientName, String recipientEmail,
+                             BillingReminder kind, String reason);
+
+    /**
      * P2.13, felia 2 — rezumatul zilnic al unui cabinet: un mail pe consultant, cu toate termenele
      * nefinalizate din zilele următoare ale firmelor cabinetului.
      *

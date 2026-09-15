@@ -130,6 +130,31 @@ class FgoClientTest {
         assertThat(new FgoClient(http, "12345678", "k", "WH", "Factura", BigDecimal.ZERO, "x", 0).isConfigured()).isTrue();
     }
 
+    /** F3 — încasarea cu cardul: hash-ul pe număr, tipul „Banca", suma cu două zecimale, data cu ora. */
+    @Test
+    void aCardPaymentIsRecordedAsACollectionOnTheInvoice() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://fgo.test/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        FgoClient fgo = client(builder);
+
+        server.expect(requestTo("https://fgo.test/v1/factura/incasare"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.CodUnic").value("12345678"))
+                .andExpect(jsonPath("$.Hash").value("1FA9A297E846F33307DBB387E37095855D86E0F1"))
+                .andExpect(jsonPath("$.SerieFactura").value("WH"))
+                .andExpect(jsonPath("$.NumarFactura").value("42"))
+                .andExpect(jsonPath("$.TipIncasare").value("Banca"))
+                .andExpect(jsonPath("$.SumaIncasata").value("389.00"))
+                .andExpect(jsonPath("$.DataIncasare").value("2026-10-17 14:05:09"))
+                .andExpect(jsonPath("$.PlatformaUrl").value("https://app.wastehouse.ro"))
+                .andRespond(withSuccess("{\"Success\":true,\"Message\":\"\"}", MediaType.APPLICATION_JSON));
+
+        fgo.collect("WH", "42", new BigDecimal("389"), java.time.LocalDateTime.of(2026, 10, 17, 14, 5, 9));
+
+        server.verify();
+    }
+
     private static FgoClient client(RestClient.Builder builder) {
         return new FgoClient(builder.build(), "12345678", "cheiasecreta", "WH", "Factura",
                 BigDecimal.ZERO, "https://app.wastehouse.ro", 0);

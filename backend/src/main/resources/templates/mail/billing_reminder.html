@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+<div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+    <h2 th:if="${kind == 'OVERDUE'}" style="color: #b45309;">Factura <span th:text="${number}">WH 1</span> a trecut de scadență</h2>
+    <h2 th:if="${kind == 'READ_ONLY_WARNING'}" style="color: #b45309;">În 7 zile contul trece în doar-citire</h2>
+    <h2 th:if="${kind == 'READ_ONLY'}" style="color: #b91c1c;">Contul e acum doar pentru citire</h2>
+    <h2 th:if="${kind == 'CARD_FAILED'}" style="color: #b91c1c;">Plata cu cardul nu a trecut</h2>
+    <p>Bună ziua,</p>
+    <p th:if="${kind == 'OVERDUE'}">
+        Factura <strong th:text="${number}">WH 1</strong> pentru abonamentul WasteHouse al
+        <strong th:text="${clientName}">Firma SRL</strong> era scadentă pe <span th:text="${dueDate}">27.10.2026</span>
+        și nu vedem încă plata. Dacă ai plătit deja, poți ignora mesajul: plata ajunge la noi în una-două zile lucrătoare.
+    </p>
+    <p th:if="${kind == 'READ_ONLY_WARNING'}">
+        Factura <strong th:text="${number}">WH 1</strong> a <strong th:text="${clientName}">Firma SRL</strong>, scadentă pe
+        <span th:text="${dueDate}">27.10.2026</span>, nu e încă plătită. Dacă plata nu ajunge până pe
+        <strong th:text="${readOnlyOn}">11.11.2026</strong>, contul trece în doar-citire: vezi și descarci tot, dar nu mai
+        poți adăuga sau modifica înregistrări.
+    </p>
+    <p th:if="${kind == 'READ_ONLY'}">
+        Factura <strong th:text="${number}">WH 1</strong> a <strong th:text="${clientName}">Firma SRL</strong> e neplătită de
+        peste 15 zile de la scadență, așa că de azi contul e doar pentru citire. <strong>Nu se șterge nimic</strong>: vezi
+        și descarci toată evidența, iar contul se redeschide automat în clipa în care plata ajunge.
+    </p>
+    <p th:if="${kind == 'CARD_FAILED'}">
+        Am încercat să plătim factura <strong th:text="${number}">WH 1</strong> a
+        <strong th:text="${clientName}">Firma SRL</strong> cu cardul salvat, dar plata nu a trecut<span th:if="${reason}">
+        (<span th:text="${reason}">card refuzat</span>)</span>. Poți plăti cu alt card din aplicație sau prin transfer, în
+        contul de pe factură.
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Factura</td>
+            <td style="padding: 8px 0;" th:text="${number}">WH 1</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Total</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${total}">99 lei</td>
+        </tr>
+        <tr th:if="${dueDate}">
+            <td style="padding: 8px 0; color: #6b7280;">Scadență</td>
+            <td style="padding: 8px 0;" th:text="${dueDate}">27.10.2026</td>
+        </tr>
+    </table>
+    <p>
+        <a th:href="${accountUrl}" href="#"
+           style="display: inline-block; background: #047857; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none;">Plătește din aplicație</a>
+        <a th:if="${pdfUrl}" th:href="${pdfUrl}" href="#" style="display: inline-block; margin-left: 8px; color: #047857;">Factura (PDF)</a>
+    </p>
+    <p style="font-size: 13px; color: #6b7280;">
+        Prin transfer: la detalii plată trece seria și numărul facturii (<span th:text="${number}">WH 1</span>), ca plata
+        să fie legată de ea.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
+    <p style="font-size: 12px; color: #9ca3af;">WasteHouse — evidența și raportarea gestiunii deșeurilor.</p>
+</div>
+</body>
+</html>

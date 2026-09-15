@@ -26,7 +26,8 @@ class FgoLiveTest {
 
     private static final String TEST_ENVIRONMENT = "https://api-testuat.fgo.ro/v1";
 
-    private final FgoClient fgo = new FgoClient(
+    /** Static: JUnit face o instanță pe test, iar pauza de o secundă a clientului trebuie să țină între teste. */
+    private static final FgoClient fgo = new FgoClient(
             RestClient.builder().baseUrl(TEST_ENVIRONMENT).build(),
             System.getenv("FGO_LIVE_COD_UNIC"), System.getenv("FGO_LIVE_KEY"), System.getenv("FGO_LIVE_SERIE"),
             System.getenv().getOrDefault("FGO_LIVE_TIP_FACTURA", "Factura"),
@@ -64,5 +65,24 @@ class FgoLiveTest {
         if (repeated instanceof AssertionError e) {
             throw e;
         }
+    }
+
+    /**
+     * F3 — plata cu cardul trecută în FGO ({@code factura/incasare}), pe o factură nouă de test. Documentația
+     * spune că apelul există numai pe Premium și Enterprise; aici se vede ce răspunde contul de test.
+     */
+    @Test
+    void aCardPaymentIsRecordedAndTheInvoiceReadsPaid() {
+        LocalDate today = LocalDate.now(BillingRunService.ZONE);
+        FgoClient.Issued issued = fgo.emit(UUID.randomUUID().toString(), buyer,
+                List.of(new BillingCalculator.Line("Generator", 1, new BigDecimal("99"), new BigDecimal("99"))),
+                today, today.plusDays(10), "Test F3 incasare card");
+        System.out.println("FGO emitere pentru încasare: " + issued);
+
+        fgo.collect(issued.serie(), issued.numar(), new BigDecimal("99"), java.time.LocalDateTime.now(BillingRunService.ZONE));
+
+        FgoClient.Status status = fgo.status(issued.serie(), issued.numar());
+        System.out.println("FGO getstatus după încasare: " + status);
+        assertThat(status.isPaid()).isTrue();
     }
 }

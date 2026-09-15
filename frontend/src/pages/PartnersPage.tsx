@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Ban, Pencil, Plus, RotateCcw, Users } from "lucide-react";
-import { useAuth } from "@/auth/AuthContext";
-import { canWrite } from "@/lib/roles";
+import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
   usePartners,
   useCreatePartner,
@@ -87,9 +86,7 @@ function nextAnniversary(issueDate: string, after: string): string {
 }
 
 export function PartnersPage() {
-  const { user } = useAuth();
-  const canManage =
-    canWrite(user?.role);
+  const canManage = useCanWrite();
 
   const { data: partners, isLoading, isError } = usePartners();
   const { data: company } = useCurrentCompany();

@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
   BillingAccount,
+  CardPaymentResult,
+  PaymentMethod,
   BillingRunResult,
   Subscription,
   SubscriptionInput,
@@ -81,5 +83,47 @@ export function useDeleteSubscription(owner: SubscriptionOwner) {
       qc.setQueryData(subscriptionKey(owner), null);
       qc.invalidateQueries({ queryKey: foundersKey });
     },
+  });
+}
+
+/** F3 — cardul sau transferul, ales de cine plătește. */
+export function useChoosePaymentMethod() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (paymentMethod: PaymentMethod) => {
+      await api.put("/api/v1/billing/payment-method", { paymentMethod });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["billing"] }),
+  });
+}
+
+/** F3 — pagina Netopia pentru o factură emisă. Apelantul duce omul acolo. */
+export function usePayInvoiceByCard() {
+  return useMutation({
+    mutationFn: async (invoiceId: string) =>
+      (await api.post<{ paymentUrl: string }>(`/api/v1/billing/invoices/${invoiceId}/card`)).data.paymentUrl,
+  });
+}
+
+/**
+ * F3 — plata la care Netopia întoarce omul (`/abonament?plata=…`). Se citește din 3 în 3 secunde cât
+ * notificarea n-a ajuns încă: redirecționarea vine de obicei înaintea ei.
+ */
+export function useCardPayment(id: string | null) {
+  return useQuery({
+    queryKey: ["billing", "card-payment", id],
+    queryFn: async () => (await api.get<CardPaymentResult>(`/api/v1/billing/card-payments/${id}`)).data,
+    enabled: Boolean(id),
+    refetchInterval: (query) => (query.state.data?.status === "STARTED" ? 3000 : false),
+  });
+}
+
+/** F4, §9.3 — oprirea cu preaviz și anularea ei. Numai platforma. */
+export function useCancelSubscription(owner: SubscriptionOwner) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (action: "cancel" | "resume") =>
+      (await api.post<Subscription>(`${pathOf(owner)}/${action}`)).data,
+    onSuccess: (saved) => qc.setQueryData(subscriptionKey(owner), saved),
   });
 }

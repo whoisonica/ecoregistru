@@ -258,6 +258,8 @@ export interface ConsultancyInput {
 
 export type SubscriptionPlan = "GENERATOR" | "GENERATOR_PACKAGING" | "FULL_SERVICE" | "CONSULTANCY";
 export type SubscriptionStatus = "PENDING" | "ACTIVE" | "PAST_DUE" | "READ_ONLY" | "CANCELLED";
+/** F3 — cum plătește clientul. `null` = n-a ales încă (se tratează ca transfer: factura e emisă oricum). */
+export type PaymentMethod = "CARD" | "TRANSFER";
 
 /** Mirrors backend BillingCalculator.Line. Lei, fără TVA. */
 export interface InvoiceLine {
@@ -296,6 +298,12 @@ export interface Subscription {
   billingCity: string | null;
   billingAddress: string | null;
   invoices: SubscriptionInvoice[];
+  /** F3 — cardul salvat, mascat; tokenul nu vine niciodată la client. */
+  paymentMethod: PaymentMethod | null;
+  cardPanMasked: string | null;
+  cardExpiry: string | null;
+  /** F4, §9.3 — ultima zi facturată a unui abonament oprit. */
+  endsOn: string | null;
 }
 
 /** F2 — DRAFT: rezervată, încă neemisă în FGO (sau emiterea a căzut, vezi `lastError`). */
@@ -316,6 +324,11 @@ export interface SubscriptionInvoice {
   amountPaid: number | null;
   lastError: string | null;
   paidAt: string | null;
+  paidBy: PaymentMethod | null;
+  /** Încasarea cu cardul trecută în FGO; null cât FGO n-o are încă. */
+  fgoCollectedAt: string | null;
+  /** Refuzul ultimei încercări cu cardul, cât e ultima. */
+  lastCardError: string | null;
 }
 
 export interface SubscriptionInput {
@@ -355,7 +368,31 @@ export interface BillingAccount {
   billingCounty: string | null;
   billingCity: string | null;
   billingAddress: string | null;
-  invoices: Omit<SubscriptionInvoice, "amountPaid" | "lastError">[];
+  invoices: Omit<SubscriptionInvoice, "amountPaid" | "lastError" | "fgoCollectedAt">[];
+  paymentMethod: PaymentMethod | null;
+  cardPanMasked: string | null;
+  cardExpiry: string | null;
+  /** Cheile Netopia sunt pe server: „Plătește cu cardul" poate porni. */
+  cardPaymentAvailable: boolean;
+  endsOn: string | null;
+  /** Ziua în care contul trece în doar-citire dacă cea mai veche factură rămâne neplătită. */
+  readOnlyOn: string | null;
+}
+
+/** F4 — pentru banner și butoanele de scriere, pe orice rol: starea celui care plătește contul. */
+export interface BillingAccess {
+  status: SubscriptionStatus | null;
+  readOnly: boolean;
+  readOnlyOn: string | null;
+}
+
+/** F3 — o plată cu cardul, citită la întoarcerea de la Netopia. */
+export interface CardPaymentResult {
+  id: string;
+  status: "STARTED" | "PAID" | "FAILED";
+  error: string | null;
+  invoiceId: string;
+  invoiceStatus: InvoiceStatus;
 }
 
 /** Cine plătește: o firmă directă sau un cabinet. Firmele unui cabinet n-au abonament propriu. */

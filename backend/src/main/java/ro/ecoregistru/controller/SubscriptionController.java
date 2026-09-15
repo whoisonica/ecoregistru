@@ -69,6 +69,31 @@ public class SubscriptionController {
         return ResponseEntity.noContent().build();
     }
 
+    /** F4, §9.3 — stopped with a month's notice: billed to the end of that period, then read-only. */
+    @PostMapping("/company/{id}/cancel")
+    @PreAuthorize(PLATFORM_ONLY)
+    public SubscriptionResponse cancelCompany(@PathVariable UUID id) {
+        return subscriptionService.cancelForCompany(id, LocalDate.now(BillingRunService.ZONE));
+    }
+
+    @PostMapping("/company/{id}/resume")
+    @PreAuthorize(PLATFORM_ONLY)
+    public SubscriptionResponse resumeCompany(@PathVariable UUID id) {
+        return subscriptionService.resumeForCompany(id);
+    }
+
+    @PostMapping("/consultancy/{id}/cancel")
+    @PreAuthorize(PLATFORM_ONLY)
+    public SubscriptionResponse cancelConsultancy(@PathVariable UUID id) {
+        return subscriptionService.cancelForConsultancy(id, LocalDate.now(BillingRunService.ZONE));
+    }
+
+    @PostMapping("/consultancy/{id}/resume")
+    @PreAuthorize(PLATFORM_ONLY)
+    public SubscriptionResponse resumeConsultancy(@PathVariable UUID id) {
+        return subscriptionService.resumeForConsultancy(id);
+    }
+
     /** „X din 30" next to the founder box. */
     @GetMapping("/founders")
     @PreAuthorize(PLATFORM_ONLY)

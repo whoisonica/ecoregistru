@@ -15,6 +15,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.SubscriptionRepository;
+import ro.ecoregistru.security.SubscriptionAccessFilter;
 import ro.ecoregistru.security.TenantFilter;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
@@ -31,6 +33,8 @@ public class SecurityConfiguration {
     final RestAuthenticationEntryPoint authenticationEntryPoint;
     /** For {@link TenantFilter}: whether a consultant's consultancy manages the requested tenant. */
     final CompanyRepository companyRepository;
+    /** For {@link SubscriptionAccessFilter}: who pays for the account, and whether it is read-only. */
+    final SubscriptionRepository subscriptionRepository;
 
     /** Publicly reachable endpoints (no auth). Everything else requires a valid token. */
     private static final String[] WHITELIST = {
@@ -52,7 +56,8 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            @Value("${springdoc.api-docs.enabled:true}") boolean apiDocsEnabled) throws Exception {
+            @Value("${springdoc.api-docs.enabled:true}") boolean apiDocsEnabled,
+            @Value("${app.billing.read-only-enabled:false}") boolean readOnlyEnabled) throws Exception {
         if (apiDocsEnabled) {
             http.authorizeHttpRequests(auth -> auth.requestMatchers(API_DOCS).permitAll());
         }
@@ -103,6 +108,12 @@ public class SecurityConfiguration {
                 .addFilterAfter(
                         new TenantFilter(companyRepository),
                         JwtAuthenticationFilter.class
+                )
+
+                // F4 — read-only subscriptions write nothing; needs the tenant, so after TenantFilter
+                .addFilterAfter(
+                        new SubscriptionAccessFilter(subscriptionRepository, readOnlyEnabled),
+                        TenantFilter.class
                 );
 
         return http.build();

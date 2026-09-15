@@ -3,6 +3,7 @@ package ro.ecoregistru.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 
@@ -88,6 +89,25 @@ public class Subscription {
     String billingCity;
 
     String billingAddress;
+
+    // --- F3: how it is paid, and the saved card (V47). The token debits the card: never sent to the client. ---
+
+    /** Null until the client chooses; invoiced the same either way, since the invoice comes first. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    SubscriptionPaymentMethod paymentMethod;
+
+    String cardToken;
+
+    /** As Netopia masks it, e.g. {@code 9900****5098}: what the client recognizes. */
+    String cardPanMasked;
+
+    /** {@code MM/YYYY}. */
+    String cardExpiry;
+
+    // --- F4, §9.3: stopped with a month's notice. The last billed day; after it CANCELLED, read-only. ---
+
+    LocalDate endsOn;
 
     @Column(nullable = false)
     Instant createdAt;

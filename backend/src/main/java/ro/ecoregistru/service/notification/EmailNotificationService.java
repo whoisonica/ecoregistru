@@ -14,6 +14,7 @@ import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.service.EmailService;
+import ro.ecoregistru.service.SubscriptionStatusRules;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -106,6 +107,35 @@ public class EmailNotificationService implements NotificationService {
         ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
         emailService.send(recipientEmail, "Factura " + number + " — abonamentul WasteHouse",
                 "mail/subscription_invoice", ctx);
+    }
+
+    /**
+     * F3/F4 — one template for the four reminders: they say the same things (which invoice, how much, what
+     * to do) and differ in the first sentence. The subject names the invoice, as the invoice mail does.
+     */
+    @Override
+    public void sendBillingReminder(SubscriptionInvoice invoice, String clientName, String recipientEmail,
+                                    BillingReminder kind, String reason) {
+        String number = invoice.getFgoSerie() + " " + invoice.getFgoNumar();
+        LocalDate due = invoice.getDueDate();
+        Context ctx = new Context(Locale.of("ro"));
+        ctx.setVariable("kind", kind.name());
+        ctx.setVariable("clientName", clientName);
+        ctx.setVariable("number", number);
+        ctx.setVariable("total", lei(invoice.getTotal()));
+        ctx.setVariable("dueDate", due == null ? null : due.format(DATE));
+        ctx.setVariable("readOnlyOn", due == null ? null
+                : due.plusDays(SubscriptionStatusRules.READ_ONLY_AFTER_DAYS).format(DATE));
+        ctx.setVariable("reason", reason);
+        ctx.setVariable("pdfUrl", invoice.getFgoLink());
+        ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
+        String subject = switch (kind) {
+            case OVERDUE -> "Factura " + number + " a trecut de scadență";
+            case READ_ONLY_WARNING -> "Factura " + number + ": în 7 zile contul trece în doar-citire";
+            case READ_ONLY -> "Contul WasteHouse e acum doar pentru citire — factura " + number;
+            case CARD_FAILED -> "Plata cu cardul pentru factura " + number + " nu a trecut";
+        };
+        emailService.send(recipientEmail, subject, "mail/billing_reminder", ctx);
     }
 
     /**

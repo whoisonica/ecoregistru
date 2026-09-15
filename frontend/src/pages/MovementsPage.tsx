@@ -13,8 +13,7 @@ import {
   Scale,
   Truck,
 } from "lucide-react";
-import { useAuth } from "@/auth/AuthContext";
-import { canWrite as roleCanWrite } from "@/lib/roles";
+import { useCanWrite } from "@/hooks/useBillingAccess";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
 import { useDrivers } from "@/hooks/useDrivers";
@@ -207,9 +206,7 @@ export function MovementsRedirect() {
 }
 
 export function MovementsPage({ register }: { register: WasteRegister }) {
-  const { user } = useAuth();
-  const canWrite =
-    roleCanWrite(user?.role);
+  const canWrite = useCanWrite();
 
   const { data: workPoints } = useWorkPoints();
   const activeWorkPoints = useMemo(

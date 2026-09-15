@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ro.ecoregistru.enums.InvoiceStatus;
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -69,6 +70,21 @@ public class SubscriptionInvoice {
 
     /** When the invoice was mailed to the client (V45); null until the mail actually left. */
     Instant emailedAt;
+
+    // --- V47 ---
+
+    /** Who settled it: Netopia's notification, or FGO reading the bank statement. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    SubscriptionPaymentMethod paidBy;
+
+    /** A card payment recorded in FGO ({@code factura/incasare}); retried by the run until it is. */
+    Instant fgoCollectedAt;
+
+    /** The reminders of §2.3, each sent once, marked only after it left. */
+    Instant overdueMailedAt;
+    Instant warningMailedAt;
+    Instant readOnlyMailedAt;
 
     @Column(nullable = false)
     Instant createdAt;

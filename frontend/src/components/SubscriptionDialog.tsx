@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import {
+  useCancelSubscription,
   useDeleteSubscription,
   useFounderCount,
   useRunBilling,
@@ -24,6 +25,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const t = strings.subscriptions;
 const COMPANY_PLANS: SubscriptionPlan[] = ["GENERATOR", "GENERATOR_PACKAGING", "FULL_SERVICE"];
@@ -72,6 +74,8 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
   const saveMut = useSaveSubscription(owner);
   const deleteMut = useDeleteSubscription(owner);
   const runMut = useRunBilling();
+  const cancelMut = useCancelSubscription(owner);
+  const [confirm, confirmDialog] = useConfirm();
   const { notify } = useToast();
 
   const isConsultancy = owner.kind === "consultancy";
@@ -90,7 +94,7 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
   const currentCounty = billingCounty ?? subscription?.billingCounty ?? "";
   const currentCity = billingCity ?? subscription?.billingCity ?? "";
   const currentAddress = billingAddress ?? subscription?.billingAddress ?? "";
-  const busy = saveMut.isPending || deleteMut.isPending || runMut.isPending;
+  const busy = saveMut.isPending || deleteMut.isPending || runMut.isPending || cancelMut.isPending;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -123,6 +127,33 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
       notify(t.removed, "success");
     } catch (err) {
       notify(apiErrorMessage(err, t.removeError), "error");
+    }
+  }
+
+  /** F4, §9.3 — oprirea cu preaviz de o lună, sau anularea ei cât abonamentul n-a ajuns la capăt. */
+  function handleCancel() {
+    confirm({
+      title: t.cancel,
+      message: t.cancelConfirm,
+      confirmLabel: t.cancel,
+      tone: "danger",
+      onConfirm: async () => {
+        try {
+          const saved = await cancelMut.mutateAsync("cancel");
+          notify(t.cancelled.replace("{date}", formatDate(saved.endsOn)), "success");
+        } catch (err) {
+          notify(apiErrorMessage(err, t.cancelError), "error");
+        }
+      },
+    });
+  }
+
+  async function handleResume() {
+    try {
+      await cancelMut.mutateAsync("resume");
+      notify(t.resumed, "success");
+    } catch (err) {
+      notify(apiErrorMessage(err, t.cancelError), "error");
     }
   }
 
@@ -164,6 +195,15 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
               {t.remove}
             </Button>
           )}
+          {subscription && subscription.status !== "CANCELLED" && (
+            <Button
+              variant="outline"
+              onClick={subscription.endsOn ? handleResume : handleCancel}
+              disabled={busy}
+            >
+              {subscription.endsOn ? t.resume : t.cancel}
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {strings.common.close}
           </Button>
@@ -173,13 +213,27 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
         </>
       }
     >
+      {confirmDialog}
       {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
       {isLoading && <p className="text-sm text-content-muted">{strings.common.loading}</p>}
       {!isLoading && !isError && (
         <form id="subscription-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             {subscription ? (
-              <Badge variant="warning">{t.status[subscription.status]}</Badge>
+              <>
+                <Badge variant="warning">{t.status[subscription.status]}</Badge>
+                {subscription.endsOn && (
+                  <Badge variant="muted">{t.endsOn.replace("{date}", formatDate(subscription.endsOn))}</Badge>
+                )}
+                <span className="text-xs text-content-muted">
+                  {t.method}:{" "}
+                  {subscription.paymentMethod ? strings.billing[subscription.paymentMethod === "CARD" ? "methodCard" : "methodTransfer"] : t.methodNone}
+                  {subscription.cardPanMasked &&
+                    ` · ${t.savedCard
+                      .replace("{pan}", subscription.cardPanMasked)
+                      .replace("{expiry}", subscription.cardExpiry ?? "—")}`}
+                </span>
+              </>
             ) : (
               <p className="text-sm text-content-muted">{t.none}</p>
             )}
@@ -339,6 +393,10 @@ function InvoiceRow({ invoice }: { invoice: SubscriptionInvoice }) {
         {invoice.dueDate && invoice.status === "ISSUED" && (
           <span>{t.invoiceDue.replace("{date}", formatDate(invoice.dueDate))}</span>
         )}
+        {invoice.status === "PAID" && invoice.paidBy === "CARD" && <span>{t.paidByCard}</span>}
+        {invoice.status === "PAID" && invoice.paidBy === "CARD" && !invoice.fgoCollectedAt && (
+          <span className="text-amber-700">{t.notInFgo}</span>
+        )}
         {invoice.fgoLink && (
           <a href={invoice.fgoLink} target="_blank" rel="noreferrer" className="text-brand underline">
             {t.invoicePdf}
@@ -347,6 +405,9 @@ function InvoiceRow({ invoice }: { invoice: SubscriptionInvoice }) {
       </div>
       {invoice.status === "DRAFT" && invoice.lastError && (
         <p className="text-xs text-red-600">{invoice.lastError}</p>
+      )}
+      {invoice.status === "ISSUED" && invoice.lastCardError && (
+        <p className="text-xs text-red-600">{strings.billing.cardRefused.replace("{reason}", invoice.lastCardError)}</p>
       )}
     </li>
   );

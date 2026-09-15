@@ -21,7 +21,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { companiesKey, useCompanies, useCurrentCompany } from "@/hooks/useCompanies";
-import { canManage as roleCanManage, canWrite, isMultiCompany } from "@/lib/roles";
+import { canManage as roleCanManage, isMultiCompany } from "@/lib/roles";
+import { useCanWrite } from "@/hooks/useBillingAccess";
+import { BillingBanner } from "@/components/BillingBanner";
 import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
 import { MOVEMENTS_PATH, registersFor } from "@/lib/movementScreens";
@@ -364,7 +366,8 @@ export function Layout({ children }: { children: ReactNode }) {
   // Locurile întâi, apoi ce se poate începe: ordinea grupurilor din paletă e ordinea în care au
   // venit comenzile, iar „unde ajung" e întrebarea de zece ori mai deasă decât „ce încep".
   const navCommands = useNavigationCommands(groups);
-  const actionCommands = useActionCommands(canWrite(user?.role));
+  const writable = useCanWrite();
+  const actionCommands = useActionCommands(writable);
   const commands = useMemo(
     () => [...navCommands, ...actionCommands],
     [navCommands, actionCommands]
@@ -507,6 +510,7 @@ export function Layout({ children }: { children: ReactNode }) {
         // ecranul: pe telefon 16px sunt tot ce se poate da, pe desktop rămân cele 32 de dinainte.
         className="flex-1 overflow-auto px-4 pb-8 pt-[4.5rem] sm:px-6 lg:p-8"
       >
+        <BillingBanner />
         {children}
       </main>
     </div>

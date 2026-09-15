@@ -3,22 +3,32 @@ package ro.ecoregistru.service;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.SubscriptionRequest;
+import ro.ecoregistru.controller.response.BillingAccessResponse;
 import ro.ecoregistru.controller.response.BillingResponse;
+import ro.ecoregistru.controller.response.CardPaymentResponse;
 import ro.ecoregistru.controller.response.SubscriptionInvoiceResponse;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
 import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.CardPayment;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.Subscription;
+import ro.ecoregistru.entity.SubscriptionInvoice;
+import ro.ecoregistru.enums.CardPaymentStatus;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.MarketRole;
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
+import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
+import ro.ecoregistru.repository.CardPaymentRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ConsultancyRepository;
 import ro.ecoregistru.repository.SubscriptionInvoiceRepository;
@@ -27,12 +37,16 @@ import ro.ecoregistru.repository.WorkPointRepository;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.INVOICE_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_ALREADY_CANCELLED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_COMPANY_IN_CONSULTANCY;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_HAS_INVOICES;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_PLAN_MISMATCH;
@@ -55,6 +69,13 @@ public class SubscriptionService {
     CompanyRepository companyRepository;
     ConsultancyRepository consultancyRepository;
     WorkPointRepository workPointRepository;
+    CardPaymentRepository cardPaymentRepository;
+    NetopiaClient netopia;
+
+    /** §9.6: off until the contract says it. */
+    @NonFinal
+    @Value("${app.billing.read-only-enabled:false}")
+    boolean readOnlyEnabled;
 
     @Transactional(readOnly = true)
     public Optional<SubscriptionResponse> forCompany(UUID companyId) {
@@ -116,14 +137,157 @@ public class SubscriptionService {
      */
     @Transactional(readOnly = true)
     public Optional<BillingResponse> forAccount(AppUser user, UUID tenantId, LocalDate today) {
-        Optional<Subscription> found = switch (user.getRole()) {
+        return payerFor(user, tenantId).map(s -> toBillingResponse(s, today));
+    }
+
+    /** The subscription the account pays itself; empty for a company of a cabinet. Needs a transaction. */
+    public Optional<Subscription> payerFor(AppUser user, UUID tenantId) {
+        return switch (user.getRole()) {
             case CONSULTANT -> Optional.ofNullable(user.getConsultancy())
                     .flatMap(c -> subscriptionRepository.findByConsultancy_Id(c.getId()));
             case PLATFORM_ADMIN -> Optional.ofNullable(tenantId).flatMap(subscriptionRepository::findByCompany_Id);
             default -> Optional.ofNullable(user.getCompany())
                     .flatMap(c -> subscriptionRepository.findByCompany_Id(c.getId()));
         };
-        return found.map(s -> toBillingResponse(s, today));
+    }
+
+    /**
+     * F4 — for every role, on every screen: the status of whoever pays for the account (its own or its
+     * cabinet's subscription) and whether writes are refused now. The platform is never restricted.
+     */
+    @Transactional(readOnly = true)
+    public BillingAccessResponse access(AppUser user, UUID tenantId, LocalDate today) {
+        Optional<Subscription> payer = switch (user.getRole()) {
+            case CONSULTANT -> Optional.ofNullable(user.getConsultancy())
+                    .flatMap(c -> subscriptionRepository.findByConsultancy_Id(c.getId()));
+            default -> {
+                UUID companyId = tenantId != null ? tenantId : user.getCompany() != null ? user.getCompany().getId() : null;
+                yield companyId == null ? Optional.<Subscription>empty() : companyRepository.findById(companyId)
+                        .flatMap(c -> c.getConsultancy() != null
+                                ? subscriptionRepository.findByConsultancy_Id(c.getConsultancy().getId())
+                                : subscriptionRepository.findByCompany_Id(c.getId()));
+            }
+        };
+        return payer.map(s -> new BillingAccessResponse(s.getStatus(),
+                        readOnlyEnabled && user.getRole() != Role.PLATFORM_ADMIN
+                                && SubscriptionStatusRules.restricts(s.getStatus()),
+                        readOnlyOn(s)))
+                .orElse(new BillingAccessResponse(null, false, null));
+    }
+
+    /** F3 — the client's choice. The invoice comes first either way; the choice decides the saved card and the text. */
+    @Transactional
+    public void choosePaymentMethod(AppUser user, UUID tenantId, SubscriptionPaymentMethod method) {
+        Subscription s = payerFor(user, tenantId).orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND));
+        s.setPaymentMethod(method);
+        if (method == SubscriptionPaymentMethod.TRANSFER) {
+            // Choosing transfer is saying „do not debit my card": the token goes, not only the flag.
+            s.setCardToken(null);
+            s.setCardPanMasked(null);
+            s.setCardExpiry(null);
+        }
+    }
+
+    /** F3 — one of the account's own card payments, for the page Netopia sends the client back to. */
+    @Transactional(readOnly = true)
+    public CardPaymentResponse cardPayment(AppUser user, UUID tenantId, UUID paymentId) {
+        Subscription s = payerFor(user, tenantId).orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND));
+        CardPayment p = cardPaymentRepository.findById(paymentId)
+                .filter(c -> c.getInvoice().getSubscription().getId().equals(s.getId()))
+                .orElseThrow(() -> new NotFoundException(INVOICE_NOT_FOUND));
+        return new CardPaymentResponse(p.getId(), p.getStatus(), p.getError(), p.getInvoice().getId(),
+                p.getInvoice().getStatus());
+    }
+
+    /**
+     * §9.3 — stopped with a month's notice: the period that holds the day a month from now is the last one
+     * billed, then CANCELLED and read-only. Stopping twice keeps the first date.
+     */
+    @Transactional
+    public SubscriptionResponse cancelForCompany(UUID companyId, LocalDate today) {
+        requireCompany(companyId);
+        return cancel(subscriptionRepository.findByCompany_Id(companyId)
+                .orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND)), today);
+    }
+
+    @Transactional
+    public SubscriptionResponse cancelForConsultancy(UUID consultancyId, LocalDate today) {
+        requireConsultancy(consultancyId);
+        return cancel(subscriptionRepository.findByConsultancy_Id(consultancyId)
+                .orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND)), today);
+    }
+
+    /** Takes a stop back, while the subscription has not ended yet. */
+    @Transactional
+    public SubscriptionResponse resumeForCompany(UUID companyId) {
+        requireCompany(companyId);
+        return resume(subscriptionRepository.findByCompany_Id(companyId)
+                .orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND)));
+    }
+
+    @Transactional
+    public SubscriptionResponse resumeForConsultancy(UUID consultancyId) {
+        requireConsultancy(consultancyId);
+        return resume(subscriptionRepository.findByConsultancy_Id(consultancyId)
+                .orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND)));
+    }
+
+    private SubscriptionResponse cancel(Subscription s, LocalDate today) {
+        if (s.getStatus() == SubscriptionStatus.CANCELLED) {
+            throw new UnprocessableEntityException(SUBSCRIPTION_ALREADY_CANCELLED);
+        }
+        if (s.getEndsOn() == null) {
+            s.setEndsOn(endsOnAfterNotice(s, today));
+        }
+        return toResponse(s);
+    }
+
+    private SubscriptionResponse resume(Subscription s) {
+        if (s.getStatus() == SubscriptionStatus.CANCELLED) {
+            throw new UnprocessableEntityException(SUBSCRIPTION_ALREADY_CANCELLED);
+        }
+        s.setEndsOn(null);
+        return toResponse(s);
+    }
+
+    /** The last day of the period holding the day a month from now (or the start, if that is later). */
+    static LocalDate endsOnAfterNotice(Subscription s, LocalDate today) {
+        LocalDate noticeEnds = today.plusMonths(1);
+        LocalDate day = noticeEnds.isBefore(s.getStartedAt()) ? s.getStartedAt() : noticeEnds;
+        int period = BillingCalculator.periodOn(s.getStartedAt(), day);
+        return BillingCalculator.periodStart(s, period + 1).minusDays(1);
+    }
+
+    /** Reads the status again from the invoices ({@link SubscriptionStatusRules}). Needs a transaction. */
+    public void refreshStatus(Subscription s, LocalDate today) {
+        s.setStatus(SubscriptionStatusRules.statusOn(today,
+                invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()),
+                s.getEndsOn(), readOnlyEnabled, s.getStatus()));
+    }
+
+    public boolean readOnlyEnabled() {
+        return readOnlyEnabled;
+    }
+
+    /** Oldest unpaid due date + 15, when read-only is on and something is unpaid. */
+    private LocalDate readOnlyOn(Subscription s) {
+        if (!readOnlyEnabled || s.getStatus() == SubscriptionStatus.CANCELLED) {
+            return null;
+        }
+        return invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()).stream()
+                .filter(i -> i.getStatus() == InvoiceStatus.ISSUED && i.getDueDate() != null)
+                .map(SubscriptionInvoice::getDueDate)
+                .min(Comparator.naturalOrder())
+                .map(due -> due.plusDays(SubscriptionStatusRules.READ_ONLY_AFTER_DAYS))
+                .orElse(null);
+    }
+
+    /** The latest card attempt's refusal, while it is the latest: an attempt that went through after it hides it. */
+    private String lastCardError(UUID invoiceId) {
+        return cardPaymentRepository.findAllByInvoice_IdOrderByCreatedAtDesc(invoiceId).stream().findFirst()
+                .filter(p -> p.getStatus() == CardPaymentStatus.FAILED)
+                .map(CardPayment::getError)
+                .orElse(null);
     }
 
     /** The next invoice is the first one until the start date, then the one after the current period. */
@@ -134,11 +298,13 @@ public class SubscriptionService {
                 .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
                 .map(i -> new BillingResponse.IssuedInvoice(i.getId(), i.getPeriodStart(), i.getPeriodEnd(),
                         i.getTotal(), i.getStatus(), i.getDueDate(), i.getFgoSerie(), i.getFgoNumar(),
-                        i.getFgoLink(), i.getFgoLinkPlata(), i.getPaidAt()))
+                        i.getFgoLink(), i.getFgoLinkPlata(), i.getPaidAt(), i.getPaidBy(), lastCardError(i.getId())))
                 .toList();
         return new BillingResponse(BillingRunService.clientName(s), s.getPlan(), s.getStatus(), s.getStartedAt(),
                 s.isFounder(), invoiceFor(s, next), BillingRunService.recipient(s),
-                s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices);
+                s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices,
+                s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), netopia.isConfigured(),
+                s.getEndsOn(), readOnlyOn(s));
     }
 
     @Transactional(readOnly = true)
@@ -212,7 +378,8 @@ public class SubscriptionService {
                 : invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()).stream()
                 .map(i -> new SubscriptionInvoiceResponse(i.getId(), i.getPeriodStart(), i.getPeriodEnd(),
                         i.getTotal(), i.getStatus(), i.getDueDate(), i.getFgoSerie(), i.getFgoNumar(),
-                        i.getFgoLink(), i.getFgoLinkPlata(), i.getAmountPaid(), i.getLastError(), i.getPaidAt()))
+                        i.getFgoLink(), i.getFgoLinkPlata(), i.getAmountPaid(), i.getLastError(), i.getPaidAt(),
+                        i.getPaidBy(), i.getFgoCollectedAt(), lastCardError(i.getId())))
                 .toList();
         return new SubscriptionResponse(s.getId(), s.getPlan(), s.getStatus(),
                 s.getMonthlyPrice(), s.getImplementationFee(), s.getExtraWorkPointPrice(),
@@ -220,7 +387,7 @@ public class SubscriptionService {
                 s.getPackagingCompanyPrice(), s.isFounder(), s.getStartedAt(),
                 invoiceFor(s, 0), invoiceFor(s, 1),
                 s.getBillingEmail(), s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(),
-                invoices);
+                invoices, s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), s.getEndsOn());
     }
 
     private Company requireCompany(UUID id) {

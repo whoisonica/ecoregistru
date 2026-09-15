@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.InvoiceStatus;
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,4 +25,18 @@ public interface SubscriptionInvoiceRepository extends JpaRepository<Subscriptio
     /** Issued in FGO (paid or not) and not yet mailed to the client. */
     @Query("select i.id from SubscriptionInvoice i where i.issuedAt is not null and i.emailedAt is null order by i.createdAt")
     List<UUID> findIdsToEmail();
+
+    /** F3 — paid by card and not yet recorded in FGO: the run retries {@code factura/incasare}. */
+    @Query("select i.id from SubscriptionInvoice i where i.status = :paid and i.paidBy = :card"
+            + " and i.fgoCollectedAt is null and i.fgoNumar is not null order by i.createdAt")
+    List<UUID> findIdsToRecordInFgo(@Param("paid") InvoiceStatus paid, @Param("card") SubscriptionPaymentMethod card);
+
+    /** F3 — issued, unpaid, on a subscription paying by a saved card. */
+    @Query("select i.id from SubscriptionInvoice i join i.subscription s where i.status = :issued"
+            + " and s.paymentMethod = :card and s.cardToken is not null order by i.createdAt")
+    List<UUID> findIdsToDebit(@Param("issued") InvoiceStatus issued, @Param("card") SubscriptionPaymentMethod card);
+
+    /** F4 — issued, unpaid and past the due date: the reminders of §2.3. */
+    @Query("select i.id from SubscriptionInvoice i where i.status = :issued and i.dueDate < :today order by i.createdAt")
+    List<UUID> findIdsOverdue(@Param("issued") InvoiceStatus issued, @Param("today") LocalDate today);
 }

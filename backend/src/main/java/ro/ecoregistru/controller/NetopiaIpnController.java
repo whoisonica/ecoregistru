@@ -11,17 +11,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ro.ecoregistru.service.CardPaymentService;
 import ro.ecoregistru.service.NetopiaIpnVerifier;
 
 import java.util.Map;
 
 /**
- * F3 of plata-abonamente.md, first piece — where NETOPIA sends the payment result. Public (NETOPIA has
- * no session), trusted only after {@link NetopiaIpnVerifier}.
+ * F3 of plata-abonamente.md — where NETOPIA sends the payment result. Public (NETOPIA has no session),
+ * trusted only after {@link NetopiaIpnVerifier}; {@link CardPaymentService} settles the invoice.
  *
- * <p>For now it only logs what arrived, the card token masked. The sandbox probe of 15.09.2026 showed
- * no token in {@code operation/status}; this is how we see whether the notification carries one.
- * Nothing is stored yet.
+ * <p>A notification we could not process answers 500, so Netopia sends it again: it is stored in the same
+ * transaction that settles the invoice, so the resend is not taken for a duplicate.
  */
 @Slf4j
 @RestController
@@ -31,6 +31,7 @@ import java.util.Map;
 public class NetopiaIpnController {
 
     NetopiaIpnVerifier verifier;
+    CardPaymentService cardPaymentService;
 
     /** The raw bytes, not a DTO: the signature covers the body exactly as sent. */
     @PostMapping("/ipn")
@@ -50,11 +51,12 @@ public class NetopiaIpnController {
                 notification.path("order").path("orderID").asText(), payment.path("ntpID").asText(),
                 payment.path("status").asInt(), payment.path("amount").asText(), payment.path("currency").asText(),
                 payment.path("instrument").path("panMasked").asText(), mask(token));
+        cardPaymentService.handleNotification(notification);
         return ResponseEntity.ok(Map.of("errorType", 0, "errorCode", "", "errorMessage", ""));
     }
 
     /** The token debits the card: never whole in a log. */
-    static String mask(String token) {
+    public static String mask(String token) {
         if (token == null || token.isBlank()) {
             return "lipsă";
         }

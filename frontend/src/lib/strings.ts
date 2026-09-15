@@ -1371,6 +1371,40 @@ export const strings = {
     paidOn: "plătită {date}",
     document: "Document",
     pay: "Plătește online",
+    // F3 — cardul
+    method: "Cum plătești",
+    methodCard: "Card",
+    methodTransfer: "Transfer bancar",
+    methodCardHint:
+      "Plătești factura cu cardul, pe pagina securizată Netopia. Dacă banca salvează cardul, facturile următoare se plătesc singure în ziua emiterii.",
+    methodTransferHint:
+      "Plătești prin transfer, în contul de pe factură, în 10 zile. La detalii plată treci seria și numărul facturii.",
+    methodSaved: "Salvat.",
+    methodError: "Alegerea nu a putut fi salvată.",
+    savedCard: "Card salvat: {pan}, expiră {expiry}",
+    payByCard: "Plătește cu cardul",
+    payByCardError: "Plata cu cardul nu a putut porni.",
+    paidByCard: "cu cardul",
+    cardRefused: "Ultima plată cu cardul nu a trecut: {reason}",
+    returnPending: "Așteptăm confirmarea plății de la Netopia…",
+    returnPaid: "Plata a trecut. Mulțumim!",
+    returnFailed: "Plata nu a trecut: {reason}. Poți încerca din nou sau plăti prin transfer.",
+    returnSlow:
+      "Netopia n-a confirmat încă plata. Dacă ți s-a luat suma, factura apare plătită în câteva minute; nu plăti a doua oară.",
+    // F4
+    endsOn: "Abonamentul e oprit: ultima zi facturată e {date}. După ea contul rămâne doar pentru citire.",
+    readOnlyOn: "Dacă factura restantă nu e plătită până pe {date}, contul trece în doar-citire.",
+  },
+
+  /** F4 — bannerul de sus, pe orice ecran și pentru orice rol. */
+  billingBanner: {
+    pastDue: "Abonamentul are o factură restantă.",
+    pastDueReadOnlyOn: "Abonamentul are o factură restantă. Pe {date} contul trece în doar-citire.",
+    readOnly:
+      "Contul e doar pentru citire: abonamentul are o factură neplătită de peste 15 zile. Vezi și descarci tot; plata redeschide contul imediat.",
+    cancelled: "Abonamentul e oprit: contul e doar pentru citire. Vezi și descarci tot.",
+    action: "Vezi abonamentul",
+    askAdmin: "Plata o face administratorul firmei.",
   },
 
   /** Plata abonamentelor, F1 — pachetul și prețul unui client, pe ecranul Clienți al platformei. */
@@ -1434,6 +1468,20 @@ export const strings = {
     removed: "Abonament șters. Clientul nu mai e facturat.",
     removeError: "Abonamentul nu a putut fi șters.",
     loadError: "Nu am putut încărca abonamentul.",
+    // F3/F4
+    method: "Plată",
+    methodNone: "neales (transfer)",
+    savedCard: "card {pan}, expiră {expiry}",
+    paidByCard: "cu cardul",
+    notInFgo: "încasarea nu e încă în FGO",
+    cancel: "Oprește abonamentul",
+    cancelConfirm:
+      "Se facturează încă perioada de preaviz (o lună), apoi abonamentul se oprește și contul rămâne doar pentru citire. Continui?",
+    cancelled: "Abonament oprit. Ultima zi facturată: {date}.",
+    cancelError: "Abonamentul nu a putut fi oprit.",
+    resume: "Anulează oprirea",
+    resumed: "Oprirea a fost anulată.",
+    endsOn: "Oprit: ultima zi facturată {date}",
   },
 
   /** P2.13 — echipa cabinetului, pe ecranul Clienți al consultantului. */

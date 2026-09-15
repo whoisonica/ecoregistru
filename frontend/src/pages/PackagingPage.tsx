@@ -1,8 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, FileSpreadsheet, FileText, Package, Pencil, Plus } from "lucide-react";
-import { useAuth } from "@/auth/AuthContext";
-import { canWrite as roleCanWrite } from "@/lib/roles";
+import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
   downloadPackagingAnexa3,
   downloadPackagingDeclaration,
@@ -165,9 +164,7 @@ function RowStatus({ state, dirty }: { state?: "saving" | "saved"; dirty: boolea
  * pusă pe piaţă şi o firmă poate şti că cifra ei diferă de ce arată deşeul.
  */
 export function PackagingPage() {
-  const { user } = useAuth();
-  const canWrite =
-    roleCanWrite(user?.role);
+  const canWrite = useCanWrite();
   // Anexa 3 raportează ce s-a preluat de la terți, iar generatorii au doar ieșiri (specialista,
   // 14.09.2026). Cât timp firma nu s-a încărcat, secțiunea nu apare — ca butonul Anexei 2.
   const { data: company } = useCurrentCompany();
