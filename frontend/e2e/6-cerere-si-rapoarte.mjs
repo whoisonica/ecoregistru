@@ -116,8 +116,12 @@ check("fiecare cerere se poate citi întreagă", seeButtons.length > 0, seeButto
 
 // Coloana de acţiuni nu se mai rupe pe două rânduri. Un rând de tabel cu butoane frânte a fost
 // defectul găsit uitându-mă la captură, cu toate verificările de DOM verzi.
+// Numai rândurile cu date: rândul gol al unui tabel („Niciun cabinet încă”, P2.13) are o singură
+// celulă, cu mesajul și iconița, și nu e o coloană de acțiuni.
 const actionsWrap = await page.$$eval("tbody tr td:last-child > div", (cells) =>
-  cells.some((c) => c.getBoundingClientRect().height > 44)
+  cells
+    .filter((c) => c.parentElement.parentElement.children.length > 1)
+    .some((c) => c.getBoundingClientRect().height > 44)
 );
 check("butoanele de acţiune stau pe un rând", !actionsWrap);
 

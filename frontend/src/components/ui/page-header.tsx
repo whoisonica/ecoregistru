@@ -30,12 +30,15 @@ export function PageHeader({
         className
       )}
     >
-      <div className="min-w-0">
+      {/* Titlul își păstrează 22rem, iar butoanele se înfășoară în spațiul rămas. Cu `shrink-0` pe
+          butoane, cele două documente oficiale de pe Evidențe (numele lor lungi, cerute de specialistă
+          pe 15.09.2026) strângeau titlul pe trei rânduri, într-o coloană de 173px. */}
+      <div className="min-w-0 sm:min-w-[22rem] sm:flex-1">
         <h1 className="text-2xl font-bold text-content">{title}</h1>
         {description && <p className="mt-1 text-sm text-content-muted">{description}</p>}
       </div>
       {actions && (
-        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">{actions}</div>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>
       )}
     </div>
   );

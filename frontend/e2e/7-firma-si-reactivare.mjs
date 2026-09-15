@@ -53,9 +53,9 @@ check("golurile se spun, nu se ascund", (firma?.text ?? "").includes("Necompleta
 const cuprins = await page.$$eval("nav[aria-label] a[href^='#']", (as) =>
   as.map((a) => ({ href: a.getAttribute("href"), text: a.textContent.trim() }))
 );
-// Șapte, de la „Buletine de analiză" (G-7, 11.09) și „Jurnal de audit" (P1.11, 12.09) — amândouă
-// tot numai pentru cine le poate citi; proba rulează ca admin.
-check("pagina are cuprins", cuprins.length === 7, cuprins.map((c) => c.text).join(" · "));
+// Șase: „Jurnal de audit" (P1.11, 12.09) numai pentru cine îl poate citi, iar „Buletine de analiză"
+// (G-7) a ieșit pe 14.09.2026 odată cu buletinele. Proba rulează ca admin.
+check("pagina are cuprins", cuprins.length === 6, cuprins.map((c) => c.text).join(" · "));
 check(
   "fiecare intrare din cuprins are ținta ei",
   await page.evaluate((hrefs) => hrefs.every((h) => !!document.querySelector(h)),
