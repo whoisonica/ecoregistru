@@ -777,7 +777,7 @@ Deci regimul uleiurilor uzate e în întregime în art. 31–32.*
 > **Deci felia nu se poate dimensiona azi**, şi asta e chiar răspunsul pasului întâi: nu se
 > scrapează un tabel care va fi înlocuit de altul, cu altă formă, când apare procedura.
 > ⏳ **De reverificat**, şi n-are rost mai des de o dată pe lună. Felia: `todo-lansare.md` **P3.9**,
-> `todo-generator.md` **G-6**.
+> `status.md` **G-6**.
 
 ### 2.6-bis Viza anuală a autorizaţiei de mediu — ce spune actul (verificat 14.09.2026)
 
