@@ -176,6 +176,29 @@ class BillingRunIT {
                 any(), any(), any(), any());
     }
 
+    /**
+     * Testul de pe producție din 15.09: „1 căzute" era altă firmă, iar abonamentul care începea pe 22.09
+     * lipsea din cifre. Rezultatul le numește pe amândouă.
+     */
+    @Test
+    void theResultNamesWhoFailedWhyAndWhoStartsLater() {
+        Company noAddress = company();
+        subscription(noAddress, false);
+        Company later = company();
+        Subscription upcoming = subscription(later, true);
+        upcoming.setStartedAt(START.plusDays(5));
+        subscriptionRepository.save(upcoming);
+
+        BillingRunService.Result result = billing.run(START);
+
+        assertThat(result.failures()).filteredOn(f -> f.client().equals(noAddress.getName()))
+                .singleElement().satisfies(f -> assertThat(f.reason()).contains("județul", "adresa"));
+        assertThat(result.failed()).isEqualTo(result.failures().size());
+        assertThat(result.notStarted()).filteredOn(n -> n.client().equals(later.getName()))
+                .singleElement().satisfies(n -> assertThat(n.startsOn()).isEqualTo(START.plusDays(5)));
+        assertThat(result.notStarted()).noneMatch(n -> n.client().equals(noAddress.getName()));
+    }
+
     @Test
     void anUnpaidInvoicePastItsDueDateIsPastDueUntilFgoSeesThePayment() {
         Subscription s = subscription(company(), true);

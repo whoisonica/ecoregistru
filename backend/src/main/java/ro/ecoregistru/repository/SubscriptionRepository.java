@@ -24,5 +24,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     /** F2 — the subscriptions the daily run may invoice today. */
     List<Subscription> findAllByStatusNotAndStartedAtLessThanEqual(SubscriptionStatus status, LocalDate day);
 
+    /** The ones the run skips because they start later, named back to whoever pressed the button. */
+    List<Subscription> findAllByStatusNotAndStartedAtAfter(SubscriptionStatus status, LocalDate day);
+
     List<Subscription> findAllByStatusIn(Collection<SubscriptionStatus> statuses);
 }

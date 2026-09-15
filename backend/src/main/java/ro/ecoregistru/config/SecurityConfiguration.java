@@ -70,10 +70,11 @@ public class SecurityConfiguration {
                         // Public authentication endpoints
                         .requestMatchers(WHITELIST).permitAll()
 
-                        // Public intake form
+                        // Public intake form; NETOPIA's payment notification, verified by its signature
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/api/v1/account-requests"
+                                "/api/v1/account-requests",
+                                "/api/v1/billing/netopia/ipn"
                         ).permitAll()
 
                         // Everything else requires authentication

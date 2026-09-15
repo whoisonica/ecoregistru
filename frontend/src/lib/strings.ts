@@ -1392,6 +1392,8 @@ export const strings = {
     invoicePdf: "PDF",
     runBilling: "Emite facturile scadente acum",
     runBillingDone: "Facturare rulată: {issued} emise, {failed} căzute, {paid} plătite.",
+    runBillingFailure: "Căzută — {client}: {reason}",
+    runBillingNotStarted: "Nefacturat, începe pe {date} — {client}",
     runBillingOff: "Facturarea e oprită: lipsesc cheile FGO pe server.",
     runBillingError: "Facturarea nu a putut fi rulată.",
     none: "Clientul n-are abonament: nu e facturat și nu e restricționat.",

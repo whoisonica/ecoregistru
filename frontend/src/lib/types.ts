@@ -335,6 +335,8 @@ export interface BillingRunResult {
   issued: number;
   failed: number;
   paid: number;
+  failures: { client: string; reason: string }[];
+  notStarted: { client: string; startsOn: string }[];
 }
 
 /**

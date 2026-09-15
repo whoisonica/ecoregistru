@@ -56,7 +56,16 @@ public class BillingRunService {
     private static final DateTimeFormatter RO_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final TypeReference<List<BillingCalculator.Line>> LINES = new TypeReference<>() {};
 
-    public record Result(boolean configured, int reserved, int issued, int failed, int paid) {}
+    /**
+     * {@code failures} and {@code notStarted} are for whoever pressed the button: „1 căzute" was another
+     * company's missing address, and a subscription starting next week was simply absent from the counts.
+     */
+    public record Result(boolean configured, int reserved, int issued, int failed, int paid,
+                         List<Failure> failures, List<NotStarted> notStarted) {}
+
+    public record Failure(String client, String reason) {}
+
+    public record NotStarted(String client, LocalDate startsOn) {}
 
     SubscriptionRepository subscriptionRepository;
     SubscriptionInvoiceRepository invoiceRepository;
@@ -69,19 +78,21 @@ public class BillingRunService {
     public Result run(LocalDate today) {
         if (!fgo.isConfigured()) {
             log.warn("Facturarea abonamentelor e oprită: lipsesc FGO_COD_UNIC, FGO_PRIVATE_KEY sau FGO_SERIE.");
-            return new Result(false, 0, 0, 0, 0);
+            return new Result(false, 0, 0, 0, 0, List.of(), List.of());
         }
         int reserved = tx.execute(status -> reserveDue(today));
 
         int issued = 0;
-        int failed = 0;
+        List<Failure> failures = new ArrayList<>();
         for (UUID id : invoiceRepository.findIdsByStatus(InvoiceStatus.DRAFT)) {
-            if (issue(id, today)) {
+            Failure failure = issue(id, today);
+            if (failure == null) {
                 issued++;
             } else {
-                failed++;
+                failures.add(failure);
             }
         }
+        int failed = failures.size();
 
         for (UUID id : invoiceRepository.findIdsToEmail()) {
             mail(id);
@@ -95,7 +106,11 @@ public class BillingRunService {
         }
 
         tx.executeWithoutResult(status -> updateStatuses(today));
-        Result result = new Result(true, reserved, issued, failed, paid);
+        List<NotStarted> notStarted = tx.execute(status -> subscriptionRepository
+                .findAllByStatusNotAndStartedAtAfter(SubscriptionStatus.CANCELLED, today).stream()
+                .map(s -> new NotStarted(clientName(s), s.getStartedAt()))
+                .toList());
+        Result result = new Result(true, reserved, issued, failed, paid, failures, notStarted);
         if (reserved + issued + failed + paid > 0) {
             log.info("Facturarea abonamentelor, {}: {}", today, result);
         }
@@ -127,7 +142,8 @@ public class BillingRunService {
 
     private record Draft(FgoClient.Buyer buyer, List<BillingCalculator.Line> lines, String explanation) {}
 
-    private boolean issue(UUID invoiceId, LocalDate today) {
+    /** Null once issued; otherwise who could not be invoiced and why, the same reason kept on the row. */
+    private Failure issue(UUID invoiceId, LocalDate today) {
         try {
             Draft draft = tx.execute(status -> {
                 SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
@@ -149,13 +165,18 @@ public class BillingRunService {
                 invoice.setIssuedAt(Instant.now());
                 invoice.setLastError(null);
             });
-            return true;
+            return null;
         } catch (RuntimeException e) {
             log.error("Factura {} n-a putut fi emisă în FGO: {}", invoiceId, e.getMessage());
-            String reason = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            tx.executeWithoutResult(status -> invoiceRepository.findById(invoiceId)
-                    .ifPresent(invoice -> invoice.setLastError(reason.length() > 1000 ? reason.substring(0, 1000) : reason)));
-            return false;
+            String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            String reason = message.length() > 1000 ? message.substring(0, 1000) : message;
+            String client = tx.execute(status -> invoiceRepository.findById(invoiceId)
+                    .map(invoice -> {
+                        invoice.setLastError(reason);
+                        return clientName(invoice.getSubscription());
+                    })
+                    .orElse("?"));
+            return new Failure(client, reason);
         }
     }
 

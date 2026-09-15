@@ -100,6 +100,10 @@ app:
     platforma-url: ${FGO_PLATFORMA_URL:${FRONTEND_BASE_URL:http://localhost:5173}}
     # FGO primește o cerere pe secundă.
     min-interval-ms: ${FGO_MIN_INTERVAL_MS:1000}
+  # F3 — Netopia. Fără cheia publică și semnătura POS, orice notificare de plată e refuzată.
+  netopia:
+    pos-signature: ${NETOPIA_POS_SIGNATURE:}
+    public-key: ${NETOPIA_PUBLIC_KEY:}
   billing:
     cron: ${BILLING_CRON:0 30 6 * * *}
 

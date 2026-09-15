@@ -133,11 +133,18 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
         notify(t.runBillingOff, "error");
         return;
       }
+      // Firma și motivul, nu doar cifra: „1 căzute" din testul de pe 15.09 era altă firmă.
       notify(
-        t.runBillingDone
-          .replace("{issued}", String(result.issued))
-          .replace("{failed}", String(result.failed))
-          .replace("{paid}", String(result.paid)),
+        [
+          t.runBillingDone
+            .replace("{issued}", String(result.issued))
+            .replace("{failed}", String(result.failed))
+            .replace("{paid}", String(result.paid)),
+          ...result.failures.map((f) => t.runBillingFailure.replace("{client}", f.client).replace("{reason}", f.reason)),
+          ...result.notStarted.map((n) =>
+            t.runBillingNotStarted.replace("{client}", n.client).replace("{date}", formatDate(n.startsOn))
+          ),
+        ].join("\n"),
         result.failed > 0 ? "error" : "success"
       );
     } catch (err) {

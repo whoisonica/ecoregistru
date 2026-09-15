@@ -53,7 +53,8 @@ class EndpointGuardInventoryIT {
             "AuthenticationController.requestResetPassword",  // „am uitat parola", fără cont deschis
             "AuthenticationController.resetPassword",         // linkul din mail, inclusiv invitaţia
             "AuthenticationController.ping",
-            "AccountRequestController.submit"                 // formularul public de cerere de cont
+            "AccountRequestController.submit",                // formularul public de cerere de cont
+            "NetopiaIpnController.ipn"                        // rezultatul plății de la Netopia, crezut doar semnat (NetopiaIpnIT)
     );
 
     /**

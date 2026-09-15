@@ -97,7 +97,7 @@ function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: numbe
             )}
           >
             <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="flex-1">{toast.message}</span>
+            <span className="flex-1 whitespace-pre-line">{toast.message}</span>
             <button
               type="button"
               onClick={() => onDismiss(toast.id)}
