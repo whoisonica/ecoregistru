@@ -135,7 +135,7 @@ export function Tooltip({ content, children, className }: TooltipProps) {
               visibility: coords ? "visible" : "hidden",
             }}
             className={cn(
-              "pointer-events-none fixed z-[70] max-w-xs animate-fade-in rounded-lg bg-gray-900 px-3 py-2 text-xs leading-relaxed text-white shadow-popover",
+              "pointer-events-none fixed z-[70] max-w-xs animate-fade-in rounded-md bg-panel px-3 py-2 text-xs leading-relaxed text-panel-text shadow-popover",
               className
             )}
           >

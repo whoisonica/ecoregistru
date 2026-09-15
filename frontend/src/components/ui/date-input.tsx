@@ -1,5 +1,6 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
+import { fieldClasses } from "@/components/ui/input";
 
 /**
  * Native <input type="date"> styled to match the other form controls.
@@ -12,10 +13,8 @@ export const DateInput = forwardRef<
   <input
     ref={ref}
     type="date"
-    className={cn(
-      "flex h-10 w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50",
-      className
-    )}
+    // Aceleași clase ca `Input`: data e o rubrică, nu o excepție. Cifrele în mono, ca peste tot.
+    className={cn("flex h-10 font-mono", fieldClasses, className)}
     {...props}
   />
 ));

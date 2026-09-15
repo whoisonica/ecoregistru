@@ -49,11 +49,13 @@ export function PillGroup<T extends string>({
           <label
             key={option.value}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition-colors",
-              "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand/20",
+              // „Cântar”: o tastă, nu o pastilă. Cea apăsată e grafit cu text alb, ca segmentul ales
+              // dintr-un comutator.
+              "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
               checked
-                ? "border-brand bg-brand-50 text-brand-800"
-                : "border-line bg-surface text-content-strong hover:border-line-strong",
+                ? "border-content bg-content text-surface"
+                : "border-line-strong bg-surface text-content hover:border-content-subtle",
               off ? "cursor-not-allowed opacity-55" : "cursor-pointer"
             )}
           >
@@ -68,7 +70,7 @@ export function PillGroup<T extends string>({
             />
             {checked && multiple && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
             {option.label}
-            {option.code && <span className="font-mono text-xs font-medium opacity-70">{option.code}</span>}
+            {option.code && <span className="font-mono text-[0.6875rem] opacity-70">{option.code}</span>}
           </label>
         );
       })}

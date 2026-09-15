@@ -47,11 +47,12 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
-      <Card className="w-full max-w-sm p-8">
+    // Pe grafit, ca panoul: prima privire spune același lucru ca restul aplicației.
+    <div className="flex h-full flex-col items-center justify-center gap-6 bg-panel p-4">
+      <Card className="w-full max-w-sm border-panel-line p-8 shadow-popover">
         <div className="mb-6 text-center">
-          <div className="text-2xl font-bold text-brand"><BrandName /></div>
-          <div className="text-sm text-content-muted">{strings.tagline}</div>
+          <div className="text-2xl font-semibold text-content"><BrandName /></div>
+          <div className="mt-1 text-sm text-content-muted">{strings.tagline}</div>
         </div>
         <h1 className="mb-4 text-lg font-semibold">{strings.login.title}</h1>
         {expired && (
@@ -107,7 +108,7 @@ export function LoginPage() {
           </Link>
         </p>
       </Card>
-      <LegalFooter />
+      <LegalFooter className="text-panel-mid [&_a:hover]:text-lcd-digit" />
     </div>
   );
 }

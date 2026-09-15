@@ -9,8 +9,9 @@ import type { Deadline, DeadlineGenerationResponse } from "@/lib/types";
 const deadlinesRoot = ["deadlines"] as const;
 export const deadlinesKey = (year: number) => [...deadlinesRoot, year] as const;
 
-export function useDeadlines(year: number) {
+export function useDeadlines(year: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: deadlinesKey(year),
     queryFn: async () =>
       (await api.get<Deadline[]>("/api/v1/deadlines", { params: { year } })).data,

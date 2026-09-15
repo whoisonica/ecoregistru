@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Ban, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
+import { Ban, FileUp, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { canManage as roleCanManage, canWrite as roleCanWrite } from "@/lib/roles";
 import {
@@ -13,7 +13,7 @@ import type { WorkPoint } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -148,10 +148,18 @@ export function SettingsPage() {
         description={t.subtitle}
         actions={
           canManage && (
-            <Button onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t.add}
-            </Button>
+            <>
+              {/* Importul din Excel nu mai stă în meniu (15.09.2026): e un lucru de făcut o dată, la
+                  implementare, deci stă la Setări, lângă cine configurează firma. */}
+              <LinkButton to="/import" variant="outline">
+                <FileUp className="mr-2 h-4 w-4" />
+                {strings.nav.importExcel}
+              </LinkButton>
+              <Button onClick={openCreate} hotkey="N">
+                <Plus className="mr-2 h-4 w-4" />
+                {t.add}
+              </Button>
+            </>
           )
         }
       />

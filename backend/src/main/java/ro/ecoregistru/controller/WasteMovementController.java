@@ -17,8 +17,10 @@ import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.Anexa2ThresholdResponse;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.MovementSummaryResponse;
+import ro.ecoregistru.controller.response.MovementTotalsResponse;
 import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
+import ro.ecoregistru.enums.MovementDirection;
 import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.service.WasteMovementService;
 
@@ -54,7 +56,10 @@ public class WasteMovementController {
      * @param missingOperationCode only the rows without an R/D code: „arată-mi ce blochează
      *                             depunerea", sent from the dashboard
      * @param register             only one register's rows: „Generare" asks for {@code ANEXA_1},
-     *                             „Intrări și ieșiri" for {@code ART_48}
+     *                             „Intrări" and „Ieșiri" for {@code ART_48}
+     * @param direction            only what came in ({@code IN}: takeovers) or only what went out
+     *                             ({@code OUT}: the same rows as {@code leftSite}) — the two art. 48
+     *                             screens, separate since 15.09.2026
      * @param sort  a column key from the table header; anything unknown falls back to the default
      *               order rather than being refused, because a stale bookmark should open a table,
      *               not an error
@@ -68,13 +73,29 @@ public class WasteMovementController {
             @RequestParam(defaultValue = "false") boolean leftSite,
             @RequestParam(defaultValue = "false") boolean missingOperationCode,
             @RequestParam(required = false) WasteRegister register,
+            @RequestParam(required = false) MovementDirection direction,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "false") boolean asc) {
         return movementService.list(year, month, workPointId, wasteCodeId, leftSite,
-                missingOperationCode, register, search, page, size, sort, asc);
+                missingOperationCode, register, direction, search, page, size, sort, asc);
+    }
+
+    /**
+     * The figures above a list: the same filters as {@link #list}, added up over every row they
+     * let through, not over one page. Kilograms, plus the counts the screen colours („de
+     * cântărit", „fără cod R/D").
+     */
+    @GetMapping("/totals")
+    public MovementTotalsResponse totals(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) UUID workPointId,
+            @RequestParam(required = false) WasteRegister register,
+            @RequestParam(required = false) MovementDirection direction) {
+        return movementService.totals(year, month, workPointId, register, direction);
     }
 
     /**

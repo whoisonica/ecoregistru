@@ -28,7 +28,7 @@ export function NotFoundPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <Card className="w-full max-w-md p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-surface-muted">
           <Compass className="h-6 w-6 text-content-subtle" aria-hidden />
         </div>
         <div className="text-2xl font-bold text-brand"><BrandName /></div>

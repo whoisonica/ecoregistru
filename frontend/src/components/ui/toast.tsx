@@ -71,9 +71,10 @@ const variantIcon = {
 } as const;
 
 const variantStyle: Record<ToastVariant, string> = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  error: "border-red-200 bg-red-50 text-red-800",
-  info: "border-line bg-surface text-content-strong",
+  // Pe grafit, ca panoul: un mesaj scurt care vine de la aparat, nu o hârtie colorată.
+  success: "border-panel-line bg-panel text-lcd-digit",
+  error: "border-panel-line bg-panel text-lcd-bad",
+  info: "border-panel-line bg-panel text-panel-text",
 };
 
 function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
@@ -92,7 +93,7 @@ function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: numbe
             role={isError ? "alert" : "status"}
             aria-live={isError ? "assertive" : "polite"}
             className={cn(
-              "pointer-events-auto flex animate-slide-up items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-popover",
+              "pointer-events-auto flex animate-slide-up items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-popover",
               variantStyle[toast.variant]
             )}
           >

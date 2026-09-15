@@ -16,13 +16,15 @@ interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
 export function Label({ className, required, children, ...props }: LabelProps) {
   return (
     <label
-      className={cn("mb-1.5 block text-sm font-bold text-content-strong", className)}
+      // „Cântar”: eticheta e mică și liniștită, ca pe un formular tipărit; rubrica de sub ea e ce
+      // se citește.
+      className={cn("mb-1 block text-xs font-medium text-content-muted", className)}
       {...props}
     >
       {children}
       {required && (
         <>
-          <span aria-hidden="true" className="ml-0.5 text-red-600">
+          <span aria-hidden="true" className="ml-0.5 text-state-bad">
             *
           </span>
           <span className="sr-only"> {strings.common.requiredMarker}</span>

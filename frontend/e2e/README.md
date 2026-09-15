@@ -1,10 +1,17 @@
 # Probe de interfaţă
 
-Şaisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
-Ultima rulare completă, **15.09.2026**, pe ramura `feat/generator-100`: **„✓ 16 probe, toate trec", exit 0**.
-Proba 16 e acum importul din Excel (P2.15); cea veche, a buletinelor, a fost ştearsă pe 14.09.
-**15.09.2026, 17:11 (depozitul D1.6):** proba 7 aşteaptă acum **şase grupe** în „Datele firmei” şi **şapte intrări** în
-cuprinsul Setărilor pe firma demo `BOTH` — a apărut „Sortimente”, doar la firmele cu registrul art. 48.
+Optsprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
+
+🎛️ **15.09.2026, noaptea — direcția „Cântar” (`docs/stil-interfata.md`), toate cele 18 suite rulate** pe baza
+`eco_e2e_stil`: **15 trec**; 9, 10 și 11 cad **pe date** (baza n-are termene generate, nici depășite) — identic cu
+rularea de dinainte, pe `origin/main`, pe aceeași bază. Ce s-a mutat odată cu stilul: probele 4 și 6 caută mesajul
+de eroare după `p[data-field-error]`, nu după clasa de culoare; proba 6 numără drumurile „Vezi liniile” **fără** cel
+din banda de sus; proba 10 acceptă butonul de 40px; proba 11 citește dala de termene prin `[data-testid="stat-deadlines"]`;
+proba 12 deschide meniul contului (documentele juridice nu mai sunt subsol în bară); proba 16 caută Importul în
+Setări, nu în meniu; 1, 4, 5, 8 folosesc numele noi („Deșeuri proprii”, `/intrari`, `/iesiri`). **Proba 18** e a
+panoului. `node e2e/shots-cantar.mjs` face capturi ale tuturor ecranelor la 1440px și 375px, doar pentru privit.
+⚠️ Cu IBM Plex textul e mai lat decât cu Nunito: Generare a fost măsurat 1301px în 1114 la 1440px înainte de
+compactare (creionul în loc de „Editează”, „Cântar” în loc de „Adaugă cantitatea”, celule `px-2.5`), 1114/1114 după.
 
 🎨 **15.09.2026, seara — stilul „Prietenos” (`docs/stil-interfata.md`), toate cele 17 suite rulate** pe o bază nouă
 (`eco_e2e_stil`, creată de utilizatorul de sistem cu `-O eco`, fiindcă `eco` n-are `CREATEDB`): **14 trec**; 9, 10 și 11
@@ -156,6 +163,7 @@ ramură nu atinge `node_modules`.
 | `14-codul-oglinda.mjs` | ✅ **Rulată prima dată pe 14.09.2026** — a găsit **BUG-014**: explicaţia insignei nu se deschidea la atingere pe telefon, iar pe desktop clicul o închidea (hover-ul şi `focus` o deschideau, clicul o comuta la loc). Are acum verificări separate pentru hover, clic şi atingere (`hasTouch`), iar curăţenia rulează şi când proba cade la mijloc. Badge-ul „Cod-oglindă" apare pe mişcarea fără atașament şi **nu** pe un cod obişnuit, stă în celula codului (se pune la îndoială încadrarea, nu predarea), iar motivul citează art. 8 alin. (2), numeşte perechea periculoasă şi spune că mişcarea rămâne înregistrată. ⚠️ **Îşi scrie singură cele două mişcări şi le şterge la sfârşit** — nu se sprijină pe seed. Tipăreşte verdictul din 14.09 („✓ proba 14 trece."); fără el, rularea completă o arăta „fără verdict" deşi trecuse. |
 | ~~`16-buletine.mjs`~~ | 🗑️ **Ştearsă pe 14.09.2026, seara, odată cu buletinele** (specialista: un generator nu le completează). Istoric: ✅ **Scrisă şi rulată pe 14.09.2026, verde — 22 de verificări, 2 nerulate şi scrise ca atare.** Buletinele de analiză din Setări (G-7): formularul gol marchează **toate patru** rubricile, fiecare legată de mesajul ei, şi nu pleacă la server; **controlul** — laboratorul completat îşi pierde marcajul, celelalte trei nu. Rubrica de dată are `max` = azi. Prin API: data în viitor, fişierul lipsă şi laboratorul gol sunt refuzate **fiecare cu codul lui**, iar controlul pozitiv (aceeaşi cerere, data de azi) nu mai e refuzat pentru dată; nimic scris. Cititorul vede lista, nu vede butonul, şi ia **403** pe lângă ecran. **Proba negativă:** verificarea laboratorului scoasă din `AnalysisBulletinsSection` → cad exact cele două verificări despre ea. ⬜ **Nerulate:** „Anterior" pe al doilea buletin şi stingerea badge-ului „Cod-oglindă" — cer Cloudinary. Local, controlul pozitiv ia **500** la urcare (clientul Cloudinary gol), nu un mesaj: pe producţie cheia există. Nu scrie nimic în bază. |
 | `16-import.mjs` | Importul din Excel (P2.15), pe ecran: „Importă” rămâne blocat până când **acelaşi** fişier a trecut o verificare fără erori, alegerea altui fişier îl blochează la loc, un fişier stricat îşi spune mesajul pe ecran, iar şablonul chiar se descarcă. Regulile de import sunt ale `ExcelImportIT`. Nu salvează nimic: verifică doar şablonul gol. |
+| `18-panou-cantar.mjs` | ✅ **Scrisă și rulată pe 15.09.2026, verde.** Panoul „Cântar”: firma ca etichetă (nume, CUI, tip), afișajul lunii cu kg și verdict, cele trei taste de adăugare pe firma demo (`BOTH`), cifrele 1–9, 0 pe meniu în ordine, Generare / Intrări / Ieșiri ca intrări proprii, Import și Abonament **absente** din meniu, panoul de 262px; indicatorii nu scriu niciodată „0” și nici „?” cu serverul sus; tastele 3 și 4 deschid Intrări și Ieșiri, cu totalurile și coloanele fiecăruia (Cod R/D și Către pe Ieșiri, fără Secția); I și E deschid formularele potrivite de pe Acasă; `[` strânge panoul la 64px și scrie în `localStorage`; culoarea pubelei pe fiecare cod cunoscut din listă, roșu pe periculoase, **nimic** pe un cod necunoscut; `/intrari-iesiri` duce la `/intrari`; pe telefon bara de jos cu cele cinci intrări, nimic lateral, sertarul din „Mai mult”. Nu scrie nimic în bază. |
 | `17-persoane-fizice.mjs` | Tabul „Persoane fizice” de lângă Parteneri (D1.7b): se deschide din clic şi din URL, un CNP cu cifra de control greşită îşi marchează rubrica fără să salveze, lista arată doar ultimele 4 cifre şi caută după ele, editarea primeşte CNP-ul întreg, iar vizualizatorul vede lista fără „Adaugă persoană”. Regulile sunt ale `NaturalPersonRegistryIT`. Persoana creată se dezactivează şi se şterge la final. Merge şi pe o bază proaspăt seedată (cere doar firma demo, care are art. 48). |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.

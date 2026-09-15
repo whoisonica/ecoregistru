@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { MOVEMENTS_PATH, registersFor } from "@/lib/movementScreens";
 import {
+  SCREEN_PATH,
+  directionOf,
+  registerOf,
+  screenOfMovement,
+  screensFor,
+  type MovementScreen,
+} from "@/lib/movementScreens";
+import {
+  ArrowDownToLine,
   ArrowRight,
+  ArrowUpFromLine,
   Copy,
   ExternalLink,
   Plus,
@@ -13,6 +22,8 @@ import {
   Scale,
   Truck,
 } from "lucide-react";
+import { BinSwatch } from "@/components/ui/bin-swatch";
+import { Menu, MenuItem } from "@/components/ui/menu";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { usePartners } from "@/hooks/usePartners";
@@ -23,6 +34,7 @@ import { useWasteCodeSearch } from "@/hooks/useWasteCodes";
 import {
   useMovement,
   useMovements,
+  useMovementTotals,
   useCreateMovement,
   useUpdateMovement,
   useDeleteMovement,
@@ -38,7 +50,9 @@ import type {
   TransportDestination,
   TransportMeans,
   WasteDestination,
+  MovementDirection,
   MovementFilters,
+  MovementTotals,
   PhysicalState,
   StorageType,
   TreatmentMethod,
@@ -53,7 +67,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
-import { formatDate, withCount } from "@/lib/utils";
+import { cn, formatDate, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -126,14 +140,18 @@ function suggestedPackagingMaterial(codeLabel: string): PackagingMaterial | null
  * company's own waste (Anexa 1), „Intrări și ieșiri" the goods taken over from third parties
  * (art. 48). UNCLASSIFIED_OUT is in no list: it is the state of legacy rows, written by a migration.
  */
-function operationsFor(screen: WasteRegister): WasteOperation[] {
+function operationsFor(screen: WasteRegister, direction: MovementDirection | undefined): WasteOperation[] {
   // Pe „Generare" rămâne o singură opţiune, fiindcă mişcarea porneşte mereu de la generare: ce se
   // întâmplă cu deşeul după se alege mai jos, sub transport. Cererea specialistei, 25.08.2026:
   // „aici, la operaţiune, trebuie să rămână Generator [...] şi după, mai jos, trebuie pus în tab cu
   // Valorificare/Eliminare [...] după ce alegi la Transport spre Valorificare să apară următoarele
-  // taburi cu codurile". Pe „Intrări și ieșiri" ieşirea e directă: marfa preluată n-a fost generată
-  // de firmă, deci nu se poate scrie ca generare urmată de predare.
-  return screen === "ANEXA_1" ? ["GENERATED"] : ["COLLECTED", "RECOVERED", "DISPOSED"];
+  // taburi cu codurile". Pe art. 48 ieşirea e directă: marfa preluată n-a fost generată de firmă,
+  // deci nu se poate scrie ca generare urmată de predare. De pe 15.09.2026 ecranul spune și
+  // direcția: „Intrări" oferă preluarea, „Ieșiri" valorificarea și eliminarea.
+  if (screen === "ANEXA_1") return ["GENERATED"];
+  if (direction === "IN") return ["COLLECTED"];
+  if (direction === "OUT") return ["RECOVERED", "DISPOSED"];
+  return ["COLLECTED", "RECOVERED", "DISPOSED"];
 }
 
 /**
@@ -193,20 +211,25 @@ function todayIso() {
  * din paletă — duc tot aici, deci se trimit mai departe cu tot cu parametri: pe ecranul mișcării
  * numite în `?miscare=`, altfel pe primul ecran al firmei.
  */
-export function MovementsRedirect() {
+export function MovementsRedirect({ fallback }: { fallback?: MovementScreen } = {}) {
   const location = useLocation();
   const { data: company, isLoading } = useCurrentCompany();
   const [focusId] = useUrlState("miscare");
   const focused = useMovement(focusId || null);
   if (isLoading || (focusId && focused.isLoading)) return null;
-  const visible = registersFor(company?.type);
-  const target =
-    focused.data && visible.includes(focused.data.register) ? focused.data.register : visible[0];
-  return <Navigate replace to={MOVEMENTS_PATH[target] + location.search} />;
+  const visible = screensFor(company?.type);
+  const target = focused.data
+    ? screenOfMovement(focused.data.register, focused.data.operation, company?.type)
+    : fallback && visible.includes(fallback)
+      ? fallback
+      : visible[0];
+  return <Navigate replace to={SCREEN_PATH[target] + location.search} />;
 }
 
-export function MovementsPage({ register }: { register: WasteRegister }) {
+export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const canWrite = useCanWrite();
+  const register = registerOf(screen);
+  const direction = directionOf(screen);
 
   const { data: workPoints } = useWorkPoints();
   const activeWorkPoints = useMemo(
@@ -243,8 +266,9 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
     if (m) f.month = Number(m);
     if (workPointFilter) f.workPointId = workPointFilter;
     f.register = register;
+    if (direction) f.direction = direction;
     return f;
-  }, [monthFilter, workPointFilter, register]);
+  }, [monthFilter, workPointFilter, register, direction]);
 
   /**
    * Căutarea, sortarea și paginarea se fac **la server** (P3.1).
@@ -300,9 +324,10 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
   const { download: downloadAviz, downloadingId: downloadingAvizId } = useAvizDownload();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } = useAnexa2Download();
   const { data: company } = useCurrentCompany();
-  const isGeneration = register === "ANEXA_1";
+  const isGeneration = screen === "GENERATED";
   const location = useLocation();
   const navigate = useNavigate();
+  const totals = useMovementTotals(filters);
 
   /**
    * Mișcarea pe care o cere adresa, deschisă direct în formularul de editare.
@@ -327,11 +352,11 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
   useEffect(() => {
     if (!focusId) return;
     if (focused.data) {
-      // Rândul numit e al celuilalt ecran (o firmă „Generator și colector"): se deschide acolo, cu
-      // tot cu parametri, ca formularul să pornească pe registrul lui.
-      const own = focused.data.register;
-      if (own !== register && registersFor(company?.type).includes(own)) {
-        navigate(MOVEMENTS_PATH[own] + location.search, { replace: true });
+      // Rândul numit e al altui ecran (o intrare cerută de pe Ieșiri, o generare de pe Intrări): se
+      // deschide acolo, cu tot cu parametri, ca formularul să pornească pe registrul și direcția lui.
+      const own = screenOfMovement(focused.data.register, focused.data.operation, company?.type);
+      if (own !== screen && company) {
+        navigate(SCREEN_PATH[own] + location.search, { replace: true });
         return;
       }
       // Aceleași trei atribuiri ca `openEdit`, scrise aici ca efectul să nu atârne de o funcție
@@ -354,8 +379,8 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
     focused.isError,
     setFocusId,
     notify,
-    register,
-    company?.type,
+    screen,
+    company,
     navigate,
     location.search,
   ]);
@@ -448,53 +473,71 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
   useHotkey("n", openCreate, { enabled: Boolean(canWrite && activeWorkPoints.length > 0) });
 
-  // Ecranul celuilalt tip de firmă, deschis dintr-un link sau o adresă scrisă de mână.
-  const visibleRegisters = registersFor(company?.type);
-  if (company && !visibleRegisters.includes(register)) {
-    return <Navigate replace to={MOVEMENTS_PATH[visibleRegisters[0]] + location.search} />;
+  // Ecranul altui tip de firmă, deschis dintr-un link sau o adresă scrisă de mână.
+  const visibleScreens = screensFor(company?.type);
+  if (company && !visibleScreens.includes(screen)) {
+    return <Navigate replace to={SCREEN_PATH[visibleScreens[0]] + location.search} />;
   }
+
+  // Numele ecranului și al butonului lui, după ecran (proprietarul, 15.09.2026): „Adaugă deșeuri" pe
+  // generator, „Deșeuri proprii" unde firma e și colector, „Intrare" / „Ieșire" pe art. 48.
+  const hasCollectorScreens = visibleScreens.includes("IN");
+  const heading = {
+    GENERATED: {
+      title: t.generatorTitle,
+      subtitle: t.generatorSubtitle,
+      add: hasCollectorScreens ? t.generatorAddOwn : t.generatorAdd,
+      key: "N",
+      icon: Plus,
+      variant: "default" as const,
+    },
+    IN: { title: t.inTitle, subtitle: t.inSubtitle, add: t.inAdd, key: "I", icon: ArrowDownToLine, variant: "inbound" as const },
+    OUT: { title: t.outTitle, subtitle: t.outSubtitle, add: t.outAdd, key: "E", icon: ArrowUpFromLine, variant: "outline" as const },
+  }[screen];
 
   return (
     <div>
       <PageHeader
-        title={isGeneration ? t.generatorTitle : t.title}
-        description={isGeneration ? t.generatorSubtitle : t.subtitle}
+        title={heading.title}
+        description={heading.subtitle}
         actions={
           <>
+            {/* Evidența cronologică art. 48 e un singur document, pe amândouă ecranele art. 48. */}
             {!isGeneration && (
               <>
-                <Button
-                  variant="outline"
-                  loading={art48Busy === "xlsx"}
-                  disabled={art48Busy != null}
-                  onClick={() => downloadArt48("xlsx")}
-                  title={t.art48Hint.replace("{year}", String(filters.year))}
-                >
-                  {t.art48Xlsx}
-                </Button>
-                <Button
-                  variant="outline"
-                  loading={art48Busy === "pdf"}
-                  disabled={art48Busy != null}
-                  onClick={() => downloadArt48("pdf")}
-                  title={t.art48Hint.replace("{year}", String(filters.year))}
-                >
-                  {t.art48Pdf}
-                </Button>
+                {/* Un singur buton cu meniu pentru cele două formate: numele documentului o dată,
+                    nu de două ori pe antet. Explicația (anul, chestionarul SIM) stă în meniu. */}
+                <Menu label={t.art48Menu} align="right" disabled={art48Busy != null}>
+                  <MenuItem
+                    icon={FileText}
+                    onClick={() => downloadArt48("xlsx")}
+                    hint={t.art48Hint.replace("{year}", String(filters.year))}
+                  >
+                    {t.art48Xlsx}
+                  </MenuItem>
+                  <MenuItem icon={FileText} onClick={() => downloadArt48("pdf")}>
+                    {t.art48Pdf}
+                  </MenuItem>
+                </Menu>
               </>
             )}
             {canWrite && (
-              <Button onClick={openCreate} disabled={activeWorkPoints.length === 0}>
-                <Plus className="mr-2 h-4 w-4" />
-                {isGeneration ? t.generatorAdd : t.add}
+              <Button
+                variant={heading.variant}
+                onClick={openCreate}
+                disabled={activeWorkPoints.length === 0}
+                hotkey={heading.key}
+              >
+                <heading.icon className="mr-2 h-4 w-4" />
+                {heading.add}
               </Button>
             )}
           </>
         }
       />
 
-      {company?.type === "COLLECTOR" && (
-        <p className="mt-4 rounded-md border border-line bg-surface-muted px-3 py-2 text-sm text-content-strong">
+      {company?.type === "COLLECTOR" && screen === "IN" && (
+        <p className="mt-4 rounded-md border border-line-strong bg-surface-muted px-3 py-2 text-sm text-content-strong">
           {t.collectorOwnWasteHint}
         </p>
       )}
@@ -505,8 +548,10 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
         </p>
       )}
 
+      <TotalsStrip screen={screen} totals={totals.data} loading={totals.isLoading} failed={totals.isError} />
+
       {/* Filters */}
-      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
+      <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="filter-month">{t.filterMonth}</Label>
           <MonthInput
@@ -560,7 +605,6 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                   <SortableTH sortKey="wasteCode" sort={view.sort} onSort={view.toggleSort}>
                     {t.colWasteCode}
                   </SortableTH>
-                  <TH>{t.colOperation}</TH>
                   <SortableTH
                     sortKey="quantity"
                     sort={view.sort}
@@ -569,10 +613,12 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                   >
                     {t.colQuantity}
                   </SortableTH>
+                  {/* Pe Intrări operațiunea e mereu preluarea: coloana n-ar spune nimic. */}
+                  {screen !== "IN" && <TH>{screen === "OUT" ? t.colRdCode : t.colOperation}</TH>}
                   <SortableTH sortKey="partnerName" sort={view.sort} onSort={view.toggleSort}>
-                    {t.colPartner}
+                    {screen === "IN" ? t.colFrom : screen === "OUT" ? t.colTo : t.colPartner}
                   </SortableTH>
-                  <TH>{t.colInternalGenerator}</TH>
+                  {isGeneration && <TH>{t.colInternalGenerator}</TH>}
                   <SortableTH sortKey="workPointName" sort={view.sort} onSort={view.toggleSort}>
                     {t.colWorkPoint}
                   </SortableTH>
@@ -583,7 +629,7 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
               <TBody>
                 {(isLoading || view.visible.length === 0) && (
                   <TableFallbackRow
-                    columns={canWrite ? 9 : 8}
+                    columns={7 + (screen !== "IN" ? 1 : 0) + (isGeneration ? 1 : 0) + (canWrite ? 1 : 0)}
                     loading={isLoading}
                     icon={Truck}
                     title={
@@ -620,15 +666,16 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                 )}
                 {view.visible.map((m) => (
                   <TR key={m.id}>
-                    <TD className="whitespace-nowrap">{formatDate(m.date)}</TD>
+                    <TD className="whitespace-nowrap font-mono text-xs">{formatDate(m.date)}</TD>
                     <TD>
-                      <span className="font-medium text-content">{m.wasteCode}</span>
+                      <BinSwatch code={m.wasteCode} hazardous={m.hazardous} />
+                      <span className="font-mono font-medium text-content">{m.wasteCode}</span>
                       {m.hazardous && (
                         <Badge variant="danger" className="ml-2">
                           {t.hazardous}
                         </Badge>
                       )}
-                      <span className="block max-w-xs truncate text-xs text-content-subtle">
+                      <span className="block max-w-[12rem] truncate text-xs text-content-muted">
                         {m.wasteCodeName}
                       </span>
                       {/* Galben, ca „Autorizație expirată”: rândul nu e greșit, dar poartă o
@@ -653,27 +700,10 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                         </span>
                       )}
                     </TD>
-                    <TD>
-                      {/* A legacy exit is the one row on this screen that is wrong as it stands, so
-                          it is red, not grey: the quantity left the site but reaches neither
-                          official column of Anexa 1. Editing the row is how it gets completed. */}
-                      {m.operation === "UNCLASSIFIED_OUT" ? (
-                        <Tooltip content={t.missingCodeHint}>
-                          <Badge variant="danger">{t.missingCode}</Badge>
-                        </Tooltip>
-                      ) : (
-                        <>
-                          {e.wasteOperation[m.operation]}
-                          {m.operationCode && (
-                            <span className="ml-1 text-xs text-content-subtle">({m.operationCode})</span>
-                          )}
-                        </>
-                      )}
-                    </TD>
-                    <TD className="whitespace-nowrap text-right">
+                    <TD className="whitespace-nowrap text-right font-mono font-medium">
                       {m.quantity != null ? (
                         <>
-                          {m.quantity} {e.unit[m.unit]}
+                          {m.quantity} <span className="text-xs font-normal text-content-muted">{e.unit[m.unit]}</span>
                         </>
                       ) : (
                         <Tooltip content={t.awaitingWeighingHint}>
@@ -681,6 +711,30 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                         </Tooltip>
                       )}
                     </TD>
+                    {screen !== "IN" && (
+                      <TD>
+                        {/* A legacy exit is the one row on this screen that is wrong as it stands, so
+                            it is red, not grey: the quantity left the site but reaches neither
+                            official column of Anexa 1. Editing the row is how it gets completed. */}
+                        {m.operation === "UNCLASSIFIED_OUT" ? (
+                          <Tooltip content={t.missingCodeHint}>
+                            <Badge variant="danger">{t.missingCode}</Badge>
+                          </Tooltip>
+                        ) : screen === "OUT" ? (
+                          <>
+                            <span className="font-mono font-medium">{m.operationCode ?? "—"}</span>
+                            <span className="ml-1.5 text-xs text-content-muted">{e.wasteOperation[m.operation]}</span>
+                          </>
+                        ) : (
+                          <>
+                            {e.wasteOperation[m.operation]}
+                            {m.operationCode && (
+                              <span className="ml-1 font-mono text-xs text-content-muted">{m.operationCode}</span>
+                            )}
+                          </>
+                        )}
+                      </TD>
+                    )}
                     <TD>
                       {m.partnerName || "—"}
                       {/* Galben, nu roșu: predarea chiar a avut loc, iar rândul nu e greșit — spre
@@ -708,9 +762,9 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                             <Link
                               to={`/parteneri?partener=${m.partnerId}`}
                               aria-label={why}
-                              className="mt-0.5 block w-fit rounded-full hover:opacity-80"
+                              className="mt-0.5 block w-fit rounded hover:opacity-80"
                             >
-                              <Badge variant="warning">
+                              <Badge variant="warning" className="whitespace-normal">
                                 {expiry
                                   ? `${t.authExpiredAtHandover} · ${expiry}`
                                   : t.authExpiredAtHandover}
@@ -725,8 +779,8 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                           );
                         })()}
                     </TD>
-                    <TD>{m.internalGeneratorName || "—"}</TD>
-                    <TD>{m.workPointName}</TD>
+                    {isGeneration && <TD>{m.internalGeneratorName || "—"}</TD>}
+                    <TD className="text-content-muted">{m.workPointName}</TD>
                     <TD className="text-center">
                       {m.attachments.length > 0 ? (
                         // Buton, nu text: cifra spunea că există un document și nu ducea la el.
@@ -753,22 +807,32 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
                             când lipsește cifra; altfel, editarea. */}
                         <div className="flex items-center justify-end gap-1">
                           {m.quantity == null ? (
-                            <Button variant="ghost" size="sm" onClick={() => setWeighing(m)}>
-                              <Scale className="mr-1 h-3.5 w-3.5" />
-                              {t.recordWeight}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setWeighing(m)}
+                              aria-label={t.recordWeight}
+                            >
+                              <Scale className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                              {t.recordWeightShort}
                             </Button>
                           ) : (
-                            <Button variant="ghost" size="sm" onClick={() => openEdit(m)}>
-                              <Pencil className="mr-1 h-3.5 w-3.5" />
-                              {strings.common.edit}
+                            // Doar creionul: cu IBM Plex, „Editează" scris pe fiecare rând scotea
+                            // Generare din 1440px (măsurat 15.09.2026: 1301px în 1114). Numele
+                            // rămâne pentru cititorul de ecran și în meniul „⋯".
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              onClick={() => openEdit(m)}
+                              aria-label={strings.common.edit}
+                            >
+                              <Pencil className="h-4 w-4" aria-hidden />
                             </Button>
                           )}
                           <RowActions>
-                            {m.quantity == null && (
-                              <RowAction icon={Pencil} onClick={() => openEdit(m)}>
-                                {strings.common.edit}
-                              </RowAction>
-                            )}
+                            <RowAction icon={Pencil} onClick={() => openEdit(m)}>
+                              {strings.common.edit}
+                            </RowAction>
                             <RowAction icon={Copy} onClick={() => openDuplicate(m)}>
                               {t.duplicate}
                             </RowAction>
@@ -837,11 +901,117 @@ export function MovementsPage({ register }: { register: WasteRegister }) {
           workPoints={activeWorkPoints.map((w) => ({ id: w.id, name: w.name }))}
           defaultWorkPointId={workPointFilter || activeWorkPoints[0]?.id}
           screen={register}
+          direction={direction}
           onClose={() => setDialogOpen(false)}
         />
       )}
 
       {confirmDialog}
+    </div>
+  );
+}
+
+// --- Totalurile de deasupra listei -------------------------------------------
+
+const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
+
+/**
+ * Cifrele lunii (sau ale anului) din filtru, pe patru celule: ce contează pe ecranul ăsta.
+ *
+ * <p>Generare: generat · valorificat · eliminat · de cântărit. Intrări: primit · de la firme · de la
+ * persoane fizice · de cântărit. Ieșiri: plecat · valorificat · eliminat · fără cod R/D. Socotite de
+ * server peste toate rândurile filtrului (`useMovementTotals`), nu peste pagina adusă. Fără
+ * cântar = „de cântărit", nu zero, deci celula aia numără rânduri, nu kilograme.
+ */
+function TotalsStrip({
+  screen,
+  totals,
+  loading,
+  failed,
+}: {
+  screen: MovementScreen;
+  totals: MovementTotals | undefined;
+  loading: boolean;
+  failed: boolean;
+}) {
+  const kg = (n: number | undefined) => (n == null ? "—" : kgFormat.format(n));
+  const rows = (n: number | undefined) => (n == null ? "—" : String(n));
+  type Cell = { label: string; value: string; unit: string; tone?: "ok" | "warn" | "bad" };
+  const cells: Cell[] =
+    screen === "IN"
+      ? [
+          { label: t.totReceived, value: kg(totals?.quantityKg), unit: strings.panel.kg },
+          {
+            label: t.totFromCompanies,
+            value: totals ? kg(totals.quantityKg - totals.fromNaturalPersonsKg) : "—",
+            unit: strings.panel.kg,
+          },
+          { label: t.totFromPersons, value: kg(totals?.fromNaturalPersonsKg), unit: strings.panel.kg },
+          {
+            label: t.totAwaiting,
+            value: rows(totals?.awaitingWeighing),
+            unit: totals?.awaitingWeighing === 1 ? t.totRow : t.totRows,
+            tone: totals && totals.awaitingWeighing > 0 ? "warn" : undefined,
+          },
+        ]
+      : screen === "OUT"
+        ? [
+            { label: t.totLeft, value: kg(totals?.quantityKg), unit: strings.panel.kg },
+            { label: t.totRecovered, value: kg(totals?.recoveredKg), unit: strings.panel.kg, tone: "ok" },
+            { label: t.totDisposed, value: kg(totals?.disposedKg), unit: strings.panel.kg },
+            {
+              label: t.totMissingCode,
+              value: rows(totals?.missingOperationCode),
+              unit: totals?.missingOperationCode === 1 ? t.totRow : t.totRows,
+              tone: totals && totals.missingOperationCode > 0 ? "bad" : undefined,
+            },
+          ]
+        : [
+            { label: t.totGenerated, value: kg(totals?.quantityKg), unit: strings.panel.kg },
+            { label: t.totRecovered, value: kg(totals?.recoveredKg), unit: strings.panel.kg, tone: "ok" },
+            { label: t.totDisposed, value: kg(totals?.disposedKg), unit: strings.panel.kg },
+            {
+              label: t.totAwaiting,
+              value: rows(totals?.awaitingWeighing),
+              unit: totals?.awaitingWeighing === 1 ? t.totRow : t.totRows,
+              tone: totals && totals.awaitingWeighing > 0 ? "warn" : undefined,
+            },
+          ];
+  return (
+    <div
+      data-testid="totals"
+      className="mt-5 grid grid-cols-2 overflow-hidden rounded-md border border-line-strong sm:grid-cols-4"
+    >
+      {cells.map((c, i) => (
+        <div
+          key={c.label}
+          className={cn(
+            "px-4 py-2.5",
+            i > 0 && "sm:border-l sm:border-line-strong",
+            i % 2 === 1 && "border-l border-line-strong sm:border-l",
+            i >= 2 && "border-t border-line-strong sm:border-t-0"
+          )}
+        >
+          <div className="eyebrow truncate text-[0.625rem]">{c.label}</div>
+          <div
+            className={cn(
+              "font-mono text-[1.375rem] font-medium leading-tight",
+              failed
+                ? "text-content-subtle"
+                : c.tone === "ok"
+                  ? "text-state-ok-text"
+                  : c.tone === "warn"
+                    ? "text-state-warn-text"
+                    : c.tone === "bad"
+                      ? "text-state-bad-text"
+                      : "text-content"
+            )}
+          >
+            {failed ? strings.panel.unknown : loading && !totals ? "…" : c.value}
+            <span className="ml-1 text-xs font-normal text-content-muted">{c.unit}</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1009,6 +1179,8 @@ interface MovementFormDialogProps {
   defaultWorkPointId?: string;
   /** Ecranul din care s-a deschis — și deci registrul în care intră cantitatea. */
   screen: WasteRegister;
+  /** Pe art. 48, direcția ecranului: „Intrări" pornește pe preluare, „Ieșiri" pe valorificare. */
+  direction?: MovementDirection;
   onClose: () => void;
 }
 
@@ -1018,6 +1190,7 @@ function MovementFormDialog({
   workPoints,
   defaultWorkPointId,
   screen,
+  direction,
   onClose,
 }: MovementFormDialogProps) {
   /**
@@ -1125,7 +1298,8 @@ function MovementFormDialog({
   const [operation, setOperation] = useState<WasteOperation>(
     initialOwnExit
       ? "GENERATED"
-      : (initial?.operation ?? (screen === "ANEXA_1" ? "GENERATED" : "COLLECTED"))
+      : (initial?.operation ??
+        (screen === "ANEXA_1" ? "GENERATED" : direction === "OUT" ? "RECOVERED" : "COLLECTED"))
   );
   const [fate, setFate] = useState<ExitOperation | "">(
     initialOwnExit ? (initial.operation as ExitOperation) : ""
@@ -1299,7 +1473,7 @@ function MovementFormDialog({
 
   // O mișcare veche poate purta o operațiune pe care ecranul n-o mai oferă (generarea unui colector
   // pur, de dinainte de cele două ecrane): rămâne în listă, ca rândul să se poată salva neschimbat.
-  const offered = operationsFor(screen);
+  const offered = operationsFor(screen, direction);
   const operations =
     offered.includes(operation) || operation === "UNCLASSIFIED_OUT" ? offered : [operation, ...offered];
   /**
@@ -1629,12 +1803,20 @@ function MovementFormDialog({
         editing
           ? screen === "ANEXA_1"
             ? t.generatorEditTitle
-            : t.editTitle
+            : direction === "IN"
+              ? t.inEditTitle
+              : direction === "OUT"
+                ? t.outEditTitle
+                : t.editTitle
           : duplicateOf
             ? t.duplicateTitle
             : screen === "ANEXA_1"
               ? t.generatorAddTitle
-              : t.addTitle
+              : direction === "IN"
+                ? t.inAddTitle
+                : direction === "OUT"
+                  ? t.outAddTitle
+                  : t.addTitle
       }
       busy={isSaving}
       footer={

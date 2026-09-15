@@ -1,34 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import {
-  LayoutDashboard,
-  Truck,
-  FileSpreadsheet,
-  Users,
-  CalendarClock,
-  FolderArchive,
-  Package,
-  Settings,
-  LogOut,
-  Building2,
-  Menu,
-  X,
-  ChevronUp,
-  Receipt,
-  Briefcase,
-  FileUp,
-  type LucideIcon,
-} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Menu } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { companiesKey, useCompanies, useCurrentCompany } from "@/hooks/useCompanies";
-import { canManage as roleCanManage, isMultiCompany } from "@/lib/roles";
-import { useCanWrite } from "@/hooks/useBillingAccess";
+import { canManage as roleCanManage } from "@/lib/roles";
+import { useBillingAccess, useCanWrite } from "@/hooks/useBillingAccess";
+import { usePanelData } from "@/hooks/usePanelData";
 import { BillingBanner } from "@/components/BillingBanner";
-import { Select } from "@/components/ui/select";
 import { strings } from "@/lib/strings";
-import { MOVEMENTS_PATH, registersFor } from "@/lib/movementScreens";
-import { BrandName } from "@/components/BrandName";
+import { buildNav } from "@/lib/navItems";
+import { SCREEN_PATH } from "@/lib/movementScreens";
 import { cn } from "@/lib/utils";
 import {
   CommandPalette,
@@ -36,299 +16,50 @@ import {
   useNavigationCommands,
 } from "@/components/CommandPalette";
 import { useHotkey } from "@/hooks/useHotkey";
-import { LegalFooter } from "@/components/LegalFooter";
+import { Panel } from "@/components/panel/Panel";
+import { MobileBar } from "@/components/panel/MobileBar";
+import { BrandName } from "@/components/BrandName";
 import type { ReactNode } from "react";
 
-interface NavItem {
-  to: string;
-  label: string;
-  icon: LucideIcon;
-  end?: boolean;
-  /**
-   * Cuvintele după care paleta (Ctrl+K) mai găsește ecranul, pe lângă numele lui.
-   *
-   * <p>Stă aici, nu într-o listă a paletei: bara laterală e deja singura sursă a ecranelor, iar o
-   * a doua listă care trebuie să spună același lucru ajunge mereu să nu-l mai spună. Nu se vede
-   * nicăieri în bară — e text de căutat, nu de citit.
-   */
-  keywords?: string;
-  /** Numai pentru cine administrează: abonamentul îl plătește adminul firmei sau consultantul. */
-  manageOnly?: boolean;
-  /** Numai consultantul: panoul cabinetului n-are sens pentru platformă, care n-are un cabinet. */
-  consultantOnly?: boolean;
-}
+const PANEL_STORAGE_KEY = "wh.panel";
 
-interface NavGroup {
-  /** Lipsește la primul grup: Panoul stă singur, fără titlu peste el. */
-  label?: string;
-  items: NavItem[];
-  /** Grupul se vede numai de cine lucrează pe mai multe firme: platforma și consultantul. */
-  multiCompanyOnly?: boolean;
-}
-
-/**
- * Bara laterală, pe grupuri.
- *
- * <p>Erau nouă intrări una sub alta, în ordinea în care s-au construit ecranele — Mișcări,
- * Evidențe, Parteneri, Termene, Ambalaje, Dosar, Setări. Ordinea aia nu spune nimic despre ce ține
- * de ce: Ambalajele sunt evidență, ca Mișcările, dar stăteau după Termene; Parteneri e
- * nomenclator, ca Setări, dar stătea între Evidențe și Termene.
- *
- * <p>Grupurile răspund la „ce fac aici": înregistrez ceva, scot un document, sau configurez.
- */
-export const navGroups: NavGroup[] = [
-  { items: [{
-        to: "/",
-        label: strings.nav.dashboard,
-        icon: LayoutDashboard,
-        end: true,
-        keywords: strings.nav.kwDashboard,
-      }] },
-  {
-    label: strings.nav.groupRecords,
-    items: [
-      { to: "/miscari", label: strings.nav.movements, icon: Truck, keywords: strings.nav.kwMovements },
-      {
-        to: "/evidente",
-        label: strings.nav.evidences,
-        icon: FileSpreadsheet,
-        keywords: strings.nav.kwEvidences,
-      },
-      { to: "/ambalaje", label: strings.nav.packaging, icon: Package, keywords: strings.nav.kwPackaging },
-    ],
-  },
-  {
-    label: strings.nav.groupReporting,
-    items: [
-      {
-        to: "/termene",
-        label: strings.nav.deadlines,
-        icon: CalendarClock,
-        keywords: strings.nav.kwDeadlines,
-      },
-      {
-        to: "/dosar-control",
-        label: strings.nav.auditFile,
-        icon: FolderArchive,
-        keywords: strings.nav.kwAuditFile,
-      },
-    ],
-  },
-  {
-    label: strings.nav.groupSetup,
-    items: [
-      { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },
-      { to: "/setari", label: strings.nav.settings, icon: Settings, keywords: strings.nav.kwSettings },
-      // P2.15 — importul îl face cine configurează firma: implementarea e a noastră sau a adminului.
-      {
-        to: "/import",
-        label: strings.nav.importExcel,
-        icon: FileUp,
-        keywords: strings.nav.kwImport,
-        manageOnly: true,
-      },
-      {
-        to: "/abonament",
-        label: strings.nav.billing,
-        icon: Receipt,
-        keywords: strings.nav.kwBilling,
-        manageOnly: true,
-      },
-    ],
-  },
-  {
-    label: strings.nav.groupAdmin,
-    multiCompanyOnly: true,
-    items: [
-      {
-        to: "/cabinet",
-        label: strings.nav.consultancyOverview,
-        icon: Briefcase,
-        keywords: strings.nav.kwConsultancyOverview,
-        consultantOnly: true,
-      },
-      { to: "/clienti", label: strings.nav.clients, icon: Building2, keywords: strings.nav.kwClients },
-    ],
-  },
-];
-
-/**
- * Current-company block under the app name. Normal users see their company name (read-only).
- * PLATFORM_ADMIN and CONSULTANT get a tenant switcher that sets X-Tenant-Id (via `switchTenant`)
- * and drops the cached data of the company being left. A consultant's list is their consultancy's.
- */
-function CompanyBlock() {
-  const { user, tenantId, switchTenant } = useAuth();
-  const multiCompany = isMultiCompany(user?.role);
-  const queryClient = useQueryClient();
-  const { data: companies, isError } = useCompanies(multiCompany);
-
-  /**
-   * P2.13 — firma aleasă care nu mai e în listă se uită.
-   *
-   * <p>Firma stă în browser între sesiuni. Pentru platformă lista e toată, deci nu avea cum să
-   * lipsească; pentru un consultant lipsește exact când firma a fost mutată în alt cabinet. Serverul
-   * o refuză oricum (`tenant.required`), dar ecranele ar crede că e aleasă una și ar arăta erori în
-   * loc de „Alege o firmă".
-   */
-  useEffect(() => {
-    if (!multiCompany || !companies || !tenantId) return;
-    if (!companies.some((c) => c.id === tenantId)) {
-      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== companiesKey[0] });
-      switchTenant(null);
-    }
-  }, [multiCompany, companies, tenantId, switchTenant, queryClient]);
-
-  if (!multiCompany) {
-    return (
-      <div className="rounded-xl bg-brand-muted px-3 py-2.5 lg:bg-surface lg:shadow-card">
-        <div className="text-[11px] font-medium uppercase tracking-wide text-brand/70">
-          {strings.header.currentCompany}
-        </div>
-        <div className="mt-0.5 flex items-center gap-2 text-sm font-semibold text-brand">
-          <Building2 className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="truncate">
-            {user?.tenantName ?? strings.header.noCompanySelected}
-          </span>
-        </div>
-      </div>
-    );
+/** Starea „strâns" a panoului, ținută în browser. Citirea poate arunca (fereastră privată): try/catch. */
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(PANEL_STORAGE_KEY) === "collapsed";
+  } catch {
+    return false;
   }
-
-  function handleChange(id: string) {
-    // Switching tenant must not mix data between companies: drop every cached query. The list of
-    // companies is the one exception — it is the same for every tenant, and it is read from here,
-    // outside the subtree that remounts below, so a removed query would leave this switcher
-    // holding data nothing ever refetches.
-    queryClient.removeQueries({
-      predicate: (query) => query.queryKey[0] !== companiesKey[0],
-    });
-    switchTenant(id || null);
-  }
-
-  return (
-    <div className="rounded-xl bg-brand-muted px-3 py-2.5 lg:bg-surface lg:shadow-card">
-      <label
-        htmlFor="tenant-switcher"
-        className="block text-[11px] font-medium uppercase tracking-wide text-brand/70"
-      >
-        {strings.header.currentCompany}
-      </label>
-      <Select
-        id="tenant-switcher"
-        className="mt-1 h-9 bg-surface"
-        value={tenantId ?? ""}
-        onChange={(e) => handleChange(e.target.value)}
-      >
-        <option value="">{strings.header.selectCompany}</option>
-        {companies?.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </Select>
-      {isError && (
-        <div className="mt-1 text-xs text-red-600">{strings.header.loadCompaniesError}</div>
-      )}
-    </div>
-  );
 }
 
 /**
- * Contul, ca meniu.
- *
- * <p>Erau două rânduri de text — adresa și rolul — plus un buton de deconectare mereu vizibil, în
- * subsolul barei. Deconectarea e o acțiune rară care stătea în drum la fiecare privire, iar rolul
- * se afișa ca `PLATFORM_ADMIN`, adică numele constantei din backend.
+ * Ecranele care își leagă singure tasta N (acțiunea lor principală). Pe restul, N = adaugă deșeuri.
+ * Regula din `todo-ui-cantar.md` §6: N e acțiunea principală a ecranului curent.
  */
-function UserMenu({
-  email,
-  role,
-  onLogout,
-}: {
-  email?: string;
-  role?: string;
-  onLogout: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+const OWNS_N = new Set<string>([...Object.values(SCREEN_PATH), "/parteneri", "/setari"]);
 
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  // Prima literă a adresei. Nu e o poză de profil, dar e un reper care se ține minte mai ușor
-  // decât un rând de text tăiat la jumătate.
-  const initial = (email ?? "?").charAt(0).toUpperCase();
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label={strings.common.userMenu}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-surface-sunken"
-      >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-muted text-sm font-semibold text-brand">
-          {initial}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs font-medium text-content">{email}</span>
-          <span className="block truncate text-[11px] text-content-subtle">
-            {role ? (strings.enums.role[role as keyof typeof strings.enums.role] ?? role) : ""}
-          </span>
-        </span>
-        <ChevronUp
-          className={cn(
-            "h-4 w-4 shrink-0 text-content-subtle transition-transform",
-            !open && "rotate-180"
-          )}
-          aria-hidden
-        />
-      </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute bottom-full left-0 z-30 mb-1 w-full animate-slide-up overflow-hidden rounded-md border border-line bg-surface py-1 shadow-popover"
-        >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={onLogout}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-content transition-colors hover:bg-surface-muted"
-          >
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-            {strings.nav.logout}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
+/**
+ * Cadrul aplicației: panoul din stânga (direcția „Cântar”), pagina, bara de jos pe telefon,
+ * paleta și scurtăturile globale.
+ *
+ * <p>Pe `lg` panoul e o coloană de 262px (sau o șină de 64px când e strâns cu `[`); sub `lg` e un
+ * sertar care intră din stânga peste pagină, deschis din „Mai mult" (bara de jos) sau din banda de
+ * sus.
+ */
 export function Layout({ children }: { children: ReactNode }) {
   const { user, logout, tenantId } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  /**
-   * Sertarul de navigație, pe ecran îngust. Pe `lg` în sus bara e mereu acolo și starea asta nu
-   * schimbă nimic — clasele `lg:` o ignoră.
-   */
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  const panel = usePanelData();
+  const { company, screens, dashboard } = panel;
+  const writable = useCanWrite();
+  const manages = roleCanManage(user?.role);
+  const { data: billing } = useBillingAccess();
+  const nav = useMemo(() => buildNav(user?.role, company?.type), [user?.role, company?.type]);
 
   // O navigare închide sertarul: altfel rămâne peste pagina pe care tocmai ai cerut-o.
   useEffect(() => {
@@ -345,49 +76,31 @@ export function Layout({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  // Mișcările se văd după registru: „Generare" la generator, „Intrări și ieșiri" la colector,
-  // amândouă la „Generator și colector" (proprietarul, 14.09.2026). Până se știe firma rămâne o
-  // singură intrare, „Mișcări", care duce pe ecranul potrivit. Firma se cere doar când există una aleasă.
-  const { data: company } = useCurrentCompany(!isMultiCompany(user?.role) || Boolean(tenantId));
-  const groups = navGroups
-    .filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role))
-    .map((g) => ({
-      ...g,
-      items: g.items
-        .filter((i) => !i.manageOnly || roleCanManage(user?.role))
-        .filter((i) => !i.consultantOnly || user?.role === "CONSULTANT")
-        .flatMap((i) =>
-        i.to === "/miscari" && company
-          ? registersFor(company.type).map((r) => ({
-              ...i,
-              to: MOVEMENTS_PATH[r],
-              label: r === "ANEXA_1" ? strings.nav.movementsGenerator : strings.nav.movementsCollector,
-            }))
-          : [i]
-      ),
-    }));
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((c) => {
+      const next = !c;
+      try {
+        localStorage.setItem(PANEL_STORAGE_KEY, next ? "collapsed" : "open");
+      } catch {
+        // Fără memorie între sesiuni; panoul tot se strânge acum.
+      }
+      return next;
+    });
+  }, []);
 
   function handleLogout() {
     logout();
     navigate("/login");
   }
 
-  // Locurile întâi, apoi ce se poate începe: ordinea grupurilor din paletă e ordinea în care au
-  // venit comenzile, iar „unde ajung" e întrebarea de zece ori mai deasă decât „ce încep".
-  const navCommands = useNavigationCommands(groups);
-  const writable = useCanWrite();
-  const actionCommands = useActionCommands(writable);
-  const commands = useMemo(
-    () => [...navCommands, ...actionCommands],
-    [navCommands, actionCommands]
-  );
+  // Locurile întâi, apoi ce se poate începe: „unde ajung" e întrebarea de zece ori mai deasă.
+  const navCommands = useNavigationCommands(nav);
+  const actionCommands = useActionCommands(writable && Boolean(company), screens);
+  const commands = useMemo(() => [...navCommands, ...actionCommands], [navCommands, actionCommands]);
 
   /**
-   * `/` duce în caseta de căutare a ecranului curent, oriunde ar fi ea.
-   *
-   * <p>Legătura se face prin DOM (`[data-table-search]`), nu printr-un context cu referințe:
-   * ecranele care au o casetă o au deja randată, iar cele care n-au n-ar avea ce să pună în
-   * context. Un selector nu cere nimic de la nimeni.
+   * `/` duce în caseta de căutare a ecranului curent, oriunde ar fi ea. Legătura se face prin DOM
+   * (`[data-table-search]`), nu printr-un context cu referințe.
    */
   useHotkey("/", () => {
     const search = document.querySelector<HTMLInputElement>("[data-table-search]");
@@ -397,10 +110,72 @@ export function Layout({ children }: { children: ReactNode }) {
     }
   });
 
+  // `[` strânge panoul — doar pe ecran mare, unde există ce strânge.
+  useHotkey("[", toggleCollapsed, { enabled: window.matchMedia("(min-width: 1024px)").matches });
+
+  /**
+   * Cifrele 1–9, 0 deschid intrările meniului în ordinea afișată; F și C grupul Cabinet. Zece
+   * apeluri fixe de hook, cu tasta ca argument: numărul de hook-uri nu poate depinde de meniu.
+   */
+  const go = useCallback(
+    (key: string) => {
+      const item = [...nav.main, ...nav.cabinet].find((i) => i.hotkey === key);
+      if (item) navigate(item.to);
+    },
+    [nav, navigate]
+  );
+  useHotkey("1", () => go("1"));
+  useHotkey("2", () => go("2"));
+  useHotkey("3", () => go("3"));
+  useHotkey("4", () => go("4"));
+  useHotkey("5", () => go("5"));
+  useHotkey("6", () => go("6"));
+  useHotkey("7", () => go("7"));
+  useHotkey("8", () => go("8"));
+  useHotkey("9", () => go("9"));
+  useHotkey("0", () => go("0"));
+  useHotkey("f", () => go("F"), { enabled: nav.cabinet.some((i) => i.hotkey === "F") });
+  useHotkey("c", () => go("C"), { enabled: nav.cabinet.some((i) => i.hotkey === "C") });
+
+  // N / I / E: adaugă deșeuri, intrare, ieșire — pe ecranele care nu-și leagă singure tasta N.
+  const canAdd = writable && Boolean(company);
+  const hasGenerated = screens.includes("GENERATED");
+  const hasCollector = screens.includes("IN");
+  useHotkey(
+    "n",
+    () => navigate(`${hasGenerated ? SCREEN_PATH.GENERATED : SCREEN_PATH.IN}?nou=1`),
+    { enabled: canAdd && !OWNS_N.has(location.pathname) }
+  );
+  useHotkey("i", () => navigate(`${SCREEN_PATH.IN}?nou=1`), { enabled: canAdd && hasCollector });
+  useHotkey("e", () => navigate(`${SCREEN_PATH.OUT}?nou=1`), { enabled: canAdd && hasCollector });
+
+  const mainList = nav.main.find((i) => i.screen) ?? null;
+
+  const panelProps = {
+    nav,
+    company,
+    screens,
+    canWrite: writable,
+    canManage: manages,
+    monthName: dashboard.monthLabel,
+    monthLabel: panel.monthLabel,
+    monthKg: panel.monthKg,
+    monthLoading: panel.monthLoading,
+    monthFailed: panel.monthFailed,
+    nextAction: dashboard.nextAction,
+    nextActionLoading: dashboard.nextActionLoading,
+    indicatorFor: panel.indicatorFor,
+    billing,
+    onOpenSearch: () => setPaletteOpen(true),
+    onCloseDrawer: () => setNavOpen(false),
+    email: user?.email,
+    role: user?.role,
+    onLogout: handleLogout,
+  };
+
   return (
     <div className="flex h-full">
-      {/* Prima oprire a tastaturii: sare peste cele nouă intrări de meniu, care se repetă pe
-          fiecare pagină. Invizibil până primește focus. */}
+      {/* Prima oprire a tastaturii: sare peste meniu, care se repetă pe fiecare pagină. */}
       <a
         href="#continut"
         className="sr-only-focusable absolute left-4 top-4 z-[80] rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-fg"
@@ -408,27 +183,46 @@ export function Layout({ children }: { children: ReactNode }) {
         {strings.common.skipToContent}
       </a>
 
-      {/* Bara de sus, doar pe ecran îngust: butonul de meniu și numele aplicației. */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-surface px-4 lg:hidden">
+      {/* Banda de sus, doar pe ecran îngust: grafit, ca panoul — firma, cifra lunii, cel mai urgent lucru. */}
+      <header className="fixed inset-x-0 top-0 z-30 flex items-center gap-3 bg-panel px-3 py-2 text-white lg:hidden">
         <button
           type="button"
           onClick={() => setNavOpen(true)}
           aria-label={strings.common.openNav}
           aria-expanded={navOpen}
           aria-controls="navigatie-principala"
-          className="-ml-2 rounded-md p-2 text-content-muted hover:bg-surface-sunken"
+          className="-ml-1 rounded-md p-1.5 text-panel-text hover:bg-panel-hover"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5" aria-hidden />
         </button>
-        <div className="min-w-0">
-          <div className="truncate font-bold text-brand"><BrandName /></div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 truncate text-sm font-semibold">
+              {company?.name ?? user?.tenantName ?? <BrandName />}
+            </span>
+            {company && (
+              <span className="ml-auto shrink-0 font-mono text-[0.6875rem] uppercase text-lcd-digit">
+                {dashboard.monthLabel.slice(0, 3)} · {panel.monthFailed ? strings.panel.unknown : panel.monthKg == null ? "—" : new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(panel.monthKg)} {strings.panel.kg}
+              </span>
+            )}
+          </div>
+          {company && dashboard.nextAction && dashboard.nextAction.tone !== "ok" && dashboard.nextAction.tone !== "start" && (
+            <div
+              className={cn(
+                "truncate font-mono text-[0.6875rem]",
+                dashboard.nextAction.tone === "danger" ? "text-lcd-bad" : dashboard.nextAction.tone === "warning" ? "text-lcd-warn" : "text-panel-dim"
+              )}
+            >
+              ▲ {dashboard.nextAction.title}
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Fundalul sertarului. Nu există pe `lg`, unde bara e parte din pagină. */}
+      {/* Fundalul sertarului. Nu există pe `lg`, unde panoul e parte din pagină. */}
       {navOpen && (
         <div
-          className="fixed inset-0 z-40 animate-fade-in bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 animate-fade-in bg-black/50 lg:hidden"
           onClick={() => setNavOpen(false)}
           aria-hidden
         />
@@ -437,95 +231,43 @@ export function Layout({ children }: { children: ReactNode }) {
       <aside
         id="navigatie-principala"
         className={cn(
-          // Pe ecran îngust: sertar peste pagină, care intră din stânga. Pe `lg`: coloana
-          // dintotdeauna, în fluxul paginii.
-          // Stilul „Prietenos”: pe `lg` bara nu mai e o coloană albă cu chenar, ci stă direct pe
-          // fundalul verde pal, iar intrarea activă e un card alb.
-          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 lg:static lg:z-auto lg:w-60 lg:translate-x-0 lg:border-r-0 lg:bg-transparent",
+          // Pe ecran îngust: sertar peste pagină, care intră din stânga. Pe `lg`: coloana grafit,
+          // în fluxul paginii, de 262px sau de 64px când e strânsă.
+          "fixed inset-y-0 left-0 z-50 w-[272px] shrink-0 transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0",
+          collapsed ? "lg:w-16" : "lg:w-[262px]",
           navOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        data-collapsed={collapsed || undefined}
       >
-        <div className="flex items-start justify-between px-5 py-5">
-          <div className="min-w-0">
-            <div className="text-lg font-bold text-brand"><BrandName /></div>
-            <div className="text-xs text-content-subtle">{strings.tagline}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNavOpen(false)}
-            aria-label={strings.common.closeNav}
-            className="-mr-2 rounded-md p-2 text-content-subtle hover:bg-surface-sunken lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="px-3 pb-3">
-          <CompanyBlock />
-        </div>
-        <nav aria-label={strings.common.mainNav} className="flex-1 overflow-y-auto px-3 pb-3">
-          {groups.map((group, index) => (
-            <div key={group.label ?? "principal"} className={index > 0 ? "mt-5" : undefined}>
-              {group.label && (
-                <div className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-subtle">
-                  {group.label}
-                </div>
-              )}
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.end}
-                    className={({ isActive }) =>
-                      cn(
-                        // `py-2`, nu mai mult: la 900px înălțime, cu textul de 15px, `py-2.5` scotea
-                        // „Abonament” din vedere, sub „Import din Excel” (captura din 15.09.2026).
-                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
-                        isActive
-                          ? "bg-brand-muted text-brand-800 lg:bg-surface lg:font-bold lg:shadow-card"
-                          : "text-content-strong hover:bg-surface-sunken lg:hover:bg-surface/70"
-                      )
-                    }
-                  >
-                    <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-                    {item.label}
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
-        {/* Scurtăturile scrise undeva: altfel există, dar nu le găsește nimeni. Ascunse pe
-            ecran îngust, unde nu e tastatură. */}
-        <p className="hidden px-5 pb-3 text-[11px] leading-relaxed text-content-subtle lg:block">
-          {strings.common.shortcutHint}
-        </p>
-        {/* Subsolul aplicației. Cine e deja înăuntru caută politica tot de aici, nu de pe pagina
-            de login din care a ieșit acum două luni. */}
-        <LegalFooter variant="compact" className="px-5 pb-3" />
-        <div className="border-t border-line p-3">
-          <UserMenu email={user?.email} role={user?.role} onLogout={handleLogout} />
-        </div>
+        <Panel {...panelProps} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
+
+      <CommandPalette commands={commands} open={paletteOpen} onOpenChange={setPaletteOpen} />
 
       {/*
         Keyed by company: changing it remounts the page instead of leaving it on screen with the
-        previous tenant's filters — a work-point id or a partner selected for the company we just
-        left means nothing in the new one. The cache was emptied in `handleChange`, so the fresh
-        mount refetches everything with the new X-Tenant-Id, and nobody has to reload the page.
+        previous tenant's filters. The cache was emptied at switch, so the fresh mount refetches
+        everything with the new X-Tenant-Id.
       */}
-      <CommandPalette commands={commands} />
-
       <main
         id="continut"
         key={tenantId ?? "fara-companie"}
-        // `pt-14` lasă loc barei fixe de sus, care există doar sub `lg`. Marginile cresc cu
-        // ecranul: pe telefon 16px sunt tot ce se poate da, pe desktop rămân cele 32 de dinainte.
-        className="flex-1 overflow-auto px-4 pb-8 pt-[4.5rem] sm:px-6 lg:p-8"
+        // Sus, loc pentru banda fixă; jos, pentru bara de taburi — amândouă doar sub `lg`.
+        // Banda de sus are 54px (măsurat 15.09.2026): 70px de căptușeală lasă 16px de aer, exact
+        // cât `-top-4` al cuprinsului lipicios (`SectionNav`).
+        className="flex-1 overflow-auto px-4 pb-24 pt-[4.375rem] sm:px-6 lg:px-8 lg:pb-8 lg:pt-6"
       >
         <BillingBanner />
         {children}
       </main>
+
+      <MobileBar
+        mainList={mainList}
+        screens={screens}
+        canWrite={writable && Boolean(company)}
+        overdue={dashboard.overdueCount > 0}
+        onMore={() => setNavOpen(true)}
+      />
     </div>
   );
 }

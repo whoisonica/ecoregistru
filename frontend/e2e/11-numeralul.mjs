@@ -153,7 +153,7 @@ await login(page, "admin");
 // începe să treacă pe gol la 1 ianuarie, fără ca nimeni s-o atingă.
 const AN = new Date().getFullYear();
 const ECRANE = [
-  ["/", "Panou"],
+  ["/", "Acasă"],
   [`/miscari?luna=${AN}`, "Mișcări"],
   [`/evidente?an=${AN}`, "Evidențe"],
   [`/ambalaje?an=${AN}`, "Ambalaje"],
@@ -164,7 +164,7 @@ const ECRANE = [
 ];
 
 /** Ecranele pe care **știm** că sunt numărători: dacă vreunul dă zero, nu s-a citit nimic. */
-const CU_NUMARATORI = new Set(["Panou", "Ambalaje", "Termene"]);
+const CU_NUMARATORI = new Set(["Acasă", "Ambalaje", "Termene"]);
 
 let perechi = 0;
 const gresite = [];
@@ -234,10 +234,9 @@ await page.waitForFunction(
   { timeout: 15000 }
 );
 const dala = await page.evaluate(() => {
-  const e = [...document.querySelectorAll("div")].find(
-    (d) => d.textContent.trim() === "Termene de făcut" && d.children.length === 0
-  );
-  return e?.parentElement?.textContent.replace(/\s+/g, " ").trim() ?? "";
+  // Dala are un cârlig propriu din 15.09.2026: eticheta stă acum pe un rând cu pictograma, deci
+  // părintele ei direct nu mai e dala întreagă.
+  return document.querySelector('[data-testid="stat-deadlines"]')?.textContent.replace(/\s+/g, " ").trim() ?? "";
 });
 check("dala de termene spune și substantivul, nu doar adjectivul",
   /termen(e)? depășit(e)?|Următorul termen|Niciun termen/.test(dala), dala.slice(0, 70));

@@ -193,13 +193,13 @@ export function Dialog({
         className={cn(
           // Pe telefon urcă de jos și ocupă lățimea întreagă, cu colțurile rotunjite doar sus —
           // gestul obișnuit al unei foi modale. De la `sm` în sus e dialogul centrat de dinainte.
-          "relative z-10 flex max-h-[92vh] w-full animate-slide-up flex-col rounded-t-3xl bg-surface shadow-xl outline-none sm:max-h-[90vh] sm:rounded-3xl",
+          "relative z-10 flex max-h-[92vh] w-full animate-slide-up flex-col rounded-t-2xl border border-line-strong bg-surface shadow-popover outline-none sm:max-h-[90vh] sm:rounded-2xl",
           sizeClass[size]
         )}
       >
         <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="text-xl font-extrabold text-content">
+            <h2 id={titleId} className="text-lg font-semibold text-content">
               {title}
             </h2>
             {description && (

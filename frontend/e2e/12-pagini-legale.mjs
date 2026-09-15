@@ -122,15 +122,19 @@ check("și le leagă pe amândouă", noticeLinks === 2, noticeLinks + " linkuri"
 // ══════════════════════════════════════════════ DIN APLICAȚIE, CU SESIUNE
 await login(page);
 await page.waitForTimeout(400);
-const sidebarLinks = await page.$$eval('aside footer a', (a) => a.map((x) => x.getAttribute("href")));
+// Din 15.09.2026 (direcția „Cântar”) cele două documente stau în meniul contului, jos în panou —
+// nu ca subsol mereu vizibil. Se deschide meniul, apoi se citesc linkurile.
+await page.click('aside button[aria-haspopup="menu"]');
+await page.waitForTimeout(300);
+const sidebarLinks = await page.$$eval('aside [role="menu"] a', (a) => a.map((x) => x.getAttribute("href")));
 check(
-  "bara laterală are subsolul juridic",
+  "meniul contului are documentele juridice",
   sidebarLinks.includes("/termeni") && sidebarLinks.includes("/confidentialitate"),
   sidebarLinks.join(", ")
 );
 
 // Documentele se citesc și cu sesiune deschisă, fără să iasă din aplicație într-o pagină goală.
-await page.click('aside footer a[href="/termeni"]');
+await page.click('aside [role="menu"] a[href="/termeni"]');
 await page.waitForURL((u) => u.pathname === "/termeni", { timeout: 5000 });
 const stillTerms = (await page.textContent("h1")) ?? "";
 check("se deschid și dinăuntru", /Termeni și condiții/.test(stillTerms), stillTerms.trim());

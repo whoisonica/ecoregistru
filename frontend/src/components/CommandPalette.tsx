@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
-import { CornerDownLeft, Plus, Search, type LucideIcon } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, CornerDownLeft, Plus, Search, type LucideIcon } from "lucide-react";
 import { useHotkey } from "@/hooks/useHotkey";
 import { strings } from "@/lib/strings";
 import { cn, fold } from "@/lib/utils";
+import type { NavEntry, NavModel } from "@/lib/navItems";
+import { SCREEN_PATH, type MovementScreen } from "@/lib/movementScreens";
 
 export interface Command {
   id: string;
@@ -26,8 +28,18 @@ export interface Command {
  * fiecare căutarea lor, pe ecranul lor, unde se și pot filtra. Caută în **locuri și acțiuni**:
  * unde vreau să ajung, ce vreau să încep.
  */
-export function CommandPalette({ commands }: { commands: Command[] }) {
-  const [open, setOpen] = useState(false);
+export function CommandPalette({
+  commands,
+  open,
+  onOpenChange,
+}: {
+  commands: Command[];
+  /** Deschisă și din butonul „Caută oriunde" al panoului, nu doar din Ctrl+K — deci starea e a părintelui. */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const setOpen = (next: boolean | ((o: boolean) => boolean)) =>
+    onOpenChange(typeof next === "function" ? next(open) : next);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -146,9 +158,9 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
         role="dialog"
         aria-modal="true"
         aria-label={strings.common.commandPalette}
-        className="relative z-10 w-full max-w-lg animate-slide-up overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
+        className="relative z-10 w-full max-w-lg animate-slide-up overflow-hidden rounded-lg border border-line-strong bg-surface shadow-popover"
       >
-        <div className="flex items-center gap-2 border-b border-line px-4">
+        <div className="flex items-center gap-2 border-b-2 border-content px-4">
           <Search className="h-4 w-4 shrink-0 text-content-subtle" aria-hidden />
           <input
             ref={inputRef}
@@ -170,7 +182,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
             }}
             placeholder={strings.common.commandPalettePlaceholder}
             aria-label={strings.common.commandPalette}
-            className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-content-subtle"
+            className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-content-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
 
@@ -185,9 +197,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
             // vreodată ordonarea rupe iar grupurile, iar două surori cu aceeaşi cheie lasă în DOM
             // rânduri din randarea dinainte. `id`-ul e unic prin construcţie.
             <div key={group.items[0].command.id}>
-              <div className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-content-subtle">
-                {group.name}
-              </div>
+              <div className="eyebrow px-4 pb-1 pt-2">{group.name}</div>
               {group.items.map(({ command, index }) => (
                 <div
                   key={command.id}
@@ -218,36 +228,30 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
 }
 
 /**
- * Comenzile de navigare, construite din aceleași grupuri ca bara laterală.
+ * Comenzile de navigare, construite din același meniu ca panoul (`buildNav`).
  *
  * <p>Se ia lista de acolo, nu una scrisă a doua oară: două liste care trebuie să spună același
- * lucru ajung mereu să nu-l mai spună.
+ * lucru ajung mereu să nu-l mai spună. Intră și ecranele care nu stau în meniu (Import, Abonament):
+ * paleta e drumul lor.
  */
-export function useNavigationCommands(
-  groups: {
-    label?: string;
-    items: { to: string; label: string; icon: LucideIcon; keywords?: string }[];
-  }[]
-): Command[] {
+export function useNavigationCommands(nav: NavModel): Command[] {
   const navigate = useNavigate();
-  return useMemo(
-    () =>
-      groups.flatMap((group) =>
-        group.items.map((item) => ({
-          id: `nav:${item.to}`,
-          label: item.label,
-          // Cuvintele vin din bara laterală, unde stau lângă ecranul pe care îl descriu. `keywords`
-          // era declarat pe `Command` şi citit la potrivire, dar nu i-l dădea nimeni: tastai
-          // „fişa" sau „anexa 1" şi paleta nu găsea nimic, deşi propriul docstring promitea
-          // „unde vreau să ajung".
-          keywords: item.keywords,
-          group: group.label ?? strings.common.goTo,
-          icon: item.icon,
-          run: () => navigate(item.to),
-        }))
-      ),
-    [groups, navigate]
-  );
+  return useMemo(() => {
+    const toCommand = (item: NavEntry, group: string): Command => ({
+      id: `nav:${item.to}`,
+      label: item.label,
+      // Cuvintele vin din meniu, unde stau lângă ecranul pe care îl descriu.
+      keywords: item.keywords,
+      group,
+      icon: item.icon,
+      run: () => navigate(item.to),
+    });
+    return [
+      ...nav.main.map((i) => toCommand(i, strings.common.goTo)),
+      ...nav.cabinet.map((i) => toCommand(i, strings.nav.groupCabinet)),
+      ...nav.hidden.map((i) => toCommand(i, strings.common.goTo)),
+    ];
+  }, [nav, navigate]);
 }
 
 /**
@@ -262,27 +266,49 @@ export function useNavigationCommands(
  * paletă nu se vede pe care an ar cădea. O comandă care rescrie tăcut liniile unui dosar e exact
  * genul de ghicit pe care ecranul ăsta nu-l face.
  */
-export function useActionCommands(canWrite: boolean): Command[] {
+export function useActionCommands(canWrite: boolean, screens: MovementScreen[]): Command[] {
   const navigate = useNavigate();
+  const key = screens.join(",");
   return useMemo(() => {
     if (!canWrite) return [];
-    return [
-      {
+    const visible = key ? key.split(",") : [];
+    const out: Command[] = [];
+    if (visible.includes("GENERATED")) {
+      out.push({
         id: "action:new-movement",
-        label: strings.common.actionNewMovement,
+        label: visible.includes("IN") ? strings.panel.addOwnWaste : strings.common.actionNewMovement,
         keywords: strings.common.actionNewMovementKeywords,
         group: strings.common.actionsGroup,
         icon: Plus,
-        run: () => navigate("/miscari?nou=1"),
-      },
-      {
-        id: "action:new-partner",
-        label: strings.common.actionNewPartner,
-        keywords: strings.common.actionNewPartnerKeywords,
+        run: () => navigate(`${SCREEN_PATH.GENERATED}?nou=1`),
+      });
+    }
+    if (visible.includes("IN")) {
+      out.push({
+        id: "action:new-inbound",
+        label: strings.common.actionNewInbound,
+        keywords: strings.common.actionNewInboundKeywords,
         group: strings.common.actionsGroup,
-        icon: Plus,
-        run: () => navigate("/parteneri?nou=1"),
-      },
-    ];
-  }, [canWrite, navigate]);
+        icon: ArrowDownToLine,
+        run: () => navigate(`${SCREEN_PATH.IN}?nou=1`),
+      });
+      out.push({
+        id: "action:new-outbound",
+        label: strings.common.actionNewOutbound,
+        keywords: strings.common.actionNewOutboundKeywords,
+        group: strings.common.actionsGroup,
+        icon: ArrowUpFromLine,
+        run: () => navigate(`${SCREEN_PATH.OUT}?nou=1`),
+      });
+    }
+    out.push({
+      id: "action:new-partner",
+      label: strings.common.actionNewPartner,
+      keywords: strings.common.actionNewPartnerKeywords,
+      group: strings.common.actionsGroup,
+      icon: Plus,
+      run: () => navigate("/parteneri?nou=1"),
+    });
+    return out;
+  }, [canWrite, key, navigate]);
 }

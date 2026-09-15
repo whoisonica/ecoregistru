@@ -24,15 +24,17 @@ export function Table({
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-2xl border border-line bg-surface shadow-card",
+        // „Cântar”: tabelul stă direct pe pagină, ca un tabel tipărit — fără cutie, fără umbră.
+        // Capul are o linie de 2px grafit, rândurile o linie subțire.
+        "overflow-x-auto bg-surface",
         // Înălțimea maximă e ce face antetul lipicios să însemne ceva: fără ea, containerul
         // crește cât tabelul și nu se derulează nimic pe dinăuntru.
         stickyHeader && "max-h-[70vh] overflow-y-auto"
       )}
     >
-      {/* 14px, nu `text-sm` (15px din stilul „Prietenos”): la 15px, Mișcări ieșea din 1440px și coloana de
-          atașamente intra sub coloana de acțiuni fixată — prinsă de proba 8 (15.09.2026). Tabelele sunt
-          singurul loc unde densitatea bate mărimea. */}
+      {/* 14px, nu `text-sm`: la 15px, Mișcări ieșea din 1440px și coloana de atașamente intra sub
+          coloana de acțiuni fixată — prinsă de proba 8 (15.09.2026). Tabelele sunt singurul loc unde
+          densitatea bate mărimea. */}
       <table className={cn("w-full text-[0.875rem] leading-5", className)} {...props} />
     </div>
   );
@@ -46,13 +48,16 @@ export function THead({
   return (
     <thead
       className={cn(
-        "border-b border-line bg-surface-muted text-left text-xs font-bold uppercase tracking-wide text-content-muted",
-        // `bg-surface-muted` pe `thead` nu acoperă rândurile care trec pe dedesubt în unele
-        // browsere, de asta culoarea se pune și pe celule, prin `[&>tr>th]`.
+        // Capul de tabel în mono, mic, cu majuscule — eticheta de pe bon. Linia de 2px de sub el
+        // e ce desparte capul de rânduri; nu mai există fundal gri.
+        "border-b-2 border-content bg-surface text-left font-mono text-[0.6875rem] font-medium uppercase tracking-[0.07em] text-content-muted",
+        // `bg-surface` pe `thead` nu acoperă rândurile care trec pe dedesubt în unele browsere, de
+        // asta culoarea se pune și pe celule, prin `[&>tr>th]`. Linia de 2px se mută tot pe celule:
+        // un chenar pe `thead` lipicios rămâne în urmă la derulare.
         //
         // `z-20` bate `z-10` al coloanei fixate din dreapta: colțul din dreapta-sus e amândouă
         // deodată, iar acolo antetul trebuie să fie deasupra.
-        sticky && "sticky top-0 z-20 [&>tr>th]:bg-surface-muted",
+        sticky && "sticky top-0 z-20 border-b-0 [&>tr>th]:border-b-2 [&>tr>th]:border-content [&>tr>th]:bg-surface",
         className
       )}
       {...props}
@@ -113,7 +118,7 @@ export function TH({
 }) {
   return (
     <th
-      className={cn("relative px-3 py-3", sticky === "right" && STICKY_RIGHT, className)}
+      className={cn("relative px-2.5 py-2", sticky === "right" && STICKY_RIGHT, className)}
       {...props}
     />
   );
@@ -130,9 +135,10 @@ export function TD({
   return (
     <td
       className={cn(
-        // `px-3`, nu `px-4`: Nunito îngroșat e mai lat decât fontul de dinainte, iar Mișcări ieșea din
-        // 1440px cu 63px, adică exact coloana de atașamente sub cea de acțiuni fixată (proba 8).
-        "relative px-3 py-3 text-content-muted",
+        // `px-3`, nu `px-4`: la 15px Mișcări ieșea din 1440px cu 63px, adică exact coloana de
+        // atașamente sub cea de acțiuni fixată (proba 8). Textul celulei e cel principal, nu
+        // estompat: pe un tabel fără fundal gri, griul pe alb era prea puțin.
+        "relative px-2.5 py-2.5 text-content",
         sticky === "right" && STICKY_RIGHT,
         className
       )}
@@ -182,7 +188,7 @@ export function SortableTH({
         // Moștenește alinierea celulei: coloanele de cifre sunt la dreapta, iar butonul nu are de
         // unde ști asta singur.
         className={cn(
-          "flex w-full items-center gap-1.5 px-3 py-3 uppercase tracking-wide transition-colors hover:text-content",
+          "flex w-full items-center gap-1.5 px-2.5 py-2 uppercase tracking-[0.07em] transition-colors hover:text-content",
           align === "right" ? "justify-end text-right" : "text-left"
         )}
       >
@@ -220,7 +226,7 @@ export function Pagination({
   const to = Math.min(matchCount, (page + 1) * pageSize);
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-content-muted">
-      <span>
+      <span className="font-mono text-xs">
         {strings.common.rangeOfTotal
           .replace("{from}", String(from))
           .replace("{to}", String(to))
@@ -231,7 +237,7 @@ export function Pagination({
           type="button"
           onClick={() => onPage(page - 1)}
           disabled={page === 0}
-          className="rounded-md border border-line-strong px-3 py-1.5 transition-colors hover:bg-surface-muted disabled:opacity-40 disabled:hover:bg-transparent"
+          className="rounded-md border border-line-strong px-3 py-1.5 font-medium text-content transition-colors hover:bg-surface-muted disabled:opacity-40 disabled:hover:bg-transparent"
         >
           {strings.common.previous}
         </button>
@@ -239,7 +245,7 @@ export function Pagination({
           type="button"
           onClick={() => onPage(page + 1)}
           disabled={page >= pageCount - 1}
-          className="rounded-md border border-line-strong px-3 py-1.5 transition-colors hover:bg-surface-muted disabled:opacity-40 disabled:hover:bg-transparent"
+          className="rounded-md border border-line-strong px-3 py-1.5 font-medium text-content transition-colors hover:bg-surface-muted disabled:opacity-40 disabled:hover:bg-transparent"
         >
           {strings.common.next}
         </button>

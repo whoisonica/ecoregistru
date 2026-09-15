@@ -58,10 +58,10 @@ export function ChoiceCards<T extends string>({
           <label
             key={option.value}
             className={cn(
-              "relative flex gap-3 rounded-2xl border-2 bg-surface p-3.5 transition-colors",
+              "relative flex gap-3 rounded-lg border bg-surface p-3.5 transition-colors",
               // Focusul stă pe radio-ul ascuns; cardul îl arată în locul lui.
-              "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand/20",
-              checked ? "border-brand bg-brand-50" : "border-line hover:border-line-strong",
+              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
+              checked ? "border-brand bg-brand-50 ring-1 ring-brand" : "border-line-strong hover:border-content-subtle",
               off ? "cursor-not-allowed opacity-55" : "cursor-pointer"
             )}
           >
@@ -78,7 +78,7 @@ export function ChoiceCards<T extends string>({
               <span
                 aria-hidden
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-md",
                   checked ? "bg-brand-100 text-brand-700" : "bg-surface-sunken text-content-strong"
                 )}
               >
@@ -86,7 +86,7 @@ export function ChoiceCards<T extends string>({
               </span>
             )}
             <span className="min-w-0 flex-1 pr-6">
-              <span className="block text-sm font-bold text-content">{option.label}</span>
+              <span className="block text-sm font-semibold text-content">{option.label}</span>
               {option.description && (
                 <span className="mt-0.5 block text-xs text-content-muted">{option.description}</span>
               )}
@@ -94,7 +94,7 @@ export function ChoiceCards<T extends string>({
             {checked && (
               <span
                 aria-hidden
-                className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-brand-fg"
+                className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded bg-brand text-brand-fg"
               >
                 <Check className="h-3 w-3" strokeWidth={3.5} />
               </span>

@@ -9,8 +9,9 @@ import type { WorkPoint, WorkPointInput } from "@/lib/types";
  */
 export const workPointsKey = ["work-points"] as const;
 
-export function useWorkPoints() {
+export function useWorkPoints(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: workPointsKey,
     queryFn: async () => (await api.get<WorkPoint[]>("/api/v1/work-points")).data,
   });

@@ -501,7 +501,7 @@ export function EvidencesPage() {
                             <Tooltip content={t.missingCodeHint}>
                               <Link
                                 to={`/evidente?an=${r.year}&luna=${r.month}&punct=${r.workPointId}&vedere=handovers&problema=cod-rd`}
-                                className="ml-2 inline-block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                                className="ml-2 inline-block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                               >
                                 <Badge
                                   variant="danger"

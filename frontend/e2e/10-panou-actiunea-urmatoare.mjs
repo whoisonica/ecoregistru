@@ -58,7 +58,8 @@ const banda = await page.evaluate(() => {
 check("panoul are banda de acțiune", banda.text.includes("Următoarea acțiune"));
 check("banda numește un lucru, nu cinci", banda.text.split("Următoarea acțiune").length === 2);
 check("și are un drum către el", Boolean(banda.href), banda.href ?? "(niciunul)");
-check("eticheta linkului rămâne pe un rând", banda.inaltimeLink > 0 && banda.inaltimeLink <= 28,
+// Din 15.09.2026 drumul e un buton de 40px („Cântar”), nu un link de text: un rând înseamnă ≤ 44px.
+check("eticheta linkului rămâne pe un rând", banda.inaltimeLink > 0 && banda.inaltimeLink <= 44,
   banda.inaltimeLink + "px");
 
 // ------------------------------------------------------ 2. ALEGE CEL MAI SCUMP LUCRU DESCHIS

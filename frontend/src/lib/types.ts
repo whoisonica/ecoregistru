@@ -1062,10 +1062,35 @@ export interface MovementFilters {
    * tocmai rândul pe care îl caută cineva care vrea să-l repare.
    */
   leftSite?: boolean;
-  /** Numai rândurile unui registru — ecranul „Generare" (Anexa 1) sau „Intrări și ieșiri" (art. 48). */
+  /** Numai rândurile unui registru — ecranul „Generare" (Anexa 1) sau „Intrări"/„Ieșiri" (art. 48). */
   register?: WasteRegister;
+  /**
+   * Numai ce a intrat (preluare) sau numai ce a ieșit (valorificare, eliminare, ieșire fără cod).
+   * Ecranele „Intrări" și „Ieșiri" (15.09.2026). `OUT` înseamnă același lucru ca `leftSite`.
+   */
+  direction?: MovementDirection;
   /** Numai rândurile fără cod R/D — „arată-mi ce blochează depunerea", trimis de pe Panou. */
   missingOperationCode?: boolean;
+}
+
+/** Mirrors backend MovementDirection. */
+export type MovementDirection = "IN" | "OUT";
+
+/**
+ * Mirrors backend MovementTotalsResponse — cifrele de deasupra unei liste de mișcări, socotite de
+ * server peste **toate** rândurile filtrului, nu peste pagina adusă. Toate cantitățile în kg.
+ */
+export interface MovementTotals {
+  rows: number;
+  quantityKg: number;
+  /** Rânduri fără cantitate: destinatarul cântărește la descărcare. */
+  awaitingWeighing: number;
+  recoveredKg: number;
+  disposedKg: number;
+  /** Ieșiri fără cod R/D — ce blochează depunerea. */
+  missingOperationCode: number;
+  /** Intrări de la persoane fizice, prin operațiunea de cântar (D1.7). */
+  fromNaturalPersonsKg: number;
 }
 
 /**

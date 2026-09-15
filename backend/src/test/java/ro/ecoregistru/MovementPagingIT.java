@@ -333,6 +333,120 @@ class MovementPagingIT {
         assertThat(idsOf(page("year", year))).containsExactlyInAnyOrder(generated, collected, passedOn);
     }
 
+    /**
+     * „Intrări" și „Ieșiri" sunt același registru art. 48 filtrat pe direcție (proprietarul,
+     * 15.09.2026: „intrare și ieșire vreau să fie separat"). `IN` e preluarea; `OUT` e ce a plecat,
+     * inclusiv rândul fără cod R/D — exact rândul pe care îl caută cineva care vrea să-l repare.
+     * Generarea nu e în niciuna: stă pe „Generare", fără direcție.
+     */
+    @Test
+    void directionSplitsTakeoversFromWhatWentOut() throws Exception {
+        String year = "2009";
+        UUID generated = create(year + "-05-01", "20 01 01", null, null);
+        UUID collected = createCollected(year + "-05-02", "4.000");
+        UUID passedOn = createPassedOn(year + "-05-03", "4.000");
+        UUID broken = createPassedOn(year + "-05-04", "1.000");
+        WasteMovement legacy = movementRepository.findById(broken).orElseThrow();
+        legacy.setOperationCode(null);
+        legacy.setOperation(ro.ecoregistru.enums.WasteOperation.UNCLASSIFIED_OUT);
+        movementRepository.save(legacy);
+
+        assertThat(idsOf(page("year", year, "register", "ART_48", "direction", "IN")))
+                .containsExactly(collected);
+        assertThat(idsOf(page("year", year, "register", "ART_48", "direction", "OUT")))
+                .containsExactlyInAnyOrder(passedOn, broken);
+        assertThat(idsOf(page("year", year, "direction", "OUT"))).doesNotContain(generated, collected);
+    }
+
+    /**
+     * Totalurile de deasupra listei: aceleași filtre ca lista, adunate peste toate rândurile.
+     *
+     * <p>Rândurile sunt alese ca fiecare celulă să aibă ce număra: două intrări (din care una în
+     * tone, ca suma să normalizeze), o ieșire valorificată, una fără cod R/D și una plecată fără
+     * cântar — care se numără la „de cântărit" și <b>nu</b> adaugă un zero la kilograme. Iar
+     * generarea firmei nu intră în totalurile art. 48.
+     */
+    @Test
+    void totalsAddUpTheFilteredRowsNotAPage() throws Exception {
+        String year = "2008";
+        create(year + "-06-01", "20 01 01", null, null, "1000.000");
+        createCollected(year + "-06-02", "4.000");
+        createCollectedTonnes(year + "-06-03", "0.002");
+        createPassedOn(year + "-06-04", "3.000");
+        UUID broken = createPassedOn(year + "-06-05", "1.000");
+        WasteMovement legacy = movementRepository.findById(broken).orElseThrow();
+        legacy.setOperationCode(null);
+        legacy.setOperation(ro.ecoregistru.enums.WasteOperation.UNCLASSIFIED_OUT);
+        movementRepository.save(legacy);
+        createAwaitingWeight(year + "-06-06");
+
+        JsonNode in = totals("year", year, "register", "ART_48", "direction", "IN");
+        assertThat(in.get("rows").asLong()).isEqualTo(2);
+        assertThat(in.get("quantityKg").asDouble()).isEqualTo(6.0);
+        assertThat(in.get("fromNaturalPersonsKg").asDouble()).isZero();
+
+        JsonNode out = totals("year", year, "register", "ART_48", "direction", "OUT");
+        assertThat(out.get("rows").asLong()).isEqualTo(2);
+        assertThat(out.get("quantityKg").asDouble()).isEqualTo(4.0);
+        assertThat(out.get("recoveredKg").asDouble()).isEqualTo(3.0);
+        assertThat(out.get("disposedKg").asDouble()).isZero();
+        assertThat(out.get("missingOperationCode").asLong()).isEqualTo(1);
+
+        JsonNode own = totals("year", year, "register", "ANEXA_1");
+        assertThat(own.get("rows").asLong()).isEqualTo(2);
+        assertThat(own.get("quantityKg").asDouble()).isEqualTo(1000.0);
+        assertThat(own.get("awaitingWeighing").asLong()).isEqualTo(1);
+
+        // Un an gol răspunde cu zerouri, nu cu null: pe ecran se scrie o cifră.
+        JsonNode empty = totals("year", "2007");
+        assertThat(empty.get("rows").asLong()).isZero();
+        assertThat(empty.get("quantityKg").asDouble()).isZero();
+    }
+
+    private JsonNode totals(String... params) throws Exception {
+        var request = get("/api/v1/movements/totals").header("Authorization", "Bearer " + token);
+        for (int i = 0; i < params.length; i += 2) request = request.param(params[i], params[i + 1]);
+        return objectMapper.readTree(mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+    }
+
+    /** O preluare de la un terț: registrul îl forțează serverul pe art. 48. */
+    private UUID createCollected(String date, String quantity) throws Exception {
+        UUID wasteCodeId = wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId();
+        return createdId("""
+                {
+                  "workPointId": "%s", "date": "%s", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": %s, "physicalState": "SOLID",
+                  "operation": "COLLECTED", "partnerId": "%s"
+                }
+                """.formatted(workPointId, date, wasteCodeId, quantity, partnerId));
+    }
+
+    private UUID createCollectedTonnes(String date, String quantity) throws Exception {
+        UUID wasteCodeId = wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId();
+        return createdId("""
+                {
+                  "workPointId": "%s", "date": "%s", "wasteCodeId": "%s",
+                  "unit": "TONS", "quantity": %s, "physicalState": "SOLID",
+                  "operation": "COLLECTED", "partnerId": "%s"
+                }
+                """.formatted(workPointId, date, wasteCodeId, quantity, partnerId));
+    }
+
+    /** Marfă preluată, predată mai departe: ieșire directă pe art. 48, cu cod R. */
+    private UUID createPassedOn(String date, String quantity) throws Exception {
+        UUID wasteCodeId = wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId();
+        return createdId("""
+                {
+                  "workPointId": "%s", "date": "%s", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": %s, "physicalState": "SOLID",
+                  "operation": "RECOVERED", "operationCode": "R13",
+                  "partnerId": "%s", "register": "ART_48"
+                }
+                """.formatted(workPointId, date, wasteCodeId, quantity, partnerId));
+    }
+
     private UUID create(String date, String code, UUID partner, String docRef) throws Exception {
         return create(date, code, partner, docRef, "5.000");
     }

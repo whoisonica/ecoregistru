@@ -64,8 +64,8 @@ export function useConfirm(): [(request: ConfirmRequest) => void, ReactNode] {
     >
       <div className="flex gap-3">
         {request.tone === "danger" && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
-            <AlertTriangle className="h-4 w-4 text-red-600" aria-hidden />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-red-50">
+            <AlertTriangle className="h-4 w-4 text-state-bad" aria-hidden />
           </div>
         )}
         <div className="text-sm text-content-muted">{request.message}</div>

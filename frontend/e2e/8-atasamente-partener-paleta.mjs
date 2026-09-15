@@ -245,7 +245,7 @@ await inchidePaleta();
 
 // Jumătatea cealaltă: ce se **începe**, nu unde se ajunge.
 const predare = await paleta("predare");
-check("„predare” găsește acțiunea de adăugare", predare.some((r) => r.includes("Adaugă mișcare")),
+check("„predare” găsește acțiunea de adăugare", predare.some((r) => r.includes("Deșeuri proprii")),
   predare.join(" · "));
 
 await shot(page, "paleta_actiuni");
@@ -254,7 +254,7 @@ await shot(page, "paleta_actiuni");
 // altfel un refresh ar redeschide dialogul peste ce lucrezi.
 await page.evaluate(() => {
   [...document.querySelectorAll('div[role="option"]')]
-    .find((o) => o.textContent.includes("Adaugă mișcare"))
+    .find((o) => o.textContent.includes("Deșeuri proprii"))
     .click();
 });
 await page.waitForTimeout(1400);

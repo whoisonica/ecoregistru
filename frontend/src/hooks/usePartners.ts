@@ -14,8 +14,9 @@ import type { Partner, PartnerInput } from "@/lib/types";
  */
 export const partnersKey = ["partners"] as const;
 
-export function usePartners() {
+export function usePartners(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: partnersKey,
     queryFn: async () => (await api.get<Partner[]>("/api/v1/partners")).data,
   });

@@ -280,7 +280,7 @@ export function AccountRequestPage() {
               t.successNext3.replace("{email}", sentToEmail || t.successNoEmailFallback),
             ].map((step, i) => (
               <li key={i} className="flex gap-3 text-sm text-content-strong">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-100 font-mono text-xs font-medium text-brand-800">
                   {i + 1}
                 </span>
                 <span>{step}</span>
@@ -318,7 +318,7 @@ export function AccountRequestPage() {
         <ol className="mt-3 grid gap-3 sm:grid-cols-3">
           {[t.step1, t.step2, t.step3].map((step, i) => (
             <li key={i} className="flex gap-2 text-sm text-content-strong">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-100 font-mono text-xs font-medium text-brand-800">
                 {i + 1}
               </span>
               <span>{step}</span>

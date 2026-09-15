@@ -24,7 +24,13 @@ await page.waitForTimeout(500);
 
 const h1 = (await page.textContent("h1")) ?? "";
 check("ecranul se deschide", /Import din Excel/.test(h1), h1.trim());
-check("bara laterală duce la el", Boolean(await page.$('nav a[href="/import"]')));
+// Din 15.09.2026 importul nu mai stă în meniu (e un lucru de făcut o dată, la implementare): drumul
+// e butonul din Setări, la cine configurează firma, plus paleta Ctrl+K.
+await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
+await page.waitForTimeout(500);
+check("Setări duce la el", Boolean(await page.$('a[href="/import"]')));
+await page.goto(BASE + "/import", { waitUntil: "networkidle" });
+await page.waitForTimeout(500);
 check("„Importă” e blocat fără fișier", (await importDisabled(page)) === true);
 
 const [download] = await Promise.all([

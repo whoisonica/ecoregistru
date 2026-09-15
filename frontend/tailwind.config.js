@@ -2,37 +2,60 @@
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
+    // Direcția „Cântar” (docs/stil-interfata.md): colțuri mici peste tot, ca la un aparat, nu ca la o
+    // aplicație de telefon. Scara e **înlocuită**, nu extinsă, dinadins: ecranele scriu `rounded-xl`,
+    // `rounded-2xl`, `rounded-3xl` în zeci de locuri, iar aici toate cad pe 6–8px fără să fie
+    // rescrise de mână. `full` rămâne rotund — pentru avatar și rotița de încărcare, nu pentru pastile.
+    borderRadius: {
+      none: "0",
+      sm: "3px",
+      DEFAULT: "4px",
+      md: "5px",
+      lg: "6px",
+      xl: "6px",
+      "2xl": "8px",
+      "3xl": "8px",
+      full: "9999px",
+    },
     extend: {
-      // Stilul „Prietenos” (docs/stil-interfata.md). Nunito are litere mai mici decât fontul
-      // sistemului la aceeași mărime, deci `text-sm` și `text-xs` urcă cu câte un pixel: textul
-      // aplicației se citește la fel de ușor ca înainte, fără să mute spațierile (care stau în rem).
       fontFamily: {
-        sans: ["Nunito", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        sans: ["IBM Plex Sans", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        // Cifre, CUI, coduri de deșeu, date, etichete mici cu majuscule. Aceeași familie ca textul,
+        // deci nu sare în ochi ca un font de terminal — doar aliniază.
+        mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       fontSize: {
-        xs: ["0.8125rem", { lineHeight: "1.15rem" }],
-        sm: ["0.9375rem", { lineHeight: "1.375rem" }],
+        // 12,5 / 14,5 px: mărimile machetei aprobate. Tabelele stau la 14px (`table.tsx`).
+        xs: ["0.78125rem", { lineHeight: "1.1rem" }],
+        sm: ["0.90625rem", { lineHeight: "1.35rem" }],
+      },
+      fontWeight: {
+        // IBM Plex e citeț la 500–600; 700 rămâne doar pentru titlurile mari. `font-bold` scris în
+        // ecrane cade pe 600, ca textul să nu se îngroașe ca un afiș.
+        medium: "500",
+        semibold: "600",
+        bold: "600",
+        extrabold: "700",
       },
       colors: {
-        // Paleta ecranelor: emerald (semnul mărcii WasteHouse are culorile lui, în `BrandName`). `DEFAULT`, `fg` și `muted` există de la început și sunt
-        // folosite peste tot (`bg-brand`, `text-brand-fg`, `bg-brand-muted`) — nu se ating.
-        // Scara 50–950 e adăugată ca stările (hover, apăsat, chenar) să nu mai fie emerald-uri
-        // alese pe loc în câte o clasă.
+        // Verdele de pe Punctul Verde al ambalajelor — acțiunea principală. `DEFAULT`, `fg` și
+        // `muted` există de la început și sunt folosite peste tot (`bg-brand`, `text-brand-fg`,
+        // `bg-brand-muted`) — nu se ating. Semnul mărcii are culorile lui, în `BrandName`.
         brand: {
-          DEFAULT: "#047857",
+          DEFAULT: "#009A44",
           fg: "#ffffff",
-          muted: "#ecfdf5",
-          50: "#ecfdf5",
-          100: "#d1fae5",
-          200: "#a7f3d0",
-          300: "#6ee7b7",
-          400: "#34d399",
-          500: "#10b981",
-          600: "#059669",
-          700: "#047857",
-          800: "#065f46",
-          900: "#064e3b",
-          950: "#022c22",
+          muted: "#EEF6F1",
+          50: "#EEF6F1",
+          100: "#DDF5E6",
+          200: "#B5EBC9",
+          300: "#7CD9A1",
+          400: "#2DB466",
+          500: "#009A44",
+          600: "#008A3D",
+          700: "#007A36",
+          800: "#00622F",
+          900: "#004B24",
+          950: "#022C16",
         },
         // Tokens semantice, legate de variabilele din index.css. Rostul lor e ca „fundalul unei
         // suprafețe" să fie o singură decizie, luată într-un loc — nu `bg-white` scris de 40 de
@@ -52,12 +75,62 @@ export default {
           muted: "rgb(var(--content-muted) / <alpha-value>)",
           subtle: "rgb(var(--content-subtle) / <alpha-value>)",
         },
+        // Panoul: bara din stânga și rama de pe telefon. Grafit, ca carcasa cântarului.
+        panel: {
+          DEFAULT: "#1B201D",
+          hover: "#232925",
+          active: "#2A322E",
+          line: "#2F3632",
+          key: "#3B4440",
+          text: "#C9D1CC",
+          mid: "#8A968F",
+          dim: "#7E8A84",
+          faint: "#6B7670",
+        },
+        // Afișajul LCD din panou: cifra lunii și rândul de alertă.
+        lcd: {
+          DEFAULT: "#0D1210",
+          digit: "#7CF2A9",
+          unit: "#4FB57C",
+          warn: "#FFB020",
+          bad: "#FF6B5E",
+        },
+        // Intrarea în depozit e albastră — cealaltă direcție față de verdele „predat/ieșit".
+        inbound: {
+          DEFAULT: "#1C6FD1",
+          key: "#155BAD",
+          border: "#0F4586",
+        },
+        // Stările, ca LED-uri: pătrățel + cuvânt. Sensul nu se schimbă: roșu = nu se poate depune
+        // așa; galben = o așteptare legitimă. Culoarea pubelei (mai jos) e altceva.
+        state: {
+          ok: "#009A44",
+          "ok-text": "#007A36",
+          warn: "#F59E0B",
+          "warn-text": "#8A4B00",
+          bad: "#D92D20",
+          "bad-text": "#B42318",
+          off: "#B8BFBB",
+        },
+        // Pubelele, pe codul de deșeu (`lib/binColor.ts`): o listă explicită, nu un prefix ghicit.
+        bin: {
+          paper: "#1F5FBF",
+          plastic: "#E9B600",
+          glass: "#2E8B3E",
+          bio: "#7A4E2D",
+          residual: "#4D4D4D",
+          hazard: "#C8102E",
+          metal: "#8A9299",
+        },
+      },
+      minWidth: {
+        5: "1.25rem",
       },
       boxShadow: {
-        // Umbre moi, cu tenta verde a fundalului, nu negru: pe #EDF4F0 un gri neutru arată murdar.
-        card: "0 1px 2px 0 rgb(16 40 30 / 0.04), 0 2px 8px -2px rgb(16 40 30 / 0.06)",
-        "card-hover": "0 2px 4px -1px rgb(16 40 30 / 0.06), 0 6px 16px -4px rgb(16 40 30 / 0.10)",
-        popover: "0 4px 6px -2px rgb(0 0 0 / 0.05), 0 10px 24px -4px rgb(0 0 0 / 0.12)",
+        // Nicio umbră pe pagină: cardurile stau pe chenar, nu pe umbră. Rămâne doar popover-ul.
+        card: "none",
+        "card-hover": "none",
+        popover: "0 18px 40px -12px rgb(0 0 0 / 0.35)",
       },
       keyframes: {
         "fade-in": {

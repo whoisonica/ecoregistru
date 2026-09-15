@@ -7,7 +7,9 @@
 export function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} className="mt-1 text-xs font-medium text-red-600">
+    // `data-field-error` e cârligul probelor (4, 6): clasa de culoare s-a schimbat o dată cu stilul
+    // și probele care o căutau au căzut degeaba.
+    <p id={id} data-field-error className="mt-1 text-xs font-medium text-state-bad-text">
       {message}
     </p>
   );

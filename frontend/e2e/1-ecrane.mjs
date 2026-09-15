@@ -2,9 +2,12 @@
 import { launch, newPage, login, shot, report, BASE } from "./lib.mjs";
 
 const SCREENS = [
-  ["/", "Panou", "h1"],
-  ["/miscari", "Mișcări", "table"],
-  ["/intrari-iesiri", "Intrări și ieșiri", "table"],
+  ["/", "Acasă", "h1"],
+  ["/miscari", "Generare", "table"],
+  ["/intrari", "Intrări", "table"],
+  ["/iesiri", "Ieșiri", "table"],
+  // Adresa veche (14–15.09.2026) rămâne un redirect spre Intrări: linkuri și mailuri vechi.
+  ["/intrari-iesiri", "Intrări (adresa veche)", "table"],
   ["/import", "Import din Excel", "h1"],
   ["/evidente", "Evidențe", "table"],
   ["/parteneri", "Parteneri", "table"],

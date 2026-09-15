@@ -26,9 +26,10 @@ export function FormSection({
 }) {
   return (
     <section className={cn("space-y-3", className)}>
-      <div className="border-b border-line pb-1.5">
-        {/* Stilul „Prietenos”: titlul secțiunii e un titlu citit, nu o etichetă mică cu majuscule. */}
-        <h3 className="text-base font-extrabold text-content">{title}</h3>
+      <div className="border-b-2 border-content pb-1.5">
+        {/* Titlul secțiunii e un titlu citit, nu o etichetă mică cu majuscule. Linia de 2px de sub
+            el e aceeași ca sub capul de tabel: „aici începe ceva". */}
+        <h3 className="text-[0.9375rem] font-semibold text-content">{title}</h3>
         {description && <p className="mt-0.5 text-sm text-content-muted">{description}</p>}
       </div>
       {children}

@@ -28,9 +28,9 @@ export function Switch({
     <label
       htmlFor={id}
       className={cn(
-        "flex items-start gap-3 rounded-2xl border-2 p-3.5 transition-colors",
-        "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-brand/20",
-        checked ? "border-brand bg-brand-50" : "border-line bg-surface hover:border-line-strong",
+        "flex items-start gap-3 rounded-lg border p-3.5 transition-colors",
+        "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/40",
+        checked ? "border-brand bg-brand-50" : "border-line-strong bg-surface hover:border-content-subtle",
         disabled ? "cursor-not-allowed opacity-55" : "cursor-pointer",
         className
       )}
@@ -59,7 +59,7 @@ export function Switch({
         />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-bold text-content">{label}</span>
+        <span className="block text-sm font-semibold text-content">{label}</span>
         {description && <span className="mt-0.5 block text-xs text-content-muted">{description}</span>}
       </span>
     </label>

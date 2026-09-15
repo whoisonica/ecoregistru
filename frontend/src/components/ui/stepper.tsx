@@ -28,14 +28,14 @@ export function Stepper({
             key={step}
             aria-current={now ? "step" : undefined}
             className={cn(
-              "grid min-w-0 flex-1 gap-1.5 text-xs font-bold",
+              "grid min-w-0 flex-1 gap-1.5 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.07em]",
               done ? "text-brand-800" : now ? "text-content" : "text-content-subtle"
             )}
           >
             <span
               aria-hidden
               className={cn(
-                "h-1.5 rounded-full",
+                "h-1 rounded-sm",
                 done ? "bg-brand" : now ? "bg-gradient-to-r from-brand from-50% to-line to-50%" : "bg-line"
               )}
             />

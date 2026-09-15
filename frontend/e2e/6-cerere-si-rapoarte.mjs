@@ -61,7 +61,7 @@ await page.waitForTimeout(600);
 const invalidCount = (await page.$$('[data-invalid="true"]')).length;
 check("trimiterea goală marchează rubricile", invalidCount === 3, invalidCount + " rubrici marcate");
 
-const errorTexts = await page.$$eval("p.text-red-600", (p) => p.map((x) => x.textContent.trim()));
+const errorTexts = await page.$$eval("p[data-field-error]", (p) => p.map((x) => x.textContent.trim()));
 check("fiecare rubrică își spune motivul", errorTexts.length === 3, errorTexts.join(" | "));
 
 // Derularea la prima greșită: butonul stă la capătul paginii, marcajul e în capul ei.
@@ -167,8 +167,10 @@ check("panoul numără ieșirile fără cod R/D",
   /lini(e|i) fără cod R\/D la ieșire/.test(panel), "");
 check("și le ține separate de cele care așteaptă cântarul", /lini(e|i) care așteaptă cântarul/.test(panel), "");
 
+// Din 15.09.2026 banda „Următoarea acțiune” duce și ea cu „Vezi liniile”; aici se numără doar
+// drumurile din caseta de blocaje, nu și verdictul de deasupra.
 const fixHref = await page.$$eval("a", (a) =>
-  a.filter((x) => x.textContent.trim() === "Vezi liniile").map((x) => x.getAttribute("href"))
+  a.filter((x) => x.textContent.trim() === "Vezi liniile" && !x.closest('[data-testid="next-action"]')).map((x) => x.getAttribute("href"))
 );
 check("panoul are un drum pentru fiecare blocaj", fixHref.length === 2, fixHref.join(" | "));
 // Ducea la vederea lunară, unde rândul e un agregat și nu se poate deschide nicio mișcare.

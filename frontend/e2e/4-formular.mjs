@@ -20,7 +20,7 @@ await page.goto(BASE + `/generare?luna=${AN}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
 
 // ------------------------------------------------------------ SECȚIUNI
-await page.click('button:has-text("Adaugă generare")');
+await page.click('button:has-text("Deșeuri proprii")');
 await page.waitForTimeout(600);
 const sections = await page.$$eval('div[role="dialog"] section h3', (h) => h.map((x) => x.textContent.trim()));
 check("formularul are secțiuni titrate", sections.length === 8, sections.join(" · "));
@@ -56,7 +56,7 @@ const invalids = await page.$$eval('div[role="dialog"] [data-invalid="true"]', (
 );
 check("rubricile greșite sunt marcate", invalids.length >= 2, invalids.join(", "));
 
-const messages = await page.$$eval('div[role="dialog"] p.text-red-600', (p) => p.map((x) => x.textContent.trim()));
+const messages = await page.$$eval('div[role="dialog"] p[data-field-error]', (p) => p.map((x) => x.textContent.trim()));
 check("fiecare marcaj are mesajul lui", messages.length >= 2, messages.join(" | "));
 
 const banner = await page.$eval('div[role="dialog"] p[role="alert"]', (e) => e.textContent.trim()).catch(() => null);

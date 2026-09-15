@@ -1,10 +1,15 @@
 package ro.ecoregistru.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,12 +24,16 @@ import ro.ecoregistru.controller.request.RecordWeightRequest;
 import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.MovementSummaryResponse;
+import ro.ecoregistru.controller.response.MovementTotalsResponse;
 import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.*;
+import ro.ecoregistru.enums.MovementDirection;
 import ro.ecoregistru.enums.PackagingMaterial;
+import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
+import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
@@ -81,6 +90,8 @@ public class WasteMovementService {
     ro.ecoregistru.service.export.AvizGenerator avizGenerator;
     Anexa2ThresholdCalculator anexa2ThresholdCalculator;
     WasteMovementMapper mapper;
+    /** Pentru totaluri: o interogare Criteria cu agregate, peste același filtru ca lista. */
+    EntityManager entityManager;
 
     @Transactional
     public WasteMovementResponse create(WasteMovementRequest request) {
@@ -282,21 +293,102 @@ public class WasteMovementService {
     public PageResponse<WasteMovementResponse> list(Integer year, Integer month, UUID workPointId,
                                                     UUID wasteCodeId, boolean leftSite,
                                                     boolean missingOperationCode, WasteRegister register,
-                                                    String search,
+                                                    MovementDirection direction, String search,
                                                     int page, int size, String sortKey, boolean ascending) {
         UUID tenantId = TenantContext.require();
+        LocalDate[] window = window(year, month);
+        Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, wasteCodeId,
+                window[0], window[1], leftSite, missingOperationCode, register, direction);
+        Specification<WasteMovement> spec = ordered(withSearch(filter, search), sortKey, ascending);
+        Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
+
+        return PageResponse.of(movementRepository.findAll(spec, pageable), mapper::toResponse);
+    }
+
+    /**
+     * Cifrele de deasupra listei — aceleași filtre ca {@link #list}, adunate de bază peste toate
+     * rândurile, nu peste o pagină. Ecranele „Generare", „Intrări" și „Ieșiri" (15.09.2026).
+     *
+     * <p>Folosește <b>același</b> {@link #buildFilter} ca lista, printr-o interogare Criteria cu
+     * agregate, ca totalul să nu poată descrie alte rânduri decât cele afișate. Kilogramele se
+     * normalizează în interogare (tonele × 1000), ca la {@code summarise}; rândurile fără cantitate
+     * nu intră în nicio sumă, se numără. Liniile unei operațiuni de cântar nefinalizate nu se
+     * socotesc — sunt ciorne, nu evidență (D1.3).
+     */
+    @Transactional(readOnly = true)
+    public MovementTotalsResponse totals(Integer year, Integer month, UUID workPointId,
+                                         WasteRegister register, MovementDirection direction) {
+        UUID tenantId = TenantContext.require();
+        LocalDate[] window = window(year, month);
+        Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, null,
+                window[0], window[1], false, false, register, direction);
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Tuple> query = cb.createTupleQuery();
+        Root<WasteMovement> root = query.from(WasteMovement.class);
+        Join<WasteMovement, WeighingOperation> op = root.join("weighingOperation", JoinType.LEFT);
+
+        Expression<BigDecimal> kg = cb.<BigDecimal>selectCase()
+                .when(cb.equal(root.get("unit"), Unit.TONS),
+                        cb.prod(root.<BigDecimal>get("quantity"), BigDecimal.valueOf(1000)))
+                .otherwise(root.<BigDecimal>get("quantity"));
+        Expression<BigDecimal> zero = cb.literal(BigDecimal.ZERO);
+        Expression<Integer> one = cb.literal(1);
+        Expression<Integer> none = cb.literal(0);
+
+        query.multiselect(
+                cb.count(root).alias("rows"),
+                cb.coalesce(cb.sum(kg), zero).alias("quantityKg"),
+                cb.sum(cb.<Integer>selectCase().when(cb.isNull(root.get("quantity")), one).otherwise(none))
+                        .alias("awaitingWeighing"),
+                cb.coalesce(cb.sum(cb.<BigDecimal>selectCase()
+                        .when(cb.equal(root.get("operation"), WasteOperation.RECOVERED), kg).otherwise(zero)), zero)
+                        .alias("recoveredKg"),
+                cb.coalesce(cb.sum(cb.<BigDecimal>selectCase()
+                        .when(cb.equal(root.get("operation"), WasteOperation.DISPOSED), kg).otherwise(zero)), zero)
+                        .alias("disposedKg"),
+                cb.sum(cb.<Integer>selectCase()
+                        .when(cb.equal(root.get("operation"), WasteOperation.UNCLASSIFIED_OUT), one).otherwise(none))
+                        .alias("missingOperationCode"),
+                cb.coalesce(cb.sum(cb.<BigDecimal>selectCase()
+                        .when(cb.isNotNull(op.get("naturalPerson")), kg).otherwise(zero)), zero)
+                        .alias("fromNaturalPersonsKg"));
+        query.where(cb.and(
+                filter.toPredicate(root, query, cb),
+                cb.or(cb.isNull(op.get("id")), cb.equal(op.get("status"), WeighingOperationStatus.FINALIZED))));
+
+        Tuple t = entityManager.createQuery(query).getSingleResult();
+        return new MovementTotalsResponse(
+                number(t.get("rows")),
+                decimal(t.get("quantityKg")),
+                number(t.get("awaitingWeighing")),
+                decimal(t.get("recoveredKg")),
+                decimal(t.get("disposedKg")),
+                number(t.get("missingOperationCode")),
+                decimal(t.get("fromNaturalPersonsKg")));
+    }
+
+    /** Sumele de întregi ies `Long` sau `Integer` după dialect; `null` când nu e niciun rând. */
+    private static long number(Object value) {
+        return value == null ? 0L : ((Number) value).longValue();
+    }
+
+    private static BigDecimal decimal(Object value) {
+        return value == null ? BigDecimal.ZERO : (BigDecimal) value;
+    }
+
+    /**
+     * Fereastra de date a unui filtru: luna, sau anul întreg — sau nimic.
+     *
+     * <p>Anul fără lună înseamnă anul întreg. Până acum nu însemna nimic: se cerea `?year=2026`
+     * fără lună și veneau înapoi toate mișcările, din toți anii — o filtrare care se ignora în
+     * tăcere, deci mai rea decât una respinsă. Treapta rămâne după ce căutarea s-a mutat pe
+     * server, dar din alt motiv decât înainte: acum nu mai apără ecranul de „tot" (paginarea o
+     * face), ci spune ce se caută — „luna asta" sau „anul ăsta".
+     */
+    private static LocalDate[] window(Integer year, Integer month) {
         LocalDate fromDate = null;
         LocalDate toDate = null;
-        /*
-         * Anul fără lună înseamnă anul întreg. Până acum nu însemna nimic: se cerea `?year=2026`
-         * fără lună și veneau înapoi toate mișcările, din toți anii — o filtrare care se ignora în
-         * tăcere, deci mai rea decât una respinsă.
-         *
-         * Treapta rămâne după ce căutarea s-a mutat pe server, dar din alt motiv decât înainte:
-         * acum nu mai apără ecranul de „tot" (paginarea o face), ci spune ce se caută — „luna asta"
-         * sau „anul ăsta". Cine caută o predare de acum trei luni lărgește filtrul la an, nu
-         * nimerește luna din prima.
-         */
         if (year != null) {
             if (month != null) {
                 YearMonth ym = YearMonth.of(year, month);
@@ -307,13 +399,7 @@ public class WasteMovementService {
                 toDate = LocalDate.of(year, 12, 31);
             }
         }
-
-        Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, wasteCodeId,
-                fromDate, toDate, leftSite, missingOperationCode, register);
-        Specification<WasteMovement> spec = ordered(withSearch(filter, search), sortKey, ascending);
-        Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
-
-        return PageResponse.of(movementRepository.findAll(spec, pageable), mapper::toResponse);
+        return new LocalDate[] {fromDate, toDate};
     }
 
     /**
@@ -475,7 +561,7 @@ public class WasteMovementService {
     private Specification<WasteMovement> buildFilter(UUID tenantId, UUID workPointId,
                                                      UUID wasteCodeId, LocalDate fromDate, LocalDate toDate,
                                                      boolean leftSite, boolean missingOperationCode,
-                                                     WasteRegister register) {
+                                                     WasteRegister register, MovementDirection direction) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
             predicates.add(cb.equal(root.get("company").get("id"), tenantId));
@@ -508,9 +594,17 @@ public class WasteMovementService {
             if (missingOperationCode) {
                 predicates.add(cb.isNull(root.get("operationCode")));
             }
-            // Ecranul „Generare" (Anexa 1) și „Intrări și ieșiri" (art. 48) — proprietarul, 14.09.2026.
+            // Ecranul „Generare" (Anexa 1) și cele de art. 48 — proprietarul, 14.09.2026.
             if (register != null) {
                 predicates.add(cb.equal(root.get("register"), register));
+            }
+            // „Intrări" / „Ieșiri", separate (proprietarul, 15.09.2026). `OUT` e același set ca
+            // `leftSite`: și rândul fără cod a ieșit pe poartă.
+            if (direction == MovementDirection.IN) {
+                predicates.add(cb.equal(root.get("operation"), WasteOperation.COLLECTED));
+            } else if (direction == MovementDirection.OUT) {
+                predicates.add(root.get("operation").in(
+                        WasteOperation.RECOVERED, WasteOperation.DISPOSED, WasteOperation.UNCLASSIFIED_OUT));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

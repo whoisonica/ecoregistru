@@ -5,6 +5,7 @@ import type {
   Attachment,
   MovementFilters,
   MovementSummary,
+  MovementTotals,
   Unit,
   WasteMovement,
   WasteMovementInput,
@@ -45,6 +46,7 @@ export function useMovements(filters: MovementFilters, table: RemoteTableParams)
       if (filters.workPointId) params.workPointId = filters.workPointId;
       if (filters.wasteCodeId) params.wasteCodeId = filters.wasteCodeId;
       if (filters.leftSite) params.leftSite = true;
+      if (filters.direction) params.direction = filters.direction;
       if (filters.missingOperationCode) params.missingOperationCode = true;
       if (filters.register) params.register = filters.register;
       if (table.search) params.search = table.search;
@@ -80,8 +82,9 @@ export function useMovement(id: string | null) {
  * **paginii** sub titlul „luna aceasta" — un număr mai mic decât adevărul, care nu spune că e mai
  * mic. Serverul socotește peste luna întreagă, în kilograme.
  */
-export function useMovementSummary(year: number, month: number) {
+export function useMovementSummary(year: number, month: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: [...movementsRoot, "summary", year, month] as const,
     queryFn: async () =>
       (
@@ -89,6 +92,31 @@ export function useMovementSummary(year: number, month: number) {
           params: { year, month },
         })
       ).data,
+  });
+}
+
+/**
+ * Totalurile de deasupra unei liste de mișcări — pe aceleași filtre ca lista (lună sau an, punct
+ * de lucru, registru, direcție), dar peste toate rândurile, nu peste pagina adusă.
+ *
+ * <p>Există fiindcă lista vine pe pagini: „Primit 12.640 kg" adunat din 25 de rânduri ar fi un
+ * total mai mic decât adevărul, care nu spune că e mai mic. Cheia include filtrele, deci orice
+ * mutație pe mișcări (`invalidateAll`) o reîmprospătează odată cu lista.
+ */
+export function useMovementTotals(filters: MovementFilters, enabled = true) {
+  return useQuery({
+    queryKey: [...movementsRoot, "totals", filters] as const,
+    enabled,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const params: Record<string, string | number | boolean> = {};
+      if (filters.year != null) params.year = filters.year;
+      if (filters.month != null) params.month = filters.month;
+      if (filters.workPointId) params.workPointId = filters.workPointId;
+      if (filters.register) params.register = filters.register;
+      if (filters.direction) params.direction = filters.direction;
+      return (await api.get<MovementTotals>("/api/v1/movements/totals", { params })).data;
+    },
   });
 }
 

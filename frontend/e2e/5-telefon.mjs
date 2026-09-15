@@ -97,8 +97,8 @@ check("Escape închide sertarul", afterEsc);
 // ---------------------------------------------------------------- FORMULARUL
 await page.goto(BASE + "/generare", { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
-// Firma demo e „Generator și colector”: `/miscari` duce pe „Generare”, unde butonul e „Adaugă generare”.
-await page.click('button:has-text("Adaugă generare")');
+// Firma demo e „Generator și colector”: `/miscari` duce pe „Generare”, unde butonul e „Deșeuri proprii” (firma e și colector — 15.09.2026).
+await page.click('button:has-text("Deșeuri proprii")');
 await page.waitForTimeout(700);
 const form = await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');

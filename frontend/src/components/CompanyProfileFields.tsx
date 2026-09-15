@@ -242,13 +242,13 @@ export function CompanyProfileFields({
             {value.authorizedWasteCodes.map((w) => (
               <span
                 key={w.id}
-                className="inline-flex items-center gap-1 rounded-full bg-surface-sunken py-0.5 pl-2.5 pr-1 text-xs text-content-strong"
+                className="inline-flex items-center gap-1 rounded border border-line-strong bg-surface py-0.5 pl-2 pr-1 font-mono text-xs text-content"
               >
                 {w.code}
                 <button
                   type="button"
                   aria-label={t.removeWasteCode}
-                  className="rounded-full p-0.5 text-content-subtle hover:bg-surface-sunken hover:text-content-strong"
+                  className="rounded p-0.5 text-content-subtle hover:bg-surface-sunken hover:text-content-strong"
                   onClick={() =>
                     patch({
                       authorizedWasteCodes: value.authorizedWasteCodes.filter((x) => x.id !== w.id),

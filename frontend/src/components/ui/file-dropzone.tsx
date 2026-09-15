@@ -99,7 +99,7 @@ export function FileDropzone({
         onDrop={onDrop}
         className={cn(
           "flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed px-4 py-5 text-center text-sm transition-colors",
-          dragging ? "border-brand bg-brand-muted" : "border-line-strong bg-surface-muted hover:bg-surface-sunken",
+          dragging ? "border-brand bg-brand-muted" : "border-line-strong bg-surface hover:bg-surface-muted",
           disabled && "cursor-not-allowed opacity-50"
         )}
       >

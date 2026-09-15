@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     const card = (
       <Card className="mx-auto w-full max-w-lg p-8 text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-red-50">
           <AlertOctagon className="h-6 w-6 text-red-600" aria-hidden />
         </div>
         <h1 className="text-lg font-semibold text-content">{t.title}</h1>

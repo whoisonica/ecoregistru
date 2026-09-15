@@ -26,12 +26,18 @@ export const strings = {
 
   nav: {
     packaging: "Ambalaje",
-    dashboard: "Panou",
+    // „Acasă", nu „Panou": panoul e bara din stânga de când există direcția „Cântar” (15.09.2026),
+    // iar ecranul de pornire e locul unde se vede ce e de făcut azi.
+    dashboard: "Acasă",
     movements: "Mișcări",
-    // Două ecrane, după registru (proprietarul, 14.09.2026): generatorul vede „Generare", colectorul
-    // „Intrări și ieșiri", iar „Generator și colector" pe amândouă. Vezi `lib/movementScreens.ts`.
+    // Trei ecrane, după registru și direcție (proprietarul, 15.09.2026): generatorul vede
+    // „Generare"; colectorul „Intrări" și „Ieșiri", **separate** („să poți să vezi tot frumos");
+    // „Generator și colector" le vede pe toate trei. Vezi `lib/movementScreens.ts`.
     movementsGenerator: "Generare",
-    movementsCollector: "Intrări și ieșiri",
+    movementsIn: "Intrări",
+    movementsOut: "Ieșiri",
+    kwMovementsIn: "intrare primit preluat de la firme persoane fizice cântar depozit art. 48",
+    kwMovementsOut: "ieșire plecat predat valorificat eliminat cod R/D anexa 3 aviz anexa 2 art. 48",
     evidences: "Evidențe",
     partners: "Parteneri",
     deadlines: "Termene",
@@ -79,6 +85,73 @@ export const strings = {
     kwBilling: "facturi factură plată plătește transfer pachet preț FGO scadență restanță",
     importExcel: "Import din Excel",
     kwImport: "import excel xlsx șablon istoric încarcă parteneri mișcări implementare",
+    groupCabinet: "Cabinet",
+  },
+
+  /**
+   * Panoul — bara din stânga, direcția „Cântar” (docs/stil-interfata.md, `todo-ui-cantar.md`).
+   *
+   * <p>Pornește de la cântarul de la colector: firma ca etichetă, afișajul lunii cu cel mai urgent
+   * lucru, tastele de adăugare, apoi meniul cu o tastă pe fiecare intrare și un indicator la
+   * dreapta. Indicatorii doar citesc cifre calculate deja pe Acasă — nicio regulă nouă de business.
+   */
+  panel: {
+    collapse: "Strânge panoul",
+    expand: "Desfă panoul",
+    // Tasta e scrisă în etichetă, ca reper; scurtătura o leagă `Layout`.
+    collapseKey: "[",
+    searchEverywhere: "Caută oriunde",
+    searchKey: "Ctrl K",
+    companyPick: "Alege firma",
+    companySearch: "Caută firma…",
+    companyNeedsAttention: "Cer atenție",
+    companyFine: "În regulă",
+    companyNone: "Nicio firmă aleasă",
+    // Afișajul lunii: eticheta e luna cu majuscule, cifra e în kg, rândul de jos e cel mai urgent
+    // lucru — același verdict ca banda „Următoarea acțiune" de pe Acasă.
+    monthGenerated: "generat",
+    monthReceived: "intrat",
+    kg: "kg",
+    // Când o sursă n-a răspuns, afișajul scrie „?", nu „0" (decizia 68).
+    unknown: "?",
+    // Tastele de adăugare, după tipul firmei (§5 din todo-ui-cantar.md).
+    addWaste: "Adaugă deșeuri",
+    addOwnWaste: "Deșeuri proprii",
+    addInbound: "Intrare",
+    addOutbound: "Ieșire",
+    // Indicatorii din meniu: cifre deja calculate pe Acasă, scrise scurt.
+    indAwaitingWeighing: "{n} de cântărit",
+    indMissingCode: "{n} fără cod R/D",
+    indOverdue: "{n} depășite",
+    indOverdueOne: "1 depășit",
+    indExpiring: "{n} expiră",
+    indUnknown: "?",
+    // Jos în panou.
+    billing: "Abonament",
+    billingDays: "{n} zile",
+    billingDayOne: "1 zi",
+    billingReadOnly: "doar citire",
+    billingPastDue: "restanță",
+    billingCancelled: "oprit",
+    accountMenu: "Meniul contului",
+    shortcuts: "Scurtături",
+    shortcutsTitle: "Scurtături de tastatură",
+    shortcutsHint:
+      "Tastele lucrează oriunde pe ecran, în afara rubricilor de text. Cifrele urmează ordinea meniului din panou.",
+    shortcutNav: "Deschide ecranul cu numărul respectiv din meniu",
+    shortcutSearch: "Caută oriunde: un ecran sau o acțiune",
+    shortcutFind: "Sari în caseta de căutare a listei",
+    shortcutNew: "Acțiunea principală a ecranului: adaugă (deșeuri, partener, punct de lucru)",
+    shortcutIn: "Intrare de deșeuri (la colector)",
+    shortcutOut: "Ieșire de deșeuri (la colector)",
+    shortcutCollapse: "Strânge sau desface panoul",
+    shortcutEscape: "Închide dialogul sau meniul deschis",
+    // Telefon: bara de jos.
+    barHome: "Acasă",
+    barAdd: "Adaugă",
+    barDeadlines: "Termene",
+    barMore: "Mai mult",
+    barAddTitle: "Ce adaugi?",
   },
 
   login: {
@@ -131,9 +204,16 @@ export const strings = {
   },
 
   dashboard: {
-    title: "Panou de control",
+    title: "Acasă",
+    subtitle: "Ce e de făcut azi și cum stă evidența pe anul în curs.",
     welcome: "Bine ai venit",
     addMovement: "Adaugă mișcare",
+    // Cuvântul de pe LED-ul benzii „Următoarea acțiune": cât de urgent e.
+    toneNow: "Acum",
+    toneSoon: "Curând",
+    toneOk: "La zi",
+    toneStart: "De început",
+    toneUnknown: "Necunoscut",
     // stat tiles
     statMovements: "Mișcări luna aceasta",
     statMovementsSub: "înregistrări în {month}",
@@ -279,13 +359,44 @@ export const strings = {
   },
 
   movements: {
-    // „Intrări și ieșiri" — registrul art. 48: marfa preluată de la terți și ce pleacă din ea.
+    // Registrul art. 48, pe două ecrane (proprietarul, 15.09.2026): ce a intrat și ce a ieșit.
+    // `title`/`subtitle`/`add` rămân numele generice, pentru formular și pentru linkurile vechi.
     title: "Intrări și ieșiri de deșeuri",
     subtitle: "Deșeurile preluate de la terți și cele predate mai departe (registrul art. 48), pe puncte de lucru și luni.",
     add: "Adaugă mișcare",
+    inTitle: "Intrări de deșeuri",
+    inSubtitle: "Ce ai primit de la firme și de la persoane fizice. Intră în evidența art. 48, nu în fișa ta de gestiune.",
+    inAdd: "Intrare",
+    inAddTitle: "Intrare de deșeuri",
+    inEditTitle: "Editează intrarea",
+    outTitle: "Ieșiri de deșeuri",
+    outSubtitle: "Ce a plecat din ce ai primit: la cine, cu ce cod R/D și cu ce document.",
+    outAdd: "Ieșire",
+    outAddTitle: "Ieșire de deșeuri",
+    outEditTitle: "Editează ieșirea",
+    // Totalurile de deasupra listei: cifrele lunii (sau ale anului) din filtru, socotite de server
+    // peste toate rândurile, nu peste pagina adusă. Fără cântar = „de cântărit", nu zero.
+    totGenerated: "Generat",
+    totRecovered: "Valorificat",
+    totDisposed: "Eliminat",
+    totReceived: "Primit",
+    totFromCompanies: "De la firme",
+    totFromPersons: "De la persoane fizice",
+    totLeft: "Plecat",
+    totAwaiting: "De cântărit",
+    totMissingCode: "Fără cod R/D",
+    totRows: "rânduri",
+    totRow: "rând",
+    totalsError: "Totalurile nu s-au putut citi.",
+    colFrom: "De la",
+    colTo: "Către",
+    colRdCode: "Cod R/D",
+    colDocuments: "Documente",
+    colState: "Stare",
     // Evidența art. 48 (AD închisă 15.09.2026): pe anul din filtru, xlsx pentru portal, PDF pentru control.
-    art48Xlsx: "Evidența cronologică (.xlsx)",
-    art48Pdf: "Evidența cronologică (PDF)",
+    art48Menu: "Evidența cronologică",
+    art48Xlsx: "Descarcă .xlsx (pentru portal)",
+    art48Pdf: "Descarcă PDF (pentru control)",
     art48Hint: "Anul {year}: tabelul cronologic și totalurile pentru chestionarul SIM „Colectare/Tratare”, în tone.",
     art48Error: "Evidența cronologică nu s-a putut genera.",
     addTitle: "Adaugă mișcare",
@@ -298,8 +409,11 @@ export const strings = {
     // cerut „Ieșiri"; proprietarul l-a numit în aceeași seară după ce se înregistrează: generarea.
     generatorTitle: "Generare de deșeuri",
     generatorSubtitle: "Deșeurile generate de firmă și ce se întâmplă cu ele, pentru fișa Anexa 1 și rapoartele de generator.",
-    generatorAdd: "Adaugă generare",
-    generatorAddTitle: "Adaugă generare",
+    // „Adaugă deșeuri" pe generator, „Deșeuri proprii" acolo unde firma e și colector (proprietarul,
+    // 15.09.2026): numele spune ce face omul, nu ce coloană se umple.
+    generatorAdd: "Adaugă deșeuri",
+    generatorAddOwn: "Deșeuri proprii",
+    generatorAddTitle: "Adaugă deșeuri",
     generatorEditTitle: "Editează generarea",
     // Linkul din rapoarte a adus un id care nu mai e printre mișcările lunii: ștearsă între timp,
     // sau o adresă veche. Se spune, în loc să se deschidă un formular gol.
@@ -478,6 +592,8 @@ export const strings = {
     anexa3SectionHint:
       "Formularul de încărcare-descărcare deșeuri nepericuloase (HG 1061/2008), tipărit din această mișcare. Completează ce apare pe hârtie.",
     recordWeight: "Adaugă cantitatea",
+    // Pe rând, scurt: butonul stă pe fiecare linie de cântărit, iar numele întreg e în `aria-label`.
+    recordWeightShort: "Cântar",
     recordWeightTitle: "Cantitatea cântărită la descărcare",
     recordWeightHint:
       "Cifra pe care ți-a trimis-o destinatarul după cântărire. Până o completezi, luna rămâne provizorie în evidență și rubrica de pe Anexa 3 iese goală.",
@@ -2603,10 +2719,13 @@ export const strings = {
     // sinonimele pe care le tastează cineva grăbit — „predare" pentru o mișcare, „client" sau
     // „furnizor" pentru un partener.
     actionsGroup: "Acțiuni",
-    actionNewMovement: "Adaugă mișcare",
-    actionNewMovementKeywords: "predare generare intrare ieșire nouă înregistrează transport",
+    actionNewMovement: "Adaugă deșeuri",
+    actionNewMovementKeywords: "predare generare mișcare nouă înregistrează transport adaugă mișcare",
+    actionNewInbound: "Intrare de deșeuri",
+    actionNewInboundKeywords: "intrare primit preluat cântar depozit nouă",
+    actionNewOutbound: "Ieșire de deșeuri",
+    actionNewOutboundKeywords: "ieșire plecat predat valorificat eliminat nouă",
     actionNewPartner: "Adaugă partener",
     actionNewPartnerKeywords: "client furnizor colector transportator firmă nouă",
-    shortcutHint: "Ctrl+K pentru comenzi · / pentru căutare · N pentru adăugare",
   },
 } as const;

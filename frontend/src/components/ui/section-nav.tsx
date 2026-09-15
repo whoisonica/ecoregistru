@@ -111,11 +111,14 @@ export function SectionNav({
         // vine **după** bară în DOM, deci la z egal ea câștiga — jumătatea din dreapta a barei era
         // acoperită de butoanele „Editează / Dezactivează" ale rândului care trecea pe sub ea.
         // Capul de tabel lipit e `z-20`, deci bara trebuie să treacă și de el.
-        "sticky -top-4 z-30 -mx-4 mt-6 border-b border-line bg-surface px-4 py-2 shadow-sm lg:top-0",
-        "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-4 before:bg-surface-muted lg:before:h-8",
+        // Sub `lg`, `<main>` are `pt-[4.75rem]` (76px) și banda fixă de sus are 60px: `-top-4`
+        // lipește bara exact sub bandă. Pe `lg`, căptușeala e `pt-6` (24px), deci `::before` are
+        // exact 24px — cât marginea de deasupra barei — ca să nu acopere descrierea paginii.
+        "sticky -top-4 z-30 -mx-4 mt-6 border-b border-line bg-surface px-4 py-2 lg:top-0",
+        "before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-4 before:bg-surface lg:before:h-6",
         // Fără `relative`: `sticky` e deja poziționat, iar `cn` (tailwind-merge) ar păstra doar
         // ultima clasă de poziție — bara ar înceta să se lipească.
-        "sm:mx-0 sm:rounded-lg sm:border sm:px-2",
+        "sm:mx-0 sm:border-0 sm:px-0",
         className
       )}
     >
@@ -124,17 +127,18 @@ export function SectionNav({
           `min-w-max` îi dă lăţimea conţinutului, deci lista ar ieşi din bară şi ar face pagina să
           se deruleze lateral pe telefon (probat: 129px pe „Setări", la 375px). */}
       <div className="overflow-x-auto">
-        <ul className="flex min-w-max gap-1">
+        <ul className="flex min-w-max gap-1.5">
           {items.map((item) => (
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
                 aria-current={active === item.id ? "true" : undefined}
                 className={cn(
-                  "block whitespace-nowrap rounded-md px-3 py-1.5 text-sm transition-colors",
+                  // „Cântar”: secțiunea curentă e o tastă apăsată — grafit cu text alb.
+                  "block whitespace-nowrap rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
                   active === item.id
-                    ? "bg-surface-sunken font-medium text-content"
-                    : "text-content-muted hover:bg-surface-sunken hover:text-content"
+                    ? "border-content bg-content text-surface"
+                    : "border-line-strong text-content-muted hover:border-content-subtle hover:text-content"
                 )}
               >
                 {item.label}

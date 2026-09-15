@@ -118,7 +118,7 @@ export function Menu({
         className={
           label
             ? cn(
-                "inline-flex items-center gap-2 whitespace-nowrap rounded-md border border-line bg-surface px-3 py-2 text-sm font-medium text-content transition-colors hover:bg-surface-muted",
+                "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md border border-line-strong bg-surface px-4 text-sm font-semibold text-content transition-colors hover:bg-surface-muted",
                 "disabled:cursor-not-allowed disabled:opacity-50"
               )
             : "rounded-md p-1.5 text-content-muted transition-colors hover:bg-surface-sunken disabled:opacity-40"
@@ -141,7 +141,7 @@ export function Menu({
           ref={boxRef}
           role="menu"
           style={pos}
-          className="fixed z-30 w-64 animate-slide-up overflow-hidden rounded-md border border-line bg-surface py-1 shadow-popover"
+          className="fixed z-30 w-64 animate-slide-up overflow-hidden rounded-md border border-line-strong bg-surface py-1 shadow-popover"
           onClick={() => setOpen(false)}
         >
           {children}
@@ -181,7 +181,7 @@ export function MenuItem({
       disabled={disabled}
       className={cn(
         "flex w-full items-start gap-2.5 px-3 py-2 text-left text-sm transition-colors disabled:opacity-40",
-        tone === "danger" ? "text-red-600 hover:bg-red-50" : "text-content hover:bg-surface-muted"
+        tone === "danger" ? "text-state-bad-text hover:bg-red-50" : "text-content hover:bg-surface-muted"
       )}
     >
       {Icon && <Icon className={cn("h-4 w-4 shrink-0", hint ? "mt-0.5" : "")} />}
