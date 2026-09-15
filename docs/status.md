@@ -3,7 +3,12 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **15.09.2026, seara — ✅ local, nedeployat: depozitul D1.7b, tabul „Persoane fizice”.**
+> **15.09.2026, 18:03 — ✅ pe producție: depozitul D1.7b, tabul „Persoane fizice”.**
+> `ecoregistru-api` **v88** (`4731671`, fără migrare, schema `V48`), `ecoregistru-app` **v70** (`3b03e73`); monorepo `bd701d7`.
+> Garda exactă pe amândouă repo-urile split (frontendul a luat și `1fdf36b`, README-ul e2e rămas pe drum). Pe producție:
+> `Schema "public" is up to date` și `Started EcoRegistruApplication` pe v88, dyno `up`; bundle-ul servit are
+> „Persoane fizice” și `natural-persons`.
+>
 > Pe Parteneri, la firmele cu art. 48, tab „Firme / Persoane fizice” (`?tab=persoane-fizice`), fără migrare.
 > `/api/v1/natural-persons`: lista o citește toată firma, cu CNP-ul redus la ultimele 4 cifre și `metalReady`; fișa
 > întreagă (`GET /{id}`) doar cine scrie; scrie și OPERATOR; CNP valid (cifra de control) și unic pe firmă; ștergerea
