@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,19 +62,26 @@ public class AnafClient {
     private final long minIntervalMs;
     private final Clock clock;
     private final Map<String, Cached> cache = new ConcurrentHashMap<>();
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Duration lockWait;
     private long lastCallAt;
 
     @Autowired
     public AnafClient(@Value("${app.anaf.base-url}") String baseUrl,
                       @Value("${app.anaf.min-interval-ms:1000}") long minIntervalMs) {
         this(RestClient.builder().baseUrl(baseUrl).requestFactory(timeouts()).build(), minIntervalMs,
-                Clock.system(BUCHAREST));
+                Clock.system(BUCHAREST), Duration.ofSeconds(5));
     }
 
     AnafClient(RestClient http, long minIntervalMs, Clock clock) {
+        this(http, minIntervalMs, clock, Duration.ofSeconds(5));
+    }
+
+    AnafClient(RestClient http, long minIntervalMs, Clock clock, Duration lockWait) {
         this.http = http;
         this.minIntervalMs = minIntervalMs;
         this.clock = clock;
+        this.lockWait = lockWait;
     }
 
     /** The digits of a CUI, or empty when it cannot be one. */
@@ -105,7 +114,30 @@ public class AnafClient {
         return company;
     }
 
-    private synchronized Optional<Company> fetch(String cui) {
+    /**
+     * One call at a time, but a request does not queue behind the others for longer than
+     * {@code lockWait}: ANAF may take the whole read timeout to answer, and a synchronized method would
+     * hold every waiting request thread — enough lookups from one tab to stall the API for everyone.
+     */
+    private Optional<Company> fetch(String cui) {
+        boolean locked;
+        try {
+            locked = lock.tryLock(lockWait.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            locked = false;
+        }
+        if (!locked) {
+            throw new ServiceUnavailableException(ErrorMessageEnum.ANAF_UNAVAILABLE);
+        }
+        try {
+            return fetchLocked(cui);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private Optional<Company> fetchLocked(String cui) {
         throttle();
         JsonNode body;
         try {

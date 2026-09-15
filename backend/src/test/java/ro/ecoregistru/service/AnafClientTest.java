@@ -10,6 +10,7 @@ import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.ServiceUnavailableException;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -135,6 +136,30 @@ class AnafClientTest {
         // 13 digits is a CNP, not a company's CUI.
         assertThatThrownBy(() -> anaf.lookup("1960101123456")).isInstanceOf(BusinessException.class);
         server.verify();
+    }
+
+    /**
+     * A request that would wait behind a slow ANAF call gives up as unavailable instead of holding its
+     * thread: with a synchronized fetch, enough lookups stall every request thread of the API.
+     */
+    @Test
+    void aLookupDoesNotQueueBehindASlowOneForLong() throws Exception {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://anaf.test/api");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        // The minimum interval stands in for a slow answer: the second call sleeps holding the lock.
+        AnafClient anaf = new AnafClient(builder.build(), 3_000, SEPT_15, Duration.ofMillis(200));
+        server.expect(ExpectedCount.manyTimes(), requestTo(URL))
+                .andRespond(withSuccess("{\"found\":[],\"notFound\":[1]}", MediaType.APPLICATION_JSON));
+
+        assertThat(anaf.lookup("11111111")).isEmpty();
+        Thread slow = new Thread(() -> anaf.lookup("22222222"));
+        slow.start();
+        Thread.sleep(300);
+
+        long started = System.nanoTime();
+        assertThatThrownBy(() -> anaf.lookup("33333333")).isInstanceOf(ServiceUnavailableException.class);
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofMillis(1_500));
+        slow.join();
     }
 
     @Test

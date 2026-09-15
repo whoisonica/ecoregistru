@@ -38,7 +38,10 @@ import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.WasteMovementService;
 import ro.ecoregistru.service.WeighingOperationService;
+import ro.ecoregistru.controller.request.RecordWeightRequest;
+import ro.ecoregistru.enums.MovementDirection;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -69,6 +72,7 @@ class WeighingOperationStatusIT {
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired WeighingOperationService service;
+    @Autowired WasteMovementService movementService;
     @Autowired WasteMovementRepository movementRepository;
     @Autowired WasteArticleRepository articleRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
@@ -235,7 +239,49 @@ class WeighingOperationStatusIT {
                 .andExpect(jsonPath("$.status").value("FINALIZED"));
     }
 
+    /**
+     * O linie de cântar e și mișcare, dar formularul de mișcare n-o atinge: altfel operatorul ar schimba
+     * sau ar șterge o linie finalizată fără aprobare și fără motiv.
+     */
+    @Test
+    void aWeighingLineIsChangedOnlyThroughItsOperation() {
+        UUID id = weighedOperation("300");
+        service.finalizeOperation(id);
+        UUID lineId = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id).get(0).getId();
+        actAs(operator);
+
+        assertThatThrownBy(() -> movementService.update(lineId, null))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("din operațiune");
+        assertThatThrownBy(() -> movementService.recordWeight(lineId, new RecordWeightRequest(BigDecimal.ONE, null)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("din operațiune");
+        assertThatThrownBy(() -> movementService.delete(lineId))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("din operațiune");
+        assertThat(counted()).containsExactly(300);
+    }
+
+    /** Lista de pe Intrări/Ieșiri arată aceleași rânduri pe care le adună totalurile de deasupra ei. */
+    @Test
+    void theMovementListShowsOnlyFinalizedWeighingLines() {
+        UUID id = weighedOperation("300");
+        assertThat(listed()).isEmpty();
+        assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
+
+        service.finalizeOperation(id);
+        assertThat(listed()).containsExactly(300);
+        assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isEqualTo(1);
+
+        service.cancel(id, "Cântărire dublă");
+        assertThat(listed()).isEmpty();
+        assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
+    }
+
     // --- helpers ---
+
+    private List<Integer> listed() {
+        return movementService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
+                        null, 0, 25, null, false)
+                .content().stream().map(m -> m.quantity().intValue()).toList();
+    }
 
     private UUID weighedOperation(String kg) {
         UUID id = service.create(head()).id();

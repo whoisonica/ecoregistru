@@ -178,7 +178,7 @@ public class WasteMovementService {
     @Transactional
     public WasteMovementResponse update(UUID id, WasteMovementRequest request) {
         UUID tenantId = TenantContext.require();
-        WasteMovement movement = requireMovement(id, tenantId);
+        WasteMovement movement = requireEditableMovement(id, tenantId);
 
         Company company = requireCompany(tenantId);
         WorkPoint workPoint = requireWorkPoint(request.workPointId(), tenantId);
@@ -253,7 +253,7 @@ public class WasteMovementService {
     @Transactional
     public WasteMovementResponse recordWeight(UUID id, RecordWeightRequest request) {
         UUID tenantId = TenantContext.require();
-        WasteMovement movement = requireMovement(id, tenantId);
+        WasteMovement movement = requireEditableMovement(id, tenantId);
 
         if (movement.getQuantity() != null) {
             throw new BusinessException(NOT_AWAITING_WEIGHING);
@@ -353,9 +353,7 @@ public class WasteMovementService {
                 cb.coalesce(cb.sum(cb.<BigDecimal>selectCase()
                         .when(cb.isNotNull(op.get("naturalPerson")), kg).otherwise(zero)), zero)
                         .alias("fromNaturalPersonsKg"));
-        query.where(cb.and(
-                filter.toPredicate(root, query, cb),
-                cb.or(cb.isNull(op.get("id")), cb.equal(op.get("status"), WeighingOperationStatus.FINALIZED))));
+        query.where(filter.toPredicate(root, query, cb));
 
         Tuple t = entityManager.createQuery(query).getSingleResult();
         return new MovementTotalsResponse(
@@ -566,6 +564,11 @@ public class WasteMovementService {
             List<Predicate> predicates = new java.util.ArrayList<>();
             predicates.add(cb.equal(root.get("company").get("id"), tenantId));
             predicates.add(cb.isFalse(root.get("deleted")));
+            // Liniile unei operațiuni de cântar în lucru sau anulate sunt ciorne, nu evidență (D1.3):
+            // nici lista, nici totalurile de deasupra ei nu le arată.
+            Join<WasteMovement, WeighingOperation> weighing = root.join("weighingOperation", JoinType.LEFT);
+            predicates.add(cb.or(cb.isNull(weighing.get("id")),
+                    cb.equal(weighing.get("status"), WeighingOperationStatus.FINALIZED)));
             if (workPointId != null) {
                 predicates.add(cb.equal(root.get("workPoint").get("id"), workPointId));
             }
@@ -619,7 +622,7 @@ public class WasteMovementService {
     @Transactional
     public void delete(UUID id) {
         UUID tenantId = TenantContext.require();
-        WasteMovement movement = requireMovement(id, tenantId);
+        WasteMovement movement = requireEditableMovement(id, tenantId);
         movement.setDeleted(true);
         movement.setDeletedAt(Instant.now());
         movement.setDeletedBy(SecurityUtils.currentUser().getId());
@@ -879,6 +882,19 @@ public class WasteMovementService {
     private WasteMovement requireMovement(UUID id, UUID tenantId) {
         return movementRepository.findByIdAndCompany_IdAndDeletedFalse(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(MOVEMENT_NOT_FOUND));
+    }
+
+    /**
+     * O mișcare pe care formularul de mișcare o poate schimba. Linia unei operațiuni de cântar nu e:
+     * pe aici ar ocoli starea (finalizata nu se mai modifică), aprobarea, anularea cu motiv și prețul
+     * ascuns (D1.5, D1.8). Se lucrează pe ea prin {@code /api/v1/weighing-operations}.
+     */
+    private WasteMovement requireEditableMovement(UUID id, UUID tenantId) {
+        WasteMovement movement = requireMovement(id, tenantId);
+        if (movement.getWeighingOperation() != null) {
+            throw new BusinessException(WEIGHING_LINE_EDITED_THROUGH_OPERATION);
+        }
+        return movement;
     }
 
     private WorkPoint requireWorkPoint(UUID id, UUID tenantId) {
