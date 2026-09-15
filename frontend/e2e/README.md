@@ -1,10 +1,17 @@
 # Probe de interfaţă
 
-Cincisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
-Ultima rulare completă, 14.09.2026, pe o bază locală nouă: **„✓ 15 probe, toate trec", exit 0**.
-Proba 16 (buletinele) a fost ştearsă în aceeaşi seară, odată cu buletinele.
+Şaisprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
+Ultima rulare completă, **15.09.2026**, pe ramura `feat/generator-100`: **„✓ 16 probe, toate trec", exit 0**.
+Proba 16 e acum importul din Excel (P2.15); cea veche, a buletinelor, a fost ştearsă pe 14.09.
 
-⬜ **Nerulate pe feliile din 14.09.2026, seara–noaptea:** contul de consultant (P2.13, felia 1),
+✅ **15.09.2026 — cele de mai jos au rulat.** Pe o bază nouă (`ecoregistru_e2e_1509`, proprietar `eco` — creată
+de alt utilizator, Flyway ia `permission denied for schema public`) au căzut întâi 9, 10 şi 11 **pe date**: trebuie
+o firmă `GENERATOR` al cărei nume conţine „Proba Automata" şi termenele generate pe anul trecut şi pe cel curent
+(`POST /api/v1/deadlines/regenerate?year=`), apoi au trecut. Au mai ieşit trei probe învechite (6: rândul gol al
+tabelului de cabinete; 7: şase secţiuni în Setări; 9: nota nouă despre şoferii dezactivaţi) şi **un defect real**,
+căzut şi pe `origin/main`: titlul Evidenţelor strâns pe trei rânduri de butoanele documentelor oficiale (`PageHeader`).
+
+~~⬜ **Nerulate pe feliile din 14.09.2026, seara–noaptea:**~~ contul de consultant (P2.13, felia 1),
 ecranele „Generare” (`/generare`) şi „Intrări şi ieşiri” (`/intrari-iesiri`) care au înlocuit
 „Mişcări”, Anexa 2 şi Anexa 3 Ambalaje ascunse la generatori, viza anuală a partenerului şi ştergerea
 definitivă a şoferului. **`4-formular` şi `8-atasamente-partener-paleta` sunt mutate pe adresele noi**
