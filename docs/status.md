@@ -3,7 +3,12 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **15.09.2026, ~21:30 — ✅ gata local: stilul interfeței „Prietenos” (felia 1) și căutarea firmei după CUI la ANAF.**
+> **15.09.2026, 21:12 — ✅ pe producție: stilul interfeței „Prietenos” (felia 1) și căutarea firmei după CUI la ANAF.**
+> `ecoregistru-api` **v90** (`a8e3a34`, fără migrare, schema `V48`), `ecoregistru-app` **v72** (`50acba7`); monorepo `3da95dc`,
+> `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe amândouă repo-urile split, înainte și după cherry-pick.
+> Pe producție: `Schema "public" is up to date` și `Started EcoRegistruApplication` pe v90, `health` `UP`; bundle-ul servit
+> are „Completează din ANAF” și „Poate vinde metal”, CSS-ul are `Nunito`, `/fonts/nunito-latin-ext.woff2` răspunde `200
+> font/woff2`, iar `/api/v1/company-lookup/…` fără token `401`.
 > Ramura `feat/stil-prietenos`, peste `aaa0677` (D1.8). Suita **733 de teste, 91 de clase, 0 eșecuri, 3 sărite**; e2e pe o
 > bază nouă: **14 din 17** trec, iar 9, 10 și 11 cad pe date lipsă (firma generator de probă, termenele depășite) și cad
 > **identic pe `origin/main`** rulat pe aceeași bază.
