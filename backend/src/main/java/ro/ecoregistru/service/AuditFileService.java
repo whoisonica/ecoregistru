@@ -38,6 +38,7 @@ import ro.ecoregistru.util.WasteCodeLabel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -109,23 +110,24 @@ public class AuditFileService {
     CloudinaryStorageService storageService;
     PackagingService packagingService;
 
-    /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
-    public byte[] build(int year) {
-        return build(year, 1);
-    }
-
     /**
      * The dossier for {@code years} consecutive years ending in {@code year} - so
-     * {@code build(2026, 3)} covers 2024, 2025 and 2026, the retention window of OUG 92/2021
+     * {@code write(2026, 3, out)} covers 2024, 2025 and 2026, the retention window of OUG 92/2021
      * art. 48 alin. (5).
      *
      * <p>One year keeps the flat layout; more than one puts each year in its own folder, because
      * the file names inside repeat. The partner authorizations stay at the root either way: their
      * status ("expira in 30 de zile") is read against today, not against a reporting year, so a
      * copy per year would be the same page three times, carrying a date that fits none of them.
+     *
+     * <p>R3 (QA-FINAL-REPORT §5): the archive goes straight into {@code target}, not into a byte
+     * array first. Five years of attachments held whole in a 300 MB heap was the one download that
+     * could end in {@code OutOfMemoryError}; now only one entry at a time is in memory. Everything
+     * that can refuse the request (the year range, the tenant, the company) runs before the first
+     * byte, so a refusal still leaves the response uncommitted for the error envelope.
      */
     @Transactional
-    public byte[] build(int year, int years) {
+    public void write(int year, int years, OutputStream target) {
         if (years < 1 || years > MAX_YEARS) {
             throw new BadRequestException(AUDIT_FILE_YEARS_UNSUPPORTED);
         }
@@ -151,8 +153,7 @@ public class AuditFileService {
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
         }
 
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-             ZipOutputStream zip = new ZipOutputStream(out)) {
+        try (ZipOutputStream zip = new ZipOutputStream(target)) {
 
             writeEntry(zip, "README.txt",
                     readme(company, firstYear, year, evidenceByYear)
@@ -166,7 +167,6 @@ public class AuditFileService {
                     partnerAuthorizationsPdf(company.getName(), partners));
 
             zip.finish();
-            return out.toByteArray();
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to build audit-file ZIP", ex);
         }

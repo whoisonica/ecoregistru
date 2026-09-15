@@ -53,8 +53,7 @@ public class AnnualDeclarationBuilder {
 
         // Only Anexa 1 movements: goods taken over from third parties are the art. 48 register's
         // business and never reach this sheet (HG 856/2002 art. 2 alin. (1)).
-        Map<Key, List<WasteMovement>> movementsByPair = movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
+        Map<Key, List<WasteMovement>> movementsByPair = WasteRegister.ANEXA_1.select(movements).stream()
                 .collect(Collectors.groupingBy(
                         m -> new Key(m.getWorkPoint().getId(), m.getWasteCode().getId()),
                         LinkedHashMap::new, Collectors.toList()));

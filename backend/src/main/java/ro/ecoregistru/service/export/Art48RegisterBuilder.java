@@ -42,8 +42,7 @@ public class Art48RegisterBuilder {
         LocalDate start = LocalDate.of(year, 1, 1);
         LocalDate end = LocalDate.of(year, 12, 31);
 
-        List<WasteMovement> scoped = movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ART_48)
+        List<WasteMovement> scoped = WasteRegister.ART_48.select(movements).stream()
                 .filter(m -> workPoint == null || (m.getWorkPoint() != null
                         && workPoint.getId().equals(m.getWorkPoint().getId())))
                 .filter(m -> !m.getDate().isAfter(end))

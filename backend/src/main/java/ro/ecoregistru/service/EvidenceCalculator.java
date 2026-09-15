@@ -163,8 +163,7 @@ public class EvidenceCalculator {
         evidenceRepository.deleteByCompany_IdAndYear(tenantId, year);
         evidenceRepository.flush();
 
-        Map<GroupKey, List<WasteMovement>> byGroup = movements.stream()
-                .filter(m -> m.getRegister() == WasteRegister.ANEXA_1)
+        Map<GroupKey, List<WasteMovement>> byGroup = WasteRegister.ANEXA_1.select(movements).stream()
                 .collect(Collectors.groupingBy(
                         m -> new GroupKey(m.getWorkPoint().getId(), m.getWasteCode().getId())));
 
