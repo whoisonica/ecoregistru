@@ -6,7 +6,7 @@ import { strings } from "@/lib/strings";
 import { BrandName } from "@/components/BrandName";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LegalFooter } from "@/components/LegalFooter";
+import { LegalFooter, LegalNotice } from "@/components/LegalFooter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -112,6 +112,9 @@ export function ResetPasswordPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t.saving : t.submit}
               </Button>
+              {/* O invitație e tot o resetare (vezi comentariul clasei), deci rândul apare și la o
+                  parolă uitată. Nu strică: termenii se acceptă „prin utilizare” oricum (cap. 2). */}
+              <LegalNotice text={strings.legal.setPasswordNotice} className="text-center" />
             </form>
             <p className="mt-4 text-center text-sm">
               <Link to="/parola-uitata" className="text-brand hover:underline">

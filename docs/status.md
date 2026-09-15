@@ -3,6 +3,14 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, seara — 🔄 termenii și politica, v2, în cod (necommis, nedeployat):** textele din
+> `frontend/src/lib/legal.ts` urmează setul juridic v2 din repo-ul privat. Termenii au **17 capitole**
+> (cap. 11 plata rescris, cap. 12 nou „Oprirea abonamentului și rambursări”, cap. 14 „Datele după încetare”);
+> politica numește furnizorii de facturare și de plăți și toate cheile din stocarea locală. Pagina de
+> invitație (`ResetPasswordPage`) are rândul „Salvând parola, confirmi că ai citit…” (`legal.setPasswordNotice`),
+> iar textul de sub „Card” din `/abonament` descrie autorizarea de debitare. `tsc` și `vite build` curate;
+> proba de ecran 12 numără acum 17 capitole și n-a fost rulată. ⬜ La deploy, `LEGAL_DATE` pe ziua deployului.
+>
 > **15.09.2026, ~14:30 — „primele 3 la 100%”: două defecte de producție reparate, probele de ecran și de ops făcute.**
 > Ramura `feat/branding-cabinet` peste `main` `3feb80f`, **2 commituri, fără migrare, doar backend**; suita completă
 > **687 de teste în 85 de clase, 0 eșecuri, 3 sărite** (din XML). Ramura de deploy `deploy-be-1509` peste `newrepo/main`

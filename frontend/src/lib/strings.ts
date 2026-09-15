@@ -1377,8 +1377,10 @@ export const strings = {
     method: "Cum plătești",
     methodCard: "Card",
     methodTransfer: "Transfer bancar",
+    // Nu e doar o explicație: e autorizarea de debitare (contract art. 5.8, termeni 11.5). Schemele
+    // de card cer ca, înainte de a salva cardul, omul să vadă ce se debitează, când, și cum oprește.
     methodCardHint:
-      "Plătești factura cu cardul, pe pagina securizată Netopia. Dacă banca salvează cardul, facturile următoare se plătesc singure în ziua emiterii.",
+      "Plătești factura cu cardul, pe pagina securizată Netopia. Dacă accepți acolo salvarea cardului, ne autorizezi să plătim de pe el fiecare factură emisă, la valoarea ei, în ziua emiterii (cu reîncercări în zilele 3, 6 și 10 dacă e refuzată). Poți revoca oricând, trecând pe transfer: cardul salvat se șterge.",
     methodTransferHint:
       "Plătești prin transfer, în contul de pe factură, în 10 zile. La detalii plată treci seria și numărul facturii.",
     methodSaved: "Salvat.",
@@ -2322,6 +2324,10 @@ export const strings = {
     // cont, iar acceptarea propriu-zisă se face la semnarea contractului (cap. 2 din termeni).
     // O bifă aici ar cere un consimțământ pentru ceva ce încă nu s-a întâmplat.
     accountRequestNotice: "Trimițând cererea, confirmi că ai citit {termeni} și {confidentialitate}.",
+    // Sub butonul de salvare a parolei — adică la invitație, singurul moment în care un utilizator
+    // invitat (nu cel care a cerut contul) trece printr-un ecran al nostru înainte să lucreze.
+    // Termenii, cap. 6.4, spun exact asta; fără rândul ăsta ar spune-o degeaba.
+    setPasswordNotice: "Salvând parola, confirmi că ai citit {termeni} și {confidentialitate}.",
     // Etichetele de **înăuntrul** propoziției. Nu se refolosesc cele din subsol („Termeni și
     // condiții"), fiindcă acolo sunt titluri de pagină, iar aici sunt complement direct.
     accountRequestTermsLabel: "termenii și condițiile",

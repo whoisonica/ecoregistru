@@ -27,11 +27,12 @@ check("nu ne-a aruncat în login", !page.url().includes("/login"), page.url());
 const dateLine = (await page.textContent("h1 + p")) ?? "";
 check("spune de când e în vigoare", /În vigoare de la:\s*\S/.test(dateLine), dateLine.trim());
 
-// Cele şaisprezece capitole, şi cuprinsul care le numără la fel. Un capitol adăugat în
-// `legal.ts` şi uitat din cuprins n-ar avea cum să se vadă altfel.
+// Cele şaptesprezece capitole (16 până la v2 din 15.09.2026, când a intrat „Oprirea abonamentului
+// şi rambursări”), şi cuprinsul care le numără la fel. Un capitol adăugat în `legal.ts` şi uitat
+// din cuprins n-ar avea cum să se vadă altfel.
 const chapters = await page.$$eval("article section", (s) => s.length);
 const tocEntries = await page.$$eval("nav ol li a", (a) => a.length);
-check("are cele 16 capitole", chapters === 16, chapters + " capitole");
+check("are cele 17 capitole", chapters === 17, chapters + " capitole");
 check("cuprinsul le are pe toate", tocEntries === chapters, tocEntries + " intrări");
 
 // Marcajul de rând s-a consumat: în pagină nu rămâne niciun asterisc dublu şi niciun `[text](url)`.

@@ -54,14 +54,22 @@ export function LegalFooter({
 }
 
 /**
- * Rândul de sub butonul de trimitere al cererii de cont.
+ * Rândul de sub butonul de trimitere al cererii de cont și, cu alt `text`, de sub butonul de
+ * salvare a parolei la invitație.
  *
  * <p>Propoziția stă întreagă în `strings.ts`, cu două locuri marcate — altfel ar fi trebuit tăiată
  * în cinci bucăți („confirmi că ai citit", „și", „."), iar o propoziție tăiată nu se mai poate nici
  * citi, nici traduce. Se taie **aici**, la randare, exact pe cele două marcaje.
  */
-export function LegalNotice({ className }: { className?: string }) {
-  const parts = strings.legal.accountRequestNotice.split(/(\{termeni\}|\{confidentialitate\})/);
+export function LegalNotice({
+  className,
+  text = strings.legal.accountRequestNotice,
+}: {
+  className?: string;
+  /** Propoziția, cu `{termeni}` și `{confidentialitate}` acolo unde intră linkurile. */
+  text?: string;
+}) {
+  const parts = text.split(/(\{termeni\}|\{confidentialitate\})/);
   return (
     <p className={cn("text-xs text-content-muted", className)}>
       {parts.map((part, i) => {
