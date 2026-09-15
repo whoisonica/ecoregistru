@@ -3,6 +3,31 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, 17:11 — ✅ pe producție: depozitul D1.6 (sortimente) + D1.7 (persoane fizice), blocantele legale citite.**
+> `ecoregistru-api` **v87** (`48ee383`, fără migrare, schema `V48`), `ecoregistru-app` **v69** (`65bd192`); monorepo `9c873eb`
+> (3 commituri rebazate peste `b3695fc`, BUG-017), `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe
+> amândouă repo-urile split (backend: `.gitignore` + newline-ul din `SecurityConfiguration.java`; frontend: `.gitignore`
+> + `vite.config.js`/`.d.ts`).
+>
+> Ce a intrat:
+> - **D1.6:** catalogul de sortimente pe `/api/v1/waste-articles`, scris de ADMIN, CONSULTANT și **OPERATOR** (decizia
+>   proprietarului, „lasă userii să își customizeze sortimentele”); bifa „metal” propusă din cod (`MetalWasteCodes`,
+>   `WasteCodeResponse.metalSuggested`); sortimentul „interzis de la PF” refuzat la intrarea unei persoane fizice
+>   (OUG 31/2011 art. 1 alin. (1)); secțiunea „Sortimente” în Setări, doar la firmele cu art. 48.
+> - **D1.7:** la metal de la o PF se cer CNP valid, act și domiciliu, la cântărire și iar la finalizare
+>   (OUG 31/2011 art. 1 alin. (1^2)); persoanele fără operațiune de 10 ani întregi se anonimizează
+>   (`NaturalPersonRetentionScheduler`, Legea 82/1991 art. 25); CNP-ul și actul rămân redactate în jurnal.
+> - **Blocantele depozitului** citite pe sursă primară (`surse-oficiale.md` §18): C1 (10% din brut), C2, AX, AY, AZ
+>   decise pe text. **C3 corectat la reverificare:** Ordinul 701/2024 art. 18 alin. (3) exceptează municipalele,
+>   deci borderoul la hârtie/plastic de la PF trece la specialistă (BA).
+>
+> Probe: suita **707 teste, 87 de clase, 0 eșecuri, 3 sărite** (din XML, după rebase); `WasteArticleIT` 8/8,
+> `NaturalPersonIT` 8/8; proba negativă pe 2 + 4 reguli, fiecare pică exact testele ei; proba de ecran pe aplicația
+> pornită local, ca ADMIN și ca OPERATOR, **11/11** de fiecare dată (conturile de probă șterse). Pe producție:
+> releaseurile cu hash-urile de mai sus, `Schema "public" is up to date` și `Started EcoRegistruApplication` pe v87
+> (14:11:40 UTC, dyno `up`), bundle-ul servit are
+> `waste-articles`, „Adaugă sortiment” și `metalSuggested`. Proba e2e 7 așteaptă acum 7 secțiuni în Setări.
+>
 > **15.09.2026, ~17:00 — ✅ pe producție: BUG-017, un DoS de disponibilitate pe importul Excel.**
 > `ecoregistru-api` **v86** (`edc9d533`, fără migrare, schema `V48`), monorepo `b3695fc` pe `main` și
 > `deploy/heroku-split`; frontend neatins (app rămâne v68). Găsit la o rundă QA amănunțită pe suprafața
