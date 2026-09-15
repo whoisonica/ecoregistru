@@ -3,6 +3,32 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, ~21:30 — ✅ gata local: stilul interfeței „Prietenos” (felia 1) și căutarea firmei după CUI la ANAF.**
+> Ramura `feat/stil-prietenos`, peste `aaa0677` (D1.8). Suita **733 de teste, 91 de clase, 0 eșecuri, 3 sărite**; e2e pe o
+> bază nouă: **14 din 17** trec, iar 9, 10 și 11 cad pe date lipsă (firma generator de probă, termenele depășite) și cad
+> **identic pe `origin/main`** rulat pe aceeași bază.
+>
+> **Stilul**, decis de proprietar din trei variante desenate, e scris ca regulă în `docs/stil-interfata.md`, iar
+> `CLAUDE.md` îl cere oricărei sesiuni. Nunito servit din `frontend/public/fonts` (OFL), nu de pe Google Fonts, ca IP-ul
+> clientului să nu plece la un terț; fondul verde pal, griurile cu tentă verde, textul la 15/13px; butoane pastilă,
+> câmpuri `rounded-xl` cu chenar de 2px și halou la focus, carduri și tabele `rounded-2xl`, dialoguri `rounded-3xl`,
+> titlurile de secțiune citite, nu majuscule; bara laterală pe fundalul paginii. Primitive noi pentru feliile
+> următoare și pentru D1.15: `ChoiceCards`, `PillGroup`, `Switch`, `Stepper`. „Cine vede prețurile” (D1.8) e pe carduri,
+> nu într-o listă derulantă care se tăia pe telefon. Reparate din verificarea D1.7b/D1.8: pe tabul „Persoane fizice”
+> antetul vorbea despre firme; „ⓘ” de pe persoanele cu operațiuni era un `title`, necitibil pe telefon și din tastatură
+> (acum `Tooltip`); badge-ul spune „Poate vinde metal”.
+> **Găsit de proba 8, nu de `tsc`:** cu textul de 15px și celulele `px-4`, Mișcări ieșea din 1440px cu 63px, iar
+> „Vezi atașamentele” intra sub coloana de acțiuni fixată. Tabelele au rămas la 14px, celulele la `px-3`, bara laterală
+> la `w-60`; măsurat după: `scrollWidth = clientWidth = 1134`. Tot din capturi: la 900px înălțime „Abonament” ieșea din
+> meniu (intrările înapoi la `py-2`).
+>
+> **ANAF:** „Completează din ANAF” în formularul de partener aduce denumirea, adresa și numărul de la Registrul
+> Comerțului din serviciul public v9 și completează **numai rubricile goale**; contribuabilul inactiv e semnalat.
+> `GET /api/v1/company-lookup/{cui}`, doar autentificat; cererile rărite la una pe secundă, cum cere documentația ANAF;
+> firma găsită ținută o zi, CUI-ul negăsit nu; ANAF căzut → `503 anaf.unavailable`, fără Sentry. Răspunsul live
+> (15.09.2026, cu CUI-ul ONSIA) n-are `cod`/`message`, deși documentația le are — nimic nu depinde de ele. Probe:
+> `AnafClientTest` 7, `CompanyLookupIT` 5; proba negativă pe memorie și pe 503 pică exact testele lor.
+>
 > **15.09.2026, 20:27 — ✅ pe producție: depozitul D1.8, prețurile și cine le vede.**
 > `ecoregistru-api` **v89** (`aae5fd1`, fără migrare), `ecoregistru-app` **v71** (`8a2cacc`); monorepo `8b28a3d`. Garda exactă pe
 > amândouă repo-urile split. Pe producție: `Schema "public" is up to date` și `Started EcoRegistruApplication` pe v89
