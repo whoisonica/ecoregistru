@@ -68,7 +68,7 @@ export function ConsultancyOverviewPage() {
   }
 
   if (!isConsultant) {
-    return <PageHeader title={t.title} description={strings.clients.onlyPlatformAdmin} />;
+    return <PageHeader title={t.title} description={t.consultantsOnly} />;
   }
 
   const attention = (rows ?? []).filter(needsAttention).length;

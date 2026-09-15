@@ -14,7 +14,9 @@ public enum ErrorMessageEnum {
     WEAK_PASSWORD("weak.password", "Parola trebuie să aibă minim 8 caractere, cu literă mare, literă mică și cifră."),
     ACCOUNT_ALREADY_EXISTS("account.already.exists", "Există deja un cont cu acest email."),
     ACCOUNT_ALREADY_VERIFIED("account.already.verified", "Acest cont este deja verificat."),
-    EMAIL_NOT_VERIFIED("email.not.verified", "Emailul nu a fost verificat. Verifică-ți căsuța de email."),
+    // Codul rămâne, textul spune ce se face: aplicația n-are verificare de email, iar un cont se activează
+    // alegând parola (din invitație sau din „Am uitat parola”). Textul vechi trimitea după un mail care nu există.
+    EMAIL_NOT_VERIFIED("email.not.verified", "Contul nu e activ încă. Alege-ți parola din linkul primit pe email sau din „Am uitat parola”."),
     INVALID_CREDENTIALS("invalid.credentials", "Email sau parolă incorecte."),
     INVALID_VERIFICATION_CODE("verification.code.invalid", "Codul de verificare este invalid."),
     VERIFICATION_CODE_EXPIRED("verification.code.expired", "Codul de verificare a expirat. Solicită unul nou."),

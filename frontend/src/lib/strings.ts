@@ -1539,6 +1539,9 @@ export const strings = {
     subtitle:
       "Ce cere atenție pe fiecare firmă a cabinetului: termene, ce blochează depunerea și autorizațiile partenerilor. Firmele cu termene depășite sunt primele.",
     loadError: "Nu am putut încărca firmele cabinetului.",
+    // Pentru orice alt rol decât consultantul. Textul de la Clienți promitea secțiunea și administratorului.
+    consultantsOnly:
+      "Panoul e al consultanților: fiecare vede aici firmele cabinetului lui. Administratorul platformei le găsește în Clienți.",
     empty: "Cabinetul nu are încă nicio firmă activă.",
     emptyHint: "Adaugă prima firmă din Clienți; apare aici imediat.",
     emptyAction: "Deschide Clienți",
