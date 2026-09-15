@@ -292,8 +292,10 @@ const inSetari = await page.evaluate(() => {
 check("nota de retenţie stă în „Şoferii noştri", /Date personale/.test(inSetari.text));
 check("şi spune termenul, cu temeiul lui",
   /cel puțin 3 ani/.test(inSetari.text) && /art\. 48/.test(inSetari.text));
-check("şi spune ce **nu** face dezactivarea",
-  /dezactivarea unui șofer nu îl scoate/.test(inSetari.text));
+// Din 14.09.2026 (AO, `V41`) fișa unui șofer dezactivat se poate șterge definitiv, iar datele de pe
+// mișcări pleacă singure după trei ani. Nota spune asta; textul vechi („dezactivarea nu îl scoate”) a ieșit.
+check("şi spune ce se întâmplă cu fişa unui şofer dezactivat",
+  /Fișa unui șofer dezactivat se poate șterge definitiv/.test(inSetari.text));
 check("stă la vedere, nu într-un dialog", inSetari.inainteDeTabel);
 await shot(page, "9-soferi-nota");
 
