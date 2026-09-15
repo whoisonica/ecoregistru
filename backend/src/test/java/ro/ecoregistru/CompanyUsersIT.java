@@ -149,7 +149,7 @@ class CompanyUsersIT {
                 .andExpect(status().isNoContent());
 
         // Once for the invite itself, once for the resend.
-        verify(emailService, times(2)).sendPasswordResetEmail(any(), anyString());
+        verify(emailService, times(2)).sendInviteEmail(any(), anyString(), org.mockito.ArgumentMatchers.anyInt());
     }
 
     /**

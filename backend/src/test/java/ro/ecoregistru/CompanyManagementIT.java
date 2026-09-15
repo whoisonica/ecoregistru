@@ -151,7 +151,7 @@ class CompanyManagementIT {
         assertNotNull(created.getCompany());
         assertEquals(id, created.getCompany().getId().toString());
         assertFalse(created.isEnabled());
-        verify(emailService, times(1)).sendPasswordResetEmail(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
+        verify(emailService, times(1)).sendInviteEmail(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyInt());
     }
 
     @Test

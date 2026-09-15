@@ -74,6 +74,7 @@ class ConsultancyOverviewIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired NotificationService notificationService;
     @Autowired TemplateEngine templateEngine;
+    @Autowired VerificationRecordRepository verificationRecordRepository;
 
     @MockBean EmailService emailService;
 
@@ -202,7 +203,36 @@ class ConsultancyOverviewIT {
                         .header("Authorization", "Bearer " + anaToken))
                 .andExpect(status().isNoContent());
 
-        verify(emailService).sendPasswordResetEmail(argThat(u -> u.getId().equals(pending.getId())), anyString());
+        verify(emailService).sendInviteEmail(argThat(u -> u.getId().equals(pending.getId())), anyString(), eq(7));
+    }
+
+    /**
+     * 15.09.2026 — invitația văzută pe producție era mailul de resetare („Dacă nu tu ai făcut cererea,
+     * ignoră”), valabil 30 de minute. Acum are mailul ei, iar linkul ține 7 zile.
+     */
+    @Test
+    void theInvitationIsAnInvitationAndLastsAWeek() throws Exception {
+        AppUser pending = consultant("invitat", cabinet, false);
+
+        mockMvc.perform(post("/api/v1/consultancy/users/" + pending.getId() + "/resend-invite")
+                        .header("Authorization", "Bearer " + anaToken))
+                .andExpect(status().isNoContent());
+
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendInviteEmail(argThat(u -> u.getId().equals(pending.getId())), code.capture(), eq(7));
+        verify(emailService, never()).sendPasswordResetEmail(any(), anyString());
+        VerificationRecord record = verificationRecordRepository
+                .findByCodeAndVerificationRecordType(code.getValue(), VerificationRecordType.RESET_PASSWORD).orElseThrow();
+        assertThat(record.getExpiresAt()).isAfter(java.time.LocalDateTime.now().plusDays(6));
+
+        Context ctx = new Context();
+        ctx.setVariable("firstName", "Ana");
+        ctx.setVariable("organization", cabinet.getName());
+        ctx.setVariable("validDays", 7);
+        ctx.setVariable("resetUrl", "https://app.wastehouse.ro/reseteaza-parola?code=x");
+        String html = templateEngine.process("mail/invite", ctx);
+        assertThat(html).contains(cabinet.getName()).contains("7 zile").contains("reseteaza-parola?code=x")
+                .doesNotContain("resetare").doesNotContain("ignoră");
     }
 
     /** Un coleg cu parolă are „Parolă uitată"; o invitație nouă ar fi un link de resetare pentru contul altuia. */
@@ -214,6 +244,7 @@ class ConsultancyOverviewIT {
                         .header("Authorization", "Bearer " + anaToken))
                 .andExpect(status().is4xxClientError());
 
+        verify(emailService, never()).sendInviteEmail(any(), anyString(), org.mockito.ArgumentMatchers.anyInt());
         verify(emailService, never()).sendPasswordResetEmail(any(), anyString());
     }
 

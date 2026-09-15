@@ -46,6 +46,22 @@ public class EmailService {
         send(user.getEmail(), "Resetare parolă — WasteHouse", "mail/forgot_password", ctx);
     }
 
+    /**
+     * 15.09.2026 — invitația are mailul ei. Până atunci pleca mailul de resetare („Am primit o cerere de
+     * resetare… Dacă nu tu ai făcut cererea, ignoră”), valabil 30 de minute: un client invitat îl ignora
+     * sau îl deschidea a doua zi expirat. Linkul duce pe aceeași pagină, fiindcă mecanismul e același.
+     */
+    public void sendInviteEmail(AppUser user, String code, int validDays) {
+        String organization = user.getConsultancy() != null ? user.getConsultancy().getName()
+                : user.getCompany() != null ? user.getCompany().getName() : "WasteHouse";
+        Context ctx = new Context(Locale.of("ro"));
+        ctx.setVariable("firstName", user.getFirstName() != null ? user.getFirstName() : "");
+        ctx.setVariable("organization", organization);
+        ctx.setVariable("validDays", validDays);
+        ctx.setVariable("resetUrl", frontendBaseUrl + "/reseteaza-parola?code=" + code);
+        send(user.getEmail(), "Invitație în WasteHouse — " + organization, "mail/invite", ctx);
+    }
+
     public void send(String to, String subject, String templateName, Context context) {
         try {
             String html = templateEngine.process(templateName, context);

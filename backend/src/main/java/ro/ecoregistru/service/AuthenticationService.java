@@ -53,6 +53,8 @@ public class AuthenticationService {
     final RateLimiter rateLimiter;
 
     private static final int CODE_TTL_MINUTES = 30;
+    /** O invitație se deschide când ajunge omul la mail, nu în jumătate de oră. */
+    static final int INVITE_TTL_DAYS = 7;
 
     /**
      * P0.3, the per-email half. {@code RateLimitFilter} already counted this request against the
@@ -190,9 +192,9 @@ public class AuthenticationService {
         appUserRepository.save(user);
 
         String code = newCode();
-        saveRecord(user, code, RESET_PASSWORD);
+        saveInviteRecord(user, code);
         try {
-            emailService.sendPasswordResetEmail(user, code);
+            emailService.sendInviteEmail(user, code, INVITE_TTL_DAYS);
         } catch (EmailException e) {
             log.error("Failed to send invite email to {}", user.getEmail(), e);
         }
@@ -223,9 +225,9 @@ public class AuthenticationService {
         verificationRecordRepository
                 .deleteByUserAndVerificationRecordTypeAndConfirmedFalse(user, RESET_PASSWORD);
         String code = newCode();
-        saveRecord(user, code, RESET_PASSWORD);
+        saveInviteRecord(user, code);
         try {
-            emailService.sendPasswordResetEmail(user, code);
+            emailService.sendInviteEmail(user, code, INVITE_TTL_DAYS);
         } catch (EmailException e) {
             log.error("Failed to resend invite email to {}", user.getEmail(), e);
         }
@@ -241,6 +243,18 @@ public class AuthenticationService {
                 .confirmed(false)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusMinutes(CODE_TTL_MINUTES))
+                .build());
+    }
+
+    /** Tot un RESET_PASSWORD (pagina și endpointul sunt aceleași), doar cu termenul unei invitații. */
+    private void saveInviteRecord(AppUser user, String code) {
+        verificationRecordRepository.save(VerificationRecord.builder()
+                .user(user)
+                .code(code)
+                .verificationRecordType(RESET_PASSWORD)
+                .confirmed(false)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusDays(INVITE_TTL_DAYS))
                 .build());
     }
 
