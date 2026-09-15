@@ -22,7 +22,8 @@ import java.util.UUID;
  * <p>Like a reception, a delivery stays out of Anexa 1 (HG 856/2002 art. 2 alin. (1)). Waste the
  * company generated itself and hands over is a {@link WasteMovement}, not a delivery.
  *
- * <p>Etapa 2 creates the seam only; the screens are Etapa 8.
+ * <p>Etapa 2 created the seam only. <b>Nothing writes here (P3.6, 15.09.2026)</b> — same as {@link Reception}:
+ * art. 48 exits are ART_48 movements and the depot module uses {@code WeighingOperation} (V46).
  */
 @Getter
 @Setter

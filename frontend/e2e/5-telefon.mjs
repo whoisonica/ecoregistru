@@ -95,9 +95,10 @@ const afterEsc = await page.evaluate(() => {
 check("Escape închide sertarul", afterEsc);
 
 // ---------------------------------------------------------------- FORMULARUL
-await page.goto(BASE + "/miscari", { waitUntil: "networkidle" });
+await page.goto(BASE + "/generare", { waitUntil: "networkidle" });
 await page.waitForTimeout(700);
-await page.click('button:has-text("Adaugă mișcare")');
+// Firma demo e „Generator și colector”: `/miscari` duce pe „Generare”, unde butonul e „Adaugă generare”.
+await page.click('button:has-text("Adaugă generare")');
 await page.waitForTimeout(700);
 const form = await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
