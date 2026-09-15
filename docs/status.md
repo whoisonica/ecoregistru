@@ -3,7 +3,11 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **15.09.2026, seara — ✅ local (nedeployat): depozitul D1.8, prețurile și cine le vede.**
+> **15.09.2026, 20:27 — ✅ pe producție: depozitul D1.8, prețurile și cine le vede.**
+> `ecoregistru-api` **v89** (`aae5fd1`, fără migrare), `ecoregistru-app` **v71** (`8a2cacc`); monorepo `8b28a3d`. Garda exactă pe
+> amândouă repo-urile split. Pe producție: `Schema "public" is up to date` și `Started EcoRegistruApplication` pe v89
+> (17:27:30 UTC), dyno `up`; bundle-ul servit are `price-visibility`.
+>
 > Fără migrare: `companies.price_visibility` e din V46, deci schema rămâne `V48` și prima liberă `V49`.
 > Setarea firmei, `COMPANY` / `NO_CONSULTANT` / `ADMIN_ONLY`, o schimbă **doar adminul firmei**
 > (`PUT /api/v1/companies/current/price-visibility`, secțiunea „Prețuri” din Setări). Platforma e tratată ca un consultant
