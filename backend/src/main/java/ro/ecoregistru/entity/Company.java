@@ -142,6 +142,16 @@ public class Company {
     @Column(name = "anexa3_unit", length = 10)
     Unit anexa3Unit;
 
+    /**
+     * D1.8 — cine vede prețurile depozitului (V46). Se schimbă doar de adminul firmei, prin
+     * {@code PUT /api/v1/companies/current/price-visibility}; {@code CompanyRequest} nu o poartă,
+     * ca profilul editat de consultant sau de platformă să nu o poată atinge.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "price_visibility", length = 20, nullable = false)
+    @Builder.Default
+    ro.ecoregistru.enums.PriceVisibility priceVisibility = ro.ecoregistru.enums.PriceVisibility.COMPANY;
+
     // --- The account profile: what this client answered on the intake form ---
     //
     // Both sets narrow what the screens offer, and both are allowed to be empty: an empty set

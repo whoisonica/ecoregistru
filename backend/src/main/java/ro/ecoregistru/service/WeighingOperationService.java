@@ -39,6 +39,8 @@ import ro.ecoregistru.security.TenantContext;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -57,6 +59,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
  * citească fără rescriere. Se salvează tot formularul odată: cât timp operațiunea e în lucru,
  * liniile vechi se șterg și se scriu cele trimise. Nu se pierde nimic numărat, fiindcă o linie de
  * operațiune în lucru nu contează nicăieri (D1.3).
+ *
+ * <p><b>Prețurile</b> (D1.8) le vede doar cine are voie după {@link ro.ecoregistru.enums.PriceVisibility}:
+ * celorlalți răspunsul le vine gol, iar ce trimit ei nu schimbă prețul salvat.
  */
 @Service
 @RequiredArgsConstructor
@@ -125,7 +130,7 @@ public class WeighingOperationService {
                 .createdBy(SecurityUtils.currentUser().getId())
                 .build();
         operationRepository.save(operation);
-        return toResponse(operation, List.of());
+        return toResponse(operation, List.of(), pricesVisible(company));
     }
 
     /**
@@ -151,18 +156,23 @@ public class WeighingOperationService {
         }
 
         UUID userId = SecurityUtils.currentUser().getId();
+        boolean pricesVisible = pricesVisible(operation.getCompany());
+        List<WasteMovement> previous = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
+        Map<UUID, Iterator<BigDecimal>> keptPrices = pricesVisible ? Map.of() : pricesByArticle(previous);
         List<WasteMovement> lines = new ArrayList<>();
         for (int i = 0; i < request.lines().size(); i++) {
-            lines.add(line(operation, request.lines().get(i), i + 1, tenantId, userId));
+            WeighingLinesRequest.Line sent = request.lines().get(i);
+            BigDecimal unitPrice = pricesVisible ? sent.unitPrice() : nextKept(keptPrices, sent.articleId());
+            lines.add(line(operation, sent, unitPrice, i + 1, tenantId, userId));
         }
 
         requireMetalIdentity(operation, lines);
         operation.setGrossKg(request.grossKg());
         operation.setTareKg(request.tareKg());
-        movementRepository.deleteAll(movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
+        movementRepository.deleteAll(previous);
         movementRepository.flush();
         movementRepository.saveAll(lines);
-        return toResponse(operation, lines);
+        return toResponse(operation, lines, pricesVisible);
     }
 
     /**
@@ -190,7 +200,7 @@ public class WeighingOperationService {
         operation.setFinalizedAt(java.time.Instant.now());
         operation.setFinalizedBy(user.getId());
         operationRepository.saveAndFlush(operation);
-        return toResponse(operation, lines);
+        return toResponse(operation, lines, pricesVisible(operation.getCompany()));
     }
 
     /**
@@ -217,7 +227,8 @@ public class WeighingOperationService {
         operation.setCancelledBy(user.getId());
         operation.setCancelReason(motive);
         operationRepository.saveAndFlush(operation);
-        return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
+        return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id),
+                pricesVisible(operation.getCompany()));
     }
 
     /**
@@ -255,7 +266,8 @@ public class WeighingOperationService {
         UUID tenantId = TenantContext.require();
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
-        return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
+        return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id),
+                pricesVisible(operation.getCompany()));
     }
 
     @Transactional(readOnly = true)
@@ -263,17 +275,20 @@ public class WeighingOperationService {
         UUID tenantId = TenantContext.require();
         List<WeighingOperation> operations =
                 operationRepository.findAllByCompany_IdOrderByDateDescNumberDesc(tenantId);
-        Map<UUID, List<WasteMovement>> lines = operations.isEmpty() ? Map.of()
-                : movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
-                                operations.stream().map(WeighingOperation::getId).toList())
-                        .stream().collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
+        if (operations.isEmpty()) {
+            return List.of();
+        }
+        boolean pricesVisible = pricesVisible(operations.get(0).getCompany());
+        Map<UUID, List<WasteMovement>> lines = movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
+                        operations.stream().map(WeighingOperation::getId).toList())
+                .stream().collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
         return operations.stream()
-                .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of())))
+                .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of()), pricesVisible))
                 .toList();
     }
 
-    private WasteMovement line(WeighingOperation operation, WeighingLinesRequest.Line line, int lineNo,
-                               UUID tenantId, UUID userId) {
+    private WasteMovement line(WeighingOperation operation, WeighingLinesRequest.Line line, BigDecimal unitPrice,
+                               int lineNo, UUID tenantId, UUID userId) {
         if (line.articleId() == null) {
             throw new BusinessException(WEIGHING_LINE_ARTICLE_REQUIRED);
         }
@@ -291,7 +306,7 @@ public class WeighingOperationService {
         if (finalKg.compareTo(net) > 0) {
             throw new BusinessException(WEIGHING_LINE_FINAL_ABOVE_NET);
         }
-        if (line.unitPrice() != null && line.unitPrice().signum() < 0) {
+        if (unitPrice != null && unitPrice.signum() < 0) {
             throw new BusinessException(WEIGHING_LINE_PRICE_NEGATIVE);
         }
 
@@ -314,13 +329,41 @@ public class WeighingOperationService {
                 .grossKg(line.grossKg())
                 .tareKg(line.tareKg())
                 .netKg(net)
-                .unitPrice(line.unitPrice())
-                .totalValue(line.unitPrice() == null ? null
-                        : finalKg.multiply(line.unitPrice()).setScale(2, RoundingMode.HALF_UP))
+                .unitPrice(unitPrice)
+                .totalValue(unitPrice == null ? null
+                        : finalKg.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP))
                 .notes(blankToNull(line.notes()))
                 .deleted(false)
                 .createdBy(userId)
                 .build();
+    }
+
+    /** D1.8 — vede prețurile cel care lucrează acum pe firma asta? Regula e în {@code PriceVisibility}. */
+    private static boolean pricesVisible(Company company) {
+        return company.getPriceVisibility().visibleTo(SecurityUtils.currentUser().getRole());
+    }
+
+    /**
+     * D1.8 — cine nu vede prețurile nici nu le poate schimba sau șterge. Formularul lui vine fără preț,
+     * deci prețul se ia din liniile salvate, pe sortiment și în ordine: a doua linie de „Cupru” trimisă
+     * primește prețul celei de-a doua linii de „Cupru” salvate. O linie fără pereche rămâne fără preț,
+     * iar valoarea se recalculează din cantitatea finală nouă.
+     */
+    private static Map<UUID, Iterator<BigDecimal>> pricesByArticle(List<WasteMovement> previous) {
+        Map<UUID, List<BigDecimal>> prices = new HashMap<>();
+        for (WasteMovement m : previous) {
+            if (m.getArticle() != null) {
+                prices.computeIfAbsent(m.getArticle().getId(), k -> new ArrayList<>()).add(m.getUnitPrice());
+            }
+        }
+        Map<UUID, Iterator<BigDecimal>> kept = new HashMap<>();
+        prices.forEach((article, list) -> kept.put(article, list.iterator()));
+        return kept;
+    }
+
+    private static BigDecimal nextKept(Map<UUID, Iterator<BigDecimal>> kept, UUID articleId) {
+        Iterator<BigDecimal> prices = articleId == null ? null : kept.get(articleId);
+        return prices != null && prices.hasNext() ? prices.next() : null;
     }
 
     /**
@@ -412,7 +455,8 @@ public class WeighingOperationService {
         return value == null || value.trim().isEmpty() ? null : value.trim();
     }
 
-    private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> lines) {
+    private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> lines,
+                                                        boolean pricesVisible) {
         Partner partner = o.getPartner();
         NaturalPerson person = o.getNaturalPerson();
         return new WeighingOperationResponse(o.getId(), o.getType(), o.getNumber(), o.getDate(),
@@ -421,14 +465,16 @@ public class WeighingOperationService {
                 person == null ? null : person.getId(), person == null ? null : person.getName(),
                 o.getOrigin(), o.getDriverName(), o.getVehicleRegistration(), o.getOrderNumber(),
                 o.getStatus(), o.getNotes(), o.getGrossKg(), o.getTareKg(),
-                lines.stream().map(WeighingOperationService::toLine).toList());
+                lines.stream().map(m -> toLine(m, pricesVisible)).toList());
     }
 
-    private static WeighingOperationResponse.Line toLine(WasteMovement m) {
+    /** D1.8 — prețul și valoarea pleacă doar către cine le vede. */
+    private static WeighingOperationResponse.Line toLine(WasteMovement m, boolean pricesVisible) {
         WasteArticle article = m.getArticle();
         return new WeighingOperationResponse.Line(m.getId(), m.getLineNo() == null ? 0 : m.getLineNo(),
                 article == null ? null : article.getId(), article == null ? null : article.getName(),
                 m.getWasteCode().getCode(), m.getGrossKg(), m.getTareKg(), m.getNetKg(), m.getQuantity(),
-                m.getUnitPrice(), m.getTotalValue(), m.getOperationCode());
+                pricesVisible ? m.getUnitPrice() : null, pricesVisible ? m.getTotalValue() : null,
+                m.getOperationCode());
     }
 }

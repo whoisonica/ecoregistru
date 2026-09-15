@@ -126,7 +126,10 @@ public class AuditInterceptor implements Interceptor {
      * diferenţa dintre o completare şi o corectare.
      */
     private static final Set<String> REDACTED_FIELDS =
-            Set.of("identification", "driverIdentification", "cnp", "driverCnp");
+            Set.of("identification", "driverIdentification", "cnp", "driverCnp",
+                    // D1.8: jurnalul îl citesc consultantul și platforma, pe care setarea de prețuri îi
+                    // poate exclude. Fapta „prețul liniei s-a schimbat” rămâne; valoarea, nu.
+                    "unitPrice", "totalValue");
 
     /** Ce se scrie în locul valorii unui câmp redactat. */
     private static final String REDACTED = "•••";

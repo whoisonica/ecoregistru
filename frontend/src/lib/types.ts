@@ -139,7 +139,13 @@ export interface Company {
   /** P2.13 — cabinetul care gestionează firma; amândouă null la un client direct. */
   consultancyId?: string | null;
   consultancyName?: string | null;
+  /** D1.8 — cine vede prețurile depozitului; o schimbă doar adminul firmei. */
+  priceVisibility?: PriceVisibility;
+  /** Dacă cel logat vede prețurile. Regula stă pe server (`PriceVisibility`), nu se reface aici. */
+  pricesVisible?: boolean;
 }
+
+export type PriceVisibility = "COMPANY" | "NO_CONSULTANT" | "ADMIN_ONLY";
 
 /** Create/update payload for a company (PLATFORM_ADMIN and CONSULTANT). */
 export interface CompanyInput {

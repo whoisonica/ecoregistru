@@ -3,8 +3,13 @@ package ro.ecoregistru.service;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ro.ecoregistru.enums.PriceVisibility;
+import static ro.ecoregistru.exception.ErrorMessageEnum.PRICE_VISIBILITY_REQUIRED;
 import ro.ecoregistru.controller.request.CompanyRequest;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.response.CompanyResponse;
@@ -285,6 +290,34 @@ public class CompanyService {
                 c.getWasteManagerExternal(), c.getWasteManagerTraining(),
                 c.getConstructionPermitHolder(),
                 consultancy == null ? null : consultancy.getId(),
-                consultancy == null ? null : consultancy.getName());
+                consultancy == null ? null : consultancy.getName(),
+                c.getPriceVisibility(), pricesVisible(c));
+    }
+
+    /**
+     * D1.8 — cine vede prețurile depozitului, pe firma din sesiune. Doar adminul ei o schimbă
+     * (decizia proprietarului, 15.09.2026): un consultant sau platforma care ar putea-o schimba și-ar
+     * deschide singur prețurile ascunse. Controllerul are aceeași regulă; asta e jumătatea care ține
+     * și fără HTTP.
+     */
+    @Transactional
+    public CompanyResponse updatePriceVisibility(PriceVisibility visibility) {
+        if (SecurityUtils.currentUser().getRole() != Role.ADMIN) {
+            throw new AccessDeniedException("Doar administratorul firmei alege cine vede prețurile.");
+        }
+        if (visibility == null) {
+            throw new BusinessException(PRICE_VISIBILITY_REQUIRED);
+        }
+        Company company = companyRepository.findById(TenantContext.require())
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        company.setPriceVisibility(visibility);
+        return toResponse(company);
+    }
+
+    /** Pentru cel care întreabă. Fără utilizator pe thread nu e nimeni care să vadă. */
+    private static boolean pricesVisible(Company c) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getPrincipal() instanceof AppUser user
+                && c.getPriceVisibility().visibleTo(user.getRole());
     }
 }

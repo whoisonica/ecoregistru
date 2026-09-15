@@ -671,6 +671,24 @@ export const strings = {
     // Cuprinsul lipicios din capul paginii. Patru secțiuni una sub alta, dintre care trei tabele,
     // fac cea mai lungă pagină de configurare din aplicație.
     sections: "Pe pagină",
+    // D1.8. Opțiunile numesc și suportul WasteHouse: la „toată firma” îl include, iar omul trebuie
+    // să știe asta când alege (proprietarul, 15.09.2026: platforma e tratată ca un consultant).
+    prices: {
+      title: "Prețuri",
+      subtitle:
+        "Prețurile de la cântar, pe intrări și pe ieșiri, fără TVA. Alegi cine le vede. Cine nu le vede nu le poate nici schimba.",
+      label: "Cine vede prețurile",
+      options: {
+        COMPANY: "Toată firma, inclusiv consultantul și suportul WasteHouse",
+        NO_CONSULTANT: "Doar utilizatorii firmei, fără consultant și fără suportul WasteHouse",
+        ADMIN_ONLY: "Doar administratorul firmei",
+      },
+      youSee: "Tu vezi prețurile.",
+      youDontSee: "Tu nu vezi prețurile.",
+      onlyAdmin: "Setarea o schimbă administratorul firmei.",
+      saved: "Am salvat cine vede prețurile.",
+      saveError: "Salvarea a eșuat. Încearcă din nou.",
+    },
     company: {
       title: "Datele firmei",
       subtitle:

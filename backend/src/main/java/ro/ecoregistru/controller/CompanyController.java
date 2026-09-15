@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.AssignConsultancyRequest;
 import ro.ecoregistru.controller.request.CompanyRequest;
 import ro.ecoregistru.controller.request.InviteUserRequest;
+import ro.ecoregistru.controller.request.PriceVisibilityRequest;
 import ro.ecoregistru.controller.response.CompanyResponse;
 import ro.ecoregistru.controller.response.CompanyUserResponse;
 import ro.ecoregistru.service.CompanyService;
@@ -52,6 +53,17 @@ public class CompanyController {
     @GetMapping("/current")
     public CompanyResponse current() {
         return companyService.current();
+    }
+
+    /**
+     * D1.8 — cine vede prețurile depozitului. Doar adminul firmei (decizia proprietarului, 15.09.2026):
+     * consultantul și platforma nu, altfel și-ar deschide singuri prețurile ascunse de el. Serviciul
+     * verifică același lucru.
+     */
+    @PutMapping("/current/price-visibility")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public CompanyResponse updatePriceVisibility(@RequestBody PriceVisibilityRequest request) {
+        return companyService.updatePriceVisibility(request.priceVisibility());
     }
 
     @PostMapping

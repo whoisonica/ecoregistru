@@ -55,8 +55,9 @@ const cuprins = await page.$$eval("nav[aria-label] a[href^='#']", (as) =>
 );
 // Șapte: „Jurnal de audit" (P1.11, 12.09) numai pentru cine îl poate citi, „Buletine de analiză"
 // (G-7) a ieșit pe 14.09.2026 odată cu buletinele, iar „Sortimente" (D1.6, 15.09.2026) apare doar la
-// firmele cu art. 48 — firma demo e BOTH, deci o are. Proba rulează ca admin.
-check("pagina are cuprins", cuprins.length === 7, cuprins.map((c) => c.text).join(" · "));
+// firmele cu art. 48 — firma demo e BOTH, deci o are. Tot acolo, „Prețuri” (D1.8, 15.09.2026), deci opt.
+// Proba rulează ca admin.
+check("pagina are cuprins", cuprins.length === 8, cuprins.map((c) => c.text).join(" · "));
 check(
   "fiecare intrare din cuprins are ținta ei",
   await page.evaluate((hrefs) => hrefs.every((h) => !!document.querySelector(h)),

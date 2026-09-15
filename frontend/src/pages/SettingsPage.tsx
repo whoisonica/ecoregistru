@@ -31,6 +31,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
 import { WasteArticlesSection } from "@/components/WasteArticlesSection";
+import { PriceVisibilitySection } from "@/components/PriceVisibilitySection";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { registersFor } from "@/lib/movementScreens";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
@@ -161,7 +162,12 @@ export function SettingsPage() {
           { id: "datele-firmei", label: strings.settings.company.title },
           { id: "puncte-de-lucru", label: t.title },
           { id: "generatori-interni", label: strings.settings.internalGenerators.title },
-          ...(hasDepot ? [{ id: "sortimente", label: strings.settings.articles.title }] : []),
+          ...(hasDepot
+            ? [
+                { id: "preturi", label: strings.settings.prices.title },
+                { id: "sortimente", label: strings.settings.articles.title },
+              ]
+            : []),
           { id: "soferi", label: strings.settings.drivers.title },
           // Doar pentru cine chiar are secțiunea: un link care duce la nimic e mai rău
           // decât un link care lipsește.
@@ -266,6 +272,8 @@ export function SettingsPage() {
       <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
 
       {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}
+      {hasDepot && <PriceVisibilitySection />}
+
       {hasDepot && <WasteArticlesSection canManage={roleCanWrite(user?.role)} />}
 
       <OwnDriversSection canManage={canManage} />

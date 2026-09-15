@@ -63,13 +63,18 @@ class EndpointGuardInventoryIT {
      * <p>P2.13 a adăugat {@code CONSULTANT} în cele două praguri de firmă — un consultant lucrează
      * într-o firmă a cabinetului lui ca un administrator al ei — plus două praguri noi: al
      * directorului de firme (platformă sau consultant) şi al echipei de cabinet (numai consultant).
+     *
+     * <p>D1.8 (15.09.2026) a adăugat pragul „numai adminul firmei”, pe un singur endpoint: cine vede
+     * prețurile depozitului. Consultantul și platforma rămân dinadins afară, altfel și-ar deschide
+     * singuri prețurile ascunse de el (decizia proprietarului).
      */
     private static final Set<String> KNOWN_GUARDS = Set.of(
             "hasAuthority('PLATFORM_ADMIN')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT')",
-            "hasAuthority('CONSULTANT')"
+            "hasAuthority('CONSULTANT')",
+            "hasAuthority('ADMIN')"
     );
 
     private static final Set<RequestMethod> WRITES =

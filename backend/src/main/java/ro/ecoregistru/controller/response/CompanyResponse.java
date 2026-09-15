@@ -4,6 +4,7 @@ import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.PackagingOperatorRole;
+import ro.ecoregistru.enums.PriceVisibility;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.LocalDate;
@@ -67,5 +68,12 @@ public record CompanyResponse(
 
         /** P2.13 — the consultancy managing the company; both null for a direct client. */
         UUID consultancyId,
-        String consultancyName
+        String consultancyName,
+
+        /**
+         * D1.8 — cine vede prețurile depozitului, și dacă îl vede cel care întreabă. Ecranul citește
+         * {@code pricesVisible}, nu reface regula din {@code PriceVisibility}.
+         */
+        PriceVisibility priceVisibility,
+        boolean pricesVisible
 ) {}

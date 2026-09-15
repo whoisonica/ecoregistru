@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Company, CompanyInput, CompanyUser, InviteUserInput } from "@/lib/types";
+import type { Company, CompanyInput, CompanyUser, InviteUserInput, PriceVisibility } from "@/lib/types";
 
 /**
  * Companies (tenants) — platform admin and consultant. The list drives the tenant switcher AND the
@@ -51,6 +51,23 @@ export function useUpdateCompany() {
     mutationFn: async ({ id, input }: { id: string; input: CompanyInput }) =>
       (await api.put<Company>(`/api/v1/companies/${id}`, input)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: companiesKey }),
+  });
+}
+
+/**
+ * D1.8 — cine vede prețurile depozitului, pe firma curentă. Doar adminul firmei. Răspunsul e chiar
+ * firma curentă, deci se pune în cache direct; operațiunile se recitesc, fiindcă prețul din ele
+ * atârnă de setare.
+ */
+export function useUpdatePriceVisibility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (priceVisibility: PriceVisibility) =>
+      (await api.put<Company>("/api/v1/companies/current/price-visibility", { priceVisibility })).data,
+    onSuccess: (company) => {
+      qc.setQueryData(currentCompanyKey, company);
+      qc.invalidateQueries({ queryKey: ["weighing-operations"] });
+    },
   });
 }
 
