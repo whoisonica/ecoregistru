@@ -3,6 +3,17 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, 15:00 — ✅ pe producție: fixul contului dezactivat, juridicul v2, textul pentru contul inactiv.**
+> `ecoregistru-api` **v85** (`699d832`, fără migrare, schema `V48`), `ecoregistru-app` **v68** (`450909d`); monorepo `82d3c51`.
+> api v84 / app v67 (`1558ede` / `8b75c7f`, push-urile proprietarului) au adus `dc063f5`; app v68 juridicul v2 (`15b9b8c`);
+> api v85 fixul de reset (`82d3c51`, rebazat peste `dc063f5`, conflictul din `ErrorMessageEnum` păstrează ambele texte).
+> Suita **690/85, 0 eșecuri, 3 sărite** (din XML, după rebase); garda exactă pe amândouă repo-urile split.
+> Verificat: `Started EcoRegistruApplication` pe v85; bundle-ul servit are „Salvând parola”, „Oprirea abonamentului” și
+> autorizarea de debitare; **proba 12 pe producție, 20/20 pe partea publică** (partea cu login cere `E2E_PASSWORD`).
+> ⬜ Proba fixului pe producție (consultant de probă dezactivat → „Parolă uitată” → niciun mail) și curățenia datelor de
+> probă cer sesiunea proprietarului în Chrome. Cele două intrări de mai jos rămân ca istoric; marcajele lor „nedeployat”
+> sunt închise de aceasta.
+>
 > **15.09.2026, ~15:00 — 🔴 un cont dezactivat se putea reactiva singur prin „Parolă uitată” (găsit la citirea codului,
 > la evaluarea generală; neprobat pe producție).** `resetPassword` punea `enabled = true` fără să se uite la `deactivatedAt`,
 > iar `requestPasswordReset` trimitea linkul și conturilor dezactivate. Un coleg dezactivat de admin sau de cabinet își
