@@ -10,8 +10,8 @@ rulează local și are testele verzi.
 > Suita **690/85, 0 eșecuri, 3 sărite** (din XML, după rebase); garda exactă pe amândouă repo-urile split.
 > Verificat: `Started EcoRegistruApplication` pe v85; bundle-ul servit are „Salvând parola”, „Oprirea abonamentului” și
 > autorizarea de debitare; **proba 12 pe producție, 20/20 pe partea publică** (partea cu login cere `E2E_PASSWORD`).
-> ⬜ Proba fixului pe producție (consultant de probă dezactivat → „Parolă uitată” → niciun mail) și curățenia datelor de
-> probă cer sesiunea proprietarului în Chrome. Cele două intrări de mai jos rămân ca istoric; marcajele lor „nedeployat”
+> ✅ **Fixul probat pe producție 15.09 ~15:10:** `cmpunkro0+whoperator@gmail.com` (`c8e94cce…`, `enabled = f`, `deactivated_at` 12:01:03 UTC, confirmat în bază) → `request-reset-password` 200 și **niciun** `Sent 'mail/forgot_password'`; controlul pozitiv, consultantul activ, a primit mailul la 15:08 și a intrat (reset 200, login 200). În bază, niciun rând `enabled` + `deactivated_at`.
+> Curățenia datelor de probă se face în altă sesiune. Cele două intrări de mai jos rămân ca istoric; marcajele lor „nedeployat”
 > sunt închise de aceasta.
 >
 > **15.09.2026, ~15:00 — 🔴 un cont dezactivat se putea reactiva singur prin „Parolă uitată” (găsit la citirea codului,
