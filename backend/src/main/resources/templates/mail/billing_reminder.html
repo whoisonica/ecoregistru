@@ -5,6 +5,10 @@
 </head>
 <body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
 <div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 20px 0;"><tr>
+        <td style="vertical-align: middle; padding-right: 10px;"><img src="https://app.wastehouse.ro/brand/wastehouse-mark.png" width="32" height="32" alt="" style="display: block; border: 0;"/></td>
+        <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #111827; letter-spacing: -0.3px;">WasteHouse</td>
+    </tr></table>
     <h2 th:if="${kind == 'OVERDUE'}" style="color: #b45309;">Factura <span th:text="${number}">WH 1</span> a trecut de scadență</h2>
     <h2 th:if="${kind == 'READ_ONLY_WARNING'}" style="color: #b45309;">În 7 zile contul trece în doar-citire</h2>
     <h2 th:if="${kind == 'READ_ONLY'}" style="color: #b91c1c;">Contul e acum doar pentru citire</h2>
