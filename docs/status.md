@@ -3,6 +3,16 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, seara — ✅ local (nedeployat): depozitul D1.8, prețurile și cine le vede.**
+> Fără migrare: `companies.price_visibility` e din V46, deci schema rămâne `V48` și prima liberă `V49`.
+> Setarea firmei, `COMPANY` / `NO_CONSULTANT` / `ADMIN_ONLY`, o schimbă **doar adminul firmei**
+> (`PUT /api/v1/companies/current/price-visibility`, secțiunea „Prețuri” din Setări). Platforma e tratată ca un consultant
+> (deciziile proprietarului). Cine nu vede prețul primește operațiunile fără `unitPrice`/`totalValue`, iar formularul
+> trimis de el nu schimbă prețul salvat: se păstrează pe sortiment și în ordine, iar valoarea urmează cantitatea nouă.
+> Jurnalul de audit redactează prețul. Probe: `PriceVisibilityIT` 6/6 (3 setări × 5 roluri, editarea fără drept,
+> HTTP, audit); proba negativă pe 7 reguli, 6 pică exact testele lor, iar `@PreAuthorize` scos nu pică nimic (serviciul
+> refuză la fel); `EndpointGuardInventoryIT` a prins pragul nou. Suita **721 de teste, 89 de clase, 0 eșecuri, 3 sărite**.
+>
 > **15.09.2026, 18:03 — ✅ pe producție: depozitul D1.7b, tabul „Persoane fizice”.**
 > `ecoregistru-api` **v88** (`4731671`, fără migrare, schema `V48`), `ecoregistru-app` **v70** (`3b03e73`); monorepo `bd701d7`.
 > Garda exactă pe amândouă repo-urile split (frontendul a luat și `1fdf36b`, README-ul e2e rămas pe drum). Pe producție:
