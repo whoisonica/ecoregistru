@@ -61,6 +61,17 @@ public interface WasteMovementRepository
             + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
     List<WasteMovement> findCounted(@Param("companyId") UUID companyId);
 
+    /**
+     * P2.13, felia 2 — câte mișcări care contează stau pe un cod-oglindă declarat nepericulos fără
+     * niciun document atașat. Aceeași regulă ca badge-ul din listă ({@code WasteMovementMapper#mirrorClassificationUnproven}).
+     */
+    @Query("select count(m) from WasteMovement m left join m.weighingOperation o "
+            + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "
+            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED) "
+            + "and m.wasteCode.mirrorOf is not null and m.attachments is empty")
+    long countUnprovenMirrorClassifications(@Param("companyId") UUID companyId,
+                                            @Param("from") LocalDate from, @Param("to") LocalDate to);
+
     /** The movements that count within a date range — the evidence engine's input. */
     @Query("select m from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "

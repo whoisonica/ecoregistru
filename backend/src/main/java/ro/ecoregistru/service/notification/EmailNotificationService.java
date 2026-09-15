@@ -17,9 +17,12 @@ import ro.ecoregistru.service.EmailService;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Email implementation of {@link NotificationService} (Romanian). Renders one message per
@@ -103,6 +106,34 @@ public class EmailNotificationService implements NotificationService {
         ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
         emailService.send(recipientEmail, "Factura " + number + " — abonamentul WasteHouse",
                 "mail/subscription_invoice", ctx);
+    }
+
+    /**
+     * P2.13, felia 2 — rezumatul zilnic al cabinetului. Subiectul spune câte termene sunt, fiindcă asta
+     * decide dacă mailul se deschide azi sau mâine; firmele sunt în corp.
+     */
+    @Override
+    public void sendConsultantDigest(String consultancyName, List<ReportingDeadline> deadlines,
+                                     List<String> recipientEmails, LocalDate today) {
+        List<Map<String, String>> rows = deadlines.stream()
+                .map(d -> Map.of(
+                        "company", d.getCompany().getName(),
+                        "label", label(d.getReportType()),
+                        "dueDate", d.getDueDate().format(DATE),
+                        "whenText", when(ChronoUnit.DAYS.between(today, d.getDueDate()))))
+                .toList();
+        String countText = deadlines.size() == 1 ? "1 termen"
+                : deadlines.size() + (deadlines.size() >= 20 ? " de termene" : " termene");
+        String subject = consultancyName + ": " + countText + " în următoarele 7 zile";
+
+        for (String to : recipientEmails) {
+            Context ctx = new Context(Locale.of("ro"));
+            ctx.setVariable("consultancyName", consultancyName);
+            ctx.setVariable("countText", countText);
+            ctx.setVariable("rows", rows);
+            ctx.setVariable("panelUrl", frontendBaseUrl + "/cabinet");
+            emailService.send(to, subject, "mail/consultant_digest", ctx);
+        }
     }
 
     /** "389 lei", "1.234,50 lei". */

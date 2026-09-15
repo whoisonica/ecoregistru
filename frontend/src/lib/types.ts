@@ -1108,3 +1108,22 @@ export interface DeadlineGenerationResponse {
   year: number;
   generated: number;
 }
+
+/**
+ * P2.13, felia 2 — un rând din „Toate firmele mele" (backend `ConsultancyOverviewResponse`). Blocajele
+ * și partenerii sunt ale anului curent, socotite după aceleași reguli ca Panoul firmei.
+ */
+export interface ConsultancyOverviewRow {
+  companyId: string;
+  name: string;
+  cui: string | null;
+  type: CompanyType;
+  overdueDeadlines: number;
+  nextDeadline: { reportType: ReportType; dueDate: string } | null;
+  /** Fals când anul curent n-are niciun termen: „0 depășite" nu înseamnă atunci nimic. */
+  deadlinesGenerated: boolean;
+  linesWithoutOperationCode: number;
+  linesAwaitingWeighing: number;
+  unprovenMirrorMovements: number;
+  partnersExpiring: number;
+}

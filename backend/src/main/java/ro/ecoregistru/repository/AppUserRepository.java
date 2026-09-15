@@ -27,6 +27,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
 
     long countByConsultancy_Id(UUID consultancyId);
 
+    /** P2.13, felia 2 — consultanții care pot citi rezumatul zilnic; invitațiile nefolosite nu. */
+    List<AppUser> findAllByConsultancy_IdAndEnabledTrue(UUID consultancyId);
+
     /**
      * P1.12 — one member of a tenant. Scoped by company on purpose: an id from another tenant
      * comes back empty and the service turns that into 404, so the endpoint never confirms that

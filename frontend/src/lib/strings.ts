@@ -21,6 +21,7 @@ export const strings = {
     pickCompanyHint:
       "Ecranele de evidență sunt ale unei firme anume. Alege una din „Firma curentă”, sus în bara laterală — sau deschide Clienți, de unde se administrează toate.",
     pickCompanyAction: "Deschide Clienți",
+    pickCompanyActionConsultant: "Deschide firmele mele",
   },
 
   nav: {
@@ -36,6 +37,10 @@ export const strings = {
     deadlines: "Termene",
     auditFile: "Dosar de control",
     clients: "Clienți",
+    // P2.13, felia 2 — panoul cabinetului, numai la consultant.
+    consultancyOverview: "Firmele mele",
+    kwConsultancyOverview:
+      "cabinet toate firmele portofoliu termene depășite blocaje autorizații parteneri ce am de făcut consultant",
     settings: "Setări",
     logout: "Deconectare",
     // Grupurile din bara laterală. Nouă intrări plate nu spun nimic despre ce ține de ce; patru
@@ -1445,6 +1450,41 @@ export const strings = {
     // Ca la utilizatorii firmei, plus singurul lucru care diferă: pierde toate firmele deodată.
     confirmDeactivate:
       "Sesiunile deschise se închid imediat și nu mai vede nicio firmă a cabinetului. Ce a înregistrat rămâne neatins, cu numele lui. Se poate reactiva oricând.",
+  },
+
+  /**
+   * P2.13, felia 2 — „Firmele mele": ce e de făcut pe fiecare firmă a cabinetului, pe un singur ecran.
+   * Cuvintele celulelor sunt ale Panoului firmei, ca un consultant să recunoască același lucru după ce comută.
+   */
+  consultancyOverview: {
+    title: "Firmele mele",
+    subtitle:
+      "Ce cere atenție pe fiecare firmă a cabinetului: termene, ce blochează depunerea și autorizațiile partenerilor. Firmele cu termene depășite sunt primele.",
+    loadError: "Nu am putut încărca firmele cabinetului.",
+    empty: "Cabinetul nu are încă nicio firmă activă.",
+    emptyHint: "Adaugă prima firmă din Clienți; apare aici imediat.",
+    emptyAction: "Deschide Clienți",
+    summaryAllClear: "Toate firmele sunt la zi.",
+    summary: "{attention} din {total} cer atenție",
+    company: "Firmă",
+    deadlines: "Termene",
+    blockers: "Blocaje la depunere",
+    partners: "Parteneri",
+    open: "Deschide",
+    overdue: "{count} depășite",
+    overdueOne: "1 depășit",
+    next: "Următorul: {date}",
+    noNext: "Niciun termen în perioada următoare",
+    notGenerated: "Termenele anului nu sunt generate",
+    generate: "Generează",
+    withoutCode: "{count} fără cod R/D",
+    awaitingWeighing: "{count} în așteptarea cântăririi",
+    mirror: "{count} cod-oglindă fără document",
+    none: "Nimic",
+    partnersExpiring: "{count} cu autorizația expirând",
+    clear: "La zi",
+    // Pe telefon tabelul se citește rând cu rând; eticheta spune ce e fiecare cifră.
+    searchPlaceholder: "Caută după nume sau CUI…",
   },
 
   // Romanian month names (index 0 = January), for display of the `month` field.

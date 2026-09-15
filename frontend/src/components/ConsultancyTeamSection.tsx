@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { Ban, Plus, RotateCcw, Users } from "lucide-react";
+import { Ban, Mail, Plus, RotateCcw, Users, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
+  useCancelColleagueInvite,
   useConsultancyTeam,
   useDeactivateColleague,
   useInviteColleague,
   useReactivateColleague,
+  useResendColleagueInvite,
 } from "@/hooks/useConsultancies";
 import type { CompanyUser, InviteConsultantInput } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -31,9 +33,8 @@ const u = strings.settings.users;
  * P2.13 — colegii din cabinet, pe ecranul Clienți al consultantului.
  *
  * <p>Sora mai mică a lui `CompanyUsersSection`: fără rol de ales (într-un cabinet toți sunt
- * consultanți, cu aceleași drepturi) și fără retrimitere/anulare de invitație, care nu sunt încă pe
- * server pentru cabinet. Rămân cele trei stări și butoanele care li se potrivesc, iar rândul propriu
- * n-are niciunul — serverul refuză oricum.
+ * consultanți, cu aceleași drepturi). Din felia 2 are și retrimiterea și anularea invitației, cu
+ * aceleași cuvinte ca la firmă. Rândul propriu n-are niciun buton — serverul refuză oricum.
  */
 export function ConsultancyTeamSection() {
   const { user: me } = useAuth();
@@ -41,6 +42,8 @@ export function ConsultancyTeamSection() {
   const inviteMut = useInviteColleague();
   const deactivateMut = useDeactivateColleague();
   const reactivateMut = useReactivateColleague();
+  const resendMut = useResendColleagueInvite();
+  const cancelMut = useCancelColleagueInvite();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 
@@ -110,6 +113,36 @@ export function ConsultancyTeamSection() {
     } catch (err) {
       notify(apiErrorMessage(err, u.saveError), "error");
     }
+  }
+
+  async function handleResend(m: CompanyUser) {
+    try {
+      await resendMut.mutateAsync(m.id);
+      notify(u.resent, "success");
+    } catch (err) {
+      notify(apiErrorMessage(err, u.resendError), "error");
+    }
+  }
+
+  function handleCancelInvite(m: CompanyUser) {
+    confirm({
+      title: u.confirmCancelTitle,
+      message: (
+        <>
+          <strong className="text-content">{m.email}</strong>. {u.confirmCancel}
+        </>
+      ),
+      confirmLabel: u.cancelInvite,
+      tone: "danger",
+      onConfirm: async () => {
+        try {
+          await cancelMut.mutateAsync(m.id);
+          notify(u.cancelled, "success");
+        } catch (err) {
+          notify(apiErrorMessage(err, u.saveError), "error");
+        }
+      },
+    });
   }
 
   function statusBadge(m: CompanyUser) {
@@ -190,7 +223,31 @@ export function ConsultancyTeamSection() {
                             {u.deactivate}
                           </Button>
                         )}
-                        {(isMe || m.status === "PENDING_INVITE") && (
+                        {m.status === "PENDING_INVITE" && !isMe && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={u.resend}
+                              disabled={resendMut.isPending}
+                              onClick={() => handleResend(m)}
+                            >
+                              <Mail className="mr-1 h-3.5 w-3.5" />
+                              {u.resendShort}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={u.cancelInvite}
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => handleCancelInvite(m)}
+                            >
+                              <X className="mr-1 h-3.5 w-3.5" />
+                              {u.cancelInviteShort}
+                            </Button>
+                          </>
+                        )}
+                        {isMe && (
                           <span className="text-xs text-content-subtle">—</span>
                         )}
                       </div>

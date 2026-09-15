@@ -4,6 +4,7 @@ import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -45,4 +46,15 @@ public interface NotificationService {
      *                          so it is sent again on the next run.
      */
     void sendSubscriptionInvoice(SubscriptionInvoice invoice, String clientName, String recipientEmail);
+
+    /**
+     * P2.13, felia 2 — rezumatul zilnic al unui cabinet: un mail pe consultant, cu toate termenele
+     * nefinalizate din zilele următoare ale firmelor cabinetului.
+     *
+     * @param deadlines termenele, deja ordonate, fiecare cu firma încărcată
+     * @param today     ziua față de care se scrie „scadent mâine"
+     * @throws RuntimeException if delivery fails — the digest is not retried; tomorrow's carries the same deadlines.
+     */
+    void sendConsultantDigest(String consultancyName, List<ReportingDeadline> deadlines,
+                              List<String> recipientEmails, LocalDate today);
 }

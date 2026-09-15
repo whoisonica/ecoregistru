@@ -60,9 +60,16 @@ export function RequireTenant({ children }: { children: ReactNode }) {
         title={strings.header.pickCompanyTitle}
         description={strings.header.pickCompanyHint}
         action={
-          <LinkButton to="/clienti" variant="outline">
-            {strings.header.pickCompanyAction}
-          </LinkButton>
+          // P2.13, felia 2: consultantul alege din panoul cabinetului, unde vede și ce e de făcut pe fiecare.
+          user?.role === "CONSULTANT" ? (
+            <LinkButton to="/cabinet" variant="outline">
+              {strings.header.pickCompanyActionConsultant}
+            </LinkButton>
+          ) : (
+            <LinkButton to="/clienti" variant="outline">
+              {strings.header.pickCompanyAction}
+            </LinkButton>
+          )
         }
       />
     );

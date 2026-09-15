@@ -17,6 +17,7 @@ import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ConsultancyRepository;
+import ro.ecoregistru.repository.VerificationRecordRepository;
 import ro.ecoregistru.security.SecurityUtils;
 
 import java.time.Instant;
@@ -30,6 +31,8 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_ALREADY_DEACTIVATED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_DEACTIVATED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_INVITATION;
+import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_PENDING;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_STILL_PENDING;
 
 /**
@@ -56,6 +59,7 @@ public class ConsultancyService {
     ConsultancyRepository consultancyRepository;
     CompanyRepository companyRepository;
     AppUserRepository appUserRepository;
+    VerificationRecordRepository verificationRecordRepository;
     AuthenticationService authenticationService;
 
     // --- platform admin ---
@@ -133,6 +137,35 @@ public class ConsultancyService {
         colleague.setEnabled(true);
         colleague.setDeactivatedAt(null);
         appUserRepository.save(colleague);
+    }
+
+    /**
+     * P2.13, felia 2 — invitația trimisă din nou, ca la utilizatorii firmei ({@code CompanyUserService.resendInvite}):
+     * doar unui coleg care n-a intrat niciodată. Unul cu parolă are „Parolă uitată".
+     */
+    @Transactional
+    public void resendColleagueInvite(UUID id) {
+        AppUser colleague = requireColleague(id);
+        if (colleague.isEnabled() || colleague.getDeactivatedAt() != null) {
+            throw new BusinessException(USER_NOT_PENDING);
+        }
+        authenticationService.resendInvite(colleague);
+    }
+
+    /**
+     * P2.13, felia 2 — invitația nefolosită se anulează și rândul se șterge, ca adresa greșită să se
+     * elibereze. Sigur din același motiv ca la firmă ({@code CompanyUserService.cancelInvite}): un cont
+     * în care nu s-a intrat nu e autorul a nimic.
+     */
+    @Transactional
+    public void cancelColleagueInvite(UUID id) {
+        AppUser colleague = requireColleague(id);
+        refuseSelf(colleague);
+        if (colleague.isEnabled() || colleague.getDeactivatedAt() != null) {
+            throw new BusinessException(USER_NOT_INVITATION);
+        }
+        verificationRecordRepository.deleteByUser(colleague);
+        appUserRepository.delete(colleague);
     }
 
     // --- guards ---

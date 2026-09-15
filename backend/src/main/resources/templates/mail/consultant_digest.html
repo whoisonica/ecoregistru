@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+<div style="max-width: 640px; margin: 0 auto; padding: 24px;">
+    <h2 style="color: #047857;">Termenele din următoarele 7 zile</h2>
+    <p>Bună ziua,</p>
+    <p>
+        Firmele cabinetului <strong th:text="${consultancyName}">Cabinet</strong> au
+        <strong th:text="${countText}">3 termene</strong> nefinalizate în următoarele 7 zile:
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+        <tr style="text-align: left; color: #6b7280;">
+            <th style="padding: 6px 8px 6px 0; border-bottom: 1px solid #e5e7eb;">Firmă</th>
+            <th style="padding: 6px 8px; border-bottom: 1px solid #e5e7eb;">Raportare</th>
+            <th style="padding: 6px 0 6px 8px; border-bottom: 1px solid #e5e7eb;">Termen</th>
+        </tr>
+        <tr th:each="row : ${rows}">
+            <td style="padding: 8px 8px 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: bold;"
+                th:text="${row.company}">Firma SRL</td>
+            <td style="padding: 8px; border-bottom: 1px solid #f3f4f6;" th:text="${row.label}">Raportare</td>
+            <td style="padding: 8px 0 8px 8px; border-bottom: 1px solid #f3f4f6; white-space: nowrap;">
+                <span th:text="${row.dueDate}">01.01.2026</span><br/>
+                <span style="color: #b45309; font-size: 12px;" th:text="${row.whenText}">scadent mâine</span>
+            </td>
+        </tr>
+    </table>
+    <p>
+        <a th:href="${panelUrl}"
+           style="display: inline-block; background: #047857; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none;">
+            Deschide panoul cabinetului
+        </a>
+    </p>
+    <p style="font-size: 13px; color: #6b7280;">
+        Primești acest rezumat o dată pe zi, doar în zilele în care un termen cade în următoarele 7 zile.
+        Pe panou vezi și termenele depășite, blocajele la depunere și autorizațiile partenerilor.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
+    <p style="font-size: 12px; color: #9ca3af;">WasteHouse — evidența și raportarea gestiunii deșeurilor.</p>
+</div>
+</body>
+</html>

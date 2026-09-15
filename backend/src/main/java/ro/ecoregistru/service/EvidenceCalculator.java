@@ -324,6 +324,25 @@ public class EvidenceCalculator {
                 .toList();
     }
 
+    /** P2.13, felia 2 — cele două feluri de „nu e gata" ale Panoului, numărate pe linii de evidență. */
+    public record EvidenceBlockers(int linesWithoutOperationCode, int linesAwaitingWeighing) {}
+
+    /**
+     * Ce blochează depunerea pe anul dat, pentru o firmă <b>numită de apelant</b> — panoul cabinetului,
+     * care nu are o firmă aleasă. Aceeași prospețime ca {@link #list}, deci aceleași cifre ca Panoul firmei.
+     *
+     * <p>⚠️ Nu citește {@code TenantContext}: apelantul răspunde de acces. Singurul apelant e
+     * {@code ConsultancyOverviewService}, care ia firmele din cabinetul sesiunii.
+     */
+    @Transactional
+    public EvidenceBlockers blockers(UUID companyId, int year) {
+        refreshIfStale(companyId, year);
+        List<MonthlyEvidence> lines = evidenceRepository.findByCompany_IdAndYear(companyId, year);
+        int withoutCode = (int) lines.stream().filter(e -> e.getTotalUnclassifiedOut().signum() > 0).count();
+        int awaiting = (int) lines.stream().filter(MonthlyEvidence::isAwaitingWeighing).count();
+        return new EvidenceBlockers(withoutCode, awaiting);
+    }
+
     /**
      * Rebuilds a year, and the years before it that feed its opening balance, when the movements
      * have moved on since the lines were written.

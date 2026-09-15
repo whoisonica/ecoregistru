@@ -4,6 +4,7 @@ import type {
   CompanyUser,
   Consultancy,
   ConsultancyInput,
+  ConsultancyOverviewRow,
   InviteConsultantInput,
 } from "@/lib/types";
 
@@ -80,5 +81,39 @@ export function useReactivateColleague() {
       await api.post(`/api/v1/consultancy/users/${id}/reactivate`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: teamKey }),
+  });
+}
+
+/** Nu schimbă nimic din listă — invitația rămâne în așteptare —, deci nu reîmprospătează. */
+export function useResendColleagueInvite() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/v1/consultancy/users/${id}/resend-invite`);
+    },
+  });
+}
+
+export function useCancelColleagueInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/v1/consultancy/users/${id}/invitation`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: teamKey }),
+  });
+}
+
+/**
+ * P2.13, felia 2 — „Toate firmele mele". Nu ține de firma aleasă; comutatorul golește oricum cache-ul,
+ * deci la întoarcere cifrele se cer din nou, după ce s-a lucrat pe firmă.
+ */
+export const overviewKey = ["consultancy", "overview"] as const;
+
+export function useConsultancyOverview(enabled: boolean) {
+  return useQuery({
+    queryKey: overviewKey,
+    queryFn: async () =>
+      (await api.get<ConsultancyOverviewRow[]>("/api/v1/consultancy/overview")).data,
+    enabled,
   });
 }

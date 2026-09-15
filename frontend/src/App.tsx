@@ -19,6 +19,7 @@ import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { BillingPage } from "@/pages/BillingPage";
+import { ConsultancyOverviewPage } from "@/pages/ConsultancyOverviewPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 function AppShell({
@@ -83,6 +84,16 @@ export default function App() {
             element={
               <AppShell needsTenant={false}>
                 <ClientsPage />
+              </AppShell>
+            }
+          />
+          {/* P2.13, felia 2 — panoul cabinetului, peste toate firmele; deci fără firmă aleasă. Adresa
+              e scrisă și în mailul de rezumat (`EmailNotificationService.sendConsultantDigest`). */}
+          <Route
+            path="/cabinet"
+            element={
+              <AppShell needsTenant={false}>
+                <ConsultancyOverviewPage />
               </AppShell>
             }
           />

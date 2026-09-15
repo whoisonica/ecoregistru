@@ -16,6 +16,7 @@ import {
   X,
   ChevronUp,
   Receipt,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -50,6 +51,8 @@ interface NavItem {
   keywords?: string;
   /** Numai pentru cine administrează: abonamentul îl plătește adminul firmei sau consultantul. */
   manageOnly?: boolean;
+  /** Numai consultantul: panoul cabinetului n-are sens pentru platformă, care n-are un cabinet. */
+  consultantOnly?: boolean;
 }
 
 interface NavGroup {
@@ -125,7 +128,16 @@ export const navGroups: NavGroup[] = [
   {
     label: strings.nav.groupAdmin,
     multiCompanyOnly: true,
-    items: [{ to: "/clienti", label: strings.nav.clients, icon: Building2, keywords: strings.nav.kwClients }],
+    items: [
+      {
+        to: "/cabinet",
+        label: strings.nav.consultancyOverview,
+        icon: Briefcase,
+        keywords: strings.nav.kwConsultancyOverview,
+        consultantOnly: true,
+      },
+      { to: "/clienti", label: strings.nav.clients, icon: Building2, keywords: strings.nav.kwClients },
+    ],
   },
 ];
 
@@ -330,7 +342,10 @@ export function Layout({ children }: { children: ReactNode }) {
     .filter((g) => !g.multiCompanyOnly || isMultiCompany(user?.role))
     .map((g) => ({
       ...g,
-      items: g.items.filter((i) => !i.manageOnly || roleCanManage(user?.role)).flatMap((i) =>
+      items: g.items
+        .filter((i) => !i.manageOnly || roleCanManage(user?.role))
+        .filter((i) => !i.consultantOnly || user?.role === "CONSULTANT")
+        .flatMap((i) =>
         i.to === "/miscari" && company
           ? registersFor(company.type).map((r) => ({
               ...i,

@@ -54,4 +54,19 @@ public class ConsultancyTeamController {
         consultancyService.reactivateColleague(id);
         return ResponseEntity.noContent().build();
     }
+
+    /** Aceleași căi ca la utilizatorii firmei ({@link UserController}). */
+    @PostMapping("/{id}/resend-invite")
+    @PreAuthorize(CONSULTANT_ONLY)
+    public ResponseEntity<Void> resendInvite(@PathVariable UUID id) {
+        consultancyService.resendColleagueInvite(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/invitation")
+    @PreAuthorize(CONSULTANT_ONLY)
+    public ResponseEntity<Void> cancelInvite(@PathVariable UUID id) {
+        consultancyService.cancelColleagueInvite(id);
+        return ResponseEntity.noContent().build();
+    }
 }

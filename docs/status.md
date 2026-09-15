@@ -3,6 +3,24 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, după-amiaza — P2.13 felia 2: „Firmele mele” și rezumatul zilnic al consultanților.**
+> 🟡 Construită în `feat/cabinet-panou` (din `786587e`), **fără migrare, nedeployată**. **Suita completă:
+> 621 de teste în 72 de clase, 0 eșecuri, 1 sărit** (din XML), `tsc` curat, `vite build` verde.
+> - **`GET /api/v1/consultancy/overview`** (numai `CONSULTANT`, fără firmă aleasă): pe fiecare firmă activă a
+>   cabinetului — termene depășite (din anul trecut încoace) și următorul, `deadlinesGenerated`, liniile fără
+>   cod R/D și cele de cântărit (`EvidenceCalculator.blockers`, aceeași prospețime ca Panoul), codurile-oglindă
+>   fără document, partenerii activi cu autorizația/viza în 60 de zile. Ordonat: depășite, apoi cu probleme,
+>   apoi după termen. Fără tranzacție peste buclă, ca lacătul evidenței să nu fie ținut peste toate firmele.
+> - **`ConsultantDigestScheduler`** (07:30, Europe/Bucharest): un mail pe zi pe consultant activ, cu termenele
+>   nefinalizate din 7 zile ale firmelor active; nimic când nu e nimic; fără fanioane (mâine are aceleași termene).
+>   Șablonul `mail/consultant_digest`, cu link spre `/cabinet`.
+> - **Echipa cabinetului:** `POST /consultancy/users/{id}/resend-invite`, `DELETE /consultancy/users/{id}/invitation`.
+> - **Frontend:** `/cabinet` „Firmele mele” (meniu numai la consultant); clic pe celulă = comută firma și
+>   deschide Termene / Evidențe / Parteneri; „Alege o firmă” trimite consultantul aici.
+> - **Probe:** `ConsultancyOverviewIT` 8, `ConsultantDigestIT` 3. Proba negativă pe 8 reguli (inactive, finalizate,
+>   invitații, șterse, parteneri inactivi, retrimitere la activ) — fiecare a picat testul ei.
+> - ⬜ Pe ecran nevăzută: Demo n-are cont de consultant.
+>
 > **Unde suntem — 15.09.2026, 01:52.** 💳 **Abonamentele F2 (facturi FGO, transfer) sunt pe producție,
 > legate de contul de TEST FGO.**
 > ✅ Monorepo `d41f99c`, `api` **v71** (`14c2af3`, „now at version v44”, pornire 11 s), config **v72**
