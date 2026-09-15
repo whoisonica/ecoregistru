@@ -3,6 +3,20 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, noaptea — ✅ gata local: direcția interfeței „Cântar” (C1–C4), ramura `feat/ui-cantar` `823e366`.**
+> Panou grafit cu taste și afișajul lunii, pagina albă, IBM Plex Sans + Mono servite din `frontend/public/fonts`
+> (Nunito scos), stări ca LED, tabel ca pe bon, pubela pe codul de deșeu (`lib/binColor.ts`, listă explicită).
+> **Intrări și Ieșiri** sunt ecrane separate (`/intrari`, `/iesiri`; `/intrari-iesiri` → `/intrari`), cu patru totaluri
+> socotite de server peste toate rândurile filtrului: `direction=IN|OUT` pe `GET /api/v1/movements` și
+> `GET /api/v1/movements/totals` (Criteria peste același filtru ca lista). Tastele: cifrele 1–9, 0 pe meniu, N / I / E
+> pentru adăugare, `/`, `[` (strânge panoul), Ctrl K; pe telefon bandă grafit sus și bară de taburi jos. Import din Excel
+> a ieșit din meniu (buton în Setări + paletă); Abonament e un rând jos în panou. Regula: `docs/stil-interfata.md` și
+> `CLAUDE.md` rescrise. Suita **735 de teste, 91 de clase, 0 eșecuri, 3 sărite** (`MovementPagingIT` +2); e2e
+> **15 din 18** pe `eco_e2e_stil` — 9, 10, 11 cad pe date, identic cu `origin/main` pe aceeași bază; proba **18** e a
+> panoului. Măsurat: Generare 1114/1114 la 1440px după ce „Editează” a devenit creion și „Adaugă cantitatea” → „Cântar”
+> (IBM Plex e mai lat decât Nunito: 1301px înainte). Abateri deliberate de la machetă: „Reciclat” → „Valorificat”;
+> Evidența cronologică = un buton cu meniu; Abonament fără bara perioadei (API-ul n-are „plătit până la”).
+>
 > **15.09.2026, 21:12 — ✅ pe producție: stilul interfeței „Prietenos” (felia 1) și căutarea firmei după CUI la ANAF.**
 > `ecoregistru-api` **v90** (`a8e3a34`, fără migrare, schema `V48`), `ecoregistru-app` **v72** (`50acba7`); monorepo `3da95dc`,
 > `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe amândouă repo-urile split, înainte și după cherry-pick.

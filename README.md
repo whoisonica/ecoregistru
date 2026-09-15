@@ -180,20 +180,21 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ### Interface style
 
-The UI follows one written style, **"Prietenos"** (friendly), chosen on 15.09.2026 for a client who runs a bakery
-rather than an environmental consultancy: Nunito served by the app itself (not from Google, which would hand the
-client's IP to a third party), pill buttons, rounded fields on a pale green ground, choice cards instead of short
-dropdowns, and screen copy that names what the person does before the article of law that requires it. The tokens
-live in `frontend/tailwind.config.js` and `frontend/src/index.css`, the primitives in `frontend/src/components/ui`
-(including `ChoiceCards`, `PillGroup`, `Switch` and `Stepper`), and the rules — twelve for forms, plus what never
-changes: the movement form's field order, the printed documents, red versus amber — in
+The UI follows one written direction, **"Cântar"** (the weighbridge), chosen by the owner on 15.09.2026 after a
+friendlier SaaS-looking pass was rejected: a graphite side panel with keys and an LCD-style month display, the page
+itself white like a weighbridge ticket, IBM Plex Sans and Mono served by the app itself (not from Google, which would
+hand the client's IP to a third party), thin rules instead of shadows, small corners, states shown as an LED square
+plus a word, and a bin-colour swatch before every waste code. Generation, intake and dispatch are three screens with
+their own routes and server-side totals above each list. Screen copy names what the person does before the article
+of law that requires it. The tokens live in `frontend/tailwind.config.js` and `frontend/src/index.css`, the panel in
+`frontend/src/components/panel`, the primitives in `frontend/src/components/ui`, and the rules — twelve for forms,
+plus what never changes: the movement form's field order, the printed documents, red versus amber — in
 [`docs/stil-interfata.md`](docs/stil-interfata.md). There is no dark theme, on purpose.
 
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Sixteen suites, all run
-green on 15.09.2026: every screen opens clean, the action column stays reachable when a table scrolls, search
+download — against the local dev server and a backend on the `dev` profile. Eighteen suites (15 green on the e2e base on 15.09.2026; three fail on missing seed data, identically on `main`): every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
 it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started
