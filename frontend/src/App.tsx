@@ -20,6 +20,7 @@ import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { BillingPage } from "@/pages/BillingPage";
 import { ConsultancyOverviewPage } from "@/pages/ConsultancyOverviewPage";
+import { ImportPage } from "@/pages/ImportPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 function AppShell({
@@ -98,6 +99,7 @@ export default function App() {
             }
           />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
+          <Route path="/import" element={<AppShell><ImportPage /></AppShell>} />
           {/* Fără firmă aleasă: abonamentul unui consultant e al cabinetului, nu al firmei din
               comutator. Adresa e scrisă și în mailul cu factura (`EmailNotificationService`). */}
           <Route

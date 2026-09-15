@@ -167,6 +167,14 @@ public enum ErrorMessageEnum {
 
     ART48_REGISTER_NOT_ENABLED("movement.register.art48.disabled", "Firma e înregistrată doar ca generator. Preluarea de deșeuri de la terți cere tipul „Colector” sau „Ambele”."),
 
+    // --- Import din Excel (P2.15) ---
+    IMPORT_FILE_UNREADABLE("import.file.unreadable",
+            "Fișierul nu se poate citi ca Excel. Folosește șablonul .xlsx descărcat din aplicație, fără parolă."),
+    IMPORT_TEMPLATE_MISMATCH("import.template.mismatch",
+            "Fișierul nu are foile și coloanele șablonului. Descarcă șablonul din aplicație și copiază datele în el, fără să muți coloanele."),
+    IMPORT_TOO_MANY_ROWS("import.too.many.rows",
+            "O foaie are mai mult de 2.000 de rânduri. Împarte fișierul pe ani și importă-i pe rând."),
+
     // --- Evidence / deadlines ---
     EVIDENCE_NOT_FOUND("evidence.not.found", "Evidența nu a fost găsită."),
     EXPORT_FORMAT_UNSUPPORTED("export.format.unsupported", "Format de export nesuportat. Alege „xlsx” sau „pdf”."),

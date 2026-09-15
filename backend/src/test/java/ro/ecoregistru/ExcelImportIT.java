@@ -1,0 +1,284 @@
+package ro.ecoregistru;
+
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import ro.ecoregistru.config.JwtService;
+import ro.ecoregistru.entity.*;
+import ro.ecoregistru.enums.*;
+import ro.ecoregistru.exception.ErrorMessageEnum;
+import ro.ecoregistru.repository.*;
+import ro.ecoregistru.service.importer.ImportTemplate;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.*;
+
+import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * P2.15 — importul de istoric din Excel. Ce contează, în ordine: că „Verifică" nu scrie nimic, că un
+ * singur rând greşit ţine tot fişierul afară, că regulile sunt ale formularului (nu ale importului),
+ * că acelaşi fişier de două ori nu dublează nimic şi că un CUI din altă firmă nu se găseşte.
+ */
+@SpringBootTest
+@ActiveProfiles("dev")
+@AutoConfigureMockMvc
+@AutoConfigureEmbeddedDatabase(provider = ZONKY)
+class ExcelImportIT {
+
+    @Autowired MockMvc mockMvc;
+    @Autowired JwtService jwtService;
+    @Autowired PasswordEncoder passwordEncoder;
+    @Autowired CompanyRepository companyRepository;
+    @Autowired AppUserRepository appUserRepository;
+    @Autowired WorkPointRepository workPointRepository;
+    @Autowired PartnerRepository partnerRepository;
+    @Autowired WasteMovementRepository movementRepository;
+    @Autowired WasteCodeRepository wasteCodeRepository;
+    @Autowired ImportTemplate template;
+
+    private String adminToken;
+    private String viewerToken;
+    private UUID companyId;
+    private String workPoint;
+    private String cui;
+
+    @BeforeEach
+    void setUp() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company company = companyRepository.save(Company.builder()
+                .name("Import " + suffix + " SRL").cui("RO" + suffix).type(CompanyType.BOTH)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        companyId = company.getId();
+        workPoint = "Sediu " + suffix;
+        workPointRepository.save(WorkPoint.builder()
+                .company(company).name(workPoint).active(true).createdAt(Instant.now()).build());
+        adminToken = jwtService.generateToken(user(company, Role.ADMIN));
+        viewerToken = jwtService.generateToken(user(company, Role.CLIENT_VIEWER));
+        cui = "RO9" + suffix.replaceAll("\\D", "7");
+    }
+
+    private AppUser user(Company company, Role role) {
+        return appUserRepository.save(AppUser.builder()
+                .email(role.name().toLowerCase() + "+" + UUID.randomUUID().toString().substring(0, 8) + "@import.ro")
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(role).company(company).enabled(true).createdAt(Instant.now()).build());
+    }
+
+    private Object[] partnerRow() {
+        return new Object[]{"Reciclare Import SRL", cui, "Colector", "Da", "Nu", "Nu",
+                "AUT-12", LocalDate.of(2027, 1, 1), "Str. Fabricii 1", "J05/1/2020"};
+    }
+
+    private Object[] generation() {
+        return new Object[]{LocalDate.of(2026, 3, 10), workPoint, "15 01 01", "Generare", 1200, "kg",
+                null, null, null, "Fișa 3", "Solid", "CT", null, null, null, null};
+    }
+
+    /** Text, nu celule tipate: aşa arată un Excel lipit din altă parte. */
+    private Object[] recovery() {
+        return new Object[]{"20.03.2026", workPoint, "150101*", "valorificare", "1,2", "tone",
+                "R3", "Deseu propriu", cui, "Aviz 7", null, null, null, null, null, null};
+    }
+
+    @Test
+    void theTemplateHasTheTwoDataSheetsAndTheInstructions() throws Exception {
+        byte[] xlsx = mockMvc.perform(get("/api/v1/import/sablon").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(xlsx))) {
+            assertThat(wb.getSheetName(0)).isEqualTo("Parteneri");
+            assertThat(wb.getSheetName(1)).isEqualTo("Mișcări");
+            assertThat(wb.getSheetName(2)).isEqualTo("Instrucțiuni");
+            assertThat(wb.getSheet("Mișcări").getRow(0).getCell(2).getStringCellValue()).isEqualTo("Cod deșeu *");
+        }
+    }
+
+    @Test
+    void verifyingRunsTheWholeImportAndKeepsNothing() throws Exception {
+        send("/api/v1/import/verificare", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation(), recovery())), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(false)))
+                .andExpect(jsonPath("$.partnersNew", is(1)))
+                .andExpect(jsonPath("$.movementsNew", is(2)))
+                .andExpect(jsonPath("$.errors", empty()));
+
+        assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();
+    }
+
+    @Test
+    void importingSavesThePartnersAndTheMovementsThatNameThem() throws Exception {
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation(), recovery())), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(true)));
+
+        List<Partner> partners = partnerRepository.findAllByCompany_Id(companyId);
+        assertThat(partners).singleElement().satisfies(p -> {
+            assertThat(p.getCui()).isEqualTo(cui);
+            assertThat(p.getType()).isEqualTo(PartnerType.COLLECTOR);
+            assertThat(p.isClient()).isTrue();
+            assertThat(p.getAuthorizationExpiry()).isEqualTo(LocalDate.of(2027, 1, 1));
+        });
+
+        List<WasteMovement> movements = movementRepository.findAllByCompany_IdAndDeletedFalse(companyId);
+        assertThat(movements).hasSize(2);
+        WasteMovement recovered = movements.stream()
+                .filter(m -> m.getOperation() == WasteOperation.RECOVERED).findFirst().orElseThrow();
+        assertThat(recovered.getDate()).isEqualTo(LocalDate.of(2026, 3, 20));
+        assertThat(recovered.getWasteCode().getId()).isEqualTo(wasteCodeRepository.findByCode("15 01 01").orElseThrow().getId());
+        assertThat(recovered.getQuantity()).isEqualByComparingTo(new BigDecimal("1.2"));
+        assertThat(recovered.getUnit()).isEqualTo(Unit.TONS);
+        assertThat(recovered.getOperationCode()).isEqualTo(WasteOperationCode.R3);
+        assertThat(recovered.getRegister()).isEqualTo(WasteRegister.ANEXA_1);
+        assertThat(recovered.getPartner().getId()).isEqualTo(partners.get(0).getId());
+        WasteMovement generated = movements.stream()
+                .filter(m -> m.getOperation() == WasteOperation.GENERATED).findFirst().orElseThrow();
+        assertThat(generated.getStorageType()).isEqualTo(StorageType.CT);
+        assertThat(generated.getPhysicalState()).isEqualTo(PhysicalState.SOLID);
+    }
+
+    @Test
+    void theSameFileTwiceDoublesNothing() throws Exception {
+        byte[] xlsx = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation(), recovery()));
+        send("/api/v1/import", xlsx, adminToken).andExpect(jsonPath("$.saved", is(true)));
+
+        send("/api/v1/import", xlsx, adminToken)
+                .andExpect(jsonPath("$.saved", is(true)))
+                .andExpect(jsonPath("$.partnersNew", is(0)))
+                .andExpect(jsonPath("$.partnersExisting", is(1)))
+                .andExpect(jsonPath("$.movementsNew", is(0)))
+                .andExpect(jsonPath("$.movementsExisting", is(2)));
+
+        assertThat(partnerRepository.findAllByCompany_Id(companyId)).hasSize(1);
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).hasSize(2);
+    }
+
+    /**
+     * Rândurile 3–6 au câte o greşeală, fiecare de alt fel; rândul 2 e bun şi tot nu intră. Rândul 6
+     * trece de citire şi e oprit de regula formularului, cu mesajul formularului.
+     */
+    @Test
+    void oneBadRowKeepsTheWholeFileOutAndEveryBadRowIsNamed() throws Exception {
+        Object[] unknownCode = generation();
+        unknownCode[2] = "15 01 99";
+        Object[] unknownWorkPoint = generation();
+        unknownWorkPoint[1] = "Hala care nu există";
+        Object[] noQuantity = generation();
+        noQuantity[4] = null;
+        Object[] recoveryWithoutCode = recovery();
+        recoveryWithoutCode[6] = null;
+
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()),
+                        List.<Object[]>of(generation(), unknownCode, unknownWorkPoint, noQuantity, recoveryWithoutCode)), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(false)))
+                .andExpect(jsonPath("$.errors[*].row", containsInAnyOrder(3, 4, 5, 6)))
+                .andExpect(jsonPath("$.errors[?(@.row == 3)].message", hasItem(containsString("15 01 99"))))
+                .andExpect(jsonPath("$.errors[?(@.row == 4)].message", hasItem(containsString("Punct de lucru"))))
+                .andExpect(jsonPath("$.errors[?(@.row == 5)].message", hasItem(containsString("obligatoriu"))))
+                .andExpect(jsonPath("$.errors[?(@.row == 6)].message",
+                        hasItem(ErrorMessageEnum.OPERATION_CODE_REQUIRED_RECOVERY.getMessage())));
+
+        assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();
+    }
+
+    @Test
+    void aPartnerOfAnotherCompanyIsNotFoundByItsCui() throws Exception {
+        Company other = companyRepository.save(Company.builder()
+                .name("Altă firmă SRL").cui("RO" + UUID.randomUUID().toString().substring(0, 8))
+                .type(CompanyType.GENERATOR).active(true).afmObligation(false).createdAt(Instant.now()).build());
+        partnerRepository.save(Partner.builder().company(other).name("Partenerul altcuiva SRL").cui(cui)
+                .type(PartnerType.COLLECTOR).client(true).active(true).createdAt(Instant.now()).build());
+
+        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(recovery())), adminToken)
+                .andExpect(jsonPath("$.errors[0].row", is(2)))
+                .andExpect(jsonPath("$.errors[0].message", containsString("nu e nici în foaia Parteneri")));
+    }
+
+    @Test
+    void aFileThatIsNotTheTemplateIsRefusedWhole() throws Exception {
+        byte[] renamed;
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(template.render()));
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            wb.getSheet("Mișcări").getRow(0).getCell(4).setCellValue("Cantitate (kg)");
+            wb.write(out);
+            renamed = out.toByteArray();
+        }
+        send("/api/v1/import/verificare", renamed, adminToken)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("import.template.mismatch")));
+
+        send("/api/v1/import/verificare", "%PDF-1.4 nu e Excel".getBytes(), adminToken)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("import.file.unreadable")));
+    }
+
+    @Test
+    void aViewerCannotImport() throws Exception {
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of()), viewerToken)
+                .andExpect(status().isForbidden());
+        assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
+    }
+
+    // --- helpers ---
+
+    private ResultActions send(String path, byte[] xlsx, String token) throws Exception {
+        return mockMvc.perform(multipart(path)
+                .file(new MockMultipartFile("file", "import.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", xlsx))
+                .header("Authorization", "Bearer " + token));
+    }
+
+    private byte[] file(List<Object[]> partners, List<Object[]> movements) throws Exception {
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(template.render()));
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            CellStyle date = wb.createCellStyle();
+            date.setDataFormat(wb.getCreationHelper().createDataFormat().getFormat("dd.mm.yyyy"));
+            fill(wb.getSheet("Parteneri"), partners, date);
+            fill(wb.getSheet("Mișcări"), movements, date);
+            wb.write(out);
+            return out.toByteArray();
+        }
+    }
+
+    private static void fill(Sheet sheet, List<Object[]> rows, CellStyle date) {
+        for (int i = 0; i < rows.size(); i++) {
+            Row row = sheet.createRow(i + 1);
+            Object[] values = rows.get(i);
+            for (int j = 0; j < values.length; j++) {
+                if (values[j] == null) continue;
+                Cell cell = row.createCell(j);
+                if (values[j] instanceof LocalDate d) {
+                    cell.setCellValue(d);
+                    cell.setCellStyle(date);
+                } else if (values[j] instanceof Number n) {
+                    cell.setCellValue(n.doubleValue());
+                } else {
+                    cell.setCellValue(values[j].toString());
+                }
+            }
+        }
+    }
+}

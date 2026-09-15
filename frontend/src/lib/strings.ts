@@ -77,6 +77,8 @@ export const strings = {
     kwClients: "firme companii tenant cereri de cont profil de piață cabinet consultanți echipa",
     billing: "Abonament",
     kwBilling: "facturi factură plată plătește transfer pachet preț FGO scadență restanță",
+    importExcel: "Import din Excel",
+    kwImport: "import excel xlsx șablon istoric încarcă parteneri mișcări implementare",
   },
 
   login: {
@@ -2293,6 +2295,40 @@ export const strings = {
     // condiții"), fiindcă acolo sunt titluri de pagină, iar aici sunt complement direct.
     accountRequestTermsLabel: "termenii și condițiile",
     accountRequestPrivacyLabel: "politica de confidențialitate",
+  },
+
+  // P2.15 — importul de istoric. Mesajele de pe rânduri vin de la backend, cu numele coloanei în ele.
+  importExcel: {
+    title: "Import din Excel",
+    subtitle:
+      "Partenerii și mișcările de până acum, dintr-un singur fișier. Întâi se verifică, apoi se importă — totul sau nimic.",
+    templateTitle: "1. Descarcă șablonul",
+    templateHint:
+      "Copiază datele în foile „Parteneri” și „Mișcări”, fără să muți coloanele. Foaia „Instrucțiuni” spune ce intră în fiecare.",
+    templateButton: "Descarcă șablonul .xlsx",
+    templateError: "Șablonul nu a putut fi descărcat.",
+    fileTitle: "2. Verifică și importă fișierul completat",
+    fileHint: "„Importă” se deblochează după o verificare fără nicio eroare, pe același fișier.",
+    chooseFile: "Alege fișierul",
+    noFile: "Niciun fișier ales",
+    verify: "Verifică",
+    import: "Importă",
+    verifyError: "Fișierul nu a putut fi verificat.",
+    importError: "Importul nu a reușit. Nu s-a salvat nimic.",
+    resultTitle: "Ce s-a găsit în fișier",
+    resultSaved: "Ce s-a salvat",
+    partnersNew: "Parteneri noi",
+    partnersExisting: "Parteneri deja în firmă (nu se modifică)",
+    movementsNew: "Mișcări noi",
+    movementsExisting: "Mișcări deja importate din același fișier",
+    noErrors: "Nicio eroare. Fișierul se poate importa.",
+    errorsTitle: "{n} probleme. Nu se salvează nimic până nu sunt rezolvate toate.",
+    sheet: "Foaia",
+    row: "Rândul",
+    problem: "Problema",
+    saved: "Import salvat: {partners} parteneri și {movements} mișcări noi.",
+    afterImport:
+      "Întrebările despre ambalaje și datele de transport pentru Anexa 3 se completează după import, pe fiecare mișcare.",
   },
 
   fileDropzone: {
