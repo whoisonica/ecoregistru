@@ -156,6 +156,7 @@ public class WeighingOperationService {
             lines.add(line(operation, request.lines().get(i), i + 1, tenantId, userId));
         }
 
+        requireMetalIdentity(operation, lines);
         operation.setGrossKg(request.grossKg());
         operation.setTareKg(request.tareKg());
         movementRepository.deleteAll(movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
@@ -183,6 +184,8 @@ public class WeighingOperationService {
         if (lines.isEmpty()) {
             throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
         }
+        // A doua oară aici: fișa persoanei se poate edita între cântărire și finalizare.
+        requireMetalIdentity(operation, lines);
         operation.setStatus(WeighingOperationStatus.FINALIZED);
         operation.setFinalizedAt(java.time.Instant.now());
         operation.setFinalizedBy(user.getId());
@@ -215,6 +218,24 @@ public class WeighingOperationService {
         operation.setCancelReason(motive);
         operationRepository.saveAndFlush(operation);
         return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id));
+    }
+
+    /**
+     * D1.7 — la metal, borderoul cere de la persoana fizică numele, seria și numărul actului, CNP-ul și
+     * domiciliul (OUG 31/2011 art. 1 alin. (1^2) lit. b) pct. (ii)). La hârtie sau plastic nicio lege nu
+     * le cere, deci acolo ajunge numele (Legea 190/2018 art. 4; `surse-oficiale.md` §18.3).
+     */
+    private static void requireMetalIdentity(WeighingOperation operation, List<WasteMovement> lines) {
+        NaturalPerson person = operation.getNaturalPerson();
+        if (person == null || lines.stream().noneMatch(l -> l.getArticle() != null && l.getArticle().isMetal())) {
+            return;
+        }
+        boolean complete = person.getCnp() != null && ro.ecoregistru.util.ValidCnp.Validator.isValidCnp(person.getCnp())
+                && person.getIdentification() != null && !person.getIdentification().isBlank()
+                && person.getAddress() != null && !person.getAddress().isBlank();
+        if (!complete) {
+            throw new BusinessException(NATURAL_PERSON_METAL_IDENTITY_REQUIRED);
+        }
     }
 
     /** Controllerul are aceeași regulă; aici e jumătatea care ține și fără HTTP. */

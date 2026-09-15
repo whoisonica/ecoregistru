@@ -90,6 +90,7 @@ public enum ErrorMessageEnum {
     WEIGHING_OPERATION_ONE_COUNTERPARTY("weighing.operation.one.counterparty", "Alege fie un partener, fie o persoană fizică, nu amândouă."),
     WEIGHING_OPERATION_PERSON_ONLY_IN("weighing.operation.person.only.in", "O persoană fizică doar vinde depozitului. O ieșire merge la un operator autorizat, deci alege un partener."),
     NATURAL_PERSON_NOT_FOUND("natural.person.not.found", "Persoana fizică nu a fost găsită."),
+    NATURAL_PERSON_METAL_IDENTITY_REQUIRED("natural.person.metal.identity.required", "La metal, borderoul cere de la persoana fizică CNP-ul valid, seria și numărul actului de identitate și domiciliul (OUG 31/2011 art. 1 alin. (1^2)). Completează-le în fișa persoanei."),
     WEIGHING_OPERATION_NOT_EDITABLE("weighing.operation.not.editable", "Operațiunea e finalizată sau anulată și nu se mai modifică."),
     WEIGHING_OPERATION_NO_LINES("weighing.operation.no.lines", "O operațiune fără linii nu se poate finaliza."),
     WEIGHING_OPERATION_CANCEL_REASON_REQUIRED("weighing.operation.cancel.reason.required", "Scrie motivul anulării."),

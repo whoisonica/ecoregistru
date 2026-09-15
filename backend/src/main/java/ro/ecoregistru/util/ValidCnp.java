@@ -34,7 +34,8 @@ public @interface ValidCnp {
             return value == null || value.isBlank() || isValidCnp(value.trim());
         }
 
-        static boolean isValidCnp(String cnp) {
+        /** Public pentru serviciul de operațiuni: la metal CNP-ul e obligatoriu, nu doar bine format. */
+        public static boolean isValidCnp(String cnp) {
             if (!cnp.matches("\\d{13}")) {
                 return false;
             }

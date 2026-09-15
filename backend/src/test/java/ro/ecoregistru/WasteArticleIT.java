@@ -172,8 +172,10 @@ class WasteArticleIT {
         UUID rail = service.create(new WasteArticleRequest("Șină CF", copper.getId(), null, true)).id();
         UUID scrap = service.create(new WasteArticleRequest("Cupru casnic", copper.getId(), null, false)).id();
 
+        // Identitate completă: la metal borderoul o cere (D1.7), iar aici se probează doar bifa „interzis”.
         NaturalPerson person = personRepository.save(NaturalPerson.builder()
-                .company(company).name("Ion Popescu").active(true).createdAt(Instant.now()).build());
+                .company(company).name("Ion Popescu").cnp("1900101123457").identification("CJ 123456")
+                .address("Cluj, str. X 1").active(true).createdAt(Instant.now()).build());
         UUID fromPerson = operations.create(new WeighingOperationRequest(IN, depot.getId(), LocalDate.of(2026, 9, 15),
                 null, person.getId(), null, null, null, null, null, null)).id();
 
