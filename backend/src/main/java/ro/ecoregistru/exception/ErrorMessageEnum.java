@@ -17,6 +17,7 @@ public enum ErrorMessageEnum {
     // Codul rămâne, textul spune ce se face: aplicația n-are verificare de email, iar un cont se activează
     // alegând parola (din invitație sau din „Am uitat parola”). Textul vechi trimitea după un mail care nu există.
     EMAIL_NOT_VERIFIED("email.not.verified", "Contul nu e activ încă. Alege-ți parola din linkul primit pe email sau din „Am uitat parola”."),
+    ACCOUNT_DEACTIVATED("account.deactivated", "Contul a fost dezactivat. Cere administratorului să îl reactiveze."),
     INVALID_CREDENTIALS("invalid.credentials", "Email sau parolă incorecte."),
     INVALID_VERIFICATION_CODE("verification.code.invalid", "Codul de verificare este invalid."),
     VERIFICATION_CODE_EXPIRED("verification.code.expired", "Codul de verificare a expirat. Solicită unul nou."),

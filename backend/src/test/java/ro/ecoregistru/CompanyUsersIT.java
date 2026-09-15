@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
@@ -16,6 +18,7 @@ import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.service.EmailService;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,11 +26,14 @@ import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZO
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -59,6 +65,7 @@ class CompanyUsersIT {
     @Autowired JwtService jwtService;
     @Autowired AppUserRepository appUserRepository;
     @Autowired ObjectMapper objectMapper;
+    @Autowired PasswordEncoder passwordEncoder;
 
     /** Mocked so the invite mails go nowhere and can still be counted. */
     @MockBean EmailService emailService;
@@ -392,7 +399,86 @@ class CompanyUsersIT {
                 .andExpect(status().isNotFound());
     }
 
+    // --- a deactivated account stays out (15.09.2026) ---
+
+    /**
+     * „Parolă uitată" used to undo a deactivation: {@code resetPassword} set {@code enabled = true}
+     * without looking at {@code deactivatedAt}. So a deactivated account is sent no link — and gets
+     * one again once reactivated, the control that the silence is the rule and not a dead mailer.
+     */
+    @Test
+    void aDeactivatedAccountIsSentNoResetLink() throws Exception {
+        String email = uniqueEmail("concediat");
+        String id = invite(email, "OPERATOR");
+        enable(email);
+        mockMvc.perform(delete("/api/v1/users/" + id).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        requestReset(email);
+        verify(emailService, never()).sendPasswordResetEmail(any(), anyString());
+
+        mockMvc.perform(post("/api/v1/users/" + id + "/reactivate").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+        requestReset(email);
+        verify(emailService, times(1)).sendPasswordResetEmail(any(), anyString());
+    }
+
+    /** The link already in the inbox — here the 7-day invite — does not reopen the account either. */
+    @Test
+    void aLinkFromBeforeTheDeactivationDoesNotReopenTheAccount() throws Exception {
+        String email = uniqueEmail("link-vechi");
+        String id = invite(email, "OPERATOR");
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendInviteEmail(any(), code.capture(), anyInt());
+        enable(email);
+        mockMvc.perform(delete("/api/v1/users/" + id).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/v1/auth/reset-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "code", code.getValue(), "password", "Parola1234", "confirmPassword", "Parola1234"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("account.deactivated")));
+
+        AppUser after = appUserRepository.findByEmail(email).orElseThrow();
+        assertFalse(after.isEnabled());
+        assertNotNull(after.getDeactivatedAt());
+    }
+
+    /** A row the hole may already have left on production — enabled and deactivated — does not sign in. */
+    @Test
+    void anAccountBothEnabledAndDeactivatedDoesNotSignIn() throws Exception {
+        String email = uniqueEmail("stare-rupta");
+        invite(email, "OPERATOR");
+        AppUser user = appUserRepository.findByEmail(email).orElseThrow();
+        user.setPassword(passwordEncoder.encode("Parola1234"));
+        user.setEnabled(true);
+        user.setDeactivatedAt(Instant.now());
+        appUserRepository.saveAndFlush(user);
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Forwarded-For", freshIp())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "Parola1234"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("account.deactivated")));
+    }
+
     // --- helpers ---
+
+    private void requestReset(String email) throws Exception {
+        mockMvc.perform(post("/api/v1/auth/request-reset-password")
+                        .header("X-Forwarded-For", freshIp())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("email", email))))
+                .andExpect(status().isOk());
+    }
+
+    /** Its own caller for the per-IP rate limits, so these tests never share a bucket. */
+    private String freshIp() {
+        return "10.9." + Math.floorMod(UUID.randomUUID().hashCode(), 250) + "." + Math.floorMod(UUID.randomUUID().hashCode(), 250);
+    }
 
     /** Invites onto the demo company through the endpoint under test; returns the new id. */
     private String invite(String email, String role) throws Exception {

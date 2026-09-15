@@ -3,6 +3,18 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, ~15:00 — 🔴 un cont dezactivat se putea reactiva singur prin „Parolă uitată” (găsit la citirea codului,
+> la evaluarea generală; neprobat pe producție).** `resetPassword` punea `enabled = true` fără să se uite la `deactivatedAt`,
+> iar `requestPasswordReset` trimitea linkul și conturilor dezactivate. Un coleg dezactivat de admin sau de cabinet își
+> punea parola și intra, iar rândul ajungea în starea `enabled` + `deactivated_at`, pe care `V34` o declara imposibilă.
+> Reparat în `AuthenticationService`, ramura `fix/deactivated-reset` peste `feat/branding-cabinet`, fără migrare, doar backend:
+> - un cont dezactivat nu primește link (tot 200 tăcut);
+> - un link emis înainte de dezactivare (invitația de 7 zile) e refuzat cu `account.deactivated`;
+> - `login` refuză și rândurile rămase în starea ruptă.
+> Trei teste noi în `CompanyUsersIT` (22/22). Proba negativă (`scratchpad/negproof_reset.py`): fiecare gardă scoasă
+> pe rând → cade exact testul ei, 1 din 22. Suita completă **690 de teste, 85 de clase, 0 eșecuri, 3 sărite** (din XML).
+> Ecranul afișează deja mesajul serverului. ⬜ Nedeployat; ⬜ de verificat pe producție dacă există rânduri cu
+> `enabled = true` și `deactivated_at` setat (după deploy nu mai intră, dar parola aleasă rămâne).
 > **15.09.2026, seara — 🔄 termenii și politica, v2, în cod (necommis, nedeployat):** textele din
 > `frontend/src/lib/legal.ts` urmează setul juridic v2 din repo-ul privat. Termenii au **17 capitole**
 > (cap. 11 plata rescris, cap. 12 nou „Oprirea abonamentului și rambursări”, cap. 14 „Datele după încetare”);

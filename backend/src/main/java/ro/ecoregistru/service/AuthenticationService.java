@@ -77,6 +77,11 @@ public class AuthenticationService {
         AppUser user = appUserRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(INVALID_CREDENTIALS));
 
+        // Before `enabled`: a row that is both enabled and deactivated could only have come from the
+        // reset hole closed below, and it must not sign in either.
+        if (user.getDeactivatedAt() != null) {
+            throw new BusinessException(ACCOUNT_DEACTIVATED);
+        }
         if (!user.isEnabled()) {
             throw new BusinessException(EMAIL_NOT_VERIFIED);
         }
@@ -104,7 +109,8 @@ public class AuthenticationService {
             throw new TooManyRequestsException(retryAfter);
         }
         // Silent no-op if the account does not exist (avoid leaking which emails are registered).
-        appUserRepository.findByEmail(email.toLowerCase()).ifPresent(user -> {
+        // A deactivated account gets no link either — same silent 200, so the answer still says nothing.
+        appUserRepository.findByEmail(email.toLowerCase()).filter(u -> u.getDeactivatedAt() == null).ifPresent(user -> {
             verificationRecordRepository
                     .deleteByUserAndVerificationRecordTypeAndConfirmedFalse(user, RESET_PASSWORD);
             String code = newCode();
@@ -132,6 +138,12 @@ public class AuthenticationService {
         }
 
         AppUser user = record.getUser();
+        // The link may predate the deactivation (an invite lives 7 days). Without this, the
+        // `setEnabled(true)` below undid the admin's decision: a colleague switched off could pick
+        // "Parolă uitată" and walk back in. Only reactivation brings an account back.
+        if (user.getDeactivatedAt() != null) {
+            throw new BusinessException(ACCOUNT_DEACTIVATED);
+        }
         user.setPassword(passwordEncoder.encode(request.password()));
         // P0.4 — the new password takes the old sessions with it. Without this, someone who took
         // the account back by resetting the password would be sharing it with whoever still had a
