@@ -4,8 +4,10 @@ Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intr
 rulează local și are testele verzi.
 
 > **15.09.2026, după-amiaza — P2.13 felia 2: „Firmele mele” și rezumatul zilnic al consultanților.**
-> 🟡 Construită în `feat/cabinet-panou` (din `786587e`), **fără migrare, nedeployată**. **Suita completă:
-> 621 de teste în 72 de clase, 0 eșecuri, 1 sărit** (din XML), `tsc` curat, `vite build` verde.
+> ✅ **Pe producție din 15.09.2026, 12:25:** `ecoregistru-api` **v79** (`6a826d2`, fără migrare, schema `V46`),
+> `ecoregistru-app` **v63** (`d48889e`), monorepo `d2f4639`. Bundle-ul servit conține `consultancy/overview`.
+> Construită în `feat/cabinet-panou`, pusă peste billing `7561b16`. **Suita completă după rebase:
+> 632 de teste în 74 de clase, 0 eșecuri, 1 sărit** (din XML), `tsc` curat, `vite build` verde.
 > - **`GET /api/v1/consultancy/overview`** (numai `CONSULTANT`, fără firmă aleasă): pe fiecare firmă activă a
 >   cabinetului — termene depășite (din anul trecut încoace) și următorul, `deadlinesGenerated`, liniile fără
 >   cod R/D și cele de cântărit (`EvidenceCalculator.blockers`, aceeași prospețime ca Panoul), codurile-oglindă
