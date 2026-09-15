@@ -3,6 +3,24 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, după-amiaza — generator, conformitate, securitate: ramura `feat/generator-100`.**
+> ⬜ **Nedeployată.** Rebazată pe `375a434` (V47), **fără migrare**. Suita completă după rebase: **676 de teste în
+> 83 de clase, 0 eșecuri, 3 sărite** (din XML); `tsc` și `vite build` curate; **„✓ 16 probe, toate trec"**.
+> - **Sentry, veriga nevăzută din P0.6:** `POST /api/v1/platform/sentry-probe`, numai `PLATFORM_ADMIN`, aruncă o
+>   excepție care trece prin `AdviceController.handleUnexpected` (`SentryProbeIT`: 500 generic + `captureException`;
+>   adminul firmei ia 403 și nu raportează nimic). ⬜ Se apasă o dată pe producție.
+> - **R3:** dosarul de control se scrie direct în răspuns (`AuditFileService.write`); antetele zip pleacă abia cu
+>   primul octet, ca un refuz să rămână JSON. Proba negativă: antetele puse devreme → cade testul de 6 ani.
+> - **R1:** `WasteRegister.select` e singurul loc unde o listă de mișcări se taie pe registru;
+>   `RegisterSelectionInventoryTest` citește sursa și cade pe un cititor care îl ocolește (probat negativ).
+> - **P2.15 — importul din Excel:** `GET /api/v1/import/sablon`, `POST /api/v1/import/verificare` (rulează și
+>   întoarce înapoi), `POST /api/v1/import` (totul sau nimic). Rândurile trec prin `PartnerService.create` și
+>   `WasteMovementService.create`; partenerii după CUI/denumire numai în firmă; același fișier nu dublează
+>   mișcările. Ecran `/import`. `ExcelImportIT` 8/8, proba negativă pe trei reguli → 5 cad; proba de ecran 16.
+> - **P3.6:** `AuditChecklistTemplate`/`AuditResult` șterse; `Reception`/`Delivery` marcate nefolosite.
+> - **UI:** `PageHeader` păstrează 22rem titlului — pe Evidențe se strângea pe trei rânduri (cădea și pe `main`).
+>   Probele 6, 7, 9 aduse la zi; 9/10/11 cer pe o bază nouă o firmă „Proba Automata…” și termenele regenerate.
+
 > **15.09.2026, după-amiaza — P2.13 felia 2: „Firmele mele” și rezumatul zilnic al consultanților.**
 > ✅ **Pe producție din 15.09.2026, 12:25:** `ecoregistru-api` **v79** (`6a826d2`, fără migrare, schema `V46`),
 > `ecoregistru-app` **v63** (`d48889e`), monorepo `d2f4639`. Bundle-ul servit conține `consultancy/overview`.
