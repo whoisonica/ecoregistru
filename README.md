@@ -182,7 +182,7 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
 download — against the local dev server and a backend on the `dev` profile. Sixteen suites, all run
-green on 14.09.2026: every screen opens clean, the action column stays reachable when a table scrolls, search
+green on 15.09.2026: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
 it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started
@@ -386,8 +386,12 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | The partner's annual visa | **Parteneri** → edit → authorization | Issue date of the original authorization, the visa decision (number, date) and the visa period, typed from the decision; the screen proposes the issue anniversary. The handover badge, the 60-day alert, the Anexa 3 rubric and the dossier all read whichever comes first, the expiry or the end of the visa |
 | Two movement screens | the menu, on each company type | A **generator** sees **"Generare"** (`/generare`, Anexa 1), a **collector** only **"Intrări și ieșiri"** (`/intrari-iesiri`, the art. 48 register), "Generator și colector" both. A pure collector gets a note instead: its own waste goes on Anexa 1, so such a company is set to "both". On a generator there is no Anexa 2 button (`anexa2.collectors.only`) and no Anexa 3 Ambalaje section (`anexa3.packaging.collectors.only`) |
 | The art. 48 chronological record | **Intrări și ieșiri** → "Evidența cronologică (.xlsx)" / "(PDF)" | The year in the month filter, one work point or all. First the chronological table of the `ART_48` movements (kg and t, partner, R/D, transport, document), then the year's totals shaped like the SIM "Colectare/Tratare" questionnaire, in tonnes: cap. 1 per code (opening stock from earlier years, collected, recovered, disposed, closing) and cap. 2 A/B per recipient. OUG 92/2021 art. 48 alin. (1) prescribes the content and "tabular", not a form, and the portal is typed by hand, so the xlsx is the copy aid (`docs/surse-oficiale.md` §2.1-bis). A generator gets `art48.register.collectors.only` |
-| A client's subscription | **Clienți** → "Abonament", on a direct company's row or a consultancy's (platform admin) | Plan, start date and founder flag; the prices are copied from the grid when the subscription is created and change only with the plan. The dialog shows the first invoice and the monthly one: a period runs from the start day to the day before it next month, at full price. A company inside a consultancy has no subscription of its own (`subscription.company.in.consultancy`), and a company with one cannot join a consultancy (`company.has.own.subscription`). No invoice is issued yet, and a client without a subscription is neither billed nor restricted |
+| A client's subscription | **Clienți** → "Abonament", on a direct company's row or a consultancy's (platform admin) | Plan, start date and founder flag; the prices are copied from the grid when the subscription is created and change only with the plan. The dialog shows the first invoice and the monthly one: a period runs from the start day to the day before it next month, at full price. A company inside a consultancy has no subscription of its own (`subscription.company.in.consultancy`), and a company with one cannot join a consultancy (`company.has.own.subscription`). Invoices are issued from the app on the due day and mailed to the client; a client without a subscription is neither billed nor restricted |
 | A consultancy | **Clienți** → "Cabinete" (platform admin) · "Echipa cabinetului" (consultant) | The platform creates a consultancy and invites its first consultant; the consultant invites colleagues and creates companies, which join the consultancy. A consultant's company list holds only that consultancy's companies, and moving a company between consultancies is left to the platform |
+| All of a consultancy's companies | **Firmele mele** (`/cabinet`, consultant only) | One row per active company: overdue deadlines and the next one, lines with no R/D code or awaiting the weighbridge, mirror codes with no document, partner authorizations lapsing within 60 days. A cell switches to that company and opens the screen that clears it. A daily 07:30 mail lists the week's open deadlines, and sends nothing when there is nothing |
+| The consultancy's letterhead | **Clienți** → "Antetul cabinetului pe rapoarte" (consultant) | A logo and a contact line printed on the unofficial reports — the evidence summary, the partner authorizations, the dossier `README.txt`. The official forms never carry it. The image type is read from its bytes, not its name |
+| History from a spreadsheet | **Import din Excel** (`/import`) | Download the template, fill it, press "Verifică": the file runs and rolls back, listing every row's errors. "Importă" stays locked until that same file has passed with no errors, and then writes all or nothing; importing the same file again adds nothing. A small file that inflates huge is refused before it is parsed |
+| Waste articles (depot) | **Setări** → "Sortimente", only on a company with the art. 48 register | The depot's own catalogue, each article tied to a waste code. "Metal" is proposed from the code; "not accepted from individuals" makes an intake from a private person refuse that article. Anyone who writes may edit it |
 
 ### Tests
 
@@ -396,16 +400,19 @@ cd backend
 ./gradlew.bat test
 ```
 
-511 tests across 58 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+707 tests across 87 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport
-form, and the packaging declaration of Ordinul 794/2012.
+form, and the packaging declaration of Ordinul 794/2012 — plus the Excel import, the consultancy
+panel, subscriptions and invoicing, and the depot module's weighing operations.
 
 The pre-launch QA audit added fourteen suites and found sixteen defects, each one first pinned by a
 test asserting the **correct** behaviour and seen failing, then turned green by its fix — so every
 repair is proved by a test written before it rather than after. None of the sixteen crossed an access
-boundary. Every official document is also checked as printed —
+boundary. A seventeenth came from a load-focused pass after the audit closed: a small `.xlsx` that
+inflates to many megabytes exhausted the single dyno's heap for every client, and is now refused
+before parsing, proved on a 300 MB heap. Every official document is also checked as printed —
 figures read back out of the PDF and the `.xls`, not out of the data behind them — and each of those
 checks was shown to fail when its column was swapped in the generator.
 
