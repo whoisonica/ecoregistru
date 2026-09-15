@@ -17,6 +17,7 @@ import {
   ChevronUp,
   Receipt,
   Briefcase,
+  FileUp,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -118,6 +119,14 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },
       { to: "/setari", label: strings.nav.settings, icon: Settings, keywords: strings.nav.kwSettings },
+      // P2.15 — importul îl face cine configurează firma: implementarea e a noastră sau a adminului.
+      {
+        to: "/import",
+        label: strings.nav.importExcel,
+        icon: FileUp,
+        keywords: strings.nav.kwImport,
+        manageOnly: true,
+      },
       {
         to: "/abonament",
         label: strings.nav.billing,
