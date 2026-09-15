@@ -3,6 +3,27 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, ~13:50 — 💳 Abonamente F3 (plata cu cardul prin Netopia) și F4 (doar-citire, mementouri, oprire).**
+> ✅ **Pe producție:** `ecoregistru-api` **v80** (`2242e2a`, „now at version v47”), `ecoregistru-app` **v64**
+> (`ac95170`), monorepo `375a434`. **Suita completă: 665 de teste în 80 de clase, 0 eșecuri, 3 sărite** (probele
+> live), din XML; `tsc` și `vite build` curate. Pe producție, fără sesiune: `/billing/access` → 401, IPN nesemnat → 400.
+> - **Factura întâi, și la card:** rularea zilnică emite factura în FGO ca la transfer; cardul plătește o factură
+>   existentă, pe pagina Netopia. Notificarea (IPN) se păstrează unică pe (ntpID, stare) în aceeași tranzacție care
+>   plătește factura; încasarea se trece în FGO (`factura/incasare`) și se reîncearcă dacă FGO e căzut.
+> - **Cardul salvat** (când Netopia dă token): debitare în zilele 0, 3, 6, 10 după emitere, mail la fiecare refuz.
+> - **`V47`:** metoda de plată și cardul mascat pe abonament, `ends_on`; pe factură `paid_by`, `fgo_collected_at` și
+>   mementourile; tabelele `card_payments` și `payment_notifications`.
+> - **Doar-citirea** (15 zile după scadență, sau abonament oprit): orice scriere → 403 `subscription.read_only`;
+>   GET-urile (toate documentele), plata, autentificarea și platforma rămân libere. **Oprită din
+>   `APP_BILLING_READ_ONLY_ENABLED`** până la contract. Mementouri la scadență +1, +8, +15.
+> - **Oprirea abonamentului** cu preaviz de o lună, din dialogul Abonament; bannerul de abonament pe orice ecran;
+>   butoanele de scriere urmează rolul și doar-citirea.
+> - **Probe:** `CardPaymentIT` 8, `BillingReadOnlyIT` 8, `SubscriptionStatusRulesTest` 7, `NetopiaClientTest` 5,
+>   `SubscriptionEndsOnTest` 2. Proba negativă pe 6 reguli scoase deodată → exact 6 teste. Live: sandboxul Netopia
+>   dă pagina de plată pentru cererea noastră; FGO de test acceptă încasarea (99/99).
+> - ⬜ **Cardul nu e pornit pe producție:** lipsește cheia cu care Netopia semnează notificările (RSA 2048) și
+>   tokenizarea pe POS. Debitarea cu cardul salvat e neprobată pe Netopia.
+>
 > **15.09.2026, după-amiaza — P2.13 felia 2: „Firmele mele” și rezumatul zilnic al consultanților.**
 > ✅ **Pe producție din 15.09.2026, 12:25:** `ecoregistru-api` **v79** (`6a826d2`, fără migrare, schema `V46`),
 > `ecoregistru-app` **v63** (`d48889e`), monorepo `d2f4639`. Bundle-ul servit conține `consultancy/overview`.
