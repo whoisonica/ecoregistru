@@ -1083,6 +1083,18 @@ export const strings = {
     removeDriver: "Șterge",
     // form placeholders
     cuiPlaceholder: "ex. RO12345678",
+    // Căutarea după CUI, la ANAF. Completează numai rubricile goale: ce a scris omul nu se rescrie.
+    anafLookup: "Completează din ANAF",
+    anafLookupHint:
+      "Scrie CUI-ul și apasă butonul: denumirea, adresa și numărul de la Registrul Comerțului vin din registrul public ANAF. Ce ai completat deja rămâne cum e.",
+    anafFilled: "Completat din ANAF: {fields}. Verifică înainte să salvezi.",
+    anafNothingToFill: "ANAF o știe ca „{name}”. Rubricile erau deja completate, deci n-am schimbat nimic.",
+    anafFieldName: "denumirea",
+    anafFieldAddress: "adresa",
+    anafFieldRegistry: "numărul de la Registrul Comerțului",
+    anafInactive: "Atenție: ANAF o arată ca contribuabil inactiv.",
+    anafError: "Nu am putut întreba ANAF. Completează datele de mână.",
+    anafCuiFirst: "Scrie întâi CUI-ul, apoi apasă butonul.",
     authorizationNumberPlaceholder: "ex. 123/2024",
     typePlaceholder: "Alege tipul",
     // status / badges

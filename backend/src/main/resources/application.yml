@@ -85,6 +85,11 @@ app:
     # Single URL form: cloudinary://<api_key>:<api_secret>@<cloud_name>
     url: ${CLOUDINARY_URL:}
     folder: ${CLOUDINARY_FOLDER:ecoregistru}
+  # Căutarea firmei după CUI (formularul de partener): serviciul public ANAF v9, fără cheie. Documentația
+  # permite o cerere pe secundă și sancționează suprasolicitarea, deci cererile se răresc.
+  anaf:
+    base-url: ${ANAF_BASE_URL:https://webservicesp.anaf.ro/api}
+    min-interval-ms: ${ANAF_MIN_INTERVAL_MS:1000}
   # Plata abonamentelor, F2 — facturile prin API-ul FGO v7. **Oprită implicit**: fără cod unic, cheie
   # și serie, `BillingRunService` nu rezervă și nu emite nimic. Adresa implicită e mediul de test
   # (`api-testuat`), ca o cheie pusă din greșeală să nu emită facturi reale; producția o schimbă

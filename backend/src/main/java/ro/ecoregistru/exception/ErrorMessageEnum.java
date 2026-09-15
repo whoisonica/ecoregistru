@@ -194,6 +194,12 @@ public enum ErrorMessageEnum {
     IMPORT_TOO_MANY_ROWS("import.too.many.rows",
             "O foaie are mai mult de 2.000 de rânduri. Împarte fișierul pe ani și importă-i pe rând."),
 
+    // --- Căutarea firmei după CUI, la ANAF ---
+    ANAF_CUI_NOT_FOUND("anaf.cui.not.found",
+            "ANAF nu are nicio firmă cu acest CUI. Verifică cifrele sau completează datele de mână."),
+    ANAF_UNAVAILABLE("anaf.unavailable",
+            "Serviciul ANAF nu răspunde acum. Completează datele de mână sau încearcă peste câteva minute."),
+
     // --- Evidence / deadlines ---
     EVIDENCE_NOT_FOUND("evidence.not.found", "Evidența nu a fost găsită."),
     EXPORT_FORMAT_UNSUPPORTED("export.format.unsupported", "Format de export nesuportat. Alege „xlsx” sau „pdf”."),

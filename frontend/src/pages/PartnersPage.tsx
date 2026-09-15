@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Ban, Pencil, Plus, RotateCcw, Users } from "lucide-react";
+import { Ban, Pencil, Plus, RotateCcw, Search, Users } from "lucide-react";
+import { useCompanyLookup } from "@/hooks/useCompanyLookup";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
   usePartners,
@@ -107,6 +108,46 @@ export function PartnersPage() {
   const [editing, setEditing] = useState<Partner | null>(null);
   const [name, setName] = useState("");
   const [cui, setCui] = useState("");
+  // Ce a răspuns ANAF la „Completează din ANAF”, spus sub rubrică. Se șterge când se schimbă CUI-ul.
+  const [anafNote, setAnafNote] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(null);
+  const anafLookup = useCompanyLookup();
+
+  /**
+   * Completează din ANAF numai rubricile goale. Ce a scris omul nu se rescrie: poate a scris numele
+   * cu care îi spun ei firmei, iar adresa de descărcare poate fi alta decât sediul din registru.
+   */
+  async function fillFromAnaf() {
+    if (!cui.trim()) {
+      setAnafNote({ tone: "error", text: t.anafCuiFirst });
+      return;
+    }
+    setAnafNote(null);
+    try {
+      const found = await anafLookup.mutateAsync(cui.trim());
+      const filled: string[] = [];
+      if (!name.trim() && found.name) {
+        setName(found.name);
+        setNameError(false);
+        filled.push(t.anafFieldName);
+      }
+      if (!address.trim() && found.address) {
+        setAddress(found.address);
+        filled.push(t.anafFieldAddress);
+      }
+      if (!tradeRegisterNumber.trim() && found.tradeRegisterNumber) {
+        setTradeRegisterNumber(found.tradeRegisterNumber);
+        filled.push(t.anafFieldRegistry);
+      }
+      const fields =
+        filled.length > 1 ? `${filled.slice(0, -1).join(", ")} și ${filled[filled.length - 1]}` : filled[0];
+      const text = fields
+        ? t.anafFilled.replace("{fields}", fields)
+        : t.anafNothingToFill.replace("{name}", found.name ?? found.cui);
+      setAnafNote(found.inactive ? { tone: "warn", text: `${text} ${t.anafInactive}` } : { tone: "ok", text });
+    } catch (error) {
+      setAnafNote({ tone: "error", text: apiErrorMessage(error, t.anafError) });
+    }
+  }
   const [authorizationNumber, setAuthorizationNumber] = useState("");
   const [authorizationExpiry, setAuthorizationExpiry] = useState("");
   const [authorizationIssueDate, setAuthorizationIssueDate] = useState("");
@@ -226,6 +267,7 @@ export function PartnersPage() {
     setEditing(null);
     setName("");
     setCui("");
+    setAnafNote(null);
     setAuthorizationNumber("");
     setAuthorizationExpiry("");
     setAuthorizationIssueDate("");
@@ -304,6 +346,7 @@ export function PartnersPage() {
     setEditing(p);
     setName(p.name);
     setCui(p.cui ?? "");
+    setAnafNote(null);
     setAuthorizationNumber(p.authorizationNumber ?? "");
     setAuthorizationExpiry(p.authorizationExpiry ?? "");
     setAuthorizationIssueDate(p.authorizationIssueDate ?? "");
@@ -756,12 +799,44 @@ export function PartnersPage() {
             </div>
             <div>
               <Label htmlFor="p-cui">{t.cui}</Label>
-              <Input
-                id="p-cui"
-                value={cui}
-                onChange={(e) => setCui(e.target.value)}
-                placeholder={t.cuiPlaceholder}
-              />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="p-cui"
+                  className="min-w-0 flex-1"
+                  value={cui}
+                  onChange={(e) => {
+                    setCui(e.target.value);
+                    if (anafNote) setAnafNote(null);
+                  }}
+                  placeholder={t.cuiPlaceholder}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={fillFromAnaf}
+                  loading={anafLookup.isPending}
+                >
+                  {!anafLookup.isPending && <Search className="mr-2 h-4 w-4" aria-hidden />}
+                  {t.anafLookup}
+                </Button>
+              </div>
+              {anafNote ? (
+                <p
+                  role="status"
+                  className={
+                    anafNote.tone === "error"
+                      ? "mt-1 text-xs text-red-600"
+                      : anafNote.tone === "warn"
+                        ? "mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900"
+                        : "mt-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900"
+                  }
+                >
+                  {anafNote.text}
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-content-muted">{t.anafLookupHint}</p>
+              )}
             </div>
           </FormSection>
 

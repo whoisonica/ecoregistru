@@ -71,6 +71,14 @@ public class AdviceController {
         return envelope(BUSINESS_ERROR, e.getErrorCode().getCode(), e.getErrorCode().getMessage());
     }
 
+    /** An outside service did not answer (ANAF). Logged, never reported: the defect is not ours. */
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public Map<String, Object> handleServiceUnavailable(ServiceUnavailableException e) {
+        log.warn("{} {}", ERROR, e.getErrorCode().getCode());
+        return envelope(BUSINESS_ERROR, e.getErrorCode().getCode(), e.getErrorCode().getMessage());
+    }
+
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     @ExceptionHandler(UnprocessableEntityException.class)
     public Map<String, Object> handleUnprocessable(UnprocessableEntityException e) {
