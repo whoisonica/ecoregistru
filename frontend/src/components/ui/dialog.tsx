@@ -193,13 +193,13 @@ export function Dialog({
         className={cn(
           // Pe telefon urcă de jos și ocupă lățimea întreagă, cu colțurile rotunjite doar sus —
           // gestul obișnuit al unei foi modale. De la `sm` în sus e dialogul centrat de dinainte.
-          "relative z-10 flex max-h-[92vh] w-full animate-slide-up flex-col rounded-t-2xl bg-surface shadow-xl outline-none sm:max-h-[90vh] sm:rounded-xl",
+          "relative z-10 flex max-h-[92vh] w-full animate-slide-up flex-col rounded-t-3xl bg-surface shadow-xl outline-none sm:max-h-[90vh] sm:rounded-3xl",
           sizeClass[size]
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="text-lg font-semibold text-content">
+            <h2 id={titleId} className="text-xl font-extrabold text-content">
               {title}
             </h2>
             {description && (
@@ -218,9 +218,9 @@ export function Dialog({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer && (
-          <div className="flex flex-col-reverse gap-2 border-t border-line px-5 py-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-line px-6 py-4 sm:flex-row sm:justify-end">
             {footer}
           </div>
         )}

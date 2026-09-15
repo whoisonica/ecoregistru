@@ -178,6 +178,17 @@ uploads them. Research: [`docs/legislatie.md`](docs/legislatie.md).
 
 ---
 
+### Interface style
+
+The UI follows one written style, **"Prietenos"** (friendly), chosen on 15.09.2026 for a client who runs a bakery
+rather than an environmental consultancy: Nunito served by the app itself (not from Google, which would hand the
+client's IP to a third party), pill buttons, rounded fields on a pale green ground, choice cards instead of short
+dropdowns, and screen copy that names what the person does before the article of law that requires it. The tokens
+live in `frontend/tailwind.config.js` and `frontend/src/index.css`, the primitives in `frontend/src/components/ui`
+(including `ChoiceCards`, `PillGroup`, `Switch` and `Stepper`), and the rules — twelve for forms, plus what never
+changes: the movement form's field order, the printed documents, red versus amber — in
+[`docs/stil-interfata.md`](docs/stil-interfata.md). There is no dark theme, on purpose.
+
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser

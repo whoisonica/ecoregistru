@@ -534,7 +534,8 @@ export function PartnersPage() {
     <div>
       <PageHeader
         title={t.title}
-        description={t.subtitle}
+        // Pe tabul „Persoane fizice” antetul spune ce e lista de dedesubt, nu ce sunt firmele.
+        description={personsTab ? strings.naturalPersons.subtitle : t.subtitle}
         actions={
           canManage && !personsTab && (
             <Button onClick={openCreate}>

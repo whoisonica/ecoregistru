@@ -181,7 +181,7 @@ function CompanyBlock() {
 
   if (!multiCompany) {
     return (
-      <div className="rounded-md bg-brand-muted px-3 py-2">
+      <div className="rounded-xl bg-brand-muted px-3 py-2.5 lg:bg-surface lg:shadow-card">
         <div className="text-[11px] font-medium uppercase tracking-wide text-brand/70">
           {strings.header.currentCompany}
         </div>
@@ -207,7 +207,7 @@ function CompanyBlock() {
   }
 
   return (
-    <div className="rounded-md bg-brand-muted px-3 py-2">
+    <div className="rounded-xl bg-brand-muted px-3 py-2.5 lg:bg-surface lg:shadow-card">
       <label
         htmlFor="tenant-switcher"
         className="block text-[11px] font-medium uppercase tracking-wide text-brand/70"
@@ -439,7 +439,9 @@ export function Layout({ children }: { children: ReactNode }) {
         className={cn(
           // Pe ecran îngust: sertar peste pagină, care intră din stânga. Pe `lg`: coloana
           // dintotdeauna, în fluxul paginii.
-          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 lg:static lg:z-auto lg:w-60 lg:translate-x-0",
+          // Stilul „Prietenos”: pe `lg` bara nu mai e o coloană albă cu chenar, ci stă direct pe
+          // fundalul verde pal, iar intrarea activă e un card alb.
+          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 lg:static lg:z-auto lg:w-60 lg:translate-x-0 lg:border-r-0 lg:bg-transparent",
           navOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -476,10 +478,12 @@ export function Layout({ children }: { children: ReactNode }) {
                     end={item.end}
                     className={({ isActive }) =>
                       cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        // `py-2`, nu mai mult: la 900px înălțime, cu textul de 15px, `py-2.5` scotea
+                        // „Abonament” din vedere, sub „Import din Excel” (captura din 15.09.2026).
+                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
                         isActive
-                          ? "bg-brand-muted text-brand"
-                          : "text-content-muted hover:bg-surface-sunken"
+                          ? "bg-brand-muted text-brand-800 lg:bg-surface lg:font-bold lg:shadow-card"
+                          : "text-content-strong hover:bg-surface-sunken lg:hover:bg-surface/70"
                       )
                     }
                   >

@@ -1,20 +1,21 @@
 import { forwardRef, type SelectHTMLAttributes } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fieldClasses } from "@/components/ui/input";
 
 /**
  * Styled native <select>. Kept native for accessibility and zero-dependency
  * behaviour; used for unit / operation / physical state / R-D code / partner.
+ *
+ * <p>Într-un formular nou, sub șapte opțiuni se folosesc `ChoiceCards` sau `PillGroup`
+ * (docs/stil-interfata.md): lista derulantă ascunde variantele exact omului care nu le știe.
  */
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, children, ...props }, ref) => (
     <div className="relative">
       <select
         ref={ref}
-        className={cn(
-          "flex h-10 w-full appearance-none rounded-md border border-line-strong bg-surface px-3 py-2 pr-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:opacity-50",
-          className
-        )}
+        className={cn("flex h-10 appearance-none pr-9", fieldClasses, className)}
         {...props}
       >
         {children}

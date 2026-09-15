@@ -3,6 +3,16 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Stilul „Prietenos” (docs/stil-interfata.md). Nunito are litere mai mici decât fontul
+      // sistemului la aceeași mărime, deci `text-sm` și `text-xs` urcă cu câte un pixel: textul
+      // aplicației se citește la fel de ușor ca înainte, fără să mute spațierile (care stau în rem).
+      fontFamily: {
+        sans: ["Nunito", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+      },
+      fontSize: {
+        xs: ["0.8125rem", { lineHeight: "1.15rem" }],
+        sm: ["0.9375rem", { lineHeight: "1.375rem" }],
+      },
       colors: {
         // Paleta ecranelor: emerald (semnul mărcii WasteHouse are culorile lui, în `BrandName`). `DEFAULT`, `fg` și `muted` există de la început și sunt
         // folosite peste tot (`bg-brand`, `text-brand-fg`, `bg-brand-muted`) — nu se ating.
@@ -44,8 +54,9 @@ export default {
         },
       },
       boxShadow: {
-        card: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)",
-        "card-hover": "0 2px 4px -1px rgb(0 0 0 / 0.06), 0 4px 10px -2px rgb(0 0 0 / 0.08)",
+        // Umbre moi, cu tenta verde a fundalului, nu negru: pe #EDF4F0 un gri neutru arată murdar.
+        card: "0 1px 2px 0 rgb(16 40 30 / 0.04), 0 2px 8px -2px rgb(16 40 30 / 0.06)",
+        "card-hover": "0 2px 4px -1px rgb(16 40 30 / 0.06), 0 6px 16px -4px rgb(16 40 30 / 0.10)",
         popover: "0 4px 6px -2px rgb(0 0 0 / 0.05), 0 10px 24px -4px rgb(0 0 0 / 0.12)",
       },
       keyframes: {

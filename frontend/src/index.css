@@ -2,24 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Stilul „Prietenos” (15.09.2026) — regulile întregi sunt în `docs/stil-interfata.md`.
+   Fontul e servit de aplicație, nu de Google Fonts: o cerere către Google la fiecare deschidere ar
+   trimite adresa IP a clientului unui terț pe care nu-l numește politica de confidențialitate.
+   Nunito, SIL Open Font License 1.1 — licența stă lângă fișiere, în `public/fonts/OFL.txt`. */
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/nunito-latin-ext.woff2") format("woff2");
+  /* Aici stau ă, ș, ț: fără subsetul ăsta diacriticele ar cădea pe fontul de rezervă, în mijlocul cuvântului. */
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/nunito-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   color-scheme: light;
 
   /* Tokens semantice, în canale RGB ca modificatorii de opacitate ai Tailwind (`bg-surface/50`)
-     să funcționeze. Valorile sunt scara de gri pe care aplicația o folosea deja scrisă de mână;
-     mutarea lor aici nu schimbă niciun pixel, dar face ca schimbarea următoare să fie una
-     singură, nu patruzeci. */
+     să funcționeze. Din 15.09.2026 griurile au o tentă spre verdele mărcii, iar fundalul paginii
+     e verdele pal pe care stau cardurile albe — schimbarea a fost una singură, aici, cum promitea
+     comentariul de dinainte. */
   --surface: 255 255 255; /* alb — cardurile, tabelele, dialogurile */
-  --surface-muted: 249 250 251; /* gray-50 — fundalul paginii, capul de tabel */
-  --surface-sunken: 243 244 246; /* gray-100 — câmpuri dezactivate, zone „adâncite" */
-  --border-subtle: 229 231 235; /* gray-200 — chenarul obișnuit */
-  --border-strong: 209 213 219; /* gray-300 — chenarul câmpurilor de formular */
-  --content: 17 24 39; /* gray-900 — textul principal */
-  /* gray-700 — eticheta unui câmp, titlul unei secțiuni: text care nu e titlu, dar nici estompat.
-     Codul folosea aici gray-600, gray-700 și gray-800 amestecate, pentru aceeași treabă. */
-  --content-strong: 55 65 81;
-  --content-muted: 107 114 128; /* gray-500 — explicații, subtitluri */
-  --content-subtle: 156 163 175; /* gray-400 — text secundar, stări goale */
+  --surface-muted: 237 244 240; /* #EDF4F0 — fundalul paginii, capul de tabel */
+  --surface-sunken: 227 235 230; /* #E3EBE6 — câmpuri dezactivate, zone „adâncite" */
+  --border-subtle: 224 232 227; /* #E0E8E3 — chenarul obișnuit */
+  --border-strong: 203 213 207; /* #CBD5CF — chenarul la hover, liniile care trebuie să se vadă */
+  --content: 20 32 27; /* #14201B — textul principal */
+  /* Eticheta unui câmp, titlul unei secțiuni: text care nu e titlu, dar nici estompat. */
+  --content-strong: 55 68 62; /* #37443E */
+  --content-muted: 102 112 105; /* #667069 — explicații, subtitluri */
+  /* Mai închis decât gray-400 de dinainte (2,5:1 pe alb): textul secundar trebuie totuși citit. */
+  --content-subtle: 132 143 137; /* #848F89 */
 }
 
 html,
@@ -30,7 +54,7 @@ body,
 
 body {
   @apply bg-surface-muted text-content antialiased;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Nunito", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Inelul de focus e aceeași afirmație peste tot, inclusiv pe elementele native pe care nu le

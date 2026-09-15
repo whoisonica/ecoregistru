@@ -18,12 +18,13 @@ import { cn } from "@/lib/utils";
  * mai multe rânduri — zona de fișiere, rândurile de meniu — nu trec prin primitiva asta.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50",
+  // Stilul „Prietenos”: pastilă, text îngroșat, butonul principal cu o umbră verde care îl scoate din pagină.
+  "inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-brand text-brand-fg hover:bg-brand-800",
-        outline: "border border-line-strong bg-surface hover:bg-surface-muted",
+        default: "bg-brand text-brand-fg shadow-[0_6px_16px_-8px_rgb(4_120_87_/_0.6)] hover:bg-brand-800",
+        outline: "border-2 border-line bg-surface hover:border-line-strong hover:bg-surface-muted",
         ghost: "hover:bg-surface-sunken",
         // Pentru fapta care nu se ia înapoi. Până acum se scria pe loc, ca
         // `className="text-red-600 hover:bg-red-50"` pe un buton ghost — de patru ori, cu patru
@@ -32,9 +33,9 @@ const buttonVariants = cva(
         "danger-ghost": "text-red-600 hover:bg-red-50",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 px-3",
-        lg: "h-12 px-6 text-base",
+        default: "h-10 px-5 py-2",
+        sm: "h-8 px-3.5",
+        lg: "h-12 px-7 text-base",
         // Pătrat, pentru butoanele care poartă doar o pictogramă.
         icon: "h-10 w-10 shrink-0",
         "icon-sm": "h-8 w-8 shrink-0",

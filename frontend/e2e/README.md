@@ -6,6 +6,14 @@ Proba 16 e acum importul din Excel (P2.15); cea veche, a buletinelor, a fost şt
 **15.09.2026, 17:11 (depozitul D1.6):** proba 7 aşteaptă acum **şase grupe** în „Datele firmei” şi **şapte intrări** în
 cuprinsul Setărilor pe firma demo `BOTH` — a apărut „Sortimente”, doar la firmele cu registrul art. 48.
 
+🎨 **15.09.2026, seara — stilul „Prietenos” (`docs/stil-interfata.md`), toate cele 17 suite rulate** pe o bază nouă
+(`eco_e2e_stil`, creată de utilizatorul de sistem cu `-O eco`, fiindcă `eco` n-are `CREATEDB`): **14 trec**; 9, 10 și 11
+cad **pe date** (nu există firma generator „Proba Automata”, nici termene depășite) și cad **identic, cuvânt cu cuvânt,
+pe `origin/main`** rulat pe aceeași bază. Proba **8** a prins o regresie reală a stilului: cu textul de 15px și celulele
+`px-4`, Mișcări ieșea din 1440px cu 63px și butonul „Vezi atașamentele” intra sub coloana de acțiuni fixată. Reparat în
+`table.tsx` (tabelele la 14px, celulele `px-3`) și bara laterală înapoi la `w-60`; măsurat după: `scrollWidth 1134 =
+clientWidth 1134`, butonul liber. Proba 17 citește acum eticheta nouă, „Poate vinde metal”.
+
 ✅ **15.09.2026 — cele de mai jos au rulat.** Pe o bază nouă (`ecoregistru_e2e_1509`, proprietar `eco` — creată
 de alt utilizator, Flyway ia `permission denied for schema public`) au căzut întâi 9, 10 şi 11 **pe date**: trebuie
 o firmă `GENERATOR` al cărei nume conţine „Proba Automata" şi termenele generate pe anul trecut şi pe cel curent

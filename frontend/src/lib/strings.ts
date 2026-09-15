@@ -683,6 +683,18 @@ export const strings = {
         NO_CONSULTANT: "Doar utilizatorii firmei, fără consultant și fără suportul WasteHouse",
         ADMIN_ONLY: "Doar administratorul firmei",
       },
+      // Aceleași trei variante, pe carduri: numele scurt sus, cine rămâne afară dedesubt.
+      choice: {
+        COMPANY: { label: "Toată firma", description: "Inclusiv consultantul și suportul WasteHouse." },
+        NO_CONSULTANT: {
+          label: "Doar oamenii firmei",
+          description: "Fără consultant și fără suportul WasteHouse.",
+        },
+        ADMIN_ONLY: {
+          label: "Doar administratorul",
+          description: "Nici operatorul, nici consultantul, nici suportul WasteHouse.",
+        },
+      },
       youSee: "Tu vezi prețurile.",
       youDontSee: "Tu nu vezi prețurile.",
       onlyAdmin: "Setarea o schimbă administratorul firmei.",
@@ -945,14 +957,14 @@ export const strings = {
     namePlaceholder: "ex. Ion Popescu",
     cnp: "CNP",
     cnpHint: "Obligatoriu doar la metal. În listă se văd numai ultimele 4 cifre.",
-    cnpInvalid: "CNP invalid: 13 cifre, cu cifra de control corectă.",
+    cnpInvalid: "Verifică cifrele: un CNP are 13 cifre, iar ultima trebuie să se potrivească cu celelalte. Probabil una e greșit tastată.",
     identification: "Seria și numărul actului de identitate",
     identificationPlaceholder: "ex. CJ 123456",
     address: "Domiciliu",
     addressPlaceholder: "ex. Cluj-Napoca, str. Horea 1",
-    metalColumn: "Borderou metal",
-    metalReady: "Complet pentru metal",
-    nameOnly: "Doar nume",
+    metalColumn: "Metal",
+    metalReady: "Poate vinde metal",
+    nameOnly: "Lipsesc datele pentru metal",
     searchPlaceholder: "Caută după nume sau ultimele cifre din CNP...",
     empty: "Nicio persoană fizică încă.",
     emptyHint: "Adaugă oamenii care îți aduc deșeuri. La cântar îi alegi din listă.",
@@ -965,6 +977,7 @@ export const strings = {
     delete: "Șterge definitiv",
     confirmDeleteTitle: "Ștergi definitiv fișa persoanei?",
     confirmDelete: "Persoana n-a vândut nimic, deci fișa se poate șterge. Nu se mai poate recupera.",
+    hasOperationsLabel: "De ce nu se poate șterge",
     hasOperationsHint:
       "Apare pe operațiuni: fișa nu se șterge, fiindcă borderoul se păstrează 10 ani. Datele pleacă singure la termen.",
     created: "Persoană adăugată.",
@@ -2522,6 +2535,8 @@ export const strings = {
     requiredField: "Câmp obligatoriu.",
     // Citit doar de cititorul de ecran, în locul asteriscului. Vezi `Label`.
     requiredMarker: "obligatoriu",
+    // `Stepper` — citit doar de cititorul de ecran, înaintea numelui pasului curent.
+    stepOf: "Pasul {n} din {total}:",
     search: "Caută",
     // Citite doar de cititorul de ecran, pe cele două select-uri ale lui `MonthInput` — eticheta
     // vizibilă e una singură, a filtrului.

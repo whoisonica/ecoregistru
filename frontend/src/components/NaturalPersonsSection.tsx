@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Ban, Pencil, Plus, RotateCcw, Trash2, UserRound } from "lucide-react";
+import { Ban, Info, Pencil, Plus, RotateCcw, Trash2, UserRound } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
   useNaturalPersons,
   useNaturalPerson,
@@ -175,8 +176,8 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
 
   return (
     <section className="mt-4">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <p className="max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
+      {/* Explicația listei stă în antetul paginii (PartnersPage), nu a doua oară aici. */}
+      <div className="mb-3 flex flex-wrap items-start justify-end gap-3">
         {canManage && (
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
@@ -262,8 +263,12 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
                               {strings.common.reactivate}
                             </Button>
                             {p.hasOperations ? (
-                              <span className="self-center px-2 text-xs text-content-muted" title={t.hasOperationsHint}>
-                                ⓘ
+                              // `title` nu se citește pe telefon și nici din tastatură; `Tooltip` da.
+                              <span className="self-center px-2">
+                                <Tooltip content={t.hasOperationsHint}>
+                                  <Info className="h-4 w-4 text-content-subtle" aria-hidden />
+                                  <span className="sr-only">{t.hasOperationsLabel}</span>
+                                </Tooltip>
                               </span>
                             ) : (
                               <Button

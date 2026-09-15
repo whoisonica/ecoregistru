@@ -16,7 +16,7 @@ interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
 export function Label({ className, required, children, ...props }: LabelProps) {
   return (
     <label
-      className={cn("mb-1 block text-sm font-medium text-content-strong", className)}
+      className={cn("mb-1.5 block text-sm font-bold text-content-strong", className)}
       {...props}
     >
       {children}

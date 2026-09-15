@@ -74,7 +74,8 @@ await page.waitForTimeout(400);
 body = await page.evaluate(() => document.body.innerText);
 check("căutarea după ultimele 4 cifre găsește persoana", /•••••••••3457/.test(body));
 check("CNP-ul întreg nu e nicăieri în listă", !body.includes(CNP));
-check("fișa completă e marcată pentru metal", /Complet pentru metal/.test(body));
+// Eticheta a devenit „Poate vinde metal” odată cu stilul „Prietenos” (15.09.2026).
+check("fișa completă e marcată pentru metal", /Poate vinde metal/.test(body));
 await shot(page, "17-persoane-fizice-lista");
 
 const row = page.locator("tr", { hasText: "•••••••••3457" }).first();

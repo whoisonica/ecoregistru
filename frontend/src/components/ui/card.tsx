@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-xl border border-line bg-surface p-5 shadow-card", className)}
+      className={cn("rounded-2xl border border-line bg-surface p-5 shadow-card", className)}
       {...props}
     />
   );
@@ -33,7 +33,7 @@ export function CardHeader({
   return (
     <div className={cn("flex items-start justify-between gap-4", className)}>
       <div className="min-w-0">
-        <h2 className="font-semibold text-content">{title}</h2>
+        <h2 className="text-base font-extrabold text-content">{title}</h2>
         {description && <p className="mt-0.5 text-sm text-content-muted">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}

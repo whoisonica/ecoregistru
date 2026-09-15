@@ -24,13 +24,16 @@ export function Table({
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-xl border border-line bg-surface",
+        "overflow-x-auto rounded-2xl border border-line bg-surface shadow-card",
         // Înălțimea maximă e ce face antetul lipicios să însemne ceva: fără ea, containerul
         // crește cât tabelul și nu se derulează nimic pe dinăuntru.
         stickyHeader && "max-h-[70vh] overflow-y-auto"
       )}
     >
-      <table className={cn("w-full text-sm", className)} {...props} />
+      {/* 14px, nu `text-sm` (15px din stilul „Prietenos”): la 15px, Mișcări ieșea din 1440px și coloana de
+          atașamente intra sub coloana de acțiuni fixată — prinsă de proba 8 (15.09.2026). Tabelele sunt
+          singurul loc unde densitatea bate mărimea. */}
+      <table className={cn("w-full text-[0.875rem] leading-5", className)} {...props} />
     </div>
   );
 }
@@ -43,7 +46,7 @@ export function THead({
   return (
     <thead
       className={cn(
-        "border-b border-line bg-surface-muted text-left text-xs font-medium uppercase tracking-wide text-content-muted",
+        "border-b border-line bg-surface-muted text-left text-xs font-bold uppercase tracking-wide text-content-muted",
         // `bg-surface-muted` pe `thead` nu acoperă rândurile care trec pe dedesubt în unele
         // browsere, de asta culoarea se pune și pe celule, prin `[&>tr>th]`.
         //
@@ -110,7 +113,7 @@ export function TH({
 }) {
   return (
     <th
-      className={cn("relative px-4 py-3", sticky === "right" && STICKY_RIGHT, className)}
+      className={cn("relative px-3 py-3", sticky === "right" && STICKY_RIGHT, className)}
       {...props}
     />
   );
@@ -127,7 +130,9 @@ export function TD({
   return (
     <td
       className={cn(
-        "relative px-4 py-3 text-content-muted",
+        // `px-3`, nu `px-4`: Nunito îngroșat e mai lat decât fontul de dinainte, iar Mișcări ieșea din
+        // 1440px cu 63px, adică exact coloana de atașamente sub cea de acțiuni fixată (proba 8).
+        "relative px-3 py-3 text-content-muted",
         sticky === "right" && STICKY_RIGHT,
         className
       )}
@@ -177,7 +182,7 @@ export function SortableTH({
         // Moștenește alinierea celulei: coloanele de cifre sunt la dreapta, iar butonul nu are de
         // unde ști asta singur.
         className={cn(
-          "flex w-full items-center gap-1.5 px-4 py-3 uppercase tracking-wide transition-colors hover:text-content",
+          "flex w-full items-center gap-1.5 px-3 py-3 uppercase tracking-wide transition-colors hover:text-content",
           align === "right" ? "justify-end text-right" : "text-left"
         )}
       >

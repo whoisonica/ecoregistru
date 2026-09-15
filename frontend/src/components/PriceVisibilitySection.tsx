@@ -1,21 +1,22 @@
-import { Eye } from "lucide-react";
+import { Building2, Eye, Lock, Users } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useCurrentCompany, useUpdatePriceVisibility } from "@/hooks/useCompanies";
 import type { PriceVisibility } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Card, CardHeader } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { ChoiceCards, type ChoiceOption } from "@/components/ui/choice-cards";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.settings.prices;
-const OPTIONS: PriceVisibility[] = ["COMPANY", "NO_CONSULTANT", "ADMIN_ONLY"];
 
 /**
  * Cine vede prețurile depozitului (D1.8). Alege doar adminul firmei (proprietarul, 15.09.2026):
- * consultantul și platforma n-au select, fiindcă și-ar putea deschide singuri prețurile ascunse.
+ * consultantul și platforma n-au alegerea, fiindcă și-ar putea deschide singuri prețurile ascunse.
  * Serverul refuză la fel.
+ *
+ * <p>Trei variante, deci trei carduri, nu o listă derulantă (stilul „Prietenos”): textele lor sunt
+ * lungi fiindcă numesc și suportul WasteHouse, iar într-un select se tăiau pe telefon.
  *
  * <p>Ceilalți văd setarea în citire și dacă ei înșiși văd prețurile: `pricesVisible` vine de pe
  * server, ca regula să nu fie scrisă a doua oară aici.
@@ -29,7 +30,14 @@ export function PriceVisibilitySection() {
   if (!company?.priceVisibility) return null;
   const isAdmin = user?.role === "ADMIN";
 
+  const options: ChoiceOption<PriceVisibility>[] = [
+    { value: "COMPANY", label: t.choice.COMPANY.label, description: t.choice.COMPANY.description, icon: <Users className="h-5 w-5" /> },
+    { value: "NO_CONSULTANT", label: t.choice.NO_CONSULTANT.label, description: t.choice.NO_CONSULTANT.description, icon: <Building2 className="h-5 w-5" /> },
+    { value: "ADMIN_ONLY", label: t.choice.ADMIN_ONLY.label, description: t.choice.ADMIN_ONLY.description, icon: <Lock className="h-5 w-5" /> },
+  ];
+
   async function change(value: PriceVisibility) {
+    if (value === company?.priceVisibility) return;
     try {
       await updateMut.mutateAsync(value);
       notify(t.saved, "success");
@@ -50,29 +58,26 @@ export function PriceVisibilitySection() {
           }
           description={t.subtitle}
         />
-        <div className="mt-4 max-w-xl">
-          <Label htmlFor="price-visibility">{t.label}</Label>
+        <div className="mt-4">
+          <p id="price-visibility-label" className="mb-2 text-sm font-bold text-content-strong">
+            {t.label}
+          </p>
           {isAdmin ? (
-            <div className="mt-1">
-              <Select
-                id="price-visibility"
-                value={company.priceVisibility}
-                disabled={updateMut.isPending}
-                onChange={(e) => change(e.target.value as PriceVisibility)}
-              >
-                {OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {t.options[option]}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <ChoiceCards
+              name="price-visibility"
+              aria-labelledby="price-visibility-label"
+              value={company.priceVisibility}
+              onChange={change}
+              options={options}
+              columns={3}
+              disabled={updateMut.isPending}
+            />
           ) : (
-            <p id="price-visibility" className="mt-1 text-sm text-content">
+            <p id="price-visibility" className="text-sm text-content">
               {t.options[company.priceVisibility]}
             </p>
           )}
-          <p className="mt-2 text-sm text-content-muted">
+          <p className="mt-3 text-sm text-content-muted">
             {company.pricesVisible ? t.youSee : t.youDontSee}
             {!isAdmin && ` ${t.onlyAdmin}`}
           </p>
