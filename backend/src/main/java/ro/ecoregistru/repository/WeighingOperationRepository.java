@@ -8,6 +8,7 @@ import ro.ecoregistru.enums.WeighingOperationType;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface WeighingOperationRepository extends JpaRepository<WeighingOperation, UUID> {
@@ -15,6 +16,13 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     Optional<WeighingOperation> findByIdAndCompany_Id(UUID id, UUID companyId);
 
     List<WeighingOperation> findAllByCompany_IdOrderByDateDescNumberDesc(UUID companyId);
+
+    boolean existsByNaturalPerson_Id(UUID naturalPersonId);
+
+    /** Persoanele fizice ale firmei care apar pe cel puțin o operațiune, într-o singură interogare pentru listă. */
+    @Query("select distinct o.naturalPerson.id from WeighingOperation o "
+            + "where o.company.id = :companyId and o.naturalPerson is not null")
+    Set<UUID> findNaturalPersonIdsWithOperations(@Param("companyId") UUID companyId);
 
     @Query("select max(o.number) from WeighingOperation o where o.company.id = :companyId and o.type = :type")
     Integer findMaxNumber(@Param("companyId") UUID companyId, @Param("type") WeighingOperationType type);

@@ -8,6 +8,7 @@ import ro.ecoregistru.entity.NaturalPerson;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,12 @@ public interface NaturalPersonRepository extends JpaRepository<NaturalPerson, UU
     String ERASED_NAME = "Persoană fizică (date șterse)";
 
     Optional<NaturalPerson> findByIdAndCompany_Id(UUID id, UUID companyId);
+
+    List<NaturalPerson> findAllByCompany_IdOrderByNameAsc(UUID companyId);
+
+    boolean existsByCompany_IdAndCnp(UUID companyId, String cnp);
+
+    boolean existsByCompany_IdAndCnpAndIdNot(UUID companyId, String cnp, UUID id);
 
     /**
      * Anonimizează persoanele fără nicio operațiune de la {@code cutoff} încoace (Legea 82/1991 art. 25:

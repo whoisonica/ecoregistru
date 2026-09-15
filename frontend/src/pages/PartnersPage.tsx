@@ -40,6 +40,8 @@ import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
+import { NaturalPersonsSection } from "@/components/NaturalPersonsSection";
+import { registersFor } from "@/lib/movementScreens";
 
 const t = strings.partners;
 const typeLabels = strings.enums.partnerType;
@@ -90,6 +92,10 @@ export function PartnersPage() {
 
   const { data: partners, isLoading, isError } = usePartners();
   const { data: company } = useCurrentCompany();
+  // D1.7b: persoanele fizice sunt ale depozitului, deci tabul apare doar la firma cu art. 48.
+  const hasDepot = Boolean(company) && registersFor(company?.type).includes("ART_48");
+  const [tab, setTab] = useUrlState("tab");
+  const personsTab = hasDepot && tab === "persoane-fizice";
   const createMut = useCreatePartner();
   const updateMut = useUpdatePartner();
   const deactivateMut = useDeactivatePartner();
@@ -479,7 +485,7 @@ export function PartnersPage() {
 
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
-  useHotkey("n", openCreate, { enabled: Boolean(canManage) });
+  useHotkey("n", openCreate, { enabled: Boolean(canManage) && !personsTab });
 
   return (
     <div>
@@ -487,7 +493,7 @@ export function PartnersPage() {
         title={t.title}
         description={t.subtitle}
         actions={
-          canManage && (
+          canManage && !personsTab && (
             <Button onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
               {t.add}
@@ -496,6 +502,38 @@ export function PartnersPage() {
         }
       />
 
+      {hasDepot && (
+        <div role="tablist" className="mt-6 flex gap-1 border-b border-line">
+          {[
+            { id: "", label: strings.naturalPersons.tabFirms },
+            { id: "persoane-fizice", label: strings.naturalPersons.tab },
+          ].map((item) => {
+            const selected = (item.id === "persoane-fizice") === personsTab;
+            return (
+              <button
+                key={item.id || "firme"}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setTab(item.id)}
+                className={
+                  "-mb-px border-b-2 px-3 py-2 text-sm font-medium " +
+                  (selected
+                    ? "border-brand-600 text-content-strong"
+                    : "border-transparent text-content-muted hover:text-content")
+                }
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {personsTab ? (
+        <NaturalPersonsSection canManage={Boolean(canManage)} />
+      ) : (
+      <>
       <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
         <div>
           <Label htmlFor="filter-role">{t.filterRole}</Label>
@@ -636,6 +674,8 @@ export function PartnersPage() {
           </>
         )}
       </section>
+      </>
+      )}
 
       <Dialog
         open={dialogOpen}

@@ -522,6 +522,38 @@ export interface WasteArticleInput {
   forbiddenFromIndividuals: boolean;
 }
 
+/**
+ * Un rând din tabul „Persoane fizice” (D1.7b). CNP-ul vine doar cu ultimele patru cifre: lista o vede
+ * toată firma. Fișa întreagă e `NaturalPerson`, cerută doar la deschiderea formularului.
+ */
+export interface NaturalPersonSummary {
+  id: string;
+  name: string;
+  cnpLastDigits: string | null;
+  /** CNP valid, act și domiciliu: tot ce cere borderoul la metal (OUG 31/2011 art. 1 alin. (1^2)). */
+  metalReady: boolean;
+  active: boolean;
+  /** Apare pe o operațiune, deci fișa nu se mai șterge definitiv (borderoul se păstrează 10 ani). */
+  hasOperations: boolean;
+}
+
+export interface NaturalPerson {
+  id: string;
+  name: string;
+  cnp: string | null;
+  identification: string | null;
+  address: string | null;
+  active: boolean;
+  hasOperations: boolean;
+}
+
+export interface NaturalPersonInput {
+  name: string;
+  cnp: string | null;
+  identification: string | null;
+  address: string | null;
+}
+
 // --- Partners ---
 
 /**

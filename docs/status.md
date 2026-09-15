@@ -3,6 +3,14 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, seara — ✅ local, nedeployat: depozitul D1.7b, tabul „Persoane fizice”.**
+> Pe Parteneri, la firmele cu art. 48, tab „Firme / Persoane fizice” (`?tab=persoane-fizice`), fără migrare.
+> `/api/v1/natural-persons`: lista o citește toată firma, cu CNP-ul redus la ultimele 4 cifre și `metalReady`; fișa
+> întreagă (`GET /{id}`) doar cine scrie; scrie și OPERATOR; CNP valid (cifra de control) și unic pe firmă; ștergerea
+> definitivă doar pentru o fișă dezactivată și fără operațiuni, fiindcă borderoul se păstrează 10 ani (Legea 82/1991
+> art. 25). Probe: `NaturalPersonRegistryIT` 8/8, proba negativă pe 7 reguli (fiecare pică exact testele ei), suita
+> **715 teste, 88 de clase, 0 eșecuri, 3 sărite**; e2e `17-persoane-fizice.mjs` **13/13** pe o bază proaspăt seedată.
+>
 > **15.09.2026, 17:11 — ✅ pe producție: depozitul D1.6 (sortimente) + D1.7 (persoane fizice), blocantele legale citite.**
 > `ecoregistru-api` **v87** (`48ee383`, fără migrare, schema `V48`), `ecoregistru-app` **v69** (`65bd192`); monorepo `9c873eb`
 > (3 commituri rebazate peste `b3695fc`, BUG-017), `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe
