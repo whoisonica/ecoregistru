@@ -194,25 +194,31 @@ class WasteArticleIT {
         assertThat(operations.replaceLines(fromPartner, lines(rail)).lines()).hasSize(1);
     }
 
-    /** Operatorul cântărește, dar nu își scoate singur bifele care decid actele de la cântar. */
+    /** Oricine scrie își personalizează catalogul (decizia proprietarului, 15.09.2026); vizualizatorul nu. */
     @Test
-    void onlyApproversWriteTheCatalogOverHttp() throws Exception {
+    void everyWriterCustomizesTheCatalogButNotTheViewerOverHttp() throws Exception {
         AppUser operator = user(company, Role.OPERATOR);
+        AppUser viewer = user(company, Role.CLIENT_VIEWER);
         String body = "{\"name\":\"Aluminiu\",\"wasteCodeId\":\"" + copper.getId() + "\",\"forbiddenFromIndividuals\":false}";
         // Capcana din WeighingOperationStatusIT: o autentificare lăsată pe thread oprește filtrul JWT.
         SecurityContextHolder.clearContext();
         TenantContext.clear();
 
         mockMvc.perform(post("/api/v1/waste-articles")
-                        .header("Authorization", "Bearer " + jwtService.generateToken(operator))
+                        .header("Authorization", "Bearer " + jwtService.generateToken(viewer))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/v1/waste-articles")
-                        .header("Authorization", "Bearer " + jwtService.generateToken(admin))
+                        .header("Authorization", "Bearer " + jwtService.generateToken(operator))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.metal").value(true))
                 .andExpect(jsonPath("$.wasteCode").value("17 04 01"));
+        // Viewerul citește lista: formularul de operațiune și Setările o afișează oricui din firmă.
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/waste-articles")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(viewer)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Aluminiu"));
     }
 
     // --- helpers ---

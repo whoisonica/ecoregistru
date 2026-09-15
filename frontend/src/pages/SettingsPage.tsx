@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Ban, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { canManage as roleCanManage } from "@/lib/roles";
+import { canManage as roleCanManage, canWrite as roleCanWrite } from "@/lib/roles";
 import {
   useWorkPoints,
   useCreateWorkPoint,
@@ -265,7 +265,8 @@ export function SettingsPage() {
 
       <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
 
-      {hasDepot && <WasteArticlesSection canManage={canManage} />}
+      {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}
+      {hasDepot && <WasteArticlesSection canManage={roleCanWrite(user?.role)} />}
 
       <OwnDriversSection canManage={canManage} />
 

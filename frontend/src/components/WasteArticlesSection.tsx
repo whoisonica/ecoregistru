@@ -32,8 +32,8 @@ const t = strings.settings.articles;
  * Catalogul de sortimente al depozitului (D1.6). La cântar omul alege sortimentul, nu codul.
  *
  * <p>Bifa „metal” se propune din cod (`metalSuggested`, calculat pe server) până când omul o atinge;
- * de acolo rămâne alegerea lui. Scriu doar cei care administrează firma: bifele decid ce acte se cer
- * la o intrare de la persoană fizică, iar serverul refuză la fel.
+ * de acolo rămâne alegerea lui. Catalogul îl personalizează oricine scrie, și operatorul (proprietarul,
+ * 15.09.2026); `canManage` vine din `canWrite`, iar serverul are același prag.
  */
 export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
   const { data: articles, isLoading, isError } = useWasteArticles();

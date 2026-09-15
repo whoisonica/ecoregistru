@@ -2426,6 +2426,10 @@ aceeași valoare (§10.1: *„2% din veniturile realizate din vânzarea deșeuri
 calculează **independent, pe valoarea brută**, și nu una din cealaltă. Așa scrie și borderoul:
 *„reținute la sursă din valoarea brută”*.
 
+**Normele metodologice** (HG 1/2016, anexa, forma consolidată din 02.02.2026, Portal 289668) au fost
+căutate la reverificare. **N-au nimic despre lit. m²) sau despre metalele din patrimoniul personal**, deci
+nu schimbă baza: rămâne „venitul brut” din art. 115.
+
 **Pentru cod:** cota e fixă prin lege, deci stă în cod cu trimiterea la articol, nu ca setare pe firmă.
 Nu se aplică la hârtie, plastic sau acumulatori de la PF: art. 62 lit. f) îi lasă neimpozabili (§12).
 
@@ -2442,20 +2446,31 @@ proprie. **Fraza cu procentele nu e în listă.** Ea e o mențiune din model car
 Tipărirea cotelor în vigoare, cu sumele calculate, respectă conținutul cerut. Tipărirea lui 16% + 3% ar
 declara pe un document financiar-contabil (alin. (1^3)) o reținere care nu s-a făcut.
 
-### 18.3 C3 — hârtia și plasticul de la PF: **tot borderou**, din cauza SIATD, dar fără CNP
+### 18.3 C3 — hârtia și plasticul de la PF: **textul nu tranșează**, deci întrebarea BA la specialistă
 
-OUG 31/2011 privește doar metalele. **Ordinul 701/2024 art. 18 alin. (3)** cere însă, pentru orice
-tranzacție din SIATD (ambalaje, anvelope, DEEE, baterii portabile, municipale):
+⚠️ **Corectat la reverificare, tot pe 15.09.2026.** Prima formă a acestei secțiuni spunea „borderou la
+orice intrare PF, din cauza SIATD”. Recitit întreg, ordinul nu susține concluzia.
+
+OUG 31/2011 privește doar metalele. **Ordinul 701/2024 art. 18 alin. (3)** spune:
 
 > La inițierea unei tranzacții în aplicația SIATD pentru fiecare transport/tranzacție cu deșeuri,
-> înregistrat(ă) în platformă, cu excepția deșeurilor municipale preluate de operatorul economic colector,
-> se va indica sursa deșeurilor în formatul corespunzător cerințelor SIATD, **inclusiv borderoul de
-> achiziție în cazul deșeurilor preluate de la persoane fizice**.
+> înregistrat(ă) în platformă, **cu excepția deșeurilor municipale preluate de operatorul economic
+> colector**, se va indica sursa deșeurilor în formatul corespunzător cerințelor SIATD, inclusiv
+> borderoul de achiziție în cazul deșeurilor preluate de la persoane fizice.
 
-**Ce decide:**
-- **fiecare intrare de la PF primește borderou**, nu doar cea cu metal;
-- **CNP-ul și actul de identitate rămân obligatorii doar la metal**, fiindcă numai art. 1 alin. (1^2) lit. b) pct. (ii) din OUG 31/2011 le cere. La restul, ordinul nu numește câmpuri, deci se aplică minimizarea (Legea 190/2018 art. 4, §16): nume și domiciliu;
-- impozitul se tipărește doar pe liniile de metal, iar AFM pe toate.
+Două texte trag în direcții opuse:
+- **OUG 92/2021, definiția de la pct. 13:** *„deșeuri municipale înseamnă: a) deșeuri amestecate și deșeuri colectate separat de la gospodării, inclusiv hârtia și cartonul, sticla, metalele, materialele plastice, [...] ambalajele, deșeurile de echipamente electrice și electronice, deșeurile de baterii și acumulatori”*. Hârtia sau PET-ul adus de o PF la centru e deci, după definiție, deșeu municipal, iar excepția l-ar scoate;
+- **același alineat** numește însă borderoul „în cazul deșeurilor preluate de la persoane fizice”. Dacă toate deșeurile de la PF ar fi municipale, mențiunea n-ar avea obiect.
+
+În plus, **art. 2** face SIATD obligatoriu doar pentru operatorii care *„gestionează deșeuri pentru”* o
+OIREP, pentru anvelope sau pentru deșeuri municipale. Nu orice centru de colectare e în SIATD.
+
+**Ce decide până la răspuns:**
+- borderoul e **obligatoriu doar la metal** (OUG 31/2011), cu CNP, act și domiciliu (D1.7, deja în cod);
+- la celelalte intrări PF, borderoul se poate tipări **la cerere**, fără CNP (minimizarea din Legea 190/2018 art. 4, §16);
+- impozitul se calculează doar pe liniile de metal, iar AFM pe toate.
+
+Întrebarea e trecută la specialistă ca **BA** (`intrebari-specialist.md`).
 
 ### 18.4 AX — PF care își aduce singură deșeul: **borderou, nu Anexa 3**
 
@@ -2464,14 +2479,17 @@ Ce spune HG 1061/2008:
 - **art. 23:** scutește numai salubrizarea;
 - **anexa nr. 3:** la expeditor are rubricile *„Autorizație de mediu nr.”*, *„Data la care expiră autorizația de mediu”* și *„Semnatura și ștampila”*, iar la transportator *„Licența de transport mărfuri nepericuloase nr.”*.
 
+Consolidarea din 23.01.2026 n-a schimbat nimic aici: e sentința Curții de Apel Pitești nr. 225/F-CONT/2024,
+care anulează art. 25 alin. (3) (confiscarea mijlocului de transport).
+
 Formularul e construit pentru operatori economici: o persoană fizică n-are autorizație de mediu
 (OUG 92/2021 art. 34 alin. (1^1): *„se emite numai pentru operatorii economici persoane juridice”*),
 n-are ștampilă și n-are licență de transport.
 
 Ce spun celelalte acte:
 - **OUG 92/2021 art. 30 alin. (4):** *„Persoanele fizice au obligația să depună deșeurile provenite din gospodărie, pe tipuri, în sistemul de colectare separată [...] inclusiv în centrele prevăzute la art. 60 pct. A lit. h) și i)”*. PF *depune*, nu expediază un transport;
-- **Ordinul 701/2024 art. 18 alin. (3)** (§18.3) numește explicit documentul-sursă pentru deșeurile de la PF: borderoul;
-- formularul de transport apare în alin. (4) al aceluiași articol, dar pentru tranzacțiile între operatori.
+- Ordinul 701/2024 art. 18 alin. (3) numește borderoul ca sursă pentru deșeurile de la PF, dar cu excepția municipalelor (§18.3), deci **nu e un sprijin sigur** pentru AX și nu mai e numărat aici;
+- formularul de transport apare în alin. (4) al aceluiași articol, dar la tranzacțiile cu ambalaje, între operatori.
 
 **Ce decide:** la o intrare de la PF aplicația **nu** generează Anexa 3. Documentul e borderoul, alături
 de bonul de cântar.

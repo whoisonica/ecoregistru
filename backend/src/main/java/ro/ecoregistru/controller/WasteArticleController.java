@@ -15,9 +15,10 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Catalogul de sortimente (D1.6). Îl scriu doar cei care aprobă operațiuni: bifele „metal” și
- * „interzis de la PF” decid ce acte se cer la cântar, deci un operator nu și le poate scoate singur
- * înaintea unei intrări. Citirea e a oricui din firmă, fiindcă formularul de operațiune alege din listă.
+ * Catalogul de sortimente (D1.6). Îl personalizează oricine scrie în firmă, inclusiv operatorul de la
+ * cântar (decizia proprietarului, 15.09.2026: „lasă userii să își customizeze sortimentele”). Fiecare
+ * schimbare, inclusiv a bifelor „metal” și „interzis de la PF”, rămâne în jurnalul de audit, iar
+ * finalizarea operațiunii tot adminul sau consultantul o face. Vizualizatorul doar citește.
  */
 @RestController
 @RequestMapping("/api/v1/waste-articles")
@@ -25,7 +26,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WasteArticleController {
 
-    static final String CAN_MANAGE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
+    static final String CAN_MANAGE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
 
     WasteArticleService service;
 
