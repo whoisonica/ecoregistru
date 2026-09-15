@@ -254,6 +254,14 @@ export interface ConsultancyInput {
   cui: string;
 }
 
+/** P2.14 — mirrors backend ConsultancyBrandingResponse. Logoul se cere separat, după `updatedAt`. */
+export interface ConsultancyBranding {
+  consultancyName: string;
+  headerLine: string | null;
+  hasLogo: boolean;
+  updatedAt: string | null;
+}
+
 // --- Abonamente (plata-abonamente.md, F1) ---
 
 export type SubscriptionPlan = "GENERATOR" | "GENERATOR_PACKAGING" | "FULL_SERVICE" | "CONSULTANCY";

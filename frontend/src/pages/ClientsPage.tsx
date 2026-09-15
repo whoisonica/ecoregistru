@@ -5,6 +5,7 @@ import { isMultiCompany } from "@/lib/roles";
 import { AssignConsultancyDialog, ConsultanciesSection } from "@/components/ConsultanciesSection";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { ConsultancyTeamSection } from "@/components/ConsultancyTeamSection";
+import { ConsultancyBrandingSection } from "@/components/ConsultancyBrandingSection";
 import {
   useCompanies,
   useCreateCompany,
@@ -828,7 +829,12 @@ export function ClientsPage() {
           <ConsultanciesSection />
         </>
       )}
-      {isConsultant && <ConsultancyTeamSection />}
+      {isConsultant && (
+        <>
+          <ConsultancyTeamSection />
+          <ConsultancyBrandingSection />
+        </>
+      )}
       {assigning && (
         <AssignConsultancyDialog company={assigning} onClose={() => setAssigning(null)} />
       )}

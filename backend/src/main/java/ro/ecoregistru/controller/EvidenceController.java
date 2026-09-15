@@ -17,6 +17,7 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.EvidenceCalculator;
 import ro.ecoregistru.service.export.ExportFormat;
+import ro.ecoregistru.service.ReportBrandingService;
 import ro.ecoregistru.service.export.GenericEvidenceExporter;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public class EvidenceController {
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
+    ReportBrandingService brandingService;
     ro.ecoregistru.service.export.Anexa1FormGenerator anexa1FormGenerator;
     ro.ecoregistru.service.export.AnnualDeclarationGenerator annualDeclarationGenerator;
     CompanyRepository companyRepository;
@@ -131,7 +133,8 @@ public class EvidenceController {
         Company company = companyRepository.findById(TenantContext.require())
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         List<MonthlyEvidenceResponse> rows = evidenceCalculator.list(year, month, workPointId);
-        byte[] body = evidenceExporter.export(exportFormat, company.getName(), year, month, rows);
+        byte[] body = evidenceExporter.export(exportFormat, company.getName(), year, month, rows,
+                brandingService.forCompany(company.getId()));
 
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("evidenta-" + year + "." + exportFormat.getExtension())

@@ -1500,6 +1500,34 @@ export const strings = {
       "Sesiunile deschise se închid imediat și nu mai vede nicio firmă a cabinetului. Ce a înregistrat rămâne neatins, cu numele lui. Se poate reactiva oricând.",
   },
 
+  /** P2.14 — antetul cabinetului pe rapoartele neoficiale. Formularele oficiale nu îl primesc, și ecranul o spune. */
+  consultancyBranding: {
+    title: "Antetul cabinetului pe rapoarte",
+    subtitle:
+      "Logoul și un rând de contact apar sus pe rezumatul evidenței (PDF și Excel), pe lista autorizațiilor partenerilor și în README-ul dosarului de control, la toate firmele cabinetului.",
+    officialNote:
+      "Formularele oficiale (fișa de evidență, evidența centralizată, anexele, avizul) rămân exact ca modelul din lege, fără antet.",
+    logo: "Logo",
+    logoHint: "PNG sau JPG, cel mult 500 KB. Se potrivește pe o înălțime de circa 1,5 cm.",
+    chooseLogo: "Alege logoul",
+    replaceLogo: "Schimbă logoul",
+    removeLogo: "Șterge logoul",
+    noLogo: "Fără logo",
+    logoTooLarge: "Logoul e prea mare. Cel mult 500 KB.",
+    logoUploaded: "Logoul a fost salvat.",
+    logoRemoved: "Logoul a fost șters.",
+    headerLine: "Rândul de contact",
+    headerLinePlaceholder: "Ex.: Tel. 0722 000 000 · contact@cabinet.ro · Oradea",
+    headerLineHint: "Opțional, cel mult 200 de caractere. Gol = doar numele cabinetului.",
+    save: "Salvează rândul",
+    saved: "Rândul de antet a fost salvat.",
+    preview: "Așa arată sus pe pagină",
+    preparedBy: "Pregătit de {name}",
+    emptyPreview: "Fără logo și fără rând de contact, rapoartele rămân fără antet.",
+    loadError: "Nu am putut încărca antetul cabinetului.",
+    saveError: "Nu am putut salva antetul.",
+  },
+
   /**
    * P2.13, felia 2 — „Firmele mele": ce e de făcut pe fiecare firmă a cabinetului, pe un singur ecran.
    * Cuvintele celulelor sunt ale Panoului firmei, ca un consultant să recunoască același lucru după ce comută.

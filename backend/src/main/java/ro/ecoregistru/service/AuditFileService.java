@@ -33,6 +33,7 @@ import ro.ecoregistru.service.export.Anexa1FormGenerator;
 import ro.ecoregistru.service.export.AnnualDeclarationGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.GenericEvidenceExporter;
+import ro.ecoregistru.service.export.ReportBranding;
 import ro.ecoregistru.util.UsedOilCodes;
 import ro.ecoregistru.util.WasteCodeLabel;
 
@@ -108,6 +109,7 @@ public class AuditFileService {
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
     PackagingService packagingService;
+    ReportBrandingService brandingService;
 
     /** One year, at the root of the archive - the shape the dossier had before Etapa 6. */
     public byte[] build(int year) {
@@ -135,6 +137,9 @@ public class AuditFileService {
 
         List<Partner> partners = partnerRepository.findAllByCompany_Id(tenantId);
         int firstYear = year - years + 1;
+        // P2.14: the consultancy's header, on the working pack only — README, the generic summary and
+        // the partner list. The official sheets in the same archive print their model and nothing else.
+        ReportBranding branding = brandingService.forCompany(tenantId);
 
         // Read once, used twice: the README says how many evidence lines each year actually has,
         // and the exports print them.
@@ -155,15 +160,15 @@ public class AuditFileService {
              ZipOutputStream zip = new ZipOutputStream(out)) {
 
             writeEntry(zip, "README.txt",
-                    readme(company, firstYear, year, evidenceByYear)
+                    readme(company, firstYear, year, evidenceByYear, branding)
                             .getBytes(StandardCharsets.UTF_8));
             for (int y = firstYear; y <= year; y++) {
                 // A single year stays where it always was; several would collide on the file
                 // names, so each gets a folder named after it.
-                writeYear(zip, years == 1 ? "" : y + "/", company, tenantId, y, evidenceByYear.get(y));
+                writeYear(zip, years == 1 ? "" : y + "/", company, tenantId, y, evidenceByYear.get(y), branding);
             }
             writeEntry(zip, "autorizatii-parteneri.pdf",
-                    partnerAuthorizationsPdf(company.getName(), partners));
+                    partnerAuthorizationsPdf(company.getName(), partners, branding));
 
             zip.finish();
             return out.toByteArray();
@@ -174,7 +179,8 @@ public class AuditFileService {
 
     /** Everything that belongs to one reporting year, written under {@code prefix}. */
     private void writeYear(ZipOutputStream zip, String prefix, Company company, UUID tenantId,
-                           int year, List<MonthlyEvidenceResponse> evidence) throws IOException {
+                           int year, List<MonthlyEvidenceResponse> evidence,
+                           ReportBranding branding) throws IOException {
         List<WasteMovement> movements = movementRepository
                 .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
@@ -199,9 +205,9 @@ public class AuditFileService {
                     packagingService.render(year, ExportFormat.PDF));
         }
         writeEntry(zip, prefix + "evidenta-" + year + ".xlsx",
-                evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence));
+                evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence, branding));
         writeEntry(zip, prefix + "evidenta-" + year + ".pdf",
-                evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence));
+                evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence, branding));
 
         writeAttachments(zip, prefix, movements, attachmentRepository.findAllOfLiveMovementsBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
@@ -280,11 +286,13 @@ public class AuditFileService {
 
     // --- partner authorizations PDF ---
 
-    private byte[] partnerAuthorizationsPdf(String companyName, List<Partner> partners) {
+    private byte[] partnerAuthorizationsPdf(String companyName, List<Partner> partners, ReportBranding branding) {
         Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
             doc.open();
+
+            ReportBranding.addPdfHeader(doc, branding);
 
             Font companyFont = new Font(Font.HELVETICA, 13, Font.BOLD);
             Font titleFont = new Font(Font.HELVETICA, 11, Font.BOLD);
@@ -374,10 +382,14 @@ public class AuditFileService {
      * folder that holds it, and says up front why three is the number that matters.
      */
     private String readme(Company company, int firstYear, int lastYear,
-                          Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+                          Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear,
+                          ReportBranding branding) {
         boolean single = firstYear == lastYear;
         StringBuilder sb = new StringBuilder();
         sb.append("DOSAR DE CONTROL — ").append(company.getName()).append("\n");
+        if (branding != null) {
+            sb.append(branding.textLine()).append("\n");
+        }
         if (single) {
             sb.append("Anul de raportare: ").append(lastYear).append("\n");
         } else {

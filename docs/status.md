@@ -3,6 +3,24 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, după-amiaza — P2.14: antetul cabinetului pe rapoartele neoficiale.**
+> 🟡 Construit în `feat/branding-cabinet` (din `e1470a8`), **nedeployat**. Migrarea **`V48`** — `V47` e al plății
+> cu cardul (sesiune paralelă), deci se deployează după ea.
+> - **`consultancy_branding`** (tabel separat, un rând pe cabinet): logo PNG/JPG ≤ 500 KB în bază (nu pe
+>   Cloudinary, care e în SUA) și un rând de contact ≤ 200 de caractere.
+> - **Endpointuri, numai `CONSULTANT`:** `GET/PUT /api/v1/consultancy/branding`, `POST/DELETE/GET …/logo`.
+>   Tipul imaginii se citește din octeți și se decodează, nu se crede numele fișierului.
+> - **Pe hârtie:** `ReportBranding.addPdfHeader` / `addXlsxHeader` — logo, „Pregătit de {cabinet}”, rândul —
+>   pe rezumatul evidenței (`/evidences/export`, PDF și xlsx), `autorizatii-parteneri.pdf` și `README.txt` din
+>   dosar. Antetul e al **firmei** (`ConsultancyBrandingRepository.findForCompany`), nu al celui care descarcă.
+>   **Formularele oficiale nu îl primesc.** Un antet gol nu tipărește nimic.
+> - **Frontend:** Clienți → „Antetul cabinetului pe rapoarte” (numai consultant), cu previzualizarea benzii.
+> - **Probe:** `ConsultancyBrandingIT` 7/7, citit de pe PDF, xlsx și README; vecinii `AuditFileIT` 19,
+>   `EvidenceExportIT` 5, `EndpointGuardInventoryIT` 4, `ConsultancyOverviewIT` 8. `tsc` curat, `vite build` verde.
+>   Proba negativă pe 5 reguli (controller, antet gol, legătura cu cabinetul firmei, tipul din octeți, README):
+>   fiecare a picat testele ei; controlul pe codul întreg 7/7. **Suita completă: 639 de teste în 75 de clase,
+>   0 eșecuri, 1 sărit** (din XML).
+>
 > **15.09.2026, ~13:50 — 💳 Abonamente F3 (plata cu cardul prin Netopia) și F4 (doar-citire, mementouri, oprire).**
 > ✅ **Pe producție:** `ecoregistru-api` **v80** (`2242e2a`, „now at version v47”), `ecoregistru-app` **v64**
 > (`ac95170`), monorepo `375a434`. **Suita completă: 665 de teste în 80 de clase, 0 eșecuri, 3 sărite** (probele

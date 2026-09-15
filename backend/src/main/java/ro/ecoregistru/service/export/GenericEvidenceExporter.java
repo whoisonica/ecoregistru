@@ -54,11 +54,15 @@ public class GenericEvidenceExporter {
             "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"
     };
 
+    /**
+     * @param branding the consultancy's header (P2.14), or null for a direct client. This page is
+     *                 unofficial, so it may carry one; the official forms never do.
+     */
     public byte[] export(ExportFormat format, String companyName, int year, Integer month,
-                         List<MonthlyEvidenceResponse> rows) {
+                         List<MonthlyEvidenceResponse> rows, ReportBranding branding) {
         return switch (format) {
-            case XLSX -> toXlsx(companyName, year, month, rows);
-            case PDF -> toPdf(companyName, year, month, rows);
+            case XLSX -> toXlsx(companyName, year, month, rows, branding);
+            case PDF -> toPdf(companyName, year, month, rows, branding);
             // XLS (BIFF8) exists for one document only: the packaging declaration, whose format
             // Ordinul 794/2012 art. 6 names on sight. This export is an explicitly unofficial
             // summary — no act constrains it — so it stays on the modern spreadsheet and answers
@@ -86,7 +90,8 @@ public class GenericEvidenceExporter {
 
     // --- XLSX (Apache POI) ---
 
-    private byte[] toXlsx(String companyName, int year, Integer month, List<MonthlyEvidenceResponse> rows) {
+    private byte[] toXlsx(String companyName, int year, Integer month, List<MonthlyEvidenceResponse> rows,
+                          ReportBranding branding) {
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet("Evidență");
 
@@ -104,7 +109,8 @@ public class GenericEvidenceExporter {
             CellStyle numberStyle = wb.createCellStyle();
             numberStyle.setDataFormat(wb.createDataFormat().getFormat("#,##0.###"));
 
-            int r = 0;
+            // The logo sits over the last columns, clear of the three title rows' text.
+            int r = ReportBranding.addXlsxHeader(wb, sheet, COLUMNS.length - 2, branding);
             cell(sheet.createRow(r++), 0, companyName, titleStyle);
             cell(sheet.createRow(r++), 0, TITLE, titleStyle);
             cell(sheet.createRow(r++), 0, subtitle(year, month), null);
@@ -156,11 +162,14 @@ public class GenericEvidenceExporter {
 
     // --- PDF (OpenPDF) ---
 
-    private byte[] toPdf(String companyName, int year, Integer month, List<MonthlyEvidenceResponse> rows) {
+    private byte[] toPdf(String companyName, int year, Integer month, List<MonthlyEvidenceResponse> rows,
+                         ReportBranding branding) {
         Document doc = new Document(PageSize.A4.rotate(), 36, 36, 36, 36);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
             doc.open();
+
+            ReportBranding.addPdfHeader(doc, branding);
 
             Font companyFont = new Font(Font.HELVETICA, 13, Font.BOLD);
             Font titleFont = new Font(Font.HELVETICA, 11, Font.BOLD);

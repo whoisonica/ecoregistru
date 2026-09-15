@@ -47,6 +47,12 @@ public enum ErrorMessageEnum {
     CONSULTANCY_NOT_FOUND("consultancy.not.found", "Cabinetul nu a fost găsit."),
     CONSULTANCY_CUI_ALREADY_EXISTS("consultancy.cui.exists", "Există deja un cabinet cu acest CUI."),
 
+    // --- Antetul cabinetului pe rapoarte (P2.14) ---
+    BRANDING_LOGO_INVALID("branding.logo.invalid", "Logoul trebuie să fie o imagine PNG sau JPG."),
+    BRANDING_LOGO_TOO_LARGE("branding.logo.too.large", "Logoul e prea mare. Cel mult 500 KB."),
+    BRANDING_LOGO_NOT_FOUND("branding.logo.not.found", "Cabinetul nu are logo încărcat."),
+    BRANDING_HEADER_TOO_LONG("branding.header.too.long", "Rândul de antet are cel mult 200 de caractere."),
+
     // --- Abonamente (plata-abonamente.md, F1) ---
     SUBSCRIPTION_COMPANY_IN_CONSULTANCY("subscription.company.in.consultancy", "Firma e în portofoliul unui cabinet, iar abonamentul îl plătește cabinetul. Scoate-o întâi din cabinet."),
     SUBSCRIPTION_PLAN_MISMATCH("subscription.plan.mismatch", "Abonamentul de cabinet se pune numai pe un cabinet, iar celelalte pachete numai pe o firmă."),
