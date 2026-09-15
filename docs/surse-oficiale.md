@@ -2306,11 +2306,9 @@ Sursă primară: [legislatie.just.ro/Public/DetaliiDocument/300022](https://legi
 
 **Aplicare:** art. VII alin. (1) lit. b) — *„pentru veniturile plătite începând cu data de 1 august 2025”*.
 
-> 🟠 **Cota nu e citită pe sursă primară.** Art. 115 alin. (1), pe forma gratuită de pe Lege5, dă
-> **16%** doar pentru lit. a)–k). Trei surse secundare (contabilul.manager.ro, juridice.ro, b1tv) dau
-> **10%** pentru lit. m²), reținut la sursă de operatorul colector la plată. Declararea se face lunar,
-> prin D100 până pe 25, și anual pe beneficiar, prin D205 (tot surse secundare). **De confirmat cu
-> contabilul înainte de cod.**
+> ✅ **Cota e citită pe sursă primară pe 15.09.2026: 10% din venitul brut**, vezi §18.1. Nota de
+> dinainte („16% pe Lege5, 10% doar din surse secundare, de confirmat cu contabilul”) a fost închisă pe
+> Codul fiscal consolidat de pe Portalul Legislativ, forma din 08.08.2026.
 >
 > **Ce se închide cu asta:** răspunsul **L** al specialistei, „dacă deșeul nu e din gospodărie
 > proprie, încă 10%” (`status.md`), era un impozit pe venit din Codul fiscal, nu AFM, cum bănuiam.
@@ -2400,6 +2398,126 @@ text inițial; 15.09.2026):
 **Consecință:** cântarul depozitului are o dată de expirare a verificării și primește alertă.
 
 ---
+
+## 18. Blocantele modulului de depozit, închise pe text (15.09.2026)
+
+Întrebările C1–C3 (contabil) și AX–AZ (specialistă) din `intrebari-specialist.md` au fost citite pe
+sursă primară în aceeași zi. Formele citite, toate de pe Portalul Legislativ: Codul fiscal **08.08.2026**
+(171282), OUG 31/2011 **05.06.2022** (127186), OUG 196/2005 **07.03.2025** (258980), OUG 92/2021
+**11.07.2026** (245846), HG 1061/2008 **23.01.2026** (97706), HG 1132/2008 **17.12.2021** (97608),
+Ordinul 701/2024 (281612). Regulamentul (UE) 2023/1542 e citit din CELLAR, în română.
+
+### 18.1 C1 — impozitul la metalele PF: **10% din venitul brut**, reținut la plată
+
+**Codul fiscal art. 115 alin. (1)** (modificat de OUG 89/2025, de la 01.01.2026):
+
+> Impozitul pe venit se calculează prin reținere la sursă la momentul acordării veniturilor de către
+> plătitorii de venituri, prin aplicarea asupra venitului brut a unei cote de: a) **10%** pentru
+> veniturile prevăzute la art. 114 alin. (2) lit. a)-g), j)-k^1) **și m^2)**; b) 16% pentru veniturile
+> prevăzute la art. 114 alin. (2) lit. h) și i).
+
+- **Alin. (2):** *„Impozitul calculat și reținut reprezintă impozit final.”*
+- **Alin. (3):** *„Impozitul astfel reținut se plătește la bugetul de stat până la data de 25 inclusiv a lunii următoare celei în care a fost reținut.”*
+- **Art. 132 alin. (1):** plătitorul *„calculează, reține, plătește și declară”* până la termenul de plată, deci lunar (D100).
+- **Art. 132 alin. (2):** plătitorul depune *„o declarație privind calcularea și reținerea impozitului pentru fiecare beneficiar de venit [...] până în ultima zi a lunii februarie inclusiv a anului curent pentru anul expirat”* (D205).
+
+**Baza** e *„venitul brut”*, adică valoarea de cumpărare. Contribuția AFM se calculează și ea din
+aceeași valoare (§10.1: *„2% din veniturile realizate din vânzarea deșeurilor”*). Cele două se
+calculează **independent, pe valoarea brută**, și nu una din cealaltă. Așa scrie și borderoul:
+*„reținute la sursă din valoarea brută”*.
+
+**Pentru cod:** cota e fixă prin lege, deci stă în cod cu trimiterea la articol, nu ca setare pe firmă.
+Nu se aplică la hârtie, plastic sau acumulatori de la PF: art. 62 lit. f) îi lasă neimpozabili (§12).
+
+### 18.2 C2 — cotele de pe borderou: se tipăresc **cele în vigoare**
+
+Modelul din anexa OUG 31/2011 scrie *„Impozitul pe venit de 16% și contribuția de 3% la Administrația
+Fondului pentru Mediu [...] au fost reținute la sursă din valoarea brută.”* Ambele cifre sunt depășite:
+10% (§18.1) și 2% (OUG 196/2005 art. 9 alin. (1) lit. a), în vigoare). Cei 3% la metale mai apar pe Portal
+doar într-o notă despre decizia ÎCCJ HP nr. 9/2020, ca istoric.
+
+**Ce decide:** conținutul obligatoriu al borderoului e lista din **art. 1 alin. (1^2) lit. b) pct. (i)–(viii)**:
+operatorul, persoana fizică, codul, cantitatea, valoarea, contul, chitanța și declarația de gospodărie
+proprie. **Fraza cu procentele nu e în listă.** Ea e o mențiune din model care trimite la actele fiscale.
+Tipărirea cotelor în vigoare, cu sumele calculate, respectă conținutul cerut. Tipărirea lui 16% + 3% ar
+declara pe un document financiar-contabil (alin. (1^3)) o reținere care nu s-a făcut.
+
+### 18.3 C3 — hârtia și plasticul de la PF: **tot borderou**, din cauza SIATD, dar fără CNP
+
+OUG 31/2011 privește doar metalele. **Ordinul 701/2024 art. 18 alin. (3)** cere însă, pentru orice
+tranzacție din SIATD (ambalaje, anvelope, DEEE, baterii portabile, municipale):
+
+> La inițierea unei tranzacții în aplicația SIATD pentru fiecare transport/tranzacție cu deșeuri,
+> înregistrat(ă) în platformă, cu excepția deșeurilor municipale preluate de operatorul economic colector,
+> se va indica sursa deșeurilor în formatul corespunzător cerințelor SIATD, **inclusiv borderoul de
+> achiziție în cazul deșeurilor preluate de la persoane fizice**.
+
+**Ce decide:**
+- **fiecare intrare de la PF primește borderou**, nu doar cea cu metal;
+- **CNP-ul și actul de identitate rămân obligatorii doar la metal**, fiindcă numai art. 1 alin. (1^2) lit. b) pct. (ii) din OUG 31/2011 le cere. La restul, ordinul nu numește câmpuri, deci se aplică minimizarea (Legea 190/2018 art. 4, §16): nume și domiciliu;
+- impozitul se tipărește doar pe liniile de metal, iar AFM pe toate.
+
+### 18.4 AX — PF care își aduce singură deșeul: **borderou, nu Anexa 3**
+
+Ce spune HG 1061/2008:
+- **art. 21:** transportul spre colectare se face *„pe baza formularului [...] completat și semnat de către expeditorul, transportatorul și destinatarul”*;
+- **art. 23:** scutește numai salubrizarea;
+- **anexa nr. 3:** la expeditor are rubricile *„Autorizație de mediu nr.”*, *„Data la care expiră autorizația de mediu”* și *„Semnatura și ștampila”*, iar la transportator *„Licența de transport mărfuri nepericuloase nr.”*.
+
+Formularul e construit pentru operatori economici: o persoană fizică n-are autorizație de mediu
+(OUG 92/2021 art. 34 alin. (1^1): *„se emite numai pentru operatorii economici persoane juridice”*),
+n-are ștampilă și n-are licență de transport.
+
+Ce spun celelalte acte:
+- **OUG 92/2021 art. 30 alin. (4):** *„Persoanele fizice au obligația să depună deșeurile provenite din gospodărie, pe tipuri, în sistemul de colectare separată [...] inclusiv în centrele prevăzute la art. 60 pct. A lit. h) și i)”*. PF *depune*, nu expediază un transport;
+- **Ordinul 701/2024 art. 18 alin. (3)** (§18.3) numește explicit documentul-sursă pentru deșeurile de la PF: borderoul;
+- formularul de transport apare în alin. (4) al aceluiași articol, dar pentru tranzacțiile între operatori.
+
+**Ce decide:** la o intrare de la PF aplicația **nu** generează Anexa 3. Documentul e borderoul, alături
+de bonul de cântar.
+⚠️ **Rămâne un risc, și e scris aici, nu ascuns:** HG 1061/2008 nu conține o scutire *expresă* pentru
+PF. Concluzia se sprijină pe rubricile formularului, pe art. 30 alin. (4) și pe SIATD, nu pe o frază
+care să spună „nu se aplică”. Dacă un inspector cere totuși formularul, se poate adăuga ca opțiune
+fără schimbare de model.
+
+### 18.5 AY — acumulatorii auto (16 06 01\*) de la PF: **se pot primi**, ca deșeu periculos, fără CNP și fără impozit
+
+**HG 1132/2008 art. 7 alin. (18)** (în vigoare pe Portal, forma din 17.12.2021):
+
+> Utilizatorul final de baterii și acumulatori auto și industriali este obligat să predea deșeurile de
+> baterii și acumulatori auto și industriale separat de alte deșeuri către: a) distribuitorii [...];
+> b) unitățile care prestează servicii de înlocuire [...]; **c) punctele de colectare pentru deșeuri de
+> baterii și acumulatori**; d) producător, după caz.
+
+Utilizatorul final e definit la art. 3 ca *„orice persoană fizică [...] care cumpără ori dobândește
+baterii [...] în scopul utilizării lor”*.
+
+**Regulamentul (UE) 2023/1542 art. 61 alin. (1)** obligă producătorii să preia deșeurile de baterii SLI de
+la distribuitori, refabricanți, instalațiile de tratare VSU/DEEE și autoritățile publice. Tot acolo:
+*„Statele membre **pot** adopta măsuri prin care să impună condiția ca entitățile menționate [...] să poată
+colecta [...] numai dacă au încheiat un contract cu producătorii”*. **O astfel de măsură românească nu
+s-a găsit:** HG 1132/2008 n-a mai fost modificată din 2021.
+
+**Ce decide:**
+- un centru de colectare autorizat pentru 16 06 01\* îi poate primi de la PF;
+- **nu** e metal după OUG 31/2011, deci nu cere CNP și nu intră sub impozitul de la §18.1: art. 62 lit. f) exceptă doar metalele;
+- AFM 2% se reține;
+- codul periculos intră doar dacă autorizația firmei îl acoperă. Asta e condiția depozitului, iar aplicația nu o poate verifica singură.
+
+⚠️ **Rămâne deschis:** o eventuală măsură națională după art. 61 alin. (1) al doilea paragraf. Se reverifică
+la D7.4.
+
+### 18.6 AZ — capacitatea din autorizație: **pe tip de deșeu, în tone și volum**
+
+**OUG 92/2021 art. 34 alin. (2)**, autorizația de mediu *„trebuie să conțină următoarea listă care nu este
+exhaustivă”*:
+- **lit. c):** *„tipurile și cantitățile exprimate în **tone și volum** de deșeuri care pot fi tratate, inclusiv originea acestora”*;
+- **lit. d):** *„tipurile și cantitățile de deșeuri și/sau produse care rezultă din instalație exprimate în **tone/an** și volum”*.
+
+**Ce decide pentru D3.4:** capacitatea se ține **pe depozit × cod**, în tone și în m³. Perioada se ia din
+autorizație: lit. d) spune explicit „tone/an” pentru ce iese, iar lit. c) nu fixează perioada pentru ce
+intră. Deci perioada („la un moment dat” sau „pe an”) e un câmp al rândului de capacitate, nu o
+presupunere a aplicației.
 
 ## Anexă — de ce „sursă primară" nu e pedanterie
 

@@ -258,6 +258,10 @@ public class WeighingOperationService {
         }
         WasteArticle article = articleRepository.findByIdAndCompany_Id(line.articleId(), tenantId)
                 .orElseThrow(() -> new NotFoundException(WASTE_ARTICLE_NOT_FOUND));
+        // OUG 31/2011 art. 1 alin. (1): amendă 100.000–150.000 lei și revocarea autorizației de colectare.
+        if (operation.getNaturalPerson() != null && article.isForbiddenFromIndividuals()) {
+            throw new BusinessException(WEIGHING_LINE_ARTICLE_FORBIDDEN_FROM_INDIVIDUALS);
+        }
         BigDecimal net = resolveNet(line);
         BigDecimal finalKg = line.finalKg() == null ? net : line.finalKg();
         if (finalKg.signum() <= 0) {

@@ -494,6 +494,32 @@ export interface WasteCode {
   code: string;
   name: string;
   hazardous: boolean;
+  /** Propunerea pentru bifa „metal” a unui sortiment nou (OUG 31/2011); omul o poate schimba. */
+  metalSuggested: boolean;
+}
+
+// --- Depozit: sortimente (D1.6) ---
+
+/** Denumirea comercială a unui deșeu („Cupru”, „Carton balotat”), legată de un cod LER. */
+export interface WasteArticle {
+  id: string;
+  name: string;
+  wasteCodeId: string;
+  wasteCode: string;
+  wasteCodeName: string;
+  hazardous: boolean;
+  /** Borderoul cere CNP și act de identitate, iar plata către PF poartă impozitul de 10%. */
+  metal: boolean;
+  /** Serverul refuză sortimentul la o intrare de la persoană fizică (OUG 31/2011 art. 1 alin. (1)). */
+  forbiddenFromIndividuals: boolean;
+  active: boolean;
+}
+
+export interface WasteArticleInput {
+  name: string;
+  wasteCodeId: string;
+  metal: boolean;
+  forbiddenFromIndividuals: boolean;
 }
 
 // --- Partners ---

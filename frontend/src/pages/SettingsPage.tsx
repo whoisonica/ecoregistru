@@ -30,6 +30,9 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
+import { WasteArticlesSection } from "@/components/WasteArticlesSection";
+import { useCurrentCompany } from "@/hooks/useCompanies";
+import { registersFor } from "@/lib/movementScreens";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
 import { CompanyUsersSection } from "@/components/CompanyUsersSection";
 import { AuditLogSection } from "@/components/AuditLogSection";
@@ -40,6 +43,9 @@ const t = strings.settings.workPoints;
 export function SettingsPage() {
   const { user } = useAuth();
   const canManage = roleCanManage(user?.role);
+  // Sortimentele sunt ale depozitului: le vede doar firma care are „Intrări și ieșiri” (art. 48).
+  const { data: company } = useCurrentCompany();
+  const hasDepot = Boolean(company) && registersFor(company?.type).includes("ART_48");
 
   const { data: workPoints, isLoading, isError } = useWorkPoints();
   const createMut = useCreateWorkPoint();
@@ -155,6 +161,7 @@ export function SettingsPage() {
           { id: "datele-firmei", label: strings.settings.company.title },
           { id: "puncte-de-lucru", label: t.title },
           { id: "generatori-interni", label: strings.settings.internalGenerators.title },
+          ...(hasDepot ? [{ id: "sortimente", label: strings.settings.articles.title }] : []),
           { id: "soferi", label: strings.settings.drivers.title },
           // Doar pentru cine chiar are secțiunea: un link care duce la nimic e mai rău
           // decât un link care lipsește.
@@ -257,6 +264,8 @@ export function SettingsPage() {
       </section>
 
       <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
+
+      {hasDepot && <WasteArticlesSection canManage={canManage} />}
 
       <OwnDriversSection canManage={canManage} />
 

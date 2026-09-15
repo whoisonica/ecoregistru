@@ -12,6 +12,7 @@ import ro.ecoregistru.controller.response.WasteCodeResponse;
 import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.util.Diacritics;
+import ro.ecoregistru.util.MetalWasteCodes;
 
 import java.util.List;
 
@@ -37,7 +38,8 @@ public class WasteCodeController {
                 // same search.
                 : wasteCodeRepository.search(Diacritics.fold(q.trim()), Limit.of(MAX_RESULTS));
         return codes.stream()
-                .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous()))
+                .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous(),
+                        MetalWasteCodes.suggests(w.getCode())))
                 .toList();
     }
 }

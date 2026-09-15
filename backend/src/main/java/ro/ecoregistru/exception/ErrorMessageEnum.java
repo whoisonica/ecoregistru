@@ -106,6 +106,10 @@ public enum ErrorMessageEnum {
     WEIGHING_LINE_FINAL_ABOVE_NET("weighing.line.final.above.net", "Cantitatea finală nu poate fi mai mare decât neto."),
     WEIGHING_LINE_PRICE_NEGATIVE("weighing.line.price.negative", "Prețul nu poate fi negativ."),
     WEIGHING_LINE_OPERATION_CODE_REQUIRED("weighing.line.operation.code.required", "La ieșire, alege pe fiecare linie operația: valorificare (R) sau eliminare (D)."),
+    WEIGHING_LINE_ARTICLE_FORBIDDEN_FROM_INDIVIDUALS("weighing.line.article.forbidden.from.individuals", "Sortimentul ăsta nu se cumpără de la persoane fizice (OUG 31/2011 art. 1 alin. (1)). Alege alt sortiment sau un partener."),
+    WASTE_ARTICLE_NAME_REQUIRED("waste.article.name.required", "Scrie denumirea sortimentului."),
+    WASTE_ARTICLE_CODE_REQUIRED("waste.article.code.required", "Alege codul de deșeu al sortimentului."),
+    WASTE_ARTICLE_NAME_TAKEN("waste.article.name.taken", "Există deja un sortiment cu denumirea asta."),
 
     // --- Partner ---
     PARTNER_NOT_FOUND("partner.not.found", "Partenerul nu a fost găsit."),

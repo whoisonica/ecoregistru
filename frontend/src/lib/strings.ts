@@ -720,6 +720,42 @@ export const strings = {
       saveError: "Salvarea a eșuat. Încearcă din nou.",
       loadError: "Nu am putut încărca punctele de lucru.",
     },
+    articles: {
+      title: "Sortimente",
+      subtitle:
+        "Denumirile cu care lucrezi la cântar („Cupru”, „Carton balotat”), fiecare legată de codul ei de deșeu. Pe registre se tipărește codul, iar pe ecran și pe borderou, sortimentul.",
+      add: "Adaugă sortiment",
+      addTitle: "Adaugă sortiment",
+      editTitle: "Editează sortimentul",
+      name: "Denumire",
+      namePlaceholder: "ex. Cupru",
+      code: "Cod de deșeu",
+      codePlaceholder: "Caută după cod sau denumire...",
+      metal: "Metal feros sau neferos",
+      // OUG 31/2011 art. 1 alin. (1^2); Codul fiscal art. 114 alin. (2) lit. m²), art. 115 alin. (1).
+      metalHint:
+        "La o persoană fizică, borderoul cere CNP-ul și actul de identitate, iar din plată se reține impozitul de 10%. Bifa se propune din cod; o poți schimba.",
+      forbidden: "Nu se cumpără de la persoane fizice",
+      // OUG 31/2011 art. 1 alin. (1): șine, capace de canal, cabluri de semnalizare și altele asemenea.
+      forbiddenHint:
+        "Pentru ce interzice OUG 31/2011 art. 1 alin. (1): șine și piese de cale ferată, capace de cămin, cabluri de semnalizare și telecomunicații, componente de rețele de utilități. Aplicația refuză sortimentul la o intrare de la persoană fizică.",
+      badgeMetal: "Metal",
+      badgeForbidden: "Interzis PF",
+      empty: "Niciun sortiment încă.",
+      emptyHint: "La cântar alegi sortimentul, nu codul. Adaugă-le pe cele cu care lucrezi.",
+      searchPlaceholder: "Caută după denumire sau cod...",
+      active: "Activ",
+      inactive: "Inactiv",
+      deactivate: "Dezactivează",
+      confirmDeactivateTitle: "Dezactivezi sortimentul?",
+      confirmDeactivate:
+        "Nu mai apare la cântar. Operațiunile deja înregistrate îl păstrează. Îl poți reactiva oricând.",
+      created: "Sortiment adăugat.",
+      updated: "Sortiment actualizat.",
+      deactivated: "Sortiment dezactivat.",
+      saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
+      loadError: "Nu am putut încărca sortimentele.",
+    },
     drivers: {
       title: "Șoferii noștri",
       subtitle:
