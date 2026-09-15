@@ -3,6 +3,20 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, ~17:00 — ✅ pe producție: BUG-017, un DoS de disponibilitate pe importul Excel.**
+> `ecoregistru-api` **v86** (`edc9d533`, fără migrare, schema `V48`), monorepo `b3695fc` pe `main` și
+> `deploy/heroku-split`; frontend neatins (app rămâne v68). Găsit la o rundă QA amănunțită pe suprafața
+> de **după** închiderea auditului: `ExcelImportService.open()` construia tot registrul XSSF în memorie
+> **înainte** de `MAX_ROWS`, deci un `.xlsx` valid de 40.000 de rânduri (**1,3 MB comprimat / 16 MB
+> despachetat**, sub plasa de 12 MB) sufoca heap-ul de 300 MB al dyno-ului — declanșabil de un `OPERATOR`,
+> 5 în paralel dobora procesul pentru **toți clienții** (măsurat: 25/30 cereri normale picau, 42 OOM).
+> Reparat cu o gardă care despachetează în flux și se oprește la prima intrare peste 8 MB
+> (`guardInflatedSize`, doar `java.util.zip`). `ExcelImportIT` +1, **probat negativ**; re-probat pe jar
+> de producție la `-Xmx300m`: bombă → **400 în ~10 ms, 0 OOM**, 30/30 cereri normale supraviețuiesc.
+> Suita **691/85, 0 eșecuri, 3 sărite** (din XML). Verificat pe producție (extensia Chrome, sesiune de
+> consultant): ecranul „Import din Excel" curat, `/import/verificare` cu șablonul → **200, 0 rânduri, 0
+> erori, nimic scris**; consola fără erori; api + app 200. Detalii: `ecoregistru-docs` `QA-BUGS.md`, BUG-017.
+>
 > **15.09.2026, 15:00 — ✅ pe producție: fixul contului dezactivat, juridicul v2, textul pentru contul inactiv.**
 > `ecoregistru-api` **v85** (`699d832`, fără migrare, schema `V48`), `ecoregistru-app` **v68** (`450909d`); monorepo `82d3c51`.
 > api v84 / app v67 (`1558ede` / `8b75c7f`, push-urile proprietarului) au adus `dc063f5`; app v68 juridicul v2 (`15b9b8c`);
