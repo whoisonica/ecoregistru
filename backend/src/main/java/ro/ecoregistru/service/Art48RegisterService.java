@@ -55,7 +55,7 @@ public class Art48RegisterService {
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
         // Every year up to this one, not just this one: the opening stock is what the earlier years left.
         return builder.build(company, workPoint, year,
-                movementRepository.findAllByCompany_IdAndDeletedFalse(tenantId));
+                movementRepository.findCounted(tenantId));
     }
 
     @Transactional(readOnly = true)

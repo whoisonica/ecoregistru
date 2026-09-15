@@ -261,7 +261,7 @@ public class PackagingService {
     }
 
     private List<WasteMovement> yearMovements(UUID tenantId, int year) {
-        return movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
+        return movementRepository.findCountedBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
     }
 }

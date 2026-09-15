@@ -144,7 +144,7 @@ public class EvidenceCalculator {
     /** Rebuilds one year in isolation; returns how many lines it wrote. */
     private int regenerateSingleYear(UUID tenantId, int year) {
         List<WasteMovement> movements = movementRepository
-                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
 
         // Opening balance per group = previous year's December closing stock. A pair carrying
@@ -248,7 +248,7 @@ public class EvidenceCalculator {
         Company company = companyRepository.getReferenceById(tenantId);
         List<MonthlyEvidenceResponse> lines = list(year, null, workPointId);
         List<WasteMovement> movements = movementRepository
-                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
         return anexa1SheetBuilder.build(company, year, lines, movements,
                 sectionsByWorkPoint(tenantId));
@@ -282,7 +282,7 @@ public class EvidenceCalculator {
         Company company = companyRepository.getReferenceById(tenantId);
         List<MonthlyEvidenceResponse> lines = list(year, null, workPointId);
         List<WasteMovement> movements = movementRepository
-                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
         return annualDeclarationBuilder.build(company, year, lines, movements);
     }

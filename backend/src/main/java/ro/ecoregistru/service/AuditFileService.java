@@ -176,7 +176,7 @@ public class AuditFileService {
     private void writeYear(ZipOutputStream zip, String prefix, Company company, UUID tenantId,
                            int year, List<MonthlyEvidenceResponse> evidence) throws IOException {
         List<WasteMovement> movements = movementRepository
-                .findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
 
         // The regulated document of the bundle, and the reason the dossier gets printed at
