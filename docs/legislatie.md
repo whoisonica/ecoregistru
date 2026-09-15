@@ -72,7 +72,9 @@
 - Amendă/penalități AFM: până la 250.000 lei + penalități zilnice la plată. 🟡
 
 ### E. Pe radar, ÎN AFARA Fazei 1 (de notat, nu de construit acum)
-- **RO e-Transport** — notificarea transporturilor (inclusiv deșeuri) în SAF-T/e-Transport. 🟡
+- ~~**RO e-Transport** — notificarea transporturilor (inclusiv deșeuri) în SAF-T/e-Transport. 🟡~~ ✅ **Verificat 15.09.2026: deșeurile NU sunt pe lista OPANAF 802/2022**, deci transportul intern nu cere cod UIT. Rămân doar transporturile internaționale. `surse-oficiale.md` §14.
+- ✅ **Impozitul pe venit la metalele cumpărate de la PF** (Legea 141/2025, Codul fiscal art. 114 alin. (2) lit. m²), din 01.08.2025) îl reține colectorul. 🟠 Cota (10%?) e de confirmat cu contabilul. `surse-oficiale.md` §12.
+- ✅ **Plafonul de numerar către o PF este 10.000 lei/zi** (Legea 70/2015 art. 4); taxare inversă la deșeuri (Codul fiscal art. 331); cântar verificat metrologic (OG 20/1992); inventar anual (Legea 82/1991 art. 7). `surse-oficiale.md` §13, §15, §17.
 - **SGR (Sistemul Garanție-Returnare)** — relevant doar dacă clientul pune pe piață băuturi ambalate. 🟡
 - **Legea 249/2015** (ambalaje) — dacă avem clienți cu obligații de ambalaje.
 

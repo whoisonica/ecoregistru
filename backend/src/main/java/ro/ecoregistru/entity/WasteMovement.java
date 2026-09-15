@@ -378,6 +378,39 @@ public class WasteMovement {
     @Column(name = "packaging_hazardous_content")
     Boolean packagingHazardousContent;
 
+    // --- Linia unei operațiuni de depozit (V46) ---
+
+    /**
+     * Operațiunea de cântar din care face parte linia. Null la mișcările înregistrate direct, care
+     * contează ca până acum; cu operațiune, linia contează doar când operațiunea e finalizată.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "weighing_operation_id")
+    WeighingOperation weighingOperation;
+
+    /** Sortimentul; codul LER al liniei e al lui. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "article_id")
+    WasteArticle article;
+
+    @Column(name = "gross_kg", precision = 14, scale = 3)
+    BigDecimal grossKg;
+
+    @Column(name = "tare_kg", precision = 14, scale = 3)
+    BigDecimal tareKg;
+
+    /** Brut − tara. {@link #quantity} e cantitatea finală acceptată, niciodată peste neto. */
+    @Column(name = "net_kg", precision = 14, scale = 3)
+    BigDecimal netKg;
+
+    /** Lei/kg, fără TVA (taxare inversă). */
+    @Column(name = "unit_price", precision = 14, scale = 4)
+    BigDecimal unitPrice;
+
+    /** Cantitatea finală × prețul, rotunjită și păstrată. */
+    @Column(name = "total_value", precision = 16, scale = 2)
+    BigDecimal totalValue;
+
     /** Free text, e.g. aviz nr. */
     String documentReference;
 

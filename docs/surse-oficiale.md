@@ -1184,6 +1184,17 @@ unul pinuieşte cifra 161 şi unul marginile de formulare).
 Sursă: [legislatie.just.ro/Public/DetaliiDocument/97706](https://legislatie.just.ro/Public/DetaliiDocument/97706),
 consolidare 23.01.2026. **În vigoare.** Accesat 22.08.2026.
 
+> 🆕 **Recitit 15.09.2026, pentru modulul de depozit: transferul între punctele de lucru proprii.**
+> **Art. 20 alin. (4):** *„Fiecare transport de deşeuri nepericuloase trebuie să fie însoţit de un
+> formular”*. **Art. 23 alin. (1)** scoate de sub hotărâre doar *„transportul deşeurilor municipale,
+> efectuat de către operatorii economici autorizaţi să presteze serviciul de salubrizare”*. **Art. 23
+> alin. (2)** cere formularul și când operatorul își transportă propriile deșeuri nepericuloase.
+> **Art. 1 alin. (3):** transportul se face numai către operatori cu autorizație de mediu.
+> **Consecință:** un transfer între două depozite ale aceleiași firme **are Anexa 3**. Nu există
+> scutire pentru rută internă.
+> 🟠 **Neclar:** persoana fizică ce își aduce singură deșeul la centru. Actul n-o scutește explicit,
+> dar nici n-o numește; practica nu cere formular. E întrebarea **AX** din `intrebari-specialist.md`.
+
 **Cele trei anexe, reverificate pe 02.09.2026 la audit** — fiindcă aplicaţia trimite clientul la una
 dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
 
@@ -2123,7 +2134,52 @@ cantitatea în **kg**; preţul unitar şi valoarea; contul de virament / documen
 >    în plus.
 >
 > **Termenul de păstrare nu e în ordonanță.** Ca document financiar-contabil intră sub regimul
-> general al Legii contabilității — **de verificat separat**, nu se presupune.
+> general al Legii contabilității — ~~**de verificat separat**, nu se presupune~~ **verificat pe
+> 15.09.2026: 10 ani**, vezi §15.
+
+### 9.1 Recitit integral pe 15.09.2026 (forma consolidată din 05.06.2022)
+
+**Art. 1 alin. (1^2)** — operatorii autorizați care cumpără metale de la persoane fizice au obligația:
+
+> a) să efectueze plata contravalorii bunurilor achiziţionate [...] **prin virament bancar, în contul
+> specificat de vânzător, sau cu numerar**, cu respectarea legislaţiei fiscale;
+> b) să completeze [...] un **borderou de achiziţie de deşeuri metalice** [...]
+
+„Cu respectarea legislației fiscale” trimite la plafonul de numerar din Legea 70/2015 art. 4 (§13).
+
+**Art. 1 alin. (2)** — contravenţiile. **Alin. (3)**: la operatorii de colectare, sancțiunea
+complementară e **revocarea autorizației de colectare**.
+
+| Faptă | Amendă |
+|---|---|
+| achiziția metalelor interzise de la PF, alin. (1): infrastructură de transport, rețele de utilități, gaze/țiței, semnalizare rutieră, cale ferată, produse de prelucrare chimică/termică | 100.000–150.000 lei |
+| metal care nu provine din gospodăria proprie, alin. (1^1) | 100.000–150.000 lei |
+| nerespectarea regulilor de plată | 30.000–50.000 lei |
+| borderou necompletat sau incomplet | 10.000–30.000 lei |
+| la repetare | limitele cresc cu 50% |
+
+Constată: Poliția, Jandarmeria, Poliția de Frontieră, Garda Națională de Mediu, ANAF. Metalele cu păgubit
+neidentificat se confiscă.
+
+**Anexa — modelul borderoului, rubrică cu rubrică:**
+
+- antet: *„denumire, formă juridică, adresă sediu social/punct de lucru, nr. din registrul comerţului,
+  CUI, CIF, nr. şi data emiterii autorizaţiei de mediu”* — operatorul economic colector/valorificator;
+- deținătorul: nume, seria și numărul actului de identitate, emitentul, CNP, domiciliu, mijlocul de transport;
+- tabel: **Denumirea deşeului şi descrierea acestuia (0) · Codul conform HG nr. 856/2002 (1) ·
+  Cantitatea (kg) (2) · Preţul unitar (lei/kg) (3) · Valoarea (lei) (4 = 2 × 3)** · TOTAL;
+- plata: *„Se achită suma de ... lei [...] cu chitanţa nr. ... sau în termen de maximum 3 zile lucrătoare
+  de la data prezentei, prin virament bancar în contul deţinătorului”*;
+- reținerile: *„Impozitul pe venit de **16%** şi contribuţia de **3%** la Administraţia Fondului pentru
+  Mediu [...] au fost reţinute la sursă din valoarea brută.”*;
+- *„Gestionar primitor”*;
+- declarația: *„Declar pe propria răspundere că deşeurile pe care le predau provin din gospodăria proprie.”*
+
+> ⚠️ **Procentele din model sunt cele din 2011 și nu mai sunt cele în vigoare.** AFM e **2%** (§10.1).
+> Impozitul pe venit la metalele PF a fost reintrodus de Legea 141/2025 (§12), cu altă cotă.
+> Tipărirea cu cotele actuale, calculate, e de confirmat cu contabilul.
+> **CNP-ul se cere doar aici**, la metale. Pentru hârtie sau plastic cumpărate de la PF nicio lege în
+> vigoare nu cere CNP. Colectat fără obligație legală, ar cădea sub Legea 190/2018 art. 4 alin. (2) (§16).
 
 ---
 
@@ -2144,6 +2200,12 @@ versiune consolidată, accesat 22.08.2026.
 > are o obligație AFM **lunară**, structural, prin simplul fapt că cumpără deșeu. Nu e opțională și nu
 > depinde de ambalaje. Calculul se face pe fiecare achiziție → cade direct pe entitatea `Reception`,
 > care oricum are prețul.
+
+> 🆕 **Baza de calcul, citită pe 15.09.2026** (forma consolidată din 07.03.2025). **Art. 10 alin. (5):**
+> baza pentru procentele de la art. 9 alin. (1) lit. a), e), f) şi j) este *„valoarea de vânzare,
+> **exclusiv taxa pe valoarea adăugată** aferentă”*. Ordonanța nu are nicio scutire pentru persoane
+> fizice sau pentru deșeul din gospodărie: textul spune „deţinătorul deşeurilor, persoană fizică sau
+> juridică”. Deci cei 2% se rețin **și** de la PF, **și** la hârtie și plastic, nu doar la metale.
 
 ### 10.2 Art. 9 alin. (1) lit. c) — contribuția pentru economia circulară
 
@@ -2224,6 +2286,118 @@ specialista îl numește „ce tip de generator" — producător / importator / 
 > În cod: `MarketRole` (`PRODUCER` / `IMPORTER` / `TRADER`), set pe `Company` și pe
 > `AccountRequest`, migrarea `V13`. Set gol = întrebarea n-a primit răspuns, deci nu se
 > concluzionează nimic — aceeași regulă ca la restul profilului.
+
+---
+
+## 12. Codul fiscal — impozitul pe venit la metalele cumpărate de la PF (Legea 141/2025)
+
+Sursă primară: [legislatie.just.ro/Public/DetaliiDocument/300022](https://legislatie.just.ro/Public/DetaliiDocument/300022)
+(Legea 141/2025), accesat **15.09.2026**.
+
+**Art. 62 lit. f)**, venituri neimpozabile, în forma nouă:
+
+> veniturile de orice fel, în bani sau în natură, primite ca urmare a predării deşeurilor din patrimoniul
+> personal, **altele decât metale feroase şi neferoase şi aliajele acestora** din patrimoniul personal
+
+**Art. 114 alin. (2) lit. m²)**, nou, la „venituri din alte surse”:
+
+> veniturile de orice fel, în bani sau în natură, primite ca urmare a predării metalelor feroase şi
+> neferoase şi aliajelor acestora, din patrimoniul personal, încadrate ca deşeuri potrivit legii
+
+**Aplicare:** art. VII alin. (1) lit. b) — *„pentru veniturile plătite începând cu data de 1 august 2025”*.
+
+> 🟠 **Cota nu e citită pe sursă primară.** Art. 115 alin. (1), pe forma gratuită de pe Lege5, dă
+> **16%** doar pentru lit. a)–k). Trei surse secundare (contabilul.manager.ro, juridice.ro, b1tv) dau
+> **10%** pentru lit. m²), reținut la sursă de operatorul colector la plată. Declararea se face lunar,
+> prin D100 până pe 25, și anual pe beneficiar, prin D205 (tot surse secundare). **De confirmat cu
+> contabilul înainte de cod.**
+>
+> **Ce se închide cu asta:** răspunsul **L** al specialistei, „dacă deșeul nu e din gospodărie
+> proprie, încă 10%” (`status.md`), era un impozit pe venit din Codul fiscal, nu AFM, cum bănuiam.
+> Textul în vigoare îl leagă însă de **metale**, nu de proveniență. Hârtia, plasticul și acumulatorii
+> de la PF rămân neimpozabili; doar cei 2% AFM se rețin.
+
+## 13. Legea 70/2015 — plafonul de numerar
+
+Sursă: [legislatie.just.ro/Public/DetaliiDocument/167088](https://legislatie.just.ro/Public/DetaliiDocument/167088),
+consolidare 01.01.2026, accesat 15.09.2026.
+
+**Art. 4:** operațiunile de încasări și plăți în numerar între persoane juridice și persoane fizice
+*„se efectuează cu încadrarea în plafonul zilnic de **10.000 lei** către/de la o persoană”*. **Art. 3
+alin. (2)–(3)** interzice fragmentarea plăților ca să rămână sub plafon.
+**Consecință:** un depozit plătește cash unei PF cel mult 10.000 lei pe zi, iar restul prin virament
+(OUG 31/2011 art. 1 alin. (1^2) lit. a), §9.1).
+
+## 14. OPANAF 802/2022 — RO e-Transport: deșeurile nu sunt pe listă
+
+Sursă: [legislatie.just.ro/Public/DetaliiDocument/254608](https://legislatie.just.ro/Public/DetaliiDocument/254608),
+accesat 15.09.2026.
+
+Anexa cuprinde legume (NC 0701–0714), fructe (0801–0814), băuturi (2201–2208), sare și ciment (2505,
+2517), îmbrăcăminte (6101–6117, 6201–6212, 6214–6217), încălțăminte (6401–6405) și bare de oțel
+(7213–7214). **Niciun cod de deșeuri sau resturi**: 7204, 7404, 7602, 4707 și 3915 lipsesc.
+Surse din 2026 ([fiscalitatea.ro](https://www.fiscalitatea.ro/ro-e-transport-din-1072024-lista-cu-bunuri-cu-risc-fiscal-se-modifica-23464))
+spun că lista nu s-a mai schimbat.
+**Consecință:** transportul intern de deșeuri **nu cere cod UIT**. Rămân doar transporturile
+internaționale, pe OUG 41/2022, dacă apare un client exportator. Corectează `legislatie.md` §E.
+
+## 15. Legea 82/1991 — păstrarea documentelor și inventarul
+
+Sursă: [legislatie.just.ro/Public/DetaliiDocumentAfis/58588](https://legislatie.just.ro/Public/DetaliiDocumentAfis/58588),
+consolidare 04.02.2025, accesat 15.09.2026.
+
+**Art. 25 alin. (1):**
+
+> Registrul-jurnal, Registrul-inventar şi Cartea mare, precum şi **documentele justificative** care stau
+> la baza înregistrărilor în contabilitatea financiară se păstrează în arhiva persoanelor prevăzute la
+> art. 1, timp de **10 ani**, cu începere de la data încheierii exerciţiului financiar în cursul căruia
+> au fost întocmite, cu excepţia statelor de salarii, care se păstrează timp de 50 de ani.
+
+**Art. 7** (citit prin surse secundare): inventarierea generală a elementelor de activ și de pasiv
+*„cel puțin o dată în cursul exercițiului financiar”*. Procedura e în **OMFP 2861/2009**
+([legislatie.just.ro/112430](https://legislatie.just.ro/Public/DetaliiDocument/112430)): comisie numită
+prin decizie scrisă, liste de inventariere, proces-verbal.
+**Consecințe:** borderoul PF și CNP-ul de pe el se păstrează 10 ani, nu 3 cum rămân datele șoferului.
+Stocul depozitului trebuie inventariat cel puțin anual.
+
+## 16. Legea 190/2018 art. 4 — CNP-ul
+
+Sursă: [legislatie.just.ro/Public/DetaliiDocument/203151](https://legislatie.just.ro/Public/DetaliiDocument/203151),
+accesat 15.09.2026.
+
+> **(1)** Prelucrarea unui număr de identificare naţional, inclusiv prin colectarea sau dezvăluirea
+> documentelor ce îl conţin, se poate efectua în situaţiile prevăzute de art. 6 alin. (1) din
+> Regulamentul general privind protecţia datelor.
+> **(2)** Prelucrarea [...] în scopul prevăzut la art. 6 alin. (1) lit. f) [...], respectiv al
+> realizării intereselor legitime urmărite de operator sau de o parte terţă, se efectuează cu
+> instituirea de către operator a următoarelor garanţii: [măsuri tehnice și organizatorice, **responsabil
+> cu protecția datelor**, termene de stocare și ștergere, instruirea periodică a celor care prelucrează].
+
+**Consecință:** la metale CNP-ul are temei de obligație legală (art. 6 alin. (1) lit. c) GDPR, OUG
+31/2011), fără garanțiile de la alin. (2). La orice altă cumpărare de la PF, un CNP cerut „ca să fie”
+ar cere DPO la client. Deci aplicația **cere CNP doar când e metal**.
+
+## 17. Codul fiscal art. 331 și OG 20/1992 — TVA și cântarul
+
+**Art. 331 alin. (2) lit. a)** ([Lege5](https://lege5.ro/Gratuit/g43donzvgi/masuri-de-simplificare-codul-fiscal?dp=hazdimzygizdi),
+sursă secundară; 15.09.2026): **taxarea inversă** se aplică între plătitori de TVA la livrarea de:
+1. deşeuri feroase şi neferoase și rebuturi, inclusiv semifabricatele din prelucrarea lor;
+2. reziduuri reciclabile din metale, zgură, cenuşă;
+3. *„deşeuri de materiale reciclabile şi materiale reciclabile uzate constând în hârtie, carton,
+   material textil, cabluri, cauciuc, plastic, cioburi de sticlă şi sticlă”*;
+4. materialele de la pct. 1–3 după curăţare, selecţie, tăiere, presare etc.
+
+**Consecință:** prețurile din depozit se țin **fără TVA**, la fel ca baza de 2% (§10.1).
+
+**OG 20/1992 privind metrologia** ([Lege5](https://lege5.ro/gratuit/gyztgnzx/ordonanta-nr-20-1992-privind-activitatea-de-metrologie),
+text inițial; 15.09.2026):
+- art. 3 și 21 pun sub control metrologic legal măsurările *„efectuate în cadrul unor tranzacţii comerciale”*;
+- art. 24: deținătorul asigură legalitatea mijloacelor de măsurare;
+- art. 29 sancționează *„utilizarea mijloacelor de măsurare neverificate metrologic sau cu termenul de
+  verificare depăşit”*.
+
+🟠 Amenzile din textul inițial sunt în lei vechi; cuantumul actual n-a fost citit.
+**Consecință:** cântarul depozitului are o dată de expirare a verificării și primește alertă.
 
 ---
 

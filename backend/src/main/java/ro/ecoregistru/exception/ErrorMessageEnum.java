@@ -66,6 +66,15 @@ public enum ErrorMessageEnum {
     // --- WorkPoint ---
     WORK_POINT_NOT_FOUND("work.point.not.found", "Punctul de lucru nu a fost găsit."),
 
+    // --- Modulul de depozit (V46) ---
+    WEIGHING_OPERATION_NOT_FOUND("weighing.operation.not.found", "Operațiunea nu a fost găsită."),
+    WEIGHING_OPERATION_TYPE_REQUIRED("weighing.operation.type.required", "Alege tipul operațiunii: intrare sau ieșire."),
+    WEIGHING_OPERATION_TYPE_UNAVAILABLE("weighing.operation.type.unavailable", "Deocamdată se înregistrează doar intrări și ieșiri."),
+    WEIGHING_OPERATION_DATE_REQUIRED("weighing.operation.date.required", "Alege data operațiunii."),
+    WEIGHING_OPERATION_ONE_COUNTERPARTY("weighing.operation.one.counterparty", "Alege fie un partener, fie o persoană fizică, nu amândouă."),
+    WEIGHING_OPERATION_PERSON_ONLY_IN("weighing.operation.person.only.in", "O persoană fizică doar vinde depozitului. O ieșire merge la un operator autorizat, deci alege un partener."),
+    NATURAL_PERSON_NOT_FOUND("natural.person.not.found", "Persoana fizică nu a fost găsită."),
+
     // --- Partner ---
     PARTNER_NOT_FOUND("partner.not.found", "Partenerul nu a fost găsit."),
     DRIVER_NOT_FOUND("driver.not.found", "Șoferul nu a fost găsit."),

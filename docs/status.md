@@ -1475,6 +1475,11 @@ cineva de două ori.
   fizică ce vinde deşeu care nu provine din gospodăria proprie — Codul fiscal, nu OUG 196/2005.
   **Neverificat pe sursă primară**, deci nu se codează nimic pe el; intră în `surse-oficiale.md`
   abia după ce se citeşte articolul.
+  🆕 **Citit pe 15.09.2026** (`surse-oficiale.md` §12): da, e impozit pe venit, dar din Legea 141/2025
+  și **legat de metale**, nu de proveniență. Metalele feroase și neferoase vândute de PF se impozitează
+  din 01.08.2025 (Codul fiscal art. 114 alin. (2) lit. m²), cu reținere la sursă de colector. Restul
+  deșeurilor din gospodărie rămân neimpozabile (art. 62 lit. f)). Cota de 10% vine încă doar din surse
+  secundare.
 - **N — „cartonul din magazine este 15 01 01"**, iar raportarea lui se face în declaraţia de
   ambalaje. Nu propunem coduri în formular, deci nu se schimbă nicio validare — dar modulul de
   ambalaje ştie de-acum ce coduri îl privesc.
@@ -7368,8 +7373,9 @@ nesetate pe `ecoregistru-api`; cele cinci variabile `MAIL_*` sunt setate.*
   ecranului, care ar scuti muncă la exportul SIM (felie târzie oricum); e o înlesnire, nu un blocaj.
 - 🟠 **Cuantumul contribuției pentru economia circulară** (OUG 196/2005, anexa nr. 2) — Portalul
   Legislativ trunchiază anexele pe versiunile consolidate. Blochează doar profilul de groapă.
-- 🟠 **Termenul de păstrare al borderoului de achiziție** — nu e în OUG 31/2011; intră sub Legea
-  contabilității, de verificat separat.
+- ✅ ~~**Termenul de păstrare al borderoului de achiziție** — nu e în OUG 31/2011; intră sub Legea
+  contabilității, de verificat separat.~~ **10 ani** de la încheierea exercițiului (Legea 82/1991
+  art. 25, verificat 15.09.2026, `surse-oficiale.md` §15).
 - ✅ **SMTP** — deblocat pe 24.08 și **confirmat pe producție**: STARTTLS reparat, credențiale
   Gmail pe dyno, paginile de resetare/invitație construite, mail chiar livrat.
 - ✅ **Conturile de demo din baza de producție — închise (09.09.2026, noaptea târziu).** Toate

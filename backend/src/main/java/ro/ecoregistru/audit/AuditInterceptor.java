@@ -63,7 +63,12 @@ public class AuditInterceptor implements Interceptor {
             InternalGenerator.class,
             Driver.class,
             Attachment.class,
-            AppUser.class);
+            AppUser.class,
+            // Modulul de depozit (V46): operațiunea e document justificativ, iar persoana fizică
+            // e o persoană — CNP-ul și actul ei se redactează prin numele câmpurilor.
+            WeighingOperation.class,
+            WasteArticle.class,
+            NaturalPerson.class);
 
     /**
      * Câmpurile din care se compune eticheta, pe tip, în ordinea în care se citesc.
@@ -72,16 +77,19 @@ public class AuditInterceptor implements Interceptor {
      * calculează în mijlocul flush-ului. „Mişcarea din 11.09.2026" e o etichetă mai slabă decât
      * „11.09.2026 · 20 01 01", şi e etichetă de câte ori codul e o asociere.
      */
-    private static final Map<Class<?>, List<String>> LABEL_FIELDS = Map.of(
-            WasteMovement.class, List.of("date", "documentReference"),
-            Company.class, List.of("name"),
-            Partner.class, List.of("name"),
-            PartnerWorkPoint.class, List.of("name"),
-            WorkPoint.class, List.of("name"),
-            InternalGenerator.class, List.of("name"),
-            Driver.class, List.of("name"),
-            Attachment.class, List.of("fileName"),
-            AppUser.class, List.of("email"));
+    private static final Map<Class<?>, List<String>> LABEL_FIELDS = Map.ofEntries(
+            Map.entry(WasteMovement.class, List.of("date", "documentReference")),
+            Map.entry(Company.class, List.of("name")),
+            Map.entry(Partner.class, List.of("name")),
+            Map.entry(PartnerWorkPoint.class, List.of("name")),
+            Map.entry(WorkPoint.class, List.of("name")),
+            Map.entry(InternalGenerator.class, List.of("name")),
+            Map.entry(Driver.class, List.of("name")),
+            Map.entry(Attachment.class, List.of("fileName")),
+            Map.entry(AppUser.class, List.of("email")),
+            Map.entry(WeighingOperation.class, List.of("type", "number", "date")),
+            Map.entry(WasteArticle.class, List.of("name")),
+            Map.entry(NaturalPerson.class, List.of("name")));
 
     /**
      * Ce nu se scrie niciodată ca modificare.
