@@ -3,7 +3,13 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
-> **15.09.2026, noaptea — ✅ gata local: direcția interfeței „Cântar” (C1–C4), ramura `feat/ui-cantar` `823e366`.**
+> **15.09.2026, 23:02 — ✅ pe producție: direcția interfeței „Cântar” (C1–C4).**
+> `ecoregistru-api` **v91** (`0d7a8f5`, fără migrare, schema `V48`), `ecoregistru-app` **v73** (`24a5e2d`); monorepo `dc6f555`
+> (`feat/ui-cantar` `823e366` + status), `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe amândouă
+> repo-urile split, înainte și după cherry-pick. Pe producție: `Schema "public" is up to date` și `Started
+> EcoRegistruApplication` pe v91 (20:02:39 UTC), `health` `UP`; bundle-ul servit are „Deșeuri proprii”, „Intrări de deșeuri”,
+> „Caută oriunde”, `movements/totals` și `data-bin`; CSS-ul are `IBM Plex Sans`, `/fonts/plex-sans-400-latin.woff2`
+> răspunde `200 font/woff2`; `/api/v1/movements/totals` fără token `401`.
 > Panou grafit cu taste și afișajul lunii, pagina albă, IBM Plex Sans + Mono servite din `frontend/public/fonts`
 > (Nunito scos), stări ca LED, tabel ca pe bon, pubela pe codul de deșeu (`lib/binColor.ts`, listă explicită).
 > **Intrări și Ieșiri** sunt ecrane separate (`/intrari`, `/iesiri`; `/intrari-iesiri` → `/intrari`), cu patru totaluri
