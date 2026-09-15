@@ -68,6 +68,17 @@ public class ExcelImportService {
     /** Heroku taie cererea la 30 de secunde; două mii de rânduri pe foaie încap cu marjă. */
     public static final int MAX_ROWS = 2000;
 
+    /**
+     * Câţi octeţi despachetaţi acceptă o foaie înainte s-o citim în model. {@link #MAX_ROWS} se
+     * verifică abia după ce POI a construit tot registrul în memorie — prea târziu pentru un fişier
+     * mic care se umflă mult: 40.000 de rânduri intră în ~1,3 MB comprimaţi, dar dau o foaie de
+     * 16 MB, iar modelul XSSF din ea trece de heap-ul de 300 MB al dyno-ului şi îl doboară pentru
+     * toţi clienţii. Şablonul cu 2.000 de rânduri stă la ~0,76 MB despachetat, deci 8 MB e ~10×
+     * peste maximul legitim şi mult sub pragul care sufocă heap-ul. Comprimarea nu e axa bună —
+     * rânduri identice se string de 1000:1 — deci se măsoară octeţii despachetaţi, oprind pe loc.
+     */
+    static final long MAX_ENTRY_BYTES = 8L * 1024 * 1024;
+
     private static final List<DateTimeFormatter> DATE_FORMATS = List.of(
             DateTimeFormatter.ofPattern("d.M.yyyy"), DateTimeFormatter.ofPattern("d/M/yyyy"),
             DateTimeFormatter.ISO_LOCAL_DATE);
@@ -226,10 +237,35 @@ public class ExcelImportService {
     }
 
     private static Workbook open(byte[] bytes) {
+        guardInflatedSize(bytes);
         try {
             return WorkbookFactory.create(new ByteArrayInputStream(bytes));
         } catch (IOException | RuntimeException e) {
             // Un PDF redenumit .xlsx, un fişier stricat, un .xlsx cu parolă.
+            throw new BadRequestException(IMPORT_FILE_UNREADABLE);
+        }
+    }
+
+    /**
+     * Opreşte un fişier care s-ar umfla peste {@link #MAX_ENTRY_BYTES} <b>înainte</b> ca POI să-l
+     * citească în model. Despachetează în flux, cu un tampon fix, şi se opreşte la prima intrare
+     * care trece pragul — deci memoria e mărginită orice ar fi în arhivă. Mărimea din antetul zip
+     * nu e de încredere (fişierele scrise în flux o lasă -1), aşa că se numără octeţii reali.
+     */
+    private static void guardInflatedSize(byte[] bytes) {
+        try (java.util.zip.ZipInputStream zip = new java.util.zip.ZipInputStream(new ByteArrayInputStream(bytes))) {
+            byte[] buf = new byte[8192];
+            while (zip.getNextEntry() != null) {
+                long inflated = 0;
+                int n;
+                while ((n = zip.read(buf)) > 0) {
+                    inflated += n;
+                    if (inflated > MAX_ENTRY_BYTES) {
+                        throw new BadRequestException(IMPORT_TOO_MANY_ROWS);
+                    }
+                }
+            }
+        } catch (IOException e) {
             throw new BadRequestException(IMPORT_FILE_UNREADABLE);
         }
     }

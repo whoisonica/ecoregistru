@@ -235,6 +235,51 @@ class ExcelImportIT {
                 .andExpect(jsonPath("$['error-code']", is("import.file.unreadable")));
     }
 
+    /**
+     * BUG-017 — un fişier mic care se umflă mult e oprit înainte ca POI să-l citească în model.
+     * Aici e o singură celulă de 9 MB: comprimată intră în câţiva KB (trece de plasa de 12 MB a
+     * cererii), dar despachetată sufocă heap-ul de 300 MB al dyno-ului. {@code MAX_ROWS} nu o
+     * prinde — e un rând, nu două mii. Fără garda din {@code open()}, cererea ar da 500 (OOM) şi ar
+     * doborî procesul pentru toţi clienţii; cu ea, un 400 curat şi serverul sănătos (cererea de mai
+     * jos tot răspunde).
+     */
+    @Test
+    void aTinyFileThatInflatesHugeIsRefusedBeforeItIsParsed() throws Exception {
+        // Se umflă la nivelul arhivei, ca atacul real: fiecare foaie a şablonului e recopiată, iar
+        // în sheet1.xml se strecoară un comentariu XML de 9 MB înainte de </worksheet>. Comprimat
+        // (acelaşi octet repetat) intră în câţiva KB.
+        byte[] bomb;
+        try (java.util.zip.ZipInputStream in =
+                     new java.util.zip.ZipInputStream(new ByteArrayInputStream(template.render()));
+             ByteArrayOutputStream out = new ByteArrayOutputStream();
+             java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(out)) {
+            String padding = "<!--" + "A".repeat(9 * 1024 * 1024) + "-->";
+            java.util.zip.ZipEntry e;
+            while ((e = in.getNextEntry()) != null) {
+                byte[] data = in.readAllBytes();
+                if (e.getName().endsWith("sheet1.xml")) {
+                    data = new String(data, java.nio.charset.StandardCharsets.UTF_8)
+                            .replace("</worksheet>", padding + "</worksheet>")
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                }
+                zip.putNextEntry(new java.util.zip.ZipEntry(e.getName()));
+                zip.write(data);
+                zip.closeEntry();
+            }
+            zip.finish();
+            bomb = out.toByteArray();
+        }
+        assertThat(bomb.length).as("comprimat trece de plasa de 12 MB").isLessThan(1024 * 1024);
+
+        send("/api/v1/import/verificare", bomb, adminToken)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("import.too.many.rows")));
+
+        // Serverul e viu după: garda a oprit fişierul, nu l-a lăsat să consume heap-ul.
+        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(recovery())), adminToken)
+                .andExpect(status().isOk());
+    }
+
     @Test
     void aViewerCannotImport() throws Exception {
         send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of()), viewerToken)
