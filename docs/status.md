@@ -3,6 +3,13 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, 13:54 — ✅ semnul WasteHouse („Bucla-casă”) peste tot, pe producție:** `ecoregistru-api` **v82**
+> (`6784d9f`), `ecoregistru-app` **v66** (`73360dd`), monorepo `0b2bcf4`. **683 de teste, 84 de clase, 0 eșecuri, 3 sărite.**
+> Fără migrare (schema `V48`). Alb pe `#047857`, pătrat rotunjit; înlocuiește săgeata diagonală din aplicație și bucla
+> rotundă de pe landing. `BrandName`, favicon, `apple-touch-icon` și `frontend/public/brand/wastehouse-mark.png`, cu
+> care toate cele 6 mailuri au acum antet cu logo (mailurile nu citesc SVG). **Logoul e închis — nu mai e muncă pe el.**
+> Landingul (semn + footer pentru Netopia) îl urcă proprietarul pe cPanel; logoul în FGO și Netopia, tot proprietarul.
+>
 > **15.09.2026, 13:34 — ✅ pe producție, împreună cu P2.14 (mai jos):** `ecoregistru-api` **v81** (`63dc856`,
 > „now at version v48”), `ecoregistru-app` **v65** (`8476ff1`), monorepo `45b157f` pe `main` și
 > `deploy/heroku-split`. **Suita combinată: 683 de teste în 84 de clase, 0 eșecuri, 3 sărite.** Schema **`V48`**,
