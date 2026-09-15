@@ -3,8 +3,13 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **15.09.2026, 13:34 — ✅ pe producție, împreună cu P2.14 (mai jos):** `ecoregistru-api` **v81** (`63dc856`,
+> „now at version v48”), `ecoregistru-app` **v65** (`8476ff1`), monorepo `45b157f` pe `main` și
+> `deploy/heroku-split`. **Suita combinată: 683 de teste în 84 de clase, 0 eșecuri, 3 sărite.** Schema **`V48`**,
+> prima liberă **`V49`**. ⬜ Rămân: `sentry-probe` apăsat o dată pe producție; antetul văzut pe ecran cu un cont de consultant.
+>
 > **15.09.2026, după-amiaza — generator, conformitate, securitate: ramura `feat/generator-100`.**
-> ⬜ **Nedeployată.** Rebazată pe `375a434` (V47), **fără migrare**. Suita completă după rebase: **676 de teste în
+> ✅ **Pe producție (api v81, app v65).** Rebazată pe `375a434` (V47), **fără migrare**. Suita completă după rebase: **676 de teste în
 > 83 de clase, 0 eșecuri, 3 sărite** (din XML); `tsc` și `vite build` curate; **„✓ 16 probe, toate trec"**.
 > - **Sentry, veriga nevăzută din P0.6:** `POST /api/v1/platform/sentry-probe`, numai `PLATFORM_ADMIN`, aruncă o
 >   excepție care trece prin `AdviceController.handleUnexpected` (`SentryProbeIT`: 500 generic + `captureException`;
@@ -23,8 +28,8 @@ rulează local și are testele verzi.
 
 >
 > **15.09.2026, după-amiaza — P2.14: antetul cabinetului pe rapoartele neoficiale.**
-> 🟡 Construit în `feat/branding-cabinet` (din `e1470a8`), **nedeployat**. Migrarea **`V48`** — `V47` e al plății
-> cu cardul (sesiune paralelă), deci se deployează după ea.
+> ✅ **Pe producție (api v81 cu `V48` migrată, app v65).** Construit în `feat/branding-cabinet` (din `e1470a8`),
+> rebazat peste plăți și deployat după `V47`.
 > - **`consultancy_branding`** (tabel separat, un rând pe cabinet): logo PNG/JPG ≤ 500 KB în bază (nu pe
 >   Cloudinary, care e în SUA) și un rând de contact ≤ 200 de caractere.
 > - **Endpointuri, numai `CONSULTANT`:** `GET/PUT /api/v1/consultancy/branding`, `POST/DELETE/GET …/logo`.
