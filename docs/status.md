@@ -14,9 +14,8 @@ rulează local și are testele verzi.
 > `weighing_operations.driver_id` n-avea `ON DELETE SET NULL`, deci fișa unui șofer folosit la cântar nu se putea șterge.
 > Suita backend **808 de teste, 99 de clase, 0 eșecuri**; `DriverFleetIT` 5/5 cu proba negativă pe 5 reguli; e2e **21** 13/13.
 >
-> ⚠️ **`V54` (mobilul, M1c, `feat/mobil`) NU e pe producție, iar `V55` a intrat înaintea ei.** Flyway fără out-of-order o va
-> refuza: înainte de deployul M1c, `V54__device_session_push_token.sql` se renumerotează în **`V56`**. Următoarea liberă: **`V56`**
-> (sau `V57`, dacă M1c ia `V56`).
+> ✅ **Migrările mobilului, rezolvat 16.09:** `V54` a M1c a fost renumerotată în **`V56`** pe `feat/mobil` (`8086c14`, nedeployat);
+> `V54` rămâne nefolosit pe producție. Următoarea liberă: **`V57`** (`V56` e rezervată M1c).
 
 > **16.09.2026, 12:37 și 12:42 — ✅ pe producție: depozitul D1.9–D1.15 și aplicația mobilă M1b.**
 > `ecoregistru-api` **v94** (`3ef32ec`, **migrările `V51` și `V52`**, schema 50 → 52), `ecoregistru-app` **v76** (`b80ab14`,
