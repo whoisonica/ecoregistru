@@ -51,6 +51,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
  *  - PACKAGING_ANNUAL — 25 February, the packaging report of Ordinul 794/2012 art. 6, at the
  *    county environmental agency. Only for a company whose profile says it puts packaging on the
  *    national market; an unanswered profile gets nothing. See {@link #packagingDeadline}.
+ *  - PACKAGING_ANNEX3 — 25 February too, Anexa 3 of the same order (art. 4): a collector that took
+ *    over a {@code 15 01} code in the reported year. Read from the movements. See
+ *    {@link #packagingWasteDeadline}.
  *  - APM_ANNUAL_APRIL — 30 April, the second annual APM filing (OUG 92/2021 art. 49 alin. (9)):
  *    used oils and construction waste. Only for a company one of whose two halves signals;
  *    see {@link #aprilDeadline}.
@@ -129,6 +132,7 @@ public class DeadlineService {
                 today, due -> true);
         created += afmDeadlines(company, today);
         created += packagingDeadline(company, today);
+        created += packagingWasteDeadline(company, today);
         created += aprilDeadline(company, today);
         created += mayDeadline(company, today);
         return created;
@@ -184,6 +188,27 @@ public class DeadlineService {
         }
         return ensureNext(company, ReportType.PACKAGING_ANNUAL,
                 List.of(MonthDay.of(Month.FEBRUARY, 25)), today, due -> true);
+    }
+
+    /**
+     * Anexa 3 la Ordinul 794/2012, due 25 February for the previous year (art. 4 and art. 6).
+     *
+     * <p>Owed by a collector that <em>took over</em> packaging waste — a {@code 15 01} code
+     * (art. 8 alin. (3)) on a {@code COLLECTED} movement of the reported year. The same positive-only
+     * rule as the used-oil half of {@link #aprilDeadline}: a collector with no such takeover gets
+     * nothing, and the next morning asks again. A generator never does — art. 4 does not name it.
+     *
+     * <p>The packaging role (collector, recycler, …) is <b>not</b> required. It decides which table
+     * gets printed, not whether the report is owed; a missing role is shown on the deadline as
+     * something to fill in, not used to stay silent.
+     */
+    private int packagingWasteDeadline(Company company, LocalDate today) {
+        if (!company.getType().keepsArt48Register()) {
+            return 0;
+        }
+        return ensureNext(company, ReportType.PACKAGING_ANNEX3, List.of(MonthDay.of(Month.FEBRUARY, 25)),
+                today, due -> movementRepository.existsCollectedPackaging(company.getId(),
+                        LocalDate.of(due.getYear() - 1, 1, 1), LocalDate.of(due.getYear() - 1, 12, 31)));
     }
 
     /**

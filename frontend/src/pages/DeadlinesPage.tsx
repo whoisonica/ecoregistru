@@ -34,6 +34,7 @@ import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DeadlineReadiness } from "@/components/DeadlineReadiness";
 import { useToast } from "@/components/ui/toast";
 import type { BadgeProps } from "@/components/ui/badge";
 
@@ -385,7 +386,7 @@ function DeadlinesTable({
                       {strings.enums.deadlineStatus[d.status]}
                     </Badge>
                   </TD>
-                  <TD className="whitespace-nowrap">
+                  <TD className="min-w-56">
                     {doc ? (
                       <Link
                         to={doc.to}
@@ -397,6 +398,7 @@ function DeadlinesTable({
                     ) : (
                       <span className="text-content-subtle">—</span>
                     )}
+                    <DeadlineReadiness deadline={d} />
                   </TD>
                   <TD className="max-w-xs truncate text-content-muted">
                     {d.completionNote ?? "—"}
@@ -470,6 +472,7 @@ function DeadlineCard({
       {d.completionNote && (
         <p className="text-sm text-content-muted">{d.completionNote}</p>
       )}
+      <DeadlineReadiness deadline={d} />
       {(doc || canManage) && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           {doc ? (

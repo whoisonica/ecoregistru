@@ -358,6 +358,47 @@ class DeadlineIT {
         assertThat(dates(t, ReportType.PACKAGING_ANNUAL)).isEmpty();
     }
 
+    // ---------- Anexa 3 Ambalaje — Ordinul 794/2012 art. 4 și 6 (16.09.2026) ----------
+
+    /** Un colector care a preluat ambalaje (15 01) în 2026 depune Anexa 3 pe 25.02.2027. */
+    @Test
+    void aCollectorThatTookOverPackagingOwesAnexa3OnThe25thOfFebruary() {
+        TenantFixture t = newTenantOfType(CompanyType.COLLECTOR);
+        addMovement(t, "15 01 01", 2026, WasteOperation.COLLECTED);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
+
+        assertThat(dates(t, ReportType.PACKAGING_ANNEX3)).containsExactly(LocalDate.of(2027, 2, 25));
+    }
+
+    /** Anul raportat e cel dinaintea termenului: pe 10.01.2026, 25.02.2026 privește 2025, gol. */
+    @Test
+    void anexa3LooksAtTheYearBeforeTheDeadline() {
+        TenantFixture t = newTenantOfType(CompanyType.COLLECTOR);
+        addMovement(t, "15 01 01", 2026, WasteOperation.COLLECTED);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 1, 10));
+
+        assertThat(dates(t, ReportType.PACKAGING_ANNEX3)).isEmpty();
+    }
+
+    /**
+     * Semnalul e preluarea unui cod 15 01, nimic altceva: nici o preluare de alt deșeu, nici ambalajul
+     * generat de colectorul însuși, nici generatorul (art. 4 nu-l numește).
+     */
+    @Test
+    void anexa3NeedsAPackagingTakeoverByACollector() {
+        TenantFixture otherWaste = newTenantOfType(CompanyType.COLLECTOR);
+        addMovement(otherWaste, "20 01 01", 2026, WasteOperation.COLLECTED);
+        TenantFixture ownPackaging = newTenantOfType(CompanyType.BOTH);
+        addMovement(ownPackaging, "15 01 01", 2026, WasteOperation.GENERATED);
+        TenantFixture generator = newTenantOfType(CompanyType.GENERATOR);
+        addMovement(generator, "15 01 01", 2026, WasteOperation.GENERATED);
+
+        for (TenantFixture t : java.util.List.of(otherWaste, ownPackaging, generator)) {
+            deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
+            assertThat(dates(t, ReportType.PACKAGING_ANNEX3)).isEmpty();
+        }
+    }
+
     // ---------- Termenul de 30 aprilie — OUG 92/2021 art. 49 alin. (9) ----------
 
     /**
@@ -517,6 +558,18 @@ class DeadlineIT {
     }
 
     private void addMovement(TenantFixture t, String code, int year) {
+        addMovement(t, code, year, WasteOperation.GENERATED);
+    }
+
+    private TenantFixture newTenantOfType(CompanyType type) {
+        TenantFixture t = newTenant(false);
+        Company company = companyRepository.findById(t.company.getId()).orElseThrow();
+        company.setType(type);
+        companyRepository.save(company);
+        return t;
+    }
+
+    private void addMovement(TenantFixture t, String code, int year, WasteOperation operation) {
         WorkPoint wp = workPointRepository.save(WorkPoint.builder()
                 .company(t.company).name("PL-" + UUID.randomUUID().toString().substring(0, 6))
                 .active(true).createdAt(Instant.now()).build());
@@ -524,7 +577,7 @@ class DeadlineIT {
         movementRepository.save(WasteMovement.builder()
                 .company(t.company).workPoint(wp).date(LocalDate.of(year, 4, 15))
                 .wasteCode(wasteCode).quantity(new java.math.BigDecimal("15.000")).unit(Unit.KG)
-                .operation(WasteOperation.GENERATED).deleted(false)
+                .operation(operation).deleted(false)
                 .createdBy(UUID.randomUUID()).build());
     }
 

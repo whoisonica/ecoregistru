@@ -129,5 +129,26 @@ public enum ReportType {
      */
     APM_ANNUAL_MAY,
 
+    /**
+     * The packaging-waste report of Ordinul 794/2012 — <b>Anexa 3</b>, the one this application builds
+     * for collectors — due <b>25 February</b> for the previous year (art. 6), at the environmental
+     * agency of each work point (art. 4 alin. (3)–(4)).
+     *
+     * <p>Found on 16.09.2026, when the owner asked which filings follow from the recorded movements
+     * ({@code docs/surse-oficiale.md} §2.11). Art. 4 alin. (1) binds the authorised collectors,
+     * recyclers, recoverers and traders of packaging waste; art. 8 alin. (3) identifies that waste by
+     * the {@code 15 01} codes. So the fact is in the evidence: a {@code 15 01} takeover in the
+     * reported year. The document existed; its deadline did not.
+     *
+     * <p><b>Not</b> {@link #PACKAGING_ANNUAL}, though both fall on 25 February under the same act:
+     * that one is Anexa 1, what a company put on the market (art. 1), read from the profile. Different
+     * annex, different people, a different signal — and a collector who also sells packaged goods owes
+     * both.
+     *
+     * <p>A generator is <b>not</b> in art. 4. The exits-only Anexa 3 a generator can print (the owner,
+     * 16.09.2026) is an offer, not an obligation, so it creates no deadline.
+     */
+    PACKAGING_ANNEX3,
+
     OTHER
 }

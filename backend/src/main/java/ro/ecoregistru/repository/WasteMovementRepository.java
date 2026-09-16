@@ -118,6 +118,21 @@ public interface WasteMovementRepository
                                         @Param("to") LocalDate to);
 
     /**
+     * Whether the company took over packaging waste ({@code 15 01}, Ordinul 794/2012 art. 8 alin. (3))
+     * in a date range — the signal of the Anexa 3 deadline. Same exclusions as
+     * {@link #findDistinctWasteCodes}: deleted rows and unfinished weighings do not count.
+     */
+    @Query("select count(m) > 0 from WasteMovement m left join m.weighingOperation o "
+            + "where m.company.id = :companyId and m.deleted = false "
+            + "and m.operation = ro.ecoregistru.enums.WasteOperation.COLLECTED "
+            + "and m.wasteCode.code like '15 01%' "
+            + "and m.date between :from and :to "
+            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+    boolean existsCollectedPackaging(@Param("companyId") UUID companyId,
+                                     @Param("from") LocalDate from,
+                                     @Param("to") LocalDate to);
+
+    /**
      * The two figures the dashboard shows about a month: how many movements were recorded and how
      * much they weigh together, in kilograms.
      *

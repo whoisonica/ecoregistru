@@ -205,6 +205,14 @@ check("termenul de 15 martie duce la evidenţă", anexa1?.document?.href === `/e
 check("şi duce la anul raportat, nu la anul termenului",
   new RegExp(String(anRaportat)).test(anexa1?.document?.text ?? ""), anexa1?.document?.text);
 
+// Din 16.09.2026, sub document stă starea lui, socotită din evidența anului raportat.
+check("termenul de 15 martie arată cifrele anului raportat",
+  new RegExp(`${anRaportat}: \\d+ (cod|coduri|de coduri), [\\d.,]+ t`).test(anexa1?.documentText ?? ""),
+  anexa1?.documentText);
+const anexa3 = termene.find((r) => /^Anexa 3 Ambalaje/.test(r.tip));
+check("un colector cu ambalaje preluate primește termenul Anexei 3 (Ordinul 794/2012 art. 4)",
+  Boolean(anexa3) && /25\.02\./.test(anexa3.termen), anexa3?.termen);
+
 // Contribuţiile AFM sunt bani declaraţi în aplicaţia AFM: n-avem ce document să oferim, deci nu
 // oferim niciunul. Un link către ceva ce nu tipărim ar fi chiar promisiunea goală reparată pe 07.09.
 const afm = termene.filter((r) => /^AFM/.test(r.tip));

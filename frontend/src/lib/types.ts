@@ -1385,6 +1385,7 @@ export type ReportType =
   | "AFM_QUARTERLY"
   | "AFM_ANNUAL"
   | "PACKAGING_ANNUAL"
+  | "PACKAGING_ANNEX3"
   // 30 aprilie, OUG 92/2021 art. 49 alin. (9) — uleiuri uzate şi deşeuri din construcţii. Lipsea
   // din calendar cu totul până pe 10.09.2026, şi nu doar din tipul ăsta.
   | "APM_ANNUAL_APRIL"

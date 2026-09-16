@@ -160,6 +160,7 @@ public class PushNotifier {
             case AFM_QUARTERLY -> "Declarația AFM trimestrială";
             case AFM_ANNUAL -> "Declarația AFM anuală";
             case PACKAGING_ANNUAL -> "Anexa 1 Ambalaje";
+            case PACKAGING_ANNEX3 -> "Anexa 3 Ambalaje";
             case APM_ANNUAL_APRIL -> "Raportarea anuală la APM (30 aprilie)";
             case APM_ANNUAL_MAY -> "Programul de prevenire a deșeurilor";
             case OTHER -> "Raportare";

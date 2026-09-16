@@ -1,4 +1,4 @@
-import type { Deadline } from "@/lib/types";
+import type { Deadline, MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/count";
 
@@ -58,11 +58,37 @@ export function documentFor(d: Deadline): { to: string; label: string } | null {
       label: strings.deadlines.documentEvidence.replace("{year}", String(reported)),
     };
   }
-  if (d.reportType === "PACKAGING_ANNUAL") {
+  if (d.reportType === "PACKAGING_ANNUAL" || d.reportType === "PACKAGING_ANNEX3") {
     return {
       to: `/ambalaje?an=${reported}`,
       label: strings.deadlines.documentPackaging.replace("{year}", String(reported)),
     };
   }
   return null;
+}
+
+/** Anul pe care îl raportează un termen anual: cel dinaintea scadenței. */
+export function reportedYear(d: Deadline): number {
+  return Number(d.dueDate.slice(0, 4)) - 1;
+}
+
+/**
+ * Starea evidenței pentru termenul de 15 martie: câte coduri, câte kilograme generate și ce o oprește
+ * de la depunere. Blocajele se numără pe linii, exact ca pe Panou (`readiness.ts`), ca cele două cifre
+ * să nu difere. `yearOpen` = anul raportat încă nu s-a încheiat, deci „gata” n-ar fi adevărat.
+ */
+export function evidenceReadiness(rows: MonthlyEvidence[], year: number, today = new Date()) {
+  const codes = new Set(rows.map((r) => r.wasteCode)).size;
+  const generatedKg = rows.reduce((sum, r) => sum + r.totalGenerated, 0);
+  const missingCode = rows.filter((r) => r.totalUnclassifiedOut > 0).length;
+  const awaitingWeighing = rows.filter((r) => r.awaitingWeighing).length;
+  const yearOpen = year >= today.getFullYear();
+  return {
+    codes,
+    generatedKg,
+    missingCode,
+    awaitingWeighing,
+    yearOpen,
+    ready: !yearOpen && rows.length > 0 && missingCode === 0 && awaitingWeighing === 0,
+  };
 }

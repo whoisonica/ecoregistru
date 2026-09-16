@@ -1719,6 +1719,23 @@ export const strings = {
     // link către un document inexistent ar promite mai mult decât ținem.
     documentEvidence: "Deschide evidența pe {year}",
     documentPackaging: "Deschide ambalajele pe {year}",
+    // Starea documentului pe termenul lui: din ce e deja înregistrat, fără socoteli noi.
+    readiness: {
+      loading: "Se verifică documentul…",
+      error: "Nu am putut verifica documentul.",
+      yearOpen: "Anul {year} nu s-a încheiat — cifrele cresc până la 31 decembrie.",
+      evidenceEmpty: "Nicio generare înregistrată în {year}.",
+      evidenceFigures: "{year}: {codes}, {tonnes} t",
+      missingCode: "{count} fără cod R/D",
+      awaitingWeighing: "{count} de cântărit",
+      unclassified: "{count} neîncadrate (material sau proveniență)",
+      packagingEmpty: "Nicio mișcare cu ambalaje în {year}.",
+      roleMissing: "Alege la Ambalaje ce ești: colector, comerciant, reciclator sau valorificator.",
+      perWorkPoint: "Se depune pe fiecare punct de lucru — descarcă-le din Ambalaje.",
+      ready: "Gata de depus",
+      download: "Descarcă",
+      downloadError: "Documentul nu a putut fi descărcat.",
+    },
     colDocument: "Documentul",
   },
 
@@ -2418,6 +2435,8 @@ export const strings = {
       // Ordinul 794/2012 art. 6, la agenția județeană — nu la AFM. Construiam documentul de la
       // `V22`, dar nu pleca nicio alertă pentru el (punctul 3 al auditului).
       PACKAGING_ANNUAL: "Anexa 1 Ambalaje (anual, 25 februarie) — la agenția județeană de mediu",
+      PACKAGING_ANNEX3:
+        "Anexa 3 Ambalaje (anual, 25 februarie) — deșeurile de ambalaje preluate, la agenția de mediu a fiecărui punct de lucru",
       // 30 aprilie — al doilea termen anual la APM, găsit abia pe 10.09.2026 la recitirea legii-
       // cadru pe forma consolidată. Lipsea din calendar cu totul: aveam 15 martie, 25 ianuarie,
       // 25 februarie și cadențele AFM, iar un client cu un butoi de ulei uzat afla din tăcerea
