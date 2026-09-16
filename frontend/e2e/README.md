@@ -1,5 +1,9 @@
 # Probe de interfaţă
 
+🗓️ **16.09.2026, 21:20 — Termene „De făcut” / „Bifate”**: proba 9 citește tabelul din `[data-testid="deadlines-todo"]` și dă clic
+pe linkul din `table` (pe desktop, cardul de telefon e ascuns și acoperă ținta); proba 10 cere acum **0** termene depășite pe
+tenantul demo (api v105 ascunde nebifatele trecute) și compară tonul benzii între firme. **23/23** pe `eco_e2e_facut`.
+
 🧾 **16.09.2026, seara — proba 23 (`23-cereri-1609.mjs`)**: pe „Generare” fără selectul „Operațiune”, lista de coduri după
 denumire, scopul V/E după destinul ales, destinația cu patru opțiuni și obligatorie, destinatarul fără autorizație refuzat,
 colectorul fără autorizație nesalvat, butonul ANAF la partener și la firmă nouă, „Economia circulară” scoasă, Anexa 3 Ambalaje

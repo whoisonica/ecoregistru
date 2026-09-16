@@ -8,6 +8,20 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 21:23 — ✅ pe producție: termenele trecute nebifate ascunse; pagina Termene cu „De făcut” și „Bifate”.**
+> Trei felii, la cererea proprietarului („de ce sunt la toate firmele termene din trecut depășite?”). **(1) api v105** (20:55,
+> `3009032`; monorepo `28c5a80`): termenele create după regula veche (anul întreg) au rămas în bază, nebifate, deci „depășite”.
+> Proprietarul a ales să le **ascundă din interfață**, nu să le șteargă. `DeadlineService.list` sare peste cele nebifate cu data
+> trecută (cele bifate rămân, ca istoric); `ConsultancyOverviewService` nu le mai numără (`overdueDeadlines` = 0). Filtrul e pe server,
+> deci ajunge și pe telefon fără build EAS. Mailurile și rezumatul consultantului nu se schimbă (luau deja doar termene viitoare).
+> ⚠️ Efect: un termen ratat de acum încolo dispare după data lui; nu mai există avertizare „depășit”. **(2) app v89** (21:12,
+> `a9034ef`; monorepo `e985063`): pe Termene, **„De făcut”** = toate nebifatele, fără an (AFM 25.09.2026 lângă SIM 15.03.2027), iar
+> **„Bifate”** = istoricul, cu selectorul de an (implicit anul curent). Aleasă în locul saltului automat pe anul următor: cu AFM lunar,
+> 2026 nu s-ar fi golit până în decembrie și 15 martie ar fi stat ascuns. **(3) app v90** (21:23, `fd3b3c7`; monorepo `6a55374`): sub
+> 640px, câte un card în loc de rând de tabel (denumirea se rupea pe șapte rânduri, data ieșea tăiată). Probe: backend **841/102, 0
+> eșecuri**, negativă pe filtrul din `list`; e2e **23/23** pe `eco_e2e_facut` (probele 9 și 10 adaptate: 10 cădea din cauza v105, demo
+> nu mai are depășite); capturi privite la 1440px și 375px, `scrollWidth` = `clientWidth`. Fără migrare; liberă tot **`V61`**.
+
 > **16.09.2026, 20:43 — ✅ pe producție: termenele — doar următorul, pe fiecare fel, niciunul din trecut.**
 > `ecoregistru-api` **v104** (`1178a7b`, fără migrare), `ecoregistru-app` **v88** (`bbe4d49`); monorepo `021ecb5`. Proprietarul: „de ce
 > îmi generează termene din trecut?”. Butonul genera anul calendaristic întreg, de la 1 ianuarie: un cont nou din septembrie primea
