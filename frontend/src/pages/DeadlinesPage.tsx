@@ -33,6 +33,7 @@ import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import type { BadgeProps } from "@/components/ui/badge";
 
@@ -291,120 +292,216 @@ function DeadlinesTable({
   return (
     <div className="mt-3">
       <TableToolbar view={view} placeholder={t.searchPlaceholder} />
-      <Table stickyHeader>
-        <THead sticky>
-          <TR>
-            <SortableTH
-              sortKey="reportType"
-              sort={view.sort}
-              onSort={view.toggleSort}
-            >
-              {t.colReportType}
-            </SortableTH>
-            <SortableTH
-              sortKey="dueDate"
-              sort={view.sort}
-              onSort={view.toggleSort}
-            >
-              {t.colDueDate}
-            </SortableTH>
-            <TH>{t.colStatus}</TH>
-            <TH>{t.colDocument}</TH>
-            <TH>{t.colNote}</TH>
-            {canManage && (
-              <TH sticky="right" className="whitespace-nowrap text-right">
-                {strings.common.actions}
-              </TH>
+      {/* Pe telefon, câte un card: în tabel, denumirea lungă se rupea pe șapte rânduri și data ieșea tăiată. */}
+      <div className="sm:hidden" data-testid="deadlines-cards">
+        {!loading && view.visible.length === 0 ? (
+          <EmptyState
+            icon={CalendarClock}
+            title={view.emptiedBySearch ? strings.common.noResults : emptyTitle}
+            description={view.emptiedBySearch ? undefined : emptyHint}
+            action={view.emptiedBySearch ? undefined : emptyAction}
+          />
+        ) : (
+          <ul className="divide-y divide-line border-y border-line">
+            {view.visible.map((d) => (
+              <DeadlineCard
+                key={d.id}
+                d={d}
+                canManage={canManage}
+                onComplete={onComplete}
+                onReopen={onReopen}
+                reopenPending={reopenPending}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="hidden sm:block">
+        <Table stickyHeader>
+          <THead sticky>
+            <TR>
+              <SortableTH
+                sortKey="reportType"
+                sort={view.sort}
+                onSort={view.toggleSort}
+              >
+                {t.colReportType}
+              </SortableTH>
+              <SortableTH
+                sortKey="dueDate"
+                sort={view.sort}
+                onSort={view.toggleSort}
+              >
+                {t.colDueDate}
+              </SortableTH>
+              <TH>{t.colStatus}</TH>
+              <TH>{t.colDocument}</TH>
+              <TH>{t.colNote}</TH>
+              {canManage && (
+                <TH sticky="right" className="whitespace-nowrap text-right">
+                  {strings.common.actions}
+                </TH>
+              )}
+            </TR>
+          </THead>
+          <TBody>
+            {(loading || view.visible.length === 0) && (
+              <TableFallbackRow
+                columns={canManage ? 6 : 5}
+                loading={loading}
+                icon={CalendarClock}
+                title={
+                  view.emptiedBySearch ? strings.common.noResults : emptyTitle
+                }
+                description={view.emptiedBySearch ? undefined : emptyHint}
+                action={view.emptiedBySearch ? undefined : emptyAction}
+              />
             )}
-          </TR>
-        </THead>
-        <TBody>
-          {(loading || view.visible.length === 0) && (
-            <TableFallbackRow
-              columns={canManage ? 6 : 5}
-              loading={loading}
-              icon={CalendarClock}
-              title={
-                view.emptiedBySearch ? strings.common.noResults : emptyTitle
-              }
-              description={view.emptiedBySearch ? undefined : emptyHint}
-              action={view.emptiedBySearch ? undefined : emptyAction}
-            />
-          )}
-          {view.visible.map((d) => {
-            const doc = documentFor(d);
-            const days = daysLabel(d);
-            return (
-              <TR key={d.id}>
-                <TD className="font-medium text-content">
-                  {strings.enums.reportType[d.reportType]}
-                </TD>
-                <TD className="whitespace-nowrap">
-                  {formatDate(d.dueDate)}
-                  {days && (
-                    <span
-                      className={cn(
-                        "block text-xs",
-                        d.status === "OVERDUE"
-                          ? "text-red-600"
-                          : "text-content-subtle",
-                      )}
-                    >
-                      {days}
-                    </span>
-                  )}
-                </TD>
-                <TD className="whitespace-nowrap">
-                  <Badge variant={statusVariant[d.status]}>
-                    {strings.enums.deadlineStatus[d.status]}
-                  </Badge>
-                </TD>
-                <TD className="whitespace-nowrap">
-                  {doc ? (
-                    <Link
-                      to={doc.to}
-                      className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
-                    >
-                      {doc.label}
-                      <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-                    </Link>
-                  ) : (
-                    <span className="text-content-subtle">—</span>
-                  )}
-                </TD>
-                <TD className="max-w-xs truncate text-content-muted">
-                  {d.completionNote ?? "—"}
-                </TD>
-                {canManage && (
-                  <TD sticky="right" className="whitespace-nowrap text-right">
-                    {d.status === "DONE" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onReopen(d)}
-                        disabled={reopenPending}
+            {view.visible.map((d) => {
+              const doc = documentFor(d);
+              const days = daysLabel(d);
+              return (
+                <TR key={d.id}>
+                  <TD className="font-medium text-content">
+                    {strings.enums.reportType[d.reportType]}
+                  </TD>
+                  <TD className="whitespace-nowrap">
+                    {formatDate(d.dueDate)}
+                    {days && (
+                      <span
+                        className={cn(
+                          "block text-xs",
+                          d.status === "OVERDUE"
+                            ? "text-red-600"
+                            : "text-content-subtle",
+                        )}
                       >
-                        <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                        {t.reopen}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onComplete(d)}
-                      >
-                        <Check className="mr-1 h-3.5 w-3.5" />
-                        {t.markDone}
-                      </Button>
+                        {days}
+                      </span>
                     )}
                   </TD>
-                )}
-              </TR>
-            );
-          })}
-        </TBody>
-      </Table>
+                  <TD className="whitespace-nowrap">
+                    <Badge variant={statusVariant[d.status]}>
+                      {strings.enums.deadlineStatus[d.status]}
+                    </Badge>
+                  </TD>
+                  <TD className="whitespace-nowrap">
+                    {doc ? (
+                      <Link
+                        to={doc.to}
+                        className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+                      >
+                        {doc.label}
+                        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                      </Link>
+                    ) : (
+                      <span className="text-content-subtle">—</span>
+                    )}
+                  </TD>
+                  <TD className="max-w-xs truncate text-content-muted">
+                    {d.completionNote ?? "—"}
+                  </TD>
+                  {canManage && (
+                    <TD sticky="right" className="whitespace-nowrap text-right">
+                      {d.status === "DONE" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onReopen(d)}
+                          disabled={reopenPending}
+                        >
+                          <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                          {t.reopen}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onComplete(d)}
+                        >
+                          <Check className="mr-1 h-3.5 w-3.5" />
+                          {t.markDone}
+                        </Button>
+                      )}
+                    </TD>
+                  )}
+                </TR>
+              );
+            })}
+          </TBody>
+        </Table>
+      </div>
       <TablePagination view={view} />
     </div>
+  );
+}
+
+function DeadlineCard({
+  d,
+  canManage,
+  onComplete,
+  onReopen,
+  reopenPending,
+}: {
+  d: Deadline;
+  canManage: boolean;
+  onComplete: (d: Deadline) => void;
+  onReopen: (d: Deadline) => void;
+  reopenPending: boolean;
+}) {
+  const doc = documentFor(d);
+  const days = daysLabel(d);
+  return (
+    <li className="space-y-2 py-3">
+      <div className="font-medium text-content">
+        {strings.enums.reportType[d.reportType]}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span className="whitespace-nowrap">
+          {formatDate(d.dueDate)}
+          {days && (
+            <span className="ml-1.5 text-xs text-content-subtle">{days}</span>
+          )}
+        </span>
+        <Badge variant={statusVariant[d.status]}>
+          {strings.enums.deadlineStatus[d.status]}
+        </Badge>
+      </div>
+      {d.completionNote && (
+        <p className="text-sm text-content-muted">{d.completionNote}</p>
+      )}
+      {(doc || canManage) && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {doc ? (
+            <Link
+              to={doc.to}
+              className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+            >
+              {doc.label}
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          ) : (
+            <span />
+          )}
+          {canManage &&
+            (d.status === "DONE" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onReopen(d)}
+                disabled={reopenPending}
+              >
+                <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                {t.reopen}
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => onComplete(d)}>
+                <Check className="mr-1 h-3.5 w-3.5" />
+                {t.markDone}
+              </Button>
+            ))}
+        </div>
+      )}
+    </li>
   );
 }

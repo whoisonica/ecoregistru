@@ -234,7 +234,7 @@ check("iar pagina nu se derulează lateral", inaltimi.lateral === 0, `${inaltimi
 await shot(page, "9-termene");
 
 // Linkul chiar deschide ecranul, pe anul din adresă.
-await clickAt(page, `[data-testid="deadlines-todo"] a[href="/evidente?an=${anRaportat}"]`);
+await clickAt(page, `[data-testid="deadlines-todo"] table a[href="/evidente?an=${anRaportat}"]`);
 await page.waitForTimeout(1200);
 const dupaClic = await page.evaluate(() => ({
   adresa: location.pathname + location.search,
