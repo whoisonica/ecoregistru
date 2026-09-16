@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useRecordWeight } from "@/hooks/useMovements";
+import { useDeclaration } from "@/hooks/useDeadlines";
+import { declaredText } from "@/lib/deadlines";
 import type { Unit, WasteMovement } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -31,6 +33,8 @@ export function RecordWeightDialog({
 }) {
   const { notify } = useToast();
   const recordMut = useRecordWeight();
+  const year = Number(movement.date.slice(0, 4));
+  const declaration = useDeclaration(year);
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState<Unit>(movement.unit);
 
@@ -96,6 +100,11 @@ export function RecordWeightDialog({
           </div>
         </div>
         <p className="text-xs text-content-muted">{t.recordWeightHint}</p>
+        {declaration && (
+          <p className="text-xs font-medium text-content" data-testid="declared-year">
+            {declaredText(t.declaredWeight, year, declaration)}
+          </p>
+        )}
       </form>
     </Dialog>
   );

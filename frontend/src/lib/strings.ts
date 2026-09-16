@@ -1014,6 +1014,16 @@ export const strings = {
     updated: "Mișcare actualizată.",
     deleted: "Mișcare ștearsă.",
     saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
+    // Anul e declarat: termenul de 15 martie pentru el e bifat (evaluarea din 17.09.2026).
+    declaredTitle: "Anul {year} e deja declarat",
+    declaredSave:
+      "Termenul de 15 martie pentru {year} e bifat ca depus{on}. Dacă salvezi, evidența pe {year} se schimbă și nu mai e aceeași cu ce ai depus în SIM. Dacă e o corectură, actualizează și declarația depusă.",
+    declaredDelete:
+      "Atenție: anul {year} e deja declarat{on}. După ștergere, evidența pe {year} nu mai e aceeași cu ce ai depus în SIM.",
+    declaredWeight:
+      "Anul {year} e deja declarat{on}: cantitatea schimbă evidența pe care ai depus-o în SIM.",
+    declaredOn: " (bifat pe {date})",
+    declaredConfirm: "Salvează oricum",
     confirmDeleteTitle: "Ștergi mișcarea?",
     // Corpul dialogului poartă identitatea rândului; aici rămâne doar urmarea.
     confirmDelete:

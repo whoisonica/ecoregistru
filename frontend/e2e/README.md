@@ -1,5 +1,10 @@
 # Probe de interfaţă
 
+📅 **17.09.2026 — proba 27 (`27-an-declarat.mjs`)**: cu termenul de 15 martie al anului următor bifat, salvarea unei mișcări din
+anul curent întreabă „Anul X e deja declarat” (cu ziua bifării); „Anulează” nu salvează, „Salvează oricum” salvează; dialogul de
+ștergere spune același lucru; cu termenul redeschis, salvarea trece direct. **Negativă:** cu `declarationOf` oprit cad 4 verificări.
+Creează și șterge o mișcare `PROBA27-…` și lasă termenul cum l-a găsit. Probele 4, 23 și 26 trec alături.
+
 ✅ **17.09.2026 — proba 26 (`26-dupa-salvare.mjs`)**: o predare nouă salvată prin ecran arată „Predarea e în evidență”, cu
 bonul (cod, 33 kg, destinatarul) și Anexa 3 + avizul, fără Anexa 2; „Încă una la fel” pornește cu codul și destinatarul, fără
 cantitate, document și „La fel ca data trecută”; editarea rămâne pe mesajul scurt; `/generare?nou=1` într-un tab proaspăt la

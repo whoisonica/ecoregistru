@@ -1,6 +1,7 @@
 import type { Deadline, MonthlyEvidence, ReportType } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/count";
+import { formatDate } from "@/lib/utils";
 
 /**
  * Socotelile pe termene, într-un singur loc.
@@ -79,6 +80,25 @@ export function noteFor(d: Deadline): string | null {
 /** Anul pe care îl raportează un termen anual: cel dinaintea scadenței. */
 export function reportedYear(d: Deadline): number {
   return Number(d.dueDate.slice(0, 4)) - 1;
+}
+
+/**
+ * Termenul de 15 martie bifat pentru anul `year`, dacă există: anul e declarat. O mișcare schimbată
+ * după aceea face ca evidența retipărită să nu mai fie cea depusă în SIM, iar asta trebuie spus la
+ * salvare, nu aflat la control (evaluarea din 17.09.2026).
+ */
+export function declarationOf(deadlines: Deadline[], year: number): Deadline | undefined {
+  return deadlines.find(
+    (d) => d.reportType === "SIM_ANNUAL" && d.status === "DONE" && reportedYear(d) === year,
+  );
+}
+
+/** Textul avertismentului: `{year}` și `{on}` („ (bifat pe 12.03.2027)”, gol fără dată). */
+export function declaredText(template: string, year: number, declaration: Deadline): string {
+  const on = declaration.completedAt
+    ? strings.movements.declaredOn.replace("{date}", formatDate(declaration.completedAt))
+    : "";
+  return template.replace(/\{year\}/g, String(year)).replace("{on}", on);
 }
 
 /**

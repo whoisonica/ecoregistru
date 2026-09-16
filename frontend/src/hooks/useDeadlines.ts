@@ -1,6 +1,13 @@
 import { useMemo } from "react";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { declarationOf } from "@/lib/deadlines";
 import type { Deadline, DeadlineGenerationResponse } from "@/lib/types";
 
 /**
@@ -17,6 +24,33 @@ export function useDeadlines(year: number, enabled = true) {
     queryFn: async () =>
       (await api.get<Deadline[]>("/api/v1/deadlines", { params: { year } })).data,
   });
+}
+
+/**
+ * Declarația anului `year` (termenul de 15 martie al anului următor, bifat), sau `undefined`.
+ * Citită la nevoie, pe gestul de salvare sau ștergere. Dacă termenele nu se pot citi, nu oprim
+ * salvarea: avertismentul e un ajutor, nu o poartă.
+ */
+export async function fetchDeclaration(
+  queryClient: QueryClient,
+  year: number,
+): Promise<Deadline | undefined> {
+  try {
+    const list = await queryClient.fetchQuery({
+      queryKey: deadlinesKey(year + 1),
+      queryFn: async () =>
+        (await api.get<Deadline[]>("/api/v1/deadlines", { params: { year: year + 1 } })).data,
+    });
+    return declarationOf(list, year);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Aceeași întrebare, ca hook, pentru un dialog care o arată pe ecran. */
+export function useDeclaration(year: number) {
+  const q = useDeadlines(year + 1);
+  return q.data ? declarationOf(q.data, year) : undefined;
 }
 
 /**

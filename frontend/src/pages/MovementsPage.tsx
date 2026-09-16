@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
   SCREEN_PATH,
@@ -59,6 +60,8 @@ import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useRemoteTableView } from "@/hooks/useTableView";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { fetchDeclaration } from "@/hooks/useDeadlines";
+import { declaredText } from "@/lib/deadlines";
 import {
   canPrintAnexa3,
   canPrintAviz,
@@ -164,6 +167,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const deleteMut = useDeleteMovement();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<WasteMovement | null>(null);
@@ -325,7 +329,9 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     setDialogOpen(true);
   }
 
-  function handleDelete(m: WasteMovement) {
+  async function handleDelete(m: WasteMovement) {
+    const year = Number(m.date.slice(0, 4));
+    const declaration = await fetchDeclaration(queryClient, year);
     // Identitatea rândului în corpul dialogului: `window.confirm` nu putea decât un șir fix, deci
     // întreba „sigur ștergi această mișcare?" fără să spună vreodată *care*. Cu patru butoane pe
     // rând și rânduri care se aseamănă, asta e chiar informația care oprește greșeala.
@@ -337,6 +343,11 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
           {formatDate(m.date)}
           {m.quantity != null ? `, ${m.quantity} ${e.unit[m.unit]}` : ""}
           {m.partnerName ? `, ${m.partnerName}` : ""}. {t.confirmDelete}
+          {declaration && (
+            <span className="mt-2 block font-medium text-content">
+              {declaredText(t.declaredDelete, year, declaration)}
+            </span>
+          )}
         </>
       ),
       tone: "danger",

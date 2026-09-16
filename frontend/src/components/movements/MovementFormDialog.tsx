@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, History, Trash2, Paperclip } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { PageSlice } from "@/hooks/useTableView";
 import { usePartners } from "@/hooks/usePartners";
@@ -51,6 +51,8 @@ import { Switch } from "@/components/ui/switch";
 import { BinSwatch } from "@/components/ui/bin-swatch";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { fetchDeclaration } from "@/hooks/useDeadlines";
+import { declaredText } from "@/lib/deadlines";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
 import { useAnexa2Threshold } from "@/hooks/useAnexa2";
 import { useAttachmentOpen } from "@/hooks/useAttachment";
@@ -391,6 +393,7 @@ export function MovementFormDialog({
   const [dirty, setDirty] = useState(false);
   const markDirty = useCallback(() => setDirty(true), []);
   const [confirmClose, closeConfirmation] = useConfirm();
+  const queryClient = useQueryClient();
   const formRef = useRef<HTMLFormElement>(null);
   /**
    * Al câtelea fișier se urcă acum. Urcarea e secvențială — și rămâne așa, fiindcă backendul
@@ -746,6 +749,25 @@ export function MovementFormDialog({
     setErrors({});
     const input = buildInput();
 
+    // Anul declarat: anul datei noi și, la editare, anul datei vechi — mutarea unei mișcări din 2026
+    // în 2027 schimbă și evidența pe 2026. Întrebăm o dată, cu primul an declarat găsit.
+    const years = [...new Set([input.date, editing?.date].filter(Boolean).map((d) => Number(d!.slice(0, 4))))];
+    for (const year of years) {
+      const declaration = await fetchDeclaration(queryClient, year);
+      if (declaration) {
+        confirmClose({
+          title: t.declaredTitle.replace("{year}", String(year)),
+          message: declaredText(t.declaredSave, year, declaration),
+          confirmLabel: t.declaredConfirm,
+          onConfirm: () => void save(input),
+        });
+        return;
+      }
+    }
+    await save(input);
+  }
+
+  async function save(input: ReturnType<typeof buildInput>) {
     // Salvarea are două jumătăți, iar ele nu eșuează la fel: mișcarea e cantitatea din fișă,
     // atașamentele sunt hârtii lângă ea. Ținute într-un singur `try`, o urcare căzută spunea
     // „Salvarea a eșuat" peste o mișcare deja înregistrată — și reflexul, apăsatul din nou, o

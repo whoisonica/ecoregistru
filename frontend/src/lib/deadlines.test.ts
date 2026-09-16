@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { daysLabel, daysUntil, documentFor, evidenceReadiness, noteFor } from "@/lib/deadlines";
+import {
+  daysLabel,
+  daysUntil,
+  declarationOf,
+  declaredText,
+  documentFor,
+  evidenceReadiness,
+  noteFor,
+} from "@/lib/deadlines";
 import type { MonthlyEvidence } from "@/lib/types";
 import type { Deadline } from "@/lib/types";
 
@@ -53,4 +61,29 @@ test("evidența e gata de depus numai pe un an încheiat, cu linii și fără bl
   assert.equal(blocked.missingCode, 1);
   assert.equal(blocked.awaitingWeighing, 1);
   assert.equal(blocked.ready, false);
+});
+
+test("anul e declarat doar de termenul de 15 martie bifat, al anului următor", () => {
+  const done2026 = deadline({ reportType: "SIM_ANNUAL", dueDate: "2027-03-15", status: "DONE", completedAt: "2027-03-12T10:00:00Z" });
+  const list = [
+    done2026,
+    deadline({ reportType: "SIM_ANNUAL", dueDate: "2026-03-15", status: "OVERDUE" }),
+    deadline({ reportType: "PACKAGING_ANNUAL", dueDate: "2026-02-25", status: "DONE" }),
+  ];
+  assert.equal(declarationOf(list, 2026), done2026);
+  // 2025: termenul lui e nebifat; ambalajele bifate nu declară evidența.
+  assert.equal(declarationOf(list, 2025), undefined);
+  assert.equal(declarationOf(list, 2027), undefined);
+});
+
+test("avertismentul spune anul și ziua bifării, iar fără dată nu inventează una", () => {
+  const d = deadline({ reportType: "SIM_ANNUAL", dueDate: "2027-03-15", status: "DONE", completedAt: "2027-03-12T10:00:00Z" });
+  assert.equal(
+    declaredText("Anul {year} e declarat{on}; evidența pe {year}.", 2026, d),
+    "Anul 2026 e declarat (bifat pe 12.03.2027); evidența pe 2026.",
+  );
+  assert.equal(
+    declaredText("Anul {year} e declarat{on}.", 2026, { ...d, completedAt: null }),
+    "Anul 2026 e declarat.",
+  );
 });
