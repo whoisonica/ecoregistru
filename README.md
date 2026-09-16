@@ -317,6 +317,11 @@ straight from
 movement screens a company gets live in one place. The screen checks are Maestro flows under `mobile/maestro/` — their
 headers say how to run them.
 
+**Photographing the delivery note.** "Adaugă" → "Pozează avizul" reads the aviz on the phone (Vision on iOS, ML Kit on
+Android, with the model bundled), and every field it found asks for "Corect" before the handover is saved. The parser is
+plain code with its own tests (`npm run test:aviz`, invented notes only). A handover saved without signal waits in a
+SQLite outbox and leaves on its own — once, thanks to a `clientGeneratedId` given at creation.
+
 **Device sessions.** A phone signs in with `deviceName` in the login body and gets a long-lived refresh token next to
 the eight-hour access token; `POST /api/v1/auth/refresh` exchanges it for a new pair, rotating it each time. The row
 behind it lives in `device_sessions` as a SHA-256 hash, expires 60 days after last use, and is revoked by signing out,
@@ -363,6 +368,10 @@ R13, D5), so the narrowing is visible rather than theoretical.
 |---|---|---|
 | Depot weighbridge | **Cântar** (only for companies that keep the art. 48 register) | One numbered operation per truck, with a line per sortiment: type gross and tare and the net fills itself and locks — the figure comes from the weighbridge, not from typing. Fill a price and the payment block shows what is withheld at source (2% to the environment fund, 10% income tax on metal bought from an individual) and what is left to pay. Nothing counts anywhere until you finalize |
 | Withheld at source | **Cântar** → the strip above the list | What the month owes and the date it is due: 25th of the next month. The rates come from the server, so an old month keeps the rate that was withheld then |
+| Purchase slip from an individual | **Cântar** → a finalized intake from an individual → "Borderou" | The OUG 31/2011 slip, numbered at first print: at metal the CNP, ID card, household declaration and both withholdings with the rates in force; without metal only the name. Paying one person more than 10,000 lei in cash on the same day shows a warning in the form |
+| Transport papers per truck | **Cântar** → a saved outgoing operation → "Anexa 3" / "Aviz" | One form with every line of the truck, not one per sortiment. The Anexa 3 number comes from the same series as the movements; hazardous lines stay off Anexa 3 and on the aviz. Anexa 2 stays on the movement |
+| The depot's month | **Cântar** → "Registrul lunii" | An xlsx with one row per sortiment, in weighbridge order: gross, tare, net, status, who cancelled and why. Prices only for someone allowed to see them |
+| Origin on the art. 48 record | **Intrări și ieșiri** → the chronological export | An "Originea" column on takeovers: "populaţie" for an individual, otherwise what the operation or the partner says. Nobody classified it → the cell stays empty |
 | Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not. Press "Trimite" on an empty form: the three required fields mark themselves and the page scrolls to the first — a banner that marks nothing is the defect this page kept longest |
 | Not knowing the R/D codes | `/cerere-cont` → "Ce se întâmplă cu deșeul" | Twenty-eight tickboxes are folded behind a choice whose first option is "Nu știu — le stabilim împreună". An empty set was always a valid answer; now the form says so |
 | Reading a request | **Clienți** → a request row → "Vezi cererea" | Every answer the client gave, in the order they gave them — including `notes`, the free-text box. An unanswered field shows as an empty dash rather than being skipped; a section nobody filled in collapses to one line |
@@ -444,7 +453,7 @@ cd backend
 ./gradlew.bat test
 ```
 
-707 tests across 87 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+796 tests across 97 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport

@@ -3,6 +3,27 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **16.09.2026, 12:37 și 12:42 — ✅ pe producție: depozitul D1.9–D1.15 și aplicația mobilă M1b.**
+> `ecoregistru-api` **v94** (`3ef32ec`, **migrările `V51` și `V52`**, schema 50 → 52), `ecoregistru-app` **v76** (`b80ab14`,
+> depozitul) și **v77** (`7733370`, textele M1b); monorepo `main` = `origin/main` = `deploy/heroku-split` = `35ef8a5`.
+> Pe producție: `Migrating schema "public" to version "51 - depot retentions"`, apoi `"52 - weighing operation anexa3"`,
+> `Successfully applied 2 migrations […] now at version v52` și `Started EcoRegistruApplication` (09:37:55 UTC).
+> Garda de conținut curată pe ambele repo-uri split. Intră deodată blocurile de mai jos marcate „local, nedeployat” din
+> 16.09: reținerile la sursă și raportul lor (D1.9, D1.10), ecranul „Cântar” cu reparațiile de QA (D1.15), originea pe
+> art. 48 (D1.12), registrul intrărilor și ieșirilor (D1.14), Anexa 3 și avizul pe operațiune (D1.13) și borderoul de
+> achiziție cu plafonul de numerar (D1.11). Suita backend după D1.11: **796 de teste, 97 de clase, 0 eșecuri**.
+>
+> **M1b — „Pozează avizul”** (`mobile/`, fără backend): camera sau galeria, recunoașterea textului pe telefon (Vision pe
+> iOS, ML Kit pe Android, cu modelul legat în aplicație), parserul avizului (`mobile/src/aviz/parse.ts`, 18 teste pe avize
+> inventate, `npm run test:aviz`), confirmarea câmp cu câmp, codul R/D obligatoriu (G3), partenerul după CUI (G4) și coada
+> offline pe SQLite (`mobile/src/outbox.ts`: un `clientGeneratedId` dat o dată, poza după ce predarea are id, reîncercare la
+> deschidere, la revenirea rețelei și la 30 s). Probat pe iPhone 17 / iOS 26.5 și Android 16: predarea salvată fără
+> legătură, telefonul repornit, trimisă singură, **o singură dată** în bază. App v77 atinge numai `strings.mobile`, pe care
+> Rollup îl taie din bundle-ul web — nu schimbă nimic în browser. Rămân deschise: urcarea pozei pe producție merge în
+> Cloudinary (SUA) până la B2; o poză urcată cu răspunsul pierdut poate ieși de două ori ca atașament; Sentry pe mobil nu e pus.
+>
+> Următoarea migrare liberă: **`V53`**.
+
 > **16.09.2026, 11:11 — ✅ pe producție: G1, sesiunea pe dispozitiv, și aplicația mobilă legată la serverul real.**
 > `ecoregistru-api` **v93** (`c91687c`, **migrare `V50`**, schema 48 → 50), `ecoregistru-app` **v74** (`2e88413`);
 > monorepo `9700a30`, `origin/main` + `deploy/heroku-split` sincronizate. Garda de conținut exactă înainte și după
@@ -10,7 +31,7 @@ rulează local și are testele verzi.
 > atins și de M0). Pe producție: `Migrating schema "public" to version "50 - device sessions"`, `Successfully applied
 > 1 migration […] now at version v50`, `Started EcoRegistruApplication` (08:11:15 UTC).
 >
-> ⚠️ **`V49` (depozit, D1.9/D1.10) e scrisă pe `feat/depozit-colector` dar NU e deployată, iar `V50` a intrat înaintea
+> ✅ *Rezolvat înainte de deploy (`2904d41`: `V49` → `V51`); rămâne ca regulă.* ⚠️ **`V49` (depozit, D1.9/D1.10) e scrisă pe `feat/depozit-colector` dar NU e deployată, iar `V50` a intrat înaintea
 > ei.** Flyway rulează cu `out-of-order` implicit `false`, deci la următorul deploy al depozitului migrarea `V49` va fi
 > **refuzată** și dyno-ul nu va porni. Reparația e într-o linie: `V49__depot_retentions.sql` se renumerotează în `V51`
 > înainte de deployul lui. Nu e o alegere, e regula lui Flyway: numerele se dau în ordinea în care ajung pe dyno.
@@ -36,7 +57,7 @@ rulează local și are testele verzi.
 > 📌 **Maestro potrivește textul întreg al unui nod, nu o bucată** — un rând „Firmă · CUI · tip” nu se prinde cu numele
 > firmei, ci cu `.*Nume.*`.
 
-> **16.09.2026, ~11:00 — ✅ local (ramura `feat/mobil`, nedeployat): aplicația mobilă, felia M1a — o zi obișnuită.**
+> **16.09.2026, ~11:00 — ✅ pe producție din 11:11 (api v93, app v75): aplicația mobilă, felia M1a — o zi obișnuită.**
 > Ramura rebazată peste `origin/main` (`f21db62`); `tsc` și `npm run build` în `frontend` **curate după
 > `strings.mobile`** — golul rămas din M0 e închis.
 >
@@ -68,7 +89,7 @@ rulează local și are testele verzi.
 > Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
 >
 
-> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.11, borderoul de achiziție de la persoane fizice.**
+> **16.09.2026 — ✅ pe producție din 12:37 (api v94, app v76): depozitul D1.11, borderoul de achiziție de la persoane fizice.**
 > În formularul unei intrări **finalizate** de la o persoană fizică apare **„Borderou”** (`GET /weighing-operations/{id}/borderou`),
 > după modelul din anexa la OUG 31/2011, rubrică cu rubrică: operatorul (denumire, adresă și punct de lucru, Reg. Com.,
 > CUI/CIF, autorizația de mediu), deținătorul, tabelul (0)–(4) cu TOTAL, plata (chitanța, viramentul în 3 zile lucrătoare,
@@ -85,7 +106,7 @@ rulează local și are testele verzi.
 > intră în excepția numită a documentelor pe o singură operațiune. Probat în Chrome ca admin și operator, la 1440 și 375:
 > butonul, PDF-ul citit, avertismentul cu 10.560 lei. Suita **796/97** (singura cădere, inventarul, reparată și rerulată); e2e 19 verde.
 
-> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.13, documentele de transport pe operațiune.**
+> **16.09.2026 — ✅ pe producție din 12:37 (api v94, app v76): depozitul D1.13, documentele de transport pe operațiune.**
 > O ieșire cu douăsprezece sortimente e un camion, deci **un singur formular** (HG 1061/2008 art. 20 alin. (4)). În
 > formularul unei ieșiri salvate și neanulate de pe „Cântar” apar **„Anexa 3”** și **„Aviz”**
 > (`GET /weighing-operations/{id}/anexa3` și `/aviz`), cu toate liniile: pe Anexa 3 fiecare deșeu cu codul lui și
@@ -105,7 +126,7 @@ rulează local și are testele verzi.
 > două documente de transport. Probat în Chrome pe o ieșire cu două sortimente: PDF-urile deschise și citite, subsolul
 > la 1440 și 375 (pe telefon cele două documente stau pe un rând). Suita **789/96, 0 eșecuri**; e2e 19 verde.
 
-> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.14, registrul intrărilor și ieșirilor.**
+> **16.09.2026 — ✅ pe producție din 12:37 (api v94, app v76): depozitul D1.14, registrul intrărilor și ieșirilor.**
 > Documentul de lucru pe care depozitele îl scot azi din programul de cântar, acum din aplicație: butonul **„Registrul
 > lunii”** de pe ecranul „Cântar” descarcă `registru-intrari-iesiri-AAAA-LL.xlsx` (`GET /api/v1/weighing-operations/registru
 > ?year&month`, fără lună = anul). O linie pe sortiment, cu capul operațiunii repetat; amândouă direcțiile și **toate
@@ -117,7 +138,7 @@ rulează local și are testele verzi.
 > prețurile ascunse, începutul perioadei, rolul PF), fiecare scoasă pică exact testele ei; e2e **19** verde, cu
 > descărcarea nouă; capturile privite la 1440 și 375. Suita **781/95, 0 eșecuri**.
 
-> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.12, originea în evidența cronologică art. 48.**
+> **16.09.2026 — ✅ pe producție din 12:37 (api v94, app v76): depozitul D1.12, originea în evidența cronologică art. 48.**
 > Art. 48 alin. (1) lit. a) cere „natura şi originea” deșeurilor; exportul avea partenerul, dar nu și de la cine vine
 > deșeul, iar o preluare de la o persoană fizică ieșea cu rubrica de partener goală și nimic altceva. Coloana nouă
 > **„Originea”** (după „CUI partener”, în xlsx și în PDF) tipărește, numai la preluări, cuvântul notei 2 din Anexa 3 la
@@ -128,7 +149,7 @@ rulează local și are testele verzi.
 > scoasă pică exact testul ei. Ramura rebazată întâi peste `main` `1bfa416` (mobil M1a), iar **`V49` renumerotată
 > `V51`**; suita după rebazare **776/94, 0 eșecuri**.
 
-> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.9, D1.10 și D1.15 — reținerile la sursă și ecranul „Cântar”.**
+> **16.09.2026 — ✅ pe producție din 12:37 (api v94, app v76): depozitul D1.9, D1.10 și D1.15 — reținerile la sursă și ecranul „Cântar”.**
 > Migrarea **`V51`** (scrisă ca `V49`, renumerotată pe 16.09 fiindcă `V50` a mobilului a ajuns întâi pe producție) adaugă bazele de calcul lângă sumele reținute, cu constrângere: o sumă reținută fără baza ei ar fi o
 > cifră fără document. La finalizarea unei **intrări** se calculează și se păstrează **2% la Fondul pentru mediu** din toată
 > valoarea (OUG 196/2005 art. 9 alin. (1) lit. a), și de la persoane fizice, și la hârtie sau plastic) și **10% impozit pe
@@ -163,7 +184,7 @@ rulează local și are testele verzi.
 > 91 de clase, 0 eșecuri, 3 sărite**. Garda backend e exactă înainte și după cherry-pick. Pe producție: `Schema "public" is up
 > to date` și `Started EcoRegistruApplication` pe v92 (20:54:31 UTC), `health` `UP`.
 >
-> **15.09.2026, ~23:15 — ✅ local (ramura `feat/mobil`, nedeployat): aplicația mobilă, felia M0 — scheletul.**
+> **15.09.2026, ~23:15 — ✅ (în `main` din 16.09, odată cu M1a): aplicația mobilă, felia M0 — scheletul.**
 > `mobile/` nou: **Expo SDK 57** (React Native 0.86, React 19.2, TypeScript), Expo Router, TanStack Query, development build
 > (nu Expo Go). Tokenii de aspect în `mobile/src/theme.ts`, după prototipul aprobat (antet grafit, afișaj LCD cu segmentele
 > stinse, bară de jos translucidă), IBM Plex Sans + Mono legate în aplicație (OFL). Sesiunea stă în Keychain / Keystore
