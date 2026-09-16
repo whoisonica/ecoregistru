@@ -294,6 +294,25 @@ npm run dev
 
 Runs on `http://localhost:5173`, proxying `/api` to `:8080`.
 
+### 4. Mobile app (optional, early)
+
+`mobile/` is an Expo SDK 57 app (React Native, Expo Router, TanStack Query) that talks to the same backend. It is a
+**development build**, not Expo Go, so the first run compiles the native app: Xcode with an iOS simulator runtime and
+CocoaPods for iOS; the Android SDK with an emulator for Android.
+
+```bash
+cd mobile
+npm install
+npx expo run:ios --no-bundler -d "iPhone 17"     # builds and installs once
+npx expo run:android --no-bundler                 # with an emulator already running
+npx expo start --dev-client                       # Metro, for both
+```
+
+The simulator reaches the backend at `localhost:8080`, the Android emulator at `10.0.2.2:8080`; `EXPO_PUBLIC_API_URL`
+overrides both (a real phone on the same network). Screen text and types are imported straight from
+`frontend/src/lib` (`strings.ts`, `types.ts`), so new copy goes there. The screen check is a Maestro flow,
+`mobile/maestro/m0-login-acasa.yaml` — its header says how to run it.
+
 ### Demo accounts (dev profile)
 
 The seed creates four accounts — a `PLATFORM_ADMIN` with no tenant, and an `ADMIN`, an `OPERATOR`

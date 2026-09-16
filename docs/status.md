@@ -13,6 +13,24 @@ rulează local și are testele verzi.
 > 91 de clase, 0 eșecuri, 3 sărite**. Garda backend e exactă înainte și după cherry-pick. Pe producție: `Schema "public" is up
 > to date` și `Started EcoRegistruApplication` pe v92 (20:54:31 UTC), `health` `UP`.
 >
+> **15.09.2026, ~23:15 — ✅ local (ramura `feat/mobil`, nedeployat): aplicația mobilă, felia M0 — scheletul.**
+> `mobile/` nou: **Expo SDK 57** (React Native 0.86, React 19.2, TypeScript), Expo Router, TanStack Query, development build
+> (nu Expo Go). Tokenii de aspect în `mobile/src/theme.ts`, după prototipul aprobat (antet grafit, afișaj LCD cu segmentele
+> stinse, bară de jos translucidă), IBM Plex Sans + Mono legate în aplicație (OFL). Sesiunea stă în Keychain / Keystore
+> (`expo-secure-store`); un 401 pe o cerere autentificată scoate omul din cont, ca pe web.
+> **Ecrane:** login; Acasă cu kilogramele lunii din `GET /movements/summary` și săgeți între luni; bara de jos
+> (Acasă, Generare, „+”, Termene, Control), cu „+” ascuns la `CLIENT_VIEWER`; celelalte patru ecrane sunt locuri goale
+> până la M1. Afișajul scrie „ÎNREGISTRAT”, nu „PREDAT”, fiindcă sumarul numără ambele sensuri; un indicator neîncărcat
+> arată „?”.
+> **Textele și tipurile se importă direct din `frontend/src/lib`** (`@web/strings`, `@web/types`, Metro `watchFolders`);
+> textele noi stau în `strings.mobile`. Singurul import din `types.ts` (`import("@/auth/AuthContext").Role`, doar de tip)
+> e trimis de `mobile/tsconfig.json` la `mobile/src/auth.ts`.
+> **Proba:** `mobile/maestro/m0-login-acasa.yaml` — login `admin@demo.ro` pe backendul local, două luni înapoi, verifică
+> „7 mișcări în lună” și „790,5” (aceeași cifră ca endpointul întrebat direct) — trece pe **iPhone 17 / iOS 26.5** și pe
+> **Android 16** (emulator), capturile privite. Din ele s-au reparat segmentele stinse (se rupeau pe două rânduri și nu stăteau
+> sub cifre) și locul săgeților. `tsc` în `mobile/` curat; **`frontend/` n-a fost reconstruit după `strings.mobile`** — de rulat
+> înainte de merge. Backendul nu e atins, deci subtree-urile de deploy nu iau nimic din felia asta.
+>
 > **15.09.2026, 23:02 — ✅ pe producție: direcția interfeței „Cântar” (C1–C4).**
 > `ecoregistru-api` **v91** (`0d7a8f5`, fără migrare, schema `V48`), `ecoregistru-app` **v73** (`24a5e2d`); monorepo `dc6f555`
 > (`feat/ui-cantar` `823e366` + status), `origin/main` + `deploy/heroku-split` sincronizate. Garda exactă pe amândouă

@@ -154,6 +154,28 @@ export const strings = {
     barAddTitle: "Ce adaugi?",
   },
 
+  // Aplicația de telefon (`mobile/`, todo-mobil.md). Tot ce e deja aici pe web se ia de acolo;
+  // aici stă doar ce spune numai telefonul.
+  mobile: {
+    tabHome: "Acasă",
+    tabAdd: "Adaugă",
+    tabControl: "Control",
+    // Afișajul lunii. `/movements/summary` numără toate mișcările lunii, în ambele sensuri, deci
+    // eticheta spune „înregistrat", nu „predat".
+    lcdLabel: (month: string) => `${month.toUpperCase()} · ÎNREGISTRAT`,
+    lcdState: "KG",
+    lcdMovements: (n: number) => (n === 1 ? "1 mișcare în lună" : `${n} mișcări în lună`),
+    lcdEmpty: "Nicio mișcare în luna asta",
+    lcdError: "Nu am putut încărca luna",
+    previousMonth: "Luna anterioară",
+    nextMonth: "Luna următoare",
+    serverUnreachable: "Nu ajung la server. Verifică legătura la internet și încearcă din nou.",
+    comingSoon: "Ecranul ăsta vine în versiunea următoare a aplicației.",
+    // Consultantul și administratorul de platformă aleg firma; pe telefon comutatorul vine în M1a.
+    pickCompanyOnWeb: "Alegerea firmei vine pe telefon în curând. Până atunci, lucrează pe web.",
+    account: "Contul",
+  },
+
   login: {
     title: "Autentificare",
     email: "Email",

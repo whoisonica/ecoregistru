@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "WasteHouse",
+    "slug": "wastehouse",
+    "scheme": "wastehouse",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "ro.wastehouse.app"
+    },
+    "android": {
+      "package": "ro.wastehouse.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#161B18",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-splash-screen"
+    ]
+  }
+}
