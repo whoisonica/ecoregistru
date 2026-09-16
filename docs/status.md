@@ -8,14 +8,14 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
-> **17.09.2026 — ⬜ local, necommis: nota despre OIREP sub termenul de 25 februarie (Anexa 1 Ambalaje), pe Termene.**
+> **17.09.2026, 01:38 — ✅ pe producție: nota despre OIREP sub termenul de 25 februarie (Anexa 1 Ambalaje), pe Termene** (`ecoregistru-app` **v100**, `4a954a0`, din `main` `b2b8876`).
 > Scanarea de conformitate, pct. 1: Ordinul 794/2012 art. 1 alin. (1)–(2) cere Anexa 1 numai celor care își îndeplinesc singuri
 > obiectivele; cu un OIREP raportează OIREP-ul, iar profilul nu întreabă asta. Proprietarul a ales să i se spună omului chiar
 > acolo unde vede termenul: `noteFor` (`lib/deadlines.ts`) + `strings.deadlines.typeNote`, tipărită sub numele raportării în tabel
 > (`max-w-md`) și pe cardul de telefon. Termenul rămâne; doar Anexa 1 Ambalaje are notă. **Probe:** `npm test` 24/24 (1 nou), tsc,
-> build. Neprobat în browser (capturile la 1440/375).
+> build. **Pe producție:** bundle-ul servit (`index-DAYZqpcl.js`) conține nota; proprietarul: „apare, e frumos”.
 
-> **17.09.2026 — ⬜ local, necommis: README-ul dosarului nu mai pune „Termen: 25 februarie” pe Anexa 3 Ambalaje a unui generator.**
+> **17.09.2026, 01:37 — ✅ pe producție: README-ul dosarului nu mai pune „Termen: 25 februarie” pe Anexa 3 Ambalaje a unui generator** (`ecoregistru-api` **v110**, `f4ae0f9`, din `main` `b2b8876`; nicio migrare).
 > Din scanarea de conformitate cerută de proprietar (pct. 4): Ordinul 794/2012 art. 4 alin. (1) numește colectorii, comercianții,
 > reciclatorii și valorificatorii, nu generatorul (`docs/surse-oficiale.md` §2.11), iar la generator foaia e tipărită la cerere, cu
 > ieșirile (16.09). README-ul scria totuși termenul la orice cont — un termen inventat pe hârtia citită de inspector. Acum
