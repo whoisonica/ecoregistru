@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase (FCM pentru push, todo-mobil §16). Nu e secret ca o parolă, dar repo-ul e public și fișierul
+# poartă cheia API a proiectului `wastehouse-22763`: se ia din consola Firebase, nu din git.
+google-services.json
