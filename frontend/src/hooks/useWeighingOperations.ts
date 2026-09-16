@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
+import { openPdfInTab } from "@/lib/openFileInTab";
 import type {
   DepotRetentionReport,
   WeighingLinesInput,
@@ -145,4 +146,23 @@ export async function downloadDepotRegister(year: number, month: number): Promis
     })
   ).data as Blob;
   saveBlob(data, `registru-intrari-iesiri-${year}-${String(month).padStart(2, "0")}.xlsx`);
+}
+
+/**
+ * D1.13 — Anexa 3 sau avizul pe tot transportul unei ieșiri, într-un tab. Prima Anexa 3 alocă numărul
+ * formularului, deci o cere doar cine scrie; retipărirea dă același număr.
+ */
+export async function openWeighingDocument(
+  operation: WeighingOperation,
+  document: "anexa3" | "aviz"
+): Promise<void> {
+  await openPdfInTab(
+    async () =>
+      (
+        await api.get(`/api/v1/weighing-operations/${operation.id}/${document}`, {
+          responseType: "blob",
+        })
+      ).data as Blob,
+    `${document}-iesire-${operation.number}-${operation.date}.pdf`
+  );
 }

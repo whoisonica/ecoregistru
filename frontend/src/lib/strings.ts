@@ -1203,6 +1203,9 @@ export const strings = {
     confirmFinalize:
       "După finalizare nu se mai modifică: liniile intră în stoc, în registrul art. 48 și în evidențe. Dacă e greșită, o poți anula, cu motiv.",
     cancelOperation: "Anulează operațiunea",
+    printAnexa3: "Anexa 3",
+    printAviz: "Aviz",
+    documentError: "Documentul nu a putut fi generat.",
     cancelled: "Operațiune anulată.",
     cancelReason: "Motivul anulării",
     cancelReasonPlaceholder: "ex. cântărire dublă",

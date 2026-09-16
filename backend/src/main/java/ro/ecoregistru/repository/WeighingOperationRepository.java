@@ -117,6 +117,10 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     @Query("select max(o.number) from WeighingOperation o where o.company.id = :companyId and o.type = :type")
     Integer findMaxNumber(@Param("companyId") UUID companyId, @Param("type") WeighingOperationType type);
 
+    /** D1.13 — cel mai mare număr de Anexa 3 dat unei operațiuni; seria e comună cu a mișcărilor. */
+    @Query("select max(o.anexa3Number) from WeighingOperation o where o.company.id = :companyId")
+    Integer findMaxAnexa3Number(@Param("companyId") UUID companyId);
+
     /**
      * Ține numerotarea unei firme pe un tip până la sfârșitul tranzacției. A doua creare simultană
      * așteaptă commitul primei și abia apoi citește maximul, deci nu poate lua același număr.

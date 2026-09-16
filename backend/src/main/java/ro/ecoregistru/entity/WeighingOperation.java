@@ -118,6 +118,13 @@ public class WeighingOperation {
     @Column(name = "borderou_number")
     Integer borderouNumber;
 
+    /** D1.13 — seria și numărul Anexei 3, alocate la prima tipărire și păstrate (V52). */
+    @Column(name = "anexa3_series", length = 20)
+    String anexa3Series;
+
+    @Column(name = "anexa3_number")
+    Integer anexa3Number;
+
     /** Declarația „provin din gospodăria proprie”, obligatorie la metal de la PF. */
     @Column(name = "own_household")
     Boolean ownHousehold;

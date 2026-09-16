@@ -110,11 +110,20 @@ public class Anexa3FormGenerator {
      * (02.09.2026), so nothing printed on the form is lost.
      */
     public byte[] render(WasteMovement movement, Company sender) {
+        return render(movement, List.of(movement), sender);
+    }
+
+    /**
+     * D1.13 — un formular pe transport (art. 20 alin. (4)): transportatorul, datele, părțile și
+     * numărul vin din {@code head}, iar deșeurile și cantitățile sunt toate {@code lines}. O mișcare
+     * obișnuită e propriul ei cap și singura ei linie, deci formularul ei nu se schimbă.
+     */
+    public byte[] render(WasteMovement movement, List<WasteMovement> lines, Company sender) {
         Document doc = new Document(PageSize.A4, 28, 28, 28, 28);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
             doc.open();
-            addForm(doc, movement, sender);
+            addForm(doc, movement, lines, sender);
             doc.close();
             return out.toByteArray();
         } catch (IOException ex) {
@@ -122,7 +131,7 @@ public class Anexa3FormGenerator {
         }
     }
 
-    private void addForm(Document doc, WasteMovement movement, Company sender)
+    private void addForm(Document doc, WasteMovement movement, List<WasteMovement> lines, Company sender)
             throws DocumentException {
         doc.add(header(movement));
 
@@ -131,8 +140,8 @@ public class Anexa3FormGenerator {
         table.setWidths(new float[]{16, 11, 21, 13, 30, 9});
         table.addCell(column(carrierColumn(movement, sender)));
         table.addCell(column(dateColumn(movement)));
-        table.addCell(column(wasteColumn(movement)));
-        table.addCell(column(quantityColumn(movement)));
+        table.addCell(column(wasteColumn(movement, lines)));
+        table.addCell(column(quantityColumn(movement, lines)));
         table.addCell(column(partiesColumn(movement, sender)));
         table.addCell(column(observationsColumn(movement)));
         doc.add(table);
@@ -222,11 +231,15 @@ public class Anexa3FormGenerator {
     }
 
     /** "Caracteristici deşeuri: Categorii deşeuri/cod", the free description, and "Destinat:". */
-    private List<Paragraph> wasteColumn(WasteMovement m) {
+    private List<Paragraph> wasteColumn(WasteMovement m, List<WasteMovement> lines) {
         Paragraph heading = block("Caracteristici deşeuri:");
 
+        // Un transport cu mai multe sortimente le scrie pe toate în aceeași rubrică, în ordinea
+        // liniilor; coloana „Cantitate” le repetă codul, ca rândurile să se poată lega între ele.
         Paragraph waste = block("Categorii deşeuri");
-        addLines(waste, m.getWasteCode().getName(), "Cod: " + m.getWasteCode().getCode());
+        for (WasteMovement line : lines) {
+            addLines(waste, line.getWasteCode().getName(), "Cod: " + line.getWasteCode().getCode());
+        }
 
         // "Descriere" and "Destinat:" share one box on the paper; the ticks sit in the next one.
         Paragraph description = block("Descriere");
@@ -253,21 +266,35 @@ public class Anexa3FormGenerator {
      * "Cantitate". Empty on purpose when the recipient does the weighing — that is how the filled
      * model reached us, with the figure written in afterwards by hand.
      */
-    private List<Paragraph> quantityColumn(WasteMovement m) {
+    private List<Paragraph> quantityColumn(WasteMovement m, List<WasteMovement> lines) {
         Unit printed = printedUnit(m);
         Paragraph heading = block("Cantitate");
         Paragraph weight = block(unitLabel(printed));
-        BigDecimal quantity = converted(m.getQuantity(), m.getUnit(), printed);
-        if (quantity != null) {
-            weight.add(text(plain(quantity), body));
-        } else {
-            // The line stays blank so it can be filled in on the spot; the note says why.
-            weight.add(text("_______", body));
-            weight.add(text(WEIGHED_AT_UNLOADING, small));
-        }
-
         Paragraph volume = block("mc");
-        addLines(volume, m.getVolumeM3() == null ? null : plain(m.getVolumeM3()));
+        if (lines.size() == 1) {
+            WasteMovement only = lines.get(0);
+            BigDecimal quantity = converted(only.getQuantity(), only.getUnit(), printed);
+            if (quantity != null) {
+                weight.add(text(plain(quantity), body));
+            } else {
+                // The line stays blank so it can be filled in on the spot; the note says why.
+                weight.add(text("_______", body));
+                weight.add(text(WEIGHED_AT_UNLOADING, small));
+            }
+            addLines(volume, only.getVolumeM3() == null ? null : plain(only.getVolumeM3()));
+        } else {
+            for (WasteMovement line : lines) {
+                String code = line.getWasteCode().getCode() + ": ";
+                BigDecimal quantity = converted(line.getQuantity(), line.getUnit(), printed);
+                weight.add(text(code + (quantity == null ? "_______" : plain(quantity)), body));
+                if (line.getVolumeM3() != null) {
+                    volume.add(text(code + plain(line.getVolumeM3()), body));
+                }
+            }
+            if (lines.stream().anyMatch(line -> line.getQuantity() == null)) {
+                weight.add(text(WEIGHED_AT_UNLOADING, small));
+            }
+        }
 
         return List.of(heading, weight, volume);
     }

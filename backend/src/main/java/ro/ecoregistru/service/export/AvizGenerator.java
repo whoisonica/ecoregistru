@@ -66,6 +66,15 @@ public class AvizGenerator {
     }
 
     public byte[] render(WasteMovement m, Company sender) {
+        return render(m, List.of(m), sender);
+    }
+
+    /**
+     * D1.13 — un aviz pe transport: capul (expeditor, destinatar, șofer, mașină, date) vine din
+     * {@code head}, iar pozițiile sunt toate {@code lines}, câte un rând fiecare. O mișcare obișnuită
+     * e propriul ei cap și singura ei linie.
+     */
+    public byte[] render(WasteMovement m, List<WasteMovement> lines, Company sender) {
         Document doc = new Document(PageSize.A4, 40, 40, 40, 40);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter.getInstance(doc, out);
@@ -111,7 +120,7 @@ public class AvizGenerator {
                     field("Număr auto / remorcă", m.getVehicleRegistration())));
 
             doc.add(sectionTitle("5. Poziţii marfă / deşeuri"));
-            doc.add(positions(m));
+            doc.add(positions(lines));
 
             doc.add(sectionTitle("6. Validare şi semnare"));
             doc.add(signatures());
@@ -123,7 +132,7 @@ public class AvizGenerator {
         }
     }
 
-    private PdfPTable positions(WasteMovement m) {
+    private PdfPTable positions(List<WasteMovement> lines) {
         PdfPTable table = new PdfPTable(4);
         table.setWidthPercentage(100);
         setWidths(table, new float[]{50, 18, 22, 10});
@@ -132,13 +141,15 @@ public class AvizGenerator {
         table.addCell(line(new Phrase(cp1250("Cantitate"), bold), Element.ALIGN_RIGHT));
         table.addCell(line(new Phrase(cp1250("UM"), bold), Element.ALIGN_LEFT));
 
-        table.addCell(line(new Phrase(cp1250(m.getWasteCode().getName()), body), Element.ALIGN_LEFT));
-        table.addCell(line(new Phrase(cp1250(m.getWasteCode().getCode()), body), Element.ALIGN_LEFT));
-        // Fără cantitate când cântăreşte destinatarul — acelaşi motiv ca pe Anexa 3: o cifră
-        // inventată pe un document care pleacă cu camionul e mai rea decât un loc gol.
-        String quantity = m.getQuantity() == null ? "" : quantity(m.getQuantity());
-        table.addCell(line(new Phrase(quantity, body), Element.ALIGN_RIGHT));
-        table.addCell(line(new Phrase(unit(m.getUnit()), body), Element.ALIGN_LEFT));
+        for (WasteMovement m : lines) {
+            table.addCell(line(new Phrase(cp1250(m.getWasteCode().getName()), body), Element.ALIGN_LEFT));
+            table.addCell(line(new Phrase(cp1250(m.getWasteCode().getCode()), body), Element.ALIGN_LEFT));
+            // Fără cantitate când cântăreşte destinatarul — acelaşi motiv ca pe Anexa 3: o cifră
+            // inventată pe un document care pleacă cu camionul e mai rea decât un loc gol.
+            String quantity = m.getQuantity() == null ? "" : quantity(m.getQuantity());
+            table.addCell(line(new Phrase(quantity, body), Element.ALIGN_RIGHT));
+            table.addCell(line(new Phrase(unit(m.getUnit()), body), Element.ALIGN_LEFT));
+        }
         table.setSpacingAfter(10f);
         return table;
     }

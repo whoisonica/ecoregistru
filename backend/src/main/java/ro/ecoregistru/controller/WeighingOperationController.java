@@ -31,6 +31,7 @@ public class WeighingOperationController {
     static final String CAN_APPROVE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
 
     WeighingOperationService service;
+    ro.ecoregistru.service.WeighingDocumentService documentService;
 
     /** Lista ecranului: o direcție și o lună (sau un an); fără ele, tot ce are firma. */
     @GetMapping
@@ -61,6 +62,30 @@ public class WeighingOperationController {
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         org.springframework.http.ContentDisposition.attachment().filename(file).build().toString())
                 .body(service.renderRegister(year, month));
+    }
+
+    /**
+     * D1.13 — Anexa 3 pe tot transportul. Doar cine scrie, fiindcă prima tipărire alocă numărul
+     * formularului; retipărirea dă același document.
+     */
+    @GetMapping("/{id}/anexa3")
+    @PreAuthorize(CAN_WRITE)
+    public org.springframework.http.ResponseEntity<byte[]> anexa3(@PathVariable UUID id) {
+        return pdf(documentService.renderAnexa3(id), "anexa3-operatiune-" + id + ".pdf");
+    }
+
+    /** D1.13 — avizul de însoțire pe tot transportul. O citire: nu alocă nimic. */
+    @GetMapping("/{id}/aviz")
+    public org.springframework.http.ResponseEntity<byte[]> aviz(@PathVariable UUID id) {
+        return pdf(documentService.renderAviz(id), "aviz-operatiune-" + id + ".pdf");
+    }
+
+    private static org.springframework.http.ResponseEntity<byte[]> pdf(byte[] body, String file) {
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        org.springframework.http.ContentDisposition.inline().filename(file).build().toString())
+                .body(body);
     }
 
     @GetMapping("/{id}")

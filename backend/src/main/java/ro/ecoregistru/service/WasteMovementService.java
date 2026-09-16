@@ -77,6 +77,7 @@ public class WasteMovementService {
     public static final long MAX_ATTACHMENT_BYTES = 10L * 1024 * 1024;
 
     WasteMovementRepository movementRepository;
+    Anexa3Numbering anexa3Numbering;
     CompanyRepository companyRepository;
     WorkPointRepository workPointRepository;
     WasteCodeRepository wasteCodeRepository;
@@ -762,6 +763,7 @@ public class WasteMovementService {
         WasteMovement movement = requireMovement(id, tenantId);
         Company company = requireCompany(tenantId);
 
+        requireOutsideOperation(movement);
         if (!movement.getOperation().isExit() || movement.getPartner() == null) {
             throw new BusinessException(ANEXA3_REQUIRES_HANDOVER);
         }
@@ -769,8 +771,7 @@ public class WasteMovementService {
             throw new BusinessException(ANEXA3_HAZARDOUS_NOT_ALLOWED);
         }
         if (movement.getAnexa3Number() == null) {
-            Integer max = movementRepository.findMaxAnexa3Number(tenantId);
-            movement.setAnexa3Number(max == null ? 1 : max + 1);
+            movement.setAnexa3Number(anexa3Numbering.next(tenantId));
             movement.setAnexa3Series(company.getAnexa3Series());
         }
         return anexa3FormGenerator.render(movement, company);
@@ -785,6 +786,7 @@ public class WasteMovementService {
     public byte[] renderAviz(UUID id) {
         UUID tenantId = TenantContext.require();
         WasteMovement movement = requireMovement(id, tenantId);
+        requireOutsideOperation(movement);
         if (!movement.getOperation().isExit() || movement.getPartner() == null) {
             throw new BusinessException(AVIZ_REQUIRES_HANDOVER);
         }
@@ -895,6 +897,16 @@ public class WasteMovementService {
             throw new BusinessException(WEIGHING_LINE_EDITED_THROUGH_OPERATION);
         }
         return movement;
+    }
+
+    /**
+     * D1.13 — Anexa 3 și avizul unei linii de cântar se tipăresc din operațiune, pe tot transportul.
+     * Pe aici ar ieși un formular pe sortiment, cu număr propriu, pentru un singur camion.
+     */
+    private static void requireOutsideOperation(WasteMovement movement) {
+        if (movement.getWeighingOperation() != null) {
+            throw new BusinessException(WEIGHING_LINE_DOCUMENT_THROUGH_OPERATION);
+        }
     }
 
     private WorkPoint requireWorkPoint(UUID id, UUID tenantId) {

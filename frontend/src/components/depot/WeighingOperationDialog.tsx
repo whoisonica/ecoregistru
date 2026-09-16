@@ -11,10 +11,11 @@ import {
   useCreateWeighingOperation,
   useFinalizeWeighingOperation,
   useSaveWeighingLines,
+  openWeighingDocument,
   useUpdateWeighingOperation,
 } from "@/hooks/useWeighingOperations";
-import { canManage } from "@/lib/roles";
-import { apiErrorMessage } from "@/lib/api";
+import { canManage, canWrite } from "@/lib/roles";
+import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import type {
   DepotPaymentMethod,
@@ -130,6 +131,22 @@ export function WeighingOperationDialog({
   // încărcat, rubrica lipsește — mai bine o rubrică apărută târziu decât una care se ia înapoi.
   const pricesVisible = Boolean(company?.pricesVisible);
   const approver = canManage(user?.role);
+  // D1.13 — documentele de transport: doar la o ieșire salvată și neanulată. Intrarea n-are formular
+  // de la noi (îl face expeditorul, iar persoana fizică n-are deloc — AX).
+  const printable = Boolean(operation && !inbound && operation.status !== "CANCELLED");
+  const [printing, setPrinting] = useState<"anexa3" | "aviz" | null>(null);
+
+  async function printDocument(document: "anexa3" | "aviz") {
+    if (!operation) return;
+    setPrinting(document);
+    try {
+      await openWeighingDocument(operation, document);
+    } catch (err) {
+      notify(await apiBlobErrorMessage(err, t.documentError), "error");
+    } finally {
+      setPrinting(null);
+    }
+  }
 
   const [date, setDate] = useState(operation?.date ?? new Date().toISOString().slice(0, 10));
   const [workPointId, setWorkPointId] = useState(operation?.workPointId ?? "");
@@ -347,6 +364,27 @@ export function WeighingOperationDialog({
             <Button variant="outline" onClick={onClose} disabled={busy}>
               {strings.common.close}
             </Button>
+            {printable && (
+              // Pe telefon, cele două documente stau pe un rând: subsolul are deja patru butoane.
+              <div className="grid grid-cols-2 gap-2 sm:flex">
+                {canWrite(user?.role) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => printDocument("anexa3")}
+                    disabled={busy || printing !== null}
+                  >
+                    {printing === "anexa3" ? strings.movements.anexa3Downloading : t.printAnexa3}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => printDocument("aviz")}
+                  disabled={busy || printing !== null}
+                >
+                  {printing === "aviz" ? strings.movements.avizDownloading : t.printAviz}
+                </Button>
+              </div>
+            )}
             {editable && (
               <Button variant="outline" onClick={handleSave} disabled={busy}>
                 {busy ? strings.common.saving : t.save}

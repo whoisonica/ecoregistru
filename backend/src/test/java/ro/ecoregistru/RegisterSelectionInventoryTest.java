@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -26,6 +27,13 @@ class RegisterSelectionInventoryTest {
     private static final Path MAIN = Path.of("src/main/java/ro/ecoregistru/service");
     private static final Pattern PUBLIC_TAKES_MOVEMENTS =
             Pattern.compile("public [^;{=]*\\([^)]*List<WasteMovement> \\w+[^)]*\\)", Pattern.DOTALL);
+    /**
+     * D1.13 (16.09.2026): formularele de transport primesc liniile <b>unui singur camion</b> — o operațiune
+     * de depozit, deci un singur registru prin construcție (V46: liniile sunt în {@code ART_48}). Nu adună
+     * și nu raportează nimic; o listă a lor e un transport, nu o evidență. Excepție numită, nu tipul
+     * parametrului schimbat ca să scape de tipar: un generator nou tot aici trebuie trecut, cu motivul lui.
+     */
+    private static final Set<String> TRANSPORT_DOCUMENTS = Set.of("Anexa3FormGenerator.java", "AvizGenerator.java");
     private static final Pattern SELECTS_A_REGISTER =
             Pattern.compile("WasteRegister\\.(ANEXA_1|ART_48)\\.select\\(");
 
@@ -44,6 +52,7 @@ class RegisterSelectionInventoryTest {
         assertThat(readers).as("cititorii de mişcări au fost găsiţi").hasSizeGreaterThanOrEqualTo(6);
 
         List<String> unfiltered = readers.stream()
+                .filter(p -> !TRANSPORT_DOCUMENTS.contains(p.getFileName().toString()))
                 .filter(p -> !SELECTS_A_REGISTER.matcher(read(p)).find())
                 .map(p -> p.getFileName().toString())
                 .toList();

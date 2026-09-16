@@ -68,6 +68,26 @@ rulează local și are testele verzi.
 > Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
 >
 
+> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.13, documentele de transport pe operațiune.**
+> O ieșire cu douăsprezece sortimente e un camion, deci **un singur formular** (HG 1061/2008 art. 20 alin. (4)). În
+> formularul unei ieșiri salvate și neanulate de pe „Cântar” apar **„Anexa 3”** și **„Aviz”**
+> (`GET /weighing-operations/{id}/anexa3` și `/aviz`), cu toate liniile: pe Anexa 3 fiecare deșeu cu codul lui și
+> cantitatea legată prin cod, pe aviz câte o poziție pe linie. Anexa 3 ia **doar liniile nepericuloase** (una cu toate
+> liniile periculoase e refuzată cu trimitere la anexa 2); avizul le ia pe toate. Numărul Anexei 3 se dă la prima
+> tipărire și se păstrează pe capul operațiunii (**migrarea `V52`**), din **aceeași serie** cu mișcările: maximul din
+> amândouă + 1, sub lacăt consultativ (`Anexa3Numbering`, folosit acum și de mișcare). „Nr. comandă / aviz” de pe
+> operațiune e numărul avizului și rubrica „Observaţii”. **Refuzuri:** intrarea (formularul îl face expeditorul; PF n-are
+> deloc, AX), operațiunea anulată, și un rând de cântar tipărit prin `/movements/{id}/anexa3|aviz` — ar fi dat un număr
+> pe sortiment pentru un singur camion. Ce nu ține operațiunea (transportator ales, data descărcării, bifele „Destinat:”,
+> volumul) iese gol, de completat de mână. **Anexa 2 nu e pe operațiune:** formularul are un singur tip de deșeu și un
+> număr dat de agenție pe expediție.
+> **Proba:** `WeighingDocumentIT` 8/8, cu proba negativă pe opt reguli (filtrul de periculoase, toate liniile, seria
+> comună, numărul păstrat, doar ieșiri, anulata, rândul de cântar, numărul avizului), fiecare scoasă pică exact testul
+> ei; `Anexa3FormIT` 20/20 neschimbat (formularul unei mișcări obișnuite iese la fel). `RegisterSelectionInventoryTest`
+> a căzut corect (generatoarele primesc acum o listă de mișcări) și are o excepție numită, cu motivul, pentru cele
+> două documente de transport. Probat în Chrome pe o ieșire cu două sortimente: PDF-urile deschise și citite, subsolul
+> la 1440 și 375 (pe telefon cele două documente stau pe un rând). Suita **789/96, 0 eșecuri**; e2e 19 verde.
+
 > **16.09.2026 — 🟡 local, nedeployat: depozitul D1.14, registrul intrărilor și ieșirilor.**
 > Documentul de lucru pe care depozitele îl scot azi din programul de cântar, acum din aplicație: butonul **„Registrul
 > lunii”** de pe ecranul „Cântar” descarcă `registru-intrari-iesiri-AAAA-LL.xlsx` (`GET /api/v1/weighing-operations/registru
