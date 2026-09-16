@@ -1,0 +1,31 @@
+# Proba pe backendul adevărat (Heroku). Nu folosește contul demo — acela nu există pe producție —,
+# deci nu cere parolă: ce se probează aici e **legătura**, nu datele.
+#   maestro test -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1a-productie.yaml
+# Aplicația trebuie construită FĂRĂ `mobile/.env.local`, ca `BASE_URL` să fie producția.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 20000
+- tapOn:
+    id: login-email
+- inputText: nimeni@wastehouse.ro
+- tapOn:
+    id: login-password
+- inputText: ParolaGresita1
+- hideKeyboard
+- tapOn:
+    id: login-submit
+- tapOn:
+    text: Not Now
+    optional: true
+# Serverul a răspuns „email sau parolă greșite" — deci cererea a ajuns la Heroku și s-a întors.
+# Dacă n-ar fi ajuns, mesajul ar fi fost „Nu ajung la server" (`ApiError` vs restul, în login.tsx).
+- extendedWaitUntil:
+    visible:
+      id: login-error
+    timeout: 25000
+- assertNotVisible: Nu ajung la server.*
+- takeScreenshot: 07-productie-raspunde
