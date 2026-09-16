@@ -53,8 +53,8 @@ const roleLabels = strings.enums.inviteRole;
 
 /**
  * Ordinea în care se citesc: lunar, anual — ca în art. 11. „Economia circulară" (trimestrial) a ieșit
- * din configurare (proprietarul, 16.09.2026): e a depozitelor de deșeuri, nu a clienților noștri. O
- * firmă care o avea deja bifată o vede în continuare, ca s-o poată debifa.
+ * din configurare (proprietarul, 16.09.2026): e a depozitelor de deșeuri, nu a clienților noștri.
+ * `V60` a scos-o și de pe firmele care o aveau, iar serverul n-o mai salvează.
  */
 const AFM_CONTRIBUTIONS: AfmContribution[] = ["WITHHOLDING_2_PERCENT", "PACKAGING"];
 const COMPANY_TYPES: CompanyType[] = ["GENERATOR", "COLLECTOR", "BOTH"];
@@ -162,7 +162,7 @@ export function ClientsPage() {
     setCui(c?.cui ?? "");
     setType(c?.type ?? "GENERATOR");
     setAfmObligation(!!c?.afmObligation);
-    setAfmContributions(c?.afmContributions ?? []);
+    setAfmContributions((c?.afmContributions ?? []).filter((a) => a !== "CIRCULAR_ECONOMY"));
     setEnvironmentalAuthNumber(c?.environmentalAuthNumber ?? "");
     setEnvironmentalAuthExpiry(c?.environmentalAuthExpiry ?? "");
     setAddress(c?.address ?? "");
@@ -691,10 +691,7 @@ export function ClientsPage() {
               <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
               <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>
               <div className="mt-2 space-y-2">
-                {(editing?.afmContributions?.includes("CIRCULAR_ECONOMY")
-                  ? (["WITHHOLDING_2_PERCENT", "CIRCULAR_ECONOMY", "PACKAGING"] as AfmContribution[])
-                  : AFM_CONTRIBUTIONS
-                ).map((contribution) => (
+                {AFM_CONTRIBUTIONS.map((contribution) => (
                   <label key={contribution} className="flex items-start gap-2 text-sm">
                     <input
                       type="checkbox"

@@ -217,7 +217,11 @@ public class CompanyService {
             company.setMarketRoles(new LinkedHashSet<>(request.marketRoles()));
         }
         if (request.afmContributions() != null) {
-            company.setAfmContributions(new LinkedHashSet<>(request.afmContributions()));
+            // „Economia circulară" nu se mai configurează (proprietarul, 16.09.2026); un client vechi
+            // care o mai trimite n-o poate pune la loc.
+            company.setAfmContributions(request.afmContributions().stream()
+                    .filter(c -> c != ro.ecoregistru.enums.AfmContribution.CIRCULAR_ECONOMY)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new)));
         }
         if (request.authorizedWasteCodeIds() != null) {
             Set<WasteCode> codes = new LinkedHashSet<>(

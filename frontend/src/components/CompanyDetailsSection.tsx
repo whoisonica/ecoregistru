@@ -202,8 +202,11 @@ export function CompanyDetailsSection() {
               <Field
                 label={c.afmContributions}
                 value={
-                  company.afmContributions?.length
-                    ? company.afmContributions.map((a) => e.afmContribution[a]).join(" · ")
+                  company.afmContributions?.some((a) => a !== "CIRCULAR_ECONOMY")
+                    ? company.afmContributions
+                        .filter((a) => a !== "CIRCULAR_ECONOMY")
+                        .map((a) => e.afmContribution[a])
+                        .join(" · ")
                     : p.empty
                 }
               />

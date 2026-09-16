@@ -75,6 +75,21 @@ class CompanyManagementIT {
                 .andExpect(jsonPath("$.active", is(true)));
     }
 
+    /** „Economia circulară" a ieșit din configurare (16.09.2026): trimisă de un client vechi, nu se salvează. */
+    @Test
+    void theCircularEconomyContributionIsNotSaved() throws Exception {
+        mockMvc.perform(post("/api/v1/companies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "Fără Groapă SRL", "cui", uniqueCui(), "type", "GENERATOR",
+                                "afmObligation", false,
+                                "afmContributions", java.util.List.of("CIRCULAR_ECONOMY", "PACKAGING")))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.afmContributions.length()", is(1)))
+                .andExpect(jsonPath("$.afmContributions[0]", is("PACKAGING")));
+    }
+
     @Test
     void nonPlatformAdminIsForbiddenToCreate() throws Exception {
         mockMvc.perform(post("/api/v1/companies")

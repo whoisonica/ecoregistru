@@ -39,6 +39,10 @@ public enum AfmContribution {
      *
      * <p>The rate itself is in anexa nr. 2, which the consolidated text on the legal portal
      * truncates — still missing, and the reason the landfill profile is not built.
+     *
+     * <p><b>Out of the account configuration since 16.09.2026</b> (the owner): our clients are not
+     * landfills. Kept only so the completed quarterly deadlines of the past still read; `V60`
+     * removed it from every company, and nothing saves or generates it any more.
      */
     CIRCULAR_ECONOMY(AfmCadence.QUARTERLY),
 

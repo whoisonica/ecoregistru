@@ -230,7 +230,15 @@ public class DeadlineService {
      * fades out as accounts are filled in rather than going quiet all at once.
      */
     private int afmDeadlines(Company company, int year) {
-        Set<AfmContribution> owed = company.getAfmContributions();
+        // „Economia circulară" a ieşit din configurarea contului (proprietarul, 16.09.2026): e a
+        // depozitelor de deşeuri, nu a clienţilor noştri, deci nu mai generează termenul trimestrial.
+        // Un cont care o avea ca singur răspuns nu cade pe calea veche (12 termene lunare): a răspuns.
+        if (company.getAfmContributions().equals(Set.of(AfmContribution.CIRCULAR_ECONOMY))) {
+            return 0;
+        }
+        Set<AfmContribution> owed = company.getAfmContributions().stream()
+                .filter(c -> c != AfmContribution.CIRCULAR_ECONOMY)
+                .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
         if (owed.isEmpty()) {
             if (!company.isAfmObligation()) {
                 return 0;

@@ -137,20 +137,21 @@ class DeadlineIT {
                 .andExpect(jsonPath("$.generated", is(13))); // 1 SIM + 12 monthly
     }
 
-    /** The circular-economy contribution of a landfill: four, after each quarter. */
+    /**
+     * „Economia circulară" a ieşit din configurare (proprietarul, 16.09.2026): nu mai generează termene
+     * trimestriale, iar un cont care o avea ca singur răspuns nu cade pe cele 12 lunare, chiar cu bifa veche.
+     */
     @Test
-    void theCircularEconomyContributionIsQuarterly() throws Exception {
-        TenantFixture t = newTenant(false, AfmContribution.CIRCULAR_ECONOMY);
+    void theCircularEconomyContributionGeneratesNothingAnyMore() throws Exception {
+        TenantFixture t = newTenant(true, AfmContribution.CIRCULAR_ECONOMY);
         regenerate(t.token, 2026);
 
         mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", is(5))) // SIM + four quarters
-                .andExpect(jsonPath("$[?(@.reportType == 'AFM_QUARTERLY' && @.dueDate == '2026-04-25')]")
-                        .exists())
-                .andExpect(jsonPath("$[?(@.reportType == 'AFM_QUARTERLY' && @.dueDate == '2026-10-25')]")
-                        .exists());
+                .andExpect(jsonPath("$.length()", is(1))) // doar SIM
+                .andExpect(jsonPath("$[?(@.reportType == 'AFM_QUARTERLY')]").isEmpty())
+                .andExpect(jsonPath("$[?(@.reportType == 'AFM_MONTHLY')]").isEmpty());
     }
 
     /**
