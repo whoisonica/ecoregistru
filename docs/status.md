@@ -8,7 +8,7 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
-> **17.09.2026 — ✅ pe producție: rândul de sub termenul de 15 martie, pe Termene, în kilograme** (`ecoregistru-app`; api neatins).
+> **17.09.2026 — ✅ pe producție: rândul de sub termenul de 15 martie, pe Termene, în kilograme** (`ecoregistru-app` **v101**, `5e95d05`, din `main` `01e9acf`; api neatins). **Pe producție:** bundle-ul `index-CTHomVzv.js` are textul nou.
 > Scria „2026: 3 coduri, 1,060 t” — 1.060 kg în tone, cu virgula românească la zecimale, citit de proprietar ca o mie de tone („nu cred că
 > e ok”). Tonele veneau din punctul 7 al auditului (04.09, art. 48 „în tone”), premisă închisă pe 14.09 de Andreea (AF: „kg”). Acum
 > `formatKg` (`lib/units.ts`, punct la mii, fără zecimale forțate): „2026: 3 coduri, 1.060 kg”. Numai rândul de pe Termene, la cererea
