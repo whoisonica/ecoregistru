@@ -1131,6 +1131,65 @@ cauza originii sau compoziţiei**"*. Perechea-oglindă de la §3.4 e un subset a
 
 ---
 
+### 2.11 Ce depuneri se pot deduce din generări — căutarea din 16.09.2026
+
+*Întrebarea proprietarului: „din ce generări ai, să-ți genereze automat ce trebuie să depui”. Citite pe 16.09.2026
+pe Portalul Legislativ: OUG 92/2021 ([245846](https://legislatie.just.ro/Public/DetaliiDocument/245846)), Ordinul
+794/2012 ([135672](https://legislatie.just.ro/Public/DetaliiDocument/135672)); plus ghidul SIM al ANMAP
+([SIM.SD.GhidPublic.pdf](https://anmap.gov.ro/documents/27459/69882411/SIM.SD.GhidPublic.pdf)), pp. 6–8.*
+
+**1. OUG 92/2021 nu s-a mai schimbat după 11.07.2026.** Forma consolidată are șapte date de modificare. Tabelul din
+§2 nu avea una: **15-05-2025, Legea nr. 56 din 8 mai 2025** (M.Of. 433/12.05.2025), care modifică art. 66 alin. (1^2)
+lit. c) — infracțiunile. Nu atinge nicio obligație de raportare.
+
+**2. În tot actul, un producător sau deținător de deșeuri are doar trei depuneri cu dată fixă.** Am căutat „până la”, „anul următor”,
+„anual” și „raportează” în tot textul:
+
+| Termen | Articol | Cine, cuvânt cu cuvânt | Ce declanșează obligația |
+|---|---|---|---|
+| 15 martie | art. 48 alin. (1) | „Producătorii de deşeuri nepericuloase [...] producătorii de deşeuri periculoase [...] care colectează sau transportă [...]” | **calitatea** de producător: art. 3 pct. 24, „orice persoană ale cărei activităţi generează deşeuri” |
+| 30 aprilie | art. 49 alin. (9) | titularii autorizațiilor de construire/desființare și „producătorii şi deţinătorii de uleiuri uzate” | autorizația, respectiv **uleiul uzat** |
+| 31 mai | art. 44 alin. (3) | persoana juridică cu autorizație de mediu | autorizația |
+
+Celelalte „anual” din art. 49 sunt ale ANMAP și ale ministerelor (alin. (1)–(7), (10), (13)), ale UAT-urilor și
+operatorilor de salubritate (alin. (14)) sau ale sistemului de apărare (alin. (11), (16)). **Alin. (15)** spune doar
+unde se depune: „Producătorii şi deţinătorii de deşeuri prevăzuţi la alin. (9), precum şi la art. 48 raportează datele
+în registrul/registrele instituit/e de ANMAP.”
+
+**3. Pentru 15 martie, legea nu spune ce face cine n-a generat nimic într-un an.** Obligația cade pe *producător*,
+adică pe o calitate dată de activitate, nu pe cantitatea din anul raportat. În ghidul SIM, la p. 7, chestionarele sunt
+„**alocate** spre completare” de ANMAP: „Proddes — este completat de operatorii economici generatori de deşeuri”. La
+p. 8 scrie: „Daca chestionarele alocate nu corespund activitatii dvs, va rugam efectuati sesizari la adresa
+suportsim@anpm.ro”. Deci depunerea se leagă de chestionarul alocat firmei, nu de faptul că există generări. **Termenul de 15
+martie rămâne pentru orice generator.** Întrebare de practică pentru specialistă: *cu chestionarul PRODDES alocat și
+zero generări în an, se trimite gol sau se face sesizarea?*
+
+**4. Ordinul 794/2012: Anexa 3 Ambalaje e o obligație a colectorului, cu termen, și calendarul nu o avea.**
+
+> **Art. 4 alin. (1)** — Operatorii economici autorizaţi pentru desfăşurarea activităţii de colectare, reciclare sau
+> valorificare a deşeurilor de ambalaje, comercianţii de deşeuri de ambalaje şi operatorii de salubritate care
+> desfăşoară şi activitatea de colectare ca operator economic autorizat pentru colectarea deşeurilor de ambalaje sunt
+> obligaţi să raporteze datele prevăzute în anexa nr. 3, tabelul 1 sau, după caz, tabelul 2, referitoare la ambalajele
+> gestionate.
+>
+> **Alin. (4)** — Raportarea se realizează pentru fiecare punct de lucru în parte [...]
+>
+> **Art. 6** — Datele de raportare se transmit în format electronic ".xls" protejat împotriva modificării datelor şi
+> pe suport hârtie, până cel târziu la data de **25 februarie** a fiecărui an pentru anul anterior [...]
+>
+> **Art. 8 alin. (3)** — Identificarea prin coduri a deşeurilor de ambalaje se face prin încadrarea în unul dintre
+> următoarele coduri [...] **15 01** [...]
+
+Aici chiar se poate deduce din mișcări. Un colector, reciclator, valorificator sau comerciant care a gestionat un cod
+**15 01** în anul raportat datorează Anexa 3 până pe 25 februarie. `DeadlineService` creează azi 25 februarie numai
+pentru Anexa 1 (`PACKAGING_ANNUAL`, din rolul de piață).
+⚠️ **Generatorul nu e în art. 4.** Anexa 3 la generator, cu ieșirile (16.09.2026), e o decizie a proprietarului, nu o
+obligație din ordin. Din ea nu se deduce un termen.
+
+**5. Ce nu se poate deduce din generări, și de ce:** Anexa 1 Ambalaje (marfa ambalată *pusă pe piață*, art. 1, nu
+deșeul 15 01), notificarea AFM din 25 ianuarie (art. 3, îndeplinirea individuală a obiectivelor), 31 mai
+(autorizația), contribuțiile AFM (bani, OUG 196/2005). HG 856/2002 nu are termen (§1.1).
+
 ## 3. Nomenclatorul codurilor de deșeuri
 
 ### 3.1 Sursa care se folosește: Decizia 2014/955/UE
