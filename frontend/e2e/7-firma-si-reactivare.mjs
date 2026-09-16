@@ -167,7 +167,12 @@ await page.click("#utilizatori button");            // „Invită utilizator"
 await page.waitForTimeout(500);
 await page.fill("#cu-email", EMAIL_PROBA);
 await page.click('button[type="submit"][form="company-invite-form"]');
-await page.waitForTimeout(1000);
+// Invitația trimite mailul în aceeași cerere (SMTP cu timeout de 10 s), deci rândul poate întârzia
+// câteva secunde. O pauză fixă de o secundă făcea proba să cadă din când în când în CI (16.09.2026):
+// se așteaptă rândul, cu plafon, iar dacă nu vine, verificările de mai jos cad cu mesajul lor.
+const rowFor = (e) =>
+  [...document.querySelectorAll("#utilizatori tbody tr")].some((r) => r.textContent.includes(e));
+await page.waitForFunction(rowFor, EMAIL_PROBA, { timeout: 25000 }).catch(() => {});
 
 const randUtilizator = async (email) =>
   page.evaluate((e) => {
@@ -203,16 +208,16 @@ check("și n-are butoane de acțiune", (eu?.butoane ?? []).length === 0, (eu?.bu
 
 await page.evaluate((e) => {
   const tr = [...document.querySelectorAll("#utilizatori tbody tr")].find((r) => r.textContent.includes(e));
-  [...tr.querySelectorAll("button")].find((b) => b.textContent.includes("Anulează")).click();
+  [...(tr?.querySelectorAll("button") ?? [])].find((b) => b.textContent.includes("Anulează"))?.click();
 }, EMAIL_PROBA);
 await page.waitForTimeout(400);
 const confirmare = await page.evaluate(() => document.querySelector('div[role="dialog"]')?.textContent ?? "");
 check("anularea întreabă întâi", confirmare.includes("Anulezi invitația?"), confirmare.slice(0, 60));
 await page.evaluate(() => {
   const dlg = document.querySelector('div[role="dialog"]');
-  [...dlg.querySelectorAll("button")].find((b) => b.textContent.includes("Anulează invitația")).click();
+  [...(dlg?.querySelectorAll("button") ?? [])].find((b) => b.textContent.includes("Anulează invitația"))?.click();
 });
-await page.waitForTimeout(1000);
+await page.waitForFunction((e) => !([...document.querySelectorAll("#utilizatori tbody tr")].some((r) => r.textContent.includes(e))), EMAIL_PROBA, { timeout: 10000 }).catch(() => {});
 check("rândul dispare de tot", (await randUtilizator(EMAIL_PROBA)) === null);
 
 await shot(page, "setari_utilizatori");

@@ -1083,7 +1083,9 @@ export function MovementFormDialog({
                     ))}
                   </Select>
                   <FieldError id="mv-code-rd-err" message={errors.operationCode} />
-                  <p className="mt-1 text-xs text-content-muted">{t.operationCodeHint}</p>
+                  <p className="mt-1 text-xs text-content-muted">
+                    {effectiveOperation === "DISPOSED" ? t.operationCodeHintDisposal : t.operationCodeHintRecovery}
+                  </p>
                 </div>
               )}
             </div>

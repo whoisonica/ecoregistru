@@ -218,6 +218,61 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 > operaţiunea finală făcută de altcineva? Și cine e „agentul economic care efectuează operaţia":
 > colectorul, sau reciclatorul final? Întrebare deschisă către specialistă
 > (`docs/intrebari-specialist.md` §3). În cod: se cere codul, nu se propune niciunul implicit.
+>
+> ✅ **Închis pe text și pe corpus, 16.09.2026.** Prima jumătate o închisese specialista pe 24.08 („codurile
+> alese de client”, `legislatie.md` punctul 6). A doua jumătate, cine e „agentul economic”, se închide
+> din trei lucruri citite acum.
+>
+> **1. Notele de subsol ale anexelor 3 și 7 din OUG 92/2021.** Forma consolidată de pe Portalul Legislativ,
+> [doc. 245846](https://legislatie.just.ro/Public/DetaliiDocument/245846), are ca ultimă modificare
+> 11.07.2026 și a fost citită pe 16.09.2026. Pe 10.09 am copiat anexele fără note (§2.2, §2.3), iar
+> răspunsul era tocmai în ele:
+>
+> > R12 Schimbul de deșeuri în vederea expunerii la oricare dintre operațiunile numerotate de la R 1 la R 11⁵
+> > ⁵ În cazul în care nu există niciun alt cod R corespunzător, aceasta include operațiunile preliminare
+> > înainte de valorificare, inclusiv preprocesarea, cum ar fi, printre altele, demontarea, sortarea,
+> > sfărâmarea, compactarea, granularea, mărunțirea uscată, condiționarea, reambalarea, separarea și
+> > amestecarea înainte de supunerea la oricare dintre operațiunile numerotate de la R1 la R11.
+> >
+> > R13 Stocarea deșeurilor înaintea oricărei operațiuni numerotate de la R 1 la R 12 (excluzând stocarea
+> > temporară, înaintea colectării, la situl unde a fost generat deșeul)⁶
+> > ⁶ Stocare temporară înseamnă stocare preliminară în conformitate cu anexa nr. 1 pct. 6.
+> >
+> > D13 Amestecarea anterioară oricărei operațiuni numerotate de la D1 la D12²
+> > ² În cazul în care nu există niciun alt cod D corespunzător, aceasta include operațiunile preliminare
+> > înainte de eliminare, inclusiv preprocesarea, cum ar fi, printre altele, sortarea, sfărâmarea, compactarea,
+> > granularea, uscarea, mărunțirea uscată, condiționarea sau separarea […]
+> >
+> > D15 Stocarea înaintea oricărei operațiuni numerotate de la D1 la D14 (excluzând stocarea temporară,
+> > înaintea colectării, în zona de generare a deșeurilor)³
+> > ³ Stocare temporară înseamnă stocare preliminară în conformitate cu articolul 3 punctul 10.
+>
+> Anexa nr. 1 pct. 6: *„colectare - strângerea deșeurilor, inclusiv sortarea și stocarea preliminară a
+> deșeurilor, în vederea transportării la o instalație de tratare”*. Pct. 32: *„tratare - operațiunile de
+> valorificare sau eliminare, inclusiv pregătirea prealabilă valorificării sau eliminării”*.
+> **Deci colectorul care doar stochează face el însuși o operațiune cu cod (R13/D15), iar cel care sortează
+> sau balotează face R12/D13.** Nu există un gol în care operațiunea colectorului să n-aibă cod, deci nu e
+> nevoie să împrumuți codul reciclatorului final.
+>
+> **2. Rubrica fișei e o pereche.** *„Operaţia de valorificare”* și *„Agentul economic care efectuează
+> operaţia de valorificare”*: agentul e cel care face operația scrisă în coloana de alături. Perechea
+> (R13, colectorul) e coerentă, la fel și (R3, reciclatorul). Perechea (R3, colectorul) nu e, fiindcă
+> colectorul nu reciclează.
+>
+> **3. Corpusul, 9 fișe `.xlsx` din 2022–2024:** la agent se scrie **destinatarul direct**, iar codul e
+> **operațiunea lui**. Doi operatori de colectare și sortare au **R12**, un operator de salubrizare care
+> stochează înaintea eliminării are **D15**, depozitul de deșeuri are **D1**, iar trei reciclatori au **R3**.
+> Pe nicio foaie nu apare un reciclator final în locul colectorului căruia i s-a predat. Numele partenerilor
+> nu se scriu aici, fiindcă sunt date de client.
+>
+> ⇒ **Regula:** agentul economic = partenerul căruia i-ai predat deșeul (destinatarul de pe Anexa 3), iar
+> codul = operațiunea pe care **o face el**, din autorizația lui de mediu: R13/D15 dacă doar stochează,
+> R12/D13 dacă sortează sau balotează, R1–R11 sau D1–D10 dacă tratează efectiv. Generatorul nu poate
+> ști ce se întâmplă după colector și nici nu i se cere. Răspunderea de la art. 24 alin. (1) (§2.1b) rămâne,
+> dar o acoperă verificarea autorizației destinatarului (AH), nu codul de pe fișă. Aplicația făcea deja
+> asta: partenerul e „agentul” (`strings.movements.partnerHint`). Din 16.09.2026, explicația de sub „Cod
+> operațiune” spune regula pe înțeles (`operationCodeHintRecovery` / `operationCodeHintDisposal`). **Niciun cod
+> nu se propune implicit**, fiindcă depinde de autorizația partenerului, pe care aplicația nu o ține pe coduri.
 
 > **Referința legală din facsimil e depășită.** Actul spune „conform Anexei IIB din legea 426/2001"
 > (Cap. 3) și „conform Anexei IIA din Legea 426/2001" (Cap. 4). Legea 426/2001 e abrogată. Șablonul

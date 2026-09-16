@@ -640,8 +640,13 @@ export const strings = {
     fateDisposalEffect:
       "Cantitatea se raportează la „Eliminată final”, cu un cod D și cu operatorul care o face (cap. 4).",
     operationCode: "Cod operațiune (R/D)",
-    operationCodeHint:
-      "Evidența gestiunii deșeurilor nu are coloană de „predare”: cantitatea se raportează la „valorificată” (cod R) sau la „eliminată final” (cod D). Predarea se înregistrează alegând operațiunea și partenerul care o face.",
+    // Cine e „agentul economic” și ce cod poartă: notele 5 și 6 la anexa 3 și nota 3 la anexa 7 din
+    // OUG 92/2021, plus corpusul (docs/surse-oficiale.md §1.2, închis 16.09.2026). Se scrie operațiunea
+    // destinatarului direct, nu a celui de după el.
+    operationCodeHintRecovery:
+      "Alege ce face cu deșeul firma căreia i-l predai, după autorizația ei de mediu: R13 dacă doar îl depozitează, R12 dacă îl sortează sau îl balotează, R3, R4 ori R5 dacă îl reciclează chiar ea. Nu scrie ce se întâmplă mai departe, la altă firmă.",
+    operationCodeHintDisposal:
+      "Alege ce face cu deșeul firma căreia i-l predai, după autorizația ei de mediu: D15 dacă doar îl depozitează până la eliminare, D13 dacă îl sortează sau îl amestecă, D1 dacă e depozitul de deșeuri. Nu scrie ce se întâmplă mai departe, la altă firmă.",
     partner: "Operatorul care efectuează operațiunea",
     partnerPlaceholder: "— noi, pe amplasamentul propriu —",
     partnerHint:
