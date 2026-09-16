@@ -56,6 +56,7 @@ class AuditFileIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired WorkPointRepository workPointRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
+    @Autowired PartnerRepository partnerRepository;
     @Autowired WasteMovementRepository movementRepository;
     @Autowired AttachmentRepository attachmentRepository;
 
@@ -333,6 +334,48 @@ class AuditFileIT {
             }
         }
         assertThat(workPointNames).containsOnly("PL-UNIC-" + suffix);
+    }
+
+    /**
+     * Anexa 3 Ambalaje în dosar (proprietarul, 16.09.2026): .xls şi PDF pe fiecare punct de lucru cu
+     * ambalaje în an, şi nimic pe punctul fără ambalaje. Un generator are numai ieşirile.
+     */
+    @Test
+    void theDossierCarriesAnexa3PackagingPerWorkPointThatMovedPackaging() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company gen = companyRepository.save(Company.builder()
+                .name("Ambalaje Dosar SRL").cui("ROA" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        AppUser user = appUserRepository.save(AppUser.builder()
+                .email("dosar-a3+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(gen).enabled(true).createdAt(Instant.now()).build());
+        WorkPoint withPackaging = workPointRepository.save(WorkPoint.builder()
+                .company(gen).name("Hala Florești").active(true).createdAt(Instant.now()).build());
+        workPointRepository.save(WorkPoint.builder()
+                .company(gen).name("Birou Cluj").active(true).createdAt(Instant.now()).build());
+        Partner recycler = partnerRepository.save(Partner.builder()
+                .company(gen).name("Reciclator Dosar SA").cui("RO9" + suffix.substring(0, 5))
+                .authorizationNumber("AM 3/2025").type(PartnerType.RECOVERER).client(true).active(true)
+                .createdAt(Instant.now()).build());
+        movementRepository.save(WasteMovement.builder()
+                .company(gen).workPoint(withPackaging).date(LocalDate.of(2026, 4, 2))
+                .wasteCode(wasteCodeRepository.findByCode("15 01 01").orElseThrow())
+                .quantity(new BigDecimal("80.000")).unit(Unit.KG).operation(WasteOperation.RECOVERED)
+                .operationCode(WasteOperationCode.R3).register(WasteRegister.ANEXA_1).partner(recycler)
+                .deleted(false).createdBy(user.getId()).build());
+
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        List<String> entries = zipEntryNames(zip);
+        assertThat(entries).contains("anexa3-ambalaje-2026-hala-floresti.xls", "anexa3-ambalaje-2026-hala-floresti.pdf");
+        assertThat(entries).noneMatch(n -> n.contains("birou-cluj"));
+        assertThat(new String(readEntryBytes(zip, "anexa3-ambalaje-2026-hala-floresti.pdf"), 0, 5)).isEqualTo("%PDF-");
+        String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
+        assertThat(readme).contains("anexa3-ambalaje-2026-hala-floresti.xls / .pdf").contains("Hala Florești");
     }
 
     // --- G-2: the four obligations the dossier used to pass over in silence ---

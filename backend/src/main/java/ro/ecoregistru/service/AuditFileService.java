@@ -20,6 +20,7 @@ import ro.ecoregistru.entity.Attachment;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.exception.BadRequestException;
@@ -28,12 +29,15 @@ import ro.ecoregistru.repository.AttachmentRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
+import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.Anexa1FormGenerator;
 import ro.ecoregistru.service.export.AnnualDeclarationGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
 import ro.ecoregistru.service.export.GenericEvidenceExporter;
+import ro.ecoregistru.service.export.PackagingAnexa3;
 import ro.ecoregistru.service.export.ReportBranding;
+import ro.ecoregistru.util.Diacritics;
 import ro.ecoregistru.util.UsedOilCodes;
 import ro.ecoregistru.util.WasteCodeLabel;
 
@@ -66,6 +70,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
  *   - "Evidenta gestiunii deseurilor centralizata" (the former annual declaration): the same year
  *     folded to one line per waste code, per work point,
  *   - Anexa 1 Ambalaje (.xls + .pdf), when the company puts packaging on the market,
+ *   - Anexa 3 Ambalaje (.xls + .pdf), one pair per work point that moved packaging that year,
  *   - the generic evidence summary in both xlsx and pdf,
  *   - a PDF summary of partner authorizations (with expiry status),
  *   - atasamente/index.txt listing every movement attachment, and the attachment files
@@ -110,6 +115,7 @@ public class AuditFileService {
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
     PackagingService packagingService;
+    WorkPointRepository workPointRepository;
     ReportBrandingService brandingService;
 
     /**
@@ -153,20 +159,26 @@ public class AuditFileService {
         // so it brings the cache up to date itself. Idempotent: with nothing new to fold in, the
         // lines come out identical.
         Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear = new LinkedHashMap<>();
+        Map<Integer, Anexa3Plan> anexa3ByYear = new LinkedHashMap<>();
+        List<WorkPoint> workPoints = workPointRepository.findAllByCompany_Id(tenantId).stream()
+                .sorted(Comparator.comparing(WorkPoint::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
         for (int y = firstYear; y <= year; y++) {
             evidenceCalculator.regenerateYear(y);
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
+            anexa3ByYear.put(y, anexa3Plan(y, workPoints));
         }
 
         try (ZipOutputStream zip = new ZipOutputStream(target)) {
 
             writeEntry(zip, "README.txt",
-                    readme(company, firstYear, year, evidenceByYear, branding)
+                    readme(company, firstYear, year, evidenceByYear, anexa3ByYear, branding)
                             .getBytes(StandardCharsets.UTF_8));
             for (int y = firstYear; y <= year; y++) {
                 // A single year stays where it always was; several would collide on the file
                 // names, so each gets a folder named after it.
-                writeYear(zip, years == 1 ? "" : y + "/", company, tenantId, y, evidenceByYear.get(y), branding);
+                writeYear(zip, years == 1 ? "" : y + "/", company, tenantId, y, evidenceByYear.get(y),
+                        anexa3ByYear.get(y), branding);
             }
             writeEntry(zip, "autorizatii-parteneri.pdf",
                     partnerAuthorizationsPdf(company.getName(), partners, branding));
@@ -199,7 +211,7 @@ public class AuditFileService {
 
     /** Everything that belongs to one reporting year, written under {@code prefix}. */
     private void writeYear(ZipOutputStream zip, String prefix, Company company, UUID tenantId,
-                           int year, List<MonthlyEvidenceResponse> evidence,
+                           int year, List<MonthlyEvidenceResponse> evidence, Anexa3Plan anexa3,
                            ReportBranding branding) throws IOException {
         List<WasteMovement> movements = movementRepository
                 .findCountedBetween(
@@ -223,6 +235,15 @@ public class AuditFileService {
                     packagingService.render(year, ExportFormat.XLS));
             writeEntry(zip, prefix + "anexa1-ambalaje-" + year + ".pdf",
                     packagingService.render(year, ExportFormat.PDF));
+        }
+        // Anexa 3 Ambalaje (proprietarul, 16.09.2026): una per punct de lucru, fiindcă aşa se depune
+        // (Ordinul 794/2012 art. 4 alin. (4)), şi numai unde anul are ambalaje — o foaie oficială
+        // goală n-are ce căuta la control.
+        for (Anexa3File file : anexa3.files()) {
+            writeEntry(zip, prefix + file.baseName() + ".xls",
+                    packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.XLS));
+            writeEntry(zip, prefix + file.baseName() + ".pdf",
+                    packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.PDF));
         }
         writeEntry(zip, prefix + "evidenta-" + year + ".xlsx",
                 evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence, branding));
@@ -403,6 +424,7 @@ public class AuditFileService {
      */
     private String readme(Company company, int firstYear, int lastYear,
                           Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear,
+                          Map<Integer, Anexa3Plan> anexa3ByYear,
                           ReportBranding branding) {
         boolean single = firstYear == lastYear;
         StringBuilder sb = new StringBuilder();
@@ -440,6 +462,19 @@ public class AuditFileService {
                         "Anexa 1 Ambalaje (Ordinul 794/2012) — declarația de",
                         "ambalaje: .xls pentru depunere, PDF pe hârtie.",
                         "Termen: 25 februarie " + (year + 1) + "."));
+            }
+            Anexa3Plan anexa3 = anexa3ByYear.get(year);
+            for (Anexa3File file : anexa3.files()) {
+                sb.append(entry(prefix + file.baseName() + ".xls / .pdf",
+                        "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
+                        "„" + file.workPointName() + "”: .xls pentru depunere, PDF pe hârtie.",
+                        "Termen: 25 februarie " + (year + 1) + "."));
+            }
+            if (anexa3.roleMissing()) {
+                sb.append(entry(prefix + "anexa3-ambalaje-" + year,
+                        "LIPSEȘTE: anul are ambalaje, dar profilul firmei nu spune",
+                        "dacă e colector, comerciant, reciclator sau valorificator,",
+                        "deci nu se știe care tabel se completează. Răspunde în Setări."));
             }
             sb
                     .append(entry(prefix + "evidenta-" + year + ".xlsx / .pdf",
@@ -712,6 +747,47 @@ public class AuditFileService {
             case RECOVERER -> "Valorificator";
             case GENERATOR -> "Generator";
         };
+    }
+
+    /** Un fişier Anexa 3 din dosar: numele fără extensie şi punctul de lucru pe care îl raportează. */
+    private record Anexa3File(String baseName, UUID workPointId, String workPointName) {}
+
+    /** Ce Anexe 3 intră într-un an, şi dacă a rămas vreuna pe dinafară fiindcă lipseşte rolul din profil. */
+    private record Anexa3Plan(List<Anexa3File> files, boolean roleMissing) {}
+
+    /**
+     * Anexele 3 Ambalaje ale unui an: câte una pe fiecare punct de lucru care are rânduri (preluări,
+     * predări sau tratări pe coduri 15 01 xx). Un punct fără ambalaje nu primește foaie, iar unul cu
+     * ambalaje dar fără rolul din profil e numit în README, nu tipărit ghicind tabelul.
+     */
+    private Anexa3Plan anexa3Plan(int year, List<WorkPoint> workPoints) {
+        List<Anexa3File> files = new java.util.ArrayList<>();
+        Set<String> used = new java.util.HashSet<>();
+        boolean roleMissing = false;
+        for (WorkPoint wp : workPoints) {
+            PackagingAnexa3 doc = packagingService.anexa3(year, wp.getId());
+            if (doc.intake().isEmpty() && doc.handovers().isEmpty() && doc.treatments().isEmpty()) {
+                continue;
+            }
+            if (!doc.printable()) {
+                roleMissing = true;
+                continue;
+            }
+            String base = "anexa3-ambalaje-" + year + "-" + slug(wp.getName());
+            String name = base;
+            for (int i = 2; !used.add(name); i++) {
+                name = base + "-" + i;
+            }
+            files.add(new Anexa3File(name, wp.getId(), wp.getName()));
+        }
+        return new Anexa3Plan(files, roleMissing);
+    }
+
+    /** „Punct de lucru Cluj" → „punct-de-lucru-cluj": un nume de fişier care nu se strică pe nicio arhivă. */
+    private static String slug(String name) {
+        String folded = Diacritics.fold(name == null ? "" : name).replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return folded.isEmpty() ? "punct" : folded;
     }
 
     private static void writeEntry(ZipOutputStream zip, String name, byte[] bytes) throws IOException {
