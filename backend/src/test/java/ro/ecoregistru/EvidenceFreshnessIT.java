@@ -272,7 +272,7 @@ class EvidenceFreshnessIT {
                   "quantity": %s,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "GENERATED",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
                   "register": "ANEXA_1"%s
                 }
                 """.formatted(workPointId, code.getId(), qty,

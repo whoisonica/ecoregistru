@@ -221,22 +221,6 @@ class Anexa1FormIT {
                 .isEqualTo(BigDecimal.ZERO);
     }
 
-    /**
-     * The other half of the same rule: when the client does record the generation, nothing is
-     * implied and the figures stay exactly as recorded — no quantity is counted twice.
-     */
-    @Test
-    void recordedGenerationIsNotDoubled() {
-        Anexa1Sheet paper = sheets().stream()
-                .filter(s -> s.wasteCode().equals("20 01 01"))
-                .findFirst().orElseThrow();
-
-        // The demo tenant records both sides in February: 100 generated, 60 recovered.
-        Anexa1Sheet.Anexa1MonthRow february = paper.rows().get(1);
-        assertThat(february.generated()).usingComparator(BigDecimal::compareTo)
-                .isEqualTo(new BigDecimal("100.000"));
-    }
-
     @Test
     void theFormIsAPdfWithOnePagePerSheet() throws Exception {
         byte[] pdf = mockMvc.perform(get("/api/v1/evidences/anexa1?year=" + YEAR)

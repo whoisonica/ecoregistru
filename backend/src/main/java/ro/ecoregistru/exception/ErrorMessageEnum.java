@@ -195,6 +195,7 @@ public enum ErrorMessageEnum {
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),
     OPERATION_NOT_ALLOWED_FOR_COMPANY_TYPE("movement.operation.not.allowed", "Operațiunea nu este disponibilă pentru tipul firmei."),
     OPERATION_CODE_NOT_IN_PROFILE("movement.operation.code.not.in.profile", "Codul de operație nu e printre cele declarate de firmă. Completează profilul firmei dacă a apărut o operațiune nouă."),
+    GENERATION_NEEDS_EXIT("movement.generation.needs.exit", "Deșeul generat se înregistrează la predare: alege valorificare (cod R) sau eliminare (cod D) și partenerul care îl preia. „Rămâne în stoc” nu mai există."),
     OPERATION_NOT_SELECTABLE("movement.operation.not.selectable", "„Ieșire neclasificată” nu se poate alege: e starea liniilor vechi, fără cod R/D. Alege valorificare sau eliminare și codul operației."),
     REGISTER_INVALID_FOR_OPERATION("movement.register.invalid", "Registrul nu se potrivește cu operațiunea: deșeul generat intră în Anexa 1, iar preluarea de la terți în registrul cronologic."),
     // Un cont care preia deşeu de la terţi nu poate lăsa întrebarea fără răspuns: aceeaşi ieşire

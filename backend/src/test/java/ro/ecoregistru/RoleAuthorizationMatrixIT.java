@@ -574,7 +574,7 @@ class RoleAuthorizationMatrixIT {
     private String movementJson() {
         return """
                 {"workPointId":"%s","date":"%s","wasteCodeId":"%s","quantity":1.000,
-                 "unit":"KG","operation":"GENERATED","physicalState":"SOLID"}
+                 "unit":"KG","operation":"RECOVERED","register":"ANEXA_1","operationCode":"R13","physicalState":"SOLID"}
                 """.formatted(workPoint.getId(), LocalDate.now(), wasteCodeId);
     }
 

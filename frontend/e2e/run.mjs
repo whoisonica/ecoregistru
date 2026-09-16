@@ -17,7 +17,7 @@ const suites = [
   ["6-cerere-si-rapoarte.mjs", "cererea de cont, inboxul ei şi drumul spre mişcarea vinovată"],
   ["7-firma-si-reactivare.mjs", "datele firmei, reactivarea şi garda formularului"],
   ["8-atasamente-partener-paleta.mjs", "atașamentele, partenerul pe secțiuni, cuprinsul și paleta"],
-  ["9-restrangeri-si-semne.mjs", "rubrica restrânsă, grila care spune că a salvat, stocul pe coduri, termenele"],
+  ["9-restrangeri-si-semne.mjs", "rubrica restrânsă, grila care spune că a salvat, panoul fără dala de stoc, termenele"],
   ["10-panou-actiunea-urmatoare.mjs", "banda «următoarea acțiune» din capul Panoului"],
   ["11-numeralul.mjs", "numeralul românesc, pe toate ecranele deodată"],
   ["12-pagini-legale.mjs", "termenii și politica: se deschid fără cont, și se ajunge la ele"],

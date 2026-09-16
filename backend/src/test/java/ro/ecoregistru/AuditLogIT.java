@@ -292,7 +292,7 @@ class AuditLogIT {
                   %s%s
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity,
-                extra == null ? "\"operation\": \"GENERATED\"" : extra,
+                extra == null ? "\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\"" : extra,
                 partner == null ? "" : ",\n  \"partnerId\": \"" + partner + "\"");
     }
 

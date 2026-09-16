@@ -148,32 +148,14 @@ public class PackagingDeclarationBuilder {
     }
 
     /**
-     * The movements whose kilograms tabelul 1 may count, one physical quantity at a time.
-     *
-     * <p>Grouped by waste code: where the year holds recorded generations for a code, only those
-     * count; where it holds none, the exits stand in for them. A company that records both would
-     * otherwise declare the same load twice, and a company that records only the handover — the
-     * usual case, and the one that forced implied generation in {@code V24} — would declare nothing
-     * at all.
+     * The movements whose kilograms tabelul 1 counts: the exits. Until 16.09.2026 a recorded
+     * generation of the same load stood in for them, so one quantity was not declared twice; a bare
+     * generation cannot be recorded any more ({@code V58}), so each load is its handover, once.
      */
     private List<WasteMovement> countOnce(List<WasteMovement> packaging) {
-        Map<String, List<WasteMovement>> byCode = new LinkedHashMap<>();
-        for (WasteMovement m : packaging) {
-            byCode.computeIfAbsent(m.getWasteCode().getCode(), k -> new ArrayList<>()).add(m);
-        }
-
-        List<WasteMovement> basis = new ArrayList<>();
-        for (List<WasteMovement> group : byCode.values()) {
-            List<WasteMovement> generated = group.stream()
-                    .filter(m -> m.getOperation() == WasteOperation.GENERATED)
-                    .toList();
-            basis.addAll(generated.isEmpty()
-                    ? group.stream()
-                            .filter(m -> m.getOperation() != WasteOperation.COLLECTED)
-                            .toList()
-                    : generated);
-        }
-        return basis;
+        return packaging.stream()
+                .filter(m -> m.getOperation() != WasteOperation.COLLECTED)
+                .toList();
     }
 
     /** The six figures of one material row, accumulated as the movements come in. */

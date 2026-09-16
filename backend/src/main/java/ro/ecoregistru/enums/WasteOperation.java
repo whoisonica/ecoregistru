@@ -16,7 +16,15 @@ package ro.ecoregistru.enums;
  */
 public enum WasteOperation {
 
-    /** Waste produced in the company's own activity. Anexa 1 only (art. 1 alin. (1)). */
+    /**
+     * Waste produced in the company's own activity and left on site. Anexa 1 only (art. 1 alin. (1)).
+     *
+     * <p><b>Not recorded any more (16.09.2026, the owner).</b> A generator has no weighbridge and
+     * keeps no stock: the waste sits in a bin until the collector comes, and the quantity is known
+     * only at handover, from the collector's ticket. So a row on „Generare" is always a handover —
+     * a {@link #RECOVERED} or {@link #DISPOSED} — and the generation is the one {@code V24} infers
+     * from it. The member stays for the rows {@code V58} soft-deleted, which still map to it.
+     */
     GENERATED,
 
     /** Waste taken over from a third party. Art. 48 register only (art. 2 alin. (1)). */
@@ -44,6 +52,6 @@ public enum WasteOperation {
 
     /** Whether an operator may choose this when recording a movement. */
     public boolean isSelectable() {
-        return this != UNCLASSIFIED_OUT;
+        return this != UNCLASSIFIED_OUT && this != GENERATED;
     }
 }

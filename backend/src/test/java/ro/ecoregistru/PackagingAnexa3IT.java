@@ -283,7 +283,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": 500, "operation": "GENERATED",
+                  "unit": "KG", "quantity": 500, "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
                   "register": "ANEXA_1", "packagingOnMarket": true
                 }
                 """.formatted(workPointId, YEAR, codeId("15 01 01")));

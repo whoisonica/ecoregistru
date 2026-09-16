@@ -4,7 +4,6 @@ import { useMovementSummary } from "@/hooks/useMovements";
 import { useDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
-import type { MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
 import { daysLabel, documentFor } from "@/lib/deadlines";
@@ -74,39 +73,6 @@ export function useDashboardData(enabled = true) {
   const generatedThisMonth = summary?.quantityKg ?? 0;
   /** Câte mișcări s-au înregistrat luna asta — cifra care spune dacă evidența se ține la zi. */
   const movementCount = summary?.movements ?? 0;
-
-  /**
-   * Stocul, **pe coduri**. Suma închiderilor peste toate codurile — hârtie plus ulei uzat plus
-   * menajer — e o cantitate care nu există fizic nicăieri, iar un stoc negativ pe un cod s-ar scădea
-   * din pozitivele celorlalte. Se numără codurile care chiar au stoc și se numesc primele trei.
-   * Stocul unei perechi (punct de lucru, cod) e închiderea **ultimei ei luni calculate**.
-   * Ordinea: întâi negativele, apoi pozitivele, fiecare după mărime.
-   */
-  const stock = useMemo(() => {
-    const lastPerPair = new Map<string, MonthlyEvidence>();
-    for (const r of evidences ?? []) {
-      const key = `${r.workPointId}|${r.wasteCodeId}`;
-      const prev = lastPerPair.get(key);
-      if (!prev || r.month > prev.month) lastPerPair.set(key, r);
-    }
-    const byCode = new Map<string, number>();
-    for (const r of lastPerPair.values()) {
-      byCode.set(r.wasteCode, (byCode.get(r.wasteCode) ?? 0) + r.closingStock);
-    }
-    const withStock = [...byCode.entries()]
-      .map(([code, kg]) => ({ code, kg }))
-      .filter((x) => x.kg !== 0)
-      .sort((a, b) => {
-        if (a.kg < 0 !== b.kg < 0) return a.kg < 0 ? -1 : 1;
-        return Math.abs(b.kg) - Math.abs(a.kg);
-      });
-    return {
-      count: withStock.length,
-      negative: withStock.filter((x) => x.kg < 0).length,
-      top: withStock.slice(0, 3),
-      rest: Math.max(0, withStock.length - 3),
-    };
-  }, [evidences]);
 
   /**
    * Un singur lucru de făcut, ales după cât costă dacă rămâne nefăcut. Ordinea: termen depășit,
@@ -258,7 +224,6 @@ export function useDashboardData(enabled = true) {
     blockerCount,
     generatedThisMonth,
     movementCount,
-    stock,
     nextAction,
     nextActionLoading,
   };

@@ -111,7 +111,7 @@ class Anexa3FormIT {
     /** Somebody has to do the weighing, and it is the party taking the waste over. */
     @Test
     void weighingAtUnloadingNeedsARecipient() throws Exception {
-        mockMvc.perform(movement("\"operation\": \"GENERATED\", \"weighedAtUnloading\": true"))
+        mockMvc.perform(movement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"weighedAtUnloading\": true"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.weighing.recipient")));
     }
@@ -233,7 +233,7 @@ class Anexa3FormIT {
 
     @Test
     void theFormIsRefusedWhenNothingWasHandedOver() throws Exception {
-        UUID id = createMovement("\"operation\": \"GENERATED\", \"quantity\": 5.0", wasteCodeId);
+        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"quantity\": 5.0", wasteCodeId);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/anexa3")
                         .header("Authorization", "Bearer " + token))
@@ -383,7 +383,7 @@ class Anexa3FormIT {
     /** Fără destinatar nu e nicio predare de însoţit. */
     @Test
     void theAvizNeedsAHandover() throws Exception {
-        UUID id = createMovement("\"operation\": \"GENERATED\", \"quantity\": 5", wasteCodeId);
+        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"quantity\": 5", wasteCodeId);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/aviz")
                         .header("Authorization", "Bearer " + token))

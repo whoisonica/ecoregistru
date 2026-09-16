@@ -221,7 +221,8 @@ class MovementPagingIT {
     @Test
     void leftSiteKeepsOnlyWhatWentOut() throws Exception {
         String year = "2020";
-        create(year + "-02-03", "20 01 01", null, null);
+        // Singurul rând care nu pleacă: preluarea. Generarea fără ieșire nu se mai poate scrie (V58).
+        createCollected(year + "-02-03", "5.000");
         UUID handedOver = createHandover(year + "-02-04", null);
 
         assertThat(idsOf(page("year", year, "leftSite", "true"))).containsExactly(handedOver);
@@ -337,12 +338,12 @@ class MovementPagingIT {
      * „Intrări" și „Ieșiri" sunt același registru art. 48 filtrat pe direcție (proprietarul,
      * 15.09.2026: „intrare și ieșire vreau să fie separat"). `IN` e preluarea; `OUT` e ce a plecat,
      * inclusiv rândul fără cod R/D — exact rândul pe care îl caută cineva care vrea să-l repare.
-     * Generarea nu e în niciuna: stă pe „Generare", fără direcție.
+     * Deșeul propriu nu e în niciuna: e o predare, dar pe Anexa 1, deci pe „Generare".
      */
     @Test
     void directionSplitsTakeoversFromWhatWentOut() throws Exception {
         String year = "2009";
-        UUID generated = create(year + "-05-01", "20 01 01", null, null);
+        UUID own = create(year + "-05-01", "20 01 01", null, null);
         UUID collected = createCollected(year + "-05-02", "4.000");
         UUID passedOn = createPassedOn(year + "-05-03", "4.000");
         UUID broken = createPassedOn(year + "-05-04", "1.000");
@@ -355,7 +356,7 @@ class MovementPagingIT {
                 .containsExactly(collected);
         assertThat(idsOf(page("year", year, "register", "ART_48", "direction", "OUT")))
                 .containsExactlyInAnyOrder(passedOn, broken);
-        assertThat(idsOf(page("year", year, "direction", "OUT"))).doesNotContain(generated, collected);
+        assertThat(idsOf(page("year", year, "direction", "OUT"))).contains(own).doesNotContain(collected);
     }
 
     /**
@@ -461,7 +462,7 @@ class MovementPagingIT {
                   "quantity": %s,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "GENERATED"%s%s
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"%s%s
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity,
                 partner == null ? "" : ",\n  \"partnerId\": \"" + partner + "\"",
@@ -486,7 +487,7 @@ class MovementPagingIT {
                   "partnerId": "%s",
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "GENERATED"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"
                 }
                 """.formatted(workPointId, date, wasteCodeId, partnerId));
     }
@@ -530,7 +531,7 @@ class MovementPagingIT {
                   "quantity": %s,
                   "unit": "TONS",
                   "physicalState": "SOLID",
-                  "operation": "GENERATED"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity));
     }

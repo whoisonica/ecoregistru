@@ -106,7 +106,7 @@ await page.waitForTimeout(900);
 const panou = await page.evaluate(() => {
   const txt = document.body.textContent.replace(/\s+/g, " ");
   const dale = [...document.querySelectorAll("div")].filter(
-    (d) => d.children.length === 0 && /^(Coduri cu stoc|Termene de făcut)$/.test(d.textContent.trim())
+    (d) => d.children.length === 0 && /^(Termene de făcut)$/.test(d.textContent.trim())
   ).length;
   return {
     areStarea: /Starea evidenței pe \d{4}/.test(txt),
@@ -120,7 +120,8 @@ const panou = await page.evaluate(() => {
   };
 });
 check("caseta «Starea evidenței» a rămas", panou.areStarea);
-check("dalele au rămas", panou.areDale === 2, panou.areDale + " din 2");
+// „Coduri cu stoc” a ieșit dinadins pe 16.09.2026 (V58): pe Anexa 1 stocul e zero prin construcție.
+check("dala de termene a rămas", panou.areDale === 1, panou.areDale + " din 1");
 check("listele au rămas", panou.areTermene && panou.areAutorizatii);
 check("dala de cantitate spune și pe câte mișcări", panou.numaraMiscari);
 

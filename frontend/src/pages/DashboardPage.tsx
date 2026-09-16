@@ -223,7 +223,7 @@ export function DashboardPage() {
       <NextActionBand action={d.nextAction} loading={d.nextActionLoading} />
 
       {/* Cifrele. Kilograme, nu rânduri: nimeni nu se uită la câte înregistrări are luna. */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatTile
           icon={Package}
           value={kgFormat.format(d.generatedThisMonth)}
@@ -238,43 +238,6 @@ export function DashboardPage() {
           loading={d.loadingMovements}
           failed={d.failedMovements}
         />
-        <StatTile
-          icon={Scale}
-          value={String(d.stock.count)}
-          label={t.statStock}
-          sub={
-            d.stock.negative > 0
-              ? withCount(t.statStockNegative, d.stock.negative, "cod", "coduri")
-              : t.statStockSub
-          }
-          tone={d.stock.negative > 0 ? "red" : "brand"}
-          testId="stat-stock"
-          loading={d.loadingEvidences}
-          failed={d.failedEvidences}
-        >
-          {d.stock.top.length > 0 && (
-            <ul className="mt-2 space-y-0.5 text-xs">
-              {d.stock.top.map((row) => (
-                <li key={row.code} className="flex items-center justify-between gap-2">
-                  <span className="truncate font-mono text-content-muted">{row.code}</span>
-                  <span
-                    className={cn(
-                      "shrink-0 font-mono",
-                      row.kg < 0 ? "font-medium text-state-bad-text" : "text-content"
-                    )}
-                  >
-                    {kgFormat.format(row.kg)} kg
-                  </span>
-                </li>
-              ))}
-              {d.stock.rest > 0 && (
-                <li className="text-content-subtle">
-                  {withCount(t.statStockMore, d.stock.rest, "cod", "coduri")}
-                </li>
-              )}
-            </ul>
-          )}
-        </StatTile>
         <StatTile
           icon={CalendarClock}
           value={String(d.openDeadlines.length)}

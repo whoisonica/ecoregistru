@@ -490,8 +490,6 @@ export function MovementFormDialog({
       );
     } else if (effectiveOperation === "DISPOSED") {
       out.push(t.effectDisposed.replace("{code}", operationCode || "—"));
-    } else if (operation === "GENERATED") {
-      out.push(t.effectStock);
     }
     if (isPackagingCode && packagingOnMarket !== false) out.push(t.effectPackaging);
     if (showAnexa3Section) out.push(t.effectAnexa3);
@@ -536,6 +534,9 @@ export function MovementFormDialog({
     } else if (!partnerId) {
       errs.partnerId = t.weighingNeedsPartner;
     }
+    // Generarea nu mai rămâne în stoc (proprietarul, 16.09.2026): un generator n-are cântar, află
+    // cantitatea abia la predare, de pe tichetul colectorului — deci rândul e mereu o predare.
+    if (showsFate && operation === "GENERATED" && !fate) errs.fate = t.fateRequired;
     if (effectiveOperation === "RECOVERED" && (!operationCode || !operationCode.startsWith("R")))
       errs.operationCode = t.recoveryCodeRequired;
     if (effectiveOperation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
@@ -1036,17 +1037,17 @@ export function MovementFormDialog({
                       un câmp, ci coloana din fişă în care intră cantitatea. */}
                   {(
                     [
-                      ["", t.fateStock, t.fateStockEffect],
                       ["RECOVERED", t.fateRecovery, t.fateRecoveryEffect],
                       ["DISPOSED", t.fateDisposal, t.fateDisposalEffect],
                     ] as const
                   ).map(([value, label, effect]) => (
-                    <label key={value || "STOCK"} className="flex cursor-pointer gap-2">
+                    <label key={value} className="flex cursor-pointer gap-2">
                       <input
                         type="radio"
                         name="mv-fate"
                         className="mt-1 h-4 w-4 shrink-0"
                         checked={fate === value}
+                        {...(value === "RECOVERED" ? invalidProps("mv-fate-err", errors.fate) : {})}
                         onChange={() => {
                           setFate(value);
                           setOperationCode(""); // familia de coduri se schimbă cu alegerea
@@ -1058,6 +1059,7 @@ export function MovementFormDialog({
                       </span>
                     </label>
                   ))}
+                  <FieldError id="mv-fate-err" message={errors.fate} />
                 </div>
               )}
 

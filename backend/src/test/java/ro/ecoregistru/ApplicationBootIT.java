@@ -69,7 +69,7 @@ class ApplicationBootIT {
         UUID demoTenantId = companyRepository.findAll().stream()
                 .filter(c -> "Demo Reciclare SRL".equals(c.getName()))
                 .findFirst().orElseThrow().getId();
-        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(37);
+        assertThat(wasteMovementRepository.findAllByCompany_IdAndDeletedFalse(demoTenantId)).hasSize(29);
 
         /*
          * Cele două rânduri adăugate pe 07.09.2026, și de ce sunt numărate pe nume, nu doar în

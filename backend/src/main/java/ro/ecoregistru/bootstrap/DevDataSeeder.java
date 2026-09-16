@@ -256,49 +256,38 @@ public class DevDataSeeder implements CommandLineRunner {
         // recycler's own operation. See docs/intrebari-specialist.md — whether ANMAP expects R13 or
         // the final operation in this common case is the one open question here.
 
-        // ---- Paper (20 01 01) at Cluj — the carry-over showcase ----
-        // Feb: +100 -60 = 40
-        ms.add(section(mv(company, wpCluj, d(2, 3), paper, "100.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, "Generat intern", createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(2, 20), paper, "60.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 201", createdBy));
-        // Mar: +80 -90 = 30
-        ms.add(section(mv(company, wpCluj, d(3, 5), paper, "80.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(3, 22), paper, "90.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 214", createdBy));
-        // Apr: +120 -100 = 50
-        ms.add(section(mv(company, wpCluj, d(4, 4), paper, "120.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(4, 25), paper, "100.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 233", createdBy));
-        // May: +90 -90 = 50
-        ms.add(section(mv(company, wpCluj, d(5, 6), paper, "90.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(5, 24), paper, "90.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 251", createdBy));
-        // Jun: +110 -130 = 30
-        ms.add(section(mv(company, wpCluj, d(6, 7), paper, "110.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(6, 26), paper, "130.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 268", createdBy));
-        // Jul: +120.5 -100 = 50.5
-        ms.add(section(mv(company, wpCluj, d(7, 5), paper, "120.500", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, "Generat intern", createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(7, 11), paper, "100.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 285", createdBy));
+        // ---- Paper (20 01 01) at Cluj — a handover a month, the generation inferred from it (V24, V58) ----
+        ms.add(section(mv(company, wpCluj, d(2, 20), paper, "60.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 201", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(3, 22), paper, "90.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 214", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(4, 25), paper, "100.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 233", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(5, 24), paper, "90.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 251", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(6, 26), paper, "130.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 268", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(7, 11), paper, "100.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 285", createdBy), birouri));
 
-        // ---- Plastic (15 01 02) at Cluj — generation + internal recovery (R3) ----
-        ms.add(section(mv(company, wpCluj, d(2, 8), plastic, "50.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(2, 18), plastic, "20.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, null, "Valorificare internă", createdBy));
-        ms.add(section(mv(company, wpCluj, d(4, 10), plastic, "60.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(4, 19), plastic, "30.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor, "Aviz nr. 240", createdBy));
-        ms.add(section(mv(company, wpCluj, d(7, 8), plastic, "80.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(7, 16), plastic, "30.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, null, "Valorificare internă", createdBy));
+        // ---- Plastic (15 01 02) at Cluj — internal recovery (R3) and a handover ----
+        ms.add(section(mv(company, wpCluj, d(2, 18), plastic, "20.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, null, "Valorificare internă", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(4, 19), plastic, "30.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor, "Aviz nr. 240", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(7, 16), plastic, "30.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, null, "Valorificare internă", createdBy), birouri));
+        // Predările lunare la reciclator. Până la V58 rândurile de generare umpleau lista peste o pagină
+        // (proba de ecran 3 citește paginarea); acum lista are numai predări, deci le are pe toate.
+        ms.add(section(mv(company, wpCluj, d(3, 17), plastic, "25.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor, "Aviz nr. 221", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(5, 15), plastic, "35.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor, "Aviz nr. 249", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(6, 18), plastic, "40.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R3, ecoValor, "Aviz nr. 263", createdBy), birouri));
 
         // ---- Metals (20 01 40) at Turda — handed to the metal recycler ----
-        ms.add(section(mv(company, wpTurda, d(3, 9), metals, "200.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), productie));
-        ms.add(mv(company, wpTurda, d(3, 21), metals, "150.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 310", createdBy));
-        ms.add(section(mv(company, wpTurda, d(4, 12), metals, "180.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), productie));
-        ms.add(mv(company, wpTurda, d(4, 27), metals, "180.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 341", createdBy));
-        ms.add(section(mv(company, wpTurda, d(6, 11), metals, "220.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), productie));
-        ms.add(mv(company, wpTurda, d(6, 24), metals, "100.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 372", createdBy));
+        ms.add(section(mv(company, wpTurda, d(3, 21), metals, "150.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 310", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(4, 27), metals, "180.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 341", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(6, 24), metals, "100.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 372", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(5, 26), metals, "140.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 357", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(7, 22), metals, "160.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R4, metalRecycler, "Aviz nr. 391", createdBy), productie));
 
         // ---- Mixed municipal (20 03 01) at Turda — disposal at a conforming landfill (D5) ----
         // D5 (specially engineered landfill) rather than D1 (deposit onto land): municipal waste
         // in RO goes to "depozite conforme" with sealed cells. Per specialist feedback, 2026-08-20.
-        ms.add(section(mv(company, wpTurda, d(5, 3), mixed, "300.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), productie));
-        ms.add(mv(company, wpTurda, d(5, 28), mixed, "300.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 355", createdBy));
-        ms.add(section(mv(company, wpTurda, d(7, 4), mixed, "260.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy), productie));
-        ms.add(mv(company, wpTurda, d(7, 18), mixed, "200.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 388", createdBy));
+        ms.add(section(mv(company, wpTurda, d(5, 28), mixed, "300.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 355", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(7, 18), mixed, "200.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 388", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(3, 27), mixed, "280.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 318", createdBy), productie));
+        ms.add(section(mv(company, wpTurda, d(6, 27), mixed, "240.000", WasteOperation.DISPOSED, PhysicalState.SOLID, WasteOperationCode.D5, carrier, "Aviz nr. 374", createdBy), productie));
 
         // ---- Glass (15 01 07) taken over at the depot, then passed on ----
         // The traded-goods flow, and the reason the register discriminator exists. Neither leg
@@ -312,11 +301,10 @@ public class DevDataSeeder implements CommandLineRunner {
         ms.add(glassPassedOn);
 
         // ---- Hazardous: waste oils (13 02 08) at Cluj ----
-        ms.add(section(mv(company, wpCluj, d(4, 15), oil, "15.000", WasteOperation.GENERATED, PhysicalState.LIQUID, null, null, "Schimb ulei utilaje", createdBy), birouri));
-        ms.add(mv(company, wpCluj, d(4, 23), oil, "15.000", WasteOperation.RECOVERED, PhysicalState.LIQUID, WasteOperationCode.R13, collector, "Aviz nr. 238", createdBy));
+        ms.add(section(mv(company, wpCluj, d(4, 23), oil, "15.000", WasteOperation.RECOVERED, PhysicalState.LIQUID, WasteOperationCode.R13, collector, "Aviz nr. 238", createdBy), birouri));
+        ms.add(section(mv(company, wpCluj, d(7, 24), oil, "12.000", WasteOperation.RECOVERED, PhysicalState.LIQUID, WasteOperationCode.R13, collector, "Aviz nr. 394", createdBy), birouri));
 
         // ---- Hazardous: lead batteries (16 06 01) at the depot ----
-        ms.add(mv(company, wpDepozit, d(5, 14), battery, "8.000", WasteOperation.GENERATED, PhysicalState.SOLID, null, null, null, createdBy));
         ms.add(mv(company, wpDepozit, d(5, 29), battery, "8.000", WasteOperation.RECOVERED, PhysicalState.SOLID, WasteOperationCode.R13, collector, "Aviz nr. 359", createdBy));
 
         // ---- Cele două stări pentru care ecranele au reguli proprii, dar seed-ul n-avea rânduri --

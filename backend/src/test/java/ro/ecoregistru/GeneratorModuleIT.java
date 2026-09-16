@@ -125,7 +125,7 @@ class GeneratorModuleIT {
         UUID id = createSection(workPointId, "Depozit ambalaje");
 
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"GENERATED\", \"internalGeneratorId\": \"" + id + "\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"internalGeneratorId\": \"" + id + "\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.internalGeneratorId", is(id.toString())))
                 .andExpect(jsonPath("$.internalGeneratorName", is("Depozit ambalaje")));
@@ -137,7 +137,7 @@ class GeneratorModuleIT {
         UUID id = createSection(otherWorkPoint(), "Hala 2");
 
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"GENERATED\", \"internalGeneratorId\": \"" + id + "\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"internalGeneratorId\": \"" + id + "\""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("internal.generator.wrong.work.point")));
     }
@@ -147,19 +147,22 @@ class GeneratorModuleIT {
     @Test
     void theOperationsFollowTheCompanyType() {
         assertThat(CompanyType.GENERATOR.allowedOperations())
-                .containsExactlyInAnyOrder(WasteOperation.GENERATED,
-                        WasteOperation.RECOVERED, WasteOperation.DISPOSED);
+                .containsExactlyInAnyOrder(WasteOperation.RECOVERED, WasteOperation.DISPOSED);
 
         // A collector keeps Anexa 1 too, for its own waste (art. 2 alin. (1)), so it never loses
-        // GENERATED — it only gains the takeover.
+        // the exits — it only gains the takeover.
         assertThat(CompanyType.COLLECTOR.allowedOperations())
-                .contains(WasteOperation.GENERATED, WasteOperation.COLLECTED);
+                .containsExactlyInAnyOrder(WasteOperation.COLLECTED,
+                        WasteOperation.RECOVERED, WasteOperation.DISPOSED);
         assertThat(CompanyType.BOTH.allowedOperations())
-                .contains(WasteOperation.GENERATED, WasteOperation.COLLECTED);
+                .containsExactlyInAnyOrder(WasteOperation.COLLECTED,
+                        WasteOperation.RECOVERED, WasteOperation.DISPOSED);
 
-        // Neither type may choose the legacy state a migration writes.
-        assertThat(CompanyType.BOTH.allowedOperations())
-                .doesNotContain(WasteOperation.UNCLASSIFIED_OUT);
+        // No type may choose a bare generation (16.09.2026) or the legacy state a migration writes.
+        for (CompanyType type : CompanyType.values()) {
+            assertThat(type.allowedOperations())
+                    .doesNotContain(WasteOperation.GENERATED, WasteOperation.UNCLASSIFIED_OUT);
+        }
     }
 
     @Test
@@ -205,7 +208,7 @@ class GeneratorModuleIT {
     @Test
     void aMovementCarriesTheStorageAndTreatmentOfCapitolul2() throws Exception {
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"GENERATED\", \"storageType\": \"CT\","
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"storageType\": \"CT\","
                                 + " \"treatmentMethod\": \"TM\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.storageType", is("CT")))

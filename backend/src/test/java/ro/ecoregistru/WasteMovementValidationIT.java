@@ -80,12 +80,19 @@ class WasteMovementValidationIT {
                 .andExpect(jsonPath("$['error-code']", is("movement.operation.code.disposal")));
     }
 
-    /** A plain GENERATED movement may not carry an R/D code. */
+    /**
+     * „Rămâne în stoc” nu mai există (proprietarul, 16.09.2026): un generator n-are cântar, află
+     * cantitatea la predare, deci deșeul propriu se scrie numai ca valorificare sau eliminare.
+     * Cu cod sau fără, generarea singură e refuzată — și pe API, nu doar pe ecran.
+     */
     @Test
-    void operationCodeIsForbiddenForGenerated() throws Exception {
+    void generationWithoutAnExitIsRefused() throws Exception {
+        mockMvc.perform(postMovement("GENERATED", "SOLID", null))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("movement.generation.needs.exit")));
         mockMvc.perform(postMovement("GENERATED", "SOLID", "R1"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['error-code']", is("movement.operation.code.not.allowed")));
+                .andExpect(jsonPath("$['error-code']", is("movement.generation.needs.exit")));
     }
 
     /** RECOVERED with a valid R code succeeds and the code round-trips in the response. */

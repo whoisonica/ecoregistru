@@ -384,6 +384,9 @@ public class WasteMovementService {
      */
     private void validateOperation(WasteMovementRequest request, Company company) {
         WasteOperation operation = request.operation();
+        if (operation == WasteOperation.GENERATED) {
+            throw new BusinessException(GENERATION_NEEDS_EXIT);
+        }
         if (!operation.isSelectable()) {
             throw new BusinessException(OPERATION_NOT_SELECTABLE);
         }

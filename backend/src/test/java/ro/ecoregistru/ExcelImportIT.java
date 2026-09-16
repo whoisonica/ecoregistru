@@ -90,9 +90,9 @@ class ExcelImportIT {
                 "AUT-12", LocalDate.of(2027, 1, 1), "Str. Fabricii 1", "J05/1/2020"};
     }
 
-    private Object[] generation() {
-        return new Object[]{LocalDate.of(2026, 3, 10), workPoint, "15 01 01", "Generare", 1200, "kg",
-                null, null, null, "Fișa 3", "Solid", "CT", null, null, null, null};
+    private Object[] disposal() {
+        return new Object[]{LocalDate.of(2026, 3, 10), workPoint, "15 01 01", "Eliminare", 1200, "kg",
+                "D5", "Deșeu propriu", null, "Fișa 3", "Solid", "CT", null, null, null, null};
     }
 
     /** Text, nu celule tipate: aşa arată un Excel lipit din altă parte. */
@@ -118,7 +118,7 @@ class ExcelImportIT {
 
     @Test
     void verifyingRunsTheWholeImportAndKeepsNothing() throws Exception {
-        send("/api/v1/import/verificare", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation(), recovery())), adminToken)
+        send("/api/v1/import/verificare", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), adminToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(false)))
                 .andExpect(jsonPath("$.partnersNew", is(1)))
@@ -131,7 +131,7 @@ class ExcelImportIT {
 
     @Test
     void importingSavesThePartnersAndTheMovementsThatNameThem() throws Exception {
-        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation(), recovery())), adminToken)
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), adminToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(true)));
 
@@ -154,15 +154,15 @@ class ExcelImportIT {
         assertThat(recovered.getOperationCode()).isEqualTo(WasteOperationCode.R3);
         assertThat(recovered.getRegister()).isEqualTo(WasteRegister.ANEXA_1);
         assertThat(recovered.getPartner().getId()).isEqualTo(partners.get(0).getId());
-        WasteMovement generated = movements.stream()
-                .filter(m -> m.getOperation() == WasteOperation.GENERATED).findFirst().orElseThrow();
-        assertThat(generated.getStorageType()).isEqualTo(StorageType.CT);
-        assertThat(generated.getPhysicalState()).isEqualTo(PhysicalState.SOLID);
+        WasteMovement disposed = movements.stream()
+                .filter(m -> m.getOperation() == WasteOperation.DISPOSED).findFirst().orElseThrow();
+        assertThat(disposed.getStorageType()).isEqualTo(StorageType.CT);
+        assertThat(disposed.getPhysicalState()).isEqualTo(PhysicalState.SOLID);
     }
 
     @Test
     void theSameFileTwiceDoublesNothing() throws Exception {
-        byte[] xlsx = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation(), recovery()));
+        byte[] xlsx = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery()));
         send("/api/v1/import", xlsx, adminToken).andExpect(jsonPath("$.saved", is(true)));
 
         send("/api/v1/import", xlsx, adminToken)
@@ -182,17 +182,17 @@ class ExcelImportIT {
      */
     @Test
     void oneBadRowKeepsTheWholeFileOutAndEveryBadRowIsNamed() throws Exception {
-        Object[] unknownCode = generation();
+        Object[] unknownCode = disposal();
         unknownCode[2] = "15 01 99";
-        Object[] unknownWorkPoint = generation();
+        Object[] unknownWorkPoint = disposal();
         unknownWorkPoint[1] = "Hala care nu există";
-        Object[] noQuantity = generation();
+        Object[] noQuantity = disposal();
         noQuantity[4] = null;
         Object[] recoveryWithoutCode = recovery();
         recoveryWithoutCode[6] = null;
 
         send("/api/v1/import", file(List.<Object[]>of(partnerRow()),
-                        List.<Object[]>of(generation(), unknownCode, unknownWorkPoint, noQuantity, recoveryWithoutCode)), adminToken)
+                        List.<Object[]>of(disposal(), unknownCode, unknownWorkPoint, noQuantity, recoveryWithoutCode)), adminToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(false)))
                 .andExpect(jsonPath("$.errors[*].row", containsInAnyOrder(3, 4, 5, 6)))
@@ -203,6 +203,26 @@ class ExcelImportIT {
                         hasItem(ErrorMessageEnum.OPERATION_CODE_REQUIRED_RECOVERY.getMessage())));
 
         assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();
+    }
+
+    /**
+     * „Generare” a ieșit din listă (16.09.2026): deșeul propriu se importă ca predare, la fel ca pe
+     * ecran. Un fișier pe șablonul vechi, cu rânduri de generare, se oprește pe rândul lor.
+     */
+    @Test
+    void aGenerationRowIsNamedAndKeepsTheFileOut() throws Exception {
+        Object[] generation = disposal();
+        generation[3] = "Generare";
+        generation[6] = null;
+        generation[8] = null;
+
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation)), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(false)))
+                .andExpect(jsonPath("$.errors[*].row", containsInAnyOrder(2)))
+                .andExpect(jsonPath("$.errors[0].message", containsString("Generare")));
+
         assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();
     }
 
@@ -294,7 +314,7 @@ class ExcelImportIT {
     /** Punctul de lucru din foaia lui e găsit de mișcarea din același fișier; cel existent nu se dublează. */
     @Test
     void aWorkPointFromItsSheetIsCreatedAndUsedByTheMovementsOfTheSameFile() throws Exception {
-        Object[] atTheNewSite = generation();
+        Object[] atTheNewSite = disposal();
         atTheNewSite[1] = "Depozit Nord";
         send("/api/v1/import", file(List.<Object[]>of(new Object[]{"Depozit Nord", "Str. Nordului 3"},
                         new Object[]{workPoint.toUpperCase(), null}),
@@ -340,7 +360,7 @@ class ExcelImportIT {
         String carrierCui = "RO8" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 6);
         Object[] carrier = {"Transport Rapid SRL", carrierCui, "Colector", "Nu", "Da", "Da",
                 null, null, null, null};
-        Object[] row = Arrays.copyOf(generation(), 28);
+        Object[] row = Arrays.copyOf(disposal(), 28);
         row[16] = "Da";
         row[17] = "Hârtie carton";
         row[18] = "Ambalaje secundare şi de transport";
@@ -379,7 +399,7 @@ class ExcelImportIT {
     /** O valoare greșită în coloanele noi e o eroare cu rândul și coloana ei, ca în rest. */
     @Test
     void aWrongPackagingMaterialIsNamedOnItsRow() throws Exception {
-        Object[] row = Arrays.copyOf(generation(), 28);
+        Object[] row = Arrays.copyOf(disposal(), 28);
         row[16] = "Da";
         row[17] = "Carton ondulat";
         send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(row)), adminToken)
@@ -401,7 +421,7 @@ class ExcelImportIT {
                     "Stare fizică", "Tip stocare", "Mod tratare", "Mijloc de transport", "Destinație", "Observații");
             for (int i = 0; i < firstTemplate.size(); i++) header.createCell(i).setCellValue(firstTemplate.get(i));
             List<Object[]> rows = new ArrayList<>();
-            rows.add(generation());
+            rows.add(disposal());
             for (int i = 0; i < rows.size(); i++) {
                 Row r = movements.createRow(i + 1);
                 Object[] v = rows.get(i);

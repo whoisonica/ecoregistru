@@ -70,6 +70,20 @@ const linked = await page.evaluate(() => {
 });
 check("marcajul e legat de mesaj", linked.mesajExista, JSON.stringify(linked));
 
+// „Rămâne în stoc” nu mai există (16.09.2026): generatorul află cantitatea la predare, deci pe
+// „Generare” se alege numai unde pleacă deșeul — și fără alegere formularul nu pleacă.
+const fate = await page.evaluate(() => {
+  const dlg = document.querySelector('div[role="dialog"]');
+  const radios = [...dlg.querySelectorAll('input[name="mv-fate"]')];
+  return {
+    optiuni: radios.map((r) => r.closest("label")?.textContent.trim().split(/Cantitatea/)[0]),
+    stoc: /Rămâne în stoc/.test(dlg.textContent),
+    mesaj: document.getElementById("mv-fate-err")?.textContent.trim() ?? null,
+  };
+});
+check("destinul are doar valorificare și eliminare", fate.optiuni.length === 2 && !fate.stoc, fate.optiuni.join(" · "));
+check("fără destin, rubrica se marchează", fate.mesaj?.startsWith("Alege unde pleacă deșeul") === true, JSON.stringify(fate.mesaj));
+
 await shot(page, "formular_validare");
 await page.keyboard.press("Escape");
 await page.waitForTimeout(400);

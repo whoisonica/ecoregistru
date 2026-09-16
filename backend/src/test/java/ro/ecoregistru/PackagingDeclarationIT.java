@@ -191,26 +191,6 @@ class PackagingDeclarationIT {
     }
 
     /**
-     * A company that records the generation <em>and</em> the handover of the same load has two
-     * movements for one physical quantity. The declaration counts it once — the generations win,
-     * and the exits stand in only where no generation was recorded, which is the same substitution
-     * the evidence engine makes for implied generation (V24).
-     */
-    @Test
-    void oneLoadRecordedTwiceIsDeclaredOnce() throws Exception {
-        generation("15 01 01", "500", "SECONDARY");
-        handover("15 01 01", "500", collector.getId(), "R3", "SECONDARY", null);
-
-        PackagingDeclaration d = declaration();
-
-        assertThat(row(d, PackagingMaterial.HARTIE_CARTON).secondaryTotal())
-                .isEqualByComparingTo("500");
-        // Tabelul 2 rămâne despre predare, deci acolo cifra apare o dată, din ieşire.
-        assertThat(d.handoverRows()).singleElement()
-                .satisfies(r -> assertThat(r.quantity()).isEqualByComparingTo("500"));
-    }
-
-    /**
      * 15 01 04 is "ambalaje metalice": aluminium cans and steel drums share it, and the form has a
      * row for each. Until the client says which, the quantity is reported as unclassified — it is
      * <b>not</b> parked in "Altele", which the specialist says stays empty in practice (25.08.2026).
@@ -595,17 +575,6 @@ class PackagingDeclarationIT {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
-    }
-
-    private void generation(String code, String quantity, String category) throws Exception {
-        UUID codeId = wasteCodeRepository.findByCode(code).orElseThrow().getId();
-        createMovement("""
-                {
-                  "workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": %s, "operation": "GENERATED",
-                  "packagingOnMarket": true, "packagingCategory": "%s"
-                }
-                """.formatted(workPointId, YEAR, codeId, quantity, category));
     }
 
     private void handover(String code, String quantity, UUID partnerId, String operationCode,

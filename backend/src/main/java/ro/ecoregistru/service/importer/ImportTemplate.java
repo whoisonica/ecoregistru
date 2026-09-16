@@ -65,9 +65,12 @@ public class ImportTemplate {
 
     static final Map<String, Boolean> YES_NO = labels("Da", true, "Nu", false);
 
-    /** Fără „Ieşire neclasificată": nu se alege nici pe ecran ({@code WasteOperation#isSelectable}). */
+    /**
+     * Fără „Ieşire neclasificată" şi fără „Generare": nu se aleg nici pe ecran
+     * ({@code WasteOperation#isSelectable}). Deşeul propriu se importă ca predare, pe „Deșeu propriu".
+     */
     static final Map<String, WasteOperation> OPERATIONS = labels(
-            "Generare", WasteOperation.GENERATED, "Preluare de la terți", WasteOperation.COLLECTED,
+            "Preluare de la terți", WasteOperation.COLLECTED,
             "Valorificare", WasteOperation.RECOVERED, "Eliminare", WasteOperation.DISPOSED);
 
     static final Map<String, Unit> UNITS = labels("kg", Unit.KG, "tone", Unit.TONS);

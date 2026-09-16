@@ -105,7 +105,7 @@ class MovementListFilterIT {
                   "quantity": 5.000,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "GENERATED"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"
                 }
                 """.formatted(workPointId, date, wasteCodeId);
         String created = mockMvc.perform(post("/api/v1/movements")

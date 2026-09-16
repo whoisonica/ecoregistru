@@ -172,13 +172,17 @@ class RegisterSeamIT {
                 .andExpect(jsonPath("$.treatmentPurpose", is(nullValue())));
     }
 
-    /** Art. 1 alin. (1): own waste is Anexa 1, and cannot be pushed out of it. */
+    /**
+     * Art. 1 alin. (1): own waste is Anexa 1, and cannot be pushed out of it. Since 16.09.2026 a
+     * bare generation is refused before any register is looked at — own waste is recorded only as
+     * its handover — so this pins that the refusal comes first, whatever register is asked for.
+     */
     @Test
     void generatedWasteCannotBeForcedIntoTheArt48Register() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"GENERATED\", \"register\": \"ART_48\""))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$['error-code']", is("movement.register.invalid")));
+                .andExpect(jsonPath("$['error-code']", is("movement.generation.needs.exit")));
     }
 
     /**

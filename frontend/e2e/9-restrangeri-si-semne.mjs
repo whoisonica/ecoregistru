@@ -155,35 +155,15 @@ const totMarcat = await page.evaluate(() =>
 );
 check("şi rândul nu mai e marcat", !totMarcat);
 
-// ---------------------------------------- 3. PANOUL NUMĂRĂ CE SE POATE NUMĂRA
-// Cifra era suma închiderilor peste toate codurile — hârtie plus ulei uzat plus menajer, adică o
-// cantitate care nu există fizic nicăieri, şi în care un stoc negativ se scădea din pozitivele
-// celorlalte. Acum se numără codurile şi se numesc primele trei.
+// ---------------------------------------- 3. PANOUL NU MAI ARE DALĂ DE STOC
+// Până pe 16.09.2026 dala „Coduri cu stoc” număra codurile cu stoc din evidența lunară. De atunci
+// generarea se scrie numai ca predare (V58) — un generator n-are cântar și nu ține stoc — deci pe
+// Anexa 1 stocul iese zero prin construcție, iar o dală care arată mereu „0” ar fi un zgomot.
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(1200);
-
-const stoc = await page.evaluate(() => {
-  // Dala e găsită după cârligul ei, nu după poziția etichetei: în „Cântar” eticheta stă într-un rând
-  // cu iconița, iar `parentElement` nu mai era dala — proba căzuse pe markup, nu pe cifre.
-  const tile = document.querySelector('[data-testid="stat-stock"]');
-  if (!tile) return null;
-  return {
-    valoare: tile.querySelector("div.font-mono")?.textContent.trim() ?? "",
-    linii: [...tile.querySelectorAll("li")].map((li) => li.textContent.trim()),
-    text: tile.textContent,
-  };
-});
-check("panoul are dala de stoc", stoc !== null);
-check("şi numără coduri, nu kilograme adunate", stoc?.valoare === "4", stoc?.valoare);
-check("nu mai scrie suma peste coduri", !/390/.test(stoc?.text ?? ""), (stoc?.text ?? "").slice(0, 80));
-check("primele trei coduri se numesc, cu kilogramele lor",
-  (stoc?.linii ?? []).slice(0, 3).join(" | ") === "20 01 40170 kg | 15 01 02110 kg | 20 03 0160 kg",
-  (stoc?.linii ?? []).join(" | "));
-// „și încă 1 cod" de la felia de numeral din 09.09 — înainte era doar cifra. Se cere substantivul
-// pe față: fără el, o formă greșită („și încă 1 coduri") ar trece neatinsă.
-check("iar restul se numără, nu se ascunde", /și încă 1 cod\b/.test((stoc?.linii ?? []).join(" ")),
-  (stoc?.linii ?? []).at(-1));
-await shot(page, "9-panou-stoc");
+check("panoul nu mai are dala de stoc", (await page.$('[data-testid="stat-stock"]')) === null);
+check("dar are dala de termene", (await page.$('[data-testid="stat-deadlines"]')) !== null);
+await shot(page, "9-panou-fara-stoc");
 
 // -------------------------------- 4. TERMENELE SPUN CÂTE ZILE MAI SUNT, ŞI DUC LA DOCUMENT
 // Panoul socotea zilele de mult; tabelul lăsa clientul s-o facă în cap. Iar niciun termen nu ducea

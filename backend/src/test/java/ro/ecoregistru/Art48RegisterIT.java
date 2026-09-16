@@ -135,7 +135,7 @@ class Art48RegisterIT {
         movement("2026-06-11", "15 01 02", "KG", "300", "DISPOSED", "D1", landfill, "ART_48");
         movement("2026-06-20", "15 01 02", "KG", "200", "DISPOSED", "D1", landfill, "ART_48");
         // The company's own waste: anexa 1, never here.
-        movement("2026-03-01", "20 01 01", "KG", "900", "GENERATED", null, null, "ANEXA_1");
+        movement("2026-03-01", "20 01 01", "KG", "900", "RECOVERED", "R3", recycler, "ANEXA_1");
         // Next year: outside the document.
         movement("2027-01-05", "15 01 01", "KG", "50", "COLLECTED", null, supplier, null);
     }

@@ -36,17 +36,14 @@ public enum CompanyType {
      *
      * <p>The only member that varies is {@link WasteOperation#COLLECTED}, and it varies for the
      * same reason the art. 48 register does: a company that does not take waste over from third
-     * parties has nothing to record there. {@link WasteOperation#GENERATED} is offered to every
-     * type on purpose — art. 2 alin. (1) obliges an authorised collector to keep Anexa 1 too, for
-     * the waste of its own activity, a sorting station's own reject included — so a COLLECTOR is
-     * never stripped of it. {@link WasteOperation#UNCLASSIFIED_OUT} is in no set: it is written by
-     * a migration, never chosen.
+     * parties has nothing to record there. The exits are offered to every type on purpose —
+     * art. 2 alin. (1) obliges an authorised collector to keep Anexa 1 too, for the waste of its
+     * own activity — so a COLLECTOR is never stripped of them. {@link WasteOperation#GENERATED}
+     * and {@link WasteOperation#UNCLASSIFIED_OUT} are in no set: neither is chosen any more.
      */
     public Set<WasteOperation> allowedOperations() {
         return keepsArt48Register()
-                ? EnumSet.of(WasteOperation.GENERATED, WasteOperation.COLLECTED,
-                             WasteOperation.RECOVERED, WasteOperation.DISPOSED)
-                : EnumSet.of(WasteOperation.GENERATED,
-                             WasteOperation.RECOVERED, WasteOperation.DISPOSED);
+                ? EnumSet.of(WasteOperation.COLLECTED, WasteOperation.RECOVERED, WasteOperation.DISPOSED)
+                : EnumSet.of(WasteOperation.RECOVERED, WasteOperation.DISPOSED);
     }
 }

@@ -374,7 +374,7 @@ class Anexa2FormIT {
     /** The form records a consignment from an expeditor to a destinatar. */
     @Test
     void aMovementWithoutARecipientIsRefused() throws Exception {
-        UUID id = createMovement("\"operation\": \"GENERATED\", \"quantity\": 200",
+        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"operationCode\": \"R3\", \"quantity\": 200",
                 hazardousCodeId);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/anexa2")

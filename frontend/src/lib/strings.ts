@@ -390,15 +390,6 @@ export const strings = {
     // 08.09, când dala a trecut pe kilograme; se întoarce aici, unde nu concurează cu ea.
     statGeneratedSub: "kilograme, pe {count} din luna aceasta",
     statGeneratedSubNone: "kilograme — nicio mișcare înregistrată luna aceasta",
-    // Kilogramele nu se adună peste coduri: hârtie + ulei uzat + menajer nu e nicio cantitate
-    // fizică, iar un stoc negativ pe un cod se ascundea sub pozitivele celorlalte. Se numără
-    // codurile care au stoc și se numesc primele — cifra stă pe cod, unde înseamnă ceva.
-    statStock: "Coduri cu stoc",
-    // Stocul vine din evidența calculată, care poate fi în urma mișcărilor — de asta scrie
-    // „la ultima lună calculată" și nu „acum".
-    statStockSub: "la ultima lună calculată; kilogramele stau pe cod",
-    statStockNegative: "{count} cu stoc negativ — ieșiri neacoperite",
-    statStockMore: "și încă {count}",
     // Zilele nu se mai socotesc aici: `daysLabel` le scrie o singură dată pentru toată aplicația,
     // cu „azi" și „mâine" în cuvinte și cu acordul numeralului. Șirul ăsta spunea „în 1 zile" — și,
     // mai rău, „în 0 zile" chiar în ziua termenului.
@@ -562,7 +553,6 @@ export const strings = {
     effectTitle: "Ce face mișcarea asta",
     effectAnexa1: "Intră pe fișa de evidență (Anexa 1)",
     effectArt48: "Intră în registrul art. 48 — marfă preluată, nu deșeul firmei",
-    effectStock: "Rămâne pe stoc: nicio ieșire, doar generarea",
     effectRecovered: "Iese ca valorificare, cu codul {code}",
     effectDisposed: "Iese ca eliminare, cu codul {code}",
     effectPackaging: "Intră și în declarația de ambalaje (Anexa 1 Ambalaje)",
@@ -642,9 +632,7 @@ export const strings = {
     fateTitle: "Ce se întâmplă cu deșeul",
     fateHint:
       "Se alege după transport, fiindcă de el atârnă: transportul spre valorificare cere un cod R, cel spre eliminare un cod D.",
-    fateStock: "Rămâne în stoc",
-    fateStockEffect:
-      "Cantitatea intră la „Generate” și rămâne pe amplasament. Nu se predă nimic, deci nu există Anexa 3.",
+    fateRequired: "Alege unde pleacă deșeul: spre valorificare sau spre eliminare.",
     fateRecovery: "Transport spre valorificare",
     fateRecoveryEffect:
       "Cantitatea se raportează la „Valorificată”, cu un cod R și cu operatorul care o face (cap. 3).",
