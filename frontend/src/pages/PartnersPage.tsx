@@ -549,6 +549,15 @@ export function PartnersPage() {
     .filter(Boolean)
     .join(" · ");
 
+  /**
+   * „Generator” ca tip de partener: firma de la care **primești** deșeu. Un cont de generator pur
+   * doar predă, deci cardul l-ar încurca la primul partener (proprietarul, 17.09.2026). Rămâne la
+   * colectori, unde e sursa intrărilor, și pe un partener care îl are deja — o valoare salvată nu
+   * dispare din formular. Cât timp firma nu s-a încărcat nu se arată, ca proveniența de mai jos.
+   */
+  const offersGeneratorType =
+    (company != null && company.type !== "GENERATOR") || type === "GENERATOR";
+
   const asksPackagingOrigin =
     (company != null && company.type !== "GENERATOR") || packagingOrigin !== "";
 
@@ -1017,7 +1026,9 @@ export function PartnersPage() {
                   options={[
                     { value: "COLLECTOR", label: typeLabels.COLLECTOR, description: t.typeCollectorHint, icon: <Warehouse className="h-5 w-5" /> },
                     { value: "RECOVERER", label: typeLabels.RECOVERER, description: t.typeRecovererHint, icon: <Recycle className="h-5 w-5" /> },
-                    { value: "GENERATOR", label: typeLabels.GENERATOR, description: t.typeGeneratorHint, icon: <Factory className="h-5 w-5" /> },
+                    ...(offersGeneratorType
+                      ? [{ value: "GENERATOR" as const, label: typeLabels.GENERATOR, description: t.typeGeneratorHint, icon: <Factory className="h-5 w-5" /> }]
+                      : []),
                     { value: NONE_TYPE, label: t.typeNoneCard, description: t.typeNoneCardHint, icon: <Truck className="h-5 w-5" /> },
                   ]}
                 />
