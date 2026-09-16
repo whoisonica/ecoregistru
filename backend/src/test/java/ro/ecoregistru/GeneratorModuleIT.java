@@ -266,7 +266,7 @@ class GeneratorModuleIT {
                 {
                   "name": "%s",
                   "cui": null,
-                  "authorizationNumber": null,
+                  "authorizationNumber": "AM 1/2024",
                   "authorizationExpiry": null,
                   "type": "COLLECTOR",
                   "client": %s,

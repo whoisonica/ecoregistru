@@ -40,7 +40,6 @@ import java.util.UUID;
 
 import ro.ecoregistru.exception.BusinessException;
 
-import static ro.ecoregistru.exception.ErrorMessageEnum.ANEXA3_PACKAGING_COLLECTORS_ONLY;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PACKAGING_OPERATOR_ROLE_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
@@ -230,11 +229,8 @@ public class PackagingService {
         UUID tenantId = TenantContext.require();
         Company company = companyRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
-        // Specialista, 14.09.2026: generatorii au doar ieşiri. Fără preluări nu există ce raporta aici,
-        // şi refuzul vine înaintea punctului de lucru fiindcă nu depinde de el. Descărcarea trece tot pe aici.
-        if (!company.getType().keepsArt48Register()) {
-            throw new BusinessException(ANEXA3_PACKAGING_COLLECTORS_ONLY);
-        }
+        // Specialista, 14.09.2026: generatorii au doar ieşiri — deci la ei raportul are numai
+        // jumătatea de ieşiri (proprietarul, 16.09.2026), nu un refuz. Vezi PackagingAnexa3Builder.
         WorkPoint workPoint = workPointId == null ? null : workPointRepository.findById(workPointId)
                 .filter(wp -> wp.getCompany().getId().equals(tenantId))
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));

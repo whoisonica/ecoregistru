@@ -31,6 +31,7 @@ const suites = [
   ["20-flota.mjs", "flota din Setări: numărul normalizat, ITP-ul și licența care expiră, vehiculul recunoscut la cântar"],
   ["21-soferi.mjs", "șoferii din Setări: depozitul implicit, atestatul expirat, șoferul ales din listă la cântar"],
   ["22-lansare-marunte.mjs", "Istoric pe rândul de mișcare, cât cântărește dosarul, parola cu «Arată» și putere, limitele la șoferi"],
+  ["23-cereri-1609.mjs", "Generare fără «Operațiune», scopul V/E, destinația și autorizația destinatarului, ANAF la CUI, Anexa 3 la generator"],
 ];
 
 const only = process.argv[2];

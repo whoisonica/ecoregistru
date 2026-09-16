@@ -14,6 +14,7 @@ import ro.ecoregistru.controller.response.PartnerWorkPointResponse;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.PartnerWorkPoint;
+import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 import ro.ecoregistru.exception.BusinessException;
 
+import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_AUTHORIZATION_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_ROLE_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_TYPE_REQUIRED;
@@ -53,6 +55,7 @@ public class PartnerService {
         UUID tenantId = TenantContext.require();
         requireCommercialRole(request);
         requireWasteRoleOrCarrier(request);
+        requireAuthorization(request);
         Partner partner = Partner.builder()
                 .company(companyRepository.getReferenceById(tenantId))
                 .name(request.name())
@@ -85,6 +88,7 @@ public class PartnerService {
         Partner partner = require(id);
         requireCommercialRole(request);
         requireWasteRoleOrCarrier(request);
+        requireAuthorization(request);
         partner.setName(request.name());
         partner.setCui(request.cui());
         partner.setAuthorizationNumber(request.authorizationNumber());
@@ -157,6 +161,20 @@ public class PartnerService {
      * audit file prints and the Anexa 3 "Destinat:" ticks are read from. Nullable in the column,
      * not optional in the product: the rule moved here.
      */
+    /**
+     * Cine preia deşeul trebuie să aibă autorizaţie de mediu (proprietarul, 16.09.2026; OUG 92/2021
+     * art. 23 alin. (1) cere predarea către un operator autorizat). Se cere colectorului şi
+     * valorificatorului — celor cărora li se predă. Un generator de la care preluăm şi o firmă care
+     * doar transportă n-au de ce s-o aibă.
+     */
+    private void requireAuthorization(PartnerRequest request) {
+        boolean receivesWaste = request.type() == PartnerType.COLLECTOR
+                || request.type() == PartnerType.RECOVERER;
+        if (receivesWaste && blankToNull(request.authorizationNumber()) == null) {
+            throw new BusinessException(PARTNER_AUTHORIZATION_REQUIRED);
+        }
+    }
+
     private void requireWasteRoleOrCarrier(PartnerRequest request) {
         if (request.type() == null && !request.carrier()) {
             throw new BusinessException(PARTNER_TYPE_REQUIRED);

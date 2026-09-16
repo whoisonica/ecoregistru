@@ -321,7 +321,7 @@ class AuditLogIT {
                         // `client` nu e decor: serviciul cere un rol comercial (V7) — cine e
                         // partenerul pentru noi nu se poate deduce din tipul lui.
                         .content("""
-                                { "name": "%s", "type": "COLLECTOR", "client": true }
+                                { "name": "%s", "type": "COLLECTOR", "client": true, "authorizationNumber": "AM 1/2024" }
                                 """.formatted(name)))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();

@@ -26,11 +26,9 @@ export type WasteRegister = "ANEXA_1" | "ART_48";
 
 /**
  * "Scopul" — HG 856/2002 anexa nr. 1, cap. 2, nota 3. Derived from the R/D operation code, never
- * entered. Only V is written: every filled Anexa 1 we hold puts "V" on recovery sheets and a dash
- * on disposal sheets, so a disposal is null here and the cell prints empty. What identifies it is
- * its D code in cap. 4, next to the operator.
+ * entered: V for an R code, E for a D code (both printed since 16.09.2026, at the owner's request).
  */
-export type TreatmentPurpose = "V";
+export type TreatmentPurpose = "V" | "E";
 
 export type Unit = "KG" | "TONS";
 
@@ -862,6 +860,8 @@ export interface PackagingAnexa3 {
   unclassified: PackagingAnexa3UnclassifiedRow[];
   preparedBy: string | null;
   preparedByRole: string | null;
+  /** Contul e generator: numai ieşirile, fără preluări (proprietarul, 16.09.2026). */
+  exitsOnly: boolean;
   /** false = profilul n-a spus care tabel se aplică, deci nu se tipăreşte nimic. */
   printable: boolean;
   usesTable2: boolean;

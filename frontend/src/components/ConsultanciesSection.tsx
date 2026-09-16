@@ -12,6 +12,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CuiField } from "@/components/AnafLookup";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Dialog } from "@/components/ui/dialog";
@@ -210,22 +211,33 @@ export function ConsultanciesSection() {
               <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
             )}
           </div>
-          <div>
-            <Label htmlFor="cons-cui">{t.cui}</Label>
-            <Input
-              id="cons-cui"
-              value={cui}
-              onChange={(e) => {
-                setCui(e.target.value);
-                if (formError === "cui") setFormError(false);
-              }}
-              placeholder={t.cuiPlaceholder}
-              aria-invalid={formError === "cui"}
-            />
-            {formError === "cui" && (
-              <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
-            )}
-          </div>
+          <CuiField
+            id="cons-cui"
+            label={t.cui}
+            value={cui}
+            onChange={(v) => {
+              setCui(v);
+              if (formError === "cui") setFormError(false);
+            }}
+            placeholder={t.cuiPlaceholder}
+            invalid={{ "aria-invalid": formError === "cui" }}
+            error={
+              formError === "cui" && (
+                <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+              )
+            }
+            targets={[
+              {
+                label: strings.partners.anafFieldName,
+                current: name,
+                pick: (f) => f.name,
+                set: (v) => {
+                  setName(v);
+                  if (formError === "name") setFormError(false);
+                },
+              },
+            ]}
+          />
         </form>
       </Dialog>
 

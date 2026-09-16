@@ -50,6 +50,7 @@ public class AccountRequestService {
     CompanyRepository companyRepository;
     WorkPointRepository workPointRepository;
     CompanyService companyService;
+    WorkPointService workPointService;
 
     /**
      * Public. Returns nothing about what it wrote, so it cannot be used to probe for companies.
@@ -157,7 +158,7 @@ public class AccountRequestService {
 
         Company company = companyRepository.getReferenceById(created.id());
         if (request.getWorkPointName() != null || request.getWorkPointAddress() != null) {
-            workPointRepository.save(WorkPoint.builder()
+            WorkPoint workPoint = workPointRepository.save(WorkPoint.builder()
                     .company(company)
                     .name(request.getWorkPointName() != null
                             ? request.getWorkPointName()
@@ -166,6 +167,7 @@ public class AccountRequestService {
                     .active(true)
                     .createdAt(Instant.now())
                     .build());
+            workPointService.seedDefaultSections(workPoint);
         }
 
         request.setStatus(AccountRequestStatus.APPROVED);

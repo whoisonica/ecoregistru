@@ -113,10 +113,14 @@ class WeighingDocumentIT {
         String text = Golden.flat(Golden.pdfText(pdf(admin, "/api/v1/weighing-operations/" + out.getId() + "/anexa3")));
         assertThat(occurrences(text, "ANEXA3")).isEqualTo(1);
         assertThat(occurrences(text, "Serieşinumăr")).isEqualTo(1);
+        // La categorie numai codurile, la descriere denumirile (proprietarul, 16.09.2026).
+        StringBuilder codes = new StringBuilder("Categoriideşeuri");
         for (int i = 0; i < 12; i++) {
             String code = plain.get(i).getCode().replace(" ", "");
-            assertThat(text).contains("Cod:" + code).contains(code + ":" + (100 + i));
+            codes.append(code);
+            assertThat(text).contains(code + ":" + (100 + i));
         }
+        assertThat(text).contains(codes.append("Descriere").toString());
         assertThat(text).contains("ReciclatorBetaSA");
     }
 
@@ -151,7 +155,8 @@ class WeighingDocumentIT {
         String hazardousCode = hazardous.getCode().replace(" ", "");
 
         String anexa3 = Golden.flat(Golden.pdfText(pdf(admin, "/api/v1/weighing-operations/" + out.getId() + "/anexa3")));
-        assertThat(anexa3).contains("Cod:" + plain.get(0).getCode().replace(" ", "")).doesNotContain(hazardousCode);
+        assertThat(anexa3).contains("Categoriideşeuri" + plain.get(0).getCode().replace(" ", "") + "Descriere")
+                .doesNotContain(hazardousCode);
 
         String aviz = Golden.flat(Golden.pdfText(pdf(viewer, "/api/v1/weighing-operations/" + out.getId() + "/aviz")));
         assertThat(aviz).contains(plain.get(0).getCode().replace(" ", "")).contains(hazardousCode);

@@ -31,9 +31,8 @@ public enum WasteOperationCode {
      * "valorificată" or in "eliminată final".
      */
     public TreatmentPurpose treatmentPurpose() {
-        // Null, not E: disposal leaves the "Scopul" cell empty on every filled form we have.
-        // See TreatmentPurpose for the evidence.
-        return isRecovery() ? TreatmentPurpose.V : null;
+        // V or E, as nota 3 writes them — see TreatmentPurpose for why E came back (16.09.2026).
+        return isRecovery() ? TreatmentPurpose.V : TreatmentPurpose.E;
     }
 
     /**

@@ -33,6 +33,7 @@ import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
+import { CuiField } from "@/components/AnafLookup";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
@@ -50,12 +51,12 @@ const t = strings.clients;
 const typeLabels = strings.enums.companyType;
 const roleLabels = strings.enums.inviteRole;
 
-/** Ordinea în care se citesc: lunar, trimestrial, anual — ca în art. 11. */
-const AFM_CONTRIBUTIONS: AfmContribution[] = [
-  "WITHHOLDING_2_PERCENT",
-  "CIRCULAR_ECONOMY",
-  "PACKAGING",
-];
+/**
+ * Ordinea în care se citesc: lunar, anual — ca în art. 11. „Economia circulară" (trimestrial) a ieșit
+ * din configurare (proprietarul, 16.09.2026): e a depozitelor de deșeuri, nu a clienților noștri. O
+ * firmă care o avea deja bifată o vede în continuare, ca s-o poată debifa.
+ */
+const AFM_CONTRIBUTIONS: AfmContribution[] = ["WITHHOLDING_2_PERCENT", "PACKAGING"];
 const COMPANY_TYPES: CompanyType[] = ["GENERATOR", "COLLECTOR", "BOTH"];
 const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
 
@@ -468,20 +469,41 @@ export function ClientsPage() {
               )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="c-cui">{t.cui}</Label>
-                <Input
+              <div className="sm:col-span-2">
+                <CuiField
                   id="c-cui"
+                  label={t.cui}
                   value={cui}
-                  onChange={(e) => {
-                    setCui(e.target.value);
+                  onChange={(v) => {
+                    setCui(v);
                     if (formError === "cui") setFormError(false);
                   }}
                   placeholder={t.cuiPlaceholder}
+                  error={
+                    formError === "cui" && (
+                      <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+                    )
+                  }
+                  targets={[
+                    {
+                      label: strings.partners.anafFieldName,
+                      current: name,
+                      pick: (f) => f.name,
+                      set: (v) => {
+                        setName(v);
+                        if (formError === "name") setFormError(false);
+                      },
+                    },
+                    { label: strings.partners.anafFieldAddress, current: address, pick: (f) => f.address, set: setAddress },
+                    {
+                      label: strings.partners.anafFieldRegistry,
+                      current: tradeRegisterNumber,
+                      pick: (f) => f.tradeRegisterNumber,
+                      set: setTradeRegisterNumber,
+                    },
+                    { label: strings.partners.anafFieldCaen, current: caenCode, pick: (f) => f.caenCode, set: setCaenCode },
+                  ]}
                 />
-                {formError === "cui" && (
-                  <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
-                )}
               </div>
               <div>
                 <Label htmlFor="c-reg">{strings.settings.company.tradeRegisterNumber}</Label>
@@ -669,7 +691,10 @@ export function ClientsPage() {
               <span className="block text-sm font-medium text-content-strong">{t.afmContributions}</span>
               <p className="mt-0.5 text-xs text-content-muted">{t.afmContributionsHint}</p>
               <div className="mt-2 space-y-2">
-                {AFM_CONTRIBUTIONS.map((contribution) => (
+                {(editing?.afmContributions?.includes("CIRCULAR_ECONOMY")
+                  ? (["WITHHOLDING_2_PERCENT", "CIRCULAR_ECONOMY", "PACKAGING"] as AfmContribution[])
+                  : AFM_CONTRIBUTIONS
+                ).map((contribution) => (
                   <label key={contribution} className="flex items-start gap-2 text-sm">
                     <input
                       type="checkbox"

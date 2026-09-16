@@ -236,13 +236,18 @@ public class Anexa3FormGenerator {
 
         // Un transport cu mai multe sortimente le scrie pe toate în aceeași rubrică, în ordinea
         // liniilor; coloana „Cantitate” le repetă codul, ca rândurile să se poată lega între ele.
+        // „Categorii deşeuri/cod” poartă numai codul, iar „Descriere” denumirea din listă — „ambalaje
+        // de hârtie şi carton” (proprietarul, 16.09.2026). Observaţiile mişcării vin după denumire.
         Paragraph waste = block("Categorii deşeuri");
         for (WasteMovement line : lines) {
-            addLines(waste, line.getWasteCode().getName(), "Cod: " + line.getWasteCode().getCode());
+            addLines(waste, line.getWasteCode().getCode());
         }
 
         // "Descriere" and "Destinat:" share one box on the paper; the ticks sit in the next one.
         Paragraph description = block("Descriere");
+        for (WasteMovement line : lines) {
+            addLines(description, decapitalize(line.getWasteCode().getName()));
+        }
         addLines(description, m.getNotes());
         description.add(text("Destinat:", label));
 

@@ -137,18 +137,17 @@ class RegisterSeamIT {
 
     /**
      * The same exit to a landfill: the partner is the operator, the code says it is disposal, and
-     * the "Scopul" letter stays empty. The note of cap. 2 does define an E, but no filled Anexa 1
-     * we hold writes it — the D code in cap. 4 is what identifies a disposal. See
+     * the "Scopul" letter is E — nota 3's own letter, printed since 16.09.2026. See
      * {@link ro.ecoregistru.enums.TreatmentPurpose}.
      */
     @Test
-    void disposalByAPartnerCarriesItsDCodeAndNoScopulLetter() throws Exception {
+    void disposalByAPartnerCarriesItsDCodeAndTheScopulLetterE() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"DISPOSED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
                                 + "\", \"operationCode\": \"D5\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operationCode", is("D5")))
-                .andExpect(jsonPath("$.treatmentPurpose", is(nullValue())));
+                .andExpect(jsonPath("$.treatmentPurpose", is("E")));
     }
 
     /** Nothing requires a partner: an operation with none was performed on our own site. */

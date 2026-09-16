@@ -104,7 +104,7 @@ public class PackagingAnexa3XlsGenerator {
         int last = table2 ? 7 : 6;
         int r = 1;
 
-        put(sh, s.title, r, 1, TITLE + " — " + d.role().tableHeading());
+        put(sh, s.title, r, 1, TITLE + " — " + d.heading());
         merge(sh, r, r, 1, last);
         sh.getRow(r).setHeightInPoints(30);
         r += 2;

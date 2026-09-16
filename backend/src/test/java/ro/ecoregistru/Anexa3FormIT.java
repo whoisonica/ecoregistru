@@ -422,7 +422,10 @@ class Anexa3FormIT {
         assertThat(page).contains(flat("Nume si prenume: Musat Liviu RK 157812"
                 + " Nr.inmatr.mij.trans: B69BMA"));
         assertThat(page).contains(flat("Data Încărcare 05.07.2026 Descărcare 06.07.2026"));
-        assertThat(page).contains(flat("Categorii deşeuri " + code.getName() + " Cod: " + code.getCode()));
+        // Proprietarul, 16.09.2026: la categorie numai codul, la descriere denumirea din listă.
+        assertThat(page).contains(flat("Categorii deşeuri " + code.getCode() + " Descriere "
+                + Character.toLowerCase(code.getName().charAt(0)) + code.getName().substring(1)));
+        assertThat(page).doesNotContain(flat("Cod: " + code.getCode()));
         assertThat(page).contains(flat("Destinat: colectării |X| stocării temporare |_|"
                 + " tratării |_| valorificării |X| eliminării |_|"));
         // Recorded as 1234,5 kg, printed in the unit chosen for this transport: the point moves

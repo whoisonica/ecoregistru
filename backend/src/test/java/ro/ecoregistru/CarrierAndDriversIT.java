@@ -86,7 +86,8 @@ class CarrierAndDriversIT {
     @Test
     void aCollectorCanAlsoBeACarrier() throws Exception {
         mockMvc.perform(createPartner("""
-                        "name": "Eco Colect SRL", "type": "COLLECTOR", "supplier": true, "carrier": true
+                        "name": "Eco Colect SRL", "type": "COLLECTOR", "supplier": true, "carrier": true,
+                        "authorizationNumber": "AM 12/2024"
                         """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type", is("COLLECTOR")))
@@ -121,6 +122,26 @@ class CarrierAndDriversIT {
                 .andExpect(jsonPath("$['error-code']", is("partner.type.required")));
     }
 
+    /**
+     * Cine preia deşeul trebuie să aibă autorizaţie de mediu (proprietarul, 16.09.2026): colectorul
+     * şi valorificatorul fără număr sunt refuzaţi; generatorul de la care preluăm, nu.
+     */
+    @Test
+    void aCollectorOrRecovererWithoutAnEnvironmentalAuthorizationIsRefused() throws Exception {
+        for (String type : new String[]{"COLLECTOR", "RECOVERER"}) {
+            mockMvc.perform(createPartner("""
+                            "name": "Fara Autorizatie %s SRL", "type": "%s", "client": true,
+                            "authorizationNumber": "  "
+                            """.formatted(type, type)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$['error-code']", is("partner.authorization.required")));
+        }
+        mockMvc.perform(createPartner("""
+                        "name": "Sursa Ambalaje SRL", "type": "GENERATOR", "supplier": true
+                        """))
+                .andExpect(status().isOk());
+    }
+
     // ---------- A carrier's drivers ----------
 
     @Test
@@ -146,6 +167,7 @@ class CarrierAndDriversIT {
     void untickingCarrierKeepsTheDrivers() throws Exception {
         String partnerId = createPartnerReturningId("""
                 "name": "Uneori Transport SRL", "type": "COLLECTOR", "carrier": true, "supplier": true,
+                "authorizationNumber": "AM 1/2024",
                 "drivers": [{"name": "Vasile Ionescu"}]
                 """);
 
@@ -154,7 +176,7 @@ class CarrierAndDriversIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name": "Uneori Transport SRL", "type": "COLLECTOR",
-                                 "carrier": false, "supplier": true}
+                                 "carrier": false, "supplier": true, "authorizationNumber": "AM 1/2024"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.carrier", is(false)))

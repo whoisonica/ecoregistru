@@ -73,7 +73,7 @@ public class PackagingAnexa3Generator {
             doc.open();
 
             Paragraph head = new Paragraph(
-                    cp1250("ANEXA Nr. 3 — " + d.role().tableHeading()), title);
+                    cp1250("ANEXA Nr. 3 — " + d.heading()), title);
             head.setSpacingAfter(8f);
             doc.add(head);
 

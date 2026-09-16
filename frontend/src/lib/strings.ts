@@ -623,8 +623,15 @@ export const strings = {
     storageAndTreatment: "Stocare, tratare și transport (cap. 2)",
     transportMeans: "Transport — mijlocul",
     wasteDestination: "Transport — destinația",
-    storageType: "Stocare — tipul",
+    storageType: "Depozitare până la predare — tipul",
     treatmentMethod: "Tratare — ce se face",
+    treatmentMethodHint: "Ce alegi aici apare pe fișă la „Modul”. La „— fără —” apare „-”.",
+    treatmentPurpose: "Tratare — scopul",
+    treatmentPurposeHint:
+      "Nu se alege: îl dă unde pleacă deșeul. V la valorificare, E la eliminare — așa apare în coloana „Scopul” de pe fișă.",
+    wasteDestinationRequired: "Alege destinația: DO, I, Vr sau A.",
+    partnerNeedsAuthorization:
+      "Partenerul n-are trecut numărul autorizației de mediu. Cine preia deșeul trebuie să fie autorizat: completează-l în fișa lui, la Parteneri.",
     nomenclatorPlaceholder: "— fără —",
     operationGeneratorHint:
       "Mișcarea pornește de la generare. Ce se întâmplă cu deșeul după — pleacă spre valorificare sau spre eliminare — se alege mai jos, după transport.",
@@ -1528,16 +1535,19 @@ export const strings = {
     // Căutarea după CUI, la ANAF. Completează numai rubricile goale: ce a scris omul nu se rescrie.
     anafLookup: "Completează din ANAF",
     anafLookupHint:
-      "Scrie CUI-ul și apasă butonul: denumirea, adresa și numărul de la Registrul Comerțului vin din registrul public ANAF. Ce ai completat deja rămâne cum e.",
+      "Scrie CUI-ul și apasă butonul: datele firmei vin din registrul public ANAF. Ce ai completat deja rămâne cum e.",
     anafFilled: "Completat din ANAF: {fields}. Verifică înainte să salvezi.",
     anafNothingToFill: "ANAF o știe ca „{name}”. Rubricile erau deja completate, deci n-am schimbat nimic.",
     anafFieldName: "denumirea",
     anafFieldAddress: "adresa",
     anafFieldRegistry: "numărul de la Registrul Comerțului",
+    anafFieldCaen: "codul CAEN",
     anafInactive: "Atenție: ANAF o arată ca contribuabil inactiv.",
     anafError: "Nu am putut întreba ANAF. Completează datele de mână.",
     anafCuiFirst: "Scrie întâi CUI-ul, apoi apasă butonul.",
     authorizationNumberPlaceholder: "ex. 123/2024",
+    authorizationRequired:
+      "Completează numărul autorizației de mediu: colectorul sau valorificatorul căruia îi predai deșeul trebuie să fie autorizat.",
     typePlaceholder: "Alege tipul",
     // status / badges
     active: "Activ",
@@ -2253,11 +2263,11 @@ export const strings = {
       ANEXA_1: "Evidența gestiunii — deșeu propriu",
       ART_48: "Registru cronologic — preluat de la terți",
     },
-    // HG 856/2002, anexa nr. 1, cap. 2, nota 3. Nota definește și „E — în vederea eliminării”,
-    // dar niciun formular completat pe care îl avem nu îl scrie: pe fișele de eliminare coloana
-    // rămâne goală, iar ce identifică eliminarea e codul D din cap. 4.
+    // HG 856/2002, anexa nr. 1, cap. 2, nota 3. Amândouă literele se tipăresc din 16.09.2026
+    // (proprietarul): V la valorificare, E la eliminare.
     treatmentPurpose: {
       V: "V — pentru valorificare",
+      E: "E — în vederea eliminării",
     },
     // HG 856/2002, anexa nr. 1, cap. 2, nota 1 — tipul de stocare.
     storageType: {
@@ -2795,6 +2805,10 @@ export const strings = {
     // n-are rubrică de destinatar; se citește doar pe ecran, de un om care va căuta „ANMAP".
     anexa3AddresseeAnmap: "ANMAP",
     anexa3AddresseeLocal: "agenția județeană pentru protecția mediului din raza punctului de lucru",
+    anexa3ExitsTitle: "Anexa 3. Deșeuri de ambalaje predate — ieșiri",
+    anexa3ExitsHint:
+      "Ambalajele pe care le-ai predat în anul ales, pe material și pe firma care le-a preluat. Se însumează din predările de pe Generare, pe coduri 15 01 xx.",
+    anexa3ExitsTableTitle: "Ieșiri — ce ai predat și cui",
     anexa3Table1Title: "Tabelul 1 — colectori și comercianți",
     anexa3Table2Title: "Tabelul 2 — reciclatori și valorificatori",
     anexa3IntakeTitle: "Cantitatea preluată",

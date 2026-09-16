@@ -190,7 +190,7 @@ class ApiErrorContractIT {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Transport SRL","client":true,"supplier":false,"carrier":true,"type":"COLLECTOR"}"""))
+                                {"name":"Transport SRL","client":true,"supplier":false,"carrier":true,"type":"COLLECTOR","authorizationNumber":"AM 1/2024"}"""))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String partnerId = created.replaceAll("^.*?\"id\"\\s*:\\s*\"([^\"]+)\".*$", "$1");

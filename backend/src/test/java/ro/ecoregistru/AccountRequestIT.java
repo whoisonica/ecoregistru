@@ -16,6 +16,7 @@ import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.enums.AccountRequestStatus;
 import ro.ecoregistru.repository.AccountRequestRepository;
 import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.InternalGeneratorRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 
 import java.util.UUID;
@@ -56,6 +57,7 @@ class AccountRequestIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired AccountRequestRepository accountRequestRepository;
     @Autowired WorkPointRepository workPointRepository;
+    @Autowired InternalGeneratorRepository internalGeneratorRepository;
 
     private String platformToken;
     private String tenantToken;
@@ -153,6 +155,11 @@ class AccountRequestIT {
                     assertThat(wp.getName()).isEqualTo("Hala Florești");
                     assertThat(wp.getAddress()).isEqualTo("Str. Depozitelor nr. 4, Florești");
                 });
+        // „Birouri" şi „Producţie" din prima zi a contului (proprietarul, 16.09.2026): aprobarea
+        // ocolea serviciul punctelor de lucru, deci contul pornea fără nicio secţie.
+        assertThat(internalGeneratorRepository.findAllByCompany_IdOrderByNameAsc(companyId))
+                .extracting(g -> g.getName())
+                .containsExactly("Birouri", "Producţie");
     }
 
     /**

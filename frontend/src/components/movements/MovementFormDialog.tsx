@@ -65,6 +65,22 @@ import { Anexa2Fields } from "@/components/movements/Anexa2Fields";
 const t = strings.movements;
 const e = strings.enums;
 
+/** Nota 5 a fișei, cum o folosesc clienții: groapa orașului, incinerare, valorificare, altele. */
+const OFFERED_DESTINATIONS: string[] = ["DO", "I", "Vr", "A"];
+
+/**
+ * Un cod din Lista europeană, citit după denumire (proprietarul, 16.09.2026): denumirea întâi,
+ * codul lângă ea și dedesubt, ca lista să se parcurgă după ce e deșeul, nu după cifre.
+ */
+function wasteCodeItem(id: string, code: string, name: string, hazardous: boolean): ComboboxItem {
+  const title = name.charAt(0).toUpperCase() + name.slice(1);
+  return {
+    id,
+    label: `${title} (${code})`,
+    sublabel: hazardous ? `${code} · ${t.hazardous}` : code,
+  };
+}
+
 interface MovementFormDialogProps {
   editing: WasteMovement | null;
   /**
@@ -131,14 +147,15 @@ export function MovementFormDialog({
   }, [workPoints, initial?.workPointId, initial?.workPointName]);
   const [date, setDate] = useState(editing?.date ?? todayIso());
   const [wasteCode, setWasteCode] = useState<ComboboxItem | null>(
-    initial
-      ? {
-          id: initial.wasteCodeId,
-          label: `${initial.wasteCode} — ${initial.wasteCodeName}`,
-          // Same marker the search results carry, so "is this hazardous?" has one answer here.
-          sublabel: initial.hazardous ? t.hazardous : undefined,
-        }
-      : null
+    initial ? wasteCodeItem(initial.wasteCodeId, initial.wasteCode, initial.wasteCodeName, initial.hazardous) : null
+  );
+  /**
+   * Codul și periculozitatea codului ales, ținute separat de ce scrie în listă. Lista se citește
+   * după denumire (proprietarul, 16.09.2026), deci eticheta nu mai începe cu codul, iar regulile de
+   * mai jos — ambalaj, periculos, cap. 18 — nu se mai pot sprijini pe ea.
+   */
+  const [codeMeta, setCodeMeta] = useState<{ code: string; hazardous: boolean } | null>(
+    initial ? { code: initial.wasteCode, hazardous: initial.hazardous } : null
   );
   const [codeQuery, setCodeQuery] = useState("");
   // Ambalaje: cele trei rubrici pe care le cere tabelul 1 al Anexei 1 Ambalaje şi pe care numai
@@ -221,10 +238,11 @@ export function MovementFormDialog({
   const [partnerWorkPointId, setPartnerWorkPointId] = useState(
     initial?.partnerWorkPointId ?? ""
   );
-  const recipientWorkPoints = useMemo(
-    () => (partners ?? []).find((p) => p.id === partnerId)?.workPoints ?? [],
+  const chosenPartner = useMemo(
+    () => (partners ?? []).find((p) => p.id === partnerId),
     [partners, partnerId]
   );
+  const recipientWorkPoints = chosenPartner?.workPoints ?? [];
   /**
    * Transportatorii se grupează, nu se filtrează. Regula casei e că un răspuns lipsă nu restrânge
    * nimic (vezi profilul de firmă): dacă nimeni n-a bifat încă „Transportator" în Parteneri, un
@@ -362,11 +380,9 @@ export function MovementFormDialog({
   const searchResults = codeSearch.data ?? [];
   const shownCodes =
     profileWasteCodes.length > 0 && !codeQuery.trim() ? profileWasteCodes : searchResults;
-  const codeItems: ComboboxItem[] = shownCodes.map((w) => ({
-    id: w.id,
-    label: `${w.code} — ${w.name}`,
-    sublabel: w.hazardous ? t.hazardous : undefined,
-  }));
+  const codeItems: ComboboxItem[] = shownCodes.map((w) =>
+    wasteCodeItem(w.id, w.code, w.name, w.hazardous)
+  );
 
   // O mișcare veche poate purta o operațiune pe care ecranul n-o mai oferă (generarea unui colector
   // pur, de dinainte de cele două ecrane): rămâne în listă, ca rândul să se poată salva neschimbat.
@@ -425,18 +441,18 @@ export function MovementFormDialog({
    * decide singur (15 01 01 hârtie, 15 01 02 alte plastice, 15 01 03 lemn, 15 01 07 sticlă); la
    * 15 01 04 nu se propune nimic, fiindcă acoperă şi aluminiul, şi oţelul.
    */
-  const isPackagingCode = (wasteCode?.label ?? "").startsWith("15 01");
-  const suggestedMaterial = suggestedPackagingMaterial(wasteCode?.label ?? "");
+  const isPackagingCode = (codeMeta?.code ?? "").startsWith("15 01");
+  const suggestedMaterial = suggestedPackagingMaterial(codeMeta?.code ?? "");
 
   /**
    * Cele două formulare de transport din HG 1061/2008 sunt aceeași întrebare cu răspuns opus:
    * anexa 3 pentru nepericuloase, anexa 2 pentru periculoase. Blocul de transport e comun —
    * transportator, delegat, mașină, cele cinci bife — și doar rubricile proprii diferă.
    */
-  const isHazardousCode = wasteCode?.sublabel === t.hazardous;
+  const isHazardousCode = codeMeta?.hazardous ?? false;
   // Capitolul 18: art. 24 dă formularul transportatorului, pe rută. Nu e o variantă a Anexei 2,
   // e alt flux — deci nu se oferă, se explică.
-  const isMedicalCode = isHazardousCode && (wasteCode?.label ?? "").startsWith("18");
+  const isMedicalCode = isHazardousCode && (codeMeta?.code ?? "").startsWith("18");
   const showTransportSection = isExit(effectiveOperation) && Boolean(partnerId);
   const showAnexa3Section = showTransportSection && !isHazardousCode;
   // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori". La un generator blocul de
@@ -541,6 +557,12 @@ export function MovementFormDialog({
       errs.operationCode = t.recoveryCodeRequired;
     if (effectiveOperation === "DISPOSED" && (!operationCode || !operationCode.startsWith("D")))
       errs.operationCode = t.disposalCodeRequired;
+    // Cine preia deșeul trebuie să aibă autorizație de mediu (proprietarul, 16.09.2026). Se cere
+    // numărul din fișa partenerului; expirarea rămâne avertisment, ca până acum (decizia 36).
+    if (requiresCode && partnerId && !chosenPartner?.authorizationNumber?.trim())
+      errs.partnerId = t.partnerNeedsAuthorization;
+    // Nota 5 a fișei: pe o predare de deșeu propriu destinația nu rămâne goală.
+    if (screenRegister === "ANEXA_1" && !wasteDestination) errs.wasteDestination = t.wasteDestinationRequired;
     if (isLegacyExit) errs.form = t.legacyExitHint;
     return errs;
   }
@@ -825,6 +847,8 @@ export function MovementFormDialog({
                 // niciun `change` până la formular, deci garda se marchează aici.
                 markDirty();
                 setWasteCode(item);
+                const picked = item ? shownCodes.find((w) => w.id === item.id) : undefined;
+                setCodeMeta(picked ? { code: picked.code, hazardous: picked.hazardous } : null);
               }}
               onQueryChange={setCodeQuery}
               items={codeItems}
@@ -897,6 +921,10 @@ export function MovementFormDialog({
 
         <FormSection title={t.sectionOperation}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {/* Pe „Generare" operațiunea e una singură și nu se alege: rândul e mereu o predare, iar
+                unde pleacă deșeul se spune mai jos, sub transport. Un select cu o singură opțiune,
+                „Generare", se citea ca vechiul „rămâne în stoc" (proprietarul, 16.09.2026). */}
+            {operations.length > 1 && (
             <div>
               <Label htmlFor="mv-op">{t.operation}</Label>
               <Select
@@ -917,10 +945,8 @@ export function MovementFormDialog({
                   <option value="UNCLASSIFIED_OUT">{e.wasteOperation.UNCLASSIFIED_OUT}</option>
                 )}
               </Select>
-              {operations.length === 1 && (
-                <p className="mt-1 text-xs text-content-muted">{t.operationGeneratorHint}</p>
-              )}
             </div>
+            )}
             <div>
               <Label htmlFor="mv-state">{t.physicalState}</Label>
               <Select
@@ -937,6 +963,10 @@ export function MovementFormDialog({
               </Select>
             </div>
           </div>
+
+          {operations.length === 1 && (
+            <p className="text-xs text-content-muted">{t.operationGeneratorHint}</p>
+          )}
 
           {operation === "COLLECTED" && (
             <p className="rounded-md border border-line bg-surface-muted px-3 py-2 text-xs text-content-strong">
@@ -982,7 +1012,23 @@ export function MovementFormDialog({
                   </option>
                 ))}
               </Select>
+              <p className="mt-1 text-xs text-content-muted">{t.treatmentMethodHint}</p>
             </div>
+            {/* Nota 3 a fișei: scopul nu se alege, îl dă codul R/D — V la valorificare, E la
+                eliminare. Se arată aici ca omul să vadă ce se tipărește în coloana „Scopul". */}
+            {requiresCode && (
+              <div>
+                <span className="block text-sm font-medium text-content-strong">{t.treatmentPurpose}</span>
+                <p className="mt-1.5 font-mono text-sm text-content" data-testid="mv-purpose">
+                  {effectiveOperation === "RECOVERED"
+                    ? e.treatmentPurpose.V
+                    : effectiveOperation === "DISPOSED"
+                      ? e.treatmentPurpose.E
+                      : "—"}
+                </p>
+                <p className="mt-1 text-xs text-content-muted">{t.treatmentPurposeHint}</p>
+              </div>
+            )}
           </div>
         </FormSection>
 
@@ -1009,14 +1055,20 @@ export function MovementFormDialog({
                 id="mv-destination"
                 value={wasteDestination}
                 onChange={(ev) => setWasteDestination(ev.target.value as typeof wasteDestination)}
+                {...invalidProps("mv-destination-err", errors.wasteDestination)}
               >
                 <option value="">{t.nomenclatorPlaceholder}</option>
-                {Object.entries(e.wasteDestination).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
+                {/* Patru destinații (proprietarul, 16.09.2026); una veche din afara lor rămâne în
+                    listă la editare, ca rândul să se poată salva neschimbat. */}
+                {Object.entries(e.wasteDestination)
+                  .filter(([value]) => OFFERED_DESTINATIONS.includes(value) || value === initial?.wasteDestination)
+                  .map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
               </Select>
+              <FieldError id="mv-destination-err" message={errors.wasteDestination} />
             </div>
           </div>
 

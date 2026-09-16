@@ -121,19 +121,12 @@ class Anexa1FormIT {
     }
 
     /**
-     * And "Modul" keeps quiet along with the quantity — audit point 14, fixed 04.09.2026.
-     *
-     * <p>The quantity was already computed from own treatment alone, but "Modul" and "Scopul" were
-     * read from <em>every</em> movement of the month. So a handover on which the client had also
-     * ticked a treatment method printed <em>Modul: TM</em> next to <em>Cant.: 0.000</em>: a
-     * treatment declared with no quantity, a rubric contradicting itself on a filed form.
-     *
-     * <p>The corpus decides the shape of the rubric (regula de lucru 3). Panemar — a bakery that
-     * only hands waste over — writes {@code 0.000} with Modul {@code -}; Hamburger, which really
-     * does bale, writes both. Both silent is their practice for a pure handover.
+     * "Modul" shows what the client picked on Generare, "-" when they picked nothing; "Scopul" is V
+     * or E from where the waste went (proprietarul, 16.09.2026). A handover with TM prints TM and V;
+     * a disposal with no method prints "-" and E.
      */
     @Test
-    void chapterTwoLeavesTheTreatmentModeBlankWhenNothingWasTreatedHere() throws Exception {
+    void chapterTwoShowsTheChosenModeAndThePurpose() throws Exception {
         Company company = admin.getCompany();
         UUID workPointId = workPointRepository.findAllByCompany_Id(company.getId()).get(0).getId();
         UUID codeId = wasteCodeRepository.findByCode("15 01 03").orElseThrow().getId();
@@ -153,6 +146,18 @@ class Anexa1FormIT {
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk());
+        String disposal = """
+                {
+                  "workPointId": "%s", "date": "%d-10-10", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 40,
+                  "operation": "DISPOSED", "register": "ANEXA_1", "operationCode": "D5"
+                }
+                """.formatted(workPointId, YEAR, codeId);
+        mockMvc.perform(post("/api/v1/movements")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(disposal))
+                .andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/evidences/regenerate?year=" + YEAR)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
@@ -164,9 +169,14 @@ class Anexa1FormIT {
 
         assertThat(september.treatedQuantity()).usingComparator(BigDecimal::compareTo)
                 .isEqualTo(BigDecimal.ZERO);
-        // The point of the fix: the mode must not survive alone.
-        assertThat(september.treatmentMethod()).isBlank();
-        assertThat(september.purpose()).isBlank();
+        assertThat(september.treatmentMethod()).isEqualTo("TM");
+        assertThat(september.purpose()).isEqualTo("V");
+
+        Anexa1Sheet.Anexa1MonthRow october = sheet.rows().get(9);
+        assertThat(october.treatedQuantity()).usingComparator(BigDecimal::compareTo)
+                .isEqualTo(new BigDecimal("40"));
+        assertThat(october.treatmentMethod()).isEqualTo("-");
+        assertThat(october.purpose()).isEqualTo("E");
     }
 
     /**
@@ -410,8 +420,7 @@ class Anexa1FormIT {
 
     /**
      * G1 (B6), the other half: the values the screen offers are the letters the notes print, each
-     * with the note's own wording. Nota 3 is the one deliberate gap — {@code TreatmentPurpose} keeps
-     * only V, see its javadoc — so there the enum must be inside the note, not equal to it.
+     * with the note's own wording — nota 3 included, since E came back on 16.09.2026.
      */
     @Test
     void everyChapterTwoNomenclatorIsTheListItsNotePrints() {
@@ -420,7 +429,7 @@ class Anexa1FormIT {
         assertNomenclator(CHAPTER_TWO_NOTES[1], ro.ecoregistru.enums.TreatmentMethod.values(),
                 ro.ecoregistru.enums.TreatmentMethod::getOfficialLabel, true);
         assertNomenclator(CHAPTER_TWO_NOTES[2], ro.ecoregistru.enums.TreatmentPurpose.values(),
-                ro.ecoregistru.enums.TreatmentPurpose::getOfficialLabel, false);
+                ro.ecoregistru.enums.TreatmentPurpose::getOfficialLabel, true);
         assertNomenclator(CHAPTER_TWO_NOTES[3], ro.ecoregistru.enums.TransportMeans.values(),
                 ro.ecoregistru.enums.TransportMeans::getOfficialLabel, true);
         assertNomenclator(CHAPTER_TWO_NOTES[4], ro.ecoregistru.enums.WasteDestination.values(),
@@ -478,7 +487,8 @@ class Anexa1FormIT {
             assertThat(c.isRecovery()).as(c.name()).isEqualTo(recovery);
             assertThat(c.isDisposal()).as(c.name()).isEqualTo(!recovery);
             assertThat(c.treatmentPurpose()).as(c.name())
-                    .isEqualTo(recovery ? ro.ecoregistru.enums.TreatmentPurpose.V : null);
+                    .isEqualTo(recovery ? ro.ecoregistru.enums.TreatmentPurpose.V
+                            : ro.ecoregistru.enums.TreatmentPurpose.E);
         });
     }
 

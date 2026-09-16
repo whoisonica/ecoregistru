@@ -56,7 +56,15 @@ export function operationsFor(screen: WasteRegister, direction: MovementDirectio
  */
 export type FieldErrors = Partial<
   Record<
-    "workPointId" | "date" | "wasteCode" | "quantity" | "partnerId" | "fate" | "operationCode" | "form",
+    | "workPointId"
+    | "date"
+    | "wasteCode"
+    | "quantity"
+    | "partnerId"
+    | "fate"
+    | "operationCode"
+    | "wasteDestination"
+    | "form",
     string
   >
 >;

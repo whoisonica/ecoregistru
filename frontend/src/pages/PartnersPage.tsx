@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Ban, Pencil, Plus, RotateCcw, Search, Users } from "lucide-react";
-import { useCompanyLookup } from "@/hooks/useCompanyLookup";
+import { Ban, Pencil, Plus, RotateCcw, Users } from "lucide-react";
+import { CuiField } from "@/components/AnafLookup";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
   usePartners,
@@ -25,6 +25,7 @@ import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
+import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
@@ -108,46 +109,6 @@ export function PartnersPage() {
   const [editing, setEditing] = useState<Partner | null>(null);
   const [name, setName] = useState("");
   const [cui, setCui] = useState("");
-  // Ce a răspuns ANAF la „Completează din ANAF”, spus sub rubrică. Se șterge când se schimbă CUI-ul.
-  const [anafNote, setAnafNote] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(null);
-  const anafLookup = useCompanyLookup();
-
-  /**
-   * Completează din ANAF numai rubricile goale. Ce a scris omul nu se rescrie: poate a scris numele
-   * cu care îi spun ei firmei, iar adresa de descărcare poate fi alta decât sediul din registru.
-   */
-  async function fillFromAnaf() {
-    if (!cui.trim()) {
-      setAnafNote({ tone: "error", text: t.anafCuiFirst });
-      return;
-    }
-    setAnafNote(null);
-    try {
-      const found = await anafLookup.mutateAsync(cui.trim());
-      const filled: string[] = [];
-      if (!name.trim() && found.name) {
-        setName(found.name);
-        setNameError(false);
-        filled.push(t.anafFieldName);
-      }
-      if (!address.trim() && found.address) {
-        setAddress(found.address);
-        filled.push(t.anafFieldAddress);
-      }
-      if (!tradeRegisterNumber.trim() && found.tradeRegisterNumber) {
-        setTradeRegisterNumber(found.tradeRegisterNumber);
-        filled.push(t.anafFieldRegistry);
-      }
-      const fields =
-        filled.length > 1 ? `${filled.slice(0, -1).join(", ")} și ${filled[filled.length - 1]}` : filled[0];
-      const text = fields
-        ? t.anafFilled.replace("{fields}", fields)
-        : t.anafNothingToFill.replace("{name}", found.name ?? found.cui);
-      setAnafNote(found.inactive ? { tone: "warn", text: `${text} ${t.anafInactive}` } : { tone: "ok", text });
-    } catch (error) {
-      setAnafNote({ tone: "error", text: apiErrorMessage(error, t.anafError) });
-    }
-  }
   const [authorizationNumber, setAuthorizationNumber] = useState("");
   const [authorizationExpiry, setAuthorizationExpiry] = useState("");
   const [authorizationIssueDate, setAuthorizationIssueDate] = useState("");
@@ -180,6 +141,9 @@ export function PartnersPage() {
   const [nameError, setNameError] = useState(false);
   const [roleError, setRoleError] = useState(false);
   const [typeError, setTypeError] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  /** Cui îi predai deșeul: colectorul și valorificatorul. Lor li se cere autorizația (16.09.2026). */
+  const needsAuthorization = type === "COLLECTOR" || type === "RECOVERER";
   const [roleFilterRaw, setRoleFilter] = useUrlState("rol");
   const roleFilter = roleFilterRaw as RoleFilter;
 
@@ -267,7 +231,6 @@ export function PartnersPage() {
     setEditing(null);
     setName("");
     setCui("");
-    setAnafNote(null);
     setAuthorizationNumber("");
     setAuthorizationExpiry("");
     setAuthorizationIssueDate("");
@@ -289,6 +252,7 @@ export function PartnersPage() {
     setNameError(false);
     setRoleError(false);
     setTypeError(false);
+    setAuthError(false);
     setSwitchedFrom(null);
     setDialogOpen(true);
   }
@@ -346,7 +310,6 @@ export function PartnersPage() {
     setEditing(p);
     setName(p.name);
     setCui(p.cui ?? "");
-    setAnafNote(null);
     setAuthorizationNumber(p.authorizationNumber ?? "");
     setAuthorizationExpiry(p.authorizationExpiry ?? "");
     setAuthorizationIssueDate(p.authorizationIssueDate ?? "");
@@ -378,6 +341,7 @@ export function PartnersPage() {
     setNameError(false);
     setRoleError(false);
     setTypeError(false);
+    setAuthError(false);
     setDialogOpen(true);
   }
 
@@ -395,6 +359,12 @@ export function PartnersPage() {
     // Mirrors the backend rule: either they do something with the waste, or they haul it.
     if (!type && !isCarrier) {
       setTypeError(true);
+      return;
+    }
+    // Aceeași regulă ca serverul: cine preia deșeul are autorizație de mediu.
+    if (needsAuthorization && !authorizationNumber.trim()) {
+      setAuthError(true);
+      document.getElementById("p-auth-number")?.focus();
       return;
     }
     const input: PartnerInput = {
@@ -798,47 +768,31 @@ export function PartnersPage() {
                 </div>
               )}
             </div>
-            <div>
-              <Label htmlFor="p-cui">{t.cui}</Label>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input
-                  id="p-cui"
-                  className="min-w-0 flex-1"
-                  value={cui}
-                  onChange={(e) => {
-                    setCui(e.target.value);
-                    if (anafNote) setAnafNote(null);
-                  }}
-                  placeholder={t.cuiPlaceholder}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={fillFromAnaf}
-                  loading={anafLookup.isPending}
-                >
-                  {!anafLookup.isPending && <Search className="mr-2 h-4 w-4" aria-hidden />}
-                  {t.anafLookup}
-                </Button>
-              </div>
-              {anafNote ? (
-                <p
-                  role="status"
-                  className={
-                    anafNote.tone === "error"
-                      ? "mt-1 text-xs text-red-600"
-                      : anafNote.tone === "warn"
-                        ? "mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-900"
-                        : "mt-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs text-emerald-900"
-                  }
-                >
-                  {anafNote.text}
-                </p>
-              ) : (
-                <p className="mt-1 text-xs text-content-muted">{t.anafLookupHint}</p>
-              )}
-            </div>
+            <CuiField
+              id="p-cui"
+              label={t.cui}
+              value={cui}
+              onChange={setCui}
+              placeholder={t.cuiPlaceholder}
+              targets={[
+                {
+                  label: t.anafFieldName,
+                  current: name,
+                  pick: (f) => f.name,
+                  set: (v) => {
+                    setName(v);
+                    setNameError(false);
+                  },
+                },
+                { label: t.anafFieldAddress, current: address, pick: (f) => f.address, set: setAddress },
+                {
+                  label: t.anafFieldRegistry,
+                  current: tradeRegisterNumber,
+                  pick: (f) => f.tradeRegisterNumber,
+                  set: setTradeRegisterNumber,
+                },
+              ]}
+            />
           </FormSection>
 
           <FormSection title={t.sectionRole}>
@@ -1094,13 +1048,20 @@ export function PartnersPage() {
 
           <FormSection title={t.sectionAuthorization} description={t.sectionAuthorizationHint}>
             <div>
-              <Label htmlFor="p-auth-number">{t.authorizationNumber}</Label>
+              <Label htmlFor="p-auth-number" required={needsAuthorization}>
+                {t.authorizationNumber}
+              </Label>
               <Input
                 id="p-auth-number"
                 value={authorizationNumber}
-                onChange={(e) => setAuthorizationNumber(e.target.value)}
+                onChange={(e) => {
+                  setAuthorizationNumber(e.target.value);
+                  if (authError) setAuthError(false);
+                }}
                 placeholder={t.authorizationNumberPlaceholder}
+                {...invalidProps("p-auth-number-err", authError ? t.authorizationRequired : undefined)}
               />
+              <FieldError id="p-auth-number-err" message={authError ? t.authorizationRequired : undefined} />
             </div>
             <div>
               <Label htmlFor="p-auth-issue">{t.authorizationIssueDate}</Label>

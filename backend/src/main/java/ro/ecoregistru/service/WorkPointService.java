@@ -62,8 +62,12 @@ public class WorkPointService {
      * column from scratch is how it ends up empty on a filed form — which is exactly what the
      * specialist saw on 25.08.2026 in her own account. Predefined, not imposed: they can be
      * renamed or removed, and a movement still says which one the waste came from.
+     *
+     * <p>Public because a work point is also born outside this service: the approval of an account
+     * request creates the first one, and the two sections have to be there from the account's first
+     * day (proprietarul, 16.09.2026).
      */
-    private void seedDefaultSections(WorkPoint workPoint) {
+    public void seedDefaultSections(WorkPoint workPoint) {
         for (String name : DEFAULT_SECTIONS) {
             internalGeneratorRepository.save(InternalGenerator.builder()
                     .company(workPoint.getCompany())

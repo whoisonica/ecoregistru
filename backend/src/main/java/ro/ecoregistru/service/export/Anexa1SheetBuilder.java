@@ -132,13 +132,10 @@ public class Anexa1SheetBuilder {
         // on 25.08 when she saw a figure there and asked why. Printing the quantity would claim an
         // operation that never happened.
         //
-        // And "Modul" and "Scopul" describe that same treatment, so they are read from the same
-        // movements as the quantity — audit point 14, 02.09.2026. Taken from the whole month, as
-        // they were until then, a handover on which the client had also ticked a treatment method
-        // printed "Modul: TM" next to "Cant.: 0.000": a treatment declared with no quantity, a
-        // rubric contradicting itself on a filed form. The corpus settles the form of the rubric
-        // (regula de lucru 3): Panemar, a bakery that only hands over, writes 0.000 with Modul "-",
-        // while Hamburger, which really does bale, writes both. Silence on both is their practice.
+        // "Modul" is what the client picked on the movements of the month, "-" when they picked
+        // nothing ("— fără —"); "Scopul" is V or E from where the waste went (proprietarul,
+        // 16.09.2026). Both are read from every movement of the month, not only from what was
+        // treated on site, so a client who hands waste over still sees their choice on the sheet.
         BigDecimal storedQuantity = line.totalGenerated();
         List<WasteMovement> treatedOnSite = monthly.stream()
                 .filter(m -> m.getOperation().isExit() && m.getPartner() == null)
@@ -155,9 +152,9 @@ public class Anexa1SheetBuilder {
                 storedQuantity,
                 distinct(monthly, m -> name(m.getStorageType())),
                 treatedHere,
-                distinct(treatedOnSite, m -> name(m.getTreatmentMethod())),
-                distinct(treatedOnSite, m -> m.getOperationCode() == null
-                        ? null : name(m.getOperationCode().treatmentPurpose())),
+                orDash(distinct(monthly, m -> name(m.getTreatmentMethod()))),
+                orDash(distinct(monthly, m -> m.getOperationCode() == null
+                        ? null : name(m.getOperationCode().treatmentPurpose()))),
                 distinct(monthly, m -> name(m.getTransportMeans())),
                 distinct(monthly, m -> name(m.getWasteDestination())),
                 handovers(recoveries),
@@ -246,6 +243,10 @@ public class Anexa1SheetBuilder {
                 .filter(v -> v != null && !v.isBlank())
                 .distinct()
                 .collect(Collectors.joining(", "));
+    }
+
+    private String orDash(String value) {
+        return value.isBlank() ? "-" : value;
     }
 
     private String name(Enum<?> value) {

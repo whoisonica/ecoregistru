@@ -147,36 +147,57 @@ class PackagingAnexa3IT {
     // ------------------------------------------------------------------ who files it
 
     /**
-     * Specialista, 14.09.2026: generatorii au doar ieşiri. Acelaşi cont, care la colector primeşte
-     * raportul, e refuzat cu codul lui imediat ce firma e generator, pe previzualizare şi pe descărcare.
+     * Specialista, 14.09.2026: generatorii au doar ieşiri — iar proprietarul, 16.09.2026, vrea
+     * raportul şi la ei, numai cu ieşirile. Acelaşi cont, trecut pe generator şi fără rolul din
+     * profil: raportul iese tipăribil, fără preluări, cu predarea deşeului propriu şi fără marfa
+     * preluată.
      */
     @Test
-    void aGeneratorAccountGetsNoAnexa3() throws Exception {
+    void aGeneratorAccountGetsTheExitsHalfOnly() throws Exception {
+        takeover("15 01 01", "300", generatorSource.getId(), null);
+        exit("15 01 01", "50", recipient.getId(), "R3");
+        createMovement("""
+                {
+                  "workPointId": "%s", "date": "%d-07-02", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 120, "operation": "RECOVERED", "operationCode": "R3",
+                  "partnerId": "%s", "register": "ANEXA_1"
+                }
+                """.formatted(workPointId, YEAR, codeId("15 01 01"), recipient.getId()));
+
         CompanyType before = company.getType();
+        PackagingOperatorRole roleBefore = company.getPackagingOperatorRole();
         try {
             company.setType(CompanyType.GENERATOR);
+            company.setPackagingOperatorRole(null);
             companyRepository.save(company);
 
             mockMvc.perform(get("/api/v1/packaging/anexa3")
                             .param("year", String.valueOf(YEAR))
+                            .param("workPointId", workPointId.toString())
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$['error-code']", is("anexa3.packaging.collectors.only")));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.exitsOnly", is(true)))
+                    .andExpect(jsonPath("$.printable", is(true)))
+                    .andExpect(jsonPath("$.usesTable2", is(false)))
+                    .andExpect(jsonPath("$.intake.length()", is(0)))
+                    .andExpect(jsonPath("$.handovers.length()", is(1)))
+                    .andExpect(jsonPath("$.handovers[0].quantity", is(120.0)));
             mockMvc.perform(get("/api/v1/packaging/anexa3/download")
                             .param("year", String.valueOf(YEAR))
-                            .param("format", "xls")
+                            .param("workPointId", workPointId.toString())
+                            .param("format", "pdf")
                             .header("Authorization", "Bearer " + token))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$['error-code']", is("anexa3.packaging.collectors.only")));
+                    .andExpect(status().isOk());
         } finally {
             company.setType(before);
+            company.setPackagingOperatorRole(roleBefore);
             companyRepository.save(company);
         }
-        // Controlul pozitiv: înapoi la tipul de colector, aceeaşi cerere trece.
-        mockMvc.perform(get("/api/v1/packaging/anexa3")
-                        .param("year", String.valueOf(YEAR))
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+        // Controlul pozitiv: înapoi la colector, raportul citeşte iar registrul art. 48.
+        PackagingAnexa3 collector = anexa3();
+        assertThat(collector.exitsOnly()).isFalse();
+        assertThat(collector.handovers()).hasSize(1);
+        assertThat(collector.handovers().get(0).quantity()).isEqualByComparingTo("50");
     }
 
     // ------------------------------------------------------------------ the left half

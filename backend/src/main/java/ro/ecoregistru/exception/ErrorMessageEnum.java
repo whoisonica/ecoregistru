@@ -145,6 +145,7 @@ public enum ErrorMessageEnum {
     DRIVER_BELONGS_TO_PARTNER("driver.belongs.to.partner", "Șoferul ăsta e al unui transportator: editează-l în fișa partenerului."),
     DRIVER_DELETE_REQUIRES_DEACTIVATION("driver.delete.requires.deactivation", "Dezactivează întâi șoferul. Ștergerea fișei e definitivă, deci se face doar pentru un șofer scos deja din listă."),
     PARTNER_TYPE_REQUIRED("partner.type.required", "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă."),
+    PARTNER_AUTHORIZATION_REQUIRED("partner.authorization.required", "Completează numărul autorizației de mediu: colectorul sau valorificatorul căruia îi predai deșeul trebuie să fie autorizat."),
     PARTNER_ROLE_REQUIRED("partner.role.required", "Alege rolul partenerului: client (îi predai deșeu și îi facturezi tu), furnizor (îți prestează serviciul și îți facturează el) sau ambele."),
 
     // --- Internal generator (Anexa 1 cap. 2 "Secţia") ---
@@ -187,7 +188,6 @@ public enum ErrorMessageEnum {
     // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori".
     ANEXA2_COLLECTORS_ONLY("anexa2.collectors.only", "Anexa 2 (formularul de transport pentru deșeuri periculoase) o întocmește colectorul care preia deșeul. Contul e de generator, deci formularul nu se tipărește de aici."),
     // Aceeași seară: „generatorii au doar ieșiri" — deci n-au ambalaje preluate de la terți de raportat.
-    ANEXA3_PACKAGING_COLLECTORS_ONLY("anexa3.packaging.collectors.only", "Anexa 3 la Ordinul 794/2012 raportează ambalajele preluate de la terți, deci o depun colectorii, comercianții și reciclatorii. Contul e de generator, deci raportul nu se întocmește de aici."),
     // 15.09.2026, AD închisă: evidența art. 48 a mărfii preluate e a celor care preiau; generatorul o ține pe fișa Anexa 1.
     ART48_REGISTER_COLLECTORS_ONLY("art48.register.collectors.only", "Evidența cronologică a deșeurilor preluate de la terți o țin firmele care preiau deșeu. Contul e de generator: evidența lui e fișa Anexa 1, de pe ecranul „Generare”."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),

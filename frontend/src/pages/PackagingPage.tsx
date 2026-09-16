@@ -165,10 +165,11 @@ function RowStatus({ state, dirty }: { state?: "saving" | "saved"; dirty: boolea
  */
 export function PackagingPage() {
   const canWrite = useCanWrite();
-  // Anexa 3 raportează ce s-a preluat de la terți, iar generatorii au doar ieșiri (specialista,
-  // 14.09.2026). Cât timp firma nu s-a încărcat, secțiunea nu apare — ca butonul Anexei 2.
+  // Anexa 3 apare la toți: la colector cu preluări și ieșiri, la generator numai cu ieșirile
+  // (proprietarul, 16.09.2026; până atunci era ascunsă generatorilor). Cât timp firma nu s-a
+  // încărcat, secțiunea nu apare — ca butonul Anexei 2.
   const { data: company } = useCurrentCompany();
-  const takesOver = company != null && company.type !== "GENERATOR";
+  const companyLoaded = company != null;
 
   const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const { data: movements, isLoading: loadingMovements } = usePackagingMovements(year);
@@ -417,7 +418,7 @@ export function PackagingPage() {
           { id: "registru", label: t.navRegister },
           { id: "tabelul-1", label: t.navTable1 },
           { id: "tabelul-2", label: t.navTable2 },
-          ...(takesOver ? [{ id: "anexa-3", label: t.navAnexa3 }] : []),
+          ...(companyLoaded ? [{ id: "anexa-3", label: t.navAnexa3 }] : []),
         ]}
       />
 
@@ -777,7 +778,7 @@ export function PackagingPage() {
         </div>
       </section>
 
-      {takesOver && <Anexa3Section year={year} />}
+      {companyLoaded && <Anexa3Section year={year} />}
     </div>
   );
 }
@@ -832,6 +833,7 @@ function Anexa3Section({ year }: { year: number }) {
   // rubrica „Punct de lucru" goală ar fi un formular pe care clientul nu-l poate folosi.
   const canDownload = (data?.printable ?? false) && workPointId !== "";
   const table2 = data?.usesTable2 ?? false;
+  const exitsOnly = data?.exitsOnly ?? false;
   const missingOrigin = (data?.unclassified ?? []).filter((r) => r.missingOrigin).length;
   const missingMaterial = (data?.unclassified ?? []).filter((r) => r.missingMaterial).length;
   const missingQuantity = (data?.unclassified ?? []).filter((r) => r.missingQuantity).length;
@@ -840,8 +842,10 @@ function Anexa3Section({ year }: { year: number }) {
     <section id="anexa-3" className="mt-10 scroll-mt-20">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
-          <h2 className="text-lg font-semibold text-content">{t.anexa3Title}</h2>
-          <p className="mt-1 text-sm text-content-muted">{t.anexa3Hint}</p>
+          <h2 className="text-lg font-semibold text-content">
+            {exitsOnly ? t.anexa3ExitsTitle : t.anexa3Title}
+          </h2>
+          <p className="mt-1 text-sm text-content-muted">{exitsOnly ? t.anexa3ExitsHint : t.anexa3Hint}</p>
         </div>
         <div className="flex items-end gap-2">
           <div>
@@ -908,10 +912,14 @@ function Anexa3Section({ year }: { year: number }) {
       {data?.printable && (
         <>
           <p className="mt-3 text-sm text-content-strong">
-            <span className="font-medium">
-              {table2 ? t.anexa3Table2Title : t.anexa3Table1Title}
-            </span>
-            {" · "}
+            {!exitsOnly && (
+              <>
+                <span className="font-medium">
+                  {table2 ? t.anexa3Table2Title : t.anexa3Table1Title}
+                </span>
+                {" · "}
+              </>
+            )}
             {t.anexa3Addressee}: {addresseeOf(data)}
           </p>
 
@@ -936,6 +944,7 @@ function Anexa3Section({ year }: { year: number }) {
             </div>
           )}
 
+          {!exitsOnly && (
           <div className="mt-3">
             <h3 className="text-sm font-semibold text-content-strong">{t.anexa3IntakeTitle}</h3>
             <p className="mb-2 text-xs text-content-muted">{t.anexa3IntakeHint}</p>
@@ -967,9 +976,12 @@ function Anexa3Section({ year }: { year: number }) {
               </TBody>
             </Table>
           </div>
+          )}
 
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-content-strong">{t.anexa3OutTitle}</h3>
+          <div className={exitsOnly ? "mt-3" : "mt-6"}>
+            <h3 className="text-sm font-semibold text-content-strong">
+              {exitsOnly ? t.anexa3ExitsTableTitle : t.anexa3OutTitle}
+            </h3>
             {table2 && <p className="mb-2 text-xs text-content-muted">{t.anexa3RecyclingHint}</p>}
             <Table stickyHeader>
               <THead sticky>

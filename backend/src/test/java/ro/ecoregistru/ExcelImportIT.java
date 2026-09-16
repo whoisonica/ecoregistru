@@ -359,7 +359,7 @@ class ExcelImportIT {
     void packagingAndTransportColumnsReachTheMovement() throws Exception {
         String carrierCui = "RO8" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 6);
         Object[] carrier = {"Transport Rapid SRL", carrierCui, "Colector", "Nu", "Da", "Da",
-                null, null, null, null};
+                "AM 7/2025", null, null, null};
         Object[] row = Arrays.copyOf(disposal(), 28);
         row[16] = "Da";
         row[17] = "Hârtie carton";
