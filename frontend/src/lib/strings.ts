@@ -182,6 +182,7 @@ export const strings = {
     // Afișajul generatorului spune „predat”, fiindcă cifra e pe direcția de ieșire (`direction=OUT`);
     // la colector luna are și intrări, deci rămâne „înregistrat”.
     lcdLabelOut: (month: string) => `${month.toUpperCase()} · PREDAT`,
+    lcdLabelIn: (month: string) => `${month.toUpperCase()} · PRIMIT`,
     monthMovements: "Mișcările lunii",
     movementsEmpty: "Nicio mișcare în luna asta.",
     movementsError: "Nu am putut încărca mișcările.",

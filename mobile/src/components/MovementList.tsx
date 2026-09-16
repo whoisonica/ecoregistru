@@ -83,7 +83,7 @@ export function MovementList({ title, screen, tabs }: {
     <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
       <GraphiteHeader title={title} meta={(session?.tenantName ?? strings.appName).toUpperCase()}>
         <Lcd
-          label={strings.mobile.lcdLabel(label)}
+          label={lcdLabelFor(params.direction)(label)}
           state={strings.mobile.lcdState}
           value={totals.data ? formatKg(totals.data.quantityKg) : totals.isPending && enabled ? "" : null}
           unit="kg"
@@ -158,6 +158,19 @@ export function MovementList({ title, screen, tabs }: {
 function Bin({ code, hazardous }: { code: string; hazardous: boolean }) {
   const bin = binFor(code, hazardous);
   return bin ? <View style={[styles.bin, { backgroundColor: binColors[bin] }]} /> : <View style={styles.binGap} />;
+}
+
+/**
+ * Eticheta afișajului urmează filtrul ecranului, nu ecranul.
+ *
+ * <p>Altfel aceeași cifră primea două nume: Acasă spunea „PREDAT" (cere `direction=OUT`), iar
+ * „Generare" spunea „ÎNREGISTRAT" peste exact același total, fiindcă la un generator pur tot ce e în
+ * Anexa 1 a și plecat. Pe „Generare" nu e o direcție, deci „înregistrat" e cuvântul corect acolo.
+ */
+function lcdLabelFor(direction?: "IN" | "OUT") {
+  if (direction === "OUT") return strings.mobile.lcdLabelOut;
+  if (direction === "IN") return strings.mobile.lcdLabelIn;
+  return strings.mobile.lcdLabel;
 }
 
 const styles = StyleSheet.create({

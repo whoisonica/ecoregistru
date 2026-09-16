@@ -3,6 +3,39 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **16.09.2026, 11:11 — ✅ pe producție: G1, sesiunea pe dispozitiv, și aplicația mobilă legată la serverul real.**
+> `ecoregistru-api` **v93** (`c91687c`, **migrare `V50`**, schema 48 → 50), `ecoregistru-app` **v74** (`2e88413`);
+> monorepo `9700a30`, `origin/main` + `deploy/heroku-split` sincronizate. Garda de conținut exactă înainte și după
+> cherry-pick, pe amândouă repo-urile split (backend `^` = 1 commit; frontend `^^` = 2, fiindcă `strings.ts` fusese
+> atins și de M0). Pe producție: `Migrating schema "public" to version "50 - device sessions"`, `Successfully applied
+> 1 migration […] now at version v50`, `Started EcoRegistruApplication` (08:11:15 UTC).
+>
+> ⚠️ **`V49` (depozit, D1.9/D1.10) e scrisă pe `feat/depozit-colector` dar NU e deployată, iar `V50` a intrat înaintea
+> ei.** Flyway rulează cu `out-of-order` implicit `false`, deci la următorul deploy al depozitului migrarea `V49` va fi
+> **refuzată** și dyno-ul nu va porni. Reparația e într-o linie: `V49__depot_retentions.sql` se renumerotează în `V51`
+> înainte de deployul lui. Nu e o alegere, e regula lui Flyway: numerele se dau în ordinea în care ajung pe dyno.
+>
+> **Probat pe serverul de producție, nu doar local** (contul de platformă al proprietarului, dat pentru probă):
+> `/auth/refresh` rotește tokenul și îl refuză pe cel refolosit (`device.session.invalid`); tokenul nou deschide API-ul;
+> `/auth/devices` și `DELETE /auth/devices/{id}` cer sesiune (401 fără ea) și răspund 200/204 cu ea; `/auth/logout` e 200
+> și pe un token inexistent; loginul **cu** `deviceName` nu strică nimic pentru web. Plafonul de 10 dispozitive pe cont
+> s-a văzut lucrând. Cele 10 sesiuni de probă au fost **scoase la final**, contul a rămas curat.
+>
+> **Aplicația mobilă se leagă din prima la Heroku** (`mobile/src/api.ts`: producția e valoarea implicită,
+> `EXPO_PUBLIC_API_URL` în `mobile/.env.local` o bate pentru lucrul local). Fluxurile Maestro rulate **pe datele reale
+> de producție**, verzi pe iPhone 17 / iOS 26.5 **și** pe Android 16: firmă nealeasă → afișajul cere alegerea, nu arată
+> un zero; comutatorul listează firmele contului cu CUI și tip; o firmă **`GENERATOR` pură** — drumul pe care baza demo
+> (`BOTH`) nu-l acoperea — arată „PREDAT”, fără comutator de ecrane; lista lunii, totalurile, pubelele și „Dispozitive
+> conectate” cu „telefonul ăsta”. Un cod fără pubelă (`15 01 03`, lemn) rămâne **fără pătrățel**, nu cu unul gol.
+> Reparat din capturi: „Generare” scria „ÎNREGISTRAT” peste exact cifra pe care Acasă o numea „PREDAT” — eticheta
+> afișajului urmează acum **filtrul ecranului** (`lcdLabelIn`/`Out`/neutru).
+>
+> 📌 **`strings.mobile` nu ajunge în bundle-ul web** — Rollup îl taie ca proprietate nefolosită (probat și local, și pe
+> bundle-ul servit, cu un text pur ASCII). Deci app **v74 nu schimbă nimic din ce rulează browserul**; releaseul există
+> ca repo-ul split să rămână sincronizat. La o verificare de conținut pe frontend nu se caută texte de mobil.
+> 📌 **Maestro potrivește textul întreg al unui nod, nu o bucată** — un rând „Firmă · CUI · tip” nu se prinde cu numele
+> firmei, ci cu `.*Nume.*`.
+
 > **16.09.2026, ~11:00 — ✅ local (ramura `feat/mobil`, nedeployat): aplicația mobilă, felia M1a — o zi obișnuită.**
 > Ramura rebazată peste `origin/main` (`f21db62`); `tsc` și `npm run build` în `frontend` **curate după
 > `strings.mobile`** — golul rămas din M0 e închis.

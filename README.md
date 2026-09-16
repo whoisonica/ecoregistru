@@ -308,8 +308,11 @@ npx expo run:android --no-bundler                 # with an emulator already run
 npx expo start --dev-client                       # Metro, for both
 ```
 
-The simulator reaches the backend at `localhost:8080`, the Android emulator at `10.0.2.2:8080`; `EXPO_PUBLIC_API_URL`
-overrides both (a real phone on the same network). Screen text and types are imported straight from
+**The app talks to the deployed API out of the box** — nothing to start on the machine. For local work, put
+`EXPO_PUBLIC_API_URL` in `mobile/.env.local` (git-ignored, see `.env.local.example`): `http://localhost:8080` for the
+iOS simulator, `http://10.0.2.2:8080` for the Android emulator, the machine's LAN address for a real phone. Expo reads
+`EXPO_PUBLIC_*` when Metro starts, so changing it means restarting the bundler. Screen text and types are imported
+straight from
 `frontend/src/lib` (`strings.ts`, `types.ts`, `movementScreens.ts`, `binColor.ts`), so new copy and the rule for which
 movement screens a company gets live in one place. The screen checks are Maestro flows under `mobile/maestro/` — their
 headers say how to run them.
