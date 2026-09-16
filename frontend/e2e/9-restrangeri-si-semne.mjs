@@ -168,11 +168,12 @@ await shot(page, "9-panou-fara-stoc");
 // -------------------------------- 4. TERMENELE SPUN CÂTE ZILE MAI SUNT, ŞI DUC LA DOCUMENT
 // Panoul socotea zilele de mult; tabelul lăsa clientul s-o facă în cap. Iar niciun termen nu ducea
 // la documentul care îl stinge — deşi aplicaţia chiar îl tipăreşte.
-await page.goto(BASE + "/termene?an=2026", { waitUntil: "networkidle" });
+// Din 16.09.2026 pagina are „De făcut” (fără an) și „Bifate” (cu an); zilele și documentul stau în prima.
+await page.goto(BASE + "/termene", { waitUntil: "networkidle" });
 await page.waitForTimeout(1000);
 
 const termene = await page.evaluate(() => {
-  const randuri = [...document.querySelectorAll("tbody tr")];
+  const randuri = [...document.querySelectorAll('[data-testid="deadlines-todo"] tbody tr')];
   return randuri.map((tr) => {
     const c = [...tr.querySelectorAll("td")];
     const link = c[3]?.querySelector("a");
@@ -191,15 +192,18 @@ const cuZile = termene.filter((r) => /zile|azi|mâine/.test(r.termen));
 check("fiecare termen nefinalizat spune câte zile mai sunt",
   cuZile.length === termene.filter((r) => r.stare !== "Finalizat").length,
   cuZile[0]?.termen.replace(/\s+/g, " "));
-check("iar unul depăşit o spune ca depăşire, nu ca aşteptare",
-  termene.every((r) => r.stare !== "Depășit" || /depășit de \d+ (de )?zile/.test(r.termen)),
+// Seederul pune termene trecute nebifate; din 16.09.2026 nu se mai arată nicăieri.
+check("niciun termen trecut nebifat în „De făcut”",
+  termene.every((r) => r.stare !== "Depășit"),
   termene.find((r) => r.stare === "Depășit")?.termen.replace(/\s+/g, " "));
 
+// „De făcut” nu are an: 15 martie de anul viitor stă aici lângă AFM-ul lunii acesteia.
+const anRaportat = new Date().getFullYear();
 const anexa1 = termene.find((r) => /Evidența gestiunii/.test(r.tip));
-check("termenul de 15 martie duce la evidenţă", anexa1?.document?.href === "/evidente?an=2025",
+check("termenul de 15 martie duce la evidenţă", anexa1?.document?.href === `/evidente?an=${anRaportat}`,
   anexa1?.document?.href ?? anexa1?.documentText);
 check("şi duce la anul raportat, nu la anul termenului",
-  /2025/.test(anexa1?.document?.text ?? ""), anexa1?.document?.text);
+  new RegExp(String(anRaportat)).test(anexa1?.document?.text ?? ""), anexa1?.document?.text);
 
 // Contribuţiile AFM sunt bani declaraţi în aplicaţia AFM: n-avem ce document să oferim, deci nu
 // oferim niciunul. Un link către ceva ce nu tipărim ar fi chiar promisiunea goală reparată pe 07.09.
@@ -230,14 +234,14 @@ check("iar pagina nu se derulează lateral", inaltimi.lateral === 0, `${inaltimi
 await shot(page, "9-termene");
 
 // Linkul chiar deschide ecranul, pe anul din adresă.
-await clickAt(page, "tbody tr td:nth-child(4) a");
+await clickAt(page, `[data-testid="deadlines-todo"] a[href="/evidente?an=${anRaportat}"]`);
 await page.waitForTimeout(1200);
 const dupaClic = await page.evaluate(() => ({
   adresa: location.pathname + location.search,
   an: document.querySelector("#ev-year")?.value ?? document.querySelector("select")?.value ?? "",
 }));
 check("iar clicul chiar deschide documentul, pe anul lui",
-  dupaClic.adresa.startsWith("/evidente") && /2025/.test(dupaClic.adresa), dupaClic.adresa);
+  dupaClic.adresa === `/evidente?an=${anRaportat}`, dupaClic.adresa);
 
 // ------------------------- 5. ACTUL DE IDENTITATE AL ŞOFERILOR SPUNE DE CE E ŢINUT
 // Singurul dat personal al cuiva din afara firmei pe care aplicaţia îl ţine — şi singurul care se

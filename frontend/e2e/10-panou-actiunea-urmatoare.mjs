@@ -9,8 +9,8 @@
 //   3. duce în altă parte decât ce numește, sau duce la anul termenului în loc de anul raportat
 //      (decizia 59), adică deschide un dosar gol chiar în ziua depunerii.
 //
-// Tenantul demo are termene AFM depășite din lunile trecute ale anului, deci ramura pe care o
-// probăm aici e cea de sus. Verificăm **și** că ce e mai jos nu s-a mutat: banda nu ține locul
+// Din 16.09.2026 termenele nebifate cu data trecută nu se mai arată nicăieri (api v105), deci
+// tenantul demo nu mai are ramura „termene depășite”: sus stă linia fără cod R/D. Verificăm **și** că ce e mai jos nu s-a mutat: banda nu ține locul
 // casetei de blocaje, o dublează dinadins, iar dacă una dispare felia s-a înțeles greșit.
 import { launch, newPage, login, shot, companies, switchCompany, BASE } from "./lib.mjs";
 
@@ -51,6 +51,7 @@ const banda = await page.evaluate(() => {
     // Câte rânduri ocupă eticheta linkului: două înseamnă butonul rupt, defectul din 07.09 și 08.09.
     inaltimeLink: link ? Math.round(link.getBoundingClientRect().height) : 0,
     titluStare: stare?.textContent.trim() ?? "",
+    rosu: b.className.includes("border-state-bad"),
   };
 });
 
@@ -63,8 +64,8 @@ check("eticheta linkului rămâne pe un rând", banda.inaltimeLink > 0 && banda.
   banda.inaltimeLink + "px");
 
 // ------------------------------------------------------ 2. ALEGE CEL MAI SCUMP LUCRU DESCHIS
-// Pe tenantul demo sunt termene AFM depășite, deci banda trebuie să le numească pe ele — nu
-// cântarul, nu autorizațiile. Dacă ordinea s-ar inversa, exact asta ar trece neobservat.
+// Pe tenantul demo termenele AFM trecute au rămas în bază, nebifate. Banda nu are voie să le
+// scoată la iveală pe altă cale decât pagina de Termene, care le ascunde.
 const dala = await page.evaluate(
   () => document.querySelector('[data-testid="stat-deadlines"]')?.textContent.replace(/\s+/g, " ").trim() ?? ""
 );
@@ -72,10 +73,9 @@ const dala = await page.evaluate(
 // prinde amândouă formele de plural, plus singularul: cu un singur termen depășit dala scrie
 // „1 termen depășit", iar o probă care cere „depășite" ar trece de la sine pe zero.
 const depasite = Number(/(\d+)(?: de)? termen[e]? depășit/.exec(dala)?.[1] ?? 0);
-check("tenantul demo chiar are termene depășite, deci ramura se probează pe date, nu pe gol",
-  depasite > 0, depasite + " depășite");
-check("banda le numește pe ele, nu cântarul sau autorizațiile",
-  /depășit|depășite/.test(banda.text), banda.text.slice(0, 90));
+// Seederul pune termene AFM trecute și nebifate; ele nu se mai numără și nu se mai numesc.
+check("termenele trecute nebifate nu mai apar ca depășite pe dală", depasite === 0, depasite + " depășite");
+check("banda nu le mai numește", !/depășit/.test(banda.text), banda.text.slice(0, 90));
 check("și nu vorbește despre altceva în același timp",
   !/așteaptă cântarul/.test(banda.text) && !/Ești la zi/.test(banda.text));
 
@@ -159,7 +159,7 @@ if (alta) {
   });
   check("pe altă firmă banda spune altceva", bandaAlta.text !== banda.text,
     bandaAlta.text.slice(0, 80));
-  check("și își schimbă și tonul, nu doar cifra", bandaAlta.rosu !== banda.text.includes("depășite"),
+  check("și își schimbă și tonul, nu doar cifra", bandaAlta.rosu !== banda.rosu,
     bandaAlta.rosu ? "roșu" : bandaAlta.verde ? "verde" : "chihlimbar");
   check("iar drumul rămâne unul real", Boolean(bandaAlta.href), bandaAlta.href ?? "(niciunul)");
   await shot(page, "10-panou-actiune-alta-firma");

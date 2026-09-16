@@ -1702,9 +1702,12 @@ export const strings = {
     noteLabel: "Notă (opțional)",
     notePlaceholder: "ex. depus la ANMAP pe 12.03, nr. înregistrare 1234",
     // empty state
-    empty: "Niciun termen pentru {year}.",
+    todoTitle: "De făcut",
+    todoEmpty: "Niciun termen de făcut.",
+    doneTitle: "Bifate",
+    doneEmpty: "Niciun termen bifat în {year}.",
     searchPlaceholder: "Caută după tip de raportare sau notă...",
-    emptyHint: "Termenele apar singure, câte unul pe fiecare raportare. Alege alt an sau apasă „Verifică termenele”.",
+    emptyHint: "Termenele apar singure, câte unul pe fiecare raportare. Dacă lipsește unul, apasă „Verifică termenele”.",
     // Data singură cere o socoteală în cap — Panoul o făcea de mult, tabelul nu. „Azi" și „mâine"
     // se scriu în cuvinte: „în 0 zile" e adevărat și nu se citește ca nimic.
     daysLeft: "în {count}",
