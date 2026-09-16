@@ -8,6 +8,16 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 01:02 — ✅ pe producție: mesajul de după import și exportul complet al unei firme** (`ecoregistru-app` **v97**, `1f1d46c`,
+> din `main` `44d97a3`; **api neatins**, v109, nicio migrare). După un import salvat, mesajul spunea că ambalajele și transportul se
+> completează în aplicație, deși fișierul le poate aduce din a doua felie; acum: „Ce n-a fost în fișier (ambalajele, transportul pentru
+> Anexa 3, CNP-ul șoferului) se completează în aplicație, pe fiecare mișcare.” **Exportul promis în DPA §10.1:** `scripts/export-client.sh <CUI>`
+> (`b312fb8`) scrie câte un CSV pe tabel dintr-o tranzacție read-only (tabelele cu `company_id` descoperite din schemă, plus cele legate prin
+> părinte) și descarcă atașamentele și buletinele de pe Cloudinary cu URL semnat ca `CloudinaryStorageService#signedUrl`; fără parole,
+> sesiuni, abonamente și plăți. **Probe:** semnătura identică cu SDK-ul cloudinary-core 2.3.0 pe aceeași cheie de test; pe baza locală,
+> Demo Reciclare → 28 de tabele, zero rânduri din celelalte trei firme. Nerulat pe producție. **Pe producție:** bundle-ul servit
+> (`index-OX1x_Wm4.js`) are textul nou.
+
 > **17.09.2026, 00:31 — ✅ pe producție: BUG-024, firma aleasă ține de tab** (`ecoregistru-app` **v96**, `d167acc`, din `main` `97236c0`;
 > **api neatins**, v109, nicio migrare). Firma aleasă de platformă sau de consultant stătea numai în `localStorage`, comun tuturor taburilor.
 > Schimbată într-un tab, ea muta cererile celorlalte, deși ecranul lor arăta tot firma veche. S-a prins la primul import de pe producție:
