@@ -146,7 +146,9 @@ e **felul de a întreba**, nu paleta paginilor publice: înăuntru rămâne „C
 (CUI-ul întâi, cu ANAF, apoi denumirea cu sugestia de duplicat, adresa, Registrul Comerțului, punctele de lucru) · „Ce
 face pentru tine” (tipul pe carduri; „Generator” nu apare la un cont de generator pur, care doar predă, decât pe un partener care îl are deja — „Doar le transportă” e tipul gol și pune singur bifa de transportator —, cine pe cine
 facturează ca două comutatoare, proveniența ambalajelor ca taste, cu întrebarea „Cine duce deșeul de la tine la el?” pe două carduri imediat sub tip, cu mașinile și șoferii lui dedesubt) · „Autorizația de
-mediu” (numărul, emiterea, viza anuală, termenul vechi; temeiul sub „De ce?”). În stânga dialogului stă cuprinsul: cifra
+mediu” (sus numărul — obligatoriu la colector/valorificator — și „Viza e valabilă până la”; emiterea, decizia de viză
+și bifa „Autorizație integrată veche, cu termen?” sub „Detalii de pe hârtii”, deschis singur la editare când are ceva;
+temeiul sub „De ce?”; în listă, „Viză necompletată” galben — întrebarea BB). În stânga dialogului stă cuprinsul: cifra
 în mono, pasul curent cu linia grafit, sub pașii completați ce s-a scris, pătrățel roșu pe pasul cu greșeala. Pe telefon,
 `Stepper` sus, cu nume scurte. La adăugare „Continuă” își verifică pasul; la editare Salvează stă pe orice pas, iar linkul
 „Autorizație expirată” deschide direct pasul 3. **Pașii sunt toți montați** (`hidden`), deci id-urile rubricilor și

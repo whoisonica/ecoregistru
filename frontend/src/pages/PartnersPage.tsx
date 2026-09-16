@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Ban, Building2, Factory, Pencil, Plus, Recycle, RotateCcw, Truck, Users, Warehouse } from "lucide-react";
+import { Ban, Building2, ChevronRight, Factory, Pencil, Plus, Recycle, RotateCcw, Truck, Users, Warehouse } from "lucide-react";
 import { CuiField } from "@/components/AnafLookup";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
@@ -37,7 +37,6 @@ import { FormStepRail } from "@/components/ui/form-steps";
 import { Tooltip } from "@/components/ui/tooltip";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
-import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
@@ -70,6 +69,12 @@ type RoleFilter = "" | "client" | "supplier" | "none" | "carrier";
 function ExpiryBadge({ partner }: { partner: Partner }) {
   // V41: data care vine prima dintre expirare și sfârșitul vizei anuale.
   if (!partner.authorizationValidUntil) {
+    // Colectorul sau valorificatorul cu autorizație, dar fără viză: galben, nu roșu. Legea nu-i
+    // cere generatorului să noteze viza; semnul spune doar ce e de cerut (17.09.2026). Dacă lipsa
+    // ei ar trebui să oprească predarea e întrebarea BB pentru specialistă (intrebari-specialist.md).
+    if (partner.authorizationNumber && (partner.type === "COLLECTOR" || partner.type === "RECOVERER")) {
+      return <Badge variant="warning">{t.visaMissing}</Badge>;
+    }
     return <span className="text-content-subtle">{t.noAuthorization}</span>;
   }
   const date = partner.authorizationValidUntil;
@@ -116,6 +121,10 @@ export function PartnersPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [step, setStep] = useState(0);
+  /** „Detalii de pe hârtii” deschis: la editare, dacă e ceva completat acolo, ca nimic să nu pară pierdut. */
+  const [authDetailsOpen, setAuthDetailsOpen] = useState(false);
+  /** Bifa „Autorizație integrată veche, cu termen?”: arată data expirării. */
+  const [hasOldExpiry, setHasOldExpiry] = useState(false);
   const [editing, setEditing] = useState<Partner | null>(null);
   const [name, setName] = useState("");
   const [cui, setCui] = useState("");
@@ -265,6 +274,8 @@ export function PartnersPage() {
     setAuthError(false);
     setSwitchedFrom(null);
     setStep(0);
+    setAuthDetailsOpen(false);
+    setHasOldExpiry(false);
     setDialogOpen(true);
   }
 
@@ -354,6 +365,10 @@ export function PartnersPage() {
     setRoleError(false);
     setTypeError(false);
     setAuthError(false);
+    setAuthDetailsOpen(
+      Boolean(p.authorizationIssueDate || p.visaDecisionNumber || p.visaDecisionDate || p.authorizationExpiry)
+    );
+    setHasOldExpiry(Boolean(p.authorizationExpiry));
     setStep(startStep);
     setDialogOpen(true);
   }
@@ -1274,6 +1289,9 @@ export function PartnersPage() {
 
             {/* ------------------------------------------------ 3. AUTORIZAȚIA DE MEDIU */}
             <div hidden={step !== 2} className="space-y-5">
+              {/* Sus, cele două întrebări care contează: numărul (obligatoriu la cine preia deșeul)
+                  și până când ține viza, de care atârnă avertismentul. Restul rubricilor, aceleași
+                  ca înainte, stau sub „Detalii de pe hârtii” (17.09.2026). */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="p-auth-number" required={needsAuthorization}>
@@ -1292,72 +1310,108 @@ export function PartnersPage() {
                   <FieldError id="p-auth-number-err" message={authError ? t.authorizationRequired : undefined} />
                 </div>
                 <div>
-                  <Label htmlFor="p-auth-issue">{t.authorizationIssueDate}</Label>
+                  <Label htmlFor="p-visa-until">{t.visaUntilAsk}</Label>
                   <DateInput
-                    id="p-auth-issue"
-                    value={authorizationIssueDate}
-                    onChange={(e) => setAuthorizationIssueDate(e.target.value)}
+                    id="p-visa-until"
+                    value={visaValidUntil}
+                    onChange={(e) => setVisaValidUntil(e.target.value)}
                   />
-                  <p className="mt-1 text-xs text-content-muted">{t.authorizationIssueDateHint}</p>
+                  {authorizationIssueDate && !visaValidUntil && (() => {
+                    const proposal = nextAnniversary(
+                      authorizationIssueDate,
+                      visaDecisionDate || new Date().toISOString().slice(0, 10)
+                    );
+                    return (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => setVisaValidUntil(proposal)}
+                      >
+                        {t.visaValidUntilSuggest.replace("{date}", formatDate(proposal))}
+                      </Button>
+                    );
+                  })()}
                 </div>
               </div>
+              <p className="-mt-2 text-xs text-content-muted">{t.visaUntilHint}</p>
 
-              <FormSection title={t.visaGroup} description={t.visaGroupHint}>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="p-visa-number">{t.visaDecisionNumber}</Label>
-                    <Input
-                      id="p-visa-number"
-                      value={visaDecisionNumber}
-                      onChange={(e) => setVisaDecisionNumber(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="p-visa-date">{t.visaDecisionDate}</Label>
-                    <DateInput
-                      id="p-visa-date"
-                      value={visaDecisionDate}
-                      onChange={(e) => setVisaDecisionDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="p-visa-until">{t.visaValidUntil}</Label>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <DateInput
-                      id="p-visa-until"
-                      className="sm:max-w-[16rem]"
-                      value={visaValidUntil}
-                      onChange={(e) => setVisaValidUntil(e.target.value)}
-                    />
-                    {authorizationIssueDate && !visaValidUntil && (() => {
-                      const proposal = nextAnniversary(
-                        authorizationIssueDate,
-                        visaDecisionDate || new Date().toISOString().slice(0, 10)
-                      );
-                      return (
-                        <Button type="button" variant="outline" size="sm" onClick={() => setVisaValidUntil(proposal)}>
-                          {t.visaValidUntilSuggest.replace("{date}", formatDate(proposal))}
-                        </Button>
-                      );
-                    })()}
-                  </div>
-                  <p className="mt-1 text-xs text-content-muted">{t.visaValidUntilHint}</p>
-                </div>
-              </FormSection>
-
-              <FormSection title={t.oldAuthorizationGroup}>
-                <div>
-                  <Label htmlFor="p-auth-expiry">{t.authorizationExpiryOptional}</Label>
-                  <DateInput
-                    id="p-auth-expiry"
-                    className="sm:max-w-[16rem]"
-                    value={authorizationExpiry}
-                    onChange={(e) => setAuthorizationExpiry(e.target.value)}
+              <div className="rounded-lg border border-line">
+                <button
+                  type="button"
+                  aria-expanded={authDetailsOpen}
+                  aria-controls="p-auth-details"
+                  onClick={() => setAuthDetailsOpen((open) => !open)}
+                  className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-semibold text-content-strong hover:bg-surface-muted"
+                >
+                  <ChevronRight
+                    aria-hidden
+                    className={"h-4 w-4 shrink-0 transition-transform " + (authDetailsOpen ? "rotate-90" : "")}
                   />
-                  <p className="mt-1 text-xs text-content-muted">{t.authorizationExpiryOptionalHint}</p>
+                  {t.authDetails}
+                  <span className="font-normal text-content-muted">· {t.authDetailsOptional}</span>
+                </button>
+                <div id="p-auth-details" hidden={!authDetailsOpen} className="space-y-4 border-t border-line px-3.5 py-3.5">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div>
+                      <Label htmlFor="p-auth-issue">{t.authorizationIssueDate}</Label>
+                      <DateInput
+                        id="p-auth-issue"
+                        value={authorizationIssueDate}
+                        onChange={(e) => setAuthorizationIssueDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="p-visa-number">{t.visaDecisionNumber}</Label>
+                      <Input
+                        id="p-visa-number"
+                        value={visaDecisionNumber}
+                        onChange={(e) => setVisaDecisionNumber(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="p-visa-date">{t.visaDecisionDate}</Label>
+                      <DateInput
+                        id="p-visa-date"
+                        value={visaDecisionDate}
+                        onChange={(e) => setVisaDecisionDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-content-muted">{t.authorizationIssueDateHint}</p>
+
+                  <div>
+                    <label className="flex items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 rounded border-line-strong"
+                        checked={hasOldExpiry}
+                        onChange={(e) => {
+                          setHasOldExpiry(e.target.checked);
+                          // Debifat de om: autorizația nu are termen, deci data scrisă nu mai e a ei.
+                          if (!e.target.checked) setAuthorizationExpiry("");
+                        }}
+                      />
+                      <span>
+                        <span className="font-medium text-content-strong">{t.oldExpiryAsk}</span>
+                        <span className="block text-xs text-content-muted">{t.oldExpiryHint}</span>
+                      </span>
+                    </label>
+                    {hasOldExpiry && (
+                      <div className="mt-3 pl-6">
+                        <Label htmlFor="p-auth-expiry">{t.authorizationExpiryOptional}</Label>
+                        <DateInput
+                          id="p-auth-expiry"
+                          className="sm:max-w-[16rem]"
+                          value={authorizationExpiry}
+                          onChange={(e) => setAuthorizationExpiry(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </FormSection>
+              </div>
             </div>
           </form>
         </div>

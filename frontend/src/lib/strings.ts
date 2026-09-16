@@ -1554,13 +1554,8 @@ export const strings = {
       "Ziua și luna ei deschid anul de viză; la o autorizație revizuită contează tot cea inițială (Ordinul 1150/2020, art. 5 alin. (4)).",
     visaDecisionNumber: "Decizia de viză anuală nr.",
     visaDecisionDate: "Data deciziei",
-    visaValidUntil: "Viza aplicată până la",
-    visaValidUntilHint:
-      "Cum scrie pe decizie: „se aplică viza pentru perioada …”. Perioada o dă agenția, deci se trece de pe hârtie.",
     visaValidUntilSuggest: "Propune {date}",
     authorizationExpiryOptional: "Data expirării (numai la autorizațiile cu termen)",
-    authorizationExpiryOptionalHint:
-      "Autorizațiile de azi nu mai expiră: rămân valabile cât se obține viza anuală (OUG 195/2005, art. 16 alin. (2^1)). Termen mai au doar cele de dinainte de 18.11.2019, nemodificate (Legea 219/2019, art. II).",
     // Reperele formularului lung, ca la mișcare și la firmă. Nu se pliază: jumătate din secțiuni
     // conțin rubrici obligatorii, iar un câmp obligatoriu ascuns sub un titlu închis e un formular
     // care se refuză fără să spună de ce.
@@ -1569,7 +1564,7 @@ export const strings = {
     sectionCarrier: "Transport",
     sectionAuthorization: "Autorizația de mediu",
     sectionAuthorizationHint:
-      "Predarea se face către un operator autorizat (OUG 92/2021, art. 23 alin. (1)), iar autorizația rămâne valabilă cât se obține viza anuală. Cu perioada vizei sau data expirării completată, aplicația anunță cu 60 de zile înainte și marchează predările făcute după. Dacă le ai pe amândouă, contează cea care vine prima.",
+      "Deșeul se predă numai unui operator autorizat (OUG 92/2021, art. 23 alin. (1)), iar predarea nu te scapă de răspundere (art. 24 alin. (1)). Autorizația de mediu nu mai expiră: rămâne valabilă cât timp firma obține în fiecare an viza (OUG 195/2005, art. 16 alin. (2^1)). Fără viză, agenția o suspendă — activitatea e interzisă cât ține suspendarea — și apoi o anulează (art. 17 alin. (3)–(4)). Cu data vizei completată, aplicația te anunță cu 60 de zile înainte și marchează predările făcute după.",
     sectionAnexa3: "Date pentru Anexa 3",
     // Formularul pe trei pași (17.09.2026), ca cererea de cont: aceleași rubrici, aceeași salvare,
     // doar împărțite. Titlurile spun ce face omul, nu numele rubricilor.
@@ -1585,8 +1580,10 @@ export const strings = {
     step2Subtitle: "Ce face cu deșeul, cine îl duce până la el și cine pe cine facturează.",
     step3Name: "Autorizația de mediu",
     step3Title: "Autorizația de mediu",
-    step3SubtitleRequired: "Un colector sau un valorificator lucrează numai cu autorizație. Scrie numărul ei de pe hârtie.",
-    step3SubtitleOptional: "Pentru o firmă care doar transportă sau doar generează, autorizația nu e obligatorie. Complet-o dacă o ai.",
+    step3SubtitleRequired:
+      "Cere-i autorizația de mediu și ultima decizie de viză — le ai de obicei lângă contract. Numărul autorizației e obligatoriu.",
+    step3SubtitleOptional:
+      "Pentru o firmă care doar transportă sau doar generează, autorizația nu e obligatorie. Completeaz-o dacă o ai.",
     stepOf: "Pasul {n} din 3",
     stepContinue: "Continuă",
     stepBack: "Înapoi",
@@ -1609,9 +1606,15 @@ export const strings = {
     carrierNoCardDisabled: "Nu se poate: o firmă care doar transportă vine mereu ea după deșeu.",
     carrierDetails: "Mașinile și șoferii lui",
     carrierDetailsHint: "Opțional. Ce scrii aici se completează singur pe Anexa 3, ca să nu tastezi de fiecare dată.",
-    visaGroup: "Viza anuală",
-    visaGroupHint: "De pe decizia de viză. Cu perioada completată, te anunțăm cu 60 de zile înainte să expire.",
-    oldAuthorizationGroup: "Doar la autorizațiile vechi, cu termen",
+    visaUntilAsk: "Viza e valabilă până la",
+    visaUntilHint:
+      "Scrie data de pe decizia de viză („se aplică viza pentru perioada …”). Te anunțăm cu 60 de zile înainte să expire.",
+    authDetails: "Detalii de pe hârtii",
+    authDetailsOptional: "opțional",
+    oldExpiryAsk: "Autorizație integrată veche, cu termen?",
+    oldExpiryHint:
+      "Doar autorizațiile integrate de mediu emise înainte de 18.11.2019 și netrecute pe viză mai au termen, cel mult până în 2029 (Legea 219/2019, art. II). La o autorizație obișnuită lasă nebifat.",
+    visaMissing: "Viză necompletată",
     summaryNoAuthorization: "Fără autorizație",
     summaryAuthorization: "Autorizația {n}",
     summaryCarrier: "transportă",
