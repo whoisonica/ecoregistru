@@ -8,6 +8,20 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 23:57 — ✅ pe producție: login, cererea de cont și paginile de parolă în direcția „Poster”.** `ecoregistru-app` **v95**
+> (`2bd04da`), din monorepo `main` `7e81a2c`; **api neatins** (v109), nicio migrare. Proprietarul a cerut „upgrade vizual” pe paginile de
+> dinaintea contului și a ales, după trei runde de machete, paleta landingului: `PublicShell.tsx` cu stânga pe hârtie deschisă, titlu negru cu
+> ultima frază în verdele landingului (token `mark` #047857, doar pe paginile publice), formular aerisit cu rubrici de 48px. **Cererea de cont
+> în patru pași** (Compania · Punctul de lucru · Contactul · Deșeurile), aproape totul obligatoriu; generatorul pur poate bifa „Activitatea
+> noastră nu are nevoie de autorizație de mediu”, care pleacă drept propoziție în observații (aceleași rubrici trimise, backendul neatins).
+> „Parolă uitată” și „Alege-ți parola” trec și ele pe `PublicShell`. Regula: `docs/stil-interfata.md`, „Paginile de dinaintea contului”.
+> **Probe** (sesiunea paralelă, pe `eco_e2e_poster` cu `V62`): `npm test` 20/20, tsc, build; e2e 1, 5, 6, 12, 16, 22 și **25** (nouă;
+> negativa ei dă 6 FAIL pe paginile vechi); resetarea parolei probată de mână cap-coadă (parola nouă intră, cea veche e refuzată, codul
+> refolosit dă 422). Suita e2e completă nu s-a rulat pe ramura asta. **Pe producție, după deploy:** conținutul `ferepo/main` = `main:frontend`
+> (în afară de divergența stabilă `.gitignore` + `vite.config.js/.d.ts`); `/login`, `/cerere-cont`, `/parola-uitata`, `/reseteaza-parola` → 200,
+> fără erori în consolă și 0px derulare laterală la 1440px și 375px; CSP, HSTS, `nosniff`, `Referrer-Policy` neschimbate; aplicația publicată
+> are și textele importului („Retragi importul?”). ⬜ De confirmat cu Andreea: formularea bifei și lista rubricilor obligatorii.
+
 > **16.09.2026, 23:51 — ✅ pe producție (api v109 cu `V62`, app v94, `69797e6`): BUG-023, dublurile la reimport și istoricul importurilor cu „Retrage”.**
 > **(1) BUG-023:** destinația obligatorie și partenerul autorizat pe o predare de deșeu propriu stăteau numai în formularul web;
 > acum `WasteMovementService.validateOwnWasteHandover` le cere pe server, doar pe registrul Anexa 1 (proprietarul: „generator doar”).
