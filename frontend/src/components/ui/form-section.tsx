@@ -18,19 +18,30 @@ export function FormSection({
   description,
   children,
   className,
+  size = "default",
 }: {
   title: string;
   description?: ReactNode;
   children: ReactNode;
   className?: string;
+  /**
+   * `lg`: titlul de 20px fără linia de 2px, pentru formularul public aerisit (cererea de cont,
+   * direcția „Poster”). În aplicație rămâne `default`.
+   */
+  size?: "default" | "lg";
 }) {
+  const large = size === "lg";
   return (
-    <section className={cn("space-y-3", className)}>
-      <div className="border-b-2 border-content pb-1.5">
+    <section className={cn(large ? "space-y-4" : "space-y-3", className)}>
+      <div className={cn(!large && "border-b-2 border-content pb-1.5")}>
         {/* Titlul secțiunii e un titlu citit, nu o etichetă mică cu majuscule. Linia de 2px de sub
             el e aceeași ca sub capul de tabel: „aici începe ceva". */}
-        <h3 className="text-[0.9375rem] font-semibold text-content">{title}</h3>
-        {description && <p className="mt-0.5 text-sm text-content-muted">{description}</p>}
+        <h3 className={cn("font-semibold text-content", large ? "text-xl leading-7" : "text-[0.9375rem]")}>
+          {title}
+        </h3>
+        {description && (
+          <p className={cn("mt-0.5 text-content-muted", large ? "text-base" : "text-sm")}>{description}</p>
+        )}
       </div>
       {children}
     </section>

@@ -102,6 +102,20 @@ Select-ul nativ rămâne pentru liste lungi (parteneri, puncte de lucru, coduri 
 
 ---
 
+## Paginile de dinaintea contului — direcția „Poster”
+
+*Aleasă de proprietar pe 16.09.2026 din trei machete (Aurora · **Poster** · Editorial), după ce trei variante în
+stilul panoului (LCD, taste, bon) fuseseră respinse: pe login și pe cerere nu se pune „aparatul”.*
+
+`components/PublicShell.tsx`, folosit de login și de cererea de cont. **Stânga, verde** (`from-brand-400 via-brand-700
+to-brand-900`, cu o lumină difuză `lcd-digit` în colț): semnul, un titlu mare (56px pe login, 44px pe cerere), o
+propoziție, apoi ce vrea pagina să arate — pe login trei tile-uri cu ecrane care chiar există (Anexa 1, 15 martie,
+Dosarul de control), pe cerere pașii 01–03 (`PosterStep`, un `ol`). **Dreapta, alb**: formularul, cu rubrici de
+48px (`h-12`), titlul de 32px, linkul spre cealaltă pagină în colț și subsolul juridic o singură dată. Pe telefon
+verdele devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii. Cererea începe cu
+CUI-ul, „Ce faceți cu deșeurile” e `ChoiceCards` pe trei coloane, secțiunile sunt `FormSection size="lg"` (titlu de
+20px, fără linia de 2px). Parola uitată și alegerea parolei rămân pe cardul vechi, de rescris când se atinge.
+
 ## Ecranele de mișcări
 
 Trei ecrane, după registru și direcție (`lib/movementScreens.ts`): **Generare** (`/generare`, Anexa 1), **Intrări**

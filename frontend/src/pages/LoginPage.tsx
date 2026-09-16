@@ -2,14 +2,14 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { LegalFooter } from "@/components/LegalFooter";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
-import { BrandName } from "@/components/BrandName";
+import { CornerLink, PosterTile, PublicShell } from "@/components/PublicShell";
 import { apiErrorMessage, LOGIN_EXPIRED_PARAM, REDIRECT_PARAM } from "@/lib/api";
+
+const t = strings.login;
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -41,32 +41,46 @@ export function LoginPage() {
       await login(email, password);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(apiErrorMessage(err, strings.login.genericError));
+      setError(apiErrorMessage(err, t.genericError));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    // Pe grafit, ca panoul: prima privire spune același lucru ca restul aplicației.
-    <div className="flex h-full flex-col items-center justify-center gap-6 bg-panel p-4">
-      <Card className="w-full max-w-sm border-panel-line p-8 shadow-popover">
-        <div className="mb-6 text-center">
-          <div className="text-2xl font-semibold text-content"><BrandName /></div>
-          <div className="mt-1 text-sm text-content-muted">{strings.tagline}</div>
+    // Direcția „Poster” (16.09.2026): verdele cu promisiunea produsului în stânga, formularul
+    // aerisit în dreapta. Tile-urile spun ce găsești înăuntru — ecrane care chiar există.
+    <PublicShell
+      headline={t.posterHeadline}
+      lede={t.posterLede}
+      aside={
+        <div className="hidden flex-wrap gap-3.5 lg:flex">
+          <PosterTile kicker={t.tile1Kicker} title={t.tile1Title} note={t.tile1Note} led />
+          <PosterTile kicker={t.tile2Kicker} title={t.tile2Title} note={t.tile2Note} />
+          <PosterTile kicker={t.tile3Kicker} title={t.tile3Title} note={t.tile3Note} />
         </div>
-        <h1 className="mb-4 text-lg font-semibold">{strings.login.title}</h1>
+      }
+      corner={<CornerLink prompt={t.noAccount} label={t.requestAccount} to="/cerere-cont" />}
+    >
+      <div className="mx-auto flex w-full max-w-[400px] flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.title}</h1>
+          <p className="text-content-muted">{t.subtitle}</p>
+        </div>
         {expired && (
-          <div className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            {strings.login.sessionExpired}
+          <div className="flex items-start gap-2 rounded-md border border-state-warn px-3 py-2 text-sm text-state-warn-text">
+            <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-warn" />
+            {t.sessionExpired}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
             {/* `Label` cu `htmlFor`, ca peste tot în aplicație: eticheta scrisă de mână nu era
                 legată de câmp, deci nici clicul pe ea nu focaliza, nici cititorul de ecran nu
                 știa ce se cere. */}
-            <Label htmlFor="login-email">{strings.login.email}</Label>
+            <Label htmlFor="login-email" className="text-[0.8125rem] text-content-strong">
+              {t.email}
+            </Label>
             <Input
               id="login-email"
               type="email"
@@ -75,40 +89,47 @@ export function LoginPage() {
               required
               autoComplete="email"
               autoFocus
+              className="h-12 px-4 text-base"
             />
           </div>
           <div>
-            <Label htmlFor="login-password">{strings.login.password}</Label>
+            <div className="flex items-baseline justify-between">
+              <Label htmlFor="login-password" className="text-[0.8125rem] text-content-strong">
+                {t.password}
+              </Label>
+              <Link to="/parola-uitata" className="mb-1 text-[0.8125rem] font-medium text-brand hover:underline">
+                {t.forgotPassword}
+              </Link>
+            </div>
             <PasswordInput
               id="login-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
+              className="h-12 px-4 text-base"
             />
           </div>
           {error && (
-            <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-state-bad px-3 py-2 text-sm text-state-bad-text"
+            >
+              <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-bad" />
               {error}
             </div>
           )}
-          <Button type="submit" className="w-full" loading={loading}>
-            {loading ? strings.login.loading : strings.login.submit}
+          <Button type="submit" size="lg" className="w-full" loading={loading}>
+            {loading ? t.loading : t.submit}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm">
-          <Link to="/parola-uitata" className="text-brand hover:underline">
-            {strings.login.forgotPassword}
-          </Link>
-        </p>
         {/* The register is closed: there is no sign-up, only a request support acts on. */}
-        <p className="mt-2 text-center text-sm">
-          <Link to="/cerere-cont" className="text-brand hover:underline">
+        <p className="text-sm text-content-muted lg:hidden">
+          <Link to="/cerere-cont" className="font-medium text-brand hover:underline">
             {strings.accountRequest.linkFromLogin}
           </Link>
         </p>
-      </Card>
-      <LegalFooter className="text-panel-mid [&_a:hover]:text-lcd-digit" />
-    </div>
+      </div>
+    </PublicShell>
   );
 }

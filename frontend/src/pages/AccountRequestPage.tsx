@@ -6,23 +6,22 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { BrandName } from "@/components/BrandName";
 import { withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/ui/date-input";
 import { FormSection } from "@/components/ui/form-section";
 import { FieldError, invalidProps } from "@/components/ui/field-error";
+import { ChoiceCards } from "@/components/ui/choice-cards";
 import { MarketRolePicker } from "@/components/CompanyProfileFields";
 import { PillGroup } from "@/components/ui/pill-group";
-import { LegalFooter, LegalNotice } from "@/components/LegalFooter";
+import { LegalNotice } from "@/components/LegalFooter";
+import { CornerLink, PosterStep, PublicShell } from "@/components/PublicShell";
 
 const t = strings.accountRequest;
-const typeLabels = strings.enums.companyType;
 const codeLabels = strings.enums.wasteOperationCode;
 
 const COMPANY_TYPES: CompanyType[] = ["GENERATOR", "COLLECTOR", "BOTH"];
@@ -296,78 +295,73 @@ export function AccountRequestPage() {
     }
   }
 
-  if (sent) {
-    return (
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
-        <div className="text-center">
-          <div className="text-xl font-bold text-brand"><BrandName /></div>
-          <CheckCircle2 className="mx-auto mt-6 h-12 w-12 text-emerald-600" />
-          <h1 className="mt-4 text-2xl font-bold text-content">{t.successTitle}</h1>
-          <p className="mt-2 text-sm text-content-strong">{t.successBody}</p>
-        </div>
-
-        {/* „Am primit cererea" spune ce s-a întâmplat; asta spune ce urmează, cu un termen. */}
-        <Card className="mt-8 text-left">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-            {t.successNextTitle}
-          </h2>
-          <ol className="mt-3 space-y-3">
-            {[
-              t.successNext1,
-              t.successNext2,
-              t.successNext3.replace("{email}", sentToEmail || t.successNoEmailFallback),
-            ].map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm text-content-strong">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-100 font-mono text-xs font-medium text-brand-800">
-                  {i + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
+  // Direcția „Poster” (16.09.2026): verdele din stânga cu cei trei pași, formularul aerisit în
+  // dreapta. Același cadru pe pagina de mulțumire, ca omul să nu sară în alt decor după ce a apăsat.
+  const poster = (
+    <PublicShell
+      split="narrow"
+      align="top"
+      headline={t.posterHeadline}
+      lede={t.posterLede}
+      aside={
+        <div className="flex flex-col gap-7">
+          <ol className="flex flex-col gap-7">
+            <PosterStep index={1} title={t.step1Title} body={t.step1Body} current={!sent} />
+            <PosterStep index={2} title={t.step2Title} body={t.step2Body} current={sent} />
+            <PosterStep index={3} title={t.step3Title} body={t.step3Body} />
           </ol>
-          <p className="mt-4 border-t border-line pt-3 text-xs text-content-muted">{t.successSpam}</p>
-        </Card>
+          <div className="flex items-center gap-2.5 text-xs text-white/75">
+            <span aria-hidden className="inline-block h-2 w-2 rounded-sm bg-lcd-digit" />
+            {t.posterNote}
+          </div>
+        </div>
+      }
+      corner={<CornerLink prompt={t.haveAccount} label={t.goToLogin} to="/login" />}
+    >
+      {sent ? (
+        <div className="flex max-w-[560px] flex-col gap-8">
+          <div className="flex flex-col gap-3">
+            <CheckCircle2 className="h-12 w-12 text-brand" aria-hidden />
+            <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.successTitle}</h1>
+            <p className="text-content-muted">{t.successBody}</p>
+          </div>
 
-        <Link to="/login" className="mt-6 text-center text-sm text-brand hover:underline">
-          {t.backToLogin}
-        </Link>
+          {/* „Am primit cererea" spune ce s-a întâmplat; asta spune ce urmează, cu un termen. */}
+          <Card className="text-left">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
+              {t.successNextTitle}
+            </h2>
+            <ol className="mt-3 space-y-3">
+              {[
+                t.successNext1,
+                t.successNext2,
+                t.successNext3.replace("{email}", sentToEmail || t.successNoEmailFallback),
+              ].map((step, i) => (
+                <li key={i} className="flex gap-3 text-sm text-content-strong">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-100 font-mono text-xs font-medium text-brand-800">
+                    {i + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 border-t border-line pt-3 text-xs text-content-muted">{t.successSpam}</p>
+          </Card>
 
-        <LegalFooter className="mt-10" />
-      </div>
-    );
-  }
+          <Link to="/login" className="text-sm font-medium text-brand hover:underline">
+            {t.backToLogin}
+          </Link>
+        </div>
+      ) : (
+        <div className="flex w-full max-w-[720px] flex-col gap-10">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.title}</h1>
+            <p className="text-content-muted">{t.requiredLegend}</p>
+          </div>
 
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      {/* Cele două rânduri de brand pe care le are cardul de login. Fără ele, un prospect care
-          intră pe link vede un formular lung fără să știe al cui e. */}
-      <header className="text-center">
-        <div className="text-2xl font-bold text-brand"><BrandName /></div>
-        <div className="text-sm text-content-muted">{strings.tagline}</div>
-      </header>
-
-      <h1 className="mt-8 text-2xl font-bold text-content">{t.title}</h1>
-      <p className="mt-1 text-sm text-content-muted">{t.subtitle}</p>
-
-      <Card className="mt-6 bg-surface-sunken">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-          {t.stepsTitle}
-        </h2>
-        <ol className="mt-3 grid gap-3 sm:grid-cols-3">
-          {[t.step1, t.step2, t.step3].map((step, i) => (
-            <li key={i} className="flex gap-2 text-sm text-content-strong">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-100 font-mono text-xs font-medium text-brand-800">
-                {i + 1}
-              </span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
-      </Card>
-
-      <form ref={formRef} onSubmit={handleSubmit} className="mt-8 space-y-7" noValidate>
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-10" noValidate>
         {draft.restored && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-inbound px-3 py-2 text-sm text-inbound-border">
             <span>{t.draftRestored}</span>
             <button
               type="button"
@@ -381,34 +375,21 @@ export function AccountRequestPage() {
         {error && (
           <p
             role="alert"
-            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            className="flex items-start gap-2 rounded-md border border-state-bad px-3 py-2 text-sm text-state-bad-text"
           >
+            <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-bad" />
             {error}
           </p>
         )}
 
-        <p className="text-xs text-content-muted">{t.requiredLegend}</p>
-
-        <FormSection title={t.sectionCompany}>
-          <div>
-            <Label htmlFor="ar-name" required>
-              {t.companyName}
-            </Label>
-            <Input
-              id="ar-name"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              autoComplete="organization"
-              {...invalidProps("ar-name-err", errors.companyName)}
-            />
-            <FieldError id="ar-name-err" message={errors.companyName} />
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FormSection size="lg" title={t.sectionCompany}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="ar-cui" required>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-cui" required>
                 {t.cui}
               </Label>
               <Input
+                className="h-12 px-4 text-base"
                 id="ar-cui"
                 value={cui}
                 onChange={(e) => setCui(e.target.value)}
@@ -418,23 +399,41 @@ export function AccountRequestPage() {
               <FieldError id="ar-cui-err" message={errors.cui} />
             </div>
             <div>
-              <Label htmlFor="ar-type">{t.companyType}</Label>
-              <Select
-                id="ar-type"
-                value={companyType}
-                onChange={(e) => setCompanyType(e.target.value as CompanyType)}
-              >
-                {COMPANY_TYPES.map((ct) => (
-                  <option key={ct} value={ct}>
-                    {typeLabels[ct]}
-                  </option>
-                ))}
-              </Select>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-name" required>
+                {t.companyName}
+              </Label>
+              <Input
+                className="h-12 px-4 text-base"
+                id="ar-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                autoComplete="organization"
+                {...invalidProps("ar-name-err", errors.companyName)}
+              />
+              <FieldError id="ar-name-err" message={errors.companyName} />
             </div>
           </div>
           <div>
-            <Label htmlFor="ar-caen">{t.caenCode}</Label>
+            <span id="ar-type-label" className="mb-1 block text-xs font-medium text-content-muted">
+              {t.companyType}
+            </span>
+            <ChoiceCards
+              name="ar-type"
+              aria-labelledby="ar-type-label"
+              columns={3}
+              value={companyType}
+              onChange={setCompanyType}
+              options={COMPANY_TYPES.map((ct) => ({
+                value: ct,
+                label: t.companyTypeChoice[ct].label,
+                description: t.companyTypeChoice[ct].hint,
+              }))}
+            />
+          </div>
+          <div>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-caen">{t.caenCode}</Label>
             <Input
+              className="h-12 px-4 text-base"
               id="ar-caen"
               value={caenCode}
               onChange={(e) => setCaenCode(e.target.value)}
@@ -443,8 +442,9 @@ export function AccountRequestPage() {
             <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
           </div>
           <div>
-            <Label htmlFor="ar-address">{t.companyAddress}</Label>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-address">{t.companyAddress}</Label>
             <Textarea
+              className="px-4 text-base"
               id="ar-address"
               rows={2}
               value={companyAddress}
@@ -453,10 +453,11 @@ export function AccountRequestPage() {
           </div>
         </FormSection>
 
-        <FormSection title={t.sectionWorkPoint} description={t.workPointHint}>
+        <FormSection size="lg" title={t.sectionWorkPoint} description={t.workPointHint}>
           <div>
-            <Label htmlFor="ar-wp-name">{t.workPointName}</Label>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-wp-name">{t.workPointName}</Label>
             <Input
+              className="h-12 px-4 text-base"
               id="ar-wp-name"
               value={workPointName}
               onChange={(e) => setWorkPointName(e.target.value)}
@@ -464,8 +465,9 @@ export function AccountRequestPage() {
             />
           </div>
           <div>
-            <Label htmlFor="ar-wp-address">{t.workPointAddress}</Label>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-wp-address">{t.workPointAddress}</Label>
             <Textarea
+              className="px-4 text-base"
               id="ar-wp-address"
               rows={2}
               value={workPointAddress}
@@ -474,11 +476,12 @@ export function AccountRequestPage() {
           </div>
         </FormSection>
 
-        <FormSection title={t.sectionContact} description={t.contactHint}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FormSection size="lg" title={t.sectionContact} description={t.contactHint}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="ar-contact-name">{t.contactName}</Label>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-name">{t.contactName}</Label>
               <Input
+                className="h-12 px-4 text-base"
                 id="ar-contact-name"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
@@ -486,8 +489,9 @@ export function AccountRequestPage() {
               />
             </div>
             <div>
-              <Label htmlFor="ar-contact-phone">{t.contactPhone}</Label>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-phone">{t.contactPhone}</Label>
               <Input
+                className="h-12 px-4 text-base"
                 id="ar-contact-phone"
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
@@ -496,8 +500,9 @@ export function AccountRequestPage() {
             </div>
           </div>
           <div>
-            <Label htmlFor="ar-contact-role">{t.contactRole}</Label>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-role">{t.contactRole}</Label>
             <Input
+              className="h-12 px-4 text-base"
               id="ar-contact-role"
               value={contactRole}
               onChange={(e) => setContactRole(e.target.value)}
@@ -506,10 +511,11 @@ export function AccountRequestPage() {
             <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
           </div>
           <div>
-            <Label htmlFor="ar-contact-email" required>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-email" required>
               {t.contactEmail}
             </Label>
             <Input
+              className="h-12 px-4 text-base"
               id="ar-contact-email"
               type="email"
               value={contactEmail}
@@ -521,19 +527,21 @@ export function AccountRequestPage() {
           </div>
         </FormSection>
 
-        <FormSection title={t.sectionAuthorization}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FormSection size="lg" title={t.sectionAuthorization}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="ar-auth-number">{t.environmentalAuthNumber}</Label>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-auth-number">{t.environmentalAuthNumber}</Label>
               <Input
+                className="h-12 px-4 text-base"
                 id="ar-auth-number"
                 value={authNumber}
                 onChange={(e) => setAuthNumber(e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="ar-auth-expiry">{t.environmentalAuthExpiry}</Label>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-auth-expiry">{t.environmentalAuthExpiry}</Label>
               <DateInput
+                className="h-12 px-4 text-base"
                 id="ar-auth-expiry"
                 value={authExpiry}
                 onChange={(e) => setAuthExpiry(e.target.value)}
@@ -543,10 +551,11 @@ export function AccountRequestPage() {
         </FormSection>
 
         {asksTransport && (
-          <FormSection title={t.sectionTransport} description={t.transportHint}>
+          <FormSection size="lg" title={t.sectionTransport} description={t.transportHint}>
             <div>
-              <Label htmlFor="ar-transport-means">{t.transportMeans}</Label>
+              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-transport-means">{t.transportMeans}</Label>
               <Textarea
+                className="px-4 text-base"
                 id="ar-transport-means"
                 rows={2}
                 value={transportMeans}
@@ -554,18 +563,20 @@ export function AccountRequestPage() {
                 placeholder={t.transportMeansPlaceholder}
               />
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="ar-transport-licence">{t.transportLicenseNumber}</Label>
+                <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-transport-licence">{t.transportLicenseNumber}</Label>
                 <Input
+                  className="h-12 px-4 text-base"
                   id="ar-transport-licence"
                   value={transportLicenseNumber}
                   onChange={(e) => setTransportLicenseNumber(e.target.value)}
                 />
               </div>
               <div>
-                <Label htmlFor="ar-transport-expiry">{t.transportLicenseExpiry}</Label>
+                <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-transport-expiry">{t.transportLicenseExpiry}</Label>
                 <DateInput
+                  className="h-12 px-4 text-base"
                   id="ar-transport-expiry"
                   value={transportLicenseExpiry}
                   onChange={(e) => setTransportLicenseExpiry(e.target.value)}
@@ -575,7 +586,7 @@ export function AccountRequestPage() {
           </FormSection>
         )}
 
-        <FormSection title={t.sectionMarketRole}>
+        <FormSection size="lg" title={t.sectionMarketRole}>
           <MarketRolePicker
             value={marketRoles}
             onChange={setMarketRoles}
@@ -584,7 +595,7 @@ export function AccountRequestPage() {
           />
         </FormSection>
 
-        <FormSection title={t.sectionWaste}>
+        <FormSection size="lg" title={t.sectionWaste}>
           <div>
             <span id="ar-waste-list" className="block text-sm font-medium text-content-strong">
               {t.wasteCodesText}
@@ -603,8 +614,9 @@ export function AccountRequestPage() {
             />
           </div>
           <div>
-            <Label htmlFor="ar-waste-text">{t.wasteOtherText}</Label>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-waste-text">{t.wasteOtherText}</Label>
             <Textarea
+              className="px-4 text-base"
               id="ar-waste-text"
               rows={3}
               value={wasteCodesText}
@@ -663,7 +675,7 @@ export function AccountRequestPage() {
             </div>
 
             {chooseCodes && (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {[
                   { title: t.recovery, codes: R_CODES },
                   { title: t.disposal, codes: D_CODES },
@@ -692,8 +704,9 @@ export function AccountRequestPage() {
           </fieldset>
 
           <div>
-            <Label htmlFor="ar-notes">{t.notes}</Label>
+            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-notes">{t.notes}</Label>
             <Textarea
+              className="px-4 text-base"
               id="ar-notes"
               rows={3}
               value={notes}
@@ -718,21 +731,25 @@ export function AccountRequestPage() {
           />
         </div>
 
-        <div className="border-t border-line pt-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link to="/login" className="text-sm text-brand hover:underline">
+        <div className="border-t border-line pt-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <Link to="/login" className="text-sm font-medium text-brand hover:underline">
               {t.backToLogin}
             </Link>
-            <Button type="submit" loading={submitMut.isPending}>
-              {submitMut.isPending ? t.submitting : t.submit}
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              <Button type="submit" size="lg" loading={submitMut.isPending}>
+                {submitMut.isPending ? t.submitting : t.submit}
+              </Button>
+              {/* Sub buton, nu deasupra lui: se citește în drum spre apăsare. */}
+              <LegalNotice className="text-right" />
+            </div>
           </div>
-          {/* Sub buton, nu deasupra lui: se citește în drum spre apăsare. */}
-          <LegalNotice className="mt-3" />
         </div>
       </form>
-
-      <LegalFooter className="mt-10" />
-    </div>
+        </div>
+      )}
+    </PublicShell>
   );
+
+  return poster;
 }

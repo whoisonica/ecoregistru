@@ -285,7 +285,23 @@ export const strings = {
   },
 
   login: {
-    title: "Autentificare",
+    title: "Intră în cont",
+    subtitle: "Cu emailul și parola contului tău.",
+    // Verdele din stânga (direcția „Poster”, 16.09.2026): promisiunea produsului, în limbajul
+    // patronului, și trei tile-uri cu ecrane care chiar există în aplicație.
+    posterHeadline: "Evidența deșeurilor, fără dosarul de hârtie.",
+    posterLede: "Registrul, anexele și termenele legale, ținute pe punct de lucru și gata de depus.",
+    tile1Kicker: "Anexa 1",
+    tile1Title: "Generare",
+    tile1Note: "gata de depus",
+    tile2Kicker: "Termen",
+    tile2Title: "15 martie",
+    tile2Note: "declarația anuală",
+    tile3Kicker: "Dosar de control",
+    tile3Title: "Un singur PDF",
+    tile3Note: "tot ce cere Garda de Mediu",
+    noAccount: "Nu ai cont?",
+    requestAccount: "Cere un cont",
     email: "Email",
     password: "Parolă",
     submit: "Intră în cont",
@@ -2527,7 +2543,7 @@ export const strings = {
       "Am păstrat ce completaseși și am pus la loc în formular. Verifică datele înainte de trimitere.",
     draftDiscard: "Șterge și începe de la zero",
     // Public page
-    title: "Cerere de cont WasteHouse",
+    title: "Cerere de cont",
     subtitle:
       "Conturile se creează de echipa WasteHouse, pe baza acestui formular. Completează-l o dată — din răspunsuri configurăm aplicația pentru tipul tău de activitate, ca să vezi doar ce îți trebuie.",
     // Cele trei rânduri din capul paginii. Un prospect care intră pe link nu știe nici unde a
@@ -2537,6 +2553,27 @@ export const strings = {
     step1: "Completezi formularul — câteva minute, doar trei rubrici sunt obligatorii.",
     step2: "Îl citim și configurăm aplicația pentru activitatea ta.",
     step3: "Primești datele de acces pe email, în 1–2 zile lucrătoare.",
+    // Verdele din stânga (direcția „Poster”, 16.09.2026): titlul, apoi aceiași trei pași, cu titlu
+    // și o propoziție fiecare, ca o listă numerotată 01–03.
+    posterHeadline: "Cere un cont.\nRestul îl facem noi.",
+    posterLede: "Conturile le creează echipa WasteHouse, din acest formular.",
+    step1Title: "Completezi formularul",
+    step1Body: "Câteva minute. Doar trei rubrici sunt obligatorii.",
+    step2Title: "Configurăm aplicația pentru tine",
+    step2Body: "Vezi doar ecranele de care are nevoie activitatea ta.",
+    step3Title: "Primești accesul pe email",
+    step3Body: "În 1–2 zile lucrătoare.",
+    posterNote: "Nimic nu pleacă până nu apeși „Trimite cererea”.",
+    haveAccount: "Ai deja cont?",
+    goToLogin: "Intră",
+    // „Ce faceți cu deșeurile” ca trei carduri cu o propoziție (regula: sub șapte opțiuni, nu
+    // `Select`). Valorile rămân `CompanyType`; pe listele interne firma se numește tot
+    // „Generator” / „Colector” (`enums.companyType`).
+    companyTypeChoice: {
+      GENERATOR: { label: "Le generăm", hint: "Ies din activitatea firmei: brutărie, atelier, magazin, șantier." },
+      COLLECTOR: { label: "Le colectăm", hint: "Primim deșeuri de la alții și le predăm mai departe." },
+      BOTH: { label: "Amândouă", hint: "Generăm deșeuri proprii și colectăm de la alții." },
+    },
     requiredLegend: "Rubricile marcate cu * sunt obligatorii. Restul ne scutesc de un telefon.",
     sectionCompany: "Firma",
     sectionWorkPoint: "Punctul de lucru",

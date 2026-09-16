@@ -64,9 +64,10 @@ check("trimiterea goală marchează rubricile", invalidCount === 3, invalidCount
 const errorTexts = await page.$$eval("p[data-field-error]", (p) => p.map((x) => x.textContent.trim()));
 check("fiecare rubrică își spune motivul", errorTexts.length === 3, errorTexts.join(" | "));
 
-// Derularea la prima greșită: butonul stă la capătul paginii, marcajul e în capul ei.
+// Derularea la prima greșită: butonul stă la capătul paginii, marcajul e în capul ei. Din
+// 16.09.2026 (direcția „Poster”) CUI-ul e prima rubrică, înaintea denumirii.
 const focusedId = await page.evaluate(() => document.activeElement?.id ?? "");
-check("focusul sare la prima rubrică greșită", focusedId === "ar-name", focusedId || "(niciunul)");
+check("focusul sare la prima rubrică greșită", focusedId === "ar-cui", focusedId || "(niciunul)");
 
 // ---------------------------------------------- CUI-UL E VERIFICAT AICI, NU LA APROBARE
 await page.fill("#ar-name", "Proba Automata SRL");
