@@ -38,6 +38,22 @@ rulează local și are testele verzi.
 > Landingul (`wastehouse.ro`, întrebarea „Ce se întâmplă cu evidența pe care o am deja în Excel?”) rescris local pe 17.09 („O aducem noi
 > în aplicație…”); se urcă de mână, pe cPanel.
 
+> **16.09.2026, 22:41 — ✅ pe producție: termenele ratate rămân pe ecran, „Primii pași” pe Acasă, monitorizarea din afară.**
+> `ecoregistru-api` **v107** (`8fc6b50`, `now at version v61`), `ecoregistru-app` **v92** (`39b8445`); monorepo `c9bbb35`, `eee7bb7`,
+> `13c71de`, `d756469`. Cerute de proprietar după evaluarea de seară („fa 1 2 3”). **(1) Termenele ratate.** Din api v105 orice termen
+> nebifat cu data trecută se ascundea, deci un 15 martie nedepus dispărea a doua zi fără semn. `MissedDeadlinePolicy`
+> (`app.deadlines.missed-shown-from`, implicit 17.09.2026): cele cu scadența de atunci încolo rămân „Depășit” până se bifează și se
+> numără iar în panoul cabinetului; resturile generării vechi rămân ascunse. `DeadlineAlertScheduler` trimite **o singură** notificare
+> (mail + push) a doua zi, în fereastra de 7 zile (`V61`, `warned_missed`). Web și mobil citesc și anul trecut (mobilul, la următorul
+> build EAS). **(2) „Primii pași”** pe Acasă (`lib/firstSteps.ts`, `components/panel/FirstSteps.tsx`): datele firmei (spune ce rubrici
+> lipsesc: adresa, CAEN, persoana desemnată), punctul de lucru, firma care preia deșeurile, prima mișcare (sau importul). Pașii se bifează
+> din date; lista apare doar cât lucrul nu e pornit, n-o vede vizualizatorul, „Ascunde” ține pe firmă. **(3)** `.github/workflows/uptime.yml`:
+> la 10 minute, health-ul API-ului, `app.wastehouse.ro`, `wastehouse.ro`. ⚠️ Prima rulare a găsit că `app.wastehouse.ro` servește
+> certificatul fără intermediarul Let's Encrypt (`openssl s_client` → „Verify return code: 21”); de reparat din Heroku ACM. Probe:
+> backend **852/103, 0 eșecuri** (IT-urile de termene pe proprietatea 2026-01-01, ca să nu depindă de calendar); negative pe cele patru
+> reguli (6 teste căzute) și pe `showFirstSteps`; `npm test` 20; e2e **24/24** pe bază nouă (proba 24 nouă), capturi la 1440px și 375px.
+> Următoarea migrare liberă: **`V62`**.
+
 > **16.09.2026, 22:00 — ✅ pe producție: Anexa 3 Ambalaje la colector și starea documentului pe fiecare termen.**
 > `ecoregistru-api` **v106** (`3b9c08d`), `ecoregistru-app` **v91** (`bbce88b`); monorepo `b153130`, fără migrare. Proprietarul: „din ce
 > generări ai să-ți genereze automat ce trebuie să depui”, apoi „caută atent în lege”. Temeiul e în `surse-oficiale.md` §2.11 (`3f53d99`).
