@@ -4,7 +4,7 @@ import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { ApiError, deadlines, downloadAuditFile, evidences, partners, UnauthorizedError } from "../../src/api";
+import { ApiError, downloadAuditFile, evidences, partners, upcomingDeadlines, UnauthorizedError } from "../../src/api";
 import { Pills, PrimaryButton } from "../../src/components/Form";
 import { GraphiteHeader } from "../../src/components/GraphiteHeader";
 import { Icon } from "../../src/components/Icon";
@@ -30,8 +30,8 @@ export default function ControlScreen() {
   const enabled = !!auth && !!tenant;
 
   const deadlinesQ = useQuery({
-    queryKey: ["deadlines", tenant, year],
-    queryFn: () => deadlines(auth!, year),
+    queryKey: ["deadlines", tenant, "upcoming"],
+    queryFn: () => upcomingDeadlines(auth!),
     enabled,
   });
   const evidencesQ = useQuery({

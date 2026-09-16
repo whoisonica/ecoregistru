@@ -205,6 +205,16 @@ export function deadlines(auth: Auth, year: number) {
   return request<Deadline[]>(`/api/v1/deadlines?year=${year}`, { auth });
 }
 
+/**
+ * Anul în curs și cel următor, într-o listă (16.09.2026): serverul ține doar următorul termen al
+ * fiecărui fel, iar acela e des în anul următor — 15 martie pentru datele de anul ăsta.
+ */
+export async function upcomingDeadlines(auth: Auth) {
+  const year = new Date().getFullYear();
+  const [current, next] = await Promise.all([deadlines(auth, year), deadlines(auth, year + 1)]);
+  return [...current, ...next];
+}
+
 // ── controlul (M1c) ─────────────────────────────────────────────────────────
 
 /** Evidența anului, linie cu linie — din ea vin „fără cod R/D” și „așteaptă cântarul”, ca pe Panoul web. */

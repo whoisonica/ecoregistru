@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { Deadline, DeadlineGenerationResponse } from "@/lib/types";
 
@@ -18,15 +19,38 @@ export function useDeadlines(year: number, enabled = true) {
   });
 }
 
+/**
+ * Termenele anului în curs **și** ale celui următor, într-o listă. De pe 16.09.2026 calendarul ține
+ * doar următorul termen al fiecărui fel, iar acela e des în anul următor (15 martie pentru anul de
+ * acum): Panoul care citea doar anul curent ar fi spus „niciun termen” unui cont nou din septembrie.
+ */
+export function useUpcomingDeadlines(enabled = true) {
+  const year = new Date().getFullYear();
+  const [current, next] = useQueries({
+    queries: [year, year + 1].map((y) => ({
+      enabled,
+      queryKey: deadlinesKey(y),
+      queryFn: async () =>
+        (await api.get<Deadline[]>("/api/v1/deadlines", { params: { year: y } })).data,
+    })),
+  });
+  const data = useMemo(
+    () => (current.data && next.data ? [...current.data, ...next.data] : undefined),
+    [current.data, next.data]
+  );
+  return {
+    data,
+    isLoading: current.isLoading || next.isLoading,
+    isError: current.isError || next.isError,
+  };
+}
+
+/** Completează calendarul cu următorul termen al fiecărui fel; pe server, nu pe un an ales. */
 export function useRegenerateDeadlines() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (year: number) =>
-      (
-        await api.post<DeadlineGenerationResponse>("/api/v1/deadlines/regenerate", null, {
-          params: { year },
-        })
-      ).data,
+    mutationFn: async () =>
+      (await api.post<DeadlineGenerationResponse>("/api/v1/deadlines/regenerate")).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: deadlinesRoot }),
   });
 }

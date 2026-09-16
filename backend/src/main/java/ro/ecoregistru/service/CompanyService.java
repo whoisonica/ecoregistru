@@ -72,6 +72,7 @@ public class CompanyService {
     SubscriptionRepository subscriptionRepository;
     WasteCodeRepository wasteCodeRepository;
     AuthenticationService authenticationService;
+    DeadlineService deadlineService;
 
     @Transactional(readOnly = true)
     public List<CompanyResponse> listAll() {
@@ -117,6 +118,8 @@ public class CompanyService {
                 .build();
         applyEditableFields(company, request);
         companyRepository.save(company);
+        // Termenele următoare apar odată cu firma, nu abia dimineața (DeadlineCalendarScheduler).
+        deadlineService.ensureUpcoming(company.getId(), DeadlineService.today());
         return toResponse(company);
     }
 
@@ -133,6 +136,8 @@ public class CompanyService {
         company.setType(request.type());
         company.setAfmObligation(request.afmObligation());
         applyEditableFields(company, request);
+        // Un răspuns nou în profil (contribuții AFM, autorizație, ambalaje) își aduce termenul pe loc.
+        deadlineService.ensureUpcoming(company.getId(), DeadlineService.today());
         return toResponse(company);
     }
 

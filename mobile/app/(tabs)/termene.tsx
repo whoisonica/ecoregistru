@@ -3,7 +3,7 @@ import { strings } from "@web/strings";
 import { useEffect } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { deadlines, UnauthorizedError } from "../../src/api";
+import { upcomingDeadlines, UnauthorizedError } from "../../src/api";
 import { GraphiteHeader } from "../../src/components/GraphiteHeader";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
 import { formatDate } from "../../src/format";
@@ -19,11 +19,10 @@ import { colors, radius } from "../../src/theme";
  */
 export default function TermeneScreen() {
   const { session, auth, signOut } = useSession();
-  // Termenele anului în curs: ce se depune anul ăsta și ce a rămas în urmă din el.
-  const year = new Date().getFullYear();
+  // Termenele anului în curs și ale celui următor: acolo stă des următorul termen al fiecărui fel.
   const query = useQuery({
-    queryKey: ["deadlines", session?.tenantId, year],
-    queryFn: () => deadlines(auth!, year),
+    queryKey: ["deadlines", session?.tenantId, "upcoming"],
+    queryFn: () => upcomingDeadlines(auth!),
     enabled: !!auth && !!session?.tenantId,
   });
 

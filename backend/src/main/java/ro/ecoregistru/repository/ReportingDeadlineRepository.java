@@ -19,7 +19,8 @@ public interface ReportingDeadlineRepository extends JpaRepository<ReportingDead
 
     Optional<ReportingDeadline> findByIdAndCompany_Id(UUID id, UUID companyId);
 
-    boolean existsByCompany_IdAndReportTypeAndDueDate(UUID companyId, ReportType reportType, LocalDate dueDate);
+    Optional<ReportingDeadline> findByCompany_IdAndReportTypeAndDueDate(UUID companyId, ReportType reportType,
+                                                                        LocalDate dueDate);
 
     /**
      * Cross-tenant query for the alert scheduler: deadlines in a given status whose due date

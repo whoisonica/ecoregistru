@@ -25,9 +25,14 @@ import ro.ecoregistru.enums.MarketRole;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.MonthDay;
+import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
@@ -50,14 +55,40 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
  *    used oils and construction waste. Only for a company one of whose two halves signals;
  *    see {@link #aprilDeadline}.
  *
- * Generation is additive and idempotent (unique on company+type+due_date): it never deletes,
- * so completion state and warning flags survive a re-run. Effective status (OVERDUE) is derived
- * at read time from the due date, so the list is correct without waiting for the scheduler.
+ * <p><b>Doar următorul termen, pe fiecare fel de termen (proprietarul, 16.09.2026).</b> Până atunci
+ * butonul genera anul calendaristic întreg, de la 1 ianuarie: un cont făcut în septembrie primea
+ * 15 martie, 30 aprilie, 31 mai și opt AFM-uri lunare, toate „depășite” din prima zi — iar ele
+ * privesc anul de dinainte de cont. Termenele care contau (15 martie anul viitor, pentru datele
+ * ținute acum în aplicație) nu apăreau nicăieri până în ianuarie. Acum, pentru fiecare fel de termen:
+ *
+ * <ul>
+ *   <li>nu se creează nimic cu scadența trecută;</li>
+ *   <li>se creează prima apariție de azi înainte, dacă firma o datorează;</li>
+ *   <li>cât timp aceea e deschisă, nu apare următoarea („nu mă interesează 2028 dacă am încă 2027
+ *       de raportat”). Apare când e bifată sau când i-a trecut data.</li>
+ * </ul>
+ *
+ * <p>Calendarul se ține singur: {@link DeadlineCalendarScheduler} în fiecare dimineață, la
+ * crearea și la modificarea firmei, și la bifarea unui termen. Butonul de pe Termene face același
+ * lucru, pe loc. Generarea rămâne aditivă și idempotentă (unic pe firmă+tip+scadență): nu șterge,
+ * deci termenele create după regula veche rămân. Starea efectivă (OVERDUE) se socotește la citire.
  */
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DeadlineService {
+
+    /** Ziua „de azi” a unui client e cea din România, nu cea a serverului (UTC pe Heroku). */
+    public static final ZoneId ZONE = ZoneId.of("Europe/Bucharest");
+
+    /** Cât de departe se caută următoarea apariție: un termen anual bifat devreme sare peste un an. */
+    private static final int YEARS_AHEAD = 2;
+
+    private static final List<MonthDay> EVERY_25TH = Arrays.stream(Month.values())
+            .map(m -> MonthDay.of(m, 25)).toList();
+    // The 25th of the month after each quarter: January, April, July, October.
+    private static final List<MonthDay> AFTER_EACH_QUARTER = List.of(MonthDay.of(Month.JANUARY, 25),
+            MonthDay.of(Month.APRIL, 25), MonthDay.of(Month.JULY, 25), MonthDay.of(Month.OCTOBER, 25));
 
     ReportingDeadlineRepository deadlineRepository;
     CompanyRepository companyRepository;
@@ -66,7 +97,7 @@ public class DeadlineService {
     @Transactional(readOnly = true)
     public List<DeadlineResponse> list(int year) {
         UUID tenantId = TenantContext.require();
-        LocalDate today = LocalDate.now();
+        LocalDate today = today();
         return deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))
                 .stream()
@@ -74,27 +105,62 @@ public class DeadlineService {
                 .toList();
     }
 
+    /** Butonul de pe Termene: completează pe loc ce ar completa dimineața programată. */
+    @Transactional
+    public DeadlineGenerationResponse regenerate() {
+        return new DeadlineGenerationResponse(ensureUpcoming(TenantContext.require(), today()));
+    }
+
     /**
-     * Ensures the tenant has all the deadlines that fall due within the given calendar year.
-     * Returns the number of newly created deadlines (existing ones are left untouched).
+     * Creează, pentru fiecare fel de termen pe care firma îl datorează, următoarea apariție, dacă
+     * nu există deja una deschisă de azi înainte. Întoarce câte termene noi au apărut.
      */
     @Transactional
-    public DeadlineGenerationResponse regenerateYear(int year) {
-        UUID tenantId = TenantContext.require();
-        Company company = companyRepository.findById(tenantId)
+    public int ensureUpcoming(UUID companyId, LocalDate today) {
+        Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
 
         int created = 0;
+        // SIM annual: 15 March, covering the previous year.
+        created += ensureNext(company, ReportType.SIM_ANNUAL, List.of(MonthDay.of(Month.MARCH, 15)),
+                today, due -> true);
+        created += afmDeadlines(company, today);
+        created += packagingDeadline(company, today);
+        created += aprilDeadline(company, today);
+        created += mayDeadline(company, today);
+        return created;
+    }
 
-        // SIM annual: 15 March of this year (covers the previous year).
-        created += createIfMissing(company, ReportType.SIM_ANNUAL, LocalDate.of(year, Month.MARCH, 15));
+    public static LocalDate today() {
+        return LocalDate.now(ZONE);
+    }
 
-        created += afmDeadlines(company, year);
-        created += packagingDeadline(company, year);
-        created += aprilDeadline(company, year);
-        created += mayDeadline(company, year);
-
-        return new DeadlineGenerationResponse(year, created);
+    /**
+     * Prima scadență a tipului de azi înainte. Una bifată deja (depusă devreme) se sare; una
+     * deschisă oprește căutarea — ea e „următorul termen”. Pe prima care lipsește, {@code owed}
+     * hotărăște dacă firma o datorează: dacă nu, nu se creează nimic acum, iar dimineața
+     * următoare întreabă din nou (o mișcare cu ulei uzat poate apărea între timp).
+     */
+    private int ensureNext(Company company, ReportType type, List<MonthDay> days, LocalDate today,
+                           Predicate<LocalDate> owed) {
+        for (int year = today.getYear(); year <= today.getYear() + YEARS_AHEAD; year++) {
+            for (MonthDay day : days) {
+                LocalDate due = day.atYear(year);
+                if (due.isBefore(today)) {
+                    continue;
+                }
+                Optional<ReportingDeadline> existing = deadlineRepository
+                        .findByCompany_IdAndReportTypeAndDueDate(company.getId(), type, due);
+                if (existing.isPresent()) {
+                    if (existing.get().getStatus() == DeadlineStatus.DONE) {
+                        continue;
+                    }
+                    return 0;
+                }
+                return owed.test(due) ? create(company, type, due) : 0;
+            }
+        }
+        return 0;
     }
 
     /**
@@ -108,13 +174,13 @@ public class DeadlineService {
      * A trader gets nothing either — it sells goods somebody else packaged, so it never introduced
      * the packaging and does not file (Legea 249/2015; see {@link MarketRole}).
      */
-    private int packagingDeadline(Company company, int year) {
+    private int packagingDeadline(Company company, LocalDate today) {
         Set<MarketRole> roles = company.getMarketRoles();
         if (!MarketRole.answered(roles) || !MarketRole.putsPackagingOnMarket(roles)) {
             return 0;
         }
-        return createIfMissing(company, ReportType.PACKAGING_ANNUAL,
-                LocalDate.of(year, Month.FEBRUARY, 25));
+        return ensureNext(company, ReportType.PACKAGING_ANNUAL,
+                List.of(MonthDay.of(Month.FEBRUARY, 25)), today, due -> true);
     }
 
     /**
@@ -132,29 +198,27 @@ public class DeadlineService {
      *       for anyone who hauls rubble while the obligation belongs to the permit holder.</li>
      * </ul>
      *
-     * <p><b>The year looked at is {@code year - 1}</b>, not {@code year}: the article says "până la
+     * <p><b>The year looked at is the one before the due date</b>: the article says "până la
      * 30 aprilie a anului următor celui pentru care se raportează", so the deadline falling in
-     * April {@code year} reports {@code year - 1} — the same relation {@link ReportType#SIM_ANNUAL}
-     * has with its 15 March. Reading the current year instead would put the reminder one year
+     * April {@code Y} reports {@code Y - 1} — the same relation {@link ReportType#SIM_ANNUAL}
+     * has with its 15 March. Reading the due year instead would put the reminder one year
      * early for a company that has just started handling oil, and miss one that stopped.
      *
      * <p>Both signals are positive-only: a company with no oil code and an unanswered profile gets
      * nothing. That is the rule of {@link ReportType}, and here it has teeth — a wrong reminder on
      * this date sends a client to prepare a report that is not theirs.
      */
-    private int aprilDeadline(Company company, int year) {
-        int reported = year - 1;
-        boolean holdsUsedOils = !UsedOilCodes.among(movementRepository.findDistinctWasteCodes(
+    private int aprilDeadline(Company company, LocalDate today) {
+        boolean holdsPermit = Boolean.TRUE.equals(company.getConstructionPermitHolder());
+        return ensureNext(company, ReportType.APM_ANNUAL_APRIL, List.of(MonthDay.of(Month.APRIL, 30)),
+                today, due -> holdsPermit || holdsUsedOils(company, due.getYear() - 1));
+    }
+
+    private boolean holdsUsedOils(Company company, int reported) {
+        return !UsedOilCodes.among(movementRepository.findDistinctWasteCodes(
                 company.getId(),
                 LocalDate.of(reported, 1, 1),
                 LocalDate.of(reported, 12, 31))).isEmpty();
-        boolean holdsPermit = Boolean.TRUE.equals(company.getConstructionPermitHolder());
-
-        if (!holdsUsedOils && !holdsPermit) {
-            return 0;
-        }
-        return createIfMissing(company, ReportType.APM_ANNUAL_APRIL,
-                LocalDate.of(year, Month.APRIL, 30));
     }
 
     /**
@@ -179,17 +243,16 @@ public class DeadlineService {
      * {@code environmentalAuthExpiry} would mute the reminder for precisely the client who is
      * behind on it.
      *
-     * <p>Like {@link #aprilDeadline}, the year looked at is {@code year - 1} — "până la 31 mai
-     * anul următor raportării" — and the row carries no document link, because the programme is
+     * <p>Like {@link #aprilDeadline}, the row carries no document link, because the programme is
      * written by the client (or a third party, alin. (2)), not printed by us.
      */
-    private int mayDeadline(Company company, int year) {
+    private int mayDeadline(Company company, LocalDate today) {
         String permit = company.getEnvironmentalAuthNumber();
         if (permit == null || permit.isBlank()) {
             return 0;
         }
-        return createIfMissing(company, ReportType.APM_ANNUAL_MAY,
-                LocalDate.of(year, Month.MAY, 31));
+        return ensureNext(company, ReportType.APM_ANNUAL_MAY, List.of(MonthDay.of(Month.MAY, 31)),
+                today, due -> true);
     }
 
     @Transactional
@@ -198,7 +261,9 @@ public class DeadlineService {
         deadline.setStatus(DeadlineStatus.DONE);
         deadline.setCompletedAt(Instant.now());
         deadline.setCompletionNote(request != null ? request.note() : null);
-        return toResponse(deadline, LocalDate.now());
+        // Bifat devreme: următorul de același fel apare acum, nu abia dimineața.
+        ensureUpcoming(deadline.getCompany().getId(), today());
+        return toResponse(deadline, today());
     }
 
     @Transactional
@@ -207,7 +272,7 @@ public class DeadlineService {
         deadline.setStatus(DeadlineStatus.UPCOMING);
         deadline.setCompletedAt(null);
         deadline.setCompletionNote(null);
-        return toResponse(deadline, LocalDate.now());
+        return toResponse(deadline, today());
     }
 
     /**
@@ -225,11 +290,11 @@ public class DeadlineService {
      * </ul>
      *
      * <p>An account that has not answered which contributions it owes keeps the old behaviour
-     * exactly: the flag alone still produces the twelve monthly deadlines. Switching an alert off
+     * exactly: the flag alone still produces the monthly deadline. Switching an alert off
      * on an assumption is worse than leaving one that is too loud, and this way the legacy path
      * fades out as accounts are filled in rather than going quiet all at once.
      */
-    private int afmDeadlines(Company company, int year) {
+    private int afmDeadlines(Company company, LocalDate today) {
         // „Economia circulară" a ieşit din configurarea contului (proprietarul, 16.09.2026): e a
         // depozitelor de deşeuri, nu a clienţilor noştri, deci nu mai generează termenul trimestrial.
         // Un cont care o avea ca singur răspuns nu cade pe calea veche (12 termene lunare): a răspuns.
@@ -240,45 +305,26 @@ public class DeadlineService {
                 .filter(c -> c != AfmContribution.CIRCULAR_ECONOMY)
                 .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
         if (owed.isEmpty()) {
-            if (!company.isAfmObligation()) {
-                return 0;
-            }
-            int created = 0;
-            for (Month month : Month.values()) {
-                created += createIfMissing(company, ReportType.AFM_MONTHLY,
-                        LocalDate.of(year, month, 25));
-            }
-            return created;
+            return company.isAfmObligation()
+                    ? ensureNext(company, ReportType.AFM_MONTHLY, EVERY_25TH, today, due -> true)
+                    : 0;
         }
 
         int created = 0;
-        for (AfmContribution contribution : owed) {
-            switch (contribution.getCadence()) {
-                case MONTHLY -> {
-                    for (Month month : Month.values()) {
-                        created += createIfMissing(company, ReportType.AFM_MONTHLY,
-                                LocalDate.of(year, month, 25));
-                    }
-                }
-                // The 25th of the month after each quarter: April, July, October, January.
-                case QUARTERLY -> {
-                    for (Month month : List.of(Month.APRIL, Month.JULY, Month.OCTOBER,
-                            Month.JANUARY)) {
-                        created += createIfMissing(company, ReportType.AFM_QUARTERLY,
-                                LocalDate.of(year, month, 25));
-                    }
-                }
-                case ANNUAL -> created += createIfMissing(company, ReportType.AFM_ANNUAL,
-                        LocalDate.of(year, Month.JANUARY, 25));
-            }
+        for (AfmContribution.AfmCadence cadence : owed.stream().map(AfmContribution::getCadence)
+                .distinct().toList()) {
+            created += switch (cadence) {
+                case MONTHLY -> ensureNext(company, ReportType.AFM_MONTHLY, EVERY_25TH, today, due -> true);
+                case QUARTERLY -> ensureNext(company, ReportType.AFM_QUARTERLY, AFTER_EACH_QUARTER, today,
+                        due -> true);
+                case ANNUAL -> ensureNext(company, ReportType.AFM_ANNUAL,
+                        List.of(MonthDay.of(Month.JANUARY, 25)), today, due -> true);
+            };
         }
         return created;
     }
 
-    private int createIfMissing(Company company, ReportType type, LocalDate dueDate) {
-        if (deadlineRepository.existsByCompany_IdAndReportTypeAndDueDate(company.getId(), type, dueDate)) {
-            return 0;
-        }
+    private int create(Company company, ReportType type, LocalDate dueDate) {
         deadlineRepository.save(ReportingDeadline.builder()
                 .company(company)
                 .reportType(type)

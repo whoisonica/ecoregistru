@@ -31,10 +31,13 @@ import type { BadgeProps } from "@/components/ui/badge";
 
 const t = strings.deadlines;
 
-/** Year options: current year down to five years back. */
+/**
+ * Anul viitor, apoi anul curent și cinci ani înapoi. Anul viitor e acolo fiindcă următorul termen al
+ * unui fel stă des în el (15 martie pentru datele de anul ăsta).
+ */
 function yearOptions(): number[] {
-  const now = new Date().getFullYear();
-  return Array.from({ length: 6 }, (_, i) => now - i);
+  const next = new Date().getFullYear() + 1;
+  return Array.from({ length: 7 }, (_, i) => next - i);
 }
 
 const statusVariant: Record<DeadlineStatus, BadgeProps["variant"]> = {
@@ -73,15 +76,14 @@ export function DeadlinesPage() {
   });
 
   function handleRegenerate() {
-    regenerateMut.mutate(year, {
+    regenerateMut.mutate(undefined, {
       onSuccess: (res) =>
         notify(
           // Zero termene noi nu e o eroare — calendarul era deja complet —, dar „S-au generat 0 de
           // termene noi" se citește ca una.
           (res.generated === 0
             ? t.generatedNone
-            : withCount(t.generated, res.generated, "termen nou", "termene noi")
-          ).replace("{year}", String(res.year)),
+            : withCount(t.generated, res.generated, "termen nou", "termene noi")),
           "success"
         ),
       onError: (err) => notify(apiErrorMessage(err, t.generateError), "error"),
@@ -186,7 +188,7 @@ export function DeadlinesPage() {
                         ? strings.common.noResults
                         : t.empty.replace("{year}", String(year))
                     }
-                    description={canManage ? t.emptyHint.replace("{year}", String(year)) : undefined}
+                    description={canManage ? t.emptyHint : undefined}
                     action={
                       canManage && (
                         <Button onClick={handleRegenerate} disabled={regenerateMut.isPending}>

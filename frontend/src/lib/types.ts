@@ -1408,7 +1408,6 @@ export interface Deadline {
 
 /** Mirrors backend DeadlineGenerationResponse. */
 export interface DeadlineGenerationResponse {
-  year: number;
   generated: number;
 }
 

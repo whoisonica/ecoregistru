@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
-import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.DeadlineService;
 
 import java.math.BigDecimal;
@@ -62,6 +61,7 @@ public class DevDataSeeder implements CommandLineRunner {
     WasteMovementRepository wasteMovementRepository;
     InternalGeneratorRepository internalGeneratorRepository;
     AttachmentRepository attachmentRepository;
+    ReportingDeadlineRepository reportingDeadlineRepository;
     PasswordEncoder passwordEncoder;
     DeadlineService deadlineService;
 
@@ -174,22 +174,38 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     /**
-     * Termenele anului trecut și ale anului curent, cum le-ar genera butonul de pe Termene. Anul
-     * trecut e integral depășit, iar AFM-ul lunar (firma demo are obligația) dă depășite și în anul
-     * curent — ramura de „termene depășite” din Panou și de pe Termene are pe ce se proba.
+     * Firma demo e o firmă care folosește aplicația de anul trecut și a rămas în urmă: termenele
+     * scadente de la 1 ianuarie anul trecut până azi (SIM, AFM lunar, 31 mai — are autorizație) sunt
+     * nebifate, deci „depășite”, iar peste ele vine calendarul de mai departe, cum îl ține dimineața
+     * programată. Ramura de „termene depășite” din Panou și de pe Termene are pe ce se proba.
+     *
+     * <p>Istoria se scrie direct în tabel: de pe 16.09.2026 generarea nu mai creează termene cu
+     * scadența trecută. Până atunci o dădea butonul, pe anul întreg — și o dădea și clienților noi.
      *
      * <p>Până pe 16.09.2026 le puneau doar rulările anterioare ale suitei e2e, deci pe o bază nouă
      * probele 10 și 11 cădeau „pe date”, iar suita nu putea rula în CI.
      */
     private void seedDeadlines(Company company) {
-        int year = LocalDate.now().getYear();
-        TenantContext.set(company.getId());
-        try {
-            deadlineService.regenerateYear(year - 1);
-            deadlineService.regenerateYear(year);
-        } finally {
-            TenantContext.clear();
+        LocalDate today = DeadlineService.today();
+        for (int year = today.getYear() - 1; year <= today.getYear(); year++) {
+            List<ReportingDeadline> history = new ArrayList<>();
+            history.add(pastDeadline(company, ReportType.SIM_ANNUAL, LocalDate.of(year, 3, 15)));
+            history.add(pastDeadline(company, ReportType.APM_ANNUAL_MAY, LocalDate.of(year, 5, 31)));
+            for (int month = 1; month <= 12; month++) {
+                history.add(pastDeadline(company, ReportType.AFM_MONTHLY, LocalDate.of(year, month, 25)));
+            }
+            reportingDeadlineRepository.saveAll(history.stream()
+                    .filter(d -> d.getDueDate().isBefore(today))
+                    .toList());
         }
+        deadlineService.ensureUpcoming(company.getId(), today);
+    }
+
+    private static ReportingDeadline pastDeadline(Company company, ReportType type, LocalDate dueDate) {
+        return ReportingDeadline.builder()
+                .company(company).reportType(type).dueDate(dueDate).status(DeadlineStatus.UPCOMING)
+                .warned7Days(true).warned1Day(true).createdAt(Instant.now())
+                .build();
     }
 
     /**

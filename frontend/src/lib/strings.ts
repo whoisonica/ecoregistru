@@ -1674,14 +1674,14 @@ export const strings = {
   deadlines: {
     title: "Termene de raportare",
     subtitle:
-      "Calendarul obligațiilor de raportare pe firmă: SIM anual și, pentru firmele cu obligație, AFM lunar.",
-    generate: "Generează termenele",
-    generating: "Se generează...",
+      "Următorul termen al fiecărei raportări pe care o datorează firma. Când unul e bifat sau trece, apare următorul.",
+    generate: "Verifică termenele",
+    generating: "Se verifică...",
     // „Termene generate: 1 noi" — substantivul și adjectivul intră amândouă în `countOf`, iar
     // prefixul dispare ca să nu se spună „termene" de două ori. Zero are șir propriu: „0 de
     // termene noi" e corect gramatical și se citește ca o eroare.
-    generated: "Calendarul {year}: {count}.",
-    generatedNone: "Toate termenele pentru {year} existau deja.",
+    generated: "Calendarul: {count}.",
+    generatedNone: "Termenele următoare existau deja.",
     generateError: "Generarea termenelor a eșuat. Încearcă din nou.",
     loadError: "Nu am putut încărca termenele.",
     // filters
@@ -1704,7 +1704,7 @@ export const strings = {
     // empty state
     empty: "Niciun termen pentru {year}.",
     searchPlaceholder: "Caută după tip de raportare sau notă...",
-    emptyHint: "Apasă „Generează termenele” pentru a crea calendarul anului {year}.",
+    emptyHint: "Termenele apar singure, câte unul pe fiecare raportare. Alege alt an sau apasă „Verifică termenele”.",
     // Data singură cere o socoteală în cap — Panoul o făcea de mult, tabelul nu. „Azi" și „mâine"
     // se scriu în cuvinte: „în 0 zile" e adevărat și nu se citește ca nimic.
     daysLeft: "în {count}",

@@ -1,10 +1,9 @@
 package ro.ecoregistru.controller.response;
 
 /**
- * Result of (re)generating a year's reporting deadlines. Generation is additive and
- * idempotent, so {@code generated} counts only the newly created deadlines.
+ * Result of completing the calendar with the next deadline of each kind. Generation is additive
+ * and idempotent, so {@code generated} counts only the newly created deadlines.
  */
 public record DeadlineGenerationResponse(
-        int year,
         int generated
 ) {}

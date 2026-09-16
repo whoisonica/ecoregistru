@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useEvidences } from "@/hooks/useEvidences";
 import { useMovementSummary } from "@/hooks/useMovements";
-import { useDeadlines } from "@/hooks/useDeadlines";
+import { useUpcomingDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { strings } from "@/lib/strings";
@@ -47,7 +47,7 @@ export function useDashboardData(enabled = true) {
   const { data: summary, isLoading: loadingMovements, isError: failedMovements } =
     useMovementSummary(year, month, enabled);
   const { data: deadlines, isLoading: loadingDeadlines, isError: failedDeadlines } =
-    useDeadlines(year, enabled);
+    useUpcomingDeadlines(enabled);
   const { data: partners, isLoading: loadingPartners, isError: failedPartners } = usePartners(enabled);
   /**
    * Punctele de lucru, numai ca să se poată deosebi „nu e nimic de făcut" de „nu s-a început încă".

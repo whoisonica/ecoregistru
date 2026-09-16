@@ -29,13 +29,15 @@ import ro.ecoregistru.repository.ReportingDeadlineRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
+import ro.ecoregistru.service.DeadlineCalendarScheduler;
+import ro.ecoregistru.service.DeadlineService;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,9 +45,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * FAZA TERMENE / T4: reporting-deadline calendar over the real HTTP stack.
- * Covers additive+idempotent generation, the AFM-only-when-obligated rule, effective
- * OVERDUE derivation, completion, role gating and tenant isolation.
+ * FAZA TERMENE / T4: reporting-deadline calendar. Covers the next-deadline-per-kind rule
+ * (16.09.2026), additive+idempotent generation, the AFM-only-when-obligated rule, effective
+ * OVERDUE derivation, completion, role gating and tenant isolation. Generation is driven with a
+ * fixed day through the service, so the suite does not depend on the day it runs.
  */
 @SpringBootTest
 @ActiveProfiles("dev")
@@ -61,6 +64,8 @@ class DeadlineIT {
     @Autowired WorkPointRepository workPointRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired WasteMovementRepository movementRepository;
+    @Autowired DeadlineService deadlineService;
+    @Autowired DeadlineCalendarScheduler calendarScheduler;
 
     /** Fresh tenant so deadline counts are deterministic regardless of other test methods. */
     private TenantFixture newTenant(boolean afmObligation, AfmContribution... contributions) {
@@ -76,103 +81,197 @@ class DeadlineIT {
         return new TenantFixture(company, jwtService.generateToken(admin));
     }
 
-    @Test
-    void generatesSimPlusTwelveAfmForAnObligatedCompany() throws Exception {
-        TenantFixture t = newTenant(true);
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generated", is(13))); // 1 SIM + 12 AFM
+    // ---------- Doar următorul termen, pe fiecare fel (16.09.2026) ----------
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
+    /** Ziua contului din exemplul proprietarului: 15 martie tocmai a trecut. */
+    private static final LocalDate MARCH_16_2027 = LocalDate.of(2027, 3, 16);
+
+    /**
+     * Bugul pe care l-a reparat felia: un cont făcut în septembrie primea anul întreg, de la
+     * 1 ianuarie — 15 martie și opt AFM-uri lunare „depășite” din prima zi. Acum nimic trecut.
+     */
+    @Test
+    void aNewAccountGetsNothingAlreadyPastDue() {
+        TenantFixture t = newTenant(true);
+        setEnvironmentalPermit(t, "AM 214/12.03.2024", null);
+        LocalDate september16 = LocalDate.of(2026, 9, 16);
+
+        deadlineService.ensureUpcoming(t.company.getId(), september16);
+
+        assertThat(rows(t)).allSatisfy(d -> assertThat(d.getDueDate()).isAfterOrEqualTo(september16));
+        assertThat(dates(t, ReportType.SIM_ANNUAL)).containsExactly(LocalDate.of(2027, 3, 15));
+        assertThat(dates(t, ReportType.AFM_MONTHLY)).containsExactly(LocalDate.of(2026, 9, 25));
+        assertThat(dates(t, ReportType.APM_ANNUAL_MAY)).containsExactly(LocalDate.of(2027, 5, 31));
+    }
+
+    /**
+     * Exemplul proprietarului: cont pe 16 martie 2027. 15 martie 2027 a trecut, deci primul SIM e
+     * 15 martie 2028; 31 mai 2027 e încă înainte, deci apare el — și nu și 31 mai 2028.
+     */
+    @Test
+    void theOwnersExampleOneRowPerKindTheNextOneOnly() {
+        TenantFixture t = newTenant(false);
+        setEnvironmentalPermit(t, "AM 214/12.03.2024", null);
+
+        deadlineService.ensureUpcoming(t.company.getId(), MARCH_16_2027);
+
+        assertThat(dates(t, ReportType.SIM_ANNUAL)).containsExactly(LocalDate.of(2028, 3, 15));
+        assertThat(dates(t, ReportType.APM_ANNUAL_MAY)).containsExactly(LocalDate.of(2027, 5, 31));
+    }
+
+    /** „Nu mă interesează 2028 dacă am încă 2027 de raportat”: cât e deschis, nu vine următorul. */
+    @Test
+    void theNextOccurrenceWaitsWhileTheCurrentOneIsOpen() {
+        TenantFixture t = newTenant(false);
+        UUID id = t.company.getId();
+
+        deadlineService.ensureUpcoming(id, LocalDate.of(2026, 9, 16));
+        deadlineService.ensureUpcoming(id, LocalDate.of(2027, 3, 15)); // chiar în ziua termenului
+
+        assertThat(dates(t, ReportType.SIM_ANNUAL)).containsExactly(LocalDate.of(2027, 3, 15));
+    }
+
+    /** Scadența trecută fără bifă: termenul rămâne (depășit), iar următorul apare. */
+    @Test
+    void oncePastDueTheNextOccurrenceAppears() {
+        TenantFixture t = newTenant(false);
+        UUID id = t.company.getId();
+
+        deadlineService.ensureUpcoming(id, LocalDate.of(2026, 9, 16));
+        deadlineService.ensureUpcoming(id, MARCH_16_2027);
+
+        assertThat(dates(t, ReportType.SIM_ANNUAL))
+                .containsExactly(LocalDate.of(2027, 3, 15), LocalDate.of(2028, 3, 15));
+    }
+
+    /** Bifat devreme: următorul de același fel apare pe loc, din ruta de bifare. */
+    @Test
+    void completingADeadlineBringsTheNextOneOfTheSameKind() throws Exception {
+        TenantFixture t = newTenant(true);
+        LocalDate today = DeadlineService.today();
+        deadlineService.ensureUpcoming(t.company.getId(), today);
+        ReportingDeadline monthly = rows(t).stream()
+                .filter(d -> d.getReportType() == ReportType.AFM_MONTHLY).findFirst().orElseThrow();
+
+        mockMvc.perform(post("/api/v1/deadlines/" + monthly.getId() + "/complete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"note\":\"Depus la AFM\"}")
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", is(13)));
+                .andExpect(jsonPath("$.status", is("DONE")))
+                .andExpect(jsonPath("$.completionNote", is("Depus la AFM")))
+                .andExpect(jsonPath("$.completedAt").exists());
+
+        assertThat(dates(t, ReportType.AFM_MONTHLY))
+                .containsExactly(monthly.getDueDate(), monthly.getDueDate().plusMonths(1));
+    }
+
+    /** Crearea firmei aduce calendarul, fără buton și fără să aștepte dimineața. */
+    @Test
+    void creatingACompanyBringsItsUpcomingDeadlines() throws Exception {
+        String platform = jwtService.generateToken(
+                appUserRepository.findByEmail("platform@ecoregistru.ro").orElseThrow());
+        String cui = "RO" + (10_000_000 + new java.util.Random().nextInt(89_999_999));
+        mockMvc.perform(post("/api/v1/companies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Termene noi SRL\",\"cui\":\"" + cui
+                                + "\",\"type\":\"GENERATOR\",\"afmObligation\":false}")
+                        .header("Authorization", "Bearer " + platform))
+                .andExpect(status().isOk());
+
+        Company created = companyRepository.findAll().stream()
+                .filter(c -> c.getCui().equals(cui)).findFirst().orElseThrow();
+        assertThat(deadlineRepository.findAll().stream()
+                .filter(d -> d.getCompany().getId().equals(created.getId()))
+                .map(ReportingDeadline::getReportType))
+                .containsExactly(ReportType.SIM_ANNUAL);
+    }
+
+    /**
+     * Dimineața programată trece prin toate firmele active și e idempotentă. Ziua e în 1990 dinadins:
+     * rularea atinge toate firmele bazei de probe, iar termenele din 1990 nu cad în fereastra
+     * niciunei alte probe.
+     */
+    @Test
+    void theMorningRunCompletesEveryActiveCompanyOnce() {
+        TenantFixture t = newTenant(true);
+        LocalDate today = LocalDate.of(1990, 9, 16);
+
+        calendarScheduler.run(today);
+        int afterFirst = rows(t).size();
+        calendarScheduler.run(today);
+
+        assertThat(afterFirst).isEqualTo(2); // SIM 15.03.1991 + AFM 25.09.1990
+        assertThat(rows(t)).hasSize(2);
     }
 
     @Test
-    void generatesOnlySimForANonObligatedCompany() throws Exception {
-        TenantFixture t = newTenant(false);
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generated", is(1))); // SIM only
+    void generatesSimAndTheNextMonthlyAfmForAnObligatedCompany() {
+        TenantFixture t = newTenant(true);
+        assertThat(deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16))).isEqualTo(2);
+    }
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", is(1)))
-                .andExpect(jsonPath("$[0].reportType", is("SIM_ANNUAL")))
-                .andExpect(jsonPath("$[0].dueDate", is("2026-03-15")));
+    @Test
+    void generatesOnlySimForANonObligatedCompany() {
+        TenantFixture t = newTenant(false);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
+        assertThat(rows(t)).extracting(ReportingDeadline::getReportType).containsExactly(ReportType.SIM_ANNUAL);
     }
 
     // ---------- The three cadences of OUG 196/2005 art. 11 ----------
 
     /**
-     * The wrong output this slice was written to fix: a company whose only Environment Fund
-     * contribution is the yearly packaging one used to get <b>twelve</b> monthly deadlines. It now
-     * gets one, on 25 January — not 15 March, and not monthly.
+     * The wrong output the cadence slice was written to fix: a company whose only Environment Fund
+     * contribution is the yearly packaging one used to get <b>twelve</b> monthly deadlines. It gets
+     * one, on 25 January — not 15 March, and not monthly.
      */
     @Test
-    void packagingOnlyGetsOneDeadlineOn25January() throws Exception {
+    void packagingOnlyGetsOneDeadlineOn25January() {
         TenantFixture t = newTenant(true, AfmContribution.PACKAGING);
-        regenerate(t.token, 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", is(2))) // SIM + one AFM
-                .andExpect(jsonPath("$[?(@.reportType == 'AFM_ANNUAL' && @.dueDate == '2026-01-25')]")
-                        .exists())
-                .andExpect(jsonPath("$[?(@.reportType == 'AFM_MONTHLY')]").doesNotExist());
+        assertThat(dates(t, ReportType.AFM_ANNUAL)).containsExactly(LocalDate.of(2027, 1, 25));
+        assertThat(dates(t, ReportType.AFM_MONTHLY)).isEmpty();
     }
 
-    /** The 2% a collector withholds at source is monthly, so this one really is twelve. */
+    /** The 2% a collector withholds at source is monthly: the next 25th. */
     @Test
-    void theWithheldTwoPercentIsMonthly() throws Exception {
+    void theWithheldTwoPercentIsMonthly() {
         TenantFixture t = newTenant(false, AfmContribution.WITHHOLDING_2_PERCENT);
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generated", is(13))); // 1 SIM + 12 monthly
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 12, 26));
+
+        assertThat(dates(t, ReportType.AFM_MONTHLY)).containsExactly(LocalDate.of(2027, 1, 25));
     }
 
     /**
      * „Economia circulară" a ieşit din configurare (proprietarul, 16.09.2026): nu mai generează termene
-     * trimestriale, iar un cont care o avea ca singur răspuns nu cade pe cele 12 lunare, chiar cu bifa veche.
+     * trimestriale, iar un cont care o avea ca singur răspuns nu cade pe cele lunare, chiar cu bifa veche.
      */
     @Test
-    void theCircularEconomyContributionGeneratesNothingAnyMore() throws Exception {
+    void theCircularEconomyContributionGeneratesNothingAnyMore() {
         TenantFixture t = newTenant(true, AfmContribution.CIRCULAR_ECONOMY);
-        regenerate(t.token, 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", is(1))) // doar SIM
-                .andExpect(jsonPath("$[?(@.reportType == 'AFM_QUARTERLY')]").isEmpty())
-                .andExpect(jsonPath("$[?(@.reportType == 'AFM_MONTHLY')]").isEmpty());
+        assertThat(rows(t)).extracting(ReportingDeadline::getReportType).containsExactly(ReportType.SIM_ANNUAL);
     }
 
     /**
-     * An account nobody has filled in keeps exactly what it had: the flag alone still means twelve
-     * monthly deadlines. Switching an alert off on an assumption is worse than leaving one that is
-     * too loud, so the legacy path fades out as accounts get answered — not all at once.
+     * An account nobody has filled in keeps what it had: the flag alone still means the monthly
+     * deadline. Switching an alert off on an assumption is worse than leaving one that is too loud.
      */
     @Test
-    void anUnansweredAccountKeepsTheOldMonthlyDeadline() throws Exception {
+    void anUnansweredAccountKeepsTheOldMonthlyDeadline() {
         TenantFixture t = newTenant(true);
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generated", is(13)));
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
+
+        assertThat(dates(t, ReportType.AFM_MONTHLY)).containsExactly(LocalDate.of(2026, 9, 25));
     }
 
     @Test
     void regenerationIsIdempotent() throws Exception {
         TenantFixture t = newTenant(true);
-        regenerate(t.token, 2026); // first run creates 13
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
+        regenerate(t.token);
+        mockMvc.perform(post("/api/v1/deadlines/regenerate")
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.generated", is(0))); // nothing new the second time
@@ -182,42 +281,23 @@ class DeadlineIT {
     void pastDueUncompletedDeadlineReadsAsOverdue() throws Exception {
         TenantFixture t = newTenant(false);
         // A deadline that fell due yesterday, still not done.
+        LocalDate yesterday = DeadlineService.today().minusDays(1);
         deadlineRepository.save(ReportingDeadline.builder()
                 .company(t.company).reportType(ReportType.OTHER)
-                .dueDate(LocalDate.now().minusDays(1)).status(DeadlineStatus.UPCOMING)
+                .dueDate(yesterday).status(DeadlineStatus.UPCOMING)
                 .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
 
-        int year = LocalDate.now().minusDays(1).getYear();
-        mockMvc.perform(get("/api/v1/deadlines").param("year", String.valueOf(year))
+        mockMvc.perform(get("/api/v1/deadlines").param("year", String.valueOf(yesterday.getYear()))
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.reportType=='OTHER')].status", is(java.util.List.of("OVERDUE"))));
     }
 
     @Test
-    void completeMarksDoneAndStoresNote() throws Exception {
-        TenantFixture t = newTenant(false);
-        regenerate(t.token, 2026);
-        UUID id = deadlineRepository
-                .findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
-                        t.company.getId(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
-                .get(0).getId();
-
-        mockMvc.perform(post("/api/v1/deadlines/" + id + "/complete")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"note\":\"Depus SIM la ANPM\"}")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("DONE")))
-                .andExpect(jsonPath("$.completionNote", is("Depus SIM la ANPM")))
-                .andExpect(jsonPath("$.completedAt").exists());
-    }
-
-    @Test
     void viewerCannotGenerate() throws Exception {
         String viewerToken = jwtService.generateToken(
                 appUserRepository.findByEmail("viewer@demo.ro").orElseThrow());
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2026")
+        mockMvc.perform(post("/api/v1/deadlines/regenerate")
                         .header("Authorization", "Bearer " + viewerToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$['error-code']", is("access.denied")));
@@ -227,9 +307,10 @@ class DeadlineIT {
     void deadlinesAreTenantScoped() throws Exception {
         TenantFixture a = newTenant(true);
         TenantFixture b = newTenant(true);
-        regenerate(a.token, 2027);
-        // B has generated nothing for 2027 -> B's list is empty even though A has 13.
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
+        LocalDate today = DeadlineService.today();
+        deadlineService.ensureUpcoming(a.company.getId(), today);
+        // B has generated nothing -> B's list is empty even though A has rows.
+        mockMvc.perform(get("/api/v1/deadlines").param("year", String.valueOf(today.getYear() + 1))
                         .header("Authorization", "Bearer " + b.token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()", is(0)));
@@ -237,21 +318,13 @@ class DeadlineIT {
 
     // ---------- 25 February: the packaging report of Ordinul 794/2012 (audit point 3) ----------
 
-    /**
-     * A producer files the packaging report at the county agency by 25 February (art. 1 + art. 6).
-     * Before 04.09.2026 the application built that document and even named the term in the
-     * audit-file README, but generated no deadline for it at all.
-     */
+    /** A producer files the packaging report at the county agency by 25 February (art. 1 + art. 6). */
     @Test
-    void aProducerGetsThe25FebruaryPackagingDeadline() throws Exception {
+    void aProducerGetsThe25FebruaryPackagingDeadline() {
         TenantFixture t = newTenantWithRoles(MarketRole.PRODUCER);
-        regenerate(t.token, 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 1, 10));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL' "
-                        + "&& @.dueDate == '2026-02-25')]").exists());
+        assertThat(dates(t, ReportType.PACKAGING_ANNUAL)).containsExactly(LocalDate.of(2026, 2, 25));
     }
 
     /**
@@ -259,239 +332,169 @@ class DeadlineIT {
      * national market and does not file — Legea 249/2015, and {@code MarketRole#putsPackagingOnMarket}.
      */
     @Test
-    void aTraderGetsNoPackagingDeadline() throws Exception {
+    void aTraderGetsNoPackagingDeadline() {
         TenantFixture t = newTenantWithRoles(MarketRole.TRADER);
-        regenerate(t.token, 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 1, 10));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL')]").doesNotExist());
+        assertThat(dates(t, ReportType.PACKAGING_ANNUAL)).isEmpty();
     }
 
     /**
      * And an account that never answered the question gets nothing either — deliberately the
      * opposite of how an empty profile treats <em>screens</em>, which stay fully offered
-     * (decizia 6). An alert asserts something about the client; a screen only offers. Sending a
-     * false reminder is the mistake {@code V21} spent a migration undoing, so silence wins here.
+     * (decizia 6). An alert asserts something about the client; a screen only offers.
      */
     @Test
-    void anUnansweredProfileGetsNoPackagingDeadline() throws Exception {
+    void anUnansweredProfileGetsNoPackagingDeadline() {
         TenantFixture t = newTenant(false); // no market roles at all
-        regenerate(t.token, 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 1, 10));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'PACKAGING_ANNUAL')]").doesNotExist());
+        assertThat(dates(t, ReportType.PACKAGING_ANNUAL)).isEmpty();
     }
 
     // ---------- Termenul de 30 aprilie — OUG 92/2021 art. 49 alin. (9) ----------
 
     /**
-     * Half one: a used-oil code in the evidence is the fact, so it needs no question. The reported
-     * year is the one <em>before</em> the deadline — "până la 30 aprilie a anului următor celui
-     * pentru care se raportează" — so a 2026 movement produces the 30.04.2027 deadline, and the
-     * test asserts on that year precisely because reading the wrong one would still look right in
-     * a single-year check.
+     * Half one: a used-oil code in the evidence is the fact. The reported year is the one
+     * <em>before</em> the deadline, so a 2026 movement produces the 30.04.2027 deadline.
      */
     @Test
-    void aUsedOilMovementCreatesThe30AprilDeadlineOfTheFollowingYear() throws Exception {
+    void aUsedOilMovementCreatesThe30AprilDeadlineOfTheFollowingYear() {
         TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(
-                        "$[?(@.reportType == 'APM_ANNUAL_APRIL' && @.dueDate == '2027-04-30')]")
-                        .exists());
-
-        // And not in the year of the movement itself: 30.04.2026 would report 2025, which this
-        // company has no movements in.
-        regenerate(t.token, 2026);
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2026")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).containsExactly(LocalDate.of(2027, 4, 30));
     }
 
     /**
-     * And the direction that matters more. A company that moves waste but no oil gets nothing —
-     * a reminder on this date sends a client to prepare a report that is not theirs, and a false
-     * alert is exactly what {@code V21} spent a migration removing.
+     * And not in the year of the movement itself: on 1 April 2026 the next 30 April is 2026's,
+     * which reports 2025 — and this company has no movements in 2025.
      */
     @Test
-    void aCompanyWithoutOilAndWithoutAPermitGetsNo30April() throws Exception {
+    void theUsedOilOfTheDueYearDoesNotCount() {
+        TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 4, 1));
+
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).isEmpty();
+    }
+
+    /**
+     * The morning asks again: oil that appears after 30 April 2026 has passed still brings the
+     * 30 April 2027 deadline, without anybody pressing a button.
+     */
+    @Test
+    void oilRecordedLaterStillBringsTheDeadlineOnTheNextRun() {
+        TenantFixture t = newTenant(false);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 5, 2));
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).isEmpty();
+
+        addMovement(t, "13 02 08", 2026);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 5, 3));
+
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).containsExactly(LocalDate.of(2027, 4, 30));
+    }
+
+    /** A company that moves waste but no oil gets nothing. */
+    @Test
+    void aCompanyWithoutOilAndWithoutAPermitGetsNo30April() {
         // Hârtie şi carton: nowhere near chapter 13.
         TenantFixture t = newTenantWithMovementOn("20 01 01", 2026);
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).isEmpty();
     }
 
-    /**
-     * The other half: the building permit is asked, not derived — chapter 17 appears for anyone who
-     * hauls rubble while the obligation belongs to the permit holder. Either half alone is enough,
-     * so this company has the deadline with no oil anywhere.
-     */
+    /** The other half: the building permit is asked, not derived. Either half alone is enough. */
     @Test
-    void aBuildingPermitHolderGetsThe30AprilDeadlineWithoutAnyOil() throws Exception {
+    void aBuildingPermitHolderGetsThe30AprilDeadlineWithoutAnyOil() {
         TenantFixture t = newTenantWithMovementOn("20 01 01", 2026);
         setConstructionPermitHolder(t, Boolean.TRUE);
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(
-                        "$[?(@.reportType == 'APM_ANNUAL_APRIL' && @.dueDate == '2027-04-30')]")
-                        .exists());
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).containsExactly(LocalDate.of(2027, 4, 30));
     }
 
     /**
      * Three states, and the two that generate nothing are asserted separately on purpose: an
-     * explicit "no" and an unanswered profile behave the same, and a later refactor that read the
-     * field as a plain boolean would keep passing a test written only for {@code null}.
+     * explicit "no" and an unanswered profile behave the same.
      */
     @Test
-    void neitherAnsweredNoNorUnansweredCreatesTheConstructionHalf() throws Exception {
+    void neitherAnsweredNoNorUnansweredCreatesTheConstructionHalf() {
         TenantFixture answeredNo = newTenantWithMovementOn("20 01 01", 2026);
         setConstructionPermitHolder(answeredNo, Boolean.FALSE);
-        regenerate(answeredNo.token, 2027);
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + answeredNo.token))
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+        deadlineService.ensureUpcoming(answeredNo.company.getId(), LocalDate.of(2026, 9, 16));
+        assertThat(dates(answeredNo, ReportType.APM_ANNUAL_APRIL)).isEmpty();
 
         TenantFixture unanswered = newTenantWithMovementOn("20 01 01", 2026);
         setConstructionPermitHolder(unanswered, null);
-        regenerate(unanswered.token, 2027);
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + unanswered.token))
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]").doesNotExist());
+        deadlineService.ensureUpcoming(unanswered.company.getId(), LocalDate.of(2026, 9, 16));
+        assertThat(dates(unanswered, ReportType.APM_ANNUAL_APRIL)).isEmpty();
     }
 
-    /** Both halves signalling still produce one row, not two: same day, same recipient. */
+    /** Both halves signalling still produce one row, not two, and a second run creates nothing. */
     @Test
-    void bothHalvesTogetherStillProduceOneRow() throws Exception {
+    void bothHalvesTogetherStillProduceOneRow() {
         TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
         setConstructionPermitHolder(t, Boolean.TRUE);
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
+        assertThat(deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16))).isZero();
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                // hasSize pe rezultatul filtrului, nu `.length()`: `.length()` s-ar aplica
-                // fiecărui obiect găsit și ar număra câmpurile lui, nu rândurile.
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_APRIL')]", hasSize(1)));
-    }
-
-    /** Generation stays idempotent with the new rule: a second run creates nothing. */
-    @Test
-    void the30AprilDeadlineIsNotRecreatedOnASecondRun() throws Exception {
-        TenantFixture t = newTenantWithMovementOn("13 02 08", 2026);
-        regenerate(t.token, 2027);
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generated", is(0)));
+        assertThat(dates(t, ReportType.APM_ANNUAL_APRIL)).hasSize(1);
     }
 
     // ---------- Termenul de 31 mai — OUG 92/2021 art. 44 alin. (3) ----------
 
     /**
-     * Al patrulea termen anual, găsit pe 11.09.2026. Semnalul e cel mai curat din cele trei
-     * termene de APM: art. 44 alin. (1) leagă obligația de persoana juridică <em>pentru care
-     * autoritatea a emis o autorizație de mediu</em>, iar numărul autorizației e deja în profil —
-     * nu e corelat cu faptul, e chiar condiția din articol. Anul raportat e cel dinainte
-     * („până la 31 mai anul următor raportării"), deci se cere și direcția inversă: termenul
-     * NU apare în anul autorizației, ci în următorul.
+     * Semnalul e numărul autorizației de mediu din profil — chiar condiția din art. 44 alin. (1).
      */
     @Test
-    void anEnvironmentalPermitCreatesThe31MayDeadline() throws Exception {
+    void anEnvironmentalPermitCreatesThe31MayDeadline() {
         TenantFixture t = newTenant(false);
         setEnvironmentalPermit(t, "AM 214/12.03.2024", LocalDate.of(2029, 3, 12));
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(
-                        "$[?(@.reportType == 'APM_ANNUAL_MAY' && @.dueDate == '2027-05-31')]")
-                        .exists());
+        assertThat(dates(t, ReportType.APM_ANNUAL_MAY)).containsExactly(LocalDate.of(2027, 5, 31));
     }
 
-    /**
-     * Direcția care contează, ca peste tot în calendarul ăsta: o firmă fără autorizație de mediu
-     * în profil nu primește nimic. Programul de prevenire e al titularului de autorizație, iar o
-     * alertă falsă aici trimite clientul să pregătească un document care nu e al lui.
-     */
+    /** O firmă fără autorizație de mediu în profil nu primește nimic. */
     @Test
-    void aCompanyWithoutAnEnvironmentalPermitGetsNo31May() throws Exception {
+    void aCompanyWithoutAnEnvironmentalPermitGetsNo31May() {
         TenantFixture t = newTenant(false);
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_MAY')]").doesNotExist());
+        assertThat(dates(t, ReportType.APM_ANNUAL_MAY)).isEmpty();
     }
 
-    /**
-     * Rubrica goală nu e un răspuns. Un șir de spații ajunge în bază la fel de ușor ca un
-     * {@code null} — dintr-un formular trimis cu rubrica atinsă și ștearsă — și ar aprinde un
-     * termen pe o autorizație care nu există. Proba pinuiește {@code isBlank}, nu
-     * {@code != null}: o rescriere care ar verifica doar nulitatea ar trece un test scris pe el.
-     */
+    /** Rubrica goală nu e un răspuns: {@code isBlank}, nu {@code != null}. */
     @Test
-    void aBlankPermitNumberIsNotAPermit() throws Exception {
+    void aBlankPermitNumberIsNotAPermit() {
         TenantFixture t = newTenant(false);
         setEnvironmentalPermit(t, "   ", null);
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_MAY')]").doesNotExist());
+        assertThat(dates(t, ReportType.APM_ANNUAL_MAY)).isEmpty();
     }
 
     /**
-     * Și decizia inversă, scrisă ca probă fiindcă altfel se „repară" mai târziu: o autorizație
-     * <b>expirată</b> ține termenul aprins. Raportarea e a anului raportat, iar o autorizație
-     * stinsă între timp nu șterge ce se datora cât a ținut — a citi expirarea aici ar tăcea exact
-     * pentru clientul rămas în urmă.
+     * Și decizia inversă: o autorizație <b>expirată</b> ține termenul aprins — raportarea e a anului
+     * raportat, iar o autorizație stinsă între timp nu șterge ce se datora cât a ținut.
      */
     @Test
-    void anExpiredPermitStillCreatesThe31MayDeadline() throws Exception {
+    void anExpiredPermitStillCreatesThe31MayDeadline() {
         TenantFixture t = newTenant(false);
         setEnvironmentalPermit(t, "AM 9/01.02.2019", LocalDate.of(2024, 2, 1));
-        regenerate(t.token, 2027);
+        deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath(
-                        "$[?(@.reportType == 'APM_ANNUAL_MAY' && @.dueDate == '2027-05-31')]")
-                        .exists());
+        assertThat(dates(t, ReportType.APM_ANNUAL_MAY)).containsExactly(LocalDate.of(2027, 5, 31));
     }
 
-    /** Un singur rând, și generarea rămâne idempotentă: a doua rulare creează zero. */
-    @Test
-    void the31MayDeadlineIsOneRowAndIsNotRecreated() throws Exception {
-        TenantFixture t = newTenant(false);
-        setEnvironmentalPermit(t, "AM 214/12.03.2024", null);
-        regenerate(t.token, 2027);
+    private java.util.List<ReportingDeadline> rows(TenantFixture t) {
+        return deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
+                t.company.getId(), LocalDate.of(1900, 1, 1), LocalDate.of(2100, 12, 31));
+    }
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(jsonPath("$[?(@.reportType == 'APM_ANNUAL_MAY')]", hasSize(1)));
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", "2027")
-                        .header("Authorization", "Bearer " + t.token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.generated", is(0)));
+    private java.util.List<LocalDate> dates(TenantFixture t, ReportType type) {
+        return rows(t).stream().filter(d -> d.getReportType() == type).map(ReportingDeadline::getDueDate).toList();
     }
 
     private void setEnvironmentalPermit(TenantFixture t, String number, LocalDate expiry) {
@@ -503,6 +506,11 @@ class DeadlineIT {
 
     private TenantFixture newTenantWithMovementOn(String code, int year) {
         TenantFixture t = newTenant(false);
+        addMovement(t, code, year);
+        return t;
+    }
+
+    private void addMovement(TenantFixture t, String code, int year) {
         WorkPoint wp = workPointRepository.save(WorkPoint.builder()
                 .company(t.company).name("PL-" + UUID.randomUUID().toString().substring(0, 6))
                 .active(true).createdAt(Instant.now()).build());
@@ -512,7 +520,6 @@ class DeadlineIT {
                 .wasteCode(wasteCode).quantity(new java.math.BigDecimal("15.000")).unit(Unit.KG)
                 .operation(WasteOperation.GENERATED).deleted(false)
                 .createdBy(UUID.randomUUID()).build());
-        return t;
     }
 
     private void setConstructionPermitHolder(TenantFixture t, Boolean value) {
@@ -529,8 +536,8 @@ class DeadlineIT {
         return t;
     }
 
-    private void regenerate(String token, int year) throws Exception {
-        mockMvc.perform(post("/api/v1/deadlines/regenerate").param("year", String.valueOf(year))
+    private void regenerate(String token) throws Exception {
+        mockMvc.perform(post("/api/v1/deadlines/regenerate")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
     }

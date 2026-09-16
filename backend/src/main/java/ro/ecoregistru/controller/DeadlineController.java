@@ -35,8 +35,8 @@ public class DeadlineController {
 
     @PostMapping("/regenerate")
     @PreAuthorize(CAN_WRITE)
-    public DeadlineGenerationResponse regenerate(@RequestParam int year) {
-        return deadlineService.regenerateYear(year);
+    public DeadlineGenerationResponse regenerate() {
+        return deadlineService.regenerate();
     }
 
     @PostMapping("/{id}/complete")
