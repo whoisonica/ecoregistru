@@ -110,6 +110,8 @@ export function AccountRequestPage() {
   const [caenCode, setCaenCode] = useState("");
   const [authNumber, setAuthNumber] = useState("");
   const [authExpiry, setAuthExpiry] = useState("");
+  /** Generatorul care spune explicit că activitatea lui nu cere autorizație de mediu. */
+  const [noEnvAuth, setNoEnvAuth] = useState(false);
   const [transportMeans, setTransportMeans] = useState("");
   const [transportLicenseNumber, setTransportLicenseNumber] = useState("");
   const [transportLicenseExpiry, setTransportLicenseExpiry] = useState("");
@@ -146,7 +148,7 @@ export function AccountRequestPage() {
       companyName, cui, companyType, companyAddress,
       workPointName, workPointAddress,
       contactName, contactEmail, contactPhone, contactRole, caenCode,
-      authNumber, authExpiry,
+      authNumber, authExpiry, noEnvAuth,
       transportMeans, transportLicenseNumber, transportLicenseExpiry,
       marketRoles, operationCodes, wasteCodesText, wasteNames, notes,
     }),
@@ -154,7 +156,7 @@ export function AccountRequestPage() {
       companyName, cui, companyType, companyAddress,
       workPointName, workPointAddress,
       contactName, contactEmail, contactPhone, contactRole, caenCode,
-      authNumber, authExpiry,
+      authNumber, authExpiry, noEnvAuth,
       transportMeans, transportLicenseNumber, transportLicenseExpiry,
       marketRoles, operationCodes, wasteCodesText, wasteNames, notes,
     ]
@@ -177,6 +179,8 @@ export function AccountRequestPage() {
       setCaenCode(v.caenCode);
       setAuthNumber(v.authNumber);
       setAuthExpiry(v.authExpiry);
+      // O ciornă de dinaintea bifei n-o are.
+      setNoEnvAuth(v.noEnvAuth ?? false);
       setTransportMeans(v.transportMeans);
       setTransportLicenseNumber(v.transportLicenseNumber);
       setTransportLicenseExpiry(v.transportLicenseExpiry);
@@ -194,6 +198,7 @@ export function AccountRequestPage() {
     (v) =>
       v.companyType === "GENERATOR" &&
       v.marketRoles.length === 0 &&
+      !v.noEnvAuth &&
       v.operationCodes.length === 0 &&
       (v.wasteNames ?? []).length === 0 &&
       [
@@ -221,6 +226,7 @@ export function AccountRequestPage() {
     setCaenCode("");
     setAuthNumber("");
     setAuthExpiry("");
+    setNoEnvAuth(false);
     setTransportMeans("");
     setTransportLicenseNumber("");
     setTransportLicenseExpiry("");
@@ -250,6 +256,9 @@ export function AccountRequestPage() {
   const asksTransport = companyType !== "GENERATOR";
   // Doar cine generează are „tipul de generator” (producător / importator / comerciant).
   const asksMarketRoles = companyType !== "COLLECTOR";
+  /** Bifa „n-avem nevoie de autorizație” există doar la generatorul pur; colectorul are întotdeauna. */
+  const mayLackEnvAuth = companyType === "GENERATOR";
+  const skipsEnvAuth = mayLackEnvAuth && noEnvAuth;
 
   /**
    * Rubricile obligatorii ale unui pas; `undefined` = toate (la trimitere). Aproape totul e
@@ -272,8 +281,10 @@ export function AccountRequestPage() {
     if (only === undefined || only === 2) {
       need(workPointName, "workPointName");
       need(workPointAddress, "workPointAddress");
-      need(authNumber, "authNumber");
-      need(authExpiry, "authExpiry", t.errRequiredDate);
+      if (!skipsEnvAuth) {
+        need(authNumber, "authNumber");
+        need(authExpiry, "authExpiry", t.errRequiredDate);
+      }
       if (asksTransport) {
         need(transportMeans, "transportMeans");
         need(transportLicenseNumber, "transportLicenseNumber");
@@ -370,8 +381,8 @@ export function AccountRequestPage() {
       contactPhone: contactPhone.trim() || null,
       contactRole: contactRole.trim() || null,
       caenCode: caenCode.trim() || null,
-      environmentalAuthNumber: authNumber.trim() || null,
-      environmentalAuthExpiry: authExpiry || null,
+      environmentalAuthNumber: skipsEnvAuth ? null : authNumber.trim() || null,
+      environmentalAuthExpiry: skipsEnvAuth ? null : authExpiry || null,
       transportMeans: asksTransport ? transportMeans.trim() || null : null,
       transportLicenseNumber: asksTransport ? transportLicenseNumber.trim() || null : null,
       transportLicenseExpiry: asksTransport ? transportLicenseExpiry || null : null,
@@ -384,7 +395,9 @@ export function AccountRequestPage() {
         ]
           .filter(Boolean)
           .join(", ") || null,
-      notes: notes.trim() || null,
+      // Bifa pleacă drept propoziție în observații: cine aprobă o citește acolo, lângă restul, fără
+      // o rubrică nouă în backend.
+      notes: [skipsEnvAuth ? t.noEnvAuthNote : "", notes.trim()].filter(Boolean).join("\n") || null,
       website: website || null,
     };
     try {
@@ -641,7 +654,7 @@ export function AccountRequestPage() {
               <FormSection size="lg" title={t.sectionAuthorization} className="pt-2">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <Label className={labelClass} htmlFor="ar-auth-number" required>
+                    <Label className={labelClass} htmlFor="ar-auth-number" required={!skipsEnvAuth}>
                       {t.environmentalAuthNumber}
                     </Label>
                     <Input
@@ -649,12 +662,13 @@ export function AccountRequestPage() {
                       id="ar-auth-number"
                       value={authNumber}
                       onChange={(e) => setAuthNumber(e.target.value)}
+                      disabled={skipsEnvAuth}
                       {...invalidProps("ar-auth-number-err", errors.authNumber)}
                     />
                     <FieldError id="ar-auth-number-err" message={errors.authNumber} />
                   </div>
                   <div>
-                    <Label className={labelClass} htmlFor="ar-auth-expiry" required>
+                    <Label className={labelClass} htmlFor="ar-auth-expiry" required={!skipsEnvAuth}>
                       {t.environmentalAuthExpiry}
                     </Label>
                     <DateInput
@@ -662,11 +676,31 @@ export function AccountRequestPage() {
                       id="ar-auth-expiry"
                       value={authExpiry}
                       onChange={(e) => setAuthExpiry(e.target.value)}
+                      disabled={skipsEnvAuth}
                       {...invalidProps("ar-auth-expiry-err", errors.authExpiry)}
                     />
                     <FieldError id="ar-auth-expiry-err" message={errors.authExpiry} />
                   </div>
                 </div>
+                {mayLackEnvAuth && (
+                  <label className="flex items-start gap-3 rounded-md border border-line p-3.5 text-sm has-[:checked]:border-mark has-[:checked]:bg-mark-soft/40">
+                    <input
+                      type="checkbox"
+                      id="ar-no-env-auth"
+                      className="mt-0.5 h-4 w-4 rounded border-line-strong"
+                      checked={noEnvAuth}
+                      onChange={(e) => {
+                        setNoEnvAuth(e.target.checked);
+                        // Bifa scoate cele două rubrici din obligații — și semnele lor, dacă erau puse.
+                        if (e.target.checked) setErrors((prev) => ({ ...prev, authNumber: undefined, authExpiry: undefined }));
+                      }}
+                    />
+                    <span>
+                      <span className="font-medium text-content-strong">{t.noEnvAuth}</span>
+                      <span className="mt-0.5 block text-xs text-content-muted">{t.noEnvAuthHint}</span>
+                    </span>
+                  </label>
+                )}
               </FormSection>
 
               {asksTransport && (

@@ -2595,6 +2595,13 @@ export const strings = {
     errRequired: "Rubrica e obligatorie.",
     errRequiredDate: "Scrie data, ca în act.",
     errMarketRoles: "Bifează cel puțin una — din răspuns știm dacă raportezi și ambalaje.",
+    // Autorizația e obligatorie, dar nu toți generatorii au una: Anexa 1 a Ordinului 1798/2007 o cere
+    // doar activităților cu impact (producție, HoReCa, ateliere…). Bifa ține loc de răspuns — echipa
+    // vede că omul a spus „nu am”, nu că a sărit rubrica. La colectori nu apare: ei au întotdeauna.
+    noEnvAuth: "Activitatea noastră nu are nevoie de autorizație de mediu",
+    noEnvAuthHint:
+      "Autorizația e cerută doar pentru activitățile din Anexa 1 a Ordinului 1798/2007 (producție, restaurante, ateliere, construcții). Dacă nu ești sigur, lasă nebifat și scrie ce ai.",
+    noEnvAuthNote: "Fără autorizație de mediu — activitatea nu o cere (declarat în formular).",
     haveAccount: "Ai deja cont?",
     goToLogin: "Intră",
     // „Ce faceți cu deșeurile” ca trei carduri cu o propoziție (regula: sub șapte opțiuni, nu

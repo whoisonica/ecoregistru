@@ -123,8 +123,9 @@ Pe telefon coloana din stânga devine o bandă în capul paginii; loginul își 
 **Cererea e în patru pași, aproape totul obligatoriu** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de
 rubrici pe o pagină; apoi, la blocul pliat cu opționale, „hai să obligăm omul să își facă și punct de lucru și tot ce
 e sub «Detalii care ne scutesc de un telefon»”): „Detalii despre compania ta” (CUI, denumire, tipul ca `ChoiceCards`,
-adresa sediului, CAEN) · „Punctul de lucru” (denumire, adresă, autorizația de mediu cu nr. și expirare; la colectori
-și transportul) · „Datele tale de contact” (nume, telefon, email, funcția) · „Deșeurile companiei tale” (etichetele
+adresa sediului, CAEN) · „Punctul de lucru” (denumire, adresă, autorizația de mediu cu nr. și expirare — la generatorul pur cu bifa
+„Activitatea noastră nu are nevoie de autorizație de mediu”, fiindcă Anexa 1 la Ordinul 1798/2007 o cere doar
+activităților cu impact; bifa pleacă drept propoziție în observații; la colectori și transportul) · „Datele tale de contact” (nume, telefon, email, funcția) · „Deșeurile companiei tale” (etichetele
 bifabile + rând liber, opționale; tipul de generator obligatoriu la cine generează; codurile R/D cu „Nu știu” ca
 răspuns valid; observațiile libere). Fiecare „Continuă” își verifică pasul; trimiterea întoarce omul la pasul rubricii
 greșite. Pașii din stânga sunt cuprinsul formularului: cel curent aprins, sub cei trecuți ce s-a completat. Titlurile

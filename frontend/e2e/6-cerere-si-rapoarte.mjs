@@ -80,6 +80,15 @@ check("punctul de lucru gol oprește pasul 2", (await invalidCount()) === 4 && (
 check("data lipsă are mesajul ei", /Scrie data/.test(await page.textContent("form")), "");
 await page.fill("#ar-wp-name", "Hala de probă");
 await page.fill("#ar-wp-address", "Str. Probelor nr. 6, Cluj-Napoca");
+// Nu toți generatorii au autorizație (Anexa 1 la Ordinul 1798/2007): bifa ține loc de răspuns și
+// scoate cele două rubrici din obligații — apoi se scoate, ca proba să trimită o autorizație reală.
+await page.check("#ar-no-env-auth");
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+check("„n-avem nevoie de autorizație” lasă generatorul să treacă", await onStep(3));
+await page.click('button:has-text("Înapoi")');
+await page.waitForTimeout(300);
+await page.uncheck("#ar-no-env-auth");
 await page.fill("#ar-auth-number", "AM-PROBA-6");
 await page.fill("#ar-auth-expiry", "2028-06-30");
 await page.click(CONTINUE);
