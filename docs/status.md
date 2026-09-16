@@ -8,6 +8,32 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 15:56 și 16:08 — ✅ pe producție: ce rămăsese în cod din `todo-lansare`, Spring Boot 3.5, refactorul și e2e în CI.**
+> Două release-uri. **Întâi** `ecoregistru-api` **v98** (`16439ae`, **migrarea `V57`**, schema 56 → 57) și `ecoregistru-app` **v81**
+> (`8e6266a`), monorepo `84f68fc`; **apoi** api **v99** (`750c01e`, fără migrare) și app **v82** (`3b323c1`), monorepo
+> `main` = `origin/main` = `deploy/heroku-split` = `cc68648`. Pe producție: `now at version v57`, `Started EcoRegistruApplication`
+> (12:56:47 și 13:08:52 UTC), **fără „Flyway upgrade recommended”** (ultimul avertisment la 12:12 UTC); `/actuator/health` 200,
+> `GET /api/v1/audit-file/size` 401 fără token; bundle-ul servit are „Arată parola”, „Istoricul unei singure mișcări”,
+> `workPointsNew` și `stat-stock`. Garda de conținut curată (întâi backend `^^^^`, frontend `^^^`; apoi `^` pe amândouă).
+> Ce intră:
+> - **„Istoric” pe rândul de mișcare** (meniul „⋯” → `/setari?istoric=<id>`): jurnalul de audit filtrat pe rând, cu
+>   „Arată tot jurnalul”; numai PLATFORM_ADMIN/CONSULTANT/ADMIN (probat negativ pe operator).
+> - **Cât cântărește dosarul de control** înainte de descărcare: `V57` `attachments.size_bytes`, scrisă la încărcare;
+>   `GET /api/v1/audit-file/size`; atașamentele de dinainte se numără separat, fără mărime ghicită.
+> - **Importul din Excel, a doua felie (P2.15):** foaia „Puncte de lucru” (unul nou îl importă doar cine l-ar putea adăuga din
+>   Setări), 12 coloane opționale de ambalaje (Ordinul 794/2012) și transport (Anexa 3); fișierele pe șablonul vechi se citesc
+>   ca înainte; CNP-ul nu se importă.
+> - **„Arată parola”** la login și la resetare, cu **bara de putere** numai la parola nouă (regula din
+>   `AuthenticationService`, cu diacritice); **`maxLength`** la rubricile de șofer, ca `DriverRequest`.
+> - **Spring Boot 3.2.1 → 3.5.16**, **Flyway 9.22 → 11.20.3** (+ `flyway-database-postgresql`; recunoaște PostgreSQL 18),
+>   springdoc 2.8.17, zonky 2.8.0.
+> - Din sesiunea paralelă: `MovementsPage` și `WasteMovementService` sparte (`MovementAttachmentService`, `MovementQueryService`,
+>   `MovementDocumentService`, `components/movements/`), teste unitare de frontend (`npm test`, 14), `DevDataSeeder` cu termene și
+>   „Proba Automata SRL”, jobul e2e în CI, `scripts/deploy-split.sh`, jurnalul vechi mutat în `istoric/`.
+> Suita backend **833 de teste, 102 clase, 0 eșecuri** (+7: `AuditFileIT` +1, `ExcelImportIT` 9 → 15), pe Boot 3.5.16; negative
+> pe 7 reguli; **e2e 22/22** pe o bază nouă (`eco_e2e_lansare`), cu **proba 8 care chiar deschide un atașament** și proba 22 nouă.
+> **Următoarea migrare liberă: `V58`.**
+
 > **16.09.2026, 15:12 și 15:14 — ✅ pe producție: aplicația mobilă M1c („A venit controlul”, dosarul prin partajare, push Expo).**
 > `ecoregistru-api` **v97** (`7ebbcbb`, **migrarea `V56`**, schema 55 → 56), `ecoregistru-app` **v80** (`75a1ae5`); monorepo
 > `main` = `origin/main` = `deploy/heroku-split` = `23cd96c`. Pe producție: `Migrating schema "public" to version "56 - device

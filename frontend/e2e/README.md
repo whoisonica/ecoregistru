@@ -1,5 +1,10 @@
 # Probe de interfaţă
 
+🧾 **16.09.2026 — proba 22 (`22-lansare-marunte.mjs`)**: „Istoric” de pe rândul de mișcare până în jurnalul filtrat (și
+operatorul fără el, probat negativ), mărimea dosarului de control, „Arată parola” cu bara de putere (nivelurile regulii
+serverului, cu diacritice), limitele rubricilor de șofer. **Proba 8 chiar deschide un atașament** (tab `blob:`, poza
+încărcată; atașamentele demo trimit spre cloud-ul public `demo`, deci cere rețea). **22/22** pe o bază nouă.
+
 ✅ **16.09.2026 — suita pornește de pe o bază nouă și rulează în CI** (jobul `e2e` din `.github/workflows/ci.yml`).
 `DevDataSeeder` pune acum ce lăsau în urmă rulările vechi: termenele anului trecut și ale anului curent (deci termene
 depășite) și a doua firmă, generatorul pur „Proba Automata SRL”. Căderile „pe date” ale probelor 9, 10 și 11 erau de fapt
