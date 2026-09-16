@@ -68,7 +68,7 @@ import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
 import { cn, formatDate, withCount } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, LinkButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -806,7 +806,18 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                             nouă coloane. Afară rămâne cea care e chiar de făcut acum: cântarul,
                             când lipsește cifra; altfel, editarea. */}
                         <div className="flex items-center justify-end gap-1">
-                          {m.quantity == null ? (
+                          {/* O linie de cântar nu se editează de aici: se schimbă numai prin
+                              operațiunea ei (BUG-018), deci rândul duce acolo. */}
+                          {m.weighingOperationId ? (
+                            <LinkButton
+                              to={`/cantar?op=${m.weighingOperationId}`}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Scale className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                              {t.openWeighing}
+                            </LinkButton>
+                          ) : m.quantity == null ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -830,12 +841,16 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                             </Button>
                           )}
                           <RowActions>
-                            <RowAction icon={Pencil} onClick={() => openEdit(m)}>
-                              {strings.common.edit}
-                            </RowAction>
-                            <RowAction icon={Copy} onClick={() => openDuplicate(m)}>
-                              {t.duplicate}
-                            </RowAction>
+                            {!m.weighingOperationId && (
+                              <>
+                                <RowAction icon={Pencil} onClick={() => openEdit(m)}>
+                                  {strings.common.edit}
+                                </RowAction>
+                                <RowAction icon={Copy} onClick={() => openDuplicate(m)}>
+                                  {t.duplicate}
+                                </RowAction>
+                              </>
+                            )}
                             {canPrintAnexa3(m) && (
                               <RowAction
                                 icon={FileText}
@@ -867,9 +882,11 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                   : t.anexa2Download}
                               </RowAction>
                             )}
-                            <RowAction icon={Trash2} tone="danger" onClick={() => handleDelete(m)}>
-                              {strings.common.delete}
-                            </RowAction>
+                            {!m.weighingOperationId && (
+                              <RowAction icon={Trash2} tone="danger" onClick={() => handleDelete(m)}>
+                                {strings.common.delete}
+                              </RowAction>
+                            )}
                           </RowActions>
                         </div>
                       </TD>

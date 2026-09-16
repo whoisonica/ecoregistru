@@ -27,6 +27,7 @@ const suites = [
   ["16-import.mjs", "importul din Excel: șablonul, verificarea și butonul care se deblochează"],
   ["17-persoane-fizice.mjs", "tabul «Persoane fizice»: CNP mascat, cifra de control, editarea, vizualizatorul"],
   ["18-panou-cantar.mjs", "panoul «Cântar»: eticheta firmei, afișajul, tastele, Intrări/Ieșiri, pubelele, bara de jos"],
+  ["19-cantar-operatiuni.mjs", "ecranul «Cântar»: operațiunile depozitului, neto din cântar, cât se reține din plată"],
 ];
 
 const only = process.argv[2];

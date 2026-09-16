@@ -370,11 +370,27 @@ public class WeighingOperationService {
                 pricesVisible(operation.getCompany()));
     }
 
+    /** Toate operațiunile firmei; filtrele ecranului trec prin {@link #list(WeighingOperationType, Integer, Integer)}. */
     @Transactional(readOnly = true)
     public List<WeighingOperationResponse> list() {
+        return list(null, null, null);
+    }
+
+    /**
+     * Lista ecranului: o direcție (sau amândouă), o lună sau un an (sau tot). Ordinea e cea a
+     * cântarului — ultima operațiune sus, iar în aceeași zi numărul mare primul.
+     */
+    @Transactional(readOnly = true)
+    public List<WeighingOperationResponse> list(WeighingOperationType type, Integer year, Integer month) {
         UUID tenantId = TenantContext.require();
-        List<WeighingOperation> operations =
-                operationRepository.findAllByCompany_IdOrderByDateDescNumberDesc(tenantId);
+        java.time.LocalDate from = java.time.LocalDate.of(1900, 1, 1);
+        java.time.LocalDate to = java.time.LocalDate.of(9999, 12, 31);
+        if (year != null) {
+            java.time.YearMonth period = month == null ? null : java.time.YearMonth.of(year, month);
+            from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
+            to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
+        }
+        List<WeighingOperation> operations = operationRepository.findForScreen(tenantId, type, from, to);
         if (operations.isEmpty()) {
             return List.of();
         }
@@ -605,6 +621,7 @@ public class WeighingOperationService {
                 o.getPaymentMethod(), o.getReceiptNumber(), o.getOwnHousehold(),
                 pricesVisible ? o.getAfmBase() : null, pricesVisible ? o.getAfmContribution() : null,
                 pricesVisible ? o.getIncomeTaxBase() : null, pricesVisible ? o.getIncomeTax() : null,
+                DepotRetentions.AFM_RATE, DepotRetentions.INCOME_TAX_RATE,
                 o.getCancelReason(),
                 lines.stream().map(m -> toLine(m, pricesVisible)).toList());
     }

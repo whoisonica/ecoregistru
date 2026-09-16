@@ -11,6 +11,7 @@ import {
   Home,
   Package,
   Receipt,
+  Scale,
   Settings,
   Users,
   type LucideIcon,
@@ -18,7 +19,7 @@ import {
 import type { Role } from "@/auth/AuthContext";
 import type { CompanyType } from "@/lib/types";
 import { canManage, isMultiCompany } from "@/lib/roles";
-import { SCREEN_PATH, screensFor, type MovementScreen } from "@/lib/movementScreens";
+import { SCREEN_PATH, registersFor, screensFor, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@/lib/strings";
 
 export interface NavEntry {
@@ -48,6 +49,13 @@ export interface NavModel {
 }
 
 const DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
+
+/**
+ * Cifrele ajung fix pentru zece intrări. La firmele cu depozit meniul are unsprezece, fiindcă mai
+ * intră „Cântar”, iar ultima — Setări — primește litera ei. O literă e mai ușor de ținut minte
+ * decât a unsprezecea cifră oricum n-ar exista.
+ */
+const OVERFLOW_KEY = "S";
 
 const SCREEN_ENTRY: Record<MovementScreen, Omit<NavEntry, "hotkey">> = {
   GENERATED: {
@@ -89,6 +97,16 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   ];
   if (companyType) {
     for (const screen of screensFor(companyType)) main.push(SCREEN_ENTRY[screen]);
+    // Cântarul e al depozitului: firmele care preiau deșeu de la alții (registrul art. 48). Stă
+    // lângă Intrări și Ieșiri, fiindcă de acolo vin rândurile lor.
+    if (registersFor(companyType).includes("ART_48")) {
+      main.push({
+        to: "/cantar",
+        label: strings.nav.weighing,
+        icon: Scale,
+        keywords: strings.nav.kwWeighing,
+      });
+    }
   }
   main.push(
     { to: "/ambalaje", label: strings.nav.packaging, icon: Package, keywords: strings.nav.kwPackaging },
@@ -128,7 +146,7 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
 
   return {
-    main: main.map((entry, i) => ({ ...entry, hotkey: DIGITS[i] })),
+    main: main.map((entry, i) => ({ ...entry, hotkey: DIGITS[i] ?? OVERFLOW_KEY })),
     cabinet,
     hidden,
   };

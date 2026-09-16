@@ -114,8 +114,9 @@ export function Layout({ children }: { children: ReactNode }) {
   useHotkey("[", toggleCollapsed, { enabled: window.matchMedia("(min-width: 1024px)").matches });
 
   /**
-   * Cifrele 1–9, 0 deschid intrările meniului în ordinea afișată; F și C grupul Cabinet. Zece
-   * apeluri fixe de hook, cu tasta ca argument: numărul de hook-uri nu poate depinde de meniu.
+   * Cifrele 1–9, 0 deschid intrările meniului în ordinea afișată; S Setările când meniul trece de
+   * zece intrări; F și C grupul Cabinet. Apeluri fixe de hook, cu tasta ca argument: numărul de
+   * hook-uri nu poate depinde de meniu.
    */
   const go = useCallback(
     (key: string) => {
@@ -134,6 +135,8 @@ export function Layout({ children }: { children: ReactNode }) {
   useHotkey("8", () => go("8"));
   useHotkey("9", () => go("9"));
   useHotkey("0", () => go("0"));
+  // „S” e Setările, când Cântarul depozitului a împins meniul peste cele zece cifre (`navItems.ts`).
+  useHotkey("s", () => go("S"), { enabled: nav.main.some((i) => i.hotkey === "S") });
   useHotkey("f", () => go("F"), { enabled: nav.cabinet.some((i) => i.hotkey === "F") });
   useHotkey("c", () => go("C"), { enabled: nav.cabinet.some((i) => i.hotkey === "C") });
 

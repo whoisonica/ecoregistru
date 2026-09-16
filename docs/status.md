@@ -67,6 +67,23 @@ rulează local și are testele verzi.
 > din cont — cu **control pozitiv**, sesiunea revocată duce la ecranul de login, deci verdele nu e fals.
 > Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
 >
+
+> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.9, D1.10 și D1.15 — reținerile la sursă și ecranul „Cântar”.**
+> Migrarea **`V49`** adaugă bazele de calcul lângă sumele reținute, cu constrângere: o sumă reținută fără baza ei ar fi o
+> cifră fără document. La finalizarea unei **intrări** se calculează și se păstrează **2% la Fondul pentru mediu** din toată
+> valoarea (OUG 196/2005 art. 9 alin. (1) lit. a), și de la persoane fizice, și la hârtie sau plastic) și **10% impozit pe
+> venit** numai pe liniile de metal cumpărate de la o persoană fizică (Codul fiscal art. 114 alin. (2) lit. m²), art. 115
+> alin. (1) lit. a)); amândouă pe valoarea brută, independent una de alta, rotunjite o singură dată pe total. Cotele sunt
+> fixe prin lege, deci stau în cod cu trimiterea la articol — o cotă schimbată mâine nu rescrie declarația de luna trecută.
+> `GET /api/v1/weighing-operations/retentions?year&month` dă raportul lunar (AFM și D100, 25 a lunii următoare) sau anual,
+> cu beneficiarii pentru D205 (ultima zi a lui februarie); îl vede cine administrează firma **și** vede prețurile.
+> Ecranul **„Cântar”** (`/cantar`, doar la firmele cu registrul art. 48) arată operațiunile pe direcții și pe lună, cu banda
+> reținerilor deasupra; formularul ține capul, liniile de cântar (tara unei linii = brutul celei dinainte), plata și
+> declarația de gospodărie proprie, cerută la finalizare când persoana fizică aduce metal (OUG 31/2011 art. 1 alin. (1^1)).
+> Un rând de registru venit de la cântar nu se mai editează din „Intrări”/„Ieșiri”: duce la operațiunea lui (BUG-018).
+> Suita **757 de teste, 92 de clase, 0 eșecuri, 3 sărite**; `DepotRetentionIT` 15/15 cu proba negativă pe cinci reguli de
+> excludere; e2e: proba **19** nouă, verde, plus 1–5, 15, 18 verzi (9, 10, 11 cad pe date, ca pe `origin/main`).
+
 > **15.09.2026, 23:54 — ✅ pe producție: două reparații găsite la analiza codului.** `ecoregistru-api` **v92**
 > (`7e09df0`, fără migrare, schema `V48`); frontendul e neschimbat (app v73); monorepo `c0d4584`. (1) Linia unei operațiuni
 > de cântar nu se mai modifică, nu se mai cântărește și nu se mai șterge prin `/api/v1/movements/{id}`

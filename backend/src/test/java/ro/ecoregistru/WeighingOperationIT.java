@@ -183,6 +183,22 @@ class WeighingOperationIT {
                 .isInstanceOf(NotFoundException.class);
     }
 
+    /** Filtrele ecranului (D1.15): direcția și luna, amândouă opționale. */
+    @Test
+    void theScreenListFiltersByDirectionAndMonth() {
+        service.create(request(IN, collector.getId(), null));
+        service.create(request(OUT, collector.getId(), null));
+        UUID august = service.create(new WeighingOperationRequest(IN, depot.getId(), LocalDate.of(2026, 8, 3),
+                collector.getId(), null, null, null, null, null, null, null, null, null, null)).id();
+
+        assertThat(service.list()).hasSize(3);
+        assertThat(service.list(IN, null, null)).hasSize(2);
+        assertThat(service.list(null, 2026, 9)).hasSize(2);
+        assertThat(service.list(IN, 2026, 8)).extracting(WeighingOperationResponse::id).containsExactly(august);
+        assertThat(service.list(null, 2026, null)).hasSize(3);
+        assertThat(service.list(OUT, 2026, 8)).isEmpty();
+    }
+
     @Test
     void aGeneratorHasNoDepotOperations() {
         Company generator = company(CompanyType.GENERATOR);

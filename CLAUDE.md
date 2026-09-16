@@ -10,7 +10,8 @@
 - **Fără temă întunecată.** Panoul e grafit, pagina e albă: o singură lume de culori.
 - **Meniul și tastele se citesc din cod înainte de a propune ecrane** (`frontend/src/lib/navItems.ts`,
   `lib/movementScreens.ts`, `App.tsx`): proprietarul nu vrea să explice ce există deja. Tasta N e acțiunea principală
-  a ecranului curent; cifrele, I, E, `/`, `[` și Ctrl K sunt legate în `Layout.tsx`.
+  a ecranului curent; cifrele, S (Setări, când meniul trece de zece intrări), I, E, `/`, `[` și Ctrl K sunt legate în
+  `Layout.tsx`.
 - Textele de ecran stau în `frontend/src/lib/strings.ts`, în română, pe înțelesul unui client care nu e specialist de
   mediu. Temeiul legal merge în explicație, nu în etichetă. Documentele tipărite își păstrează numele din acte.
 - Ordinea rubricilor din formularul de mișcare nu se schimbă. Nicio cifră nu se precompletează pe un formular oficial.

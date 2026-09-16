@@ -10,6 +10,7 @@ import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
 import ro.ecoregistru.controller.response.DepotRetentionReport;
 import ro.ecoregistru.controller.response.WeighingOperationResponse;
+import ro.ecoregistru.enums.WeighingOperationType;
 import ro.ecoregistru.service.WeighingOperationService;
 
 import java.util.List;
@@ -31,9 +32,12 @@ public class WeighingOperationController {
 
     WeighingOperationService service;
 
+    /** Lista ecranului: o direcție și o lună (sau un an); fără ele, tot ce are firma. */
     @GetMapping
-    public List<WeighingOperationResponse> list() {
-        return service.list();
+    public List<WeighingOperationResponse> list(@RequestParam(required = false) WeighingOperationType type,
+                                                @RequestParam(required = false) Integer year,
+                                                @RequestParam(required = false) Integer month) {
+        return service.list(type, year, month);
     }
 
     /**

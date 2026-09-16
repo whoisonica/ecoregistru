@@ -560,6 +560,131 @@ export interface NaturalPersonInput {
   address: string | null;
 }
 
+// --- Depozit: operațiunile de cântar (D1.4–D1.10, ecranul D1.15) ---
+
+/** Felia 1 înregistrează doar intrări și ieșiri; transferul și inventarul vin cu F2/F3. */
+export type WeighingOperationType = "IN" | "OUT";
+
+/** În lucru → Finalizată (nemodificabilă) sau Anulată cu motiv. Doar cele finalizate intră în registre. */
+export type WeighingOperationStatus = "IN_PROGRESS" | "FINALIZED" | "CANCELLED";
+
+/** Cum se plătește marfa. Numerarul către o persoană fizică are plafon zilnic (Legea 70/2015 art. 4). */
+export type DepotPaymentMethod = "VIREMENT" | "NUMERAR";
+
+/**
+ * O linie de cântar. `finalKg` e cantitatea acceptată — cea care intră în stoc și în registre;
+ * `netKg` rămâne alături ca dovadă de cântar.
+ */
+export interface WeighingLine {
+  id: string;
+  lineNo: number;
+  articleId: string | null;
+  articleName: string | null;
+  wasteCode: string;
+  grossKg: number | null;
+  tareKg: number | null;
+  netKg: number | null;
+  finalKg: number | null;
+  /** Gol pentru cine nu vede prețurile (`PriceVisibility`) — regula e pe server. */
+  unitPrice: number | null;
+  totalValue: number | null;
+  operationCode: WasteOperationCode | null;
+}
+
+export interface WeighingOperation {
+  id: string;
+  type: WeighingOperationType;
+  number: number;
+  date: string;
+  workPointId: string;
+  workPointName: string;
+  partnerId: string | null;
+  partnerName: string | null;
+  naturalPersonId: string | null;
+  naturalPersonName: string | null;
+  origin: PackagingOrigin | null;
+  driverName: string | null;
+  vehicleRegistration: string | null;
+  orderNumber: string | null;
+  status: WeighingOperationStatus;
+  notes: string | null;
+  grossKg: number | null;
+  tareKg: number | null;
+  paymentMethod: DepotPaymentMethod | null;
+  receiptNumber: string | null;
+  /** Declarația persoanei fizice că deșeul provine din gospodăria proprie (OUG 31/2011 art. 1 alin. (1^1)). */
+  ownHousehold: boolean | null;
+  /** Reținerile, calculate la finalizare. Goale cât operațiunea e în lucru și pentru cine nu vede prețurile. */
+  afmBase: number | null;
+  afmContribution: number | null;
+  incomeTaxBase: number | null;
+  incomeTax: number | null;
+  /** Cotele în vigoare, de la server: ecranul arată cât se reține fără să țină el legea. */
+  afmRate: number;
+  incomeTaxRate: number;
+  cancelReason: string | null;
+  lines: WeighingLine[];
+}
+
+export interface WeighingOperationInput {
+  type: WeighingOperationType;
+  workPointId: string;
+  date: string;
+  partnerId: string | null;
+  naturalPersonId: string | null;
+  origin?: PackagingOrigin | null;
+  driverId?: string | null;
+  driverName: string | null;
+  vehicleRegistration: string | null;
+  orderNumber: string | null;
+  paymentMethod: DepotPaymentMethod | null;
+  receiptNumber: string | null;
+  ownHousehold: boolean | null;
+  notes: string | null;
+}
+
+/** Tot cântarul odată: liniile trimise le înlocuiesc pe cele salvate. */
+export interface WeighingLinesInput {
+  grossKg: number | null;
+  tareKg: number | null;
+  lines: {
+    articleId: string | null;
+    grossKg: number | null;
+    tareKg: number | null;
+    netKg: number | null;
+    finalKg: number | null;
+    unitPrice: number | null;
+    operationCode: WasteOperationCode | null;
+    notes: string | null;
+  }[];
+}
+
+/**
+ * Ce a reținut depozitul la sursă (D1.9, D1.10): lunar pentru AFM și D100, anual cu beneficiarii
+ * pentru D205. Cotele vin de la server, ca sumele vechi să rămână citibile dacă legea le schimbă.
+ */
+export interface DepotRetentionReport {
+  year: number;
+  month: number | null;
+  from: string;
+  to: string;
+  dueDate: string;
+  afmRate: number;
+  afmBase: number;
+  afmContribution: number;
+  incomeTaxRate: number;
+  incomeTaxBase: number;
+  incomeTax: number;
+  operations: number;
+  beneficiaries: {
+    personId: string;
+    name: string;
+    cnp: string | null;
+    base: number;
+    tax: number;
+  }[];
+}
+
 // --- Partners ---
 
 /**
@@ -869,6 +994,8 @@ export interface Attachment {
 // --- Waste movements ---
 
 export interface WasteMovement {
+  /** Linia face parte dintr-o operațiune de cântar: se schimbă numai prin ea (D1.4, BUG-018). */
+  weighingOperationId?: string | null;
   id: string;
   workPointId: string;
   workPointName: string;

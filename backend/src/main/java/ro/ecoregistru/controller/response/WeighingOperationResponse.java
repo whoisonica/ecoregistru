@@ -43,6 +43,9 @@ public record WeighingOperationResponse(
         BigDecimal afmContribution,
         BigDecimal incomeTaxBase,
         BigDecimal incomeTax,
+        /** Cotele în vigoare, ca ecranul să arate cât se reține din plată fără să le știe el. */
+        BigDecimal afmRate,
+        BigDecimal incomeTaxRate,
         String cancelReason,
         List<Line> lines) {
 

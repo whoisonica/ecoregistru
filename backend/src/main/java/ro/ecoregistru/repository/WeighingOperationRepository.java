@@ -17,9 +17,27 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
 
     Optional<WeighingOperation> findByIdAndCompany_Id(UUID id, UUID companyId);
 
-    List<WeighingOperation> findAllByCompany_IdOrderByDateDescNumberDesc(UUID companyId);
-
     boolean existsByNaturalPerson_Id(UUID naturalPersonId);
+
+    /**
+     * Lista ecranului (D1.15), cu partenerul, persoana și depozitul aduse odată: altfel fiecare rând
+     * ar cere încă trei interogări (BUG-016). {@code type} lipsă înseamnă amândouă direcțiile.
+     */
+    @Query("""
+            select o from WeighingOperation o
+              left join fetch o.partner
+              left join fetch o.naturalPerson
+              join fetch o.workPoint
+            where o.company.id = :companyId
+              and o.date between :from and :to
+              and (:type is null or o.type = :type)
+            order by o.date desc, o.number desc
+            """)
+    List<WeighingOperation> findForScreen(@Param("companyId") UUID companyId,
+                                          @Param("type") WeighingOperationType type,
+                                          @Param("from") LocalDate from,
+                                          @Param("to") LocalDate to);
+
 
     /** Persoanele fizice ale firmei care apar pe cel puțin o operațiune, într-o singură interogare pentru listă. */
     @Query("select distinct o.naturalPerson.id from WeighingOperation o "

@@ -361,6 +361,8 @@ R13, D5), so the narrowing is visible rather than theoretical.
 
 | What | Where | What to look for |
 |---|---|---|
+| Depot weighbridge | **Cântar** (only for companies that keep the art. 48 register) | One numbered operation per truck, with a line per sortiment: type gross and tare and the net fills itself and locks — the figure comes from the weighbridge, not from typing. Fill a price and the payment block shows what is withheld at source (2% to the environment fund, 10% income tax on metal bought from an individual) and what is left to pay. Nothing counts anywhere until you finalize |
+| Withheld at source | **Cântar** → the strip above the list | What the month owes and the date it is due: 25th of the next month. The rates come from the server, so an old month keeps the rate that was withheld then |
 | Intake form | `/cerere-cont` — public, no login | Choose "Colector" and the transport block appears; choose "Generator" and it does not. Press "Trimite" on an empty form: the three required fields mark themselves and the page scrolls to the first — a banner that marks nothing is the defect this page kept longest |
 | Not knowing the R/D codes | `/cerere-cont` → "Ce se întâmplă cu deșeul" | Twenty-eight tickboxes are folded behind a choice whose first option is "Nu știu — le stabilim împreună". An empty set was always a valid answer; now the form says so |
 | Reading a request | **Clienți** → a request row → "Vezi cererea" | Every answer the client gave, in the order they gave them — including `notes`, the free-text box. An unanswered field shows as an empty dash rather than being skipped; a section nobody filled in collapses to one line |

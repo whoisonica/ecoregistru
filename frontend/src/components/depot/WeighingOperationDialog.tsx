@@ -1,0 +1,781 @@
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { useAuth } from "@/auth/AuthContext";
+import { useCurrentCompany } from "@/hooks/useCompanies";
+import { usePartners } from "@/hooks/usePartners";
+import { useWorkPoints } from "@/hooks/useWorkPoints";
+import { useNaturalPersons } from "@/hooks/useNaturalPersons";
+import { useWasteArticles } from "@/hooks/useWasteArticles";
+import {
+  useCancelWeighingOperation,
+  useCreateWeighingOperation,
+  useFinalizeWeighingOperation,
+  useSaveWeighingLines,
+  useUpdateWeighingOperation,
+} from "@/hooks/useWeighingOperations";
+import { canManage } from "@/lib/roles";
+import { apiErrorMessage } from "@/lib/api";
+import { strings } from "@/lib/strings";
+import type {
+  DepotPaymentMethod,
+  WasteOperationCode,
+  WeighingOperation,
+  WeighingOperationInput,
+  WeighingOperationType,
+} from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { BinSwatch } from "@/components/ui/bin-swatch";
+import { Dialog } from "@/components/ui/dialog";
+import { DateInput } from "@/components/ui/date-input";
+import { FormSection } from "@/components/ui/form-section";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PillGroup } from "@/components/ui/pill-group";
+import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Tooltip } from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+
+const t = strings.weighing;
+const codeLabels = strings.enums.wasteOperationCode;
+
+const leiFormat = new Intl.NumberFormat("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const lei = (value: number) => `${leiFormat.format(value)} lei`;
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+interface LineDraft {
+  key: string;
+  articleId: string;
+  gross: string;
+  tare: string;
+  net: string;
+  final: string;
+  price: string;
+  code: WasteOperationCode | "";
+}
+
+const emptyLine = (): LineDraft => ({
+  key: crypto.randomUUID(),
+  articleId: "",
+  gross: "",
+  tare: "",
+  net: "",
+  final: "",
+  price: "",
+  code: "",
+});
+
+/** Câmp gol → null; altfel numărul. Virgula se acceptă: la cântar se scrie „12,5”. */
+function num(value: string): number | null {
+  const cleaned = value.replace(",", ".").trim();
+  if (cleaned === "") return null;
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Neto e brut − tara când amândouă sunt cântărite; altfel ce s-a scris direct. Aceeași regulă ca pe server. */
+function netOf(line: LineDraft): number | null {
+  const gross = num(line.gross);
+  const tare = num(line.tare);
+  if (gross != null && tare != null) return round2(gross - tare);
+  return num(line.net);
+}
+
+/**
+ * Formularul unei operațiuni de cântar (D1.15): capul, liniile și plata, într-un singur loc — cum
+ * arată bonul pe care îl completează omul de la poartă.
+ *
+ * <p>În stilul formularelor actuale, nu pe pași: decizia proprietarului din 15.09.2026
+ * („formurile de pe fe actual sunt ok”).
+ *
+ * <p>Se salvează în două cereri, ca pe server: capul (creare sau editare) și apoi tot cântarul odată.
+ * Cât operațiunea e finalizată sau anulată, formularul e doar de citit — nu se mai atinge nimic din
+ * ce a intrat în registre (D1.5).
+ */
+export function WeighingOperationDialog({
+  open,
+  type,
+  operation,
+  onClose,
+}: {
+  open: boolean;
+  /** Direcția, când se creează una nouă. Pe una existentă se ia de la ea: tipul nu se schimbă. */
+  type: WeighingOperationType;
+  operation: WeighingOperation | null;
+  onClose: () => void;
+}) {
+  const { user } = useAuth();
+  const { data: company } = useCurrentCompany();
+  const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
+
+  const createMut = useCreateWeighingOperation();
+  const updateMut = useUpdateWeighingOperation();
+  const linesMut = useSaveWeighingLines();
+  const finalizeMut = useFinalizeWeighingOperation();
+  const cancelMut = useCancelWeighingOperation();
+
+  const workPoints = useWorkPoints();
+  const partners = usePartners();
+  const persons = useNaturalPersons();
+  const articles = useWasteArticles();
+
+  const direction = operation?.type ?? type;
+  const inbound = direction === "IN";
+  const editable = !operation || operation.status === "IN_PROGRESS";
+  const pricesVisible = company?.pricesVisible !== false;
+  const approver = canManage(user?.role);
+
+  const [date, setDate] = useState(operation?.date ?? new Date().toISOString().slice(0, 10));
+  const [workPointId, setWorkPointId] = useState(operation?.workPointId ?? "");
+  const [fromPerson, setFromPerson] = useState(Boolean(operation?.naturalPersonId));
+  const [partnerId, setPartnerId] = useState(operation?.partnerId ?? "");
+  const [personId, setPersonId] = useState(operation?.naturalPersonId ?? "");
+  const [driverName, setDriverName] = useState(operation?.driverName ?? "");
+  const [vehicle, setVehicle] = useState(operation?.vehicleRegistration ?? "");
+  const [orderNumber, setOrderNumber] = useState(operation?.orderNumber ?? "");
+  const [notes, setNotes] = useState(operation?.notes ?? "");
+  const [truckGross, setTruckGross] = useState(operation?.grossKg?.toString() ?? "");
+  const [truckTare, setTruckTare] = useState(operation?.tareKg?.toString() ?? "");
+  const [payment, setPayment] = useState<DepotPaymentMethod | "">(operation?.paymentMethod ?? "");
+  const [receipt, setReceipt] = useState(operation?.receiptNumber ?? "");
+  const [ownHousehold, setOwnHousehold] = useState(operation?.ownHousehold ?? false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [lines, setLines] = useState<LineDraft[]>(
+    operation?.lines.length
+      ? operation.lines.map((l) => ({
+          key: l.id,
+          articleId: l.articleId ?? "",
+          gross: l.grossKg?.toString() ?? "",
+          tare: l.tareKg?.toString() ?? "",
+          net: l.netKg?.toString() ?? "",
+          final: l.finalKg?.toString() ?? "",
+          price: l.unitPrice?.toString() ?? "",
+          code: l.operationCode ?? "",
+        }))
+      : [emptyLine()]
+  );
+
+  // Un singur depozit: nu se alege ce n-are alternativă.
+  const openWorkPoints = useMemo(() => (workPoints.data ?? []).filter((w) => w.active), [workPoints.data]);
+  useEffect(() => {
+    if (!workPointId && openWorkPoints.length > 0) setWorkPointId(openWorkPoints[0].id);
+  }, [openWorkPoints, workPointId]);
+
+  const activeArticles = useMemo(() => (articles.data ?? []).filter((a) => a.active), [articles.data]);
+  const articleById = useMemo(
+    () => new Map(activeArticles.map((a) => [a.id, a])),
+    [activeArticles]
+  );
+
+  const totals = useMemo(() => {
+    let kg = 0;
+    let value = 0;
+    let metalValue = 0;
+    for (const line of lines) {
+      const final = num(line.final) ?? netOf(line);
+      const price = num(line.price);
+      if (final == null) continue;
+      kg += final;
+      if (price == null) continue;
+      const lineValue = round2(final * price);
+      value += lineValue;
+      if (articleById.get(line.articleId)?.metal) metalValue += lineValue;
+    }
+    const afmRate = operation?.afmRate ?? 0.02;
+    const taxRate = operation?.incomeTaxRate ?? 0.1;
+    const afm = inbound ? round2(value * afmRate) : 0;
+    const tax = inbound && fromPerson ? round2(metalValue * taxRate) : 0;
+    return { kg: round2(kg), value: round2(value), afm, tax, net: round2(value - afm - tax), afmRate, taxRate };
+  }, [lines, articleById, inbound, fromPerson, operation]);
+
+  const needsDeclaration =
+    inbound && fromPerson && lines.some((l) => articleById.get(l.articleId)?.metal);
+
+  const busy =
+    createMut.isPending || updateMut.isPending || linesMut.isPending || finalizeMut.isPending;
+
+  function patch(key: string, change: Partial<LineDraft>) {
+    setLines((current) => current.map((l) => (l.key === key ? { ...l, ...change } : l)));
+  }
+
+  /** Tara unei linii e brutul liniei dinainte: cântărirea e succesivă, nu se scrie de două ori. */
+  function addLine() {
+    setLines((current) => {
+      const previous = current[current.length - 1];
+      const next = emptyLine();
+      if (previous?.gross) next.tare = previous.gross;
+      return [...current, next];
+    });
+  }
+
+  function headInput(): WeighingOperationInput {
+    return {
+      type: direction,
+      workPointId,
+      date,
+      partnerId: fromPerson ? null : partnerId || null,
+      naturalPersonId: fromPerson ? personId || null : null,
+      driverName: driverName.trim() || null,
+      vehicleRegistration: vehicle.trim() || null,
+      orderNumber: orderNumber.trim() || null,
+      paymentMethod: payment || null,
+      receiptNumber: receipt.trim() || null,
+      ownHousehold: fromPerson ? ownHousehold : null,
+      notes: notes.trim() || null,
+    };
+  }
+
+  async function save(): Promise<string | null> {
+    const head = headInput();
+    const id = operation
+      ? (await updateMut.mutateAsync({ id: operation.id, input: head })).id
+      : (await createMut.mutateAsync(head)).id;
+    const filled = lines.filter((l) => l.articleId && (netOf(l) != null || num(l.final) != null));
+    if (filled.length > 0) {
+      await linesMut.mutateAsync({
+        id,
+        input: {
+          grossKg: num(truckGross),
+          tareKg: num(truckTare),
+          lines: filled.map((l) => ({
+            articleId: l.articleId,
+            grossKg: num(l.gross),
+            tareKg: num(l.tare),
+            // Neto se trimite doar când n-a fost calculat din brut și tara: serverul refuză un neto
+            // care nu se potrivește cu cântărirea.
+            netKg: num(l.gross) != null && num(l.tare) != null ? null : num(l.net),
+            finalKg: num(l.final),
+            unitPrice: pricesVisible ? num(l.price) : null,
+            operationCode: inbound ? null : (l.code || null) as WasteOperationCode | null,
+            notes: null,
+          })),
+        },
+      });
+    }
+    return id;
+  }
+
+  async function handleSave() {
+    try {
+      await save();
+      notify(t.saved, "success");
+      onClose();
+    } catch (err) {
+      notify(apiErrorMessage(err, t.saveError), "error");
+    }
+  }
+
+  function handleFinalize() {
+    confirm({
+      title: t.confirmFinalizeTitle,
+      message: t.confirmFinalize,
+      confirmLabel: t.finalize,
+      onConfirm: async () => {
+        try {
+          const id = await save();
+          if (id) await finalizeMut.mutateAsync(id);
+          notify(t.finalized, "success");
+          onClose();
+        } catch (err) {
+          notify(apiErrorMessage(err, t.saveError), "error");
+        }
+      },
+    });
+  }
+
+  async function handleCancel() {
+    if (!operation || !cancelReason.trim()) return;
+    try {
+      await cancelMut.mutateAsync({ id: operation.id, reason: cancelReason.trim() });
+      notify(t.cancelled, "success");
+      onClose();
+    } catch (err) {
+      notify(apiErrorMessage(err, t.saveError), "error");
+    }
+  }
+
+  const title = operation
+    ? `${inbound ? t.tabIn : t.tabOut} · ${operation.number}`
+    : inbound
+      ? t.newIn
+      : t.newOut;
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title={title}
+        size="2xl"
+        busy={busy}
+        description={
+          operation?.status === "CANCELLED" ? (
+            <span className="text-state-bad-text">
+              {t.cancelledBecause} {operation.cancelReason}
+            </span>
+          ) : undefined
+        }
+        footer={
+          <>
+            <Button variant="outline" onClick={onClose} disabled={busy}>
+              {strings.common.close}
+            </Button>
+            {editable && (
+              <Button variant="outline" onClick={handleSave} disabled={busy}>
+                {busy ? strings.common.saving : t.save}
+              </Button>
+            )}
+            {editable &&
+              (approver ? (
+                <Button onClick={handleFinalize} disabled={busy}>
+                  {t.finalize}
+                </Button>
+              ) : (
+                <p className="self-center text-xs text-content-muted">{t.finalizeHint}</p>
+              ))}
+            {operation && operation.status !== "CANCELLED" && approver && (
+              <Button
+                variant="ghost"
+                className="text-state-bad-text"
+                onClick={() => setCancelling(true)}
+                disabled={busy}
+              >
+                {t.cancelOperation}
+              </Button>
+            )}
+          </>
+        }
+      >
+        <div className="space-y-6">
+          <FormSection title={t.sectionWho}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="wo-date">{t.date}</Label>
+                <DateInput
+                  id="wo-date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  disabled={!editable}
+                />
+              </div>
+              <div>
+                <Label htmlFor="wo-wp">{t.workPoint}</Label>
+                <Select
+                  id="wo-wp"
+                  value={workPointId}
+                  onChange={(e) => setWorkPointId(e.target.value)}
+                  disabled={!editable}
+                >
+                  {openWorkPoints.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+
+            {inbound && (
+              <PillGroup
+                name="wo-from"
+                options={[
+                  { value: "FIRM", label: t.fromCompany },
+                  { value: "PERSON", label: t.fromPerson },
+                ]}
+                selected={[fromPerson ? "PERSON" : "FIRM"]}
+                onToggle={(value) => setFromPerson(value === "PERSON")}
+                disabled={!editable}
+              />
+            )}
+
+            {fromPerson && inbound ? (
+              <div>
+                <Label htmlFor="wo-person">{t.person}</Label>
+                <Select
+                  id="wo-person"
+                  value={personId}
+                  onChange={(e) => setPersonId(e.target.value)}
+                  disabled={!editable}
+                >
+                  <option value="">{t.personPlaceholder}</option>
+                  {(persons.data ?? [])
+                    .filter((p) => p.active || p.id === personId)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                        {p.cnpLastDigits ? ` · ...${p.cnpLastDigits}` : ""}
+                      </option>
+                    ))}
+                </Select>
+                <p className="mt-1 text-xs text-content-muted">{t.personMissing}</p>
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="wo-partner">{t.partner}</Label>
+                <Select
+                  id="wo-partner"
+                  value={partnerId}
+                  onChange={(e) => setPartnerId(e.target.value)}
+                  disabled={!editable}
+                >
+                  <option value="">{t.partnerPlaceholder}</option>
+                  {(partners.data ?? [])
+                    .filter((p) => p.active || p.id === partnerId)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                        {p.cui ? ` · ${p.cui}` : ""}
+                      </option>
+                    ))}
+                </Select>
+              </div>
+            )}
+          </FormSection>
+
+          <FormSection title={t.sectionTransport}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <Label htmlFor="wo-driver">{t.driver}</Label>
+                <Input
+                  id="wo-driver"
+                  value={driverName}
+                  onChange={(e) => setDriverName(e.target.value)}
+                  disabled={!editable}
+                />
+              </div>
+              <div>
+                <Label htmlFor="wo-vehicle">{t.vehicle}</Label>
+                <Input
+                  id="wo-vehicle"
+                  value={vehicle}
+                  onChange={(e) => setVehicle(e.target.value)}
+                  disabled={!editable}
+                />
+              </div>
+              <div>
+                <Label htmlFor="wo-order">{t.orderNumber}</Label>
+                <Input
+                  id="wo-order"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  disabled={!editable}
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          <FormSection title={t.sectionScale} description={t.truckHint}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="wo-gross">{t.truckGross}</Label>
+                <Input
+                  id="wo-gross"
+                  inputMode="decimal"
+                  value={truckGross}
+                  onChange={(e) => setTruckGross(e.target.value)}
+                  disabled={!editable}
+                />
+              </div>
+              <div>
+                <Label htmlFor="wo-tare">{t.truckTare}</Label>
+                <Input
+                  id="wo-tare"
+                  inputMode="decimal"
+                  value={truckTare}
+                  onChange={(e) => setTruckTare(e.target.value)}
+                  disabled={!editable}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {lines.map((line, index) => {
+                const article = articleById.get(line.articleId);
+                const net = netOf(line);
+                const final = num(line.final) ?? net;
+                return (
+                  <div key={line.key} className="border border-line p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs uppercase tracking-wide text-content-muted">
+                        {index + 1}
+                        {article && (
+                          <span className="ml-2 inline-flex items-center normal-case text-content">
+                            <BinSwatch code={article.wasteCode} hazardous={article.hazardous} />
+                            {article.wasteCode}
+                          </span>
+                        )}
+                      </span>
+                      {editable && lines.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setLines((c) => c.filter((l) => l.key !== line.key))}
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          {t.lineRemove}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                      <div className="col-span-2">
+                        <Label htmlFor={`wo-art-${line.key}`}>{t.lineArticle}</Label>
+                        <Select
+                          id={`wo-art-${line.key}`}
+                          value={line.articleId}
+                          onChange={(e) => patch(line.key, { articleId: e.target.value })}
+                          disabled={!editable}
+                        >
+                          <option value="">—</option>
+                          {activeArticles
+                            .filter((a) => !(fromPerson && inbound && a.forbiddenFromIndividuals))
+                            .map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {a.name} · {a.wasteCode}
+                              </option>
+                            ))}
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor={`wo-g-${line.key}`}>{t.lineGross}</Label>
+                        <Input
+                          id={`wo-g-${line.key}`}
+                          inputMode="decimal"
+                          value={line.gross}
+                          onChange={(e) => patch(line.key, { gross: e.target.value })}
+                          disabled={!editable}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`wo-t-${line.key}`}>{t.lineTare}</Label>
+                        <Input
+                          id={`wo-t-${line.key}`}
+                          inputMode="decimal"
+                          value={line.tare}
+                          onChange={(e) => patch(line.key, { tare: e.target.value })}
+                          disabled={!editable}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`wo-n-${line.key}`}>{t.lineNet}</Label>
+                        <Input
+                          id={`wo-n-${line.key}`}
+                          inputMode="decimal"
+                          value={line.gross && line.tare ? (net ?? "").toString() : line.net}
+                          onChange={(e) => patch(line.key, { net: e.target.value })}
+                          disabled={!editable || Boolean(line.gross && line.tare)}
+                          className={line.gross && line.tare ? "bg-surface-sunken" : undefined}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`wo-f-${line.key}`}>{t.lineFinal}</Label>
+                        <Input
+                          id={`wo-f-${line.key}`}
+                          inputMode="decimal"
+                          placeholder={net != null ? String(net) : ""}
+                          value={line.final}
+                          onChange={(e) => patch(line.key, { final: e.target.value })}
+                          disabled={!editable}
+                        />
+                      </div>
+                      {pricesVisible && (
+                        <div>
+                          <Label htmlFor={`wo-p-${line.key}`}>{t.linePrice}</Label>
+                          <Input
+                            id={`wo-p-${line.key}`}
+                            inputMode="decimal"
+                            value={line.price}
+                            onChange={(e) => patch(line.key, { price: e.target.value })}
+                            disabled={!editable}
+                          />
+                        </div>
+                      )}
+                      {!inbound && (
+                        <div>
+                          <Label htmlFor={`wo-c-${line.key}`}>{t.lineCode}</Label>
+                          <Select
+                            id={`wo-c-${line.key}`}
+                            value={line.code}
+                            onChange={(e) =>
+                              patch(line.key, { code: e.target.value as WasteOperationCode | "" })
+                            }
+                            disabled={!editable}
+                          >
+                            <option value="">—</option>
+                            {(Object.keys(codeLabels) as WasteOperationCode[]).map((c) => (
+                              <option key={c} value={c}>
+                                {codeLabels[c]}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+                      )}
+                      {pricesVisible && final != null && num(line.price) != null && (
+                        <div className="self-end">
+                          <span className="text-xs text-content-muted">{t.lineTotal}</span>
+                          <p className="font-mono tabular-nums text-content">
+                            {lei(round2(final * (num(line.price) as number)))}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {editable && (
+                <Button variant="outline" size="sm" onClick={addLine}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t.lineAdd}
+                </Button>
+              )}
+              <p className="text-xs text-content-muted">{t.lineTareHint}</p>
+            </div>
+          </FormSection>
+
+          <FormSection title={t.sectionPayment}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="wo-pay">{t.paymentMethod}</Label>
+                <PillGroup
+                  name="wo-pay"
+                  options={[
+                    { value: "VIREMENT", label: t.paymentVirement },
+                    { value: "NUMERAR", label: t.paymentNumerar },
+                  ]}
+                  selected={payment ? [payment] : []}
+                  onToggle={(value) =>
+                    setPayment((current) =>
+                      current === value ? "" : (value as DepotPaymentMethod)
+                    )
+                  }
+                  disabled={!editable}
+                />
+              </div>
+              {payment === "NUMERAR" && (
+                <div>
+                  <Label htmlFor="wo-receipt">{t.receiptNumber}</Label>
+                  <Input
+                    id="wo-receipt"
+                    value={receipt}
+                    onChange={(e) => setReceipt(e.target.value)}
+                    disabled={!editable}
+                  />
+                </div>
+              )}
+            </div>
+            {fromPerson && inbound && <p className="text-xs text-content-muted">{t.cashHint}</p>}
+
+            {fromPerson && inbound && (
+              <Switch
+                id="wo-household"
+                checked={ownHousehold}
+                onChange={setOwnHousehold}
+                disabled={!editable}
+                label={
+                  <>
+                    {t.ownHousehold}
+                    {needsDeclaration && !ownHousehold && (
+                      <Badge variant="warning" className="ml-2">
+                        {strings.common.requiredField}
+                      </Badge>
+                    )}
+                  </>
+                }
+                description={t.ownHouseholdHint}
+              />
+            )}
+
+            {pricesVisible && (
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 border border-line bg-surface-sunken p-3 sm:grid-cols-4">
+                <Figure label={t.totalKg} value={`${totals.kg} kg`} />
+                <Figure label={t.totalValue} value={lei(totals.value)} />
+                {inbound && (
+                  <Figure
+                    label={`${t.withheldAfm} · ${Number((totals.afmRate * 100).toFixed(2))}%`}
+                    value={`− ${lei(totals.afm)}`}
+                  />
+                )}
+                {inbound && fromPerson && (
+                  <Figure
+                    label={`${t.withheldTax} · ${Number((totals.taxRate * 100).toFixed(2))}%`}
+                    value={`− ${lei(totals.tax)}`}
+                  />
+                )}
+                {inbound && (
+                  <div className="col-span-2 sm:col-span-4">
+                    <dt className="text-xs text-content-muted">
+                      {t.withheldNet}
+                      <Tooltip content={t.withheldHint}>
+                        <span className="ml-2 cursor-help font-mono text-content-subtle">?</span>
+                      </Tooltip>
+                    </dt>
+                    <dd className="font-mono text-lg tabular-nums text-content-strong">
+                      {lei(totals.net)}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            )}
+
+            <div>
+              <Label htmlFor="wo-notes">{t.notes}</Label>
+              <Textarea
+                id="wo-notes"
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={!editable}
+              />
+            </div>
+          </FormSection>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={cancelling}
+        onClose={() => setCancelling(false)}
+        title={t.confirmCancelTitle}
+        description={t.confirmCancelBody}
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setCancelling(false)}>
+              {strings.common.close}
+            </Button>
+            <Button
+              className="bg-state-bad text-white hover:bg-state-bad"
+              onClick={handleCancel}
+              disabled={!cancelReason.trim() || cancelMut.isPending}
+            >
+              {t.cancelOperation}
+            </Button>
+          </>
+        }
+      >
+        <Label htmlFor="wo-cancel-reason">{t.cancelReason}</Label>
+        <Textarea
+          id="wo-cancel-reason"
+          rows={3}
+          value={cancelReason}
+          onChange={(e) => setCancelReason(e.target.value)}
+          placeholder={t.cancelReasonPlaceholder}
+        />
+      </Dialog>
+
+      {confirmDialog}
+    </>
+  );
+}
+
+function Figure({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-content-muted">{label}</dt>
+      <dd className="font-mono tabular-nums text-content-strong">{value}</dd>
+    </div>
+  );
+}

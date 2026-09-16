@@ -90,6 +90,7 @@ public class WasteMovementMapper {
                                 partner == null ? null : partner.getPackagingOrigin())
                         .orElse(null),
                 PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()),
+                m.getWeighingOperation() == null ? null : m.getWeighingOperation().getId(),
                 m.getCreatedAt(),
                 m.getUpdatedAt()
         );

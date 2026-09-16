@@ -11,6 +11,7 @@ import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { MovementsPage, MovementsRedirect } from "@/pages/MovementsPage";
+import { WeighingOperationsPage } from "@/pages/WeighingOperationsPage";
 import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/generare" element={<AppShell><MovementsPage key="generare" screen="GENERATED" /></AppShell>} />
           <Route path="/intrari" element={<AppShell><MovementsPage key="intrari" screen="IN" /></AppShell>} />
           <Route path="/iesiri" element={<AppShell><MovementsPage key="iesiri" screen="OUT" /></AppShell>} />
+          <Route path="/cantar" element={<AppShell><WeighingOperationsPage /></AppShell>} />
           <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />

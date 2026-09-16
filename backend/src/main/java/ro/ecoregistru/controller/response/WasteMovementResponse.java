@@ -145,6 +145,13 @@ public record WasteMovementResponse(
         /** True when the code is 15 01 xx, so the screen knows to ask the three above. */
         boolean packagingCode,
 
+        /**
+         * Operațiunea de cântar din care face parte rândul, când e o linie de depozit (D1.4). Ecranul
+         * de mișcări îl folosește ca să trimită omul acolo în loc să-i ofere o editare pe care
+         * serverul o refuză: o linie de cântar se schimbă numai prin operațiunea ei (BUG-018).
+         */
+        UUID weighingOperationId,
+
         Instant createdAt,
         Instant updatedAt
 ) {}

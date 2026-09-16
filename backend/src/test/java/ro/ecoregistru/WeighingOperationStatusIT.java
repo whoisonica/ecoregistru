@@ -269,6 +269,11 @@ class WeighingOperationStatusIT {
         service.finalizeOperation(id);
         assertThat(listed()).containsExactly(300);
         assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isEqualTo(1);
+        // Rândul își spune operațiunea, ca ecranul să trimită omul acolo în loc să-i ofere o
+        // editare pe care serviciul o refuză (BUG-018).
+        assertThat(movementService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
+                        null, 0, 25, null, false)
+                .content().get(0).weighingOperationId()).isEqualTo(id);
 
         service.cancel(id, "Cântărire dublă");
         assertThat(listed()).isEmpty();
