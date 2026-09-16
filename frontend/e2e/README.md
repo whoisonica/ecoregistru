@@ -1,5 +1,11 @@
 # Probe de interfaţă
 
+✅ **17.09.2026 — proba 26 (`26-dupa-salvare.mjs`)**: o predare nouă salvată prin ecran arată „Predarea e în evidență”, cu
+bonul (cod, 33 kg, destinatarul) și Anexa 3 + avizul, fără Anexa 2; „Încă una la fel” pornește cu codul și destinatarul, fără
+cantitate, document și „La fel ca data trecută”; editarea rămâne pe mesajul scurt; `/generare?nou=1` într-un tab proaspăt la
+375px are punctul de lucru ales. **Negative:** fără `onCreated` în pagină cad 5+ verificări; fără efectul punctului de lucru
+cade (4). Șterge mișcarea creată.
+
 🧭 **17.09.2026 — partenerul pe trei pași și „Adaugă deșeuri” pe înțeles**: proba 8 cere trei pași în cuprinsul dialogului și CUI-ul ca
 primă rubrică; 9 numără pașii, nu secțiunile; 10 caută sugestia de duplicat în `ul` (cuprinsul e un `ol`); 23 trece prin
 Continuă · Continuă · Salvează și citește destinația din taste (`input[name="mv-destination"]`), iar destinul se alege pe card.

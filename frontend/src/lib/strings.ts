@@ -651,6 +651,21 @@ export const strings = {
     receiptEmpty: "—",
     // „Ca data trecută” (varianta A, proprietarul, 15.09.2026): se aplică numai la clic. Nu se
     // copiază nicio cifră, nici data, nici documentul — doar alegerile.
+    // Ecranul de după o mișcare nouă (17.09.2026): ce urmează, nu doar „salvat”.
+    savedTitleGenerated: "Predarea e în evidență",
+    savedTitleIn: "Intrarea e în evidență",
+    savedTitleOut: "Ieșirea e în evidență",
+    savedLead: "Am salvat-o. Dacă deșeul pleacă acum, tipărește documentele de mai jos.",
+    savedNext: "Ce urmează",
+    savedAnexa3: "Tipărește Anexa 3 — formularul de transport",
+    savedAviz: "Descarcă avizul de însoțire",
+    savedAvizHint: "Merge cu marfa, împreună cu Anexa 3.",
+    savedAnexa2: "Tipărește Anexa 2 — transportul deșeurilor periculoase",
+    savedAnexa2Hint: "Formularul de expediție pentru deșeurile periculoase.",
+    savedWeighTitle: "Scrie cantitatea când vine bonul de cântar",
+    savedWeighHint: "Pe rândul predării apare butonul „Cântar”. Până atunci, Anexa 3 se tipărește cu cantitatea goală.",
+    savedAnother: "Încă una la fel",
+    savedDone: "Gata",
     sameAsLast: "La fel ca data trecută",
     sameAsLastFrom: "{date} · {partner}",
     sameAsLastApplied:

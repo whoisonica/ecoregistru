@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, History, Trash2, Paperclip } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -110,6 +110,13 @@ interface MovementFormDialogProps {
    * pornire, dar **nu** face din formular o editare: se salvează o înregistrare nouă.
    */
   duplicateOf?: WasteMovement | null;
+  /**
+   * „Încă una la fel”, din ecranul de după salvare: ca `duplicateOf`, dar fără cifre — nici
+   * cantitatea, nici volumul, nici cântărirea la descărcare, nici notițele. Doar alegerile.
+   */
+  sameAs?: WasteMovement | null;
+  /** O mișcare nouă s-a salvat: părintele arată ce urmează. Fără el, mesajul scurt de dinainte. */
+  onCreated?: (movement: WasteMovement) => void;
   workPoints: { id: string; name: string }[];
   defaultWorkPointId?: string;
   /** Ecranul din care s-a deschis — și deci registrul în care intră cantitatea. */
@@ -122,6 +129,8 @@ interface MovementFormDialogProps {
 export function MovementFormDialog({
   editing,
   duplicateOf,
+  sameAs,
+  onCreated,
   workPoints,
   defaultWorkPointId,
   screen,
@@ -135,7 +144,9 @@ export function MovementFormDialog({
    * <p>Peste tot mai jos, `initial` decide **ce scrie în rubrici**, iar `editing` decide **ce se
    * întâmplă la salvare**. Sunt două întrebări diferite, iar înainte era una singură.
    */
-  const initial = editing ?? duplicateOf ?? null;
+  const initial = editing ?? duplicateOf ?? sameAs ?? null;
+  /** De unde se iau cifrele: numai editarea și duplicarea le aduc; „Încă una la fel” nu. */
+  const figures = editing ?? duplicateOf ?? null;
   const { notify } = useToast();
   const createMut = useCreateMovement();
   const updateMut = useUpdateMovement();
@@ -155,6 +166,18 @@ export function MovementFormDialog({
     if (initial || workPoints.some((w) => w.id === preferred)) return preferred;
     return workPoints[0]?.id ?? "";
   });
+  /**
+   * Formularul deschis prin `?nou=1` — butonul „+” de pe telefon, „Adaugă deșeuri” din panou de pe alt
+   * ecran, „Primii pași” — pornea înaintea listei de puncte de lucru, deci starea rămânea pe gol și
+   * salvarea cădea pe „Câmp obligatoriu” la o rubrică pe care omul n-o atinsese (găsit 17.09.2026).
+   * Când lista sosește, o mișcare nouă ia punctul implicit, exact ca la o deschidere obișnuită. Nu
+   * atinge o editare și nici o alegere făcută deja.
+   */
+  useEffect(() => {
+    if (initial || workPointId || workPoints.length === 0) return;
+    const preferred = defaultWorkPointId ?? "";
+    setWorkPointId(workPoints.some((w) => w.id === preferred) ? preferred : workPoints[0].id);
+  }, [initial, workPointId, workPoints, defaultWorkPointId]);
   /**
    * Ce se oferă în select: punctele active, plus cel al mișcării editate dacă între timp a fost
    * dezactivat. O mișcare veche trebuie să rămână salvabilă fără să-și piardă tăcut amplasamentul —
@@ -210,13 +233,13 @@ export function MovementFormDialog({
     initial?.packagingHazardousContent ?? false
   );
   const [quantity, setQuantity] = useState(
-    initial?.quantity != null ? String(initial.quantity) : ""
+    figures?.quantity != null ? String(figures.quantity) : ""
   );
   const [weighedAtUnloading, setWeighedAtUnloading] = useState(
-    initial?.weighedAtUnloading ?? false
+    figures?.weighedAtUnloading ?? false
   );
   const [volumeM3, setVolumeM3] = useState(
-    initial?.volumeM3 != null ? String(initial.volumeM3) : ""
+    figures?.volumeM3 != null ? String(figures.volumeM3) : ""
   );
   const [unit, setUnit] = useState(initial?.unit ?? "KG");
   /**
@@ -349,7 +372,7 @@ export function MovementFormDialog({
   );
   // Adevărat cât timp bifele sunt ale noastre, nu ale lui: atunci scrie sub ele de unde vin.
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
-  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [notes, setNotes] = useState(figures?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   /**
@@ -400,7 +423,7 @@ export function MovementFormDialog({
    * de pe același ecran, adusă numai pe o mișcare nouă de tot. Nu se aplică nimic singur — butonul
    * o pune la clic, iar ce pune e exact ce ar pune „Duplică”, fără cantitate, dată și document.
    */
-  const offerLast = !editing && !duplicateOf && Boolean(wasteCode);
+  const offerLast = !editing && !duplicateOf && !sameAs && Boolean(wasteCode);
   const { data: lastMovement } = useQuery({
     queryKey: ["movements", "last-like", wasteCode?.id, screen, direction ?? null],
     enabled: offerLast,
@@ -727,11 +750,11 @@ export function MovementFormDialog({
     // atașamentele sunt hârtii lângă ea. Ținute într-un singur `try`, o urcare căzută spunea
     // „Salvarea a eșuat" peste o mișcare deja înregistrată — și reflexul, apăsatul din nou, o
     // înregistra a doua oară.
-    let movementId: string;
+    let saved: WasteMovement;
     try {
-      movementId = editing
-        ? (await updateMut.mutateAsync({ id: editing.id, input }), editing.id)
-        : (await createMut.mutateAsync(input)).id;
+      saved = editing
+        ? await updateMut.mutateAsync({ id: editing.id, input })
+        : await createMut.mutateAsync(input);
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
       return;
@@ -742,7 +765,7 @@ export function MovementFormDialog({
     for (const [index, file] of pendingFiles.entries()) {
       setUpload({ index: index + 1, total: pendingFiles.length, name: file.name });
       try {
-        await addAttachmentMut.mutateAsync({ movementId, file });
+        await addAttachmentMut.mutateAsync({ movementId: saved.id, file });
       } catch (err) {
         failed.push(file);
         firstError ??= err;
@@ -767,6 +790,10 @@ export function MovementFormDialog({
       return;
     }
 
+    if (!editing && onCreated) {
+      onCreated(saved);
+      return;
+    }
     notify(editing ? t.updated : t.created, "success");
     onClose();
   }

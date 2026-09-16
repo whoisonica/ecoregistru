@@ -34,6 +34,7 @@ const suites = [
   ["23-cereri-1609.mjs", "Generare fără «Operațiune», scopul V/E, destinația și autorizația destinatarului, ANAF la CUI, Anexa 3 la generator"],
   ["24-primii-pasi.mjs", "«Primii pași» pe Acasă: nu la firma care are tot, pașii bifați din date, «Ascunde» care ține, 375px"],
   ["25-parola-poster.mjs", "«Parolă uitată» și «Alege-ți parola» în PublicShell: fără cod, parole diferite, cod greșit, 375px"],
+  ["26-dupa-salvare.mjs", "ce urmează după o mișcare nouă: bonul, Anexa 3 și avizul, «Încă una la fel» fără cifre, editarea cu mesajul scurt"],
 ];
 
 const only = process.argv[2];

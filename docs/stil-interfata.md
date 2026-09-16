@@ -164,6 +164,14 @@ ecran îngust rămân doar efectele, deasupra. **„La fel ca data trecută”**
 alege codul, dacă există o mișcare cu același cod pe același ecran; la clic pune alegerile ei (ca „Duplică”), niciodată
 cantitatea, data, documentul sau numărul Anexei 2.
 
+**După salvare** (regula 12, 17.09.2026, `MovementSavedDialog.tsx`): o mișcare **nouă** nu mai închide doar dialogul cu un mesaj.
+Apare „Predarea e în evidență” (Intrarea / Ieșirea), cu bonul citit din răspunsul serverului și, sub „Ce urmează”, exact
+documentele pe care rândul le poate tipări — aceleași reguli ca meniul „⋯” (`canPrintAnexa3`, `canPrintAviz`,
+`canPrintAnexa2`) — plus, la o predare fără cântar, unde se scrie cantitatea când vine bonul. „Încă una la fel” pornește
+formularul cu alegerile ei (`sameAs`), fără cantitate, volum, cântărire, notițe, dată sau document; „Gata” închide. **Editarea**
+păstrează mesajul scurt. Formularul deschis prin `?nou=1` (butonul „+” de pe telefon, panoul, „Primii pași”) ia punctul de
+lucru implicit și când lista sosește după deschidere.
+
 ## Ecranele de mișcări
 
 Trei ecrane, după registru și direcție (`lib/movementScreens.ts`): **Generare** (`/generare`, Anexa 1), **Intrări**

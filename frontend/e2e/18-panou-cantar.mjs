@@ -108,7 +108,8 @@ const bins = await page.$$eval("table tbody tr", (rows) =>
     return { code, bin, hazardous };
   })
 );
-const expected = { "20 01 01": "paper", "15 01 02": "plastic", "20 03 01": "residual", "15 01 07": "glass", "20 01 40": "plastic" };
+// 15 01 01 intră de la proba 26, care salvează o predare pe hârtie și carton (o șterge, dar o rulare întreruptă o lasă).
+const expected = { "20 01 01": "paper", "15 01 01": "paper", "15 01 02": "plastic", "20 03 01": "residual", "15 01 07": "glass", "20 01 40": "plastic" };
 const known = bins.filter((b) => b.code in expected);
 check("proba a avut rânduri cu coduri cunoscute", known.length >= 3, `${known.length} din ${bins.length}`);
 check("fiecare cod cunoscut are pubela lui", known.every((b) => b.bin === expected[b.code]), known.map((b) => `${b.code}=${b.bin}`).join(" · "));

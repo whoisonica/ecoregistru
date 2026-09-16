@@ -70,6 +70,7 @@ import { TotalsStrip } from "@/components/movements/TotalsStrip";
 import { AttachmentsDialog } from "@/components/movements/AttachmentsDialog";
 import { RecordWeightDialog } from "@/components/movements/RecordWeightDialog";
 import { MovementFormDialog } from "@/components/movements/MovementFormDialog";
+import { MovementSavedDialog } from "@/components/movements/MovementSavedDialog";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -169,6 +170,9 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   // Mișcarea de la care pornește una nouă. Separată de `editing`, fiindcă răspunde la altă
   // întrebare: de unde se iau valorile, nu ce se face cu ele la salvare.
   const [duplicating, setDuplicating] = useState<WasteMovement | null>(null);
+  // Mișcarea tocmai salvată: arată ce urmează. `sameAs` e „Încă una la fel” pornit de acolo.
+  const [savedMovement, setSavedMovement] = useState<WasteMovement | null>(null);
+  const [sameAs, setSameAs] = useState<WasteMovement | null>(null);
   // Mișcarea căreia i-a venit cântarul de la destinatar; null = dialogul e închis.
   const [weighing, setWeighing] = useState<WasteMovement | null>(null);
   // Mișcarea ale cărei atașamente se citesc. Separată de `editing`: e o vedere, nu o editare, și
@@ -233,6 +237,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
       // rescrisă la fiecare randare — exact felul de dependență care fura focusul din `Dialog`.
       setEditing(focused.data);
       setDuplicating(null);
+      setSameAs(null);
       setDialogOpen(true);
       setFocusId("");
       return;
@@ -272,6 +277,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     if (!canWrite) return;
     setEditing(null);
     setDuplicating(null);
+    setSameAs(null);
     setDialogOpen(true);
   }, [newParam, setNewParam, canWrite]);
 
@@ -294,12 +300,14 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   function openCreate() {
     setEditing(null);
     setDuplicating(null);
+    setSameAs(null);
     setDialogOpen(true);
   }
 
   function openEdit(m: WasteMovement) {
     setEditing(m);
     setDuplicating(null);
+    setSameAs(null);
     setDialogOpen(true);
   }
 
@@ -313,6 +321,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   function openDuplicate(m: WasteMovement) {
     setEditing(null);
     setDuplicating(m);
+    setSameAs(null);
     setDialogOpen(true);
   }
 
@@ -793,11 +802,33 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         <MovementFormDialog
           editing={editing}
           duplicateOf={duplicating}
+          sameAs={sameAs}
+          onCreated={(m) => {
+            setDialogOpen(false);
+            setSavedMovement(m);
+          }}
           workPoints={activeWorkPoints.map((w) => ({ id: w.id, name: w.name }))}
           defaultWorkPointId={workPointFilter || activeWorkPoints[0]?.id}
           screen={register}
           direction={direction}
           onClose={() => setDialogOpen(false)}
+        />
+      )}
+
+      {savedMovement && (
+        <MovementSavedDialog
+          movement={savedMovement}
+          screen={register}
+          direction={direction}
+          onClose={() => setSavedMovement(null)}
+          onAnother={() => {
+            const from = savedMovement;
+            setSavedMovement(null);
+            setEditing(null);
+            setDuplicating(null);
+            setSameAs(from);
+            setDialogOpen(true);
+          }}
         />
       )}
 
