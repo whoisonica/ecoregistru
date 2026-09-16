@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LegalFooter } from "@/components/LegalFooter";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
 import { BrandName } from "@/components/BrandName";
@@ -78,9 +79,8 @@ export function LoginPage() {
           </div>
           <div>
             <Label htmlFor="login-password">{strings.login.password}</Label>
-            <Input
+            <PasswordInput
               id="login-password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

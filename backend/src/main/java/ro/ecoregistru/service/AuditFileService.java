@@ -177,6 +177,26 @@ public class AuditFileService {
         }
     }
 
+    /**
+     * Cât cântărește dosarul, înainte de descărcare. Numai atașamentele: foile generate au câteva sute de KB,
+     * iar pozele și PDF-urile scanate sunt restul. Aceleași reguli de interval și de firmă ca {@link #write}.
+     */
+    @Transactional(readOnly = true)
+    public AuditFileSize size(int year, int years) {
+        if (years < 1 || years > MAX_YEARS) {
+            throw new BadRequestException(AUDIT_FILE_YEARS_UNSUPPORTED);
+        }
+        UUID tenantId = TenantContext.require();
+        Object[] row = attachmentRepository.sizeOfLiveMovementsBetween(
+                tenantId, LocalDate.of(year - years + 1, 1, 1), LocalDate.of(year, 12, 31)).get(0);
+        long all = ((Number) row[0]).longValue();
+        long sized = ((Number) row[1]).longValue();
+        return new AuditFileSize(all, ((Number) row[2]).longValue(), all - sized);
+    }
+
+    /** {@code unknownSize}: atașamente de dinainte de V57, fără mărime ținută. */
+    public record AuditFileSize(long attachments, long attachmentBytes, long unknownSize) {}
+
     /** Everything that belongs to one reporting year, written under {@code prefix}. */
     private void writeYear(ZipOutputStream zip, String prefix, Company company, UUID tenantId,
                            int year, List<MonthlyEvidenceResponse> evidence,

@@ -6,7 +6,7 @@ import {
   ShieldCheck,
   Paperclip,
 } from "lucide-react";
-import { downloadAuditFile } from "@/hooks/useAuditFile";
+import { downloadAuditFile, useAuditFileSize, type AuditFileSize } from "@/hooks/useAuditFile";
 import { useEvidences } from "@/hooks/useEvidences";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiBlobErrorMessage } from "@/lib/api";
@@ -21,6 +21,25 @@ import { useToast } from "@/components/ui/toast";
 
 const t = strings.auditFile;
 
+/** „1,4 MB”. Sub 1 MB, în KB: un dosar fără poze nu e „0,0 MB”. */
+function formatSize(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return mb >= 1
+    ? `${mb.toLocaleString("ro-RO", { maximumFractionDigits: 1 })} MB`
+    : `${Math.max(1, Math.round(bytes / 1024)).toLocaleString("ro-RO")} KB`;
+}
+
+function sizeLine(size: AuditFileSize): string {
+  if (size.attachments === 0) return t.sizeNone;
+  const known = size.attachments - size.unknownSize;
+  if (known === 0) return t.sizeAllUnknown.replace("{count}", String(size.attachments));
+  const template = size.unknownSize > 0 ? t.sizeUnknown : t.sizeKnown;
+  return template
+    .replace("{count}", String(size.unknownSize > 0 ? known : size.attachments))
+    .replace("{size}", formatSize(size.attachmentBytes))
+    .replace("{unknown}", String(size.unknownSize));
+}
+
 /** Year options: current year down to five years back. */
 function yearOptions(): number[] {
   const now = new Date().getFullYear();
@@ -31,6 +50,7 @@ export function AuditFilePage() {
   const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const [years, setYears] = useUrlNumber("ani", 1);
   const [downloading, setDownloading] = useState(false);
+  const { data: size } = useAuditFileSize(year, years);
   const { notify } = useToast();
 
   /**
@@ -130,6 +150,11 @@ export function AuditFilePage() {
         </div>
 
         <p className="mt-2 text-xs text-content-muted">{t.yearsHint}</p>
+        {size && (
+          <p data-testid="audit-file-size" className="mt-1 text-xs text-content-muted">
+            {sizeLine(size)}
+          </p>
+        )}
 
         <div className="mt-6 border-t border-line pt-4">
           <p className="text-sm font-medium text-content-strong">{t.contents}</p>

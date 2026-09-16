@@ -64,6 +64,9 @@ public class Attachment {
     String fileName;
     String contentType;
 
+    /** Mărimea fișierului primit, pentru estimarea dosarului (V57). Null pe rândurile de dinainte. */
+    Long sizeBytes;
+
     @Column(nullable = false)
     Instant createdAt;
 }

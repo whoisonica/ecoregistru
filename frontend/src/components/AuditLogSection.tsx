@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { History } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import type { AuditChange, AuditLogEntry, AuditLogFilters } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
@@ -58,10 +60,23 @@ function changeLine(change: AuditChange): string {
  */
 export function AuditLogSection({ canManage }: { canManage: boolean }) {
   const [entityType, setEntityType] = useState("");
+  // `?istoric=<id>` vine din „Istoric” de pe un rând de mișcare: drumul invers al jurnalului.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const oneRow = searchParams.get("istoric");
   const filters = useMemo<AuditLogFilters>(
-    () => (entityType ? { entityType } : {}),
-    [entityType]
+    () => (oneRow ? { entityId: oneRow } : entityType ? { entityType } : {}),
+    [entityType, oneRow]
   );
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (oneRow && canManage) sectionRef.current?.scrollIntoView();
+  }, [oneRow, canManage]);
+
+  function showAll() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("istoric");
+    setSearchParams(next, { replace: true });
+  }
   const table = useRemoteTableView<AuditLogEntry>({ resetOn: filters });
   const { data, isLoading, isError } = useAuditLog(filters, table.params, canManage);
   const view = table.bind(data);
@@ -69,16 +84,31 @@ export function AuditLogSection({ canManage }: { canManage: boolean }) {
   if (!canManage) return null;
 
   return (
-    <section id="jurnal-audit" className="mt-8 scroll-mt-20">
+    <section id="jurnal-audit" ref={sectionRef} className="mt-8 scroll-mt-20">
       <h2 className="mb-1 text-lg font-semibold text-content">{t.title}</h2>
       <p className="mb-3 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
+
+      {oneRow && (
+        <div
+          data-testid="audit-one-row"
+          className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-muted px-3 py-2"
+        >
+          <div>
+            <p className="text-sm font-medium text-content">{t.oneRowTitle}</p>
+            <p className="text-xs text-content-muted">{t.oneRowHint}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={showAll}>
+            {t.showAll}
+          </Button>
+        </div>
+      )}
 
       {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
       {!isError && (
         <div>
           <TableToolbar view={view} placeholder={t.searchPlaceholder}>
-            <Select
+            {!oneRow && <Select
               aria-label={t.filterType}
               value={entityType}
               onChange={(event) => setEntityType(event.target.value)}
@@ -90,7 +120,7 @@ export function AuditLogSection({ canManage }: { canManage: boolean }) {
                   {label}
                 </option>
               ))}
-            </Select>
+            </Select>}
           </TableToolbar>
 
           <Table stickyHeader>

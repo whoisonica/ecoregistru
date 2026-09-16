@@ -1003,6 +1003,7 @@ export function PartnersPage() {
                             <Label htmlFor={`p-driver-name-${index}`}>{t.driverName}</Label>
                             <Input
                               id={`p-driver-name-${index}`}
+                              maxLength={255}
                               value={d.name}
                               placeholder={t.driverNamePlaceholder}
                               onChange={(e) =>
@@ -1016,6 +1017,7 @@ export function PartnersPage() {
                             <Label htmlFor={`p-driver-id-${index}`}>{t.driverIdentification}</Label>
                             <Input
                               id={`p-driver-id-${index}`}
+                              maxLength={100}
                               value={d.identification ?? ""}
                               placeholder={t.driverIdentificationPlaceholder}
                               onChange={(e) =>
@@ -1045,6 +1047,7 @@ export function PartnersPage() {
                             <Label htmlFor={`p-driver-plate-${index}`}>{t.driverVehicle}</Label>
                             <Input
                               id={`p-driver-plate-${index}`}
+                              maxLength={50}
                               value={d.vehicleRegistration ?? ""}
                               placeholder={t.driverVehiclePlaceholder}
                               onChange={(e) =>

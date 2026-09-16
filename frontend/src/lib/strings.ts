@@ -726,6 +726,8 @@ export const strings = {
     recordWeightShort: "Cântar",
     // Rândurile venite de la cântar se schimbă numai prin operațiunea lor (BUG-018).
     openWeighing: "La cântar",
+    /** P1.11 — drumul de la rând la jurnalul lui. */
+    history: "Istoric",
     recordWeightTitle: "Cantitatea cântărită la descărcare",
     recordWeightHint:
       "Cifra pe care ți-a trimis-o destinatarul după cântărire. Până o completezi, luna rămâne provizorie în evidență și rubrica de pe Anexa 3 iese goală.",
@@ -1164,6 +1166,10 @@ export const strings = {
       changeArrow: "→",
       /** Câte fapte se văd sub un rând înainte să se strângă. */
       moreChanges: "+{count} încă",
+      /** Jurnalul deschis din „Istoric” de pe un rând de mișcare: numai faptele acelui rând. */
+      oneRowTitle: "Istoricul unei singure mișcări",
+      oneRowHint: "Se văd doar faptele rândului din care ai venit.",
+      showAll: "Arată tot jurnalul",
       retention:
         "Jurnalul se păstrează cât evidența pe care o descrie — cel puțin 3 ani (OUG 92/2021, art. 48 alin. (5)).",
     },
@@ -1729,6 +1735,11 @@ export const strings = {
     download: "Descarcă dosarul (.zip)",
     downloading: "Se pregătește arhiva...",
     downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
+    /** Estimarea de dinainte de descărcare. {count} atașamente, {size} deja formatat. */
+    sizeNone: "Fără atașamente în perioada aleasă — arhiva are doar foile generate.",
+    sizeKnown: "{count} atașamente, cam {size} de descărcat.",
+    sizeAllUnknown: "{count} atașamente, încărcate înainte să le ținem mărimea — nu știm cât cântăresc.",
+    sizeUnknown: "{count} atașamente, cam {size} de descărcat, plus {unknown} încărcate înainte să le ținem mărimea.",
     contents: "Arhiva conține:",
     contentAnexa1:
       "Evidența gestiunii deșeurilor generate (HG 856/2002, anexa 1): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
@@ -2937,6 +2948,15 @@ export const strings = {
   },
 
   common: {
+    /** Rubrica de parolă: „Arată” și bara de putere de la o parolă nouă. */
+    password: {
+      show: "Arată parola",
+      hide: "Ascunde parola",
+      strength0: "Încă nu respectă regula de mai jos",
+      strength1: "Acceptată",
+      strength2: "Bună",
+      strength3: "Puternică",
+    },
     /**
      * Nota de retenţie pentru actul de identitate al şoferilor — singurul dat personal pe care
      * aplicaţia îl ţine despre cineva care nu are cont în ea, şi singurul care se **tipăreşte**

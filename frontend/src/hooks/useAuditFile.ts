@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
 
@@ -21,4 +22,20 @@ export async function downloadAuditFile(year: number, years = 1): Promise<void> 
       ? `dosar-control-${year}.zip`
       : `dosar-control-${year - years + 1}-${year}.zip`
   );
+}
+
+/** Mirrors backend `AuditFileService.AuditFileSize`. `unknownSize`: atașamente de dinainte să se țină mărimea. */
+export interface AuditFileSize {
+  attachments: number;
+  attachmentBytes: number;
+  unknownSize: number;
+}
+
+/** Cât cântărește dosarul, înainte de descărcare: numai atașamentele, restul sunt câteva sute de KB. */
+export function useAuditFileSize(year: number, years: number) {
+  return useQuery({
+    queryKey: ["audit-file-size", year, years] as const,
+    queryFn: async () =>
+      (await api.get<AuditFileSize>("/api/v1/audit-file/size", { params: { year, years } })).data,
+  });
 }

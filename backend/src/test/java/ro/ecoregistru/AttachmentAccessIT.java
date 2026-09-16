@@ -189,9 +189,15 @@ class AttachmentAccessIT {
         var justUnder = new MockMultipartFile("file", "scan.pdf", "application/pdf",
                 new byte[(int) MAX_ATTACHMENT_BYTES]);
 
-        mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(justUnder)
-                        .header("Authorization", "Bearer " + tokenA))
-                .andExpect(status().isOk());
+        String id = com.jayway.jsonpath.JsonPath.read(
+                mockMvc.perform(multipart("/api/v1/movements/" + movementA + "/attachments").file(justUnder)
+                                .header("Authorization", "Bearer " + tokenA))
+                        .andExpect(status().isOk())
+                        .andReturn().getResponse().getContentAsString(), "$.id");
+
+        // V57: mărimea se ține la încărcare, pentru estimarea dosarului de control.
+        assertThat(attachmentRepository.findById(UUID.fromString(id)).orElseThrow().getSizeBytes())
+                .isEqualTo(MAX_ATTACHMENT_BYTES);
     }
 
     // ---------- P0.5 · ce intră ca nume şi ca tip de fişier ----------

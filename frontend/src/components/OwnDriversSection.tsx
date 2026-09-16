@@ -334,6 +334,7 @@ export function OwnDriversSection({
             <Label htmlFor="d-name">{t.name}</Label>
             <Input
               id="d-name"
+              maxLength={255}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -348,6 +349,7 @@ export function OwnDriversSection({
             <Label htmlFor="d-identification">{t.identification}</Label>
             <Input
               id="d-identification"
+              maxLength={100}
               value={identification}
               onChange={(e) => setIdentification(e.target.value)}
               placeholder={t.identificationPlaceholder}
@@ -369,6 +371,7 @@ export function OwnDriversSection({
             <Label htmlFor="d-vehicle">{t.vehicle}</Label>
             <Input
               id="d-vehicle"
+              maxLength={50}
               list={hasDepot ? "d-fleet" : undefined}
               value={vehicleRegistration}
               onChange={(e) => setVehicleRegistration(e.target.value)}
@@ -406,6 +409,7 @@ export function OwnDriversSection({
               <Label htmlFor="d-attestation">{t.attestationNumber}</Label>
               <Input
                 id="d-attestation"
+                maxLength={100}
                 value={attestationNumber}
                 onChange={(e) => setAttestationNumber(e.target.value)}
                 placeholder={t.attestationNumberPlaceholder}

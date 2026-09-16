@@ -66,6 +66,7 @@ public class MovementAttachmentService {
                 .format(stored.format())
                 .fileName(safeFileName(file.getOriginalFilename()))
                 .contentType(file.getContentType())
+                .sizeBytes(file.getSize())
                 .createdAt(Instant.now())
                 .build();
         movement.getAttachments().add(attachment);

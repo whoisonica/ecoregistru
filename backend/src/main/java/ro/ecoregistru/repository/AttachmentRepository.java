@@ -26,4 +26,16 @@ public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
     List<Attachment> findAllOfLiveMovementsBetween(@Param("companyId") UUID companyId,
                                                    @Param("from") LocalDate from,
                                                    @Param("to") LocalDate to);
+
+    /**
+     * Estimarea dosarului: aceleași atașamente ca {@link #findAllOfLiveMovementsBetween}, numărate, nu
+     * încărcate. {@code [toate, cu mărime, suma mărimilor]}.
+     */
+    @Query("""
+            select count(a), count(a.sizeBytes), coalesce(sum(a.sizeBytes), 0) from Attachment a
+            where a.movement.company.id = :companyId and a.movement.deleted = false
+              and a.movement.date between :from and :to""")
+    List<Object[]> sizeOfLiveMovementsBetween(@Param("companyId") UUID companyId,
+                                              @Param("from") LocalDate from,
+                                              @Param("to") LocalDate to);
 }

@@ -17,12 +17,15 @@ import {
   Trash2,
   Paperclip,
   FileText,
+  History,
   Scale,
   Truck,
 } from "lucide-react";
 import { BinSwatch } from "@/components/ui/bin-swatch";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { useCanWrite } from "@/hooks/useBillingAccess";
+import { useAuth } from "@/auth/AuthContext";
+import { canManage as roleCanManage } from "@/lib/roles";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { downloadArt48Register } from "@/hooks/useEvidences";
@@ -93,6 +96,8 @@ export function MovementsRedirect({ fallback }: { fallback?: MovementScreen } = 
 
 export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const canWrite = useCanWrite();
+  // „Istoric” duce în jurnalul de audit, care e al administratorului (`CAN_READ` din `AuditLogController`).
+  const canSeeHistory = roleCanManage(useAuth().user?.role);
   const register = registerOf(screen);
   const direction = directionOf(screen);
 
@@ -745,6 +750,14 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                 {downloadingAnexa2Id === m.id
                                   ? t.anexa2Downloading
                                   : t.anexa2Download}
+                              </RowAction>
+                            )}
+                            {canSeeHistory && (
+                              <RowAction
+                                icon={History}
+                                onClick={() => navigate(`/setari?istoric=${m.id}#jurnal-audit`)}
+                              >
+                                {t.history}
                               </RowAction>
                             )}
                             {!m.weighingOperationId && (

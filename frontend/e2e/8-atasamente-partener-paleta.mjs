@@ -69,6 +69,27 @@ check("și nicio adresă de Cloudinary în tot dialogul",
 // Numai citire: ștergerea rămâne în formular, lângă urcare, unde e și confirmarea.
 check("nu are buton de ștergere", !/Șterge/.test(dialog?.text ?? ""));
 
+// Deschiderea chiar apăsată (todo-lansare, „Interfață”): până aici proba doar număra butoanele. Clicul pe
+// fișier trebuie să deschidă un tab cu conținutul adus prin sesiune — adresa `blob:`, nu una de Cloudinary —
+// iar poza din el să se fi încărcat. Atașamentele demo trimit spre imagini publice din cloud-ul `demo`, deci
+// proba cere rețea; un backend fără ea cade aici cu mesajul de eroare din toast.
+const [tab] = await Promise.all([
+  page.context().waitForEvent("page", { timeout: 20000 }).catch(() => null),
+  clickAt(page, 'div[role="dialog"][aria-modal="true"] li button'),
+]);
+check("clicul pe fișier deschide un tab", tab !== null);
+if (tab) {
+  await tab.waitForFunction(() => location.href.startsWith("blob:"), null, { timeout: 20000 }).catch(() => {});
+  const deschis = await tab.evaluate(() => ({
+    adresa: location.href,
+    poza: [...document.images].some((i) => i.complete && i.naturalWidth > 0),
+  })).catch(() => ({ adresa: tab.url(), poza: false }));
+  check("tabul are conținutul adus prin sesiune (blob:), nu adresa din cloud",
+    deschis.adresa.startsWith("blob:"), deschis.adresa.slice(0, 40));
+  check("și fișierul chiar s-a deschis (poza încărcată)", deschis.poza);
+  await tab.close();
+}
+
 await shot(page, "atasamente_dialog");
 await page.keyboard.press("Escape");
 await page.waitForTimeout(400);

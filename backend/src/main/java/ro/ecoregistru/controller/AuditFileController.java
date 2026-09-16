@@ -28,6 +28,13 @@ public class AuditFileController {
 
     AuditFileService auditFileService;
 
+    /** Cât cântărește dosarul, ca ecranul s-o spună înainte de descărcare. */
+    @GetMapping("/size")
+    public AuditFileService.AuditFileSize size(@RequestParam int year,
+                                               @RequestParam(defaultValue = "1") int years) {
+        return auditFileService.size(year, years);
+    }
+
     /**
      * @param year  the last reporting year in the dossier
      * @param years how many consecutive years back to include, 1..5. Three is the retention

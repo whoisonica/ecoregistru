@@ -7,7 +7,7 @@ import { BrandName } from "@/components/BrandName";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LegalFooter, LegalNotice } from "@/components/LegalFooter";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 const t = strings.resetPassword;
@@ -85,9 +85,9 @@ export function ResetPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="rp-pass">{t.password}</Label>
-                <Input
+                <PasswordInput
                   id="rp-pass"
-                  type="password"
+                  showStrength
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -97,9 +97,8 @@ export function ResetPasswordPage() {
               </div>
               <div>
                 <Label htmlFor="rp-confirm">{t.confirmPassword}</Label>
-                <Input
+                <PasswordInput
                   id="rp-confirm"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required

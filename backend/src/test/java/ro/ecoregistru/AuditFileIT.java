@@ -57,6 +57,7 @@ class AuditFileIT {
     @Autowired WorkPointRepository workPointRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired WasteMovementRepository movementRepository;
+    @Autowired AttachmentRepository attachmentRepository;
 
     private String adminToken;
     private String viewerToken;
@@ -222,6 +223,69 @@ class AuditFileIT {
                         .header("Authorization", "Bearer " + viewerToken))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("application/zip")));
+    }
+
+    /**
+     * Cât cântărește dosarul, înainte de descărcare: numără atașamentele firmei din interval, adună mărimile
+     * știute și le numără separat pe cele fără mărime. Mișcarea ștearsă, anul din afara intervalului și
+     * firma vecină nu intră.
+     */
+    @Test
+    void sizeCountsOnlyThisTenantsLiveAttachmentsInTheRange() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company own = companyRepository.save(Company.builder()
+                .name("Cantar SRL").cui("ROS" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        AppUser user = appUserRepository.save(AppUser.builder()
+                .email("marime+" + suffix + "@demo.ro").password("x")
+                .role(Role.CLIENT_VIEWER).company(own).enabled(true).createdAt(Instant.now()).build());
+        WorkPoint wp = workPointRepository.save(WorkPoint.builder()
+                .company(own).name("PL-" + suffix).active(true).createdAt(Instant.now()).build());
+        WasteCode code = wasteCodeRepository.findAll().get(0);
+
+        WasteMovement live2026 = movement(own, wp, code, user, LocalDate.of(2026, 3, 10), false);
+        WasteMovement live2025 = movement(own, wp, code, user, LocalDate.of(2025, 6, 1), false);
+        WasteMovement deleted2026 = movement(own, wp, code, user, LocalDate.of(2026, 4, 1), true);
+        attachment(live2026, 1_000L);
+        attachment(live2026, null);
+        attachment(live2025, 5_000L);
+        attachment(deleted2026, 9_000_000L);
+        // Vecinul: demo are și el mișcări pe 2026; atașamentul lui nu trebuie să apară aici.
+        WasteMovement neighbour = movementRepository.findAll().stream()
+                .filter(m -> !m.getCompany().getId().equals(own.getId())).findFirst().orElseThrow();
+        attachment(neighbour, 7_000_000L);
+
+        String token = jwtService.generateToken(user);
+        mockMvc.perform(get("/api/v1/audit-file/size").param("year", "2026")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attachments").value(2))
+                .andExpect(jsonPath("$.attachmentBytes").value(1000))
+                .andExpect(jsonPath("$.unknownSize").value(1));
+        mockMvc.perform(get("/api/v1/audit-file/size").param("year", "2026").param("years", "2")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attachments").value(3))
+                .andExpect(jsonPath("$.attachmentBytes").value(6000))
+                .andExpect(jsonPath("$.unknownSize").value(1));
+        mockMvc.perform(get("/api/v1/audit-file/size").param("year", "2026").param("years", "6")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    private WasteMovement movement(Company company, WorkPoint wp, WasteCode code, AppUser user,
+                                   LocalDate date, boolean deleted) {
+        return movementRepository.save(WasteMovement.builder()
+                .company(company).workPoint(wp).date(date).wasteCode(code)
+                .quantity(new BigDecimal("10.000")).unit(Unit.KG).operation(WasteOperation.GENERATED)
+                .deleted(deleted).createdBy(user.getId()).build());
+    }
+
+    private void attachment(WasteMovement movement, Long size) {
+        attachmentRepository.save(Attachment.builder()
+                .movement(movement).url("https://example.test/a").publicId("p-" + UUID.randomUUID())
+                .fileName("a.pdf").contentType("application/pdf").sizeBytes(size)
+                .createdAt(Instant.now()).build());
     }
 
     @Test
