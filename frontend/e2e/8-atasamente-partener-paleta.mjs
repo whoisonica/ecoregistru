@@ -102,7 +102,8 @@ const goale = await page.$$eval("td", (tds) =>
 check("rândurile fără atașamente n-au buton", goale > 0, `${goale} liniuțe`);
 
 // -------------------------------------------------------- FORMULARUL DE PARTENER
-// Era o coloană de cincisprezece blocuri într-un dialog de 512px, deși are secțiuni evidente.
+// Era o coloană de cincisprezece blocuri într-un dialog de 512px, deși are secțiuni evidente. Din
+// 17.09.2026 e pe trei pași, ca cererea de cont: cine e · ce face · autorizația.
 await page.goto(BASE + "/parteneri", { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 await page.evaluate(() => {
@@ -114,21 +115,22 @@ const partener = await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
   if (!d) return null;
   const form = d.querySelector("#partner-form");
-  const rubrici = [...form.querySelectorAll("input, select, textarea")].map((el) => el.id).filter(Boolean);
+  // `#p-type` e cârligul rubricii tipului, acum carduri: intră în ordine ca o rubrică.
+  const rubrici = [...form.querySelectorAll("input, select, textarea, #p-type")].map((el) => el.id).filter(Boolean);
   return {
     latime: Math.round(d.getBoundingClientRect().width),
-    titluri: [...form.querySelectorAll("h3")].map((h) => h.textContent.trim()),
+    pasi: [...d.querySelectorAll("nav[aria-label] li")].map((li) => li.textContent.trim()),
     rubrici,
   };
 });
-check("formularul are secțiuni titrate", (partener?.titluri ?? []).length === 5,
-  (partener?.titluri ?? []).join(" · "));
+check("formularul are trei pași în cuprins", (partener?.pasi ?? []).length === 3,
+  (partener?.pasi ?? []).join(" · "));
 check("dialogul s-a lărgit, ca cel de mișcare și cel de firmă", (partener?.latime ?? 0) > 600,
   `${partener?.latime}px`);
 // CUI-ul stătea între bifa de transportator și autorizație: o identificare ruptă în două de o
 // întrebare despre camioane.
-check("CUI-ul stă lângă denumire, nu după camioane",
-  (partener?.rubrici ?? []).indexOf("p-cui") === 1,
+check("CUI-ul e prima rubrică, denumirea imediat după",
+  (partener?.rubrici ?? []).indexOf("p-cui") === 0 && (partener?.rubrici ?? []).indexOf("p-name") === 1,
   (partener?.rubrici ?? []).slice(0, 4).join(" · "));
 check("autorizația vine după rol și transport",
   (partener?.rubrici ?? []).indexOf("p-auth-number") > (partener?.rubrici ?? []).indexOf("p-type"));

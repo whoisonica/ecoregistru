@@ -137,6 +137,31 @@ nu repetă titlul formularului („Parola se schimbă, evidența rămâne.” ·
 dreapta, cu pictograma în `mark` și titlul de 32px. Eroarea formularelor publice e `PublicError` (chenar `state-bad` cu
 pătrățel), aceeași pe login și pe cele două pagini.
 
+## Formularele din aplicație după cererea de cont (17.09.2026)
+
+Proprietarul a cerut „fă 1 și 2, dar hai să le gândim frumos; nu schimba informația”. Ce s-a luat de la cererea de cont
+e **felul de a întreba**, nu paleta paginilor publice: înăuntru rămâne „Cântar” (alb, `brand`, colțuri mici).
+
+**Partenerul, pe trei pași** (`PartnersPage.tsx`, `FormStepRail` din `components/ui/form-steps.tsx`): „Despre partener”
+(CUI-ul întâi, cu ANAF, apoi denumirea cu sugestia de duplicat, adresa, Registrul Comerțului, punctele de lucru) · „Ce
+face pentru tine” (tipul pe carduri — „Doar le transportă” e tipul gol și pune singur bifa de transportator —, cine pe cine
+facturează ca două comutatoare, proveniența ambalajelor ca taste, transportatorul cu licența și șoferii) · „Autorizația de
+mediu” (numărul, emiterea, viza anuală, termenul vechi; temeiul sub „De ce?”). În stânga dialogului stă cuprinsul: cifra
+în mono, pasul curent cu linia grafit, sub pașii completați ce s-a scris, pătrățel roșu pe pasul cu greșeala. Pe telefon,
+`Stepper` sus, cu nume scurte. La adăugare „Continuă” își verifică pasul; la editare Salvează stă pe orice pas, iar linkul
+„Autorizație expirată” deschide direct pasul 3. **Pașii sunt toți montați** (`hidden`), deci id-urile rubricilor și
+valorile nu se pierd între pași; regulile și `PartnerInput` sunt cele de dinainte.
+
+**„Adaugă deșeuri” rămâne pe o pagină** (se completează des; pașii ar fi doar clicuri în plus), cu **aceeași ordine a
+rubricilor** și același `validate`/`buildInput`: titlurile de secțiune întreabă („Ce deșeu și când”, „Cât a fost”, „Cum
+pleacă și unde ajunge”, „Cine îl preia”); sub șapte opțiuni, taste (`PillGroup`: unitatea, operațiunea, starea fizică,
+mijlocul de transport, destinația, unitatea de pe Anexa 3, caseta „Destinat:”); „Unde pleacă deșeul” pe carduri; „Nu am
+cântar” ca comutator. Listele lungi rămân `Select` (depozitarea, tratarea, codul R/D, partenerii, șoferii). În dreapta,
+**bonul mișcării**: codul cu pubela, cantitatea, unde pleacă, către cine, documentul, apoi „Ce face mișcarea asta” — pe
+ecran îngust rămân doar efectele, deasupra. **„La fel ca data trecută”** (regula 4) apare pe o mișcare nouă după ce se
+alege codul, dacă există o mișcare cu același cod pe același ecran; la clic pune alegerile ei (ca „Duplică”), niciodată
+cantitatea, data, documentul sau numărul Anexei 2.
+
 ## Ecranele de mișcări
 
 Trei ecrane, după registru și direcție (`lib/movementScreens.ts`): **Generare** (`/generare`, Anexa 1), **Intrări**

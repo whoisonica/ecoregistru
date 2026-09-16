@@ -38,6 +38,7 @@ export function CuiField({
   required,
   invalid,
   error,
+  autoFocus,
 }: {
   id: string;
   label: string;
@@ -50,6 +51,7 @@ export function CuiField({
   invalid?: Record<string, unknown>;
   /** Mesajul de eroare al formularului, pus sub rubrică în locul explicației. */
   error?: React.ReactNode;
+  autoFocus?: boolean;
 }) {
   const [note, setNote] = useState<Note | null>(null);
   const lookup = useCompanyLookup();
@@ -96,6 +98,7 @@ export function CuiField({
             if (note) setNote(null);
           }}
           placeholder={placeholder}
+          autoFocus={autoFocus}
           {...invalid}
         />
         <Button type="button" variant="outline" className="shrink-0" onClick={fill} loading={lookup.isPending}>

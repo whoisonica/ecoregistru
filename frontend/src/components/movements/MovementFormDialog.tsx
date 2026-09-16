@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowRight, Trash2, Paperclip } from "lucide-react";
+import { ArrowRight, History, Trash2, Paperclip } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import type { PageSlice } from "@/hooks/useTableView";
 import { usePartners } from "@/hooks/usePartners";
 import { useDrivers } from "@/hooks/useDrivers";
 import { useCurrentCompany } from "@/hooks/useCompanies";
@@ -30,7 +33,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { withCount } from "@/lib/utils";
+import { formatDate, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +45,10 @@ import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
 import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { FormSection } from "@/components/ui/form-section";
+import { PillGroup, type PillOption } from "@/components/ui/pill-group";
+import { ChoiceCards } from "@/components/ui/choice-cards";
+import { Switch } from "@/components/ui/switch";
+import { BinSwatch } from "@/components/ui/bin-swatch";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
@@ -79,6 +86,21 @@ function wasteCodeItem(id: string, code: string, name: string, hazardous: boolea
     label: `${title} (${code})`,
     sublabel: hazardous ? `${code} · ${t.hazardous}` : code,
   };
+}
+
+/**
+ * Un nomenclator al fișei („AS — Autospeciale”) ca taste: cuvintele mari, codul mic lângă ele.
+ * Pe hârtie se tipărește tot codul; pe ecran omul citește ce e.
+ */
+function nomenclatorPills<T extends string>(labels: Record<string, string>, keep?: (value: string) => boolean): PillOption<T>[] {
+  return Object.entries(labels)
+    .filter(([value]) => (keep ? keep(value) : true))
+    .map(([value, label]) => {
+      const [code, ...rest] = label.split(" — ");
+      return rest.length > 0
+        ? { value: value as T, label: rest.join(" — "), code }
+        : { value: value as T, label };
+    });
 }
 
 interface MovementFormDialogProps {
@@ -372,6 +394,71 @@ export function MovementFormDialog({
   const idempotencyKey = useRef(crypto.randomUUID());
 
   const codeSearch = useWasteCodeSearch(codeQuery);
+
+  /**
+   * „La fel ca data trecută” (varianta A, proprietarul, 15.09.2026): ultima mișcare cu același cod,
+   * de pe același ecran, adusă numai pe o mișcare nouă de tot. Nu se aplică nimic singur — butonul
+   * o pune la clic, iar ce pune e exact ce ar pune „Duplică”, fără cantitate, dată și document.
+   */
+  const offerLast = !editing && !duplicateOf && Boolean(wasteCode);
+  const { data: lastMovement } = useQuery({
+    queryKey: ["movements", "last-like", wasteCode?.id, screen, direction ?? null],
+    enabled: offerLast,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const params: Record<string, string | number> = {
+        wasteCodeId: wasteCode!.id,
+        register: screen,
+        page: 0,
+        size: 1,
+        sort: "date",
+      };
+      if (direction) params.direction = direction;
+      const page = (await api.get<PageSlice<WasteMovement>>("/api/v1/movements", { params })).data;
+      return page.content[0] ?? null;
+    },
+  });
+  const [appliedLast, setAppliedLast] = useState<string | null>(null);
+
+  function applyLast(m: WasteMovement) {
+    markDirty();
+    // Aceleași reguli ca la pornirea din `initial`: o ieșire de pe Anexa 1 se citește ca generare
+    // + predare; una de pe art. 48 rămâne ieșire directă, dacă ecranul o oferă.
+    const ownExit = isExit(m.operation) && m.register !== "ART_48";
+    if (ownExit) {
+      setOperation("GENERATED");
+      setFate(m.operation as ExitOperation);
+    } else if (operationsFor(screen, direction).includes(m.operation)) {
+      setOperation(m.operation);
+      setFate("");
+    }
+    setOperationCode(m.operationCode ?? "");
+    setUnit(m.unit);
+    setPhysicalState(m.physicalState ?? "");
+    setStorageType(m.storageType ?? "");
+    setTreatmentMethod(m.treatmentMethod ?? "");
+    setTransportMeans(m.transportMeans ?? "");
+    setWasteDestination(m.wasteDestination ?? "");
+    setPartnerId(m.partnerId ?? "");
+    setPartnerWorkPointId(m.partnerWorkPointId ?? "");
+    setAnexa3Unit(m.anexa3Unit ?? "");
+    setTransportPartnerId(m.transportPartnerId ?? "");
+    setDriverId("");
+    setDriverName(m.driverName ?? "");
+    setDriverIdentification(m.driverIdentification ?? "");
+    setDriverCnp(m.driverCnp ?? "");
+    setVehicleRegistration(m.vehicleRegistration ?? "");
+    setTransportDestinations(m.transportDestinations ?? []);
+    setDestinationsPrefilled(false);
+    setAnexa2Packaging(m.anexa2Packaging ?? "");
+    setPackagingOnMarket(m.packagingOnMarket ?? null);
+    setPackagingMaterial(m.packagingMaterial ?? "");
+    setPackagingCategory(m.packagingCategory ?? "");
+    setPackagingOrigin(m.packagingOrigin ?? "");
+    setPackagingReusable(m.packagingReusable ?? false);
+    setPackagingHazardousContent(m.packagingHazardousContent ?? false);
+    setAppliedLast(formatDate(m.date));
+  }
 
   // The waste codes on the account's authorization. With a profile answered, the picker opens on
   // those four or five instead of on the 842 of the European List, and typing still searches the
@@ -717,7 +804,7 @@ export function MovementFormDialog({
   return (
     <Dialog
       open
-      size="xl"
+      size="2xl"
       onClose={requestClose}
       title={
         editing
@@ -766,26 +853,57 @@ export function MovementFormDialog({
         </>
       }
     >
-      <form
-        ref={formRef}
-        id="movement-form"
-        onSubmit={handleSubmit}
-        onChange={markDirty}
-        className="space-y-6"
-      >
-        {Object.keys(errors).length > 0 && (
-          <p
-            role="alert"
-            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-          >
-            {errors.form ?? strings.common.fixErrors}
-          </p>
-        )}
-
-        <div className="rounded-lg border border-line bg-surface-muted px-3 py-2.5">
-          <div className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-            {t.effectTitle}
-          </div>
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_236px] lg:items-start lg:gap-7">
+      {/* Bonul: pe ecran lat stă în dreapta și urmează derularea; îngust, rămâne deasupra, cum
+          stătea banda de efect. Se citește din aceleași valori pe care le trimite `buildInput`. */}
+      <aside className="lg:sticky lg:top-0 lg:order-last" aria-label={t.receiptTitle}>
+        <div className="rounded-lg border border-line bg-surface-muted px-3.5 py-3">
+          <div className="eyebrow text-content-muted">{t.receiptTitle}</div>
+          <dl className="mt-2 hidden space-y-1.5 border-b border-dashed border-line-strong pb-2.5 text-xs lg:block">
+            <div>
+              <dt className="text-content-muted">{t.receiptCode}</dt>
+              <dd className="font-medium text-content">
+                {codeMeta ? (
+                  <>
+                    <BinSwatch code={codeMeta.code} hazardous={codeMeta.hazardous} />
+                    <span className="font-mono">{codeMeta.code}</span>
+                  </>
+                ) : (
+                  t.receiptEmpty
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-content-muted">{t.receiptQuantity}</dt>
+              <dd className="font-mono font-medium text-content">
+                {weighedAtUnloading
+                  ? t.receiptAwaiting
+                  : quantity
+                    ? `${quantity} ${e.unit[unit]}`
+                    : t.receiptEmpty}
+              </dd>
+            </div>
+            {requiresCode && (
+              <div>
+                <dt className="text-content-muted">{t.receiptFate}</dt>
+                <dd className="font-medium text-content">
+                  {e.wasteOperation[effectiveOperation]}
+                  {operationCode ? <span className="font-mono"> · {operationCode}</span> : null}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt className="text-content-muted">{t.receiptPartner}</dt>
+              <dd className="truncate font-medium text-content">{chosenPartner?.name ?? t.receiptOwnSite}</dd>
+            </div>
+            {documentReference.trim() && (
+              <div>
+                <dt className="text-content-muted">{t.receiptDocument}</dt>
+                <dd className="truncate font-mono font-medium text-content">{documentReference.trim()}</dd>
+              </div>
+            )}
+          </dl>
+          <div className="mt-2 text-xs font-semibold text-content-strong lg:mt-2.5">{t.effectTitle}</div>
           {effects.length === 0 ? (
             <p className="mt-1 text-xs text-content-subtle">{t.effectIncomplete}</p>
           ) : (
@@ -799,8 +917,24 @@ export function MovementFormDialog({
             </ul>
           )}
         </div>
+      </aside>
+      <form
+        ref={formRef}
+        id="movement-form"
+        onSubmit={handleSubmit}
+        onChange={markDirty}
+        className="min-w-0 space-y-6"
+      >
+        {Object.keys(errors).length > 0 && (
+          <p
+            role="alert"
+            className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
+            {errors.form ?? strings.common.fixErrors}
+          </p>
+        )}
 
-        <FormSection title={t.sectionWaste}>
+        <FormSection title={t.askWaste}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-wp">{t.filterWorkPoint}</Label>
@@ -859,9 +993,29 @@ export function MovementFormDialog({
             />
             <FieldError id="mv-code-err" message={errors.wasteCode} />
           </div>
+
+          {offerLast && lastMovement && !appliedLast && (
+            <div className="flex flex-col gap-2 rounded-md border border-line bg-surface-muted px-3 py-2 sm:flex-row sm:items-center">
+              <Button type="button" variant="outline" size="sm" onClick={() => applyLast(lastMovement)}>
+                <History className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                {t.sameAsLast}
+              </Button>
+              <span className="min-w-0 truncate font-mono text-xs text-content-muted">
+                {t.sameAsLastFrom
+                  .replace("{date}", formatDate(lastMovement.date))
+                  .replace("{partner}", lastMovement.partnerName ?? t.receiptOwnSite)}
+              </span>
+            </div>
+          )}
+          {appliedLast && (
+            <p role="status" className="flex items-start gap-2 text-xs text-content-muted">
+              <span aria-hidden className="mt-1 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-ok" />
+              {t.sameAsLastApplied.replace("{date}", appliedLast)}
+            </p>
+          )}
         </FormSection>
 
-        <FormSection title={t.sectionQuantity}>
+        <FormSection title={t.askQuantity}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="mv-qty">{t.quantity}</Label>
@@ -881,27 +1035,31 @@ export function MovementFormDialog({
               <FieldError id="mv-qty-err" message={errors.quantity} />
             </div>
             <div>
-              <Label htmlFor="mv-unit">{t.unit}</Label>
-              <Select id="mv-unit" value={unit} onChange={(ev) => setUnit(ev.target.value as typeof unit)}>
-                <option value="KG">{e.unit.KG}</option>
-                <option value="TONS">{e.unit.TONS}</option>
-              </Select>
+              <span id="mv-unit-label" className="mb-1 block text-xs font-medium text-content-muted">
+                {t.unit}
+              </span>
+              <PillGroup
+                name="mv-unit"
+                aria-labelledby="mv-unit-label"
+                className="min-h-10 items-center"
+                selected={[unit]}
+                onToggle={(value) => setUnit(value)}
+                options={[
+                  { value: "KG", label: e.unit.KG },
+                  { value: "TONS", label: e.unit.TONS },
+                ]}
+              />
             </div>
           </div>
 
           <div>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-line-strong"
-                checked={weighedAtUnloading}
-                onChange={(ev) => setWeighedAtUnloading(ev.target.checked)}
-              />
-              <span>
-                <span className="font-medium text-content-strong">{t.weighedAtUnloading}</span>
-                <span className="block text-xs text-content-muted">{t.weighedAtUnloadingHint}</span>
-              </span>
-            </label>
+            <Switch
+              id="mv-weighed"
+              checked={weighedAtUnloading}
+              onChange={setWeighedAtUnloading}
+              label={t.askWeighed}
+              description={t.weighedAtUnloadingHint}
+            />
             {weighedAtUnloading && (
               <div className="mt-3">
                 <Label htmlFor="mv-volume">{t.volumeM3}</Label>
@@ -919,48 +1077,49 @@ export function MovementFormDialog({
           </div>
         </FormSection>
 
-        <FormSection title={t.sectionOperation}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <FormSection title={operations.length > 1 ? t.askOperation : t.askState}>
+          <div className="space-y-4">
             {/* Pe „Generare" operațiunea e una singură și nu se alege: rândul e mereu o predare, iar
                 unde pleacă deșeul se spune mai jos, sub transport. Un select cu o singură opțiune,
                 „Generare", se citea ca vechiul „rămâne în stoc" (proprietarul, 16.09.2026). */}
             {operations.length > 1 && (
-            <div>
-              <Label htmlFor="mv-op">{t.operation}</Label>
-              <Select
-                id="mv-op"
-                value={operation}
-                onChange={(ev) => {
-                  setOperation(ev.target.value as WasteOperation);
+            <div id="mv-op">
+              <span id="mv-op-label" className="mb-1 block text-xs font-medium text-content-muted">
+                {t.operation}
+              </span>
+              <PillGroup
+                name="mv-op"
+                aria-labelledby="mv-op-label"
+                selected={[operation]}
+                onToggle={(value) => {
+                  if (value === operation) return;
+                  setOperation(value);
                   setFate(""); // ce se întâmplă cu deşeul se alege din nou
                   setOperationCode(""); // reset — options depend on operation
                 }}
-              >
-                {operations.map((op) => (
-                  <option key={op} value={op}>
-                    {e.wasteOperation[op]}
-                  </option>
-                ))}
-                {operation === "UNCLASSIFIED_OUT" && (
-                  <option value="UNCLASSIFIED_OUT">{e.wasteOperation.UNCLASSIFIED_OUT}</option>
-                )}
-              </Select>
+                options={[
+                  ...operations.map((op) => ({ value: op, label: e.wasteOperation[op] })),
+                  ...(operation === "UNCLASSIFIED_OUT"
+                    ? [{ value: "UNCLASSIFIED_OUT" as WasteOperation, label: e.wasteOperation.UNCLASSIFIED_OUT }]
+                    : []),
+                ]}
+              />
             </div>
             )}
-            <div>
-              <Label htmlFor="mv-state">{t.physicalState}</Label>
-              <Select
-                id="mv-state"
-                value={physicalState}
-                onChange={(ev) => setPhysicalState(ev.target.value as typeof physicalState)}
-              >
-                <option value="">{t.physicalStatePlaceholder}</option>
-                {Object.entries(e.physicalState).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
+            <div id="mv-state">
+              <span id="mv-state-label" className="mb-1 block text-xs font-medium text-content-muted">
+                {t.physicalState}
+              </span>
+              <PillGroup
+                name="mv-state"
+                aria-labelledby="mv-state-label"
+                selected={[physicalState]}
+                onToggle={(value) => setPhysicalState(value)}
+                options={[
+                  { value: "" as const, label: t.pillNone },
+                  ...nomenclatorPills<PhysicalState>(e.physicalState),
+                ]}
+              />
             </div>
           </div>
 
@@ -981,10 +1140,10 @@ export function MovementFormDialog({
           )}
         </FormSection>
 
-        <FormSection title={t.sectionHandling}>
+        <FormSection title={t.askHandling}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="mv-storage">{t.storageType}</Label>
+              <Label htmlFor="mv-storage">{t.askStorage}</Label>
               <Select
                 id="mv-storage"
                 value={storageType}
@@ -999,7 +1158,7 @@ export function MovementFormDialog({
               </Select>
             </div>
             <div>
-              <Label htmlFor="mv-treatment">{t.treatmentMethod}</Label>
+              <Label htmlFor="mv-treatment">{t.askTreatment}</Label>
               <Select
                 id="mv-treatment"
                 value={treatmentMethod}
@@ -1032,44 +1191,46 @@ export function MovementFormDialog({
           </div>
         </FormSection>
 
-        <FormSection title={t.sectionTransport}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="mv-transport-means">{t.transportMeans}</Label>
-              <Select
-                id="mv-transport-means"
-                value={transportMeans}
-                onChange={(ev) => setTransportMeans(ev.target.value as typeof transportMeans)}
-              >
-                <option value="">{t.nomenclatorPlaceholder}</option>
-                {Object.entries(e.transportMeans).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
+        <FormSection title={t.askTransport}>
+          <div id="mv-transport-means">
+            <span id="mv-transport-means-label" className="mb-1 block text-xs font-medium text-content-muted">
+              {t.askTransportMeans}
+            </span>
+            <PillGroup
+              name="mv-transport-means"
+              aria-labelledby="mv-transport-means-label"
+              selected={[transportMeans]}
+              onToggle={(value) => setTransportMeans(value)}
+              options={[
+                { value: "" as const, label: t.pillNone },
+                ...nomenclatorPills<TransportMeans>(e.transportMeans),
+              ]}
+            />
+          </div>
+          <div>
+            <span id="mv-destination-label" className="mb-1 block text-xs font-medium text-content-muted">
+              {t.askDestination}
+              {screenRegister === "ANEXA_1" && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
+            </span>
+            {/* Patru destinații (proprietarul, 16.09.2026); una veche din afara lor rămâne la
+                editare, ca rândul să se poată salva neschimbat. Pe o predare de deșeu propriu
+                rubrica e obligatorie, deci „Fără” nu se oferă acolo. */}
+            <div id="mv-destination" tabIndex={-1} {...invalidProps("mv-destination-err", errors.wasteDestination)}>
+              <PillGroup
+                name="mv-destination"
+                aria-labelledby="mv-destination-label"
+                selected={[wasteDestination]}
+                onToggle={(value) => setWasteDestination(value)}
+                options={[
+                  ...(screenRegister === "ANEXA_1" ? [] : [{ value: "" as const, label: t.pillNone }]),
+                  ...nomenclatorPills<WasteDestination>(
+                    e.wasteDestination,
+                    (value) => OFFERED_DESTINATIONS.includes(value) || value === initial?.wasteDestination
+                  ),
+                ]}
+              />
             </div>
-            <div>
-              <Label htmlFor="mv-destination">{t.wasteDestination}</Label>
-              <Select
-                id="mv-destination"
-                value={wasteDestination}
-                onChange={(ev) => setWasteDestination(ev.target.value as typeof wasteDestination)}
-                {...invalidProps("mv-destination-err", errors.wasteDestination)}
-              >
-                <option value="">{t.nomenclatorPlaceholder}</option>
-                {/* Patru destinații (proprietarul, 16.09.2026); una veche din afara lor rămâne în
-                    listă la editare, ca rândul să se poată salva neschimbat. */}
-                {Object.entries(e.wasteDestination)
-                  .filter(([value]) => OFFERED_DESTINATIONS.includes(value) || value === initial?.wasteDestination)
-                  .map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-              </Select>
-              <FieldError id="mv-destination-err" message={errors.wasteDestination} />
-            </div>
+            <FieldError id="mv-destination-err" message={errors.wasteDestination} />
           </div>
 
           {/* Ce se întâmplă cu deşeul stă sub transport, fiindcă de transport atârnă: „după ce alegi
@@ -1077,40 +1238,34 @@ export function MovementFormDialog({
               sau cu codurile de eliminare, în funcţie de cum o să fie transportul" (specialista,
               25.08.2026). Sus rămâne de unde vine deşeul; aici, unde ajunge. */}
           {(showsFate || requiresCode) && (
-            <div className="space-y-3 rounded-md border border-line-strong p-3">
+            <div className="space-y-3 rounded-lg border border-line-strong p-3.5">
               <div>
-                <span className="text-sm font-semibold text-content-strong">{t.fateTitle}</span>
+                <span id="mv-fate-label" className="text-sm font-semibold text-content-strong">
+                  {showsFate ? t.askFate : t.fateTitle}
+                </span>
                 <p className="text-xs text-content-muted">{t.fateHint}</p>
               </div>
 
               {showsFate && (
-                <div className="space-y-2">
+                <div>
                   {/* Ca la provenienţă: fiecare opţiune îşi spune efectul, fiindcă alegerea nu schimbă
                       un câmp, ci coloana din fişă în care intră cantitatea. */}
-                  {(
-                    [
-                      ["RECOVERED", t.fateRecovery, t.fateRecoveryEffect],
-                      ["DISPOSED", t.fateDisposal, t.fateDisposalEffect],
-                    ] as const
-                  ).map(([value, label, effect]) => (
-                    <label key={value} className="flex cursor-pointer gap-2">
-                      <input
-                        type="radio"
-                        name="mv-fate"
-                        className="mt-1 h-4 w-4 shrink-0"
-                        checked={fate === value}
-                        {...(value === "RECOVERED" ? invalidProps("mv-fate-err", errors.fate) : {})}
-                        onChange={() => {
-                          setFate(value);
-                          setOperationCode(""); // familia de coduri se schimbă cu alegerea
-                        }}
-                      />
-                      <span>
-                        <span className="text-sm font-medium">{label}</span>
-                        <span className="block text-xs text-content-muted">{effect}</span>
-                      </span>
-                    </label>
-                  ))}
+                  <div {...invalidProps("mv-fate-err", errors.fate)}>
+                    <ChoiceCards
+                      name="mv-fate"
+                      aria-labelledby="mv-fate-label"
+                      columns={2}
+                      value={fate || null}
+                      onChange={(value) => {
+                        setFate(value);
+                        setOperationCode(""); // familia de coduri se schimbă cu alegerea
+                      }}
+                      options={[
+                        { value: "RECOVERED", label: t.fateRecovery, description: t.fateRecoveryEffect },
+                        { value: "DISPOSED", label: t.fateDisposal, description: t.fateDisposalEffect },
+                      ]}
+                    />
+                  </div>
                   <FieldError id="mv-fate-err" message={errors.fate} />
                 </div>
               )}
@@ -1144,7 +1299,7 @@ export function MovementFormDialog({
           )}
         </FormSection>
 
-        <FormSection title={t.sectionRecipient}>
+        <FormSection title={t.askRecipient}>
           <div>
             <Label htmlFor="mv-partner">{t.partner}</Label>
             <Select
@@ -1311,17 +1466,21 @@ export function MovementFormDialog({
                   <p className="mt-1 text-xs text-content-muted">{t.anexa2NumberHint}</p>
                 </div>
               ) : (
-              <div>
-                <Label htmlFor="mv-anexa3-unit">{t.anexa3Unit}</Label>
-                <Select
-                  id="mv-anexa3-unit"
-                  value={anexa3Unit}
-                  onChange={(ev) => setAnexa3Unit(ev.target.value as Unit | "")}
-                >
-                  <option value="">{t.anexa3UnitCompany}</option>
-                  <option value="KG">{e.unit.KG}</option>
-                  <option value="TONS">{e.unit.TONS}</option>
-                </Select>
+              <div id="mv-anexa3-unit">
+                <span id="mv-anexa3-unit-label" className="mb-1 block text-xs font-medium text-content-muted">
+                  {t.anexa3Unit}
+                </span>
+                <PillGroup
+                  name="mv-anexa3-unit"
+                  aria-labelledby="mv-anexa3-unit-label"
+                  selected={[anexa3Unit]}
+                  onToggle={(value) => setAnexa3Unit(value)}
+                  options={[
+                    { value: "" as Unit | "", label: t.anexa3UnitCompany },
+                    { value: "KG", label: e.unit.KG },
+                    { value: "TONS", label: e.unit.TONS },
+                  ]}
+                />
                 <p className="mt-1 text-xs text-content-muted">{t.anexa3UnitHint}</p>
               </div>
               )}
@@ -1437,30 +1596,29 @@ export function MovementFormDialog({
               </div>
             </div>
             <div>
-              <span className="block text-sm font-medium text-content-strong">
-                {t.transportDestinations}
+              <span id="mv-destinat-label" className="block text-sm font-medium text-content-strong">
+                {t.askTransportDestinations}
               </span>
               <p className="text-xs text-content-muted">
                 {destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}
               </p>
-              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                {(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => (
-                  <label key={d} className="flex items-center gap-1.5 text-sm">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-line-strong"
-                      checked={transportDestinations.includes(d)}
-                      onChange={() => {
-                        setDestinationsPrefilled(false);
-                        setTransportDestinations((prev) =>
-                          prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
-                        );
-                      }}
-                    />
-                    {e.transportDestination[d]}
-                  </label>
-                ))}
-              </div>
+              <PillGroup
+                multiple
+                name="mv-destinat"
+                aria-labelledby="mv-destinat-label"
+                className="mt-2"
+                selected={transportDestinations}
+                onToggle={(d) => {
+                  setDestinationsPrefilled(false);
+                  setTransportDestinations((prev) =>
+                    prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
+                  );
+                }}
+                options={(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => ({
+                  value: d,
+                  label: e.transportDestination[d],
+                }))}
+              />
             </div>
             {showAnexa2Section && (
               <Anexa2Fields
@@ -1477,7 +1635,7 @@ export function MovementFormDialog({
           </div>
         )}
 
-        <FormSection title={t.sectionDocument}>
+        <FormSection title={t.askDocument}>
           <div>
             <Label htmlFor="mv-doc">{t.documentReference}</Label>
             <Input
@@ -1499,7 +1657,7 @@ export function MovementFormDialog({
           </div>
         </FormSection>
 
-        <FormSection title={t.sectionAttachments}>
+        <FormSection title={t.askAttachments} description={t.askAttachmentsHint}>
           <div>
               {editing && editing.attachments.length > 0 && (
               <ul className="mb-2 space-y-1">
@@ -1542,6 +1700,7 @@ export function MovementFormDialog({
           </div>
         </FormSection>
       </form>
+      </div>
       {closeConfirmation}
     </Dialog>
   );

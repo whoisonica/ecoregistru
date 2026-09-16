@@ -53,15 +53,15 @@ if ((await paper.count()) > 0) await paper.click();
 else await page.locator('[role="listbox"] [role="option"]').first().click();
 await page.waitForTimeout(300);
 
-const destinations = await page.$$eval("#mv-destination option", (os) => os.map((o) => o.value).filter(Boolean));
+const destinations = await page.$$eval('#mv-destination input[name="mv-destination"]', (os) => os.map((o) => o.value).filter(Boolean));
 check("destinația are patru opțiuni: DO, I, Vr, A", destinations.join(",") === "DO,I,Vr,A", destinations.join(","));
 
 await page.fill("#mv-qty", "12");
-await page.locator('input[name="mv-fate"]').nth(1).check(); // spre eliminare
+await page.locator('label:has(input[name="mv-fate"])').nth(1).click(); // spre eliminare
 await page.waitForTimeout(200);
 const purposeE = await page.textContent('[data-testid="mv-purpose"]').catch(() => null);
 check("eliminarea arată scopul E", (purposeE ?? "").startsWith("E"), purposeE ?? "—");
-await page.locator('input[name="mv-fate"]').nth(0).check(); // spre valorificare
+await page.locator('label:has(input[name="mv-fate"])').nth(0).click(); // spre valorificare
 await page.waitForTimeout(200);
 const purposeV = await page.textContent('[data-testid="mv-purpose"]').catch(() => null);
 check("valorificarea arată scopul V", (purposeV ?? "").startsWith("V"), purposeV ?? "—");
@@ -88,8 +88,11 @@ if ((await discard.count()) > 0) await discard.click().catch(() => {});
 await page.goto(BASE + "/parteneri?nou=1", { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 await page.fill("#p-name", "Proba 23 Colector");
-await page.click('div[role="dialog"] button[type="submit"]');
-await page.waitForTimeout(600);
+// Trei pași (17.09.2026): Continuă, Continuă, Salvează — colectorul e tipul implicit.
+for (let i = 0; i < 3; i++) {
+  await page.click('div[role="dialog"] button[type="submit"]');
+  await page.waitForTimeout(400);
+}
 const authErr = await page.$("#p-auth-number-err");
 check("colectorul fără autorizație nu se salvează", Boolean(authErr));
 check("butonul ANAF e lângă CUI", (await page.locator('div[role="dialog"] button:has-text("Completează din ANAF")').count()) === 1);

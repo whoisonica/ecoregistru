@@ -340,14 +340,14 @@ await page.fill("#p-name", "Colector");
 await page.waitForTimeout(400);
 const sugestii = await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
-  const li = [...d.querySelectorAll("li button")].map((b) => b.textContent.trim());
+  const li = [...d.querySelectorAll("ul li button")].map((b) => b.textContent.trim());
   return li;
 });
 check("sugestia de duplicat apare de la două litere", sugestii.length > 0, sugestii.join(" | "));
 
 await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
-  d.querySelector("li button")?.click();
+  d.querySelector("ul li button")?.click();
 });
 await page.waitForTimeout(500);
 const dupaComutare = await page.evaluate(() => {
@@ -394,7 +394,7 @@ await page.fill("#p-cui", "RO12345678");
 await page.waitForTimeout(400);
 await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
-  d.querySelector("li button")?.click();
+  d.querySelector("ul li button")?.click();
 });
 await page.waitForTimeout(500);
 const intrebare = await page.evaluate(() => {

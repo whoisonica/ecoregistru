@@ -1,5 +1,11 @@
 # Probe de interfaţă
 
+🧭 **17.09.2026 — partenerul pe trei pași și „Adaugă deșeuri” pe înțeles**: proba 8 cere trei pași în cuprinsul dialogului și CUI-ul ca
+primă rubrică; 9 numără pașii, nu secțiunile; 10 caută sugestia de duplicat în `ul` (cuprinsul e un `ol`); 23 trece prin
+Continuă · Continuă · Salvează și citește destinația din taste (`input[name="mv-destination"]`), iar destinul se alege pe card.
+Drumul datelor probat separat, prin ecran și citit înapoi din API: partenerul cu toate rubricile pe trei pași și mișcarea cu
+„La fel ca data trecută” ies identic, cantitatea e cea scrisă. **25/25** pe `eco_e2e_formulare`.
+
 🔑 **17.09.2026 — proba 25 (`25-parola-poster.mjs`)**: „Parolă uitată” și „Alege-ți parola” stau în `PublicShell`, ca loginul
 (semnul în `header`, fraza verde din titlu, linkul din colț spre login, un singur subsol, butonul în `bg-mark`); adresa fără cont
 primește același răspuns; fără cod nu apare formularul; parolele diferite se opresc în ecran; codul greșit primește 404 și eroarea
