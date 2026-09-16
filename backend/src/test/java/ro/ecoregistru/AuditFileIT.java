@@ -376,6 +376,12 @@ class AuditFileIT {
         assertThat(new String(readEntryBytes(zip, "anexa3-ambalaje-2026-hala-floresti.pdf"), 0, 5)).isEqualTo("%PDF-");
         String readme = new String(readEntryBytes(zip, "README.txt"), StandardCharsets.UTF_8);
         assertThat(readme).contains("anexa3-ambalaje-2026-hala-floresti.xls / .pdf").contains("Hala Florești");
+        // 17.09.2026, scanarea de conformitate, pct. 4: art. 4 alin. (1) din Ordinul 794/2012 nu numeşte
+        // generatorul, deci README-ul nu-i pune termenul de 25 februarie pe o foaie tipărită la cerere.
+        // Anexa 1 Ambalaje nu intră aici (profilul n-are rol de piaţă), deci „25 februarie" ar putea
+        // veni numai de la Anexa 3.
+        assertThat(readme).contains("tipărită la cerere").contains("fără termen")
+                .doesNotContain("Termen: 25 februarie");
     }
 
     // --- G-2: the four obligations the dossier used to pass over in silence ---

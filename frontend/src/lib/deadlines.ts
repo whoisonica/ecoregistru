@@ -1,4 +1,4 @@
-import type { Deadline, MonthlyEvidence } from "@/lib/types";
+import type { Deadline, MonthlyEvidence, ReportType } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/count";
 
@@ -65,6 +65,15 @@ export function documentFor(d: Deadline): { to: string; label: string } | null {
     };
   }
   return null;
+}
+
+/**
+ * Ce i se spune omului lângă un termen, chiar acolo unde îl vede: o obligație care poate să nu fie
+ * a lui. Doar unde profilul nu răspunde încă în locul lui — azi Anexa 1 Ambalaje, cu OIREP-ul.
+ */
+export function noteFor(d: Deadline): string | null {
+  const notes = strings.deadlines.typeNote as Partial<Record<ReportType, string>>;
+  return notes[d.reportType] ?? null;
 }
 
 /** Anul pe care îl raportează un termen anual: cel dinaintea scadenței. */

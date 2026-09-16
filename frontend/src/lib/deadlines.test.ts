@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { daysLabel, daysUntil, documentFor, evidenceReadiness } from "@/lib/deadlines";
+import { daysLabel, daysUntil, documentFor, evidenceReadiness, noteFor } from "@/lib/deadlines";
 import type { MonthlyEvidence } from "@/lib/types";
 import type { Deadline } from "@/lib/types";
 
@@ -28,6 +28,12 @@ test("documentul care stinge termenul e pe anul raportat, iar AFM n-are document
   assert.equal(documentFor(deadline({ reportType: "PACKAGING_ANNUAL", dueDate: "2027-02-25" }))?.to, "/ambalaje?an=2026");
   assert.equal(documentFor(deadline({ reportType: "PACKAGING_ANNEX3", dueDate: "2027-02-25" }))?.to, "/ambalaje?an=2026");
   assert.equal(documentFor(deadline({ reportType: "AFM_MONTHLY", dueDate: "2026-10-25" })), null);
+});
+
+test("Anexa 1 Ambalaje poartă nota despre OIREP; celelalte termene n-au notă", () => {
+  assert.match(noteFor(deadline({ reportType: "PACKAGING_ANNUAL", dueDate: "2027-02-25" })) ?? "", /OIREP/);
+  assert.equal(noteFor(deadline({ reportType: "SIM_ANNUAL", dueDate: "2027-03-15" })), null);
+  assert.equal(noteFor(deadline({ reportType: "PACKAGING_ANNEX3", dueDate: "2027-02-25" })), null);
 });
 
 const line = (over: Partial<MonthlyEvidence>) =>

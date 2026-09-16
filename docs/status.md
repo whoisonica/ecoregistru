@@ -8,6 +8,21 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026 — ⬜ local, necommis: nota despre OIREP sub termenul de 25 februarie (Anexa 1 Ambalaje), pe Termene.**
+> Scanarea de conformitate, pct. 1: Ordinul 794/2012 art. 1 alin. (1)–(2) cere Anexa 1 numai celor care își îndeplinesc singuri
+> obiectivele; cu un OIREP raportează OIREP-ul, iar profilul nu întreabă asta. Proprietarul a ales să i se spună omului chiar
+> acolo unde vede termenul: `noteFor` (`lib/deadlines.ts`) + `strings.deadlines.typeNote`, tipărită sub numele raportării în tabel
+> (`max-w-md`) și pe cardul de telefon. Termenul rămâne; doar Anexa 1 Ambalaje are notă. **Probe:** `npm test` 24/24 (1 nou), tsc,
+> build. Neprobat în browser (capturile la 1440/375).
+
+> **17.09.2026 — ⬜ local, necommis: README-ul dosarului nu mai pune „Termen: 25 februarie” pe Anexa 3 Ambalaje a unui generator.**
+> Din scanarea de conformitate cerută de proprietar (pct. 4): Ordinul 794/2012 art. 4 alin. (1) numește colectorii, comercianții,
+> reciclatorii și valorificatorii, nu generatorul (`docs/surse-oficiale.md` §2.11), iar la generator foaia e tipărită la cerere, cu
+> ieșirile (16.09). README-ul scria totuși termenul la orice cont — un termen inventat pe hârtia citită de inspector. Acum
+> `AuditFileService.readme` scrie la generator „numai cu ieșirile: tipărită la cerere … fără termen”; la colector rămâne cum era.
+> Documentul în sine (xls/PDF) e neatins, deci validarea Andreei din 16.09 nu se redeschide. **Probe:** `AuditFileIT` 21/21;
+> negativa (fără schimbare) cade exact testul `theDossierCarriesAnexa3PackagingPerWorkPointThatMovedPackaging`. Suita completă nu s-a rulat.
+
 > **17.09.2026, 01:28 — ✅ pe producție: „Ce urmează” după o mișcare nouă** (`ecoregistru-app` **v99**, `7c4b996`, din `main` `5a2766d`;
 > **api neatins**, v109, nicio migrare; datele salvate neschimbate). Regula 12 a formularelor, cerută de proprietar după app v98: o mișcare
 > **nouă** arată „Predarea e în evidență” (Intrarea / Ieșirea), bonul citit din răspunsul serverului și, sub „Ce urmează”, documentele pe

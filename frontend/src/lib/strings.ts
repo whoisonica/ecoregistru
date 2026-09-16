@@ -1887,6 +1887,14 @@ export const strings = {
     // link către un document inexistent ar promite mai mult decât ținem.
     documentEvidence: "Deschide evidența pe {year}",
     documentPackaging: "Deschide ambalajele pe {year}",
+    // Ce trebuie să știe omul lângă un termen, fără să deschidă legea — numai unde termenul poate să
+    // nu fie al lui. Anexa 1 Ambalaje o depune doar cine își îndeplinește singur obiectivele
+    // (Ordinul 794/2012 art. 1 alin. (1)–(2)); cu un OIREP raportează OIREP-ul, iar profilul nu
+    // întreabă încă asta (scanarea de conformitate din 17.09.2026, pct. 1; proprietarul: se spune aici).
+    typeNote: {
+      PACKAGING_ANNUAL:
+        "Se depune doar dacă firma își îndeplinește singură obiectivele de valorificare a ambalajelor. Dacă le-ai transferat unei organizații (OIREP), raportează ea în locul tău și nu depui Anexa 1. Dacă ai transferat doar o parte, raportezi cantitățile netransferate (Ordinul 794/2012, art. 1).",
+    },
     // Starea documentului pe termenul lui: din ce e deja înregistrat, fără socoteli noi.
     readiness: {
       loading: "Se verifică documentul…",

@@ -464,11 +464,22 @@ public class AuditFileService {
                         "Termen: 25 februarie " + (year + 1) + "."));
             }
             Anexa3Plan anexa3 = anexa3ByYear.get(year);
+            // Termenul de 25 februarie e al celor din art. 4 alin. (1) — colectori, comercianţi,
+            // reciclatori, valorificatori. Un generator nu e numit acolo (docs/surse-oficiale.md
+            // §2.11): la el foaia e tipărită la cerere, cu ieşirile, şi README-ul nu-i pune un
+            // termen pe care nu-l are (proprietarul, 17.09.2026 — scanarea de conformitate, pct. 4).
+            boolean owesAnexa3 = company.getType().keepsArt48Register();
             for (Anexa3File file : anexa3.files()) {
-                sb.append(entry(prefix + file.baseName() + ".xls / .pdf",
-                        "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
-                        "„" + file.workPointName() + "”: .xls pentru depunere, PDF pe hârtie.",
-                        "Termen: 25 februarie " + (year + 1) + "."));
+                sb.append(owesAnexa3
+                        ? entry(prefix + file.baseName() + ".xls / .pdf",
+                                "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
+                                "„" + file.workPointName() + "”: .xls pentru depunere, PDF pe hârtie.",
+                                "Termen: 25 februarie " + (year + 1) + ".")
+                        : entry(prefix + file.baseName() + ".xls / .pdf",
+                                "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
+                                "„" + file.workPointName() + "”, numai cu ieşirile: tipărită la cerere.",
+                                "Nu e o obligaţie de depunere a generatorului (art. 4 alin. (1) numeşte",
+                                "colectorii, comercianţii, reciclatorii şi valorificatorii); fără termen."));
             }
             if (anexa3.roleMissing()) {
                 sb.append(entry(prefix + "anexa3-ambalaje-" + year,

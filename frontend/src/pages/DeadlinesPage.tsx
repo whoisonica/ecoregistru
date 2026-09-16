@@ -19,7 +19,7 @@ import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { cn, formatDate, withCount } from "@/lib/utils";
-import { daysLabel, documentFor } from "@/lib/deadlines";
+import { daysLabel, documentFor, noteFor } from "@/lib/deadlines";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -361,10 +361,14 @@ function DeadlinesTable({
             {view.visible.map((d) => {
               const doc = documentFor(d);
               const days = daysLabel(d);
+              const note = noteFor(d);
               return (
                 <TR key={d.id}>
                   <TD className="font-medium text-content">
                     {strings.enums.reportType[d.reportType]}
+                    {note && (
+                      <p className="mt-1 max-w-md text-xs font-normal text-content-subtle">{note}</p>
+                    )}
                   </TD>
                   <TD className="whitespace-nowrap">
                     {formatDate(d.dueDate)}
@@ -453,10 +457,12 @@ function DeadlineCard({
 }) {
   const doc = documentFor(d);
   const days = daysLabel(d);
+  const note = noteFor(d);
   return (
     <li className="space-y-2 py-3">
       <div className="font-medium text-content">
         {strings.enums.reportType[d.reportType]}
+        {note && <p className="mt-1 text-xs font-normal text-content-subtle">{note}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span className="whitespace-nowrap">
