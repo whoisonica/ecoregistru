@@ -1,4 +1,5 @@
 import axios from "axios";
+import { tabScopedStore } from "@/lib/tenantStore";
 
 const TOKEN_KEY = "eco_token";
 const TENANT_KEY = "eco_tenant"; // used by PLATFORM_ADMIN tenant switcher
@@ -26,11 +27,8 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
-export const tenantStore = {
-  get: () => localStorage.getItem(TENANT_KEY),
-  set: (id: string) => localStorage.setItem(TENANT_KEY, id),
-  clear: () => localStorage.removeItem(TENANT_KEY),
-};
+/** Pe tab, nu pe browser — BUG-024, vezi `tenantStore.ts`. */
+export const tenantStore = tabScopedStore(TENANT_KEY, sessionStorage, localStorage);
 
 export const userStore = {
   get: () => localStorage.getItem(USER_KEY),

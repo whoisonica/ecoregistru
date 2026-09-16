@@ -70,7 +70,7 @@ const template = await page.evaluate(async () => {
   const res = await fetch("/api/v1/import/sablon", {
     headers: {
       Authorization: "Bearer " + localStorage.getItem("eco_token"),
-      "X-Tenant-Id": localStorage.getItem("eco_tenant") ?? "",
+      "X-Tenant-Id": sessionStorage.getItem("eco_tenant") ?? localStorage.getItem("eco_tenant") ?? "",
     },
   });
   const bytes = new Uint8Array(await res.arrayBuffer());
