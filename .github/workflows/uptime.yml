@@ -41,12 +41,14 @@ jobs:
           body=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 \
             https://ecoregistru-api-5ba7c1d5e3e3.herokuapp.com/actuator/health)
           echo "$body"
-          echo "$body" | grep -q '"status":"UP"'
+          # Here-string, nu `echo | grep -q`: Actions rulează bash cu pipefail, iar `grep -q` închide pipe-ul
+          # la prima potrivire, deci `echo` primește SIGPIPE și pasul cade pe o pagină bună (16.09.2026).
+          grep -q '"status":"UP"' <<< "$body"
 
       - name: Aplicația web — app.wastehouse.ro
         run: |
           html=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 https://app.wastehouse.ro/)
-          echo "$html" | grep -q '/assets/index-' || { echo "pagina nu încarcă bundle-ul"; exit 1; }
+          grep -q '/assets/index-' <<< "$html" || { echo "pagina nu încarcă bundle-ul"; exit 1; }
 
       - name: Landingul — wastehouse.ro
         run: curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 -o /dev/null https://wastehouse.ro/
