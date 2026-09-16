@@ -68,6 +68,23 @@ rulează local și are testele verzi.
 > Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
 >
 
+> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.11, borderoul de achiziție de la persoane fizice.**
+> În formularul unei intrări **finalizate** de la o persoană fizică apare **„Borderou”** (`GET /weighing-operations/{id}/borderou`),
+> după modelul din anexa la OUG 31/2011, rubrică cu rubrică: operatorul (denumire, adresă și punct de lucru, Reg. Com.,
+> CUI/CIF, autorizația de mediu), deținătorul, tabelul (0)–(4) cu TOTAL, plata (chitanța, viramentul în 3 zile lucrătoare,
+> sau fraza întreagă cu ambele variante când felul plății nu e ales), reținerile, gestionarul primitor. Numărul se dă la
+> prima tipărire și se păstrează (regim intern, alin. (1^3); coloana e din V46, **fără migrare nouă**). **Cotele în
+> vigoare** (10% impozit, doar pe metal; 2% AFM), cu sumele păstrate la finalizare — nu „16% și 3%” din model (C2). La
+> **metal**: act, CNP, domiciliu și declarația de gospodărie proprie; **fără metal**: doar numele (C3, Legea 190/2018
+> art. 4). Îl tipărește cine scrie **și** vede prețurile. **Plafonul de numerar** (Legea 70/2015 art. 4): în formular apare
+> un avertisment când plățile în numerar către aceeași persoană în aceeași zi (după rețineri, fără anulate și viramente)
+> trec de 10.000 lei (`GET /{id}/cash-check`); suma se arată doar cui vede prețurile. Pe hârtie nu se scrie nimic despre asta.
+> **Proba:** `BorderouIT` 7/7 pe fraze întregi din model, cu proba negativă pe zece reguli (identitate doar la metal,
+> declarație doar la metal, suma plătită după rețineri, prețurile, doar finalizate, doar PF, numărul păstrat, plafonul,
+> suma ascunsă, fraza fără fel de plată), fiecare scoasă pică exact testul ei. `RegisterSelectionInventoryTest`: borderoul
+> intră în excepția numită a documentelor pe o singură operațiune. Probat în Chrome ca admin și operator, la 1440 și 375:
+> butonul, PDF-ul citit, avertismentul cu 10.560 lei. Suita **796/97** (singura cădere, inventarul, reparată și rerulată); e2e 19 verde.
+
 > **16.09.2026 — 🟡 local, nedeployat: depozitul D1.13, documentele de transport pe operațiune.**
 > O ieșire cu douăsprezece sortimente e un camion, deci **un singur formular** (HG 1061/2008 art. 20 alin. (4)). În
 > formularul unei ieșiri salvate și neanulate de pe „Cântar” apar **„Anexa 3”** și **„Aviz”**

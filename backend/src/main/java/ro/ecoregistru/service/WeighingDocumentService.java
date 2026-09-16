@@ -56,6 +56,7 @@ public class WeighingDocumentService {
     Anexa3Numbering anexa3Numbering;
     Anexa3FormGenerator anexa3Generator;
     AvizGenerator avizGenerator;
+    ro.ecoregistru.service.export.BorderouGenerator borderouGenerator;
 
     /** Alocă numărul la prima tipărire și îl păstrează: retipărirea e același document. */
     @Transactional
@@ -88,6 +89,80 @@ public class WeighingDocumentService {
             throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
         }
         return avizGenerator.render(head(operation, company), lines, company);
+    }
+
+    /**
+     * D1.11 — borderoul de achiziție al unei intrări de la o persoană fizică, după finalizare (reținerile
+     * de pe el se calculează atunci). Numărul se dă la prima tipărire și se păstrează: regim intern de
+     * numerotare (OUG 31/2011 art. 1 alin. (1^3)). Obligatoriu la metal, la cerere la rest (C3).
+     *
+     * <p>Poartă prețuri și, la metal, CNP-ul întreg: îl tipărește doar cine scrie (controllerul) <b>și</b>
+     * vede prețurile (D1.8).
+     */
+    @Transactional
+    public byte[] renderBorderou(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        Company company = requireCompany(tenantId);
+        requirePricesVisible(company, "Borderoul arată prețurile depozitului.");
+        if (operation.getType() != WeighingOperationType.IN || operation.getNaturalPerson() == null) {
+            throw new BusinessException(WEIGHING_BORDEROU_REQUIRES_PERSON);
+        }
+        if (operation.getStatus() != WeighingOperationStatus.FINALIZED) {
+            throw new BusinessException(WEIGHING_BORDEROU_REQUIRES_FINALIZED);
+        }
+        if (operation.getBorderouNumber() == null) {
+            operationRepository.lockNumbering(tenantId + ":borderou");
+            Integer max = operationRepository.findMaxBorderouNumber(tenantId);
+            operation.setBorderouNumber(max == null ? 1 : max + 1);
+            operationRepository.saveAndFlush(operation);
+        }
+        return borderouGenerator.render(operation,
+                movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id), company);
+    }
+
+    /** Plafonul zilnic de plăți în numerar către o persoană fizică (Legea 70/2015 art. 4 alin. (1)). */
+    public static final java.math.BigDecimal CASH_DAILY_LIMIT = new java.math.BigDecimal("10000");
+
+    /**
+     * D1.11 — cât s-a plătit în numerar persoanei acestei operațiuni în aceeași zi, cu ea inclusă, și dacă
+     * trece de 10.000 lei. Un avertisment pe ecran, nu un refuz și nimic pe hârtie: plata s-a făcut deja
+     * sau se face la ghișeu, iar aplicația spune doar ce vede. Suma e ce se dă omului, după rețineri.
+     * Cine nu vede prețurile află doar dacă s-a trecut plafonul, fără sumă.
+     */
+    @Transactional(readOnly = true)
+    public CashCheck cashCheck(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (operation.getNaturalPerson() == null) {
+            return new CashCheck(false, null, CASH_DAILY_LIMIT);
+        }
+        java.math.BigDecimal paid = java.math.BigDecimal.ZERO;
+        for (WeighingOperation o : operationRepository.findCashToPersonOnDay(tenantId,
+                operation.getNaturalPerson().getId(), operation.getDate())) {
+            List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(o.getId());
+            DepotRetentions.Amounts retained = o.getAfmContribution() != null && o.getIncomeTax() != null
+                    ? new DepotRetentions.Amounts(o.getAfmBase(), o.getAfmContribution(), o.getIncomeTaxBase(), o.getIncomeTax())
+                    : DepotRetentions.of(o, lines);
+            java.math.BigDecimal value = lines.stream().map(WasteMovement::getTotalValue)
+                    .filter(java.util.Objects::nonNull).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            paid = paid.add(value)
+                    .subtract(retained.afm()).subtract(retained.incomeTax());
+        }
+        boolean visible = operation.getCompany().getPriceVisibility()
+                .visibleTo(ro.ecoregistru.security.SecurityUtils.currentUser().getRole());
+        return new CashCheck(paid.compareTo(CASH_DAILY_LIMIT) > 0, visible ? paid : null, CASH_DAILY_LIMIT);
+    }
+
+    public record CashCheck(boolean aboveLimit, java.math.BigDecimal paidToday, java.math.BigDecimal limit) {
+    }
+
+    private static void requirePricesVisible(Company company, String why) {
+        if (!company.getPriceVisibility().visibleTo(ro.ecoregistru.security.SecurityUtils.currentUser().getRole())) {
+            throw new org.springframework.security.access.AccessDeniedException(why);
+        }
     }
 
     private WeighingOperation requireHandover(UUID id, UUID tenantId) {

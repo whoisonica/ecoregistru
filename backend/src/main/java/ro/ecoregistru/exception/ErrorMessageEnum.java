@@ -119,6 +119,8 @@ public enum ErrorMessageEnum {
     WEIGHING_LINE_DOCUMENT_THROUGH_OPERATION("weighing.line.document.through.operation", "Rândul face parte dintr-o operațiune de cântar. Anexa 3 și avizul se tipăresc din operațiune, pe tot transportul."),
     WEIGHING_DOCUMENT_REQUIRES_HANDOVER("weighing.document.requires.handover", "Anexa 3 și avizul se tipăresc pentru o ieșire către un partener. La o intrare, formularul îl face cel care a trimis deșeul."),
     WEIGHING_DOCUMENT_CANCELLED("weighing.document.cancelled", "Operațiunea e anulată: nu se mai tipăresc documente pentru ea."),
+    WEIGHING_BORDEROU_REQUIRES_PERSON("weighing.borderou.requires.person", "Borderoul de achiziție se face pentru o intrare de la o persoană fizică."),
+    WEIGHING_BORDEROU_REQUIRES_FINALIZED("weighing.borderou.requires.finalized", "Borderoul se tipărește după finalizare: abia atunci sunt calculate reținerile de pe el."),
     WEIGHING_ANEXA3_ONLY_HAZARDOUS("weighing.anexa3.only.hazardous", "Toate liniile sunt deșeuri periculoase. Anexa 3 e pentru deșeuri nepericuloase; pentru cele periculoase se folosește formularul din anexa 2 la HG 1061/2008."),
     PRICE_VISIBILITY_REQUIRED("price.visibility.required", "Alege cine vede prețurile."),
     WEIGHING_LINE_OPERATION_CODE_REQUIRED("weighing.line.operation.code.required", "La ieșire, alege pe fiecare linie operația: valorificare (R) sau eliminare (D)."),

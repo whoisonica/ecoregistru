@@ -80,6 +80,23 @@ public class WeighingOperationController {
         return pdf(documentService.renderAviz(id), "aviz-operatiune-" + id + ".pdf");
     }
 
+    /**
+     * D1.11 — borderoul de achiziție al unei intrări de la o persoană fizică. Doar cine scrie: prima
+     * tipărire alocă numărul, iar la metal documentul poartă CNP-ul întreg.
+     */
+    @GetMapping("/{id}/borderou")
+    @PreAuthorize(CAN_WRITE)
+    public org.springframework.http.ResponseEntity<byte[]> borderou(@PathVariable UUID id) {
+        return pdf(documentService.renderBorderou(id), "borderou-" + id + ".pdf");
+    }
+
+    /** D1.11 — plățile în numerar de azi către persoana operațiunii, față de plafonul de 10.000 lei. */
+    @GetMapping("/{id}/cash-check")
+    @PreAuthorize(CAN_WRITE)
+    public ro.ecoregistru.service.WeighingDocumentService.CashCheck cashCheck(@PathVariable UUID id) {
+        return documentService.cashCheck(id);
+    }
+
     private static org.springframework.http.ResponseEntity<byte[]> pdf(byte[] body, String file) {
         return org.springframework.http.ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_PDF)

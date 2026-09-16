@@ -117,6 +117,21 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     @Query("select max(o.number) from WeighingOperation o where o.company.id = :companyId and o.type = :type")
     Integer findMaxNumber(@Param("companyId") UUID companyId, @Param("type") WeighingOperationType type);
 
+    /** D1.11 — cel mai mare număr de borderou al firmei; regim intern de numerotare (OUG 31/2011 art. 1 alin. (1^3)). */
+    @Query("select max(o.borderouNumber) from WeighingOperation o where o.company.id = :companyId")
+    Integer findMaxBorderouNumber(@Param("companyId") UUID companyId);
+
+    /** D1.11 — plățile în numerar către aceeași persoană în aceeași zi, cu operațiunea care se verifică. */
+    @Query("""
+            select o from WeighingOperation o
+            where o.company.id = :companyId and o.naturalPerson.id = :personId and o.date = :date
+              and o.paymentMethod = ro.ecoregistru.enums.PaymentMethod.NUMERAR
+              and o.status <> ro.ecoregistru.enums.WeighingOperationStatus.CANCELLED
+            """)
+    List<WeighingOperation> findCashToPersonOnDay(@Param("companyId") UUID companyId,
+                                                  @Param("personId") UUID personId,
+                                                  @Param("date") LocalDate date);
+
     /** D1.13 — cel mai mare număr de Anexa 3 dat unei operațiuni; seria e comună cu a mișcărilor. */
     @Query("select max(o.anexa3Number) from WeighingOperation o where o.company.id = :companyId")
     Integer findMaxAnexa3Number(@Param("companyId") UUID companyId);

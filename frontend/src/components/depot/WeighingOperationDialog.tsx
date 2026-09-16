@@ -12,6 +12,7 @@ import {
   useFinalizeWeighingOperation,
   useSaveWeighingLines,
   openWeighingDocument,
+  useCashCheck,
   useUpdateWeighingOperation,
 } from "@/hooks/useWeighingOperations";
 import { canManage, canWrite } from "@/lib/roles";
@@ -134,9 +135,25 @@ export function WeighingOperationDialog({
   // D1.13 — documentele de transport: doar la o ieșire salvată și neanulată. Intrarea n-are formular
   // de la noi (îl face expeditorul, iar persoana fizică n-are deloc — AX).
   const printable = Boolean(operation && !inbound && operation.status !== "CANCELLED");
-  const [printing, setPrinting] = useState<"anexa3" | "aviz" | null>(null);
+  const [printing, setPrinting] = useState<"anexa3" | "aviz" | "borderou" | null>(null);
+  // D1.11 — borderoul: o intrare finalizată de la o persoană fizică. Poartă prețuri și, la metal, CNP-ul,
+  // deci îl tipărește cine scrie și vede prețurile (serverul verifică la fel).
+  const borderouReady = Boolean(
+    operation &&
+      operation.type === "IN" &&
+      operation.naturalPersonId &&
+      operation.status === "FINALIZED" &&
+      canWrite(user?.role) &&
+      company?.pricesVisible
+  );
 
-  async function printDocument(document: "anexa3" | "aviz") {
+  // Plafonul de numerar se verifică pe ce e salvat: suma zilei vine din toate operațiunile persoanei.
+  const cashCheck = useCashCheck(
+    operation?.id ?? null,
+    Boolean(operation?.naturalPersonId && operation.paymentMethod === "NUMERAR" && canWrite(user?.role))
+  );
+
+  async function printDocument(document: "anexa3" | "aviz" | "borderou") {
     if (!operation) return;
     setPrinting(document);
     try {
@@ -364,6 +381,15 @@ export function WeighingOperationDialog({
             <Button variant="outline" onClick={onClose} disabled={busy}>
               {strings.common.close}
             </Button>
+            {borderouReady && (
+              <Button
+                variant="outline"
+                onClick={() => printDocument("borderou")}
+                disabled={busy || printing !== null}
+              >
+                {printing === "borderou" ? strings.movements.avizDownloading : t.printBorderou}
+              </Button>
+            )}
             {printable && (
               // Pe telefon, cele două documente stau pe un rând: subsolul are deja patru butoane.
               <div className="grid grid-cols-2 gap-2 sm:flex">
@@ -736,6 +762,16 @@ export function WeighingOperationDialog({
               )}
             </div>
             {fromPerson && inbound && <p className="text-xs text-content-muted">{t.cashHint}</p>}
+            {cashCheck.data?.aboveLimit && (
+              <p role="alert" className="text-sm text-state-warn-text">
+                {t.cashAboveLimit}
+                {cashCheck.data.paidToday != null && (
+                  <span className="mt-1 block font-mono">
+                    {t.cashPaidToday} {lei(cashCheck.data.paidToday)}
+                  </span>
+                )}
+              </p>
+            )}
 
             {fromPerson && inbound && (
               <Switch

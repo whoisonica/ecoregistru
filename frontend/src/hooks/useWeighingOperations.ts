@@ -47,6 +47,22 @@ export function useWeighingOperation(id: string | null) {
   });
 }
 
+/** D1.11 — plățile în numerar de azi către persoana operațiunii, față de plafonul de 10.000 lei/zi. */
+export interface CashCheck {
+  aboveLimit: boolean;
+  /** Gol pentru cine nu vede prețurile: află doar că s-a trecut plafonul. */
+  paidToday: number | null;
+  limit: number;
+}
+
+export function useCashCheck(id: string | null, enabled: boolean) {
+  return useQuery({
+    enabled: Boolean(id) && enabled,
+    queryKey: [...weighingKey, "cash", id],
+    queryFn: async () => (await api.get<CashCheck>(`/api/v1/weighing-operations/${id}/cash-check`)).data,
+  });
+}
+
 export const retentionsKey = ["depot-retentions"] as const;
 
 function useInvalidate() {
@@ -154,7 +170,7 @@ export async function downloadDepotRegister(year: number, month: number): Promis
  */
 export async function openWeighingDocument(
   operation: WeighingOperation,
-  document: "anexa3" | "aviz"
+  document: "anexa3" | "aviz" | "borderou"
 ): Promise<void> {
   await openPdfInTab(
     async () =>
@@ -163,6 +179,6 @@ export async function openWeighingDocument(
           responseType: "blob",
         })
       ).data as Blob,
-    `${document}-iesire-${operation.number}-${operation.date}.pdf`
+    `${document}-${operation.type === "IN" ? "intrare" : "iesire"}-${operation.number}-${operation.date}.pdf`
   );
 }
