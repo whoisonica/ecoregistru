@@ -6,7 +6,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { withCount } from "@/lib/utils";
+import { cn, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -113,6 +113,10 @@ export function AccountRequestPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  /** Pasul curent, 1–3. Ciorna ține rubricile, nu pasul: la revenire se pornește de la început. */
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  /** Blocul pliat de la pasul 3, cu tot ce nu e obligatoriu. */
+  const [showExtra, setShowExtra] = useState(false);
   /** Emailul cu care s-a trimis, ca pagina de mulțumire să-l poată numi. */
   const [sentToEmail, setSentToEmail] = useState("");
 
@@ -226,15 +230,58 @@ export function AccountRequestPage() {
     setOperationCodes([]);
   }
 
-  function validate(): FieldErrors {
+  /** Rubricile obligatorii ale unui pas; `undefined` = toate (la trimitere). */
+  function validate(only?: 1 | 2 | 3): FieldErrors {
     const errs: FieldErrors = {};
-    if (!companyName.trim()) errs.companyName = t.errCompanyName;
-    const normalizedCui = cui.replace(/\s/g, "").toUpperCase();
-    if (!normalizedCui) errs.cui = t.errCui;
-    else if (!CUI_PATTERN.test(normalizedCui)) errs.cui = t.errCuiFormat;
-    if (!contactEmail.trim()) errs.contactEmail = t.errContactEmail;
-    else if (!EMAIL_PATTERN.test(contactEmail.trim())) errs.contactEmail = t.errContactEmailFormat;
+    if (only === undefined || only === 1) {
+      if (!companyName.trim()) errs.companyName = t.errCompanyName;
+      const normalizedCui = cui.replace(/\s/g, "").toUpperCase();
+      if (!normalizedCui) errs.cui = t.errCui;
+      else if (!CUI_PATTERN.test(normalizedCui)) errs.cui = t.errCuiFormat;
+    }
+    if (only === undefined || only === 2) {
+      if (!contactEmail.trim()) errs.contactEmail = t.errContactEmail;
+      else if (!EMAIL_PATTERN.test(contactEmail.trim())) errs.contactEmail = t.errContactEmailFormat;
+    }
     return errs;
+  }
+
+  /** Pe ce pas stă o rubrică greșită — ca trimiterea să ducă omul înapoi la ea, nu doar s-o marcheze. */
+  function stepOf(errs: FieldErrors): 1 | 2 | 3 {
+    return errs.companyName || errs.cui ? 1 : errs.contactEmail ? 2 : 3;
+  }
+
+  /**
+   * După ce randarea a pus semnele pe rubrici, du ochiul la prima. `data-invalid` e cârligul,
+   * deci nu ținem nicio listă de referințe în paralel cu formularul.
+   */
+  function focusFirstInvalid() {
+    requestAnimationFrame(() => {
+      const first = formRef.current?.querySelector<HTMLElement>('[data-invalid="true"]');
+      if (!first) return;
+      first.scrollIntoView({ block: "center", behavior: "smooth" });
+      first.focus({ preventScroll: true });
+    });
+  }
+
+  function goTo(next: 1 | 2 | 3) {
+    setStep(next);
+    // Pasul nou începe de sus, ca o pagină nouă — nu de unde rămăsese derularea celui vechi.
+    requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+  }
+
+  /** „Continuă”: pasul curent se verifică aici, nu abia la trimitere, trei ecrane mai încolo. */
+  function nextStep() {
+    const found = validate(step);
+    if (Object.keys(found).length > 0) {
+      setErrors(found);
+      setError(strings.common.fixErrors);
+      focusFirstInvalid();
+      return;
+    }
+    setErrors({});
+    setError(null);
+    if (step < 3) goTo((step + 1) as 2 | 3);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -243,15 +290,11 @@ export function AccountRequestPage() {
     if (Object.keys(found).length > 0) {
       setErrors(found);
       setError(strings.common.fixErrors);
-      // După ce randarea a pus semnele pe rubrici, du ochiul la prima. `data-invalid` e cârligul,
-      // deci nu ținem nicio listă de referințe în paralel cu formularul. Butonul stă la capătul a
-      // șase secțiuni: fără derulare, apăsatul lui pare că nu face nimic.
-      requestAnimationFrame(() => {
-        const first = formRef.current?.querySelector<HTMLElement>('[data-invalid="true"]');
-        if (!first) return;
-        first.scrollIntoView({ block: "center", behavior: "smooth" });
-        first.focus({ preventScroll: true });
-      });
+      // Rubrica greșită poate fi pe un pas trecut (ciorna a pus la loc un CUI stricat): întoarce
+      // omul la pasul ei și abia apoi du-i ochiul la rubrică.
+      const target = stepOf(found);
+      if (target !== step) goTo(target);
+      focusFirstInvalid();
       return;
     }
     setErrors({});
@@ -295,9 +338,16 @@ export function AccountRequestPage() {
     }
   }
 
-  // Direcția „Poster” (16.09.2026): verdele din stânga cu cei trei pași, formularul aerisit în
-  // dreapta. Același cadru pe pagina de mulțumire, ca omul să nu sară în alt decor după ce a apăsat.
-  const poster = (
+  // Direcția „Poster” (16.09.2026): verdele din stânga cu cuprinsul formularului — cei trei pași, cu
+  // cel curent aprins și ce s-a completat scris sub cei trecuți; formularul aerisit în dreapta, un
+  // pas pe ecran. Același cadru pe pagina de mulțumire, ca omul să nu sară în alt decor după ce a apăsat.
+  const stepNames = [t.step1Name, t.step2Name, t.step3Name] as const;
+  const stepTitles = [t.step1Title, t.step2Title, t.step3Title] as const;
+  const stepSubtitles = [t.step1Subtitle, t.step2Subtitle, t.step3Subtitle] as const;
+  const fieldClass = "h-12 px-4 text-base";
+  const labelClass = "text-[0.8125rem] text-content-strong";
+
+  return (
     <PublicShell
       split="narrow"
       align="top"
@@ -305,14 +355,32 @@ export function AccountRequestPage() {
       lede={t.posterLede}
       aside={
         <div className="flex flex-col gap-7">
-          <ol className="flex flex-col gap-7">
-            <PosterStep index={1} title={t.step1Title} body={t.step1Body} current={!sent} />
-            <PosterStep index={2} title={t.step2Title} body={t.step2Body} current={sent} />
-            <PosterStep index={3} title={t.step3Title} body={t.step3Body} />
+          <ol className="flex flex-col gap-6">
+            <PosterStep
+              index={1}
+              title={t.step1Name}
+              body={t.step1Lead}
+              current={!sent && step === 1}
+              done={sent || step > 1}
+              summary={[companyName.trim(), cui.trim()].filter(Boolean).join(" · ")}
+            />
+            <PosterStep
+              index={2}
+              title={t.step2Name}
+              body={t.step2Lead}
+              current={!sent && step === 2}
+              done={sent || step > 2}
+              summary={contactEmail.trim()}
+            />
+            <PosterStep index={3} title={t.step3Name} body={t.step3Lead} current={!sent && step === 3} done={sent} />
           </ol>
-          <div className="flex items-center gap-2.5 text-xs text-white/75">
-            <span aria-hidden className="inline-block h-2 w-2 rounded-sm bg-lcd-digit" />
-            {t.posterNote}
+          <div className="flex flex-col gap-1.5 border-t border-white/20 pt-5 text-xs text-white/75">
+            {[t.noteRequired, t.noteAccess, t.posterNote].map((line) => (
+              <div key={line} className="flex items-center gap-2.5">
+                <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-sm bg-lcd-digit" />
+                {line}
+              </div>
+            ))}
           </div>
         </div>
       }
@@ -336,12 +404,12 @@ export function AccountRequestPage() {
                 t.successNext1,
                 t.successNext2,
                 t.successNext3.replace("{email}", sentToEmail || t.successNoEmailFallback),
-              ].map((step, i) => (
+              ].map((line, i) => (
                 <li key={i} className="flex gap-3 text-sm text-content-strong">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-100 font-mono text-xs font-medium text-brand-800">
                     {i + 1}
                   </span>
-                  <span>{step}</span>
+                  <span>{line}</span>
                 </li>
               ))}
             </ol>
@@ -353,403 +421,476 @@ export function AccountRequestPage() {
           </Link>
         </div>
       ) : (
-        <div className="flex w-full max-w-[720px] flex-col gap-10">
+        <form ref={formRef} onSubmit={handleSubmit} className="flex w-full max-w-[680px] flex-col gap-9" noValidate>
           <div className="flex flex-col gap-2">
-            <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.title}</h1>
-            <p className="text-content-muted">{t.requiredLegend}</p>
+            <span className="font-mono text-xs font-medium uppercase tracking-[0.08em] text-brand">
+              {t.stepOf.replace("{n}", String(step)).replace("{name}", stepNames[step - 1])}
+            </span>
+            <h1 id="ar-step-title" className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">
+              {stepTitles[step - 1]}
+            </h1>
+            <p className="text-content-muted">{stepSubtitles[step - 1]}</p>
           </div>
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-10" noValidate>
-        {draft.restored && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-inbound px-3 py-2 text-sm text-inbound-border">
-            <span>{t.draftRestored}</span>
-            <button
-              type="button"
-              onClick={discardDraft}
-              className="shrink-0 font-medium underline hover:no-underline"
+          {draft.restored && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-inbound px-3 py-2 text-sm text-inbound-border">
+              <span>{t.draftRestored}</span>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="shrink-0 font-medium underline hover:no-underline"
+              >
+                {t.draftDiscard}
+              </button>
+            </div>
+          )}
+          {error && (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-state-bad px-3 py-2 text-sm text-state-bad-text"
             >
-              {t.draftDiscard}
-            </button>
-          </div>
-        )}
-        {error && (
-          <p
-            role="alert"
-            className="flex items-start gap-2 rounded-md border border-state-bad px-3 py-2 text-sm text-state-bad-text"
-          >
-            <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-bad" />
-            {error}
-          </p>
-        )}
+              <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-bad" />
+              {error}
+            </p>
+          )}
 
-        <FormSection size="lg" title={t.sectionCompany}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-cui" required>
-                {t.cui}
-              </Label>
-              <Input
-                className="h-12 px-4 text-base"
-                id="ar-cui"
-                value={cui}
-                onChange={(e) => setCui(e.target.value)}
-                placeholder={t.cuiPlaceholder}
-                {...invalidProps("ar-cui-err", errors.cui)}
-              />
-              <FieldError id="ar-cui-err" message={errors.cui} />
-            </div>
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-name" required>
-                {t.companyName}
-              </Label>
-              <Input
-                className="h-12 px-4 text-base"
-                id="ar-name"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                autoComplete="organization"
-                {...invalidProps("ar-name-err", errors.companyName)}
-              />
-              <FieldError id="ar-name-err" message={errors.companyName} />
-            </div>
-          </div>
-          <div>
-            <span id="ar-type-label" className="mb-1 block text-xs font-medium text-content-muted">
-              {t.companyType}
-            </span>
-            <ChoiceCards
-              name="ar-type"
-              aria-labelledby="ar-type-label"
-              columns={3}
-              value={companyType}
-              onChange={setCompanyType}
-              options={COMPANY_TYPES.map((ct) => ({
-                value: ct,
-                label: t.companyTypeChoice[ct].label,
-                description: t.companyTypeChoice[ct].hint,
-              }))}
-            />
-          </div>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-caen">{t.caenCode}</Label>
-            <Input
-              className="h-12 px-4 text-base"
-              id="ar-caen"
-              value={caenCode}
-              onChange={(e) => setCaenCode(e.target.value)}
-              placeholder={t.caenCodePlaceholder}
-            />
-            <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
-          </div>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-address">{t.companyAddress}</Label>
-            <Textarea
-              className="px-4 text-base"
-              id="ar-address"
-              rows={2}
-              value={companyAddress}
-              onChange={(e) => setCompanyAddress(e.target.value)}
-            />
-          </div>
-        </FormSection>
-
-        <FormSection size="lg" title={t.sectionWorkPoint} description={t.workPointHint}>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-wp-name">{t.workPointName}</Label>
-            <Input
-              className="h-12 px-4 text-base"
-              id="ar-wp-name"
-              value={workPointName}
-              onChange={(e) => setWorkPointName(e.target.value)}
-              placeholder={t.workPointNamePlaceholder}
-            />
-          </div>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-wp-address">{t.workPointAddress}</Label>
-            <Textarea
-              className="px-4 text-base"
-              id="ar-wp-address"
-              rows={2}
-              value={workPointAddress}
-              onChange={(e) => setWorkPointAddress(e.target.value)}
-            />
-          </div>
-        </FormSection>
-
-        <FormSection size="lg" title={t.sectionContact} description={t.contactHint}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-name">{t.contactName}</Label>
-              <Input
-                className="h-12 px-4 text-base"
-                id="ar-contact-name"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                autoComplete="name"
-              />
-            </div>
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-phone">{t.contactPhone}</Label>
-              <Input
-                className="h-12 px-4 text-base"
-                id="ar-contact-phone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                autoComplete="tel"
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-role">{t.contactRole}</Label>
-            <Input
-              className="h-12 px-4 text-base"
-              id="ar-contact-role"
-              value={contactRole}
-              onChange={(e) => setContactRole(e.target.value)}
-              placeholder={t.contactRolePlaceholder}
-            />
-            <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
-          </div>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-contact-email" required>
-              {t.contactEmail}
-            </Label>
-            <Input
-              className="h-12 px-4 text-base"
-              id="ar-contact-email"
-              type="email"
-              value={contactEmail}
-              onChange={(e) => setContactEmail(e.target.value)}
-              autoComplete="email"
-              {...invalidProps("ar-contact-email-err", errors.contactEmail)}
-            />
-            <FieldError id="ar-contact-email-err" message={errors.contactEmail} />
-          </div>
-        </FormSection>
-
-        <FormSection size="lg" title={t.sectionAuthorization}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-auth-number">{t.environmentalAuthNumber}</Label>
-              <Input
-                className="h-12 px-4 text-base"
-                id="ar-auth-number"
-                value={authNumber}
-                onChange={(e) => setAuthNumber(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-auth-expiry">{t.environmentalAuthExpiry}</Label>
-              <DateInput
-                className="h-12 px-4 text-base"
-                id="ar-auth-expiry"
-                value={authExpiry}
-                onChange={(e) => setAuthExpiry(e.target.value)}
-              />
-            </div>
-          </div>
-        </FormSection>
-
-        {asksTransport && (
-          <FormSection size="lg" title={t.sectionTransport} description={t.transportHint}>
-            <div>
-              <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-transport-means">{t.transportMeans}</Label>
-              <Textarea
-                className="px-4 text-base"
-                id="ar-transport-means"
-                rows={2}
-                value={transportMeans}
-                onChange={(e) => setTransportMeans(e.target.value)}
-                placeholder={t.transportMeansPlaceholder}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {step === 1 && (
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className={labelClass} htmlFor="ar-cui" required>
+                    {t.cui}
+                  </Label>
+                  <Input
+                    className={fieldClass}
+                    id="ar-cui"
+                    value={cui}
+                    onChange={(e) => setCui(e.target.value)}
+                    placeholder={t.cuiPlaceholder}
+                    autoFocus
+                    {...invalidProps("ar-cui-err", errors.cui)}
+                  />
+                  <FieldError id="ar-cui-err" message={errors.cui} />
+                </div>
+                <div>
+                  <Label className={labelClass} htmlFor="ar-name" required>
+                    {t.companyName}
+                  </Label>
+                  <Input
+                    className={fieldClass}
+                    id="ar-name"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    autoComplete="organization"
+                    {...invalidProps("ar-name-err", errors.companyName)}
+                  />
+                  <FieldError id="ar-name-err" message={errors.companyName} />
+                </div>
+              </div>
               <div>
-                <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-transport-licence">{t.transportLicenseNumber}</Label>
+                <span id="ar-type-label" className={cn("mb-1 block text-xs font-medium", labelClass)}>
+                  {t.companyType}
+                </span>
+                <ChoiceCards
+                  name="ar-type"
+                  aria-labelledby="ar-type-label"
+                  columns={3}
+                  value={companyType}
+                  onChange={setCompanyType}
+                  options={COMPANY_TYPES.map((ct) => ({
+                    value: ct,
+                    label: t.companyTypeChoice[ct].label,
+                    description: t.companyTypeChoice[ct].hint,
+                  }))}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className={labelClass} htmlFor="ar-contact-name">
+                    {t.contactName}
+                  </Label>
+                  <Input
+                    className={fieldClass}
+                    id="ar-contact-name"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    autoComplete="name"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label className={labelClass} htmlFor="ar-contact-phone">
+                    {t.contactPhone}
+                  </Label>
+                  <Input
+                    className={fieldClass}
+                    id="ar-contact-phone"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    autoComplete="tel"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className={labelClass} htmlFor="ar-contact-email" required>
+                  {t.contactEmail}
+                </Label>
                 <Input
-                  className="h-12 px-4 text-base"
-                  id="ar-transport-licence"
-                  value={transportLicenseNumber}
-                  onChange={(e) => setTransportLicenseNumber(e.target.value)}
+                  className={fieldClass}
+                  id="ar-contact-email"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  autoComplete="email"
+                  {...invalidProps("ar-contact-email-err", errors.contactEmail)}
                 />
+                <FieldError id="ar-contact-email-err" message={errors.contactEmail} />
               </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="flex flex-col gap-6">
+              <PillGroup
+                name="ar-waste-names"
+                multiple
+                aria-labelledby="ar-step-title"
+                options={COMMON_WASTES.map((w) => ({ value: w.name, label: w.name, code: w.code }))}
+                selected={wasteNames}
+                onToggle={(name) =>
+                  setWasteNames((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]))
+                }
+              />
               <div>
-                <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-transport-expiry">{t.transportLicenseExpiry}</Label>
-                <DateInput
-                  className="h-12 px-4 text-base"
-                  id="ar-transport-expiry"
-                  value={transportLicenseExpiry}
-                  onChange={(e) => setTransportLicenseExpiry(e.target.value)}
+                <Label className={labelClass} htmlFor="ar-waste-text">
+                  {t.wasteOtherText}
+                </Label>
+                <Textarea
+                  className="px-4 text-base"
+                  id="ar-waste-text"
+                  rows={2}
+                  value={wasteCodesText}
+                  onChange={(e) => setWasteCodesText(e.target.value)}
+                  placeholder={t.wasteCodesTextPlaceholder}
                 />
+                <p className="mt-1 text-xs text-content-muted">{t.extraOtherHint}</p>
               </div>
-            </div>
-          </FormSection>
-        )}
 
-        <FormSection size="lg" title={t.sectionMarketRole}>
-          <MarketRolePicker
-            value={marketRoles}
-            onChange={setMarketRoles}
-            label={t.marketRoles}
-            hint={t.marketRolesHint}
-          />
-        </FormSection>
-
-        <FormSection size="lg" title={t.sectionWaste}>
-          <div>
-            <span id="ar-waste-list" className="block text-sm font-medium text-content-strong">
-              {t.wasteCodesText}
-            </span>
-            <p className="mt-0.5 text-xs text-content-muted">{t.wasteListHint}</p>
-            <PillGroup
-              name="ar-waste-names"
-              multiple
-              aria-labelledby="ar-waste-list"
-              className="mt-2"
-              options={COMMON_WASTES.map((w) => ({ value: w.name, label: w.name, code: w.code }))}
-              selected={wasteNames}
-              onToggle={(name) =>
-                setWasteNames((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]))
-              }
-            />
-          </div>
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-waste-text">{t.wasteOtherText}</Label>
-            <Textarea
-              className="px-4 text-base"
-              id="ar-waste-text"
-              rows={3}
-              value={wasteCodesText}
-              onChange={(e) => setWasteCodesText(e.target.value)}
-              placeholder={t.wasteCodesTextPlaceholder}
-            />
-            <p className="mt-1 text-xs text-content-muted">{t.wasteCodesTextHint}</p>
-          </div>
-
-          <fieldset>
-            <legend className="text-sm font-medium text-content-strong">{t.operationCodes}</legend>
-            <p className="mt-0.5 text-xs text-content-muted">{t.operationCodesHint}</p>
-
-            {/* Două ieșiri, iar prima e onorabilă: „nu știu" e un răspuns pe care aplicația îl
-                înțelege deja — set gol înseamnă „nu s-a răspuns", iar profilul gol nu restrânge
-                nimic (decizia 6). Ce s-a schimbat e că formularul o spune. */}
-            <div className="mt-2 space-y-2">
-              <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
-                <input
-                  type="radio"
-                  name="ar-codes-mode"
-                  className="mt-0.5 h-4 w-4 border-line-strong"
-                  checked={!chooseCodes}
-                  onChange={chooseUnknownCodes}
-                />
-                <span>
-                  <span className="font-medium text-content-strong">{t.operationCodesUnknown}</span>
-                  <span className="mt-0.5 block text-xs text-content-muted">
-                    {t.operationCodesUnknownHint}
-                  </span>
-                </span>
-              </label>
-
-              <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
-                <input
-                  type="radio"
-                  name="ar-codes-mode"
-                  className="mt-0.5 h-4 w-4 border-line-strong"
-                  checked={chooseCodes}
-                  onChange={() => setChooseCodes(true)}
-                />
-                <span>
-                  <span className="font-medium text-content-strong">{t.operationCodesChoose}</span>
-                  <span className="mt-0.5 block text-xs text-content-muted">
-                    {operationCodes.length > 0
-                      ? withCount(
-                          t.operationCodesSelected,
-                          operationCodes.length,
-                          "operațiune aleasă",
-                          "operațiuni alese"
-                        )
-                      : t.operationCodesChooseHint}
-                  </span>
-                </span>
-              </label>
-            </div>
-
-            {chooseCodes && (
-              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {[
-                  { title: t.recovery, codes: R_CODES },
-                  { title: t.disposal, codes: D_CODES },
-                ].map((group) => (
-                  <div key={group.title}>
-                    <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-                      {group.title}
-                    </span>
-                    <div className="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-line p-2">
-                      {group.codes.map((c) => (
-                        <label key={c} className="flex items-start gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            className="mt-0.5 h-4 w-4 rounded border-line-strong"
-                            checked={operationCodes.includes(c)}
-                            onChange={() => toggleCode(c)}
+              {/* Tot ce nu e obligatoriu, într-un singur bloc pliat. Plierea nu ascunde nimic care
+                  ar bloca trimiterea: toate rubricile dinăuntru sunt opționale. */}
+              <div className="rounded-lg border border-line-strong">
+                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
+                  <div>
+                    <div className="font-semibold text-content">{t.extraTitle}</div>
+                    <div className="text-xs text-content-muted">{t.extraHint}</div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    aria-expanded={showExtra}
+                    aria-controls="ar-extra"
+                    onClick={() => setShowExtra((v) => !v)}
+                  >
+                    {showExtra ? t.extraClose : t.extraOpen}
+                  </Button>
+                </div>
+                {showExtra && (
+                  <div id="ar-extra" className="space-y-8 border-t border-line px-4 pb-5 pt-5">
+                    <FormSection title={t.sectionWorkPoint} description={t.workPointHint}>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-wp-name">
+                            {t.workPointName}
+                          </Label>
+                          <Input
+                            className={fieldClass}
+                            id="ar-wp-name"
+                            value={workPointName}
+                            onChange={(e) => setWorkPointName(e.target.value)}
+                            placeholder={t.workPointNamePlaceholder}
                           />
-                          <span className="text-content-strong">{codeLabels[c]}</span>
+                        </div>
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-wp-address">
+                            {t.workPointAddress}
+                          </Label>
+                          <Textarea
+                            className="px-4 text-base"
+                            id="ar-wp-address"
+                            rows={2}
+                            value={workPointAddress}
+                            onChange={(e) => setWorkPointAddress(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </FormSection>
+
+                    <FormSection title={t.sectionCompany}>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-caen">
+                            {t.caenCode}
+                          </Label>
+                          <Input
+                            className={fieldClass}
+                            id="ar-caen"
+                            value={caenCode}
+                            onChange={(e) => setCaenCode(e.target.value)}
+                            placeholder={t.caenCodePlaceholder}
+                          />
+                          <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
+                        </div>
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-contact-role">
+                            {t.contactRole}
+                          </Label>
+                          <Input
+                            className={fieldClass}
+                            id="ar-contact-role"
+                            value={contactRole}
+                            onChange={(e) => setContactRole(e.target.value)}
+                            placeholder={t.contactRolePlaceholder}
+                          />
+                          <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className={labelClass} htmlFor="ar-address">
+                          {t.companyAddress}
+                        </Label>
+                        <Textarea
+                          className="px-4 text-base"
+                          id="ar-address"
+                          rows={2}
+                          value={companyAddress}
+                          onChange={(e) => setCompanyAddress(e.target.value)}
+                        />
+                      </div>
+                    </FormSection>
+
+                    <FormSection title={t.sectionAuthorization}>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-auth-number">
+                            {t.environmentalAuthNumber}
+                          </Label>
+                          <Input
+                            className={fieldClass}
+                            id="ar-auth-number"
+                            value={authNumber}
+                            onChange={(e) => setAuthNumber(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-auth-expiry">
+                            {t.environmentalAuthExpiry}
+                          </Label>
+                          <DateInput
+                            className={fieldClass}
+                            id="ar-auth-expiry"
+                            value={authExpiry}
+                            onChange={(e) => setAuthExpiry(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </FormSection>
+
+                    {asksTransport && (
+                      <FormSection title={t.sectionTransport} description={t.transportHint}>
+                        <div>
+                          <Label className={labelClass} htmlFor="ar-transport-means">
+                            {t.transportMeans}
+                          </Label>
+                          <Textarea
+                            className="px-4 text-base"
+                            id="ar-transport-means"
+                            rows={2}
+                            value={transportMeans}
+                            onChange={(e) => setTransportMeans(e.target.value)}
+                            placeholder={t.transportMeansPlaceholder}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <Label className={labelClass} htmlFor="ar-transport-licence">
+                              {t.transportLicenseNumber}
+                            </Label>
+                            <Input
+                              className={fieldClass}
+                              id="ar-transport-licence"
+                              value={transportLicenseNumber}
+                              onChange={(e) => setTransportLicenseNumber(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label className={labelClass} htmlFor="ar-transport-expiry">
+                              {t.transportLicenseExpiry}
+                            </Label>
+                            <DateInput
+                              className={fieldClass}
+                              id="ar-transport-expiry"
+                              value={transportLicenseExpiry}
+                              onChange={(e) => setTransportLicenseExpiry(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </FormSection>
+                    )}
+
+                    <FormSection title={t.sectionMarketRole}>
+                      <MarketRolePicker
+                        value={marketRoles}
+                        onChange={setMarketRoles}
+                        label={t.marketRoles}
+                        hint={t.marketRolesHint}
+                      />
+                    </FormSection>
+
+                    <fieldset>
+                      <legend className="text-sm font-medium text-content-strong">{t.operationCodes}</legend>
+                      <p className="mt-0.5 text-xs text-content-muted">{t.operationCodesHint}</p>
+
+                      {/* Două ieșiri, iar prima e onorabilă: „nu știu" e un răspuns pe care aplicația
+                          îl înțelege deja — set gol înseamnă „nu s-a răspuns", iar profilul gol nu
+                          restrânge nimic (decizia 6). Ce s-a schimbat e că formularul o spune. */}
+                      <div className="mt-2 space-y-2">
+                        <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
+                          <input
+                            type="radio"
+                            name="ar-codes-mode"
+                            className="mt-0.5 h-4 w-4 border-line-strong"
+                            checked={!chooseCodes}
+                            onChange={chooseUnknownCodes}
+                          />
+                          <span>
+                            <span className="font-medium text-content-strong">{t.operationCodesUnknown}</span>
+                            <span className="mt-0.5 block text-xs text-content-muted">
+                              {t.operationCodesUnknownHint}
+                            </span>
+                          </span>
                         </label>
-                      ))}
+
+                        <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
+                          <input
+                            type="radio"
+                            name="ar-codes-mode"
+                            className="mt-0.5 h-4 w-4 border-line-strong"
+                            checked={chooseCodes}
+                            onChange={() => setChooseCodes(true)}
+                          />
+                          <span>
+                            <span className="font-medium text-content-strong">{t.operationCodesChoose}</span>
+                            <span className="mt-0.5 block text-xs text-content-muted">
+                              {operationCodes.length > 0
+                                ? withCount(
+                                    t.operationCodesSelected,
+                                    operationCodes.length,
+                                    "operațiune aleasă",
+                                    "operațiuni alese"
+                                  )
+                                : t.operationCodesChooseHint}
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+
+                      {chooseCodes && (
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {[
+                            { title: t.recovery, codes: R_CODES },
+                            { title: t.disposal, codes: D_CODES },
+                          ].map((group) => (
+                            <div key={group.title}>
+                              <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">
+                                {group.title}
+                              </span>
+                              <div className="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-line p-2">
+                                {group.codes.map((c) => (
+                                  <label key={c} className="flex items-start gap-2 text-sm">
+                                    <input
+                                      type="checkbox"
+                                      className="mt-0.5 h-4 w-4 rounded border-line-strong"
+                                      checked={operationCodes.includes(c)}
+                                      onChange={() => toggleCode(c)}
+                                    />
+                                    <span className="text-content-strong">{codeLabels[c]}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </fieldset>
+
+                    <div>
+                      <Label className={labelClass} htmlFor="ar-notes">
+                        {t.notes}
+                      </Label>
+                      <Textarea
+                        className="px-4 text-base"
+                        id="ar-notes"
+                        rows={3}
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                      />
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </fieldset>
+            </div>
+          )}
 
-          <div>
-            <Label className="text-[0.8125rem] text-content-strong" htmlFor="ar-notes">{t.notes}</Label>
-            <Textarea
-              className="px-4 text-base"
-              id="ar-notes"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+          {/* Momeala. `sr-only` o scoate din pagină fără s-o scoată din DOM, `tabIndex={-1}` o scoate
+              din drumul tastaturii, iar `aria-hidden` din cel al cititorului de ecran — deci un om
+              n-o poate completa nici din greșeală. Un robot care umple tot ce găsește, da. */}
+          <div aria-hidden="true" className="sr-only">
+            <label htmlFor="ar-website">Website</label>
+            <input
+              id="ar-website"
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
             />
           </div>
-        </FormSection>
 
-        {/* Momeala. `sr-only` o scoate din pagină fără s-o scoată din DOM, `tabIndex={-1}` o scoate
-            din drumul tastaturii, iar `aria-hidden` din cel al cititorului de ecran — deci un om
-            n-o poate completa nici din greșeală. Un robot care umple tot ce găsește, da. */}
-        <div aria-hidden="true" className="sr-only">
-          <label htmlFor="ar-website">Website</label>
-          <input
-            id="ar-website"
-            name="website"
-            type="text"
-            tabIndex={-1}
-            autoComplete="off"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-          />
-        </div>
-
-        <div className="border-t border-line pt-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <Link to="/login" className="text-sm font-medium text-brand hover:underline">
-              {t.backToLogin}
-            </Link>
-            <div className="flex flex-col items-end gap-2">
-              <Button type="submit" size="lg" loading={submitMut.isPending}>
-                {submitMut.isPending ? t.submitting : t.submit}
+          <div className="flex flex-wrap items-start justify-between gap-4 border-t border-line pt-6">
+            {step === 1 ? (
+              <span />
+            ) : (
+              <button
+                type="button"
+                onClick={() => goTo((step - 1) as 1 | 2)}
+                className="text-sm font-medium text-brand hover:underline"
+              >
+                ← {t.backStep}
+              </button>
+            )}
+            {step < 3 ? (
+              <Button type="button" size="lg" onClick={nextStep}>
+                {t.continueStep} →
               </Button>
-              {/* Sub buton, nu deasupra lui: se citește în drum spre apăsare. */}
-              <LegalNotice className="text-right" />
-            </div>
+            ) : (
+              <div className="flex flex-col items-end gap-2">
+                <Button type="submit" size="lg" loading={submitMut.isPending}>
+                  {submitMut.isPending ? t.submitting : t.submit}
+                </Button>
+                {/* Sub buton, nu deasupra lui: se citește în drum spre apăsare. */}
+                <LegalNotice className="text-right" />
+              </div>
+            )}
           </div>
-        </div>
-      </form>
-        </div>
+        </form>
       )}
     </PublicShell>
   );
-
-  return poster;
 }

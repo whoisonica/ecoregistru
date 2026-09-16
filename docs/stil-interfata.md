@@ -112,9 +112,13 @@ to-brand-900`, cu o lumină difuză `lcd-digit` în colț): semnul, un titlu mar
 propoziție, apoi ce vrea pagina să arate — pe login trei tile-uri cu ecrane care chiar există (Anexa 1, 15 martie,
 Dosarul de control), pe cerere pașii 01–03 (`PosterStep`, un `ol`). **Dreapta, alb**: formularul, cu rubrici de
 48px (`h-12`), titlul de 32px, linkul spre cealaltă pagină în colț și subsolul juridic o singură dată. Pe telefon
-verdele devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii. Cererea începe cu
-CUI-ul, „Ce faceți cu deșeurile” e `ChoiceCards` pe trei coloane, secțiunile sunt `FormSection size="lg"` (titlu de
-20px, fără linia de 2px). Parola uitată și alegerea parolei rămân pe cardul vechi, de rescris când se atinge.
+verdele devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii. **Cererea e în trei pași** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de rubrici pe o pagină):
+„Detalii despre compania ta” (CUI, denumire, „Ce faceți cu deșeurile” ca `ChoiceCards`) · „Datele tale de contact”
+(nume, telefon, email) · „Deșeurile companiei tale” (etichetele bifabile + un rând liber). Tot ce nu e obligatoriu
+stă pliat la pasul 3, într-un singur bloc: „Detalii care ne scutesc de un telefon · Adaugă”. Fiecare „Continuă”
+își verifică pasul; trimiterea întoarce omul la pasul rubricii greșite. Pașii de pe verde sunt cuprinsul
+formularului: cel curent aprins, sub cei trecuți ce s-a completat. Titlurile sunt prietenoase, nu întrebări
+(„Cine sunteți?” a fost respins). Parola uitată și alegerea parolei rămân pe cardul vechi, de rescris când se atinge.
 
 ## Ecranele de mișcări
 

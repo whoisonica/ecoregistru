@@ -19,6 +19,8 @@ const check = (n, ok, d = "") => {
 };
 
 // ══════════════════════════════════════════════ FORMULARUL PUBLIC, FĂRĂ AUTENTIFICARE
+// Din 16.09.2026 (direcția „Poster”) formularul e în trei pași — Compania · Contactul · Deșeurile —
+// cu tot ce nu e obligatoriu pliat la ultimul pas. Proba merge pas cu pas, cum merge omul.
 await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
 await page.waitForTimeout(400);
 
@@ -26,72 +28,89 @@ const brand = await page.textContent("header");
 check("pagina spune al cui e", /WasteHouse/.test(brand ?? ""), (brand ?? "").trim().slice(0, 40));
 
 const steps = await page.$$eval("ol li", (li) => li.length);
-check("scrie ce urmează după trimitere", steps >= 3, steps + " pași");
+check("verdele arată cei trei pași ai formularului", steps >= 3, steps + " pași");
 
-// Cele trei rubrici obligatorii se văd **înainte** de a apăsa Trimite, nu după.
-const marked = await page.$$eval("label", (labels) =>
+const CONTINUE = 'button:has-text("Continuă")';
+
+// ---------------------------------------------- PASUL 1: COMPANIA
+// Rubricile obligatorii ale pasului se văd **înainte** de a apăsa Continuă, nu după.
+const marked1 = await page.$$eval("label", (labels) =>
   labels.filter((l) => l.textContent.includes("*")).map((l) => l.getAttribute("for"))
 );
 check(
-  "cele trei rubrici obligatorii sunt marcate",
-  ["ar-name", "ar-cui", "ar-contact-email"].every((id) => marked.includes(id)),
-  marked.join(", ")
+  "pasul 1 își marchează cele două rubrici obligatorii",
+  ["ar-cui", "ar-name"].every((id) => marked1.includes(id)),
+  marked1.join(", ")
 );
 
-// Cele 28 de bife R/D nu mai stau deschise în fața cuiva care n-a auzit de R13.
+await page.click(CONTINUE);
+await page.waitForTimeout(500);
+const invalid1 = (await page.$$('[data-invalid="true"]')).length;
+check("„Continuă” pe pasul gol marchează rubricile", invalid1 === 2, invalid1 + " rubrici marcate");
+const errorTexts1 = await page.$$eval("p[data-field-error]", (p) => p.map((x) => x.textContent.trim()));
+check("fiecare rubrică își spune motivul", errorTexts1.length === 2, errorTexts1.join(" | "));
+const focusedId = await page.evaluate(() => document.activeElement?.id ?? "");
+check("focusul sare la prima rubrică greșită", focusedId === "ar-cui", focusedId || "(niciunul)");
+const stillStep1 = (await page.textContent("form")).includes("Pasul 1 din 3");
+check("și nu trece mai departe", stillStep1);
+
+// CUI-ul e verificat aici, nu la aprobare.
+await page.fill("#ar-name", "Proba Automata SRL");
+await page.fill("#ar-cui", "nu-e-cui");
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+check("CUI-ul stricat se respinge cu forma cerută", /2–10 cifre/.test(await page.textContent("form")), "");
+
+const cui = "RO" + String(Date.now()).slice(-8);
+await page.fill("#ar-cui", cui);
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+check("pasul 2 se deschide", (await page.textContent("form")).includes("Pasul 2 din 3"));
+const asideAfter1 = await page.textContent("ol");
+check("verdele scrie ce s-a completat la pasul 1", asideAfter1.includes(cui), "");
+
+// ---------------------------------------------- PASUL 2: CONTACTUL
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+const focused2 = await page.evaluate(() => document.activeElement?.id ?? "");
+check("emailul lipsă oprește pasul 2", focused2 === "ar-contact-email", focused2 || "(niciunul)");
+await page.fill("#ar-contact-email", "fara-arond");
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+check("emailul incomplet se respinge", /nu pare complet/.test(await page.textContent("form")), "");
+
+const email = "proba" + String(Date.now()).slice(-6) + "@example.ro";
+await page.fill("#ar-contact-email", email);
+await page.fill("#ar-contact-phone", "0740000006");
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+check("pasul 3 se deschide", (await page.textContent("form")).includes("Pasul 3 din 3"));
+
+// ---------------------------------------------- PASUL 3: DEȘEURILE + DETALIILE PLIATE
+// Tot ce nu e obligatoriu stă pliat: fără „Adaugă”, nicio rubrică din el nu e în pagină.
+check("detaliile opționale sunt pliate", (await page.$("#ar-wp-name")) === null);
+await page.click('button:has-text("Adaugă")');
+await page.waitForTimeout(300);
+check("„Adaugă” le deschide", (await page.$("#ar-wp-name")) !== null);
+
+// Cele 28 de bife R/D nu stau deschise în fața cuiva care n-a auzit de R13.
 const codesHiddenAtFirst = (await page.$$('input[type="checkbox"][class*="rounded"]')).length;
 const hasUnknownEscape = (await page.textContent("form")).includes("Nu știu");
 check("lista de coduri R/D e pliată, cu o ieșire onorabilă", hasUnknownEscape, "„Nu știu” există");
 check("codurile nu sunt bifate din start", codesHiddenAtFirst < 28, codesHiddenAtFirst + " bife vizibile");
-
-// Deschiderea listei o arată; „Nu știu” o ascunde **și** golește ce s-a bifat, ca să nu rămână
-// în urmă răspunsuri pe care omul crede că le-a retras.
 await page.click('input[name="ar-codes-mode"] >> nth=1');
 await page.waitForTimeout(250);
 const codesShown = (await page.$$('input[type="checkbox"]')).length;
 check("alegerea „le aleg acum” deschide lista", codesShown > 20, codesShown + " bife");
 
-// ---------------------------------------------- TRIMITEREA GOALĂ MARCHEAZĂ RUBRICILE
-// Defectul nr. 4 din proba de pe 07.09 („bannerul marca nimic”), rămas pe pagina asta: apăsai
-// butonul din capătul a șase secțiuni și părea că nu face nimic.
-await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-await page.click('button[type="submit"]');
-await page.waitForTimeout(600);
-
-const invalidCount = (await page.$$('[data-invalid="true"]')).length;
-check("trimiterea goală marchează rubricile", invalidCount === 3, invalidCount + " rubrici marcate");
-
-const errorTexts = await page.$$eval("p[data-field-error]", (p) => p.map((x) => x.textContent.trim()));
-check("fiecare rubrică își spune motivul", errorTexts.length === 3, errorTexts.join(" | "));
-
-// Derularea la prima greșită: butonul stă la capătul paginii, marcajul e în capul ei. Din
-// 16.09.2026 (direcția „Poster”) CUI-ul e prima rubrică, înaintea denumirii.
-const focusedId = await page.evaluate(() => document.activeElement?.id ?? "");
-check("focusul sare la prima rubrică greșită", focusedId === "ar-cui", focusedId || "(niciunul)");
-
-// ---------------------------------------------- CUI-UL E VERIFICAT AICI, NU LA APROBARE
-await page.fill("#ar-name", "Proba Automata SRL");
-await page.fill("#ar-cui", "nu-e-cui");
-await page.fill("#ar-contact-email", "fara-arond");
-await page.click('button[type="submit"]');
-await page.waitForTimeout(500);
-const formText = await page.textContent("form");
-check("CUI-ul stricat se respinge cu forma cerută", /2–10 cifre/.test(formText), "");
-check("emailul incomplet se respinge", /nu pare complet/.test(formText), "");
-
-// ---------------------------------------------- TRIMITEREA CARE MERGE
-const cui = "RO" + String(Date.now()).slice(-8);
-const email = "proba" + String(Date.now()).slice(-6) + "@example.ro";
-await page.fill("#ar-cui", cui);
-await page.fill("#ar-contact-email", email);
-// Exact cele opt rubrici pe care tabelul inboxului le ascundea. Se completează aici ca dialogul de
-// mai jos să aibă ce citi: o cerere goală n-ar dovedi nimic, fiindcă secțiunile fără niciun răspuns
-// se pliază dinadins la un singur rând.
+// Exact rubricile pe care tabelul inboxului le ascundea. Se completează aici ca dialogul de mai jos
+// să aibă ce citi: o cerere goală n-ar dovedi nimic, fiindcă secțiunile fără niciun răspuns se
+// pliază dinadins la un singur rând.
 await page.fill("#ar-wp-name", "Hala de probă");
 await page.fill("#ar-wp-address", "Str. Probelor nr. 6, Cluj-Napoca");
-await page.fill("#ar-contact-phone", "0740000006");
 await page.fill("#ar-auth-number", "AM-PROBA-6");
 await page.fill("#ar-notes", "Rând scris de proba automată 6-cerere-si-rapoarte.");
+await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 await page.click('button[type="submit"]');
 await page.waitForTimeout(1200);
 

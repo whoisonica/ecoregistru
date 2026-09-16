@@ -108,8 +108,16 @@ await page.click('footer a[href="/confidentialitate"]');
 await page.waitForURL((u) => u.pathname === "/confidentialitate", { timeout: 5000 });
 check("linkul din subsol chiar deschide politica", page.url().endsWith("/confidentialitate"));
 
-// Cererea de cont: rândul de sub buton, cu cele două trimiteri.
+// Cererea de cont: rândul de sub butonul de trimitere, cu cele două trimiteri. Din 16.09.2026
+// formularul e în trei pași, iar butonul (și rândul) stau la ultimul — se ajunge acolo ca omul.
 await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
+await page.waitForTimeout(300);
+await page.fill("#ar-cui", "RO12345678");
+await page.fill("#ar-name", "Proba Legală SRL");
+await page.click('button:has-text("Continuă")');
+await page.waitForTimeout(300);
+await page.fill("#ar-contact-email", "proba@example.ro");
+await page.click('button:has-text("Continuă")');
 await page.waitForTimeout(300);
 const noticeText = (await page.textContent("form")) ?? "";
 check(

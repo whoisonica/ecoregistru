@@ -137,25 +137,27 @@ export function PosterStep({
   title,
   body,
   current = false,
+  done = false,
+  summary,
 }: {
   index: number;
   title: string;
   body: string;
+  /** Pasul pe care stă omul: cifra aprinsă. */
   current?: boolean;
+  /** Pas trecut: cifra aprinsă, iar sub titlu ce a completat (`summary`), dacă e ceva. */
+  done?: boolean;
+  summary?: string;
 }) {
+  const lit = current || done;
   return (
-    <li className="flex gap-4">
-      <span
-        className={cn(
-          "w-9 shrink-0 font-mono text-[28px] leading-8",
-          current ? "text-lcd-digit" : "text-white/50"
-        )}
-      >
+    <li className="flex gap-4" aria-current={current ? "step" : undefined}>
+      <span className={cn("w-9 shrink-0 font-mono text-[28px] leading-8", lit ? "text-lcd-digit" : "text-white/50")}>
         {String(index).padStart(2, "0")}
       </span>
-      <div>
-        <div className="text-[17px] font-semibold text-white">{title}</div>
-        <div className="text-white/75">{body}</div>
+      <div className="min-w-0">
+        <div className={cn("text-[17px] font-semibold", lit ? "text-white" : "text-white/75")}>{title}</div>
+        <div className="truncate text-white/75">{done && summary ? summary : body}</div>
       </div>
     </li>
   );

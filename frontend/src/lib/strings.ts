@@ -2553,17 +2553,40 @@ export const strings = {
     step1: "Completezi formularul — câteva minute, doar trei rubrici sunt obligatorii.",
     step2: "Îl citim și configurăm aplicația pentru activitatea ta.",
     step3: "Primești datele de acces pe email, în 1–2 zile lucrătoare.",
-    // Verdele din stânga (direcția „Poster”, 16.09.2026): titlul, apoi aceiași trei pași, cu titlu
-    // și o propoziție fiecare, ca o listă numerotată 01–03.
+    // Verdele din stânga (direcția „Poster”, 16.09.2026): titlul, apoi cuprinsul formularului —
+    // cei trei pași ai lui, 01–03, cu pasul curent aprins și ce s-a completat scris sub cei trecuți.
     posterHeadline: "Cere un cont.\nRestul îl facem noi.",
     posterLede: "Conturile le creează echipa WasteHouse, din acest formular.",
-    step1Title: "Completezi formularul",
-    step1Body: "Câteva minute. Doar trei rubrici sunt obligatorii.",
-    step2Title: "Configurăm aplicația pentru tine",
-    step2Body: "Vezi doar ecranele de care are nevoie activitatea ta.",
-    step3Title: "Primești accesul pe email",
-    step3Body: "În 1–2 zile lucrătoare.",
+    step1Name: "Compania",
+    step1Lead: "Cum se numește și ce face cu deșeurile.",
+    step2Name: "Contactul",
+    step2Lead: "Unde trimitem datele de acces.",
+    step3Name: "Deșeurile",
+    step3Lead: "Ce ai de obicei. Poți lăsa gol.",
+    noteRequired: "Trei rubrici obligatorii, câteva minute.",
+    noteAccess: "Accesul vine pe email, în 1–2 zile lucrătoare.",
     posterNote: "Nimic nu pleacă până nu apeși „Trimite cererea”.",
+    // Formularul în pași (proprietarul, 16.09.2026, după ce a văzut 22 de rubrici pe o pagină: „nu e
+    // prea lung?”, apoi „vreau mai prietenos” la „Cine sunteți?”). Fiecare pas e o întrebare
+    // prietenoasă, nu un titlu de secțiune; „Cine sunteți?” a fost respins, s-a cerut „Detalii despre
+    // compania ta”.
+    stepOf: "Pasul {n} din 3 · {name}",
+    step1Title: "Detalii despre compania ta",
+    step1Subtitle: "Câteva date din certificatul de înregistrare. Restul îl completăm noi.",
+    step2Title: "Datele tale de contact",
+    step2Subtitle: "Pe acest email primești linkul cu care îți alegi parola, în 1–2 zile lucrătoare.",
+    step3Title: "Deșeurile companiei tale",
+    step3Subtitle:
+      "Bifează ce ai de obicei. Dacă nu ești sigur, lasă gol — le stabilim împreună la configurarea contului.",
+    continueStep: "Continuă",
+    backStep: "Înapoi",
+    // Tot ce nu e obligatoriu stă pliat într-un singur bloc, la ultimul pas. Toate rubricile de
+    // dinăuntru sunt opționale, deci plierea nu ascunde nimic care ar bloca trimiterea.
+    extraTitle: "Detalii care ne scutesc de un telefon",
+    extraHint: "Punctul de lucru, autorizația de mediu, codurile R/D, ambalajele, CAEN, funcția.",
+    extraOpen: "Adaugă",
+    extraClose: "Ascunde",
+    extraOtherHint: "Ce nu e în listă, în cuvintele tale. Le transformăm noi în coduri.",
     haveAccount: "Ai deja cont?",
     goToLogin: "Intră",
     // „Ce faceți cu deșeurile” ca trei carduri cu o propoziție (regula: sub șapte opțiuni, nu
