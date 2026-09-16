@@ -8,6 +8,17 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 01:28 — ✅ pe producție: „Ce urmează” după o mișcare nouă** (`ecoregistru-app` **v99**, `7c4b996`, din `main` `5a2766d`;
+> **api neatins**, v109, nicio migrare; datele salvate neschimbate). Regula 12 a formularelor, cerută de proprietar după app v98: o mișcare
+> **nouă** arată „Predarea e în evidență” (Intrarea / Ieșirea), bonul citit din răspunsul serverului și, sub „Ce urmează”, documentele pe
+> care rândul le poate tipări (aceleași reguli ca meniul „⋯”: Anexa 3, avizul, Anexa 2 la colectori), plus unde se scrie cantitatea la o
+> predare fără cântar. „Încă una la fel” pornește formularul cu alegerile ei, fără cantitate, volum, cântărire, notițe, dată sau document.
+> Editarea păstrează mesajul scurt. **Defect vechi reparat odată cu ea:** formularul deschis prin `?nou=1` (butonul „+” de pe telefon,
+> „Adaugă deșeuri” din panou de pe alt ecran, „Primii pași”) pornea înaintea punctelor de lucru și rămânea fără punct, deci salvarea cădea
+> pe o rubrică neatinsă. **Probe:** tsc, e2e **26/26** pe `eco_e2e_formulare` (proba **26** nouă; negative: fără `onCreated` cad 5+
+> verificări, fără efectul punctului de lucru cade una; proba 18 știe acum de 15 01 01, pe care îl lasă o rulare întreruptă a probei 26).
+> **Pe producție:** bundle-ul servit conține textele noi, `app.wastehouse.ro/generare` 200.
+
 > **17.09.2026, 01:11 — ✅ pe producție: partenerul pe trei pași și „Adaugă deșeuri” pe înțeles** (`ecoregistru-app` **v98**, `df7ff45`, din
 > `main` `f14f62e`; **api neatins**, v109, nicio migrare; **aceleași rubrici, reguli și date trimise** — doar felul de a întreba). Proprietarul:
 > „fă 1 și 2, dar hai să le gândim frumos; nu schimba informația”, cu fonturile curente. **Partenerul** (`PartnersPage.tsx`, `FormStepRail`):
