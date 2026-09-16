@@ -8,6 +8,21 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 01:11 — ✅ pe producție: partenerul pe trei pași și „Adaugă deșeuri” pe înțeles** (`ecoregistru-app` **v98**, `df7ff45`, din
+> `main` `f14f62e`; **api neatins**, v109, nicio migrare; **aceleași rubrici, reguli și date trimise** — doar felul de a întreba). Proprietarul:
+> „fă 1 și 2, dar hai să le gândim frumos; nu schimba informația”, cu fonturile curente. **Partenerul** (`PartnersPage.tsx`, `FormStepRail`):
+> Despre partener (CUI întâi, ANAF) · Ce face pentru tine (tipul pe carduri — „Generator” ascuns la un cont doar generator —, „Cine duce
+> deșeul de la tine la el?” pe două carduri, cine pe cine facturează, proveniența ambalajelor pe taste doar la colectori, cu textul care o
+> deosebește de „Calitatea” din Setări) · Autorizația de mediu (numărul și „Viza e valabilă până la” sus; emiterea, decizia de viză și bifa
+> „Autorizație integrată veche, cu termen?” sub „Detalii de pe hârtii”; în listă „Viză necompletată” galben — întrebarea **BB** la Andreea,
+> după verificarea vizei în OUG 195/2005 art. 16–17, Ordinul 1150/2020 și art. 34¹ OUG 92/2021, lista ANMAP încă inexistentă). **Mișcarea**
+> (`MovementFormDialog.tsx`): o pagină, ordinea rubricilor neatinsă, titluri care întreabă, taste sub șapte opțiuni, destinul pe carduri,
+> bonul mișcării în dreapta, „La fel ca data trecută” (alegerile ultimei mișcări cu același cod, fără cantitate/dată/document). Documentele
+> tipărite nu se schimbă. **Probe:** tsc, build, `npm test` 23/23, e2e **25/25** pe `eco_e2e_formulare` după rebazare (8, 9, 10, 23
+> adaptate), drumul datelor prin ecran citit din API (partener cu toate rubricile, mișcare cu „La fel ca data trecută”, editare fără
+> schimbări = identic), capturi 1440/375, tabelul Parteneri 1114/1114. **Pe producție:** bundle-ul servit conține textele noi,
+> `app.wastehouse.ro/login` 200. Regula: `docs/stil-interfata.md`, „Formularele din aplicație după cererea de cont”.
+
 > **17.09.2026, 01:02 — ✅ pe producție: mesajul de după import și exportul complet al unei firme** (`ecoregistru-app` **v97**, `1f1d46c`,
 > din `main` `44d97a3`; **api neatins**, v109, nicio migrare). După un import salvat, mesajul spunea că ambalajele și transportul se
 > completează în aplicație, deși fișierul le poate aduce din a doua felie; acum: „Ce n-a fost în fișier (ambalajele, transportul pentru
