@@ -10,7 +10,7 @@ import {
 } from "@/hooks/useWeighingOperations";
 import { useTableView } from "@/hooks/useTableView";
 import { useHotkey } from "@/hooks/useHotkey";
-import { canWrite } from "@/lib/roles";
+import { canManage, canWrite } from "@/lib/roles";
 import { registersFor } from "@/lib/movementScreens";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
@@ -67,9 +67,9 @@ export function WeighingOperationsPage() {
   }, [month]);
 
   const { data, isLoading, isError } = useWeighingOperations({ type, year, month: monthNumber });
-  // Banda reținerilor o vede doar cine administrează firma și vede prețurile; altfel serverul dă 403
-  // și rămâne ascunsă. `retry: false` în hook, ca un 403 să nu fie reîncercat de trei ori.
-  const retentions = useDepotRetentions(year, monthNumber);
+  // Banda reținerilor o vede doar cine administrează firma și vede prețurile. Regula e pe server, dar
+  // operatorul nici n-o cere: un 403 la fiecare deschidere de ecran e zgomot, nu informație.
+  const retentions = useDepotRetentions(year, monthNumber, canManage(user?.role));
 
   const operations = useMemo(() => data ?? [], [data]);
   const view = useTableView(operations, {

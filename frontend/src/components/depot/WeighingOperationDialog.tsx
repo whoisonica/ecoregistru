@@ -126,7 +126,9 @@ export function WeighingOperationDialog({
   const direction = operation?.type ?? type;
   const inbound = direction === "IN";
   const editable = !operation || operation.status === "IN_PROGRESS";
-  const pricesVisible = company?.pricesVisible !== false;
+  // Serverul spune dacă omul ăsta vede prețurile (D1.8); regula nu se reface aici. Cât firma nu s-a
+  // încărcat, rubrica lipsește — mai bine o rubrică apărută târziu decât una care se ia înapoi.
+  const pricesVisible = Boolean(company?.pricesVisible);
   const approver = canManage(user?.role);
 
   const [date, setDate] = useState(operation?.date ?? new Date().toISOString().slice(0, 10));
@@ -143,6 +145,12 @@ export function WeighingOperationDialog({
   const [payment, setPayment] = useState<DepotPaymentMethod | "">(operation?.paymentMethod ?? "");
   const [receipt, setReceipt] = useState(operation?.receiptNumber ?? "");
   const [ownHousehold, setOwnHousehold] = useState(operation?.ownHousehold ?? false);
+  /**
+   * Operațiunea pe care o scrie formularul. La deschidere e cea dată; la prima salvare a uneia noi
+   * devine cea creată — altfel o a doua apăsare (după un refuz pe linii sau pe declarație) ar crea
+   * încă o operațiune, cu încă un număr consumat.
+   */
+  const [savedId, setSavedId] = useState<string | null>(operation?.id ?? null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [lines, setLines] = useState<LineDraft[]>(
@@ -166,11 +174,15 @@ export function WeighingOperationDialog({
     if (!workPointId && openWorkPoints.length > 0) setWorkPointId(openWorkPoints[0].id);
   }, [openWorkPoints, workPointId]);
 
-  const activeArticles = useMemo(() => (articles.data ?? []).filter((a) => a.active), [articles.data]);
-  const articleById = useMemo(
-    () => new Map(activeArticles.map((a) => [a.id, a])),
-    [activeArticles]
-  );
+  const allArticles = useMemo(() => articles.data ?? [], [articles.data]);
+  /**
+   * Toate sortimentele, nu doar cele active: o linie veche poate ține unul scos între timp din
+   * catalog, iar fără el aici linia n-ar mai ști ce e — nici că e metal, nici cum se cheamă. Lista de
+   * ales rămâne a celor active, plus sortimentul chiar al liniei (vezi mai jos), ca salvarea să nu-l
+   * piardă tăcut.
+   */
+  const articleById = useMemo(() => new Map(allArticles.map((a) => [a.id, a])), [allArticles]);
+  const activeArticles = useMemo(() => allArticles.filter((a) => a.active), [allArticles]);
 
   const totals = useMemo(() => {
     let kg = 0;
@@ -186,6 +198,9 @@ export function WeighingOperationDialog({
       value += lineValue;
       if (articleById.get(line.articleId)?.metal) metalValue += lineValue;
     }
+    // Cotele vin de la server pe operațiune. Pe una nouă, care încă nu există, se folosesc cele din
+    // lege ca **previzualizare** — singurul loc din frontend care le știe. Nu pot minți un document:
+    // la finalizare serverul recalculează și scrie ce spune `service/DepotRetentions`.
     const afmRate = operation?.afmRate ?? 0.02;
     const taxRate = operation?.incomeTaxRate ?? 0.1;
     const afm = inbound ? round2(value * afmRate) : 0;
@@ -232,9 +247,10 @@ export function WeighingOperationDialog({
 
   async function save(): Promise<string | null> {
     const head = headInput();
-    const id = operation
-      ? (await updateMut.mutateAsync({ id: operation.id, input: head })).id
+    const id = savedId
+      ? (await updateMut.mutateAsync({ id: savedId, input: head })).id
       : (await createMut.mutateAsync(head)).id;
+    setSavedId(id);
     const filled = lines.filter((l) => l.articleId && (netOf(l) != null || num(l.final) != null));
     if (filled.length > 0) {
       await linesMut.mutateAsync({
@@ -271,6 +287,12 @@ export function WeighingOperationDialog({
   }
 
   function handleFinalize() {
+    // Fără nicio linie completă, finalizarea ar fi refuzată de server — dar abia după ce a creat
+    // operațiunea și i-a dat un număr. Se oprește aici.
+    if (!lines.some((l) => l.articleId && (netOf(l) != null || num(l.final) != null))) {
+      notify(t.linesRequired, "error");
+      return;
+    }
     confirm({
       title: t.confirmFinalizeTitle,
       message: t.confirmFinalize,
@@ -532,7 +554,15 @@ export function WeighingOperationDialog({
                         >
                           <option value="">—</option>
                           {activeArticles
-                            .filter((a) => !(fromPerson && inbound && a.forbiddenFromIndividuals))
+                            .concat(
+                              // Sortimentul liniei, chiar dacă a fost scos din catalog între timp.
+                              article && !article.active ? [article] : []
+                            )
+                            .filter(
+                              (a) =>
+                                a.id === line.articleId ||
+                                !(fromPerson && inbound && a.forbiddenFromIndividuals)
+                            )
                             .map((a) => (
                               <option key={a.id} value={a.id}>
                                 {a.name} · {a.wasteCode}

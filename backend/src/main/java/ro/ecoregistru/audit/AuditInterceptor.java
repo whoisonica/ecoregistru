@@ -129,7 +129,11 @@ public class AuditInterceptor implements Interceptor {
             Set.of("identification", "driverIdentification", "cnp", "driverCnp",
                     // D1.8: jurnalul îl citesc consultantul și platforma, pe care setarea de prețuri îi
                     // poate exclude. Fapta „prețul liniei s-a schimbat” rămâne; valoarea, nu.
-                    "unitPrice", "totalValue");
+                    "unitPrice", "totalValue",
+                    // D1.9 și D1.10: reținerile sunt bani calculați din prețuri — baza AFM e chiar
+                    // valoarea întregii intrări. Fără ele aici, prețul ascuns pe ecran s-ar citi din
+                    // jurnal, împărțind suma la cotă.
+                    "afmBase", "afmContribution", "incomeTaxBase", "incomeTax");
 
     /** Ce se scrie în locul valorii unui câmp redactat. */
     private static final String REDACTED = "•••";

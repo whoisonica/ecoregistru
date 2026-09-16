@@ -1143,17 +1143,13 @@ export const strings = {
     statusInProgress: "În lucru",
     statusFinalized: "Finalizată",
     statusCancelled: "Anulată",
-    lines: (n: number) => (n === 1 ? "1 sortiment" : `${n} sortimente`),
     // --- formularul ---
-    editTitle: "Operațiunea",
     sectionWho: "Cine și când",
     sectionTransport: "Transport",
     sectionScale: "Cântarul",
     sectionPayment: "Plata",
     fromCompany: "Firmă",
     fromPerson: "Persoană fizică",
-    fromCompanyHint: "Un generator sau alt colector, cu CUI.",
-    fromPersonHint: "Un om care își aduce deșeul. Borderoul cere CNP doar la metal.",
     partner: "Firma",
     partnerPlaceholder: "Caută firma după nume sau CUI...",
     person: "Persoana",
@@ -1177,7 +1173,6 @@ export const strings = {
     lineAdd: "Adaugă sortiment",
     lineRemove: "Șterge linia",
     lineTareHint: "Tara unei linii e brutul liniei dinainte: se cântărește o dată, la fiecare sortiment descărcat.",
-    lineFinalHint: "Cât primești efectiv, după impurități. Nu poate fi mai mult decât neto.",
     linesRequired: "Adaugă cel puțin un sortiment.",
     totalKg: "Total acceptat",
     totalValue: "Total valoare",
@@ -1190,7 +1185,6 @@ export const strings = {
     ownHousehold: "Declar că deșeurile provin din gospodăria proprie",
     ownHouseholdHint:
       "Obligatorie la metal de la persoane fizice: OUG 31/2011 art. 1 alin. (1^1) interzice cumpărarea metalului care nu provine din gospodăria proprie.",
-    withheld: "Se reține din plată",
     // Cota vine de la server și se lipește de etichetă: „Fondul pentru mediu · 2%”.
     withheldAfm: "Fondul pentru mediu",
     withheldTax: "Impozit pe venit",
@@ -1224,8 +1218,6 @@ export const strings = {
       empty: "Nimic de reținut încă în luna asta.",
       hint:
         "Cifrele sunt cele reținute la finalizare, pe cote fixe prin lege: 2% la Fondul pentru mediu din orice intrare cu preț (OUG 196/2005) și 10% impozit pe metalul cumpărat de la persoane fizice (Codul fiscal art. 115). Aplicația le calculează; declarațiile le depune contabilul.",
-      beneficiaries: (n: number) =>
-        n === 1 ? "1 persoană cu impozit reținut anul ăsta" : `${n} persoane cu impozit reținut anul ăsta`,
     },
   },
   naturalPersons: {

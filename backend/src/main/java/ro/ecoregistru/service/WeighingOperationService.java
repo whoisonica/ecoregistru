@@ -128,7 +128,8 @@ public class WeighingOperationService {
                 .orderNumber(blankToNull(request.orderNumber()))
                 .paymentMethod(request.paymentMethod())
                 .receiptNumber(blankToNull(request.receiptNumber()))
-                .ownHousehold(request.ownHousehold())
+                // Declarația e a persoanei fizice; pe o operațiune cu partener n-are obiect.
+                .ownHousehold(person == null ? null : request.ownHousehold())
                 .notes(blankToNull(request.notes()))
                 .status(WeighingOperationStatus.IN_PROGRESS)
                 .createdBy(SecurityUtils.currentUser().getId())
@@ -192,7 +193,7 @@ public class WeighingOperationService {
         operation.setOrderNumber(blankToNull(request.orderNumber()));
         operation.setPaymentMethod(request.paymentMethod());
         operation.setReceiptNumber(blankToNull(request.receiptNumber()));
-        operation.setOwnHousehold(request.ownHousehold());
+        operation.setOwnHousehold(person == null ? null : request.ownHousehold());
         operation.setNotes(blankToNull(request.notes()));
 
         List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);

@@ -20,11 +20,30 @@ public interface WasteMovementRepository
 
     List<WasteMovement> findAllByCompany_IdAndDeletedFalse(UUID companyId);
 
-    /** Liniile unei operațiuni de depozit, în ordinea cântăririi. */
-    List<WasteMovement> findAllByWeighingOperation_IdOrderByLineNoAsc(UUID operationId);
+    /**
+     * Liniile unei operațiuni de depozit, în ordinea cântăririi, cu codul și sortimentul aduse odată:
+     * răspunsul le scrie pe amândouă, iar fără fetch fiecare linie ar costa încă două interogări
+     * (aceeași formă ca BUG-016).
+     */
+    @Query("""
+            select m from WasteMovement m
+              join fetch m.wasteCode
+              left join fetch m.article
+            where m.weighingOperation.id = :operationId
+            order by m.lineNo
+            """)
+    List<WasteMovement> findAllByWeighingOperation_IdOrderByLineNoAsc(@Param("operationId") UUID operationId);
 
-    /** Liniile mai multor operațiuni dintr-o singură interogare, pentru listă. */
-    List<WasteMovement> findAllByWeighingOperation_IdInOrderByLineNoAsc(java.util.Collection<UUID> operationIds);
+    /** Liniile mai multor operațiuni dintr-o singură interogare, pentru listă. Vezi metoda de mai sus. */
+    @Query("""
+            select m from WasteMovement m
+              join fetch m.wasteCode
+              left join fetch m.article
+            where m.weighingOperation.id in :operationIds
+            order by m.lineNo
+            """)
+    List<WasteMovement> findAllByWeighingOperation_IdInOrderByLineNoAsc(
+            @Param("operationIds") java.util.Collection<UUID> operationIds);
 
     /** Idempotency lookup for (future) offline sync. */
     Optional<WasteMovement> findByCompany_IdAndClientGeneratedId(UUID companyId, UUID clientGeneratedId);

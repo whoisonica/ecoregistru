@@ -83,6 +83,15 @@ rulează local și are testele verzi.
 > Un rând de registru venit de la cântar nu se mai editează din „Intrări”/„Ieșiri”: duce la operațiunea lui (BUG-018).
 > Suita **757 de teste, 92 de clase, 0 eșecuri, 3 sărite**; `DepotRetentionIT` 15/15 cu proba negativă pe cinci reguli de
 > excludere; e2e: proba **19** nouă, verde, plus 1–5, 15, 18 verzi (9, 10, 11 cad pe date, ca pe `origin/main`).
+> **Trecerea de QA de după** (tot 16.09) a găsit și reparat: (1) un **refuz la finalizare urmat de a doua apăsare crea o a doua
+> operațiune**, cu încă un număr consumat — formularul ține acum minte operațiunea creată; (2) „Finalizează” pe un formular
+> fără linii crea o ciornă numerotată înainte de refuz — acum se oprește în ecran; (3) o linie cu un sortiment scos între timp
+> din catalog **se pierdea tăcut la salvare** — sortimentul liniei rămâne de ales; (4) **reținerile apăreau în clar în jurnalul
+> de audit**, deși sunt bani din prețuri (baza AFM e chiar valoarea intrării) — se redactează ca `unitPrice`; (5) declarația de
+> gospodărie proprie se golește pe o operațiune fără persoană fizică; (6) operatorul nu mai cere raportul reținerilor (un 403
+> la fiecare deschidere); (7) liniile listei aduc codul și sortimentul în aceeași interogare (3 în loc de 5, constant la 3 ca
+> și la 15 operațiuni — `DepotListPerformanceIT`). Suita **759 de teste, 93 de clase, 0 eșecuri, 3 sărite**; e2e comparată
+> probă cu probă cu `main` pe aceeași bază: identică, plus 19.
 
 > **15.09.2026, 23:54 — ✅ pe producție: două reparații găsite la analiza codului.** `ecoregistru-api` **v92**
 > (`7e09df0`, fără migrare, schema `V48`); frontendul e neschimbat (app v73); monorepo `c0d4584`. (1) Linia unei operațiuni

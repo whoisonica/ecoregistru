@@ -278,6 +278,26 @@ class PriceVisibilityIT {
                 || c.contains("4050") || c.contains("4175"));
     }
 
+    /**
+     * D1.9 și D1.10 — reținerile sunt bani calculați din prețuri, deci se redactează la fel. Baza AFM
+     * e chiar valoarea intrării: scrisă în jurnal, ar da prețul ascuns pe ecran înapoi, împărțind-o
+     * la cotă.
+     */
+    @Test
+    void theAuditLogKeepsTheFactButNotTheWithheldAmounts() {
+        UUID id = pricedOperation();
+        service.finalizeOperation(id);
+
+        List<String> changes = auditLogRepository.findAll().stream()
+                .filter(l -> id.equals(l.getEntityId()))
+                .map(l -> String.valueOf(l.getChanges()))
+                .toList();
+        assertThat(String.join("", changes)).as("controlul pozitiv: finalizarea chiar e scrisă")
+                .contains("afmContribution").contains("•••");
+        assertThat(changes).as("nicio sumă și nicio bază în clar")
+                .noneMatch(c -> c.contains("4050") || c.contains("81.00") || c.contains("405.00"));
+    }
+
     // --- helpers ---
 
     private UUID pricedOperation() {
