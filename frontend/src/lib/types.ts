@@ -963,6 +963,12 @@ export interface Driver {
   /** Pentru avizul de însoțire (V42). */
   cnp: string | null;
   vehicleRegistration: string | null;
+  /** D2.2 — depozitul unde lucrează de obicei. */
+  homeWorkPointId: string | null;
+  homeWorkPointName: string | null;
+  /** D2.2 — atestatul profesional sau certificatul ADR. */
+  attestationNumber: string | null;
+  attestationExpiry: string | null;
   active: boolean;
 }
 
@@ -973,6 +979,9 @@ export interface DriverInput {
   identification?: string | null;
   cnp?: string | null;
   vehicleRegistration?: string | null;
+  homeWorkPointId?: string | null;
+  attestationNumber?: string | null;
+  attestationExpiry?: string | null;
 }
 
 export interface PartnerWorkPointInput {

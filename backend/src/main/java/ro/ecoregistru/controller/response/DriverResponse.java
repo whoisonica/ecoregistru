@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.response;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -15,5 +16,9 @@ public record DriverResponse(
         String identification,
         String cnp,
         String vehicleRegistration,
+        UUID homeWorkPointId,
+        String homeWorkPointName,
+        String attestationNumber,
+        LocalDate attestationExpiry,
         boolean active
 ) {}

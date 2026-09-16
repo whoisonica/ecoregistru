@@ -33,9 +33,9 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 const t = strings.settings.vehicles;
 
 /** Aceeași fereastră ca mailul (`VehicleExpiryAlertScheduler.WARNING_WINDOW_DAYS`). */
-const WARNING_DAYS = 30;
+export const WARNING_DAYS = 30;
 
-function daysFromToday(iso: string): number {
+export function daysFromToday(iso: string): number {
   const today = new Date(new Date().toDateString());
   return Math.round((new Date(`${iso.slice(0, 10)}T00:00:00`).getTime() - today.getTime()) / 86_400_000);
 }

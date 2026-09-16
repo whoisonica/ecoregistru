@@ -8,7 +8,12 @@ import {
   useReactivateDriver,
   useDeleteDriver,
 } from "@/hooks/useDrivers";
-import type { Driver } from "@/lib/types";
+import { useVehicles } from "@/hooks/useVehicles";
+import type { Driver, WorkPoint } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
+import { Select } from "@/components/ui/select";
+import { WARNING_DAYS, daysFromToday } from "@/components/VehiclesSection";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -27,6 +32,16 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const t = strings.settings.drivers;
 
+/** D2.2 — atestatul cu starea lui, ca actele unui vehicul: expirat, expiră în 30 de zile, valabil. */
+function AttestationBadge({ driver }: { driver: Driver }) {
+  if (!driver.attestationExpiry) return <>{driver.attestationNumber || t.noAttestation}</>;
+  const days = daysFromToday(driver.attestationExpiry);
+  const text = formatDate(driver.attestationExpiry);
+  if (days < 0) return <Badge variant="danger">{`${t.attestationExpired} · ${text}`}</Badge>;
+  if (days <= WARNING_DAYS) return <Badge variant="warning">{`${t.attestationExpiresSoon} · ${text}`}</Badge>;
+  return <Badge variant="success">{text}</Badge>;
+}
+
 /**
  * Șoferii firmei — cazul „— transportăm noi —" de pe formularul de mișcare.
  *
@@ -35,8 +50,18 @@ const t = strings.settings.drivers;
  * că un șofer adăugat de aici dispare data viitoare când cineva deschide și salvează partenerul.
  * Ecranul îi și ascunde, ca lista să fie ce zice titlul.
  */
-export function OwnDriversSection({ canManage }: { canManage: boolean }) {
+export function OwnDriversSection({
+  canManage,
+  workPoints,
+  hasDepot,
+}: {
+  canManage: boolean;
+  workPoints: WorkPoint[];
+  /** Depozitul implicit și flota au sens doar la firmele cu registrul art. 48 (D2.2). */
+  hasDepot: boolean;
+}) {
   const { data: allDrivers, isLoading, isError } = useDrivers();
+  const vehicles = useVehicles();
   const createMut = useCreateDriver();
   const updateMut = useUpdateDriver();
   const deactivateMut = useDeactivateDriver();
@@ -53,15 +78,22 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
   const [identification, setIdentification] = useState("");
   const [cnp, setCnp] = useState("");
   const [vehicleRegistration, setVehicleRegistration] = useState("");
+  const [homeWorkPointId, setHomeWorkPointId] = useState("");
+  const [attestationNumber, setAttestationNumber] = useState("");
+  const [attestationExpiry, setAttestationExpiry] = useState("");
   const [nameError, setNameError] = useState(false);
 
   const { rows: visibleDrivers, control: activeFilter } = useActiveFilter(drivers);
   const view = useTableView(visibleDrivers, {
-    searchText: (d) => [d.name, d.identification, d.vehicleRegistration].filter(Boolean).join(" "),
+    searchText: (d) =>
+      [d.name, d.identification, d.vehicleRegistration, d.homeWorkPointName, d.attestationNumber]
+        .filter(Boolean)
+        .join(" "),
     comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
   });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
+  const depots = workPoints.filter((w) => w.active || w.id === homeWorkPointId);
 
   function openCreate() {
     setEditing(null);
@@ -69,6 +101,9 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     setIdentification("");
     setCnp("");
     setVehicleRegistration("");
+    setHomeWorkPointId("");
+    setAttestationNumber("");
+    setAttestationExpiry("");
     setNameError(false);
     setDialogOpen(true);
   }
@@ -79,6 +114,9 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
     setIdentification(d.identification ?? "");
     setCnp(d.cnp ?? "");
     setVehicleRegistration(d.vehicleRegistration ?? "");
+    setHomeWorkPointId(d.homeWorkPointId ?? "");
+    setAttestationNumber(d.attestationNumber ?? "");
+    setAttestationExpiry(d.attestationExpiry ?? "");
     setNameError(false);
     setDialogOpen(true);
   }
@@ -94,6 +132,9 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
       identification: identification.trim() || null,
       cnp: cnp.trim() || null,
       vehicleRegistration: vehicleRegistration.trim() || null,
+      homeWorkPointId: homeWorkPointId || null,
+      attestationNumber: attestationNumber.trim() || null,
+      attestationExpiry: attestationExpiry || null,
     };
     try {
       if (editing) {
@@ -194,6 +235,8 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
                 </SortableTH>
                 <TH>{t.identification}</TH>
                 <TH>{t.vehicle}</TH>
+                {hasDepot && <TH>{t.homeWorkPoint}</TH>}
+                <TH>{t.attestation}</TH>
                 <TH>{strings.common.status}</TH>
                 {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
               </TR>
@@ -201,7 +244,7 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
             <TBody>
               {(isLoading || view.visible.length === 0) && (
                 <TableFallbackRow
-                  columns={canManage ? 5 : 4}
+                  columns={(canManage ? 6 : 5) + (hasDepot ? 1 : 0)}
                   loading={isLoading}
                   icon={UserCircle}
                   title={view.emptiedBySearch ? strings.common.noResults : t.empty}
@@ -215,6 +258,10 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
                   <TD className="font-medium text-content">{d.name}</TD>
                   <TD>{d.identification || "—"}</TD>
                   <TD>{d.vehicleRegistration || "—"}</TD>
+                  {hasDepot && <TD>{d.homeWorkPointName || "—"}</TD>}
+                  <TD>
+                    <AttestationBadge driver={d} />
+                  </TD>
                   <TD>
                     {d.active ? (
                       <Badge variant="success">{t.active}</Badge>
@@ -322,12 +369,58 @@ export function OwnDriversSection({ canManage }: { canManage: boolean }) {
             <Label htmlFor="d-vehicle">{t.vehicle}</Label>
             <Input
               id="d-vehicle"
+              list={hasDepot ? "d-fleet" : undefined}
               value={vehicleRegistration}
               onChange={(e) => setVehicleRegistration(e.target.value)}
               placeholder={t.vehiclePlaceholder}
             />
+            {/* D2.2 — vehiculul implicit se alege din flotă; la cântar numărul lui e recunoscut (D2.1). */}
+            {hasDepot && (
+              <datalist id="d-fleet">
+                {(vehicles.data ?? [])
+                  .filter((v) => v.active)
+                  .map((v) => (
+                    <option key={v.id} value={v.registration}>
+                      {v.kind ?? ""}
+                    </option>
+                  ))}
+              </datalist>
+            )}
             <p className="mt-1 text-xs text-content-muted">{t.vehicleHint}</p>
           </div>
+          {hasDepot && (
+            <div>
+              <Label htmlFor="d-home">{t.homeWorkPoint}</Label>
+              <Select id="d-home" value={homeWorkPointId} onChange={(e) => setHomeWorkPointId(e.target.value)}>
+                <option value="">{t.noHomeWorkPoint}</option>
+                {depots.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="d-attestation">{t.attestationNumber}</Label>
+              <Input
+                id="d-attestation"
+                value={attestationNumber}
+                onChange={(e) => setAttestationNumber(e.target.value)}
+                placeholder={t.attestationNumberPlaceholder}
+              />
+            </div>
+            <div>
+              <Label htmlFor="d-attestation-expiry">{t.attestationExpiry}</Label>
+              <DateInput
+                id="d-attestation-expiry"
+                value={attestationExpiry}
+                onChange={(e) => setAttestationExpiry(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-content-muted">{t.attestationHint}</p>
         </form>
       </Dialog>
 

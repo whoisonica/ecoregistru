@@ -9,10 +9,12 @@ import ro.ecoregistru.controller.request.DriverRequest;
 import ro.ecoregistru.controller.response.DriverResponse;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
+import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.DriverRepository;
+import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
@@ -23,6 +25,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_BELONGS_TO_PARTNE
 import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_DELETE_REQUIRES_DEACTIVATION;
 import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_NAME_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.DRIVER_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
 
 /**
  * Our <em>own</em> drivers — the rows of {@code drivers} with no partner, which is the
@@ -41,6 +44,7 @@ public class DriverService {
 
     DriverRepository driverRepository;
     CompanyRepository companyRepository;
+    WorkPointRepository workPointRepository;
 
     /** Every driver of the tenant, ours and the carriers'. The movement form filters client-side. */
     @Transactional(readOnly = true)
@@ -57,12 +61,10 @@ public class DriverService {
         Driver driver = Driver.builder()
                 .company(companyRepository.getReferenceById(tenantId))
                 .name(name)
-                .identification(blankToNull(request.identification()))
-                .cnp(blankToNull(request.cnp()))
-                .vehicleRegistration(blankToNull(request.vehicleRegistration()))
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
+        apply(driver, request, tenantId);
         driverRepository.save(driver);
         return toResponse(driver);
     }
@@ -71,9 +73,7 @@ public class DriverService {
     public DriverResponse update(UUID id, DriverRequest request) {
         Driver driver = requireOwn(id);
         driver.setName(requireName(request));
-        driver.setIdentification(blankToNull(request.identification()));
-        driver.setCnp(blankToNull(request.cnp()));
-        driver.setVehicleRegistration(blankToNull(request.vehicleRegistration()));
+        apply(driver, request, TenantContext.require());
         return toResponse(driver);
     }
 
@@ -120,6 +120,19 @@ public class DriverService {
         requireOwn(id).setActive(true);
     }
 
+    /** D2.2 — depozitul implicit trebuie să fie al firmei; atestatul e liber, data lui e opțională. */
+    private void apply(Driver driver, DriverRequest request, UUID tenantId) {
+        WorkPoint home = request.homeWorkPointId() == null ? null
+                : workPointRepository.findByIdAndCompany_Id(request.homeWorkPointId(), tenantId)
+                        .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        driver.setIdentification(blankToNull(request.identification()));
+        driver.setCnp(blankToNull(request.cnp()));
+        driver.setVehicleRegistration(blankToNull(request.vehicleRegistration()));
+        driver.setHomeWorkPoint(home);
+        driver.setAttestationNumber(blankToNull(request.attestationNumber()));
+        driver.setAttestationExpiry(request.attestationExpiry());
+    }
+
     private Driver requireOwn(UUID id) {
         UUID tenantId = TenantContext.require();
         Driver driver = driverRepository.findByIdAndCompany_Id(id, tenantId)
@@ -143,10 +156,13 @@ public class DriverService {
 
     private static DriverResponse toResponse(Driver d) {
         Partner partner = d.getPartner();
+        WorkPoint home = d.getHomeWorkPoint();
         return new DriverResponse(d.getId(),
                 partner == null ? null : partner.getId(),
                 partner == null ? null : partner.getName(),
                 d.getName(), d.getIdentification(), d.getCnp(), d.getVehicleRegistration(),
+                home == null ? null : home.getId(), home == null ? null : home.getName(),
+                d.getAttestationNumber(), d.getAttestationExpiry(),
                 d.isActive());
     }
 }

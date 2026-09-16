@@ -2,6 +2,7 @@ package ro.ecoregistru.controller.request;
 
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -10,11 +11,15 @@ import java.util.UUID;
  *
  * @param id null for a new one; an existing id keeps the row, so the movements that already
  *           prefilled from him are unaffected by an edit
+ * @param homeWorkPointId depozitul implicit (D2.2); numai la șoferii noștri, fișa transportatorului îl ignoră
  */
 public record DriverRequest(
         UUID id,
         @Size(max = 255) String name,
         @Size(max = 100) String identification,
         @ro.ecoregistru.util.ValidCnp String cnp,
-        @Size(max = 50) String vehicleRegistration
+        @Size(max = 50) String vehicleRegistration,
+        UUID homeWorkPointId,
+        @Size(max = 100) String attestationNumber,
+        LocalDate attestationExpiry
 ) {}

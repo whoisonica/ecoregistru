@@ -289,7 +289,7 @@ export function SettingsPage() {
       {/* D2.1 — flota; o scrie oricine scrie, ca sortimentele și ca serverul. */}
       {hasDepot && <VehiclesSection workPoints={workPoints ?? []} canManage={roleCanWrite(user?.role)} />}
 
-      <OwnDriversSection canManage={canManage} />
+      <OwnDriversSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />
 
       <CompanyUsersSection canManage={canManage} />
 

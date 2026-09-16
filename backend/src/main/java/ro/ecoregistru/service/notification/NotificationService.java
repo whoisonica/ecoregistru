@@ -1,5 +1,6 @@
 package ro.ecoregistru.service.notification;
 
+import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.entity.SubscriptionInvoice;
@@ -46,6 +47,13 @@ public interface NotificationService {
      * @throws RuntimeException if delivery fails — the caller must then leave the vehicle unmarked.
      */
     void sendVehicleExpiryWarning(Vehicle vehicle, List<String> recipientEmails, long daysUntil);
+
+    /**
+     * D2.2 — atestatul unui șofer al firmei expiră în 30 de zile.
+     *
+     * @throws RuntimeException if delivery fails — the caller must then leave the driver unmarked.
+     */
+    void sendDriverAttestationWarning(Driver driver, List<String> recipientEmails, long daysUntil);
 
     /**
      * Sends an issued subscription invoice to whoever pays it, with FGO's PDF link (§9.4 of

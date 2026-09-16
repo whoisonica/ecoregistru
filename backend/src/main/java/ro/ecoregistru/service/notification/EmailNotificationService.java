@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
+import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.entity.SubscriptionInvoice;
@@ -103,6 +104,21 @@ public class EmailNotificationService implements NotificationService {
             ctx.setVariable("whenText", whenExpiry(daysUntil));
             ctx.setVariable("settingsUrl", frontendBaseUrl + "/setari#flota");
             emailService.send(to, subject, "mail/vehicle_expiring", ctx);
+        }
+    }
+
+    /** D2.2 — ca la vehicul: subiectul numește șoferul. */
+    @Override
+    public void sendDriverAttestationWarning(Driver driver, List<String> recipientEmails, long daysUntil) {
+        String subject = "Atestatul șoferului " + driver.getName() + " " + whenExpiry(daysUntil);
+        for (String to : recipientEmails) {
+            Context ctx = new Context(Locale.of("ro"));
+            ctx.setVariable("name", driver.getName());
+            ctx.setVariable("attestationNumber", driver.getAttestationNumber());
+            ctx.setVariable("attestationExpiry", driver.getAttestationExpiry().format(DATE));
+            ctx.setVariable("whenText", whenExpiry(daysUntil));
+            ctx.setVariable("settingsUrl", frontendBaseUrl + "/setari#soferi");
+            emailService.send(to, subject, "mail/driver_attestation_expiring", ctx);
         }
     }
 

@@ -29,6 +29,7 @@ const suites = [
   ["18-panou-cantar.mjs", "panoul «Cântar»: eticheta firmei, afișajul, tastele, Intrări/Ieșiri, pubelele, bara de jos"],
   ["19-cantar-operatiuni.mjs", "ecranul «Cântar»: operațiunile depozitului, neto din cântar, cât se reține din plată"],
   ["20-flota.mjs", "flota din Setări: numărul normalizat, ITP-ul și licența care expiră, vehiculul recunoscut la cântar"],
+  ["21-soferi.mjs", "șoferii din Setări: depozitul implicit, atestatul expirat, șoferul ales din listă la cântar"],
 ];
 
 const only = process.argv[2];

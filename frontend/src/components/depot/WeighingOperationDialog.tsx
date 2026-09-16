@@ -7,6 +7,7 @@ import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useNaturalPersons } from "@/hooks/useNaturalPersons";
 import { useWasteArticles } from "@/hooks/useWasteArticles";
 import { useVehicles } from "@/hooks/useVehicles";
+import { useDrivers } from "@/hooks/useDrivers";
 import {
   useCancelWeighingOperation,
   useCreateWeighingOperation,
@@ -188,6 +189,29 @@ export function WeighingOperationDialog({
         (d) => d && d < new Date().toISOString().slice(0, 10)
       )
   );
+  const drivers = useDrivers();
+  /**
+   * D2.2 — șoferul din listă cu numele scris (fără diferență de majuscule). Doar o potrivire unică leagă
+   * fișa; un nume necunoscut sau purtat de doi rămâne text, ca șoferul ocazional al unui furnizor.
+   */
+  const listedDriver = useMemo(() => {
+    const typed = driverName.trim().toLocaleLowerCase("ro");
+    if (!typed) return null;
+    const matches = (drivers.data ?? []).filter((d) => d.active && d.name.toLocaleLowerCase("ro") === typed);
+    return matches.length === 1 ? matches[0] : null;
+  }, [driverName, drivers.data]);
+  const driverAttestationExpired = Boolean(
+    listedDriver?.attestationExpiry && listedDriver.attestationExpiry < new Date().toISOString().slice(0, 10)
+  );
+  function changeDriverName(value: string) {
+    setDriverName(value);
+    const typed = value.trim().toLocaleLowerCase("ro");
+    const matches = (drivers.data ?? []).filter((d) => d.active && d.name.toLocaleLowerCase("ro") === typed);
+    // Mașina lui obișnuită intră doar într-o rubrică goală: ce a scris omul nu se rescrie.
+    if (matches.length === 1 && matches[0].vehicleRegistration && !vehicle.trim()) {
+      setVehicle(matches[0].vehicleRegistration);
+    }
+  }
   const [orderNumber, setOrderNumber] = useState(operation?.orderNumber ?? "");
   const [notes, setNotes] = useState(operation?.notes ?? "");
   const [truckGross, setTruckGross] = useState(operation?.grossKg?.toString() ?? "");
@@ -285,6 +309,7 @@ export function WeighingOperationDialog({
       date,
       partnerId: fromPerson ? null : partnerId || null,
       naturalPersonId: fromPerson ? personId || null : null,
+      driverId: listedDriver?.id ?? null,
       driverName: driverName.trim() || null,
       vehicleId: fleetVehicle?.id ?? null,
       vehicleRegistration: vehicle.trim() || null,
@@ -546,10 +571,30 @@ export function WeighingOperationDialog({
                 <Label htmlFor="wo-driver">{t.driver}</Label>
                 <Input
                   id="wo-driver"
+                  list="wo-drivers"
                   value={driverName}
-                  onChange={(e) => setDriverName(e.target.value)}
+                  onChange={(e) => changeDriverName(e.target.value)}
                   disabled={!editable}
                 />
+                <datalist id="wo-drivers">
+                  {(drivers.data ?? [])
+                    .filter((d) => d.active)
+                    .map((d) => (
+                      <option key={d.id} value={d.name}>
+                        {d.partnerName ?? d.vehicleRegistration ?? ""}
+                      </option>
+                    ))}
+                </datalist>
+                {driverName.trim() && (
+                  <p className="mt-1 text-xs text-content-muted">
+                    {listedDriver ? t.driverFromList : t.driverOccasional}
+                  </p>
+                )}
+                {driverAttestationExpired && (
+                  <Badge variant="danger" className="mt-1">
+                    {t.driverAttestationExpired}
+                  </Badge>
+                )}
               </div>
               <div>
                 <Label htmlFor="wo-vehicle">{t.vehicle}</Label>

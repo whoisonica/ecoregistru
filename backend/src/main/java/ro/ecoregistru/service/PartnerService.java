@@ -266,6 +266,7 @@ public class PartnerService {
                 p.getDrivers().stream()
                         .map(d -> new DriverResponse(d.getId(), p.getId(), p.getName(), d.getName(),
                                 d.getIdentification(), d.getCnp(), d.getVehicleRegistration(),
+                                null, null, d.getAttestationNumber(), d.getAttestationExpiry(),
                                 d.isActive()))
                         .toList());
     }

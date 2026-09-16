@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+<div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 20px 0;"><tr>
+        <td style="vertical-align: middle; padding-right: 10px;"><img src="https://app.wastehouse.ro/brand/wastehouse-mark.png" width="32" height="32" alt="" style="display: block; border: 0;"/></td>
+        <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #111827; letter-spacing: -0.3px;">WasteHouse</td>
+    </tr></table>
+    <h2 style="color: #b45309;">Atestatul unui șofer expiră</h2>
+    <p>Bună ziua,</p>
+    <p>
+        Un șofer al firmei are atestatul care
+        <strong th:text="${whenText}">expiră în curând</strong>:
+    </p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Șofer</td>
+            <td style="padding: 8px 0; font-weight: bold;" th:text="${name}">Ion Popescu</td>
+        </tr>
+        <tr th:if="${attestationNumber}">
+            <td style="padding: 8px 0; color: #6b7280;">Atestat nr.</td>
+            <td style="padding: 8px 0;" th:text="${attestationNumber}">123</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; color: #6b7280;">Valabil până la</td>
+            <td style="padding: 8px 0;" th:text="${attestationExpiry}">01.01.2026</td>
+        </tr>
+    </table>
+    <p style="font-size: 13px; color: #6b7280;">
+        După reînnoire, trece data nouă în WasteHouse, la
+        <a th:href="${settingsUrl}" href="#">Setări → Șoferi</a>. Alerta următoare pleacă singură pentru data nouă.
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
+    <p style="font-size: 12px; color: #9ca3af;">WasteHouse — evidența și raportarea gestiunii deșeurilor.</p>
+</div>
+</body>
+</html>

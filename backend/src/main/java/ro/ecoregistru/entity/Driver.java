@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -69,6 +70,22 @@ public class Driver {
     /** The truck he usually comes with. "Usually": on the movement it stays editable. */
     @Column(name = "vehicle_registration", length = 50)
     String vehicleRegistration;
+
+    /** Depozitul unde lucrează de obicei (D2.2). Informativ: operațiunea își alege depozitul ei. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "home_work_point_id")
+    WorkPoint homeWorkPoint;
+
+    /** Atestatul profesional sau certificatul ADR (D2.2). */
+    @Column(name = "attestation_number", length = 100)
+    String attestationNumber;
+
+    @Column(name = "attestation_expiry")
+    LocalDate attestationExpiry;
+
+    /** Data pentru care a plecat deja alerta; o dată reînnoită o rearmează. */
+    @Column(name = "attestation_warning_sent_for")
+    LocalDate attestationWarningSentFor;
 
     @Column(nullable = false)
     boolean active;
