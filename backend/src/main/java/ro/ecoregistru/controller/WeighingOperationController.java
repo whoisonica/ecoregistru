@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.WeighingCancelRequest;
 import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
+import ro.ecoregistru.controller.response.DepotRetentionReport;
 import ro.ecoregistru.controller.response.WeighingOperationResponse;
 import ro.ecoregistru.service.WeighingOperationService;
 
@@ -35,6 +36,16 @@ public class WeighingOperationController {
         return service.list();
     }
 
+    /**
+     * D1.9 și D1.10 — reținerile la sursă dintr-o lună; fără {@code month}, tot anul, cu beneficiarii
+     * pentru D205. Serviciul cere pe deasupra și dreptul de a vedea prețurile.
+     */
+    @GetMapping("/retentions")
+    @PreAuthorize(CAN_APPROVE)
+    public DepotRetentionReport retentions(@RequestParam int year, @RequestParam(required = false) Integer month) {
+        return service.retentions(year, month);
+    }
+
     @GetMapping("/{id}")
     public WeighingOperationResponse get(@PathVariable UUID id) {
         return service.get(id);
@@ -44,6 +55,13 @@ public class WeighingOperationController {
     @PreAuthorize(CAN_WRITE)
     public WeighingOperationResponse create(@RequestBody WeighingOperationRequest request) {
         return service.create(request);
+    }
+
+    /** Capul unei operațiuni în lucru. Tipul nu se schimbă; restul, da. */
+    @PutMapping("/{id}")
+    @PreAuthorize(CAN_WRITE)
+    public WeighingOperationResponse update(@PathVariable UUID id, @RequestBody WeighingOperationRequest request) {
+        return service.update(id, request);
     }
 
     /** Tot formularul odată: liniile trimise le înlocuiesc pe cele salvate. */

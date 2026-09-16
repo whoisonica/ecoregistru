@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
+import ro.ecoregistru.controller.response.DepotRetentionReport;
 import ro.ecoregistru.controller.response.WeighingOperationResponse;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Driver;
@@ -125,12 +126,89 @@ public class WeighingOperationService {
                 .vehicleRegistration(firstNonBlank(request.vehicleRegistration(),
                         driver == null ? null : driver.getVehicleRegistration()))
                 .orderNumber(blankToNull(request.orderNumber()))
+                .paymentMethod(request.paymentMethod())
+                .receiptNumber(blankToNull(request.receiptNumber()))
+                .ownHousehold(request.ownHousehold())
                 .notes(blankToNull(request.notes()))
                 .status(WeighingOperationStatus.IN_PROGRESS)
                 .createdBy(SecurityUtils.currentUser().getId())
                 .build();
         operationRepository.save(operation);
         return toResponse(operation, List.of(), pricesVisible(company));
+    }
+
+    /**
+     * Capul unei operațiuni în lucru: data, depozitul, de la cine, șoferul, plata. Tipul nu se
+     * schimbă — numerotarea e separată pe intrări și ieșiri, deci o intrare greșit pornită se
+     * anulează, nu se convertește.
+     *
+     * <p>Liniile poartă instantaneul capului (data, depozitul, partenerul, mașina), fiindcă ele sunt
+     * cele care ajung în registre; de aceea se rescriu odată cu el. Regulile care atârnă de
+     * vânzător se verifică din nou aici: un carton devenit „de la o persoană fizică” trece, o șină
+     * de cale ferată nu.
+     */
+    @Transactional
+    public WeighingOperationResponse update(UUID id, WeighingOperationRequest request) {
+        UUID tenantId = TenantContext.require();
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
+            throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
+        }
+        if (request.type() != null && request.type() != operation.getType()) {
+            throw new BusinessException(WEIGHING_OPERATION_TYPE_NOT_EDITABLE);
+        }
+        if (request.date() == null) {
+            throw new BusinessException(WEIGHING_OPERATION_DATE_REQUIRED);
+        }
+        if (request.partnerId() != null && request.naturalPersonId() != null) {
+            throw new BusinessException(WEIGHING_OPERATION_ONE_COUNTERPARTY);
+        }
+        if (request.naturalPersonId() != null && operation.getType() != WeighingOperationType.IN) {
+            throw new BusinessException(WEIGHING_OPERATION_PERSON_ONLY_IN);
+        }
+
+        WorkPoint workPoint = workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        Partner partner = request.partnerId() == null ? null
+                : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
+                        .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
+        NaturalPerson person = request.naturalPersonId() == null ? null
+                : naturalPersonRepository.findByIdAndCompany_Id(request.naturalPersonId(), tenantId)
+                        .orElseThrow(() -> new NotFoundException(NATURAL_PERSON_NOT_FOUND));
+        Driver driver = request.driverId() == null ? null
+                : driverRepository.findByIdAndCompany_Id(request.driverId(), tenantId)
+                        .orElseThrow(() -> new NotFoundException(DRIVER_NOT_FOUND));
+
+        operation.setWorkPoint(workPoint);
+        operation.setDate(request.date());
+        operation.setPartner(partner);
+        operation.setNaturalPerson(person);
+        operation.setOrigin(resolveOrigin(request, partner, person));
+        operation.setDriver(driver);
+        operation.setDriverName(firstNonBlank(request.driverName(), driver == null ? null : driver.getName()));
+        operation.setVehicleRegistration(firstNonBlank(request.vehicleRegistration(),
+                driver == null ? null : driver.getVehicleRegistration()));
+        operation.setOrderNumber(blankToNull(request.orderNumber()));
+        operation.setPaymentMethod(request.paymentMethod());
+        operation.setReceiptNumber(blankToNull(request.receiptNumber()));
+        operation.setOwnHousehold(request.ownHousehold());
+        operation.setNotes(blankToNull(request.notes()));
+
+        List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
+        for (WasteMovement line : lines) {
+            if (person != null && line.getArticle() != null && line.getArticle().isForbiddenFromIndividuals()) {
+                throw new BusinessException(WEIGHING_LINE_ARTICLE_FORBIDDEN_FROM_INDIVIDUALS);
+            }
+            line.setWorkPoint(workPoint);
+            line.setDate(request.date());
+            line.setPartner(partner);
+            line.setDriverName(operation.getDriverName());
+            line.setVehicleRegistration(operation.getVehicleRegistration());
+        }
+        requireMetalIdentity(operation, lines);
+        operationRepository.saveAndFlush(operation);
+        return toResponse(operation, lines, pricesVisible(operation.getCompany()));
     }
 
     /**
@@ -196,6 +274,14 @@ public class WeighingOperationService {
         }
         // A doua oară aici: fișa persoanei se poate edita între cântărire și finalizare.
         requireMetalIdentity(operation, lines);
+        requireOwnHouseholdDeclaration(operation, lines);
+        // D1.9 și D1.10 — reținerile se calculează acum și rămân așa: o cotă schimbată mâine nu
+        // rescrie declarația de luna trecută.
+        DepotRetentions.Amounts retained = DepotRetentions.of(operation, lines);
+        operation.setAfmBase(retained.afmBase());
+        operation.setAfmContribution(retained.afm());
+        operation.setIncomeTaxBase(retained.incomeTaxBase());
+        operation.setIncomeTax(retained.incomeTax());
         operation.setStatus(WeighingOperationStatus.FINALIZED);
         operation.setFinalizedAt(java.time.Instant.now());
         operation.setFinalizedBy(user.getId());
@@ -249,6 +335,20 @@ public class WeighingOperationService {
         }
     }
 
+    /**
+     * Metalul cumpărat de la o persoană fizică poate proveni numai din gospodăria ei (OUG 31/2011
+     * art. 1 alin. (1^1), amendă 100.000–150.000 lei), iar borderoul poartă declarația ei. Fără bifă
+     * nu se finalizează: documentul ar pleca necompletat.
+     */
+    private static void requireOwnHouseholdDeclaration(WeighingOperation operation, List<WasteMovement> lines) {
+        if (operation.getNaturalPerson() == null || Boolean.TRUE.equals(operation.getOwnHousehold())) {
+            return;
+        }
+        if (lines.stream().anyMatch(l -> l.getArticle() != null && l.getArticle().isMetal())) {
+            throw new BusinessException(WEIGHING_OPERATION_OWN_HOUSEHOLD_REQUIRED);
+        }
+    }
+
     /** Controllerul are aceeași regulă; aici e jumătatea care ține și fără HTTP. */
     private static void requireApprover(ro.ecoregistru.entity.AppUser user) {
         if (!APPROVERS.contains(user.getRole())) {
@@ -285,6 +385,43 @@ public class WeighingOperationService {
         return operations.stream()
                 .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of()), pricesVisible))
                 .toList();
+    }
+
+    /**
+     * D1.9 și D1.10 — raportul reținerilor. Cu lună, e cel lunar (AFM și D100, 25 a lunii următoare);
+     * fără lună, e anul întreg, cu beneficiarii pentru D205.
+     *
+     * <p>Îl vede cine <b>administrează</b> firma și cine <b>vede prețurile</b>: sunt bani calculați din
+     * prețuri (D1.8), iar lista de beneficiari poartă CNP-uri întregi.
+     */
+    @Transactional(readOnly = true)
+    public DepotRetentionReport retentions(int year, Integer month) {
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        requireApprover(SecurityUtils.currentUser());
+        if (!pricesVisible(company)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Raportul reținerilor arată prețurile depozitului.");
+        }
+        // O lună în afara lui 1–12 cade pe `DateTimeException`, tratată deja ca 400 (AdviceController).
+        java.time.YearMonth period = month == null ? null : java.time.YearMonth.of(year, month);
+        java.time.LocalDate from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
+        java.time.LocalDate to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
+        // Lunar: 25 a lunii următoare. Anual: ultima zi a lui februarie, pentru declarația pe beneficiar.
+        java.time.LocalDate dueDate = month == null
+                ? java.time.LocalDate.of(year + 1, 2, 1).with(java.time.temporal.TemporalAdjusters.lastDayOfMonth())
+                : to.plusDays(1).withDayOfMonth(25);
+
+        var totals = operationRepository.sumRetentions(tenantId, from, to);
+        var beneficiaries = operationRepository.findTaxedBeneficiaries(tenantId, from, to).stream()
+                .map(b -> new DepotRetentionReport.Beneficiary(b.getPersonId(), b.getName(), b.getCnp(),
+                        b.getBase(), b.getTax()))
+                .toList();
+        return new DepotRetentionReport(year, month, from, to, dueDate,
+                DepotRetentions.AFM_RATE, totals.getAfmBase(), totals.getAfm(),
+                DepotRetentions.INCOME_TAX_RATE, totals.getIncomeTaxBase(), totals.getIncomeTax(),
+                totals.getOperations(), beneficiaries);
     }
 
     private WasteMovement line(WeighingOperation operation, WeighingLinesRequest.Line line, BigDecimal unitPrice,
@@ -465,6 +602,10 @@ public class WeighingOperationService {
                 person == null ? null : person.getId(), person == null ? null : person.getName(),
                 o.getOrigin(), o.getDriverName(), o.getVehicleRegistration(), o.getOrderNumber(),
                 o.getStatus(), o.getNotes(), o.getGrossKg(), o.getTareKg(),
+                o.getPaymentMethod(), o.getReceiptNumber(), o.getOwnHousehold(),
+                pricesVisible ? o.getAfmBase() : null, pricesVisible ? o.getAfmContribution() : null,
+                pricesVisible ? o.getIncomeTaxBase() : null, pricesVisible ? o.getIncomeTax() : null,
+                o.getCancelReason(),
                 lines.stream().map(m -> toLine(m, pricesVisible)).toList());
     }
 

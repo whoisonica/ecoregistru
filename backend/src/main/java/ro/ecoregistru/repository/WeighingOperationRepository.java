@@ -6,6 +6,8 @@ import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.WeighingOperation;
 import ro.ecoregistru.enums.WeighingOperationType;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +25,76 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     @Query("select distinct o.naturalPerson.id from WeighingOperation o "
             + "where o.company.id = :companyId and o.naturalPerson is not null")
     Set<UUID> findNaturalPersonIdsWithOperations(@Param("companyId") UUID companyId);
+
+
+    /**
+     * D1.9 și D1.10 — ce s-a reținut la sursă într-o perioadă: bazele și sumele păstrate pe
+     * operațiunile <b>finalizate</b> de intrare. Anulatele nu se declară, iar ieșirile nu rețin nimic
+     * (acolo cei 2% îi reține cumpărătorul). Luna e cea a <b>datei operațiunii</b>, nu a introducerii ei.
+     */
+    @Query("""
+            select coalesce(sum(o.afmBase), 0) as afmBase,
+                   coalesce(sum(o.afmContribution), 0) as afm,
+                   coalesce(sum(o.incomeTaxBase), 0) as incomeTaxBase,
+                   coalesce(sum(o.incomeTax), 0) as incomeTax,
+                   count(o) as operations
+            from WeighingOperation o
+            where o.company.id = :companyId
+              and o.type = ro.ecoregistru.enums.WeighingOperationType.IN
+              and o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED
+              and o.date between :from and :to
+            """)
+    RetentionTotals sumRetentions(@Param("companyId") UUID companyId,
+                                  @Param("from") LocalDate from,
+                                  @Param("to") LocalDate to);
+
+    /** Forma pe care o întoarce {@link #sumRetentions}; numele sunt aliasurile din select. */
+    interface RetentionTotals {
+        BigDecimal getAfmBase();
+
+        BigDecimal getAfm();
+
+        BigDecimal getIncomeTaxBase();
+
+        BigDecimal getIncomeTax();
+
+        long getOperations();
+    }
+
+    /**
+     * Declarația pe fiecare beneficiar de venit (Codul fiscal art. 132 alin. (2), D205): persoanele
+     * fizice de la care s-a reținut impozit în perioadă, cu venitul brut și impozitul. Persoanele
+     * fără impozit — hârtie, plastic, acumulatori — nu apar: n-au venit impozabil de declarat.
+     */
+    @Query("""
+            select p.id as personId, p.name as name, p.cnp as cnp,
+                   coalesce(sum(o.incomeTaxBase), 0) as base,
+                   coalesce(sum(o.incomeTax), 0) as tax
+            from WeighingOperation o join o.naturalPerson p
+            where o.company.id = :companyId
+              and o.type = ro.ecoregistru.enums.WeighingOperationType.IN
+              and o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED
+              and o.date between :from and :to
+              and o.incomeTax > 0
+            group by p.id, p.name, p.cnp
+            order by p.name
+            """)
+    List<TaxedBeneficiary> findTaxedBeneficiaries(@Param("companyId") UUID companyId,
+                                                  @Param("from") LocalDate from,
+                                                  @Param("to") LocalDate to);
+
+    /** Forma pe care o întoarce {@link #findTaxedBeneficiaries}. CNP-ul se maschează în serviciu. */
+    interface TaxedBeneficiary {
+        UUID getPersonId();
+
+        String getName();
+
+        String getCnp();
+
+        BigDecimal getBase();
+
+        BigDecimal getTax();
+    }
 
     @Query("select max(o.number) from WeighingOperation o where o.company.id = :companyId and o.type = :type")
     Integer findMaxNumber(@Param("companyId") UUID companyId, @Param("type") WeighingOperationType type);

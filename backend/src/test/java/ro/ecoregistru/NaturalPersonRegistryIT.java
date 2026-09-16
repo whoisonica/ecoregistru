@@ -209,7 +209,7 @@ class NaturalPersonRegistryIT {
         WorkPoint depot = workPointRepository.save(WorkPoint.builder()
                 .company(company).name("Depozit").active(true).createdAt(Instant.now()).build());
         operations.create(new WeighingOperationRequest(IN, depot.getId(), LocalDate.of(2026, 9, 15), null, sold,
-                null, null, null, null, null, null));
+                null, null, null, null, null, null, null, null, null));
 
         assertThatThrownBy(() -> service.delete(mistake))
                 .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getErrorCode())

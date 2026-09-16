@@ -98,9 +98,17 @@ public class WeighingOperation {
     @Column(name = "receipt_number", length = 60)
     String receiptNumber;
 
+    /** Valoarea pe care s-au calculat cei 2% AFM: toată intrarea, fără TVA (V49). */
+    @Column(name = "afm_base", precision = 16, scale = 2)
+    BigDecimal afmBase;
+
     /** 2% AFM reținut la sursă, calculat la finalizare și păstrat. */
     @Column(name = "afm_contribution", precision = 16, scale = 2)
     BigDecimal afmContribution;
+
+    /** Valoarea pe care s-a calculat impozitul: doar liniile de metal ale unei intrări PF (V49). */
+    @Column(name = "income_tax_base", precision = 16, scale = 2)
+    BigDecimal incomeTaxBase;
 
     /** Impozitul reținut la metalele de la PF, calculat la finalizare și păstrat. */
     @Column(name = "income_tax", precision = 16, scale = 2)

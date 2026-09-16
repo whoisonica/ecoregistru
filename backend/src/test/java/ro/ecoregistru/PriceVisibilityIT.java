@@ -315,7 +315,7 @@ class PriceVisibilityIT {
 
     private WeighingOperationRequest head() {
         return new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
     }
 
     private static WeighingLinesRequest lines(Line... lines) {

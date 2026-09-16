@@ -97,6 +97,39 @@ class WeighingOperationSchemaIT {
         assertRefused(() -> insertLine(operation, "100.500", "100.000"), "waste_movements_final_within_net");
     }
 
+    /**
+     * D1.9 și D1.10 — o sumă reținută fără baza ei ar fi o cifră fără document (V49). Fiecare refuz
+     * stă în testul lui: în Postgres primul refuz avortează toată tranzacția, deci două într-una
+     * n-ar mai proba nimic al doilea.
+     */
+    @Test
+    void theAfmContributionAlwaysCarriesItsBase() {
+        UUID operation = insert("IN", 1, partnerId, null, null, "IN_PROGRESS", null);
+        assertRefused(() -> jdbc.update(
+                        "update weighing_operations set afm_contribution = 10 where id = ?", operation),
+                "weighing_operations_afm_base");
+    }
+
+    @Test
+    void theIncomeTaxAlwaysCarriesItsBase() {
+        UUID operation = insert("IN", 1, partnerId, null, null, "IN_PROGRESS", null);
+        assertRefused(() -> jdbc.update(
+                        "update weighing_operations set income_tax = 200 where id = ?", operation),
+                "weighing_operations_income_tax_base");
+    }
+
+    /** Controlul pozitiv al celor două de mai sus: cu bazele scrise, aceleași sume trec. */
+    @Test
+    void amountsWithTheirBasesAreAccepted() {
+        UUID operation = insert("IN", 1, partnerId, null, null, "IN_PROGRESS", null);
+
+        jdbc.update("update weighing_operations set afm_base = 500, afm_contribution = 10, "
+                + "income_tax_base = 2000, income_tax = 200 where id = ?", operation);
+
+        assertThat(jdbc.queryForObject("select afm_contribution from weighing_operations where id = ?",
+                java.math.BigDecimal.class, operation)).isEqualByComparingTo("10");
+    }
+
     // --- helpers ---
 
     private void assertRefused(Runnable insert, String constraint) {

@@ -1,6 +1,7 @@
 package ro.ecoregistru.controller.response;
 
 import ro.ecoregistru.enums.PackagingOrigin;
+import ro.ecoregistru.enums.PaymentMethod;
 import ro.ecoregistru.enums.WasteOperationCode;
 import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.enums.WeighingOperationType;
@@ -10,7 +11,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-/** Capul operațiunii, cu liniile. Fără CNP: persoana fizică apare doar cu numele. */
+/**
+ * Capul operațiunii, cu liniile. Fără CNP: persoana fizică apare doar cu numele.
+ *
+ * <p>Reținerile (D1.9, D1.10) sunt bani calculați din prețuri, deci pleacă doar către cine vede
+ * prețurile (D1.8); celorlalți le vin goale, ca {@code unitPrice} pe linie.
+ */
 public record WeighingOperationResponse(
         UUID id,
         WeighingOperationType type,
@@ -30,6 +36,14 @@ public record WeighingOperationResponse(
         String notes,
         BigDecimal grossKg,
         BigDecimal tareKg,
+        PaymentMethod paymentMethod,
+        String receiptNumber,
+        Boolean ownHousehold,
+        BigDecimal afmBase,
+        BigDecimal afmContribution,
+        BigDecimal incomeTaxBase,
+        BigDecimal incomeTax,
+        String cancelReason,
         List<Line> lines) {
 
     /** O linie de cântar. {@code finalKg} e ce intră în stoc și în registre. */
