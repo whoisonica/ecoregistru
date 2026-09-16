@@ -3,6 +3,15 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **16.09.2026, 15:12 și 15:14 — ✅ pe producție: aplicația mobilă M1c („A venit controlul”, dosarul prin partajare, push Expo).**
+> `ecoregistru-api` **v97** (`7ebbcbb`, **migrarea `V56`**, schema 55 → 56), `ecoregistru-app` **v80** (`75a1ae5`); monorepo
+> `main` = `origin/main` = `deploy/heroku-split` = `23cd96c`. Pe producție: `Migrating schema "public" to version "56 - device
+> session push token"`, `now at version v56`, `Started EcoRegistruApplication` (12:12:42 UTC); `/actuator/health` 200,
+> `PUT /api/v1/auth/devices/{id}/push-token` 401 fără token. Garda de conținut curată (backend `^^`, frontend `^`).
+> **`PUSH_ENABLED` nesetat pe api** → push-ul rămâne oprit până când Expo e în registrul art. 30 și în DPA. Pe web intră doar
+> refactorul `lib/readiness.ts` (fără efect vizibil). `V54` a rămas nefolosit (M1c a fost renumerotată după D2.2).
+> Suita backend **826 de teste, 102 clase, 0 eșecuri**; `tsc` curat în `frontend` și `mobile`. **Următoarea migrare liberă: `V57`.**
+
 > **16.09.2026, 13:41 — ✅ pe producție: depozitul D2.2, șoferii extinși (după D2.1 flota, 13:20, api v95 / app v78, `V53`).**
 > `ecoregistru-api` **v96** (`704b817`, **migrarea `V55`**, schema 53 → 55), `ecoregistru-app` **v79** (`0062009`); monorepo
 > `main` = `origin/main` = `deploy/heroku-split` = `429d80f`. Pe producție: `Migrating schema "public" to version "55 - driver
@@ -13,9 +22,7 @@ rulează local și are testele verzi.
 > pune mașina lui într-o rubrică goală, altfel rămâne ocazional; atestatul expirat se vede. **Reparat în aceeași migrare:**
 > `weighing_operations.driver_id` n-avea `ON DELETE SET NULL`, deci fișa unui șofer folosit la cântar nu se putea șterge.
 > Suita backend **808 de teste, 99 de clase, 0 eșecuri**; `DriverFleetIT` 5/5 cu proba negativă pe 5 reguli; e2e **21** 13/13.
->
-> ✅ **Migrările mobilului, rezolvat 16.09:** `V54` a M1c a fost renumerotată în **`V56`** pe `feat/mobil` (`8086c14`, nedeployat);
-> `V54` rămâne nefolosit pe producție. Următoarea liberă: **`V57`** (`V56` e rezervată M1c).
+
 
 > **16.09.2026, 12:37 și 12:42 — ✅ pe producție: depozitul D1.9–D1.15 și aplicația mobilă M1b.**
 > `ecoregistru-api` **v94** (`3ef32ec`, **migrările `V51` și `V52`**, schema 50 → 52), `ecoregistru-app` **v76** (`b80ab14`,
