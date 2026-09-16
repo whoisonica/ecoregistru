@@ -69,7 +69,7 @@ rulează local și are testele verzi.
 >
 
 > **16.09.2026 — 🟡 local, nedeployat: depozitul D1.9, D1.10 și D1.15 — reținerile la sursă și ecranul „Cântar”.**
-> Migrarea **`V49`** adaugă bazele de calcul lângă sumele reținute, cu constrângere: o sumă reținută fără baza ei ar fi o
+> Migrarea **`V51`** (scrisă ca `V49`, renumerotată pe 16.09 fiindcă `V50` a mobilului a ajuns întâi pe producție) adaugă bazele de calcul lângă sumele reținute, cu constrângere: o sumă reținută fără baza ei ar fi o
 > cifră fără document. La finalizarea unei **intrări** se calculează și se păstrează **2% la Fondul pentru mediu** din toată
 > valoarea (OUG 196/2005 art. 9 alin. (1) lit. a), și de la persoane fizice, și la hârtie sau plastic) și **10% impozit pe
 > venit** numai pe liniile de metal cumpărate de la o persoană fizică (Codul fiscal art. 114 alin. (2) lit. m²), art. 115

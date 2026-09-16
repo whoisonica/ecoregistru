@@ -98,7 +98,7 @@ class WeighingOperationSchemaIT {
     }
 
     /**
-     * D1.9 și D1.10 — o sumă reținută fără baza ei ar fi o cifră fără document (V49). Fiecare refuz
+     * D1.9 și D1.10 — o sumă reținută fără baza ei ar fi o cifră fără document (V51). Fiecare refuz
      * stă în testul lui: în Postgres primul refuz avortează toată tranzacția, deci două într-una
      * n-ar mai proba nimic al doilea.
      */

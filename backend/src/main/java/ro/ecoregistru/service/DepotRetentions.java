@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * D1.9 și D1.10 — reținerile la sursă de pe o intrare de depozit. Singurul loc unde stau cele două
- * cote; se calculează la finalizare și se păstrează pe operațiune (V46 + V49), ca o cotă schimbată
+ * cote; se calculează la finalizare și se păstrează pe operațiune (V46 + V51), ca o cotă schimbată
  * mâine să nu rescrie ce s-a reținut ieri.
  *
  * <p><b>Cotele sunt fixe prin lege, nu setări pe firmă</b> ({@code surse-oficiale.md} §18.1, C1):
