@@ -8,6 +8,22 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 22:00 — ✅ pe producție: Anexa 3 Ambalaje la colector și starea documentului pe fiecare termen.**
+> `ecoregistru-api` **v106** (`3b9c08d`), `ecoregistru-app` **v91** (`bbce88b`); monorepo `b153130`, fără migrare. Proprietarul: „din ce
+> generări ai să-ți genereze automat ce trebuie să depui”, apoi „caută atent în lege”. Temeiul e în `surse-oficiale.md` §2.11 (`3f53d99`).
+> Pe scurt: un producător sau deținător are trei depuneri cu dată fixă în OUG 92/2021, toate deja în calendar. 15 martie rămâne pentru orice generator
+> (chestionarele SIM sunt „alocate”; întrebarea **AP** la specialistă). Singurul gol: **Ordinul 794/2012 art. 4** — colectorii,
+> reciclatorii, valorificatorii și comercianții autorizați depun **Anexa 3** pe fiecare punct de lucru până pe **25 februarie** (art. 6),
+> pentru codurile 15 01 (art. 8 alin. (3)). **(1)** `ReportType.PACKAGING_ANNEX3`: se creează pentru o firmă care ține registrul art. 48,
+> dacă are o preluare `COLLECTED` pe 15 01 în anul raportat (`WasteMovementRepository.existsCollectedPackaging`). Generatorul nu îl
+> primește: art. 4 nu-l numește. Rolul de ambalaje nu e cerut pentru termen. Pe producție apare la `DeadlineCalendarScheduler` (06:45) sau
+> la „Verifică termenele”. **(2)** Pe „De făcut”, sub linkul documentului (`DeadlineReadiness`): cifrele anului raportat (coduri, tone generate),
+> blocajele (fără cod R/D, de cântărit, neîncadrate, rolul de ambalaje lipsă) și, numai pe un an încheiat și fără blocaje, **„Gata de
+> depus”** cu „Descarcă” (Evidența generate PDF, Anexa 1 `.xls`, Anexa 3 `.xls`; la Anexa 3 cu mai multe puncte de lucru descărcarea rămâne
+> pe Ambalaje). Probe: backend **844/102, 0 eșecuri** (3 teste noi în `DeadlineIT`; negativă: fără filtrul COLLECTED + 15 01 cade exact
+> testul lui), `npm test` verde (`evidenceReadiness`), e2e **23/23** pe `eco_e2e_depuneri` (proba 9 verifică cifrele și termenul Anexei 3),
+> capturi la 1440px și 375px fără derulare laterală. Liberă tot **`V61`**.
+
 > **16.09.2026, 21:23 — ✅ pe producție: termenele trecute nebifate ascunse; pagina Termene cu „De făcut” și „Bifate”.**
 > Trei felii, la cererea proprietarului („de ce sunt la toate firmele termene din trecut depășite?”). **(1) api v105** (20:55,
 > `3009032`; monorepo `28c5a80`): termenele create după regula veche (anul întreg) au rămas în bază, nebifate, deci „depășite”.
