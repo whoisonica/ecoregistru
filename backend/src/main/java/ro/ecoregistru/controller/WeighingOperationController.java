@@ -50,6 +50,19 @@ public class WeighingOperationController {
         return service.retentions(year, month);
     }
 
+    /** D1.14 — registrul intrărilor și ieșirilor pe o lună (sau pe an), ca {@code .xlsx}. */
+    @GetMapping("/registru")
+    public org.springframework.http.ResponseEntity<byte[]> register(@RequestParam int year,
+                                                                   @RequestParam(required = false) Integer month) {
+        String file = "registru-intrari-iesiri-" + year + (month == null ? "" : String.format("-%02d", month)) + ".xlsx";
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        org.springframework.http.ContentDisposition.attachment().filename(file).build().toString())
+                .body(service.renderRegister(year, month));
+    }
+
     @GetMapping("/{id}")
     public WeighingOperationResponse get(@PathVariable UUID id) {
         return service.get(id);

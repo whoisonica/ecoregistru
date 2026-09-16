@@ -68,6 +68,18 @@ rulează local și are testele verzi.
 > Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
 >
 
+> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.14, registrul intrărilor și ieșirilor.**
+> Documentul de lucru pe care depozitele îl scot azi din programul de cântar, acum din aplicație: butonul **„Registrul
+> lunii”** de pe ecranul „Cântar” descarcă `registru-intrari-iesiri-AAAA-LL.xlsx` (`GET /api/v1/weighing-operations/registru
+> ?year&month`, fără lună = anul). O linie pe sortiment, cu capul operațiunii repetat; amândouă direcțiile și **toate
+> stările**, cu starea scrisă, cine a anulat și motivul — un registru din care lipsesc anulările nu arată ce s-a anulat.
+> Ordinea cântarului: zi, intrările înaintea ieșirilor, numărul. Coloanele urmează exportul unui depozit funcțional, cu
+> trei abateri: **fără oră** (decizia proprietarului), „Sortiment” în locul unui ID intern, iar **prețul și valoarea doar
+> pentru cine vede prețurile** (D1.8). Persoana fizică apare cu numele, niciodată cu CNP-ul sau actul.
+> **Proba:** `DepotRegisterIT` 4/4 pe rânduri întregi (nume inventate), cu proba negativă pe patru reguli (ordinea,
+> prețurile ascunse, începutul perioadei, rolul PF), fiecare scoasă pică exact testele ei; e2e **19** verde, cu
+> descărcarea nouă; capturile privite la 1440 și 375. Suita **781/95, 0 eșecuri**.
+
 > **16.09.2026 — 🟡 local, nedeployat: depozitul D1.12, originea în evidența cronologică art. 48.**
 > Art. 48 alin. (1) lit. a) cere „natura şi originea” deșeurilor; exportul avea partenerul, dar nu și de la cine vine
 > deșeul, iar o preluare de la o persoană fizică ieșea cu rubrica de partener goală și nimic altceva. Coloana nouă

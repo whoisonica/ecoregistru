@@ -63,6 +63,26 @@ check("pagina nu se lățește la 1440px", screen.bodyOverflow <= 0, `${screen.b
 check("banda reținerilor spune ceva despre luna asta", screen.strip.length > 0, screen.strip.slice(0, 80));
 await shot(page, "19-cantar");
 
+// ---------------------------------------------------------------- REGISTRUL LUNII (D1.14)
+// O citire: descarcă registrul intrărilor și ieșirilor pe luna aleasă. Coloanele le apără DepotRegisterIT;
+// aici se probează că butonul e pe ecran, că pleacă luna din filtru și că vine un xlsx, nu o eroare.
+// Ecranul pornește pe luna curentă (`currentMonth()`).
+const now = new Date();
+const monthValue = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+const [registru] = await Promise.all([
+  page.waitForEvent("download", { timeout: 15000 }).catch(() => null),
+  page.click('button:has-text("Registrul lunii")'),
+]);
+const expectedName = `registru-intrari-iesiri-${monthValue}.xlsx`;
+check("„Registrul lunii” descarcă luna din filtru", registru?.suggestedFilename() === expectedName,
+  `${registru?.suggestedFilename()} (așteptat ${expectedName})`);
+if (registru) {
+  const fs = await import("node:fs/promises");
+  const bytes = await fs.readFile(await registru.path());
+  check("fișierul e un xlsx (zip), nu o pagină de eroare", bytes.length > 1000 && bytes.subarray(0, 2).toString() === "PK",
+    `${bytes.length} octeți`);
+}
+
 // ---------------------------------------------------------------- FORMULARUL
 await page.click('button:has-text("Intrare nouă")');
 await page.waitForTimeout(900);

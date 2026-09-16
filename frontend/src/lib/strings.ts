@@ -1124,6 +1124,8 @@ export const strings = {
     tabOut: "Ieșiri",
     newIn: "Intrare nouă",
     newOut: "Ieșire nouă",
+    exportRegister: "Registrul lunii",
+    exportRegisterError: "Registrul nu a putut fi descărcat. Încearcă din nou.",
     number: "Nr.",
     date: "Data",
     workPoint: "Depozit",

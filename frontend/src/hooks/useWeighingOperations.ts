@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { saveBlob } from "@/lib/download";
 import type {
   DepotRetentionReport,
   WeighingLinesInput,
@@ -130,4 +131,18 @@ export function useDepotRetentions(year: number, month: number | null, enabled =
         })
       ).data,
   });
+}
+
+/**
+ * D1.14 — registrul intrărilor și ieșirilor pe o lună: amândouă direcțiile, toate stările, o linie pe
+ * sortiment. `.xlsx`, fiindcă e documentul de lucru al depozitului, nu un formular de depus.
+ */
+export async function downloadDepotRegister(year: number, month: number): Promise<void> {
+  const data = (
+    await api.get("/api/v1/weighing-operations/registru", {
+      params: { year, month },
+      responseType: "blob",
+    })
+  ).data as Blob;
+  saveBlob(data, `registru-intrari-iesiri-${year}-${String(month).padStart(2, "0")}.xlsx`);
 }

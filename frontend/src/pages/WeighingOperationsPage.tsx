@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowDownToLine, ArrowUpFromLine, Scale } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, FileSpreadsheet, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import {
+  downloadDepotRegister,
   useDepotRetentions,
   useWeighingOperation,
   useWeighingOperations,
@@ -25,6 +26,8 @@ import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { Tooltip } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useToast } from "@/components/ui/toast";
+import { apiBlobErrorMessage } from "@/lib/api";
 import { WeighingOperationDialog } from "@/components/depot/WeighingOperationDialog";
 
 const t = strings.weighing;
@@ -55,6 +58,8 @@ export function WeighingOperationsPage() {
   const [month, setMonth] = useState(currentMonth());
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const { notify } = useToast();
   // `?op=…` vine de pe „Intrări”/„Ieșiri”, de pe un rând care e linie de cântar. Operațiunea lui
   // poate fi din altă lună decât cea aleasă aici, deci se cere separat.
   const [params, setParams] = useSearchParams();
@@ -70,6 +75,17 @@ export function WeighingOperationsPage() {
   // Banda reținerilor o vede doar cine administrează firma și vede prețurile. Regula e pe server, dar
   // operatorul nici n-o cere: un 403 la fiecare deschidere de ecran e zgomot, nu informație.
   const retentions = useDepotRetentions(year, monthNumber, canManage(user?.role));
+
+  async function exportRegister() {
+    setExporting(true);
+    try {
+      await downloadDepotRegister(year, monthNumber);
+    } catch (err) {
+      notify(await apiBlobErrorMessage(err, t.exportRegisterError), "error");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const operations = useMemo(() => data ?? [], [data]);
   const view = useTableView(operations, {
@@ -142,7 +158,14 @@ export function WeighingOperationsPage() {
             </button>
           ))}
         </div>
-        <MonthInput id="weighing-month" value={month} onChange={setMonth} />
+        <div className="flex flex-wrap items-end gap-2">
+          <MonthInput id="weighing-month" value={month} onChange={setMonth} />
+          {/* Amândouă direcțiile, oricare tab e deschis: e registrul intrărilor și al ieșirilor. */}
+          <Button variant="outline" onClick={exportRegister} disabled={exporting}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t.exportRegister}
+          </Button>
+        </div>
       </div>
 
       {retentions.data && <RetentionsStrip report={retentions.data} />}

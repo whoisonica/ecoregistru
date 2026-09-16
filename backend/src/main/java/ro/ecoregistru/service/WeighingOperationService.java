@@ -77,6 +77,8 @@ public class WeighingOperationService {
     PartnerRepository partnerRepository;
     NaturalPersonRepository naturalPersonRepository;
     DriverRepository driverRepository;
+    ro.ecoregistru.repository.AppUserRepository userRepository;
+    ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
 
     @Transactional
     public WeighingOperationResponse create(WeighingOperationRequest request) {
@@ -402,6 +404,43 @@ public class WeighingOperationService {
         return operations.stream()
                 .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of()), pricesVisible))
                 .toList();
+    }
+
+    /**
+     * D1.14 — registrul intrărilor și ieșirilor, o lună sau un an, amândouă direcțiile, toate stările,
+     * în ordinea cântarului: zi cu zi, intrările înaintea ieșirilor, numărul crescător. Îl scoate oricine
+     * vede lista; prețul intră doar pentru cine îl vede (D1.8).
+     */
+    @Transactional(readOnly = true)
+    public byte[] renderRegister(int year, Integer month) {
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        java.time.YearMonth period = month == null ? null : java.time.YearMonth.of(year, month);
+        java.time.LocalDate from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
+        java.time.LocalDate to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
+        List<WeighingOperation> operations = new ArrayList<>(operationRepository.findForScreen(tenantId, null, from, to));
+        operations.sort(java.util.Comparator.comparing(WeighingOperation::getDate)
+                .thenComparing(WeighingOperation::getType)
+                .thenComparingInt(WeighingOperation::getNumber));
+        Map<UUID, List<WasteMovement>> lines = operations.isEmpty() ? Map.of()
+                : movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
+                                operations.stream().map(WeighingOperation::getId).toList())
+                        .stream().collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
+        Map<UUID, String> userNames = new HashMap<>();
+        userRepository.findAllById(operations.stream().map(WeighingOperation::getCancelledBy)
+                        .filter(java.util.Objects::nonNull).distinct().toList())
+                .forEach(u -> userNames.put(u.getId(), fullName(u)));
+        String label = period == null ? "Anul " + year
+                : "Luna " + String.format("%02d.%d", month, year);
+        String name = company.getCui() == null ? company.getName() : company.getName() + " · CUI " + company.getCui();
+        return registerGenerator.xlsx(name, label, operations, lines, userNames, pricesVisible(company));
+    }
+
+    private static String fullName(ro.ecoregistru.entity.AppUser user) {
+        String name = java.util.stream.Stream.of(user.getFirstName(), user.getLastName())
+                .filter(v -> v != null && !v.isBlank()).collect(Collectors.joining(" "));
+        return name.isEmpty() ? user.getEmail() : name;
     }
 
     /**
