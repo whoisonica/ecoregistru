@@ -1,16 +1,21 @@
-import { Platform } from "react-native";
-
 import type { Company, Deadline, MovementSummary, MovementTotals, WasteMovement, WasteRegister } from "@web/types";
 
 import type { AuthResponse, DeviceSessionRow } from "./auth";
 
 /**
- * Backendul local din profilul dev. Emulatorul Android vede Mac-ul la 10.0.2.2, simulatorul iOS la localhost.
- * `EXPO_PUBLIC_API_URL` bate amândouă (telefon real în aceeași rețea).
+ * **Serverul adevărat, cel de pe Heroku.** Aplicația se leagă la producție din prima, fără nimic de
+ * pornit pe Mac: cine ia telefonul în mână vede datele firmei lui, nu o bază de probă.
+ *
+ * <p>Pentru lucrul local se pune `EXPO_PUBLIC_API_URL` în `mobile/.env.local` (fișier ignorat de git):
+ * `http://localhost:8080` pe simulatorul iOS, `http://10.0.2.2:8080` pe emulatorul Android — acolo
+ * Mac-ul se vede la altă adresă —, sau IP-ul Mac-ului în rețea pentru un telefon adevărat. Expo citește
+ * variabilele `EXPO_PUBLIC_*` la pornirea lui Metro, deci schimbarea cere o repornire a bundler-ului.
+ *
+ * <p>API-ul n-are domeniu propriu; `app.wastehouse.ro` e frontendul, nu el.
  */
-const BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ??
-  (Platform.OS === "android" ? "http://10.0.2.2:8080" : "http://localhost:8080");
+const PRODUCTION_URL = "https://ecoregistru-api-5ba7c1d5e3e3.herokuapp.com";
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? PRODUCTION_URL;
 
 /** 401 pe o cerere cu token, după ce reîmprospătarea a fost încercată și n-a mers: omul iese din cont. */
 export class UnauthorizedError extends Error {}
