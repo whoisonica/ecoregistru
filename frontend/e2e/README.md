@@ -1,5 +1,10 @@
 # Probe de interfaţă
 
+🧾 **16.09.2026, seara — proba 23 (`23-cereri-1609.mjs`)**: pe „Generare” fără selectul „Operațiune”, lista de coduri după
+denumire, scopul V/E după destinul ales, destinația cu patru opțiuni și obligatorie, destinatarul fără autorizație refuzat,
+colectorul fără autorizație nesalvat, butonul ANAF la partener și la firmă nouă, „Economia circulară” scoasă, Anexa 3 Ambalaje
+cu ieșirile pe generatorul „Proba Automata SRL”. Lasă în urmă partenerul „Proba 23 Fără Autorizație”. **23/23** pe o bază nouă.
+
 🧾 **16.09.2026 — proba 22 (`22-lansare-marunte.mjs`)**: „Istoric” de pe rândul de mișcare până în jurnalul filtrat (și
 operatorul fără el, probat negativ), mărimea dosarului de control, „Arată parola” cu bara de putere (nivelurile regulii
 serverului, cu diacritice), limitele rubricilor de șofer. **Proba 8 chiar deschide un atașament** (tab `blob:`, poza

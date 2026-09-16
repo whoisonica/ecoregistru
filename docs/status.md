@@ -8,6 +8,46 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, seara — ✅ validare: Andreea a verificat toate anexele și toate documentele pe care le generează aplicația.**
+> Transmis de proprietar după deploy-urile de mai jos (api v102 / app v85): fișa de evidență (HG 856/2002 anexa 1), evidența
+> centralizată, Anexa 3 și avizul (HG 1061/2008), Anexa 2, Anexa 1 și Anexa 3 Ambalaje (Ordinul 794/2012), evidența cronologică
+> art. 48 și dosarul de control, în forma de pe producție de la 16.09.2026, 19:44.
+
+> **16.09.2026, 19:44 — ✅ pe producție: Anexa 3 Ambalaje în dosarul de control.**
+> `ecoregistru-api` **v102**, `ecoregistru-app` **v85**; monorepo `main` = `origin/main` = `e0f0c4e`. Fără migrare.
+> - În arhivă intră `anexa3-ambalaje-AAAA-<punct-de-lucru>.xls` și `.pdf`, **câte o pereche pe fiecare punct de lucru** care are în an
+>   preluări, predări sau tratări pe coduri 15 01 xx (Ordinul 794/2012 art. 4 alin. (4): raportarea e per punct de lucru). Un punct fără
+>   ambalaje nu primește foaie goală. La generator foaia are doar ieșirile.
+> - Un colector cu ambalaje dar **fără rolul din profil** nu primește foaia (nu se știe care tabel): README-ul o spune și trimite la Setări.
+> - `README.txt` numește fiecare fișier, cu punctul de lucru și termenul de 25 februarie; ecranul „Dosar de control” are rândul nou.
+> Suita backend **834 de teste, 102 clase, 0 eșecuri** (+1, `AuditFileIT.theDossierCarriesAnexa3PackagingPerWorkPointThatMovedPackaging`);
+> **proba negativă:** fără scrierea în arhivă cade exact testul ăsta. Probele e2e 1 și 22 trec; ecranul privit la 1440px.
+
+> **16.09.2026, 19:13 — ✅ pe producție: cererile proprietarului din 16.09 seara (migrarea `V59`).**
+> `ecoregistru-api` **v101** (`981c170`, `now at version v59`), `ecoregistru-app` **v84** (`44d7918`); monorepo `05061c7`.
+> - **Formularul de mișcare:** codul de deșeu se caută și se citește **după denumire** („Ambalaje de hârtie și carton (15 01 01)”);
+>   pe „Generare” nu mai e selectul „Operațiune” cu singura opțiune „Generare” (se citea ca vechiul „rămâne în stoc”); „Stocare — tipul”
+>   se numește „Depozitare până la predare — tipul”; **„Tratare — scopul”** arată V sau E după unde pleacă deșeul;
+>   **„Transport — destinația”** oferă numai **DO, I, Vr, A** și e obligatorie pe Generare (o valoare veche rămâne la editare);
+>   o predare către un partener **fără nr. de autorizație de mediu** e refuzată în formular, cu trimitere la fișa lui.
+> - **Fișa Anexa 1, cap. 2:** **„Modul”** = ce a ales omul pe mișcările lunii, **„-”** la „— fără —”; **„Scopul”** = **V** la cod R,
+>   **E** la cod D (până acum doar V, iar Modul/Scopul se citeau numai din tratarea proprie — punctul 14 al auditului, schimbat la cererea
+>   proprietarului). „Tratare: Cant.” rămâne numai tratarea proprie.
+> - **Anexa 3 transport:** „Categorii deșeuri” = numai codul; „Descriere” = denumirea din listă, apoi observațiile.
+> - **Parteneri:** colectorul și valorificatorul **cer nr. de autorizație de mediu** (formular + server, `partner.authorization.required`);
+>   generatorul-sursă și firma care doar transportă, nu. La import, rândul fără autorizație iese ca eroare de rând.
+> - **Generatori interni:** „Birouri” și „Producție” se creează și la **aprobarea cererii de cont** (până acum doar la „punct de lucru nou”);
+>   **`V59`** le pune pe punctele de lucru rămase fără nicio secție.
+> - **Firme:** „Economia circulară (trimestrial, 25)” a ieșit din configurare (rămâne vizibilă doar unde era bifată);
+>   **butonul „Completează din ANAF”** e acum și la Firme și la Cabinete (componenta comună `CuiField`), nu doar la Parteneri.
+>   Cererea publică de cont rămâne fără el: căutarea ANAF e doar pentru conectați.
+> - **Ambalaje:** Anexa 3 (Ordinul 794/2012) **apare și la generator, numai cu ieșirile** (`exitsOnly`, titlul „Deșeuri de ambalaje predate”);
+>   refuzul `anexa3.packaging.collectors.only` a ieșit. **BUG-022:** `printable`/`usesTable2` nu ieșeau în JSON (metode de record),
+>   deci secțiunea arăta mereu „rolul lipsește” — reparat cu `@JsonProperty`, cu test pe `jsonPath`.
+> Suita backend **833 de teste, 102 clase, 0 eșecuri**; **negative** pe autorizația partenerului, pe secțiile de la aprobare și pe regula
+> Modul/Scopul; `npm test` 14/14; **e2e 22/22 + proba nouă 23** pe o bază nouă (`eco_e2e_cereri`); capturile privite la 1440px și 375px.
+> **Următoarea migrare liberă: `V60`.**
+
 > **16.09.2026, 18:22 — ✅ pe producție: antetele de securitate ale aplicației web (BUG-020) și jjwt 0.12.7 (BUG-021).**
 > Același release ca intrarea de mai jos: `ecoregistru-api` **v100** (`95056a2`), `ecoregistru-app` **v83** (`03d6d59`); monorepo `main` = `112dd5f`.
 > - **BUG-020** (`c870da1`): `serve -s dist` nu trimitea niciun antet. Build-ul scrie acum `dist/serve.json` (`frontend/scripts/serve-config.mjs`)
