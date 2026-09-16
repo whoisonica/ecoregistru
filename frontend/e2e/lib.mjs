@@ -110,6 +110,40 @@ export async function login(page, who = "admin") {
   await page.waitForLoadState("networkidle");
 }
 
+/**
+ * Firmele din selectorul panoului „Cântar” (`CompanyLabel`), la PLATFORM_ADMIN și la consultant.
+ *
+ * <p>Până pe 15.09.2026 era un `<select id="tenant-switcher">`, iar probele 9 și 10 îl citeau direct;
+ * după panoul nou au căzut cu un timeout pe care README-ul l-a pus pe seama datelor. Probele trec
+ * acum prin funcțiile astea două, ca un selector mutat să se repare într-un singur loc.
+ */
+export async function companies(page) {
+  const label = 'button[data-testid="company-label"]';
+  await page.waitForSelector(label, { timeout: 15000 });
+  await page.click(label);
+  await page.waitForFunction(
+    () => document.querySelectorAll('[role="listbox"] [role="option"]').length > 0,
+    { timeout: 15000 }
+  );
+  const names = await page.$$eval('[role="listbox"] [role="option"]', (os) =>
+    os.map((o) => o.querySelector("span.truncate")?.textContent.trim() ?? o.textContent.trim())
+  );
+  await page.keyboard.press("Escape");
+  return names;
+}
+
+/** Comută pe prima firmă al cărei nume se potrivește; întoarce numele sau `null`. */
+export async function switchCompany(page, match) {
+  const names = await companies(page);
+  const name = names.find((n) => match.test(n));
+  if (!name) return null;
+  await page.click('button[data-testid="company-label"]');
+  await page.locator('[role="listbox"] [role="option"]', { hasText: name }).first().click();
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(600);
+  return name;
+}
+
 export async function shot(page, name) {
   await page.screenshot({ path: path.join(SHOTS, name + ".png"), fullPage: true });
 }

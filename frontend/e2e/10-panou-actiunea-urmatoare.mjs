@@ -12,7 +12,7 @@
 // Tenantul demo are termene AFM depășite din lunile trecute ale anului, deci ramura pe care o
 // probăm aici e cea de sus. Verificăm **și** că ce e mai jos nu s-a mutat: banda nu ține locul
 // casetei de blocaje, o dublează dinadins, iar dacă una dispare felia s-a înțeles greșit.
-import { launch, newPage, login, shot, BASE } from "./lib.mjs";
+import { launch, newPage, login, shot, companies, switchCompany, BASE } from "./lib.mjs";
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -65,12 +65,9 @@ check("eticheta linkului rămâne pe un rând", banda.inaltimeLink > 0 && banda.
 // ------------------------------------------------------ 2. ALEGE CEL MAI SCUMP LUCRU DESCHIS
 // Pe tenantul demo sunt termene AFM depășite, deci banda trebuie să le numească pe ele — nu
 // cântarul, nu autorizațiile. Dacă ordinea s-ar inversa, exact asta ar trece neobservat.
-const dala = await page.evaluate(() => {
-  const t = [...document.querySelectorAll("div")].find(
-    (d) => d.textContent.trim() === "Termene de făcut" && d.children.length === 0
-  );
-  return t?.parentElement?.textContent.replace(/\s+/g, " ").trim() ?? "";
-});
+const dala = await page.evaluate(
+  () => document.querySelector('[data-testid="stat-deadlines"]')?.textContent.replace(/\s+/g, " ").trim() ?? ""
+);
 // „3 termene depășite" de la felia de numeral din 09.09 — înainte scria „3 depășite". Regexul
 // prinde amândouă formele de plural, plus singularul: cu un singur termen depășit dala scrie
 // „1 termen depășit", iar o probă care cere „depășite" ar trece de la sine pe zero.
@@ -134,19 +131,13 @@ check("dala de cantitate spune și pe câte mișcări", panou.numaraMiscari);
 // (numără, nu doar căuta) și ca la restrângerea de pe 08.09 (probează și cazul celălalt).
 await login(page, "platform");
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
-await page.waitForFunction(
-  () => document.querySelectorAll("#tenant-switcher option").length > 1,
-  { timeout: 15000 }
-);
-const firme = await page.$$eval("#tenant-switcher option", (os) =>
-  os.map((o) => ({ id: o.value, nume: o.textContent.trim() })).filter((o) => o.id)
-);
+const firme = (await companies(page)).map((nume) => ({ nume }));
 const alta = firme.find((f) => !/Demo Reciclare/.test(f.nume));
 check("există o a doua firmă pe care să se probeze cealaltă ramură", Boolean(alta),
   alta?.nume ?? "(niciuna)");
 if (alta) {
-  await page.selectOption("#tenant-switcher", alta.id);
-  await page.waitForTimeout(2500);
+  await switchCompany(page, new RegExp(alta.nume.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  await page.waitForTimeout(1500);
   await page.waitForFunction(
     () => {
       const b = document.querySelector('[data-testid="next-action"]');
@@ -159,9 +150,10 @@ if (alta) {
     return {
       text: b.textContent.replace(/\s+/g, " ").trim(),
       href: b.querySelector("a")?.getAttribute("href") ?? null,
-      // Tonul spune ce fel de afirmație face banda: roșu = ceva curge, verde = nimic de făcut.
-      rosu: b.className.includes("red"),
-      verde: b.className.includes("emerald"),
+      // Tonul spune ce fel de afirmație face banda: chenarul roșu = ceva curge (LED-ul „Acum”),
+      // chihlimbar = curând, neutru = nimic de făcut. În „Cântar” tonul stă pe chenar, nu pe fond.
+      rosu: b.className.includes("border-state-bad"),
+      verde: !b.className.includes("border-state-bad") && !b.className.includes("border-state-warn"),
     };
   });
   check("pe altă firmă banda spune altceva", bandaAlta.text !== banda.text,

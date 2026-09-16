@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
+import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.DeadlineService;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -61,6 +63,7 @@ public class DevDataSeeder implements CommandLineRunner {
     InternalGeneratorRepository internalGeneratorRepository;
     AttachmentRepository attachmentRepository;
     PasswordEncoder passwordEncoder;
+    DeadlineService deadlineService;
 
     /**
      * Parola conturilor demo, din mediu. Goală = se generează una la fiecare pornire şi se scrie
@@ -164,7 +167,49 @@ public class DevDataSeeder implements CommandLineRunner {
                 collector, carrier, metalRecycler, ecoValor, expiredAuth,
                 birouri, productie);
 
+        seedDeadlines(company);
+        seedPureGenerator();
+
         log.info("Demo data seeded. Login with admin@demo.ro / {}", demoPassword);
+    }
+
+    /**
+     * Termenele anului trecut și ale anului curent, cum le-ar genera butonul de pe Termene. Anul
+     * trecut e integral depășit, iar AFM-ul lunar (firma demo are obligația) dă depășite și în anul
+     * curent — ramura de „termene depășite” din Panou și de pe Termene are pe ce se proba.
+     *
+     * <p>Până pe 16.09.2026 le puneau doar rulările anterioare ale suitei e2e, deci pe o bază nouă
+     * probele 10 și 11 cădeau „pe date”, iar suita nu putea rula în CI.
+     */
+    private void seedDeadlines(Company company) {
+        int year = LocalDate.now().getYear();
+        TenantContext.set(company.getId());
+        try {
+            deadlineService.regenerateYear(year - 1);
+            deadlineService.regenerateYear(year);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    /**
+     * O a doua firmă, generator pur, fără conturi proprii: administratorul de platformă comută pe
+     * ea. Proba 9 verifică pe ea ce se ascunde unui generator (proveniența ambalajelor), iar proba 10
+     * că banda de pe Panou spune altceva pe o firmă fără termene. Numele e cel pe care îl caută
+     * proba 9 („Proba Automata”).
+     */
+    private void seedPureGenerator() {
+        Company generator = companyRepository.save(Company.builder()
+                .name("Proba Automata SRL")
+                .cui("RO23456789")
+                .type(CompanyType.GENERATOR)
+                .address("Str. Probei nr. 2, Cluj-Napoca")
+                .contactName("Gina Generator")
+                .contactEmail("contact@proba-automata.ro")
+                .active(true)
+                .createdAt(Instant.now())
+                .build());
+        workPointRepository.save(workPoint(generator, "Sediu", "Str. Probei nr. 2, Cluj-Napoca"));
     }
 
     /**

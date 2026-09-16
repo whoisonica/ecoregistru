@@ -1,5 +1,13 @@
 # Probe de interfaţă
 
+✅ **16.09.2026 — suita pornește de pe o bază nouă și rulează în CI** (jobul `e2e` din `.github/workflows/ci.yml`).
+`DevDataSeeder` pune acum ce lăsau în urmă rulările vechi: termenele anului trecut și ale anului curent (deci termene
+depășite) și a doua firmă, generatorul pur „Proba Automata SRL”. Căderile „pe date” ale probelor 9, 10 și 11 erau de fapt
+**și** probe învechite: 9 și 10 citeau `#tenant-switcher`, un `<select>` care nu mai există de la panoul „Cântar”, iar
+dalele Panoului după poziția etichetei. Acum trec prin `companies()` / `switchCompany()` din `lib.mjs` și prin
+`data-testid="stat-stock"` / `"stat-deadlines"`. Proba 7 numără nouă secțiuni în Setări (Flota și Șoferii noștri, D2.1–D2.2).
+Capitolul de mai jos despre „baza acumulată” e istoric: nu mai trebuie păstrată baza de dezvoltare ca să treacă suita.
+
 Optsprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
 
 🎛️ **15.09.2026, noaptea — direcția „Cântar” (`docs/stil-interfata.md`), toate cele 18 suite rulate** pe baza

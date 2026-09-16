@@ -58,7 +58,7 @@ function StatTile({
   label: string;
   sub: string;
   tone: "brand" | "amber" | "red";
-  /** Cârligul probelor: proba 11 citește dala de termene întreagă. */
+  /** Cârligul probelor: proba 11 (și 10) citesc dala de termene, proba 9 pe cea de stoc. */
   testId?: string;
   loading?: boolean;
   /**
@@ -248,6 +248,7 @@ export function DashboardPage() {
               : t.statStockSub
           }
           tone={d.stock.negative > 0 ? "red" : "brand"}
+          testId="stat-stock"
           loading={d.loadingEvidences}
           failed={d.failedEvidences}
         >

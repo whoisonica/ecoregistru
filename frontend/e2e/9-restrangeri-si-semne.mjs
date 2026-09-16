@@ -5,7 +5,7 @@
 // aici e o **afirmație**: o rubrică cerută cuiva care n-o depune niciodată, o cifră care adună
 // kilograme peste coduri diferite, un „salvat" pe care nu-l vede nimeni, un termen care nu duce la
 // documentul care îl stinge.
-import { launch, newPage, login, shot, visible, clickAt, BASE } from "./lib.mjs";
+import { launch, newPage, login, shot, visible, clickAt, companies, switchCompany, BASE } from "./lib.mjs";
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -49,25 +49,15 @@ async function formularPartener() {
 // la fel de mare ca una care nu ascunde nimănui.
 await login(page, "platform");
 
-// Lista de firme vine dintr-o interogare proprie: fără aşteptarea asta, comutatorul are o singură
-// opţiune goală, iar verificările de mai jos ar trece **fiindcă nu s-a ales nicio firmă** — exact
-// felul de trecere din motivul greşit pe care proba 8 l-a prins la paletă.
-await page.waitForFunction(
-  () => document.querySelectorAll("#tenant-switcher option").length > 1,
-  { timeout: 15000 }
-);
-
-const firme = await page.$$eval("#tenant-switcher option", (os) =>
-  os.map((o) => ({ id: o.value, nume: o.textContent.trim() })).filter((o) => o.id)
-);
+// Lista de firme vine dintr-o interogare proprie: `companies` așteaptă să apară rândurile, altfel
+// verificările de mai jos ar trece **fiindcă nu s-a ales nicio firmă** — exact felul de trecere din
+// motivul greşit pe care proba 8 l-a prins la paletă.
+const firme = await companies(page);
 check("administratorul de platformă vede firmele", firme.length >= 2, `${firme.length} firme`);
 
 async function comutaLa(potrivire) {
-  const tinta = firme.find((f) => potrivire.test(f.nume));
-  if (!tinta) return null;
-  await page.selectOption("#tenant-switcher", tinta.id);
-  await page.waitForTimeout(900);
-  return tinta;
+  const nume = await switchCompany(page, potrivire);
+  return nume ? { nume } : null;
 }
 
 const generatorPur = await comutaLa(/Proba Automata/);
@@ -173,17 +163,14 @@ await page.goto(BASE + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(1200);
 
 const stoc = await page.evaluate(() => {
-  const eticheta = [...document.querySelectorAll("div")].find(
-    (d) => d.textContent.trim() === "Coduri cu stoc" && d.children.length === 0
-  );
-  const card = eticheta?.closest("div.rounded-xl, div[class*='rounded']");
-  const tile = eticheta?.parentElement;
+  // Dala e găsită după cârligul ei, nu după poziția etichetei: în „Cântar” eticheta stă într-un rând
+  // cu iconița, iar `parentElement` nu mai era dala — proba căzuse pe markup, nu pe cifre.
+  const tile = document.querySelector('[data-testid="stat-stock"]');
   if (!tile) return null;
   return {
-    valoare: tile.querySelector("div.text-3xl")?.textContent.trim() ?? "",
-    sub: eticheta.nextElementSibling?.textContent.trim() ?? "",
+    valoare: tile.querySelector("div.font-mono")?.textContent.trim() ?? "",
     linii: [...tile.querySelectorAll("li")].map((li) => li.textContent.trim()),
-    text: (card ?? tile).textContent,
+    text: tile.textContent,
   };
 });
 check("panoul are dala de stoc", stoc !== null);
