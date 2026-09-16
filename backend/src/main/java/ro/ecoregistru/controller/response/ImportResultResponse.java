@@ -12,6 +12,8 @@ public record ImportResultResponse(
         int partnersExisting,
         int movementsNew,
         int movementsExisting,
+        int workPointsNew,
+        int workPointsExisting,
         List<RowError> errors
 ) {
     /** {@code row} e numărul rândului din Excel, cum îl vede omul (antetul e rândul 1). */

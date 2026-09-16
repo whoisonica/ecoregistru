@@ -17,6 +17,8 @@ interface ImportResult {
   partnersExisting: number;
   movementsNew: number;
   movementsExisting: number;
+  workPointsNew: number;
+  workPointsExisting: number;
   errors: { sheet: string; row: number; message: string }[];
 }
 
@@ -70,6 +72,7 @@ export function ImportPage() {
         qc.invalidateQueries();
         notify(
           t.saved
+            .replace("{workPoints}", String(res.data.workPointsNew))
             .replace("{partners}", String(res.data.partnersNew))
             .replace("{movements}", String(res.data.movementsNew)),
           "success",
@@ -138,6 +141,8 @@ export function ImportPage() {
           <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {(
               [
+                [t.workPointsNew, result.workPointsNew],
+                [t.workPointsExisting, result.workPointsExisting],
                 [t.partnersNew, result.partnersNew],
                 [t.partnersExisting, result.partnersExisting],
                 [t.movementsNew, result.movementsNew],

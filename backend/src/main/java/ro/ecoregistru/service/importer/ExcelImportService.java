@@ -10,6 +10,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 import ro.ecoregistru.controller.request.PartnerRequest;
 import ro.ecoregistru.controller.request.WasteMovementRequest;
+import ro.ecoregistru.controller.request.WorkPointRequest;
 import ro.ecoregistru.controller.response.ImportResultResponse;
 import ro.ecoregistru.controller.response.ImportResultResponse.RowError;
 import ro.ecoregistru.entity.Partner;
@@ -27,6 +28,8 @@ import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.PartnerService;
 import ro.ecoregistru.service.WasteMovementService;
+import ro.ecoregistru.service.WorkPointService;
+import ro.ecoregistru.security.SecurityUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -89,31 +92,46 @@ public class ExcelImportService {
     WorkPointRepository workPointRepository;
     WasteCodeRepository wasteCodeRepository;
     WasteMovementRepository movementRepository;
+    WorkPointService workPointService;
+
+    /** Cine poate adăuga un punct de lucru: {@code CAN_MANAGE} din {@code WorkPointController}. */
+    private static final Set<Role> MANAGERS = EnumSet.of(Role.PLATFORM_ADMIN, Role.CONSULTANT, Role.ADMIN);
 
     @Transactional
     public ImportResultResponse run(MultipartFile file, boolean save) {
         UUID tenantId = TenantContext.require();
         byte[] bytes = bytesOf(file);
         List<RowError> errors = new ArrayList<>();
-        int[] counts = new int[4]; // parteneri noi, existenţi, mişcări noi, existente
+        int[] counts = new int[6]; // parteneri noi, existenţi, mişcări noi, existente, puncte de lucru noi, existente
 
         try (Workbook wb = open(bytes)) {
             Sheet partners = sheet(wb, PARTNERS);
             Sheet movements = sheet(wb, MOVEMENTS);
-            if (partners == null && movements == null) {
+            Sheet workPoints = sheet(wb, WORK_POINTS);
+            if (partners == null && movements == null && workPoints == null) {
                 throw new BadRequestException(IMPORT_TEMPLATE_MISMATCH);
             }
-            requireHeader(partners, PARTNER_COLUMNS);
-            requireHeader(movements, MOVEMENT_COLUMNS);
+            requireHeader(partners, PARTNER_COLUMNS, 0);
+            requireHeader(movements, MOVEMENT_COLUMNS, 0);
+            requireHeader(workPoints, WORK_POINT_COLUMNS, 0);
+            boolean movementExtras = movements != null && hasColumnsFrom(movements, MOVEMENT_COLUMNS.size());
+            if (movementExtras) {
+                requireHeader(movements, MOVEMENT_EXTRA_COLUMNS, MOVEMENT_COLUMNS.size());
+            }
             requireSize(partners);
             requireSize(movements);
+            requireSize(workPoints);
+
+            if (workPoints != null) {
+                importWorkPoints(workPoints, tenantId, errors, counts);
+            }
 
             PartnerIndex index = new PartnerIndex(partnerRepository.findAllByCompany_Id(tenantId));
             if (partners != null) {
                 importPartners(partners, index, errors, counts);
             }
             if (movements != null) {
-                importMovements(movements, tenantId, fingerprint(bytes), index, errors, counts);
+                importMovements(movements, movementExtras, tenantId, fingerprint(bytes), index, errors, counts);
             }
         } catch (IOException e) {
             throw new BadRequestException(IMPORT_FILE_UNREADABLE);
@@ -123,7 +141,43 @@ public class ExcelImportService {
         if (!saved) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
         }
-        return new ImportResultResponse(saved, counts[0], counts[1], counts[2], counts[3], List.copyOf(errors));
+        return new ImportResultResponse(saved, counts[0], counts[1], counts[2], counts[3], counts[4], counts[5],
+                List.copyOf(errors));
+    }
+
+    // --- work points ---
+
+    /**
+     * A doua felie: punctele de lucru, înaintea mișcărilor care le numesc. Prin {@link WorkPointService#create},
+     * deci cu secțiile implicite. Unul care există deja după nume se sare. Unul nou îl importă doar cine l-ar
+     * putea adăuga și din Setări ({@code CAN_MANAGE} din {@code WorkPointController}): importul e deschis și
+     * operatorului, iar fără verificarea asta ar fi fost ușa din spate spre o scriere care îi e închisă.
+     */
+    private void importWorkPoints(Sheet sheet, UUID tenantId, List<RowError> errors, int[] counts) {
+        Set<String> existing = new HashSet<>();
+        workPointRepository.findAllByCompany_Id(tenantId).forEach(wp -> existing.add(fold(wp.getName())));
+        boolean canManage = MANAGERS.contains(SecurityUtils.currentUser().getRole());
+
+        for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+            Cells c = new Cells(sheet, r, WORK_POINT_COLUMNS, errors);
+            if (c.blank()) continue;
+            String name = c.required(0, 255);
+            String address = c.text(1, 1000);
+            if (!c.ok()) continue;
+            if (existing.contains(fold(name))) {
+                counts[5]++;
+                continue;
+            }
+            if (!canManage) {
+                c.error(0, "„" + name + "” nu există în firmă, iar punctele de lucru noi le adaugă un administrator.");
+                continue;
+            }
+            c.attempt(() -> {
+                workPointService.create(new WorkPointRequest(name, address));
+                existing.add(fold(name));
+                counts[4]++;
+            });
+        }
     }
 
     // --- partners ---
@@ -162,13 +216,15 @@ public class ExcelImportService {
 
     // --- movements ---
 
-    private void importMovements(Sheet sheet, UUID tenantId, String fingerprint, PartnerIndex partners,
-                                 List<RowError> errors, int[] counts) {
+    private void importMovements(Sheet sheet, boolean extras, UUID tenantId, String fingerprint,
+                                 PartnerIndex partners, List<RowError> errors, int[] counts) {
+        List<String> columns = new ArrayList<>(MOVEMENT_COLUMNS);
+        if (extras) columns.addAll(MOVEMENT_EXTRA_COLUMNS);
         Map<String, WorkPoint> workPoints = new HashMap<>();
         workPointRepository.findAllByCompany_Id(tenantId).forEach(wp -> workPoints.put(fold(wp.getName()), wp));
 
         for (int r = 1; r <= sheet.getLastRowNum(); r++) {
-            Cells c = new Cells(sheet, r, MOVEMENT_COLUMNS, errors);
+            Cells c = new Cells(sheet, r, columns, errors);
             if (c.blank()) continue;
 
             LocalDate date = c.date(0);
@@ -197,6 +253,25 @@ public class ExcelImportService {
             TransportMeans transportMeans = c.enumName(13, TransportMeans.class);
             WasteDestination destination = c.enumName(14, WasteDestination.class);
             String notes = c.text(15, 2000);
+
+            // A doua felie: ambalajele și transportul. Fără coloane, totul rămâne null, ca înainte.
+            int x = MOVEMENT_COLUMNS.size();
+            Boolean packagingOnMarket = extras ? c.choice(x, YES_NO) : null;
+            PackagingMaterial packagingMaterial = extras ? c.choice(x + 1, PACKAGING_MATERIALS) : null;
+            PackagingCategory packagingCategory = extras ? c.choice(x + 2, PACKAGING_CATEGORIES) : null;
+            Boolean packagingReusable = extras ? c.choice(x + 3, YES_NO) : null;
+            Boolean packagingHazardous = extras ? c.choice(x + 4, YES_NO) : null;
+            PackagingOrigin packagingOrigin = extras ? c.choice(x + 5, PACKAGING_ORIGINS) : null;
+            LocalDate loadDate = extras ? c.date(x + 6) : null;
+            LocalDate unloadDate = extras ? c.date(x + 7) : null;
+            String carrierRef = extras ? c.text(x + 8, 255) : null;
+            UUID carrierId = carrierRef == null ? null : partners.find(carrierRef, carrierRef);
+            if (carrierRef != null && carrierId == null) {
+                c.error(x + 8, "„" + carrierRef + "” nu e nici în foaia Parteneri, nici în firmă.");
+            }
+            String driverName = extras ? c.text(x + 9, 255) : null;
+            String driverIdentification = extras ? c.text(x + 10, 100) : null;
+            String vehicleRegistration = extras ? c.text(x + 11, 50) : null;
             if (!c.ok()) continue;
 
             UUID rowId = UUID.nameUUIDFromBytes(
@@ -210,9 +285,11 @@ public class ExcelImportService {
                         rowId, workPoint.getId(), date, code.getId(), quantity, false, null, unit,
                         operation, register, physicalState, storageType, treatmentMethod, transportMeans,
                         destination, operationCode, partnerId, null, document, notes,
-                        null, null, null, null, null, null, null, null, null, null,
+                        loadDate, unloadDate, null, carrierId, driverName, driverIdentification, null,
+                        vehicleRegistration, null, null,
                         null, null, null, null,
-                        null, null, null, null, null, null));
+                        packagingOnMarket, packagingMaterial, packagingCategory, packagingReusable,
+                        packagingHazardous, packagingOrigin));
                 counts[2]++;
             });
         }
@@ -277,16 +354,27 @@ public class ExcelImportService {
         return null;
     }
 
-    private static void requireHeader(Sheet sheet, List<String> columns) {
+    private static void requireHeader(Sheet sheet, List<String> columns, int from) {
         if (sheet == null) return;
         Row header = sheet.getRow(0);
         DataFormatter text = new DataFormatter(Locale.ROOT);
         for (int i = 0; i < columns.size(); i++) {
-            String found = header == null ? "" : text.formatCellValue(header.getCell(i));
+            String found = header == null ? "" : text.formatCellValue(header.getCell(from + i));
             if (!fold(found).equals(fold(columns.get(i)))) {
                 throw new BadRequestException(IMPORT_TEMPLATE_MISMATCH);
             }
         }
+    }
+
+    /** Are antetul ceva scris de la coloana {@code from} încolo? Așa se recunoaște șablonul cu a doua felie. */
+    private static boolean hasColumnsFrom(Sheet sheet, int from) {
+        Row header = sheet.getRow(0);
+        if (header == null) return false;
+        DataFormatter text = new DataFormatter(Locale.ROOT);
+        for (int i = from; i < Math.max(from, header.getLastCellNum()); i++) {
+            if (!text.formatCellValue(header.getCell(i)).isBlank()) return true;
+        }
+        return false;
     }
 
     private static void requireSize(Sheet sheet) {

@@ -2901,10 +2901,10 @@ export const strings = {
   importExcel: {
     title: "Import din Excel",
     subtitle:
-      "Partenerii și mișcările de până acum, dintr-un singur fișier. Întâi se verifică, apoi se importă — totul sau nimic.",
+      "Punctele de lucru, partenerii și mișcările de până acum, dintr-un singur fișier. Întâi se verifică, apoi se importă — totul sau nimic.",
     templateTitle: "1. Descarcă șablonul",
     templateHint:
-      "Copiază datele în foile „Parteneri” și „Mișcări”, fără să muți coloanele. Foaia „Instrucțiuni” spune ce intră în fiecare.",
+      "Copiază datele în foile „Puncte de lucru”, „Parteneri” și „Mișcări”, fără să muți coloanele. Ambalajele și transportul (Anexa 3) au coloane opționale la capătul foii „Mișcări”. Foaia „Instrucțiuni” spune ce intră în fiecare.",
     templateButton: "Descarcă șablonul .xlsx",
     templateError: "Șablonul nu a putut fi descărcat.",
     fileTitle: "2. Verifică și importă fișierul completat",
@@ -2917,6 +2917,8 @@ export const strings = {
     importError: "Importul nu a reușit. Nu s-a salvat nimic.",
     resultTitle: "Ce s-a găsit în fișier",
     resultSaved: "Ce s-a salvat",
+    workPointsNew: "Puncte de lucru noi",
+    workPointsExisting: "Puncte de lucru deja în firmă",
     partnersNew: "Parteneri noi",
     partnersExisting: "Parteneri deja în firmă (nu se modifică)",
     movementsNew: "Mișcări noi",
@@ -2926,7 +2928,7 @@ export const strings = {
     sheet: "Foaia",
     row: "Rândul",
     problem: "Problema",
-    saved: "Import salvat: {partners} parteneri și {movements} mișcări noi.",
+    saved: "Import salvat: {workPoints} puncte de lucru, {partners} parteneri și {movements} mișcări noi.",
     afterImport:
       "Întrebările despre ambalaje și datele de transport pentru Anexa 3 se completează după import, pe fiecare mișcare.",
   },

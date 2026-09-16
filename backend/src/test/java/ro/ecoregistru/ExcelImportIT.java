@@ -107,9 +107,11 @@ class ExcelImportIT {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
         try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(xlsx))) {
-            assertThat(wb.getSheetName(0)).isEqualTo("Parteneri");
-            assertThat(wb.getSheetName(1)).isEqualTo("Mișcări");
-            assertThat(wb.getSheetName(2)).isEqualTo("Instrucțiuni");
+            assertThat(wb.getSheetName(0)).isEqualTo("Puncte de lucru");
+            assertThat(wb.getSheetName(1)).isEqualTo("Parteneri");
+            assertThat(wb.getSheetName(2)).isEqualTo("Mișcări");
+            assertThat(wb.getSheetName(3)).isEqualTo("Instrucțiuni");
+            assertThat(wb.getSheet("Mișcări").getRow(0).getCell(16).getStringCellValue()).isEqualTo("Ambalaj pus pe piață");
             assertThat(wb.getSheet("Mișcări").getRow(0).getCell(2).getStringCellValue()).isEqualTo("Cod deșeu *");
         }
     }
@@ -287,6 +289,149 @@ class ExcelImportIT {
         assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
     }
 
+    // --- a doua felie: punctele de lucru, ambalajele, transportul ---
+
+    /** Punctul de lucru din foaia lui e găsit de mișcarea din același fișier; cel existent nu se dublează. */
+    @Test
+    void aWorkPointFromItsSheetIsCreatedAndUsedByTheMovementsOfTheSameFile() throws Exception {
+        Object[] atTheNewSite = generation();
+        atTheNewSite[1] = "Depozit Nord";
+        send("/api/v1/import", file(List.<Object[]>of(new Object[]{"Depozit Nord", "Str. Nordului 3"},
+                        new Object[]{workPoint.toUpperCase(), null}),
+                List.<Object[]>of(), List.<Object[]>of(atTheNewSite)), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(true)))
+                .andExpect(jsonPath("$.workPointsNew", is(1)))
+                .andExpect(jsonPath("$.workPointsExisting", is(1)))
+                .andExpect(jsonPath("$.movementsNew", is(1)));
+
+        List<WorkPoint> points = workPointRepository.findAllByCompany_Id(companyId);
+        assertThat(points).extracting(WorkPoint::getName).containsExactlyInAnyOrder(workPoint, "Depozit Nord");
+        UUID north = points.stream().filter(p -> p.getName().equals("Depozit Nord")).findFirst().orElseThrow().getId();
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId))
+                .singleElement().satisfies(m -> assertThat(m.getWorkPoint().getId()).isEqualTo(north));
+    }
+
+    /**
+     * Importul e deschis operatorului, adăugarea unui punct de lucru nu (`WorkPointController`, CAN_MANAGE).
+     * Foaia nu e o ușă din spate: rândul nou e o eroare și tot fișierul rămâne afară. Cel existent trece.
+     */
+    @Test
+    void anOperatorCannotCreateAWorkPointThroughTheImport() throws Exception {
+        Company company = companyRepository.findById(companyId).orElseThrow();
+        String operatorToken = jwtService.generateToken(user(company, Role.OPERATOR));
+        send("/api/v1/import", file(List.<Object[]>of(new Object[]{"Punct Operator", null},
+                        new Object[]{workPoint, null}), List.<Object[]>of(), List.<Object[]>of()), operatorToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(false)))
+                .andExpect(jsonPath("$.workPointsExisting", is(1)))
+                .andExpect(jsonPath("$.errors", hasSize(1)))
+                .andExpect(jsonPath("$.errors[0].sheet", is("Puncte de lucru")))
+                .andExpect(jsonPath("$.errors[0].row", is(2)))
+                .andExpect(jsonPath("$.errors[0].message", containsString("administrator")));
+
+        assertThat(workPointRepository.findAllByCompany_Id(companyId)).extracting(WorkPoint::getName)
+                .containsExactly(workPoint);
+    }
+
+    /** Coloanele de după „Observații” ajung în rubricile de ambalaje și de Anexa 3 ale mișcării. */
+    @Test
+    void packagingAndTransportColumnsReachTheMovement() throws Exception {
+        String carrierCui = "RO8" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 6);
+        Object[] carrier = {"Transport Rapid SRL", carrierCui, "Colector", "Nu", "Da", "Da",
+                null, null, null, null};
+        Object[] row = Arrays.copyOf(generation(), 28);
+        row[16] = "Da";
+        row[17] = "Hârtie carton";
+        row[18] = "Ambalaje secundare şi de transport";
+        row[19] = "Nu";
+        row[20] = "nu";
+        row[21] = "GENERATOR_PJ";
+        row[22] = LocalDate.of(2026, 3, 10);
+        row[23] = "11.03.2026";
+        row[24] = carrierCui;
+        row[25] = "Ion Popescu";
+        row[26] = "CI AB 123456";
+        row[27] = "B 12 ABC";
+
+        send("/api/v1/import", file(List.<Object[]>of(), List.<Object[]>of(carrier), List.<Object[]>of(row)), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errors", empty()))
+                .andExpect(jsonPath("$.saved", is(true)));
+
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).singleElement().satisfies(m -> {
+            assertThat(m.getPackagingOnMarket()).isTrue();
+            assertThat(m.getPackagingMaterial()).isEqualTo(PackagingMaterial.HARTIE_CARTON);
+            assertThat(m.getPackagingCategory()).isEqualTo(PackagingCategory.SECONDARY);
+            assertThat(m.getPackagingReusable()).isFalse();
+            assertThat(m.getPackagingHazardousContent()).isFalse();
+            assertThat(m.getPackagingOrigin()).isEqualTo(PackagingOrigin.GENERATOR_PJ);
+            assertThat(m.getLoadDate()).isEqualTo(LocalDate.of(2026, 3, 10));
+            assertThat(m.getUnloadDate()).isEqualTo(LocalDate.of(2026, 3, 11));
+            assertThat(m.getTransportPartner().getId()).isEqualTo(partnerRepository.findAllByCompany_Id(companyId)
+                    .stream().filter(p -> carrierCui.equals(p.getCui())).findFirst().orElseThrow().getId());
+            assertThat(m.getDriverName()).isEqualTo("Ion Popescu");
+            assertThat(m.getDriverIdentification()).isEqualTo("CI AB 123456");
+            assertThat(m.getVehicleRegistration()).isEqualTo("B 12 ABC");
+        });
+    }
+
+    /** O valoare greșită în coloanele noi e o eroare cu rândul și coloana ei, ca în rest. */
+    @Test
+    void aWrongPackagingMaterialIsNamedOnItsRow() throws Exception {
+        Object[] row = Arrays.copyOf(generation(), 28);
+        row[16] = "Da";
+        row[17] = "Carton ondulat";
+        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(row)), adminToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errors", hasSize(1)))
+                .andExpect(jsonPath("$.errors[0].message", containsString("Material ambalaj")));
+    }
+
+    /** Un fișier pe șablonul de dinainte (fără foaia de puncte și fără coloanele noi) se citește ca până acum. */
+    @Test
+    void aFileOnTheFirstTemplateStillImports() throws Exception {
+        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            CellStyle date = wb.createCellStyle();
+            date.setDataFormat(wb.getCreationHelper().createDataFormat().getFormat("dd.mm.yyyy"));
+            Sheet movements = wb.createSheet("Mișcări");
+            Row header = movements.createRow(0);
+            List<String> firstTemplate = List.of("Data *", "Punct de lucru *", "Cod deșeu *", "Operațiune *",
+                    "Cantitate *", "UM *", "Cod R/D", "Registru", "Partener (CUI sau denumire)", "Nr. document",
+                    "Stare fizică", "Tip stocare", "Mod tratare", "Mijloc de transport", "Destinație", "Observații");
+            for (int i = 0; i < firstTemplate.size(); i++) header.createCell(i).setCellValue(firstTemplate.get(i));
+            List<Object[]> rows = new ArrayList<>();
+            rows.add(generation());
+            for (int i = 0; i < rows.size(); i++) {
+                Row r = movements.createRow(i + 1);
+                Object[] v = rows.get(i);
+                for (int j = 0; j < v.length; j++) {
+                    if (v[j] == null) continue;
+                    if (v[j] instanceof LocalDate d) { r.createCell(j).setCellValue(d); r.getCell(j).setCellStyle(date); }
+                    else if (v[j] instanceof Number n) r.createCell(j).setCellValue(n.doubleValue());
+                    else r.createCell(j).setCellValue(v[j].toString());
+                }
+            }
+            wb.write(out);
+            send("/api/v1/import", out.toByteArray(), adminToken)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.saved", is(true)))
+                    .andExpect(jsonPath("$.movementsNew", is(1)));
+        }
+    }
+
+    /** Coloanele noi sunt un bloc: un antet care le începe și apoi le schimbă e refuzat întreg. */
+    @Test
+    void aHalfWrittenExtraHeaderIsRefused() throws Exception {
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(template.render()));
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            wb.getSheet("Mișcări").getRow(0).getCell(18).setCellValue("Altceva");
+            wb.write(out);
+            send("/api/v1/import/verificare", out.toByteArray(), adminToken)
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
     // --- helpers ---
 
     private ResultActions send(String path, byte[] xlsx, String token) throws Exception {
@@ -297,10 +442,15 @@ class ExcelImportIT {
     }
 
     private byte[] file(List<Object[]> partners, List<Object[]> movements) throws Exception {
+        return file(List.of(), partners, movements);
+    }
+
+    private byte[] file(List<Object[]> workPoints, List<Object[]> partners, List<Object[]> movements) throws Exception {
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(template.render()));
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             CellStyle date = wb.createCellStyle();
             date.setDataFormat(wb.getCreationHelper().createDataFormat().getFormat("dd.mm.yyyy"));
+            fill(wb.getSheet("Puncte de lucru"), workPoints, date);
             fill(wb.getSheet("Parteneri"), partners, date);
             fill(wb.getSheet("Mișcări"), movements, date);
             wb.write(out);
