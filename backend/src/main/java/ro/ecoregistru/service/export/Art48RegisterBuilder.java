@@ -4,7 +4,9 @@ import org.springframework.stereotype.Component;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.entity.WeighingOperation;
 import ro.ecoregistru.entity.WorkPoint;
+import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
@@ -77,10 +79,30 @@ public class Art48RegisterBuilder {
                 m.getQuantity() == null ? null : kg(m),
                 partner == null ? null : partner.getName(),
                 partner == null ? null : partner.getCui(),
+                origin(m),
                 m.getOperationCode() == null ? null : m.getOperationCode().name(),
                 m.getTransportMeans() == null ? null : m.getTransportMeans().getOfficialLabel(),
                 m.getTreatmentMethod() == null ? null : m.getTreatmentMethod().getOfficialLabel(),
                 m.getDocumentReference());
+    }
+
+    /**
+     * D1.12 — „originea” of art. 48 alin. (1) lit. a), for what was taken over. A depot line reads it
+     * from its weighing operation, which fixed it when the load came in (always {@code POPULATIE}
+     * from a natural person, who has no partner record); a movement typed directly keeps the old
+     * reading, its own choice before the partner's. Where nobody answered, the cell stays empty
+     * rather than guessed — the same rule {@link PackagingOrigin#resolve} gives Anexa 3.
+     */
+    private static String origin(WasteMovement m) {
+        if (m.getOperation() != WasteOperation.COLLECTED) {
+            return null;
+        }
+        WeighingOperation op = m.getWeighingOperation();
+        PackagingOrigin chosen = op != null ? op.getOrigin() : m.getPackagingOrigin();
+        Partner partner = op != null && op.getPartner() != null ? op.getPartner() : m.getPartner();
+        return PackagingOrigin.resolve(chosen, partner == null ? null : partner.getPackagingOrigin())
+                .map(PackagingOrigin::getOfficialLabel)
+                .orElse(null);
     }
 
     /**

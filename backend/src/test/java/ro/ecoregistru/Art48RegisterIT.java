@@ -19,17 +19,31 @@ import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Partner;
+import ro.ecoregistru.entity.NaturalPerson;
+import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.entity.WeighingOperation;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.enums.Unit;
+import ro.ecoregistru.enums.WasteOperation;
+import ro.ecoregistru.enums.WasteRegister;
+import ro.ecoregistru.enums.WeighingOperationStatus;
+import ro.ecoregistru.enums.WeighingOperationType;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.NaturalPersonRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
+import ro.ecoregistru.repository.WasteMovementRepository;
+import ro.ecoregistru.repository.WeighingOperationRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 
 import java.io.ByteArrayInputStream;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,8 +91,12 @@ class Art48RegisterIT {
     @Autowired PartnerRepository partnerRepository;
     @Autowired WorkPointRepository workPointRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
+    @Autowired WasteMovementRepository movementRepository;
+    @Autowired WeighingOperationRepository weighingOperationRepository;
+    @Autowired NaturalPersonRepository naturalPersonRepository;
 
     private String token;
+    private UUID adminId;
     private Company company;
     private UUID workPointId;
     private Partner supplier;
@@ -97,6 +115,7 @@ class Art48RegisterIT {
                 .email("art48+" + suffix + "@demo.ro").password("x")
                 .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
         token = jwtService.generateToken(admin);
+        adminId = admin.getId();
         workPointId = workPointRepository.save(WorkPoint.builder()
                 .company(company).name("Depozit Nord").active(true).createdAt(Instant.now())
                 .build()).getId();
@@ -125,18 +144,52 @@ class Art48RegisterIT {
     void theChronologicalTableHoldsTheYearsArt48MovementsInDateOrder() throws Exception {
         fixture();
         try (Workbook wb = xlsx()) {
-            List<List<Object>> rows = dataRows(wb.getSheet("Cronologic"), 14);
+            List<List<Object>> rows = dataRows(wb.getSheet("Cronologic"), 15);
             assertThat(rows).containsExactly(
                     List.of("Martie", "15.03.2026", "Depozit Nord", "Preluare", "15 01 01", name("15 01 01"),
-                            700.0, 0.7, "Magazin Alfa SRL", supplier.getCui(), "", "", "", ""),
+                            700.0, 0.7, "Magazin Alfa SRL", supplier.getCui(), "", "", "", "", ""),
                     List.of("Aprilie", "02.04.2026", "Depozit Nord", "Predare la valorificare", "15 01 01", name("15 01 01"),
-                            500.0, 0.5, "Reciclator Beta SA", recycler.getCui(), "R3", "", "", ""),
+                            500.0, 0.5, "Reciclator Beta SA", recycler.getCui(), "", "R3", "", "", ""),
                     List.of("Mai", "06.05.2026", "Depozit Nord", "Preluare", "15 01 02", name("15 01 02"),
-                            2000.0, 2.0, "Magazin Alfa SRL", supplier.getCui(), "", "", "", ""),
+                            2000.0, 2.0, "Magazin Alfa SRL", supplier.getCui(), "", "", "", "", ""),
                     List.of("Iunie", "11.06.2026", "Depozit Nord", "Predare la eliminare", "15 01 02", name("15 01 02"),
-                            300.0, 0.3, "Depozit Gamma SRL", landfill.getCui(), "D1", "", "", ""),
+                            300.0, 0.3, "Depozit Gamma SRL", landfill.getCui(), "", "D1", "", "", ""),
                     List.of("Iunie", "20.06.2026", "Depozit Nord", "Predare la eliminare", "15 01 02", name("15 01 02"),
-                            200.0, 0.2, "Depozit Gamma SRL", landfill.getCui(), "D1", "", "", ""));
+                            200.0, 0.2, "Depozit Gamma SRL", landfill.getCui(), "", "D1", "", "", ""));
+        }
+    }
+
+    /**
+     * D1.12 — „originea” of lit. a), on takeovers only. A depot line reads it from its operation
+     * (a natural person is always „populaţie” and has no partner to name); a movement typed directly
+     * falls back to the partner's record; an operation's own choice beats the partner's record; an
+     * exit and an unclassified takeover print nothing rather than a guess.
+     */
+    @Test
+    void theChronologicalTableNamesTheOriginOfEachTakeover() throws Exception {
+        supplier.setPackagingOrigin(PackagingOrigin.COLECTOR);
+        partnerRepository.save(supplier);
+        // The recycler has an origin on record too: an exit to it must still print none.
+        recycler.setPackagingOrigin(PackagingOrigin.COMERCIANT);
+        partnerRepository.save(recycler);
+        movement("2026-02-01", "15 01 01", "KG", "100", "COLLECTED", null, supplier, null);
+        movement("2026-02-02", "15 01 01", "KG", "60", "RECOVERED", "R3", recycler, "ART_48");
+        movement("2026-02-03", "15 01 02", "KG", "70", "COLLECTED", null, landfill, null);
+        NaturalPerson person = naturalPersonRepository.save(NaturalPerson.builder()
+                .company(company).name("Ion Popescu").active(true).createdAt(Instant.now()).build());
+        depotLine(depotOperation(1, null, person, PackagingOrigin.POPULATIE), "15 01 02", "20", null);
+        // The partner's record says collector; what was chosen when this load came in wins.
+        depotLine(depotOperation(2, supplier, null, PackagingOrigin.GENERATOR_PJ), "15 01 01", "30", supplier);
+
+        try (Workbook wb = xlsx()) {
+            assertThat(dataRows(wb.getSheet("Cronologic"), 15))
+                    .extracting(row -> List.of(row.get(1), row.get(3), row.get(8), row.get(10)))
+                    .containsExactly(
+                            List.of("01.02.2026", "Preluare", "Magazin Alfa SRL", "colector"),
+                            List.of("02.02.2026", "Predare la valorificare", "Reciclator Beta SA", ""),
+                            List.of("03.02.2026", "Preluare", "Depozit Gamma SRL", ""),
+                            List.of("04.02.2026", "Preluare", "", "populaţie"),
+                            List.of("05.02.2026", "Preluare", "Magazin Alfa SRL", "generator persoană juridică"));
         }
     }
 
@@ -231,6 +284,27 @@ class Art48RegisterIT {
 
     private String name(String code) {
         return wasteCodeRepository.findByCode(code).orElseThrow().getName();
+    }
+
+    private WeighingOperation depotOperation(int number, Partner partner, NaturalPerson person,
+                                             PackagingOrigin origin) {
+        return weighingOperationRepository.saveAndFlush(WeighingOperation.builder()
+                .company(company).workPoint(workPointRepository.findById(workPointId).orElseThrow())
+                .type(WeighingOperationType.IN).number(number)
+                .date(LocalDate.of(2026, 2, 3 + number))
+                .partner(partner).naturalPerson(person).origin(origin)
+                .status(WeighingOperationStatus.FINALIZED).finalizedAt(Instant.now()).finalizedBy(adminId)
+                .createdBy(adminId).build());
+    }
+
+    private void depotLine(WeighingOperation op, String code, String kg, Partner partner) {
+        movementRepository.saveAndFlush(WasteMovement.builder()
+                .company(company).workPoint(op.getWorkPoint()).date(op.getDate())
+                .wasteCode(wasteCodeRepository.findByCode(code).orElseThrow())
+                .quantity(new BigDecimal(kg)).netKg(new BigDecimal(kg)).unit(Unit.KG)
+                .operation(WasteOperation.COLLECTED).register(WasteRegister.ART_48)
+                .partner(partner).weighingOperation(op).lineNo(1).deleted(false)
+                .createdBy(adminId).build());
     }
 
     private Partner partner(String name, String cui, PartnerType type, String address) {

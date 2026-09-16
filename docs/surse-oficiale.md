@@ -475,7 +475,7 @@ verifica fără cont.
 **Consecința pentru cod.** Tot ce cer lit. a)–c) și chestionarul se află deja pe `WasteMovement`: dată
 (cronologic), cod, cantitate, `operation`, `operationCode` (R/D), `partner` (nume, CUI, adresă),
 `transportMeans`, `treatmentMethod`, `wasteDestination`, plus stocul, care se deduce. Lipsește doar
-„sursa colectării", o listă a portalului pe care ghidul n-o tipărește. Exportul registrului `ART_48`
+„sursa colectării", o listă a portalului pe care ghidul n-o tipărește. (Din 16.09.2026, D1.12, evidența cronologică are coloana **„Originea”** de la lit. a), cu cuvintele notei 2 din Anexa 3 la Ordinul 794/2012 — „populaţie”, „generator persoană juridică”, „colector”, „comerciant” — citită din operațiunea de cântar sau din fișa partenerului; lista portalului rămâne necunoscută, deci nu se pretinde că e aceeași.) Exportul registrului `ART_48`
 **nu inventează un formular oficial**: e tabelul cronologic lunar cerut de alin. (1), plus totalurile
 anuale așezate ca în tabelele de mai sus, ca ajutor de copiat în portal.
 

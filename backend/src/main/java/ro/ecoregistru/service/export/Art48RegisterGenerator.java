@@ -44,7 +44,8 @@ public class Art48RegisterGenerator {
     static final String BASIS = "OUG nr. 92/2021, art. 48 alin. (1): evidență cronologică lunară, în format tabelar, "
             + "cu conținutul de la lit. a)–c). Actul nu prevede un formular.";
     static final String SIM_NOTE = "Totalurile anuale urmează chestionarul SIM „Colectare/Tratare”, în tone. "
-            + "Portalul cere în plus „sursa colectării”, aleasă din lista lui; aplicația nu o ține.";
+            + "Portalul cere în plus „sursa colectării”, aleasă din lista lui, pe care ghidul nu o tipărește; "
+            + "coloana „Originea” din evidența cronologică arată de la cine s-a preluat.";
     static final String STOCK_NOTE = "Stocul la începutul anului se calculează din mișcările înregistrate în aplicație "
             + "în anii anteriori.";
 
@@ -55,7 +56,7 @@ public class Art48RegisterGenerator {
 
     static final String[] CHRONO_COLUMNS = {
             "Luna", "Data", "Punct de lucru", "Operațiunea", "Cod deșeu", "Denumire",
-            "Cantitate (kg)", "Cantitate (t)", "Partener", "CUI partener", "Cod R/D",
+            "Cantitate (kg)", "Cantitate (t)", "Partener", "CUI partener", "Originea", "Cod R/D",
             "Mod de transport", "Metoda de tratare", "Document"
     };
     static final String[] CAP1_COLUMNS = {
@@ -100,10 +101,11 @@ public class Art48RegisterGenerator {
                 number(x, 7, tons(e.kg()), s.tons);
                 text(x, 8, e.partner());
                 text(x, 9, e.partnerCui());
-                text(x, 10, e.operationCode());
-                text(x, 11, e.transport());
-                text(x, 12, e.treatment());
-                text(x, 13, e.document());
+                text(x, 10, e.origin());
+                text(x, 11, e.operationCode());
+                text(x, 12, e.transport());
+                text(x, 13, e.treatment());
+                text(x, 14, e.document());
             }
             row++;
             for (String note : notes(r)) {
@@ -233,7 +235,7 @@ public class Art48RegisterGenerator {
             if (r.entries().isEmpty()) {
                 doc.add(new Paragraph(cp1250("Nicio mișcare în registru în anul acesta."), small));
             } else {
-                PdfPTable t = table(chronoColumns, head, new float[]{6, 9, 9, 6, 16, 6, 6, 12, 7, 4, 7, 7, 7});
+                PdfPTable t = table(chronoColumns, head, new float[]{6, 9, 9, 6, 15, 6, 6, 11, 7, 7, 4, 7, 7, 7});
                 int month = 0;
                 for (Art48Register.Entry e : r.entries()) {
                     if (e.date().getMonthValue() != month) {
@@ -246,7 +248,7 @@ public class Art48RegisterGenerator {
                     }
                     cells(t, body, e.date().format(DATE), e.workPoint(), e.operation(), e.wasteCode(), e.wasteName());
                     numbers(t, body, kgText(e.kg()), tonsText(e.kg()));
-                    cells(t, body, e.partner(), e.partnerCui(), e.operationCode(), e.transport(), e.treatment(), e.document());
+                    cells(t, body, e.partner(), e.partnerCui(), e.origin(), e.operationCode(), e.transport(), e.treatment(), e.document());
                 }
                 doc.add(t);
             }

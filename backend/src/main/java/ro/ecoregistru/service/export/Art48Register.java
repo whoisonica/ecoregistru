@@ -43,6 +43,11 @@ public record Art48Register(
                         BigDecimal kg,
                         String partner,
                         String partnerCui,
+                        /**
+                         * „Originea” of lit. a), on a takeover only: the word nota 2 of Anexa 3 (Ordinul
+                         * 794/2012) prints. Null on an exit, and on a takeover nobody classified.
+                         */
+                        String origin,
                         String operationCode,
                         String transport,
                         String treatment,

@@ -68,6 +68,17 @@ rulează local și are testele verzi.
 > Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
 >
 
+> **16.09.2026 — 🟡 local, nedeployat: depozitul D1.12, originea în evidența cronologică art. 48.**
+> Art. 48 alin. (1) lit. a) cere „natura şi originea” deșeurilor; exportul avea partenerul, dar nu și de la cine vine
+> deșeul, iar o preluare de la o persoană fizică ieșea cu rubrica de partener goală și nimic altceva. Coloana nouă
+> **„Originea”** (după „CUI partener”, în xlsx și în PDF) tipărește, numai la preluări, cuvântul notei 2 din Anexa 3 la
+> Ordinul 794/2012: la o linie de cântar, originea fixată pe operațiune la intrare (persoana fizică e mereu
+> „populaţie”), altfel alegerea de pe mișcare, apoi fișa partenerului. Nimeni n-a clasificat → celulă goală, nu ghicită.
+> La ieșiri rămâne goală. Nota de sub tabel nu mai spune „aplicația nu o ține”. **Proba:** `Art48RegisterIT` 6/6, cu
+> proba negativă pe trei reguli (doar la preluare, operațiunea înaintea fișei, fișa partenerului ca rezervă), fiecare
+> scoasă pică exact testul ei. Ramura rebazată întâi peste `main` `1bfa416` (mobil M1a), iar **`V49` renumerotată
+> `V51`**; suita după rebazare **776/94, 0 eșecuri**.
+
 > **16.09.2026 — 🟡 local, nedeployat: depozitul D1.9, D1.10 și D1.15 — reținerile la sursă și ecranul „Cântar”.**
 > Migrarea **`V51`** (scrisă ca `V49`, renumerotată pe 16.09 fiindcă `V50` a mobilului a ajuns întâi pe producție) adaugă bazele de calcul lângă sumele reținute, cu constrângere: o sumă reținută fără baza ei ar fi o
 > cifră fără document. La finalizarea unei **intrări** se calculează și se păstrează **2% la Fondul pentru mediu** din toată
