@@ -8,6 +8,17 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, ~02:40 — ✅ pe producție: agentul economic la tratarea proprie, nota SIM pentru un an fără deșeuri, persoana desemnată după Legea 17/2023, avertismentul pentru anul declarat** (`ecoregistru-api` **v111**, `214b3ac`; `ecoregistru-app` **v102**, `8740902`; din `main` `63e75d4`; nicio migrare).
+> Întrebările AH, BB, AK, AP și C, închise din lege în locul specialistei (temeiul în `ecoregistru-docs/docs/intrebari-specialist.md`).
+> **C:** o operație fără partener o face firma („prin mijloace proprii”, OUG 92/2021 art. 23 alin. (1)), deci fișa (cap. 3/4) și evidența
+> centralizată scriu denumirea firmei, nu „în activitatea proprie” (HG 856/2002 anexa 1; ghidul SIM, PRODDES tabelul 2a și corelația
+> PRODDES005). Schimbă un document tipărit: validarea specialistei se redeschide pentru fișă și evidența centralizată. **AP:** sub 15 martie,
+> un an încheiat fără generări trimite la suportsim@anpm.ro (ghidul SIM, p. 8). **AK:** art. 23 alin. (4)–(5) în forma din 12.01.2023 —
+> orice generator desemnează persoana, instruirea se cere doar cu autorizație de mediu; README-ul dosarului, explicația din profil și
+> `surse-oficiale.md` §2.1b citau forma veche. **Anul declarat:** cu 15 martie bifat pentru anul mișcării, salvarea întreabă („Salvează
+> oricum”), ștergerea și „Adaugă cantitatea” avertizează; doar web, doar avertisment. **Probe:** backend 864/104, 0 eșecuri (negative pe C și
+> AK); `npm test` 27/27; e2e 27 (negativă: 4 căderi), 4, 23, 26. **Pe producție:** health UP, bundle-ul `index-BwQPIeNf.js` are cele trei texte noi.
+
 > **17.09.2026 — ✅ pe producție: rândul de sub termenul de 15 martie, pe Termene, în kilograme** (`ecoregistru-app` **v101**, `5e95d05`, din `main` `01e9acf`; api neatins). **Pe producție:** bundle-ul `index-CTHomVzv.js` are textul nou.
 > Scria „2026: 3 coduri, 1,060 t” — 1.060 kg în tone, cu virgula românească la zecimale, citit de proprietar ca o mie de tone („nu cred că
 > e ok”). Tonele veneau din punctul 7 al auditului (04.09, art. 48 „în tone”), premisă închisă pe 14.09 de Andreea (AF: „kg”). Acum
