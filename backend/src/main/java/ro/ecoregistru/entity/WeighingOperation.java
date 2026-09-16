@@ -77,6 +77,11 @@ public class WeighingOperation {
     @Column(name = "driver_name")
     String driverName;
 
+    /** Vehiculul ales din flotă (D2.1). Documentele tipăresc totuși {@link #vehicleRegistration}. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id")
+    Vehicle vehicle;
+
     @Column(name = "vehicle_registration", length = 50)
     String vehicleRegistration;
 

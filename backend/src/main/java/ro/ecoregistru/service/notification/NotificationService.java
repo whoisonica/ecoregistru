@@ -3,6 +3,7 @@ package ro.ecoregistru.service.notification;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.entity.SubscriptionInvoice;
+import ro.ecoregistru.entity.Vehicle;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -37,6 +38,14 @@ public interface NotificationService {
      *                          unmarked, so the warning is retried tomorrow.
      */
     void sendPartnerAuthorizationWarning(Partner partner, List<String> recipientEmails, long daysUntil);
+
+    /**
+     * D2.1 — ITP-ul sau licența de transport a unui vehicul din flotă expiră în 30 de zile.
+     *
+     * @param daysUntil zile întregi până la cea mai apropiată expirare (0 = azi)
+     * @throws RuntimeException if delivery fails — the caller must then leave the vehicle unmarked.
+     */
+    void sendVehicleExpiryWarning(Vehicle vehicle, List<String> recipientEmails, long daysUntil);
 
     /**
      * Sends an issued subscription invoice to whoever pays it, with FGO's PDF link (§9.4 of

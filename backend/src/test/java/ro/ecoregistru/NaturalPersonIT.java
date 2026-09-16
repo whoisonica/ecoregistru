@@ -156,7 +156,7 @@ class NaturalPersonIT {
                 .type(PartnerType.COLLECTOR).supplier(true).packagingOrigin(PackagingOrigin.COLECTOR)
                 .active(true).createdAt(Instant.now()).build());
         UUID id = service.create(new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
-                null, null, null, null, null, null, null, null, null, null)).id();
+                null, null, null, null, null, null, null, null, null, null, null)).id();
 
         service.replaceLines(id, lines(copper));
         assertThat(service.finalizeOperation(id).status()).isEqualTo(WeighingOperationStatus.FINALIZED);
@@ -229,7 +229,7 @@ class NaturalPersonIT {
     /** Cu declarația de gospodărie proprie bifată: subiectul de aici e identitatea, nu declarația (D1.9). */
     private UUID fromPerson(NaturalPerson person) {
         return service.create(new WeighingOperationRequest(IN, depot.getId(), DAY, null, person.getId(),
-                null, null, null, null, null, null, null, true, null)).id();
+                null, null, null, null, null, null, null, null, true, null)).id();
     }
 
     /** O operațiune a persoanei la data cerută, direct în bază: regula de identitate nu e subiectul aici. */

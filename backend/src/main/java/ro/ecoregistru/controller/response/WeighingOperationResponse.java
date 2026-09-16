@@ -30,6 +30,7 @@ public record WeighingOperationResponse(
         String naturalPersonName,
         PackagingOrigin origin,
         String driverName,
+        UUID vehicleId,
         String vehicleRegistration,
         String orderNumber,
         WeighingOperationStatus status,

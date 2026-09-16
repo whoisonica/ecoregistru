@@ -604,6 +604,8 @@ export interface WeighingOperation {
   naturalPersonName: string | null;
   origin: PackagingOrigin | null;
   driverName: string | null;
+  /** Vehiculul ales din flotă (D2.1); numărul tipărit rămâne `vehicleRegistration`. */
+  vehicleId: string | null;
   vehicleRegistration: string | null;
   orderNumber: string | null;
   status: WeighingOperationStatus;
@@ -634,6 +636,7 @@ export interface WeighingOperationInput {
   naturalPersonId: string | null;
   origin?: PackagingOrigin | null;
   driverId?: string | null;
+  vehicleId?: string | null;
   driverName: string | null;
   vehicleRegistration: string | null;
   orderNumber: string | null;
@@ -921,6 +924,36 @@ export interface PartnerWorkPoint {
  * Un delegat care poate apărea pe Anexa 3. `partnerId` completat = șoferul unui transportator;
  * null = șofer de-al nostru, cazul „transportăm noi".
  */
+/** Un vehicul din flotă (D2.1). */
+export interface Vehicle {
+  id: string;
+  registration: string;
+  kind: string | null;
+  standardTareKg: number | null;
+  /** Peste 3,5 t: numai atunci are licență de transport. */
+  heavy: boolean;
+  itpExpiry: string | null;
+  transportLicenseNumber: string | null;
+  transportLicenseExpiry: string | null;
+  homeWorkPointId: string | null;
+  homeWorkPointName: string | null;
+  partnerId: string | null;
+  partnerName: string | null;
+  active: boolean;
+}
+
+export interface VehicleInput {
+  registration: string;
+  kind: string | null;
+  standardTareKg: number | null;
+  heavy: boolean;
+  itpExpiry: string | null;
+  transportLicenseNumber: string | null;
+  transportLicenseExpiry: string | null;
+  homeWorkPointId: string | null;
+  partnerId: string | null;
+}
+
 export interface Driver {
   id: string;
   partnerId: string | null;

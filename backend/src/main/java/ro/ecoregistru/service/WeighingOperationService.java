@@ -14,6 +14,7 @@ import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.NaturalPerson;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteArticle;
+import ro.ecoregistru.entity.Vehicle;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WeighingOperation;
 import ro.ecoregistru.entity.WorkPoint;
@@ -30,6 +31,7 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.DriverRepository;
 import ro.ecoregistru.repository.NaturalPersonRepository;
 import ro.ecoregistru.repository.PartnerRepository;
+import ro.ecoregistru.repository.VehicleRepository;
 import ro.ecoregistru.repository.WasteArticleRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WeighingOperationRepository;
@@ -77,6 +79,7 @@ public class WeighingOperationService {
     PartnerRepository partnerRepository;
     NaturalPersonRepository naturalPersonRepository;
     DriverRepository driverRepository;
+    VehicleRepository vehicleRepository;
     ro.ecoregistru.repository.AppUserRepository userRepository;
     ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
 
@@ -110,6 +113,9 @@ public class WeighingOperationService {
         Driver driver = request.driverId() == null ? null
                 : driverRepository.findByIdAndCompany_Id(request.driverId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(DRIVER_NOT_FOUND));
+        Vehicle vehicle = request.vehicleId() == null ? null
+                : vehicleRepository.findByIdAndCompany_Id(request.vehicleId(), tenantId)
+                        .orElseThrow(() -> new NotFoundException(VEHICLE_NOT_FOUND));
 
         operationRepository.lockNumbering(tenantId + ":" + type);
         Integer max = operationRepository.findMaxNumber(tenantId, type);
@@ -125,8 +131,8 @@ public class WeighingOperationService {
                 .origin(resolveOrigin(request, partner, person))
                 .driver(driver)
                 .driverName(firstNonBlank(request.driverName(), driver == null ? null : driver.getName()))
-                .vehicleRegistration(firstNonBlank(request.vehicleRegistration(),
-                        driver == null ? null : driver.getVehicleRegistration()))
+                .vehicle(vehicle)
+                .vehicleRegistration(resolveRegistration(request, driver, vehicle))
                 .orderNumber(blankToNull(request.orderNumber()))
                 .paymentMethod(request.paymentMethod())
                 .receiptNumber(blankToNull(request.receiptNumber()))
@@ -182,6 +188,9 @@ public class WeighingOperationService {
         Driver driver = request.driverId() == null ? null
                 : driverRepository.findByIdAndCompany_Id(request.driverId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(DRIVER_NOT_FOUND));
+        Vehicle vehicle = request.vehicleId() == null ? null
+                : vehicleRepository.findByIdAndCompany_Id(request.vehicleId(), tenantId)
+                        .orElseThrow(() -> new NotFoundException(VEHICLE_NOT_FOUND));
 
         operation.setWorkPoint(workPoint);
         operation.setDate(request.date());
@@ -190,8 +199,8 @@ public class WeighingOperationService {
         operation.setOrigin(resolveOrigin(request, partner, person));
         operation.setDriver(driver);
         operation.setDriverName(firstNonBlank(request.driverName(), driver == null ? null : driver.getName()));
-        operation.setVehicleRegistration(firstNonBlank(request.vehicleRegistration(),
-                driver == null ? null : driver.getVehicleRegistration()));
+        operation.setVehicle(vehicle);
+        operation.setVehicleRegistration(resolveRegistration(request, driver, vehicle));
         operation.setOrderNumber(blankToNull(request.orderNumber()));
         operation.setPaymentMethod(request.paymentMethod());
         operation.setReceiptNumber(blankToNull(request.receiptNumber()));
@@ -531,6 +540,17 @@ public class WeighingOperationService {
                 .build();
     }
 
+    /**
+     * D2.1 — numărul tipărit: al vehiculului din flotă, dacă e ales (altfel ar putea rămâne pe foaie
+     * alt număr decât mașina legată), apoi cel scris de mână, apoi mașina obișnuită a șoferului.
+     */
+    private static String resolveRegistration(WeighingOperationRequest request, Driver driver, Vehicle vehicle) {
+        if (vehicle != null) {
+            return vehicle.getRegistration();
+        }
+        return firstNonBlank(request.vehicleRegistration(), driver == null ? null : driver.getVehicleRegistration());
+    }
+
     /** D1.8 — vede prețurile cel care lucrează acum pe firma asta? Regula e în {@code PriceVisibility}. */
     private static boolean pricesVisible(Company company) {
         return company.getPriceVisibility().visibleTo(SecurityUtils.currentUser().getRole());
@@ -656,7 +676,8 @@ public class WeighingOperationService {
                 o.getWorkPoint().getId(), o.getWorkPoint().getName(),
                 partner == null ? null : partner.getId(), partner == null ? null : partner.getName(),
                 person == null ? null : person.getId(), person == null ? null : person.getName(),
-                o.getOrigin(), o.getDriverName(), o.getVehicleRegistration(), o.getOrderNumber(),
+                o.getOrigin(), o.getDriverName(),
+                o.getVehicle() == null ? null : o.getVehicle().getId(), o.getVehicleRegistration(), o.getOrderNumber(),
                 o.getStatus(), o.getNotes(), o.getGrossKg(), o.getTareKg(),
                 o.getPaymentMethod(), o.getReceiptNumber(), o.getOwnHousehold(),
                 pricesVisible ? o.getAfmBase() : null, pricesVisible ? o.getAfmContribution() : null,

@@ -162,7 +162,7 @@ class DepotListPerformanceIT {
             WasteArticle first = article();
             WasteArticle second = article();
             UUID id = service.create(new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
-                    null, null, null, null, null, null, null, null, null, null)).id();
+                    null, null, null, null, null, null, null, null, null, null, null)).id();
             service.replaceLines(id, new WeighingLinesRequest(null, null, List.of(
                     new Line(first.getId(), null, null, new BigDecimal("100"), null, new BigDecimal("0.5"), null, null),
                     new Line(second.getId(), null, null, new BigDecimal("50"), null, new BigDecimal("20"), null, null))));

@@ -62,6 +62,7 @@ public class AuditInterceptor implements Interceptor {
             WorkPoint.class,
             InternalGenerator.class,
             Driver.class,
+            Vehicle.class,
             Attachment.class,
             AppUser.class,
             // Modulul de depozit (V46): operațiunea e document justificativ, iar persoana fizică
@@ -85,6 +86,7 @@ public class AuditInterceptor implements Interceptor {
             Map.entry(WorkPoint.class, List.of("name")),
             Map.entry(InternalGenerator.class, List.of("name")),
             Map.entry(Driver.class, List.of("name")),
+            Map.entry(Vehicle.class, List.of("registration")),
             Map.entry(Attachment.class, List.of("fileName")),
             Map.entry(AppUser.class, List.of("email")),
             Map.entry(WeighingOperation.class, List.of("type", "number", "date")),

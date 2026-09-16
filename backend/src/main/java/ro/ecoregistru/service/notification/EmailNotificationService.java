@@ -11,6 +11,7 @@ import org.thymeleaf.context.Context;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
 import ro.ecoregistru.entity.SubscriptionInvoice;
+import ro.ecoregistru.entity.Vehicle;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.service.EmailService;
@@ -84,6 +85,24 @@ public class EmailNotificationService implements NotificationService {
             ctx.setVariable("daysUntil", daysUntil);
             ctx.setVariable("whenText", whenExpiry(daysUntil));
             emailService.send(to, subject, "mail/partner_authorization_expiring", ctx);
+        }
+    }
+
+    /** D2.1 — subiectul numește mașina, ca la partener: cititorul are de verificat un camion anume. */
+    @Override
+    public void sendVehicleExpiryWarning(Vehicle vehicle, List<String> recipientEmails, long daysUntil) {
+        String subject = "ITP-ul sau licența vehiculului " + vehicle.getRegistration() + " " + whenExpiry(daysUntil);
+        for (String to : recipientEmails) {
+            Context ctx = new Context(Locale.of("ro"));
+            ctx.setVariable("registration", vehicle.getRegistration());
+            ctx.setVariable("kind", vehicle.getKind());
+            ctx.setVariable("itpExpiry", vehicle.getItpExpiry() == null ? null : vehicle.getItpExpiry().format(DATE));
+            ctx.setVariable("licenseNumber", vehicle.getTransportLicenseNumber());
+            ctx.setVariable("licenseExpiry", vehicle.getTransportLicenseExpiry() == null ? null
+                    : vehicle.getTransportLicenseExpiry().format(DATE));
+            ctx.setVariable("whenText", whenExpiry(daysUntil));
+            ctx.setVariable("settingsUrl", frontendBaseUrl + "/setari#flota");
+            emailService.send(to, subject, "mail/vehicle_expiring", ctx);
         }
     }
 

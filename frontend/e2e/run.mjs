@@ -28,6 +28,7 @@ const suites = [
   ["17-persoane-fizice.mjs", "tabul «Persoane fizice»: CNP mascat, cifra de control, editarea, vizualizatorul"],
   ["18-panou-cantar.mjs", "panoul «Cântar»: eticheta firmei, afișajul, tastele, Intrări/Ieșiri, pubelele, bara de jos"],
   ["19-cantar-operatiuni.mjs", "ecranul «Cântar»: operațiunile depozitului, neto din cântar, cât se reține din plată"],
+  ["20-flota.mjs", "flota din Setări: numărul normalizat, ITP-ul și licența care expiră, vehiculul recunoscut la cântar"],
 ];
 
 const only = process.argv[2];

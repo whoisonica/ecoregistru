@@ -31,6 +31,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import { InternalGeneratorsSection } from "@/components/InternalGeneratorsSection";
 import { OwnDriversSection } from "@/components/OwnDriversSection";
 import { WasteArticlesSection } from "@/components/WasteArticlesSection";
+import { VehiclesSection } from "@/components/VehiclesSection";
 import { PriceVisibilitySection } from "@/components/PriceVisibilitySection";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { registersFor } from "@/lib/movementScreens";
@@ -174,6 +175,7 @@ export function SettingsPage() {
             ? [
                 { id: "preturi", label: strings.settings.prices.title },
                 { id: "sortimente", label: strings.settings.articles.title },
+                { id: "flota", label: strings.settings.vehicles.title },
               ]
             : []),
           { id: "soferi", label: strings.settings.drivers.title },
@@ -283,6 +285,9 @@ export function SettingsPage() {
 
       {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}
       {hasDepot && <WasteArticlesSection canManage={roleCanWrite(user?.role)} />}
+
+      {/* D2.1 — flota; o scrie oricine scrie, ca sortimentele și ca serverul. */}
+      {hasDepot && <VehiclesSection workPoints={workPoints ?? []} canManage={roleCanWrite(user?.role)} />}
 
       <OwnDriversSection canManage={canManage} />
 

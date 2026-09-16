@@ -16,6 +16,7 @@ import java.util.UUID;
  * @param origin        doar pentru un partener, și doar când nu vrei ce spune fișa lui; la o persoană
  *                      fizică e ignorat (mereu POPULATIE)
  * @param driverId      șoferul ales din listă; numele și mașina se iau de la el dacă nu sunt scrise
+ * @param vehicleId     vehiculul ales din flotă (D2.1); numărul lui are întâietate față de cel scris
  * @param paymentMethod cum se plătește marfa; la o persoană fizică, numerarul are plafon zilnic
  *                      (Legea 70/2015 art. 4), iar viramentul se face în 3 zile lucrătoare
  * @param receiptNumber chitanța, când s-a plătit numerar (OUG 31/2011 art. 1 alin. (1^2) lit. a))
@@ -30,6 +31,7 @@ public record WeighingOperationRequest(
         UUID naturalPersonId,
         PackagingOrigin origin,
         UUID driverId,
+        UUID vehicleId,
         String driverName,
         String vehicleRegistration,
         String orderNumber,

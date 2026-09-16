@@ -6,6 +6,7 @@ import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useNaturalPersons } from "@/hooks/useNaturalPersons";
 import { useWasteArticles } from "@/hooks/useWasteArticles";
+import { useVehicles } from "@/hooks/useVehicles";
 import {
   useCancelWeighingOperation,
   useCreateWeighingOperation,
@@ -172,6 +173,21 @@ export function WeighingOperationDialog({
   const [personId, setPersonId] = useState(operation?.naturalPersonId ?? "");
   const [driverName, setDriverName] = useState(operation?.driverName ?? "");
   const [vehicle, setVehicle] = useState(operation?.vehicleRegistration ?? "");
+  const vehicles = useVehicles();
+  /**
+   * D2.1 — vehiculul din flotă cu numărul scris, comparat cum îl salvează serverul (majuscule, fără
+   * spații și cratime). Un număr care nu e în flotă rămâne text: mașina ocazională a unui furnizor.
+   */
+  const fleetVehicle = useMemo(() => {
+    const typed = vehicle.replace(/[\s-]/g, "").toUpperCase();
+    return typed ? (vehicles.data ?? []).find((v) => v.registration === typed) ?? null : null;
+  }, [vehicle, vehicles.data]);
+  const fleetDocumentsExpired = Boolean(
+    fleetVehicle &&
+      [fleetVehicle.itpExpiry, fleetVehicle.transportLicenseExpiry].some(
+        (d) => d && d < new Date().toISOString().slice(0, 10)
+      )
+  );
   const [orderNumber, setOrderNumber] = useState(operation?.orderNumber ?? "");
   const [notes, setNotes] = useState(operation?.notes ?? "");
   const [truckGross, setTruckGross] = useState(operation?.grossKg?.toString() ?? "");
@@ -270,6 +286,7 @@ export function WeighingOperationDialog({
       partnerId: fromPerson ? null : partnerId || null,
       naturalPersonId: fromPerson ? personId || null : null,
       driverName: driverName.trim() || null,
+      vehicleId: fleetVehicle?.id ?? null,
       vehicleRegistration: vehicle.trim() || null,
       orderNumber: orderNumber.trim() || null,
       paymentMethod: payment || null,
@@ -538,10 +555,33 @@ export function WeighingOperationDialog({
                 <Label htmlFor="wo-vehicle">{t.vehicle}</Label>
                 <Input
                   id="wo-vehicle"
+                  list="wo-fleet"
+                  className="font-mono"
                   value={vehicle}
                   onChange={(e) => setVehicle(e.target.value)}
                   disabled={!editable}
                 />
+                <datalist id="wo-fleet">
+                  {(vehicles.data ?? [])
+                    .filter((v) => v.active)
+                    .map((v) => (
+                      <option key={v.id} value={v.registration}>
+                        {v.kind ?? ""}
+                      </option>
+                    ))}
+                </datalist>
+                {fleetVehicle && (
+                  <p className="mt-1 text-xs text-content-muted">
+                    {t.vehicleFromFleet}
+                    {fleetVehicle.standardTareKg != null &&
+                      ` · ${t.vehicleStandardTare} ${fleetVehicle.standardTareKg.toLocaleString("ro-RO")} kg`}
+                  </p>
+                )}
+                {fleetDocumentsExpired && (
+                  <Badge variant="danger" className="mt-1">
+                    {t.vehicleDocumentsExpired}
+                  </Badge>
+                )}
               </div>
               <div>
                 <Label htmlFor="wo-order">{t.orderNumber}</Label>

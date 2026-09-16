@@ -128,6 +128,13 @@ public enum ErrorMessageEnum {
     WASTE_ARTICLE_NAME_REQUIRED("waste.article.name.required", "Scrie denumirea sortimentului."),
     WASTE_ARTICLE_CODE_REQUIRED("waste.article.code.required", "Alege codul de deșeu al sortimentului."),
     WASTE_ARTICLE_NAME_TAKEN("waste.article.name.taken", "Există deja un sortiment cu denumirea asta."),
+    // --- Flota (F2, V53) ---
+    VEHICLE_NOT_FOUND("vehicle.not.found", "Vehiculul nu a fost găsit."),
+    VEHICLE_REGISTRATION_REQUIRED("vehicle.registration.required", "Scrie numărul de înmatriculare."),
+    VEHICLE_REGISTRATION_TAKEN("vehicle.registration.taken", "Există deja un vehicul cu numărul ăsta. Caută-l în listă, poate e dezactivat."),
+    VEHICLE_TARE_NOT_POSITIVE("vehicle.tare.not.positive", "Tara standard trebuie să fie mai mare decât zero."),
+    VEHICLE_PARTNER_NOT_CARRIER("vehicle.partner.not.carrier", "Partenerul ales nu e bifat ca transportator. Bifează-l în fișa lui sau lasă vehiculul al firmei."),
+    VEHICLE_DELETE_REQUIRES_DEACTIVATION("vehicle.delete.requires.deactivation", "Dezactivează întâi vehiculul. Ștergerea fișei e definitivă, deci se face doar pentru un vehicul scos deja din listă."),
 
     // --- Partner ---
     PARTNER_NOT_FOUND("partner.not.found", "Partenerul nu a fost găsit."),
