@@ -57,7 +57,7 @@ check("datele firmei: spune ce lipsește, nu și adresa completată",
 check("consultantul/platforma e trimis la Clienți, nu rugat să ne scrie", byId.company && /Deschide Clienți/.test(byId.company.text));
 check("punct de lucru: de făcut", byId.workPoint && !byId.workPoint.done);
 check("partener și mișcare: de făcut", byId.partner && !byId.partner.done && byId.movement && !byId.movement.done);
-check("mișcarea are și importul din Excel", byId.movement && /Importă din Excel/.test(byId.movement.text));
+check("platforma vede la mișcare și importul din Excel", byId.movement && /Importă din Excel/.test(byId.movement.text));
 const progress = await page.textContent('[data-testid="first-steps"]');
 check("progresul: 0 din 4", /0 din 4 gata/.test(progress ?? ""));
 await shot(page, "24-primii-pasi-1440");

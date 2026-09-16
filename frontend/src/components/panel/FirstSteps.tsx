@@ -5,7 +5,7 @@ import { useCurrentCompany } from "@/hooks/useCompanies";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { firstSteps, showFirstSteps, type CompanyField, type FirstStep } from "@/lib/firstSteps";
 import { SCREEN_PATH, screensFor } from "@/lib/movementScreens";
-import { canManage, canWrite, isMultiCompany } from "@/lib/roles";
+import { canImport, canWrite, isMultiCompany } from "@/lib/roles";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -81,10 +81,11 @@ export function FirstSteps() {
       case "movement":
         return {
           title: t.movement,
-          hint: t.movementHint,
+          // Importul îl facem noi (16.09.2026): clientul află unde trimite Excelul, platforma îl deschide.
+          hint: `${t.movementHint} ${canImport(user?.role) ? t.importHintPlatform : t.importHintSendUs}`,
           links: [
             { to: `${SCREEN_PATH[firstScreen]}?nou=1`, label: t.movementCta },
-            ...(canManage(user?.role) ? [{ to: "/import", label: t.importCta }] : []),
+            ...(canImport(user?.role) ? [{ to: "/import", label: t.importCta }] : []),
           ],
         };
     }

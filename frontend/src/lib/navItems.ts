@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import type { Role } from "@/auth/AuthContext";
 import type { CompanyType } from "@/lib/types";
-import { canManage, isMultiCompany } from "@/lib/roles";
+import { canImport, canManage, isMultiCompany } from "@/lib/roles";
 import { SCREEN_PATH, registersFor, screensFor, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@/lib/strings";
 
@@ -88,8 +88,8 @@ const SCREEN_ENTRY: Record<MovementScreen, Omit<NavEntry, "hotkey">> = {
  * (colectorul pur fără Generare — decizia proprietarului din 14.09.2026: firma cu deșeu propriu se
  * trece pe `BOTH`). Până se știe firma (consultantul fără firmă aleasă) rămân intrările comune.
  *
- * <p>Importul din Excel nu mai e în meniu: e un lucru de făcut o dată, la implementare, și stă la
- * Setări (link) și în paletă. Abonamentul stă jos în panou, nu în listă.
+ * <p>Importul din Excel nu e în meniu: îl facem noi, la implementare (numai platforma, din 16.09.2026),
+ * și stă la Setări (link) și în paletă. Abonamentul stă jos în panou, nu în listă.
  */
 export function buildNav(role: Role | undefined, companyType: CompanyType | undefined): NavModel {
   const main: Omit<NavEntry, "hotkey">[] = [
@@ -138,11 +138,11 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
 
   const hidden: NavEntry[] = [];
+  if (canImport(role)) {
+    hidden.push({ to: "/import", label: strings.nav.importExcel, icon: FileUp, keywords: strings.nav.kwImport });
+  }
   if (canManage(role)) {
-    hidden.push(
-      { to: "/import", label: strings.nav.importExcel, icon: FileUp, keywords: strings.nav.kwImport },
-      { to: "/abonament", label: strings.nav.billing, icon: Receipt, keywords: strings.nav.kwBilling }
-    );
+    hidden.push({ to: "/abonament", label: strings.nav.billing, icon: Receipt, keywords: strings.nav.kwBilling });
   }
 
   return {

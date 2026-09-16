@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Ban, FileUp, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { canManage as roleCanManage, canWrite as roleCanWrite } from "@/lib/roles";
+import { canImport, canManage as roleCanManage, canWrite as roleCanWrite } from "@/lib/roles";
 import {
   useWorkPoints,
   useCreateWorkPoint,
@@ -150,12 +150,14 @@ export function SettingsPage() {
         actions={
           canManage && (
             <>
-              {/* Importul din Excel nu mai stă în meniu (15.09.2026): e un lucru de făcut o dată, la
-                  implementare, deci stă la Setări, lângă cine configurează firma. */}
-              <LinkButton to="/import" variant="outline">
-                <FileUp className="mr-2 h-4 w-4" />
-                {strings.nav.importExcel}
-              </LinkButton>
+              {/* Importul din Excel nu stă în meniu: îl facem noi, la implementare. Din 16.09.2026 butonul
+                  e numai al platformei; clientul ne trimite fișierul. */}
+              {canImport(user?.role) && (
+                <LinkButton to="/import" variant="outline">
+                  <FileUp className="mr-2 h-4 w-4" />
+                  {strings.nav.importExcel}
+                </LinkButton>
+              )}
               <Button onClick={openCreate} hotkey="N">
                 <Plus className="mr-2 h-4 w-4" />
                 {t.add}

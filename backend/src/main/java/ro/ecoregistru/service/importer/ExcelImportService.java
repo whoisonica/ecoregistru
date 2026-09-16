@@ -29,7 +29,6 @@ import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.PartnerService;
 import ro.ecoregistru.service.WasteMovementService;
 import ro.ecoregistru.service.WorkPointService;
-import ro.ecoregistru.security.SecurityUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -94,9 +93,6 @@ public class ExcelImportService {
     WasteMovementRepository movementRepository;
     WorkPointService workPointService;
 
-    /** Cine poate adăuga un punct de lucru: {@code CAN_MANAGE} din {@code WorkPointController}. */
-    private static final Set<Role> MANAGERS = EnumSet.of(Role.PLATFORM_ADMIN, Role.CONSULTANT, Role.ADMIN);
-
     @Transactional
     public ImportResultResponse run(MultipartFile file, boolean save) {
         UUID tenantId = TenantContext.require();
@@ -149,14 +145,12 @@ public class ExcelImportService {
 
     /**
      * A doua felie: punctele de lucru, înaintea mișcărilor care le numesc. Prin {@link WorkPointService#create},
-     * deci cu secțiile implicite. Unul care există deja după nume se sare. Unul nou îl importă doar cine l-ar
-     * putea adăuga și din Setări ({@code CAN_MANAGE} din {@code WorkPointController}): importul e deschis și
-     * operatorului, iar fără verificarea asta ar fi fost ușa din spate spre o scriere care îi e închisă.
+     * deci cu secțiile implicite. Unul care există deja după nume se sare. Importul îl face numai platforma
+     * ({@code ImportController}), care poate adăuga puncte de lucru oricum.
      */
     private void importWorkPoints(Sheet sheet, UUID tenantId, List<RowError> errors, int[] counts) {
         Set<String> existing = new HashSet<>();
         workPointRepository.findAllByCompany_Id(tenantId).forEach(wp -> existing.add(fold(wp.getName())));
-        boolean canManage = MANAGERS.contains(SecurityUtils.currentUser().getRole());
 
         for (int r = 1; r <= sheet.getLastRowNum(); r++) {
             Cells c = new Cells(sheet, r, WORK_POINT_COLUMNS, errors);
@@ -166,10 +160,6 @@ public class ExcelImportService {
             if (!c.ok()) continue;
             if (existing.contains(fold(name))) {
                 counts[5]++;
-                continue;
-            }
-            if (!canManage) {
-                c.error(0, "„" + name + "” nu există în firmă, iar punctele de lucru noi le adaugă un administrator.");
                 continue;
             }
             c.attempt(() -> {

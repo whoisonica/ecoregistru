@@ -16,7 +16,8 @@ import java.util.*;
  * P2.15 — şablonul de import, şi tot ce ştie despre coloanele lui.
  *
  * <p>Un singur şablon, al nostru (decizia proprietarului, 15.09.2026), nu o potrivire de coloane pe
- * Excelul fiecărui client: implementarea o facem noi, deci cine copiază datele în el e omul nostru.
+ * Excelul fiecărui client: implementarea o facem noi, deci cine copiază datele în el e omul nostru. Din 16.09.2026 tot noi îl şi
+ * importăm: endpointurile sunt numai ale platformei.
  * Coloanele sunt pe poziţii fixe, iar antetul se verifică la citire — un fişier cu alt antet e
  * refuzat întreg, nu citit pe jumătate cu coloanele alunecate.
  *
@@ -168,7 +169,7 @@ public class ImportTemplate {
                 "2. Coloanele cu * sunt obligatorii. Un rând gol se sare.",
                 "3. Partenerii se potrivesc după CUI, apoi după denumire. Unul care există deja în firmă nu se dublează și nu se modifică.",
                 "4. Pe o mișcare, „Partener” se scrie cu CUI-ul sau denumirea din foaia „Parteneri” ori din aplicație.",
-                "5. „Punct de lucru” e numele din foaia „Puncte de lucru” sau din Setări → Puncte de lucru. Un punct de lucru care există deja (după nume) nu se dublează. Punctele noi le importă doar un administrator.",
+                "5. „Punct de lucru” e numele din foaia „Puncte de lucru” sau din Setări → Puncte de lucru. Un punct de lucru care există deja (după nume) nu se dublează.",
                 "6. „Cod deșeu” se scrie ca în Lista europeană: 15 01 01 sau 150101 (asteriscul nu contează).",
                 "7. „Cod R/D” e obligatoriu la Valorificare (R1–R13) și la Eliminare (D1–D15), și interzis în rest.",
                 "8. „Registru” se completează doar la o firmă colector, pe ieșiri: „Deșeu propriu” sau „Preluat de la terți”.",

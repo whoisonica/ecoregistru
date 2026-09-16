@@ -8,6 +8,19 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, ~23:30 — 🔧 local, nedeployat: importul din Excel e numai al platformei.**
+> Proprietarul: „hai să nu lăsăm oamenii să facă asta singuri” — importul e partea noastră din implementare; clientul și consultantul
+> ne trimit fișierul. **Server:** `ImportController` pe `hasAuthority('PLATFORM_ADMIN')`, pe toate trei endpointurile (și șablonul);
+> firma se alege cu `X-Tenant-Id`. Verificarea „punctul de lucru nou îl importă doar un administrator” din `ExcelImportService` a
+> ieșit, fiindcă nu mai are cui să i se aplice. **Ecran:** `canImport` în `roles.ts`; butonul din Setări, intrarea din paletă și linkul
+> din „Primii pași” numai la platformă; ceilalți citesc în „Primii pași” să ne trimită Excelul la contact@wastehouse.ro; `/import`
+> scris de mână duce acasă. Fără migrare, niciun document tipărit atins. **Probe:** `ExcelImportIT` 16/16, cu
+> `onlyThePlatformImports` (administratorul, consultantul cabinetului care are firma și operatorul: 403 pe șablon, verificare și
+> import; nimic salvat) — **negativă:** cu rolurile vechi în `CAN_IMPORT` testul cade (200 în loc de 403). Suita backend **852 de teste, 103 clase, 0 eșecuri**; `npm test` 20/20; build verde.
+> e2e pe `eco_e2e_import`: probele **1, 16, 24 trec** (16: administratorul nu vede butonul și e dus acasă, platforma importă pe firma demo).
+> ⚠️ Landingul (`wastehouse.ro`, întrebarea „Ce se întâmplă cu evidența pe care o am deja în Excel?”) încă descrie importul ca pe ceva
+> ce faci singur: de rescris la următorul upload.
+
 > **16.09.2026, 22:00 — ✅ pe producție: Anexa 3 Ambalaje la colector și starea documentului pe fiecare termen.**
 > `ecoregistru-api` **v106** (`3b9c08d`), `ecoregistru-app` **v91** (`bbce88b`); monorepo `b153130`, fără migrare. Proprietarul: „din ce
 > generări ai să-ți genereze automat ce trebuie să depui”, apoi „caută atent în lege”. Temeiul e în `surse-oficiale.md` §2.11 (`3f53d99`).

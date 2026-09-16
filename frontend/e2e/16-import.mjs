@@ -4,7 +4,10 @@
 // backend: că „Importă” rămâne blocat până când **același** fișier a trecut o verificare fără erori,
 // că alegerea altui fișier îl blochează la loc, că un fișier stricat își spune mesajul pe ecran, și
 // că șablonul chiar se descarcă. Proba nu salvează nimic: verifică doar șablonul gol.
-import { launch, newPage, login, shot, BASE } from "./lib.mjs";
+//
+// Din 16.09.2026 importul e numai al platformei (îl facem noi, la implementare): administratorul firmei
+// nu-l mai vede nici în Setări, nici în paletă, iar adresa scrisă de mână îl duce acasă.
+import { launch, newPage, login, shot, switchCompany, BASE } from "./lib.mjs";
 
 const browser = await launch();
 let fails = 0;
@@ -16,16 +19,28 @@ const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 const importDisabled = (page) =>
   page.$eval('button:has-text("Importă")', (b) => b.disabled).catch(() => null);
 
-// ══════════════════════════════════════════════ ADMIN
+// ══════════════════════════════════════════════ ADMINISTRATORUL FIRMEI
+const admin = await newPage(browser);
+await login(admin, "admin");
+await admin.goto(BASE + "/setari", { waitUntil: "networkidle" });
+await admin.waitForTimeout(500);
+check("administratorul nu are importul în Setări", !(await admin.$('a[href="/import"]')));
+await admin.goto(BASE + "/import", { waitUntil: "networkidle" });
+await admin.waitForTimeout(500);
+check("adresa /import îl duce acasă", new URL(admin.url()).pathname === "/", admin.url());
+check("și nu vede ecranul de import", !(await admin.isVisible("text=Descarcă șablonul")));
+await admin.close();
+
+// ══════════════════════════════════════════════ PLATFORMA
 const page = await newPage(browser);
-await login(page, "admin");
+await login(page, "platform");
+check("platforma comută pe firma demo", Boolean(await switchCompany(page, /Demo/)));
 await page.goto(BASE + "/import", { waitUntil: "networkidle" });
 await page.waitForTimeout(500);
 
 const h1 = (await page.textContent("h1")) ?? "";
 check("ecranul se deschide", /Import din Excel/.test(h1), h1.trim());
-// Din 15.09.2026 importul nu mai stă în meniu (e un lucru de făcut o dată, la implementare): drumul
-// e butonul din Setări, la cine configurează firma, plus paleta Ctrl+K.
+// Importul nu stă în meniu: drumul e butonul din Setări, plus paleta Ctrl+K.
 await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
 await page.waitForTimeout(500);
 check("Setări duce la el", Boolean(await page.$('a[href="/import"]')));
@@ -53,7 +68,10 @@ check("și „Importă” rămâne blocat", (await importDisabled(page)) === tru
 // Șablonul gol, luat cu sesiunea paginii: o verificare fără erori deblochează „Importă”.
 const template = await page.evaluate(async () => {
   const res = await fetch("/api/v1/import/sablon", {
-    headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("eco_token"),
+      "X-Tenant-Id": localStorage.getItem("eco_tenant") ?? "",
+    },
   });
   const bytes = new Uint8Array(await res.arrayBuffer());
   let s = "";

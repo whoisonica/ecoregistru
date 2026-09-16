@@ -56,8 +56,9 @@ class ExcelImportIT {
     @Autowired WasteMovementRepository movementRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired ImportTemplate template;
+    @Autowired ConsultancyRepository consultancyRepository;
 
-    private String adminToken;
+    private String platformToken;
     private String viewerToken;
     private UUID companyId;
     private String workPoint;
@@ -73,7 +74,8 @@ class ExcelImportIT {
         workPoint = "Sediu " + suffix;
         workPointRepository.save(WorkPoint.builder()
                 .company(company).name(workPoint).active(true).createdAt(Instant.now()).build());
-        adminToken = jwtService.generateToken(user(company, Role.ADMIN));
+        // Importul e numai al platformei (16.09.2026), care n-are firmă: o alege cu X-Tenant-Id.
+        platformToken = jwtService.generateToken(user(null, Role.PLATFORM_ADMIN));
         viewerToken = jwtService.generateToken(user(company, Role.CLIENT_VIEWER));
         cui = "RO9" + suffix.replaceAll("\\D", "7");
     }
@@ -103,7 +105,8 @@ class ExcelImportIT {
 
     @Test
     void theTemplateHasTheTwoDataSheetsAndTheInstructions() throws Exception {
-        byte[] xlsx = mockMvc.perform(get("/api/v1/import/sablon").header("Authorization", "Bearer " + adminToken))
+        byte[] xlsx = mockMvc.perform(get("/api/v1/import/sablon").header("Authorization", "Bearer " + platformToken)
+                        .header("X-Tenant-Id", companyId.toString()))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
         try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(xlsx))) {
@@ -118,7 +121,7 @@ class ExcelImportIT {
 
     @Test
     void verifyingRunsTheWholeImportAndKeepsNothing() throws Exception {
-        send("/api/v1/import/verificare", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), adminToken)
+        send("/api/v1/import/verificare", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(false)))
                 .andExpect(jsonPath("$.partnersNew", is(1)))
@@ -131,7 +134,7 @@ class ExcelImportIT {
 
     @Test
     void importingSavesThePartnersAndTheMovementsThatNameThem() throws Exception {
-        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), adminToken)
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(true)));
 
@@ -163,9 +166,9 @@ class ExcelImportIT {
     @Test
     void theSameFileTwiceDoublesNothing() throws Exception {
         byte[] xlsx = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery()));
-        send("/api/v1/import", xlsx, adminToken).andExpect(jsonPath("$.saved", is(true)));
+        send("/api/v1/import", xlsx, platformToken).andExpect(jsonPath("$.saved", is(true)));
 
-        send("/api/v1/import", xlsx, adminToken)
+        send("/api/v1/import", xlsx, platformToken)
                 .andExpect(jsonPath("$.saved", is(true)))
                 .andExpect(jsonPath("$.partnersNew", is(0)))
                 .andExpect(jsonPath("$.partnersExisting", is(1)))
@@ -192,7 +195,7 @@ class ExcelImportIT {
         recoveryWithoutCode[6] = null;
 
         send("/api/v1/import", file(List.<Object[]>of(partnerRow()),
-                        List.<Object[]>of(disposal(), unknownCode, unknownWorkPoint, noQuantity, recoveryWithoutCode)), adminToken)
+                        List.<Object[]>of(disposal(), unknownCode, unknownWorkPoint, noQuantity, recoveryWithoutCode)), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(false)))
                 .andExpect(jsonPath("$.errors[*].row", containsInAnyOrder(3, 4, 5, 6)))
@@ -217,7 +220,7 @@ class ExcelImportIT {
         generation[6] = null;
         generation[8] = null;
 
-        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation)), adminToken)
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(generation)), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(false)))
                 .andExpect(jsonPath("$.errors[*].row", containsInAnyOrder(2)))
@@ -234,7 +237,7 @@ class ExcelImportIT {
         partnerRepository.save(Partner.builder().company(other).name("Partenerul altcuiva SRL").cui(cui)
                 .type(PartnerType.COLLECTOR).client(true).active(true).createdAt(Instant.now()).build());
 
-        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(recovery())), adminToken)
+        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(recovery())), platformToken)
                 .andExpect(jsonPath("$.errors[0].row", is(2)))
                 .andExpect(jsonPath("$.errors[0].message", containsString("nu e nici în foaia Parteneri")));
     }
@@ -248,11 +251,11 @@ class ExcelImportIT {
             wb.write(out);
             renamed = out.toByteArray();
         }
-        send("/api/v1/import/verificare", renamed, adminToken)
+        send("/api/v1/import/verificare", renamed, platformToken)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("import.template.mismatch")));
 
-        send("/api/v1/import/verificare", "%PDF-1.4 nu e Excel".getBytes(), adminToken)
+        send("/api/v1/import/verificare", "%PDF-1.4 nu e Excel".getBytes(), platformToken)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("import.file.unreadable")));
     }
@@ -293,12 +296,12 @@ class ExcelImportIT {
         }
         assertThat(bomb.length).as("comprimat trece de plasa de 12 MB").isLessThan(1024 * 1024);
 
-        send("/api/v1/import/verificare", bomb, adminToken)
+        send("/api/v1/import/verificare", bomb, platformToken)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("import.too.many.rows")));
 
         // Serverul e viu după: garda a oprit fişierul, nu l-a lăsat să consume heap-ul.
-        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(recovery())), adminToken)
+        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(recovery())), platformToken)
                 .andExpect(status().isOk());
     }
 
@@ -318,7 +321,7 @@ class ExcelImportIT {
         atTheNewSite[1] = "Depozit Nord";
         send("/api/v1/import", file(List.<Object[]>of(new Object[]{"Depozit Nord", "Str. Nordului 3"},
                         new Object[]{workPoint.toUpperCase(), null}),
-                List.<Object[]>of(), List.<Object[]>of(atTheNewSite)), adminToken)
+                List.<Object[]>of(), List.<Object[]>of(atTheNewSite)), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.saved", is(true)))
                 .andExpect(jsonPath("$.workPointsNew", is(1)))
@@ -333,25 +336,34 @@ class ExcelImportIT {
     }
 
     /**
-     * Importul e deschis operatorului, adăugarea unui punct de lucru nu (`WorkPointController`, CAN_MANAGE).
-     * Foaia nu e o ușă din spate: rândul nou e o eroare și tot fișierul rămâne afară. Cel existent trece.
+     * Importul îl facem noi, la implementare (proprietarul, 16.09.2026): nici administratorul firmei, nici
+     * consultantul, nici operatorul nu ajung la el — nici la șablon. Fișierul e valid, deci refuzul vine din
+     * rol, nu din conținut.
      */
     @Test
-    void anOperatorCannotCreateAWorkPointThroughTheImport() throws Exception {
+    void onlyThePlatformImports() throws Exception {
         Company company = companyRepository.findById(companyId).orElseThrow();
-        String operatorToken = jwtService.generateToken(user(company, Role.OPERATOR));
-        send("/api/v1/import", file(List.<Object[]>of(new Object[]{"Punct Operator", null},
-                        new Object[]{workPoint, null}), List.<Object[]>of(), List.<Object[]>of()), operatorToken)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.saved", is(false)))
-                .andExpect(jsonPath("$.workPointsExisting", is(1)))
-                .andExpect(jsonPath("$.errors", hasSize(1)))
-                .andExpect(jsonPath("$.errors[0].sheet", is("Puncte de lucru")))
-                .andExpect(jsonPath("$.errors[0].row", is(2)))
-                .andExpect(jsonPath("$.errors[0].message", containsString("administrator")));
-
-        assertThat(workPointRepository.findAllByCompany_Id(companyId)).extracting(WorkPoint::getName)
-                .containsExactly(workPoint);
+        byte[] valid = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal()));
+        // Consultantul e chiar al cabinetului care are firma: vede firma, dar tot nu importă.
+        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
+                .name("Cabinet " + companyId).cui("RO" + companyId.toString().replaceAll("\\D", "").substring(0, 8))
+                .createdAt(Instant.now()).build());
+        company.setConsultancy(cabinet);
+        companyRepository.save(company);
+        AppUser consultant = appUserRepository.save(AppUser.builder()
+                .email("consultant+" + UUID.randomUUID().toString().substring(0, 8) + "@import.ro")
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(Role.CONSULTANT).consultancy(cabinet).enabled(true).createdAt(Instant.now()).build());
+        for (Role role : List.of(Role.ADMIN, Role.CONSULTANT, Role.OPERATOR)) {
+            String token = jwtService.generateToken(role == Role.CONSULTANT ? consultant : user(company, role));
+            mockMvc.perform(get("/api/v1/import/sablon").header("Authorization", "Bearer " + token)
+                            .header("X-Tenant-Id", companyId.toString()))
+                    .andExpect(status().isForbidden());
+            send("/api/v1/import/verificare", valid, token).andExpect(status().isForbidden());
+            send("/api/v1/import", valid, token).andExpect(status().isForbidden());
+        }
+        assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();
     }
 
     /** Coloanele de după „Observații” ajung în rubricile de ambalaje și de Anexa 3 ale mișcării. */
@@ -374,7 +386,7 @@ class ExcelImportIT {
         row[26] = "CI AB 123456";
         row[27] = "B 12 ABC";
 
-        send("/api/v1/import", file(List.<Object[]>of(), List.<Object[]>of(carrier), List.<Object[]>of(row)), adminToken)
+        send("/api/v1/import", file(List.<Object[]>of(), List.<Object[]>of(carrier), List.<Object[]>of(row)), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errors", empty()))
                 .andExpect(jsonPath("$.saved", is(true)));
@@ -402,7 +414,7 @@ class ExcelImportIT {
         Object[] row = Arrays.copyOf(disposal(), 28);
         row[16] = "Da";
         row[17] = "Carton ondulat";
-        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(row)), adminToken)
+        send("/api/v1/import/verificare", file(List.<Object[]>of(), List.<Object[]>of(row)), platformToken)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errors", hasSize(1)))
                 .andExpect(jsonPath("$.errors[0].message", containsString("Material ambalaj")));
@@ -433,7 +445,7 @@ class ExcelImportIT {
                 }
             }
             wb.write(out);
-            send("/api/v1/import", out.toByteArray(), adminToken)
+            send("/api/v1/import", out.toByteArray(), platformToken)
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.saved", is(true)))
                     .andExpect(jsonPath("$.movementsNew", is(1)));
@@ -447,7 +459,7 @@ class ExcelImportIT {
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             wb.getSheet("Mișcări").getRow(0).getCell(18).setCellValue("Altceva");
             wb.write(out);
-            send("/api/v1/import/verificare", out.toByteArray(), adminToken)
+            send("/api/v1/import/verificare", out.toByteArray(), platformToken)
                     .andExpect(status().isBadRequest());
         }
     }
@@ -458,7 +470,8 @@ class ExcelImportIT {
         return mockMvc.perform(multipart(path)
                 .file(new MockMultipartFile("file", "import.xlsx",
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", xlsx))
-                .header("Authorization", "Bearer " + token));
+                .header("Authorization", "Bearer " + token)
+                .header("X-Tenant-Id", companyId.toString()));
     }
 
     private byte[] file(List<Object[]> partners, List<Object[]> movements) throws Exception {

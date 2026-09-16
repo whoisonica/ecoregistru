@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/auth/AuthContext";
+import { canImport } from "@/lib/roles";
 import { CheckCircle2, Download, FileUp } from "lucide-react";
 import { api, apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
@@ -23,7 +26,7 @@ interface ImportResult {
 }
 
 /**
- * P2.15 — importul de istoric din șablonul nostru.
+ * P2.15 — importul de istoric din șablonul nostru. Numai al platformei: îl facem noi, la implementare.
  *
  * <p>Două butoane, nu unul: „Verifică” rulează importul întreg pe server și îl întoarce înapoi, deci
  * erorile pe rând sunt exact cele pe care le-ar da „Importă”. „Importă” rămâne blocat până când
@@ -31,6 +34,13 @@ interface ImportResult {
  * import refuzat, nu o listă de rânduri de reparat.
  */
 export function ImportPage() {
+  const { user } = useAuth();
+  // Numai platforma importă (16.09.2026); o adresă scrisă de mână duce acasă, nu la un ecran refuzat.
+  if (!canImport(user?.role)) return <Navigate to="/" replace />;
+  return <ImportScreen />;
+}
+
+function ImportScreen() {
   const t = strings.importExcel;
   const qc = useQueryClient();
   const { notify } = useToast();

@@ -21,6 +21,14 @@ export function canManage(role: Role | undefined): boolean {
 }
 
 /**
+ * Aduce istoricul din Excel (`ImportController`, `CAN_IMPORT`). Numai platforma: importul e partea
+ * noastră din implementare (proprietarul, 16.09.2026). Clientul și consultantul ne trimit fișierul.
+ */
+export function canImport(role: Role | undefined): boolean {
+  return role === "PLATFORM_ADMIN";
+}
+
+/**
  * Lucrează pe mai multe firme, deci alege una: comutatorul din bara laterală, ecranul Clienți și
  * starea „nicio firmă aleasă". Pentru toți ceilalți firma vine din token.
  */
