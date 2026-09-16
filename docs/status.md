@@ -8,6 +8,13 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026 — ✅ pe producție: rândul de sub termenul de 15 martie, pe Termene, în kilograme** (`ecoregistru-app`; api neatins).
+> Scria „2026: 3 coduri, 1,060 t” — 1.060 kg în tone, cu virgula românească la zecimale, citit de proprietar ca o mie de tone („nu cred că
+> e ok”). Tonele veneau din punctul 7 al auditului (04.09, art. 48 „în tone”), premisă închisă pe 14.09 de Andreea (AF: „kg”). Acum
+> `formatKg` (`lib/units.ts`, punct la mii, fără zecimale forțate): „2026: 3 coduri, 1.060 kg”. Numai rândul de pe Termene, la cererea
+> proprietarului („la aia unde era confuzia”); tabelul în tone de pe Evidențe și pragul de 1 t/an al Anexei 2 rămân. **Probe:** `npm test`
+> 25/25 (1 nou), tsc, build.
+
 > **17.09.2026, 01:38 — ✅ pe producție: nota despre OIREP sub termenul de 25 februarie (Anexa 1 Ambalaje), pe Termene** (`ecoregistru-app` **v100**, `4a954a0`, din `main` `b2b8876`).
 > Scanarea de conformitate, pct. 1: Ordinul 794/2012 art. 1 alin. (1)–(2) cere Anexa 1 numai celor care își îndeplinesc singuri
 > obiectivele; cu un OIREP raportează OIREP-ul, iar profilul nu întreabă asta. Proprietarul a ales să i se spună omului chiar

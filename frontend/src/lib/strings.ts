@@ -1901,7 +1901,9 @@ export const strings = {
       error: "Nu am putut verifica documentul.",
       yearOpen: "Anul {year} nu s-a încheiat — cifrele cresc până la 31 decembrie.",
       evidenceEmpty: "Nicio generare înregistrată în {year}.",
-      evidenceFigures: "{year}: {codes}, {tonnes} t",
+      // Kilograme, nu tone: evidența se depune în kg (Andreea, 14.09.2026, AF), iar „1,060 t” se
+      // citea ca o mie de tone (proprietarul, 17.09.2026).
+      evidenceFigures: "{year}: {codes}, {kg} kg",
       missingCode: "{count} fără cod R/D",
       awaitingWeighing: "{count} de cântărit",
       unclassified: "{count} neîncadrate (material sau proveniență)",

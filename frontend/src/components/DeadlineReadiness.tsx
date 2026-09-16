@@ -9,7 +9,7 @@ import {
 } from "@/hooks/usePackaging";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { evidenceReadiness, reportedYear } from "@/lib/deadlines";
-import { formatTonnes } from "@/lib/units";
+import { formatKg } from "@/lib/units";
 import { strings } from "@/lib/strings";
 import { cn, countOf } from "@/lib/utils";
 import type { Deadline } from "@/lib/types";
@@ -74,7 +74,7 @@ function EvidenceReadiness({ year }: { year: number }) {
         {t.evidenceFigures
           .replace("{year}", String(year))
           .replace("{codes}", countOf(r.codes, "cod", "coduri"))
-          .replace("{tonnes}", formatTonnes(r.generatedKg))}
+          .replace("{kg}", formatKg(r.generatedKg))}
       </Line>
       <Status
         yearOpen={r.yearOpen}

@@ -44,6 +44,17 @@ export function formatTonnes(kilograms: number): string {
 }
 
 /**
+ * Kilograme, cum se ține și se depune evidența (Andreea, 14.09.2026, întrebarea AF: „kg”). Punct la
+ * mii, fără zecimale forțate: „1.060 kg”, nu „1,060 t” — pe un rând scurt, a doua se citea ca o mie
+ * de tone (proprietarul, 17.09.2026, pe Termene).
+ */
+const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
+
+export function formatKg(kilograms: number): string {
+  return kgFormat.format(kilograms);
+}
+
+/**
  * Aceeași formatare, pentru o cifră care e **deja** în tone — cum vine pragul de 1 t/an al
  * Anexei 2, calculat pe server. Trece prin același `Intl` ca `formatTonnes`, ca „0,840" să arate
  * la fel oriunde apare.
