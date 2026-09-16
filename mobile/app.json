@@ -36,6 +36,13 @@
         }
       ],
       "./plugins/mlkit-bundled"
-    ]
+    ],
+    "owner": "wastehouses-team",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "14f063d0-b0aa-44f0-898d-49fb1004fe81"
+      }
+    }
   }
 }
