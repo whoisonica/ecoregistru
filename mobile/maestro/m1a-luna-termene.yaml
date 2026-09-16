@@ -1,0 +1,72 @@
+# M1a: după login, ce vede omul într-o zi obișnuită — luna, mișcările ei, termenele și telefonul din cont.
+# Parola nu stă aici:  maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1a-luna-termene.yaml
+# Firma demo e „generator și colector" (CompanyType.BOTH), deci bara de jos are Generare și Intrări.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+# --- Acasă: cifra lunii și rândurile contului ---
+- extendedWaitUntil:
+    visible: .*ÎNREGISTRAT.*
+    timeout: 20000
+- takeScreenshot: 01-acasa
+- assertVisible:
+    id: devices
+# Firma demo n-are consultant, deci comutatorul de firmă nu trebuie să apară (isMultiCompany).
+- assertNotVisible:
+    id: pick-company
+
+# --- Dispozitive conectate: telefonul ăsta, cu numele lui ---
+- tapOn:
+    id: devices
+- extendedWaitUntil:
+    visible:
+      id: device-row
+    timeout: 15000
+- assertVisible: telefonul ăsta
+- takeScreenshot: 02-dispozitive
+# Întoarcerea. Pe iOS butonul din antet scrie „Acasă" (`headerBackTitle`); pe Android e o săgeată
+# fără text, iar butonul de sistem face treaba. `back` pe iOS e un swipe și nu prinde de fiecare dată.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: Acasă
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+
+# --- Mișcările lunii. Firma demo e „generator și colector", deci are comutatorul cu trei ecrane. ---
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- tapOn: Luna anterioară
+- tapOn: Luna anterioară
+- extendedWaitUntil:
+    visible:
+      id: movement-row
+    timeout: 15000
+- takeScreenshot: 03-generare-iulie
+
+# --- Comutatorul: „Intrări" e alt filtru pe același ecran, nu altă filă în bară ---
+- tapOn:
+    id: screen-IN
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- takeScreenshot: 04-intrari
+# „Control" trebuie să rămână în bară oricâte ecrane de mișcări ar avea firma.
+- assertVisible: Control
+
+# --- Termene. Baza demo n-are termene până la o regenerare, deci ecranul e verde și când e goală:
+#     ce se cere e un răspuns („Termen ..." sau „Niciun termen deschis."), nu un ecran care atârnă.
+- tapOn: Termene
+- extendedWaitUntil:
+    visible: "Termen .*|Niciun termen deschis."
+    timeout: 15000
+- takeScreenshot: 05-termene

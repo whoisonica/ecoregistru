@@ -67,6 +67,7 @@ public class CompanyUserService {
     CompanyRepository companyRepository;
     VerificationRecordRepository verificationRecordRepository;
     AuthenticationService authenticationService;
+    DeviceSessionService deviceSessionService;
 
     /**
      * The tenant's members: active, invited and switched-off alike.
@@ -148,6 +149,9 @@ public class CompanyUserService {
         user.setEnabled(false);
         user.setDeactivatedAt(Instant.now());
         user.setTokenVersion(user.getTokenVersion() + 1);
+        // G1 — și telefoanele. `rotate` le-ar refuza oricum pe contul ăsta, dar o sesiune oprită
+        // trebuie să fie oprită și în listă, nu abia când telefonul se întoarce să întrebe.
+        deviceSessionService.revokeAllOf(user);
         appUserRepository.save(user);
     }
 

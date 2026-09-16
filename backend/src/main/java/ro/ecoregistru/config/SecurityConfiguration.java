@@ -72,6 +72,11 @@ public class SecurityConfiguration {
                         // CORS preflight requests must always be allowed
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // G1 — „Dispozitive conectate” stă sub /auth din obișnuință, dar e treaba
+                        // contului, nu o ușă publică. Înaintea whitelistului, fiindcă în Spring
+                        // Security câștigă prima potrivire, iar /api/v1/auth/** ar înghiți-o.
+                        .requestMatchers("/api/v1/auth/devices", "/api/v1/auth/devices/**").authenticated()
+
                         // Public authentication endpoints
                         .requestMatchers(WHITELIST).permitAll()
 

@@ -61,6 +61,7 @@ public class ConsultancyService {
     AppUserRepository appUserRepository;
     VerificationRecordRepository verificationRecordRepository;
     AuthenticationService authenticationService;
+    DeviceSessionService deviceSessionService;
 
     // --- platform admin ---
 
@@ -125,6 +126,9 @@ public class ConsultancyService {
         colleague.setEnabled(false);
         colleague.setDeactivatedAt(Instant.now());
         colleague.setTokenVersion(colleague.getTokenVersion() + 1);
+        // G1 — și telefoanele. `rotate` le-ar refuza oricum pe contul ăsta, dar o sesiune oprită
+        // trebuie să fie oprită și în listă, nu abia când telefonul se întoarce să întrebe.
+        deviceSessionService.revokeAllOf(colleague);
         appUserRepository.save(colleague);
     }
 

@@ -1,0 +1,20 @@
+# Loginul cu contul demo. `PASSWORD` vine din linia de comandă, niciodată din fișier.
+appId: ro.wastehouse.app
+---
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 20000
+- tapOn:
+    id: login-email
+- inputText: admin@demo.ro
+- tapOn:
+    id: login-password
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: login-submit
+# iOS întreabă dacă salvează parola în Keychain-ul simulatorului.
+- tapOn:
+    text: Not Now
+    optional: true

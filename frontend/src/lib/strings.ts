@@ -171,9 +171,34 @@ export const strings = {
     nextMonth: "Luna următoare",
     serverUnreachable: "Nu ajung la server. Verifică legătura la internet și încearcă din nou.",
     comingSoon: "Ecranul ăsta vine în versiunea următoare a aplicației.",
-    // Consultantul și administratorul de platformă aleg firma; pe telefon comutatorul vine în M1a.
-    pickCompanyOnWeb: "Alegerea firmei vine pe telefon în curând. Până atunci, lucrează pe web.",
     account: "Contul",
+
+    // --- M1a ---
+    // Consultantul și administratorul de platformă aleg firma dintr-o listă; ceilalți n-au ce alege.
+    pickCompany: "Alege firma",
+    pickCompanyEmpty: "Nicio firmă pe contul ăsta.",
+    noCompanyYet: "Alege firma ca să vezi luna.",
+    company: "Firma",
+    // Afișajul generatorului spune „predat”, fiindcă cifra e pe direcția de ieșire (`direction=OUT`);
+    // la colector luna are și intrări, deci rămâne „înregistrat”.
+    lcdLabelOut: (month: string) => `${month.toUpperCase()} · PREDAT`,
+    monthMovements: "Mișcările lunii",
+    movementsEmpty: "Nicio mișcare în luna asta.",
+    movementsError: "Nu am putut încărca mișcările.",
+    awaitingWeighing: "cântărire la destinatar",
+    missingOperationCode: "fără cod R/D",
+    deadlinesEmpty: "Niciun termen deschis.",
+    deadlinesError: "Nu am putut încărca termenele.",
+    deadlineDue: (date: string) => `Termen ${date}`,
+    deadlineDone: (date: string) => `Bifat ${date}`,
+    devices: "Dispozitive conectate",
+    devicesEmpty: "Niciun telefon conectat.",
+    devicesError: "Nu am putut încărca dispozitivele.",
+    deviceThis: "telefonul ăsta",
+    deviceLastUsed: (date: string) => `Folosit ${date}`,
+    // Bara de jos a colectorului: „Intrare” albastru în locul listei de generare (todo-mobil §6).
+    tabIn: "Intrări",
+    tabOut: "Ieșiri",
   },
 
   login: {

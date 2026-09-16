@@ -1,40 +1,56 @@
 import { useQuery } from "@tanstack/react-query";
 import { strings } from "@web/strings";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { movementSummary, UnauthorizedError } from "../../src/api";
+import { movementSummary, movementTotals, UnauthorizedError } from "../../src/api";
 import { isMultiCompany } from "../../src/auth";
+import { useMovementScreens } from "../../src/company";
 import { GraphiteHeader } from "../../src/components/GraphiteHeader";
 import { Icon } from "../../src/components/Icon";
 import { Lcd } from "../../src/components/Lcd";
+import { MonthArrows } from "../../src/components/MonthArrows";
+import { Group, rowStyles, SectionHead } from "../../src/components/Rows";
+import { formatKg } from "../../src/format";
 import { useSession } from "../../src/session";
-import { colors, fonts, radius } from "../../src/theme";
+import { colors, radius } from "../../src/theme";
 
 export default function HomeScreen() {
-  const { session, signOut } = useSession();
+  const { session, auth, signOut } = useSession();
+  const router = useRouter();
   const now = new Date();
   const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() + 1 });
-  const isCurrentMonth = cursor.year === now.getFullYear() && cursor.month === now.getMonth() + 1;
 
-  // Consultantul și platforma n-au firmă în token; fără `X-Tenant-Id` serverul n-are ce număra (M1a).
+  // Consultantul și platforma aleg firma din comutator; până atunci serverul n-are ce număra.
   const noCompany = isMultiCompany(session?.role) && !session?.tenantId;
+  const screens = useMovementScreens();
+
+  /**
+   * Generatorul pur are un singur ecran, „Generare”, și pentru el cifra lunii e ce a **predat** —
+   * `/movements/totals` pe direcția de ieșire. Colectorul are și intrări, deci rămâne suma lunii
+   * din `/movements/summary`: o cifră pe o singură direcție ar ascunde jumătate din depozit.
+   */
+  const onlyGenerator = screens.length === 1 && screens[0] === "GENERATED";
 
   const summary = useQuery({
     queryKey: ["movements", "summary", session?.tenantId, cursor.year, cursor.month],
-    queryFn: () => movementSummary(session!.token, cursor.year, cursor.month),
-    enabled: !!session && !noCompany,
+    queryFn: () => movementSummary(auth!, cursor.year, cursor.month),
+    enabled: !!auth && !noCompany && !onlyGenerator,
+  });
+  const handed = useQuery({
+    queryKey: ["movements", "totals", "OUT", session?.tenantId, cursor.year, cursor.month],
+    queryFn: () => movementTotals(auth!, { ...cursor, direction: "OUT" }),
+    enabled: !!auth && !noCompany && onlyGenerator,
   });
 
-  useEffect(() => {
-    if (summary.error instanceof UnauthorizedError) signOut();
-  }, [summary.error, signOut]);
+  const kg = onlyGenerator ? handed.data?.quantityKg : summary.data?.quantityKg;
+  const rows = onlyGenerator ? handed.data?.rows : summary.data?.movements;
+  const query = onlyGenerator ? handed : summary;
 
-  const shift = (delta: number) =>
-    setCursor(({ year, month }) => {
-      const d = new Date(year, month - 1 + delta, 1);
-      return { year: d.getFullYear(), month: d.getMonth() + 1 };
-    });
+  useEffect(() => {
+    if (query.error instanceof UnauthorizedError) signOut();
+  }, [query.error, signOut]);
 
   const monthName = strings.months[cursor.month - 1];
   const label = cursor.year === now.getFullYear() ? monthName : `${monthName} ${cursor.year}`;
@@ -42,13 +58,13 @@ export default function HomeScreen() {
   let foot: string | undefined;
   let footTone: "ok" | "alert" = "ok";
   if (noCompany) {
-    foot = strings.mobile.pickCompanyOnWeb;
+    foot = strings.mobile.noCompanyYet;
     footTone = "alert";
-  } else if (summary.isError) {
+  } else if (query.isError) {
     foot = strings.mobile.lcdError;
     footTone = "alert";
-  } else if (summary.data) {
-    foot = summary.data.movements === 0 ? strings.mobile.lcdEmpty : strings.mobile.lcdMovements(summary.data.movements);
+  } else if (rows != null) {
+    foot = rows === 0 ? strings.mobile.lcdEmpty : strings.mobile.lcdMovements(rows);
   }
 
   const role = session ? strings.enums.role[session.role] : "";
@@ -60,79 +76,81 @@ export default function HomeScreen() {
         meta={role.toUpperCase()}
       >
         <Lcd
-          label={strings.mobile.lcdLabel(label)}
+          label={(onlyGenerator ? strings.mobile.lcdLabelOut : strings.mobile.lcdLabel)(label)}
           state={strings.mobile.lcdState}
-          value={summary.data ? formatKg(summary.data.quantityKg) : summary.isPending && !noCompany ? "" : null}
+          value={kg != null ? formatKg(kg) : query.isPending && !noCompany ? "" : null}
           unit="kg"
           foot={foot}
           footTone={footTone}
-          footRight={
-            <View style={styles.arrows}>
-              <Arrow name="left" label={strings.mobile.previousMonth} onPress={() => shift(-1)} />
-              <Arrow name="right" label={strings.mobile.nextMonth} onPress={() => shift(1)} disabled={isCurrentMonth} />
-            </View>
-          }
+          footRight={<MonthArrows cursor={cursor} onChange={setCursor} />}
         />
       </GraphiteHeader>
 
       <View style={styles.sheet}>
-        <Text style={styles.secHead}>{strings.mobile.account}</Text>
-        <View style={styles.group}>
-          <View style={styles.row}>
-            <Text style={styles.rowTitle} numberOfLines={1}>{session?.email}</Text>
-            <Text style={styles.rowSub}>{role}</Text>
+        <SectionHead>{strings.mobile.account}</SectionHead>
+        <Group>
+          <View style={rowStyles.row}>
+            <Text style={rowStyles.title} numberOfLines={1}>{session?.email}</Text>
+            <Text style={rowStyles.sub}>{role}</Text>
           </View>
+
+          {/* Comutatorul de firmă: numai cine are mai multe (consultant, platformă). */}
+          {isMultiCompany(session?.role) ? (
+            <Link
+              testID="pick-company"
+              icon="building"
+              title={strings.mobile.company}
+              value={session?.tenantName ?? strings.mobile.pickCompany}
+              onPress={() => router.push("/firme")}
+            />
+          ) : null}
+
+          <Link
+            testID="devices"
+            icon="phone"
+            title={strings.mobile.devices}
+            onPress={() => router.push("/dispozitive")}
+          />
+
           <Pressable
             testID="logout"
-            style={({ pressed }) => [styles.row, styles.rowSep, pressed && styles.rowPressed]}
+            style={({ pressed }) => [rowStyles.row, rowStyles.sep, pressed && rowStyles.pressed]}
             onPress={signOut}
           >
-            <Text style={[styles.rowTitle, { color: colors.redText }]}>{strings.nav.logout}</Text>
+            <Text style={[rowStyles.title, { color: colors.redText }]}>{strings.nav.logout}</Text>
           </Pressable>
-        </View>
+        </Group>
       </View>
     </ScrollView>
   );
 }
 
-function Arrow({ name, label, onPress, disabled }: {
-  name: "left" | "right";
-  label: string;
+function Link({ testID, icon, title, value, onPress }: {
+  testID: string;
+  icon: "building" | "phone";
+  title: string;
+  value?: string;
   onPress: () => void;
-  disabled?: boolean;
 }) {
   return (
     <Pressable
+      testID={testID}
       onPress={onPress}
-      disabled={disabled}
-      accessibilityLabel={label}
-      hitSlop={8}
-      style={[styles.arrow, disabled && { opacity: 0.25 }]}
+      style={({ pressed }) => [rowStyles.row, rowStyles.sep, styles.link, pressed && rowStyles.pressed]}
     >
-      <Icon name={name} size={20} color={colors.lcdUnit} strokeWidth={2.2} />
+      <Icon name={icon} size={21} color={colors.ink2} />
+      <View style={styles.linkText}>
+        <Text style={rowStyles.title}>{title}</Text>
+        {value ? <Text style={rowStyles.sub} numberOfLines={1}>{value}</Text> : null}
+      </View>
+      <Icon name="right" size={18} color={colors.ink3} />
     </Pressable>
   );
-}
-
-/** Kilogramele în forma românească: 1.240 sau 12,5. Zecimala rămâne doar când există. */
-function formatKg(kg: number) {
-  const [int, dec] = (Math.round(kg * 10) / 10).toFixed(1).split(".");
-  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return dec === "0" ? grouped : `${grouped},${dec}`;
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  arrows: { flexDirection: "row", gap: 6 },
-  arrow: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(124,242,169,0.06)",
-  },
   sheet: {
     backgroundColor: colors.ground,
     borderTopLeftRadius: radius.sheet,
@@ -142,18 +160,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     gap: 8,
   },
-  secHead: {
-    fontFamily: fonts.sansSemiBold,
-    fontSize: 13,
-    letterSpacing: 0.3,
-    color: colors.ink2,
-    textTransform: "uppercase",
-    paddingHorizontal: 4,
-  },
-  group: { backgroundColor: colors.card, borderRadius: radius.group, overflow: "hidden" },
-  row: { minHeight: 62, paddingHorizontal: 16, justifyContent: "center" },
-  rowSep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
-  rowPressed: { backgroundColor: "#F3F5F3" },
-  rowTitle: { fontFamily: fonts.sansMedium, fontSize: 16, color: colors.ink },
-  rowSub: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.ink2, marginTop: 1 },
+  link: { flexDirection: "row", alignItems: "center", gap: 12 },
+  linkText: { flex: 1 },
 });

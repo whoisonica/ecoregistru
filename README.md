@@ -310,8 +310,15 @@ npx expo start --dev-client                       # Metro, for both
 
 The simulator reaches the backend at `localhost:8080`, the Android emulator at `10.0.2.2:8080`; `EXPO_PUBLIC_API_URL`
 overrides both (a real phone on the same network). Screen text and types are imported straight from
-`frontend/src/lib` (`strings.ts`, `types.ts`), so new copy goes there. The screen check is a Maestro flow,
-`mobile/maestro/m0-login-acasa.yaml` — its header says how to run it.
+`frontend/src/lib` (`strings.ts`, `types.ts`, `movementScreens.ts`, `binColor.ts`), so new copy and the rule for which
+movement screens a company gets live in one place. The screen checks are Maestro flows under `mobile/maestro/` — their
+headers say how to run them.
+
+**Device sessions.** A phone signs in with `deviceName` in the login body and gets a long-lived refresh token next to
+the eight-hour access token; `POST /api/v1/auth/refresh` exchanges it for a new pair, rotating it each time. The row
+behind it lives in `device_sessions` as a SHA-256 hash, expires 60 days after last use, and is revoked by signing out,
+by a password reset and by deactivating the account. `GET /api/v1/auth/devices` is the "connected devices" list. A
+browser sends no `deviceName`, so nothing about the web session changed.
 
 ### Demo accounts (dev profile)
 

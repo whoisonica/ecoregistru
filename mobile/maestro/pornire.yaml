@@ -1,0 +1,51 @@
+# Pornirea aplicației pe clientul de dezvoltare — aceiași pași pentru orice flux.
+# Pe Android întâi `adb reverse tcp:8081 tcp:8081`, ca emulatorul să vadă Metro la localhost.
+appId: ro.wastehouse.app
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+# Development build: aplicația se leagă de Metro prin linkul clientului de dezvoltare.
+- openLink: exp+wastehouse://expo-development-client/?url=${METRO}
+# Pe Android lansatorul clientului de dezvoltare ignoră linkul la prima pornire, deci se apasă de mână.
+# Două înfățișări ale aceluiași ecran: ori a găsit Metro pe rețea și îl listează, ori cere adresa scrisă.
+- runFlow:
+    when:
+      visible: ".*:8081"
+    commands:
+      - tapOn: ".*:8081"
+- runFlow:
+    when:
+      visible: Connect
+    commands:
+      - tapOn: "http://"
+      - tapOn:
+          text: Cancel
+          optional: true
+      - tapOn: "http://"
+      - inputText: localhost:8081
+      - tapOn: Connect
+# Meniul clientului de dezvoltare se deschide singur la prima pornire și acoperă formularul.
+- extendedWaitUntil:
+    visible: "Runtime version.*|Autentificare"
+    timeout: 60000
+- tapOn:
+    text: Continue
+    optional: true
+- extendedWaitUntil:
+    visible: Reload
+    timeout: 8000
+    optional: true
+- runFlow:
+    when:
+      visible: Reload
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      visible: Reload
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "90%,48%"

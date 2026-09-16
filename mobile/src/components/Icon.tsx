@@ -10,6 +10,12 @@ const PATHS = {
   bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15zM10 20.5h4"/>',
   left: '<path d="M14.5 6 8.5 12l6 6"/>',
   right: '<path d="M9.5 6l6 6-6 6"/>',
+  // M1a: intrarea și ieșirea din depozit, firma din comutator, telefonul din „Dispozitive conectate”.
+  in: '<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4.5 19.5h15"/>',
+  out: '<path d="M12 20V9M7.5 13.5 12 9l4.5 4.5M4.5 4.5h15"/>',
+  building: '<path d="M4 20.5V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v15.5M14 9.5h5a1 1 0 0 1 1 1v10M3 20.5h18M7.5 8h3M7.5 12h3M7.5 16h3"/>',
+  phone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>',
+  check: '<path d="M5 12.5 9.5 17 19 7.5"/>',
 } as const;
 
 export type IconName = keyof typeof PATHS;

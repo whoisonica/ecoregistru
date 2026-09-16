@@ -36,6 +36,21 @@ export const colors = {
   separator: "rgba(17,21,19,0.09)",
 } as const;
 
+/**
+ * Pubela pe codul de deșeu. Care cod ce culoare are se hotărăște în `@/lib/binColor`, importat de pe
+ * web — aici sunt doar valorile, aceleași ca `bin.*` din `frontend/tailwind.config.js`, fiindcă
+ * telefonul n-are Tailwind. Un cod care nu e în listă n-are culoare, și nu se desenează nimic.
+ */
+export const binColors = {
+  paper: "#1F5FBF",
+  plastic: "#E9B600",
+  glass: "#2E8B3E",
+  bio: "#7A4E2D",
+  residual: "#4D4D4D",
+  hazard: "#C8102E",
+  metal: "#8A9299",
+} as const;
+
 export const fonts = {
   sans: "IBMPlexSans_400Regular",
   sansMedium: "IBMPlexSans_500Medium",

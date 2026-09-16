@@ -1,0 +1,20 @@
+# G1, proba pe telefon: tokenul de acces e mort, sesiunea de dispozitiv e vie — aplicația își ia
+# singură unul nou și omul nu vede nimic. Nu se poate aștepta opt ore, deci tokenul se omoară din
+# bază, între cele două porniri:
+#
+#   psql ... -c "UPDATE app_users SET token_version = token_version + 1 WHERE email='admin@demo.ro'"
+#
+# `token_version` e exact ce invalidează un JWT fără să atingă `device_sessions` (P0.4 + G1).
+# De rulat imediat după fluxul m1a, pe aceeași aplicație: `launchApp` fără `clearState`, ca sesiunea
+# din Keychain să rămână acolo unde a lăsat-o loginul.
+appId: ro.wastehouse.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: .*ÎNREGISTRAT.*
+    timeout: 30000
+# Dacă reîmprospătarea n-ar fi mers, 401-ul ar fi scos omul din cont și aici ar fi ecranul de login.
+- assertNotVisible:
+    id: login-email
+- assertVisible: Contul
+- takeScreenshot: 06-dupa-reimprospatare

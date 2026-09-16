@@ -52,6 +52,8 @@ class EndpointGuardInventoryIT {
             "AuthenticationController.login",                 // uşa de intrare
             "AuthenticationController.requestResetPassword",  // „am uitat parola", fără cont deschis
             "AuthenticationController.resetPassword",         // linkul din mail, inclusiv invitaţia
+            "AuthenticationController.refresh",               // G1 — tokenul de reîmprospătare e chiar autorizarea
+            "AuthenticationController.logout",                // G1 — stinge acel token; fără el n-ai ce stinge
             "AuthenticationController.ping",
             "AccountRequestController.submit",                // formularul public de cerere de cont
             "NetopiaIpnController.ipn"                        // rezultatul plății de la Netopia, crezut doar semnat (NetopiaIpnIT)
@@ -74,7 +76,10 @@ class EndpointGuardInventoryIT {
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT')",
             "hasAuthority('CONSULTANT')",
-            "hasAuthority('ADMIN')"
+            "hasAuthority('ADMIN')",
+            // G1 — „scoate telefonul ăsta”: singura scriere despre sesiunea celui care o cere, nu
+            // despre datele unei firme. Un prag pe rol ar fi scos CLIENT_VIEWER din propriul cont.
+            "isAuthenticated()"
     );
 
     private static final Set<RequestMethod> WRITES =

@@ -2,25 +2,36 @@ import { strings } from "@web/strings";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Slot, usePathname, useRouter, type Href } from "expo-router";
+import { type MovementScreen } from "@/lib/movementScreens";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { canWrite } from "../../src/auth";
+import { SCREEN_LABEL, useCompany, useMovementScreens } from "../../src/company";
 import { Icon, type IconName } from "../../src/components/Icon";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
 
 type Tab = { href: Href; path: string; label: string; icon: IconName };
 
-// Bara generatorului din prototip. Varianta colectorului (Intrare albastru) vine cu tipul firmei, în M1a.
-const LEFT: Tab[] = [
-  { href: "/", path: "/", label: strings.mobile.tabHome, icon: "home" },
-  { href: "/generare", path: "/generare", label: strings.nav.movementsGenerator, icon: "list" },
-];
+/**
+ * Bara de jos, cinci locuri, ca în prototipul aprobat: Acasă · Mișcări · „+” · Termene · Control.
+ *
+ * <p>Locul „Mișcări” poartă eticheta primului ecran al firmei — „Generare” la generator, „Intrări”
+ * la colector —, citită din `@/lib/movementScreens`, aceeași regulă ca pe web. Când firma are mai
+ * multe (un „generator și colector” are trei), restul stau pe comutatorul din capul ecranului, nu în
+ * bară: șapte locuri n-ar încăpea, iar ce ar fi ieșit afară e „Control”, adică ecranul pentru care
+ * se scoate telefonul când vine Garda.
+ *
+ * <p>Cât timp tipul firmei nu se știe (consultant fără firmă aleasă, cerere în drum), locul poartă
+ * eticheta neutră „Mișcări”: o filă ghicită ar duce omul pe ecranul altei firme.
+ */
+const HOME: Tab = { href: "/", path: "/", label: strings.mobile.tabHome, icon: "home" };
 const RIGHT: Tab[] = [
   { href: "/termene", path: "/termene", label: strings.nav.deadlines, icon: "clock" },
   { href: "/control", path: "/control", label: strings.mobile.tabControl, icon: "shield" },
 ];
+const MOVEMENT_ICON: Record<MovementScreen, IconName> = { GENERATED: "list", IN: "in", OUT: "out" };
 
 export default function TabsLayout() {
   return (
@@ -33,16 +44,36 @@ export default function TabsLayout() {
 
 function TabBar() {
   const { session } = useSession();
+  const company = useCompany();
+  const screens = useMovementScreens();
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  // Eticheta numește ecranul numai când firma are unul singur. Cu mai multe ar fi mințit: bara ar
+  // fi scris „Generare" în timp ce omul stă pe „Intrări", fiindcă acolo se schimbă, nu aici.
+  const only = screens.length === 1 ? screens[0] : undefined;
+  const left: Tab[] = [
+    HOME,
+    {
+      href: "/miscari",
+      path: "/miscari",
+      label: only ? SCREEN_LABEL[only] : strings.nav.movements,
+      icon: only ? MOVEMENT_ICON[only] : "list",
+    },
+  ];
+
+  // Colectorul lucrează pe intrări, deci „+” îi e albastru, ca pe ecranul de intrare din prototip.
+  const collector = company.data?.type === "COLLECTOR";
+  const plusColors: [string, string] = collector ? [colors.blueHi, colors.blue] : [colors.greenHi, colors.green];
+
   const item = (tab: Tab) => {
     const active = pathname === tab.path;
-    const tint = active ? colors.greenText : colors.ink3;
+    const tint = active ? (collector ? colors.blue : colors.greenText) : colors.ink3;
     return (
       <Pressable
         key={tab.path}
+        testID={`tab-${tab.path.replace("/", "") || "acasa"}`}
         style={styles.item}
         onPress={() => router.replace(tab.href)}
         accessibilityRole="tab"
@@ -56,11 +87,11 @@ function TabBar() {
 
   const content = (
     <View style={[styles.row, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-      {LEFT.map(item)}
+      {left.map(item)}
       {/* VIEWER nu vede „+” (todo-mobil §6): locul rămâne gol, ca celelalte să nu sară. */}
       {canWrite(session?.role) ? (
         <Pressable style={styles.item} onPress={() => router.replace("/adauga")} accessibilityRole="button">
-          <LinearGradient colors={[colors.greenHi, colors.green]} style={styles.plus}>
+          <LinearGradient colors={plusColors} style={[styles.plus, collector && styles.plusBlue]}>
             <Icon name="plus" size={24} color="#fff" strokeWidth={2.6} />
           </LinearGradient>
           <Text style={[styles.label, { color: colors.ink2 }]}>{strings.mobile.tabAdd}</Text>
@@ -107,4 +138,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
+  plusBlue: { shadowColor: colors.blue },
 });

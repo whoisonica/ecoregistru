@@ -19,6 +19,7 @@ import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.VerificationRecord;
+import ro.ecoregistru.enums.DevicePlatform;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.EmailException;
@@ -51,6 +52,7 @@ public class AuthenticationService {
     final AppUserRepository appUserRepository;
     final VerificationRecordRepository verificationRecordRepository;
     final RateLimiter rateLimiter;
+    final DeviceSessionService deviceSessionService;
 
     private static final int CODE_TTL_MINUTES = 30;
     /** O invitație se deschide când ajunge omul la mail, nu în jumătate de oră. */
@@ -95,7 +97,37 @@ public class AuthenticationService {
 
         // The password was right, so this attempt costs nothing: give the token back.
         rateLimiter.refund(RateLimiter.LOGIN_PER_EMAIL, email);
+
+        // G1 — un dispozitiv primește pe lângă token și dreptul de a cere altul peste opt ore.
+        // Webul nu trimite `deviceName`, deci nu se schimbă nimic pentru el.
+        if (request.deviceName() != null && !request.deviceName().isBlank()) {
+            DevicePlatform platform =
+                    request.devicePlatform() == null ? DevicePlatform.ANDROID : request.devicePlatform();
+            var issued = deviceSessionService.issue(user, request.deviceName(), platform);
+            return buildAuthResponse(user).toBuilder()
+                    .refreshToken(issued.token())
+                    .deviceSessionId(issued.session().getId())
+                    .build();
+        }
         return buildAuthResponse(user);
+    }
+
+    /**
+     * G1 — telefonul schimbă tokenul de reîmprospătare pe unul nou și pe încă opt ore de acces.
+     *
+     * <p>Nu e „încă un login”: nu trece prin {@code authenticationManager}, deci nu se numără la
+     * limitarea pe adresă. Un token de reîmprospătare nu se poate ghici (256 de biți), iar unul greșit
+     * nu spune nimic despre parolă — ce ar proteja limitarea aici e deja protejat de entropie.
+     */
+    // Fără `@Transactional` aici, dinadins: `rotate` își deschide singur una, cu `noRollbackFor`
+    // pentru refuzuri. O tranzacție în jurul ei ar fi devenit cea care hotărăște, iar ea ar fi
+    // anulat stingerea rândului pe care refuzul tocmai a scris-o.
+    public AuthenticationResponse refresh(String refreshToken) {
+        var issued = deviceSessionService.rotate(refreshToken);
+        return buildAuthResponse(issued.session().getUser()).toBuilder()
+                .refreshToken(issued.token())
+                .deviceSessionId(issued.session().getId())
+                .build();
     }
 
     @Transactional(noRollbackFor = EmailException.class)
@@ -149,6 +181,9 @@ public class AuthenticationService {
         // the account back by resetting the password would be sharing it with whoever still had a
         // token: the account stays enabled, so nothing else about it would have changed.
         user.setTokenVersion(user.getTokenVersion() + 1);
+        // G1 — și telefoanele. Fără asta, `tokenVersion` scotea din cont fiecare sesiune de browser
+        // și lăsa vie exact pe cea lungă: telefonul ar fi cerut un token nou și l-ar fi primit.
+        deviceSessionService.revokeAllOf(user);
         // Setting a password via the reset link also activates the account. This is what makes
         // the platform-admin invite flow work: invited users start disabled and become usable
         // once they pick their own password. (Harmless for already-enabled users.)

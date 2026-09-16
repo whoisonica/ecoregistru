@@ -3,6 +3,37 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **16.09.2026, ~11:00 — ✅ local (ramura `feat/mobil`, nedeployat): aplicația mobilă, felia M1a — o zi obișnuită.**
+> Ramura rebazată peste `origin/main` (`f21db62`); `tsc` și `npm run build` în `frontend` **curate după
+> `strings.mobile`** — golul rămas din M0 e închis.
+>
+> **Backend, G1 — sesiunea pe dispozitiv** (`V50`, tabel nou `device_sessions`; `V49` rămâne rezervat depozitului).
+> Tokenul de acces rămâne ce era: opt ore, semnat, necitit din bază. Nou e ce se întâmplă după: un login care **spune
+> cum îl cheamă telefonul** (`deviceName`) primește și un token de reîmprospătare, schimbat la `POST /auth/refresh` pe
+> unul nou plus încă opt ore. Rândul din bază ține **SHA-256** peste token, nu tokenul; **se rotește la fiecare
+> folosire** (cel vechi nu mai deschide nimic); moare la ieșire, la 60 de zile de nefolosire, la schimbarea parolei și
+> la dezactivarea contului. `GET /auth/devices` e „Dispozitive conectate”, `DELETE /auth/devices/{id}` scoate un
+> telefon — singura scriere gatuită cu `isAuthenticated()`, fiindcă e despre sesiunea celui care cere, nu despre datele
+> unei firme (și `CLIENT_VIEWER` are telefon). **Webul nu trimite `deviceName`, deci nu primește nimic nou.**
+> `DeviceSessionIT`, **17 teste**, fiecare regulă cu proba negativă rulată (opt reguli scoase pe rând, testul cade de
+> fiecare dată). Suita **755 de teste, 92 de clase, 0 eșecuri, 3 sărite** (era 738/91).
+> Două capcane prinse de teste, nu de citit: (1) `revoke` pe drumul de refuz se scria și se **anula**, fiindcă refuzul
+> e o excepție — `noRollbackFor` pe `rotate` **și** `@Transactional` scos de pe `AuthenticationService.refresh`, altfel
+> tranzacția din afară hotăra ea; (2) `GET /deadlines` cere `year` — §3 din `todo-mobil.md` spunea altceva.
+>
+> **Telefonul.** Comutator de firmă (`X-Tenant-Id`) pentru consultant și platformă, cu golirea cache-ului la schimbare;
+> „Dispozitive conectate” cu eticheta „telefonul ăsta”; mișcările lunii cu totalurile serverului deasupra și rândurile
+> lipsă în rândul de alertă („1 cântărire la destinatar”, „N fără cod R/D”); termenele anului, restanțele întâi; pubela
+> pe codul de deșeu. Bara de jos rămâne cea din prototip — **cinci locuri, cu „Control” la locul lui**: ecranele de
+> mișcări ale unei firme „generator și colector” sunt trei, iar băgate în bară ar fi scos afară tocmai ecranul pentru
+> care se ia telefonul când vine Garda, deci stau pe un comutator în capul ecranului. Regula care le alege e
+> `@/lib/movementScreens` de pe web, importată, nu rescrisă — la fel `binColor.ts`.
+> **Proba:** două fluxuri Maestro (`m1a-luna-termene`, `m0-login-acasa`) verzi pe **iPhone 17 / iOS 26.5** și pe
+> **Android 16**, capturile privite. G1 probat pe telefon cu `m1a-reimprospatare`: `token_version` mărit din bază omoară
+> tokenul de acces fără să atingă sesiunea de dispozitiv, iar aplicația își ia singură unul nou și nu scoate pe nimeni
+> din cont — cu **control pozitiv**, sesiunea revocată duce la ecranul de login, deci verdele nu e fals.
+> Backendul atins, deci felia are migrare: la deploy se ia numărul liber atunci.
+>
 > **15.09.2026, 23:54 — ✅ pe producție: două reparații găsite la analiza codului.** `ecoregistru-api` **v92**
 > (`7e09df0`, fără migrare, schema `V48`); frontendul e neschimbat (app v73); monorepo `c0d4584`. (1) Linia unei operațiuni
 > de cântar nu se mai modifică, nu se mai cântărește și nu se mai șterge prin `/api/v1/movements/{id}`

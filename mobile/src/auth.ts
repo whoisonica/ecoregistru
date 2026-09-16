@@ -13,6 +13,19 @@ export interface AuthResponse {
   tenantName: string | null;
   consultancyName: string | null;
   email: string;
+  /** G1 — sesiunea lungă. Vine numai fiindcă loginul a spus cum cheamă telefonul. */
+  refreshToken: string | null;
+  /** G1 — care rând din „Dispozitive conectate” e telefonul ăsta. */
+  deviceSessionId: string | null;
+}
+
+/** Un rând din `GET /auth/devices`. Oglinda lui `DeviceSessionResponse`. */
+export interface DeviceSessionRow {
+  id: string;
+  deviceName: string;
+  platform: "IOS" | "ANDROID";
+  createdAt: string;
+  lastUsedAt: string;
 }
 
 /** Aceleași praguri ca `frontend/src/lib/roles.ts`; backendul rămâne cel care refuză. */
