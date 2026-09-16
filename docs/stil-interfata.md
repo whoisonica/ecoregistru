@@ -102,23 +102,31 @@ Select-ul nativ rămâne pentru liste lungi (parteneri, puncte de lucru, coduri 
 
 ---
 
-## Paginile de dinaintea contului — direcția „Poster”
+## Paginile de dinaintea contului — direcția „Poster”, în paleta landingului
 
 *Aleasă de proprietar pe 16.09.2026 din trei machete (Aurora · **Poster** · Editorial), după ce trei variante în
-stilul panoului (LCD, taste, bon) fuseseră respinse: pe login și pe cerere nu se pune „aparatul”.*
+stilul panoului (LCD, taste, bon) fuseseră respinse: pe login și pe cerere nu se pune „aparatul”. Coloana verde
+plină din machetă a fost și ea respinsă în aceeași seară („prea deranjantă”; „culorile din landing îmi plac”).*
 
-`components/PublicShell.tsx`, folosit de login și de cererea de cont. **Stânga, verde** (`from-brand-400 via-brand-700
-to-brand-900`, cu o lumină difuză `lcd-digit` în colț): semnul, un titlu mare (56px pe login, 44px pe cerere), o
-propoziție, apoi ce vrea pagina să arate — pe login trei tile-uri cu ecrane care chiar există (Anexa 1, 15 martie,
-Dosarul de control), pe cerere pașii 01–03 (`PosterStep`, un `ol`). **Dreapta, alb**: formularul, cu rubrici de
-48px (`h-12`), titlul de 32px, linkul spre cealaltă pagină în colț și subsolul juridic o singură dată. Pe telefon
-verdele devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii. **Cererea e în trei pași** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de rubrici pe o pagină):
+`components/PublicShell.tsx`, folosit de login și de cererea de cont. **Stânga, pe hârtie deschisă**
+(`surface-muted`, linie subțire spre dreapta): semnul, rândul mic verde cu linie de pe landing
+(`strings.publicKicker`), un titlu mare negru (700, spațiere −0,03em; 56px pe login, 44px pe cerere) cu **ultima
+frază în verdele adânc al mărcii** (`text-mark`, ca „Fără să le mai ții minte.” de pe landing), o propoziție, apoi
+ce vrea pagina să arate — pe login trei tile-uri albe cu ecrane care chiar există (Anexa 1, 15 martie, Dosarul de
+control), pe cerere cuprinsul formularului (`PosterStep`, un `ol`) și trei „fapte” cu punct verde (`PosterFact`).
+**Dreapta, alb**: formularul, cu rubrici de 48px (`h-12`), titlul de 32px, linkul spre cealaltă pagină în colț și
+subsolul juridic o singură dată. **Butoanele principale și linkurile de aici sunt în `mark`** (`publicButtonClass`),
+verdele landingului `#047857`, nu `brand`-ul aplicației: cine vine de pe wastehouse.ro nu simte că a schimbat
+site-ul. Tokenul `mark` (`DEFAULT` · `hover` · `soft`) stă în `tailwind.config.js` și e doar pentru paginile publice.
+Pe telefon coloana din stânga devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii.
+
+**Cererea e în trei pași** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de rubrici pe o pagină):
 „Detalii despre compania ta” (CUI, denumire, „Ce faceți cu deșeurile” ca `ChoiceCards`) · „Datele tale de contact”
 (nume, telefon, email) · „Deșeurile companiei tale” (etichetele bifabile + un rând liber). Tot ce nu e obligatoriu
 stă pliat la pasul 3, într-un singur bloc: „Detalii care ne scutesc de un telefon · Adaugă”. Fiecare „Continuă”
-își verifică pasul; trimiterea întoarce omul la pasul rubricii greșite. Pașii de pe verde sunt cuprinsul
+își verifică pasul; trimiterea întoarce omul la pasul rubricii greșite. Pașii din stânga sunt cuprinsul
 formularului: cel curent aprins, sub cei trecuți ce s-a completat. Titlurile sunt prietenoase, nu întrebări
-(„Cine sunteți?” a fost respins). Parola uitată și alegerea parolei rămân pe cardul vechi, de rescris când se atinge.
+(„Cine sunteți?” a fost respins). Parola uitată și alegerea parolei rămân pe cardul vechi, de rescris când se ating.
 
 ## Ecranele de mișcări
 

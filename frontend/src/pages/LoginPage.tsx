@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
-import { CornerLink, PosterTile, PublicShell } from "@/components/PublicShell";
+import { CornerLink, PosterTile, PublicShell, publicButtonClass } from "@/components/PublicShell";
 import { apiErrorMessage, LOGIN_EXPIRED_PARAM, REDIRECT_PARAM } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const t = strings.login;
 
@@ -52,6 +53,7 @@ export function LoginPage() {
     // aerisit în dreapta. Tile-urile spun ce găsești înăuntru — ecrane care chiar există.
     <PublicShell
       headline={t.posterHeadline}
+      accent={t.posterAccent}
       lede={t.posterLede}
       aside={
         <div className="hidden flex-wrap gap-3.5 lg:flex">
@@ -97,7 +99,7 @@ export function LoginPage() {
               <Label htmlFor="login-password" className="text-[0.8125rem] text-content-strong">
                 {t.password}
               </Label>
-              <Link to="/parola-uitata" className="mb-1 text-[0.8125rem] font-medium text-brand hover:underline">
+              <Link to="/parola-uitata" className="mb-1 text-[0.8125rem] font-medium text-mark hover:underline">
                 {t.forgotPassword}
               </Link>
             </div>
@@ -119,13 +121,13 @@ export function LoginPage() {
               {error}
             </div>
           )}
-          <Button type="submit" size="lg" className="w-full" loading={loading}>
+          <Button type="submit" size="lg" className={cn("w-full", publicButtonClass)} loading={loading}>
             {loading ? t.loading : t.submit}
           </Button>
         </form>
         {/* The register is closed: there is no sign-up, only a request support acts on. */}
         <p className="text-sm text-content-muted lg:hidden">
-          <Link to="/cerere-cont" className="font-medium text-brand hover:underline">
+          <Link to="/cerere-cont" className="font-medium text-mark hover:underline">
             {strings.accountRequest.linkFromLogin}
           </Link>
         </p>

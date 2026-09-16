@@ -57,6 +57,14 @@ export default {
           900: "#004B24",
           950: "#022C16",
         },
+        // Verdele semnului mărcii și al landingului (wastehouse.ro): `--green` de acolo, cu
+        // apăsatul și fondul lui deschis. Pe paginile de dinaintea contului (login, cerere), ca
+        // omul care vine de pe landing să nu simtă că a schimbat site-ul. În aplicație rămâne `brand`.
+        mark: {
+          DEFAULT: "#047857",
+          hover: "#065F46",
+          soft: "#DCFCE7",
+        },
         // Tokens semantice, legate de variabilele din index.css. Rostul lor e ca „fundalul unei
         // suprafețe" să fie o singură decizie, luată într-un loc — nu `bg-white` scris de 40 de
         // ori, care nu se poate schimba fără să le atingi pe toate.

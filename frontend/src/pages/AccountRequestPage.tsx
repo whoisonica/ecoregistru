@@ -19,7 +19,7 @@ import { ChoiceCards } from "@/components/ui/choice-cards";
 import { MarketRolePicker } from "@/components/CompanyProfileFields";
 import { PillGroup } from "@/components/ui/pill-group";
 import { LegalNotice } from "@/components/LegalFooter";
-import { CornerLink, PosterStep, PublicShell } from "@/components/PublicShell";
+import { CornerLink, PosterFact, PosterStep, PublicShell, publicButtonClass } from "@/components/PublicShell";
 
 const t = strings.accountRequest;
 const codeLabels = strings.enums.wasteOperationCode;
@@ -352,6 +352,7 @@ export function AccountRequestPage() {
       split="narrow"
       align="top"
       headline={t.posterHeadline}
+      accent={t.posterAccent}
       lede={t.posterLede}
       aside={
         <div className="flex flex-col gap-7">
@@ -374,12 +375,9 @@ export function AccountRequestPage() {
             />
             <PosterStep index={3} title={t.step3Name} body={t.step3Lead} current={!sent && step === 3} done={sent} />
           </ol>
-          <div className="flex flex-col gap-1.5 border-t border-white/20 pt-5 text-xs text-white/75">
+          <div className="flex flex-col gap-1.5 border-t border-line pt-5">
             {[t.noteRequired, t.noteAccess, t.posterNote].map((line) => (
-              <div key={line} className="flex items-center gap-2.5">
-                <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-sm bg-lcd-digit" />
-                {line}
-              </div>
+              <PosterFact key={line}>{line}</PosterFact>
             ))}
           </div>
         </div>
@@ -389,7 +387,7 @@ export function AccountRequestPage() {
       {sent ? (
         <div className="flex max-w-[560px] flex-col gap-8">
           <div className="flex flex-col gap-3">
-            <CheckCircle2 className="h-12 w-12 text-brand" aria-hidden />
+            <CheckCircle2 className="h-12 w-12 text-mark" aria-hidden />
             <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.successTitle}</h1>
             <p className="text-content-muted">{t.successBody}</p>
           </div>
@@ -416,14 +414,14 @@ export function AccountRequestPage() {
             <p className="mt-4 border-t border-line pt-3 text-xs text-content-muted">{t.successSpam}</p>
           </Card>
 
-          <Link to="/login" className="text-sm font-medium text-brand hover:underline">
+          <Link to="/login" className="text-sm font-medium text-mark hover:underline">
             {t.backToLogin}
           </Link>
         </div>
       ) : (
         <form ref={formRef} onSubmit={handleSubmit} className="flex w-full max-w-[680px] flex-col gap-9" noValidate>
           <div className="flex flex-col gap-2">
-            <span className="font-mono text-xs font-medium uppercase tracking-[0.08em] text-brand">
+            <span className="font-mono text-xs font-medium uppercase tracking-[0.08em] text-mark">
               {t.stepOf.replace("{n}", String(step)).replace("{name}", stepNames[step - 1])}
             </span>
             <h1 id="ar-step-title" className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">
@@ -870,18 +868,18 @@ export function AccountRequestPage() {
               <button
                 type="button"
                 onClick={() => goTo((step - 1) as 1 | 2)}
-                className="text-sm font-medium text-brand hover:underline"
+                className="text-sm font-medium text-mark hover:underline"
               >
                 ← {t.backStep}
               </button>
             )}
             {step < 3 ? (
-              <Button type="button" size="lg" onClick={nextStep}>
+              <Button type="button" size="lg" className={publicButtonClass} onClick={nextStep}>
                 {t.continueStep} →
               </Button>
             ) : (
               <div className="flex flex-col items-end gap-2">
-                <Button type="submit" size="lg" loading={submitMut.isPending}>
+                <Button type="submit" size="lg" className={publicButtonClass} loading={submitMut.isPending}>
                   {submitMut.isPending ? t.submitting : t.submit}
                 </Button>
                 {/* Sub buton, nu deasupra lui: se citește în drum spre apăsare. */}

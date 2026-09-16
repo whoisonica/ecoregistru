@@ -5,6 +5,8 @@
 export const strings = {
   appName: "WasteHouse",
   tagline: "Evidența și raportarea gestiunii deșeurilor",
+  // Rândul mic verde cu linie de deasupra titlului, pe paginile publice — același ca pe landing.
+  publicKicker: "Evidența gestiunii deșeurilor",
 
   header: {
     // Shown above the nav: the current company. For PLATFORM_ADMIN it's a tenant switcher.
@@ -289,7 +291,8 @@ export const strings = {
     subtitle: "Cu emailul și parola contului tău.",
     // Verdele din stânga (direcția „Poster”, 16.09.2026): promisiunea produsului, în limbajul
     // patronului, și trei tile-uri cu ecrane care chiar există în aplicație.
-    posterHeadline: "Evidența deșeurilor, fără dosarul de hârtie.",
+    posterHeadline: "Evidența deșeurilor,",
+    posterAccent: "fără dosarul de hârtie.",
     posterLede: "Registrul, anexele și termenele legale, ținute pe punct de lucru și gata de depus.",
     tile1Kicker: "Anexa 1",
     tile1Title: "Generare",
@@ -2555,7 +2558,8 @@ export const strings = {
     step3: "Primești datele de acces pe email, în 1–2 zile lucrătoare.",
     // Verdele din stânga (direcția „Poster”, 16.09.2026): titlul, apoi cuprinsul formularului —
     // cei trei pași ai lui, 01–03, cu pasul curent aprins și ce s-a completat scris sub cei trecuți.
-    posterHeadline: "Cere un cont.\nRestul îl facem noi.",
+    posterHeadline: "Cere un cont.",
+    posterAccent: "Restul îl facem noi.",
     posterLede: "Conturile le creează echipa WasteHouse, din acest formular.",
     step1Name: "Compania",
     step1Lead: "Cum se numește și ce face cu deșeurile.",
