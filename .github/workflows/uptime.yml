@@ -1,0 +1,52 @@
+# Monitorizarea din afară (16.09.2026): cineva trebuie să afle că aplicația nu răspunde înaintea clientului.
+#
+# Sentry vede excepțiile unei aplicații care rulează; nu vede un dyno oprit, un build căzut la pornire, un
+# domeniu expirat sau un certificat nereînnoit — atunci nu mai e nimic care să trimită o eroare. Verificarea
+# de aici vine din afara Heroku, la fiecare 10 minute, pe cele trei uși pe care intră un client:
+#
+#   1. API-ul: `/actuator/health` trebuie să spună `UP` (indicatorul de mail e oprit dinadins, vezi
+#      `application.yml`, deci `DOWN` înseamnă baza sau aplicația, nu furnizorul de mail);
+#   2. aplicația web `app.wastehouse.ro`: 200 și pagina care încarcă bundle-ul;
+#   3. landingul `wastehouse.ro`: 200.
+#
+# Când o rulare cade, GitHub trimite mail celui care a modificat ultimul programarea (Settings →
+# Notifications → Actions → „Send notifications for failed workflows only”). Programarea GitHub nu e exactă
+# (poate întârzia câteva minute la aglomerare), iar un repo fără niciun commit 60 de zile își oprește
+# singur rularile programate. Pentru o alertă pe telefon în sub un minut: un cont UptimeRobot/Better Stack
+# pe aceleași trei adrese.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: aplicația răspunde
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: API — /actuator/health e UP
+        run: |
+          # Două reîncercări la 20 s: un deploy repornește dyno-ul (un singur dyno Basic, fără preboot),
+          # iar pauza de pornire a Java nu e o cădere.
+          body=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 \
+            https://ecoregistru-api-5ba7c1d5e3e3.herokuapp.com/actuator/health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"UP"'
+
+      - name: Aplicația web — app.wastehouse.ro
+        run: |
+          html=$(curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 https://app.wastehouse.ro/)
+          echo "$html" | grep -q '/assets/index-' || { echo "pagina nu încarcă bundle-ul"; exit 1; }
+
+      - name: Landingul — wastehouse.ro
+        run: curl -fsS --retry 2 --retry-delay 20 --retry-all-errors -m 20 -o /dev/null https://wastehouse.ro/
