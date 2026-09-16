@@ -1,5 +1,12 @@
 # Probe de interfaţă
 
+👣 **16.09.2026, 22:40 — proba 24 (`24-primii-pasi.mjs`)**: firma demo (care are tot) nu vede „Primii pași”; o firmă nouă, creată
+prin API ca platformă, vede patru pași în ordine, cu rubricile lipsă numite și drumul spre Clienți; un punct de lucru pus prin API
+bifează numai pasul lui; 375px fără derulare laterală; „Ascunde” ține după reîncărcare. Creează la fiecare rulare o firmă „Proba 24
+Primii Pași <număr>” (o firmă refolosită ar avea deja punctul de lucru). Termenele ratate (api v107) nu au probă e2e: cer o scadență
+trecută după 17.09.2026, deci le apără `DeadlineIT`, `DeadlineAlertSchedulerIT`, `ConsultancyOverviewIT` și `MissedDeadlinePolicyTest`.
+**24/24** pe `eco_e2e_primii2`.
+
 📄 **16.09.2026, 22:00 — starea documentului pe termen**: proba 9 cere pe 15 martie cifrele anului raportat
 („AN: N coduri, X t”) și, la firma demo (colector cu preluări 15 01), termenul Anexei 3 pe 25.02. **23/23** pe `eco_e2e_depuneri`.
 
