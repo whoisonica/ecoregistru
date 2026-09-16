@@ -3090,7 +3090,7 @@ export const strings = {
     problem: "Problema",
     saved: "Import salvat: {workPoints} puncte de lucru, {partners} parteneri și {movements} mișcări noi.",
     afterImport:
-      "Întrebările despre ambalaje și datele de transport pentru Anexa 3 se completează după import, pe fiecare mișcare.",
+      "Ce n-a fost în fișier (ambalajele, transportul pentru Anexa 3, CNP-ul șoferului) se completează în aplicație, pe fiecare mișcare.",
     warningsTitle: "{n} rânduri sărite: sunt deja în firmă. Nu opresc importul.",
     historyTitle: "Importurile firmei",
     historyHint:
