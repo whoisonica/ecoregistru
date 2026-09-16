@@ -1,5 +1,11 @@
 # Probe de interfaţă
 
+🔑 **17.09.2026 — proba 25 (`25-parola-poster.mjs`)**: „Parolă uitată” și „Alege-ți parola” stau în `PublicShell`, ca loginul
+(semnul în `header`, fraza verde din titlu, linkul din colț spre login, un singur subsol, butonul în `bg-mark`); adresa fără cont
+primește același răspuns; fără cod nu apare formularul; parolele diferite se opresc în ecran; codul greșit primește 404 și eroarea
+pe ecran; 375px fără derulare laterală și fără „faptele” din stânga. **Negativă:** cu paginile vechi (cardul centrat), 6 verificări
+cad. Nu lasă nimic în urmă.
+
 👣 **16.09.2026, 22:40 — proba 24 (`24-primii-pasi.mjs`)**: firma demo (care are tot) nu vede „Primii pași”; o firmă nouă, creată
 prin API ca platformă, vede patru pași în ordine, cu rubricile lipsă numite și drumul spre Clienți; un punct de lucru pus prin API
 bifează numai pasul lui; 375px fără derulare laterală; „Ascunde” ține după reîncărcare. Creează la fiecare rulare o firmă „Proba 24

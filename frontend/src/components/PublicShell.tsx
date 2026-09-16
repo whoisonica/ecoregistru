@@ -174,12 +174,39 @@ export function PosterStep({
   );
 }
 
+/** Eroarea unui formular public: chenar roșu subțire cu pătrățel, ca semnele din aplicație. */
+export function PublicError({ children }: { children: ReactNode }) {
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-md border border-state-bad px-3 py-2 text-sm text-state-bad-text"
+    >
+      <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-bad" />
+      {children}
+    </div>
+  );
+}
+
 /** Rândul mic cu punct verde, ca „faptele” de sub titlul landingului. */
 export function PosterFact({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 text-xs text-content-muted">
       <span aria-hidden className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-mark" />
       {children}
+    </div>
+  );
+}
+
+/**
+ * Coloana de „fapte” de sub titlu, despărțită de o linie (parola uitată, alegerea parolei). Pe
+ * telefon lipsește, ca la tile-urile loginului: acolo formularul trebuie să fie primul.
+ */
+export function PosterFacts({ lines }: { lines: readonly string[] }) {
+  return (
+    <div className="hidden flex-col gap-1.5 border-t border-line pt-5 lg:flex">
+      {lines.map((line) => (
+        <PosterFact key={line}>{line}</PosterFact>
+      ))}
     </div>
   );
 }

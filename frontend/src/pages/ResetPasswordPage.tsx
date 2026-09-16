@@ -3,10 +3,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { BrandName } from "@/components/BrandName";
+import { cn } from "@/lib/utils";
+import { CornerLink, PosterFacts, PublicError, PublicShell, publicButtonClass } from "@/components/PublicShell";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { LegalFooter, LegalNotice } from "@/components/LegalFooter";
+import { LegalNotice } from "@/components/LegalFooter";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
@@ -53,38 +53,46 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
-      <Card className="w-full max-w-sm p-8">
-        <div className="mb-6 text-center">
-          <div className="text-2xl font-bold text-brand"><BrandName /></div>
-          <div className="text-sm text-content-muted">{strings.tagline}</div>
-        </div>
-
+    // Direcția „Poster”, ca loginul (docs/stil-interfata.md, „Paginile de dinaintea contului”).
+    <PublicShell
+      headline={t.posterHeadline}
+      accent={t.posterAccent}
+      lede={t.posterLede}
+      aside={<PosterFacts lines={t.posterFacts} />}
+      corner={<CornerLink prompt={t.haveAccount} label={t.goToLogin} to="/login" />}
+    >
+      <div className="mx-auto flex w-full max-w-[400px] flex-col gap-8">
         {done ? (
-          <div className="space-y-4 text-center">
-            <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
-            <p className="text-sm text-content-strong">{t.done}</p>
-            <Button className="w-full" onClick={() => navigate("/login")}>
+          <>
+            <div className="flex flex-col gap-3">
+              <CheckCircle2 className="h-12 w-12 text-mark" aria-hidden />
+              <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.done}</h1>
+            </div>
+            <Button size="lg" className={cn("w-full", publicButtonClass)} onClick={() => navigate("/login")}>
               {t.toLogin}
             </Button>
-          </div>
+          </>
         ) : !code ? (
           // A bare /reseteaza-parola with nothing after it: say what is missing rather than
           // showing a form that cannot succeed.
-          <div className="space-y-4">
-            <h1 className="text-lg font-semibold">{t.title}</h1>
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{t.missingCode}</p>
-            <Link to="/parola-uitata" className="block text-center text-sm text-brand hover:underline">
+          <>
+            <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.title}</h1>
+            <PublicError>{t.missingCode}</PublicError>
+            <Link to="/parola-uitata" className="text-sm font-medium text-mark hover:underline">
               {t.requestNew}
             </Link>
-          </div>
+          </>
         ) : (
           <>
-            <h1 className="mb-1 text-lg font-semibold">{t.title}</h1>
-            <p className="mb-4 text-sm text-content-muted">{t.subtitle}</p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.title}</h1>
+              <p className="text-content-muted">{t.subtitle}</p>
+            </div>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div>
-                <Label htmlFor="rp-pass">{t.password}</Label>
+                <Label htmlFor="rp-pass" className="text-[0.8125rem] text-content-strong">
+                  {t.password}
+                </Label>
                 <PasswordInput
                   id="rp-pass"
                   showStrength
@@ -92,38 +100,38 @@ export function ResetPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
+                  autoFocus
+                  className="h-12 px-4 text-base"
                 />
-                <p className="mt-1 text-xs text-content-muted">{t.rules}</p>
+                <p className="mt-1.5 text-xs text-content-muted">{t.rules}</p>
               </div>
               <div>
-                <Label htmlFor="rp-confirm">{t.confirmPassword}</Label>
+                <Label htmlFor="rp-confirm" className="text-[0.8125rem] text-content-strong">
+                  {t.confirmPassword}
+                </Label>
                 <PasswordInput
                   id="rp-confirm"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
+                  className="h-12 px-4 text-base"
                 />
               </div>
-              {error && (
-                <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-              )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              {error && <PublicError>{error}</PublicError>}
+              <Button type="submit" size="lg" className={cn("w-full", publicButtonClass)} loading={loading}>
                 {loading ? t.saving : t.submit}
               </Button>
               {/* O invitație e tot o resetare (vezi comentariul clasei), deci rândul apare și la o
                   parolă uitată. Nu strică: termenii se acceptă „prin utilizare” oricum (cap. 2). */}
-              <LegalNotice text={strings.legal.setPasswordNotice} className="text-center" />
+              <LegalNotice text={strings.legal.setPasswordNotice} />
             </form>
-            <p className="mt-4 text-center text-sm">
-              <Link to="/parola-uitata" className="text-brand hover:underline">
-                {t.requestNew}
-              </Link>
-            </p>
+            <Link to="/parola-uitata" className="text-sm font-medium text-mark hover:underline">
+              {t.requestNew}
+            </Link>
           </>
         )}
-      </Card>
-      <LegalFooter />
-    </div>
+      </div>
+    </PublicShell>
   );
 }

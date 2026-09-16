@@ -129,8 +129,13 @@ activităților cu impact; bifa pleacă drept propoziție în observații; la co
 bifabile + rând liber, opționale; tipul de generator obligatoriu la cine generează; codurile R/D cu „Nu știu” ca
 răspuns valid; observațiile libere). Fiecare „Continuă” își verifică pasul; trimiterea întoarce omul la pasul rubricii
 greșite. Pașii din stânga sunt cuprinsul formularului: cel curent aprins, sub cei trecuți ce s-a completat. Titlurile
-sunt prietenoase, nu întrebări („Cine sunteți?” a fost respins). Parola uitată și alegerea parolei rămân pe cardul
-vechi, de rescris când se ating.
+sunt prietenoase, nu întrebări („Cine sunteți?” a fost respins).
+
+**Parola uitată și alegerea parolei** (17.09.2026) stau în același cadru, cu `split="half"` ca loginul: titlul din stânga
+nu repetă titlul formularului („Parola se schimbă, evidența rămâne.” · „Încă un pas și intri în evidență.”), dedesubt trei
+„fapte” (`PosterFacts`, ascunse pe telefon, ca tile-urile loginului). Starea de după trimitere înlocuiește formularul în
+dreapta, cu pictograma în `mark` și titlul de 32px. Eroarea formularelor publice e `PublicError` (chenar `state-bad` cu
+pătrățel), aceeași pe login și pe cele două pagini.
 
 ## Ecranele de mișcări
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
-import { CornerLink, PosterTile, PublicShell, publicButtonClass } from "@/components/PublicShell";
+import { CornerLink, PosterTile, PublicError, PublicShell, publicButtonClass } from "@/components/PublicShell";
 import { apiErrorMessage, LOGIN_EXPIRED_PARAM, REDIRECT_PARAM } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -112,15 +112,7 @@ export function LoginPage() {
               className="h-12 px-4 text-base"
             />
           </div>
-          {error && (
-            <div
-              role="alert"
-              className="flex items-start gap-2 rounded-md border border-state-bad px-3 py-2 text-sm text-state-bad-text"
-            >
-              <span aria-hidden className="mt-2 inline-block h-2 w-2 shrink-0 rounded-sm bg-state-bad" />
-              {error}
-            </div>
-          )}
+          {error && <PublicError>{error}</PublicError>}
           <Button type="submit" size="lg" className={cn("w-full", publicButtonClass)} loading={loading}>
             {loading ? t.loading : t.submit}
           </Button>

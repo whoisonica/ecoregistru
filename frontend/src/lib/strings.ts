@@ -335,6 +335,17 @@ export const strings = {
       "Linkul e incomplet — îi lipsește codul. Copiază-l din email întreg, sau cere unul nou.",
     requestNew: "Cere un link nou",
     genericError: "Nu am putut salva parola. Linkul poate fi expirat — cere unul nou.",
+    // Stânga paginii, în direcția „Poster” (ca loginul și cererea de cont).
+    posterHeadline: "Încă un pas",
+    posterAccent: "și intri în evidență.",
+    posterLede: "Dacă ai fost invitat, parola îți activează contul. Dacă ai uitat-o, o înlocuiește pe cea veche.",
+    posterFacts: [
+      "Linkul din email e valabil 30 de minute",
+      "Contul invitat devine activ odată cu parola",
+      "Evidența și documentele firmei rămân neatinse",
+    ],
+    haveAccount: "Ai deja parolă?",
+    goToLogin: "Autentifică-te",
   },
 
   forgotPassword: {
@@ -350,6 +361,16 @@ export const strings = {
     sentHint: "Verifică și în Spam. Linkul expiră în 30 de minute.",
     backToLogin: "Înapoi la autentificare",
     genericError: "Nu am putut trimite linkul. Încearcă din nou.",
+    posterHeadline: "Parola se schimbă,",
+    posterAccent: "evidența rămâne.",
+    posterLede: "Îți trimitem pe email un link cu care îți alegi o parolă nouă.",
+    posterFacts: [
+      "Invitația expirată se reînnoiește tot de aici",
+      "Verifică și în Spam, dacă nu vine în câteva minute",
+      "Evidența și documentele firmei rămân neatinse",
+    ],
+    remembered: "Ți-ai amintit parola?",
+    goToLogin: "Autentifică-te",
   },
 
   dashboard: {

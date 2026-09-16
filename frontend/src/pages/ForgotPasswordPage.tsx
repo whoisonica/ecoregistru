@@ -3,10 +3,9 @@ import { Link } from "react-router-dom";
 import { MailCheck } from "lucide-react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { BrandName } from "@/components/BrandName";
+import { cn } from "@/lib/utils";
+import { CornerLink, PosterFacts, PublicError, PublicShell, publicButtonClass } from "@/components/PublicShell";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { LegalFooter } from "@/components/LegalFooter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -42,29 +41,37 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
-      <Card className="w-full max-w-sm p-8">
-        <div className="mb-6 text-center">
-          <div className="text-2xl font-bold text-brand"><BrandName /></div>
-          <div className="text-sm text-content-muted">{strings.tagline}</div>
-        </div>
-
+    // Direcția „Poster”, ca loginul (docs/stil-interfata.md, „Paginile de dinaintea contului”).
+    <PublicShell
+      headline={t.posterHeadline}
+      accent={t.posterAccent}
+      lede={t.posterLede}
+      aside={<PosterFacts lines={t.posterFacts} />}
+      corner={<CornerLink prompt={t.remembered} label={t.goToLogin} to="/login" />}
+    >
+      <div className="mx-auto flex w-full max-w-[400px] flex-col gap-8">
         {sent ? (
-          <div className="space-y-4 text-center">
-            <MailCheck className="mx-auto h-10 w-10 text-emerald-600" />
-            <p className="text-sm text-content-strong">{t.sent}</p>
-            <p className="text-xs text-content-muted">{t.sentHint}</p>
-            <Link to="/login" className="block text-sm text-brand hover:underline">
+          <>
+            <div className="flex flex-col gap-3">
+              <MailCheck className="h-12 w-12 text-mark" aria-hidden />
+              <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.sent}</h1>
+              <p className="text-content-muted">{t.sentHint}</p>
+            </div>
+            <Link to="/login" className="text-sm font-medium text-mark hover:underline">
               {t.backToLogin}
             </Link>
-          </div>
+          </>
         ) : (
           <>
-            <h1 className="mb-1 text-lg font-semibold">{t.title}</h1>
-            <p className="mb-4 text-sm text-content-muted">{t.subtitle}</p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-[32px] font-semibold leading-10 tracking-[-0.015em] text-content">{t.title}</h1>
+              <p className="text-content-muted">{t.subtitle}</p>
+            </div>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div>
-                <Label htmlFor="fp-email">{t.email}</Label>
+                <Label htmlFor="fp-email" className="text-[0.8125rem] text-content-strong">
+                  {t.email}
+                </Label>
                 <Input
                   id="fp-email"
                   type="email"
@@ -72,24 +79,21 @@ export function ForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
+                  autoFocus
+                  className="h-12 px-4 text-base"
                 />
               </div>
-              {error && (
-                <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-              )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              {error && <PublicError>{error}</PublicError>}
+              <Button type="submit" size="lg" className={cn("w-full", publicButtonClass)} loading={loading}>
                 {loading ? t.sending : t.submit}
               </Button>
             </form>
-            <p className="mt-4 text-center text-sm">
-              <Link to="/login" className="text-brand hover:underline">
-                {t.backToLogin}
-              </Link>
-            </p>
+            <Link to="/login" className="text-sm font-medium text-mark hover:underline">
+              {t.backToLogin}
+            </Link>
           </>
         )}
-      </Card>
-      <LegalFooter />
-    </div>
+      </div>
+    </PublicShell>
   );
 }
