@@ -3,6 +3,21 @@
 Jurnalul feliilor livrate, în ordinea în care au fost construite. Fiecare intrare marcată ✅
 rulează local și are testele verzi.
 
+> **16.09.2026, 13:41 — ✅ pe producție: depozitul D2.2, șoferii extinși (după D2.1 flota, 13:20, api v95 / app v78, `V53`).**
+> `ecoregistru-api` **v96** (`704b817`, **migrarea `V55`**, schema 53 → 55), `ecoregistru-app` **v79** (`0062009`); monorepo
+> `main` = `origin/main` = `deploy/heroku-split` = `429d80f`. Pe producție: `Migrating schema "public" to version "55 - driver
+> depot attestation"`, `now at version v55`, `Started EcoRegistruApplication` (10:42:06 UTC); bundle-ul servit are
+> „Din lista de șoferi”. Garda de conținut curată la `^` pe ambele repo-uri split.
+> Ce intră: la șoferii noștri depozitul implicit și atestatul (CPC/ADR) cu alertă pe e-mail la 30 de zile
+> (`DriverAttestationAlertScheduler`, 07:25); la cântar șoferul recunoscut din listă (potrivire unică pe nume) leagă fișa și
+> pune mașina lui într-o rubrică goală, altfel rămâne ocazional; atestatul expirat se vede. **Reparat în aceeași migrare:**
+> `weighing_operations.driver_id` n-avea `ON DELETE SET NULL`, deci fișa unui șofer folosit la cântar nu se putea șterge.
+> Suita backend **808 de teste, 99 de clase, 0 eșecuri**; `DriverFleetIT` 5/5 cu proba negativă pe 5 reguli; e2e **21** 13/13.
+>
+> ⚠️ **`V54` (mobilul, M1c, `feat/mobil`) NU e pe producție, iar `V55` a intrat înaintea ei.** Flyway fără out-of-order o va
+> refuza: înainte de deployul M1c, `V54__device_session_push_token.sql` se renumerotează în **`V56`**. Următoarea liberă: **`V56`**
+> (sau `V57`, dacă M1c ia `V56`).
+
 > **16.09.2026, 12:37 și 12:42 — ✅ pe producție: depozitul D1.9–D1.15 și aplicația mobilă M1b.**
 > `ecoregistru-api` **v94** (`3ef32ec`, **migrările `V51` și `V52`**, schema 50 → 52), `ecoregistru-app` **v76** (`b80ab14`,
 > depozitul) și **v77** (`7733370`, textele M1b); monorepo `main` = `origin/main` = `deploy/heroku-split` = `35ef8a5`.
