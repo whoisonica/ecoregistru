@@ -1,7 +1,7 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.2.1'
-	id 'io.spring.dependency-management' version '1.1.4'
+	id 'org.springframework.boot' version '3.5.16'
+	id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'ro.ecoregistru'
@@ -21,6 +21,8 @@ repositories {
 	mavenCentral()
 }
 
+ext['flyway.version'] = '11.20.3'
+
 dependencies {
 	// Core Spring Boot
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -31,8 +33,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-	// Migrations (Flyway managed by Spring Boot 3.2 -> Flyway 9.x). ddl-auto is OFF.
+	// Migrations. ddl-auto is OFF. Boot 3.5 manages Flyway 11.7, which predates PostgreSQL 18 (Heroku runs 18.3) and
+	// logged „Flyway upgrade recommended” on every start; `flyway.version` below lifts it to the last 11.x. Since
+	// Flyway 10 the PostgreSQL support is its own module — without it the dyno refuses to start.
 	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 
 	// JWT auth
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
@@ -43,7 +48,7 @@ dependencies {
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 
 	// OpenAPI
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
 	// File storage: Cloudinary (decision 2026-07-11)
 	implementation 'com.cloudinary:cloudinary-http5:2.3.0'
@@ -67,7 +72,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	// Real embedded Postgres for integration tests (no Docker needed).
-	testImplementation 'io.zonky.test:embedded-database-spring-test:2.5.1'
+	testImplementation 'io.zonky.test:embedded-database-spring-test:2.8.0'
 	testImplementation 'io.zonky.test:embedded-postgres:2.0.7'
 	// Embedded Postgres binaries, one per platform the suite is ever run on. Only the Windows
 	// classifier used to be declared, and the reading of that was wrong in both directions: the
