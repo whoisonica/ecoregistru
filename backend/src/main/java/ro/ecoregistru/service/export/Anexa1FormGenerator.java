@@ -291,7 +291,7 @@ public class Anexa1FormGenerator {
                 num(t, monthTotal);
                 cell(t, "-", Element.ALIGN_CENTER);
                 // A quantity with no movement behind it can only be one we handled ourselves.
-                cell(t, monthTotal.signum() > 0 ? "în activitatea proprie" : "-",
+                cell(t, monthTotal.signum() > 0 ? s.companyName() : "-",
                         Element.ALIGN_LEFT);
                 continue;
             }
@@ -311,9 +311,9 @@ public class Anexa1FormGenerator {
                     num(t, handover.quantity());
                 }
                 cell(t, dash(handover.operation()), Element.ALIGN_CENTER);
-                // No operator named means we did it ourselves, on our own site.
+                // No operator named means we did it ourselves, on our own site: the agent is the company.
                 cell(t, handover.operator() == null || handover.operator().isBlank()
-                        ? "în activitatea proprie"
+                        ? s.companyName()
                         : handover.operator(), Element.ALIGN_LEFT);
             }
         }

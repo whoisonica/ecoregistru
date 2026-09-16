@@ -45,8 +45,11 @@ function EvidenceReadiness({ year }: { year: number }) {
   const { data, isLoading, isError } = useEvidences({ year });
   if (isLoading) return <Line>{t.loading}</Line>;
   if (isError || !data) return <Line tone="bad">{t.error}</Line>;
-  if (data.length === 0)
-    return <Line>{t.evidenceEmpty.replace("{year}", String(year))}</Line>;
+  if (data.length === 0) {
+    const text =
+      year >= new Date().getFullYear() ? t.evidenceEmpty : t.evidenceEmptyClosed;
+    return <Line>{text.replace(/\{year\}/g, String(year))}</Line>;
+  }
 
   const r = evidenceReadiness(data, year);
   // Roșu = nu se poate depune așa; galben = o așteptare legitimă (tokenii `state` din Tailwind).

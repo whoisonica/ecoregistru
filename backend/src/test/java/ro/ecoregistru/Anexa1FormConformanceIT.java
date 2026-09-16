@@ -149,6 +149,23 @@ class Anexa1FormConformanceIT {
     }
 
     /**
+     * Decizia C, 17.09.2026: an operation with no partner was carried out by the company itself
+     * ("prin mijloace proprii", OUG 92/2021 art. 23 alin. (1)), so cap. 4 names the company as the
+     * agent — not "în activitatea proprie", which no act or SIM table knows.
+     */
+    @Test
+    void anOperationDoneOnSiteNamesTheCompanyAsTheAgent() {
+        evidenceCalculator.regenerateYear(YEAR);
+        Anexa1Sheet sheet = evidenceCalculator.anexa1(YEAR, workPoint.getId()).stream()
+                .filter(s -> s.wasteCode().equals("20 03 01"))
+                .findFirst().orElseThrow();
+        Anexa1Sheet.Anexa1MonthRow july = sheet.rows().get(6);
+
+        assertThat(july.disposals()).extracting(Anexa1Sheet.Handover::operator)
+                .containsExactly("Birou Anexa 1 SRL");
+    }
+
+    /**
      * The same month, the same operator, the same code: one line, not two. The rule is a line per
      * distinct rubric, not a line per movement — otherwise a client who records four pickups a
      * month from the same collector would file a sheet nobody can read.

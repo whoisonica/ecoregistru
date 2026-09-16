@@ -227,6 +227,19 @@ class AnnualDeclarationIT {
     }
 
     /**
+     * Decizia C, 17.09.2026: a treatment done on site has no partner, and the company itself is the
+     * operator — "R3 - Declaratie Co SRL", not a bare "R3".
+     */
+    @Test
+    void anOperationDoneOnSiteNamesTheCompany() {
+        save(turda, paper, LocalDate.of(YEAR, 8, 1), "10.000", WasteOperation.RECOVERED, WasteOperationCode.R3, null);
+        evidenceCalculator.regenerateYear(YEAR);
+
+        assertThat(row("PL Turda", paper.getCode()).recoveredThrough())
+                .isEqualTo("R3 - Declaratie Co SRL");
+    }
+
+    /**
      * The 200 kg taken over from a third party in May is art. 48 business and reaches no line of
      * this sheet — HG 856/2002 art. 2 alin. (1). Were it counted, "Generat" would read 600.
      */

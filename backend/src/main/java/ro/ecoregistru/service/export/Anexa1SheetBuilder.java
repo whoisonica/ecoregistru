@@ -100,7 +100,7 @@ public class Anexa1SheetBuilder {
         List<Anexa1Sheet.Anexa1MonthRow> rows = new ArrayList<>();
         for (MonthlyEvidenceResponse line : lines) {
             List<WasteMovement> monthly = byMonth.getOrDefault(line.month(), List.of());
-            rows.add(row(line, monthly, sections));
+            rows.add(row(line, monthly, sections, company.getName()));
         }
 
         return new Anexa1Sheet(
@@ -111,7 +111,8 @@ public class Anexa1SheetBuilder {
 
     private Anexa1Sheet.Anexa1MonthRow row(MonthlyEvidenceResponse line,
                                            List<WasteMovement> monthly,
-                                           List<String> sections) {
+                                           List<String> sections,
+                                           String companyName) {
         List<WasteMovement> recoveries = monthly.stream()
                 .filter(m -> m.getOperation() == WasteOperation.RECOVERED).toList();
         List<WasteMovement> disposals = monthly.stream()
@@ -157,8 +158,8 @@ public class Anexa1SheetBuilder {
                         ? null : name(m.getOperationCode().treatmentPurpose()))),
                 distinct(monthly, m -> name(m.getTransportMeans())),
                 distinct(monthly, m -> name(m.getWasteDestination())),
-                handovers(recoveries),
-                handovers(disposals));
+                handovers(recoveries, companyName),
+                handovers(disposals, companyName));
     }
 
     /**
@@ -176,14 +177,17 @@ public class Anexa1SheetBuilder {
      * the form prints an empty cell instead of a zero it cannot stand behind. The operator's name
      * still appears — the handover happened, only the weight is missing.
      */
-    private List<Anexa1Sheet.Handover> handovers(List<WasteMovement> movements) {
+    private List<Anexa1Sheet.Handover> handovers(List<WasteMovement> movements, String companyName) {
         Map<String, BigDecimal> quantities = new java.util.LinkedHashMap<>();
         Map<String, Anexa1Sheet.Handover> rubrics = new java.util.LinkedHashMap<>();
 
         for (WasteMovement m : movements.stream()
                 .sorted(Comparator.comparing(WasteMovement::getDate)).toList()) {
             String operation = name(m.getOperationCode());
-            String operator = m.getPartner() == null ? null : m.getPartner().getName();
+            // Fără partener, operaţia a făcut-o firma însăşi (art. 23 alin. (1) OUG 92/2021, „prin mijloace
+            // proprii”), deci ea e „agentul economic care efectuează operaţia”. Se scrie denumirea ei, cum
+            // cere şi tabelul 2a din chestionarul PRODDES (denumire + CUI). Decizia C, 17.09.2026.
+            String operator = m.getPartner() == null ? companyName : m.getPartner().getName();
             String key = operation + "\0" + operator;
 
             rubrics.putIfAbsent(key, new Anexa1Sheet.Handover(null, operation, operator));

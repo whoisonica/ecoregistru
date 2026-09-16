@@ -60,7 +60,7 @@ public class AnnualDeclarationBuilder {
 
         List<AnnualDeclaration> declarations = new ArrayList<>();
         for (Map.Entry<UUID, List<MonthlyEvidenceResponse>> entry : byWorkPoint.entrySet()) {
-            List<AnnualDeclaration.Row> rows = rows(entry.getValue(), movementsByPair);
+            List<AnnualDeclaration.Row> rows = rows(entry.getValue(), movementsByPair, company.getName());
             if (rows.isEmpty()) {
                 continue;
             }
@@ -72,7 +72,8 @@ public class AnnualDeclarationBuilder {
     }
 
     private List<AnnualDeclaration.Row> rows(List<MonthlyEvidenceResponse> lines,
-                                             Map<Key, List<WasteMovement>> movementsByPair) {
+                                             Map<Key, List<WasteMovement>> movementsByPair,
+                                             String companyName) {
         Map<UUID, List<MonthlyEvidenceResponse>> byCode = lines.stream()
                 .collect(Collectors.groupingBy(MonthlyEvidenceResponse::wasteCodeId,
                         LinkedHashMap::new, Collectors.toList()));
@@ -100,8 +101,8 @@ public class AnnualDeclarationBuilder {
                     openingStock(first),
                     generated, recovered, disposed,
                     last.closingStock(),
-                    through(yearly, WasteOperation.RECOVERED),
-                    through(yearly, WasteOperation.DISPOSED),
+                    through(yearly, WasteOperation.RECOVERED, companyName),
+                    through(yearly, WasteOperation.DISPOSED, companyName),
                     unclassified));
         }
         rows.sort(Comparator.comparing(AnnualDeclaration.Row::wasteCode));
@@ -128,14 +129,15 @@ public class AnnualDeclarationBuilder {
      * the same reason the fişa lists distinct values in a month: the sheet has one row per code and
      * dropping one of the two would hide a handover that happened.
      *
-     * <p>An operation carried out on site has no partner, so only the code prints.
+     * <p>An operation carried out on site has no partner: the company did it itself, so its own name
+     * prints as the operator ("R3 - Firma SRL"), the same as on the fişa (decizia C, 17.09.2026).
      */
-    private String through(List<WasteMovement> movements, WasteOperation operation) {
+    private String through(List<WasteMovement> movements, WasteOperation operation, String companyName) {
         return movements.stream()
                 .filter(m -> m.getOperation() == operation)
                 .map(m -> {
                     String code = m.getOperationCode() == null ? null : m.getOperationCode().name();
-                    String partner = m.getPartner() == null ? null : m.getPartner().getName();
+                    String partner = m.getPartner() == null ? companyName : m.getPartner().getName();
                     if (code == null && partner == null) {
                         return null;
                     }
