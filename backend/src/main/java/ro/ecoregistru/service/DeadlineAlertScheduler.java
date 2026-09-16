@@ -24,7 +24,10 @@ import java.util.List;
  * job across all tenants (no TenantContext). Two reminders per deadline, de-duplicated via the
  * warned7Days / warned1Day flags on the deadline:
  *   - an early reminder while 2–7 days remain,
- *   - a final reminder on the last day or two (due today / tomorrow).
+ *   - a final reminder on the last day or two (due today / tomorrow),
+ *   - one notice after the due date has passed unticked (warnedMissed, V61) — only for deadlines the
+ *     screen shows as overdue ({@link MissedDeadlinePolicy}), and only within a week of the date,
+ *     so a scheduler that was down does not send months of old news at once.
  *
  * A flag is set only after a successful send, so a delivery failure is retried the next day
  * rather than silently swallowed.
@@ -37,11 +40,13 @@ public class DeadlineAlertScheduler {
 
     private static final int EARLY_WINDOW_DAYS = 7;
     private static final int FINAL_WINDOW_DAYS = 1;
+    private static final int MISSED_WINDOW_DAYS = 7;
 
     ReportingDeadlineRepository deadlineRepository;
     AppUserRepository appUserRepository;
     NotificationService notificationService;
     PushNotifier pushNotifier;
+    MissedDeadlinePolicy missedPolicy;
 
     /**
      * Daily at 07:00 (server time). Cron is overridable via app.alerts.deadline-cron.
@@ -82,9 +87,32 @@ public class DeadlineAlertScheduler {
                 }
             }
         }
+        sent += dispatchMissed(today);
         if (sent > 0) {
             log.info("Deadline reminders: sent {} of {} candidate deadline(s).", sent, candidates.size());
         }
+    }
+
+    /** A deadline that passed unticked: told once, the day after (or within the week, after an outage). */
+    private int dispatchMissed(LocalDate today) {
+        LocalDate from = today.minusDays(MISSED_WINDOW_DAYS);
+        if (from.isBefore(missedPolicy.shownFrom())) {
+            from = missedPolicy.shownFrom();
+        }
+        LocalDate to = today.minusDays(1);
+        if (to.isBefore(from)) {
+            return 0;
+        }
+        int sent = 0;
+        for (ReportingDeadline deadline : deadlineRepository.findByStatusAndDueDateBetween(
+                DeadlineStatus.UPCOMING, from, to)) {
+            if (!deadline.isWarnedMissed() && missedPolicy.missed(deadline, today)
+                    && notify(deadline, ChronoUnit.DAYS.between(today, deadline.getDueDate()))) {
+                deadline.setWarnedMissed(true);
+                sent++;
+            }
+        }
+        return sent;
     }
 
     /** Returns true only if the reminder was delivered, so the caller may mark the flag. */

@@ -9,11 +9,16 @@
         <td style="vertical-align: middle; padding-right: 10px;"><img src="https://app.wastehouse.ro/brand/wastehouse-mark.png" width="32" height="32" alt="" style="display: block; border: 0;"/></td>
         <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #111827; letter-spacing: -0.3px;">WasteHouse</td>
     </tr></table>
-    <h2 style="color: #047857;">Termen de raportare care se apropie</h2>
+    <h2 th:if="${daysUntil >= 0}" style="color: #047857;">Termen de raportare care se apropie</h2>
+    <h2 th:if="${daysUntil < 0}" style="color: #b45309;">Termen de raportare trecut și nebifat</h2>
     <p>Bună ziua,</p>
-    <p>
+    <p th:if="${daysUntil >= 0}">
         Îți reamintim că ai un termen de raportare
         <strong th:text="${whenText}">scadent în curând</strong>:
+    </p>
+    <p th:if="${daysUntil < 0}">
+        Termenul de mai jos a trecut și nu e bifat ca depus în WasteHouse. Dacă l-ai depus deja, bifează-l
+        pe pagina Termene. Dacă nu, depune-l cât mai repede: o depunere întârziată e mai bună decât niciuna.
     </p>
     <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <tr>

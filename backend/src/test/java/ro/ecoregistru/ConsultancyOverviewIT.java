@@ -54,7 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * trebuie numărat lângă fiecare: un termen finalizat lângă cele depășite, o mișcare ștearsă lângă
  * codul-oglindă, un partener cu autorizația departe lângă cel care expiră.
  */
-@SpringBootTest
+@SpringBootTest(properties = "app.deadlines.missed-shown-from=2026-01-01")
 @ActiveProfiles("dev")
 @AutoConfigureMockMvc
 @AutoConfigureEmbeddedDatabase(provider = ZONKY)
@@ -100,9 +100,10 @@ class ConsultancyOverviewIT {
         Company inactive = company("Inactive SRL", cabinet, false);
         Company foreign = company("Foreign SRL", neighbour, true);
 
-        // Busy — două depășite (unul rămas din anul trecut), unul finalizat care nu contează, următorul peste 5 zile.
+        // Busy — un depășit (cel din anul trecut e de dinainte de regula din 16.09 și nu se numără), unul
+        // finalizat care nu contează, următorul peste 5 zile.
         deadline(busy, today.minusDays(10), DeadlineStatus.UPCOMING);
-        deadline(busy, LocalDate.of(today.getYear() - 1, 12, 1), DeadlineStatus.UPCOMING);
+        deadline(busy, LocalDate.of(2025, 12, 1), DeadlineStatus.UPCOMING);
         deadline(busy, today.minusDays(3), DeadlineStatus.DONE);
         deadline(busy, today.plusDays(5), DeadlineStatus.UPCOMING);
         deadline(busy, today.plusDays(9), DeadlineStatus.UPCOMING);
@@ -157,7 +158,8 @@ class ConsultancyOverviewIT {
     void eachFigureIsCountedByTheRuleTheCompanyDashboardUses() throws Exception {
         JsonNode row = row("Busy SRL");
 
-        assertThat(row.get("overdueDeadlines").asInt()).isZero(); // cele trecute nebifate nu se mai arată (16.09.2026)
+        // Doar cel ratat după regulă (MissedDeadlinePolicy, aici de la 01.01.2026); cel din 2025 nu se arată.
+        assertThat(row.get("overdueDeadlines").asInt()).isEqualTo(1);
         assertThat(row.get("nextDeadline").get("dueDate").asText()).isEqualTo(today.plusDays(5).toString());
         assertThat(row.get("deadlinesGenerated").asBoolean()).isTrue();
         assertThat(row.get("linesWithoutOperationCode").asInt()).isEqualTo(1);

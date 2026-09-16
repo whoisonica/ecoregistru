@@ -60,6 +60,7 @@ public class ConsultancyOverviewService {
     WasteMovementRepository movementRepository;
     PartnerRepository partnerRepository;
     EvidenceCalculator evidenceCalculator;
+    MissedDeadlinePolicy missedPolicy;
 
     public List<ConsultancyOverviewResponse> overview() {
         return overview(LocalDate.now());
@@ -94,9 +95,9 @@ public class ConsultancyOverviewService {
         List<ReportingDeadline> open = deadlineRepository
                 .findAllByCompany_IdAndStatusNotAndDueDateBetweenOrderByDueDateAsc(company.getId(),
                         DeadlineStatus.DONE, LocalDate.of(year - 1, 1, 1), LocalDate.of(year + 1, 12, 31));
-        // Termenele nebifate cu data trecută nu se mai arată nicăieri (16.09.2026, ca DeadlineService.list),
-        // deci nici nu se numără: câmpul rămâne în răspuns, mereu 0, până se scoate din interfață.
-        int overdue = 0;
+        // Se numără aceleași depășite pe care le arată DeadlineService.list: cele ratate de la regula nouă
+        // încolo, nu resturile generării vechi (MissedDeadlinePolicy).
+        int overdue = (int) open.stream().filter(d -> missedPolicy.missed(d, today)).count();
         NextDeadline next = open.stream()
                 .filter(d -> !d.getDueDate().isBefore(today))
                 .findFirst()

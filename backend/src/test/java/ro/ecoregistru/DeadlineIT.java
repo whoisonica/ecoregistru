@@ -51,7 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * OVERDUE derivation, completion, role gating and tenant isolation. Generation is driven with a
  * fixed day through the service, so the suite does not depend on the day it runs.
  */
-@SpringBootTest
+@SpringBootTest(properties = "app.deadlines.missed-shown-from=2026-01-01")
 @ActiveProfiles("dev")
 @AutoConfigureMockMvc
 @AutoConfigureEmbeddedDatabase(provider = ZONKY)
@@ -278,25 +278,45 @@ class DeadlineIT {
                 .andExpect(jsonPath("$.generated", is(0))); // nothing new the second time
     }
 
-    /** 16.09.2026: un termen nebifat cu data trecută nu se mai arată; unul bifat rămâne, ca istoric. */
+    /**
+     * 16.09.2026: un termen nebifat rămas din generarea veche (scadența înainte de data regulii, aici
+     * 01.01.2026) nu se arată; unul bifat rămâne, ca istoric.
+     */
     @Test
-    void pastDueUncompletedDeadlineIsHiddenButACompletedOneStays() throws Exception {
+    void pastDueUncompletedDeadlineFromBeforeTheRuleIsHiddenButACompletedOneStays() throws Exception {
         TenantFixture t = newTenant(false);
-        LocalDate yesterday = DeadlineService.today().minusDays(1);
-        deadlineRepository.save(ReportingDeadline.builder()
-                .company(t.company).reportType(ReportType.OTHER)
-                .dueDate(yesterday).status(DeadlineStatus.UPCOMING)
-                .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
-        deadlineRepository.save(ReportingDeadline.builder()
-                .company(t.company).reportType(ReportType.SIM_ANNUAL)
-                .dueDate(yesterday).status(DeadlineStatus.DONE).completedAt(Instant.now())
-                .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
+        LocalDate old = LocalDate.of(2025, 12, 1);
+        saveDeadline(t, ReportType.OTHER, old, DeadlineStatus.UPCOMING);
+        saveDeadline(t, ReportType.SIM_ANNUAL, old, DeadlineStatus.DONE);
 
-        mockMvc.perform(get("/api/v1/deadlines").param("year", String.valueOf(yesterday.getYear()))
+        mockMvc.perform(get("/api/v1/deadlines").param("year", "2025")
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.reportType=='OTHER')]", hasSize(0)))
                 .andExpect(jsonPath("$[?(@.reportType=='SIM_ANNUAL')].status", is(java.util.List.of("DONE"))));
+    }
+
+    /**
+     * Un termen ratat de la regulă încolo nu dispare a doua zi (api v105 îl ascundea): rămâne depășit
+     * până se bifează, ca un 15 martie nedepus să se vadă.
+     */
+    @Test
+    void aDeadlineMissedAfterTheRuleStaysOverdueUntilTicked() throws Exception {
+        TenantFixture t = newTenant(false);
+        LocalDate yesterday = DeadlineService.today().minusDays(1);
+        saveDeadline(t, ReportType.OTHER, yesterday, DeadlineStatus.UPCOMING);
+
+        mockMvc.perform(get("/api/v1/deadlines").param("year", String.valueOf(yesterday.getYear()))
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.reportType=='OTHER')].status", is(java.util.List.of("OVERDUE"))));
+    }
+
+    private void saveDeadline(TenantFixture t, ReportType type, LocalDate due, DeadlineStatus status) {
+        deadlineRepository.save(ReportingDeadline.builder()
+                .company(t.company).reportType(type).dueDate(due).status(status)
+                .completedAt(status == DeadlineStatus.DONE ? Instant.now() : null)
+                .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
     }
 
     @Test

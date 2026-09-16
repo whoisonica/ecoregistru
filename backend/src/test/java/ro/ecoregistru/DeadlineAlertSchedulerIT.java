@@ -34,7 +34,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
  * "today". NotificationService is mocked so no SMTP is touched — the test asserts on which
  * deadlines get their warned flags flipped (i.e. which reminders were sent).
  */
-@SpringBootTest
+@SpringBootTest(properties = "app.deadlines.missed-shown-from=2026-01-01")
 @ActiveProfiles("dev")
 @AutoConfigureEmbeddedDatabase(provider = ZONKY)
 class DeadlineAlertSchedulerIT {
@@ -155,5 +155,50 @@ class DeadlineAlertSchedulerIT {
 
         // Delivery failed -> flag stays false so the reminder is retried tomorrow.
         assertThat(reload(d.getId()).isWarned7Days()).isFalse();
+    }
+
+    // ─── Termenul ratat (V61): o singură notificare, a doua zi ───
+
+    @Test
+    void aMissedDeadlineIsToldOnceTheDayAfter() {
+        Company c = companyWithUser();
+        LocalDate today = LocalDate.of(2026, 6, 10);
+        ReportingDeadline d = deadline(c, today.minusDays(1), DeadlineStatus.UPCOMING, true, true);
+
+        scheduler.dispatchReminders(today);
+        assertThat(reload(d.getId()).isWarnedMissed()).isTrue();
+
+        Mockito.clearInvocations(notificationService);
+        scheduler.dispatchReminders(today.plusDays(1));
+        Mockito.verify(notificationService, Mockito.never())
+                .sendDeadlineReminder(Mockito.argThat(x -> x.getId().equals(d.getId())), any(), anyLong());
+    }
+
+    @Test
+    void aMissedDeadlineGetsANegativeDayCountSoTheMailSaysItPassed() {
+        Company c = companyWithUser();
+        LocalDate today = LocalDate.of(2026, 6, 20);
+        ReportingDeadline d = deadline(c, today.minusDays(2), DeadlineStatus.UPCOMING, true, true);
+
+        scheduler.dispatchReminders(today);
+
+        Mockito.verify(notificationService)
+                .sendDeadlineReminder(Mockito.argThat(x -> x.getId().equals(d.getId())), any(), Mockito.eq(-2L));
+    }
+
+    @Test
+    void noMissedNoticeForOldNewsTickedOnesOrThoseBeforeTheRule() {
+        Company c = companyWithUser();
+        LocalDate today = LocalDate.of(2026, 7, 1);
+        ReportingDeadline stale = deadline(c, today.minusDays(20), DeadlineStatus.UPCOMING, true, true);
+        ReportingDeadline done = deadline(c, today.minusDays(1), DeadlineStatus.DONE, true, true);
+        ReportingDeadline beforeRule = deadline(c, LocalDate.of(2025, 12, 31), DeadlineStatus.UPCOMING, true, true);
+
+        scheduler.dispatchReminders(today);
+        scheduler.dispatchReminders(LocalDate.of(2026, 1, 2));
+
+        assertThat(reload(stale.getId()).isWarnedMissed()).isFalse();
+        assertThat(reload(done.getId()).isWarnedMissed()).isFalse();
+        assertThat(reload(beforeRule.getId()).isWarnedMissed()).isFalse();
     }
 }

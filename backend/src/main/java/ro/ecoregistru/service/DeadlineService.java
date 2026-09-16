@@ -96,6 +96,7 @@ public class DeadlineService {
     ReportingDeadlineRepository deadlineRepository;
     CompanyRepository companyRepository;
     WasteMovementRepository movementRepository;
+    MissedDeadlinePolicy missedPolicy;
 
     @Transactional(readOnly = true)
     public List<DeadlineResponse> list(int year) {
@@ -104,9 +105,9 @@ public class DeadlineService {
         return deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))
                 .stream()
-                // Un termen nebifat cu data trecută nu se mai arată (proprietarul, 16.09.2026): au rămas
-                // din generarea veche a anului întreg și nu mai cer nimic. Cele bifate rămân, ca istoric.
-                .filter(d -> d.getStatus() == DeadlineStatus.DONE || !d.getDueDate().isBefore(today))
+                // Cele nebifate rămase din generarea veche a anului întreg nu se arată (16.09.2026); unul
+                // ratat de la regula nouă încolo rămâne depășit până se bifează. Vezi MissedDeadlinePolicy.
+                .filter(d -> missedPolicy.shown(d, today))
                 .map(d -> toResponse(d, today))
                 .toList();
     }

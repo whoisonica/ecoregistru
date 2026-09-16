@@ -20,7 +20,7 @@ public interface NotificationService {
     /**
      * Notifies the given recipients that a deadline is approaching.
      *
-     * @param daysUntil whole days from today until the due date (0 = due today).
+     * @param daysUntil whole days from today until the due date (0 = due today; negative = passed unticked, V61).
      * @throws RuntimeException if delivery fails — the caller decides whether to mark the
      *                          deadline as warned (it should not, so the reminder is retried).
      */

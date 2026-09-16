@@ -50,7 +50,9 @@ public class EmailNotificationService implements NotificationService {
     public void sendDeadlineReminder(ReportingDeadline deadline, List<String> recipientEmails, long daysUntil) {
         String reportLabel = label(deadline.getReportType());
         String dueDate = deadline.getDueDate().format(DATE);
-        String subject = "Termen de raportare — " + reportLabel + " (" + when(daysUntil) + ")";
+        String subject = daysUntil < 0
+                ? "Termen de raportare trecut și nebifat — " + reportLabel
+                : "Termen de raportare — " + reportLabel + " (" + when(daysUntil) + ")";
 
         for (String to : recipientEmails) {
             Context ctx = new Context(Locale.of("ro"));
@@ -211,7 +213,8 @@ public class EmailNotificationService implements NotificationService {
 
     /** Human phrasing of the remaining time, used in the subject and body. */
     private String when(long daysUntil) {
-        if (daysUntil <= 0) return "scadent astăzi";
+        if (daysUntil < 0) return "trecut și nebifat";
+        if (daysUntil == 0) return "scadent astăzi";
         if (daysUntil == 1) return "scadent mâine";
         return "scadent în " + daysUntil + " zile";
     }

@@ -23,11 +23,13 @@ export function useDeadlines(year: number, enabled = true) {
  * Termenele anului în curs **și** ale celui următor, într-o listă. De pe 16.09.2026 calendarul ține
  * doar următorul termen al fiecărui fel, iar acela e des în anul următor (15 martie pentru anul de
  * acum): Panoul care citea doar anul curent ar fi spus „niciun termen” unui cont nou din septembrie.
+ * Și anul trecut: un termen ratat rămâne depășit până se bifează, deci unul din 25 decembrie trebuie
+ * să se vadă și în ianuarie. Serverul întoarce din anul trecut doar ce e bifat sau ratat cu adevărat.
  */
 export function useUpcomingDeadlines(enabled = true) {
   const year = new Date().getFullYear();
-  const [current, next] = useQueries({
-    queries: [year, year + 1].map((y) => ({
+  const [previous, current, next] = useQueries({
+    queries: [year - 1, year, year + 1].map((y) => ({
       enabled,
       queryKey: deadlinesKey(y),
       queryFn: async () =>
@@ -35,13 +37,16 @@ export function useUpcomingDeadlines(enabled = true) {
     })),
   });
   const data = useMemo(
-    () => (current.data && next.data ? [...current.data, ...next.data] : undefined),
-    [current.data, next.data]
+    () =>
+      previous.data && current.data && next.data
+        ? [...previous.data, ...current.data, ...next.data]
+        : undefined,
+    [previous.data, current.data, next.data]
   );
   return {
     data,
-    isLoading: current.isLoading || next.isLoading,
-    isError: current.isError || next.isError,
+    isLoading: previous.isLoading || current.isLoading || next.isLoading,
+    isError: previous.isError || current.isError || next.isError,
   };
 }
 

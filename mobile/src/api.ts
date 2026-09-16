@@ -207,12 +207,13 @@ export function deadlines(auth: Auth, year: number) {
 
 /**
  * Anul în curs și cel următor, într-o listă (16.09.2026): serverul ține doar următorul termen al
- * fiecărui fel, iar acela e des în anul următor — 15 martie pentru datele de anul ăsta.
+ * fiecărui fel, iar acela e des în anul următor — 15 martie pentru datele de anul ăsta. Și anul
+ * trecut: un termen ratat rămâne depășit până se bifează, chiar dacă a fost în decembrie.
  */
 export async function upcomingDeadlines(auth: Auth) {
   const year = new Date().getFullYear();
-  const [current, next] = await Promise.all([deadlines(auth, year), deadlines(auth, year + 1)]);
-  return [...current, ...next];
+  const lists = await Promise.all([year - 1, year, year + 1].map((y) => deadlines(auth, y)));
+  return lists.flat();
 }
 
 // ── controlul (M1c) ─────────────────────────────────────────────────────────

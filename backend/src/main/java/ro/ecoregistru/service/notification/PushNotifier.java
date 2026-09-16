@@ -132,7 +132,7 @@ public class PushNotifier {
 
     /** Termenul unei firme, pentru oamenii ei. Eticheta e scurtă: pe ecranul blocat încap două rânduri. */
     public static Message deadline(ReportingDeadline deadline, long daysUntil) {
-        String when = daysUntil <= 0 ? "scadent azi" : daysUntil == 1 ? "scadent mâine" : "scadent în " + daysUntil + " zile";
+        String when = daysUntil < 0 ? "trecut, nebifat" : daysUntil == 0 ? "scadent azi" : daysUntil == 1 ? "scadent mâine" : "scadent în " + daysUntil + " zile";
         return new Message(deadline.getCompany().getName() + ": termen " + when,
                 shortLabel(deadline.getReportType()), "termene");
     }

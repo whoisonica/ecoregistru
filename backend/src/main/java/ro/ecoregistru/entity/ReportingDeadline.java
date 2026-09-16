@@ -59,6 +59,10 @@ public class ReportingDeadline {
     @Column(name = "warned_1_day", nullable = false)
     boolean warned1Day;
 
+    /** V61 — mailul de a doua zi după un termen ratat a plecat (o singură dată). */
+    @Column(name = "warned_missed", nullable = false)
+    boolean warnedMissed;
+
     @Column(nullable = false)
     Instant createdAt;
 }
