@@ -8,7 +8,7 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
-> **17.09.2026, ~00:30 — 🔧 local, nedeployat: BUG-023, dublurile la reimport și istoricul importurilor cu „Retrage” (`V62`).**
+> **16.09.2026, 23:51 — ✅ pe producție (api v109 cu `V62`, app v94, `69797e6`): BUG-023, dublurile la reimport și istoricul importurilor cu „Retrage”.**
 > **(1) BUG-023:** destinația obligatorie și partenerul autorizat pe o predare de deșeu propriu stăteau numai în formularul web;
 > acum `WasteMovementService.validateOwnWasteHandover` le cere pe server, doar pe registrul Anexa 1 (proprietarul: „generator doar”).
 > Ieșirile art. 48 neschimbate. 78 de corpuri de cerere din 21 de teste trimiteau predări pe care ecranul le refuza și au primit destinația.
