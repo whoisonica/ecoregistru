@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Ban, Factory, Pencil, Plus, Recycle, RotateCcw, Truck, Users, Warehouse } from "lucide-react";
+import { Ban, Building2, Factory, Pencil, Plus, Recycle, RotateCcw, Truck, Users, Warehouse } from "lucide-react";
 import { CuiField } from "@/components/AnafLookup";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
@@ -1030,79 +1030,47 @@ export function PartnersPage() {
                 )}
               </div>
 
-              <div>
-                <span className="mb-2 block text-sm font-semibold text-content-strong">{t.roleQuestion}</span>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  <Switch
-                    id="p-role-client"
-                    checked={isClient}
-                    onChange={(checked) => {
-                      setIsClient(checked);
-                      if (roleError) setRoleError(false);
-                    }}
-                    label={roleLabels.client}
-                    description={roleLabels.clientHint}
-                  />
-                  <Switch
-                    id="p-role-supplier"
-                    checked={isSupplier}
-                    onChange={(checked) => {
-                      setIsSupplier(checked);
-                      if (roleError) setRoleError(false);
-                    }}
-                    label={roleLabels.supplier}
-                    description={roleLabels.supplierHint}
-                  />
-                </div>
-                {roleError && (
-                  <p data-field-error className="mt-1 text-xs text-state-bad-text">
-                    {t.roleRequired}
-                  </p>
-                )}
-              </div>
-
-              {/* Provenienţa stă aici, nu pe fiecare mişcare: nota 2 a Anexei 3 Ambalaje descrie
-                  **sursa**, nu transportul (decizia 43), şi se întreabă numai de la conturile care
-                  pot prelua de la terţi — un generator pur n-o depune niciodată. */}
-              {asksPackagingOrigin && (
-                <div id="p-pkg-origin">
-                  <span id="p-pkg-origin-label" className="mb-2 block text-sm font-semibold text-content-strong">
-                    {strings.packagingOrigin.label}
-                  </span>
-                  <PillGroup
-                    name="p-pkg-origin"
-                    aria-labelledby="p-pkg-origin-label"
-                    selected={[packagingOrigin]}
-                    onToggle={(value) => setPackagingOrigin(value)}
-                    options={[
-                      { value: "", label: strings.packagingOrigin.none },
-                      { value: "GENERATOR_PJ", label: strings.packagingOrigin.GENERATOR_PJ },
-                      { value: "COLECTOR", label: strings.packagingOrigin.COLECTOR },
-                      { value: "COMERCIANT", label: strings.packagingOrigin.COMERCIANT },
-                    ]}
-                  />
-                  <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
-                </div>
-              )}
-
               {/* Transportatorul e o bifă, nu un tip: aceeași firmă e des și colector, și
                   transportator. Licența și șoferii apar numai bifat. */}
               <div>
-                <span className="mb-2 block text-sm font-semibold text-content-strong">{t.carrierQuestion}</span>
-                <Switch
-                  id="p-carrier"
-                  checked={isCarrier}
-                  onChange={(checked) => {
-                    setIsCarrier(checked);
+                <span id="p-carrier-label" className="mb-2 block text-sm font-semibold text-content-strong">
+                  {t.carrierQuestion}
+                </span>
+                {/* Două răspunsuri spuse cu vorbele omului, în locul bifei „Transportator”. Salvează
+                    aceeași bifă (`carrier`); la „Doar le transportă” nu există alt răspuns. */}
+                <ChoiceCards
+                  name="p-carrier"
+                  aria-labelledby="p-carrier-label"
+                  columns={2}
+                  value={isCarrier ? "yes" : "no"}
+                  onChange={(value) => {
+                    setIsCarrier(value === "yes");
                     if (typeError) setTypeError(false);
                   }}
-                  label={t.carrierSwitch}
-                  description={t.carrierHint}
+                  options={[
+                    {
+                      value: "yes",
+                      label: t.carrierYesCard,
+                      description: t.carrierYesCardHint,
+                      icon: <Truck className="h-5 w-5" />,
+                    },
+                    {
+                      value: "no",
+                      label: t.carrierNoCard,
+                      description: type === "" ? t.carrierNoCardDisabled : t.carrierNoCardHint,
+                      icon: <Building2 className="h-5 w-5" />,
+                      disabled: type === "",
+                    },
+                  ]}
                 />
                 {!type && !isCarrier && <p className="mt-1 text-xs text-content-muted">{t.typeNoneHint}</p>}
 
                 {isCarrier && (
                   <div className="mt-3 space-y-4 border-l-2 border-line pl-4">
+                    <div>
+                      <span className="block text-sm font-semibold text-content-strong">{t.carrierDetails}</span>
+                      <p className="mt-0.5 text-xs text-content-muted">{t.carrierDetailsHint}</p>
+                    </div>
                     <Switch
                       id="p-heavy-vehicles"
                       checked={heavyVehicles}
@@ -1235,6 +1203,62 @@ export function PartnersPage() {
                   </div>
                 )}
               </div>
+
+              <div>
+                <span className="mb-2 block text-sm font-semibold text-content-strong">{t.roleQuestion}</span>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <Switch
+                    id="p-role-client"
+                    checked={isClient}
+                    onChange={(checked) => {
+                      setIsClient(checked);
+                      if (roleError) setRoleError(false);
+                    }}
+                    label={roleLabels.client}
+                    description={roleLabels.clientHint}
+                  />
+                  <Switch
+                    id="p-role-supplier"
+                    checked={isSupplier}
+                    onChange={(checked) => {
+                      setIsSupplier(checked);
+                      if (roleError) setRoleError(false);
+                    }}
+                    label={roleLabels.supplier}
+                    description={roleLabels.supplierHint}
+                  />
+                </div>
+                {roleError && (
+                  <p data-field-error className="mt-1 text-xs text-state-bad-text">
+                    {t.roleRequired}
+                  </p>
+                )}
+              </div>
+
+              {/* Provenienţa stă aici, nu pe fiecare mişcare: nota 2 a Anexei 3 Ambalaje descrie
+                  **sursa**, nu transportul (decizia 43), şi se întreabă numai de la conturile care
+                  pot prelua de la terţi — un generator pur n-o depune niciodată. */}
+              {asksPackagingOrigin && (
+                <div id="p-pkg-origin">
+                  <span id="p-pkg-origin-label" className="mb-2 block text-sm font-semibold text-content-strong">
+                    {strings.packagingOrigin.label}
+                  </span>
+                  <PillGroup
+                    name="p-pkg-origin"
+                    aria-labelledby="p-pkg-origin-label"
+                    selected={[packagingOrigin]}
+                    onToggle={(value) => setPackagingOrigin(value)}
+                    options={[
+                      { value: "", label: strings.packagingOrigin.none },
+                      { value: "GENERATOR_PJ", label: strings.packagingOrigin.GENERATOR_PJ },
+                      { value: "COLECTOR", label: strings.packagingOrigin.COLECTOR },
+                      { value: "COMERCIANT", label: strings.packagingOrigin.COMERCIANT },
+                    ]}
+                  />
+                  <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
+                </div>
+              )}
+
             </div>
 
             {/* ------------------------------------------------ 3. AUTORIZAȚIA DE MEDIU */}

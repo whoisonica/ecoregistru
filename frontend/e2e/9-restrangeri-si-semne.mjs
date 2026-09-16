@@ -284,11 +284,11 @@ await page.evaluate(() => {
   [...document.querySelectorAll("button")].find((b) => b.textContent.includes("Adaugă partener"))?.click();
 });
 await page.waitForTimeout(400);
-// Blocul de şoferi apare doar la un partener bifat „Transportator" — acolo se tastează rubrica.
+// Blocul de şoferi apare doar la un partener care vine el după deșeu — acolo se tastează rubrica.
 await page.evaluate(() => {
   const d = document.querySelector('div[role="dialog"][aria-modal="true"]');
-  const bifa = [...d.querySelectorAll("label")].find((l) => /Transportator/.test(l.textContent));
-  bifa?.querySelector("input[type=checkbox]")?.click();
+  // Din 17.09.2026 bifa e cardul „Vine el și îl ia”.
+  d.querySelector('input[name="p-carrier"][value="yes"]')?.click();
 });
 await page.waitForTimeout(400);
 const inFisa = await page.evaluate(
