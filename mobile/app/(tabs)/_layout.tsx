@@ -10,6 +10,7 @@ import { canWrite } from "../../src/auth";
 import { SCREEN_LABEL, useCompany, useMovementScreens } from "../../src/company";
 import { Icon, type IconName } from "../../src/components/Icon";
 import { useSession } from "../../src/session";
+import { useOutboxSync } from "../../src/sync";
 import { colors, fonts } from "../../src/theme";
 
 type Tab = { href: Href; path: string; label: string; icon: IconName };
@@ -34,6 +35,8 @@ const RIGHT: Tab[] = [
 const MOVEMENT_ICON: Record<MovementScreen, IconName> = { GENERATED: "list", IN: "in", OUT: "out" };
 
 export default function TabsLayout() {
+  // Coada de predări pleacă de oriunde ar fi omul în aplicație, nu doar de pe „Adaugă”.
+  useOutboxSync();
   return (
     <View style={styles.fill}>
       <Slot />
@@ -90,7 +93,12 @@ function TabBar() {
       {left.map(item)}
       {/* VIEWER nu vede „+” (todo-mobil §6): locul rămâne gol, ca celelalte să nu sară. */}
       {canWrite(session?.role) ? (
-        <Pressable style={styles.item} onPress={() => router.replace("/adauga")} accessibilityRole="button">
+        <Pressable
+          testID="tab-adauga"
+          style={styles.item}
+          onPress={() => router.replace("/adauga")}
+          accessibilityRole="button"
+        >
           <LinearGradient colors={plusColors} style={[styles.plus, collector && styles.plusBlue]}>
             <Icon name="plus" size={24} color="#fff" strokeWidth={2.6} />
           </LinearGradient>
@@ -105,7 +113,9 @@ function TabBar() {
 
   // Pe Android blurul nativ e scump și inegal; fundalul aproape opac arată la fel pe ecranele de azi.
   return Platform.OS === "ios" ? (
-    <BlurView intensity={60} tint="light" style={styles.bar}>{content}</BlurView>
+    <BlurView intensity={60} tint="light" style={styles.bar}>
+      {content}
+    </BlurView>
   ) : (
     <View style={[styles.bar, styles.barAndroid]}>{content}</View>
   );

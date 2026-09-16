@@ -25,7 +25,17 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "WasteHouse pozează avizul ca să citească din el predarea. Poza rămâne dovada predării.",
+          "photosPermission": "WasteHouse ia din galerie poza unui aviz, ca să citească din ea predarea.",
+          "microphonePermission": false
+        }
+      ],
+      "./plugins/mlkit-bundled"
     ]
   }
 }

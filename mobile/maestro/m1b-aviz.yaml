@@ -1,0 +1,112 @@
+# M1b: avizul din galerie → câmpurile citite → confirmate unul câte unul → predarea salvată.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1b-aviz.yaml
+# Avizul e INVENTAT (`aviz-partener.png`, randat din HTML: Demo Reciclare SRL → Eco Valorificare SA, 15 01 02,
+# 1.250 kg, seria DRS nr. 000417) și pus în galerie înainte: `xcrun simctl addmedia booted …` pe iOS,
+# `adb push … /sdcard/Pictures/` + scanarea media pe Android. Simulatorul n-are cameră, deci poza vine din galerie;
+# restul drumului e același.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 20000
+- takeScreenshot: 01-adauga
+- tapOn:
+    id: pick-aviz
+
+# Selectorul de poze al sistemului. Cea mai nouă poză e prima; `aviz-partener` e a doua.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: Photos
+          timeout: 15000
+      - tapOn:
+          point: "50%,24%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: ".*[Pp]hoto.*"
+          timeout: 15000
+      - tapOn:
+          text: "Photo taken on.*"
+          index: 1
+
+# --- Citirea: fiecare câmp citit are rândul lui de pe aviz și butonul „Corect”. ---
+- extendedWaitUntil:
+    visible:
+      id: f-date-confirm
+    timeout: 30000
+- takeScreenshot: 02-citit
+- assertVisible: '.*Seria DRS Nr. 000417.*'
+
+# „Salvează” nu pleacă până nu sunt confirmate toate: ecranul rămâne și spune câte mai sunt.
+- scrollUntilVisible:
+    element:
+      id: handover-save
+- tapOn:
+    id: handover-save
+- assertVisible: "Confirmă cele .* câmpuri citite din poză."
+- takeScreenshot: 03-neconfirmat
+
+# --- Confirmarea, de sus în jos, în ordinea formularului. ---
+- scrollUntilVisible:
+    element:
+      id: f-date-confirm
+    direction: UP
+- tapOn:
+    id: f-date-confirm
+- tapOn:
+    id: f-code-confirm
+- scrollUntilVisible:
+    element:
+      id: f-qty-confirm
+- tapOn:
+    id: f-qty-confirm
+- scrollUntilVisible:
+    element: Punct de lucru Cluj
+    direction: UP
+- tapOn: Punct de lucru Cluj
+
+# G3: codul R/D al ultimei predări de 15 01 02 către Eco Valorificare, aplicat numai la apăsare.
+- scrollUntilVisible:
+    element:
+      id: f-partner-confirm
+- tapOn:
+    id: f-partner-confirm
+- scrollUntilVisible:
+    element:
+      id: same-as-last
+    direction: UP
+- assertVisible: "La fel ca data trecută: R3.*"
+- tapOn:
+    id: same-as-last
+- scrollUntilVisible:
+    element:
+      id: f-doc-confirm
+- tapOn:
+    id: f-doc-confirm
+- tapOn:
+    id: f-vehicle-confirm
+- assertNotVisible: "Confirmă .* citit.* din poză."
+- scrollUntilVisible:
+    element:
+      id: handover-save
+- takeScreenshot: 04-confirmat
+- tapOn:
+    id: handover-save
+
+# --- Înapoi pe „Adaugă”. Cu serverul pornit, predarea pleacă pe loc. ---
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 15000
+- takeScreenshot: 05-dupa-salvare

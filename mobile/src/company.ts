@@ -3,6 +3,7 @@ import { screensFor, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@web/strings";
 
 import * as api from "./api";
+import { cached } from "./outbox";
 import { useSession } from "./session";
 
 /**
@@ -19,7 +20,8 @@ export function useCompany() {
   const { auth, session } = useSession();
   return useQuery({
     queryKey: ["company", "current", session?.tenantId],
-    queryFn: () => api.currentCompany(auth!),
+    // Ținut și pe telefon: formularul de predare are nevoie de profilul firmei și fără semnal.
+    queryFn: () => cached(`${session?.tenantId}:company`, () => api.currentCompany(auth!)),
     enabled: !!auth && !!session?.tenantId,
     staleTime: 5 * 60 * 1000,
   });

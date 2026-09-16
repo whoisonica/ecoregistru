@@ -1,0 +1,56 @@
+# M1b, proba fără semnal — pasul 2 din 3 (vezi 1-login.yaml): formularul fără poză, din listele de pe
+# telefon, salvat fără legătură la server. Predarea trebuie să rămână în „De trimis”.
+appId: ro.wastehouse.app
+---
+- tapOn:
+    id: without-photo
+- extendedWaitUntil:
+    visible: Punct de lucru Cluj
+    timeout: 15000
+- tapOn: Punct de lucru Cluj
+- tapOn: "20 01 01.*"
+- scrollUntilVisible:
+    element:
+      id: qty
+- tapOn:
+    id: qty
+- inputText: "77"
+# Tastatura numerică de pe iOS n-are „Gata”; formularul o închide la derulare.
+- scroll
+- scrollUntilVisible:
+    element:
+      id: fate-DISPOSED
+- tapOn:
+    id: fate-DISPOSED
+- tapOn:
+    id: op-D5
+- scrollUntilVisible:
+    element:
+      id: partner-search
+- tapOn:
+    id: partner-search
+- inputText: Depozitare
+# „Enter” închide tastatura unui câmp de text pe un rând; `hideKeyboard` nu merge sigur pe iOS.
+- pressKey: Enter
+- tapOn:
+    id: partner-option
+- scrollUntilVisible:
+    element:
+      id: f-doc
+- tapOn:
+    id: f-doc
+- inputText: OFFLINE-M1B
+- pressKey: Enter
+- takeScreenshot: 02-formular-fara-semnal
+- scrollUntilVisible:
+    element:
+      id: handover-save
+- tapOn:
+    id: handover-save
+- extendedWaitUntil:
+    visible:
+      id: outbox-row
+    timeout: 15000
+- assertVisible: ".*20 01 01 · 77 kg.*"
+- assertVisible: de trimis
+- takeScreenshot: 03-de-trimis

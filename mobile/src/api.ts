@@ -1,4 +1,17 @@
-import type { Company, Deadline, MovementSummary, MovementTotals, WasteMovement, WasteRegister } from "@web/types";
+import type {
+  Company,
+  Deadline,
+  MovementSummary,
+  MovementTotals,
+  Partner,
+  PartnerType,
+  WasteCode,
+  WasteMovement,
+  WasteRegister,
+  WorkPoint,
+} from "@web/types";
+
+import { File } from "expo-file-system";
 
 import type { AuthResponse, DeviceSessionRow } from "./auth";
 
@@ -20,9 +33,17 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? PRODUCTION_URL;
 /** 401 pe o cerere cu token, după ce reîmprospătarea a fost încercată și n-a mers: omul iese din cont. */
 export class UnauthorizedError extends Error {}
 
+/**
+ * Un răspuns de eroare de la server. `serverMessage` e propoziția scrisă de backend în plicul lui
+ * (`error-message`, `AdviceController`) — pe ea o vede omul când o predare din coadă e refuzată,
+ * fiindcă ea spune ce e de schimbat.
+ */
 export class ApiError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
+  constructor(
+    readonly status: number,
+    readonly serverMessage: string | null = null,
+  ) {
+    super(serverMessage ?? `HTTP ${status}`);
   }
 }
 
@@ -69,11 +90,13 @@ interface Options extends Omit<RequestInit, "body"> {
 
 async function request<T>(path: string, options: Options = {}): Promise<T> {
   const { auth, body, headers, retried, ...rest } = options;
+  // O poză pleacă `multipart/form-data`, iar granița o pune `fetch` singur — deci fără antet scris.
+  const multipart = body instanceof FormData;
   const res = await fetch(`${BASE_URL}${path}`, {
     ...rest,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
     headers: {
-      "Content-Type": "application/json",
+      ...(multipart ? {} : { "Content-Type": "application/json" }),
       ...(auth ? { Authorization: `Bearer ${auth.token}` } : {}),
       // Ca pe web (`frontend/src/lib/api.ts`): firma pe care lucrează sesiunea. Consultantul și
       // platforma o schimbă; pentru ceilalți e chiar firma lor și serverul o ignoră oricum.
@@ -88,7 +111,10 @@ async function request<T>(path: string, options: Options = {}): Promise<T> {
     throw new UnauthorizedError();
   }
   if (res.status === 401 && auth) throw new UnauthorizedError();
-  if (!res.ok) throw new ApiError(res.status);
+  if (!res.ok) {
+    const envelope = (await res.json().catch(() => null)) as { "error-message"?: string } | null;
+    throw new ApiError(res.status, envelope?.["error-message"] ?? null);
+  }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
@@ -158,6 +184,73 @@ export function movements(auth: Auth, params: MovementFilters) {
 /** `year` e obligatoriu — §3 din todo-mobil spunea altceva, serverul răspunde 400 fără el. */
 export function deadlines(auth: Auth, year: number) {
   return request<Deadline[]>(`/api/v1/deadlines?year=${year}`, { auth });
+}
+
+// ── predarea (M1b) ──────────────────────────────────────────────────────────
+
+export function workPoints(auth: Auth) {
+  return request<WorkPoint[]>("/api/v1/work-points", { auth });
+}
+
+/** Toată lista, fără filtru (G4): telefonul o ține în cache și caută în ea CUI-ul citit. */
+export function partners(auth: Auth) {
+  return request<Partner[]>("/api/v1/partners", { auth });
+}
+
+/**
+ * Ultimele ieșiri ale deșeului propriu, cele mai noi întâi — de aici vine „La fel ca data trecută”
+ * pentru codul R/D (G3). Fără an: o predare de anul trecut către același partener e tot un răspuns.
+ */
+export function recentHandovers(auth: Auth) {
+  return request<PageSlice<WasteMovement>>(
+    `/api/v1/movements?${query({ register: "ANEXA_1", direction: "OUT", size: 100 })}`,
+    { auth },
+  );
+}
+
+/** Nomenclatorul, pentru un cod care nu e în profilul firmei. Numai cu semnal. */
+export function wasteCodes(auth: Auth, q: string) {
+  return request<WasteCode[]>(`/api/v1/waste-codes?${query({ q })}`, { auth });
+}
+
+/** Ce știe ANAF despre un CUI. Nu salvează nimic. */
+export interface CompanyLookup {
+  cui: string;
+  name: string;
+  address: string | null;
+  tradeRegisterNumber: string | null;
+  inactive: boolean;
+}
+
+export function companyLookup(auth: Auth, cui: string) {
+  return request<CompanyLookup>(`/api/v1/company-lookup/${encodeURIComponent(cui)}`, { auth });
+}
+
+/** Partenerul nou, numai cu ce a arătat ANAF și ce a ales omul. Restul se completează pe web. */
+export interface NewPartner {
+  name: string;
+  cui: string;
+  address: string | null;
+  tradeRegisterNumber: string | null;
+  type: PartnerType;
+  client: boolean;
+  supplier: boolean;
+}
+
+export function createPartner(auth: Auth, partner: NewPartner) {
+  return request<Partner>("/api/v1/partners", { method: "POST", auth, body: { carrier: false, ...partner } });
+}
+
+export function createMovement(auth: Auth, body: unknown) {
+  return request<WasteMovement>("/api/v1/movements", { method: "POST", auth, body });
+}
+
+export function uploadAttachment(auth: Auth, movementId: string, photoUri: string) {
+  const form = new FormData();
+  // Fișierul de pe disc ca Blob (`expo-file-system`). Forma veche `{ uri, name, type }` e refuzată de
+  // `fetch`-ul din Expo 57 („Unsupported FormDataPart implementation”) — prinsă pe simulator la M1b.
+  form.append("file", new File(photoUri), "aviz.jpg");
+  return request<unknown>(`/api/v1/movements/${movementId}/attachments`, { method: "POST", auth, body: form });
 }
 
 /**

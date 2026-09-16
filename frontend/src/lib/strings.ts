@@ -204,6 +204,51 @@ export const strings = {
     // Bara de jos a colectorului: „Intrare” albastru în locul listei de generare (todo-mobil §6).
     tabIn: "Intrări",
     tabOut: "Ieșiri",
+
+    // --- M1b: „Pozează avizul” și coada de predări ---
+    handoverNew: "Predare nouă",
+    snapAviz: "Pozează avizul",
+    pickFromGallery: "Alege poza din galerie",
+    withoutPhoto: "Completează fără poză",
+    addHint: "Camera citește avizul, tu confirmi fiecare câmp. Nimic nu intră în registru până nu apeși „Salvează”.",
+    // Colectorul pur n-are „Generare”: intrările lui trec prin cântar, care vine la M2.
+    collectorLater: "Intrările la cântar vin într-o versiune următoare a aplicației.",
+    cameraDenied: "Fără acces la cameră nu pot poza avizul. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
+    reading: "Citesc avizul…",
+    readNothing: "N-am putut citi nimic din poză. Completează de mână — poza rămâne atașată predării.",
+    readFrom: (line: string) => `Din poză: „${line}”`,
+    confirmRead: "Corect",
+    confirmPending: (n: number) =>
+      n === 1 ? "Confirmă câmpul citit din poză." : `Confirmă cele ${n} câmpuri citite din poză.`,
+    photoAttached: "Poza avizului se atașează predării.",
+    // G3 — codul R/D e obligatoriu la predare. Propunerea se aplică numai la apăsare.
+    sameAsLast: (code: string, date: string) => `La fel ca data trecută: ${code} (${date})`,
+    partnerSearch: "Caută după nume sau CUI",
+    partnerNone: "Niciun partener nu se potrivește.",
+    change: "Schimbă",
+    // G4 — partenerul după CUI.
+    unknownCui: (cui: string) => `CUI-ul ${cui} de pe aviz nu e printre partenerii firmei.`,
+    anafLookup: "Caută la ANAF",
+    anafNotFound: "ANAF nu găsește CUI-ul ăsta. Verifică poza sau alege partenerul din listă.",
+    anafInactive: "ANAF îl arată inactiv fiscal.",
+    anafOffline: "Fără semnal nu pot căuta la ANAF. Alege partenerul din listă sau adaugă-l când ai semnal.",
+    partnerWhatDoes: "Ce face cu deșeul",
+    partnerWhoInvoices: "Cine facturează",
+    addPartner: "Adaugă partenerul",
+    addPartnerFailed: "Nu am putut adăuga partenerul.",
+    packagingOnWeb: "Materialul și categoria ambalajului se completează pe web.",
+    wasteCodeNoProfile: "Scrie codul sau denumirea ca să cauți în nomenclator.",
+    listUnavailable: "Lista nu e pe telefon încă. Deschide ecranul o dată cu semnal.",
+    dateFormat: "Scrie data ca zz.ll.aaaa.",
+    save: "Salvează predarea",
+    // Coada: ce n-a ajuns încă pe server.
+    outboxTitle: "De trimis",
+    outboxHint: "Pleacă singure când telefonul prinde semnal.",
+    outboxPending: "de trimis",
+    outboxRejected: "refuzată",
+    outboxPhotoFailed: "Predarea e în registru; poza n-a urcat.",
+    outboxRemove: "Scoate",
+    outboxSendNow: "Trimite acum",
   },
 
   login: {

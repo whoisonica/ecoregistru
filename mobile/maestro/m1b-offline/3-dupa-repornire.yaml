@@ -1,0 +1,66 @@
+# M1b, proba fără semnal — pasul 3 din 3 (vezi 1-login.yaml): aplicația pornită din nou, FĂRĂ să-i
+# ștergem datele. Fără `ONLINE`: predarea e tot în „De trimis”. Cu `-e ONLINE=1`: pleacă singură.
+appId: ro.wastehouse.app
+---
+# Fără `openLink`: clientul de dezvoltare se leagă singur la ultimul Metro, iar un link trimis peste
+# pornire reîncarcă pachetul în mijlocul montării și aplicația cade (EXC_BREAKPOINT în
+# `ExpoFabricView`, văzut pe iOS 26.5). Pe Android, după `adb reboot`, lansatorul poate cere Metro.
+- launchApp:
+    clearState: false
+# Pe Android, în modul avion, clientul de dezvoltare încearcă Metro pe IP-ul din rețea, nu-l găsește și
+# rămâne în lansator (uneori cu „Error loading app”). Se leagă de mână la `localhost` (prin `adb reverse`).
+# O aplicație de magazin are pachetul înăuntru, deci pasul ăsta e numai al probei.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Connect|Error loading app|Acasă"
+          timeout: 40000
+      - runFlow:
+          when:
+            visible: Error loading app
+          commands:
+            - back
+      - runFlow:
+          when:
+            visible: Connect
+          commands:
+            - tapOn: "http://"
+            - inputText: localhost:8081
+            - tapOn: Connect
+- runFlow:
+    when:
+      visible: ".*:8081"
+      platform: iOS
+    commands:
+      - tapOn: ".*:8081"
+- tapOn:
+    text: Continue
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: tab-adauga
+    timeout: 60000
+- tapOn:
+    id: tab-adauga
+- runFlow:
+    when:
+      true: ${ONLINE != "1"}
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: outbox-row
+          timeout: 15000
+      - assertVisible: ".*20 01 01 · 77 kg.*"
+      - takeScreenshot: 04-dupa-repornire-tot-de-trimis
+# Nimeni nu apasă „Trimite acum”: rândul trebuie să plece singur când revine legătura.
+- runFlow:
+    when:
+      true: ${ONLINE == "1"}
+    commands:
+      - extendedWaitUntil:
+          notVisible:
+            id: outbox-row
+          timeout: 240000
+      - takeScreenshot: 05-trimis

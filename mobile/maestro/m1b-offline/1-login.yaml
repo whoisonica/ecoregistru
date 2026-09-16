@@ -1,0 +1,27 @@
+# M1b, proba fără semnal — pasul 1 din 3, CU semnal: login și „Adaugă”, ca listele formularului
+# (profilul firmei, punctele de lucru, partenerii, ultimele predări) să ajungă pe telefon.
+#
+# Tot drumul (criteriul din todo-mobil §7 M1b):
+#   1. maestro test … m1b-offline/1-login.yaml
+#   2. se taie legătura la server — Android: `adb shell cmd connectivity airplane-mode enable`;
+#      iOS (simulatorul n-are mod avion): se oprește backendul local
+#   3. maestro test … m1b-offline/2-fara-semnal.yaml   → predarea stă în „De trimis”
+#   4. se repornește telefonul — Android: `adb reboot`, apoi `adb reverse tcp:8081 tcp:8081`;
+#      iOS: `xcrun simctl terminate booted ro.wastehouse.app`
+#   5. maestro test … m1b-offline/3-dupa-repornire.yaml cu legătura încă tăiată → tot acolo
+#   6. se redă legătura (`airplane-mode disable` / backendul pornit) și 3-dupa-repornire.yaml cu
+#      `-e ONLINE=1` → rândul pleacă singur; în bază predarea „OFFLINE-M1B” există O SINGURĂ dată.
+appId: ro.wastehouse.app
+---
+- runFlow: ../pornire.yaml
+- runFlow: ../login.yaml
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 20000
+# Timp pentru cele patru liste; nu se vede nimic pe ecran cât vin.
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: 01-cu-semnal
