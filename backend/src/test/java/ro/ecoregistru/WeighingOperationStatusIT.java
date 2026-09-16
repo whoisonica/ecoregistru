@@ -38,6 +38,7 @@ import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.MovementQueryService;
 import ro.ecoregistru.service.WasteMovementService;
 import ro.ecoregistru.service.WeighingOperationService;
 import ro.ecoregistru.controller.request.RecordWeightRequest;
@@ -73,6 +74,7 @@ class WeighingOperationStatusIT {
     @Autowired JwtService jwtService;
     @Autowired WeighingOperationService service;
     @Autowired WasteMovementService movementService;
+    @Autowired MovementQueryService queryService;
     @Autowired WasteMovementRepository movementRepository;
     @Autowired WasteArticleRepository articleRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
@@ -264,26 +266,26 @@ class WeighingOperationStatusIT {
     void theMovementListShowsOnlyFinalizedWeighingLines() {
         UUID id = weighedOperation("300");
         assertThat(listed()).isEmpty();
-        assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
+        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
 
         service.finalizeOperation(id);
         assertThat(listed()).containsExactly(300);
-        assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isEqualTo(1);
+        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isEqualTo(1);
         // Rândul își spune operațiunea, ca ecranul să trimită omul acolo în loc să-i ofere o
         // editare pe care serviciul o refuză (BUG-018).
-        assertThat(movementService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
+        assertThat(queryService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
                         null, 0, 25, null, false)
                 .content().get(0).weighingOperationId()).isEqualTo(id);
 
         service.cancel(id, "Cântărire dublă");
         assertThat(listed()).isEmpty();
-        assertThat(movementService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
+        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
     }
 
     // --- helpers ---
 
     private List<Integer> listed() {
-        return movementService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
+        return queryService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
                         null, 0, 25, null, false)
                 .content().stream().map(m -> m.quantity().intValue()).toList();
     }

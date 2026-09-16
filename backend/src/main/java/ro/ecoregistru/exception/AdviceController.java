@@ -205,7 +205,7 @@ public class AdviceController {
     }
 
     /**
-     * Plasa de sub verificarea de mărime din {@code WasteMovementService}, nu în locul ei.
+     * Plasa de sub verificarea de mărime din {@code MovementAttachmentService}, nu în locul ei.
      *
      * <p>Serviciul respinge orice trece de 10 MB — limita reală, cea a contului Cloudinary. Limita
      * de multipart din {@code application.yml} stă puțin deasupra ei, ca fișierul să apuce să

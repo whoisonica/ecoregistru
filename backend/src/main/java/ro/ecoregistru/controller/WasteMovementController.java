@@ -22,6 +22,9 @@ import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.enums.MovementDirection;
 import ro.ecoregistru.enums.WasteRegister;
+import ro.ecoregistru.service.MovementAttachmentService;
+import ro.ecoregistru.service.MovementDocumentService;
+import ro.ecoregistru.service.MovementQueryService;
 import ro.ecoregistru.service.WasteMovementService;
 
 import java.nio.charset.StandardCharsets;
@@ -40,6 +43,9 @@ public class WasteMovementController {
     static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
 
     WasteMovementService movementService;
+    MovementQueryService queryService;
+    MovementDocumentService documentService;
+    MovementAttachmentService attachmentService;
 
     /**
      * One page of movements, searched and sorted by the database.
@@ -79,7 +85,7 @@ public class WasteMovementController {
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "false") boolean asc) {
-        return movementService.list(year, month, workPointId, wasteCodeId, leftSite,
+        return queryService.list(year, month, workPointId, wasteCodeId, leftSite,
                 missingOperationCode, register, direction, search, page, size, sort, asc);
     }
 
@@ -95,7 +101,7 @@ public class WasteMovementController {
             @RequestParam(required = false) UUID workPointId,
             @RequestParam(required = false) WasteRegister register,
             @RequestParam(required = false) MovementDirection direction) {
-        return movementService.totals(year, month, workPointId, register, direction);
+        return queryService.totals(year, month, workPointId, register, direction);
     }
 
     /**
@@ -107,7 +113,7 @@ public class WasteMovementController {
      */
     @GetMapping("/summary")
     public MovementSummaryResponse summary(@RequestParam int year, @RequestParam int month) {
-        return movementService.summary(year, month);
+        return queryService.summary(year, month);
     }
 
     @GetMapping("/{id}")
@@ -147,7 +153,7 @@ public class WasteMovementController {
     @GetMapping("/{id}/anexa3")
     @PreAuthorize(CAN_WRITE)
     public ResponseEntity<byte[]> anexa3(@PathVariable UUID id) {
-        byte[] body = movementService.renderAnexa3(id);
+        byte[] body = documentService.renderAnexa3(id);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("anexa3-" + id + ".pdf")
                 .build();
@@ -162,7 +168,7 @@ public class WasteMovementController {
      */
     @GetMapping("/{id}/aviz")
     public ResponseEntity<byte[]> aviz(@PathVariable UUID id) {
-        byte[] body = movementService.renderAviz(id);
+        byte[] body = documentService.renderAviz(id);
         ContentDisposition disposition = ContentDisposition.inline()
                 .filename("aviz-" + id + ".pdf")
                 .build();
@@ -182,7 +188,7 @@ public class WasteMovementController {
      */
     @GetMapping("/{id}/anexa2")
     public ResponseEntity<byte[]> anexa2(@PathVariable UUID id) {
-        byte[] body = movementService.renderAnexa2(id);
+        byte[] body = documentService.renderAnexa2(id);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("anexa2-" + id + ".pdf")
                 .build();
@@ -199,7 +205,7 @@ public class WasteMovementController {
      */
     @GetMapping("/{id}/anexa2/prag")
     public Anexa2ThresholdResponse anexa2Threshold(@PathVariable UUID id) {
-        return movementService.anexa2Threshold(id);
+        return documentService.anexa2Threshold(id);
     }
 
     @DeleteMapping("/{id}")
@@ -214,7 +220,7 @@ public class WasteMovementController {
     public ResponseEntity<AttachmentResponse> addAttachment(
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(movementService.addAttachment(id, file));
+        return ResponseEntity.ok(attachmentService.addAttachment(id, file));
     }
 
     /**
@@ -232,7 +238,7 @@ public class WasteMovementController {
     @GetMapping("/{id}/attachments/{attachmentId}/continut")
     public ResponseEntity<byte[]> attachmentContent(@PathVariable UUID id,
                                                     @PathVariable UUID attachmentId) {
-        var content = movementService.attachmentContent(id, attachmentId);
+        var content = attachmentService.attachmentContent(id, attachmentId);
         MediaType type = safeInlineType(content.contentType());
         // Doar ce se poate arăta fără să ruleze nimic rămâne `inline`; restul se descarcă.
         ContentDisposition disposition = (type == MediaType.APPLICATION_OCTET_STREAM
@@ -282,7 +288,7 @@ public class WasteMovementController {
     @DeleteMapping("/{id}/attachments/{attachmentId}")
     @PreAuthorize(CAN_WRITE)
     public ResponseEntity<Void> deleteAttachment(@PathVariable UUID id, @PathVariable UUID attachmentId) {
-        movementService.deleteAttachment(id, attachmentId);
+        attachmentService.deleteAttachment(id, attachmentId);
         return ResponseEntity.noContent().build();
     }
 }

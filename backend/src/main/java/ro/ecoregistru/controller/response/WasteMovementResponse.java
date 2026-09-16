@@ -79,7 +79,7 @@ public record WasteMovementResponse(
          * know", and regula de lucru 1 forbids turning that into an accusation.
          *
          * <p>It is a warning, never a refusal, and it is shown on screen only. See
-         * {@code WasteMovementService#renderAnexa3} for why the form still prints, and why the
+         * {@code MovementDocumentService#renderAnexa3} for why the form still prints, and why the
          * warning must not be printed on it.
          */
         boolean recipientAuthorizationExpired,

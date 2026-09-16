@@ -17,7 +17,7 @@ import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.service.CloudinaryStorageService;
 
-import static ro.ecoregistru.service.WasteMovementService.MAX_ATTACHMENT_BYTES;
+import static ro.ecoregistru.service.MovementAttachmentService.MAX_ATTACHMENT_BYTES;
 
 import java.math.BigDecimal;
 import java.time.Instant;
