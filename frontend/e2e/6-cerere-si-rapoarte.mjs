@@ -19,8 +19,10 @@ const check = (n, ok, d = "") => {
 };
 
 // ══════════════════════════════════════════════ FORMULARUL PUBLIC, FĂRĂ AUTENTIFICARE
-// Din 16.09.2026 (direcția „Poster”) formularul e în trei pași — Compania · Contactul · Deșeurile —
-// cu tot ce nu e obligatoriu pliat la ultimul pas. Proba merge pas cu pas, cum merge omul.
+// Din 16.09.2026 (direcția „Poster”) formularul e în patru pași — Compania · Punctul de lucru ·
+// Contactul · Deșeurile — și aproape totul e obligatoriu (proprietarul: „hai să obligăm omul să își
+// facă și punct de lucru și tot ce e sub «Detalii care ne scutesc de un telefon»”). Proba merge pas
+// cu pas, cum merge omul, și încearcă la fiecare pas să treacă cu rubricile goale.
 await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
 await page.waitForTimeout(400);
 
@@ -28,35 +30,37 @@ const brand = await page.textContent("header");
 check("pagina spune al cui e", /WasteHouse/.test(brand ?? ""), (brand ?? "").trim().slice(0, 40));
 
 const steps = await page.$$eval("ol li", (li) => li.length);
-check("verdele arată cei trei pași ai formularului", steps >= 3, steps + " pași");
+check("verdele arată cei patru pași ai formularului", steps >= 4, steps + " pași");
 
 const CONTINUE = 'button:has-text("Continuă")';
+const requiredIds = () =>
+  page.$$eval("label", (labels) =>
+    labels.filter((l) => l.textContent.includes("*")).map((l) => l.getAttribute("for"))
+  );
+const onStep = async (n) => (await page.textContent("form")).includes(`Pasul ${n} din 4`);
+const invalidCount = async () => (await page.$$('[data-invalid="true"]')).length;
 
 // ---------------------------------------------- PASUL 1: COMPANIA
-// Rubricile obligatorii ale pasului se văd **înainte** de a apăsa Continuă, nu după.
-const marked1 = await page.$$eval("label", (labels) =>
-  labels.filter((l) => l.textContent.includes("*")).map((l) => l.getAttribute("for"))
-);
+const marked1 = await requiredIds();
 check(
-  "pasul 1 își marchează cele două rubrici obligatorii",
-  ["ar-cui", "ar-name"].every((id) => marked1.includes(id)),
+  "pasul 1 își marchează rubricile obligatorii",
+  ["ar-cui", "ar-name", "ar-address", "ar-caen"].every((id) => marked1.includes(id)),
   marked1.join(", ")
 );
-
 await page.click(CONTINUE);
 await page.waitForTimeout(500);
-const invalid1 = (await page.$$('[data-invalid="true"]')).length;
-check("„Continuă” pe pasul gol marchează rubricile", invalid1 === 2, invalid1 + " rubrici marcate");
+check("„Continuă” pe pasul gol marchează rubricile", (await invalidCount()) === 4, (await invalidCount()) + " marcate");
 const errorTexts1 = await page.$$eval("p[data-field-error]", (p) => p.map((x) => x.textContent.trim()));
-check("fiecare rubrică își spune motivul", errorTexts1.length === 2, errorTexts1.join(" | "));
+check("fiecare rubrică își spune motivul", errorTexts1.length === 4, errorTexts1.join(" | "));
 const focusedId = await page.evaluate(() => document.activeElement?.id ?? "");
 check("focusul sare la prima rubrică greșită", focusedId === "ar-cui", focusedId || "(niciunul)");
-const stillStep1 = (await page.textContent("form")).includes("Pasul 1 din 3");
-check("și nu trece mai departe", stillStep1);
+check("și nu trece mai departe", await onStep(1));
 
 // CUI-ul e verificat aici, nu la aprobare.
 await page.fill("#ar-name", "Proba Automata SRL");
 await page.fill("#ar-cui", "nu-e-cui");
+await page.fill("#ar-address", "Str. Sediului nr. 1, Cluj-Napoca");
+await page.fill("#ar-caen", "1071");
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
 check("CUI-ul stricat se respinge cu forma cerută", /2–10 cifre/.test(await page.textContent("form")), "");
@@ -65,34 +69,42 @@ const cui = "RO" + String(Date.now()).slice(-8);
 await page.fill("#ar-cui", cui);
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
-check("pasul 2 se deschide", (await page.textContent("form")).includes("Pasul 2 din 3"));
-const asideAfter1 = await page.textContent("ol");
-check("verdele scrie ce s-a completat la pasul 1", asideAfter1.includes(cui), "");
+check("pasul 2 se deschide", await onStep(2));
+check("verdele scrie ce s-a completat la pasul 1", (await page.textContent("ol")).includes(cui), "");
 
-// ---------------------------------------------- PASUL 2: CONTACTUL
+// ---------------------------------------------- PASUL 2: PUNCTUL DE LUCRU + AUTORIZAȚIA
+// Firma demo e „Generator” (implicit), deci transportul nu se cere; punctul de lucru și autorizația, da.
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
-const focused2 = await page.evaluate(() => document.activeElement?.id ?? "");
-check("emailul lipsă oprește pasul 2", focused2 === "ar-contact-email", focused2 || "(niciunul)");
+check("punctul de lucru gol oprește pasul 2", (await invalidCount()) === 4 && (await onStep(2)), (await invalidCount()) + " marcate");
+check("data lipsă are mesajul ei", /Scrie data/.test(await page.textContent("form")), "");
+await page.fill("#ar-wp-name", "Hala de probă");
+await page.fill("#ar-wp-address", "Str. Probelor nr. 6, Cluj-Napoca");
+await page.fill("#ar-auth-number", "AM-PROBA-6");
+await page.fill("#ar-auth-expiry", "2028-06-30");
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+check("pasul 3 se deschide", await onStep(3));
+
+// ---------------------------------------------- PASUL 3: CONTACTUL
+await page.click(CONTINUE);
+await page.waitForTimeout(400);
+const focused3 = await page.evaluate(() => document.activeElement?.id ?? "");
+check("contactul gol oprește pasul 3, cu focus pe nume", focused3 === "ar-contact-name", focused3 || "(niciunul)");
+await page.fill("#ar-contact-name", "Proba Automată");
+await page.fill("#ar-contact-phone", "0740000006");
+await page.fill("#ar-contact-role", "administrator");
 await page.fill("#ar-contact-email", "fara-arond");
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
 check("emailul incomplet se respinge", /nu pare complet/.test(await page.textContent("form")), "");
-
 const email = "proba" + String(Date.now()).slice(-6) + "@example.ro";
 await page.fill("#ar-contact-email", email);
-await page.fill("#ar-contact-phone", "0740000006");
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
-check("pasul 3 se deschide", (await page.textContent("form")).includes("Pasul 3 din 3"));
+check("pasul 4 se deschide", await onStep(4));
 
-// ---------------------------------------------- PASUL 3: DEȘEURILE + DETALIILE PLIATE
-// Tot ce nu e obligatoriu stă pliat: fără „Adaugă”, nicio rubrică din el nu e în pagină.
-check("detaliile opționale sunt pliate", (await page.$("#ar-wp-name")) === null);
-await page.click('button:has-text("Adaugă")');
-await page.waitForTimeout(300);
-check("„Adaugă” le deschide", (await page.$("#ar-wp-name")) !== null);
-
+// ---------------------------------------------- PASUL 4: DEȘEURILE, TIPUL DE GENERATOR, CODURILE
 // Cele 28 de bife R/D nu stau deschise în fața cuiva care n-a auzit de R13.
 const codesHiddenAtFirst = (await page.$$('input[type="checkbox"][class*="rounded"]')).length;
 const hasUnknownEscape = (await page.textContent("form")).includes("Nu știu");
@@ -103,13 +115,13 @@ await page.waitForTimeout(250);
 const codesShown = (await page.$$('input[type="checkbox"]')).length;
 check("alegerea „le aleg acum” deschide lista", codesShown > 20, codesShown + " bife");
 
-// Exact rubricile pe care tabelul inboxului le ascundea. Se completează aici ca dialogul de mai jos
-// să aibă ce citi: o cerere goală n-ar dovedi nimic, fiindcă secțiunile fără niciun răspuns se
-// pliază dinadins la un singur rând.
-await page.fill("#ar-wp-name", "Hala de probă");
-await page.fill("#ar-wp-address", "Str. Probelor nr. 6, Cluj-Napoca");
-await page.fill("#ar-auth-number", "AM-PROBA-6");
+// Tipul de generator e obligatoriu la cine generează: trimiterea fără nicio bifă se oprește aici.
 await page.fill("#ar-notes", "Rând scris de proba automată 6-cerere-si-rapoarte.");
+await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+await page.click('button[type="submit"]');
+await page.waitForTimeout(600);
+check("fără tipul de generator nu se trimite", /Bifează cel puțin una/.test(await page.textContent("form")), "");
+await page.click('label:has-text("Producător") input[type="checkbox"]');
 await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 await page.click('button[type="submit"]');
 await page.waitForTimeout(1200);

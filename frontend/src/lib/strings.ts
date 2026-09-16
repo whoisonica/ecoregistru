@@ -2562,35 +2562,39 @@ export const strings = {
     posterAccent: "Restul îl facem noi.",
     posterLede: "Conturile le creează echipa WasteHouse, din acest formular.",
     step1Name: "Compania",
-    step1Lead: "Cum se numește și ce face cu deșeurile.",
-    step2Name: "Contactul",
-    step2Lead: "Unde trimitem datele de acces.",
-    step3Name: "Deșeurile",
-    step3Lead: "Ce ai de obicei. Poți lăsa gol.",
-    noteRequired: "Trei rubrici obligatorii, câteva minute.",
+    step1Lead: "Nume, CUI, sediu, ce face cu deșeurile.",
+    step2Name: "Punctul de lucru",
+    step2Lead: "Unde se produce deșeul, cu autorizația.",
+    step3Name: "Contactul",
+    step3Lead: "Unde trimitem datele de acces.",
+    step4Name: "Deșeurile",
+    step4Lead: "Ce ai de obicei și ce faci cu ele.",
+    noteRequired: "Patru pași, câteva minute. Rubricile cu * sunt obligatorii.",
     noteAccess: "Accesul vine pe email, în 1–2 zile lucrătoare.",
     posterNote: "Nimic nu pleacă până nu apeși „Trimite cererea”.",
     // Formularul în pași (proprietarul, 16.09.2026, după ce a văzut 22 de rubrici pe o pagină: „nu e
-    // prea lung?”, apoi „vreau mai prietenos” la „Cine sunteți?”). Fiecare pas e o întrebare
-    // prietenoasă, nu un titlu de secțiune; „Cine sunteți?” a fost respins, s-a cerut „Detalii despre
-    // compania ta”.
-    stepOf: "Pasul {n} din 3 · {name}",
+    // prea lung?”, apoi „vreau mai prietenos” la „Cine sunteți?”, apoi, la blocul pliat cu opționale:
+    // „hai să obligăm omul să își facă și punct de lucru și tot ce e sub «Detalii care ne scutesc…»”).
+    // Fiecare pas e un titlu prietenos, nu o întrebare; aproape totul e obligatoriu, ca la aprobare
+    // să nu mai fie nevoie de un telefon.
+    stepOf: "Pasul {n} din 4 · {name}",
     step1Title: "Detalii despre compania ta",
-    step1Subtitle: "Câteva date din certificatul de înregistrare. Restul îl completăm noi.",
-    step2Title: "Datele tale de contact",
-    step2Subtitle: "Pe acest email primești linkul cu care îți alegi parola, în 1–2 zile lucrătoare.",
-    step3Title: "Deșeurile companiei tale",
-    step3Subtitle:
-      "Bifează ce ai de obicei. Dacă nu ești sigur, lasă gol — le stabilim împreună la configurarea contului.",
+    step1Subtitle: "Datele din certificatul de înregistrare, ca să putem crea firma exact cum e în acte.",
+    step2Title: "Punctul de lucru",
+    step2Subtitle:
+      "Locul unde se produce efectiv deșeul. Evidența se ține pe punct de lucru, nu pe firmă, iar adresa e des alta decât sediul.",
+    step3Title: "Datele tale de contact",
+    step3Subtitle: "Pe acest email primești linkul cu care îți alegi parola, în 1–2 zile lucrătoare.",
+    step4Title: "Deșeurile companiei tale",
+    step4Subtitle:
+      "Bifează ce ai de obicei. Dacă nu ești sigur de lista de deșeuri, lasă gol — o stabilim împreună la configurarea contului.",
     continueStep: "Continuă",
     backStep: "Înapoi",
-    // Tot ce nu e obligatoriu stă pliat într-un singur bloc, la ultimul pas. Toate rubricile de
-    // dinăuntru sunt opționale, deci plierea nu ascunde nimic care ar bloca trimiterea.
-    extraTitle: "Detalii care ne scutesc de un telefon",
-    extraHint: "Punctul de lucru, autorizația de mediu, codurile R/D, ambalajele, CAEN, funcția.",
-    extraOpen: "Adaugă",
-    extraClose: "Ascunde",
-    extraOtherHint: "Ce nu e în listă, în cuvintele tale. Le transformăm noi în coduri.",
+    wasteOtherHint: "Ce nu e în listă, în cuvintele tale. Le transformăm noi în coduri.",
+    // Rubricile obligatorii care n-au un mesaj al lor. Scurt, fiindcă stă sub o rubrică marcată.
+    errRequired: "Rubrica e obligatorie.",
+    errRequiredDate: "Scrie data, ca în act.",
+    errMarketRoles: "Bifează cel puțin una — din răspuns știm dacă raportezi și ambalaje.",
     haveAccount: "Ai deja cont?",
     goToLogin: "Intră",
     // „Ce faceți cu deșeurile” ca trei carduri cu o propoziție (regula: sub șapte opțiuni, nu
@@ -2601,7 +2605,7 @@ export const strings = {
       COLLECTOR: { label: "Le colectăm", hint: "Primim deșeuri de la alții și le predăm mai departe." },
       BOTH: { label: "Amândouă", hint: "Generăm deșeuri proprii și colectăm de la alții." },
     },
-    requiredLegend: "Rubricile marcate cu * sunt obligatorii. Restul ne scutesc de un telefon.",
+    requiredLegend: "Rubricile marcate cu * sunt obligatorii.",
     sectionCompany: "Firma",
     sectionWorkPoint: "Punctul de lucru",
     sectionContact: "Persoana de contact",
@@ -2641,7 +2645,7 @@ export const strings = {
     caenCode: "Cod CAEN",
     caenCodePlaceholder: "ex. 4677",
     caenCodeHint:
-      "Apare în antetul declarației anuale de deșeuri. Dacă nu ești sigur care e, lasă gol — rubrica rămâne necompletată și o stabilim împreună.",
+      "Codul activității principale, din certificatul de înregistrare. Apare în antetul declarației anuale de deșeuri.",
     environmentalAuthNumber: "Nr. autorizație de mediu",
     environmentalAuthExpiry: "Expiră la",
     transportMeans: "Cu ce transportați",

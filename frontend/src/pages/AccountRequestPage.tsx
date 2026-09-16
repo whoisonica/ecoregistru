@@ -59,7 +59,28 @@ const CUI_PATTERN = /^(RO)?\d{2,10}$/;
 /** Deliberat larg: validarea de email a browserului respinge deja ce e evident stricat. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type FieldErrors = Partial<Record<"companyName" | "cui" | "contactEmail", string>>;
+type FieldErrors = Partial<
+  Record<
+    | "companyName"
+    | "cui"
+    | "companyAddress"
+    | "caenCode"
+    | "workPointName"
+    | "workPointAddress"
+    | "authNumber"
+    | "authExpiry"
+    | "transportMeans"
+    | "transportLicenseNumber"
+    | "transportLicenseExpiry"
+    | "contactName"
+    | "contactEmail"
+    | "contactPhone"
+    | "contactRole"
+    | "marketRoles",
+    string
+  >
+>;
+type Step = 1 | 2 | 3 | 4;
 
 /**
  * The intake form — the only public page besides login, and the only way into a closed register.
@@ -113,10 +134,8 @@ export function AccountRequestPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  /** Pasul curent, 1–3. Ciorna ține rubricile, nu pasul: la revenire se pornește de la început. */
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  /** Blocul pliat de la pasul 3, cu tot ce nu e obligatoriu. */
-  const [showExtra, setShowExtra] = useState(false);
+  /** Pasul curent, 1–4. Ciorna ține rubricile, nu pasul: la revenire se pornește de la început. */
+  const [step, setStep] = useState<Step>(1);
   /** Emailul cu care s-a trimis, ca pagina de mulțumire să-l poată numi. */
   const [sentToEmail, setSentToEmail] = useState("");
 
@@ -215,9 +234,6 @@ export function AccountRequestPage() {
     setError(null);
   }
 
-  // Only a business that takes waste from third parties has transport to declare.
-  const asksTransport = companyType !== "GENERATOR";
-
   function toggleCode(code: WasteOperationCode) {
     setOperationCodes((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
@@ -230,25 +246,68 @@ export function AccountRequestPage() {
     setOperationCodes([]);
   }
 
-  /** Rubricile obligatorii ale unui pas; `undefined` = toate (la trimitere). */
-  function validate(only?: 1 | 2 | 3): FieldErrors {
+  // Only a business that takes waste from third parties has transport to declare.
+  const asksTransport = companyType !== "GENERATOR";
+  // Doar cine generează are „tipul de generator” (producător / importator / comerciant).
+  const asksMarketRoles = companyType !== "COLLECTOR";
+
+  /**
+   * Rubricile obligatorii ale unui pas; `undefined` = toate (la trimitere). Aproape totul e
+   * obligatoriu (proprietarul, 16.09.2026): ce lipsea cerea un telefon la aprobare. Rămân libere
+   * doar textele („alte deșeuri”, observațiile) și lista de deșeuri, unde golul e un răspuns.
+   */
+  function validate(only?: Step): FieldErrors {
     const errs: FieldErrors = {};
+    const need = (value: string, key: keyof FieldErrors, message: string = t.errRequired) => {
+      if (!value.trim()) errs[key] = message;
+    };
     if (only === undefined || only === 1) {
-      if (!companyName.trim()) errs.companyName = t.errCompanyName;
+      need(companyName, "companyName", t.errCompanyName);
       const normalizedCui = cui.replace(/\s/g, "").toUpperCase();
       if (!normalizedCui) errs.cui = t.errCui;
       else if (!CUI_PATTERN.test(normalizedCui)) errs.cui = t.errCuiFormat;
+      need(companyAddress, "companyAddress");
+      need(caenCode, "caenCode");
     }
     if (only === undefined || only === 2) {
+      need(workPointName, "workPointName");
+      need(workPointAddress, "workPointAddress");
+      need(authNumber, "authNumber");
+      need(authExpiry, "authExpiry", t.errRequiredDate);
+      if (asksTransport) {
+        need(transportMeans, "transportMeans");
+        need(transportLicenseNumber, "transportLicenseNumber");
+        need(transportLicenseExpiry, "transportLicenseExpiry", t.errRequiredDate);
+      }
+    }
+    if (only === undefined || only === 3) {
+      need(contactName, "contactName");
+      need(contactPhone, "contactPhone");
+      need(contactRole, "contactRole");
       if (!contactEmail.trim()) errs.contactEmail = t.errContactEmail;
       else if (!EMAIL_PATTERN.test(contactEmail.trim())) errs.contactEmail = t.errContactEmailFormat;
+    }
+    if (only === undefined || only === 4) {
+      if (asksMarketRoles && marketRoles.length === 0) errs.marketRoles = t.errMarketRoles;
     }
     return errs;
   }
 
   /** Pe ce pas stă o rubrică greșită — ca trimiterea să ducă omul înapoi la ea, nu doar s-o marcheze. */
-  function stepOf(errs: FieldErrors): 1 | 2 | 3 {
-    return errs.companyName || errs.cui ? 1 : errs.contactEmail ? 2 : 3;
+  function stepOf(errs: FieldErrors): Step {
+    if (errs.companyName || errs.cui || errs.companyAddress || errs.caenCode) return 1;
+    if (
+      errs.workPointName ||
+      errs.workPointAddress ||
+      errs.authNumber ||
+      errs.authExpiry ||
+      errs.transportMeans ||
+      errs.transportLicenseNumber ||
+      errs.transportLicenseExpiry
+    )
+      return 2;
+    if (errs.contactName || errs.contactEmail || errs.contactPhone || errs.contactRole) return 3;
+    return 4;
   }
 
   /**
@@ -264,7 +323,7 @@ export function AccountRequestPage() {
     });
   }
 
-  function goTo(next: 1 | 2 | 3) {
+  function goTo(next: Step) {
     setStep(next);
     // Pasul nou începe de sus, ca o pagină nouă — nu de unde rămăsese derularea celui vechi.
     requestAnimationFrame(() => window.scrollTo({ top: 0 }));
@@ -281,7 +340,7 @@ export function AccountRequestPage() {
     }
     setErrors({});
     setError(null);
-    if (step < 3) goTo((step + 1) as 2 | 3);
+    if (step < 4) goTo((step + 1) as Step);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -341,10 +400,11 @@ export function AccountRequestPage() {
   // Direcția „Poster” (16.09.2026): verdele din stânga cu cuprinsul formularului — cei trei pași, cu
   // cel curent aprins și ce s-a completat scris sub cei trecuți; formularul aerisit în dreapta, un
   // pas pe ecran. Același cadru pe pagina de mulțumire, ca omul să nu sară în alt decor după ce a apăsat.
-  const stepNames = [t.step1Name, t.step2Name, t.step3Name] as const;
-  const stepTitles = [t.step1Title, t.step2Title, t.step3Title] as const;
-  const stepSubtitles = [t.step1Subtitle, t.step2Subtitle, t.step3Subtitle] as const;
+  const stepNames = [t.step1Name, t.step2Name, t.step3Name, t.step4Name] as const;
+  const stepTitles = [t.step1Title, t.step2Title, t.step3Title, t.step4Title] as const;
+  const stepSubtitles = [t.step1Subtitle, t.step2Subtitle, t.step3Subtitle, t.step4Subtitle] as const;
   const fieldClass = "h-12 px-4 text-base";
+  const areaClass = "px-4 text-base";
   const labelClass = "text-[0.8125rem] text-content-strong";
 
   return (
@@ -356,7 +416,7 @@ export function AccountRequestPage() {
       lede={t.posterLede}
       aside={
         <div className="flex flex-col gap-7">
-          <ol className="flex flex-col gap-6">
+          <ol className="flex flex-col gap-5">
             <PosterStep
               index={1}
               title={t.step1Name}
@@ -371,9 +431,17 @@ export function AccountRequestPage() {
               body={t.step2Lead}
               current={!sent && step === 2}
               done={sent || step > 2}
+              summary={workPointName.trim()}
+            />
+            <PosterStep
+              index={3}
+              title={t.step3Name}
+              body={t.step3Lead}
+              current={!sent && step === 3}
+              done={sent || step > 3}
               summary={contactEmail.trim()}
             />
-            <PosterStep index={3} title={t.step3Name} body={t.step3Lead} current={!sent && step === 3} done={sent} />
+            <PosterStep index={4} title={t.step4Name} body={t.step4Lead} current={!sent && step === 4} done={sent} />
           </ol>
           <div className="flex flex-col gap-1.5 border-t border-line pt-5">
             {[t.noteRequired, t.noteAccess, t.posterNote].map((line) => (
@@ -502,6 +570,37 @@ export function AccountRequestPage() {
                   }))}
                 />
               </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_180px]">
+                <div>
+                  <Label className={labelClass} htmlFor="ar-address" required>
+                    {t.companyAddress}
+                  </Label>
+                  <Textarea
+                    className={areaClass}
+                    id="ar-address"
+                    rows={2}
+                    value={companyAddress}
+                    onChange={(e) => setCompanyAddress(e.target.value)}
+                    {...invalidProps("ar-address-err", errors.companyAddress)}
+                  />
+                  <FieldError id="ar-address-err" message={errors.companyAddress} />
+                </div>
+                <div>
+                  <Label className={labelClass} htmlFor="ar-caen" required>
+                    {t.caenCode}
+                  </Label>
+                  <Input
+                    className={cn(fieldClass, "font-mono")}
+                    id="ar-caen"
+                    value={caenCode}
+                    onChange={(e) => setCaenCode(e.target.value)}
+                    placeholder={t.caenCodePlaceholder}
+                    {...invalidProps("ar-caen-err", errors.caenCode)}
+                  />
+                  <FieldError id="ar-caen-err" message={errors.caenCode} />
+                  <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -509,7 +608,122 @@ export function AccountRequestPage() {
             <div className="flex flex-col gap-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className={labelClass} htmlFor="ar-contact-name">
+                  <Label className={labelClass} htmlFor="ar-wp-name" required>
+                    {t.workPointName}
+                  </Label>
+                  <Input
+                    className={fieldClass}
+                    id="ar-wp-name"
+                    value={workPointName}
+                    onChange={(e) => setWorkPointName(e.target.value)}
+                    placeholder={t.workPointNamePlaceholder}
+                    autoFocus
+                    {...invalidProps("ar-wp-name-err", errors.workPointName)}
+                  />
+                  <FieldError id="ar-wp-name-err" message={errors.workPointName} />
+                </div>
+                <div>
+                  <Label className={labelClass} htmlFor="ar-wp-address" required>
+                    {t.workPointAddress}
+                  </Label>
+                  <Textarea
+                    className={areaClass}
+                    id="ar-wp-address"
+                    rows={2}
+                    value={workPointAddress}
+                    onChange={(e) => setWorkPointAddress(e.target.value)}
+                    {...invalidProps("ar-wp-address-err", errors.workPointAddress)}
+                  />
+                  <FieldError id="ar-wp-address-err" message={errors.workPointAddress} />
+                </div>
+              </div>
+
+              <FormSection size="lg" title={t.sectionAuthorization} className="pt-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label className={labelClass} htmlFor="ar-auth-number" required>
+                      {t.environmentalAuthNumber}
+                    </Label>
+                    <Input
+                      className={fieldClass}
+                      id="ar-auth-number"
+                      value={authNumber}
+                      onChange={(e) => setAuthNumber(e.target.value)}
+                      {...invalidProps("ar-auth-number-err", errors.authNumber)}
+                    />
+                    <FieldError id="ar-auth-number-err" message={errors.authNumber} />
+                  </div>
+                  <div>
+                    <Label className={labelClass} htmlFor="ar-auth-expiry" required>
+                      {t.environmentalAuthExpiry}
+                    </Label>
+                    <DateInput
+                      className={fieldClass}
+                      id="ar-auth-expiry"
+                      value={authExpiry}
+                      onChange={(e) => setAuthExpiry(e.target.value)}
+                      {...invalidProps("ar-auth-expiry-err", errors.authExpiry)}
+                    />
+                    <FieldError id="ar-auth-expiry-err" message={errors.authExpiry} />
+                  </div>
+                </div>
+              </FormSection>
+
+              {asksTransport && (
+                <FormSection size="lg" title={t.sectionTransport} description={t.transportHint} className="pt-2">
+                  <div>
+                    <Label className={labelClass} htmlFor="ar-transport-means" required>
+                      {t.transportMeans}
+                    </Label>
+                    <Textarea
+                      className={areaClass}
+                      id="ar-transport-means"
+                      rows={2}
+                      value={transportMeans}
+                      onChange={(e) => setTransportMeans(e.target.value)}
+                      placeholder={t.transportMeansPlaceholder}
+                      {...invalidProps("ar-transport-means-err", errors.transportMeans)}
+                    />
+                    <FieldError id="ar-transport-means-err" message={errors.transportMeans} />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className={labelClass} htmlFor="ar-transport-licence" required>
+                        {t.transportLicenseNumber}
+                      </Label>
+                      <Input
+                        className={fieldClass}
+                        id="ar-transport-licence"
+                        value={transportLicenseNumber}
+                        onChange={(e) => setTransportLicenseNumber(e.target.value)}
+                        {...invalidProps("ar-transport-licence-err", errors.transportLicenseNumber)}
+                      />
+                      <FieldError id="ar-transport-licence-err" message={errors.transportLicenseNumber} />
+                    </div>
+                    <div>
+                      <Label className={labelClass} htmlFor="ar-transport-expiry" required>
+                        {t.transportLicenseExpiry}
+                      </Label>
+                      <DateInput
+                        className={fieldClass}
+                        id="ar-transport-expiry"
+                        value={transportLicenseExpiry}
+                        onChange={(e) => setTransportLicenseExpiry(e.target.value)}
+                        {...invalidProps("ar-transport-expiry-err", errors.transportLicenseExpiry)}
+                      />
+                      <FieldError id="ar-transport-expiry-err" message={errors.transportLicenseExpiry} />
+                    </div>
+                  </div>
+                </FormSection>
+              )}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className={labelClass} htmlFor="ar-contact-name" required>
                     {t.contactName}
                   </Label>
                   <Input
@@ -519,10 +733,12 @@ export function AccountRequestPage() {
                     onChange={(e) => setContactName(e.target.value)}
                     autoComplete="name"
                     autoFocus
+                    {...invalidProps("ar-contact-name-err", errors.contactName)}
                   />
+                  <FieldError id="ar-contact-name-err" message={errors.contactName} />
                 </div>
                 <div>
-                  <Label className={labelClass} htmlFor="ar-contact-phone">
+                  <Label className={labelClass} htmlFor="ar-contact-phone" required>
                     {t.contactPhone}
                   </Label>
                   <Input
@@ -531,7 +747,9 @@ export function AccountRequestPage() {
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
                     autoComplete="tel"
+                    {...invalidProps("ar-contact-phone-err", errors.contactPhone)}
                   />
+                  <FieldError id="ar-contact-phone-err" message={errors.contactPhone} />
                 </div>
               </div>
               <div>
@@ -549,298 +767,155 @@ export function AccountRequestPage() {
                 />
                 <FieldError id="ar-contact-email-err" message={errors.contactEmail} />
               </div>
+              <div>
+                <Label className={labelClass} htmlFor="ar-contact-role" required>
+                  {t.contactRole}
+                </Label>
+                <Input
+                  className={fieldClass}
+                  id="ar-contact-role"
+                  value={contactRole}
+                  onChange={(e) => setContactRole(e.target.value)}
+                  placeholder={t.contactRolePlaceholder}
+                  {...invalidProps("ar-contact-role-err", errors.contactRole)}
+                />
+                <FieldError id="ar-contact-role-err" message={errors.contactRole} />
+                <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
+              </div>
             </div>
           )}
 
-          {step === 3 && (
-            <div className="flex flex-col gap-6">
-              <PillGroup
-                name="ar-waste-names"
-                multiple
-                aria-labelledby="ar-step-title"
-                options={COMMON_WASTES.map((w) => ({ value: w.name, label: w.name, code: w.code }))}
-                selected={wasteNames}
-                onToggle={(name) =>
-                  setWasteNames((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]))
-                }
-              />
-              <div>
-                <Label className={labelClass} htmlFor="ar-waste-text">
-                  {t.wasteOtherText}
-                </Label>
-                <Textarea
-                  className="px-4 text-base"
-                  id="ar-waste-text"
-                  rows={2}
-                  value={wasteCodesText}
-                  onChange={(e) => setWasteCodesText(e.target.value)}
-                  placeholder={t.wasteCodesTextPlaceholder}
+          {step === 4 && (
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-4">
+                <PillGroup
+                  name="ar-waste-names"
+                  multiple
+                  aria-labelledby="ar-step-title"
+                  options={COMMON_WASTES.map((w) => ({ value: w.name, label: w.name, code: w.code }))}
+                  selected={wasteNames}
+                  onToggle={(name) =>
+                    setWasteNames((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]))
+                  }
                 />
-                <p className="mt-1 text-xs text-content-muted">{t.extraOtherHint}</p>
+                <div>
+                  <Label className={labelClass} htmlFor="ar-waste-text">
+                    {t.wasteOtherText}
+                  </Label>
+                  <Textarea
+                    className={areaClass}
+                    id="ar-waste-text"
+                    rows={2}
+                    value={wasteCodesText}
+                    onChange={(e) => setWasteCodesText(e.target.value)}
+                    placeholder={t.wasteCodesTextPlaceholder}
+                  />
+                  <p className="mt-1 text-xs text-content-muted">{t.wasteOtherHint}</p>
+                </div>
               </div>
 
-              {/* Tot ce nu e obligatoriu, într-un singur bloc pliat. Plierea nu ascunde nimic care
-                  ar bloca trimiterea: toate rubricile dinăuntru sunt opționale. */}
-              <div className="rounded-lg border border-line-strong">
-                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5">
-                  <div>
-                    <div className="font-semibold text-content">{t.extraTitle}</div>
-                    <div className="text-xs text-content-muted">{t.extraHint}</div>
+              {asksMarketRoles && (
+                <FormSection size="lg" title={t.sectionMarketRole}>
+                  <div data-invalid={errors.marketRoles ? "true" : undefined} tabIndex={-1}>
+                    <MarketRolePicker
+                      value={marketRoles}
+                      onChange={setMarketRoles}
+                      label={`${t.marketRoles} *`}
+                      hint={t.marketRolesHint}
+                    />
+                    <FieldError id="ar-market-roles-err" message={errors.marketRoles} />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-expanded={showExtra}
-                    aria-controls="ar-extra"
-                    onClick={() => setShowExtra((v) => !v)}
-                  >
-                    {showExtra ? t.extraClose : t.extraOpen}
-                  </Button>
+                </FormSection>
+              )}
+
+              <fieldset>
+                <legend className="text-xl font-semibold leading-7 text-content">{t.operationCodes}</legend>
+                <p className="mt-0.5 text-content-muted">{t.operationCodesHint}</p>
+
+                {/* Două ieșiri, iar prima e onorabilă: „nu știu" e un răspuns pe care aplicația îl
+                    înțelege deja — set gol înseamnă „nu s-a răspuns", iar profilul gol nu restrânge
+                    nimic (decizia 6). Ce s-a schimbat e că formularul o spune. */}
+                <div className="mt-3 space-y-2">
+                  <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
+                    <input
+                      type="radio"
+                      name="ar-codes-mode"
+                      className="mt-0.5 h-4 w-4 border-line-strong"
+                      checked={!chooseCodes}
+                      onChange={chooseUnknownCodes}
+                    />
+                    <span>
+                      <span className="font-medium text-content-strong">{t.operationCodesUnknown}</span>
+                      <span className="mt-0.5 block text-xs text-content-muted">
+                        {t.operationCodesUnknownHint}
+                      </span>
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
+                    <input
+                      type="radio"
+                      name="ar-codes-mode"
+                      className="mt-0.5 h-4 w-4 border-line-strong"
+                      checked={chooseCodes}
+                      onChange={() => setChooseCodes(true)}
+                    />
+                    <span>
+                      <span className="font-medium text-content-strong">{t.operationCodesChoose}</span>
+                      <span className="mt-0.5 block text-xs text-content-muted">
+                        {operationCodes.length > 0
+                          ? withCount(
+                              t.operationCodesSelected,
+                              operationCodes.length,
+                              "operațiune aleasă",
+                              "operațiuni alese"
+                            )
+                          : t.operationCodesChooseHint}
+                      </span>
+                    </span>
+                  </label>
                 </div>
-                {showExtra && (
-                  <div id="ar-extra" className="space-y-8 border-t border-line px-4 pb-5 pt-5">
-                    <FormSection title={t.sectionWorkPoint} description={t.workPointHint}>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-wp-name">
-                            {t.workPointName}
-                          </Label>
-                          <Input
-                            className={fieldClass}
-                            id="ar-wp-name"
-                            value={workPointName}
-                            onChange={(e) => setWorkPointName(e.target.value)}
-                            placeholder={t.workPointNamePlaceholder}
-                          />
-                        </div>
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-wp-address">
-                            {t.workPointAddress}
-                          </Label>
-                          <Textarea
-                            className="px-4 text-base"
-                            id="ar-wp-address"
-                            rows={2}
-                            value={workPointAddress}
-                            onChange={(e) => setWorkPointAddress(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </FormSection>
 
-                    <FormSection title={t.sectionCompany}>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-caen">
-                            {t.caenCode}
-                          </Label>
-                          <Input
-                            className={fieldClass}
-                            id="ar-caen"
-                            value={caenCode}
-                            onChange={(e) => setCaenCode(e.target.value)}
-                            placeholder={t.caenCodePlaceholder}
-                          />
-                          <p className="mt-1 text-xs text-content-muted">{t.caenCodeHint}</p>
-                        </div>
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-contact-role">
-                            {t.contactRole}
-                          </Label>
-                          <Input
-                            className={fieldClass}
-                            id="ar-contact-role"
-                            value={contactRole}
-                            onChange={(e) => setContactRole(e.target.value)}
-                            placeholder={t.contactRolePlaceholder}
-                          />
-                          <p className="mt-1 text-xs text-content-muted">{t.contactRoleHint}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <Label className={labelClass} htmlFor="ar-address">
-                          {t.companyAddress}
-                        </Label>
-                        <Textarea
-                          className="px-4 text-base"
-                          id="ar-address"
-                          rows={2}
-                          value={companyAddress}
-                          onChange={(e) => setCompanyAddress(e.target.value)}
-                        />
-                      </div>
-                    </FormSection>
-
-                    <FormSection title={t.sectionAuthorization}>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-auth-number">
-                            {t.environmentalAuthNumber}
-                          </Label>
-                          <Input
-                            className={fieldClass}
-                            id="ar-auth-number"
-                            value={authNumber}
-                            onChange={(e) => setAuthNumber(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-auth-expiry">
-                            {t.environmentalAuthExpiry}
-                          </Label>
-                          <DateInput
-                            className={fieldClass}
-                            id="ar-auth-expiry"
-                            value={authExpiry}
-                            onChange={(e) => setAuthExpiry(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </FormSection>
-
-                    {asksTransport && (
-                      <FormSection title={t.sectionTransport} description={t.transportHint}>
-                        <div>
-                          <Label className={labelClass} htmlFor="ar-transport-means">
-                            {t.transportMeans}
-                          </Label>
-                          <Textarea
-                            className="px-4 text-base"
-                            id="ar-transport-means"
-                            rows={2}
-                            value={transportMeans}
-                            onChange={(e) => setTransportMeans(e.target.value)}
-                            placeholder={t.transportMeansPlaceholder}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <div>
-                            <Label className={labelClass} htmlFor="ar-transport-licence">
-                              {t.transportLicenseNumber}
-                            </Label>
-                            <Input
-                              className={fieldClass}
-                              id="ar-transport-licence"
-                              value={transportLicenseNumber}
-                              onChange={(e) => setTransportLicenseNumber(e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label className={labelClass} htmlFor="ar-transport-expiry">
-                              {t.transportLicenseExpiry}
-                            </Label>
-                            <DateInput
-                              className={fieldClass}
-                              id="ar-transport-expiry"
-                              value={transportLicenseExpiry}
-                              onChange={(e) => setTransportLicenseExpiry(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </FormSection>
-                    )}
-
-                    <FormSection title={t.sectionMarketRole}>
-                      <MarketRolePicker
-                        value={marketRoles}
-                        onChange={setMarketRoles}
-                        label={t.marketRoles}
-                        hint={t.marketRolesHint}
-                      />
-                    </FormSection>
-
-                    <fieldset>
-                      <legend className="text-sm font-medium text-content-strong">{t.operationCodes}</legend>
-                      <p className="mt-0.5 text-xs text-content-muted">{t.operationCodesHint}</p>
-
-                      {/* Două ieșiri, iar prima e onorabilă: „nu știu" e un răspuns pe care aplicația
-                          îl înțelege deja — set gol înseamnă „nu s-a răspuns", iar profilul gol nu
-                          restrânge nimic (decizia 6). Ce s-a schimbat e că formularul o spune. */}
-                      <div className="mt-2 space-y-2">
-                        <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
-                          <input
-                            type="radio"
-                            name="ar-codes-mode"
-                            className="mt-0.5 h-4 w-4 border-line-strong"
-                            checked={!chooseCodes}
-                            onChange={chooseUnknownCodes}
-                          />
-                          <span>
-                            <span className="font-medium text-content-strong">{t.operationCodesUnknown}</span>
-                            <span className="mt-0.5 block text-xs text-content-muted">
-                              {t.operationCodesUnknownHint}
-                            </span>
-                          </span>
-                        </label>
-
-                        <label className="flex items-start gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-50">
-                          <input
-                            type="radio"
-                            name="ar-codes-mode"
-                            className="mt-0.5 h-4 w-4 border-line-strong"
-                            checked={chooseCodes}
-                            onChange={() => setChooseCodes(true)}
-                          />
-                          <span>
-                            <span className="font-medium text-content-strong">{t.operationCodesChoose}</span>
-                            <span className="mt-0.5 block text-xs text-content-muted">
-                              {operationCodes.length > 0
-                                ? withCount(
-                                    t.operationCodesSelected,
-                                    operationCodes.length,
-                                    "operațiune aleasă",
-                                    "operațiuni alese"
-                                  )
-                                : t.operationCodesChooseHint}
-                            </span>
-                          </span>
-                        </label>
-                      </div>
-
-                      {chooseCodes && (
-                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          {[
-                            { title: t.recovery, codes: R_CODES },
-                            { title: t.disposal, codes: D_CODES },
-                          ].map((group) => (
-                            <div key={group.title}>
-                              <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">
-                                {group.title}
-                              </span>
-                              <div className="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-line p-2">
-                                {group.codes.map((c) => (
-                                  <label key={c} className="flex items-start gap-2 text-sm">
-                                    <input
-                                      type="checkbox"
-                                      className="mt-0.5 h-4 w-4 rounded border-line-strong"
-                                      checked={operationCodes.includes(c)}
-                                      onChange={() => toggleCode(c)}
-                                    />
-                                    <span className="text-content-strong">{codeLabels[c]}</span>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
+                {chooseCodes && (
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {[
+                      { title: t.recovery, codes: R_CODES },
+                      { title: t.disposal, codes: D_CODES },
+                    ].map((group) => (
+                      <div key={group.title}>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">
+                          {group.title}
+                        </span>
+                        <div className="mt-1 max-h-48 space-y-1 overflow-y-auto rounded-md border border-line p-2">
+                          {group.codes.map((c) => (
+                            <label key={c} className="flex items-start gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 h-4 w-4 rounded border-line-strong"
+                                checked={operationCodes.includes(c)}
+                                onChange={() => toggleCode(c)}
+                              />
+                              <span className="text-content-strong">{codeLabels[c]}</span>
+                            </label>
                           ))}
                         </div>
-                      )}
-                    </fieldset>
-
-                    <div>
-                      <Label className={labelClass} htmlFor="ar-notes">
-                        {t.notes}
-                      </Label>
-                      <Textarea
-                        className="px-4 text-base"
-                        id="ar-notes"
-                        rows={3}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                      />
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 )}
+              </fieldset>
+
+              <div>
+                <Label className={labelClass} htmlFor="ar-notes">
+                  {t.notes}
+                </Label>
+                <Textarea
+                  className={areaClass}
+                  id="ar-notes"
+                  rows={3}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
               </div>
             </div>
           )}
@@ -867,13 +942,13 @@ export function AccountRequestPage() {
             ) : (
               <button
                 type="button"
-                onClick={() => goTo((step - 1) as 1 | 2)}
+                onClick={() => goTo((step - 1) as Step)}
                 className="text-sm font-medium text-mark hover:underline"
               >
                 ← {t.backStep}
               </button>
             )}
-            {step < 3 ? (
+            {step < 4 ? (
               <Button type="button" size="lg" className={publicButtonClass} onClick={nextStep}>
                 {t.continueStep} →
               </Button>

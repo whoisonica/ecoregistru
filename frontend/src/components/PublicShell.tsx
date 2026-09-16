@@ -168,7 +168,7 @@ export function PosterStep({
       </span>
       <div className="min-w-0">
         <div className={cn("text-[17px] font-semibold", lit ? "text-content" : "text-content-muted")}>{title}</div>
-        <div className="truncate text-content-muted">{done && summary ? summary : body}</div>
+        <div className={cn("text-content-muted", done && summary && "truncate")}>{done && summary ? summary : body}</div>
       </div>
     </li>
   );

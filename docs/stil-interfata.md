@@ -120,13 +120,16 @@ verdele landingului `#047857`, nu `brand`-ul aplicației: cine vine de pe wasteh
 site-ul. Tokenul `mark` (`DEFAULT` · `hover` · `soft`) stă în `tailwind.config.js` și e doar pentru paginile publice.
 Pe telefon coloana din stânga devine o bandă în capul paginii; loginul își ascunde tile-urile, cererea își ține pașii.
 
-**Cererea e în trei pași** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de rubrici pe o pagină):
-„Detalii despre compania ta” (CUI, denumire, „Ce faceți cu deșeurile” ca `ChoiceCards`) · „Datele tale de contact”
-(nume, telefon, email) · „Deșeurile companiei tale” (etichetele bifabile + un rând liber). Tot ce nu e obligatoriu
-stă pliat la pasul 3, într-un singur bloc: „Detalii care ne scutesc de un telefon · Adaugă”. Fiecare „Continuă”
-își verifică pasul; trimiterea întoarce omul la pasul rubricii greșite. Pașii din stânga sunt cuprinsul
-formularului: cel curent aprins, sub cei trecuți ce s-a completat. Titlurile sunt prietenoase, nu întrebări
-(„Cine sunteți?” a fost respins). Parola uitată și alegerea parolei rămân pe cardul vechi, de rescris când se ating.
+**Cererea e în patru pași, aproape totul obligatoriu** (proprietarul, 16.09.2026, seara: „nu e prea lung?” la 22 de
+rubrici pe o pagină; apoi, la blocul pliat cu opționale, „hai să obligăm omul să își facă și punct de lucru și tot ce
+e sub «Detalii care ne scutesc de un telefon»”): „Detalii despre compania ta” (CUI, denumire, tipul ca `ChoiceCards`,
+adresa sediului, CAEN) · „Punctul de lucru” (denumire, adresă, autorizația de mediu cu nr. și expirare; la colectori
+și transportul) · „Datele tale de contact” (nume, telefon, email, funcția) · „Deșeurile companiei tale” (etichetele
+bifabile + rând liber, opționale; tipul de generator obligatoriu la cine generează; codurile R/D cu „Nu știu” ca
+răspuns valid; observațiile libere). Fiecare „Continuă” își verifică pasul; trimiterea întoarce omul la pasul rubricii
+greșite. Pașii din stânga sunt cuprinsul formularului: cel curent aprins, sub cei trecuți ce s-a completat. Titlurile
+sunt prietenoase, nu întrebări („Cine sunteți?” a fost respins). Parola uitată și alegerea parolei rămân pe cardul
+vechi, de rescris când se ating.
 
 ## Ecranele de mișcări
 
