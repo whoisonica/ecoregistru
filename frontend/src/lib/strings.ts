@@ -456,6 +456,34 @@ export const strings = {
     nextStartMovementHint:
       "Evidența, fișa Anexa 1 și declarațiile se construiesc din mișcări — fiecare intrare și ieșire de deșeu. Până nu e înregistrată una, nu e nimic de raportat.",
     nextStartMovementCta: "Adaugă mișcare",
+    // „Primii pași" (16.09.2026): drumul unui cont nou până la primul document. Pașii se bifează singuri.
+    firstSteps: {
+      title: "Primii pași",
+      progress: "{done} din {total} gata",
+      hide: "Ascunde",
+      done: "Gata",
+      todo: "De făcut",
+      company: "Verifică datele firmei",
+      companyHintDone: "Adresa, codul CAEN și persoana desemnată sunt completate. Ele se tipăresc pe fișa de evidență și pe declarația anuală.",
+      companyHintMissing: "Lipsesc: {fields}. Se tipăresc pe fișa de evidență și pe declarația anuală; necompletate, rubricile ies goale.",
+      companyHintAskUs: "Scrie-ne la contact@wastehouse.ro și le completăm.",
+      companyHintClients: "Le completezi din Clienți.",
+      companyCta: "Vezi datele",
+      companyClientsCta: "Deschide Clienți",
+      fieldAddress: "adresa",
+      fieldCaen: "codul CAEN",
+      fieldWasteManager: "persoana desemnată cu gestiunea deșeurilor",
+      workPoint: "Adaugă punctul de lucru",
+      workPointHint: "Locul unde apar deșeurile. Fiecare mișcare se înregistrează pe un punct de lucru, iar adresa lui ajunge pe fișă.",
+      workPointCta: "Deschide Setări",
+      partner: "Adaugă firma care îți preia deșeurile",
+      partnerHint: "Colectorul sau operatorul căruia îi predai, cu numărul și data autorizației de mediu. Aplicația te anunță înainte să-i expire.",
+      partnerCta: "Deschide Parteneri",
+      movement: "Înregistrează prima mișcare",
+      movementHint: "Evidența și anexele se construiesc din mișcări. Dacă ții deja evidența într-un tabel Excel, o poți importa.",
+      movementCta: "Adaugă",
+      importCta: "Importă din Excel",
+    },
     // A treia stare a benzii, pe lângă „ai de făcut" şi „eşti la zi": **nu se ştie**.
     //
     // Garda de dinainte (`nextActionLoading`) acoperea numai cererile în zbor. O cerere **căzută**

@@ -32,6 +32,7 @@ const suites = [
   ["21-soferi.mjs", "șoferii din Setări: depozitul implicit, atestatul expirat, șoferul ales din listă la cântar"],
   ["22-lansare-marunte.mjs", "Istoric pe rândul de mișcare, cât cântărește dosarul, parola cu «Arată» și putere, limitele la șoferi"],
   ["23-cereri-1609.mjs", "Generare fără «Operațiune», scopul V/E, destinația și autorizația destinatarului, ANAF la CUI, Anexa 3 la generator"],
+  ["24-primii-pasi.mjs", "«Primii pași» pe Acasă: nu la firma care are tot, pașii bifați din date, «Ascunde» care ține, 375px"],
 ];
 
 const only = process.argv[2];

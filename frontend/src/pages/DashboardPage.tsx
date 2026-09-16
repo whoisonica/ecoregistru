@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useDashboardData, type NextAction } from "@/hooks/useDashboardData";
+import { FirstSteps } from "@/components/panel/FirstSteps";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import type { DeadlineStatus } from "@/lib/types";
 import { strings } from "@/lib/strings";
@@ -221,6 +222,9 @@ export function DashboardPage() {
       {/* Un lucru de făcut, înaintea stării: „sunt în regulă?" are răspunsul mai jos, dar
           „ce fac acum?" n-avea niciunul — se citeau cinci locuri și se trăgea singur concluzia. */}
       <NextActionBand action={d.nextAction} loading={d.nextActionLoading} />
+
+      {/* Cont nou: drumul până la primul document, pas cu pas. Dispare când e gata tot. */}
+      <FirstSteps />
 
       {/* Cifrele. Kilograme, nu rânduri: nimeni nu se uită la câte înregistrări are luna. */}
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
