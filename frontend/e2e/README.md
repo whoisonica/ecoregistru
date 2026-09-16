@@ -1,5 +1,8 @@
 # Probe de interfaţă
 
+📄 **16.09.2026, 22:00 — starea documentului pe termen**: proba 9 cere pe 15 martie cifrele anului raportat
+(„AN: N coduri, X t”) și, la firma demo (colector cu preluări 15 01), termenul Anexei 3 pe 25.02. **23/23** pe `eco_e2e_depuneri`.
+
 🗓️ **16.09.2026, 21:20 — Termene „De făcut” / „Bifate”**: proba 9 citește tabelul din `[data-testid="deadlines-todo"]` și dă clic
 pe linkul din `table` (pe desktop, cardul de telefon e ascuns și acoperă ținta); proba 10 cere acum **0** termene depășite pe
 tenantul demo (api v105 ascunde nebifatele trecute) și compară tonul benzii între firme. **23/23** pe `eco_e2e_facut`.
