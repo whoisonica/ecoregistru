@@ -2555,9 +2555,12 @@ export const strings = {
     recovery: "Valorificare (R)",
     disposal: "Eliminare (D)",
     wasteCodesText: "Ce deșeuri generați / preluați",
-    wasteCodesTextPlaceholder: "ex. carton, folie de plastic, deșeu menajer, moloz",
+    wasteListHint:
+      "Bifează ce ai din lista de mai jos, dacă vrei. Poți lăsa totul gol: le stabilim împreună la configurarea contului.",
+    wasteOtherText: "Alte deșeuri",
+    wasteCodesTextPlaceholder: "ex. nămol de la separator, textile, toner",
     wasteCodesTextHint:
-      "Scrie-le în cuvintele tale. Le transformăm noi în codurile din Lista Europeană a Deșeurilor.",
+      "Ce nu e în listă, scris în cuvintele tale. Le transformăm noi în codurile din Lista Europeană a Deșeurilor.",
     notes: "Alte observații",
     submit: "Trimite cererea",
     submitting: "Se trimite...",

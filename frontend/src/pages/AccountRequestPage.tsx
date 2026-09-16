@@ -18,6 +18,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { FormSection } from "@/components/ui/form-section";
 import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { MarketRolePicker } from "@/components/CompanyProfileFields";
+import { PillGroup } from "@/components/ui/pill-group";
 import { LegalFooter, LegalNotice } from "@/components/LegalFooter";
 
 const t = strings.accountRequest;
@@ -26,6 +27,31 @@ const codeLabels = strings.enums.wasteOperationCode;
 
 const COMPANY_TYPES: CompanyType[] = ["GENERATOR", "COLLECTOR", "BOTH"];
 const ALL_CODES = Object.keys(codeLabels) as WasteOperationCode[];
+
+/**
+ * Deșeurile pe care le au aproape toți clienții, pe nume de zi cu zi, cu codul din Lista europeană
+ * lângă (proprietarul, 16.09.2026: „să fie și lista, dar să lase gol dacă vrea”). Bifele sunt
+ * opționale, iar ce nu e aici se scrie dedesubt. Se trimit în același text ca până acum, cu codul
+ * între paranteze, deci cine aprobă cererea vede exact ce a ales omul.
+ */
+const COMMON_WASTES: { name: string; code: string }[] = [
+  { name: "Carton și ambalaje de hârtie", code: "15 01 01" },
+  { name: "Folie și ambalaje de plastic", code: "15 01 02" },
+  { name: "Paleți și ambalaje de lemn", code: "15 01 03" },
+  { name: "Doze și ambalaje metalice", code: "15 01 04" },
+  { name: "Ambalaje de sticlă", code: "15 01 07" },
+  { name: "Hârtie de birou", code: "20 01 01" },
+  { name: "Deșeu menajer amestecat", code: "20 03 01" },
+  { name: "Resturi alimentare", code: "20 01 08" },
+  { name: "Metale, fier vechi", code: "20 01 40" },
+  { name: "Lemn", code: "20 01 38" },
+  { name: "Moloz", code: "17 01 07" },
+  { name: "Echipamente electrice casate", code: "20 01 36" },
+  { name: "Anvelope uzate", code: "16 01 03" },
+  { name: "Ulei uzat", code: "13 02 08*" },
+  { name: "Becuri și tuburi fluorescente", code: "20 01 21*" },
+  { name: "Ambalaje contaminate (vopsele, chimicale)", code: "15 01 10*" },
+];
 const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
@@ -76,6 +102,8 @@ export function AccountRequestPage() {
    */
   const [chooseCodes, setChooseCodes] = useState(false);
   const [wasteCodesText, setWasteCodesText] = useState("");
+  /** Deșeurile bifate din lista uzuală, după nume. Goale e un răspuns bun: nu se cere nimic. */
+  const [wasteNames, setWasteNames] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   /**
    * Momeala: o rubrică pe care un om n-o vede și n-o poate focaliza cu Tab, dar pe care un robot
@@ -98,7 +126,7 @@ export function AccountRequestPage() {
       contactName, contactEmail, contactPhone, contactRole, caenCode,
       authNumber, authExpiry,
       transportMeans, transportLicenseNumber, transportLicenseExpiry,
-      marketRoles, operationCodes, wasteCodesText, notes,
+      marketRoles, operationCodes, wasteCodesText, wasteNames, notes,
     }),
     [
       companyName, cui, companyType, companyAddress,
@@ -106,7 +134,7 @@ export function AccountRequestPage() {
       contactName, contactEmail, contactPhone, contactRole, caenCode,
       authNumber, authExpiry,
       transportMeans, transportLicenseNumber, transportLicenseExpiry,
-      marketRoles, operationCodes, wasteCodesText, notes,
+      marketRoles, operationCodes, wasteCodesText, wasteNames, notes,
     ]
   );
 
@@ -135,6 +163,8 @@ export function AccountRequestPage() {
       // Ciorna nu ține alegerea, o deduce: dacă erau coduri bifate, lista se redeschide la ele.
       setChooseCodes(v.operationCodes.length > 0);
       setWasteCodesText(v.wasteCodesText);
+      // O ciornă de dinaintea listei n-are bifele.
+      setWasteNames(v.wasteNames ?? []);
       setNotes(v.notes);
     },
     // "Nothing worth keeping": every field back to how the form opens. GENERATOR is the
@@ -143,6 +173,7 @@ export function AccountRequestPage() {
       v.companyType === "GENERATOR" &&
       v.marketRoles.length === 0 &&
       v.operationCodes.length === 0 &&
+      (v.wasteNames ?? []).length === 0 &&
       [
         v.companyName, v.cui, v.companyAddress,
         v.workPointName, v.workPointAddress,
@@ -175,6 +206,7 @@ export function AccountRequestPage() {
     setOperationCodes([]);
     setChooseCodes(false);
     setWasteCodesText("");
+    setWasteNames([]);
     setNotes("");
     setErrors({});
     setError(null);
@@ -244,7 +276,13 @@ export function AccountRequestPage() {
       transportLicenseExpiry: asksTransport ? transportLicenseExpiry || null : null,
       marketRoles,
       operationCodes,
-      wasteCodesText: wasteCodesText.trim() || null,
+      wasteCodesText:
+        [
+          ...COMMON_WASTES.filter((w) => wasteNames.includes(w.name)).map((w) => `${w.name} (${w.code})`),
+          wasteCodesText.trim(),
+        ]
+          .filter(Boolean)
+          .join(", ") || null,
       notes: notes.trim() || null,
       website: website || null,
     };
@@ -548,7 +586,24 @@ export function AccountRequestPage() {
 
         <FormSection title={t.sectionWaste}>
           <div>
-            <Label htmlFor="ar-waste-text">{t.wasteCodesText}</Label>
+            <span id="ar-waste-list" className="block text-sm font-medium text-content-strong">
+              {t.wasteCodesText}
+            </span>
+            <p className="mt-0.5 text-xs text-content-muted">{t.wasteListHint}</p>
+            <PillGroup
+              name="ar-waste-names"
+              multiple
+              aria-labelledby="ar-waste-list"
+              className="mt-2"
+              options={COMMON_WASTES.map((w) => ({ value: w.name, label: w.name, code: w.code }))}
+              selected={wasteNames}
+              onToggle={(name) =>
+                setWasteNames((prev) => (prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]))
+              }
+            />
+          </div>
+          <div>
+            <Label htmlFor="ar-waste-text">{t.wasteOtherText}</Label>
             <Textarea
               id="ar-waste-text"
               rows={3}
