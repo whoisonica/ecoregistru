@@ -8,6 +8,27 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 20:15 — ✅ pe producție: lista de deșeuri uzuale în cererea de cont.**
+> `ecoregistru-app` **v87** (monorepo `6b29d9e`), fără backend. Pe `/cerere-cont`, la „Ce deșeuri generați / preluați”, 16 deșeuri
+> uzuale de bifat, cu codul lângă (carton 15 01 01, folie 15 01 02, paleți 15 01 03, doze 15 01 04, sticlă 15 01 07, hârtie de birou
+> 20 01 01, menajer 20 03 01, resturi alimentare 20 01 08, metale 20 01 40, lemn 20 01 38, moloz 17 01 07, echipamente electrice
+> 20 01 36, anvelope 16 01 03, ulei uzat 13 02 08*, tuburi fluorescente 20 01 21*, ambalaje contaminate 15 01 10*), apoi „Alte
+> deșeuri” (text). **Totul e opțional** („să fie și lista, dar să lase gol dacă vrea”). Bifele și textul pleacă în același
+> `wasteCodesText` („Carton și ambalaje de hârtie (15 01 01), toner”), deci consola de aprobare le vede fără nicio schimbare;
+> bifele intră și în ciornă. Probă: proba e2e 6 trece; în browser, 16 bife, cererea trimisă cu textul de mai sus, 1440px și 375px
+> fără scroll orizontal. ⚠️ Cererea inițială („la formularul de înregistrare la deșeuri să poți selecta dintr-o listă de denumiri”)
+> fusese citită greșit ca formularul de mișcare; schimbarea de acolo (codul afișat după denumire, app v84) **rămâne**, cu acordul proprietarului.
+
+> **16.09.2026, 19:59 — ✅ pe producție: „Economia circulară” scoasă de tot din configurarea contului (migrarea `V60`).**
+> `ecoregistru-api` **v103** (`now at version v60`), `ecoregistru-app` **v86**; monorepo `d966259`. Prima variantă (app v84) o scotea
+> doar din lista pentru firmă nouă, iar o firmă care o avea bifată o vedea în continuare la editare, în „Datele firmei” și la termene.
+> Acum: nu apare nicăieri pe ecran; `CompanyService` n-o mai salvează; `DeadlineService` nu mai generează `AFM_QUARTERLY`, iar un cont
+> care o avea ca singur răspuns nu cade pe cele 12 termene lunare vechi. **`V60`:** o scoate de pe firme, stinge `afm_obligation` unde
+> era singurul răspuns, șterge termenele `AFM_QUARTERLY` nefăcute (cele `DONE` rămân). Probată pe o bază locală dusă la V59 cu date puse
+> dinainte. Suita backend **835/102, 0 eșecuri** (+2: `CompanyManagementIT.theCircularEconomyContributionIsNotSaved`,
+> `DeadlineIT.theCircularEconomyContributionGeneratesNothingAnyMore`, care îl înlocuiește pe cel trimestrial); fără cele două filtre cad
+> amândouă. Proba e2e 7 trece. **Următoarea migrare liberă: `V61`.**
+
 > **16.09.2026, seara — ✅ validare: Andreea a verificat toate anexele și toate documentele pe care le generează aplicația.**
 > Transmis de proprietar după deploy-urile de mai jos (api v102 / app v85): fișa de evidență (HG 856/2002 anexa 1), evidența
 > centralizată, Anexa 3 și avizul (HG 1061/2008), Anexa 2, Anexa 1 și Anexa 3 Ambalaje (Ordinul 794/2012), evidența cronologică
