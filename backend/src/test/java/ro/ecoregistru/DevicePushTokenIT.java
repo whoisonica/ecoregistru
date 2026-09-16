@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * G2 — tokenul de push stă pe sesiunea de dispozitiv (V54). Fiecare regulă de aici are proba ei negativă:
+ * G2 — tokenul de push stă pe sesiunea de dispozitiv (V56). Fiecare regulă de aici are proba ei negativă:
  * cine își poate pune tokenul, pe ce sesiune, și cui <em>nu</em> mai pleacă o notificare.
  */
 @SpringBootTest

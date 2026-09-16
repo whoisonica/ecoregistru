@@ -56,7 +56,7 @@ public class DeviceSession {
     @Column(name = "revoked_at")
     Instant revokedAt;
 
-    /** G2 — tokenul Expo Push al telefonului; null până îl declară aplicația (V54). */
+    /** G2 — tokenul Expo Push al telefonului; null până îl declară aplicația (V56). */
     @Column(name = "push_token", length = 255)
     String pushToken;
 

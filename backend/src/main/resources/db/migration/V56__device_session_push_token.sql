@@ -11,7 +11,8 @@
 -- pe celelalte (aplicația reinstalată fără ieșire din cont lasă sesiunea veche vie). Altfel telefonul unui
 -- magazioner nou ar fi primit și alertele celui dinainte.
 --
--- **V54, nu V53:** `V53__vehicles.sql` e al depozitului (D2.1, pe producție din 16.09, api v95).
+-- **V56:** scrisă ca V54, renumerotată după ce depozitul a dus `V53` (D2.1, api v95) și `V55` (D2.2, api v96) pe producție;
+-- `V54` a rămas nefolosit, iar Flyway fără out-of-order n-ar fi acceptat-o după `V55`.
 --
 -- Aditivă: o coloană nullabilă, nimic de completat pe rândurile existente.
 
