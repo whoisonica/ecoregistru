@@ -30,7 +30,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { ChoiceCards } from "@/components/ui/choice-cards";
-import { PillGroup } from "@/components/ui/pill-group";
 import { Switch } from "@/components/ui/switch";
 import { Stepper } from "@/components/ui/stepper";
 import { FormStepRail } from "@/components/ui/form-steps";
@@ -1250,22 +1249,18 @@ export function PartnersPage() {
                   **sursa**, nu transportul (decizia 43), şi se întreabă numai de la conturile care
                   pot prelua de la terţi — un generator pur n-o depune niciodată. */}
               {asksPackagingOrigin && (
-                <div id="p-pkg-origin">
-                  <span id="p-pkg-origin-label" className="mb-2 block text-sm font-semibold text-content-strong">
-                    {strings.packagingOrigin.label}
-                  </span>
-                  <PillGroup
-                    name="p-pkg-origin"
-                    aria-labelledby="p-pkg-origin-label"
-                    selected={[packagingOrigin]}
-                    onToggle={(value) => setPackagingOrigin(value)}
-                    options={[
-                      { value: "", label: strings.packagingOrigin.none },
-                      { value: "GENERATOR_PJ", label: strings.packagingOrigin.GENERATOR_PJ },
-                      { value: "COLECTOR", label: strings.packagingOrigin.COLECTOR },
-                      { value: "COMERCIANT", label: strings.packagingOrigin.COMERCIANT },
-                    ]}
-                  />
+                <div>
+                  <Label htmlFor="p-pkg-origin">{strings.packagingOrigin.label}</Label>
+                  <Select
+                    id="p-pkg-origin"
+                    value={packagingOrigin}
+                    onChange={(e) => setPackagingOrigin(e.target.value as "" | PackagingOrigin)}
+                  >
+                    <option value="">{strings.packagingOrigin.none}</option>
+                    <option value="GENERATOR_PJ">{strings.packagingOrigin.GENERATOR_PJ}</option>
+                    <option value="COLECTOR">{strings.packagingOrigin.COLECTOR}</option>
+                    <option value="COMERCIANT">{strings.packagingOrigin.COMERCIANT}</option>
+                  </Select>
                   <p className="mt-1 text-xs text-content-muted">{strings.packagingOrigin.hintPartner}</p>
                 </div>
               )}
