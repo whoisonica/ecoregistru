@@ -8,6 +8,39 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 18:22 — ✅ pe producție: antetele de securitate ale aplicației web (BUG-020) și jjwt 0.12.7 (BUG-021).**
+> Același release ca intrarea de mai jos: `ecoregistru-api` **v100** (`95056a2`), `ecoregistru-app` **v83** (`03d6d59`); monorepo `main` = `112dd5f`.
+> - **BUG-020** (`c870da1`): `serve -s dist` nu trimitea niciun antet. Build-ul scrie acum `dist/serve.json` (`frontend/scripts/serve-config.mjs`)
+>   cu CSP strictă (`connect-src` = API + Sentry, din aceleași `VITE_*`), `frame-ancestors 'none'`, `X-Frame-Options`, HSTS, `nosniff`,
+>   `Referrer-Policy`, `Permissions-Policy`. `npm audit fix`: `fast-uri` 3.1.8 (HIGH, prin `serve`); `react-router` MODERATE rămâne (reparația doar în v7).
+>   Probă: e2e **22/22** peste build-ul servit cu antetele (`vite preview` cu proxy; `serve` n-are proxy, iar probele cer `/api` relativ);
+>   negativ, `img-src` fără `data:` pică proba 1 pe toate ecranele. Pe producție: `curl -sI` are toate antetele; login, cerere de cont și
+>   termeni fără erori în consola Chrome, fonturile Plex încărcate.
+> - **BUG-021** (`112dd5f`, din tabul paralel): jjwt 0.12.3 → 0.12.7, cursa din `Services.loadFirst` care dădea 500 la primele cereri după pornire.
+> - Tot aici: `e1d2e2d`, explicația codului R/D sub „Cod operațiune” și R13 închis pe text (`surse-oficiale.md` §1.2).
+
+> **16.09.2026, 18:22 — ✅ pe producție (api v100, `now at version v58`): „Generare” fără „Rămâne în stoc” (migrarea `V58`).**
+> Decizia proprietarului: *„ce generator are cântar și ține stoc de deșeuri?”* Generatorul află cantitatea abia la predare, de pe
+> tichetul colectorului, deci pe „Generare” fiecare rând e o predare, valorificare (R) sau eliminare (D), iar generarea o deduce
+> motorul (`V24`). Ce intră:
+> - **Formularul:** „Ce se întâmplă cu deșeul” are două opțiuni; fără alegere, rubrica se marchează („Alege unde pleacă deșeul…”).
+> - **Serverul:** `GENERATED` e refuzat primul, cu `movement.generation.needs.exit`; nu mai e în `allowedOperations()` și nici
+>   `isSelectable()`.
+> - **Importul Excel:** „Generare” a ieșit din lista de operațiuni; un fișier vechi se oprește pe rândul respectiv.
+> - **`V58`:** șterge moale toate rândurile `GENERATED` (pe producție 23, toate pe firme de probă, cu acordul proprietarului) și
+>   golește `monthly_evidences`.
+> - **Declarația de ambalaje:** numără doar ieșirile. **Panoul:** dala „Coduri cu stoc” a ieșit, fiindcă pe Anexa 1 stocul e zero
+>   prin construcție.
+> - **Seed-ul demo:** 16 generări scoase (secțiunea lor trece pe predare), 8 predări adăugate ca lista să treacă de o pagină
+>   (proba 3). Firma demo are 29 de mișcări.
+>
+> Suita backend **832 de teste, 102 clase, 0 eșecuri**: −2 fără obiect (`Anexa1FormIT.recordedGenerationIsNotDoubled`,
+> `PackagingDeclarationIT.oneLoadRecordedTwiceIsDeclaredOnce`), +1 (`ExcelImportIT.aGenerationRowIsNamedAndKeepsTheFileOut`);
+> ~50 de teste care foloseau generarea ca rând generic trec acum pe predări. **Proba negativă:** cu regula scoasă din server cad
+> exact `WasteMovementValidationIT.generationWithoutAnExitIsRefused`, `RegisterSeamIT` și `GeneratorModuleIT.theOperationsFollowTheCompanyType`.
+> `npm test` 14/14; **e2e 22/22 pe o bază nouă**: proba 4 verifică destinul cu două opțiuni, iar probele 9 și 10 verifică panoul fără dala de stoc.
+> Capturile au fost privite la 1440px și 375px. Pe producție: `Migrating schema "public" to version "58 - generation without exit removed"`, `Started EcoRegistruApplication` (15:22:36 UTC); bundle-ul servit are „Alege unde pleacă” și nu mai are „Rămâne în stoc”. **Următoarea migrare liberă: `V59`.**
+
 > **16.09.2026, 15:56 și 16:08 — ✅ pe producție: ce rămăsese în cod din `todo-lansare`, Spring Boot 3.5, refactorul și e2e în CI.**
 > Două release-uri. **Întâi** `ecoregistru-api` **v98** (`16439ae`, **migrarea `V57`**, schema 56 → 57) și `ecoregistru-app` **v81**
 > (`8e6266a`), monorepo `84f68fc`; **apoi** api **v99** (`750c01e`, fără migrare) și app **v82** (`3b323c1`), monorepo
