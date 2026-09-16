@@ -145,7 +145,7 @@ e **felul de a întreba**, nu paleta paginilor publice: înăuntru rămâne „C
 **Partenerul, pe trei pași** (`PartnersPage.tsx`, `FormStepRail` din `components/ui/form-steps.tsx`): „Despre partener”
 (CUI-ul întâi, cu ANAF, apoi denumirea cu sugestia de duplicat, adresa, Registrul Comerțului, punctele de lucru) · „Ce
 face pentru tine” (tipul pe carduri; „Generator” nu apare la un cont de generator pur, care doar predă, decât pe un partener care îl are deja — „Doar le transportă” e tipul gol și pune singur bifa de transportator —, cine pe cine
-facturează ca două comutatoare, proveniența ambalajelor rămasă listă derulantă, ca înainte, cu întrebarea „Cine duce deșeul de la tine la el?” pe două carduri imediat sub tip, cu mașinile și șoferii lui dedesubt) · „Autorizația de
+facturează ca două comutatoare, proveniența ambalajelor ca taste, cu întrebarea „Cine duce deșeul de la tine la el?” pe două carduri imediat sub tip, cu mașinile și șoferii lui dedesubt) · „Autorizația de
 mediu” (numărul, emiterea, viza anuală, termenul vechi; temeiul sub „De ce?”). În stânga dialogului stă cuprinsul: cifra
 în mono, pasul curent cu linia grafit, sub pașii completați ce s-a scris, pătrățel roșu pe pasul cu greșeala. Pe telefon,
 `Stepper` sus, cu nume scurte. La adăugare „Continuă” își verifică pasul; la editare Salvează stă pe orice pas, iar linkul
