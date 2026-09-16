@@ -40,9 +40,9 @@ dependencies {
 	implementation 'org.flywaydb:flyway-database-postgresql'
 
 	// JWT auth
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-	implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
-	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.12.7'
+	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.7'
 
 	// DTO mapping
 	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
