@@ -556,17 +556,26 @@ anuale așezate ca în tabelele de mai sus, ca ajutor de copiat în portal.
 > activităţi de tratare a deşeurilor sau unui operator public ori privat de colectare a deşeurilor
 > [...]
 
-**Alin. (4) şi (5)** — persoana desemnată:
+**Alin. (4) şi (5)** — persoana desemnată. *Corectat pe 17.09.2026: până atunci aici stătea forma de dinainte de
+12.01.2023. Textul în vigoare, modificat de **Legea 17/2023** art. I pct. 16, citit pe Portalul Legislativ
+([doc. 245846](https://legislatie.just.ro/Public/DetaliiDocument/245846)):*
 
-> (4) Pentru îndeplinirea obligaţiilor legale privind gestionarea deşeurilor, titularul unei
-> activităţi, pentru care autoritatea competentă pentru protecţia mediului a emis o autorizaţie de
-> mediu/autorizaţie integrată de mediu, are obligaţia să **desemneze o persoană** din rândul
-> angajaţilor proprii sau să **delege această obligaţie unei terţe persoane**.
+> (4) Pentru îndeplinirea obligațiilor legale privind gestionarea deșeurilor, titularul unei
+> **activități economice de gestionare a deșeurilor și/sau generatoare de deșeuri** are obligația să
+> **desemneze o persoană** din rândul angajaților proprii sau să **delege această obligație unei terțe
+> persoane**.
 >
-> (5) Persoanele desemnate, prevăzute la alin. (4), trebuie să fie **instruite** în domeniul
-> prevenirii generării de deşeuri şi al managementului deşeurilor, inclusiv în domeniul substanţelor
-> periculoase, ca urmare a absolvirii unor programe de perfecţionare şi specializare recunoscute la
-> nivel naţional [...]
+> (5) **Pentru activitățile care necesită autorizație de mediu/autorizație integrată de mediu**,
+> persoanele desemnate, prevăzute la alin. (4), trebuie să fie **instruite** în domeniul prevenirii
+> generării de deșeuri și al managementului deșeurilor, inclusiv în domeniul substanțelor periculoase,
+> ca urmare a absolvirii unor programe de perfecționare și specializare recunoscute la nivel național
+> [...]
+
+> Forma veche spunea „titularul unei activităţi, pentru care autoritatea competentă [...] a emis o autorizaţie
+> de mediu”, deci obligaţia părea doar a firmelor autorizate, iar instruirea a tuturor desemnaţilor. Acum e
+> invers: **orice generator** desemnează, **doar cine are autorizaţie de mediu** cere şi certificatul.
+> Încălcarea se sancţionează la art. 62 alin. (1) lit. a), 40.000–60.000 lei pentru persoana juridică.
+> În cod: `AuditFileService.wasteManagerNote` (dosarul cere certificatul numai când firma are număr de autorizaţie).
 
 **Art. 24 alin. (1)** — predarea nu descarcă de răspundere:
 
@@ -582,7 +591,7 @@ anuale așezate ca în tabelele de mai sus, ca ajutor de copiat în portal.
 >    se calculează față de *azi* și e doar un badge în lista de Parteneri. Deci putem tipări un
 >    formular care documentează o predare către un operator neautorizat la acea dată. Întrebarea
 >    **AH**.
-> 2. Alin. (4)–(5) sunt o rubrică de dosar pe care n-o ținem nicăieri. `contactName`/`contactRole`
+> 2. ~~Alin. (4)–(5) sunt o rubrică de dosar pe care n-o ținem nicăieri.~~ *Construită (`V29`), corectată pe forma în vigoare 17.09.2026.* `contactName`/`contactRole`
 >    sunt blocul de semnătură al declarației, nu persoana desemnată, și nu poartă certificatul de
 >    instruire. Notă de produs: **consultantul de mediu e chiar „terța persoană" de la alin. (4)** —
 >    rubrica se completează singură pentru portofoliul specialistei. Întrebarea **AK**.

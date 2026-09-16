@@ -2043,7 +2043,7 @@ export const strings = {
     // poartă certificat de instruire. Inspectorul o cere printre primele lucruri.
     wasteManagerTitle: "Persoana desemnată cu gestiunea deșeurilor",
     wasteManagerHint:
-      "Cerută de OUG 92/2021, art. 23 alin. (4): titularul unei autorizații de mediu desemnează o persoană dintre angajați sau deleagă obligația unei terțe persoane — de exemplu consultantul de mediu. Nu e persoana de contact de mai sus: aceea semnează evidența centralizată. Necompletată, dosarul de control o va marca lipsă.",
+      "Cerută de OUG 92/2021, art. 23 alin. (4): orice firmă care generează deșeuri desemnează o persoană dintre angajați sau deleagă obligația unei terțe persoane — de exemplu consultantul de mediu. Certificatul de instruire e obligatoriu doar dacă firma are autorizație de mediu (alin. (5)). Nu e persoana de contact de mai sus: aceea semnează evidența centralizată. Necompletată, dosarul de control o va marca lipsă.",
     wasteManagerName: "Nume",
     wasteManagerNamePlaceholder: "ex. Popescu Andrei",
     wasteManagerRole: "Calitatea",

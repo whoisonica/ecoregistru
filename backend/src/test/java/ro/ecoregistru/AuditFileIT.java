@@ -577,8 +577,36 @@ class AuditFileIT {
         assertThat(flat(readmeOf(company, suffix)))
                 .contains("Persoana desemnată cu gestiunea deșeurilor: NECOMPLETATĂ.")
                 .contains("OUG 92/2021, art. 23 alin. (4)")
-                .contains("Alin. (5) cere ca ea să fie instruită")
+                .contains("orice firmă a cărei activitate generează deșeuri")
+                .doesNotContain("titularul unei autorizații de mediu")
                 .doesNotContain("- Nume :");
+    }
+
+    /**
+     * Art. 23 alin. (5), forma din Legea 17/2023: instruirea se cere numai „pentru activitățile care
+     * necesită autorizație de mediu”. Fără autorizație, lipsa certificatului nu e o lipsă.
+     */
+    @Test
+    void theTrainingIsMissingOnlyWhereTheCompanyHasAnEnvironmentalAuthorization() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company withoutAuth = companyRepository.save(Company.builder()
+                .name("Birou fără autorizație SRL").cui("ROW" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now())
+                .wasteManagerName("Ioana Pop")
+                .build());
+        assertThat(flat(readmeOf(withoutAuth, suffix)))
+                .contains("- Nume : Ioana Pop")
+                .doesNotContain("Instruire: NECOMPLETATĂ");
+
+        String suffix2 = UUID.randomUUID().toString().substring(0, 8);
+        Company withAuth = companyRepository.save(Company.builder()
+                .name("Fabrică cu autorizație SRL").cui("ROX" + suffix2).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now())
+                .environmentalAuthNumber("12/01.02.2024")
+                .wasteManagerName("Ioana Pop")
+                .build());
+        assertThat(flat(readmeOf(withAuth, suffix2)))
+                .contains("Instruire: NECOMPLETATĂ");
     }
 
     /**

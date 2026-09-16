@@ -579,7 +579,9 @@ public class AuditFileService {
      * silent, and that is the one place this differs from {@link #marketRoleNote}. The market role
      * is a property of the business: not knowing it means we cannot conclude anything, and printing
      * a guess would be worse than printing nothing. The designated person is an <em>obligation</em>
-     * of anyone holding an environmental authorization, so its absence is itself the finding — and
+     * of every waste-generating business (art. 23 alin. (4) as amended by Legea 17/2023, in force
+     * since 12.01.2023 — the earlier text said "titularul unei autorizații de mediu"), so its absence
+     * is itself the finding — and
      * regula de lucru 1 says a gap must be visible as a gap. Better the client reads it here than
      * hears it from the inspector.
      */
@@ -587,10 +589,11 @@ public class AuditFileService {
         String name = company.getWasteManagerName();
         if (name == null || name.isBlank()) {
             return "Persoana desemnată cu gestiunea deșeurilor: NECOMPLETATĂ.\n"
-                    + "  -> OUG 92/2021, art. 23 alin. (4): titularul unei autorizații de mediu are\n"
-                    + "     obligația să desemneze o persoană dintre angajați SAU să delege obligația\n"
-                    + "     unei terțe persoane (de exemplu consultantul de mediu). Alin. (5) cere ca ea\n"
-                    + "     să fie instruită prin programe recunoscute la nivel național.\n"
+                    + "  -> OUG 92/2021, art. 23 alin. (4): orice firmă a cărei activitate generează\n"
+                    + "     deșeuri desemnează o persoană dintre angajați SAU deleagă obligația unei\n"
+                    + "     terțe persoane (de exemplu consultantul de mediu). Alin. (5): dacă activitatea\n"
+                    + "     are autorizație de mediu, persoana trebuie să fie și instruită prin programe\n"
+                    + "     recunoscute la nivel național.\n"
                     // Profilul firmei se editează din ecranul Clienți, care e PLATFORM_ONLY — deci
                     // un ADMIN de client nu-l poate completa singur. Mesajul spune pe cine să
                     // întrebe, nu îl trimite într-un ecran pe care nu-l are.
@@ -610,11 +613,16 @@ public class AuditFileService {
             sb.append("  - Angajat propriu.\n");
         }
         String training = company.getWasteManagerTraining();
+        boolean hasEnvironmentalAuth = company.getEnvironmentalAuthNumber() != null
+                && !company.getEnvironmentalAuthNumber().isBlank();
         if (training != null && !training.isBlank()) {
             sb.append("  - Instruire: ").append(training).append("\n");
-        } else {
-            sb.append("  - Instruire: NECOMPLETATĂ — art. 23 alin. (5) cere absolvirea unui program\n")
-                    .append("               de perfecționare recunoscut la nivel național.\n");
+        } else if (hasEnvironmentalAuth) {
+            // Alin. (5) cere instruirea numai „pentru activitățile care necesită autorizație de mediu”;
+            // fără autorizație în profil, un „NECOMPLETATĂ” ar fi o lipsă pe care legea nu o cere.
+            sb.append("  - Instruire: NECOMPLETATĂ — art. 23 alin. (5) cere, la activitățile cu\n")
+                    .append("               autorizație de mediu, absolvirea unui program de perfecționare\n")
+                    .append("               recunoscut la nivel național.\n");
         }
         return sb.append("\n").toString();
     }
