@@ -241,7 +241,7 @@ class CarrierAndDriversIT {
         JsonNode driver = onlyDriverOf(carrierId);
 
         UUID movementId = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
                   "partnerId": "%s", "quantity": 120,
                   "transportPartnerId": "%s",
                   "driverName": "%s", "driverIdentification": "%s", "vehicleRegistration": "%s",

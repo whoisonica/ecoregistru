@@ -164,7 +164,7 @@ class PartnerAnnualVisaIT {
                           "wasteCodeId": "%s",
                           "unit": "KG",
                           "physicalState": "SOLID",
-                          "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
                           "partnerId": "%s", "quantity": 100
                         }
                         """.formatted(workPointId, wasteCodeId, partnerId));

@@ -126,19 +126,19 @@ class PackagingAnexa3IT {
                 .company(company).name("Statie sortare").address("Str. Depozitului 4")
                 .active(true).createdAt(Instant.now()).build()).getId();
 
-        generatorSource = partnerRepository.save(Partner.builder()
+        generatorSource = partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name("Fabrica Ambalate SRL").cui("RO111" + suffix.substring(0, 3))
                 .type(PartnerType.GENERATOR).supplier(true).active(true)
                 .packagingOrigin(PackagingOrigin.GENERATOR_PJ)
                 .createdAt(Instant.now()).build());
 
-        collectorSource = partnerRepository.save(Partner.builder()
+        collectorSource = partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name("Colector Mic SRL").cui("RO222" + suffix.substring(0, 3))
                 .type(PartnerType.COLLECTOR).supplier(true).active(true)
                 .packagingOrigin(PackagingOrigin.COLECTOR)
                 .createdAt(Instant.now()).build());
 
-        recipient = partnerRepository.save(Partner.builder()
+        recipient = partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name("Reciclator Hartie SA").cui("RO333" + suffix.substring(0, 3))
                 .type(PartnerType.RECOVERER).client(true).active(true)
                 .createdAt(Instant.now()).build());
@@ -159,7 +159,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-07-02", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": 120, "operation": "RECOVERED", "operationCode": "R3",
+                  "unit": "KG", "quantity": 120, "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "R3",
                   "partnerId": "%s", "register": "ANEXA_1"
                 }
                 """.formatted(workPointId, YEAR, codeId("15 01 01"), recipient.getId()));
@@ -263,7 +263,7 @@ class PackagingAnexa3IT {
      */
     @Test
     void aTakeoverWithoutProvenanceIsListedRatherThanPlaced() throws Exception {
-        Partner nameless = partnerRepository.save(Partner.builder()
+        Partner nameless = partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name("Fara provenienta SRL")
                 .type(PartnerType.GENERATOR).supplier(true).active(true)
                 .createdAt(Instant.now()).build());
@@ -304,7 +304,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": 500, "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13",
+                  "unit": "KG", "quantity": 500, "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
                   "register": "ANEXA_1", "packagingOnMarket": true
                 }
                 """.formatted(workPointId, YEAR, codeId("15 01 01")));
@@ -809,7 +809,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-06-12", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": %s, "operation": "%s", "operationCode": "%s",
+                  "unit": "KG", "quantity": %s, "operation": "%s", "wasteDestination": "Vr", "operationCode": "%s",
                   "partnerId": "%s", "register": "ART_48"
                 }
                 """.formatted(workPointId, YEAR, codeId(code), quantity,

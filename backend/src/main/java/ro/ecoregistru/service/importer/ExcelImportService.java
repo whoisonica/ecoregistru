@@ -13,6 +13,7 @@ import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.request.WorkPointRequest;
 import ro.ecoregistru.controller.response.ImportResultResponse;
 import ro.ecoregistru.controller.response.ImportResultResponse.RowError;
+import ro.ecoregistru.entity.ImportBatch;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteCode;
 import ro.ecoregistru.entity.WorkPoint;
@@ -21,6 +22,7 @@ import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
+import ro.ecoregistru.repository.ImportBatchRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -29,6 +31,7 @@ import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.PartnerService;
 import ro.ecoregistru.service.WasteMovementService;
 import ro.ecoregistru.service.WorkPointService;
+import ro.ecoregistru.security.SecurityUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -36,6 +39,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -61,6 +65,14 @@ import static ro.ecoregistru.service.importer.ImportTemplate.*;
  * <p><b>Acelaşi fişier de două ori nu dublează nimic.</b> Fiecare rând de mişcare poartă un
  * {@code clientGeneratedId} derivat din firmă, conţinutul fişierului şi numărul rândului — adică
  * idempotenţa pe care {@code create} o are deja pentru sincronizarea offline.
+ *
+ * <p><b>Nici un fişier corectat şi reîncărcat</b> (16.09.2026). Amprenta se schimbă la orice virgulă, deci
+ * rândurile se compară şi după conţinut cu mişcările deja în firmă: aceeaşi dată, punct de lucru, cod,
+ * cantitate (în kg), operaţiune, partener şi document. Potrivirea e pe număr de apariţii — două predări
+ * identice în firmă acoperă două rânduri, nu toate — şi numai cu ce exista înainte de import, ca două rânduri
+ * identice din acelaşi fişier să intre amândouă. Rândul sărit apare ca avertisment, nu în tăcere.
+ *
+ * <p><b>Un import salvat se poate anula</b> ({@link ImportBatchService}): mişcările lui poartă importul (V62).
  */
 @Service
 @RequiredArgsConstructor
@@ -92,12 +104,15 @@ public class ExcelImportService {
     WasteCodeRepository wasteCodeRepository;
     WasteMovementRepository movementRepository;
     WorkPointService workPointService;
+    ImportBatchRepository batchRepository;
 
     @Transactional
     public ImportResultResponse run(MultipartFile file, boolean save) {
         UUID tenantId = TenantContext.require();
         byte[] bytes = bytesOf(file);
         List<RowError> errors = new ArrayList<>();
+        List<RowError> warnings = new ArrayList<>();
+        List<UUID> createdMovements = new ArrayList<>();
         int[] counts = new int[6]; // parteneri noi, existenţi, mişcări noi, existente, puncte de lucru noi, existente
 
         try (Workbook wb = open(bytes)) {
@@ -127,7 +142,8 @@ public class ExcelImportService {
                 importPartners(partners, index, errors, counts);
             }
             if (movements != null) {
-                importMovements(movements, movementExtras, tenantId, fingerprint(bytes), index, errors, counts);
+                importMovements(movements, movementExtras, tenantId, fingerprint(bytes), index, errors, warnings,
+                        createdMovements, counts);
             }
         } catch (IOException e) {
             throw new BadRequestException(IMPORT_FILE_UNREADABLE);
@@ -136,9 +152,17 @@ public class ExcelImportService {
         boolean saved = save && errors.isEmpty();
         if (!saved) {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+        } else if (counts[0] + counts[2] + counts[4] > 0) {
+            ImportBatch batch = batchRepository.save(ImportBatch.builder()
+                    .companyId(tenantId).fileName(fileName(file))
+                    .createdBy(SecurityUtils.currentUser().getId()).createdAt(Instant.now())
+                    .workPointsNew(counts[4]).partnersNew(counts[0]).movementsNew(counts[2]).build());
+            if (!createdMovements.isEmpty()) {
+                movementRepository.tagImportBatch(batch.getId(), createdMovements);
+            }
         }
         return new ImportResultResponse(saved, counts[0], counts[1], counts[2], counts[3], counts[4], counts[5],
-                List.copyOf(errors));
+                List.copyOf(errors), List.copyOf(warnings));
     }
 
     // --- work points ---
@@ -207,9 +231,16 @@ public class ExcelImportService {
     // --- movements ---
 
     private void importMovements(Sheet sheet, boolean extras, UUID tenantId, String fingerprint,
-                                 PartnerIndex partners, List<RowError> errors, int[] counts) {
+                                 PartnerIndex partners, List<RowError> errors, List<RowError> warnings,
+                                 List<UUID> created, int[] counts) {
         List<String> columns = new ArrayList<>(MOVEMENT_COLUMNS);
         if (extras) columns.addAll(MOVEMENT_EXTRA_COLUMNS);
+        // Ce era în firmă înainte de import, numărat pe conţinut. Rândurile create acum nu intră aici.
+        Map<String, Integer> alreadyThere = new HashMap<>();
+        movementRepository.findAllByCompany_IdAndDeletedFalse(tenantId).forEach(m -> alreadyThere.merge(
+                contentKey(m.getDate(), m.getWorkPoint().getId(), m.getWasteCode().getId(), m.getQuantity(),
+                        m.getUnit(), m.getOperation(), m.getPartner() == null ? null : m.getPartner().getId(),
+                        m.getDocumentReference()), 1, Integer::sum));
         Map<String, WorkPoint> workPoints = new HashMap<>();
         workPointRepository.findAllByCompany_Id(tenantId).forEach(wp -> workPoints.put(fold(wp.getName()), wp));
 
@@ -266,12 +297,21 @@ public class ExcelImportService {
 
             UUID rowId = UUID.nameUUIDFromBytes(
                     (tenantId + ":" + fingerprint + ":" + r).getBytes(StandardCharsets.UTF_8));
+            String key = contentKey(date, workPoint.getId(), code.getId(), quantity, unit, operation, partnerId, document);
             if (movementRepository.findByCompany_IdAndClientGeneratedId(tenantId, rowId).isPresent()) {
+                alreadyThere.computeIfPresent(key, (k, n) -> n > 1 ? n - 1 : null);
                 counts[3]++;
                 continue;
             }
+            if (alreadyThere.containsKey(key)) {
+                alreadyThere.computeIfPresent(key, (k, n) -> n > 1 ? n - 1 : null);
+                counts[3]++;
+                warnings.add(new RowError(sheet.getSheetName(), r + 1, "Pare deja în firmă: o mișcare cu aceeași dată, "
+                        + "punct de lucru, cod, cantitate, operațiune, partener și document. Nu s-a importat a doua oară."));
+                continue;
+            }
             c.attempt(() -> {
-                movementService.create(new WasteMovementRequest(
+                var movement = movementService.create(new WasteMovementRequest(
                         rowId, workPoint.getId(), date, code.getId(), quantity, false, null, unit,
                         operation, register, physicalState, storageType, treatmentMethod, transportMeans,
                         destination, operationCode, partnerId, null, document, notes,
@@ -280,9 +320,25 @@ public class ExcelImportService {
                         null, null, null, null,
                         packagingOnMarket, packagingMaterial, packagingCategory, packagingReusable,
                         packagingHazardous, packagingOrigin));
+                created.add(movement.id());
                 counts[2]++;
             });
         }
+    }
+
+    /** Cheia de conţinut a unei mişcări; cantitatea în kg, fără zerouri de coadă, documentul fără majuscule. */
+    private static String contentKey(LocalDate date, UUID workPoint, UUID code, BigDecimal quantity, Unit unit,
+                                     WasteOperation operation, UUID partner, String document) {
+        BigDecimal kg = quantity == null ? null
+                : (unit == Unit.TONS ? quantity.multiply(BigDecimal.valueOf(1000)) : quantity).stripTrailingZeros();
+        return String.join("|", String.valueOf(date), String.valueOf(workPoint), String.valueOf(code),
+                kg == null ? "" : kg.toPlainString(), String.valueOf(operation), String.valueOf(partner),
+                document == null ? "" : fold(document));
+    }
+
+    private static String fileName(MultipartFile file) {
+        String name = file.getOriginalFilename();
+        return name == null || name.isBlank() ? null : name.length() > 255 ? name.substring(0, 255) : name;
     }
 
     /** „15 01 01", „150101", „15.01.01*" — toate ajung la forma din nomenclator. */

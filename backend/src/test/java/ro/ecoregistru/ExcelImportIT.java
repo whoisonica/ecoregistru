@@ -94,13 +94,13 @@ class ExcelImportIT {
 
     private Object[] disposal() {
         return new Object[]{LocalDate.of(2026, 3, 10), workPoint, "15 01 01", "Eliminare", 1200, "kg",
-                "D5", "Deșeu propriu", null, "Fișa 3", "Solid", "CT", null, null, null, null};
+                "D5", "Deșeu propriu", null, "Fișa 3", "Solid", "CT", null, null, "DO", null};
     }
 
     /** Text, nu celule tipate: aşa arată un Excel lipit din altă parte. */
     private Object[] recovery() {
         return new Object[]{"20.03.2026", workPoint, "150101*", "valorificare", "1,2", "tone",
-                "R3", "Deseu propriu", cui, "Aviz 7", null, null, null, null, null, null};
+                "R3", "Deseu propriu", cui, "Aviz 7", null, null, null, null, "Vr", null};
     }
 
     @Test
@@ -177,6 +177,120 @@ class ExcelImportIT {
 
         assertThat(partnerRepository.findAllByCompany_Id(companyId)).hasSize(1);
         assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).hasSize(2);
+    }
+
+    /**
+     * Un fișier corectat și reîncărcat are altă amprentă, deci amprenta nu-l mai recunoaște. Rândurile care
+     * sunt deja în firmă după conținut se sar, cu avertisment; rândul cu adevărat nou intră.
+     */
+    @Test
+    void aCorrectedFileImportedAgainAddsOnlyTheNewRows() throws Exception {
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery())), platformToken)
+                .andExpect(jsonPath("$.saved", is(true)));
+
+        Object[] corrected = recovery();
+        corrected[15] = "corectat după import"; // observațiile nu fac parte din conținutul comparat
+        Object[] newRow = disposal();
+        newRow[0] = LocalDate.of(2026, 4, 2);
+        send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), corrected, newRow)), platformToken)
+                .andExpect(jsonPath("$.saved", is(true)))
+                .andExpect(jsonPath("$.movementsNew", is(1)))
+                .andExpect(jsonPath("$.movementsExisting", is(2)))
+                .andExpect(jsonPath("$.warnings", hasSize(2)))
+                .andExpect(jsonPath("$.warnings[*].row", containsInAnyOrder(2, 3)))
+                .andExpect(jsonPath("$.warnings[0].message", containsString("Pare deja în firmă")));
+
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).hasSize(3);
+    }
+
+    /** Două predări identice în același fișier sunt două predări: potrivirea e numai cu ce era deja în firmă. */
+    @Test
+    void twoIdenticalRowsInOneFileAreBothImported() throws Exception {
+        send("/api/v1/import", file(List.<Object[]>of(), List.<Object[]>of(disposal(), disposal())), platformToken)
+                .andExpect(jsonPath("$.saved", is(true)))
+                .andExpect(jsonPath("$.movementsNew", is(2)))
+                .andExpect(jsonPath("$.warnings", empty()));
+    }
+
+    /** BUG-023 prin import: predarea de deșeu propriu fără destinație e refuzată, ca pe ecran. */
+    @Test
+    void anOwnWasteHandoverWithoutADestinationKeepsTheFileOut() throws Exception {
+        Object[] noDestination = disposal();
+        noDestination[14] = null;
+        send("/api/v1/import", file(List.<Object[]>of(), List.<Object[]>of(noDestination)), platformToken)
+                .andExpect(jsonPath("$.saved", is(false)))
+                .andExpect(jsonPath("$.errors[0].message", containsString("destinația")));
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();
+    }
+
+    /**
+     * Istoricul și anularea (V62). Un rând modificat după import rămâne; celălalt se șterge. Anularea nu se
+     * repetă, iar același fișier, importat din nou, readuce exact rândul șters.
+     */
+    @Test
+    void anImportIsListedAndUndoneExceptWhatWasEditedSince() throws Exception {
+        byte[] xlsx = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal(), recovery()));
+        send("/api/v1/import", xlsx, platformToken).andExpect(jsonPath("$.saved", is(true)));
+
+        String history = mockMvc.perform(get("/api/v1/import/istoric").header("Authorization", "Bearer " + platformToken)
+                        .header("X-Tenant-Id", companyId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].fileName", is("import.xlsx")))
+                .andExpect(jsonPath("$[0].movementsNew", is(2)))
+                .andExpect(jsonPath("$[0].partnersNew", is(1)))
+                .andExpect(jsonPath("$[0].movementsRemaining", is(2)))
+                .andReturn().getResponse().getContentAsString();
+        String batchId = com.jayway.jsonpath.JsonPath.read(history, "$[0].id");
+
+        WasteMovement edited = movementRepository.findAllByCompany_IdAndDeletedFalse(companyId).stream()
+                .filter(m -> m.getOperation() == WasteOperation.RECOVERED).findFirst().orElseThrow();
+        edited.setNotes("corectat de mână");
+        movementRepository.saveAndFlush(edited);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/v1/import/" + batchId + "/anulare")
+                        .header("Authorization", "Bearer " + platformToken).header("X-Tenant-Id", companyId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted", is(1)))
+                .andExpect(jsonPath("$.kept", is(1)));
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).singleElement()
+                .satisfies(m -> assertThat(m.getId()).isEqualTo(edited.getId()));
+        // Partenerul creat de import rămâne.
+        assertThat(partnerRepository.findAllByCompany_Id(companyId)).hasSize(1);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/v1/import/" + batchId + "/anulare")
+                        .header("Authorization", "Bearer " + platformToken).header("X-Tenant-Id", companyId.toString()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("import.already.undone")));
+
+        send("/api/v1/import", xlsx, platformToken)
+                .andExpect(jsonPath("$.saved", is(true)))
+                .andExpect(jsonPath("$.movementsNew", is(1)))
+                .andExpect(jsonPath("$.movementsExisting", is(1)));
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).hasSize(2);
+    }
+
+    /** Anularea unui import din altă firmă nu-l găsește. */
+    @Test
+    void anImportOfAnotherCompanyCannotBeUndone() throws Exception {
+        send("/api/v1/import", file(List.<Object[]>of(), List.<Object[]>of(disposal())), platformToken)
+                .andExpect(jsonPath("$.saved", is(true)));
+        String history = mockMvc.perform(get("/api/v1/import/istoric").header("Authorization", "Bearer " + platformToken)
+                        .header("X-Tenant-Id", companyId.toString()))
+                .andReturn().getResponse().getContentAsString();
+        String batchId = com.jayway.jsonpath.JsonPath.read(history, "$[0].id");
+
+        Company other = companyRepository.save(Company.builder()
+                .name("Alta " + UUID.randomUUID().toString().substring(0, 8) + " SRL")
+                .cui("RO8" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 7)).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/v1/import/" + batchId + "/anulare")
+                        .header("Authorization", "Bearer " + platformToken).header("X-Tenant-Id", other.getId().toString()))
+                .andExpect(status().isNotFound());
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).hasSize(1);
     }
 
     /**
@@ -361,6 +475,13 @@ class ExcelImportIT {
                     .andExpect(status().isForbidden());
             send("/api/v1/import/verificare", valid, token).andExpect(status().isForbidden());
             send("/api/v1/import", valid, token).andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/v1/import/istoric").header("Authorization", "Bearer " + token)
+                            .header("X-Tenant-Id", companyId.toString()))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                            .post("/api/v1/import/" + UUID.randomUUID() + "/anulare")
+                            .header("Authorization", "Bearer " + token).header("X-Tenant-Id", companyId.toString()))
+                    .andExpect(status().isForbidden());
         }
         assertThat(partnerRepository.findAllByCompany_Id(companyId)).isEmpty();
         assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId)).isEmpty();

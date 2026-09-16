@@ -36,7 +36,7 @@ const created = await page.evaluate(async () => {
   if (!wasteCodeId || !workPointId) return null;
   const body = (quantity) => JSON.stringify({
     workPointId, date: "2034-02-10", wasteCodeId, quantity, unit: "KG",
-    physicalState: "SOLID", operation: "RECOVERED", register: "ANEXA_1", operationCode: "R13", notes: "proba 22 — istoric",
+    physicalState: "SOLID", operation: "RECOVERED", register: "ANEXA_1", operationCode: "R13", wasteDestination: "Vr", notes: "proba 22 — istoric",
   });
   const m = await json("/api/v1/movements", { method: "POST", headers: { "Content-Type": "application/json" }, body: body(3.5) });
   if (!m) return null;

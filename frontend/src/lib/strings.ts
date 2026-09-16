@@ -2995,6 +2995,27 @@ export const strings = {
     saved: "Import salvat: {workPoints} puncte de lucru, {partners} parteneri și {movements} mișcări noi.",
     afterImport:
       "Întrebările despre ambalaje și datele de transport pentru Anexa 3 se completează după import, pe fiecare mișcare.",
+    warningsTitle: "{n} rânduri sărite: sunt deja în firmă. Nu opresc importul.",
+    historyTitle: "Importurile firmei",
+    historyHint:
+      "„Retrage” șterge mișcările importului pe care nu le-a modificat nimeni de atunci. Partenerii și punctele de lucru create rămân.",
+    historyEmpty: "Niciun import salvat în firma asta.",
+    historyDate: "Data",
+    historyFile: "Fișierul",
+    historyAdded: "Adăugate",
+    historyAddedValue: "{movements} · {partners} · {workPoints}",
+    historyNow: "Acum",
+    historyNowValue: "{remaining}, {edited} modificate de atunci",
+    historyUndone: "Retras {date}",
+    historyError: "Istoricul nu s-a putut încărca.",
+    undo: "Retrage",
+    undoTitle: "Retragi importul?",
+    undoMessage:
+      "Importul „{file}” din {date}: se șterg {deletable}. Rămân {edited} modificate de atunci, partenerii și punctele de lucru.",
+    undoConfirm: "Retrage importul",
+    undone: "Import retras: {deleted} șterse, {kept} păstrate.",
+    undoError: "Importul nu s-a putut retrage.",
+    unnamedFile: "fără nume",
   },
 
   fileDropzone: {

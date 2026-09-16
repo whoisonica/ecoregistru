@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { canImport } from "@/lib/roles";
@@ -12,6 +12,10 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
+import { countOf } from "@/lib/count";
 
 /** Oglinda lui `ImportResultResponse`. */
 interface ImportResult {
@@ -22,7 +26,27 @@ interface ImportResult {
   movementsExisting: number;
   workPointsNew: number;
   workPointsExisting: number;
-  errors: { sheet: string; row: number; message: string }[];
+  errors: RowMessage[];
+  warnings: RowMessage[];
+}
+
+interface RowMessage {
+  sheet: string;
+  row: number;
+  message: string;
+}
+
+/** Oglinda lui `ImportBatchResponse` (V62). */
+interface ImportBatch {
+  id: string;
+  fileName: string | null;
+  createdAt: string;
+  workPointsNew: number;
+  partnersNew: number;
+  movementsNew: number;
+  movementsRemaining: number;
+  movementsEdited: number;
+  undoneAt: string | null;
 }
 
 /**
@@ -78,7 +102,7 @@ function ImportScreen() {
       setResult(res.data);
       setVerified(!save && res.data.errors.length === 0 ? file : null);
       if (res.data.saved) {
-        // Partenerii, mișcările, panoul și termenele s-au schimbat toate deodată.
+        // Partenerii, mișcările, panoul, termenele și istoricul importurilor s-au schimbat toate deodată.
         qc.invalidateQueries();
         notify(
           t.saved
@@ -176,30 +200,154 @@ function ImportScreen() {
               <p className="mt-4 text-sm font-medium text-red-700">
                 {t.errorsTitle.replace("{n}", String(result.errors.length))}
               </p>
-              <div className="mt-2">
-                <Table>
-                  <THead>
-                    <TR>
-                      <TH>{t.sheet}</TH>
-                      <TH>{t.row}</TH>
-                      <TH>{t.problem}</TH>
-                    </TR>
-                  </THead>
-                  <TBody>
-                    {result.errors.map((e, i) => (
-                      <TR key={i}>
-                        <TD>{e.sheet}</TD>
-                        <TD className="tabular-nums">{e.row}</TD>
-                        <TD>{e.message}</TD>
-                      </TR>
-                    ))}
-                  </TBody>
-                </Table>
-              </div>
+              <RowTable rows={result.errors} />
             </>
+          )}
+
+          {result.warnings.length > 0 && (
+            <div data-testid="import-warnings">
+              <p className="mt-4 text-sm font-medium text-state-warn-text">
+                {t.warningsTitle.replace("{n}", String(result.warnings.length))}
+              </p>
+              <RowTable rows={result.warnings} />
+            </div>
           )}
         </Card>
       )}
+
+      <ImportHistory />
     </div>
+  );
+}
+
+function RowTable({ rows }: { rows: RowMessage[] }) {
+  const t = strings.importExcel;
+  return (
+    <div className="mt-2">
+      <Table>
+        <THead>
+          <TR>
+            <TH>{t.sheet}</TH>
+            <TH>{t.row}</TH>
+            <TH>{t.problem}</TH>
+          </TR>
+        </THead>
+        <TBody>
+          {rows.map((e, i) => (
+            <TR key={i}>
+              <TD>{e.sheet}</TD>
+              <TD className="tabular-nums">{e.row}</TD>
+              <TD>{e.message}</TD>
+            </TR>
+          ))}
+        </TBody>
+      </Table>
+    </div>
+  );
+}
+
+/**
+ * Importurile salvate în firma aleasă și „Retrage” (V62). „Retrage”, nu „Anulează”: butonul de renunțare din
+ * confirmare se numește deja „Anulează”, iar două butoane cu același nume și efecte opuse ar duce la greșeală. Anularea șterge numai mișcările neatinse de la
+ * import; confirmarea spune câte pleacă și câte rămân, fiindcă asta e cifra care oprește o greșeală.
+ */
+function ImportHistory() {
+  const t = strings.importExcel;
+  const qc = useQueryClient();
+  const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
+  const history = useQuery({
+    queryKey: ["import-history"],
+    queryFn: async () => (await api.get<ImportBatch[]>("/api/v1/import/istoric")).data,
+  });
+  const undo = useMutation({
+    mutationFn: async (id: string) =>
+      (await api.post<{ deleted: number; kept: number }>(`/api/v1/import/${id}/anulare`)).data,
+    onSuccess: (res) => {
+      qc.invalidateQueries();
+      notify(
+        t.undone
+          .replace("{deleted}", countOf(res.deleted, "mișcare", "mișcări"))
+          .replace("{kept}", String(res.kept)),
+        "success",
+      );
+    },
+    onError: (err) => notify(apiErrorMessage(err, t.undoError), "error"),
+  });
+
+  return (
+    <Card className="mt-4" data-testid="import-history">
+      <CardHeader title={t.historyTitle} description={t.historyHint} />
+      <div className="mt-4">
+        {history.isError ? (
+          <p className="text-sm text-state-bad-text">{t.historyError}</p>
+        ) : history.data && history.data.length === 0 ? (
+          <p className="text-sm text-content-muted">{t.historyEmpty}</p>
+        ) : (
+          <Table>
+            <THead>
+              <TR>
+                <TH>{t.historyDate}</TH>
+                <TH>{t.historyFile}</TH>
+                <TH>{t.historyAdded}</TH>
+                <TH>{t.historyNow}</TH>
+                <TH />
+              </TR>
+            </THead>
+            <TBody>
+              {(history.data ?? []).map((b) => {
+                const date = formatDate(b.createdAt);
+                const deletable = b.movementsRemaining - b.movementsEdited;
+                return (
+                  <TR key={b.id}>
+                    <TD className="tabular-nums">{date}</TD>
+                    <TD>{b.fileName ?? t.unnamedFile}</TD>
+                    <TD className="tabular-nums">
+                      {t.historyAddedValue
+                        .replace("{movements}", countOf(b.movementsNew, "mișcare", "mișcări"))
+                        .replace("{partners}", countOf(b.partnersNew, "partener", "parteneri"))
+                        .replace("{workPoints}", countOf(b.workPointsNew, "punct de lucru", "puncte de lucru"))}
+                    </TD>
+                    <TD className="tabular-nums">
+                      {t.historyNowValue
+                        .replace("{remaining}", countOf(b.movementsRemaining, "mișcare", "mișcări"))
+                        .replace("{edited}", String(b.movementsEdited))}
+                    </TD>
+                    <TD className="text-right">
+                      {b.undoneAt ? (
+                        <Badge variant="muted">{t.historyUndone.replace("{date}", formatDate(b.undoneAt))}</Badge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          loading={undo.isPending && undo.variables === b.id}
+                          disabled={undo.isPending}
+                          onClick={() =>
+                            confirm({
+                              title: t.undoTitle,
+                              message: t.undoMessage
+                                .replace("{file}", b.fileName ?? t.unnamedFile)
+                                .replace("{date}", date)
+                                .replace("{deletable}", countOf(deletable, "mișcare", "mișcări"))
+                                .replace("{edited}", String(b.movementsEdited)),
+                              confirmLabel: t.undoConfirm,
+                              tone: "danger",
+                              onConfirm: () => undo.mutate(b.id),
+                            })
+                          }
+                        >
+                          {t.undo}
+                        </Button>
+                      )}
+                    </TD>
+                  </TR>
+                );
+              })}
+            </TBody>
+          </Table>
+        )}
+      </div>
+      {confirmDialog}
+    </Card>
   );
 }

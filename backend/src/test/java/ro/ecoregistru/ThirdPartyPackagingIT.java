@@ -110,7 +110,7 @@ class ThirdPartyPackagingIT {
                         .content("""
                                 {"workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
                                  "unit": "KG", "quantity": 1000, "operation": "RECOVERED",
-                                 "operationCode": "R3", "packagingCategory": "SECONDARY"}
+                                 "wasteDestination": "Vr", "operationCode": "R3", "packagingCategory": "SECONDARY"}
                                 """.formatted(workPointId, YEAR, cardboardId)))
                 .andExpect(status().isBadRequest());
     }
@@ -180,7 +180,7 @@ class ThirdPartyPackagingIT {
                         .content("""
                                 {"workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
                                  "unit": "KG", "quantity": %s, "operation": "RECOVERED",
-                                 "operationCode": "R3", "register": "%s",
+                                 "wasteDestination": "Vr", "operationCode": "R3", "register": "%s",
                                  "packagingCategory": "SECONDARY"%s}
                                 """.formatted(workPointId, YEAR, cardboardId, quantity, register,
                                 partner)))

@@ -137,7 +137,7 @@ class Anexa1FormIT {
                 {
                   "workPointId": "%s", "date": "%d-09-10", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": 100,
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
                   "partnerId": "%s", "treatmentMethod": "TM"
                 }
                 """.formatted(workPointId, YEAR, codeId, partnerId);
@@ -150,7 +150,7 @@ class Anexa1FormIT {
                 {
                   "workPointId": "%s", "date": "%d-10-10", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": 40,
-                  "operation": "DISPOSED", "register": "ANEXA_1", "operationCode": "D5"
+                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5"
                 }
                 """.formatted(workPointId, YEAR, codeId);
         mockMvc.perform(post("/api/v1/movements")
@@ -203,7 +203,7 @@ class Anexa1FormIT {
                 {
                   "workPointId": "%s", "date": "%d-08-24", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": 100,
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s"
                 }
                 """.formatted(workPointId, YEAR, codeId, partnerId);
         mockMvc.perform(post("/api/v1/movements")
@@ -354,7 +354,7 @@ class Anexa1FormIT {
                 {
                   "workPointId": "%s", "date": "%d-09-02", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": 40,
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R3", "partnerId": "%s"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s"
                 }
                 """.formatted(workPointId, YEAR, codeId, partnerId);
         mockMvc.perform(post("/api/v1/movements")

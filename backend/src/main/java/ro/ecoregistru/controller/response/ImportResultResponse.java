@@ -14,7 +14,12 @@ public record ImportResultResponse(
         int movementsExisting,
         int workPointsNew,
         int workPointsExisting,
-        List<RowError> errors
+        List<RowError> errors,
+        /**
+         * Rânduri sărite, nu greșite: o mișcare care pare deja în firmă (aceeași dată, punct de lucru, cod,
+         * cantitate, operațiune, partener și document). Nu opresc salvarea; spun ce n-a intrat și de ce.
+         */
+        List<RowError> warnings
 ) {
     /** {@code row} e numărul rândului din Excel, cum îl vede omul (antetul e rândul 1). */
     public record RowError(String sheet, int row, String message) {}

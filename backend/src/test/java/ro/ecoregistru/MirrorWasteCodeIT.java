@@ -202,7 +202,7 @@ class MirrorWasteCodeIT {
                   "quantity": 5.000,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13"
                 }
                 """.formatted(workPointId, wasteCodeId);
         String created = mockMvc.perform(post("/api/v1/movements")

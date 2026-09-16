@@ -10,7 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
+import ro.ecoregistru.controller.response.ImportBatchResponse;
 import ro.ecoregistru.controller.response.ImportResultResponse;
+import ro.ecoregistru.controller.response.ImportUndoResponse;
+import ro.ecoregistru.service.importer.ImportBatchService;
 import ro.ecoregistru.service.importer.ExcelImportService;
 import ro.ecoregistru.service.importer.ImportTemplate;
 
@@ -31,6 +37,7 @@ public class ImportController {
 
     ImportTemplate template;
     ExcelImportService importService;
+    ImportBatchService batchService;
 
     @GetMapping("/sablon")
     @PreAuthorize(CAN_IMPORT)
@@ -54,5 +61,19 @@ public class ImportController {
     @PreAuthorize(CAN_IMPORT)
     public ImportResultResponse importFile(@RequestParam("file") MultipartFile file) {
         return importService.run(file, true);
+    }
+
+    /** Importurile salvate în firma aleasă, cele mai noi întâi (V62). */
+    @GetMapping("/istoric")
+    @PreAuthorize(CAN_IMPORT)
+    public List<ImportBatchResponse> history() {
+        return batchService.list();
+    }
+
+    /** Șterge mișcările importului pe care nu le-a modificat nimeni de atunci. Vezi {@link ImportBatchService}. */
+    @PostMapping("/{id}/anulare")
+    @PreAuthorize(CAN_IMPORT)
+    public ImportUndoResponse undo(@PathVariable UUID id) {
+        return batchService.undo(id);
     }
 }

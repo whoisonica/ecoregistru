@@ -86,6 +86,7 @@ await page.click('button:has-text("Verifică")');
 await page.waitForTimeout(1200);
 check("verificarea fără erori o spune", await page.isVisible("text=Nicio eroare"));
 check("și deblochează „Importă”", (await importDisabled(page)) === false);
+check("istoricul importurilor e pe ecran", await page.isVisible('[data-testid="import-history"]'));
 check("numele fișierului e pe ecran",
   ((await page.textContent('[data-testid="import-file-name"]')) ?? "").includes("sablon.xlsx"));
 await shot(page, "import_verificat");

@@ -48,6 +48,16 @@ public interface WasteMovementRepository
     /** Idempotency lookup for (future) offline sync. */
     Optional<WasteMovement> findByCompany_IdAndClientGeneratedId(UUID companyId, UUID clientGeneratedId);
 
+    /**
+     * Leagă mișcările abia create de importul lor (V62). Update în bloc, dinadins: nu mărește {@code version},
+     * iar anularea recunoaște după {@code version = 0} un rând pe care nu l-a atins nimeni de la import.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("update WasteMovement m set m.importBatchId = :batch where m.id in :ids")
+    int tagImportBatch(@Param("batch") UUID batch, @Param("ids") java.util.Collection<UUID> ids);
+
+    List<WasteMovement> findAllByImportBatchIdAndDeletedFalse(UUID importBatchId);
+
     /** Incremental fetch (?since=) support for delta sync. */
     List<WasteMovement> findAllByCompany_IdAndUpdatedAtGreaterThan(UUID companyId, Instant since);
 

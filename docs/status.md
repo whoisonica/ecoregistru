@@ -8,7 +8,24 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
-> **16.09.2026, ~23:30 — 🔧 local, nedeployat: importul din Excel e numai al platformei.**
+> **17.09.2026, ~00:30 — 🔧 local, nedeployat: BUG-023, dublurile la reimport și istoricul importurilor cu „Retrage” (`V62`).**
+> **(1) BUG-023:** destinația obligatorie și partenerul autorizat pe o predare de deșeu propriu stăteau numai în formularul web;
+> acum `WasteMovementService.validateOwnWasteHandover` le cere pe server, doar pe registrul Anexa 1 (proprietarul: „generator doar”).
+> Ieșirile art. 48 neschimbate. 78 de corpuri de cerere din 21 de teste trimiteau predări pe care ecranul le refuza și au primit destinația.
+> Aplicația mobilă e lăsată neatinsă (proprietarul): o predare de pe telefon fără destinație ajunge „Respinsă” în coada ei.
+> **(2) Dublurile:** un fișier corectat și reîncărcat avea altă amprentă și dubla tot. Acum rândurile se compară și după conținut
+> (dată, punct de lucru, cod, cantitate în kg, operațiune, partener, document) cu ce era în firmă înainte de import, pe număr de apariții;
+> cele sărite apar ca avertismente (`warnings` în răspuns, tabel pe ecran). Două rânduri identice din același fișier intră amândouă.
+> **(3) Istoricul (`V62`, `import_batches` + `waste_movements.import_batch_id`):** `GET /api/v1/import/istoric`, `POST /api/v1/import/{id}/anulare`,
+> numai platforma. Anularea șterge (soft) mișcările importului cu `version = 0`, golește amprenta ca același fișier să se poată reimporta,
+> și păstrează ce s-a modificat de atunci, partenerii și punctele de lucru. Legarea se face cu un update în bloc, care nu urcă `version`.
+> Pe ecran: tabelul „Importurile firmei”, cu confirmare care spune câte mișcări pleacă și câte rămân („Retrage”, fiindcă renunțarea din
+> confirmare se cheamă deja „Anulează”). **Probe:** backend **861 de teste, 104 clase, 0 eșecuri** (`OwnWasteHandoverIT` 4, `ExcelImportIT` 16 → 21);
+> **negativă:** fără `validateOwnWasteHandover`, fără potrivirea după conținut și cu „orice rând e neatins” cad exact cele 5 teste ale lor.
+> e2e **24/24** pe o bază nouă cu `V62` (probele 14, 15, 22 își scriau predările prin API fără destinație și au primit-o); tabelul privit la
+> 1440px și 375px (la 375px se derulează în card, pagina nu). `npm test` 20/20, build verde. Liberă după asta: **`V63`**.
+
+> **16.09.2026, 23:23 — ✅ pe producție (api v108, app v93, `9ef84d2`): importul din Excel e numai al platformei.**
 > Proprietarul: „hai să nu lăsăm oamenii să facă asta singuri” — importul e partea noastră din implementare; clientul și consultantul
 > ne trimit fișierul. **Server:** `ImportController` pe `hasAuthority('PLATFORM_ADMIN')`, pe toate trei endpointurile (și șablonul);
 > firma se alege cu `X-Tenant-Id`. Verificarea „punctul de lucru nou îl importă doar un administrator” din `ExcelImportService` a
@@ -18,8 +35,8 @@ rulează local și are testele verzi.
 > `onlyThePlatformImports` (administratorul, consultantul cabinetului care are firma și operatorul: 403 pe șablon, verificare și
 > import; nimic salvat) — **negativă:** cu rolurile vechi în `CAN_IMPORT` testul cade (200 în loc de 403). Suita backend **852 de teste, 103 clase, 0 eșecuri**; `npm test` 20/20; build verde.
 > e2e pe `eco_e2e_import`: probele **1, 16, 24 trec** (16: administratorul nu vede butonul și e dus acasă, platforma importă pe firma demo).
-> ⚠️ Landingul (`wastehouse.ro`, întrebarea „Ce se întâmplă cu evidența pe care o am deja în Excel?”) încă descrie importul ca pe ceva
-> ce faci singur: de rescris la următorul upload.
+> Landingul (`wastehouse.ro`, întrebarea „Ce se întâmplă cu evidența pe care o am deja în Excel?”) rescris local pe 17.09 („O aducem noi
+> în aplicație…”); se urcă de mână, pe cPanel.
 
 > **16.09.2026, 22:00 — ✅ pe producție: Anexa 3 Ambalaje la colector și starea documentului pe fiecare termen.**
 > `ecoregistru-api` **v106** (`3b9c08d`), `ecoregistru-app` **v91** (`bbce88b`); monorepo `b153130`, fără migrare. Proprietarul: „din ce

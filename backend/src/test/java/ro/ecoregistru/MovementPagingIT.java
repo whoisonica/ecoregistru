@@ -323,7 +323,7 @@ class MovementPagingIT {
                 {
                   "workPointId": "%s", "date": "%s-02-03", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": 4.000, "physicalState": "SOLID",
-                  "operation": "RECOVERED", "operationCode": "R13",
+                  "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "R13",
                   "partnerId": "%s", "register": "ART_48"
                 }
                 """.formatted(workPointId, year, wasteCodeId, partnerId));
@@ -442,7 +442,7 @@ class MovementPagingIT {
                 {
                   "workPointId": "%s", "date": "%s", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s, "physicalState": "SOLID",
-                  "operation": "RECOVERED", "operationCode": "R13",
+                  "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "R13",
                   "partnerId": "%s", "register": "ART_48"
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity, partnerId));
@@ -462,7 +462,7 @@ class MovementPagingIT {
                   "quantity": %s,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"%s%s
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13"%s%s
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity,
                 partner == null ? "" : ",\n  \"partnerId\": \"" + partner + "\"",
@@ -487,7 +487,7 @@ class MovementPagingIT {
                   "partnerId": "%s",
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13"
                 }
                 """.formatted(workPointId, date, wasteCodeId, partnerId));
     }
@@ -513,7 +513,7 @@ class MovementPagingIT {
                   "physicalState": "SOLID",
                   "operation": "RECOVERED",
                   "register": "ANEXA_1",
-                  "operationCode": "R13",
+                  "wasteDestination": "Vr", "operationCode": "R13",
                   "partnerId": "%s"%s
                 }
                 """.formatted(workPointId, date, wasteCodeId, partnerId,
@@ -531,7 +531,7 @@ class MovementPagingIT {
                   "quantity": %s,
                   "unit": "TONS",
                   "physicalState": "SOLID",
-                  "operation": "RECOVERED", "register": "ANEXA_1", "operationCode": "R13"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13"
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity));
     }

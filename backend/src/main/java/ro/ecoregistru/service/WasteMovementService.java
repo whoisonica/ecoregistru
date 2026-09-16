@@ -69,6 +69,7 @@ public class WasteMovementService {
         validateDates(request);
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
+        validateOwnWasteHandover(request, register, partner);
 
         WasteMovement movement = WasteMovement.builder()
                 .company(company)
@@ -143,6 +144,7 @@ public class WasteMovementService {
         validateDates(request);
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
+        validateOwnWasteHandover(request, register, partner);
 
         movement.setWorkPoint(workPoint);
         movement.setDate(request.date());
@@ -446,6 +448,29 @@ public class WasteMovementService {
         }
         if (!allowed.contains(request.operationCode())) {
             throw new BusinessException(OPERATION_CODE_NOT_IN_PROFILE);
+        }
+    }
+
+    /**
+     * BUG-023. Două reguli ale predării de deșeu propriu (proprietarul, 16.09.2026) stăteau numai în
+     * formularul web ({@code MovementFormDialog.validate}), deci aplicația mobilă, importul și orice apel
+     * direct le ocoleau. Acum sunt aici, pentru toți:
+     * <ul>
+     *   <li>destinația (nota 5 a fișei, HG 856/2002 anexa 1) nu rămâne goală: fișa o tipărește pe fiecare predare;</li>
+     *   <li>partenerul căruia i se predă are trecut numărul autorizației de mediu (OUG 92/2021 art. 23 alin. (1)).</li>
+     * </ul>
+     * Numai pe registrul Anexa 1, adică la generator (decizia proprietarului: doar generatorul). Ieșirile de
+     * marfă preluată (art. 48) rămân cum erau. Expirarea autorizației rămâne avertisment (decizia 36).
+     */
+    private void validateOwnWasteHandover(WasteMovementRequest request, WasteRegister register, Partner partner) {
+        if (!request.operation().isExit() || register != WasteRegister.ANEXA_1) {
+            return;
+        }
+        if (request.wasteDestination() == null) {
+            throw new BusinessException(WASTE_DESTINATION_REQUIRED);
+        }
+        if (partner != null && blankToNull(partner.getAuthorizationNumber()) == null) {
+            throw new BusinessException(HANDOVER_PARTNER_NEEDS_AUTHORIZATION);
         }
     }
 

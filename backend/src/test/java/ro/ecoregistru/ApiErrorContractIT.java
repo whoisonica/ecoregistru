@@ -319,7 +319,7 @@ class ApiErrorContractIT {
                 .findAllByCompany_IdAndDeletedFalse(admin.getCompany().getId()).get(0);
         String body = """
                 {"workPointId":"%s","date":"%s","wasteCodeId":"%s","quantity":%s,"unit":"KG",
-                 "operation":"RECOVERED","operationCode":"R3","register":"ANEXA_1","unloadDate":%s}"""
+                 "operation":"RECOVERED","wasteDestination": "Vr", "operationCode":"R3","register":"ANEXA_1","unloadDate":%s}"""
                 .formatted(seeded.getWorkPoint().getId(), date, seeded.getWasteCode().getId(), quantity,
                         unloadDate == null ? "null" : "\"" + unloadDate + "\"");
         return post("/api/v1/movements")

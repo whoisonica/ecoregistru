@@ -110,7 +110,7 @@ class PackagingDeclarationIT {
         workPointId = workPointRepository.save(ro.ecoregistru.entity.WorkPoint.builder()
                 .company(company).name("Sediu").active(true).createdAt(Instant.now()).build()).getId();
 
-        collector = partnerRepository.save(Partner.builder()
+        collector = partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name("Colector Ambalaje SRL").cui("RO111" + suffix.substring(0, 3))
                 .type(PartnerType.COLLECTOR).client(true).active(true)
                 .createdAt(Instant.now()).build());
@@ -119,7 +119,7 @@ class PackagingDeclarationIT {
                 .partner(collector).name("P.L. Ilfov").address("Şos. de Centură 2-8")
                 .active(true).createdAt(Instant.now()).build());
 
-        recycler = partnerRepository.save(Partner.builder()
+        recycler = partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name("Reciclator Hârtie SA").cui("RO222" + suffix.substring(0, 3))
                 .type(PartnerType.RECOVERER).client(true).active(true)
                 .createdAt(Instant.now()).build());
@@ -593,7 +593,7 @@ class PackagingDeclarationIT {
                 {
                   "workPointId": "%s", "date": "%d-05-12", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s,
-                  "operation": "RECOVERED", "operationCode": "%s", "partnerId": "%s",
+                  "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "%s", "partnerId": "%s",
                   "packagingOnMarket": true%s
                 }
                 """.formatted(workPointId, YEAR, codeId, quantity, operationCode, partnerId, extra));
@@ -606,7 +606,7 @@ class PackagingDeclarationIT {
                 {
                   "workPointId": "%s", "date": "%d-06-12", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s,
-                  "operation": "RECOVERED", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "packagingOnMarket": false
                 }
                 """.formatted(workPointId, YEAR, codeId, quantity, partnerId));

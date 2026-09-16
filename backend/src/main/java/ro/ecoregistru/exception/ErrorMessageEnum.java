@@ -194,6 +194,8 @@ public enum ErrorMessageEnum {
     OPERATION_CODE_REQUIRED_DISPOSAL("movement.operation.code.disposal", "Eliminarea deșeului necesită un cod de operație D (D1–D15)."),
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),
     OPERATION_NOT_ALLOWED_FOR_COMPANY_TYPE("movement.operation.not.allowed", "Operațiunea nu este disponibilă pentru tipul firmei."),
+    WASTE_DESTINATION_REQUIRED("movement.destination.required", "Alege destinația deșeului predat: DO, I, Vr sau A."),
+    HANDOVER_PARTNER_NEEDS_AUTHORIZATION("movement.partner.authorization.required", "Partenerul n-are trecut numărul autorizației de mediu. Cine preia deșeul trebuie să fie autorizat: completează-l în fișa lui, la Parteneri."),
     OPERATION_CODE_NOT_IN_PROFILE("movement.operation.code.not.in.profile", "Codul de operație nu e printre cele declarate de firmă. Completează profilul firmei dacă a apărut o operațiune nouă."),
     GENERATION_NEEDS_EXIT("movement.generation.needs.exit", "Deșeul generat se înregistrează la predare: alege valorificare (cod R) sau eliminare (cod D) și partenerul care îl preia. „Rămâne în stoc” nu mai există."),
     OPERATION_NOT_SELECTABLE("movement.operation.not.selectable", "„Ieșire neclasificată” nu se poate alege: e starea liniilor vechi, fără cod R/D. Alege valorificare sau eliminare și codul operației."),
@@ -213,6 +215,8 @@ public enum ErrorMessageEnum {
             "Fișierul nu se poate citi ca Excel. Folosește șablonul .xlsx descărcat din aplicație, fără parolă."),
     IMPORT_TEMPLATE_MISMATCH("import.template.mismatch",
             "Fișierul nu are foile și coloanele șablonului. Descarcă șablonul din aplicație și copiază datele în el, fără să muți coloanele."),
+    IMPORT_BATCH_NOT_FOUND("import.batch.not.found", "Importul nu a fost găsit în firma aleasă."),
+    IMPORT_ALREADY_UNDONE("import.already.undone", "Importul a fost deja retras."),
     IMPORT_TOO_MANY_ROWS("import.too.many.rows",
             "O foaie are mai mult de 2.000 de rânduri. Împarte fișierul pe ani și importă-i pe rând."),
 

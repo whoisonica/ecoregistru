@@ -429,6 +429,10 @@ public class WasteMovement {
     @Column(name = "client_generated_id")
     UUID clientGeneratedId;
 
+    /** Importul din Excel din care a venit rândul (V62), ca să se poată anula; null la tot ce s-a scris altfel. */
+    @Column(name = "import_batch_id")
+    UUID importBatchId;
+
     // --- audit / soft delete ---
 
     @Column(nullable = false)

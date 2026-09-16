@@ -308,7 +308,7 @@ class Art48RegisterIT {
     }
 
     private Partner partner(String name, String cui, PartnerType type, String address) {
-        return partnerRepository.save(Partner.builder()
+        return partnerRepository.save(Partner.builder().authorizationNumber("AUT-TEST")
                 .company(company).name(name).cui(cui).type(type).address(address)
                 .supplier(true).client(true).active(true).createdAt(Instant.now()).build());
     }
@@ -316,7 +316,7 @@ class Art48RegisterIT {
     private void movement(String date, String code, String unit, String quantity, String operation,
                           String operationCode, Partner partner, String register) throws Exception {
         StringBuilder extra = new StringBuilder();
-        if (operationCode != null) extra.append(", \"operationCode\": \"").append(operationCode).append('"');
+        if (operationCode != null) extra.append(", \"wasteDestination\": \"Vr\", \"operationCode\": \"").append(operationCode).append('"');
         if (partner != null) extra.append(", \"partnerId\": \"").append(partner.getId()).append('"');
         if (register != null) extra.append(", \"register\": \"").append(register).append('"');
         mockMvc.perform(post("/api/v1/movements")

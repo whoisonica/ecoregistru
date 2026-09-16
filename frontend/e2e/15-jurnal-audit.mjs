@@ -50,7 +50,7 @@ const story = await page.evaluate(async () => {
       quantity,
       unit: "KG",
       physicalState: "SOLID",
-      operation: "RECOVERED", register: "ANEXA_1", operationCode: "R13",
+      operation: "RECOVERED", register: "ANEXA_1", operationCode: "R13", wasteDestination: "Vr",
       notes: "proba 15 — jurnal de audit",
     });
 
