@@ -22,6 +22,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 
@@ -50,6 +51,9 @@ public class DeviceSessionService {
 
     /** Cât ține lista din Setări. Mai multe telefoane pe un cont e normal (schimbă telefonul, îl repară). */
     static final int MAX_DEVICES_PER_USER = 10;
+
+    /** Forma tokenului Expo Push: „ExponentPushToken[…]” (și vechiul „ExpoPushToken[…]”). */
+    static final Pattern EXPO_PUSH_TOKEN = Pattern.compile("^Expo(nent)?PushToken\\[[A-Za-z0-9_-]{1,200}]$");
 
     DeviceSessionRepository deviceSessionRepository;
 
@@ -141,6 +145,28 @@ public class DeviceSessionService {
                 .filter(s -> s.getUser().getId().equals(user.getId()))
                 .orElseThrow(() -> new BusinessException(DEVICE_SESSION_INVALID));
         revoke(session);
+    }
+
+    /**
+     * G2 — telefonul își declară tokenul de push, pe sesiunea lui. Numai pe o sesiune vie a contului
+     * propriu: un id străin sau stins e refuzat ca la „Scoate telefonul”. {@code null} îl șterge.
+     */
+    @Transactional
+    public void setPushToken(AppUser user, UUID sessionId, String pushToken) {
+        DeviceSession session = deviceSessionRepository.findById(sessionId)
+                .filter(s -> s.getUser().getId().equals(user.getId()))
+                .filter(DeviceSession::isLive)
+                .orElseThrow(() -> new BusinessException(DEVICE_SESSION_INVALID));
+        if (pushToken != null && !EXPO_PUSH_TOKEN.matcher(pushToken).matches()) {
+            throw new BusinessException(PUSH_TOKEN_INVALID);
+        }
+        if (pushToken != null) {
+            deviceSessionRepository.clearPushTokenElsewhere(pushToken, session.getId());
+            // `clearAutomatically` a golit contextul: rândul se citește din nou, altfel save-ul l-ar fi scris peste.
+            session = deviceSessionRepository.findById(sessionId).orElseThrow();
+        }
+        session.setPushToken(pushToken);
+        deviceSessionRepository.save(session);
     }
 
     /** Parola schimbată și contul dezactivat nu lasă niciun telefon în urmă. */

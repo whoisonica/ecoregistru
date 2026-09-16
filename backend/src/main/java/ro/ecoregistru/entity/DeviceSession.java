@@ -56,6 +56,10 @@ public class DeviceSession {
     @Column(name = "revoked_at")
     Instant revokedAt;
 
+    /** G2 — tokenul Expo Push al telefonului; null până îl declară aplicația (V54). */
+    @Column(name = "push_token", length = 255)
+    String pushToken;
+
     /** Vie = neluată înapoi și neieșită din termen. Singura poartă prin care trece o reîmprospătare. */
     public boolean isLive() {
         return revokedAt == null && expiresAt.isAfter(Instant.now());

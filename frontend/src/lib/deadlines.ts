@@ -1,6 +1,6 @@
 import type { Deadline } from "@/lib/types";
 import { strings } from "@/lib/strings";
-import { countOf } from "@/lib/utils";
+import { countOf } from "@/lib/count";
 
 /**
  * Socotelile pe termene, într-un singur loc.

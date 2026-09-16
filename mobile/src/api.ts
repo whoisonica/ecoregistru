@@ -1,6 +1,7 @@
 import type {
   Company,
   Deadline,
+  MonthlyEvidence,
   MovementSummary,
   MovementTotals,
   Partner,
@@ -11,7 +12,7 @@ import type {
   WorkPoint,
 } from "@web/types";
 
-import { File } from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 
 import type { AuthResponse, DeviceSessionRow } from "./auth";
 
@@ -88,7 +89,8 @@ interface Options extends Omit<RequestInit, "body"> {
   retried?: boolean;
 }
 
-async function request<T>(path: string, options: Options = {}): Promise<T> {
+/** Cererea cu tot ce ține de sesiune (token, firmă, reîmprospătare, plicul de eroare), fără să citească corpul. */
+async function send(path: string, options: Options = {}): Promise<Response> {
   const { auth, body, headers, retried, ...rest } = options;
   // O poză pleacă `multipart/form-data`, iar granița o pune `fetch` singur — deci fără antet scris.
   const multipart = body instanceof FormData;
@@ -107,7 +109,7 @@ async function request<T>(path: string, options: Options = {}): Promise<T> {
 
   if (res.status === 401 && auth && !retried) {
     const token = await refreshOnce();
-    if (token) return request<T>(path, { ...options, auth: { ...auth, token }, retried: true });
+    if (token) return send(path, { ...options, auth: { ...auth, token }, retried: true });
     throw new UnauthorizedError();
   }
   if (res.status === 401 && auth) throw new UnauthorizedError();
@@ -115,6 +117,11 @@ async function request<T>(path: string, options: Options = {}): Promise<T> {
     const envelope = (await res.json().catch(() => null)) as { "error-message"?: string } | null;
     throw new ApiError(res.status, envelope?.["error-message"] ?? null);
   }
+  return res;
+}
+
+async function request<T>(path: string, options: Options = {}): Promise<T> {
+  const res = await send(path, options);
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
@@ -140,6 +147,18 @@ export function logout(refreshToken: string) {
 
 export function devices(auth: Auth) {
   return request<DeviceSessionRow[]>("/api/v1/auth/devices", { auth });
+}
+
+/**
+ * G2 — tokenul de push al telefonului, pe sesiunea lui de dispozitiv. Numai sesiunea proprie; `null`
+ * îl șterge. Fără `X-Tenant-Id`: e despre telefon, nu despre o firmă.
+ */
+export function registerPushToken(auth: Auth, deviceSessionId: string, pushToken: string | null) {
+  return request<void>(`/api/v1/auth/devices/${deviceSessionId}/push-token`, {
+    method: "PUT",
+    auth,
+    body: { token: pushToken },
+  });
 }
 
 // ── firma ────────────────────────────────────────────────────────────────────
@@ -184,6 +203,31 @@ export function movements(auth: Auth, params: MovementFilters) {
 /** `year` e obligatoriu — §3 din todo-mobil spunea altceva, serverul răspunde 400 fără el. */
 export function deadlines(auth: Auth, year: number) {
   return request<Deadline[]>(`/api/v1/deadlines?year=${year}`, { auth });
+}
+
+// ── controlul (M1c) ─────────────────────────────────────────────────────────
+
+/** Evidența anului, linie cu linie — din ea vin „fără cod R/D” și „așteaptă cântarul”, ca pe Panoul web. */
+export function evidences(auth: Auth, year: number) {
+  return request<MonthlyEvidence[]>(`/api/v1/evidences?year=${year}`, { auth });
+}
+
+/**
+ * Dosarul de control (`GET /api/v1/audit-file`), scris ca ZIP în cache-ul aplicației, de unde îl ia
+ * foaia de partajare (D5). Cache, nu documente: arhiva se refă la fiecare trimitere, iar o copie veche
+ * uitată pe telefon ar fi încă un loc cu datele firmei.
+ *
+ * <p>Numele e cel de pe web (`useAuditFile.ts`), ca inspectorul să primească același fișier de oriunde.
+ */
+export async function downloadAuditFile(auth: Auth, year: number, years: number): Promise<string> {
+  const res = await send(`/api/v1/audit-file?year=${year}&years=${years}`, { auth });
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  const name = years === 1 ? `dosar-control-${year}.zip` : `dosar-control-${year - years + 1}-${year}.zip`;
+  const file = new File(Paths.cache, name);
+  if (file.exists) file.delete();
+  file.create();
+  file.write(bytes);
+  return file.uri;
 }
 
 // ── predarea (M1b) ──────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ const PATHS = {
   building: '<path d="M4 20.5V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v15.5M14 9.5h5a1 1 0 0 1 1 1v10M3 20.5h18M7.5 8h3M7.5 12h3M7.5 16h3"/>',
   phone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>',
   check: '<path d="M5 12.5 9.5 17 19 7.5"/>',
+  alert: '<path d="M12 4.5 20.5 19H3.5z"/><path d="M12 10v4"/><path d="M12 16.6v.1"/>',
 } as const;
 
 export type IconName = keyof typeof PATHS;

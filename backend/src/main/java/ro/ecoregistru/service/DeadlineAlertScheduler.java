@@ -13,6 +13,7 @@ import ro.ecoregistru.enums.DeadlineStatus;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.ReportingDeadlineRepository;
 import ro.ecoregistru.service.notification.NotificationService;
+import ro.ecoregistru.service.notification.PushNotifier;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -40,6 +41,7 @@ public class DeadlineAlertScheduler {
     ReportingDeadlineRepository deadlineRepository;
     AppUserRepository appUserRepository;
     NotificationService notificationService;
+    PushNotifier pushNotifier;
 
     /**
      * Daily at 07:00 (server time). Cron is overridable via app.alerts.deadline-cron.
@@ -87,14 +89,15 @@ public class DeadlineAlertScheduler {
 
     /** Returns true only if the reminder was delivered, so the caller may mark the flag. */
     private boolean notify(ReportingDeadline deadline, long daysUntil) {
-        List<String> recipients = appUserRepository
-                .findAllByCompany_IdAndEnabledTrue(deadline.getCompany().getId())
-                .stream().map(AppUser::getEmail).toList();
+        List<AppUser> users = appUserRepository.findAllByCompany_IdAndEnabledTrue(deadline.getCompany().getId());
+        List<String> recipients = users.stream().map(AppUser::getEmail).toList();
         if (recipients.isEmpty()) {
             return false; // no one to tell yet — leave unmarked so it retries when users exist
         }
         try {
             notificationService.sendDeadlineReminder(deadline, recipients, daysUntil);
+            // G2 — only after the mail went out, so the phone hears about it exactly as often as the inbox.
+            pushNotifier.send(users, PushNotifier.deadline(deadline, daysUntil));
             return true;
         } catch (Exception e) {
             log.error("Failed to send reminder for deadline {} ({})",

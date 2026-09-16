@@ -10,6 +10,7 @@ import { canWrite } from "../../src/auth";
 import { SCREEN_LABEL, useCompany, useMovementScreens } from "../../src/company";
 import { Icon, type IconName } from "../../src/components/Icon";
 import { useSession } from "../../src/session";
+import { useNotificationRoutes, usePushRegistration } from "../../src/push";
 import { useOutboxSync } from "../../src/sync";
 import { colors, fonts } from "../../src/theme";
 
@@ -37,6 +38,9 @@ const MOVEMENT_ICON: Record<MovementScreen, IconName> = { GENERATED: "list", IN:
 export default function TabsLayout() {
   // Coada de predări pleacă de oriunde ar fi omul în aplicație, nu doar de pe „Adaugă”.
   useOutboxSync();
+  // G2 — tokenul de push pe sesiunea telefonului, și ecranul deschis de o notificare apăsată.
+  usePushRegistration();
+  useNotificationRoutes();
   return (
     <View style={styles.fill}>
       <Slot />

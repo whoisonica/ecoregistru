@@ -14,6 +14,7 @@ import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.ConsultancyRepository;
 import ro.ecoregistru.repository.ReportingDeadlineRepository;
 import ro.ecoregistru.service.notification.NotificationService;
+import ro.ecoregistru.service.notification.PushNotifier;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -44,6 +45,7 @@ public class ConsultantDigestScheduler {
     ReportingDeadlineRepository deadlineRepository;
     AppUserRepository appUserRepository;
     NotificationService notificationService;
+    PushNotifier pushNotifier;
 
     /** Zilnic la 07:30, după alertele firmelor (07:00) și ale partenerilor (07:15). Tranzacția stă și aici: apelul intern ocolește proxy-ul. */
     @Transactional(readOnly = true)
@@ -62,13 +64,15 @@ public class ConsultantDigestScheduler {
             if (due.isEmpty()) {
                 continue;
             }
-            List<String> recipients = appUserRepository.findAllByConsultancy_IdAndEnabledTrue(consultancy.getId())
-                    .stream().map(AppUser::getEmail).toList();
+            List<AppUser> consultants = appUserRepository.findAllByConsultancy_IdAndEnabledTrue(consultancy.getId());
+            List<String> recipients = consultants.stream().map(AppUser::getEmail).toList();
             if (recipients.isEmpty()) {
                 continue;
             }
             try {
                 notificationService.sendConsultantDigest(consultancy.getName(), due, recipients, today);
+                // G2 — o notificare pe zi, ca mailul; numai după ce mailul a plecat.
+                pushNotifier.send(consultants, PushNotifier.consultantDigest(consultancy.getName(), due.size()));
                 sent++;
             } catch (Exception e) {
                 // Un cabinet căzut nu îi oprește pe ceilalți.

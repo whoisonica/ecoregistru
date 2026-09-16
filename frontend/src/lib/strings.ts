@@ -249,6 +249,39 @@ export const strings = {
     outboxPhotoFailed: "Predarea e în registru; poza n-a urcat.",
     outboxRemove: "Scoate",
     outboxSendNow: "Trimite acum",
+
+    // --- M1c: „A venit controlul” ---
+    // Rândurile sunt exact ce socotește Panoul web (`lib/readiness.ts`), nu lista din prototip: ce nu
+    // verifică aplicația nicăieri nu se afirmă nici pe telefon.
+    controlTitle: "A venit controlul",
+    controlLcdLabel: "PREGĂTIT PENTRU CONTROL",
+    controlLcdState: "ACUM",
+    controlOf: (n: number) => `din ${n}`,
+    controlAllOk: "Nimic de văzut acum",
+    controlUnknown: "Un rând n-a putut încărca",
+    controlChecks: "Ce găsește inspectorul",
+    controlOk: "în regulă",
+    controlWarn: "de văzut",
+    controlBad: "de rezolvat",
+    controlUnknownChip: "?",
+    controlUnknownRow: "Nu am putut încărca. Deschide ecranul din nou când ai semnal.",
+    checkDeadlines: "Termene",
+    checkDeadlinesOk: "Niciunul depășit",
+    checkMissingCode: (year: number) => `Codul R/D pe predări, ${year}`,
+    checkMissingCodeOk: "Completat pe toate ieșirile",
+    checkWeighing: "Cântăriri la destinatar",
+    checkWeighingOk: "Nicio ieșire nu așteaptă cântarul",
+    checkPartners: "Autorizațiile partenerilor",
+    checkPartnersOk: "Niciuna aproape de expirare",
+    checkPartnerOne: (name: string, date: string) => `${name}: valabilă până pe ${date}`,
+    // Dosarul (D5): ZIP-ul de pe web, dat foii de partajare a telefonului — Mail, WhatsApp, Drive.
+    sendDossier: "Trimite dosarul",
+    sendDossierBusy: "Se pregătește arhiva...",
+    sendDossierHint: "Aceeași arhivă ca „Dosar de control” pe web. Alegi tu cui o trimiți.",
+    dossierYear: (year: number) => `Anul ${year}`,
+    dossierThreeYears: "Ultimii 3 ani",
+    sendDossierOffline: "Dosarul se face pe server. Fără semnal nu îl pot pregăti.",
+    shareUnavailable: "Telefonul ăsta nu poate trimite fișiere din aplicație.",
   },
 
   login: {

@@ -99,6 +99,17 @@ public class AuthenticationController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * G2 — tokenul de push al telefonului, pe sesiunea lui. Același prag ca „Scoate telefonul”: e despre
+     * sesiunea celui care cere, deci și {@code CLIENT_VIEWER} primește notificările firmei lui.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/devices/{id}/push-token")
+    public ResponseEntity<Void> setPushToken(@PathVariable UUID id, @RequestBody PushTokenRequest request) {
+        deviceSessionService.setPushToken(SecurityUtils.currentUser(), id, request.token());
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");

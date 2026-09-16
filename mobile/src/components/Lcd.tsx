@@ -7,7 +7,7 @@ import { colors, fonts, radius } from "../theme";
  * Afișajul cântarului din prototip: cifra verde peste segmentele stinse „88.888”. Segmentele urmează lungimea cifrei,
  * ca să nu rămână o cifră mare peste o fantomă mai scurtă.
  */
-export function Lcd({ label, state, value, unit, foot, footTone = "alert", footRight }: {
+export function Lcd({ label, state, value, unit, foot, footTone = "alert", footRight, ghost: ghostOverride }: {
   label: string;
   state: string;
   /** `null` = n-a încărcat. Arată „?”, nu „0” (todo-mobil §6). */
@@ -17,9 +17,11 @@ export function Lcd({ label, state, value, unit, foot, footTone = "alert", footR
   footTone?: "alert" | "ok";
   /** Tastele de pe rândul de jos. Nu stau lângă cifră: îi iau lățimea, iar fantoma nu mai încape sub ea. */
   footRight?: ReactNode;
+  /** Segmentele stinse, când cifra nu e o cantitate: „8” sub un număr de rânduri, ca în prototip. */
+  ghost?: string;
 }) {
   const shown = value ?? "?";
-  const ghost = ghostFor(shown);
+  const ghost = ghostOverride ?? ghostFor(shown);
   const size = ghost.length > 6 ? styles.digitsSmall : null;
   return (
     <View style={styles.lcd}>

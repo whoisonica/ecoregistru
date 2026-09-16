@@ -85,6 +85,13 @@ app:
     # Single URL form: cloudinary://<api_key>:<api_secret>@<cloud_name>
     url: ${CLOUDINARY_URL:}
     folder: ${CLOUDINARY_FOLDER:ecoregistru}
+  # G2 — notificările pe telefon prin Expo Push (todo-mobil M1c). **Oprite implicit**: pornite cu
+  # `PUSH_ENABLED=true`. Expo e sub-procesor nou (SUA) — intră în registrul art. 30 și în DPA înainte de
+  # pornirea pe producție. Tokenul de acces e opțional (Enhanced Push Security din contul Expo).
+  push:
+    enabled: ${PUSH_ENABLED:false}
+    base-url: ${PUSH_BASE_URL:https://exp.host}
+    access-token: ${EXPO_ACCESS_TOKEN:}
   # Căutarea firmei după CUI (formularul de partener): serviciul public ANAF v9, fără cheie. Documentația
   # permite o cerere pe secundă și sancționează suprasolicitarea, deci cererile se răresc.
   anaf:

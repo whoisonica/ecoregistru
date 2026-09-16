@@ -7,19 +7,10 @@ import { useWorkPoints } from "@/hooks/useWorkPoints";
 import type { MonthlyEvidence } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
-import { daysLabel, daysUntil, documentFor } from "@/lib/deadlines";
+import { daysLabel, documentFor } from "@/lib/deadlines";
+import { readiness } from "@/lib/readiness";
 
 const t = strings.dashboard;
-
-/**
- * Cât de aproape trebuie să fie un termen ca să merite să fie **acțiunea următoare**.
- *
- * <p>Treizeci de zile, fiindcă atât ia strâns un dosar: regenerarea evidenței, verificarea liniilor
- * roșii, scoaterea documentului. Mai devreme de-atât, banda ar numi luni întregi un lucru pe care
- * nimeni nu-l face azi — iar o bandă care spune mereu același lucru devine tapet în trei zile, exact
- * ce s-a reparat pe 07.09 la bannerul galben permanent de pe Evidențe.
- */
-const NEAR_DEADLINE_DAYS = 30;
 
 /** Ce anume e de făcut, o singură dată, cu drumul către el. `null` = nu s-a putut încă decide. */
 export type NextAction = {
@@ -72,29 +63,12 @@ export function useDashboardData(enabled = true) {
   const { data: evidences, isLoading: loadingEvidences, isError: failedEvidences } =
     useEvidences({ year }, enabled);
 
-  const openDeadlines = useMemo(
-    () =>
-      [...(deadlines ?? [])]
-        .filter((d) => d.status !== "DONE")
-        .sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
-    [deadlines]
+  /** Socoteala stă în `lib/readiness.ts`, fiindcă o face și telefonul (ecranul „A venit controlul”). */
+  const { openDeadlines, overdue, nextDeadline, nearDeadline, expiringPartners, blockers } = useMemo(
+    () => readiness(deadlines, evidences, partners),
+    [deadlines, evidences, partners]
   );
-  const overdueCount = openDeadlines.filter((d) => d.status === "OVERDUE").length;
-  const nextDeadline = openDeadlines.find((d) => d.status !== "OVERDUE");
-
-  const expiringPartners = useMemo(
-    () => (partners ?? []).filter((p) => p.active && p.expiringSoon),
-    [partners]
-  );
-
-  /** Cele două feluri de „nu e gata", numărate pe linii de evidență. */
-  const blockers = useMemo(() => {
-    const rows = evidences ?? [];
-    return {
-      missingCode: rows.filter((r) => r.totalUnclassifiedOut > 0).length,
-      awaitingWeighing: rows.filter((r) => r.awaitingWeighing).length,
-    };
-  }, [evidences]);
+  const overdueCount = overdue.length;
   const blockerCount = blockers.missingCode + blockers.awaitingWeighing;
 
   const generatedThisMonth = summary?.quantityKg ?? 0;
@@ -152,7 +126,6 @@ export function useDashboardData(enabled = true) {
         cta: t.nextUnknownCta,
       };
     }
-    const overdue = openDeadlines.filter((d) => d.status === "OVERDUE");
     if (overdue.length === 1) {
       const d = overdue[0];
       const doc = documentFor(d);
@@ -184,13 +157,13 @@ export function useDashboardData(enabled = true) {
         cta: t.blockerFix,
       };
     }
-    if (nextDeadline && daysUntil(nextDeadline.dueDate) <= NEAR_DEADLINE_DAYS) {
-      const doc = documentFor(nextDeadline);
+    if (nearDeadline) {
+      const doc = documentFor(nearDeadline);
       return {
         tone: "warning",
         title: t.nextDeadline
-          .replace("{label}", strings.enums.reportType[nextDeadline.reportType])
-          .replace("{days}", daysLabel(nextDeadline) ?? ""),
+          .replace("{label}", strings.enums.reportType[nearDeadline.reportType])
+          .replace("{days}", daysLabel(nearDeadline) ?? ""),
         hint: t.nextDeadlineHint,
         to: doc?.to ?? "/termene",
         cta: doc?.label ?? t.nextDeadlineCta,
@@ -239,8 +212,8 @@ export function useDashboardData(enabled = true) {
     }
     return { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/evidente", cta: t.viewAll };
   }, [
-    openDeadlines,
-    nextDeadline,
+    overdue,
+    nearDeadline,
     blockers,
     expiringPartners,
     failedDeadlines,

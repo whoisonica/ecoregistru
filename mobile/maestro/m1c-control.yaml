@@ -1,0 +1,45 @@
+# M1c: „A venit controlul” — verdictul din socoteala Panoului web și dosarul prin foaia de partajare.
+# maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1c-control.yaml
+# Baza demo, după `POST /deadlines/regenerate?year=…` și `POST /evidences/regenerate?year=…`: termene depășite,
+# o ieșire fără cod R/D, una la cântar, doi parteneri cu autorizația pe terminate.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+- extendedWaitUntil:
+    visible: .*ÎNREGISTRAT.*
+    timeout: 20000
+- tapOn: Control
+- extendedWaitUntil:
+    visible: PREGĂTIT PENTRU CONTROL
+    timeout: 15000
+# Toate cele patru rânduri au venit — abia atunci afișajul numără.
+- extendedWaitUntil:
+    visible:
+      id: check-partners
+    timeout: 15000
+- assertVisible:
+    id: check-deadlines
+- assertVisible:
+    id: check-missingCode
+- assertVisible:
+    id: check-weighing
+- assertVisible: "din 4"
+- assertVisible: ".*termene depășite"
+- assertVisible: "1 linie fără cod R/D la ieșire"
+- assertVisible: "1 linie care așteaptă cântarul"
+- assertVisible: "2 parteneri cu autorizația aproape expirată"
+- takeScreenshot: 01-control
+- scrollUntilVisible:
+    element:
+      id: send-dossier
+    direction: DOWN
+- takeScreenshot: 02-dosar
+- tapOn:
+    id: send-dossier
+# Foaia de partajare a sistemului, cu arhiva descărcată de pe server: ambele sisteme scriu numele fișierului (iOS, după încărcare, fără „.zip”).
+- extendedWaitUntil:
+    visible: "dosar-control-2026.*"
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: 03-foaia-de-partajare

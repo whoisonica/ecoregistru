@@ -12,6 +12,7 @@ import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.service.notification.NotificationService;
+import ro.ecoregistru.service.notification.PushNotifier;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -57,6 +58,7 @@ public class PartnerAuthorizationAlertScheduler {
     PartnerRepository partnerRepository;
     AppUserRepository appUserRepository;
     NotificationService notificationService;
+    PushNotifier pushNotifier;
 
     /**
      * Daily at 07:15 (server time), just after the deadline reminders. Cron is overridable.
@@ -108,14 +110,15 @@ public class PartnerAuthorizationAlertScheduler {
 
     /** Returns true only if the warning was delivered, so the caller may mark the partner. */
     private boolean notify(Partner partner, long daysUntil) {
-        List<String> recipients = appUserRepository
-                .findAllByCompany_IdAndEnabledTrue(partner.getCompany().getId())
-                .stream().map(AppUser::getEmail).toList();
+        List<AppUser> users = appUserRepository.findAllByCompany_IdAndEnabledTrue(partner.getCompany().getId());
+        List<String> recipients = users.stream().map(AppUser::getEmail).toList();
         if (recipients.isEmpty()) {
             return false; // no one to tell yet — leave unmarked so it retries when users exist
         }
         try {
             notificationService.sendPartnerAuthorizationWarning(partner, recipients, daysUntil);
+            // G2 — after the mail, never instead of it: the flag above stays the mail's.
+            pushNotifier.send(users, PushNotifier.partnerAuthorization(partner, daysUntil));
             return true;
         } catch (Exception e) {
             log.error("Failed to send authorization warning for partner {} ({})",

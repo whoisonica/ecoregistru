@@ -26,6 +26,8 @@ public enum ErrorMessageEnum {
     // G1 — orice motiv de refuz la reîmprospătare arată la fel pentru cine întreabă: telefonul se
     // deloghează și cere parola. Motivele separate stau în DeviceSessionService, pentru proba negativă.
     DEVICE_SESSION_INVALID("device.session.invalid", "Sesiunea de pe acest dispozitiv nu mai e valabilă. Loghează-te din nou."),
+    // G2 — tokenul de push vine de la aplicație; altceva decât un token Expo nu se ține.
+    PUSH_TOKEN_INVALID("push.token.invalid", "Tokenul de notificări nu e valid."),
 
     // --- Email ---
     EMAIL_SEND_FAILED("email.send.failed", "Trimiterea emailului a eșuat. Încearcă din nou mai târziu."),
