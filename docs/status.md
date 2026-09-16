@@ -8,6 +8,14 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 00:31 — ✅ pe producție: BUG-024, firma aleasă ține de tab** (`ecoregistru-app` **v96**, `d167acc`, din `main` `97236c0`;
+> **api neatins**, v109, nicio migrare). Firma aleasă de platformă sau de consultant stătea numai în `localStorage`, comun tuturor taburilor.
+> Schimbată într-un tab, ea muta cererile celorlalte, deși ecranul lor arăta tot firma veche. S-a prins la primul import de pe producție:
+> verificarea Onsia SRL a plecat spre Ardeal Reciclare SRL, fără să se salveze nimic. Acum `tabScopedStore` (`frontend/src/lib/tenantStore.ts`)
+> ține firma în `sessionStorage`, iar `localStorage` e doar punctul de pornire al unui tab nou. **Probe:** `npm test` 23/23 (3 noi, cu două
+> taburi; negativa fără `sessionStorage` dă 2 eșecuri), tsc, build. **Pe producție, cu două taburi:** B trece pe Demo Reciclare, A rămâne pe
+> Onsia și cererile lui pleacă tot cu Onsia.
+
 > **16.09.2026, 23:57 — ✅ pe producție: login, cererea de cont și paginile de parolă în direcția „Poster”.** `ecoregistru-app` **v95**
 > (`2bd04da`), din monorepo `main` `7e81a2c`; **api neatins** (v109), nicio migrare. Proprietarul a cerut „upgrade vizual” pe paginile de
 > dinaintea contului și a ales, după trei runde de machete, paleta landingului: `PublicShell.tsx` cu stânga pe hârtie deschisă, titlu negru cu
