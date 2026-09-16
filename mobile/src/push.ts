@@ -48,7 +48,8 @@ export function usePushRegistration() {
     let cancelled = false;
     (async () => {
       const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
-      if (!projectId || !Device.isDevice) return;
+      // Simulatorul iOS n-are APNs; emulatorul Android cu Google Play primește FCM, deci pe el se probează.
+      if (!projectId || (Platform.OS === "ios" && !Device.isDevice)) return;
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync("default", {
           name: "Termene și alerte",
