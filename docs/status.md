@@ -8,6 +8,20 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **16.09.2026, 20:43 — ✅ pe producție: termenele — doar următorul, pe fiecare fel, niciunul din trecut.**
+> `ecoregistru-api` **v104** (`1178a7b`, fără migrare), `ecoregistru-app` **v88** (`bbe4d49`); monorepo `021ecb5`. Proprietarul: „de ce
+> îmi generează termene din trecut?”. Butonul genera anul calendaristic întreg, de la 1 ianuarie: un cont nou din septembrie primea
+> 15 martie, 30 aprilie, 31 mai și AFM-urile lunare trecute, toate „depășite” (și privind anul de dinainte de cont), iar 15 martie
+> anul viitor — termenul datelor ținute acum — nu apărea nicăieri. **Regula proprietarului, pe fiecare fel de termen:** nimic cu
+> scadența trecută; doar următoarea apariție („nu mă interesează 2028 dacă am încă 2027 de raportat”); următoarea vine când cea
+> deschisă e bifată **sau i-a trecut data** (a doua ramură e asumpția mea). `DeadlineService.ensureUpcoming`, rulat de
+> `DeadlineCalendarScheduler` (06:45 București), la crearea/modificarea firmei și la bifare; `/deadlines/regenerate` nu mai ia `year`
+> („Verifică termenele”). Panoul web și telefonul (`upcomingDeadlines`, ajunge cu următorul build EAS) citesc anul curent + următorul;
+> Termene are și anul următor în listă. **Termenele deja create pe producție rămân** (decizia proprietarului). `DevDataSeeder` scrie
+> istoria demo direct în tabel. Probe: suita **841/102, 0 eșecuri** (`DeadlineIT` rescris pe zile fixe, 31); negative — fără „nimic
+> trecut” cad 12, fără „așteaptă cât e deschis” cad 4; e2e **23/23** pe bază nouă; local, firmă creată azi → AFM 25.09.2026, SIM
+> 15.03.2027, 31.05.2027. Liberă tot **`V61`**.
+
 > **16.09.2026, 20:15 — ✅ pe producție: lista de deșeuri uzuale în cererea de cont.**
 > `ecoregistru-app` **v87** (monorepo `6b29d9e`), fără backend. Pe `/cerere-cont`, la „Ce deșeuri generați / preluați”, 16 deșeuri
 > uzuale de bifat, cu codul lângă (carton 15 01 01, folie 15 01 02, paleți 15 01 03, doze 15 01 04, sticlă 15 01 07, hârtie de birou

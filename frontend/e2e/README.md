@@ -42,7 +42,7 @@ clientWidth 1134`, butonul liber. Proba 17 citește acum eticheta nouă, „Poat
 ✅ **15.09.2026 — cele de mai jos au rulat.** Pe o bază nouă (`ecoregistru_e2e_1509`, proprietar `eco` — creată
 de alt utilizator, Flyway ia `permission denied for schema public`) au căzut întâi 9, 10 şi 11 **pe date**: trebuie
 o firmă `GENERATOR` al cărei nume conţine „Proba Automata" şi termenele generate pe anul trecut şi pe cel curent
-(`POST /api/v1/deadlines/regenerate?year=`), apoi au trecut. Au mai ieşit trei probe învechite (6: rândul gol al
+(atunci `POST /api/v1/deadlines/regenerate?year=`; din 16.09 le scrie `DevDataSeeder`), apoi au trecut. Au mai ieşit trei probe învechite (6: rândul gol al
 tabelului de cabinete; 7: şase secţiuni în Setări; 9: nota nouă despre şoferii dezactivaţi) şi **un defect real**,
 căzut şi pe `origin/main`: titlul Evidenţelor strâns pe trei rânduri de butoanele documentelor oficiale (`PageHeader`).
 
