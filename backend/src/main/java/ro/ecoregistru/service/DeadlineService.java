@@ -101,6 +101,9 @@ public class DeadlineService {
         return deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))
                 .stream()
+                // Un termen nebifat cu data trecută nu se mai arată (proprietarul, 16.09.2026): au rămas
+                // din generarea veche a anului întreg și nu mai cer nimic. Cele bifate rămân, ca istoric.
+                .filter(d -> d.getStatus() == DeadlineStatus.DONE || !d.getDueDate().isBefore(today))
                 .map(d -> toResponse(d, today))
                 .toList();
     }

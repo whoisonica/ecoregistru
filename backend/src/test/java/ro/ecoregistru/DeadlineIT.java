@@ -38,6 +38,7 @@ import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -277,20 +278,25 @@ class DeadlineIT {
                 .andExpect(jsonPath("$.generated", is(0))); // nothing new the second time
     }
 
+    /** 16.09.2026: un termen nebifat cu data trecută nu se mai arată; unul bifat rămâne, ca istoric. */
     @Test
-    void pastDueUncompletedDeadlineReadsAsOverdue() throws Exception {
+    void pastDueUncompletedDeadlineIsHiddenButACompletedOneStays() throws Exception {
         TenantFixture t = newTenant(false);
-        // A deadline that fell due yesterday, still not done.
         LocalDate yesterday = DeadlineService.today().minusDays(1);
         deadlineRepository.save(ReportingDeadline.builder()
                 .company(t.company).reportType(ReportType.OTHER)
                 .dueDate(yesterday).status(DeadlineStatus.UPCOMING)
                 .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
+        deadlineRepository.save(ReportingDeadline.builder()
+                .company(t.company).reportType(ReportType.SIM_ANNUAL)
+                .dueDate(yesterday).status(DeadlineStatus.DONE).completedAt(Instant.now())
+                .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
 
         mockMvc.perform(get("/api/v1/deadlines").param("year", String.valueOf(yesterday.getYear()))
                         .header("Authorization", "Bearer " + t.token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.reportType=='OTHER')].status", is(java.util.List.of("OVERDUE"))));
+                .andExpect(jsonPath("$[?(@.reportType=='OTHER')]", hasSize(0)))
+                .andExpect(jsonPath("$[?(@.reportType=='SIM_ANNUAL')].status", is(java.util.List.of("DONE"))));
     }
 
     @Test

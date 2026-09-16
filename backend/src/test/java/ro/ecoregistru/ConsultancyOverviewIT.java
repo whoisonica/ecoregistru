@@ -157,7 +157,7 @@ class ConsultancyOverviewIT {
     void eachFigureIsCountedByTheRuleTheCompanyDashboardUses() throws Exception {
         JsonNode row = row("Busy SRL");
 
-        assertThat(row.get("overdueDeadlines").asInt()).isEqualTo(2);
+        assertThat(row.get("overdueDeadlines").asInt()).isZero(); // cele trecute nebifate nu se mai arată (16.09.2026)
         assertThat(row.get("nextDeadline").get("dueDate").asText()).isEqualTo(today.plusDays(5).toString());
         assertThat(row.get("deadlinesGenerated").asBoolean()).isTrue();
         assertThat(row.get("linesWithoutOperationCode").asInt()).isEqualTo(1);

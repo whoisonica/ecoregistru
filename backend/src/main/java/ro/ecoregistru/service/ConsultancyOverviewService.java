@@ -94,7 +94,9 @@ public class ConsultancyOverviewService {
         List<ReportingDeadline> open = deadlineRepository
                 .findAllByCompany_IdAndStatusNotAndDueDateBetweenOrderByDueDateAsc(company.getId(),
                         DeadlineStatus.DONE, LocalDate.of(year - 1, 1, 1), LocalDate.of(year + 1, 12, 31));
-        int overdue = (int) open.stream().filter(d -> d.getDueDate().isBefore(today)).count();
+        // Termenele nebifate cu data trecută nu se mai arată nicăieri (16.09.2026, ca DeadlineService.list),
+        // deci nici nu se numără: câmpul rămâne în răspuns, mereu 0, până se scoate din interfață.
+        int overdue = 0;
         NextDeadline next = open.stream()
                 .filter(d -> !d.getDueDate().isBefore(today))
                 .findFirst()
