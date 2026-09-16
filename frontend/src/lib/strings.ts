@@ -3083,7 +3083,7 @@ export const strings = {
     COMERCIANT: "Comerciant",
     label: "Proveniența deșeului de ambalaj",
     hintPartner:
-      "Ce e partenerul ăsta față de ambalajele pe care ți le aduce. Nota 2 a Anexei 3 (Ordinul 794/2012) descrie sursa, nu transportul — deci se răspunde o dată aici, nu la fiecare transport.",
+      "De la cine vin ambalajele pe care ți le aduce partenerul — nu ce ești tu (asta e în Setări, la „Calitatea pentru deșeuri de ambalaje”). Se folosește doar la preluări: la ieșiri Anexa 3 nu o cere. Nota 2 a Anexei 3 (Ordinul 794/2012) descrie sursa, nu transportul — deci se răspunde o dată aici, nu la fiecare transport.",
     hintMovement:
       "Doar dacă transportul ăsta vine de altundeva decât de obicei. Gol = se ia de pe partener. „Populație” se poate alege numai aici: o persoană fizică nu e partener.",
     none: "— nu s-a răspuns —",
