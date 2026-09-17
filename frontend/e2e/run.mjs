@@ -44,6 +44,7 @@ const suites = [
   ["34-dosar-continut.mjs", "Dosarul de control: ce intră în arhivă și de ce, pe firmă și an, 375px"],
   ["35-termene-trecute.mjs", "Termene pe taburi: De făcut · Bifate · Trecute (anul în curs, până ieri), 375px"],
   ["36-abonament-client.mjs", "Abonamentul la client: de plată, transferul de copiat, verifică plata, datele de facturare, 375px"],
+  ["37-deconectare-cache.mjs", "Deconectarea golește cache-ul: consultantul nu vede firmele platformei"],
 ];
 
 const only = process.argv[2];

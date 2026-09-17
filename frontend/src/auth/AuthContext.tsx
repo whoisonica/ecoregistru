@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api, tokenStore, tenantStore, userStore, clearSession } from "@/lib/api";
 
 export type Role = "PLATFORM_ADMIN" | "CONSULTANT" | "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const token = tokenStore.get();
@@ -64,6 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       consultancyName: data.consultancyName,
     };
     userStore.set(JSON.stringify(authUser));
+    // Cache-ul e al contului de dinainte: lista de firme a platformei rămânea în selectorul unui
+    // consultant care se autentifica după el, fără reîncărcarea paginii.
+    queryClient.clear();
     // Fără firmă în răspuns, se șterge și firma rămasă în browser: altfel un consultant care se
     // autentifică după altcineva ar porni pe firma aleasă de acela — iar serverul ar refuza-o, dar
     // ecranele ar crede că e aleasă una.
@@ -87,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     clearSession();
+    queryClient.clear();
     setUser(null);
     setTenantId(null);
   }
