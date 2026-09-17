@@ -14,7 +14,7 @@ rulează local și are testele verzi.
 > site-ul, România). Aceeași corectură în registrul art. 30, DPA Anexa C și PDF-uri (repo-ul privat). **Probe:** tsc, `npm test` 27/27;
 > pe producție bundle-ul `index-CQOz911O.js` are textul nou și niciun „Zoho”, pagina `/confidentialitate` arată cele șapte rânduri.
 
-> **17.09.2026, ~15:00 — în `main`, de deployat doar frontendul: Evidențe în kg, butonul fișei pe înțeles, selectul R/D** (monorepo `9356547`; api neatins, nicio migrare; documentele tipărite neatinse).
+> **17.09.2026, 13:13 — ✅ pe producție (`ecoregistru-app` **v104**, `04fa66b`): Evidențe în kg, butonul fișei pe înțeles, selectul R/D** (monorepo `198616e`; api neatins de sesiunea asta, nicio migrare; documentele tipărite neatinse; bundle-ul `index-CdJshcWs.js` are textele noi).
 > **(1) Kg pe Evidențe:** panoul „Pentru depunerea din 15 martie — totalul anului, pe cod” trece din tone în kg (coloanele `[kg]`), ca
 > rândul de pe Termene (app v101). Andreea (AF, 14.09): se depune în kg. Pe ecranele generatorului nu mai e nicio cifră în tone, în afară de
 > pragul de 1 t al Anexei 2 (colectori). **(2) Butonul fișei:** cu o predare „de cântărit” în an, butonul deschidea un dialog în locul PDF-ului
