@@ -240,6 +240,13 @@ export function MovementFormDialog({
   const [weighedAtUnloading, setWeighedAtUnloading] = useState(
     figures?.weighedAtUnloading ?? false
   );
+  /**
+   * Cântărită la descărcare, cu greutatea deja venită („Adaugă cantitatea”). Bifa rămâne pusă,
+   * dar cantitatea se vede, se poate corecta și pleacă la salvare. Înainte câmpul se golea și
+   * orice editare o ștergea (proprietarul, 17.09.2026).
+   */
+  const weightRecorded = weighedAtUnloading && editing?.weighedAtUnloading === true && editing.quantity != null;
+  const quantityOpen = !weighedAtUnloading || weightRecorded;
   const [volumeM3, setVolumeM3] = useState(
     figures?.volumeM3 != null ? String(figures.volumeM3) : ""
   );
@@ -655,12 +662,13 @@ export function MovementFormDialog({
     if (!wasteCode) errs.wasteCode = t.wasteCodePlaceholder;
     // The recipient's weighbridge decides the figure, so the field is left empty on purpose —
     // exactly how the paper form reaches the depot.
-    if (!weighedAtUnloading) {
+    if (quantityOpen) {
       const qty = Number(quantity);
       if (!quantity || Number.isNaN(qty) || qty <= 0) {
         errs.quantity = strings.common.requiredField;
       }
-    } else if (!partnerId) {
+    }
+    if (weighedAtUnloading && !partnerId) {
       errs.partnerId = t.weighingNeedsPartner;
     }
     // Generarea nu mai rămâne în stoc (proprietarul, 16.09.2026): un generator n-are cântar, află
@@ -686,7 +694,7 @@ export function MovementFormDialog({
       workPointId,
       date,
       wasteCodeId: wasteCode!.id,
-      quantity: weighedAtUnloading ? null : Number(quantity),
+      quantity: quantityOpen ? Number(quantity) : null,
       weighedAtUnloading,
       volumeM3: volumeM3 ? Number(volumeM3) : null,
       unit,
@@ -925,7 +933,7 @@ export function MovementFormDialog({
             <div>
               <dt className="text-content-muted">{t.receiptQuantity}</dt>
               <dd className="font-mono font-medium text-content">
-                {weighedAtUnloading
+                {!quantityOpen
                   ? t.receiptAwaiting
                   : quantity
                     ? `${quantity} ${e.unit[unit]}`
@@ -1073,11 +1081,11 @@ export function MovementFormDialog({
                 type="number"
                 step="any"
                 min="0"
-                value={weighedAtUnloading ? "" : quantity}
+                value={quantityOpen ? quantity : ""}
                 onChange={(ev) => setQuantity(ev.target.value)}
-                disabled={weighedAtUnloading}
+                disabled={!quantityOpen}
                 className={
-                  weighedAtUnloading ? "bg-surface-sunken text-content-subtle" : undefined
+                  !quantityOpen ? "bg-surface-sunken text-content-subtle" : undefined
                 }
                 {...invalidProps("mv-qty-err", errors.quantity)}
               />
