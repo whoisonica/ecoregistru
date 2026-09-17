@@ -1,6 +1,8 @@
 package ro.ecoregistru.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -54,6 +56,8 @@ public class FgoClient {
     }
 
     private static final DateTimeFormatter FGO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final RestClient http;
     private final String codUnic;
@@ -165,7 +169,12 @@ public class FgoClient {
         body.put("PlatformaUrl", platformaUrl);
         body.put("Serie", invoiceSerie);
         body.put("Numar", invoiceNumar);
-        JsonNode invoice = post("/factura/getstatus", body).path("Factura");
+        JsonNode invoice;
+        try {
+            invoice = post("/factura/getstatus", body).path("Factura");
+        } catch (FgoException e) {
+            throw new FgoException(invoiceSerie + " " + invoiceNumar + ": " + e.getMessage());
+        }
         return new Status(new BigDecimal(invoice.path("Valoare").asText("0")),
                 new BigDecimal(invoice.path("ValoareAchitata").asText("0")));
     }
@@ -211,14 +220,25 @@ public class FgoClient {
     /** The answer as FGO gave it, successful or not; only an empty body is an error here. */
     private synchronized JsonNode send(String path, Map<String, Object> body) {
         throttle();
-        JsonNode response = http.post().uri(path)
+        return http.post().uri(path)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(body)
-                .exchange((request, res) -> res.bodyTo(JsonNode.class));
-        if (response == null) {
-            throw new FgoException("FGO " + path + ": răspuns gol");
-        }
-        return response;
+                .exchange((request, res) -> {
+                    String text = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    if (text.isBlank()) {
+                        throw new FgoException("FGO " + path + ": răspuns gol (HTTP " + res.getStatusCode().value() + ")");
+                    }
+                    try {
+                        return JSON.readTree(text);
+                    } catch (JsonProcessingException e) {
+                        // 17.09.2026: getstatus answered HTML on every run and the log said only
+                        // "no suitable HttpMessageConverter" — the page itself is what tells why.
+                        String page = text.replaceAll("(?s)<(script|style).*?</\\1>", " ")
+                                .replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
+                        throw new FgoException("FGO " + path + ": HTTP " + res.getStatusCode().value()
+                                + ", nu e JSON: " + page.substring(0, Math.min(300, page.length())));
+                    }
+                });
     }
 
     private static FgoException failure(String path, JsonNode response) {
