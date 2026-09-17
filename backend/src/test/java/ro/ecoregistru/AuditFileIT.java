@@ -1,10 +1,6 @@
 package ro.ecoregistru;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,13 +81,12 @@ class AuditFileIT {
                 // The regulated document: four chapters per waste code, asked for by the
                 // specialist on 23.08.2026 ("când dă print la dosar control să respecte
                 // structura de 4 tabele pe care o am de la Andreea").
-                "01-evidenta-gestiunii-deseurilor-2026.pdf",
-                "02-evidenta-centralizata-2026.pdf",
-                "90-de-lucru/evidenta-2026.xlsx",
-                "90-de-lucru/evidenta-2026.pdf",
-                "99-documente-justificative/index.txt");
-        // Autorizațiile vin după anexele anului, deci numărul lor depinde de câte anexe are firma.
-        assertThat(entries).anyMatch(name -> name.matches("\\d{2}-autorizatii-parteneri\\.pdf"));
+                "rapoarte/evidenta-gestiunii-deseurilor-2026.pdf",
+                "rapoarte/evidenta-centralizata-2026.pdf",
+                "autorizatii-parteneri.pdf",
+                "atasamente/index.txt");
+        // Rezumatul neoficial a ieșit din dosar pe 17.09.2026 (proprietarul); rămâne pe Evidențe.
+        assertThat(entries).noneMatch(name -> name.matches("(.*/)?evidenta-2026\\.(xlsx|pdf)"));
     }
 
     @Test
@@ -102,7 +97,7 @@ class AuditFileIT {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        byte[] pdf = readEntryBytes(zip, "01-evidenta-gestiunii-deseurilor-2026.pdf");
+        byte[] pdf = readEntryBytes(zip, "rapoarte/evidenta-gestiunii-deseurilor-2026.pdf");
         assertThat(pdf).isNotEmpty();
         assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
     }
@@ -144,16 +139,16 @@ class AuditFileIT {
         List<String> entries = zipEntryNames(res.getContentAsByteArray());
         assertThat(entries).contains(
                 "00-cuprins.txt",
-                "2024/01-evidenta-gestiunii-deseurilor-2024.pdf",
-                "2025/01-evidenta-gestiunii-deseurilor-2025.pdf",
-                "2026/01-evidenta-gestiunii-deseurilor-2026.pdf",
-                "2026/02-evidenta-centralizata-2026.pdf",
-                "2026/90-de-lucru/evidenta-2026.xlsx",
-                "2026/99-documente-justificative/index.txt",
+                "2024/rapoarte/evidenta-gestiunii-deseurilor-2024.pdf",
+                "2025/rapoarte/evidenta-gestiunii-deseurilor-2025.pdf",
+                "2026/rapoarte/evidenta-gestiunii-deseurilor-2026.pdf",
+                "2026/rapoarte/evidenta-centralizata-2026.pdf",
+                "2026/atasamente/index.txt",
                 // One snapshot for the whole dossier: the status is read against today, not
                 // against a reporting year.
-                "01-autorizatii-parteneri.pdf");
-        assertThat(entries).doesNotContain("01-evidenta-gestiunii-deseurilor-2026.pdf");
+                "autorizatii-parteneri.pdf");
+        assertThat(entries).doesNotContain("rapoarte/evidenta-gestiunii-deseurilor-2026.pdf");
+        assertThat(entries).doesNotContain("2026/autorizatii-parteneri.pdf");
     }
 
     @Test
@@ -321,21 +316,11 @@ class AuditFileIT {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
 
-        // Open the evidence xlsx from inside the ZIP; its work-point column must contain only
-        // this tenant's work point, never the demo tenant's — proving the dossier is scoped.
-        byte[] xlsx = readEntryBytes(otherZip, "90-de-lucru/evidenta-2026.xlsx");
-        List<String> workPointNames = new ArrayList<>();
-        try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(xlsx))) {
-            Sheet sheet = wb.getSheetAt(0);
-            for (int r = 5; r <= sheet.getLastRowNum(); r++) { // header block is 5 rows
-                Row row = sheet.getRow(r);
-                if (row != null && row.getCell(0) != null
-                        && !row.getCell(0).getStringCellValue().isBlank()) {
-                    workPointNames.add(row.getCell(0).getStringCellValue());
-                }
-            }
-        }
-        assertThat(workPointNames).containsOnly("PL-UNIC-" + suffix);
+        // The summary xlsx left the dossier on 17.09.2026; the centralized sheet prints the same
+        // work points, one page each, so it carries the proof now: this tenant's point, never the demo's.
+        String centralized = Golden.flat(Golden.pdfText(
+                readEntryBytes(otherZip, "rapoarte/evidenta-centralizata-2026.pdf")));
+        assertThat(centralized).contains(Golden.flat("PL-UNIC-" + suffix)).doesNotContain(Golden.flat("Demo Reciclare"));
     }
 
     /**
@@ -373,11 +358,11 @@ class AuditFileIT {
                 .andReturn().getResponse().getContentAsByteArray();
 
         List<String> entries = zipEntryNames(zip);
-        assertThat(entries).contains("03-anexa3-ambalaje-2026-hala-floresti.xls", "03-anexa3-ambalaje-2026-hala-floresti.pdf");
+        assertThat(entries).contains("rapoarte/anexa3-ambalaje-2026-hala-floresti.xls", "rapoarte/anexa3-ambalaje-2026-hala-floresti.pdf");
         assertThat(entries).noneMatch(n -> n.contains("birou-cluj"));
-        assertThat(new String(readEntryBytes(zip, "03-anexa3-ambalaje-2026-hala-floresti.pdf"), 0, 5)).isEqualTo("%PDF-");
+        assertThat(new String(readEntryBytes(zip, "rapoarte/anexa3-ambalaje-2026-hala-floresti.pdf"), 0, 5)).isEqualTo("%PDF-");
         String readme = new String(readEntryBytes(zip, "00-cuprins.txt"), StandardCharsets.UTF_8);
-        assertThat(readme).contains("03-anexa3-ambalaje-2026-hala-floresti.xls / .pdf").contains("Hala Florești");
+        assertThat(readme).contains("rapoarte/anexa3-ambalaje-2026-hala-floresti.xls / .pdf").contains("Hala Florești");
         // 17.09.2026, scanarea de conformitate, pct. 4: art. 4 alin. (1) din Ordinul 794/2012 nu numeşte
         // generatorul, deci README-ul nu-i pune termenul de 25 februarie pe o foaie tipărită la cerere.
         // Anexa 1 Ambalaje nu intră aici (profilul n-are rol de piaţă), deci „25 februarie" ar putea
@@ -631,9 +616,9 @@ class AuditFileIT {
 
         byte[] producerZip = dossierOf(producer, "p" + suffix);
         assertThat(zipEntryNames(producerZip))
-                .contains("03-anexa1-ambalaje-2026.xls", "03-anexa1-ambalaje-2026.pdf",
-                        "02-evidenta-centralizata-2026.pdf", "04-autorizatii-parteneri.pdf");
-        assertThat(new String(readEntryBytes(producerZip, "03-anexa1-ambalaje-2026.pdf"), 0, 5))
+                .contains("rapoarte/anexa1-ambalaje-2026.xls", "rapoarte/anexa1-ambalaje-2026.pdf",
+                        "rapoarte/evidenta-centralizata-2026.pdf", "autorizatii-parteneri.pdf");
+        assertThat(new String(readEntryBytes(producerZip, "rapoarte/anexa1-ambalaje-2026.pdf"), 0, 5))
                 .isEqualTo("%PDF-");
         assertThat(new String(readEntryBytes(producerZip, "00-cuprins.txt"), StandardCharsets.UTF_8))
                 .contains("Anexa 1 Ambalaje (Ordinul 794/2012)");
@@ -642,7 +627,7 @@ class AuditFileIT {
                 .noneMatch(name -> name.contains("anexa1-ambalaje"));
     }
 
-    // --- 17.09.2026: numele numerotate și lista autorizațiilor refăcută ---
+    // --- 17.09.2026: rapoarte/, atasamente/ și lista autorizațiilor refăcută ---
 
     /**
      * Garda cea mai importantă a schimbării: documentele oficiale din dosar sunt exact cele de pe
@@ -659,13 +644,13 @@ class AuditFileIT {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 
-        assertThat(Golden.pdfText(readEntryBytes(zip, "01-evidenta-gestiunii-deseurilor-2026.pdf")))
+        assertThat(Golden.pdfText(readEntryBytes(zip, "rapoarte/evidenta-gestiunii-deseurilor-2026.pdf")))
                 .isNotBlank().isEqualTo(Golden.pdfText(sheet));
-        assertThat(Golden.pdfText(readEntryBytes(zip, "02-evidenta-centralizata-2026.pdf")))
+        assertThat(Golden.pdfText(readEntryBytes(zip, "rapoarte/evidenta-centralizata-2026.pdf")))
                 .isNotBlank().isEqualTo(Golden.pdfText(centralized));
     }
 
-    /** Cuprinsul și arhiva citesc aceleași nume: fiecare fișier numerotat din cuprins e în arhivă. */
+    /** Cuprinsul și arhiva citesc aceleași nume: fiecare fișier și folder numit în cuprins e în arhivă. */
     @Test
     void everyNumberedFileTheContentsNamesIsInTheArchive() throws Exception {
         byte[] zip = demoZip();
@@ -675,7 +660,8 @@ class AuditFileIT {
         List<String> named = new ArrayList<>();
         for (String line : new String(readEntryBytes(zip, "00-cuprins.txt"), StandardCharsets.UTF_8).split("\n")) {
             String name = line.strip();
-            if (line.startsWith("  ") && !line.startsWith("   ") && name.matches("\\d{2}-.*")) {
+            if (line.startsWith("  ") && !line.startsWith("   ") && !name.startsWith("-") && !name.contains(" ")
+                    && (name.contains(".") || name.endsWith("/"))) {
                 named.add(name);
             }
         }
@@ -702,9 +688,7 @@ class AuditFileIT {
     @Test
     void thePartnerListKeepsItsDiacriticsAndNamesTheCodes() throws Exception {
         byte[] zip = demoZip();
-        String partners = zipEntryNames(zip).stream()
-                .filter(n -> n.matches("\\d{2}-autorizatii-parteneri\\.pdf")).findFirst().orElseThrow();
-        String text = Golden.flat(Golden.pdfText(readEntryBytes(zip, partners)));
+        String text = Golden.flat(Golden.pdfText(readEntryBytes(zip, "autorizatii-parteneri.pdf")));
 
         assertThat(text)
                 .contains(Golden.flat("Autorizațiile partenerilor"))

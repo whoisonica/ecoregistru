@@ -228,13 +228,11 @@ class ConsultancyBrandingIT {
 
         assertThat(new String(zip.get("00-cuprins.txt"), StandardCharsets.UTF_8))
                 .contains("DOSAR DE CONTROL — Client Antet SRL\nPregătit de " + CABINET + " · " + LINE);
-        assertThat(Golden.flat(Golden.pdfText(zip.get("90-de-lucru/evidenta-" + year + ".pdf"))))
-                .contains(Golden.flat("Pregătit de " + CABINET));
-        assertThat(Golden.flat(Golden.pdfText(zip.get("03-autorizatii-parteneri.pdf"))))
+        assertThat(Golden.flat(Golden.pdfText(zip.get("autorizatii-parteneri.pdf"))))
                 .contains(Golden.flat("Pregătit de " + CABINET));
 
         for (String official : new String[]{
-                "01-evidenta-gestiunii-deseurilor-" + year + ".pdf", "02-evidenta-centralizata-" + year + ".pdf"}) {
+                "rapoarte/evidenta-gestiunii-deseurilor-" + year + ".pdf", "rapoarte/evidenta-centralizata-" + year + ".pdf"}) {
             assertThat(zip).containsKey(official);
             assertThat(Golden.flat(Golden.pdfText(zip.get(official)))).as(official)
                     .doesNotContain("AntetVerde").doesNotContain("Pregătit");

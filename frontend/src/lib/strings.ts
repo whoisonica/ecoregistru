@@ -2022,7 +2022,6 @@ export const strings = {
       "Anexa 1 Ambalaje (Ordinul 794/2012), .xls și PDF — numai dacă firma pune ambalaje pe piață (producător sau importator).",
     contentPackagingAnexa3:
       "Anexa 3 Ambalaje (Ordinul 794/2012), .xls și PDF — câte una pe fiecare punct de lucru care a avut ambalaje în an.",
-    contentEvidence: "Același an ca tabel de lucru (Excel + PDF)",
     contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
     contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
     note: "Notă: în afară de evidența gestiunii deșeurilor, dosarul NU înlocuiește formularele oficiale (SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",

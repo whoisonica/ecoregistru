@@ -38,7 +38,6 @@ import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.Anexa1FormGenerator;
 import ro.ecoregistru.service.export.AnnualDeclarationGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
-import ro.ecoregistru.service.export.GenericEvidenceExporter;
 import ro.ecoregistru.service.export.PackagingAnexa3;
 import ro.ecoregistru.service.export.ReportBranding;
 import ro.ecoregistru.util.Diacritics;
@@ -72,15 +71,16 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 /**
  * Builds the "dosar de control" (audit file) for a tenant and year as a single ZIP:
  *   - 00-cuprins.txt describing the contents and generation date (README.txt until 17.09.2026),
+ *   - autorizatii-parteneri.pdf, a summary of partner authorizations (with expiry status and the
+ *     codes each carried),
+ *   - rapoarte/: the official reports —
  *   - "Evidenta gestiunii deseurilor generate" (HG 856/2002, anexa 1): four chapters per
  *     waste code, one page each,
  *   - "Evidenta gestiunii deseurilor centralizata" (the former annual declaration): the same year
  *     folded to one line per waste code, per work point,
  *   - Anexa 1 Ambalaje (.xls + .pdf), when the company puts packaging on the market,
  *   - Anexa 3 Ambalaje (.xls + .pdf), one pair per work point that moved packaging that year,
- *   - a PDF summary of partner authorizations (with expiry status and the codes each carried),
- *   - 90-de-lucru/: the generic evidence summary in both xlsx and pdf,
- *   - 99-documente-justificative/index.txt listing every movement attachment, and the attachment files
+ *   - atasamente/index.txt, outside rapoarte/, listing every movement attachment, and the attachment files
  *     themselves (downloaded best-effort from Cloudinary; a failed download stays referenced
  *     in the index so the dossier is still complete).
  *
@@ -111,22 +111,20 @@ public class AuditFileService {
     private static final int MAX_YEARS = 5;
 
     /*
-     * Numele din arhivă (proprietarul, 17.09.2026): numerotate în ordinea în care se citește dosarul —
-     * cuprinsul, documentele oficiale, autorizațiile —, iar tabelele de lucru și documentele justificative
-     * în foldere la coadă, ca să nu se amestece cu ce se depune. Un ZIP se afișează pe alfabet, deci
-     * numărul e singurul mod de a impune ordinea.
+     * Structura arhivei (proprietarul, 17.09.2026): cuprinsul primul, lista autorizațiilor, rapoartele
+     * oficiale împreună în rapoarte/ și atașamentele în atasamente/. Rezumatul neoficial al evidenței
+     * a ieșit din dosar; rămâne de descărcat din Evidențe.
      */
     private static final String CONTENTS = "00-cuprins.txt";
     private static final String PARTNERS = "autorizatii-parteneri.pdf";
-    private static final String WORKING_DIR = "90-de-lucru/";
-    private static final String ATTACHMENTS_DIR = "99-documente-justificative/";
+    private static final String REPORTS_DIR = "rapoarte/";
+    private static final String ATTACHMENTS_DIR = "atasamente/";
 
     private static final Color LINE = new Color(0xD1, 0xD5, 0xDB);
     private static final Color MUTED = new Color(0x4B, 0x55, 0x63);
     private static final Color HEAD = new Color(0xEC, 0xFD, 0xF5);
 
     EvidenceCalculator evidenceCalculator;
-    GenericEvidenceExporter evidenceExporter;
     Anexa1FormGenerator anexa1FormGenerator;
     AnnualDeclarationGenerator annualDeclarationGenerator;
     PartnerRepository partnerRepository;
@@ -165,8 +163,8 @@ public class AuditFileService {
 
         List<Partner> partners = partnerRepository.findAllByCompany_Id(tenantId);
         int firstYear = year - years + 1;
-        // P2.14: the consultancy's header, on the working pack only — README, the generic summary and
-        // the partner list. The official sheets in the same archive print their model and nothing else.
+        // P2.14: the consultancy's header, on the working pack only — the contents and the partner
+        // list. The official sheets in the same archive print their model and nothing else.
         ReportBranding branding = brandingService.forCompany(tenantId);
 
         // Read once, used twice: the README says how many evidence lines each year actually has,
@@ -190,14 +188,11 @@ public class AuditFileService {
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
             filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(y, workPoints)));
         }
-        // Un singur an: autorizațiile vin după anexele lui, cu numărul următor. Mai mulți: stau o dată
-        // la rădăcină, primele după cuprins.
-        String partnersFile = single ? filesByYear.get(year).partners() : numbered(1, PARTNERS);
 
         try (ZipOutputStream zip = new ZipOutputStream(target)) {
 
             writeEntry(zip, CONTENTS,
-                    readme(company, firstYear, year, evidenceByYear, filesByYear, partnersFile, branding)
+                    readme(company, firstYear, year, evidenceByYear, filesByYear, branding)
                             .getBytes(StandardCharsets.UTF_8));
             // Codurile de deșeu pe care le-a purtat fiecare partener în perioada dosarului, strânse din
             // aceleași mișcări pe care le citesc anii — coloana din lista autorizațiilor.
@@ -205,10 +200,9 @@ public class AuditFileService {
             for (int y = firstYear; y <= year; y++) {
                 // A single year stays where it always was; several would collide on the file
                 // names, so each gets a folder named after it.
-                writeYear(zip, company, tenantId, y, evidenceByYear.get(y), filesByYear.get(y), branding,
-                        codesByPartner);
+                writeYear(zip, tenantId, y, filesByYear.get(y), codesByPartner);
             }
-            writeEntry(zip, partnersFile,
+            writeEntry(zip, PARTNERS,
                     partnerAuthorizationsPdf(company, partners, codesByPartner, firstYear, year, branding));
 
             zip.finish();
@@ -238,10 +232,9 @@ public class AuditFileService {
     public record AuditFileSize(long attachments, long attachmentBytes, long unknownSize) {}
 
     /** Everything that belongs to one reporting year, written under {@code files.prefix()}. */
-    private void writeYear(ZipOutputStream zip, Company company, UUID tenantId,
-                           int year, List<MonthlyEvidenceResponse> evidence, YearFiles files,
-                           ReportBranding branding, Map<UUID, Set<String>> codesByPartner) throws IOException {
-        String prefix = files.prefix();
+    private void writeYear(ZipOutputStream zip, UUID tenantId, int year, YearFiles files,
+                           Map<UUID, Set<String>> codesByPartner) throws IOException {
+        String prefix = files.prefix() + REPORTS_DIR;
         List<WasteMovement> movements = movementRepository
                 .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
@@ -282,39 +275,25 @@ public class AuditFileService {
             writeEntry(zip, prefix + file.baseName() + ".pdf",
                     packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.PDF));
         }
-        writeEntry(zip, prefix + WORKING_DIR + "evidenta-" + year + ".xlsx",
-                evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence, branding));
-        writeEntry(zip, prefix + WORKING_DIR + "evidenta-" + year + ".pdf",
-                evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence, branding));
-
-        writeAttachments(zip, prefix + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
+        writeAttachments(zip, files.prefix() + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
     }
 
     /**
      * Numele fișierelor unui an, calculate o dată și citite de două ori — de arhivă și de cuprins —, ca
-     * cele două să nu poată spune lucruri diferite. {@code packaging}: numele Anexei 1 Ambalaje fără
-     * extensie, null când firma n-o depune; {@code partners}: null la mai mulți ani (stă la rădăcină).
+     * cele două să nu poată spune lucruri diferite. {@code prefix} e folderul anului (gol la un singur an);
+     * rapoartele stau sub el, în rapoarte/. {@code packaging}: numele Anexei 1 Ambalaje fără extensie,
+     * null când firma n-o depune.
      */
     private record YearFiles(String prefix, String sheet, String centralized, String packaging,
-                             List<Anexa3File> anexa3, boolean anexa3RoleMissing, String partners) {}
+                             List<Anexa3File> anexa3, boolean anexa3RoleMissing) {}
 
     private static YearFiles yearFiles(int year, boolean single, boolean packaging, Anexa3Plan plan) {
-        int n = 1;
-        String sheet = numbered(n++, "evidenta-gestiunii-deseurilor-" + year + ".pdf");
-        String centralized = numbered(n++, "evidenta-centralizata-" + year + ".pdf");
-        String packagingName = packaging ? numbered(n++, "anexa1-ambalaje-" + year) : null;
-        List<Anexa3File> anexa3 = new java.util.ArrayList<>();
-        for (Anexa3File file : plan.files()) {
-            anexa3.add(new Anexa3File(numbered(n++, file.baseName()), file.workPointId(), file.workPointName()));
-        }
-        return new YearFiles(single ? "" : year + "/", sheet, centralized, packagingName, anexa3,
-                plan.roleMissing(), single ? numbered(n, PARTNERS) : null);
-    }
-
-    /** „01-evidenta-…”: două cifre, ca ordinea pe alfabet să fie ordinea de citire. */
-    private static String numbered(int n, String name) {
-        return String.format("%02d-%s", n, name);
+        return new YearFiles(single ? "" : year + "/",
+                "evidenta-gestiunii-deseurilor-" + year + ".pdf",
+                "evidenta-centralizata-" + year + ".pdf",
+                packaging ? "anexa1-ambalaje-" + year : null,
+                plan.files(), plan.roleMissing());
     }
 
     // --- attachments ---
@@ -655,7 +634,7 @@ public class AuditFileService {
      */
     private String readme(Company company, int firstYear, int lastYear,
                           Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear,
-                          Map<Integer, YearFiles> filesByYear, String partnersFile,
+                          Map<Integer, YearFiles> filesByYear,
                           ReportBranding branding) {
         boolean single = firstYear == lastYear;
         StringBuilder sb = new StringBuilder();
@@ -672,14 +651,12 @@ public class AuditFileService {
                     .append("alin. (5). Pentru transportatori, cel puțin 12 luni.\n");
         }
         sb.append("Generat: ").append(LocalDate.now().format(DATE)).append("\n\n");
-        sb.append("Fișierele sunt numerotate în ordinea în care se citesc: întâi documentele oficiale,\n")
-                .append("apoi autorizațiile partenerilor. Folderul ").append(WORKING_DIR)
-                .append(" are tabelele de lucru, iar\n")
-                .append(ATTACHMENTS_DIR).append(" documentele atașate mișcărilor.\n\n");
+        sb.append("Rapoartele oficiale sunt în folderul ").append(REPORTS_DIR)
+                .append(", iar documentele atașate mișcărilor\nîn ").append(ATTACHMENTS_DIR).append(".\n\n");
 
         if (!single) {
             sb.append("La rădăcina arhivei, o singură dată:\n")
-                    .append(entry(partnersFile,
+                    .append(entry(PARTNERS,
                             "Autorizațiile partenerilor și statusul lor, citit la data generării,",
                             "nu pe an, cu codurile de deșeu din toată perioada dosarului."))
                     .append("\n");
@@ -687,7 +664,7 @@ public class AuditFileService {
 
         for (int year = firstYear; year <= lastYear; year++) {
             YearFiles files = filesByYear.get(year);
-            String prefix = files.prefix();
+            String prefix = files.prefix() + REPORTS_DIR;
             if (!single) {
                 sb.append("== ").append(year).append(" ").append("=".repeat(60)).append("\n");
             }
@@ -731,12 +708,10 @@ public class AuditFileService {
                         "deci nu se știe care tabel se completează. Răspunde în Setări."));
             }
             if (single) {
-                sb.append(entry(partnersFile,
+                sb.append(entry(PARTNERS,
                         "Autorizațiile partenerilor și statusul lor, cu codurile de deșeu din an."));
             }
-            sb.append(entry(prefix + WORKING_DIR + "evidenta-" + year + ".xlsx / .pdf",
-                            "Același an ca tabel de lucru (rezumat neoficial)."))
-                    .append(entry(prefix + ATTACHMENTS_DIR,
+            sb.append(entry(files.prefix() + ATTACHMENTS_DIR,
                             "Documentele justificative atașate mișcărilor, cu index.txt."));
             sb.append(evidenceNote(year, evidenceByYear.get(year)));
             sb.append("\n");
@@ -744,7 +719,7 @@ public class AuditFileService {
 
         sb.append(marketRoleNote(company))
                 .append(wasteManagerNote(company))
-                .append(otherObligationsNote(company, evidenceByYear, partnersFile))
+                .append(otherObligationsNote(company, evidenceByYear))
                 .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
                 .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
@@ -753,7 +728,7 @@ public class AuditFileService {
 
     /**
      * One file of the contents: its name on its own line, the description indented under it. The
-     * numbered names are too long for a column beside them, and the contents is read on paper.
+     * folder paths are too long for a column beside them, and the contents is read on paper.
      */
     private static String entry(String name, String... lines) {
         StringBuilder sb = new StringBuilder("  ").append(name).append("\n");
@@ -886,7 +861,7 @@ public class AuditFileService {
      * and nothing is concluded.
      */
     private String otherObligationsNote(Company company,
-            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear, String partnersFile) {
+            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
         List<MonthlyEvidenceResponse> lines = evidenceByYear.values().stream()
                 .filter(java.util.Objects::nonNull)
                 .flatMap(List::stream)
@@ -930,7 +905,7 @@ public class AuditFileService {
                     .append("     Art. 31 alin. (3) cere ca ÎNTREAGA cantitate să fie predată numai operatorilor\n")
                     .append("     autorizați pentru colectarea, valorificarea sau eliminarea uleiurilor uzate —\n")
                     .append("     nu o parte din ea. Autorizațiile partenerilor prin care au plecat sunt în\n")
-                    .append("     ").append(partnersFile).append(", din acest dosar.\n\n");
+                    .append("     ").append(PARTNERS).append(", din acest dosar.\n\n");
         }
 
         sb.append("  4. Programul de prevenire și reducere a deșeurilor — art. 44 alin. (1) și (3)\n");
