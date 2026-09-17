@@ -8,6 +8,18 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 19:08 — ✅ pe producție: Termene pe taburi — De făcut · Bifate · Trecute, cu termenele trecute „Calculat”** (`ecoregistru-api` **v125**, `3c2d983`; `ecoregistru-app` **v115**, `6f1718d`; monorepo `6e4a361` + `292e94a`; fără migrare, schema **V63**, liberă **V64**).
+> Proprietarul: „termene la fel ca la clienți — sus De făcut, Bifate și nou Trecute, doar 2026 ce a trecut”. **(1)** `PageTabs` pe `/termene`
+> (`?tab=bifate|trecute`, ca pe Clienți); „Bifate” păstrează selectorul de an. **(2)** `GET /api/v1/deadlines/past` → `DeadlineService.listPast`: anul
+> în curs de la 1 ianuarie până ieri, bifate și nebifate, **fără** filtrul `MissedDeadlinePolicy` (arată și termenele vechi ascunse din „De făcut”);
+> pe ecran nebifatele sunt „Nebifat” gri, fără zile, fără „Depășit”. Primul deploy (api v124 / app v114, 18:48) avea doar atât. **(3)** Pe Onsia (creată
+> azi) tabul era gol: din 16.09 nu se salvează termene trecute. Varianta aleasă de proprietar: **se socotesc pe loc, nu se salvează**. Regulile calendarului
+> au devenit o listă comună (`Rule`: tip, zile, „datorează?”), folosită de `ensureUpcoming` și de `listPast`; ce lipsește din bază vine cu `computed=true`,
+> `id=null` → „Calculat”, fără buton, fără mailuri. Se socotesc după profilul **de azi** al firmei. Varianta cu termene salvate la crearea firmei — respinsă
+> (contrazice regula din 16.09). Probe: backend **908/109**, `npm test` 37, e2e **35** nouă (demo: 10 „Nebifat”; firmă nouă cu AFM lunar: 9 „Calculat”,
+> fără butoane, 0 salvate înainte și după) + 1, 9, 10, 11 verzi pe `eco_e2e_trecute`. **Negative:** badge-ul obișnuit pe Trecute → 1 cădere; butonul pe
+> rândurile calculate → 1 cădere. Pe producție, Onsia are tot 1 termen în bază după deploy. Deploy din sesiune cu `deploy-split.sh both --ref HEAD --push`.
+
 > **17.09.2026, 18:01 — ✅ pe producție: Dosarul de control — structură nouă, lista autorizațiilor refăcută, „Ce intră în arhivă” din datele reale** (`ecoregistru-api` **v122**, `ef24174`; `ecoregistru-app` **v112**, `c119c25`; monorepo `fe04437`; fără migrare, schema **V63**, liberă **V64**).
 > Proprietarul: dosarul „să fie mai frumos și să pară făcut de un profesionist”, „cu mare grijă, dosarul și documentele sunt bune”. **Niciun
 > generator de document oficial nu e atins**: diferența e în `AuditFileService` (cum se pun în arhivă), `AuditFileController`, un `count` în
