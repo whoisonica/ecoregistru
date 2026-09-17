@@ -8,6 +8,16 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, ~17:30 — ✅ pe `main`, ⏸️ NEDEPLOYAT (proprietarul: „să nu le deployăm”): Parteneri — punctele de lucru și șoferii la vedere** (`1eeaff6`, doar frontend, fără migrare; așteaptă la același deploy cu `ffec2c9`, adresa pe factura FGO, backend).
+> Proprietarul: „dacă cineva vrea ulterior să adauge șoferi într-un partener sau puncte de lucru, nu e deloc la vedere și nici intuitiv”. Punctele
+> de lucru stăteau la coada pasului 1, șoferii sub cardul „Vine el și îl ia”. Acum: **pasul 4 „Puncte de lucru și șoferi”** (opțional; la pasul 2
+> rămâne doar licența de transport; la cine nu transportă, pasul 4 spune de ce și are „Vine el cu mașinile lui — adaugă șoferi”); **în tabel, sub
+> nume**, „1 punct de lucru · 2 șoferi” sau „+ Punct de lucru” / „+ Șofer” (șoferii doar la transportatori) — deschid fișa pe pasul 4, cu rând gol
+> și cursor; pe rând „Editează” + „⋯” (Puncte de lucru și șoferi, Dezactivează / Reactivează), ca tabelul să încapă. Legătura din „Autorizație
+> expirată” deschide tot pasul autorizației. Aspectul aprobat pe localhost.
+> Probe: `tsc` curat, `npm test` 37/37; e2e **32** nouă (16/16), 8, 9 (patru pași), 10 verzi; 1440px 1114/1114, 375px fără derulare. Proba 3 cade
+> doar pe o bază cu peste 10 parteneri (rulările probei 32 îi lasă în urmă).
+
 > **17.09.2026, 16:43 — ✅ pe producție: Setările pe carduri, fiecare secțiune pe pagina ei** (`ecoregistru-app` **v110**, `ad3a0f2`; api neatins, rămâne **v119** cu F-C al tabului paralel; monorepo `59f2beb`).
 > Proprietarul: tabul Setări „nu e deloc intuitiv și nici user friendly”. Pagina lungă (până la zece tabele, cuprins lipicios, butonul din cap
 > adăuga un punct de lucru) devine **`/setari`**: carduri pe grupuri — **Firma** (Datele firmei, Puncte de lucru, Generatori interni),
