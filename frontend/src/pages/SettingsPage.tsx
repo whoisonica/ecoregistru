@@ -1,5 +1,23 @@
 import { useState, type FormEvent } from "react";
-import { Ban, FileUp, MapPin, Pencil, Plus, RotateCcw } from "lucide-react";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Ban,
+  Building2,
+  ChevronRight,
+  Eye,
+  FileUp,
+  History,
+  Layers,
+  MapPin,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Tags,
+  Truck,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { canImport, canManage as roleCanManage, canWrite as roleCanWrite } from "@/lib/roles";
 import {
@@ -38,9 +56,39 @@ import { registersFor } from "@/lib/movementScreens";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
 import { CompanyUsersSection } from "@/components/CompanyUsersSection";
 import { AuditLogSection } from "@/components/AuditLogSection";
-import { SectionNav } from "@/components/ui/section-nav";
+import { SETTINGS_CARD } from "@/components/ui/card";
+import { useInternalGenerators } from "@/hooks/useInternalGenerators";
+import { useUsers } from "@/hooks/useUsers";
+import { useDrivers } from "@/hooks/useDrivers";
+import { formatDate } from "@/lib/utils";
 
 const t = strings.settings.workPoints;
+const h = strings.settings.hub;
+
+type SectionId =
+  | "datele-firmei"
+  | "puncte-de-lucru"
+  | "generatori-interni"
+  | "utilizatori"
+  | "jurnal-audit"
+  | "soferi"
+  | "flota"
+  | "preturi"
+  | "sortimente";
+
+interface HubCard {
+  id: SectionId;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  /** Starea pe scurt, sub descriere. `bad` o scrie în roșu: e ceva de reparat, nu o informație. */
+  summary?: { text: string; bad?: boolean };
+}
+
+/** „{count} active” — numărul, fără forme de plural: cardul e o etichetă, nu o frază. */
+function count(template: string, n: number) {
+  return template.replace("{count}", String(n));
+}
 
 export function SettingsPage() {
   const { user } = useAuth();
@@ -138,164 +186,165 @@ export function SettingsPage() {
     });
   }
 
+  const workPointsSection = (
+    <section id="puncte-de-lucru" className={SETTINGS_CARD}>
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-content">{t.title}</h2>
+          <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
+        </div>
+        {canManage && (
+          <Button onClick={openCreate} hotkey="N">
+            <Plus className="mr-2 h-4 w-4" />
+            {t.add}
+          </Button>
+        )}
+      </div>
+
+      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+
+      {!isError && (
+        <>
+          <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+            {activeFilter}
+          </TableToolbar>
+          <Table stickyHeader>
+            <THead sticky>
+              <TR>
+                <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
+                  {t.name}
+                </SortableTH>
+                <TH>{t.address}</TH>
+                <TH>{strings.common.status}</TH>
+                {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
+              </TR>
+            </THead>
+            <TBody>
+              {(isLoading || view.visible.length === 0) && (
+                <TableFallbackRow
+                  columns={canManage ? 4 : 3}
+                  loading={isLoading}
+                  icon={MapPin}
+                  title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                  description={
+                    view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
+                  }
+                  action={
+                    canManage && (
+                      <Button onClick={openCreate}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t.add}
+                      </Button>
+                    )
+                  }
+                />
+              )}
+              {view.visible.map((wp) => (
+                <TR key={wp.id}>
+                  <TD className="font-medium text-content">{wp.name}</TD>
+                  <TD>{wp.address || "—"}</TD>
+                  <TD>
+                    {wp.active ? (
+                      <Badge variant="success">{t.active}</Badge>
+                    ) : (
+                      <Badge variant="muted">{t.inactive}</Badge>
+                    )}
+                  </TD>
+                  {canManage && (
+                    <TD sticky="right" className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(wp)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" />
+                          {strings.common.edit}
+                        </Button>
+                        {wp.active ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeactivate(wp)}
+                          >
+                            <Ban className="mr-1 h-3.5 w-3.5" />
+                            {t.deactivate}
+                          </Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => reactivate(wp)}>
+                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                            {strings.common.reactivate}
+                          </Button>
+                        )}
+                      </div>
+                    </TD>
+                  )}
+                </TR>
+              ))}
+            </TBody>
+          </Table>
+          <TablePagination view={view} />
+        </>
+      )}
+    </section>
+  );
+
+  // Setările (17.09.2026, varianta C): `/setari` e o pagină de carduri pe grupuri, fiecare card duce la
+  // `/setari/<secțiune>`. Înainte era o pagină lungă cu până la zece tabele și un cuprins lipicios.
+  const { section } = useParams();
+  const location = useLocation();
+  const allowed = new Set<SectionId>([
+    "datele-firmei",
+    "puncte-de-lucru",
+    "generatori-interni",
+    "soferi",
+    ...(canManage ? (["utilizatori", "jurnal-audit"] as const) : []),
+    ...(hasDepot ? (["flota", "preturi", "sortimente"] as const) : []),
+  ]);
+
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
-  useHotkey("n", openCreate, { enabled: Boolean(canManage) });
+  useHotkey("n", openCreate, { enabled: Boolean(canManage) && section === "puncte-de-lucru" });
+
+  // Legăturile vechi purtau secțiunea în ancoră (`/setari#soferi`, „Primii pași”) sau, pentru
+  // „Istoric” de pe o mișcare, `?istoric=` cu `#jurnal-audit`. Duc tot acolo, pe pagina ei.
+  if (!section) {
+    const anchor = location.hash.slice(1);
+    const legacy = new URLSearchParams(location.search).has("istoric") ? "jurnal-audit" : anchor;
+    if (legacy) return <Navigate to={`/setari/${legacy}${location.search}`} replace />;
+    return <SettingsHub canManage={canManage} canImportExcel={canManage && canImport(user?.role)} hasDepot={hasDepot} workPoints={workPoints} />;
+  }
+  // Până se încarcă firma nu se știe dacă are depozit: o secțiune de depozit nu trimite înapoi până atunci.
+  if (!allowed.has(section as SectionId) && (company || !["flota", "preturi", "sortimente"].includes(section))) {
+    return <Navigate to="/setari" replace />;
+  }
 
   return (
     <div>
-      <PageHeader
-        title={strings.settings.title}
-        description={t.subtitle}
-        actions={
-          canManage && (
-            <>
-              {/* Importul din Excel nu stă în meniu: îl facem noi, la implementare. Din 16.09.2026 butonul
-                  e numai al platformei; clientul ne trimite fișierul. */}
-              {canImport(user?.role) && (
-                <LinkButton to="/import" variant="outline">
-                  <FileUp className="mr-2 h-4 w-4" />
-                  {strings.nav.importExcel}
-                </LinkButton>
-              )}
-              <Button onClick={openCreate} hotkey="N">
-                <Plus className="mr-2 h-4 w-4" />
-                {t.add}
-              </Button>
-            </>
-          )
-        }
-      />
+      <Link
+        to="/setari"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-content-muted hover:text-content"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden />
+        {strings.settings.title}
+      </Link>
 
-      <SectionNav
-        label={strings.settings.sections}
-        items={[
-          { id: "datele-firmei", label: strings.settings.company.title },
-          { id: "puncte-de-lucru", label: t.title },
-          { id: "generatori-interni", label: strings.settings.internalGenerators.title },
-          ...(hasDepot
-            ? [
-                { id: "preturi", label: strings.settings.prices.title },
-                { id: "sortimente", label: strings.settings.articles.title },
-                { id: "flota", label: strings.settings.vehicles.title },
-              ]
-            : []),
-          { id: "soferi", label: strings.settings.drivers.title },
-          // Doar pentru cine chiar are secțiunea: un link care duce la nimic e mai rău
-          // decât un link care lipsește.
-          ...(canManage
-            ? [
-                { id: "utilizatori", label: strings.settings.users.title },
-                { id: "jurnal-audit", label: strings.settings.audit.title },
-              ]
-            : []),
-        ]}
-      />
-
-      <CompanyDetailsSection />
-
-      <section id="puncte-de-lucru" className="mt-8 scroll-mt-20">
-        <h2 className="mb-3 text-lg font-semibold text-content">{t.title}</h2>
-
-        {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
-
-        {!isError && (
-          <>
-            <TableToolbar view={view} placeholder={t.searchPlaceholder}>
-              {activeFilter}
-            </TableToolbar>
-            <Table stickyHeader>
-              <THead sticky>
-                <TR>
-                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
-                    {t.name}
-                  </SortableTH>
-                  <TH>{t.address}</TH>
-                  <TH>{strings.common.status}</TH>
-                  {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
-                </TR>
-              </THead>
-              <TBody>
-                {(isLoading || view.visible.length === 0) && (
-                  <TableFallbackRow
-                    columns={canManage ? 4 : 3}
-                    loading={isLoading}
-                    icon={MapPin}
-                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
-                    description={
-                      view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
-                    }
-                    action={
-                      canManage && (
-                        <Button onClick={openCreate}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          {t.add}
-                        </Button>
-                      )
-                    }
-                  />
-                )}
-                {view.visible.map((wp) => (
-                  <TR key={wp.id}>
-                    <TD className="font-medium text-content">{wp.name}</TD>
-                    <TD>{wp.address || "—"}</TD>
-                    <TD>
-                      {wp.active ? (
-                        <Badge variant="success">{t.active}</Badge>
-                      ) : (
-                        <Badge variant="muted">{t.inactive}</Badge>
-                      )}
-                    </TD>
-                    {canManage && (
-                      <TD sticky="right" className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEdit(wp)}>
-                            <Pencil className="mr-1 h-3.5 w-3.5" />
-                            {strings.common.edit}
-                          </Button>
-                          {wp.active ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:bg-red-50"
-                              onClick={() => handleDeactivate(wp)}
-                            >
-                              <Ban className="mr-1 h-3.5 w-3.5" />
-                              {t.deactivate}
-                            </Button>
-                          ) : (
-                            <Button variant="ghost" size="sm" onClick={() => reactivate(wp)}>
-                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                              {strings.common.reactivate}
-                            </Button>
-                          )}
-                        </div>
-                      </TD>
-                    )}
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-            <TablePagination view={view} />
-          </>
+      <div className="mt-4 space-y-6">
+        {section === "datele-firmei" && <CompanyDetailsSection />}
+        {section === "puncte-de-lucru" && workPointsSection}
+        {section === "generatori-interni" && (
+          <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
         )}
-      </section>
-
-      <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
-
-      {hasDepot && <PriceVisibilitySection />}
-
-      {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}
-      {hasDepot && <WasteArticlesSection canManage={roleCanWrite(user?.role)} />}
-
-      {/* D2.1 — flota; o scrie oricine scrie, ca sortimentele și ca serverul. */}
-      {hasDepot && <VehiclesSection workPoints={workPoints ?? []} canManage={roleCanWrite(user?.role)} />}
-
-      <OwnDriversSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />
-
-      <CompanyUsersSection canManage={canManage} />
-
-      <AuditLogSection canManage={canManage} />
+        {section === "utilizatori" && <CompanyUsersSection canManage={canManage} />}
+        {section === "jurnal-audit" && <AuditLogSection canManage={canManage} />}
+        {section === "soferi" && (
+          <OwnDriversSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />
+        )}
+        {/* D2.1 — flota; o scrie oricine scrie, ca sortimentele și ca serverul. */}
+        {section === "flota" && hasDepot && (
+          <VehiclesSection workPoints={workPoints ?? []} canManage={roleCanWrite(user?.role)} />
+        )}
+        {section === "preturi" && hasDepot && <PriceVisibilitySection />}
+        {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}
+        {section === "sortimente" && hasDepot && <WasteArticlesSection canManage={roleCanWrite(user?.role)} />}
+      </div>
 
       <Dialog
         open={dialogOpen}
@@ -339,6 +388,168 @@ export function SettingsPage() {
       </Dialog>
 
       {confirmDialog}
+    </div>
+  );
+}
+
+/**
+ * Pagina de start a Setărilor: carduri pe grupuri, fiecare cu starea pe scurt. Cardurile citesc
+ * listele pe care le-ar citi oricum secțiunile — mici și deja în cache după prima vizită.
+ */
+function SettingsHub({
+  canManage,
+  canImportExcel,
+  hasDepot,
+  workPoints,
+}: {
+  canManage: boolean;
+  canImportExcel: boolean;
+  hasDepot: boolean;
+  workPoints: WorkPoint[] | undefined;
+}) {
+  const { data: company } = useCurrentCompany();
+  const { data: generators } = useInternalGenerators();
+  const { data: users } = useUsers(canManage);
+  const { data: drivers } = useDrivers();
+
+  const today = new Date().toISOString().slice(0, 10);
+  const authExpiry = company?.environmentalAuthExpiry;
+  const companySummary = !company
+    ? undefined
+    : !authExpiry
+      ? { text: h.authMissing, bad: true }
+      : authExpiry < today
+        ? { text: h.authExpired, bad: true }
+        : { text: `${h.authValidUntil} ${formatDate(authExpiry)}` };
+
+  const activeUsers = users?.filter((u) => u.status === "ACTIVE").length ?? 0;
+  const pending = users?.filter((u) => u.status === "PENDING_INVITE").length ?? 0;
+  const ownDrivers = drivers?.filter((d) => d.partnerId === null && d.active);
+
+  const groups: { title: string; cards: HubCard[] }[] = [
+    {
+      title: h.groupCompany,
+      cards: [
+        { id: "datele-firmei", icon: Building2, title: h.company, description: h.companyHint, summary: companySummary },
+        {
+          id: "puncte-de-lucru",
+          icon: MapPin,
+          title: h.workPoints,
+          description: h.workPointsHint,
+          summary: workPoints && { text: count(h.active, workPoints.filter((w) => w.active).length) },
+        },
+        {
+          id: "generatori-interni",
+          icon: Layers,
+          title: h.internalGenerators,
+          description: h.internalGeneratorsHint,
+          summary: generators && { text: count(h.activeMasc, generators.filter((g) => g.active).length) },
+        },
+      ],
+    },
+    ...(canManage
+      ? [
+          {
+            title: h.groupTeam,
+            cards: [
+              {
+                id: "utilizatori" as const,
+                icon: UserRound,
+                title: h.users,
+                description: h.usersHint,
+                summary: users && {
+                  text: count(h.activeMasc, activeUsers) + (pending ? ` · ${count(h.pending, pending)}` : ""),
+                },
+              },
+              { id: "jurnal-audit" as const, icon: History, title: h.audit, description: h.auditHint },
+            ],
+          },
+        ]
+      : []),
+    {
+      title: h.groupTransport,
+      cards: [
+        {
+          id: "soferi",
+          icon: Truck,
+          title: h.drivers,
+          description: h.driversHint,
+          summary: ownDrivers && { text: count(h.activeMasc, ownDrivers.length) },
+        },
+        ...(hasDepot ? [{ id: "flota" as const, icon: Truck, title: h.vehicles, description: h.vehiclesHint }] : []),
+      ],
+    },
+    ...(hasDepot
+      ? [
+          {
+            title: h.groupDepot,
+            cards: [
+              { id: "preturi" as const, icon: Eye, title: h.prices, description: h.pricesHint },
+              { id: "sortimente" as const, icon: Tags, title: h.articles, description: h.articlesHint },
+            ],
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div>
+      <PageHeader
+        title={strings.settings.title}
+        description={strings.settings.subtitle}
+        actions={
+          // Importul din Excel nu stă în meniu: îl facem noi, la implementare. Din 16.09.2026 butonul
+          // e numai al platformei; clientul ne trimite fișierul.
+          canImportExcel && (
+            <LinkButton to="/import" variant="outline">
+              <FileUp className="mr-2 h-4 w-4" />
+              {strings.nav.importExcel}
+            </LinkButton>
+          )
+        }
+      />
+
+      <div className="mt-8 space-y-8">
+        {groups.map((group) => (
+          <section key={group.title} aria-labelledby={`grup-${group.title}`}>
+            <h2 id={`grup-${group.title}`} className="eyebrow mb-3">
+              {group.title}
+            </h2>
+            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {group.cards.map((card) => (
+                <li key={card.id}>
+                  <Link
+                    to={`/setari/${card.id}`}
+                    className="group flex h-full items-start gap-4 rounded-lg border border-line-strong/70 bg-surface p-4 transition-colors hover:border-content-subtle sm:p-5"
+                  >
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-line bg-surface-muted text-content-strong">
+                      <card.icon className="h-5 w-5" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[0.9375rem] font-semibold text-content">{card.title}</span>
+                      <span className="mt-0.5 block text-sm text-content-muted">{card.description}</span>
+                      {card.summary && (
+                        <span
+                          className={
+                            "mt-2.5 block font-mono text-xs " +
+                            (card.summary.bad ? "text-red-700" : "text-content-strong")
+                          }
+                        >
+                          {card.summary.text}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronRight
+                      className="mt-0.5 h-4 w-4 shrink-0 text-content-subtle transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

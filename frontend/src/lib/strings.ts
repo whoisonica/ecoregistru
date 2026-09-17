@@ -1054,9 +1054,40 @@ export const strings = {
 
   settings: {
     title: "Setări",
-    // Cuprinsul lipicios din capul paginii. Patru secțiuni una sub alta, dintre care trei tabele,
-    // fac cea mai lungă pagină de configurare din aplicație.
-    sections: "Pe pagină",
+    subtitle: "Ce completezi o dată și schimbi rar: firma, echipa, transportul.",
+    // Pagina de start (17.09.2026, varianta C): carduri pe grupuri. Descrierile sunt scurte dinadins —
+    // subtitlurile întregi, cu temeiul legal, rămân pe paginile secțiunilor.
+    hub: {
+      groupCompany: "Firma",
+      groupTeam: "Echipa",
+      groupTransport: "Transport",
+      groupDepot: "Depozit",
+      company: "Datele firmei",
+      companyHint: "Identificarea, autorizația de mediu, persoana desemnată.",
+      workPoints: "Puncte de lucru",
+      workPointsHint: "Locațiile pentru care ții evidența deșeurilor.",
+      internalGenerators: "Generatori interni",
+      internalGeneratorsHint: "Secțiile — birouri, producție, cantină — din fișa de evidență.",
+      users: "Utilizatori",
+      usersHint: "Cine intră în contul firmei și ce poate face.",
+      audit: "Jurnal de audit",
+      auditHint: "Cine a modificat ce și când. Nu se poate șterge.",
+      drivers: "Șoferi",
+      driversHint: "Delegații firmei, tipăriți pe Anexa 3 la predare.",
+      vehicles: "Flota",
+      vehiclesHint: "Vehiculele firmei: tara, ITP, licența de transport.",
+      prices: "Prețuri",
+      pricesHint: "Cine vede prețurile din depozit.",
+      articles: "Sortimente",
+      articlesHint: "Denumirile de pe bonul de cântar, legate de codurile de deșeu.",
+      // Punctele de lucru sunt „active”; generatorii, utilizatorii și șoferii, „activi”.
+      active: "{count} active",
+      activeMasc: "{count} activi",
+      pending: "{count} invitații în așteptare",
+      authValidUntil: "Autorizație valabilă până la",
+      authExpired: "Autorizația a expirat",
+      authMissing: "Autorizația nu e completată",
+    },
     // D1.8. Opțiunile numesc și suportul WasteHouse: la „toată firma” îl include, iar omul trebuie
     // să știe asta când alege (proprietarul, 15.09.2026: platforma e tratată ca un consultant).
     prices: {

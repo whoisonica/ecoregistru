@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { SETTINGS_CARD } from "@/components/ui/card";
 import { Ban, UserCircle, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import {
   useDrivers,
@@ -202,7 +203,7 @@ export function OwnDriversSection({
   }
 
   return (
-    <section id="soferi" className="mt-10 scroll-mt-20">
+    <section id="soferi" className={SETTINGS_CARD}>
       <div className="mb-3 flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>

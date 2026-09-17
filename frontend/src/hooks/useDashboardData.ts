@@ -161,7 +161,7 @@ export function useDashboardData(enabled = true) {
         tone: "start",
         title: t.nextStartWorkPoint,
         hint: t.nextStartWorkPointHint,
-        to: "/setari",
+        to: "/setari/puncte-de-lucru",
         cta: t.nextStartWorkPointCta,
       };
     }

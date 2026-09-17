@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { SETTINGS_CARD } from "@/components/ui/card";
 import { Ban, Factory, Pencil, Plus, RotateCcw } from "lucide-react";
 import {
   useInternalGenerators,
@@ -146,7 +147,7 @@ export function InternalGeneratorsSection({
   }
 
   return (
-    <section id="generatori-interni" className="mt-10 scroll-mt-20">
+    <section id="generatori-interni" className={SETTINGS_CARD}>
       <div className="mb-3 flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>

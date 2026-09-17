@@ -148,7 +148,7 @@ export function Layout({ children }: { children: ReactNode }) {
   useHotkey(
     "n",
     () => navigate(`${hasGenerated ? SCREEN_PATH.GENERATED : SCREEN_PATH.IN}?nou=1`),
-    { enabled: canAdd && !OWNS_N.has(location.pathname) }
+    { enabled: canAdd && !OWNS_N.has(location.pathname) && !location.pathname.startsWith("/setari/") }
   );
   useHotkey("i", () => navigate(`${SCREEN_PATH.IN}?nou=1`), { enabled: canAdd && hasCollector });
   useHotkey("e", () => navigate(`${SCREEN_PATH.OUT}?nou=1`), { enabled: canAdd && hasCollector });

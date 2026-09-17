@@ -65,14 +65,14 @@ export function CompanyDetailsSection() {
 
   if (isError) {
     return (
-      <section id="datele-firmei" className="mt-8 scroll-mt-20">
+      <section id="datele-firmei" className="scroll-mt-20">
         <p className="text-sm text-red-600">{t.loadError}</p>
       </section>
     );
   }
 
   return (
-    <section id="datele-firmei" className="mt-8 scroll-mt-20">
+    <section id="datele-firmei" className="scroll-mt-20">
       <Card>
         <CardHeader
           title={

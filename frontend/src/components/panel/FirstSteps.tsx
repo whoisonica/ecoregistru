@@ -71,11 +71,11 @@ export function FirstSteps() {
         return {
           title: t.company,
           hint: `${t.companyHintMissing.replace("{fields}", fields)} ${multi ? t.companyHintClients : t.companyHintAskUs}`,
-          links: [multi ? { to: "/clienti", label: t.companyClientsCta } : { to: "/setari#datele-firmei", label: t.companyCta }],
+          links: [multi ? { to: "/clienti", label: t.companyClientsCta } : { to: "/setari/datele-firmei", label: t.companyCta }],
         };
       }
       case "workPoint":
-        return { title: t.workPoint, hint: t.workPointHint, links: [{ to: "/setari#puncte-de-lucru", label: t.workPointCta }] };
+        return { title: t.workPoint, hint: t.workPointHint, links: [{ to: "/setari/puncte-de-lucru", label: t.workPointCta }] };
       case "partner":
         return { title: t.partner, hint: t.partnerHint, links: [{ to: "/parteneri", label: t.partnerCta }] };
       case "movement":

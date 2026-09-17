@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { SETTINGS_CARD } from "@/components/ui/card";
 import { Ban, Pencil, Plus, RotateCcw, Trash2, Truck } from "lucide-react";
 import {
   useVehicles,
@@ -191,7 +192,7 @@ export function VehiclesSection({ workPoints, canManage }: { workPoints: WorkPoi
   const columns = canManage ? 6 : 5;
 
   return (
-    <section id="flota" className="mt-10 scroll-mt-20">
+    <section id="flota" className={SETTINGS_CARD}>
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>

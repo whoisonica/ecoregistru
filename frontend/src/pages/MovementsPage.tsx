@@ -775,7 +775,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                             {canSeeHistory && (
                               <RowAction
                                 icon={History}
-                                onClick={() => navigate(`/setari?istoric=${m.id}#jurnal-audit`)}
+                                onClick={() => navigate(`/setari/jurnal-audit?istoric=${m.id}`)}
                               >
                                 {t.history}
                               </RowAction>

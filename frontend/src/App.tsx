@@ -116,6 +116,7 @@ export default function App() {
             }
           />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
+          <Route path="/setari/:section" element={<AppShell><SettingsPage /></AppShell>} />
           <Route path="/import" element={<AppShell><ImportPage /></AppShell>} />
           {/* Fără firmă aleasă: abonamentul unui consultant e al cabinetului, nu al firmei din
               comutator. Adresa e scrisă și în mailul cu factura (`EmailNotificationService`). */}

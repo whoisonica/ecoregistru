@@ -19,6 +19,12 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 }
 
 /**
+ * O secțiune din Setări: aceeași cutie ca `Card`, pusă direct pe `<section>`, fiindcă secțiunile cu
+ * tabel au deja capul și bara lor și n-au nevoie de încă un înveliș.
+ */
+export const SETTINGS_CARD = "scroll-mt-20 rounded-lg border border-line-strong/70 bg-surface p-4 sm:p-5";
+
+/**
  * Capul unui card: titlu la stânga, acțiune la dreapta. Aliniat pe `items-start`, nu pe `center`,
  * fiindcă titlul poate avea și o linie de explicație sub el, iar butonul trebuie să rămână sus.
  */

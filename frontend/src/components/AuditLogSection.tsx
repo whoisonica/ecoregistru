@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SETTINGS_CARD } from "@/components/ui/card";
 import { useSearchParams } from "react-router-dom";
 import { History } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
@@ -84,7 +85,7 @@ export function AuditLogSection({ canManage }: { canManage: boolean }) {
   if (!canManage) return null;
 
   return (
-    <section id="jurnal-audit" ref={sectionRef} className="mt-8 scroll-mt-20">
+    <section id="jurnal-audit" ref={sectionRef} className={SETTINGS_CARD}>
       <h2 className="mb-1 text-lg font-semibold text-content">{t.title}</h2>
       <p className="mb-3 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
 

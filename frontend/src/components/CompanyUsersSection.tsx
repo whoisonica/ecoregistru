@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { SETTINGS_CARD } from "@/components/ui/card";
 import { Ban, Mail, Plus, RotateCcw, ShieldCheck, Users, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
@@ -192,7 +193,7 @@ export function CompanyUsersSection({ canManage }: { canManage: boolean }) {
   }
 
   return (
-    <section id="utilizatori" className="mt-8 scroll-mt-20">
+    <section id="utilizatori" className={SETTINGS_CARD}>
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>

@@ -47,7 +47,7 @@ export function PriceVisibilitySection() {
   }
 
   return (
-    <section id="preturi" className="mt-8 scroll-mt-20">
+    <section id="preturi" className="scroll-mt-20">
       <Card>
         <CardHeader
           title={
