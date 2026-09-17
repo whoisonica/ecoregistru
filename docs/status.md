@@ -14,6 +14,16 @@ rulează local și are testele verzi.
 > site-ul, România). Aceeași corectură în registrul art. 30, DPA Anexa C și PDF-uri (repo-ul privat). **Probe:** tsc, `npm test` 27/27;
 > pe producție bundle-ul `index-CQOz911O.js` are textul nou și niciun „Zoho”, pagina `/confidentialitate` arată cele șapte rânduri.
 
+> **17.09.2026, ~13:45 — operare: urmărirea Brevo anonimizată, DMARC lăsat pe `p=none`** (niciun cod; producția api v115 / app v105).
+> Mailul de invitație trimis prin Brevo trece SPF, DKIM (`brevo2`, `wastehouse.ro`) și DMARC. În „Show original” s-a văzut că Brevo rescrie
+> linkurile (și pe „Alege parola”, prin `sendibt2.com`), pune un pixel de deschidere și antetul `List-Unsubscribe`. Din Brevo s-a putut doar
+> **anonimiza** urmărirea (Transactional → Settings → Tracking → „Anonymous email tracking” = Yes). Rescrierea linkurilor și `List-Unsubscribe`
+> nu se pot opri pe SMTP (Brevo le ține obligatorii; `list-help` doar pe Enterprise). Linkul rescris merge: deschiderea paginii de parolă nu
+> consumă codul. Un destinatar care apasă „Dezabonare” nu mai primește nici resetările; se deblochează din „Blocked or unsubscribed contacts”.
+> DMARC rămâne `p=none` până înainte de primul client (nu strică nimic; `quarantine` după un test din webmailul cPanel).
+> Tot atunci, din sesiunea paralelă: app **v105** (`f93800d`, cantitatea adăugată după cântărire nu se mai șterge la editare) și api **v113–v115**
+> (clientul FGO: `Content-Length`, răspunsul non-JSON în log, 409 reîncercat).
+
 > **17.09.2026, 13:13 — ✅ pe producție (`ecoregistru-app` **v104**, `04fa66b`): Evidențe în kg, butonul fișei pe înțeles, selectul R/D** (monorepo `198616e`; api neatins de sesiunea asta, nicio migrare; documentele tipărite neatinse; bundle-ul `index-CdJshcWs.js` are textele noi).
 > **(1) Kg pe Evidențe:** panoul „Pentru depunerea din 15 martie — totalul anului, pe cod” trece din tone în kg (coloanele `[kg]`), ca
 > rândul de pe Termene (app v101). Andreea (AF, 14.09): se depune în kg. Pe ecranele generatorului nu mai e nicio cifră în tone, în afară de
