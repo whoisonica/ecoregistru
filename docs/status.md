@@ -8,6 +8,19 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 15:37 — ✅ pe producție: tabelul Clienți ca tablou de lucru (F-B), panoul „Firmele mele” după ultimul termen al anului, scripturile curățeniei și ale demo-ului** (`ecoregistru-api` **v117**, `1c9d53b`, fără migrare, schema rămâne **V63**; `ecoregistru-app` **v107**, `32347ab`; monorepo `99425e8`).
+> **(1) F-B** (`072a18e`): `GET /api/v1/companies/overview` (`MULTI_COMPANY`, 5 interogări oricât de lungă e lista; consultantul fără bani) —
+> cifrele de sus, filtrele (Cer atenție, Fără abonament, Restanți, Emitere căzută, Fără utilizatori, Cabinete), coloanele Abonament / Ultima
+> factură / Utilizatori / Fișa, „Deschide” + „⋯”, tasta **N** pentru „Client nou”; logica în `lib/clients.ts`. Proba e2e **30**.
+> **(2) Panoul „Firmele mele”** (`81469ba`): „Termenele anului nu sunt generate” nu mai apare după ultimul termen al anului —
+> `deadlinesGenerated` caută în aceeași fereastră ca termenele deschise; test nou în `ConsultancyOverviewIT`, negativa probată.
+> **(3) `scripts/`** (`500075f` + `99425e8`): `curatenie-prod.sql` (istoric, cere `-v admin=<email>`), `curatenie-cloudinary.sh`, `numara-randuri.sql`,
+> `demo/seed-demo.mjs` + `demo-data.json` (cere `WH_EMAIL`). ⚠️ `500075f` singur anula F-B și panoul; `99425e8` le repune — arborele
+> egal cu `81469ba` + `scripts/`.
+> Probe înainte de deploy: backend **886/106**, 0 eșecuri; `npm test` 36/36; build verde; CI pe `99425e8` verde. Garda
+> `deploy-split.sh`: un singur commit pe fiecare parte. După: „No migration necessary”, `Started EcoRegistruApplication`,
+> `/api/v1/companies/overview` → 401 fără token, bundle-ul servit are textele noi.
+
 > **17.09.2026, 14:46 — ✅ pe producție: ecranul „Facturare”, CUI-ul cu cifra de control, „Verifică plata” și „Oprește” (F-A din `todo-clienti-abonamente.md`)** (`ecoregistru-api` **v116**, `50f9794`, **V63** aplicată; `ecoregistru-app` **v106**, `21655ad`; monorepo `ec29c53`).
 > **(1) `/facturare`** (numai platforma, grupul Cabinet, tasta **B**): ultima rulare salvată în `billing_runs` (V63), rând cu rând — firma,
 > motivul pe înțeles („CUI-ul „…” nu e valid: FGO nu-l acceptă”), facturile emise și plătite, abonamentele care nu încep; toate facturile
