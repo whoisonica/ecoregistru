@@ -97,6 +97,7 @@ export function AuditFilePage() {
     <div>
       {confirming && (
         <AwaitingWeighingDialog
+          documentName={t.title}
           lines={pendingWeighing}
           onCancel={() => setConfirming(false)}
           onConfirm={() => {

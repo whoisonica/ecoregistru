@@ -19,10 +19,13 @@ const t = strings.awaitingWeighing;
  * in advance is still worth having — so the choice stays with the person who knows.
  */
 export function AwaitingWeighingDialog({
+  documentName,
   lines,
   onConfirm,
   onCancel,
 }: {
+  /** Numele documentului care se descarcă, ca omul să știe de ce a apărut dialogul în locul fișierului. */
+  documentName: string;
   lines: MonthlyEvidence[];
   onConfirm: () => void;
   onCancel: () => void;
@@ -34,7 +37,7 @@ export function AwaitingWeighingDialog({
     <Dialog
       open
       onClose={onCancel}
-      title={t.title}
+      title={t.title.replace("{document}", documentName)}
       footer={
         <>
           <Button variant="ghost" onClick={onCancel}>
@@ -48,14 +51,15 @@ export function AwaitingWeighingDialog({
         <p className="text-sm text-content-strong">
           {withCount(t.body, lines.length, "linie", "linii")}
         </p>
-        <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <ul className="space-y-1 rounded-md border border-line bg-surface-muted px-3 py-2 text-sm text-content">
           {shown.map((l) => (
-            <li key={l.id}>
-              {l.wasteCode} — {strings.months[l.month - 1]} {l.year}, {l.workPointName}
+            <li key={l.id} className="flex items-start gap-2">
+              <span aria-hidden className="mt-1.5 h-2 w-2 shrink-0 rounded-[1px] bg-state-warn" />
+              <span className="whitespace-nowrap font-mono">{l.wasteCode}</span> — {strings.months[l.month - 1]} {l.year}, {l.workPointName}
             </li>
           ))}
           {rest > 0 && (
-            <li className="text-amber-700">{withCount(t.andMore, rest, "linie", "linii")}</li>
+            <li className="text-content-muted">{withCount(t.andMore, rest, "linie", "linii")}</li>
           )}
         </ul>
         <p className="text-xs text-content-muted">{t.hint}</p>

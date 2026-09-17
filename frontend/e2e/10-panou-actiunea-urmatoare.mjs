@@ -242,26 +242,26 @@ await page.waitForTimeout(300);
 const dupaEscape = await page.evaluate(() => Boolean(document.querySelector('[role="menu"]')));
 check("și Escape îl închide", !dupaEscape);
 
-// ------------------------------------------------------ 8. EVIDENȚE: CIFRA ÎN TONE (QA-TRACE G6)
-// OUG 92/2021 art. 48 alin. (1) cere cantitatea „în tone" la depunerea din 15 martie, iar ecranul o
-// calculează din kilograme. O greșeală de 1000× aici n-ar cădea nicăieri altundeva: fișa și
-// declarația rămân în kg. Proba recalculează din API, pe drumul ei — nu cheamă `formatTonnes`, altfel
-// ar greși la fel ca ecranul — și compară cifra citită de pe pagină, cod cu cod.
+// ------------------------------------------------------ 8. EVIDENȚE: TOTALUL ANULUI PE COD, ÎN KG (QA-TRACE 7)
+// Panoul de sub tabel adună anul pe cod pentru depunerea din 15 martie. Din 17.09.2026 e în kilograme,
+// ca evidența și formularele (Andreea, AF); până atunci era în tone și „1,060” se citea ca o mie de tone.
+// Proba recalculează din API, pe drumul ei — nu cheamă `formatKg`, altfel ar greși la fel ca ecranul —
+// și compară cifra citită de pe pagină, cod cu cod. O împărțire la 1000 rămasă undeva cade aici.
 // Panoul apare numai când anul are linii de evidență calculate. Pe o bază proaspătă nimeni n-a
 // apăsat încă „Regenerează", deci proba o face singură — altfel ar trece pe lângă panou fără să-l vadă.
 // Regenerarea rescrie un cache, nu date, deci nu lasă nimic în urmă pentru celelalte probe.
-const ANUL_TONE = 2026;
+const ANUL_TOTAL = 2026;
 await page.evaluate(async (an) => {
   await fetch("/api/v1/evidences/regenerate?year=" + an, {
     method: "POST",
     headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
   });
-}, ANUL_TONE);
+}, ANUL_TOTAL);
 // Panoul stă în vederea lunară: implicitul paginii e „Predări", unde nu există.
-await page.goto(BASE + "/evidente?an=" + ANUL_TONE + "&vedere=monthly", { waitUntil: "networkidle" });
+await page.goto(BASE + "/evidente?an=" + ANUL_TOTAL + "&vedere=monthly", { waitUntil: "networkidle" });
 await page.waitForTimeout(1200);
-const tone = await page.evaluate(async () => {
-  const titlu = [...document.querySelectorAll("h3")].find((h) => /în tone/.test(h.textContent));
+const total = await page.evaluate(async () => {
+  const titlu = [...document.querySelectorAll("h3")].find((h) => /depunerea din 15 martie/.test(h.textContent));
   if (!titlu) return null;
   const an = (titlu.textContent.match(/anului (\d{4})/) ?? [])[1];
   const res = await fetch("/api/v1/evidences?year=" + an, {
@@ -274,30 +274,34 @@ const tone = await page.evaluate(async () => {
     k[1] += r.totalRecovered;
     k[2] += r.totalDisposed;
   }
-  const randuri = [...titlu.closest("div").querySelectorAll("tbody tr")].map((tr) => {
+  const panou = titlu.closest("div");
+  const antet = [...panou.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+  const randuri = [...panou.querySelectorAll("tbody tr")].map((tr) => {
     const td = [...tr.querySelectorAll("td")];
     return { cod: td[0].querySelector("span").textContent.trim(), cifre: td.slice(1, 4).map((c) => c.textContent.trim()) };
   });
-  return { an, kg, randuri };
+  return { an, kg, antet, randuri };
 });
-check("panoul în tone există pe Evidențe", tone !== null);
-if (tone) {
-  const coduri = Object.keys(tone.kg);
-  check("are câte un rând pentru fiecare cod din evidența anului", tone.randuri.length === coduri.length && coduri.length > 0,
-    `${tone.randuri.length} rânduri, ${coduri.length} coduri în ${tone.an}`);
+check("panoul cu totalul anului există pe Evidențe", total !== null);
+if (total) {
+  const coduri = Object.keys(total.kg);
+  check("are câte un rând pentru fiecare cod din evidența anului", total.randuri.length === coduri.length && coduri.length > 0,
+    `${total.randuri.length} rânduri, ${coduri.length} coduri în ${total.an}`);
+  check("coloanele spun kg, nicio coloană în tone", total.antet.slice(1).every((h) => /\[kg\]/.test(h)) && !total.antet.some((h) => /\[t\]/.test(h)),
+    total.antet.join(" | "));
   const gresite = [];
-  for (const { cod, cifre } of tone.randuri) {
+  for (const { cod, cifre } of total.randuri) {
     cifre.forEach((text, i) => {
-      // „1.234,500" → 1234.5: punctul grupează, virgula e zecimala. Trei zecimale, fiindcă a treia e kilogramul.
+      // „1.234,5" → 1234.5: punctul grupează, virgula e zecimala.
       const valoare = Number(text.replace(/\./g, "").replace(",", "."));
-      const asteptat = (tone.kg[cod]?.[i] ?? NaN) / 1000;
-      if (!/,\d{3}$/.test(text) || Math.abs(valoare - asteptat) > 0.0005) gresite.push(`${cod}[${i}] ${text} ≠ ${asteptat}`);
+      const asteptat = total.kg[cod]?.[i] ?? NaN;
+      if (Math.abs(valoare - asteptat) > 0.0005) gresite.push(`${cod}[${i}] ${text} ≠ ${asteptat}`);
     });
   }
-  check("fiecare cifră e kilogramele din API împărțite la 1000, cu trei zecimale", gresite.length === 0,
-    gresite.slice(0, 3).join(" | ") || `${tone.randuri.length * 3} cifre`);
+  check("fiecare cifră e exact kilogramele din API", gresite.length === 0,
+    gresite.slice(0, 3).join(" | ") || `${total.randuri.length * 3} cifre`);
   // Garda: o probă care compară numai zerouri n-ar vedea un factor greșit.
-  check("și cel puțin o cifră e diferită de zero", tone.randuri.some((r) => r.cifre.some((c) => /[1-9]/.test(c))));
+  check("și cel puțin o cifră e peste 1 kg", total.randuri.some((r) => r.cifre.some((c) => Number(c.replace(/\./g, "").replace(",", ".")) >= 1)));
 }
 
 // Iar descărcarea chiar pleacă — un meniu care arată bine și nu descarcă nimic e mai rău decât

@@ -1,52 +1,18 @@
 /**
- * Conversii de unități pentru cantitățile de deșeu. Un singur loc, fiindcă factorul 1000 pus de
- * mână în două ecrane e cum se raportează de o mie de ori mai mult sau mai puțin.
+ * Formatarea cantităților de deșeu. Un singur loc, fiindcă un factor 1000 pus de mână în două
+ * ecrane e cum se raportează de o mie de ori mai mult sau mai puțin.
  *
- * **De ce există.** Evidența pe care o ținem e integral în **kilograme**, și e corectă așa:
- * HG 856/2002 lasă „Unitatea de măsură" câmp liber pe fișă, iar toate cele 33 de foi completate
- * primite de la specialistă sunt în kg. Dar depunerea de pe **15 martie** e altceva: OUG 92/2021
- * art. 48 alin. (1) scrie „cantitatea **în tone**" de două ori, la lit. a) și la lit. c).
+ * **Totul se arată în kilograme.** Evidența se ține în kg, formularele tipărite sunt în kg (toate
+ * cele 33 de foi completate primite de la specialistă), iar depunerea din 15 martie se face tot în kg
+ * (Andreea, 14.09.2026, întrebarea AF). OUG 92/2021 art. 48 alin. (1) scrie „în tone”, iar între
+ * 04.09 și 17.09.2026 Evidențe și Termene arătau o cifră în tone după el — „1,060 t” se citea ca o
+ * mie de tone (proprietarul, 17.09.2026), deci s-a renunțat.
  *
- * Deci una e ce **ții**, alta e ce **depui** — și până acum clientul făcea conversia de mână, cod
- * cu cod, chiar în ziua depunerii. Punctul 7 al auditului de conformitate din 02.09.2026.
- *
- * **Ce NU face.** Nu atinge niciun formular tipărit. Fișa și declarația anuală rămân în kg, pe
- * hârtie și în PDF — sunt corecte, iar a le muta pe tone ar fi o abatere de la modelele completate
- * fără ca vreun act s-o ceară. Cifra în tone se vede **pe ecran**, ca ajutor la încărcarea în SIM.
- * Un document nou „fișă de depunere" ar fi un format oficial inventat, ceea ce proiectul nu face.
- *
- * ⚠️ Rămâne deschisă întrebarea **AF** — dacă portalul SIM chiar cere tone la încărcare, sau
- * acceptă kilograme. Actul zice tone; practica o știe numai ea. Afișarea e nedistructivă în
- * ambele cazuri: arată amândouă unitățile, nu înlocuiește una cu alta.
+ * Singura cifră rămasă în tone e pragul de 1 t/an al Anexei 2 (HG 1061/2008), calculat pe server.
  */
 
 /**
- * Kilograme → tone. Împărțire exactă la 1000, fără rotunjire ascunsă: `450` → `0.45`.
- *
- * Rotunjirea o face **formatarea**, nu conversia, ca să nu se piardă cifre înainte de a fi văzute.
- */
-export function kgToTonnes(kilograms: number): number {
-  return kilograms / 1000;
-}
-
-/**
- * Trei zecimale: la tone, a treia zecimală e chiar kilogramul, deci e ultima cifră care mai
- * înseamnă ceva fizic. Sub ea n-are ce se pierde.
- */
-const tonnesFormat = new Intl.NumberFormat("ro-RO", {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-});
-
-/** Cantitatea în tone, formatată pentru afișare. Primește kilograme. */
-export function formatTonnes(kilograms: number): string {
-  return formatTonnesValue(kgToTonnes(kilograms));
-}
-
-/**
- * Kilograme, cum se ține și se depune evidența (Andreea, 14.09.2026, întrebarea AF: „kg”). Punct la
- * mii, fără zecimale forțate: „1.060 kg”, nu „1,060 t” — pe un rând scurt, a doua se citea ca o mie
- * de tone (proprietarul, 17.09.2026, pe Termene).
+ * Kilograme, cu punct la mii și fără zecimale forțate: „1.060”, nu „1,060” (care arată ca tone).
  */
 const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
 
@@ -55,10 +21,14 @@ export function formatKg(kilograms: number): string {
 }
 
 /**
- * Aceeași formatare, pentru o cifră care e **deja** în tone — cum vine pragul de 1 t/an al
- * Anexei 2, calculat pe server. Trece prin același `Intl` ca `formatTonnes`, ca „0,840" să arate
- * la fel oriunde apare.
+ * O cifră care e **deja** în tone — pragul de 1 t/an al Anexei 2. Trei zecimale: a treia e chiar
+ * kilogramul, ultima cifră care mai înseamnă ceva fizic.
  */
+const tonnesFormat = new Intl.NumberFormat("ro-RO", {
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+
 export function formatTonnesValue(tonnes: number): string {
   return tonnesFormat.format(tonnes);
 }

@@ -1,5 +1,11 @@
 # Probe de interfaţă
 
+📅 **17.09.2026 — proba 28 (`28-fisa-de-cantarit.mjs`) și proba 10 în kg**: pe Evidențe, cu o predare „de cântărit” în an
+(firma demo, plastic pe 22 iulie), nota apare **înainte** de clic și numără liniile; butonul fișei deschide dialogul cu numele
+documentului în titlu („Evidența gestiunii deșeurilor generate: lipsesc cantități”), fără clase `amber-*`, iar „Descarcă oricum”
+chiar descarcă. Proba 10 §8 citește totalul anului pe cod **în kg** (coloanele `[kg]`, nicio `[t]`, cifra = kilogramele din API).
+Nu lasă nimic în urmă.
+
 📅 **17.09.2026 — proba 27 (`27-an-declarat.mjs`)**: cu termenul de 15 martie al anului următor bifat, salvarea unei mișcări din
 anul curent întreabă „Anul X e deja declarat” (cu ziua bifării); „Anulează” nu salvează, „Salvează oricum” salvează; dialogul de
 ștergere spune același lucru; cu termenul redeschis, salvarea trece direct. **Negativă:** cu `declarationOf` oprit cad 4 verificări.

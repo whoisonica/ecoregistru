@@ -1331,7 +1331,9 @@ export function MovementFormDialog({
                     onChange={(ev) => setOperationCode(ev.target.value as WasteOperationCode)}
                     {...invalidProps("mv-code-rd-err", errors.operationCode)}
                   >
-                    <option value="">{strings.common.requiredField}</option>
+                    <option value="">
+                      {effectiveOperation === "DISPOSED" ? t.operationCodePlaceholderDisposal : t.operationCodePlaceholderRecovery}
+                    </option>
                     {codeOptions.map((c) => (
                       <option key={c} value={c}>
                         {e.wasteOperationCode[c]}

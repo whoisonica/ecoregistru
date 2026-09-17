@@ -17,7 +17,7 @@ import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { withCount } from "@/lib/utils";
 import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
-import { formatTonnes } from "@/lib/units";
+import { formatKg } from "@/lib/units";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Menu, MenuItem } from "@/components/ui/menu";
@@ -173,12 +173,12 @@ export function EvidencesPage() {
   const hasYearData = (yearRows ?? []).length > 0;
 
   /**
-   * Totalul anului per cod de deșeu — ce se încarcă în SIM pe 15 martie, iar OUG 92/2021 art. 48
-   * alin. (1) îl cere **în tone**. Se calculează din rândurile anului, nu din cele filtrate pe
+   * Totalul anului per cod de deșeu — ce se încarcă în SIM pe 15 martie, în kilograme (Andreea,
+   * 14.09.2026, AF). Se calculează din rândurile anului, nu din cele filtrate pe
    * lună: depunerea acoperă anul întreg, oricum ar fi filtrat ecranul (aceeași logică pentru care
    * `yearRows` există deja, pentru verificarea de dinaintea documentelor).
    *
-   * Punctul 7 al auditului. Vezi `lib/units.ts` pentru ce nu face: nu mută niciun formular pe tone.
+   * Punctul 7 al auditului a pus panoul în tone (04.09); din 17.09.2026 e în kg, ca restul evidenței.
    */
   const annualByCode = useMemo(() => {
     const acc = new Map<
@@ -256,6 +256,7 @@ export function EvidencesPage() {
     <div>
       {pendingDoc && (
         <AwaitingWeighingDialog
+          documentName={pendingDoc === "anexa1" ? t.anexa1 : t.annualDeclaration}
           lines={pendingWeighing}
           onCancel={() => setPendingDoc(null)}
           onConfirm={() => {
@@ -335,6 +336,20 @@ export function EvidencesPage() {
           scrisă cu galben pe fiecare vizită — iar un avertisment permanent devine tapet exact
           până în ziua în care ar fi trebuit să apere ceva. */}
       {canManage && <p className="mt-4 text-sm text-content-muted">{t.staleNote}</p>}
+
+      {pendingWeighing.length > 0 && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-content" data-testid="pending-weighing-note">
+          <span aria-hidden className="h-2 w-2 shrink-0 rounded-[1px] bg-state-warn" />
+          <span>
+            {withCount(t.pendingWeighingNote, pendingWeighing.length, "linie", "linii").replace("{year}", String(year))}
+          </span>
+          {view !== "handovers" && (
+            <button type="button" className="font-medium text-brand-700 underline" onClick={() => setView("handovers")}>
+              {t.pendingWeighingShow}
+            </button>
+          )}
+        </p>
+      )}
 
       {/* Filters */}
       <div className="mt-6 inline-flex rounded-lg border border-line bg-surface-muted p-0.5">
@@ -549,22 +564,23 @@ export function EvidencesPage() {
               </div>
             )}
 
-            {/* Ce se încarcă în SIM pe 15 martie, în unitatea pe care o cere actul. Stă lângă
-                evidența în kg, nu în locul ei: fișa și declarația rămân în kilograme pe hârtie. */}
+            {/* Totalul anului pe cod, pentru depunerea din 15 martie. În kilograme, ca evidența, fișa și
+                declarația: se depune în kg (Andreea, 14.09.2026, AF), iar „1,060 t” se citea ca o mie
+                de tone (proprietarul, 17.09.2026). */}
             {!isLoading && annualByCode.length > 0 && (
               <div className="mt-8 rounded-lg border border-line bg-surface-muted p-4">
                 <h3 className="text-sm font-semibold text-content-strong">
-                  {t.tonnesTitle.replace("{year}", String(year))}
+                  {t.annualTotalsTitle.replace("{year}", String(year))}
                 </h3>
-                <p className="mt-1 text-xs text-content-muted">{t.tonnesHint}</p>
+                <p className="mt-1 text-xs text-content-muted">{t.annualTotalsHint}</p>
                 <div className="mt-3">
                   <Table stickyHeader>
                     <THead sticky>
                       <TR>
                         <TH>{t.colWasteCode}</TH>
-                        <TH className="text-right">{t.colGeneratedTonnes}</TH>
-                        <TH className="text-right">{t.colRecoveredTonnes}</TH>
-                        <TH className="text-right">{t.colDisposedTonnes}</TH>
+                        <TH className="text-right">{t.colGeneratedKg}</TH>
+                        <TH className="text-right">{t.colRecoveredKg}</TH>
+                        <TH className="text-right">{t.colDisposedKg}</TH>
                       </TR>
                     </THead>
                     <TBody>
@@ -581,9 +597,9 @@ export function EvidencesPage() {
                               {r.wasteCodeName}
                             </span>
                           </TD>
-                          <TD className="whitespace-nowrap text-right">{formatTonnes(r.generated)}</TD>
-                          <TD className="whitespace-nowrap text-right">{formatTonnes(r.recovered)}</TD>
-                          <TD className="whitespace-nowrap text-right">{formatTonnes(r.disposed)}</TD>
+                          <TD className="whitespace-nowrap text-right">{formatKg(r.generated)}</TD>
+                          <TD className="whitespace-nowrap text-right">{formatKg(r.recovered)}</TD>
+                          <TD className="whitespace-nowrap text-right">{formatKg(r.disposed)}</TD>
                         </TR>
                       ))}
                     </TBody>

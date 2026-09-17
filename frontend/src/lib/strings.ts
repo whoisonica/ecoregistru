@@ -768,6 +768,9 @@ export const strings = {
     fateDisposalEffect:
       "Cantitatea se raportează la „Eliminată final”, cu un cod D și cu operatorul care o face (cap. 4).",
     operationCode: "Cod operațiune (R/D)",
+    // Rândul gol al selectului: scria „Câmp obligatoriu.” înainte de orice salvare (verificat pe producție 17.09.2026).
+    operationCodePlaceholderRecovery: "Alege codul R…",
+    operationCodePlaceholderDisposal: "Alege codul D…",
     // Cine e „agentul economic” și ce cod poartă: notele 5 și 6 la anexa 3 și nota 3 la anexa 7 din
     // OUG 92/2021, plus corpusul (docs/surse-oficiale.md §1.2, închis 16.09.2026). Se scrie operațiunea
     // destinatarului direct, nu a celui de după el.
@@ -1772,14 +1775,15 @@ export const strings = {
       "Centralizatorul anului: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
     annualDeclarationError: "Evidența centralizată nu a putut fi generată.",
 
-    // --- Cifra pentru depunere, în tone (OUG 92/2021 art. 48 alin. (1)) ---
-    // Evidența rămâne în kg peste tot, inclusiv pe hârtie; asta e doar ajutorul de la încărcare.
-    tonnesTitle: "Pentru depunerea din 15 martie — totalul anului {year}, în tone",
-    tonnesHint:
-      "Evidența se ține în kilograme, și e corect așa: fișa din HG 856/2002 lasă unitatea la alegere, iar formularele tipărite rămân în kg. Depunerea e altceva — OUG 92/2021, art. 48 alin. (1) cere cantitatea în tone. Aici o ai gata calculată pe an și pe cod, ca să n-o împarți de mână la 1000 în ziua depunerii.",
-    colGeneratedTonnes: "Generat [t]",
-    colRecoveredTonnes: "Valorificat [t]",
-    colDisposedTonnes: "Eliminat [t]",
+    // --- Totalul anului pe cod, pentru depunerea din 15 martie ---
+    // În kilograme, ca evidența și formularele: se depune în kg (Andreea, 14.09.2026, AF). Până pe
+    // 17.09.2026 panoul era în tone, după OUG 92/2021 art. 48 alin. (1), și „1,060” se citea greșit.
+    annualTotalsTitle: "Pentru depunerea din 15 martie — totalul anului {year}, pe cod",
+    annualTotalsHint:
+      "Aceleași kilograme ca în evidență, adunate pe an și pe cod, gata de trecut în SIM. Fișa și evidența centralizată tipărite au aceleași cifre.",
+    colGeneratedKg: "Generat [kg]",
+    colRecoveredKg: "Valorificat [kg]",
+    colDisposedKg: "Eliminat [kg]",
     // Cele două exporturi generice au stat până pe 08.09 în antet, la fel de vizibile ca cele două
     // documente oficiale — cinci butoane pe un rând, care strângeau titlul paginii pe trei rânduri.
     // Sunt lucruri de alt fel: unul se depune la agenție, celălalt scrie pe el „rezumat neoficial".
@@ -1847,6 +1851,10 @@ export const strings = {
     // să vezi cifra recalculată sub ochii tăi.
     staleNote:
       "Evidența se recalculează din mișcări ori de câte ori s-a schimbat ceva. „Regenerează” o reconstruiește pe loc și rescrie și anii următori, fiindcă stocul se reportează.",
+    // Spus înainte de clic: altfel butonul fișei deschidea un dialog în locul fișierului și părea stricat.
+    pendingWeighingNote:
+      "{year}: {count} fără cantitatea de la destinatar. Fișa și evidența centralizată se descarcă, dar cu rubrica goală acolo.",
+    pendingWeighingShow: "Arată predările",
   },
 
   deadlines: {
@@ -2933,13 +2941,16 @@ export const strings = {
    * miscare" — deci se numara doar liniile care chiar intra in documentul cerut.
    */
   awaitingWeighing: {
-    title: "Ai cantități care încă nu au venit de la destinatar",
-    body: "{count} din documentul pe care îl generezi așteaptă cântarul de la destinatar („se cântărește la descărcare”). Pe hârtie, cantitatea va lipsi, iar stocul nu se închide acolo.",
+    // Titlul numește documentul: dialogul apare în locul descărcării, iar fără nume părea că butonul nu
+    // merge (evaluarea din 17.09.2026).
+    title: "{document}: lipsesc cantități",
+    body: "{count} din document așteaptă cântarul de la destinatar („se cântărește la descărcare”). Pe hârtie, cantitatea va lipsi, iar stocul nu se închide acolo.",
     andMore: "și încă {count}",
-    hint: "Poți completa cifra din Mișcări → „Adaugă cantitatea”, pe rândurile marcate „De cântărit”. Sau generează acum, dacă documentul e o ciornă de lucru.",
-    generateAnyway: "Generează oricum",
-    cancel: "Renunț, completez întâi",
+    hint: "Completează cifra din tichetul destinatarului: pe rândul marcat „De cântărit” din Generare sau Ieșiri → „Adaugă cantitatea”. Sau descarcă acum, dacă documentul e o ciornă de lucru.",
+    generateAnyway: "Descarcă oricum",
+    cancel: "Completez întâi",
   },
+
 
   packaging: {
     searchPlaceholder: "Caută după cod, denumire, partener...",
