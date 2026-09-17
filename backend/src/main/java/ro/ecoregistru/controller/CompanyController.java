@@ -9,6 +9,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.AssignConsultancyRequest;
 import ro.ecoregistru.controller.request.CompanyRequest;
+import ro.ecoregistru.controller.request.OnboardClientRequest;
+import ro.ecoregistru.controller.response.OnboardClientResponse;
+import ro.ecoregistru.service.ClientOnboardingService;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.request.PriceVisibilityRequest;
 import ro.ecoregistru.controller.response.ClientOverviewResponse;
@@ -39,6 +42,7 @@ public class CompanyController {
     static final String MULTI_COMPANY = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT')";
 
     CompanyService companyService;
+    ClientOnboardingService clientOnboardingService;
 
     @GetMapping
     @PreAuthorize(MULTI_COMPANY)
@@ -78,6 +82,13 @@ public class CompanyController {
     @PreAuthorize(MULTI_COMPANY)
     public ResponseEntity<CompanyResponse> create(@RequestBody @Valid CompanyRequest request) {
         return ResponseEntity.ok(companyService.create(request));
+    }
+
+    /** F-C — „Client nou”: the company, its request, subscription and administrator together, or nothing. */
+    @PostMapping("/onboard")
+    @PreAuthorize(MULTI_COMPANY)
+    public OnboardClientResponse onboard(@RequestBody @Valid OnboardClientRequest request) {
+        return clientOnboardingService.onboard(request);
     }
 
     @PutMapping("/{id}")

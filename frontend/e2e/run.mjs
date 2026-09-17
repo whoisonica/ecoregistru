@@ -39,6 +39,7 @@ const suites = [
   ["28-fisa-de-cantarit.mjs", "Evidențe: nota „de cântărit” înainte de clic, dialogul numește fișa și „Descarcă oricum” descarcă"],
   ["29-facturare.mjs", "Facturare: tasta B, ultima rulare cu firma și motivul, filtrele, „Verifică plata” fără chei, „Oprește”, 375px"],
   ["30-clienti-tabel.mjs", "Clienți: cifrele de sus, filtrele, cele cu probleme primele, ⋯ pe rând, invitația numărată, tasta N, 375px"],
+  ["31-client-nou.mjs", "Client nou în pași: cererea pusă în pași, CUI și adresa verificate, prima factură, totul sau nimic, 375px"],
 ];
 
 const only = process.argv[2];

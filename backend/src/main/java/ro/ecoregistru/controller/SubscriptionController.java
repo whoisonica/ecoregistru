@@ -13,6 +13,7 @@ import ro.ecoregistru.controller.response.InvoiceMoneyResponse;
 import ro.ecoregistru.controller.response.InvoicePageResponse;
 import ro.ecoregistru.enums.InvoiceFilter;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
+import ro.ecoregistru.controller.response.SubscriptionPreviewResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.BillingRun;
 import ro.ecoregistru.service.BillingRunService;
@@ -38,6 +39,13 @@ public class SubscriptionController {
 
     SubscriptionService subscriptionService;
     BillingRunService billingRunService;
+
+    /** F-C — the invoices of a subscription before it exists, for a new client with one work point. */
+    @PostMapping("/preview")
+    @PreAuthorize(PLATFORM_ONLY)
+    public SubscriptionPreviewResponse preview(@RequestBody @Valid SubscriptionRequest request) {
+        return subscriptionService.preview(request);
+    }
 
     @GetMapping("/company/{id}")
     @PreAuthorize(PLATFORM_ONLY)

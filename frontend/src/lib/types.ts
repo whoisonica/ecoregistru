@@ -353,6 +353,28 @@ export interface SubscriptionInput {
   billingAddress: string | null;
 }
 
+/** F-C — mirrors backend OnboardClientRequest: firma, cererea, abonamentul și administratorul, împreună. */
+export interface OnboardClientInput {
+  company: CompanyInput;
+  accountRequestId: string | null;
+  subscription: SubscriptionInput | null;
+  admin: { email: string; firstName: string | null; lastName: string | null } | null;
+}
+
+/** Mirrors backend OnboardClientResponse. */
+export interface OnboardClientResult {
+  company: Company;
+  plan: SubscriptionPlan | null;
+  firstInvoice: InvoicePreview | null;
+  invitedEmail: string | null;
+}
+
+/** Mirrors backend SubscriptionPreviewResponse. */
+export interface SubscriptionPreview {
+  firstInvoice: InvoicePreview;
+  monthlyInvoice: InvoicePreview;
+}
+
 /** Mirrors backend BillingRunService.Result. */
 /** Mirrors backend BillingRunService.Owner: cine plătește, cum se deschide abonamentul lui. */
 export interface BillingOwnerRef {

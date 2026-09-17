@@ -25,6 +25,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import ro.ecoregistru.controller.response.SubscriptionInvoiceResponse;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
+import ro.ecoregistru.controller.response.SubscriptionPreviewResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.CardPayment;
 import ro.ecoregistru.entity.Company;
@@ -377,6 +378,20 @@ public class SubscriptionService {
         }
         s.setEndsOn(invoice.getPeriodStart().minusDays(1));
         s.setStatus(SubscriptionStatus.CANCELLED);
+    }
+
+    /**
+     * F-C — what a subscription would invoice, not saved: a new client has at most the one work point of its request,
+     * which the price already covers. A company plan only; a cabinet is not made in the „Client nou” steps.
+     */
+    public SubscriptionPreviewResponse preview(SubscriptionRequest request) {
+        if (request.plan().forConsultancy()) {
+            throw new UnprocessableEntityException(SUBSCRIPTION_PLAN_MISMATCH);
+        }
+        Subscription s = pending().founder(request.founder()).startedAt(request.startedAt()).build();
+        applyGrid(s, request.plan());
+        return new SubscriptionPreviewResponse(BillingCalculator.invoice(s, 1, 0, 0, 0),
+                BillingCalculator.invoice(s, 1, 0, 0, 1));
     }
 
     @Transactional(readOnly = true)

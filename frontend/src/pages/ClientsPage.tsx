@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { Briefcase, Building2, Plus, Receipt, UserPlus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { isMultiCompany } from "@/lib/roles";
@@ -9,7 +10,6 @@ import { ConsultancyBrandingSection } from "@/components/ConsultancyBrandingSect
 import {
   useClientOverview,
   useCompanies,
-  useCreateCompany,
   useUpdateCompany,
   useInviteUser,
 } from "@/hooks/useCompanies";
@@ -91,7 +91,7 @@ export function ClientsPage() {
   const { data: companies, isLoading, isError } = useCompanies(multiCompany);
   const [assigning, setAssigning] = useState<Company | null>(null);
   const [billing, setBilling] = useState<Company | null>(null);
-  const createMut = useCreateCompany();
+  const navigate = useNavigate();
   const updateMut = useUpdateCompany();
   const inviteMut = useInviteUser();
   const { notify } = useToast();
@@ -185,7 +185,7 @@ export function ClientsPage() {
 
   useHotkey("n", () => openCreate(), { enabled: multiCompany && tab === "" && !dialogOpen && !inviteOpen });
 
-  const isSubmitting = createMut.isPending || updateMut.isPending;
+  const isSubmitting = updateMut.isPending;
 
   if (!multiCompany) {
     return (
@@ -254,8 +254,9 @@ export function ClientsPage() {
     setDialogOpen(true);
   }
 
+  /** F-C — clientul nou are pagina lui, în pași; dialogul de aici a rămas doar pentru editare, până la F-D. */
   function openCreate() {
-    fillForm(null);
+    navigate("/clienti/nou");
   }
 
   function openEdit(c: Company) {
@@ -327,13 +328,9 @@ export function ClientsPage() {
       transportLicenseExpiry: profile.transportLicenseExpiry || null,
     };
     try {
-      if (editing) {
-        await updateMut.mutateAsync({ id: editing.id, input });
-        notify(t.updated, "success");
-      } else {
-        await createMut.mutateAsync(input);
-        notify(t.created, "success");
-      }
+      if (!editing) return;
+      await updateMut.mutateAsync({ id: editing.id, input });
+      notify(t.updated, "success");
       setDialogOpen(false);
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");

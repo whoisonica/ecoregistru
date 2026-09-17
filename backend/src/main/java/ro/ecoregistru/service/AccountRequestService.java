@@ -112,49 +112,22 @@ public class AccountRequestService {
     public CompanyResponse approve(UUID id) {
         AccountRequest request = require(id);
         requirePending(request);
+        return approveAs(request, answersOf(request));
+    }
 
-        CompanyResponse created = companyService.create(new CompanyRequest(
-                request.getCompanyName(),
-                request.getCui(),
-                request.getCompanyType(),
-                false, // the AFM obligation is a determination, not a form answer
-                request.getEnvironmentalAuthNumber(),
-                request.getEnvironmentalAuthExpiry(),
-                request.getCompanyAddress(),
-                request.getContactName(),
-                request.getContactEmail(),
-                request.getContactPhone(),
-                request.getOperationCodes(),
-                request.getMarketRoles(), // producător / importator / comerciant, as answered
-                // Which AFM contributions are owed is a determination, like the flag above: the
-                // intake form does not ask it, and support fills it in with the client.
-                Set.of(),
-                Set.of(), // the free-text waste codes are mapped by hand; nothing is guessed here
-                request.getTransportMeans(),
-                request.getTransportLicenseNumber(),
-                request.getTransportLicenseExpiry(),
-                null,   // trade register number: not asked on the intake form
-                null,   // Anexa 3 series: set later, when the client has a form pad
-                // Which table of anexa 3 ambalaje applies is not asked at intake either: it is a
-                // legal quality (Ordinul 794/2012 art. 4 alin. (1)), it only concerns operators who
-                // take packaging waste over from third parties, and putting it on a form every
-                // generator fills in would ask most clients a question that does not apply to them.
-                // Filled in with the client afterwards; until then no anexa 3 prints.
-                null,
-                request.getCaenCode(),      // both rubrics of the annual declaration's header,
-                null,   // Anexa 3 unit: not asked at intake — the form pad decides it, and an
-                        // unanswered setting keeps printing the unit of the movement
-                request.getContactRole(), // asked once at intake and copied, never retyped
-                // The designated waste manager is not asked on the intake form. It is a legal
-                // obligation (OUG 92/2021 art. 23 alin. (4)), not a preference, and often the
-                // consultant themselves — so it is filled in with the client afterwards, in
-                // Setări, rather than guessed from the contact person, who is somebody else.
-                // Until then the audit dossier says out loud that it is missing.
-                null, null, null, null,
-                // Nor is the building-permit question (art. 49 alin. (9)): it decides whether an
-                // alert is sent, so it is answered by someone, never defaulted. Null until then,
-                // which generates nothing — the rule of ReportType.
-                null));
+    /**
+     * F-C — the same approval, with the company as support checked it in the „Client nou” steps: the answers were
+     * the starting point there, and what was corrected on the way (the CUI, the ANAF address) is what gets saved.
+     */
+    @Transactional
+    public CompanyResponse approve(UUID id, CompanyRequest checked) {
+        AccountRequest request = require(id);
+        requirePending(request);
+        return approveAs(request, checked);
+    }
+
+    private CompanyResponse approveAs(AccountRequest request, CompanyRequest companyRequest) {
+        CompanyResponse created = companyService.create(companyRequest);
 
         Company company = companyRepository.getReferenceById(created.id());
         if (request.getWorkPointName() != null || request.getWorkPointAddress() != null) {
@@ -174,6 +147,52 @@ public class AccountRequestService {
         request.setCreatedCompany(company);
         stamp(request);
         return created;
+    }
+
+    /** The request's answers as a company, for an approval without the steps. */
+    private static CompanyRequest answersOf(AccountRequest request) {
+        return new CompanyRequest(
+            request.getCompanyName(),
+            request.getCui(),
+            request.getCompanyType(),
+            false, // the AFM obligation is a determination, not a form answer
+            request.getEnvironmentalAuthNumber(),
+            request.getEnvironmentalAuthExpiry(),
+            request.getCompanyAddress(),
+            request.getContactName(),
+            request.getContactEmail(),
+            request.getContactPhone(),
+            request.getOperationCodes(),
+            request.getMarketRoles(), // producător / importator / comerciant, as answered
+            // Which AFM contributions are owed is a determination, like the flag above: the
+            // intake form does not ask it, and support fills it in with the client.
+            Set.of(),
+            Set.of(), // the free-text waste codes are mapped by hand; nothing is guessed here
+            request.getTransportMeans(),
+            request.getTransportLicenseNumber(),
+            request.getTransportLicenseExpiry(),
+            null,   // trade register number: not asked on the intake form
+            null,   // Anexa 3 series: set later, when the client has a form pad
+            // Which table of anexa 3 ambalaje applies is not asked at intake either: it is a
+            // legal quality (Ordinul 794/2012 art. 4 alin. (1)), it only concerns operators who
+            // take packaging waste over from third parties, and putting it on a form every
+            // generator fills in would ask most clients a question that does not apply to them.
+            // Filled in with the client afterwards; until then no anexa 3 prints.
+            null,
+            request.getCaenCode(),      // both rubrics of the annual declaration's header,
+            null,   // Anexa 3 unit: not asked at intake — the form pad decides it, and an
+                    // unanswered setting keeps printing the unit of the movement
+            request.getContactRole(), // asked once at intake and copied, never retyped
+            // The designated waste manager is not asked on the intake form. It is a legal
+            // obligation (OUG 92/2021 art. 23 alin. (4)), not a preference, and often the
+            // consultant themselves — so it is filled in with the client afterwards, in
+            // Setări, rather than guessed from the contact person, who is somebody else.
+            // Until then the audit dossier says out loud that it is missing.
+            null, null, null, null,
+            // Nor is the building-permit question (art. 49 alin. (9)): it decides whether an
+            // alert is sent, so it is answered by someone, never defaulted. Null until then,
+            // which generates nothing — the rule of ReportType.
+            null);
     }
 
     @Transactional

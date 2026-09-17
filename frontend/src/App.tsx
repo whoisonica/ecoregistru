@@ -18,6 +18,7 @@ import { DeadlinesPage } from "@/pages/DeadlinesPage";
 import { AuditFilePage } from "@/pages/AuditFilePage";
 import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
+import { NewClientPage } from "@/pages/NewClientPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { BillingPage } from "@/pages/BillingPage";
 import { InvoicingPage } from "@/pages/InvoicingPage";
@@ -92,6 +93,15 @@ export default function App() {
             element={
               <AppShell needsTenant={false}>
                 <ClientsPage />
+              </AppShell>
+            }
+          />
+          {/* F-C — clientul nou în pași; tot fără firmă aleasă, ca lista din care pornește. */}
+          <Route
+            path="/clienti/nou"
+            element={
+              <AppShell needsTenant={false}>
+                <NewClientPage />
               </AppShell>
             }
           />

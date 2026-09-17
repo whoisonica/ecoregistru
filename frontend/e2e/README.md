@@ -1,5 +1,13 @@
 # Probe de interfaţă
 
+🆕 **17.09.2026 — proba 31 (`31-client-nou.mjs`), „Client nou” în pași (F-C)**: „Creează contul” pe o cerere duce la
+`/clienti/nou?cerere=` fără să creeze nimic; pașii au CUI-ul, numele, tipul și emailul din cerere; un CUI greșit oprește pasul 1;
+pasul 3 arată prețurile din grilă, prima factură 389 lei și adresa de la pasul 1, iar fără județ nu trece; la final rezumatul
+numește abonamentul și invitația, firma are abonamentul cu adresa aleasă și 1 utilizator, cererea e aprobată; o invitație pe
+un email cu cont (`admin@demo.ro`) arată eroarea și **nu lasă firma**; tasta N duce la `/clienti/nou`; 375px fără derulare;
+administratorul firmei primește 403 pe `/companies/onboard`. Probele 23 și 30 caută acum pagina, nu dialogul. **Negativă:** cu
+cheia formularului pe cererea găsită (nu pe adresă), rezumatul dispare după salvare → 3 căderi. Lasă în urmă „Proba 31 <număr>”.
+
 🗂️ **17.09.2026 — F-B2: probele 29 și 30 pe taburi și pe paginarea de pe server.** Proba 30 cere trei taburi (Clienți, Cereri
 de cont, Cabinete), fără cereri și cabinete sub tabelul clienților, `tab=cereri` în adresă și păstrat la reîncărcare; caută după
 numărul rulării, nu după „Proba 30” (rulările vechi împingeau rândurile pe pagina a doua). Proba 29: Facturare pornește pe

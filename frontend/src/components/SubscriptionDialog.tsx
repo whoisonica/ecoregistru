@@ -18,6 +18,7 @@ import type {
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
+import { COUNTIES } from "@/lib/counties";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,15 +31,6 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 
 const t = strings.subscriptions;
 const COMPANY_PLANS: SubscriptionPlan[] = ["GENERATOR", "GENERATOR_PACKAGING", "FULL_SERVICE"];
-
-/** Nomenclatorul de județe al FGO (`/nomenclator/judet`), scris exact ca acolo, fără diacritice. */
-const COUNTIES = [
-  "Alba", "Arad", "Arges", "Bacau", "Bihor", "Bistrita-Nasaud", "Botosani", "Braila", "Brasov",
-  "Bucuresti", "Buzau", "Calarasi", "Caras-Severin", "Cluj", "Constanta", "Covasna", "Dambovita",
-  "Dolj", "Galati", "Giurgiu", "Gorj", "Harghita", "Hunedoara", "Ialomita", "Iasi", "Ilfov",
-  "Maramures", "Mehedinti", "Mures", "Neamt", "Olt", "Prahova", "Salaj", "Satu Mare", "Sibiu",
-  "Suceava", "Teleorman", "Timis", "Tulcea", "Valcea", "Vaslui", "Vrancea",
-];
 
 /** Ca pe `/abonament`: „Activ” era galben, ca o așteptare (P7 din todo-clienti-abonamente.md). */
 const STATUS_BADGE: Record<SubscriptionStatus, "muted" | "warning" | "success" | "danger"> = {

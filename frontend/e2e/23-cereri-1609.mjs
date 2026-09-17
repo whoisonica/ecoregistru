@@ -106,9 +106,10 @@ const add = ctx2.locator('button:has-text("Client nou")').first();
 if ((await add.count()) > 0) {
   await add.click();
   await ctx2.waitForTimeout(600);
-  const dialog = await ctx2.textContent('div[role="dialog"]');
+  // F-C: clientul nou e o pagină în pași, nu un dialog.
+  const dialog = await ctx2.textContent("main");
   check("fără „Economia circulară” la firmă nouă", !dialog.includes("Economia circulară"));
-  check("CUI-ul firmei are butonul ANAF", (await ctx2.locator('div[role="dialog"] button:has-text("Completează din ANAF")').count()) === 1);
+  check("CUI-ul firmei are butonul ANAF", (await ctx2.locator('main button:has-text("Completează din ANAF")').count()) === 1);
   await shot(ctx2, "23_firma_noua");
 } else {
   check("ecranul de firme are „Client nou”", false);

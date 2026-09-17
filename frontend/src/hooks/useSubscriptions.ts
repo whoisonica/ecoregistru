@@ -12,6 +12,8 @@ import type {
   Subscription,
   SubscriptionInput,
   SubscriptionOwner,
+  SubscriptionPlan,
+  SubscriptionPreview,
 } from "@/lib/types";
 
 /**
@@ -43,6 +45,30 @@ export function useSubscription(owner: SubscriptionOwner) {
       const res = await api.get<Subscription>(pathOf(owner));
       return res.status === 204 ? null : res.data;
     },
+  });
+}
+
+/**
+ * F-C — facturile unui abonament încă nesalvat, pentru pasul „Abonamentul”. Datele de facturare nu schimbă suma, deci
+ * nu intră în cheie.
+ */
+export function useSubscriptionPreview(plan: SubscriptionPlan, founder: boolean, startedAt: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["subscriptions", "preview", plan, founder, startedAt],
+    queryFn: async () =>
+      (
+        await api.post<SubscriptionPreview>("/api/v1/subscriptions/preview", {
+          plan,
+          founder,
+          startedAt,
+          billingEmail: null,
+          billingCounty: null,
+          billingCity: null,
+          billingAddress: null,
+        })
+      ).data,
+    enabled: enabled && /^\d{4}-\d{2}-\d{2}$/.test(startedAt),
+    staleTime: Infinity,
   });
 }
 

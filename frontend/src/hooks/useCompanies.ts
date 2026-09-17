@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { ClientOverview, Company, CompanyInput, CompanyUser, InviteUserInput, PriceVisibility } from "@/lib/types";
+import type {
+  ClientOverview,
+  Company,
+  CompanyInput,
+  CompanyUser,
+  InviteUserInput,
+  OnboardClientInput,
+  OnboardClientResult,
+  PriceVisibility,
+} from "@/lib/types";
 
 /**
  * Companies (tenants) — platform admin and consultant. The list drives the tenant switcher AND the
@@ -55,6 +64,23 @@ export function useCreateCompany() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: companiesKey });
       qc.invalidateQueries({ queryKey: clientOverviewKey });
+    },
+  });
+}
+
+/**
+ * F-C — „Client nou”: firma, cererea aprobată, abonamentul și invitația într-o singură cerere. Schimbă lista de firme,
+ * cererile și tot ce e sub „subscriptions” (tabelul Clienți, fondatorii).
+ */
+export function useOnboardClient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: OnboardClientInput) =>
+      (await api.post<OnboardClientResult>("/api/v1/companies/onboard", input)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: companiesKey });
+      qc.invalidateQueries({ queryKey: ["subscriptions"] });
+      qc.invalidateQueries({ queryKey: ["account-requests"] });
     },
   });
 }

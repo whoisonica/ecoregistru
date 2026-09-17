@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, Check, Eye, Inbox, X } from "lucide-react";
 import {
   useAccountRequests,
-  useApproveAccountRequest,
   useRejectAccountRequest,
 } from "@/hooks/useAccountRequests";
 import type { AccountRequest } from "@/lib/types";
@@ -16,7 +16,6 @@ import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Dialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,12 +95,11 @@ export function AccountRequestsSection({
   onOpenCompany?: (companyId: string) => void;
 }) {
   const { data: requests, isLoading, isError } = useAccountRequests(enabled);
-  const approveMut = useApproveAccountRequest();
+  const navigate = useNavigate();
   const rejectMut = useRejectAccountRequest();
   const { notify } = useToast();
 
-  const busy = approveMut.isPending || rejectMut.isPending;
-  const [confirm, confirmDialog] = useConfirm();
+  const busy = rejectMut.isPending;
   // Cererea pe cale de a fi respinsă, cu motivul care se scrie. `null` = dialogul e închis.
   const [rejecting, setRejecting] = useState<AccountRequest | null>(null);
   const [reason, setReason] = useState("");
@@ -109,26 +107,12 @@ export function AccountRequestsSection({
   const [viewing, setViewing] = useState<AccountRequest | null>(null);
 
   /**
-   * Aprobarea creează o firmă reală și nu se poate desface: nu există ștergere de firmă, iar
-   * cererea rămâne pe veci ca urmă de hârtie. Ștergerea unei mișcări întreabă de mult, cu
-   * identitatea rândului în întrebare; asta nu întreba nimic, deși e fapta cu urmări mai mari.
+   * F-C — aprobarea trece prin pașii clientului nou, cu răspunsurile cererii deja puse: acolo se verifică CUI-ul și
+   * adresa de la ANAF și se pun abonamentul și administratorul, toate salvate împreună. Confirmarea de dinainte nu mai
+   * trebuie: nimic nu se creează până la ultimul pas.
    */
   function handleApprove(r: AccountRequest) {
-    confirm({
-      title: t.confirmApproveTitle,
-      message: (
-        <>
-          <strong className="text-content">{r.companyName}</strong>
-          {r.cui ? ` — CUI ${r.cui}` : ""}. {t.confirmApprove}
-        </>
-      ),
-      confirmLabel: t.approve,
-      onConfirm: () =>
-        approveMut.mutate(r.id, {
-          onSuccess: () => notify(t.approved, "success"),
-          onError: (err) => notify(apiErrorMessage(err, t.actionError), "error"),
-        }),
-    });
+    navigate(`/clienti/nou?cerere=${r.id}`);
   }
 
   function openReject(r: AccountRequest) {
@@ -458,7 +442,6 @@ export function AccountRequestsSection({
         </div>
       </Dialog>
 
-      {confirmDialog}
     </section>
   );
 }

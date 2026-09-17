@@ -154,8 +154,9 @@ check("după invitație, utilizatorii firmei sunt 1", usersCell === "1", usersCe
 await page.mouse.click(5, 5);
 await page.keyboard.press("n");
 await page.waitForTimeout(500);
-check("tasta N deschide firma nouă", /Adaugă firmă/.test((await page.textContent('div[role="dialog"]').catch(() => "")) ?? ""));
-await page.keyboard.press("Escape");
+// F-C: clientul nou are pagina lui, în pași (proba 31).
+check("tasta N deschide clientul nou", new URL(page.url()).pathname === "/clienti/nou", page.url());
+await page.goto(BASE + "/clienti", { waitUntil: "networkidle" });
 
 // ---------------------------------------------------------------- tabelul încape la 1440
 if (searchable) {
