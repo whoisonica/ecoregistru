@@ -74,6 +74,8 @@ public enum ErrorMessageEnum {
     INVOICE_NOT_DISCARDABLE("invoice.not.discardable", "Se poate renunța doar la o factură pe care FGO a refuzat-o. Una emisă rămâne în FGO."),
     FGO_NOT_CONFIGURED("fgo.not.configured", "Facturarea e oprită: lipsesc cheile FGO pe server."),
     FGO_UNAVAILABLE("fgo.unavailable", "FGO n-a răspuns acum. Încearcă din nou peste un minut."),
+    // Scanarea din 17.09.2026: după o verificare căzută, clientul nu mai poate întreba FGO din nou pe loc.
+    FGO_RECENTLY_ASKED("fgo.recently.asked", "Am întrebat FGO acum câteva clipe și n-a răspuns. Încearcă din nou peste două minute."),
     INVOICE_NOT_PAYABLE("invoice.not.payable", "Factura e deja plătită sau nu e încă emisă."),
     CARD_PAYMENT_UNAVAILABLE("card.payment.unavailable", "Plata cu cardul nu e disponibilă acum. Poți plăti prin transfer, în contul de pe factură, sau încearcă mai târziu."),
     // F4, §9.3 — oprirea.

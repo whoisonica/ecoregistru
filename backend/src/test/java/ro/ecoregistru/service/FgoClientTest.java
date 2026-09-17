@@ -195,4 +195,57 @@ class FgoClientTest {
         server.verify();
     }
 
+
+    /** Scanarea din 17.09.2026: clientul nu reîncearcă un 409 (o cerere, nu trei, cu pauzele lor). */
+    @Test
+    void theClientsCheckAsksOnceOnAConflict() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://fgo.test/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        FgoClient fgo = client(builder);
+        server.expect(requestTo("https://fgo.test/v1/factura/getstatus"))
+                .andRespond(withStatus(HttpStatus.CONFLICT).body("<html>conflict</html>").contentType(MediaType.TEXT_HTML));
+
+        assertThatThrownBy(() -> fgo.statusForClient("WH", "6"))
+                .isInstanceOf(FgoClient.FgoException.class)
+                .isNotInstanceOf(FgoClient.FgoBusyException.class)
+                .hasMessageContaining("HTTP 409");
+        server.verify();
+    }
+
+    /** Cu lacătul ținut de rularea de dimineață, clientul primește „ocupat” după câteva secunde, fără cerere. */
+    @Test
+    void theClientsCheckDoesNotQueueBehindABusyCall() throws Exception {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://fgo.test/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        FgoClient fgo = client(builder);
+        java.util.concurrent.CountDownLatch inside = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        server.expect(requestTo("https://fgo.test/v1/factura/getstatus"))
+                .andRespond(request -> {
+                    inside.countDown();
+                    try {
+                        release.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return withSuccess("""
+                            {"Success":true,"Factura":{"Numar":"6","Serie":"WH","Valoare":"389.00","ValoareAchitata":"0"}}
+                            """, MediaType.APPLICATION_JSON).createResponse(request);
+                });
+        Thread run = new Thread(() -> fgo.status("WH", "6"));
+        run.start();
+        inside.await();
+
+        long started = System.currentTimeMillis();
+        try {
+            org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(
+                    java.time.Duration.ofMillis(FgoClient.CLIENT_LOCK_WAIT_MS + 2_000),
+                    () -> assertThatThrownBy(() -> fgo.statusForClient("WH", "7"))
+                            .isInstanceOf(FgoClient.FgoBusyException.class));
+        } finally {
+            release.countDown();
+        }
+        assertThat(System.currentTimeMillis() - started).isLessThan(FgoClient.CLIENT_LOCK_WAIT_MS + 2_000);
+        run.join();
+    }
 }

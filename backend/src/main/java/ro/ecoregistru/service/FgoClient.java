@@ -24,6 +24,8 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The FGO invoicing API v7 (<a href="https://api-testuat.fgo.ro/v1/testing.html">documentation</a>),
@@ -49,6 +51,13 @@ public class FgoClient {
         }
     }
 
+    /** Lacătul FGO n-a fost liber la timp pentru o cerere a clientului; nu s-a întrebat nimic. */
+    public static class FgoBusyException extends FgoException {
+        public FgoBusyException() {
+            super("FGO e ocupat cu altă cerere");
+        }
+    }
+
     public static class FgoException extends RuntimeException {
         public FgoException(String message) {
             super(message);
@@ -69,6 +78,13 @@ public class FgoClient {
     private final long minIntervalMs;
     private final String tipIncasareCard;
     private static final int CONFLICT_ATTEMPTS = 3;
+    /**
+     * Cât așteaptă „Am plătit — verifică acum” după lacătul FGO. Rularea de la 06:30 și butoanele platformei
+     * așteaptă cât e nevoie; clientul nu: un apel ocupat poate ține lacătul peste un minut (30 s de citire, de trei
+     * ori, cu pauzele la 409), iar cererile lui s-ar strânge în spatele lui peste limita de 30 s a Heroku.
+     */
+    static final long CLIENT_LOCK_WAIT_MS = 5_000;
+    private final ReentrantLock lock = new ReentrantLock();
     private long lastCallAt;
 
     @Autowired
@@ -164,6 +180,18 @@ public class FgoClient {
     }
 
     public Status status(String invoiceSerie, String invoiceNumar) {
+        return status(invoiceSerie, invoiceNumar, false);
+    }
+
+    /**
+     * Aceeași citire, cerută de client de pe {@code /abonament}: o singură încercare, și numai dacă lacătul se
+     * eliberează în {@link #CLIENT_LOCK_WAIT_MS}. Altfel {@link FgoBusyException}, iar clientul reîncearcă.
+     */
+    public Status statusForClient(String invoiceSerie, String invoiceNumar) {
+        return status(invoiceSerie, invoiceNumar, true);
+    }
+
+    private Status status(String invoiceSerie, String invoiceNumar, boolean client) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("CodUnic", codUnic);
         body.put("Hash", hash(codUnic, privateKey, invoiceNumar));
@@ -172,7 +200,9 @@ public class FgoClient {
         body.put("Numar", invoiceNumar);
         JsonNode invoice;
         try {
-            invoice = post("/factura/getstatus", body).path("Factura");
+            invoice = post("/factura/getstatus", body, client).path("Factura");
+        } catch (FgoBusyException e) {
+            throw e;
         } catch (FgoException e) {
             throw new FgoException(invoiceSerie + " " + invoiceNumar + ": " + e.getMessage());
         }
@@ -211,7 +241,11 @@ public class FgoClient {
 
     /** FGO answers errors with a JSON body and {@code Success: false}, sometimes on a 4xx: read both. */
     private JsonNode post(String path, Map<String, Object> body) {
-        JsonNode response = send(path, body);
+        return post(path, body, false);
+    }
+
+    private JsonNode post(String path, Map<String, Object> body, boolean client) {
+        JsonNode response = client ? sendForClient(path, body) : send(path, body);
         if (!response.path("Success").asBoolean(false)) {
             throw failure(path, response);
         }
@@ -225,12 +259,40 @@ public class FgoClient {
      * Heroku it came on a lone getstatus minutes after any other call of ours (17.09.2026) — the egress
      * IP is shared. The page is refused before anything is done, so the call is simply asked again.
      */
-    private synchronized JsonNode send(String path, Map<String, Object> body) {
+    private JsonNode send(String path, Map<String, Object> body) {
+        lock.lock();
+        try {
+            return sendLocked(path, body, CONFLICT_ATTEMPTS);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /** Scanarea din 17.09.2026: clientul nu stă la coadă după lacăt și nu reîncearcă un 409 — reîncearcă el. */
+    private JsonNode sendForClient(String path, Map<String, Object> body) {
+        boolean locked;
+        try {
+            locked = lock.tryLock(CLIENT_LOCK_WAIT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            locked = false;
+        }
+        if (!locked) {
+            throw new FgoBusyException();
+        }
+        try {
+            return sendLocked(path, body, 1);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private JsonNode sendLocked(String path, Map<String, Object> body, int attempts) {
         for (int attempt = 1; ; attempt++) {
             try {
                 return sendOnce(path, body);
             } catch (Conflict e) {
-                if (attempt >= CONFLICT_ATTEMPTS) {
+                if (attempt >= attempts) {
                     throw new FgoException(e.getMessage());
                 }
                 // Three intervals, then six: well past the one-a-second FGO asks for.

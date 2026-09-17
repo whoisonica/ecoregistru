@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.Objects;
+import java.util.Map;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * F2 of plata-abonamente.md — the daily invoicing run, by bank transfer.
@@ -203,6 +205,10 @@ public class BillingRunService {
      * again at once: a paid invoice lifts PAST_DUE without waiting for 06:30.
      */
     public void checkPayment(UUID invoiceId, LocalDate today) {
+        checkPayment(invoiceId, today, false);
+    }
+
+    private void checkPayment(UUID invoiceId, LocalDate today, boolean client) {
         if (!fgo.isConfigured()) {
             throw new ServiceUnavailableException(ErrorMessageEnum.FGO_NOT_CONFIGURED);
         }
@@ -213,7 +219,9 @@ public class BillingRunService {
         }
         FgoClient.Status status;
         try {
-            status = fgo.status(snapshot.getFgoSerie(), snapshot.getFgoNumar());
+            status = client
+                    ? fgo.statusForClient(snapshot.getFgoSerie(), snapshot.getFgoNumar())
+                    : fgo.status(snapshot.getFgoSerie(), snapshot.getFgoNumar());
         } catch (RuntimeException e) {
             log.warn("Plata facturii {} n-a putut fi citită din FGO: {}", invoiceId, e.getMessage());
             throw new ServiceUnavailableException(ErrorMessageEnum.FGO_UNAVAILABLE);
@@ -229,9 +237,17 @@ public class BillingRunService {
     static final Duration CLIENT_CHECK_PAUSE = Duration.ofMinutes(2);
 
     /**
+     * Când a întrebat clientul ultima oară FGO, pe factură — reușit sau nu. {@code paymentCheckedAt} se scrie doar
+     * după un răspuns, deci cu FGO căzut sau pe 409 pauza nu ținea și fiecare clic mai punea o cerere la coadă
+     * (scanarea din 17.09.2026). În memorie, dinadins: e o frână, nu o evidență, și un dyno repornit o poate uita.
+     */
+    final Map<UUID, Instant> clientAttempts = new ConcurrentHashMap<>();
+
+    /**
      * F-E — „Am plătit — verifică acum” on {@code /abonament}: the same check, on an invoice of the account's
      * own subscription only. Asked again within {@link #CLIENT_CHECK_PAUSE} of the last reading (the run's
-     * or a click's), FGO is not asked: the page shows when it was read.
+     * or a click's), FGO is not asked: the page shows when it was read. Within the same pause after an attempt
+     * that got no answer, FGO is not asked either, and the client is told to come back.
      */
     public void checkPaymentForAccount(AppUser user, UUID tenantId, UUID invoiceId, LocalDate today) {
         Instant lastChecked = tx.execute(status -> {
@@ -244,10 +260,24 @@ public class BillingRunService {
                     .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.INVOICE_NOT_FOUND));
             return invoice.getPaymentCheckedAt();
         });
-        if (lastChecked != null && lastChecked.isAfter(Instant.now().minus(CLIENT_CHECK_PAUSE))) {
+        Instant now = Instant.now();
+        Instant cutoff = now.minus(CLIENT_CHECK_PAUSE);
+        if (lastChecked != null && lastChecked.isAfter(cutoff)) {
             return;
         }
-        checkPayment(invoiceId, today);
+        clientAttempts.values().removeIf(at -> !at.isAfter(cutoff));
+        boolean[] mine = {false};
+        clientAttempts.compute(invoiceId, (id, previous) -> {
+            if (previous != null && previous.isAfter(cutoff)) {
+                return previous;
+            }
+            mine[0] = true;
+            return now;
+        });
+        if (!mine[0]) {
+            throw new ServiceUnavailableException(ErrorMessageEnum.FGO_RECENTLY_ASKED);
+        }
+        checkPayment(invoiceId, today, true);
     }
 
     private int reserveDue(LocalDate today) {

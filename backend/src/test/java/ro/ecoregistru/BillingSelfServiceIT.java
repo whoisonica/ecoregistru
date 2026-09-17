@@ -92,6 +92,7 @@ class BillingSelfServiceIT {
         when(fgo.emit(any(), any(), any(), any(), any(), any())).thenAnswer(inv -> new FgoClient.Issued("WH",
                 inv.<String>getArgument(0).substring(0, 8), "https://fgo.test/x.pdf", null));
         when(fgo.status(any(), any())).thenReturn(new FgoClient.Status(new BigDecimal("389"), BigDecimal.ZERO));
+        when(fgo.statusForClient(any(), any())).thenReturn(new FgoClient.Status(new BigDecimal("389"), BigDecimal.ZERO));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -274,7 +275,7 @@ class BillingSelfServiceIT {
         Company company = company();
         Subscription s = subscription(company);
         SubscriptionInvoice invoice = issuedAnHourAgo(s);
-        when(fgo.status(any(), eq(invoice.getFgoNumar())))
+        when(fgo.statusForClient(any(), eq(invoice.getFgoNumar())))
                 .thenReturn(new FgoClient.Status(new BigDecimal("389"), new BigDecimal("389")));
         clearInvocations(fgo);
 
@@ -282,7 +283,8 @@ class BillingSelfServiceIT {
                         .header("Authorization", "Bearer " + token(admin(company))))
                 .andExpect(status().isNoContent());
 
-        verify(fgo, times(1)).status(any(), any());
+        verify(fgo, times(1)).statusForClient(any(), any());
+        verify(fgo, never()).status(any(), any());
         mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(admin(company))))
                 .andExpect(jsonPath("$.invoices[0].status", is("PAID")))
                 .andExpect(jsonPath("$.invoices[0].paymentCheckedAt").exists());
@@ -302,9 +304,37 @@ class BillingSelfServiceIT {
                     .andExpect(status().isNoContent());
         }
 
-        verify(fgo, times(1)).status(any(), any());
+        verify(fgo, times(1)).statusForClient(any(), any());
         assertThat(invoiceRepository.findById(invoice.getId()).orElseThrow().getStatus())
                 .isEqualTo(InvoiceStatus.ISSUED);
+    }
+
+    /**
+     * Scanarea din 17.09.2026: cu FGO căzut (409, timeout), `paymentCheckedAt` nu se scrie, deci pauza nu ținea și
+     * fiecare clic punea încă o cerere la coadă. Acum încercarea însăși oprește următoarea, două minute.
+     */
+    @Test
+    void afterACheckFgoDidNotAnswerTheNextClickDoesNotAskAgain() throws Exception {
+        Company company = company();
+        SubscriptionInvoice invoice = issuedAnHourAgo(subscription(company));
+        when(fgo.statusForClient(any(), eq(invoice.getFgoNumar())))
+                .thenThrow(new FgoClient.FgoException("HTTP 409, conflict"));
+        clearInvocations(fgo);
+        String token = token(admin(company));
+
+        mockMvc.perform(post("/api/v1/billing/invoices/" + invoice.getId() + "/check-payment")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$['error-code']", is("fgo.unavailable")));
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/v1/billing/invoices/" + invoice.getId() + "/check-payment")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$['error-code']", is("fgo.recently.asked")));
+        }
+
+        verify(fgo, times(1)).statusForClient(any(), any());
+        verify(fgo, never()).status(any(), any());
     }
 
     /** Factura altei firme nu există pentru client: 404, nu 403, și FGO nu e întrebat. */
