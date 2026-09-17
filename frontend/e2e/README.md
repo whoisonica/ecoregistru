@@ -1,3 +1,14 @@
+🔓 **17.09.2026 — proba 37 (`37-deconectare-cache.mjs`), deconectarea golește cache-ul**: platforma se deconectează, un consultant
+intră în același tab fără reîncărcare, iar selectorul de firme îi arată doar firmele cabinetului lui (înainte rămânea lista platformei,
+din React Query, cu firme pe care le putea și alege). Consultantul se scrie cu `psql` (`E2E_DB`). **Negativă:** fără `queryClient.clear()`
+în `AuthContext` → consultantul vede toate firmele. Lasă în urmă „Proba 37 Cabinet <număr>”, „Proba 37 <număr>” și `consultant37-<număr>@demo.ro`.
+
+🧾 **17.09.2026 seara — scanarea codului (BUG-025, BUG-028):** „Am plătit — verifică acum” răspunde tot fără FGO pe o plată citită în
+ultimele 2 minute (proba 36 o cere), iar fără cheile FGO spune „lipsesc cheile” la fiecare clic; după o încercare la care FGO n-a
+răspuns, serverul nu mai întreabă 2 minute (`fgo.recently.asked`) — apărat în `BillingSelfServiceIT`, nu pe ecran (în dev FGO n-are
+chei). Un județ din afara nomenclatorului FGO e refuzat și de server (`billing.county.invalid`). Rulate pe `eco_e2e_scanfix`, stivă
+proprie 8097/5197: **36, 31, 29, 33, 30 verzi**.
+
 💳 **17.09.2026 — proba 36 (`36-abonament-client.mjs`), `/abonament` la client (F-E)**: pe o firmă nouă, cu o factură restantă de
 6 zile (389 lei) și una care vine (99,50 lei), blocul de sus e un bon: „Restantă de 6 zile”, câte un rând pe factură (cea veche întâi, cu perioada, scadența, starea și suma), totalul 488,50 sub linia groasă și „Ultima verificare: azi, HH:MM”;
 transferul are beneficiarul, CUI-ul, IBAN-ul și banca din contract, suma „488,50” și detaliile „WH a, WH b”, iar „Copiază” pune
