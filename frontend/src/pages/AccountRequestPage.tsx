@@ -6,7 +6,16 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { isValidCui } from "@/lib/cui";
+import {
+  asksMarketRoles as asksMarketRolesOf,
+  asksTransport as asksTransportOf,
+  mayLackEnvAuth as mayLackEnvAuthOf,
+  skipsEnvAuth as skipsEnvAuthOf,
+  stepOf,
+  validate as validateValues,
+  type FieldErrors,
+  type Step,
+} from "@/components/account-request/accountRequestRules";
 import { cn, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,32 +65,6 @@ const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
 /** Aceeași formă pe care o cere `CompanyService` la crearea firmei din cerere. */
-/** Deliberat larg: validarea de email a browserului respinge deja ce e evident stricat. */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-type FieldErrors = Partial<
-  Record<
-    | "companyName"
-    | "cui"
-    | "companyAddress"
-    | "caenCode"
-    | "workPointName"
-    | "workPointAddress"
-    | "authNumber"
-    | "authExpiry"
-    | "transportMeans"
-    | "transportLicenseNumber"
-    | "transportLicenseExpiry"
-    | "contactName"
-    | "contactEmail"
-    | "contactPhone"
-    | "contactRole"
-    | "marketRoles",
-    string
-  >
->;
-type Step = 1 | 2 | 3 | 4;
-
 /**
  * The intake form — the only public page besides login, and the only way into a closed register.
  * Submitting it creates a request, not an account: support reads the answers and creates the
@@ -252,74 +235,15 @@ export function AccountRequestPage() {
     setOperationCodes([]);
   }
 
-  // Only a business that takes waste from third parties has transport to declare.
-  const asksTransport = companyType !== "GENERATOR";
-  // Doar cine generează are „tipul de generator” (producător / importator / comerciant).
-  const asksMarketRoles = companyType !== "COLLECTOR";
-  /** Bifa „n-avem nevoie de autorizație” există doar la generatorul pur; colectorul are întotdeauna. */
-  const mayLackEnvAuth = companyType === "GENERATOR";
-  const skipsEnvAuth = mayLackEnvAuth && noEnvAuth;
+  // Derivatele din tipul firmei: aceleași reguli pe care le citește și validarea, dintr-un singur loc
+  // (`accountRequestRules.ts`) — ecranul ascunde exact ce validarea nu mai cere.
+  const asksTransport = asksTransportOf(companyType);
+  const asksMarketRoles = asksMarketRolesOf(companyType);
+  const mayLackEnvAuth = mayLackEnvAuthOf(companyType);
+  const skipsEnvAuth = skipsEnvAuthOf({ companyType, noEnvAuth });
 
-  /**
-   * Rubricile obligatorii ale unui pas; `undefined` = toate (la trimitere). Aproape totul e
-   * obligatoriu (proprietarul, 16.09.2026): ce lipsea cerea un telefon la aprobare. Rămân libere
-   * doar textele („alte deșeuri”, observațiile) și lista de deșeuri, unde golul e un răspuns.
-   */
-  function validate(only?: Step): FieldErrors {
-    const errs: FieldErrors = {};
-    const need = (value: string, key: keyof FieldErrors, message: string = t.errRequired) => {
-      if (!value.trim()) errs[key] = message;
-    };
-    if (only === undefined || only === 1) {
-      need(companyName, "companyName", t.errCompanyName);
-      const normalizedCui = cui.replace(/\s/g, "").toUpperCase();
-      if (!normalizedCui) errs.cui = t.errCui;
-      else if (!isValidCui(normalizedCui)) errs.cui = t.errCuiFormat;
-      need(companyAddress, "companyAddress");
-      need(caenCode, "caenCode");
-    }
-    if (only === undefined || only === 2) {
-      need(workPointName, "workPointName");
-      need(workPointAddress, "workPointAddress");
-      if (!skipsEnvAuth) {
-        need(authNumber, "authNumber");
-        need(authExpiry, "authExpiry", t.errRequiredDate);
-      }
-      if (asksTransport) {
-        need(transportMeans, "transportMeans");
-        need(transportLicenseNumber, "transportLicenseNumber");
-        need(transportLicenseExpiry, "transportLicenseExpiry", t.errRequiredDate);
-      }
-    }
-    if (only === undefined || only === 3) {
-      need(contactName, "contactName");
-      need(contactPhone, "contactPhone");
-      need(contactRole, "contactRole");
-      if (!contactEmail.trim()) errs.contactEmail = t.errContactEmail;
-      else if (!EMAIL_PATTERN.test(contactEmail.trim())) errs.contactEmail = t.errContactEmailFormat;
-    }
-    if (only === undefined || only === 4) {
-      if (asksMarketRoles && marketRoles.length === 0) errs.marketRoles = t.errMarketRoles;
-    }
-    return errs;
-  }
-
-  /** Pe ce pas stă o rubrică greșită — ca trimiterea să ducă omul înapoi la ea, nu doar s-o marcheze. */
-  function stepOf(errs: FieldErrors): Step {
-    if (errs.companyName || errs.cui || errs.companyAddress || errs.caenCode) return 1;
-    if (
-      errs.workPointName ||
-      errs.workPointAddress ||
-      errs.authNumber ||
-      errs.authExpiry ||
-      errs.transportMeans ||
-      errs.transportLicenseNumber ||
-      errs.transportLicenseExpiry
-    )
-      return 2;
-    if (errs.contactName || errs.contactEmail || errs.contactPhone || errs.contactRole) return 3;
-    return 4;
-  }
+  /** Rubricile obligatorii ale unui pas; fără argument, toate (la trimitere). */
+  const validate = (only?: Step): FieldErrors => validateValues(draftValues, only);
 
   /**
    * După ce randarea a pus semnele pe rubrici, du ochiul la prima. `data-invalid` e cârligul,
