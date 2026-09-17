@@ -8,6 +8,18 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 16:43 — ✅ pe producție: Setările pe carduri, fiecare secțiune pe pagina ei** (`ecoregistru-app` **v110**, `ad3a0f2`; api neatins, rămâne **v119** cu F-C al tabului paralel; monorepo `59f2beb`).
+> Proprietarul: tabul Setări „nu e deloc intuitiv și nici user friendly”. Pagina lungă (până la zece tabele, cuprins lipicios, butonul din cap
+> adăuga un punct de lucru) devine **`/setari`**: carduri pe grupuri — **Firma** (Datele firmei, Puncte de lucru, Generatori interni),
+> **Echipa** (Utilizatori, Jurnal de audit; doar cine administrează), **Transport** (Șoferi; Flota la art. 48), **Depozit** (Prețuri, Sortimente;
+> doar art. 48) — fiecare cu starea pe scurt (autorizația valabilă / expirată / necompletată, câte active, invitațiile în așteptare). Cardul duce
+> la **`/setari/<secțiune>`**, cu „← Setări” și butoanele secțiunii în cardul ei; N adaugă punct de lucru doar pe pagina lui. Legăturile vechi
+> (`/setari#soferi`, `?istoric=…#jurnal-audit`) se redirecționează; „Primii pași”, Acasă și „Istoric” trimit direct la paginile noi. Alegerea
+> s-a făcut pe machete (artifact „Setări WasteHouse — machete”, variantele A–D; proprietarul a ales C).
+> Probe: `tsc` curat, `npm test` 37/37; e2e 1, 5, 7, 9, 11, 15, 16, 20, 21, 22, 24 verzi pe `eco_e2e_clienti` (1, 7, 9, 15, 22 adaptate; 20 și 21
+> rămân pe ancore și apără redirectul — **negativă:** fără redirect, 21 cade). Garda `deploy-split.sh frontend`: exact cele două commituri; bundle-ul
+> servit are „Autorizație valabilă până la”, `/setari/utilizatori` → 200.
+
 > **17.09.2026, 15:37 — ✅ pe producție: tabelul Clienți ca tablou de lucru (F-B), panoul „Firmele mele” după ultimul termen al anului, scripturile curățeniei și ale demo-ului** (`ecoregistru-api` **v117**, `1c9d53b`, fără migrare, schema rămâne **V63**; `ecoregistru-app` **v107**, `32347ab`; monorepo `99425e8`).
 > **(1) F-B** (`072a18e`): `GET /api/v1/companies/overview` (`MULTI_COMPANY`, 5 interogări oricât de lungă e lista; consultantul fără bani) —
 > cifrele de sus, filtrele (Cer atenție, Fără abonament, Restanți, Emitere căzută, Fără utilizatori, Cabinete), coloanele Abonament / Ultima

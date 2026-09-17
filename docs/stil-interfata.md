@@ -92,7 +92,7 @@ listei; `[` strânge panoul. Tastele tac în câmpuri de text (`useHotkey`).
 | `PillGroup` | Răspunsuri scurte ca **taste**: cea apăsată e grafit cu text alb. Codul oficial stă mic lângă cuvinte |
 | `Switch` | Un da/nu cu o propoziție |
 | `Stepper` | Un formular împărțit pe întrebări. **Împarte, nu rearanjează** ordinea rubricilor |
-| `SectionNav` | Cuprinsul unei pagini lungi, ca taste; secțiunea curentă e grafit |
+| `SectionNav` | Cuprinsul unei pagini lungi, ca taste; secțiunea curentă e grafit (Ambalaje). **Nu** în Setări: acolo pagina de start are carduri pe grupuri, cu starea pe scurt, iar fiecare secțiune stă pe `/setari/<id>` (17.09.2026) |
 | `Menu`, `MenuItem` | Un buton cu listă (descărcări, acțiunile rândului) |
 | `Tooltip` | Orice explicație la cerere, pe grafit. **Niciodată `title=`**; și niciodată în jurul unui `Button` — bula își randează propriul buton |
 | `Toast` | Mesaje scurte, pe grafit, ca de la aparat |
