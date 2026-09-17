@@ -2316,14 +2316,13 @@ export const strings = {
     none: "Contul ăsta n-are un abonament de plătit. Dacă firma e gestionată de un cabinet de consultanță, abonamentul e al cabinetului.",
     loadError: "Nu am putut încărca abonamentul.",
     // F-E — afișajul de sus
-    dueBy: "De plată până pe {date}",
+    dueTitle: "De plată",
+    dueBy: "Până pe {date}",
     overdueBy: "Restantă de {count}",
     dayOne: "zi",
     dayMany: "zile",
     paidUp: "Totul e plătit",
     lei: "lei",
-    dueInvoices: "Factura {numbers}",
-    dueInvoicesMany: "Facturile {numbers}",
     nextInvoiceOn: "Următoarea factură pe {date}, cam {total}.",
     firstInvoiceOn: "Prima factură se emite pe {date}: {total}.",
     howCalculated: "Cum s-a calculat",
@@ -2333,7 +2332,9 @@ export const strings = {
     endsOn: "Abonamentul e oprit: ultima zi facturată e {date}. După ea contul rămâne doar pentru citire.",
     // F-E — „Am plătit”
     checkPayment: "Am plătit — verifică acum",
-    checkPaymentHint: "Verificăm acum dacă plata a ajuns, fără să aștepți verificarea de dimineață.",
+    checkPaymentHint: "Ai plătit prin transfer? Verificăm pe loc, fără să aștepți verificarea de dimineață.",
+    lastChecked: "Ultima verificare: {when}.",
+    todayWord: "azi",
     checkedPaid: "Plata a ajuns. Mulțumim!",
     checkedNotYet:
       "Verificat la {time}: plata nu a ajuns încă. Un transfer ajunge de obicei în una-două zile lucrătoare; nu plăti a doua oară.",

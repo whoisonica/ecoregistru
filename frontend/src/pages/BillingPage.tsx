@@ -112,7 +112,7 @@ function Account({ account, today }: { account: BillingAccount; today: string })
       )}
 
       <div className={cn("mt-6 grid grid-cols-1 gap-4", due.state !== "PAID_UP" && "lg:grid-cols-2 lg:items-start")}>
-        <DueDisplay account={account} due={due} />
+        <DueDisplay account={account} due={due} today={today} />
         {due.state !== "PAID_UP" && <TransferCard account={account} due={due} />}
       </div>
 
@@ -126,8 +126,19 @@ function Account({ account, today }: { account: BillingAccount; today: string })
   );
 }
 
-/** Afișajul de sus, ca pe cântar: cifra în verde, eticheta în galben cât e de plată, în roșu când e restantă. */
-function DueDisplay({ account, due }: { account: BillingAccount; due: AmountDue }) {
+/** Ora unei citiri: „azi, 14:32”, sau cu data când nu e de azi. */
+function whenOf(iso: string, today: string) {
+  const d = new Date(iso);
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${day === today ? t.todayWord : formatDate(day)}, ${timeOf(iso)}`;
+}
+
+/**
+ * Blocul de sus, ca un bon (aleasă de proprietar pe 17.09, în locul afișajului negru): fiecare factură de plată pe
+ * rândul ei, cu perioada, scadența și starea; totalul sub linia groasă; „Am plătit” jos, cu ora ultimei verificări.
+ * Plătit tot, bonul spune „Totul e plătit” și următoarea factură.
+ */
+function DueDisplay({ account, due, today }: { account: BillingAccount; due: AmountDue; today: string }) {
   const checkMut = useCheckBillingPayment();
   const payMut = usePayInvoiceByCard();
   const { notify } = useToast();
@@ -141,11 +152,12 @@ function DueDisplay({ account, due }: { account: BillingAccount; due: AmountDue 
     .at(-1);
 
   async function check() {
-    const ids = due.unpaid.map((i) => i.id);
     try {
-      await checkMut.mutateAsync(ids);
+      await checkMut.mutateAsync(due.unpaid.map((i) => i.id));
       setCheckedAt(new Date().toISOString());
     } catch (err) {
+      // O verificare căzută nu e „plata n-a ajuns”: rândul se întoarce la ora ultimei citiri reușite.
+      setCheckedAt(null);
       notify(apiErrorMessage(err, t.checkError), "error");
     }
   }
@@ -172,43 +184,79 @@ function DueDisplay({ account, due }: { account: BillingAccount; due: AmountDue 
       .replace("{date}", formatDate(account.nextInvoice.from))
       .replace("{total}", lei(account.nextInvoice.total));
     return (
-      <section className="rounded-lg bg-lcd p-4 font-mono sm:p-5" data-testid="billing-display" data-state="PAID_UP">
-        <div className="text-[0.6875rem] uppercase tracking-[0.08em] text-lcd-unit">{t.title}</div>
-        <div className="mt-1 text-2xl font-medium text-lcd-digit sm:text-3xl">{t.paidUp}</div>
-        <p className="mt-2 font-sans text-sm text-panel-text">{next}</p>
+      <Card data-testid="billing-display" data-state="PAID_UP">
+        <div className="flex items-center justify-between gap-3">
+          <span className="eyebrow">{t.title}</span>
+          <Badge variant="success">{t.paidUp}</Badge>
+        </div>
+        <p className="mt-3 text-2xl font-semibold text-content">{t.paidUp}</p>
+        <p className="mt-1 text-sm text-content-muted">{next}</p>
         <NextInvoiceLines account={account} />
-      </section>
+      </Card>
     );
   }
 
   const overdue = due.state === "OVERDUE";
-  const numbers = transferReference(due.unpaid);
-  const stillUnpaidAt = checkedAt && !checkMut.isPending ? lastChecked : null;
+  const status =
+    checkedAt && !checkMut.isPending && lastChecked
+      ? t.checkedNotYet.replace("{time}", timeOf(lastChecked))
+      : lastChecked
+        ? t.lastChecked.replace("{when}", whenOf(lastChecked, today))
+        : t.checkPaymentHint;
 
   return (
-    <section className="rounded-lg bg-lcd p-4 sm:p-5" data-testid="billing-display" data-state={due.state}>
-      <div
-        className={cn(
-          "font-mono text-[0.6875rem] uppercase tracking-[0.08em]",
-          overdue ? "text-lcd-bad" : "text-lcd-warn"
+    <Card data-testid="billing-display" data-state={due.state}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="eyebrow">{t.dueTitle}</span>
+        {overdue ? (
+          <Badge variant="danger">{withCount(t.overdueBy, due.overdueDays, t.dayOne, t.dayMany)}</Badge>
+        ) : (
+          <Badge variant="warning">{t.dueBy.replace("{date}", formatDate(due.dueDate))}</Badge>
         )}
-      >
-        {overdue
-          ? withCount(t.overdueBy, due.overdueDays, t.dayOne, t.dayMany)
-          : t.dueBy.replace("{date}", formatDate(due.dueDate))}
       </div>
-      <div className="mt-1 flex items-baseline gap-2 font-mono">
-        <span className="text-4xl font-medium text-lcd-digit" data-testid="billing-amount">
-          {due.total.toLocaleString("ro-RO", { minimumFractionDigits: due.total % 1 ? 2 : 0, maximumFractionDigits: 2 })}
+
+      <ul className="mt-3 divide-y divide-line" data-testid="billing-due-lines">
+        {due.unpaid.map((invoice) => (
+          <li key={invoice.id} className="flex items-start justify-between gap-3 py-2.5">
+            <div className="min-w-0">
+              <div className="font-mono text-sm font-semibold text-content">{invoiceNumber(invoice)}</div>
+              <div className="font-mono text-xs text-content-muted">
+                {formatDate(invoice.periodStart)} – {formatDate(invoice.periodEnd)} ·{" "}
+                {s.invoiceDue.replace("{date}", formatDate(invoice.dueDate))}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <InvoiceState invoice={invoice} today={today} />
+                {invoice.fgoLink && (
+                  <a
+                    href={invoice.fgoLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 underline"
+                  >
+                    <FileText className="h-3.5 w-3.5" aria-hidden />
+                    {s.invoicePdf}
+                  </a>
+                )}
+              </div>
+            </div>
+            <span className="shrink-0 font-mono text-sm text-content">{lei(invoice.total)}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex items-baseline justify-between gap-3 border-t-2 border-content pt-2">
+        <span className="eyebrow">{s.total}</span>
+        <span className="font-mono text-2xl font-semibold text-content">
+          <span data-testid="billing-amount">
+            {due.total.toLocaleString("ro-RO", { minimumFractionDigits: due.total % 1 ? 2 : 0, maximumFractionDigits: 2 })}
+          </span>{" "}
+          <span className="text-base font-normal text-content-muted">{t.lei}</span>
         </span>
-        <span className="text-lcd-unit">{t.lei}</span>
       </div>
-      <p className="mt-1 text-sm text-panel-text">
-        {(due.unpaid.length > 1 ? t.dueInvoicesMany : t.dueInvoices).replace("{numbers}", numbers)}
-        {overdue && due.dueDate && <> · {s.invoiceDue.replace("{date}", formatDate(due.dueDate))}</>}
-      </p>
       {account.readOnlyOn && (
-        <p className="mt-2 text-sm text-lcd-warn">{t.readOnlyOn.replace("{date}", formatDate(account.readOnlyOn))}</p>
+        <p className="mt-2 text-xs font-medium text-state-bad-text">
+          {t.readOnlyOn.replace("{date}", formatDate(account.readOnlyOn))}
+        </p>
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -226,29 +274,18 @@ function DueDisplay({ account, due }: { account: BillingAccount; due: AmountDue 
         >
           {t.checkPayment}
         </Button>
-        {oldest?.fgoLink && (
-          <a
-            href={oldest.fgoLink}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-panel-key px-4 text-sm font-semibold text-panel-text hover:bg-panel-hover"
-          >
-            <FileText className="h-4 w-4" aria-hidden />
-            {s.invoicePdf}
-          </a>
-        )}
       </div>
-      <p className="mt-2 text-xs text-panel-mid" role="status" data-testid="billing-check-status">
-        {stillUnpaidAt ? t.checkedNotYet.replace("{time}", timeOf(stillUnpaidAt)) : t.checkPaymentHint}
+      <p className="mt-2 text-xs text-content-muted" role="status" data-testid="billing-check-status">
+        {status}
       </p>
-    </section>
+    </Card>
   );
 }
 
 function NextInvoiceLines({ account }: { account: BillingAccount }) {
   return (
-    <details className="mt-3 font-sans text-sm text-panel-text">
-      <summary className="cursor-pointer text-panel-mid hover:text-panel-text">{t.howCalculated}</summary>
+    <details className="mt-3 text-sm text-content">
+      <summary className="cursor-pointer text-content-muted hover:text-content">{t.howCalculated}</summary>
       <ul className="mt-2 space-y-1">
         {account.nextInvoice.lines.map((line, i) => (
           <li key={i} className="flex justify-between gap-3">
@@ -259,12 +296,12 @@ function NextInvoiceLines({ account }: { account: BillingAccount }) {
             <span className="font-mono">{lei(line.amount)}</span>
           </li>
         ))}
-        <li className="flex justify-between gap-3 border-t border-panel-line pt-1 font-semibold">
+        <li className="flex justify-between gap-3 border-t-2 border-content pt-1 font-semibold">
           <span>{s.total}</span>
           <span className="font-mono">{lei(account.nextInvoice.total)}</span>
         </li>
       </ul>
-      <p className="mt-2 text-xs text-panel-mid">{t.nextInvoiceHint}</p>
+      <p className="mt-2 text-xs text-content-muted">{t.nextInvoiceHint}</p>
     </details>
   );
 }

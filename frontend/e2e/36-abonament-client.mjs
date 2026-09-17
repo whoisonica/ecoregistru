@@ -81,7 +81,12 @@ check("afișajul spune restanta", (await display().getAttribute("data-state")) =
 const shown = await text('[data-testid="billing-display"]');
 check("„Restantă de 6 zile”", /Restantă de 6 zile/i.test(shown), shown.slice(0, 120));
 check("suma adună amândouă facturile: 488,50", (await text('[data-testid="billing-amount"]')).trim() === "488,50", await text('[data-testid="billing-amount"]'));
-check("numește amândouă facturile, cea veche întâi", shown.includes(`WH ${older}, WH ${newer}`), shown);
+const dueLines = await page.$$eval('[data-testid="billing-due-lines"] li', (lis) => lis.map((li) => li.textContent.replace(/\s+/g, " ")));
+check("bonul are câte un rând pe factură, cea veche întâi, cu starea și suma",
+  dueLines.length === 2 && dueLines[0].includes(`WH ${older}`) && dueLines[0].includes("Restantă") && dueLines[0].includes("389 lei")
+    && dueLines[1].includes(`WH ${newer}`) && dueLines[1].includes("De plată") && dueLines[1].includes("99,50 lei"),
+  dueLines.join(" || "));
+check("înainte de clic spune ora ultimei verificări", /Ultima verificare: azi, \d\d:\d\d/.test(await text('[data-testid="billing-check-status"]')), await text('[data-testid="billing-check-status"]'));
 
 // ---------------------------------------------------------------- (2) transferul
 const copies = await page.$$eval('[data-testid="billing-transfer"] [data-copy]', (els) => els.map((e) => e.getAttribute("data-copy")));
@@ -106,6 +111,7 @@ await page.locator('[data-testid="billing-display"] button:has-text("Am plătit"
 const toast = await page.waitForSelector('[role="status"]:has-text("FGO"), [role="alert"]:has-text("FGO")', { timeout: 5000 }).catch(() => null);
 check("fără cheile FGO, verificarea spune de ce n-a mers", Boolean(toast), toast ? await toast.textContent() : "niciun mesaj");
 check("și nu marchează nimic plătit", (await display().getAttribute("data-state")) === "OVERDUE");
+check("după o verificare căzută nu mai scrie „plata nu a ajuns”", !/plata nu a ajuns/.test(await text('[data-testid="billing-check-status"]')), await text('[data-testid="billing-check-status"]'));
 
 // ---------------------------------------------------------------- (5) facturile
 const rows = await page.$$eval('[data-testid="billing-invoices"] tbody tr', (trs) => trs.map((tr) => tr.textContent.replace(/\s+/g, " ")));
