@@ -43,6 +43,7 @@ const suites = [
   ["33-pagina-firmei.mjs", "Pagina firmei: taburile, fișa cu lipsurile, utilizatorii și istoricul firmei fără comutator, abonamentul, Intră în cont, 375px"],
   ["34-dosar-continut.mjs", "Dosarul de control: ce intră în arhivă și de ce, pe firmă și an, 375px"],
   ["35-termene-trecute.mjs", "Termene pe taburi: De făcut · Bifate · Trecute (anul în curs, până ieri), 375px"],
+  ["36-abonament-client.mjs", "Abonamentul la client: de plată, transferul de copiat, verifică plata, datele de facturare, 375px"],
 ];
 
 const only = process.argv[2];

@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
+  BillingDetails,
   BillingAccount,
   InvoiceFilter,
   InvoiceMoney,
@@ -192,6 +193,34 @@ export function useChoosePaymentMethod() {
       await api.put("/api/v1/billing/payment-method", { paymentMethod });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["billing"] }),
+  });
+}
+
+/** F-E — clientul își schimbă datele de facturare; răspunsul e abonamentul la zi. */
+export function useUpdateBillingDetails() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (details: BillingDetails) =>
+      (await api.put<BillingAccount>("/api/v1/billing/details", details)).data,
+    onSuccess: (account) => qc.setQueryData(["billing"], account),
+  });
+}
+
+/**
+ * F-E — „Am plătit — verifică acum”: FGO întrebat pe facturile date, una după alta. Serverul nu-l mai întreabă dacă
+ * a citit plata în ultimele două minute; pagina arată ora citirii.
+ */
+export function useCheckBillingPayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invoiceIds: string[]) => {
+      for (const id of invoiceIds) {
+        await api.post(`/api/v1/billing/invoices/${id}/check-payment`);
+      }
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["billing"] });
+    },
   });
 }
 

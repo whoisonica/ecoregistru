@@ -75,6 +75,14 @@ public interface NotificationService {
                              BillingReminder kind, String reason);
 
     /**
+     * F-E — the invoices' address changed in the application: the old one hears it, so a change nobody asked
+     * for does not go unnoticed (the terms take a stop request from the billing address).
+     *
+     * @throws RuntimeException if delivery fails — the caller logs it; the change itself stays saved.
+     */
+    void sendBillingEmailChanged(String clientName, String oldEmail, String newEmail, String changedBy);
+
+    /**
      * P2.13, felia 2 — rezumatul zilnic al unui cabinet: un mail pe consultant, cu toate termenele
      * nefinalizate din zilele următoare ale firmelor cabinetului.
      *

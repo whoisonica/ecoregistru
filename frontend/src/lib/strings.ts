@@ -2312,33 +2312,52 @@ export const strings = {
   /** Plata abonamentelor, F2 — abonamentul și facturile, pentru cine le plătește (`/abonament`). */
   billing: {
     title: "Abonament",
-    subtitle: "Pachetul tău, facturile emise și cum se plătesc.",
+    subtitle: "Ce ai de plată, pachetul, facturile și datele pe care le emitem.",
     none: "Contul ăsta n-are un abonament de plătit. Dacă firma e gestionată de un cabinet de consultanță, abonamentul e al cabinetului.",
     loadError: "Nu am putut încărca abonamentul.",
+    // F-E — afișajul de sus
+    dueBy: "De plată până pe {date}",
+    overdueBy: "Restantă de {count}",
+    dayOne: "zi",
+    dayMany: "zile",
+    paidUp: "Totul e plătit",
+    lei: "lei",
+    dueInvoices: "Factura {numbers}",
+    dueInvoicesMany: "Facturile {numbers}",
+    nextInvoiceOn: "Următoarea factură pe {date}, cam {total}.",
+    firstInvoiceOn: "Prima factură se emite pe {date}: {total}.",
+    howCalculated: "Cum s-a calculat",
+    nextInvoiceHint:
+      "Calculată pe ce e activ azi. Punctele de lucru sau firmele se numără din nou în prima zi a perioadei.",
+    readOnlyOn: "Dacă plata nu ajunge până pe {date}, contul trece în doar-citire: vezi și descarci tot, dar nu mai adaugi nimic.",
+    endsOn: "Abonamentul e oprit: ultima zi facturată e {date}. După ea contul rămâne doar pentru citire.",
+    // F-E — „Am plătit”
+    checkPayment: "Am plătit — verifică acum",
+    checkPaymentHint: "Verificăm acum dacă plata a ajuns, fără să aștepți verificarea de dimineață.",
+    checkedPaid: "Plata a ajuns. Mulțumim!",
+    checkedNotYet:
+      "Verificat la {time}: plata nu a ajuns încă. Un transfer ajunge de obicei în una-două zile lucrătoare; nu plăti a doua oară.",
+    checkError: "Plata nu a putut fi verificată acum. Încearcă din nou peste câteva minute.",
+    // F-E — transferul
+    transferTitle: "Plătește prin transfer bancar",
+    transferHint: "Copiază fiecare rând în aplicația băncii. Cu numărul facturii la detalii, plata se leagă singură de ea.",
+    payee: "Beneficiar",
+    payeeCui: "CUI",
+    iban: "IBAN",
+    bank: "Banca",
+    amount: "Suma",
+    reference: "Detalii plată",
+    copy: "Copiază {what}",
+    copied: "Copiat",
+    // Pachetul
+    packageTitle: "Pachetul tău",
     plan: "Pachet",
     founder: "client fondator",
     startedAt: "Început pe",
-    payment:
-      "Factura se emite în prima zi a fiecărei perioade și vine pe email. Plata se face prin transfer bancar în 10 zile, în contul scris pe factură; la detalii plată treci seria și numărul facturii.",
-    nextInvoice: "Următoarea factură ({from} – {to})",
-    nextInvoiceHint:
-      "Calculată pe ce e activ azi. Punctele de lucru sau firmele se numără din nou în prima zi a perioadei.",
-    billingData: "Date de facturare",
-    billingEmail: "Facturile vin pe",
-    billingAddress: "Adresă",
-    billingDataHint: "Ca să schimbi datele de facturare, scrie-ne la contact@wastehouse.ro.",
-    invoices: "Facturi",
-    noInvoices: "Nicio factură emisă încă.",
-    number: "Factura",
-    period: "Perioada",
-    due: "Scadență",
-    paidOn: "plătită {date}",
-    document: "Document",
-    pay: "Plătește online",
-    // F3 — cardul
     method: "Cum plătești",
     methodCard: "Card",
     methodTransfer: "Transfer bancar",
+    methodTransferOnly: "Transfer bancar, în 10 zile de la emiterea facturii. Factura vine pe email în prima zi a perioadei.",
     // Nu e doar o explicație: e autorizarea de debitare (contract art. 5.8, termeni 11.5). Schemele
     // de card cer ca, înainte de a salva cardul, omul să vadă ce se debitează, când, și cum oprește.
     methodCardHint:
@@ -2348,6 +2367,40 @@ export const strings = {
     methodSaved: "Salvat.",
     methodError: "Alegerea nu a putut fi salvată.",
     savedCard: "Card salvat: {pan}, expiră {expiry}",
+    otherPlan: "Vrei alt pachet? Scrie-ne pe contact@wastehouse.ro.",
+    // Datele de facturare
+    billingData: "Date de facturare",
+    billingDataHint: "Le folosim pe următoarele facturi. Cele deja emise rămân cum sunt.",
+    billingName: "Firma",
+    billingEmail: "Facturile vin pe",
+    billingAddress: "Adresă",
+    billingMissing: "Lipsesc județul, localitatea sau adresa: fără ele factura nu se poate emite.",
+    editBilling: "Schimbă",
+    editBillingTitle: "Datele de facturare",
+    editBillingDescription: "Denumirea și CUI-ul vin de la ANAF și intră în e-Factura, deci nu se schimbă de aici. Pentru ele, scrie-ne pe contact@wastehouse.ro.",
+    billingEmailLabel: "Emailul pe care vin facturile",
+    billingEmailHint: "De obicei al contabilului. Pe el trimitem și mementourile de plată.",
+    billingEmailChangedHint: "Anunțăm și adresa veche că facturile vin de acum pe cea nouă.",
+    billingCounty: "Județ",
+    billingCountyPlaceholder: "Alege județul",
+    billingCity: "Localitate",
+    billingStreet: "Adresă (stradă, număr, bloc)",
+    required: "Completează rubrica.",
+    invalidEmail: "Emailul nu arată bine.",
+    billingSaved: "Datele de facturare sunt salvate. Următoarea factură le folosește.",
+    billingSaveError: "Datele de facturare nu au putut fi salvate.",
+    // Facturile
+    invoices: "Facturile tale",
+    noInvoices: "Nicio factură emisă încă.",
+    number: "Factura",
+    period: "Perioada",
+    due: "Scadență",
+    paidOn: "plătită {date}",
+    invoiceUnpaid: "De plată",
+    invoiceOverdue: "Restantă",
+    invoicePaid: "Plătită",
+    document: "Document",
+    pay: "Plătește online",
     payByCard: "Plătește cu cardul",
     payByCardError: "Plata cu cardul nu a putut porni.",
     paidByCard: "cu cardul",
@@ -2357,9 +2410,6 @@ export const strings = {
     returnFailed: "Plata nu a trecut: {reason}. Poți încerca din nou sau plăti prin transfer.",
     returnSlow:
       "Netopia n-a confirmat încă plata. Dacă ți s-a luat suma, factura apare plătită în câteva minute; nu plăti a doua oară.",
-    // F4
-    endsOn: "Abonamentul e oprit: ultima zi facturată e {date}. După ea contul rămâne doar pentru citire.",
-    readOnlyOn: "Dacă factura restantă nu e plătită până pe {date}, contul trece în doar-citire.",
   },
 
   /** F4 — bannerul de sus, pe orice ecran și pentru orice rol. */
@@ -2668,6 +2718,8 @@ export const strings = {
       Attachment: "Atașament",
       AppUser: "Utilizator",
       MonthlyEvidence: "Evidența lunară",
+      // F-E — datele de facturare schimbate de client pe /abonament.
+      Subscription: "Datele de facturare",
     } as Record<string, string>,
 
     /**
@@ -2680,6 +2732,10 @@ export const strings = {
      * niciunul: aici sunt cele pe care cineva chiar le caută după un control.
      */
     auditField: {
+      billingEmail: "Emailul pentru facturi",
+      billingCounty: "Județul de facturare",
+      billingCity: "Localitatea de facturare",
+      billingAddress: "Adresa de facturare",
       quantity: "Cantitate",
       unit: "Unitate",
       date: "Data",

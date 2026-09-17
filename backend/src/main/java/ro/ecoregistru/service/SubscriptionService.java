@@ -7,7 +7,17 @@ import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import ro.ecoregistru.audit.AuditChangeCodec;
+import ro.ecoregistru.audit.PendingAudit;
+import ro.ecoregistru.controller.request.BillingDetailsRequest;
 import ro.ecoregistru.controller.request.SubscriptionRequest;
+import ro.ecoregistru.entity.AuditLog;
+import ro.ecoregistru.enums.AuditAction;
+import ro.ecoregistru.repository.AuditLogRepository;
+import ro.ecoregistru.service.notification.NotificationService;
+import java.util.ArrayList;
+import java.util.Objects;
 import ro.ecoregistru.controller.response.BillingAccessResponse;
 import ro.ecoregistru.controller.response.BillingResponse;
 import ro.ecoregistru.controller.response.CardPaymentResponse;
@@ -73,6 +83,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_PLAN_MISMAT
  * <p><b>The grid is copied, not referenced.</b> Creating a subscription, or moving it to another
  * plan, writes today's prices on it; saving it again on the same plan keeps the prices it had.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -85,11 +96,30 @@ public class SubscriptionService {
     WorkPointRepository workPointRepository;
     CardPaymentRepository cardPaymentRepository;
     NetopiaClient netopia;
+    AuditLogRepository auditLogRepository;
+    NotificationService notificationService;
 
     /** §9.6: off until the contract says it. */
     @NonFinal
     @Value("${app.billing.read-only-enabled:false}")
     boolean readOnlyEnabled;
+
+    /** F-E — the account a transfer goes to: the one in the contract and on the FGO invoice. */
+    @NonFinal
+    @Value("${app.billing.payee.name:ONSIA S.R.L.}")
+    String payeeName;
+
+    @NonFinal
+    @Value("${app.billing.payee.cui:51779887}")
+    String payeeCui;
+
+    @NonFinal
+    @Value("${app.billing.payee.iban:RO32RZBR0000060027995375}")
+    String payeeIban;
+
+    @NonFinal
+    @Value("${app.billing.payee.bank:Raiffeisen Bank România}")
+    String payeeBank;
 
     @Transactional(readOnly = true)
     public Optional<SubscriptionResponse> forCompany(UUID companyId) {
@@ -202,6 +232,63 @@ public class SubscriptionService {
         }
     }
 
+    /**
+     * F-E — the client keeps its billing data up to date (contract art. 7.5). Invoices already issued keep
+     * what they were issued with; the next one takes the new data.
+     *
+     * <p>A company's change goes in its journal, with the fields before and after. A cabinet has no journal
+     * (it is a company's, {@code company_id NOT NULL}), so there only the mail says it. When the email
+     * changes, the old address is told: the terms take a stop request from the billing address, so a
+     * change nobody asked for must not go unnoticed. A mail that fails does not undo the change.
+     */
+    @Transactional
+    public BillingResponse updateBillingDetails(AppUser user, UUID tenantId, BillingDetailsRequest request,
+                                                LocalDate today) {
+        Subscription s = payerFor(user, tenantId).orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND));
+        String oldRecipient = BillingRunService.recipient(s);
+        List<PendingAudit.FieldChange> changes = new ArrayList<>();
+        s.setBillingEmail(changed(changes, "billingEmail", s.getBillingEmail(), request.billingEmail()));
+        s.setBillingCounty(changed(changes, "billingCounty", s.getBillingCounty(), request.billingCounty()));
+        s.setBillingCity(changed(changes, "billingCity", s.getBillingCity(), request.billingCity()));
+        s.setBillingAddress(changed(changes, "billingAddress", s.getBillingAddress(), request.billingAddress()));
+        if (changes.isEmpty()) {
+            return toBillingResponse(s, today);
+        }
+        if (s.getCompany() != null) {
+            auditLogRepository.save(AuditLog.builder()
+                    .company(s.getCompany())
+                    .entityType("Subscription")
+                    .entityId(s.getId())
+                    .action(AuditAction.UPDATE)
+                    .label(s.getCompany().getName())
+                    .changes(AuditChangeCodec.write(changes))
+                    .actorId(user.getId())
+                    .actorEmail(user.getEmail())
+                    .actorRole(user.getRole())
+                    .occurredAt(Instant.now())
+                    .build());
+        }
+        String newRecipient = BillingRunService.recipient(s);
+        if (oldRecipient != null && !oldRecipient.equalsIgnoreCase(newRecipient)) {
+            try {
+                notificationService.sendBillingEmailChanged(BillingRunService.clientName(s), oldRecipient,
+                        newRecipient, user.getEmail());
+            } catch (RuntimeException e) {
+                log.warn("Mailul despre adresa de facturare schimbată n-a plecat către {}: {}", oldRecipient,
+                        e.getMessage());
+            }
+        }
+        return toBillingResponse(s, today);
+    }
+
+    private static String changed(List<PendingAudit.FieldChange> changes, String field, String from, String to) {
+        String value = trimToNull(to);
+        if (!Objects.equals(from, value)) {
+            changes.add(new PendingAudit.FieldChange(field, from, value));
+        }
+        return value;
+    }
+
     /** F3 — one of the account's own card payments, for the page Netopia sends the client back to. */
     @Transactional(readOnly = true)
     public CardPaymentResponse cardPayment(AppUser user, UUID tenantId, UUID paymentId) {
@@ -312,13 +399,16 @@ public class SubscriptionService {
                 .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
                 .map(i -> new BillingResponse.IssuedInvoice(i.getId(), i.getPeriodStart(), i.getPeriodEnd(),
                         i.getTotal(), i.getStatus(), i.getDueDate(), i.getFgoSerie(), i.getFgoNumar(),
-                        i.getFgoLink(), i.getFgoLinkPlata(), i.getPaidAt(), i.getPaidBy(), lastCardError(i.getId())))
+                        i.getFgoLink(), i.getFgoLinkPlata(), i.getPaidAt(), i.getPaidBy(), lastCardError(i.getId()),
+                        i.getPaymentCheckedAt()))
                 .toList();
         return new BillingResponse(BillingRunService.clientName(s), s.getPlan(), s.getStatus(), s.getStartedAt(),
                 s.isFounder(), invoiceFor(s, next), BillingRunService.recipient(s),
                 s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices,
                 s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), netopia.isConfigured(),
-                s.getEndsOn(), readOnlyOn(s));
+                s.getEndsOn(), readOnlyOn(s),
+                s.getCompany() != null ? s.getCompany().getCui() : s.getConsultancy().getCui(),
+                new BillingResponse.Payee(payeeName, payeeCui, payeeIban, payeeBank));
     }
 
     /** F-A — the Facturare screen: every invoice, newest first. */

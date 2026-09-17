@@ -175,6 +175,16 @@ public class EmailNotificationService implements NotificationService {
         emailService.send(recipientEmail, subject, "mail/billing_reminder", ctx);
     }
 
+    @Override
+    public void sendBillingEmailChanged(String clientName, String oldEmail, String newEmail, String changedBy) {
+        Context ctx = new Context(Locale.of("ro"));
+        ctx.setVariable("clientName", clientName);
+        ctx.setVariable("newEmail", newEmail);
+        ctx.setVariable("changedBy", changedBy);
+        ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
+        emailService.send(oldEmail, "Facturile WasteHouse vin de acum pe altă adresă", "mail/billing_email_changed", ctx);
+    }
+
     /**
      * P2.13, felia 2 — rezumatul zilnic al cabinetului. Subiectul spune câte termene sunt, fiindcă asta
      * decide dacă mailul se deschide azi sau mâine; firmele sunt în corp.

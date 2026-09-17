@@ -502,6 +502,18 @@ export interface BillingAccount {
   endsOn: string | null;
   /** Ziua în care contul trece în doar-citire dacă cea mai veche factură rămâne neplătită. */
   readOnlyOn: string | null;
+  /** F-E — lângă datele de facturare; clientul nu-l schimbă. */
+  clientCui: string;
+  /** F-E — contul în care se face transferul, același cu cel de pe factură. */
+  payee: { name: string; cui: string; iban: string; bank: string };
+}
+
+/** F-E — datele de facturare pe care clientul le ține la zi (contract art. 7.5). */
+export interface BillingDetails {
+  billingEmail: string;
+  billingCounty: string;
+  billingCity: string;
+  billingAddress: string;
 }
 
 /** F4 — pentru banner și butoanele de scriere, pe orice rol: starea celui care plătește contul. */

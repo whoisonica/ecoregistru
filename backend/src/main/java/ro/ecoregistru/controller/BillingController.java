@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ro.ecoregistru.controller.request.BillingDetailsRequest;
 import ro.ecoregistru.controller.request.PaymentMethodRequest;
 import ro.ecoregistru.controller.response.BillingAccessResponse;
 import ro.ecoregistru.controller.response.BillingResponse;
@@ -49,6 +50,7 @@ public class BillingController {
 
     SubscriptionService subscriptionService;
     CardPaymentService cardPaymentService;
+    BillingRunService billingRunService;
 
     @GetMapping
     @PreAuthorize(CAN_MANAGE)
@@ -69,6 +71,22 @@ public class BillingController {
     public ResponseEntity<Void> paymentMethod(@AuthenticationPrincipal AppUser user,
                                               @RequestBody @Valid PaymentMethodRequest request) {
         subscriptionService.choosePaymentMethod(user, TenantContext.get(), request.paymentMethod());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** F-E — the client keeps its billing data up to date (contract art. 7.5); not the name, nor the CUI. */
+    @PutMapping("/details")
+    @PreAuthorize(CAN_MANAGE)
+    public BillingResponse details(@AuthenticationPrincipal AppUser user,
+                                   @RequestBody @Valid BillingDetailsRequest request) {
+        return subscriptionService.updateBillingDetails(user, TenantContext.get(), request, today());
+    }
+
+    /** F-E — „Am plătit — verifică acum”: FGO asked about one of the account's own issued invoices. */
+    @PostMapping("/invoices/{id}/check-payment")
+    @PreAuthorize(CAN_MANAGE)
+    public ResponseEntity<Void> checkPayment(@AuthenticationPrincipal AppUser user, @PathVariable UUID id) {
+        billingRunService.checkPaymentForAccount(user, TenantContext.get(), id, today());
         return ResponseEntity.noContent().build();
     }
 

@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.BillingRun;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Subscription;
@@ -27,6 +28,7 @@ import ro.ecoregistru.service.notification.BillingReminder;
 import ro.ecoregistru.service.notification.NotificationService;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Collectors;
 import java.util.Set;
@@ -221,6 +223,31 @@ public class BillingRunService {
             recordPayment(invoice, status);
             subscriptionService.refreshStatus(invoice.getSubscription(), today);
         });
+    }
+
+    /** F-E — how long a client's „Am plătit — verifică acum” rests, so a click held down does not flood FGO. */
+    static final Duration CLIENT_CHECK_PAUSE = Duration.ofMinutes(2);
+
+    /**
+     * F-E — „Am plătit — verifică acum” on {@code /abonament}: the same check, on an invoice of the account's
+     * own subscription only. Asked again within {@link #CLIENT_CHECK_PAUSE} of the last reading (the run's
+     * or a click's), FGO is not asked: the page shows when it was read.
+     */
+    public void checkPaymentForAccount(AppUser user, UUID tenantId, UUID invoiceId, LocalDate today) {
+        Instant lastChecked = tx.execute(status -> {
+            Subscription payer = subscriptionService.payerFor(user, tenantId)
+                    .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND));
+            SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId)
+                    .filter(i -> i.getSubscription().getId().equals(payer.getId()))
+                    // A DRAFT is ours: to the client it does not exist.
+                    .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
+                    .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.INVOICE_NOT_FOUND));
+            return invoice.getPaymentCheckedAt();
+        });
+        if (lastChecked != null && lastChecked.isAfter(Instant.now().minus(CLIENT_CHECK_PAUSE))) {
+            return;
+        }
+        checkPayment(invoiceId, today);
     }
 
     private int reserveDue(LocalDate today) {

@@ -19,6 +19,8 @@ import java.util.UUID;
  * has issued. A DRAFT is ours, and so is the FGO error written on it.
  *
  * @param billingEmail where the invoices are mailed: the billing email, or the company's contact email
+ * @param clientCui    F-E — shown next to the billing data, which the client edits; the CUI it cannot
+ * @param payee        F-E — where a transfer goes, the same account the invoice prints
  */
 public record BillingResponse(
         String clientName,
@@ -41,8 +43,13 @@ public record BillingResponse(
         /* F4 */
         LocalDate endsOn,
         /** The day the account turns read-only if the oldest unpaid invoice stays unpaid; null when off or nothing is late. */
-        LocalDate readOnlyOn
+        LocalDate readOnlyOn,
+        /* F-E */
+        String clientCui,
+        Payee payee
 ) {
+    public record Payee(String name, String cui, String iban, String bank) {}
+
     public record IssuedInvoice(
             UUID id,
             LocalDate periodStart,
@@ -56,6 +63,8 @@ public record BillingResponse(
             String fgoLinkPlata,
             Instant paidAt,
             SubscriptionPaymentMethod paidBy,
-            String lastCardError
+            String lastCardError,
+            /** F-E — the last time FGO was asked whether it is paid, by the run or by „Verifică plata”. */
+            Instant paymentCheckedAt
     ) {}
 }

@@ -1,3 +1,14 @@
+💳 **17.09.2026 — proba 36 (`36-abonament-client.mjs`), `/abonament` la client (F-E)**: pe o firmă nouă, cu o factură restantă de
+6 zile (389 lei) și una care vine (99,50 lei), afișajul spune „Restantă de 6 zile”, 488,50 lei și ambele numere, cea veche întâi;
+transferul are beneficiarul, CUI-ul, IBAN-ul și banca din contract, suma „488,50” și detaliile „WH a, WH b”, iar „Copiază” pune
+IBAN-ul **fără spații** în clipboard; „Am plătit — verifică acum” pe o plată citită acum spune „Verificat la HH:MM: plata nu a
+ajuns încă” (serverul nu mai întreabă FGO în 2 minute), iar pe una veche, fără chei FGO, spune „lipsesc cheile FGO” și nu
+marchează nimic; facturile „Restantă” / „De plată”; datele de facturare: localitatea goală oprită, schimbarea emailului anunță
+adresa veche, după salvare cardul arată adresa nouă și jurnalul firmei are rândul `Subscription`; 375px fără derulare, facturile ca
+rânduri; plătite cu `psql` → „Totul e plătit”, fără transfer; operatorul primește 403 pe `/billing/details`. Platforma vede
+abonamentul firmei din comutator, deci nu cere un administrator nou. **Negative:** suma luată doar din cea mai veche factură → 2
+căderi; IBAN-ul copiat cu spații → 2 căderi. **28/28** pe `eco_e2e_abonament`. Lasă în urmă „Proba 36 <număr>” cu două facturi plătite.
+
 # Probe de interfaţă
 
 📅 **17.09.2026 — proba 35 (`35-termene-trecute.mjs`), Termene pe taburi**: De făcut · Bifate · Trecute, ca pe Clienți, tabul în
