@@ -72,6 +72,8 @@ public enum ErrorMessageEnum {
     INVOICE_NOT_FOUND("invoice.not.found", "Factura nu a fost găsită."),
     INVOICE_NOT_ISSUED("invoice.not.issued", "Plata se verifică doar pe o factură emisă și neplătită."),
     INVOICE_NOT_DISCARDABLE("invoice.not.discardable", "Se poate renunța doar la o factură pe care FGO a refuzat-o. Una emisă rămâne în FGO."),
+    // Scanarea din 17.09.2026: județul se verifică la salvare, după nomenclatorul FGO.
+    BILLING_COUNTY_INVALID("billing.county.invalid", "Județul nu e în lista FGO. Alege-l din listă."),
     FGO_NOT_CONFIGURED("fgo.not.configured", "Facturarea e oprită: lipsesc cheile FGO pe server."),
     FGO_UNAVAILABLE("fgo.unavailable", "FGO n-a răspuns acum. Încearcă din nou peste un minut."),
     // Scanarea din 17.09.2026: după o verificare căzută, clientul nu mai poate întreba FGO din nou pe loc.

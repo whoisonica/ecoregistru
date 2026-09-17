@@ -227,6 +227,21 @@ class BillingSelfServiceIT {
                 .isEqualTo(billingEmail(company));
     }
 
+    /** Scanarea din 17.09.2026: un județ pe care FGO nu-l are se oprește la salvare, nu dimineața, la emitere. */
+    @Test
+    void aCountyOutsideTheFgoListIsRefused() throws Exception {
+        Company company = company();
+        Subscription s = subscription(company);
+
+        mockMvc.perform(put("/api/v1/billing/details").header("Authorization", "Bearer " + token(admin(company)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(details("a@firma.ro", "Judetul Cluj", "Cluj-Napoca", "Str. 1")))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("billing.county.invalid")));
+
+        assertThat(subscriptionRepository.findById(s.getId()).orElseThrow().getBillingCounty()).isEqualTo("Cluj");
+    }
+
     @Test
     void anOperatorCannotChangeTheBillingData() throws Exception {
         Company company = company();

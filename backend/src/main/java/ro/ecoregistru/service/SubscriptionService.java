@@ -245,6 +245,7 @@ public class SubscriptionService {
     public BillingResponse updateBillingDetails(AppUser user, UUID tenantId, BillingDetailsRequest request,
                                                 LocalDate today) {
         Subscription s = payerFor(user, tenantId).orElseThrow(() -> new NotFoundException(SUBSCRIPTION_NOT_FOUND));
+        requireFgoCounty(request.billingCounty());
         String oldRecipient = BillingRunService.recipient(s);
         List<PendingAudit.FieldChange> changes = new ArrayList<>();
         s.setBillingEmail(changed(changes, "billingEmail", s.getBillingEmail(), request.billingEmail()));
@@ -522,6 +523,9 @@ public class SubscriptionService {
     }
 
     private Subscription apply(Subscription s, SubscriptionRequest request) {
+        if (trimToNull(request.billingCounty()) != null) {
+            requireFgoCounty(request.billingCounty());
+        }
         if (s.getPlan() != request.plan()) {
             applyGrid(s, request.plan());
         }
@@ -532,6 +536,12 @@ public class SubscriptionService {
         s.setBillingCity(trimToNull(request.billingCity()));
         s.setBillingAddress(trimToNull(request.billingAddress()));
         return subscriptionRepository.save(s);
+    }
+
+    private static void requireFgoCounty(String county) {
+        if (!ro.ecoregistru.util.FgoCounties.isValid(county)) {
+            throw new UnprocessableEntityException(ro.ecoregistru.exception.ErrorMessageEnum.BILLING_COUNTY_INVALID);
+        }
     }
 
     private static String trimToNull(String value) {
