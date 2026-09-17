@@ -17,6 +17,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Uploads, signs and fetches attachment files on Cloudinary. resource_type=auto handles both
@@ -88,11 +92,27 @@ public class CloudinaryStorageService {
      * and a live network, which is no suite at all.
      */
     public byte[] fetch(String url) throws IOException, InterruptedException {
-        HttpClient http = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(FETCH_TIMEOUT_SECONDS)).build();
-        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofSeconds(FETCH_TIMEOUT_SECONDS)).GET().build();
-        HttpResponse<byte[]> res = http.send(req, HttpResponse.BodyHandlers.ofByteArray());
+        return fetch(url, Duration.ofSeconds(FETCH_TIMEOUT_SECONDS));
+    }
+
+    /**
+     * {@code HttpRequest.timeout} ține doar până la antete: un fișier care se oprește la jumătatea corpului aștepta la
+     * nesfârșit, cu tranzacția dosarului deschisă (scanarea din 17.09.2026, o suită blocată 10 minute). Termenul e
+     * acum pe toată descărcarea.
+     */
+    byte[] fetch(String url, Duration deadline) throws IOException, InterruptedException {
+        HttpClient http = HttpClient.newBuilder().connectTimeout(deadline).build();
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url)).timeout(deadline).GET().build();
+        CompletableFuture<HttpResponse<byte[]>> call = http.sendAsync(req, HttpResponse.BodyHandlers.ofByteArray());
+        HttpResponse<byte[]> res;
+        try {
+            res = call.get(deadline.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            call.cancel(true);
+            throw new IOException("Descărcarea n-a terminat în " + deadline.toSeconds() + " s");
+        } catch (ExecutionException e) {
+            throw e.getCause() instanceof IOException io ? io : new IOException(e.getCause());
+        }
         if (res.statusCode() != 200) {
             throw new IOException("Cloudinary a răspuns " + res.statusCode());
         }
