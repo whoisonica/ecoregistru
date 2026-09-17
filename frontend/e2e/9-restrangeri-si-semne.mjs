@@ -200,7 +200,7 @@ check("niciun termen trecut nebifat în „De făcut”",
 // „De făcut” nu are an: 15 martie de anul viitor stă aici lângă AFM-ul lunii acesteia.
 const anRaportat = new Date().getFullYear();
 const anexa1 = termene.find((r) => /Evidența gestiunii/.test(r.tip));
-check("termenul de 15 martie duce la evidenţă", anexa1?.document?.href === `/evidente?an=${anRaportat}`,
+check("termenul de 15 martie duce la evidenţă", anexa1?.document?.href === `/generare?tab=total&luna=${anRaportat}`,
   anexa1?.document?.href ?? anexa1?.documentText);
 check("şi duce la anul raportat, nu la anul termenului",
   new RegExp(String(anRaportat)).test(anexa1?.document?.text ?? ""), anexa1?.document?.text);
@@ -242,14 +242,14 @@ check("iar pagina nu se derulează lateral", inaltimi.lateral === 0, `${inaltimi
 await shot(page, "9-termene");
 
 // Linkul chiar deschide ecranul, pe anul din adresă.
-await clickAt(page, `[data-testid="deadlines-todo"] table a[href="/evidente?an=${anRaportat}"]`);
+await clickAt(page, `[data-testid="deadlines-todo"] table a[href="/generare?tab=total&luna=${anRaportat}"]`);
 await page.waitForTimeout(1200);
 const dupaClic = await page.evaluate(() => ({
   adresa: location.pathname + location.search,
   an: document.querySelector("#ev-year")?.value ?? document.querySelector("select")?.value ?? "",
 }));
 check("iar clicul chiar deschide documentul, pe anul lui",
-  dupaClic.adresa === `/evidente?an=${anRaportat}`, dupaClic.adresa);
+  dupaClic.adresa === `/generare?tab=total&luna=${anRaportat}`, dupaClic.adresa);
 
 // ------------------------- 5. ACTUL DE IDENTITATE AL ŞOFERILOR SPUNE DE CE E ŢINUT
 // Singurul dat personal al cuiva din afara firmei pe care aplicaţia îl ţine — şi singurul care se

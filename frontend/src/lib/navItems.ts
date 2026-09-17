@@ -5,7 +5,6 @@ import {
   Building2,
   CalendarClock,
   Factory,
-  FileSpreadsheet,
   FileUp,
   FolderArchive,
   Home,
@@ -52,9 +51,12 @@ export interface NavModel {
 const DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 
 /**
- * Cifrele ajung fix pentru zece intrări. La firmele cu depozit meniul are unsprezece, fiindcă mai
- * intră „Cântar”, iar ultima — Setări — primește litera ei. O literă e mai ușor de ținut minte
- * decât a unsprezecea cifră oricum n-ar exista.
+ * Cifrele ajung fix pentru zece intrări, iar a unsprezecea — Setări — ar primi litera ei: o literă
+ * e mai ușor de ținut minte decât a unsprezecea cifră, care oricum nu există.
+ *
+ * <p>Din 18.09.2026 nicio firmă nu mai trece de zece: „Evidențe” a fost scos (era raportul
+ * registrului Anexa 1, adică al ecranului „Generare”), iar firma cu depozit are fix zece intrări.
+ * Litera rămâne, fiindcă rândul de rezervă nu se scoate până nu e sigur că nimic nu-l mai cere.
  */
 const OVERFLOW_KEY = "S";
 
@@ -111,7 +113,6 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
   main.push(
     { to: "/ambalaje", label: strings.nav.packaging, icon: Package, keywords: strings.nav.kwPackaging },
-    { to: "/evidente", label: strings.nav.evidences, icon: FileSpreadsheet, keywords: strings.nav.kwEvidences },
     { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock, keywords: strings.nav.kwDeadlines },
     { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile },
     { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },

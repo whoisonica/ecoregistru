@@ -162,11 +162,11 @@ await page.waitForTimeout(400);
 const paletteOpen = await page.$('div[role="dialog"] input');
 check("Ctrl+K deschide paleta", !!paletteOpen);
 if (paletteOpen) {
-  await page.keyboard.type("evid");
+  await page.keyboard.type("termen");
   await page.waitForTimeout(300);
   await page.keyboard.press("Enter");
-  await page.waitForURL((u) => u.pathname === "/evidente", { timeout: 5000 }).catch(() => {});
-  check("paleta navighează", page.url().includes("/evidente"), page.url());
+  await page.waitForURL((u) => u.pathname === "/termene", { timeout: 5000 }).catch(() => {});
+  check("paleta navighează", page.url().includes("/termene"), page.url());
 }
 
 // ---------------------------------------------------------------- „/" pe căutare

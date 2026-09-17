@@ -186,109 +186,96 @@ await page.setViewportSize({ width: 1440, height: 900 });
 await page.waitForTimeout(500);
 await shot(page, "10-panou-actiune");
 
-// ------------------------------------------------------ 7. EVIDENȚE: CINCI BUTOANE DEVENITE TREI
-// Antetul avea cinci butoane la fel de vizibile — două documente oficiale, două exporturi generice
-// pe care scrie „rezumat neoficial", și „Regenerează". Toate cinci arătau ca același fel de lucru,
-// iar titlul paginii se strângea pe trei rânduri ca să le facă loc. Exporturile intră într-un meniu.
-await page.goto(BASE + "/evidente", { waitUntil: "networkidle" });
-await page.waitForTimeout(1200);
-const antet = await page.evaluate(() => {
-  const h1 = document.querySelector("h1");
-  const zonaAntet = h1?.closest("div")?.parentElement ?? document.body;
-  const butoane = [...zonaAntet.querySelectorAll("button")].map((b) =>
-    b.textContent.replace(/\s+/g, " ").trim()
-  );
-  return {
-    butoane,
-    // Câte rânduri ocupă titlul: trei însemna că butoanele îl striveau.
-    randuriTitlu: h1 ? Math.round(h1.getBoundingClientRect().height / 32) : 0,
-    latimeTitlu: h1 ? Math.round(h1.getBoundingClientRect().width) : 0,
-  };
-});
-check("antetul nu mai are cinci butoane deodată", antet.butoane.length <= 4,
-  antet.butoane.length + ": " + antet.butoane.join(" | "));
-check("cele două documente oficiale au rămas afară",
-  antet.butoane.some((b) => /Evidența gestiunii deșeurilor generate/.test(b)) &&
-    antet.butoane.some((b) => /Evidența gestiunii deșeurilor centralizată/.test(b)),
-  antet.butoane.filter((b) => /Evidența gestiunii/.test(b)).join(" | "));
-check("iar exporturile generice au intrat în meniu",
-  antet.butoane.some((b) => /Alte descărcări/.test(b)) &&
-    !antet.butoane.some((b) => /^Rezumat (Excel|PDF)$/.test(b)));
-check("titlul nu se mai strânge pe trei rânduri", antet.randuriTitlu <= 2,
-  antet.randuriTitlu + " rânduri, " + antet.latimeTitlu + "px");
-
-// Meniul se deschide, spune ce sunt lucrurile din el, și se închide la Escape — comportamentul e
-// împrumutat de la meniul de rând, deci dacă unul se strică se strică amândouă.
-await page.evaluate(() => {
-  [...document.querySelectorAll("button")]
-    .find((b) => /Alte descărcări/.test(b.textContent))
-    ?.click();
-});
-await page.waitForTimeout(400);
-const meniu = await page.evaluate(() => {
-  const m = document.querySelector('[role="menu"]');
-  return {
-    deschis: Boolean(m),
-    itemi: m ? [...m.querySelectorAll('[role="menuitem"]')].map((i) => i.textContent.trim()) : [],
-    spuneCeSunt: m ? /rezumat neoficial/i.test(m.textContent) : false,
-  };
-});
-check("meniul se deschide", meniu.deschis);
-check("și conține exact cele două exporturi", meniu.itemi.length === 2, meniu.itemi.join(" | "));
-check("și spune pe față că sunt un rezumat neoficial", meniu.spuneCeSunt);
-await shot(page, "10-evidente-antet");
-await page.keyboard.press("Escape");
-await page.waitForTimeout(300);
-const dupaEscape = await page.evaluate(() => Boolean(document.querySelector('[role="menu"]')));
-check("și Escape îl închide", !dupaEscape);
-
-// ------------------------------------------------------ 8. EVIDENȚE: TOTALUL ANULUI PE COD, ÎN KG (QA-TRACE 7)
-// Panoul de sub tabel adună anul pe cod pentru depunerea din 15 martie. Din 17.09.2026 e în kilograme,
-// ca evidența și formularele (Andreea, AF); până atunci era în tone și „1,060” se citea ca o mie de tone.
-// Proba recalculează din API, pe drumul ei — nu cheamă `formatKg`, altfel ar greși la fel ca ecranul —
-// și compară cifra citită de pe pagină, cod cu cod. O împărțire la 1000 rămasă undeva cade aici.
+// ------------------------------------------------------ 7. GENERARE: TABUL „TOTALUL ANULUI"
+// Ecranul „Evidențe" a fost scos pe 18.09.2026: agrega exact mișcările registrului Anexa 1, adică
+// exact rândurile ecranului „Generare". Ce avea numai el — totalul anului pe cod, pentru depunerea
+// din 15 martie — a devenit al doilea tab de acolo, iar adresa veche redirectează.
+//
 // Panoul apare numai când anul are linii de evidență calculate. Pe o bază proaspătă nimeni n-a
-// apăsat încă „Regenerează", deci proba o face singură — altfel ar trece pe lângă panou fără să-l vadă.
-// Regenerarea rescrie un cache, nu date, deci nu lasă nimic în urmă pentru celelalte probe.
+// apăsat încă „Recalculează", deci proba o face singură — altfel ar trece pe lângă tabel fără să-l
+// vadă. Regenerarea rescrie un cache, nu date, deci nu lasă nimic în urmă pentru celelalte probe.
 const ANUL_TOTAL = 2026;
+await page.goto(BASE + "/generare", { waitUntil: "networkidle" });
+await page.waitForTimeout(800);
 await page.evaluate(async (an) => {
   await fetch("/api/v1/evidences/regenerate?year=" + an, {
     method: "POST",
     headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
   });
 }, ANUL_TOTAL);
-// Panoul stă în vederea lunară: implicitul paginii e „Predări", unde nu există.
-await page.goto(BASE + "/evidente?an=" + ANUL_TOTAL + "&vedere=monthly", { waitUntil: "networkidle" });
-await page.waitForTimeout(1200);
-const total = await page.evaluate(async () => {
-  const titlu = [...document.querySelectorAll("h3")].find((h) => /depunerea din 15 martie/.test(h.textContent));
-  if (!titlu) return null;
-  const an = (titlu.textContent.match(/anului (\d{4})/) ?? [])[1];
+
+// Adresa veche duce la tab, nu la un 404: linkurile din mailuri și din notițe rămân bune.
+await page.goto(BASE + "/evidente?an=" + ANUL_TOTAL, { waitUntil: "networkidle" });
+await page.waitForTimeout(1000);
+const dupaRedirect = await page.evaluate(() => location.pathname + location.search);
+check("adresa veche /evidente duce pe tabul totalului",
+  dupaRedirect.startsWith("/generare") && dupaRedirect.includes("tab=total"), dupaRedirect);
+
+const taburi = await page.evaluate(() =>
+  [...document.querySelectorAll('[role="tab"]')].map((t) => ({
+    text: t.textContent.replace(/\s+/g, " ").trim(),
+    ales: t.getAttribute("aria-selected") === "true",
+  }))
+);
+check("ecranul are două taburi", taburi.length === 2, JSON.stringify(taburi));
+check("iar cel ales e tabul totalului", taburi.find((t) => t.ales)?.text === "Totalul anului",
+  JSON.stringify(taburi));
+
+// Cifrele: proba le recalculează din API, pe drumul ei — nu cheamă `formatKg`, altfel ar greși la
+// fel ca ecranul — și compară cod cu cod. O împărțire la 1000 rămasă undeva cade aici.
+const total = await page.evaluate(async (an) => {
   const res = await fetch("/api/v1/evidences?year=" + an, {
     headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
   });
+  const linii = await res.json();
   const kg = {};
-  for (const r of await res.json()) {
+  for (const r of linii) {
     const k = (kg[r.wasteCode] ??= [0, 0, 0]);
     k[0] += r.totalGenerated;
     k[1] += r.totalRecovered;
     k[2] += r.totalDisposed;
   }
-  const panou = titlu.closest("div");
-  const antet = [...panou.querySelectorAll("thead th")].map((th) => th.textContent.trim());
-  const randuri = [...panou.querySelectorAll("tbody tr")].map((tr) => {
-    const td = [...tr.querySelectorAll("td")];
-    return { cod: td[0].querySelector("span").textContent.trim(), cifre: td.slice(1, 4).map((c) => c.textContent.trim()) };
-  });
-  return { an, kg, antet, randuri };
-});
-check("panoul cu totalul anului există pe Evidențe", total !== null);
+  // Stocul NU se adună peste luni: `closingStock` e deja cumulativ pe (punct de lucru, cod) și
+  // poartă și anii dinainte. Se ia al ultimei luni cu date, pe fiecare punct, și se adună între
+  // puncte. Proba face socoteala pe drumul ei — dacă ecranul ar aduna cele douăsprezece luni,
+  // aici s-ar vedea.
+  const ultima = {};
+  for (const r of linii) {
+    const cheie = r.wasteCode + "|" + r.workPointId;
+    if (!ultima[cheie] || r.month > ultima[cheie].month) {
+      ultima[cheie] = { month: r.month, stoc: r.closingStock };
+    }
+  }
+  const stoc = {};
+  for (const [cheie, v] of Object.entries(ultima)) {
+    const cod = cheie.slice(0, cheie.indexOf("|"));
+    stoc[cod] = (stoc[cod] ?? 0) + v.stoc;
+  }
+  const tabel = document.querySelector('[role="tabpanel"] table') ?? document.querySelector("table");
+  if (!tabel) return null;
+  const antet = [...tabel.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+  // Ultimul rând e totalul general („5 coduri de deșeu"), nu un cod — nu intră la socoteală.
+  const randuri = [...tabel.querySelectorAll("tbody tr")]
+    .map((tr) => {
+      const td = [...tr.querySelectorAll("td")];
+      const cod = td[0]?.querySelector("span")?.textContent.trim() ?? "";
+      return {
+        cod,
+        cifre: td.slice(1, 4).map((c) => c.textContent.trim()),
+        stoc: td[4]?.textContent.trim() ?? "",
+      };
+    })
+    .filter((r) => /^\d/.test(r.cod) && r.cod.includes(" "));
+  return { kg, stoc, antet, randuri };
+}, ANUL_TOTAL);
+check("tabelul totalului există", total !== null);
 if (total) {
   const coduri = Object.keys(total.kg);
-  check("are câte un rând pentru fiecare cod din evidența anului", total.randuri.length === coduri.length && coduri.length > 0,
-    `${total.randuri.length} rânduri, ${coduri.length} coduri în ${total.an}`);
-  check("coloanele spun kg, nicio coloană în tone", total.antet.slice(1).every((h) => /\[kg\]/.test(h)) && !total.antet.some((h) => /\[t\]/.test(h)),
-    total.antet.join(" | "));
+  check("are câte un rând pentru fiecare cod din evidența anului",
+    total.randuri.length === coduri.length && coduri.length > 0,
+    `${total.randuri.length} rânduri, ${coduri.length} coduri în ${ANUL_TOTAL}`);
+  check("și o coloană de stare, ca să știi dacă se poate depune",
+    total.antet.includes("Stare"), total.antet.join(" | "));
   const gresite = [];
   for (const { cod, cifre } of total.randuri) {
     cifre.forEach((text, i) => {
@@ -300,18 +287,51 @@ if (total) {
   }
   check("fiecare cifră e exact kilogramele din API", gresite.length === 0,
     gresite.slice(0, 3).join(" | ") || `${total.randuri.length * 3} cifre`);
+  const stocGresit = total.randuri
+    .filter(({ cod, stoc }) => {
+      const valoare = Number(stoc.replace(/\./g, "").replace(",", "."));
+      return Math.abs(valoare - (total.stoc[cod] ?? NaN)) > 0.0005;
+    })
+    .map(({ cod, stoc }) => `${cod} ${stoc} ≠ ${total.stoc[cod]}`);
+  check("iar „În stoc” e stocul ultimei luni, nu suma lunilor", stocGresit.length === 0,
+    stocGresit.slice(0, 3).join(" | ") || `${total.randuri.length} coduri`);
   // Garda: o probă care compară numai zerouri n-ar vedea un factor greșit.
-  check("și cel puțin o cifră e peste 1 kg", total.randuri.some((r) => r.cifre.some((c) => Number(c.replace(/\./g, "").replace(",", ".")) >= 1)));
+  check("și cel puțin o cifră e peste 1 kg",
+    total.randuri.some((r) => r.cifre.some((c) => Number(c.replace(/\./g, "").replace(",", ".")) >= 1)));
 }
 
-// Iar descărcarea chiar pleacă — un meniu care arată bine și nu descarcă nimic e mai rău decât
-// cinci butoane.
+// Documentele stau lângă cifrele din care ies; rezumatele neoficiale, într-un meniu care spune ce
+// sunt. Cele cinci butoane de altădată, toate la fel de vizibile, erau felul în care cineva depune
+// hârtia greșită.
+const documente = await page.evaluate(() => {
+  const panou = document.querySelector('[role="tabpanel"]') ?? document.body;
+  return [...panou.querySelectorAll("button")].map((b) => b.textContent.replace(/\s+/g, " ").trim());
+});
+check("fișa și centralizata au fiecare butonul ei",
+  documente.filter((b) => /^Descarcă$/.test(b)).length === 2, documente.join(" | "));
+check("iar exporturile generice stau în meniu",
+  documente.some((b) => /Alte descărcări/.test(b)) && !documente.some((b) => /^Rezumat (Excel|PDF)$/.test(b)),
+  documente.join(" | "));
+
 await page.evaluate(() => {
   [...document.querySelectorAll("button")]
     .find((b) => /Alte descărcări/.test(b.textContent))
     ?.click();
 });
-await page.waitForTimeout(300);
+await page.waitForTimeout(400);
+const meniu = await page.evaluate(() => {
+  const m = document.querySelector('[role="menu"]');
+  return {
+    deschis: Boolean(m),
+    itemi: m ? [...m.querySelectorAll('[role="menuitem"]')].map((i) => i.textContent.trim()) : [],
+  };
+});
+check("meniul se deschide", meniu.deschis);
+check("și conține exact cele două exporturi", meniu.itemi.length === 2, meniu.itemi.join(" | "));
+await shot(page, "10-generare-totalul-anului");
+
+// Iar descărcarea chiar pleacă — un meniu care arată bine și nu descarcă nimic e mai rău decât
+// cinci butoane.
 const descarcare = page.waitForEvent("download", { timeout: 20000 }).catch(() => null);
 await page.evaluate(() => {
   [...document.querySelectorAll('[role="menuitem"]')]

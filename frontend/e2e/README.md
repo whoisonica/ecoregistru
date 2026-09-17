@@ -20,6 +20,15 @@ rânduri; plătite cu `psql` → „Totul e plătit”, fără transfer; operato
 abonamentul firmei din comutator, deci nu cere un administrator nou. **Negative:** suma luată doar din cea mai veche factură → 2
 căderi; IBAN-ul copiat cu spații → 2 căderi; starea verificării păstrată după o eroare → 1 cădere. **29/29** pe `eco_e2e_abonament`. Lasă în urmă „Proba 36 <număr>” cu două facturi plătite.
 
+🧾 **18.09.2026 — „Evidențe" fuzionat în „Generare"** (probele **1, 3, 5, 6, 9, 10, 11, 28** atinse): ecranul `/evidente` a fost scos — agrega exact
+mișcările registrului `ANEXA_1`, adică rândurile lui `/generare` — iar adresa lui e redirect. **Proba 10, secțiunea 7** e rescrisă pe tabul nou:
+redirectul duce pe `?tab=total`, ecranul are două taburi, tabelul are un rând pe fiecare cod din `GET /api/v1/evidences`, **cifrele se recalculează
+în probă și se compară cod cu cod** (o împărțire la 1000 cade aici), coloana „Stare" există, fișa și centralizata au fiecare butonul lor, iar
+rezumatele stau într-un meniu care chiar descarcă. **Proba 28** s-a mutat pe `?tab=total` și citește nota de „de cântărit" în forma ei nouă
+(`data-testid="pending-weighing-note"`). **Proba 6** merge acum pe lista de mișcări filtrată (`/generare?luna=<an>&problema=cod-rd`): banda spune
+„Doar mișcările fără cod R/D", rândul poartă badge-ul roșu, iar creionul deschide chiar formularul, acolo unde stă rândul. Probele 3 și 5 nu mai
+navighează prin intrarea „Evidențe" din meniu (nu mai există), ci prin „Termene". Rulate pe stivă proprie **8099/5199**, baza `eco_e2e_evidente`.
+
 # Probe de interfaţă
 
 📅 **17.09.2026 — proba 35 (`35-termene-trecute.mjs`), Termene pe taburi**: De făcut · Bifate · Trecute, ca pe Clienți, tabul în

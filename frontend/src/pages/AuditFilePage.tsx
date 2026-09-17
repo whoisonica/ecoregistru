@@ -7,7 +7,14 @@ import {
   type AuditFileContents,
   type AuditFileSize,
 } from "@/hooks/useAuditFile";
-import { useEvidences } from "@/hooks/useEvidences";
+import {
+  downloadAnexa1Form,
+  downloadAnnualDeclaration,
+  downloadEvidenceExport,
+  useEvidences,
+} from "@/hooks/useEvidences";
+import { downloadPackagingAnexa3, downloadPackagingDeclaration } from "@/hooks/usePackaging";
+import { Menu, MenuItem } from "@/components/ui/menu";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiBlobErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -23,6 +30,10 @@ import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 
 const t = strings.auditFile;
+const ev = strings.evidences;
+
+/** Documentele care se iau separat din dosar. Arhiva întreagă are butonul ei, deasupra. */
+type DocKey = "sheet" | "centralized" | "packaging" | "anexa3" | "xlsx" | "pdf";
 
 /** „1,4 MB”. Sub 1 MB, în KB: un dosar fără poze nu e „0,0 MB”. */
 function formatSize(bytes: number): string {
@@ -52,20 +63,38 @@ const STATE: Record<RowState, { variant: "success" | "warning" | "muted" | "dang
   missing: { variant: "danger", label: t.stateMissing },
 };
 
-/** Un document din arhivă: starea lui ca LED, numele și de ce intră sau nu. */
-function ContentRow({ state, title, testId, children }: {
+/**
+ * Un document al anului: starea lui ca LED, numele, de ce intră sau nu — și, din 18.09.2026,
+ * butonul care îl ia separat.
+ *
+ * <p>`action` lipsește pentru ce există numai înăuntrul arhivei (autorizațiile partenerilor,
+ * atașamentele): acolo rândul spune „în arhivă", nu oferă un buton care n-ar avea ce descărca.
+ */
+function ContentRow({ state, title, testId, action, zipOnly, children }: {
   state: RowState;
   title: string;
   testId?: string;
+  action?: ReactNode;
+  /** Documentul se naște numai înăuntrul arhivei: n-are endpoint propriu, deci nici buton. */
+  zipOnly?: boolean;
   children: ReactNode;
 }) {
   return (
-    <li className="grid gap-1 sm:grid-cols-[8.5rem_1fr] sm:gap-3">
+    <li className="grid gap-1 sm:grid-cols-[8.5rem_1fr_auto] sm:gap-3">
       <Badge variant={STATE[state].variant} className="self-start sm:mt-0.5">{STATE[state].label}</Badge>
       <div className="min-w-0">
         <p className="text-sm font-medium text-content-strong">{title}</p>
         <div data-testid={testId} className="mt-0.5 space-y-0.5 text-sm text-content-muted">{children}</div>
       </div>
+      {action ? (
+        <div className="sm:self-start">{action}</div>
+      ) : (
+        // „în arhivă" numai unde e adevărat: pe un document care nu se aplică anului, ar fi spus
+        // exact pe dos față de eticheta „Nu intră" de lângă el.
+        <span className="text-xs text-content-subtle sm:self-start sm:pt-1">
+          {zipOnly ? t.rowInZip : t.rowNothing}
+        </span>
+      )}
     </li>
   );
 }
@@ -73,12 +102,12 @@ function ContentRow({ state, title, testId, children }: {
 const movements = (n: number) => countOf(n, t.movementOne, t.movementMany);
 
 /** Fișa și centralizata: au date dacă anul are mișcări; pe mai mulți ani, câte un rând pe an. */
-function sheetRow(c: AuditFileContents, title: string, single: string) {
+function sheetRow(c: AuditFileContents, title: string, single: string, action?: ReactNode) {
   const empty = c.years.every((y) => y.movements === 0);
   if (c.years.length === 1) {
     const y = c.years[0];
     return (
-      <ContentRow state={y.movements > 0 ? "in" : "empty"} title={title}>
+      <ContentRow state={y.movements > 0 ? "in" : "empty"} title={title} action={action}>
         <p>
           {y.movements > 0
             ? single
@@ -91,7 +120,7 @@ function sheetRow(c: AuditFileContents, title: string, single: string) {
     );
   }
   return (
-    <ContentRow state={empty ? "empty" : "in"} title={title}>
+    <ContentRow state={empty ? "empty" : "in"} title={title} action={action}>
       {c.years.map((y) => (
         <p key={y.year}>
           {y.movements > 0
@@ -103,22 +132,22 @@ function sheetRow(c: AuditFileContents, title: string, single: string) {
   );
 }
 
-function PackagingRow({ c }: { c: AuditFileContents }) {
+function PackagingRow({ c, action }: { c: AuditFileContents; action?: ReactNode }) {
   const d = c.packagingDeclaration;
   return (
-    <ContentRow state={d === "INCLUDED" ? "in" : "out"} title={t.docPackaging}>
+    <ContentRow state={d === "INCLUDED" ? "in" : "out"} title={t.docPackaging} action={d === "INCLUDED" ? action : undefined}>
       <p>{d === "INCLUDED" ? t.packagingIncluded : d === "TRADER_ONLY" ? t.packagingTrader : t.packagingNotAnswered}</p>
     </ContentRow>
   );
 }
 
-function Anexa3Row({ c }: { c: AuditFileContents }) {
+function Anexa3Row({ c, action }: { c: AuditFileContents; action?: ReactNode }) {
   const withPoints = c.years.filter((y) => y.anexa3WorkPoints.length > 0);
   const missing = c.years.filter((y) => y.anexa3RoleMissing);
   const state: RowState = withPoints.length > 0 ? "in" : missing.length > 0 ? "missing" : "out";
   const single = c.years.length === 1;
   return (
-    <ContentRow state={state} title={t.docAnexa3}>
+    <ContentRow state={state} title={t.docAnexa3} action={withPoints.length > 0 ? action : undefined}>
       {withPoints.length > 0 &&
         (single ? (
           <p>{t.anexa3Yes.replace("{points}", withPoints[0].anexa3WorkPoints.join(", "))}</p>
@@ -143,13 +172,13 @@ function Anexa3Row({ c }: { c: AuditFileContents }) {
 function PartnersRow({ c }: { c: AuditFileContents }) {
   if (c.partners === 0) {
     return (
-      <ContentRow state="empty" title={t.docPartners}>
+      <ContentRow state="empty" title={t.docPartners} zipOnly>
         <p>{t.partnersNone}</p>
       </ContentRow>
     );
   }
   return (
-    <ContentRow state="in" title={t.docPartners}>
+    <ContentRow state="in" title={t.docPartners} zipOnly>
       <p>{t.partnersYes.replace("{count}", countOf(c.partners, t.partnerOne, t.partnerMany))}</p>
       {c.partnersExpired > 0 && (
         <p className="text-state-bad-text">
@@ -160,6 +189,35 @@ function PartnersRow({ c }: { c: AuditFileContents }) {
         <p>{t.partnersSoon.replace("{count}", countOf(c.partnersExpiringSoon, t.expiredOne, t.expiredMany))}</p>
       )}
     </ContentRow>
+  );
+}
+
+/** Butonul unui rând: același text pe toate, fiindcă numele documentului e chiar lângă el. */
+function DocButton({ label, loading, disabled, onClick }: {
+  label: string;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button variant="outline" size="sm" loading={loading} disabled={disabled} onClick={onClick} aria-label={label}>
+      {!loading && <Download className="mr-1.5 h-3.5 w-3.5" />}
+      {t.rowDownload}
+    </Button>
+  );
+}
+
+/** Ambalajele ies în două formate: .xls pentru portal, PDF pentru dosar. */
+function FormatMenu({ disabled, onPick }: { disabled: boolean; onPick: (format: "xls" | "pdf") => void }) {
+  return (
+    <Menu label={t.rowDownload} align="right" disabled={disabled}>
+      <MenuItem icon={Download} onClick={() => onPick("xls")}>
+        .xls
+      </MenuItem>
+      <MenuItem icon={Download} onClick={() => onPick("pdf")}>
+        PDF
+      </MenuItem>
+    </Menu>
   );
 }
 
@@ -197,6 +255,42 @@ export function AuditFilePage() {
     [y0.data, y1.data, y2.data, y3.data, y4.data]
   );
   const [confirming, setConfirming] = useState(false);
+  /**
+   * Documentul care se pregătește acum, sau cel care așteaptă confirmarea „sunt linii necântărite".
+   * Câte o valoare pentru fiecare rând: două butoane care împart aceeași rotiță ar învârti-o pe
+   * documentul greșit.
+   */
+  const [doc, setDoc] = useState<DocKey | null>(null);
+  const [askingFor, setAskingFor] = useState<"sheet" | "centralized" | null>(null);
+
+  async function runDoc(key: DocKey, run: () => Promise<void>, fallback: string) {
+    setDoc(key);
+    try {
+      await run();
+    } catch (err) {
+      notify(await apiBlobErrorMessage(err, fallback), "error");
+    } finally {
+      setDoc(null);
+    }
+  }
+
+  /** Fișa și centralizata poartă rubrici goale cât timp o ieșire n-a fost cântărită: se spune întâi. */
+  function officialDoc(key: "sheet" | "centralized") {
+    const run = () =>
+      key === "sheet"
+        ? downloadAnexa1Form({ year })
+        : downloadAnnualDeclaration({ year });
+    const fallback = key === "sheet" ? ev.anexa1Error : ev.annualDeclarationError;
+    return runDoc(key, run, fallback);
+  }
+
+  function askOfficial(key: "sheet" | "centralized") {
+    if (pendingWeighing.length > 0) {
+      setAskingFor(key);
+      return;
+    }
+    void officialDoc(key);
+  }
 
   async function handleDownload() {
     if (pendingWeighing.length > 0) {
@@ -230,9 +324,22 @@ export function AuditFilePage() {
           }}
         />
       )}
+
+      {askingFor && (
+        <AwaitingWeighingDialog
+          documentName={askingFor === "sheet" ? ev.anexa1 : ev.annualDeclaration}
+          lines={pendingWeighing}
+          onCancel={() => setAskingFor(null)}
+          onConfirm={() => {
+            const key = askingFor;
+            setAskingFor(null);
+            void officialDoc(key);
+          }}
+        />
+      )}
       <PageHeader title={t.title} description={t.subtitle} />
 
-      <Card className="mt-6 max-w-2xl p-6">
+      <Card className="mt-6 max-w-3xl p-6">
         <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
@@ -278,6 +385,7 @@ export function AuditFilePage() {
 
         <div className="mt-6 border-t border-line pt-4">
           <p className="text-sm font-medium text-content-strong">{t.contents}</p>
+          <p className="mt-0.5 text-xs text-content-muted">{t.contentsHint}</p>
           {contents.isError ? (
             <p className="mt-3 text-sm text-content-muted">{t.contentsError}</p>
           ) : !contents.data ? (
@@ -288,24 +396,80 @@ export function AuditFilePage() {
             </div>
           ) : (
             <ul className="mt-3 space-y-4" data-testid="audit-file-contents">
-              {sheetRow(contents.data, t.docSheet, t.sheetYes)}
-              {sheetRow(contents.data, t.docCentralized, t.centralizedYes)}
-              <PackagingRow c={contents.data} />
-              <Anexa3Row c={contents.data} />
+              {sheetRow(
+                contents.data,
+                t.docSheet,
+                t.sheetYes,
+                <DocButton label={t.docSheet} loading={doc === "sheet"} disabled={doc !== null} onClick={() => askOfficial("sheet")} />
+              )}
+              {sheetRow(
+                contents.data,
+                t.docCentralized,
+                t.centralizedYes,
+                <DocButton
+                  label={t.docCentralized}
+                  loading={doc === "centralized"}
+                  disabled={doc !== null}
+                  onClick={() => askOfficial("centralized")}
+                />
+              )}
+              <PackagingRow
+                c={contents.data}
+                action={
+                  <FormatMenu
+                    disabled={doc !== null}
+                    onPick={(format) =>
+                      void runDoc("packaging", () => downloadPackagingDeclaration(year, format), t.downloadError)
+                    }
+                  />
+                }
+              />
+              <Anexa3Row
+                c={contents.data}
+                action={
+                  <FormatMenu
+                    disabled={doc !== null}
+                    onPick={(format) =>
+                      void runDoc("anexa3", () => downloadPackagingAnexa3(year, undefined, format), t.downloadError)
+                    }
+                  />
+                }
+              />
               <PartnersRow c={contents.data} />
               <ContentRow
                 state={size && size.attachments === 0 ? "out" : "in"}
                 title={t.docAttachments}
+                zipOnly
                 testId="audit-file-size"
               >
                 <p>{size ? sizeLine(size) : "?"}</p>
               </ContentRow>
             </ul>
           )}
+          <p className="mt-4 border-t border-line pt-3 text-xs text-content-muted">
+            {t.workExports}{" "}
+            <button
+              type="button"
+              disabled={doc !== null}
+              onClick={() => void runDoc("xlsx", () => downloadEvidenceExport({ year }, "xlsx"), ev.exportError)}
+              className="font-medium text-brand-700 underline disabled:opacity-60"
+            >
+              {ev.exportExcel}
+            </button>{" "}
+            ·{" "}
+            <button
+              type="button"
+              disabled={doc !== null}
+              onClick={() => void runDoc("pdf", () => downloadEvidenceExport({ year }, "pdf"), ev.exportError)}
+              className="font-medium text-brand-700 underline disabled:opacity-60"
+            >
+              {ev.exportPdf}
+            </button>
+          </p>
         </div>
       </Card>
 
-      <p className="mt-4 max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      <p className="mt-4 max-w-3xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
         {t.note}
       </p>
     </div>

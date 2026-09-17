@@ -44,7 +44,6 @@ export const strings = {
     weighing: "Cântar",
     kwWeighing:
       "cântar operațiune bon brut tara neto acceptat sortiment borderou de achiziție intrare ieșire persoană fizică preț reținere AFM impozit depozit",
-    evidences: "Evidențe",
     partners: "Parteneri",
     deadlines: "Termene",
     auditFile: "Dosar de control",
@@ -75,10 +74,11 @@ export const strings = {
      * amândouă apar, cu eticheta lor, iar omul alege.
      */
     kwDashboard: "acasă start situație stoc alerte ce am de făcut",
+    // Ecranul „Evidențe" a fost scos pe 18.09.2026, iar cuvintele lui au venit aici: raportul
+    // registrului Anexa 1 e acum tabul „Totalul anului" al ecranului de generare. Nimeni nu caută
+    // „evidențe"; se caută „fișa" sau „anexa 1", și trebuie să ducă unde sunt cifrele.
     kwMovements:
-      "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D",
-    kwEvidences:
-      "anexa 1 fișa de evidență evidența gestiunii deșeurilor generate centralizată declarația anuală centralizator HG 856/2002 regenerează tone",
+      "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D evidența gestiunii deșeurilor generate centralizată fișa de evidență anexa 1 HG 856/2002 totalul anului SIM 15 martie",
     kwPackaging:
       "anexa 1 ambalaje anexa 3 ambalaje Ordinul 794/2012 tabelul 1 tabelul 2 xls pus pe piață",
     kwDeadlines: "scadențe termene 15 martie 25 februarie 25 ianuarie AFM SIM alerte",
@@ -602,6 +602,17 @@ export const strings = {
     // cerut „Ieșiri"; proprietarul l-a numit în aceeași seară după ce se înregistrează: generarea.
     generatorTitle: "Generare de deșeuri",
     generatorSubtitle: "Deșeurile generate de firmă și ce se întâmplă cu ele, pentru fișa Anexa 1 și rapoartele de generator.",
+    // Taburile ecranului de generare (18.09.2026, proprietarul: „și Generare și Evidența e la
+    // fel?"). Ecranul „Evidențe" a fost scos: agrega exact mișcările registrului `ANEXA_1`, adică
+    // exact rândurile de aici. Ce avea numai el — totalul anului pe cod — a devenit al doilea tab;
+    // documentele se iau de aici și din Dosarul de control, care le adună pe toate.
+    tabsLabel: "Generare",
+    tabMovements: "Mișcări",
+    tabAnnual: "Totalul anului",
+    // Filtrul care leagă Acasă, panoul și totalul anului de rândurile vinovate. Stă în adresă,
+    // deci linkul se poate și trimite.
+    onlyMissingCode: "Doar mișcările fără cod R/D",
+    onlyMissingCodeOff: "Arată toate mișcările",
     // „Adaugă deșeuri" pe generator, „Deșeuri proprii" acolo unde firma e și colector (proprietarul,
     // 15.09.2026): numele spune ce face omul, nu ce coloană se umple.
     generatorAdd: "Adaugă deșeuri",
@@ -1824,15 +1835,26 @@ export const strings = {
       "Centralizatorul anului: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
     annualDeclarationError: "Evidența centralizată nu a putut fi generată.",
 
-    // --- Totalul anului pe cod, pentru depunerea din 15 martie ---
-    // În kilograme, ca evidența și formularele: se depune în kg (Andreea, 14.09.2026, AF). Până pe
-    // 17.09.2026 panoul era în tone, după OUG 92/2021 art. 48 alin. (1), și „1,060” se citea greșit.
-    annualTotalsTitle: "Pentru depunerea din 15 martie — totalul anului {year}, pe cod",
-    annualTotalsHint:
-      "Aceleași kilograme ca în evidență, adunate pe an și pe cod, gata de trecut în SIM. Fișa și evidența centralizată tipărite au aceleași cifre.",
-    colGeneratedKg: "Generat [kg]",
-    colRecoveredKg: "Valorificat [kg]",
-    colDisposedKg: "Eliminat [kg]",
+    // --- Totalul anului pe cod: tabul „Totalul anului” de pe Generare (18.09.2026) ---
+    // Până atunci, tabelul ăsta stătea în josul unui ecran propriu („Evidențe”), sub vederea
+    // lunară — deci pe vederea implicită nu se vedea deloc. În kilograme, ca evidența și
+    // formularele: se depune în kg (Andreea, 14.09.2026, AF). Până pe 17.09.2026 era în tone,
+    // după OUG 92/2021 art. 48 alin. (1), și „1,060” se citea greșit.
+    annualIntro:
+      "Cifrele pe care le treci în SIM pe 15 martie, pe fiecare cod de deșeu: cât ai generat în {year}, cât s-a valorificat, cât s-a eliminat și cât ți-a rămas. Aceleași kilograme ca pe fișa tipărită.",
+    annualTotalRow: "{count} de deșeu",
+    annualEmptyHint:
+      "Anul se umple singur, din deșeurile înregistrate pe tabul „Mișcări”.",
+    colState: "Stare",
+    // Starea unui cod, ca LED: verde = gata, galben = o așteptare legitimă, roșu = nu se poate
+    // depune așa. Aceleași înțelesuri ca pe Termene („Gata de depus”) și în panou.
+    stateReady: "Gata",
+    stateMissingCode: "{kg} kg fără cod R/D",
+    stateAwaiting: "{count} de cântărit",
+    blockerMissingCode: "{kg} kg au plecat fără cod R/D",
+    blockerAwaiting: "{count} așteaptă cântarul destinatarului",
+    download: "Descarcă",
+    regenerateNow: "Recalculează acum",
     // Cele două exporturi generice au stat până pe 08.09 în antet, la fel de vizibile ca cele două
     // documente oficiale — cinci butoane pe un rând, care strângeau titlul paginii pe trei rânduri.
     // Sunt lucruri de alt fel: unul se depune la agenție, celălalt scrie pe el „rezumat neoficial".
@@ -1857,25 +1879,9 @@ export const strings = {
     colGenerated: "Generat",
     colRecovered: "Valorificat",
     colDisposed: "Eliminat",
-    colHandedOver: "din care predat",
     colUnclassified: "Neclasificat",
-    colStock: "Stoc",
+    colStock: "În stoc",
     hazardous: "Periculos",
-    // line warnings
-    // Cele două vederi ale tabului. Implicit e registrul de predări, cerut la meeting; vederea
-    // lunară rămâne fiindcă poartă stocul cumulativ, singura cifră pe care ochiul n-o reface și
-    // exact ce cere evidența gestiunii deșeurilor.
-    viewHandovers: "Predări",
-    viewMonthly: "Evidența lunară",
-    handoversSubtitle:
-      "Ce a plecat de pe amplasament: cantitatea, data predării, cine a primit și sub ce cod. Din rândul de aici tipărești Anexa 3.",
-    colHandoverDate: "Data predării",
-    colOperationCode: "Operațiune",
-    colPartnerName: "Partener",
-    emptyHandovers: "Nicio predare pentru filtrele alese.",
-    handoversSearchPlaceholder: "Caută după cod, partener, punct de lucru...",
-    handoversLoadError: "Nu am putut încărca predările.",
-    ownSite: "pe amplasament propriu",
     // Roșu, nu galben: o ieșire fără cod R/D nu e o rubrică de completat cândva, e o cantitate
     // care lipsește din evidență. Se cere la orice ieșire nouă, deci rândurile astea sunt vechi.
     missingCode: "Fără cod R/D",
@@ -1883,27 +1889,17 @@ export const strings = {
       "Cantitate ieșită fără cod de operațiune (R/D). Se scade din stoc, dar nu poate fi raportată în „Valorificat” sau „Eliminat” până nu completezi codul pe mișcare.",
     // Badge-ul spunea ce e stricat; abia asta duce unde se repară.
     fixMissingCode: "Completează codul",
-    // Filtrul care leagă panoul de rândurile vinovate. Stă în adresă, deci linkul se poate trimite.
-    onlyMissingCode: "Doar ieșirile fără cod R/D",
-    onlyMissingCodeOff: "Arată toate predările",
-    onlyMissingCodeEmpty: "Nicio ieșire fără cod R/D pentru filtrele alese. Depunerea nu e blocată aici.",
     awaitingWeighing: "De cântărit",
     awaitingWeighingHint:
       "O ieșire din luna asta așteaptă cântarul destinatarului, deci totalurile sunt provizorii.",
     regeneratedCascade: "Evidență regenerată: {count} pentru {year} (și anii {years}).",
     // empty state
     empty: "Nu există linii de evidență pentru {year}.",
-    searchPlaceholder: "Caută după cod, denumire sau punct de lucru...",
-    emptyHint: "Apasă „Regenerează” pentru a calcula evidența anului {year} din mișcări.",
     // Evidența e un cache derivat din mișcări, iar citirea îl reconstruiește când a rămas în
-    // urmă. Butonul rămâne pentru reconstrucția cerută explicit — după o migrare, sau când vrei
+    // urmă. Linkul rămâne pentru reconstrucția cerută explicit — după o migrare, sau când vrei
     // să vezi cifra recalculată sub ochii tăi.
-    staleNote:
-      "Evidența se recalculează din mișcări ori de câte ori s-a schimbat ceva. „Regenerează” o reconstruiește pe loc și rescrie și anii următori, fiindcă stocul se reportează.",
-    // Spus înainte de clic: altfel butonul fișei deschidea un dialog în locul fișierului și părea stricat.
-    pendingWeighingNote:
-      "{year}: {count} fără cantitatea de la destinatar. Fișa și evidența centralizată se descarcă, dar cu rubrica goală acolo.",
-    pendingWeighingShow: "Arată predările",
+    staleNote: "Cifrele se recalculează singure din deșeurile înregistrate.",
+    pendingWeighingShow: "Arată mișcările",
   },
 
   deadlines: {
@@ -2024,7 +2020,18 @@ export const strings = {
      * starea lui pentru firma și perioada alese, și motivul; regulile sunt ale arhivei
      * (`AuditFileService.contents`), nu ale ecranului.
      */
-    contents: "Ce intră în arhivă",
+    contents: "Documentele anului",
+    // Din 18.09.2026 lista nu mai spune doar ce intră în arhivă: fiecare document se ia și
+    // separat, de aici (proprietarul: „să centralizeze toate documentele și să le putem
+    // downloada de acolo"). Endpoint-urile existau deja — ecranul doar le dă un buton.
+    contentsHint:
+      "Fiecare se descarcă separat, sau toate odată în arhivă. Ce n-are buton există numai înăuntrul arhivei.",
+    rowDownload: "Descarcă",
+    rowInZip: "în arhivă",
+    rowNothing: "—",
+    // Rezumatele neoficiale nu intră în dosar, dinadins (14.09.2026) — dar se iau de aici, ca să
+    // nu fie nevoie de încă un ecran pentru ele.
+    workExports: "Pentru lucru, nu pentru depunere:",
     contentsError: "Nu am putut afla ce intră în dosar. Descărcarea funcționează în continuare.",
     stateIn: "Intră",
     stateEmpty: "Intră fără date",

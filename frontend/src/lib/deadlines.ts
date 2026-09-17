@@ -55,7 +55,7 @@ export function documentFor(d: Deadline): { to: string; label: string } | null {
   const reported = Number(d.dueDate.slice(0, 4)) - 1;
   if (d.reportType === "SIM_ANNUAL") {
     return {
-      to: `/evidente?an=${reported}`,
+      to: `/generare?tab=total&luna=${reported}`,
       label: strings.deadlines.documentEvidence.replace("{year}", String(reported)),
     };
   }

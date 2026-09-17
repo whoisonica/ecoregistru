@@ -62,7 +62,7 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 5. „Caută oriunde · Ctrl K” — paleta.
 6. **Meniul** (`lib/navItems.ts`): o tastă (1–9, 0) și un indicator pe fiecare intrare („1 de cântărit”, „1 fără cod
    R/D”, „2 depășite”, „2 expiră”). Fiecare ecran de lucru e intrare proprie: Acasă · Generare · Intrări · Ieșiri ·
-   Ambalaje · Evidențe · Termene · Dosar de control · Parteneri · Setări; grupul **Cabinet** (F, C) la consultant și
+   Ambalaje · Termene · Dosar de control · Parteneri · Setări; grupul **Cabinet** (F, C) la consultant și
    platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
 7. Jos: Abonament (doar cine administrează) și contul, cu meniul Termeni · Confidențialitate · Scurtături · Deconectare.
 
@@ -185,6 +185,20 @@ peste toate rândurile filtrului (`GET /api/v1/movements/totals`), nu peste pagi
 
 Formularul e același (`MovementFormDialog`); ecranul îi dă registrul și direcția, deci pornește pe preluare la
 Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
+
+**Generare are două taburi** (18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
+sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat, ce a rămas în
+stoc și starea lui („Gata" · „N de cântărit" · „N kg fără cod R/D"), plus cele două documente oficiale dedesubt. Tabul
+stă în adresă (`?tab=total`), ca la Termene și Clienți. Ecranul **„Evidențe" a fost scos**: `EvidenceCalculator` agregă
+exact mișcările registrului `ANEXA_1`, adică exact rândurile ecranului de generare — două intrări în meniu pentru
+același registru, cu aceleași filtre și aceleași butoane de document. `/evidente` e redirect (`EvidencesRedirect`):
+`?problema=cod-rd` duce pe lista anului cu filtrul pus, restul pe tabul totalului. Registrul art. 48 nu se atinge:
+rămâne pe Intrări / Ieșiri, cu „Evidența cronologică" în meniul lui.
+
+**Dosarul de control e locul hârtiilor.** Lista „Documentele anului" (`GET /api/v1/audit-file/contents`) are de acum
+un buton pe fiecare rând: fișa, centralizata, Anexa 1 și Anexa 3 Ambalaje (`.xls` / PDF), plus rezumatele neoficiale
+sub linie. Ce se naște numai înăuntrul arhivei — lista autorizațiilor, atașamentele — scrie „în arhivă"; ce nu se
+aplică anului scrie „—", niciodată „în arhivă".
 
 ---
 

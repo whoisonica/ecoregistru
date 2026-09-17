@@ -70,6 +70,8 @@ import {
 } from "@/hooks/useAnexa3";
 import { canPrintAnexa2, useAnexa2Download } from "@/hooks/useAnexa2";
 import { TotalsStrip } from "@/components/movements/TotalsStrip";
+import { AnnualTotals } from "@/components/movements/AnnualTotals";
+import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
 import { AttachmentsDialog } from "@/components/movements/AttachmentsDialog";
 import { RecordWeightDialog } from "@/components/movements/RecordWeightDialog";
 import { MovementFormDialog } from "@/components/movements/MovementFormDialog";
@@ -83,6 +85,40 @@ const e = strings.enums;
  * din paletă — duc tot aici, deci se trimit mai departe cu tot cu parametri: pe ecranul mișcării
  * numite în `?miscare=`, altfel pe primul ecran al firmei.
  */
+/**
+ * `/evidente` — adresa ecranului scos pe 18.09.2026.
+ *
+ * <p>„Evidențe" agrega exact mișcările registrului `ANEXA_1`, adică exact rândurile ecranului
+ * „Generare": două intrări în meniu pentru același registru. Ce avea numai el — totalul anului pe
+ * cod — a devenit tabul „Totalul anului" de acolo, iar documentele se iau de acolo și din Dosarul
+ * de control.
+ *
+ * <p>Linkurile vechi se traduc, nu se pierd: „arată-mi ce blochează depunerea"
+ * (`?problema=cod-rd`) ajunge pe lista de mișcări a anului, cu filtrul pus; restul, pe tabul
+ * totalului. O firmă care nu ține Anexa 1 n-are unde: pleacă pe primul ei ecran.
+ */
+export function EvidencesRedirect() {
+  const { data: company, isLoading } = useCurrentCompany();
+  const [year] = useUrlState("an");
+  const [workPoint] = useUrlState("punct");
+  const [problem] = useUrlState("problema");
+  if (isLoading) return null;
+  const visible = screensFor(company?.type);
+  if (!visible.includes("GENERATED")) {
+    return <Navigate replace to={SCREEN_PATH[visible[0]]} />;
+  }
+  const params = new URLSearchParams();
+  if (problem === "cod-rd") {
+    params.set("luna", year || String(new Date().getFullYear()));
+    params.set("problema", "cod-rd");
+  } else {
+    params.set("tab", "total");
+    if (year) params.set("luna", year);
+  }
+  if (workPoint) params.set("punct", workPoint);
+  return <Navigate replace to={`${SCREEN_PATH.GENERATED}?${params.toString()}`} />;
+}
+
 export function MovementsRedirect({ fallback }: { fallback?: MovementScreen } = {}) {
   const location = useLocation();
   const { data: company, isLoading } = useCurrentCompany();
@@ -96,6 +132,17 @@ export function MovementsRedirect({ fallback }: { fallback?: MovementScreen } = 
       ? fallback
       : visible[0];
   return <Navigate replace to={SCREEN_PATH[target] + location.search} />;
+}
+
+/**
+ * Anii din selectorul tabului anual: cel curent și cinci în urmă. Un an venit prin adresă (linkul
+ * unui termen vechi) intră și el în listă, altfel select-ul ar arăta altceva decât filtrează pagina.
+ */
+function yearOptions(current: number): number[] {
+  const now = new Date().getFullYear();
+  const list = Array.from({ length: 6 }, (_, i) => now - i);
+  if (Number.isFinite(current) && !list.includes(current)) list.push(current);
+  return list.sort((a, b) => b - a);
 }
 
 export function MovementsPage({ screen }: { screen: MovementScreen }) {
@@ -126,6 +173,27 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const thisMonth = useMemo(() => currentMonth(), []);
   const [monthParam, setMonthFilter] = useUrlState("luna", thisMonth);
   const [workPointFilter, setWorkPointFilter] = useUrlState("punct");
+  /**
+   * Tabul ecranului de generare, în adresă ca la Termene și Clienți (`?tab=`): „Mișcări" (implicit)
+   * și „Totalul anului". Al doilea a fost, până pe 18.09.2026, josul unui ecran propriu —
+   * „Evidențe" —, care agrega exact mișcările de aici.
+   */
+  const [tabParam, setTab] = useUrlState("tab");
+  /**
+   * „Arată-mi doar ce blochează depunerea”, trimis prin adresă de pe Acasă, din panou și din tabul
+   * „Totalul anului”. Serverul știe întrebarea (`missingOperationCode`); ecranul doar o poartă, ca
+   * linkul să se poată și trimite. Până pe 18.09.2026 filtrul trăia în registrul de predări al
+   * ecranului „Evidențe”, care a fost scos.
+   */
+  const [problem, setProblem] = useUrlState("problema");
+  const onlyMissingCode = problem === "cod-rd";
+  /**
+   * Taburile stau numai pe „Generare”: registrul Anexa 1 e singurul cu un raport anual de depus
+   * (15 martie). Pe tabul totalului, lista și banda de totaluri nici nu se cer de la server.
+   */
+  const isGeneration = screen === "GENERATED";
+  const tab = isGeneration && tabParam === "total" ? "total" : "";
+  const showList = tab === "";
   // O adresă editată cu mâna (`?luna=` sau `?luna=august`) nu golește ecranul și nu-l pune să
   // aducă tot: cade pe luna curentă, ca `useUrlNumber` pe implicitul lui.
   const monthFilter = isMonthValue(monthParam) ? monthParam : thisMonth;
@@ -141,8 +209,11 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     if (workPointFilter) f.workPointId = workPointFilter;
     f.register = register;
     if (direction) f.direction = direction;
+    // O ieșire fără cod R/D a plecat și ea de pe amplasament: `leftSite` n-are ce căuta aici,
+    // rândul căutat e tocmai cel care n-a fost clasificat.
+    if (onlyMissingCode) f.missingOperationCode = true;
     return f;
-  }, [monthFilter, workPointFilter, register, direction]);
+  }, [monthFilter, workPointFilter, register, direction, onlyMissingCode]);
 
   /**
    * Căutarea, sortarea și paginarea se fac **la server** (P3.1).
@@ -160,7 +231,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     initialSort: { key: "date", direction: "desc" },
     resetOn: filters,
   });
-  const { data: movements, isLoading, isError } = useMovements(filters, table.params);
+  const { data: movements, isLoading, isError } = useMovements(filters, table.params, showList);
   const view = table.bind(movements);
   /** Rândurile paginii aduse. Nu mai e „tot ce are firma" — vezi mai sus. */
   const rows = view.visible;
@@ -192,7 +263,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   // „Șterge filtrele" apare doar când e ceva de șters. Luna curentă nu e un filtru pus de cineva,
   // e punctul de plecare al ecranului — iar ștergerea o readuce, fiindcă „nicio lună" ar însemna
   // din nou toate mișcările.
-  const hasFilters = Boolean(monthFilter !== thisMonth || workPointFilter);
+  const hasFilters = Boolean(monthFilter !== thisMonth || workPointFilter || onlyMissingCode);
   // O lună anume, nu un an întreg — ce hotărăște dacă golul se explică prin filtru.
   const isSingleMonth = monthFilter.includes("-");
   const monthLabel = isSingleMonth
@@ -202,10 +273,9 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const { download: downloadAviz, downloadingId: downloadingAvizId } = useAvizDownload();
   const { download: downloadAnexa2, downloadingId: downloadingAnexa2Id } = useAnexa2Download();
   const { data: company } = useCurrentCompany();
-  const isGeneration = screen === "GENERATED";
   const location = useLocation();
   const navigate = useNavigate();
-  const totals = useMovementTotals(filters);
+  const totals = useMovementTotals(filters, showList);
 
   /**
    * Mișcarea pe care o cere adresa, deschisă direct în formularul de editare.
@@ -385,6 +455,12 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     OUT: { title: t.outTitle, subtitle: t.outSubtitle, add: t.outAdd, key: "E", icon: ArrowUpFromLine, variant: "outline" as const },
   }[screen];
 
+  /** Intrările și Ieșirile își au documentul lor, „Evidența cronologică”, în meniul din antet. */
+  const tabs: PageTab[] = [
+    { id: "", label: t.tabMovements },
+    { id: "total", label: t.tabAnnual },
+  ];
+
   return (
     <div>
       <PageHeader
@@ -426,6 +502,10 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         }
       />
 
+      {isGeneration && (
+        <PageTabs tabs={tabs} selected={tab} onSelect={setTab} label={t.tabsLabel} />
+      )}
+
       {company?.type === "COLLECTOR" && screen === "IN" && (
         <p className="mt-4 rounded-md border border-line-strong bg-surface-muted px-3 py-2 text-sm text-content-strong">
           {t.collectorOwnWasteHint}
@@ -438,6 +518,49 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         </p>
       )}
 
+      {tab === "total" && (
+        <>
+          {/* Un singur filtru: tabelul e anual, luna n-are ce filtra în el. Scrie tot în `luna`,
+              ca anul să rămână același când te întorci pe „Mișcări”. */}
+          <div className="mt-5 flex flex-wrap items-end gap-3">
+            <div>
+              <Label htmlFor="filter-year">{strings.evidences.filterYear}</Label>
+              <Select
+                id="filter-year"
+                value={monthFilter.slice(0, 4)}
+                onChange={(ev) => setMonthFilter(ev.target.value)}
+                className="w-full sm:w-32"
+              >
+                {yearOptions(Number(monthFilter.slice(0, 4))).map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="filter-wp-total">{t.filterWorkPoint}</Label>
+              <Select
+                id="filter-wp-total"
+                value={workPointFilter}
+                onChange={(ev) => setWorkPointFilter(ev.target.value)}
+                className="w-full sm:w-56"
+              >
+                <option value="">{t.filterAll}</option>
+                {activeWorkPoints.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+          <AnnualTotals year={Number(monthFilter.slice(0, 4))} workPointId={workPointFilter || undefined} />
+        </>
+      )}
+
+      {showList && (
+        <>
       <TotalsStrip screen={screen} totals={totals.data} loading={totals.isLoading} failed={totals.isError} />
 
       {/* Filters */}
@@ -473,6 +596,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
             onClick={() => {
               setMonthFilter(thisMonth);
               setWorkPointFilter("");
+              setProblem("");
             }}
           >
             {t.clearFilters}
@@ -481,6 +605,20 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
       </div>
 
       <section className="mt-4">
+        {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel
+            tabelul pare gol pe nedrept, iar omul caută rânduri care există. */}
+        {onlyMissingCode && (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-state-bad bg-surface-muted px-3 py-2 text-sm text-state-bad-text">
+            <span className="font-medium">{t.onlyMissingCode}</span>
+            <button
+              type="button"
+              onClick={() => setProblem("")}
+              className="shrink-0 font-medium underline hover:no-underline"
+            >
+              {t.onlyMissingCodeOff}
+            </button>
+          </div>
+        )}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
@@ -797,6 +935,8 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
           </>
         )}
       </section>
+        </>
+      )}
 
       {weighing && (
         <RecordWeightDialog movement={weighing} onClose={() => setWeighing(null)} />

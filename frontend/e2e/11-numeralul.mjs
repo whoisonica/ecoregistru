@@ -155,7 +155,7 @@ const AN = new Date().getFullYear();
 const ECRANE = [
   ["/", "Acasă"],
   [`/miscari?luna=${AN}`, "Mișcări"],
-  [`/evidente?an=${AN}`, "Evidențe"],
+  [`/generare?tab=total&luna=${AN}`, "Totalul anului"],
   [`/ambalaje?an=${AN}`, "Ambalaje"],
   ["/parteneri", "Parteneri"],
   ["/termene", "Termene"],

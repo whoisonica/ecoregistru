@@ -214,44 +214,50 @@ const fixHref = await page.$$eval("a", (a) =>
   a.filter((x) => x.textContent.trim() === "Vezi liniile" && !x.closest('[data-testid="next-action"]')).map((x) => x.getAttribute("href"))
 );
 check("panoul are un drum pentru fiecare blocaj", fixHref.length === 2, fixHref.join(" | "));
-// Ducea la vederea lunară, unde rândul e un agregat și nu se poate deschide nicio mișcare.
+// Ducea la vederea lunară a fostului ecran „Evidențe", unde rândul e un agregat și nu se poate
+// deschide nicio mișcare. Din 18.09.2026 duce pe lista de mișcări a anului, cu filtrul pus.
+const AN_BLOCAJ = new Date().getFullYear();
 check(
   "blocajul roșu duce la rândurile care se pot repara, filtrate",
-  fixHref.includes("/evidente?vedere=handovers&problema=cod-rd"),
+  fixHref.includes(`/generare?luna=${AN_BLOCAJ}&problema=cod-rd`),
   fixHref.join(" | ")
 );
 
 // Filtrul „doar ce blochează depunerea” se vede și se poate scoate — altfel tabelul pare gol pe
 // nedrept și omul caută rânduri care există.
-await page.goto(BASE + "/evidente?vedere=handovers&problema=cod-rd", { waitUntil: "networkidle" });
+await page.goto(BASE + `/generare?luna=${AN_BLOCAJ}&problema=cod-rd`, { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
 const bodyText = await page.textContent("body");
 check(
   "filtrul pus din altă parte se anunță",
-  /Doar ieșirile fără cod R\/D/.test(bodyText),
+  /Doar mișcările fără cod R\/D/.test(bodyText),
   ""
 );
 // Registrul filtrat arată chiar rândul vinovat, cu badge roșu și cu acțiunea care duce la el.
 const redRows = await page.$$eval("tbody tr", (rows) =>
   rows.map((r) => r.textContent.replace(/\s+/g, " ").trim())
 );
-check("filtrul lasă doar ieșirile fără cod", redRows.length >= 1, redRows.length + " rânduri");
+check("filtrul lasă doar mișcările fără cod", redRows.length >= 1, redRows.length + " rânduri");
 check(
   "rândul poartă badge-ul roșu",
   redRows.every((r) => r.includes("Fără cod R/D")),
   redRows[0]?.slice(0, 80) ?? ""
 );
-const fixLink = await page.$$eval("a", (a) =>
-  a.filter((x) => x.textContent.trim() === "Completează codul").map((x) => x.getAttribute("href"))
-);
-check("și acțiunea care deschide mișcarea", fixLink.length >= 1, fixLink.join(" | "));
-check(
-  "linkul poartă luna lui `date`, altfel rândul n-ar fi printre cele aduse",
-  fixLink.every((h) => /\/miscari\?luna=\d{4}-\d{2}&miscare=/.test(h)),
-  fixLink[0] ?? ""
-);
+// Rândul se repară pe loc: e chiar lista lui, deci creionul deschide formularul aici, fără să mai
+// caute nimeni mișcarea prin luni.
+const creion = await page.$$eval('tbody tr button[aria-label="Editează"]', (b) => b.length);
+check("rândul se poate deschide de aici", creion >= 1, creion + " creioane");
+await page.click('tbody tr button[aria-label="Editează"]');
+await page.waitForTimeout(700);
+const formular = await page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"]');
+  return d ? d.textContent.replace(/\s+/g, " ").slice(0, 60) : "(niciun dialog)";
+});
+check("iar creionul deschide chiar formularul mișcării", /Editează/.test(formular), formular);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(400);
 
-const offButton = await page.$('button:has-text("Arată toate predările")');
+const offButton = await page.$('button:has-text("Arată toate mișcările")');
 check("și se poate scoate de aici", offButton !== null);
 await offButton?.click();
 await page.waitForTimeout(600);

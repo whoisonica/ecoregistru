@@ -239,8 +239,10 @@ async function inchidePaleta() {
   await page.waitForTimeout(300);
 }
 
+// Din 18.09.2026 fișa se tipărește de pe „Generare" (tabul „Totalul anului"): ecranul „Evidențe"
+// a fost scos, iar cuvintele lui au venit pe intrarea asta.
 const fisa = await paleta("fisa");
-check("„fisa” găsește Evidențe", fisa.some((r) => r.includes("Evidențe")), fisa.join(" · "));
+check("„fisa” găsește Generare", fisa.some((r) => r.includes("Generare")), fisa.join(" · "));
 await inchidePaleta();
 
 // „Anexa 1" e numele scurt a două documente diferite (decizia 12): declarația de ambalaje și fișa
@@ -248,7 +250,7 @@ await inchidePaleta();
 // caută pe nume.
 const anexa1 = await paleta("anexa 1");
 check("„anexa 1” găsește amândouă documentele",
-  anexa1.some((r) => r.includes("Ambalaje")) && anexa1.some((r) => r.includes("Evidențe")),
+  anexa1.some((r) => r.includes("Ambalaje")) && anexa1.some((r) => r.includes("Generare")),
   anexa1.join(" · "));
 // Şi **numai** pe ele. Verificarea asta e cea care a prins cheile duplicate: lista arăta şi
 // „Dosar de control", care n-are „anexa" nicăieri — erau rânduri rămase din randarea dinainte.

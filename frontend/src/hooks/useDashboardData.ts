@@ -119,7 +119,7 @@ export function useDashboardData(enabled = true) {
         tone: "danger",
         title: t.nextMissingCode.replace("{count}", countOf(blockers.missingCode, "linie", "linii")),
         hint: t.nextMissingCodeHint,
-        to: "/evidente?vedere=handovers&problema=cod-rd",
+        to: `/generare?luna=${year}&problema=cod-rd`,
         cta: t.blockerFix,
       };
     }
@@ -176,7 +176,7 @@ export function useDashboardData(enabled = true) {
         cta: t.nextStartMovementCta,
       };
     }
-    return { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/evidente", cta: t.viewAll };
+    return { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/generare?tab=total", cta: t.viewAll };
   }, [
     overdue,
     nearDeadline,

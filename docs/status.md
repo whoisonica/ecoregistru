@@ -8,6 +8,32 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **18.09.2026, 02:10 — 🟡 pe `main`, nedeployat: „Evidențe" fuzionat în „Generare", iar Dosarul de control devine locul hârtiilor** (numai frontend; backendul, migrările și generatoarele de documente neatinse).
+> Proprietarul, citind macheta: *„cumva nu e futai că și Generare și Evidența e la fel?"* Are dreptate, și se vede în cod: `EvidenceCalculator` agregă **exact** mișcările registrului `ANEXA_1`
+> (`EvidenceCalculator.java:41`), adică exact rândurile listate de `/generare` — două intrări în meniu pentru același registru, cu aceleași trei filtre și aceleași butoane de document. La
+> **generatorul pur**, singurul modul care se vinde, `/generare` e chiar singurul lui ecran de mișcări, deci dublura era la clientul care plătește. Decizia (18.09): **Evidențe dispare de tot**,
+> meniul rămâne „Generare", documentele se iau din Dosar, iar lista autorizațiilor rămâne numai în arhivă.
+> **(1) Generare are două taburi**, ca Termene și Clienți (`PageTabs`, tabul în adresă): **Mișcări** (ecranul de până acum, neatins) și **Totalul anului** — un rând pe cod, cu generat,
+> valorificat, eliminat, ce a rămas **în stoc** și starea („Gata" · „N de cântărit" · „N kg fără cod R/D"), rândul total, cele două documente oficiale dedesubt, „Alte descărcări" și
+> „Recalculează acum". Componenta nouă: `components/movements/AnnualTotals.tsx`. ⚠️ Stocul **nu** se adună peste luni: `closingStock` e deja cumulativ pe (punct de lucru, cod) și poartă
+> anii dinainte, deci se ia al **ultimei** luni cu date, pe fiecare punct, și se adună între puncte. Pe telefon, câte un card pe cod (tabelul are șase coloane).
+> **(2) Ecranul „Evidențe" a fost șters** (`EvidencesPage.tsx`, 615 linii, și `HandoverRegister.tsx`, folosit numai de el). `/evidente` e redirect (`EvidencesRedirect`): `?problema=cod-rd`
+> duce pe lista anului cu filtrul pus, restul pe tabul totalului; o firmă fără Anexa 1 pleacă pe primul ei ecran. Filtrul „doar ce blochează depunerea" trăiește acum pe lista de mișcări
+> (serverul îl știa deja — `WasteMovementController:80`, `missingOperationCode`), cu banda care îl anunță și îl scoate. Cuvintele paletei („fișa", „anexa 1", „evidență") s-au mutat pe Generare.
+> **(3) Dosarul de control: buton pe fiecare rând.** Lista „Ce intră în arhivă" devine „Documentele anului": fișa, centralizata, Anexa 1 și Anexa 3 Ambalaje (meniu .xls / PDF), plus
+> rezumatele neoficiale sub linie. Ce se naște numai înăuntrul arhivei (autorizațiile, atașamentele) scrie „în arhivă"; ce nu se aplică anului scrie „—", nu „în arhivă" (contrazicea eticheta
+> „Nu intră" de lângă el). Zero endpoint-uri noi: toate erau deja folosite de alte ecrane. Lista autorizațiilor rămâne fără buton — decizia proprietarului („lasă în zip").
+> **Linkuri repointate:** Acasă (banda și blocajul roșu), panoul consultantului, `documentFor` pe termenul de 15 martie (`/generare?tab=total&luna=…`).
+> **Probe:** `tsc` curat, build curat, `npm test` **58** (7 noi: `lib/annualTotals.test.ts` — socoteala pe cod, scoasă din componentă ca să se poată proba).
+> **Negativă:** cu stocul adunat peste luni, două teste cad; cu socoteala bună, trec. Asta e cifra pe care ecranul o poate greși în tăcere: pe baza demo
+> toate stocurile sunt zero, deci proba de ecran ar fi comparat numai zerouri. Suita e2e completă: **35/37**, iar cele două căderi (8 și 19) erau
+> așteptările vechi — „fisa" găsește acum „Generare", iar meniul firmei cu depozit are fix zece intrări, deci Setările sunt iar pe „0", nu pe „S";
+> amândouă reparate și re-rulate verzi. Probele 1, 3, 5, 6, 8, 9, 10, 11, 19, 22, 28, 34 rulate una câte una pe stivă proprie (8099/5199, baza
+> `eco_e2e_evidente`); proba 10 secțiunea 7 rescrisă pe tabul nou
+> (redirectul, cele două taburi, un rând pe cod, **cifrele comparate cod cu cod cu API-ul**, coloana de stare, documentele, meniul, descărcarea), proba 28 mutată pe tab, proba 6 pe lista de
+> mișcări (creionul deschide formularul acolo unde stă rândul). Capturi la 1440 și 375 privite.
+> ⚠️ În arborele de lucru mai lucra o sesiune paralelă (`components/partners/` netracked, `PartnersPage.tsx` modificat, `tsc` roșu pe ele): commitul feliei ăsteia nu le atinge.
+
 > **17.09.2026, 20:43 — ✅ pe producție: reparațiile din scanarea codului și a md-urilor** (`ecoregistru-api` **v127**, `8fdde53`; `ecoregistru-app` **v117**, `f92ab5f`; monorepo `1b82c51`; fără migrare, schema **V63**, liberă **V64**). Deployul din sesiune a fost refuzat de clasificator; l-a rulat proprietarul cu `!`.
 > Proprietarul: „scanează atent codul și toate md files”, apoi „ce ai zis că trebuie fixat, să fixăm neapărat”; depozitul și mobilul lăsate deoparte.
 > Scanarea pe `7f16fcc` (= producția): 921 de teste / 110 clase, 0 eșecuri; `npm test` 43; tsc; build. Șase defecte (BUG-025…030 în `QA-BUGS.md`, repo privat):

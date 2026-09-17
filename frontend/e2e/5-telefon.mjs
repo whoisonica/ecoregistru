@@ -37,7 +37,7 @@ await page.waitForTimeout(600);
 
 await login(page, "admin");
 
-for (const [route, name] of [["/", "panou"], ["/miscari", "miscari"], ["/evidente", "evidente"], ["/setari", "setari"]]) {
+for (const [route, name] of [["/", "panou"], ["/miscari", "miscari"], ["/generare?tab=total", "totalul-anului"], ["/setari", "setari"]]) {
   await page.goto(BASE + route, { waitUntil: "networkidle" });
   await page.waitForTimeout(800);
 
@@ -75,13 +75,13 @@ check("butonul deschide sertarul", shown.vizibil, JSON.stringify(shown));
 await shot(page, "telefon_sertar");
 
 // Navigarea îl închide la loc.
-await page.click('#navigatie-principala a[href="/evidente"]');
+await page.click('#navigatie-principala a[href="/termene"]');
 await page.waitForTimeout(600);
 const afterNav = await page.evaluate(() => {
   const r = document.getElementById("navigatie-principala").getBoundingClientRect();
   return { inchis: r.left + r.width <= 1, url: location.pathname };
 });
-check("navigarea închide sertarul", afterNav.inchis && afterNav.url === "/evidente", JSON.stringify(afterNav));
+check("navigarea închide sertarul", afterNav.inchis && afterNav.url === "/termene", JSON.stringify(afterNav));
 
 // Escape îl închide.
 await page.click('header button[aria-controls="navigatie-principala"]');

@@ -35,7 +35,9 @@ const menu = await page.evaluate(() => {
 });
 check("firma cu depozit are „Cântar” în meniu", menu.hasCantar && /Cântar/.test(menu.label), menu.label);
 check("stă imediat după Ieșiri", menu.afterIesiri);
-check("Setările păstrează o tastă (S) după a unsprezecea intrare", menu.settingsKey === "S", String(menu.settingsKey));
+// Cifrele ajung fix pentru zece intrări. De când „Evidențe" a fost scos (18.09.2026), meniul firmei
+// cu depozit are exact zece — deci Setările sunt iar pe „0", nu pe litera de rezervă.
+check("Setările au ultima cifră, nu litera de rezervă", menu.settingsKey === "0", String(menu.settingsKey));
 
 // ---------------------------------------------------------------- ECRANUL
 await page.goto(BASE + "/cantar", { waitUntil: "networkidle" });

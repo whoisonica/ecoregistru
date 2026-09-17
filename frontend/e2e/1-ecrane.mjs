@@ -8,7 +8,8 @@ const SCREENS = [
   ["/iesiri", "Ieșiri", "table"],
   // Adresa veche (14–15.09.2026) rămâne un redirect spre Intrări: linkuri și mailuri vechi.
   ["/intrari-iesiri", "Intrări (adresa veche)", "table"],
-  ["/evidente", "Evidențe", "table"],
+  // Adresa veche a ecranului „Evidențe" (scos pe 18.09.2026): redirect spre tabul totalului.
+  ["/evidente", "Evidențe (adresa veche)", "table"],
   ["/parteneri", "Parteneri", "table"],
   ["/termene", "Termene", "table"],
   ["/ambalaje", "Ambalaje", "table"],

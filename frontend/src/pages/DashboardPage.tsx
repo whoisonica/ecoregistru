@@ -268,7 +268,7 @@ export function DashboardPage() {
         <CardHeader
           title={t.statusTitle.replace("{year}", String(d.year))}
           action={
-            <Link to="/evidente" className="flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+            <Link to={`/generare?tab=total&luna=${d.year}`} className="flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
               {t.viewAll}
               <ChevronRight className="h-4 w-4" aria-hidden />
             </Link>
@@ -295,9 +295,9 @@ export function DashboardPage() {
                 tone="danger"
                 title={t.blockerMissingCode.replace("{count}", countOf(d.blockers.missingCode, "linie", "linii"))}
                 hint={t.blockerMissingCodeHint}
-                /* Registrul de predări e nivelul la care un rând **este** o mișcare, iar filtrul
-                   îl restrânge la ce blochează chiar depunerea. */
-                to="/evidente?vedere=handovers&problema=cod-rd"
+                /* Lista de mișcări e nivelul la care un rând **este** o mișcare, iar filtrul o
+                   restrânge la ce blochează chiar depunerea. */
+                to={`/generare?luna=${d.year}&problema=cod-rd`}
               />
             )}
             {d.blockers.awaitingWeighing > 0 && (
@@ -309,7 +309,7 @@ export function DashboardPage() {
                   countOf(d.blockers.awaitingWeighing, "linie", "linii")
                 )}
                 hint={t.blockerAwaitingWeighingHint}
-                to="/miscari"
+                to={`/generare?luna=${d.year}`}
               />
             )}
           </div>

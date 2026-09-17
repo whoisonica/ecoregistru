@@ -18,14 +18,15 @@ const check = (n, ok, d = "") => {
 };
 
 const AN = new Date().getFullYear();
-await page.goto(BASE + `/evidente?an=${AN}`, { waitUntil: "networkidle" });
+await page.goto(BASE + `/generare?tab=total&luna=${AN}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(1200);
 
 // ------------------------------------------------------------ (1) NOTA DE DINAINTE DE CLIC
 const nota = page.locator('[data-testid="pending-weighing-note"]');
 const textNota = (await nota.count()) ? await nota.innerText() : "";
-check("nota „de cântărit” apare pe Evidențe", /fără cantitatea de la destinatar/.test(textNota), textNota);
-check("… cu numărul liniilor și anul", new RegExp(`${AN}: \\d+ (de )?lini[ei]+ fără`).test(textNota), textNota);
+check("nota „de cântărit” apare pe totalul anului", /așteaptă cântarul destinatarului/.test(textNota), textNota);
+check("… cu numărul liniilor", /\d+ lini[ei]+? așteaptă/.test(textNota), textNota);
+check("… și lângă ea, drumul spre rândurile care lipsesc", /Arată mișcările/.test(textNota), textNota);
 
 // ------------------------------------------------------------ (2) DIALOGUL NUMEȘTE DOCUMENTUL
 await page.getByRole("button", { name: "Evidența gestiunii deșeurilor generate" }).click();

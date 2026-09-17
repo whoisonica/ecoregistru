@@ -146,7 +146,7 @@ export function ConsultancyOverviewPage() {
                       <DeadlineCell row={r} onOpen={() => openCompany(r.companyId, "/termene")} />
                     </TD>
                     <TD>
-                      <BlockersCell row={r} onOpen={() => openCompany(r.companyId, "/evidente")} />
+                      <BlockersCell row={r} onOpen={() => openCompany(r.companyId, "/generare?tab=total")} />
                     </TD>
                     <TD>
                       {r.partnersExpiring > 0 ? (

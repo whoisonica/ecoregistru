@@ -32,9 +32,15 @@ export const movementsKey = (filters: MovementFilters, table?: RemoteTableParams
  * literă tastată în căutare ar goli tabelul și l-ar umple la loc, iar ecranul ar clipi la fiecare
  * tastă.
  */
-export function useMovements(filters: MovementFilters, table: RemoteTableParams) {
+export function useMovements(
+  filters: MovementFilters,
+  table: RemoteTableParams,
+  /** `false` pe un tab care nu arată lista (Generare → „Totalul anului”): n-are ce aduce. */
+  enabled = true
+) {
   return useQuery({
     queryKey: movementsKey(filters, table),
+    enabled,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const params: Record<string, string | number | boolean> = {

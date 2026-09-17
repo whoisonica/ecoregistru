@@ -10,9 +10,8 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import { DashboardPage } from "@/pages/DashboardPage";
-import { MovementsPage, MovementsRedirect } from "@/pages/MovementsPage";
+import { EvidencesRedirect, MovementsPage, MovementsRedirect } from "@/pages/MovementsPage";
 import { WeighingOperationsPage } from "@/pages/WeighingOperationsPage";
-import { EvidencesPage } from "@/pages/EvidencesPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
 import { AuditFilePage } from "@/pages/AuditFilePage";
@@ -82,7 +81,9 @@ export default function App() {
           <Route path="/intrari" element={<AppShell><MovementsPage key="intrari" screen="IN" /></AppShell>} />
           <Route path="/iesiri" element={<AppShell><MovementsPage key="iesiri" screen="OUT" /></AppShell>} />
           <Route path="/cantar" element={<AppShell><WeighingOperationsPage /></AppShell>} />
-          <Route path="/evidente" element={<AppShell><EvidencesPage /></AppShell>} />
+          {/* Ecranul „Evidențe" a fost scos pe 18.09.2026: era raportul registrului Anexa 1,
+              adică al ecranului „Generare". Adresa rămâne, ca linkurile vechi să meargă. */}
+          <Route path="/evidente" element={<AppShell><EvidencesRedirect /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
           <Route path="/ambalaje" element={<AppShell><PackagingPage /></AppShell>} />
