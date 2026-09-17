@@ -369,6 +369,15 @@ class AuditFileIT {
         // veni numai de la Anexa 3.
         assertThat(readme).contains("tipărită la cerere").contains("fără termen")
                 .doesNotContain("Termen: 25 februarie");
+
+        // Ecranul spune același lucru ca arhiva: Anexa 3 pe Hala Florești, nimic pe Birou Cluj, numai ieșirile.
+        mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.years[0].anexa3WorkPoints[0]").value("Hala Florești"))
+                .andExpect(jsonPath("$.years[0].anexa3WorkPoints.length()").value(1))
+                .andExpect(jsonPath("$.years[0].anexa3RoleMissing").value(false))
+                .andExpect(jsonPath("$.anexa3ExitsOnly").value(true));
     }
 
     // --- G-2: the four obligations the dossier used to pass over in silence ---
@@ -625,6 +634,16 @@ class AuditFileIT {
 
         assertThat(zipEntryNames(dossierOf(trader, "t" + suffix)))
                 .noneMatch(name -> name.contains("anexa1-ambalaje"));
+
+        // Și ecranul spune de ce: producătorul o primește, comerciantul nu, iar un profil fără răspuns nu.
+        assertThat(contentsOf(producer, "cp" + suffix)).contains("\"packagingDeclaration\":\"INCLUDED\"");
+        assertThat(contentsOf(trader, "ct" + suffix)).contains("\"packagingDeclaration\":\"TRADER_ONLY\"");
+        Company unanswered = companyRepository.save(Company.builder()
+                .name("Fără profil SRL").cui("ROU" + suffix).type(CompanyType.GENERATOR)
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        assertThat(contentsOf(unanswered, "cu" + suffix)).contains("\"packagingDeclaration\":\"NOT_ANSWERED\"");
+        assertThat(zipEntryNames(dossierOf(unanswered, "u" + suffix)))
+                .noneMatch(name -> name.contains("anexa1-ambalaje"));
     }
 
     // --- 17.09.2026: rapoarte/, atasamente/ și lista autorizațiilor refăcută ---
@@ -705,6 +724,58 @@ class AuditFileIT {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray();
+    }
+
+    private String contentsOf(Company company, String suffix) throws Exception {
+        AppUser user = appUserRepository.save(AppUser.builder()
+                .email("continut+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
+        return mockMvc.perform(get("/api/v1/audit-file/contents")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Ecranul și arhiva, citite în același moment pe firma demo, spun același lucru: Anexa 1 Ambalaje
+     * e anunțată exact când arhiva o are, Anexa 3 pe exact punctele pe care le are arhiva, iar „lipsește”
+     * exact când cuprinsul scrie LIPSEȘTE. Nu presupune profilul demo-ului — alte teste din suită îl
+     * schimbă —, ci compară cele două citiri. Pe trei ani, anii vin în ordine și 2026 are mișcări.
+     */
+    @Test
+    void theContentsTellWhatTheArchiveHolds() throws Exception {
+        byte[] zip = demoZip();
+        List<String> entries = zipEntryNames(zip);
+        String readme = new String(readEntryBytes(zip, "00-cuprins.txt"), StandardCharsets.UTF_8);
+        String json = mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        com.jayway.jsonpath.DocumentContext c = com.jayway.jsonpath.JsonPath.parse(json);
+
+        assertThat(c.read("$.packagingDeclaration", String.class).equals("INCLUDED"))
+                .isEqualTo(entries.contains("rapoarte/anexa1-ambalaje-2026.pdf"));
+        List<String> points = c.read("$.years[0].anexa3WorkPoints");
+        assertThat(entries.stream().filter(n -> n.startsWith("rapoarte/anexa3-ambalaje-2026-") && n.endsWith(".pdf")).count())
+                .isEqualTo(points.size());
+        assertThat(c.read("$.years[0].anexa3RoleMissing", Boolean.class))
+                .isEqualTo(readme.contains("LIPSEȘTE: anul are ambalaje"));
+        assertThat(c.read("$.years[0].movements", Integer.class)).isPositive();
+        assertThat(c.read("$.partners", Integer.class)).isEqualTo(
+                partnerRepository.findAllByCompany_Id(
+                        appUserRepository.findByEmail("admin@demo.ro").orElseThrow().getCompany().getId()).size());
+
+        mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026").param("years", "3")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.years.length()").value(3))
+                .andExpect(jsonPath("$.years[0].year").value(2024))
+                .andExpect(jsonPath("$.years[2].year").value(2026));
+
+        mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026").param("years", "6")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest());
     }
 
     private byte[] dossierOf(Company company, String suffix) throws Exception {

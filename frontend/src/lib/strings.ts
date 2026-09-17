@@ -2009,21 +2009,58 @@ export const strings = {
     downloading: "Se pregătește arhiva...",
     downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
     /** Estimarea de dinainte de descărcare. {count} atașamente, {size} deja formatat. */
-    sizeNone: "Fără atașamente în perioada aleasă — arhiva are doar foile generate.",
+    sizeNone: "Nicio mișcare din perioada aleasă nu are fișiere atașate.",
     sizeKnown: "{count} atașamente, cam {size} de descărcat.",
     sizeAllUnknown: "{count} atașamente, încărcate înainte să le ținem mărimea — nu știm cât cântăresc.",
     sizeUnknown: "{count} atașamente, cam {size} de descărcat, plus {unknown} încărcate înainte să le ținem mărimea.",
-    contents: "Arhiva conține:",
-    contentAnexa1:
-      "Evidența gestiunii deșeurilor generate (HG 856/2002, anexa 1): cele 4 capitole, o pagină per cod de deșeu. Termen de depunere: 15 martie.",
-    contentAnnualDeclaration:
-      "Evidența gestiunii deșeurilor centralizată: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
-    contentPackaging:
-      "Anexa 1 Ambalaje (Ordinul 794/2012), .xls și PDF — numai dacă firma pune ambalaje pe piață (producător sau importator).",
-    contentPackagingAnexa3:
-      "Anexa 3 Ambalaje (Ordinul 794/2012), .xls și PDF — câte una pe fiecare punct de lucru care a avut ambalaje în an.",
-    contentPartners: "Rezumat PDF cu autorizațiile partenerilor și statusul lor",
-    contentAttachments: "Documentele justificative atașate mișcărilor (+ index)",
+    /**
+     * „Ce intră în arhivă” (proprietarul, 17.09.2026: „să fie informații reale”). Fiecare document are
+     * starea lui pentru firma și perioada alese, și motivul; regulile sunt ale arhivei
+     * (`AuditFileService.contents`), nu ale ecranului.
+     */
+    contents: "Ce intră în arhivă",
+    contentsError: "Nu am putut afla ce intră în dosar. Descărcarea funcționează în continuare.",
+    stateIn: "Intră",
+    stateEmpty: "Intră fără date",
+    stateOut: "Nu intră",
+    stateMissing: "Lipsește",
+    docSheet: "Evidența gestiunii deșeurilor generate (HG 856/2002, anexa 1)",
+    docCentralized: "Evidența gestiunii deșeurilor centralizată",
+    docPackaging: "Anexa 1 Ambalaje (Ordinul 794/2012)",
+    docAnexa3: "Anexa 3 Ambalaje (Ordinul 794/2012)",
+    docPartners: "Autorizațiile partenerilor",
+    docAttachments: "Atașamente",
+    /** {count} = „12 mișcări”. */
+    sheetYes: "{count} în {year}: cele 4 capitole, o pagină pe fiecare cod de deșeu. Termen de depunere: 15 martie {next}.",
+    centralizedYes: "{count} în {year}: un rând pe fiecare cod de deșeu, o pagină pe punct de lucru.",
+    noMovements: "Nicio mișcare înregistrată în {year}, deci foaia iese fără date.",
+    yearMovements: "{year}: {count}",
+    yearNoMovements: "{year}: fără mișcări, foaia iese fără date",
+    movementOne: "mișcare",
+    movementMany: "mișcări",
+    packagingIncluded:
+      ".xls și PDF: firma pune ambalaje pe piață (producător sau importator). Termen: 25 februarie.",
+    packagingTrader:
+      "Firma e doar comerciant: vinde marfă ambalată de alții, deci nu depune declarația de ambalaje.",
+    packagingNotAnswered:
+      "Profilul firmei nu spune dacă e producător, importator sau comerciant, deci nu se știe dacă o datorează. Îl completează consultantul care îți administrează contul.",
+    anexa3Yes: ".xls și PDF pe fiecare punct de lucru cu deșeuri de ambalaje: {points}.",
+    anexa3YesYear: "{year}: {points}",
+    anexa3ExitsOnly: "Firma e generator: anexa are numai predările și nu are termen de depunere.",
+    anexa3Deadline: "Termen: 25 februarie.",
+    anexa3None: "Niciun punct de lucru n-a avut deșeuri de ambalaje (coduri 15 01) în {year}.",
+    anexa3NonePeriod: "Niciun punct de lucru n-a avut deșeuri de ambalaje (coduri 15 01) în perioada aleasă.",
+    anexa3RoleMissing:
+      "{year} are deșeuri de ambalaje, dar profilul firmei nu spune dacă e colector, comerciant, reciclator sau valorificator, deci nu se știe ce tabel se completează. Îl completează consultantul care îți administrează contul.",
+    /** {count} = „6 parteneri”. */
+    partnersYes: "{count}, cu autorizația, viza și statusul citit azi.",
+    partnerOne: "partener",
+    partnerMany: "parteneri",
+    partnersExpired: "{count} cu autorizația expirată.",
+    expiredOne: "partener",
+    expiredMany: "parteneri",
+    partnersSoon: "{count} cu autorizația care expiră în următoarele 60 de zile.",
+    partnersNone: "Nu ai parteneri înregistrați, deci lista iese goală.",
     note: "Notă: în afară de evidența gestiunii deșeurilor, dosarul NU înlocuiește formularele oficiale (SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
   },
 

@@ -1,17 +1,21 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Download } from "lucide-react";
 import {
-  Download,
-  FileCheck2,
-  ShieldCheck,
-  Paperclip,
-} from "lucide-react";
-import { downloadAuditFile, useAuditFileSize, type AuditFileSize } from "@/hooks/useAuditFile";
+  downloadAuditFile,
+  useAuditFileContents,
+  useAuditFileSize,
+  type AuditFileContents,
+  type AuditFileSize,
+} from "@/hooks/useAuditFile";
 import { useEvidences } from "@/hooks/useEvidences";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiBlobErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useUrlNumber } from "@/hooks/useUrlState";
+import { countOf } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
@@ -39,6 +43,126 @@ function sizeLine(size: AuditFileSize): string {
     .replace("{unknown}", String(size.unknownSize));
 }
 
+type RowState = "in" | "empty" | "out" | "missing";
+
+const STATE: Record<RowState, { variant: "success" | "warning" | "muted" | "danger"; label: string }> = {
+  in: { variant: "success", label: t.stateIn },
+  empty: { variant: "warning", label: t.stateEmpty },
+  out: { variant: "muted", label: t.stateOut },
+  missing: { variant: "danger", label: t.stateMissing },
+};
+
+/** Un document din arhivă: starea lui ca LED, numele și de ce intră sau nu. */
+function ContentRow({ state, title, testId, children }: {
+  state: RowState;
+  title: string;
+  testId?: string;
+  children: ReactNode;
+}) {
+  return (
+    <li className="grid gap-1 sm:grid-cols-[8.5rem_1fr] sm:gap-3">
+      <Badge variant={STATE[state].variant} className="self-start sm:mt-0.5">{STATE[state].label}</Badge>
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-content-strong">{title}</p>
+        <div data-testid={testId} className="mt-0.5 space-y-0.5 text-sm text-content-muted">{children}</div>
+      </div>
+    </li>
+  );
+}
+
+const movements = (n: number) => countOf(n, t.movementOne, t.movementMany);
+
+/** Fișa și centralizata: au date dacă anul are mișcări; pe mai mulți ani, câte un rând pe an. */
+function sheetRow(c: AuditFileContents, title: string, single: string) {
+  const empty = c.years.every((y) => y.movements === 0);
+  if (c.years.length === 1) {
+    const y = c.years[0];
+    return (
+      <ContentRow state={y.movements > 0 ? "in" : "empty"} title={title}>
+        <p>
+          {y.movements > 0
+            ? single
+                .replace("{count}", movements(y.movements))
+                .replace("{year}", String(y.year))
+                .replace("{next}", String(y.year + 1))
+            : t.noMovements.replace("{year}", String(y.year))}
+        </p>
+      </ContentRow>
+    );
+  }
+  return (
+    <ContentRow state={empty ? "empty" : "in"} title={title}>
+      {c.years.map((y) => (
+        <p key={y.year}>
+          {y.movements > 0
+            ? t.yearMovements.replace("{year}", String(y.year)).replace("{count}", movements(y.movements))
+            : t.yearNoMovements.replace("{year}", String(y.year))}
+        </p>
+      ))}
+    </ContentRow>
+  );
+}
+
+function PackagingRow({ c }: { c: AuditFileContents }) {
+  const d = c.packagingDeclaration;
+  return (
+    <ContentRow state={d === "INCLUDED" ? "in" : "out"} title={t.docPackaging}>
+      <p>{d === "INCLUDED" ? t.packagingIncluded : d === "TRADER_ONLY" ? t.packagingTrader : t.packagingNotAnswered}</p>
+    </ContentRow>
+  );
+}
+
+function Anexa3Row({ c }: { c: AuditFileContents }) {
+  const withPoints = c.years.filter((y) => y.anexa3WorkPoints.length > 0);
+  const missing = c.years.filter((y) => y.anexa3RoleMissing);
+  const state: RowState = withPoints.length > 0 ? "in" : missing.length > 0 ? "missing" : "out";
+  const single = c.years.length === 1;
+  return (
+    <ContentRow state={state} title={t.docAnexa3}>
+      {withPoints.length > 0 &&
+        (single ? (
+          <p>{t.anexa3Yes.replace("{points}", withPoints[0].anexa3WorkPoints.join(", "))}</p>
+        ) : (
+          withPoints.map((y) => (
+            <p key={y.year}>
+              {t.anexa3YesYear.replace("{year}", String(y.year)).replace("{points}", y.anexa3WorkPoints.join(", "))}
+            </p>
+          ))
+        ))}
+      {withPoints.length > 0 && <p>{c.anexa3ExitsOnly ? t.anexa3ExitsOnly : t.anexa3Deadline}</p>}
+      {missing.map((y) => (
+        <p key={`m${y.year}`}>{t.anexa3RoleMissing.replace("{year}", String(y.year))}</p>
+      ))}
+      {withPoints.length === 0 && missing.length === 0 && (
+        <p>{single ? t.anexa3None.replace("{year}", String(c.years[0].year)) : t.anexa3NonePeriod}</p>
+      )}
+    </ContentRow>
+  );
+}
+
+function PartnersRow({ c }: { c: AuditFileContents }) {
+  if (c.partners === 0) {
+    return (
+      <ContentRow state="empty" title={t.docPartners}>
+        <p>{t.partnersNone}</p>
+      </ContentRow>
+    );
+  }
+  return (
+    <ContentRow state="in" title={t.docPartners}>
+      <p>{t.partnersYes.replace("{count}", countOf(c.partners, t.partnerOne, t.partnerMany))}</p>
+      {c.partnersExpired > 0 && (
+        <p className="text-state-bad-text">
+          {t.partnersExpired.replace("{count}", countOf(c.partnersExpired, t.expiredOne, t.expiredMany))}
+        </p>
+      )}
+      {c.partnersExpiringSoon > 0 && (
+        <p>{t.partnersSoon.replace("{count}", countOf(c.partnersExpiringSoon, t.expiredOne, t.expiredMany))}</p>
+      )}
+    </ContentRow>
+  );
+}
+
 /** Year options: current year down to five years back. */
 function yearOptions(): number[] {
   const now = new Date().getFullYear();
@@ -50,6 +174,7 @@ export function AuditFilePage() {
   const [years, setYears] = useUrlNumber("ani", 1);
   const [downloading, setDownloading] = useState(false);
   const { data: size } = useAuditFileSize(year, years);
+  const contents = useAuditFileContents(year, years);
   const { notify } = useToast();
 
   /**
@@ -107,7 +232,7 @@ export function AuditFilePage() {
       )}
       <PageHeader title={t.title} description={t.subtitle} />
 
-      <Card className="mt-6 max-w-xl p-6">
+      <Card className="mt-6 max-w-2xl p-6">
         <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
@@ -150,44 +275,37 @@ export function AuditFilePage() {
         </div>
 
         <p className="mt-2 text-xs text-content-muted">{t.yearsHint}</p>
-        {size && (
-          <p data-testid="audit-file-size" className="mt-1 text-xs text-content-muted">
-            {sizeLine(size)}
-          </p>
-        )}
 
         <div className="mt-6 border-t border-line pt-4">
           <p className="text-sm font-medium text-content-strong">{t.contents}</p>
-          <ul className="mt-3 space-y-2 text-sm text-content-strong">
-            <li className="flex items-start gap-2">
-              <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span className="font-medium text-content-strong">{t.contentAnexa1}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span className="font-medium text-content-strong">{t.contentAnnualDeclaration}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span className="font-medium text-content-strong">{t.contentPackaging}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-              <span className="font-medium text-content-strong">{t.contentPackagingAnexa3}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-brand" />
-              {t.contentPartners}
-            </li>
-            <li className="flex items-center gap-2">
-              <Paperclip className="h-4 w-4 text-brand" />
-              {t.contentAttachments}
-            </li>
-          </ul>
+          {contents.isError ? (
+            <p className="mt-3 text-sm text-content-muted">{t.contentsError}</p>
+          ) : !contents.data ? (
+            <div className="mt-3 space-y-3">
+              {[0, 1, 2, 3].map((k) => (
+                <Skeleton key={k} className="h-10 w-full" />
+              ))}
+            </div>
+          ) : (
+            <ul className="mt-3 space-y-4" data-testid="audit-file-contents">
+              {sheetRow(contents.data, t.docSheet, t.sheetYes)}
+              {sheetRow(contents.data, t.docCentralized, t.centralizedYes)}
+              <PackagingRow c={contents.data} />
+              <Anexa3Row c={contents.data} />
+              <PartnersRow c={contents.data} />
+              <ContentRow
+                state={size && size.attachments === 0 ? "out" : "in"}
+                title={t.docAttachments}
+                testId="audit-file-size"
+              >
+                <p>{size ? sizeLine(size) : "?"}</p>
+              </ContentRow>
+            </ul>
+          )}
         </div>
       </Card>
 
-      <p className="mt-4 max-w-xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      <p className="mt-4 max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
         {t.note}
       </p>
     </div>

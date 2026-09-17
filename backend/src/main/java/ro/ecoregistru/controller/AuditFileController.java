@@ -35,6 +35,13 @@ public class AuditFileController {
         return auditFileService.size(year, years);
     }
 
+    /** Ce documente intră în dosar și de ce, ca ecranul să le spună pe cele reale. */
+    @GetMapping("/contents")
+    public AuditFileService.AuditFileContents contents(@RequestParam int year,
+                                                       @RequestParam(defaultValue = "1") int years) {
+        return auditFileService.contents(year, years);
+    }
+
     /**
      * @param year  the last reporting year in the dossier
      * @param years how many consecutive years back to include, 1..5. Three is the retention

@@ -101,6 +101,14 @@ public interface WasteMovementRepository
     long countUnprovenMirrorClassifications(@Param("companyId") UUID companyId,
                                             @Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    /** Câte mișcări contează într-un interval — aceeași regulă ca {@link #findCountedBetween}, numai numărul. */
+    @Query("select count(m) from WasteMovement m left join m.weighingOperation o "
+            + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "
+            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+    long countCountedBetween(@Param("companyId") UUID companyId,
+                             @Param("from") LocalDate from,
+                             @Param("to") LocalDate to);
+
     /** The movements that count within a date range — the evidence engine's input. */
     @Query("select m from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "

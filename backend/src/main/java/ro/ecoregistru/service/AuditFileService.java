@@ -231,6 +231,62 @@ public class AuditFileService {
     /** {@code unknownSize}: atașamente de dinainte de V57, fără mărime ținută. */
     public record AuditFileSize(long attachments, long attachmentBytes, long unknownSize) {}
 
+    /**
+     * Ce intră în dosar și de ce, înainte de descărcare (proprietarul, 17.09.2026: „să fie informații
+     * reale”). Citește exact regulile după care scrie {@link #write} — același {@link #anexa3Plan},
+     * aceeași condiție pe rolul de piață, aceleași mișcări care contează —, deci ecranul nu poate
+     * promite un document pe care arhiva nu-l are. Nu regenerează nimic: numără mișcările.
+     */
+    @Transactional(readOnly = true)
+    public AuditFileContents contents(int year, int years) {
+        if (years < 1 || years > MAX_YEARS) {
+            throw new BadRequestException(AUDIT_FILE_YEARS_UNSUPPORTED);
+        }
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        List<WorkPoint> workPoints = workPointRepository.findAllByCompany_Id(tenantId).stream()
+                .sorted(Comparator.comparing(WorkPoint::getName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        List<YearContents> perYear = new java.util.ArrayList<>();
+        for (int y = year - years + 1; y <= year; y++) {
+            Anexa3Plan plan = anexa3Plan(y, workPoints);
+            perYear.add(new YearContents(y,
+                    movementRepository.countCountedBetween(tenantId, LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31)),
+                    plan.files().stream().map(Anexa3File::workPointName).toList(),
+                    plan.roleMissing()));
+        }
+
+        Set<MarketRole> roles = company.getMarketRoles();
+        PackagingDeclaration declaration = MarketRole.putsPackagingOnMarket(roles) ? PackagingDeclaration.INCLUDED
+                : MarketRole.answered(roles) ? PackagingDeclaration.TRADER_ONLY
+                : PackagingDeclaration.NOT_ANSWERED;
+
+        List<Partner> partners = partnerRepository.findAllByCompany_Id(tenantId);
+        LocalDate today = LocalDate.now();
+        long expired = partners.stream().filter(p -> status(p, today) == AuthStatus.EXPIRED).count();
+        long soon = partners.stream().filter(p -> status(p, today) == AuthStatus.SOON).count();
+
+        return new AuditFileContents(perYear, declaration, !company.getType().keepsArt48Register(),
+                partners.size(), expired, soon);
+    }
+
+    /**
+     * {@code anexa3ExitsOnly}: firma nu ține registrul de colector, deci Anexa 3 Ambalaje are numai
+     * ieșirile și nu are termen de depunere (Ordinul 794/2012 art. 4 alin. (1)).
+     */
+    public record AuditFileContents(List<YearContents> years, PackagingDeclaration packagingDeclaration,
+                                    boolean anexa3ExitsOnly, long partners, long partnersExpired,
+                                    long partnersExpiringSoon) {}
+
+    /** {@code anexa3WorkPoints}: punctele de lucru care primesc o Anexă 3 Ambalaje în anul acesta. */
+    public record YearContents(int year, long movements, List<String> anexa3WorkPoints,
+                               boolean anexa3RoleMissing) {}
+
+    /** De ce intră sau nu Anexa 1 Ambalaje: după rolul de piață din profilul firmei. */
+    public enum PackagingDeclaration { INCLUDED, TRADER_ONLY, NOT_ANSWERED }
+
     /** Everything that belongs to one reporting year, written under {@code files.prefix()}. */
     private void writeYear(ZipOutputStream zip, UUID tenantId, int year, YearFiles files,
                            Map<UUID, Set<String>> codesByPartner) throws IOException {

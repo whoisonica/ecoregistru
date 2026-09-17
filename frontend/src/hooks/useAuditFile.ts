@@ -39,3 +39,30 @@ export function useAuditFileSize(year: number, years: number) {
       (await api.get<AuditFileSize>("/api/v1/audit-file/size", { params: { year, years } })).data,
   });
 }
+
+/** Mirrors backend `AuditFileService.YearContents`. */
+export interface AuditFileYearContents {
+  year: number;
+  movements: number;
+  anexa3WorkPoints: string[];
+  anexa3RoleMissing: boolean;
+}
+
+/** Mirrors backend `AuditFileService.AuditFileContents`: ce intră în dosar, citit după regulile arhivei. */
+export interface AuditFileContents {
+  years: AuditFileYearContents[];
+  packagingDeclaration: "INCLUDED" | "TRADER_ONLY" | "NOT_ANSWERED";
+  anexa3ExitsOnly: boolean;
+  partners: number;
+  partnersExpired: number;
+  partnersExpiringSoon: number;
+}
+
+/** Ce documente intră în dosar pentru perioada aleasă și de ce — nu o listă fixă. */
+export function useAuditFileContents(year: number, years: number) {
+  return useQuery({
+    queryKey: ["audit-file-contents", year, years] as const,
+    queryFn: async () =>
+      (await api.get<AuditFileContents>("/api/v1/audit-file/contents", { params: { year, years } })).data,
+  });
+}
