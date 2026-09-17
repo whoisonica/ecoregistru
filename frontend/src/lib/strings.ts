@@ -2251,6 +2251,31 @@ export const strings = {
     inviteError: "Invitația a eșuat. Verifică datele și încearcă din nou.",
     inviteHint:
       "Utilizatorul primește un email cu link de setare a parolei. Contul devine activ după ce își setează parola.",
+    // --- F-D: cuprinsul fișei pe pagina firmei (nume scurte, încap pe telefon) ---
+    profileNav: "Secțiunile fișei firmei",
+    navAuthorization: "Autorizația",
+    navWasteManager: "Persoana desemnată",
+    navObligations: "Obligații",
+    navContact: "Contact",
+    navActivity: "Ce face firma",
+  },
+
+  /** F-D — pagina unei firme, `/clienti/:id`. */
+  companyPage: {
+    tabsLabel: "Secțiunile paginii firmei",
+    tabProfile: "Profil",
+    tabUsers: "Utilizatori",
+    tabSubscription: "Abonament și facturi",
+    tabHistory: "Istoric",
+    enterAccount: "Intră în cont",
+    notFound: "Firma nu e în lista ta",
+    notFoundHint: "Poate a fost mutată în alt cabinet sau adresa e greșită. Întoarce-te la Clienți și caut-o după nume.",
+    noUsers: "Fără utilizatori",
+    userOne: "utilizator",
+    userMany: "utilizatori",
+    overdue: "Restant",
+    gapsTitle: "Ce lipsește pentru dosar",
+    gapsHint: "Rubricile se tipăresc pe documente; goale, ies goale. Clic pe una și ajungi la ea.",
   },
 
   /** P2.13 — cabinetele de consultanță, pe ecranul Clienți al platformei. */
@@ -2491,6 +2516,12 @@ export const strings = {
     resume: "Anulează oprirea",
     resumed: "Oprirea a fost anulată.",
     endsOn: "Oprit: ultima zi facturată {date}",
+    // --- F-D: tabul „Abonament și facturi” de pe pagina firmei ---
+    panelNoSubscription:
+      "Fără abonament, clientul nu e facturat și nu e restricționat. Alege pachetul și data de start în stânga, apoi „Creează abonamentul”.",
+    invoicesSummary: "{billed} facturat · {paid} încasat",
+    stopSection: "Oprirea abonamentului",
+    stopSectionHint: "Se facturează încă o lună de preaviz, apoi contul trece pe doar-citire.",
   },
 
   /** P2.13 — echipa cabinetului, pe ecranul Clienți al consultantului. */

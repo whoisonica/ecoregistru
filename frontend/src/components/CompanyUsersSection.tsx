@@ -47,15 +47,15 @@ const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
  * <p>Rândul propriu n-are butoane, iar serverul refuză oricum: cine se dezactivează singur nu se
  * mai poate repara din aplicaţie.
  */
-export function CompanyUsersSection({ canManage }: { canManage: boolean }) {
+export function CompanyUsersSection({ canManage, companyId }: { canManage: boolean; companyId?: string }) {
   const { user: me } = useAuth();
-  const { data: users, isLoading, isError } = useUsers(canManage);
-  const inviteMut = useInviteCompanyUser();
-  const resendMut = useResendInvite();
-  const cancelMut = useCancelInvite();
-  const roleMut = useChangeUserRole();
-  const deactivateMut = useDeactivateUser();
-  const reactivateMut = useReactivateUser();
+  const { data: users, isLoading, isError } = useUsers(canManage, companyId);
+  const inviteMut = useInviteCompanyUser(companyId);
+  const resendMut = useResendInvite(companyId);
+  const cancelMut = useCancelInvite(companyId);
+  const roleMut = useChangeUserRole(companyId);
+  const deactivateMut = useDeactivateUser(companyId);
+  const reactivateMut = useReactivateUser(companyId);
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
 

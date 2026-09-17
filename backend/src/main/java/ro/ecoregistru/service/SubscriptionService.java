@@ -466,7 +466,7 @@ public class SubscriptionService {
                 .map(i -> new SubscriptionInvoiceResponse(i.getId(), i.getPeriodStart(), i.getPeriodEnd(),
                         i.getTotal(), i.getStatus(), i.getDueDate(), i.getFgoSerie(), i.getFgoNumar(),
                         i.getFgoLink(), i.getFgoLinkPlata(), i.getAmountPaid(), i.getLastError(), i.getPaidAt(),
-                        i.getPaidBy(), i.getFgoCollectedAt(), lastCardError(i.getId())))
+                        i.getPaidBy(), i.getFgoCollectedAt(), lastCardError(i.getId()), i.getPaymentCheckedAt()))
                 .toList();
         return new SubscriptionResponse(s.getId(), s.getPlan(), s.getStatus(),
                 s.getMonthlyPrice(), s.getImplementationFee(), s.getExtraWorkPointPrice(),

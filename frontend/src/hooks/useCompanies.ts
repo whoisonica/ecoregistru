@@ -132,6 +132,10 @@ export function useInviteUser() {
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: InviteUserInput }) =>
       (await api.post<CompanyUser>(`/api/v1/companies/${id}/users`, input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: clientOverviewKey }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: clientOverviewKey });
+      // F-D: tabul „Utilizatori” al paginii firmei.
+      qc.invalidateQueries({ queryKey: ["users"] });
+    },
   });
 }

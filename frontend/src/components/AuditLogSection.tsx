@@ -59,7 +59,7 @@ function changeLine(change: AuditChange): string {
  * <p>Paginat la server din prima zi: e singura tabelă despre care se știe de la început că numai
  * crește.
  */
-export function AuditLogSection({ canManage }: { canManage: boolean }) {
+export function AuditLogSection({ canManage, companyId }: { canManage: boolean; companyId?: string }) {
   const [entityType, setEntityType] = useState("");
   // `?istoric=<id>` vine din „Istoric” de pe un rând de mișcare: drumul invers al jurnalului.
   const [searchParams, setSearchParams] = useSearchParams();
@@ -79,7 +79,7 @@ export function AuditLogSection({ canManage }: { canManage: boolean }) {
     setSearchParams(next, { replace: true });
   }
   const table = useRemoteTableView<AuditLogEntry>({ resetOn: filters });
-  const { data, isLoading, isError } = useAuditLog(filters, table.params, canManage);
+  const { data, isLoading, isError } = useAuditLog(filters, table.params, canManage, companyId);
   const view = table.bind(data);
 
   if (!canManage) return null;

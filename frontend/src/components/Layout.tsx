@@ -148,7 +148,15 @@ export function Layout({ children }: { children: ReactNode }) {
   useHotkey(
     "n",
     () => navigate(`${hasGenerated ? SCREEN_PATH.GENERATED : SCREEN_PATH.IN}?nou=1`),
-    { enabled: canAdd && !OWNS_N.has(location.pathname) && !location.pathname.startsWith("/setari/") }
+    {
+      // `/clienti…` (lista, clientul nou, pagina firmei) își leagă N singur; cu o firmă aleasă în comutator,
+      // N pornea și „Adaugă deșeuri” peste invitație (prins de proba 33).
+      enabled:
+        canAdd &&
+        !OWNS_N.has(location.pathname) &&
+        !location.pathname.startsWith("/setari/") &&
+        !location.pathname.startsWith("/clienti"),
+    }
   );
   useHotkey("i", () => navigate(`${SCREEN_PATH.IN}?nou=1`), { enabled: canAdd && hasCollector });
   useHotkey("e", () => navigate(`${SCREEN_PATH.OUT}?nou=1`), { enabled: canAdd && hasCollector });

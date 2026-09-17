@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Receipt } from "lucide-react";
 import {
   useCheckInvoicePayment,
@@ -32,7 +32,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { SubscriptionDialog } from "@/components/SubscriptionDialog";
+import { checkedWhen, SubscriptionDialog } from "@/components/SubscriptionDialog";
 
 const t = strings.invoicing;
 
@@ -48,14 +48,6 @@ function lei(n: number) {
 function todayIso() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-/** „azi, 10:29” sau „16.09.2026 06:30”, pe ora de pe calculatorul omului. */
-function when(instant: string) {
-  const d = new Date(instant);
-  const time = d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
-  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return day === todayIso() ? t.today.replace("{time}", time) : `${formatDate(day)} ${time}`;
 }
 
 const isFailed = (i: BillingInvoiceRow) => i.status === "DRAFT" && Boolean(i.lastError);
@@ -162,7 +154,10 @@ export function InvoicingPage() {
     });
   }
 
-  const open = (ref: BillingOwnerRef, name: string) => setOwner({ ...ref, name });
+  const navigate = useNavigate();
+  // F-D: o firmă își are abonamentul pe pagina ei; dialogul a rămas doar pentru cabinete.
+  const open = (ref: BillingOwnerRef, name: string) =>
+    ref.kind === "company" ? navigate(`/clienti/${ref.id}?tab=abonament`) : setOwner({ ...ref, name });
 
   return (
     <div>
@@ -288,7 +283,7 @@ export function InvoicingPage() {
                         <>
                           <span className="text-xs text-content-muted">
                             {invoice.paymentCheckedAt
-                              ? t.checkedAt.replace("{when}", when(invoice.paymentCheckedAt))
+                              ? t.checkedAt.replace("{when}", checkedWhen(invoice.paymentCheckedAt))
                               : t.neverChecked}
                           </span>
                           <Button
@@ -380,7 +375,7 @@ function LastRunPanel({
         {run ? (
           <>
             <span className="font-mono text-xs text-content-muted">
-              {when(run.startedAt)} · {run.kind === "MANUAL" ? t.kindManual : t.kindScheduled}
+              {checkedWhen(run.startedAt)} · {run.kind === "MANUAL" ? t.kindManual : t.kindScheduled}
             </span>
             <span className="flex flex-wrap gap-x-4 gap-y-1">
               {/* `countOf` cere n ≥ 1: „0 de facturi emise” se citea prost, iar un zero nu spune nimic aici. */}
@@ -426,7 +421,10 @@ function LastRunPanel({
               detail={<span className="text-state-bad-text">{f.reason}</span>}
             >
               {stillFailed.has(f.invoiceId) && f.reason.startsWith("CUI-ul") && (
-                <Link to="/clienti" className="text-xs font-semibold text-brand-700 hover:underline">
+                <Link
+                  to={f.owner?.kind === "company" ? `/clienti/${f.owner.id}` : "/clienti"}
+                  className="text-xs font-semibold text-brand-700 hover:underline"
+                >
                   {t.fixCui}
                 </Link>
               )}

@@ -40,6 +40,7 @@ const suites = [
   ["29-facturare.mjs", "Facturare: tasta B, ultima rulare cu firma și motivul, filtrele, „Verifică plata” fără chei, „Oprește”, 375px"],
   ["30-clienti-tabel.mjs", "Clienți: cifrele de sus, filtrele, cele cu probleme primele, ⋯ pe rând, invitația numărată, tasta N, 375px"],
   ["31-client-nou.mjs", "Client nou în pași: cererea pusă în pași, CUI și adresa verificate, prima factură, totul sau nimic, 375px"],
+  ["33-pagina-firmei.mjs", "Pagina firmei: taburile, fișa cu lipsurile, utilizatorii și istoricul firmei fără comutator, abonamentul, Intră în cont, 375px"],
 ];
 
 const only = process.argv[2];

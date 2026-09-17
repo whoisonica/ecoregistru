@@ -341,6 +341,8 @@ export interface SubscriptionInvoice {
   fgoCollectedAt: string | null;
   /** Refuzul ultimei încercări cu cardul, cât e ultima. */
   lastCardError: string | null;
+  /** F-D — când a fost întrebat FGO ultima oară de plata ei. */
+  paymentCheckedAt: string | null;
 }
 
 export interface SubscriptionInput {

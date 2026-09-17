@@ -27,5 +27,7 @@ public record SubscriptionInvoiceResponse(
         SubscriptionPaymentMethod paidBy,
         Instant fgoCollectedAt,
         /** The latest card attempt's refusal, while it is the latest attempt. */
-        String lastCardError
+        String lastCardError,
+        /** F-D — when FGO was last asked about this invoice; null if never. */
+        Instant paymentCheckedAt
 ) {}

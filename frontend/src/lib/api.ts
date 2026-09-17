@@ -60,8 +60,10 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Only meaningful for PLATFORM_ADMIN; harmless otherwise (backend ignores it for scoped users).
+  // F-D: pagina unei firme citește utilizatorii și jurnalul ei fără să mute comutatorul, deci
+  // antetul pus de cerere rămâne. Serverul îl verifică la fel (`TenantFilter`).
   const tenant = tenantStore.get();
-  if (tenant) {
+  if (tenant && !config.headers["X-Tenant-Id"]) {
     config.headers["X-Tenant-Id"] = tenant;
   }
   return config;

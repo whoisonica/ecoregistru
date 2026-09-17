@@ -19,6 +19,7 @@ import { AuditFilePage } from "@/pages/AuditFilePage";
 import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
 import { NewClientPage } from "@/pages/NewClientPage";
+import { CompanyPage } from "@/pages/CompanyPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { BillingPage } from "@/pages/BillingPage";
 import { InvoicingPage } from "@/pages/InvoicingPage";
@@ -102,6 +103,15 @@ export default function App() {
             element={
               <AppShell needsTenant={false}>
                 <NewClientPage />
+              </AppShell>
+            }
+          />
+          {/* F-D — pagina firmei; după `/clienti/nou`, ca „nou” să nu fie citit drept id. */}
+          <Route
+            path="/clienti/:id"
+            element={
+              <AppShell needsTenant={false}>
+                <CompanyPage />
               </AppShell>
             }
           />

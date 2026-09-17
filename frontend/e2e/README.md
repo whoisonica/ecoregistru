@@ -1,5 +1,16 @@
 # Probe de interfaţă
 
+🏢 **17.09.2026 — proba 33 (`33-pagina-firmei.mjs`), pagina firmei `/clienti/:id` (F-D)**: „Deschide” duce la pagină; capul
+are numele, CUI-ul, starea abonamentului și numărul de utilizatori; taburile Profil · Utilizatori · Abonament și facturi · Istoric
+(în adresă); „Ce lipsește pentru dosar” numește adresa, CAEN-ul și persoana desemnată și dispare după salvare, fără să calce ce
+s-a scris; CUI greșit oprit; **cu comutatorul pe firma demo**, utilizatorii, invitația din tab și istoricul sunt ai firmei din
+adresă (antetul `X-Tenant-Id` al cererii) și comutatorul nu se mută; pe abonament factura emisă cu „neverificat încă”, „Verifică
+plata” fără chei, salvarea; „Invită utilizator” și tasta N; 375px fără derulare; firmă străină → „Firma nu e în lista ta”; „Intră
+în cont” comută; administratorul firmei demo cu antetul altei firme își vede doar colegii. **Negative:** `api.ts` care suprascrie
+antetul → 3 căderi (lista, invitația ajunsă la firma demo, istoricul); fără excepția `/clienti` din `Layout`, N pornea și „Adaugă
+deșeuri” al firmei din comutator → 1 cădere (defect vechi, și pe lista Clienți). Probele 29 și 30 cer acum pagina, nu dialogul.
+Lasă în urmă „Proba 33 <număr>” cu o factură și doi invitați.
+
 🤝 **17.09.2026 — proba 32 (`32-parteneri-locuri-soferi.mjs`), punctele de lucru și șoferii la vedere**: adăugarea de partener
 are patru pași (al patrulea, „Puncte de lucru și șoferi”, se salvează gol); rândul transportatorului fără nimic arată „+ Punct de
 lucru” și „+ Șofer”, care deschid fișa pe pasul 4 cu cursorul în rândul nou; după salvare rândul spune „1 punct de lucru · 1 șofer”,

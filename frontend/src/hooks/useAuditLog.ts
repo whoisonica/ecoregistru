@@ -16,17 +16,23 @@ import type { AuditLogEntry, AuditLogFilters } from "@/lib/types";
  */
 const auditLogRoot = ["audit-log"] as const;
 
-export function useAuditLog(filters: AuditLogFilters, table: RemoteTableParams, enabled = true) {
+/** `companyId` — F-D, istoricul unei firme pe pagina ei, fără comutator (vezi `useUsers`). */
+export function useAuditLog(filters: AuditLogFilters, table: RemoteTableParams, enabled = true, companyId?: string) {
   return useQuery({
     enabled,
-    queryKey: [...auditLogRoot, filters, table] as const,
+    queryKey: [...auditLogRoot, companyId ?? "current", filters, table] as const,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const params: Record<string, string | number> = { page: table.page, size: table.size };
       if (filters.entityType) params.entityType = filters.entityType;
       if (filters.entityId) params.entityId = filters.entityId;
       if (table.search) params.search = table.search;
-      return (await api.get<PageSlice<AuditLogEntry>>("/api/v1/audit-log", { params })).data;
+      return (
+        await api.get<PageSlice<AuditLogEntry>>("/api/v1/audit-log", {
+          params,
+          headers: companyId ? { "X-Tenant-Id": companyId } : undefined,
+        })
+      ).data;
     },
   });
 }

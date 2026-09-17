@@ -132,10 +132,15 @@ check("abonamentul: „Așteaptă prima plată” · Generator · 99 lei", /Gene
 // ---------------------------------------------------------------- (5) rândul: Deschide și ⋯
 const bareRow = page.locator("table").first().locator("tbody tr", { hasText: BARE }).first();
 await bareRow.locator('button:has-text("Deschide")').click();
-await page.waitForTimeout(500);
-check("„Deschide” arată firma", /Editează firma/.test((await page.textContent('div[role="dialog"]')) ?? ""));
-await page.keyboard.press("Escape");
-await page.waitForTimeout(300);
+await page.waitForURL(/\/clienti\/[0-9a-f-]{36}/, { timeout: 5000 }).catch(() => {});
+// F-D: firma are pagina ei (proba 33).
+check("„Deschide” duce la pagina firmei", new URL(page.url()).pathname === `/clienti/${ids.bare}`, page.url());
+await page.goBack({ waitUntil: "networkidle" });
+await page.waitForTimeout(600);
+if (searchable) {
+  await search.fill(RUN);
+  await page.waitForTimeout(400);
+}
 await bareRow.locator('button[aria-haspopup], button[aria-label]').last().click();
 await page.waitForTimeout(300);
 const menu = await page.$$eval('[role="menuitem"]', (items) => items.map((i) => i.textContent.trim()));

@@ -161,15 +161,16 @@ await page.waitForTimeout(1200);
 check("fără cheile FGO, spune asta și nu marchează nimic",
   /lipsesc cheile FGO/.test(await page.textContent("body")) && sql(`select status from subscription_invoices where id='${overdueId}'`) === "ISSUED");
 
-// ---------------------------------------------------------------- (6) dialogul de abonament, fără butonul de rulare
+// ---------------------------------------------------------------- (6) „Corectează” duce la abonamentul firmei (F-D)
 await pick("Căzute");
 await page.locator("table tbody tr", { hasText: B }).first().locator('button:has-text("Corectează")').click();
-await page.waitForSelector('[role="dialog"]:has-text("Date de facturare")', { timeout: 5000 });
-const dialog = await page.textContent('[role="dialog"]');
-check("„Corectează” deschide abonamentul lui B", dialog.includes(`Abonament — ${B}`));
-check("dialogul nu mai are butonul de rulare", !/Emite facturile scadente acum/.test(dialog) && /Facturare/.test(dialog));
-await page.keyboard.press("Escape");
-await page.waitForTimeout(400);
+await page.waitForSelector('[data-testid="subscription-panel"]', { timeout: 8000 });
+check("„Corectează” deschide abonamentul lui B, pe pagina firmei",
+  new URL(page.url()).pathname === `/clienti/${ids.b}` && /tab=abonament/.test(page.url()), page.url());
+const panelText = await page.textContent('[data-testid="subscription-panel"]');
+check("tabul abonamentului n-are butonul de rulare", !/Emite facturile scadente acum/.test(panelText) && /Facturare/.test(panelText));
+await page.goBack({ waitUntil: "networkidle" });
+await page.waitForTimeout(600);
 
 // ---------------------------------------------------------------- (5) Oprește
 await page.locator("table tbody tr", { hasText: B }).first().locator('button:has-text("Oprește")').click();
