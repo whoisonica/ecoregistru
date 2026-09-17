@@ -591,7 +591,8 @@ export const PRIVACY: LegalDoc = {
           rows: [
             ["**Heroku (Salesforce)**", "Găzduirea aplicației și baza de date", "**Uniunea Europeană**"],
             ["**Sentry**", "Rapoarte de eroare", "**Uniunea Europeană** (Germania)"],
-            ["**Zoho**", "Trimiterea e-mailurilor", "**Uniunea Europeană**"],
+            ["**Brevo**", "Trimiterea e-mailurilor automate ale aplicației", "**Uniunea Europeană**"],
+            ["**cyber_Folks**", "Căsuța contact@wastehouse.ro și site-ul wastehouse.ro", "**România**"],
             ["**Cloudinary**", "Fișierele atașate în aplicație", "**Statele Unite**"],
             ["**FGO**", "Emiterea facturilor abonamentului și transmiterea lor în RO e-Factura", "**România**"],
             ["**NETOPIA Payments**", "Plata cu cardul: pagina de plată, salvarea cardului, debitarea facturilor", "**România**"],
