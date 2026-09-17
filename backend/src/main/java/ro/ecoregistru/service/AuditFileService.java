@@ -1,13 +1,18 @@
 package ro.ecoregistru.service;
 
 import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfPageEventHelper;
+import com.lowagie.text.pdf.PdfTemplate;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +27,6 @@ import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.MarketRole;
-import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.AttachmentRepository;
@@ -41,6 +45,7 @@ import ro.ecoregistru.util.Diacritics;
 import ro.ecoregistru.util.UsedOilCodes;
 import ro.ecoregistru.util.WasteCodeLabel;
 
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -49,10 +54,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -64,16 +71,16 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 
 /**
  * Builds the "dosar de control" (audit file) for a tenant and year as a single ZIP:
- *   - README.txt describing the contents and generation date,
+ *   - 00-cuprins.txt describing the contents and generation date (README.txt until 17.09.2026),
  *   - "Evidenta gestiunii deseurilor generate" (HG 856/2002, anexa 1): four chapters per
  *     waste code, one page each,
  *   - "Evidenta gestiunii deseurilor centralizata" (the former annual declaration): the same year
  *     folded to one line per waste code, per work point,
  *   - Anexa 1 Ambalaje (.xls + .pdf), when the company puts packaging on the market,
  *   - Anexa 3 Ambalaje (.xls + .pdf), one pair per work point that moved packaging that year,
- *   - the generic evidence summary in both xlsx and pdf,
- *   - a PDF summary of partner authorizations (with expiry status),
- *   - atasamente/index.txt listing every movement attachment, and the attachment files
+ *   - a PDF summary of partner authorizations (with expiry status and the codes each carried),
+ *   - 90-de-lucru/: the generic evidence summary in both xlsx and pdf,
+ *   - 99-documente-justificative/index.txt listing every movement attachment, and the attachment files
  *     themselves (downloaded best-effort from Cloudinary; a failed download stays referenced
  *     in the index so the dossier is still complete).
  *
@@ -102,8 +109,21 @@ public class AuditFileService {
      * out empty, and README.txt names it as such instead of shipping a blank official sheet.
      */
     private static final int MAX_YEARS = 5;
-    /** Width of the file-name column in README.txt, wide enough for "2026/evidenta-centralizata-2026.pdf". */
-    private static final int NAME_COLUMN = 35;
+
+    /*
+     * Numele din arhivă (proprietarul, 17.09.2026): numerotate în ordinea în care se citește dosarul —
+     * cuprinsul, documentele oficiale, autorizațiile —, iar tabelele de lucru și documentele justificative
+     * în foldere la coadă, ca să nu se amestece cu ce se depune. Un ZIP se afișează pe alfabet, deci
+     * numărul e singurul mod de a impune ordinea.
+     */
+    private static final String CONTENTS = "00-cuprins.txt";
+    private static final String PARTNERS = "autorizatii-parteneri.pdf";
+    private static final String WORKING_DIR = "90-de-lucru/";
+    private static final String ATTACHMENTS_DIR = "99-documente-justificative/";
+
+    private static final Color LINE = new Color(0xD1, 0xD5, 0xDB);
+    private static final Color MUTED = new Color(0x4B, 0x55, 0x63);
+    private static final Color HEAD = new Color(0xEC, 0xFD, 0xF5);
 
     EvidenceCalculator evidenceCalculator;
     GenericEvidenceExporter evidenceExporter;
@@ -159,29 +179,37 @@ public class AuditFileService {
         // so it brings the cache up to date itself. Idempotent: with nothing new to fold in, the
         // lines come out identical.
         Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear = new LinkedHashMap<>();
-        Map<Integer, Anexa3Plan> anexa3ByYear = new LinkedHashMap<>();
+        Map<Integer, YearFiles> filesByYear = new LinkedHashMap<>();
         List<WorkPoint> workPoints = workPointRepository.findAllByCompany_Id(tenantId).stream()
                 .sorted(Comparator.comparing(WorkPoint::getName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+        boolean single = years == 1;
+        boolean packaging = MarketRole.putsPackagingOnMarket(company.getMarketRoles());
         for (int y = firstYear; y <= year; y++) {
             evidenceCalculator.regenerateYear(y);
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
-            anexa3ByYear.put(y, anexa3Plan(y, workPoints));
+            filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(y, workPoints)));
         }
+        // Un singur an: autorizațiile vin după anexele lui, cu numărul următor. Mai mulți: stau o dată
+        // la rădăcină, primele după cuprins.
+        String partnersFile = single ? filesByYear.get(year).partners() : numbered(1, PARTNERS);
 
         try (ZipOutputStream zip = new ZipOutputStream(target)) {
 
-            writeEntry(zip, "README.txt",
-                    readme(company, firstYear, year, evidenceByYear, anexa3ByYear, branding)
+            writeEntry(zip, CONTENTS,
+                    readme(company, firstYear, year, evidenceByYear, filesByYear, partnersFile, branding)
                             .getBytes(StandardCharsets.UTF_8));
+            // Codurile de deșeu pe care le-a purtat fiecare partener în perioada dosarului, strânse din
+            // aceleași mișcări pe care le citesc anii — coloana din lista autorizațiilor.
+            Map<UUID, Set<String>> codesByPartner = new HashMap<>();
             for (int y = firstYear; y <= year; y++) {
                 // A single year stays where it always was; several would collide on the file
                 // names, so each gets a folder named after it.
-                writeYear(zip, years == 1 ? "" : y + "/", company, tenantId, y, evidenceByYear.get(y),
-                        anexa3ByYear.get(y), branding);
+                writeYear(zip, company, tenantId, y, evidenceByYear.get(y), filesByYear.get(y), branding,
+                        codesByPartner);
             }
-            writeEntry(zip, "autorizatii-parteneri.pdf",
-                    partnerAuthorizationsPdf(company.getName(), partners, branding));
+            writeEntry(zip, partnersFile,
+                    partnerAuthorizationsPdf(company, partners, codesByPartner, firstYear, year, branding));
 
             zip.finish();
         } catch (IOException ex) {
@@ -209,54 +237,89 @@ public class AuditFileService {
     /** {@code unknownSize}: atașamente de dinainte de V57, fără mărime ținută. */
     public record AuditFileSize(long attachments, long attachmentBytes, long unknownSize) {}
 
-    /** Everything that belongs to one reporting year, written under {@code prefix}. */
-    private void writeYear(ZipOutputStream zip, String prefix, Company company, UUID tenantId,
-                           int year, List<MonthlyEvidenceResponse> evidence, Anexa3Plan anexa3,
-                           ReportBranding branding) throws IOException {
+    /** Everything that belongs to one reporting year, written under {@code files.prefix()}. */
+    private void writeYear(ZipOutputStream zip, Company company, UUID tenantId,
+                           int year, List<MonthlyEvidenceResponse> evidence, YearFiles files,
+                           ReportBranding branding, Map<UUID, Set<String>> codesByPartner) throws IOException {
+        String prefix = files.prefix();
         List<WasteMovement> movements = movementRepository
                 .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+        for (WasteMovement m : movements) {
+            for (Partner p : new Partner[]{m.getPartner(), m.getTransportPartner()}) {
+                if (p != null && m.getWasteCode() != null) {
+                    codesByPartner.computeIfAbsent(p.getId(), id -> new TreeSet<>())
+                            .add(WasteCodeLabel.official(m.getWasteCode().getCode(), m.getWasteCode().isHazardous()));
+                }
+            }
+        }
 
         // The regulated document of the bundle, and the reason the dossier gets printed at
         // all: one page per waste code, carrying the four chapters of the form.
-        writeEntry(zip, prefix + "evidenta-gestiunii-deseurilor-" + year + ".pdf",
+        writeEntry(zip, prefix + files.sheet(),
                 anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
         // The summary page that goes in front of those sheets: same figures, folded to the
         // year, which is what the authority reads before it opens the twelve-row detail.
         // „Evidenţa gestiunii deşeurilor centralizată" — numele cerut de specialistă pe 15.09.2026
         // pentru ce se numea până atunci „declaraţia anuală".
-        writeEntry(zip, prefix + "evidenta-centralizata-" + year + ".pdf",
+        writeEntry(zip, prefix + files.centralized(),
                 annualDeclarationGenerator.render(
                         evidenceCalculator.annualDeclaration(year, null)));
         // Anexa 1 Ambalaje lipsea din dosar (specialista, 15.09.2026). Numai la firma care pune
         // ambalaje pe piaţă: un comerciant n-o depune, iar la un profil nerăspuns nu ghicim.
-        if (MarketRole.putsPackagingOnMarket(company.getMarketRoles())) {
-            writeEntry(zip, prefix + "anexa1-ambalaje-" + year + ".xls",
+        if (files.packaging() != null) {
+            writeEntry(zip, prefix + files.packaging() + ".xls",
                     packagingService.render(year, ExportFormat.XLS));
-            writeEntry(zip, prefix + "anexa1-ambalaje-" + year + ".pdf",
+            writeEntry(zip, prefix + files.packaging() + ".pdf",
                     packagingService.render(year, ExportFormat.PDF));
         }
         // Anexa 3 Ambalaje (proprietarul, 16.09.2026): una per punct de lucru, fiindcă aşa se depune
         // (Ordinul 794/2012 art. 4 alin. (4)), şi numai unde anul are ambalaje — o foaie oficială
         // goală n-are ce căuta la control.
-        for (Anexa3File file : anexa3.files()) {
+        for (Anexa3File file : files.anexa3()) {
             writeEntry(zip, prefix + file.baseName() + ".xls",
                     packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.XLS));
             writeEntry(zip, prefix + file.baseName() + ".pdf",
                     packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.PDF));
         }
-        writeEntry(zip, prefix + "evidenta-" + year + ".xlsx",
+        writeEntry(zip, prefix + WORKING_DIR + "evidenta-" + year + ".xlsx",
                 evidenceExporter.export(ExportFormat.XLSX, company.getName(), year, null, evidence, branding));
-        writeEntry(zip, prefix + "evidenta-" + year + ".pdf",
+        writeEntry(zip, prefix + WORKING_DIR + "evidenta-" + year + ".pdf",
                 evidenceExporter.export(ExportFormat.PDF, company.getName(), year, null, evidence, branding));
 
-        writeAttachments(zip, prefix, movements, attachmentRepository.findAllOfLiveMovementsBetween(
+        writeAttachments(zip, prefix + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
+    }
+
+    /**
+     * Numele fișierelor unui an, calculate o dată și citite de două ori — de arhivă și de cuprins —, ca
+     * cele două să nu poată spune lucruri diferite. {@code packaging}: numele Anexei 1 Ambalaje fără
+     * extensie, null când firma n-o depune; {@code partners}: null la mai mulți ani (stă la rădăcină).
+     */
+    private record YearFiles(String prefix, String sheet, String centralized, String packaging,
+                             List<Anexa3File> anexa3, boolean anexa3RoleMissing, String partners) {}
+
+    private static YearFiles yearFiles(int year, boolean single, boolean packaging, Anexa3Plan plan) {
+        int n = 1;
+        String sheet = numbered(n++, "evidenta-gestiunii-deseurilor-" + year + ".pdf");
+        String centralized = numbered(n++, "evidenta-centralizata-" + year + ".pdf");
+        String packagingName = packaging ? numbered(n++, "anexa1-ambalaje-" + year) : null;
+        List<Anexa3File> anexa3 = new java.util.ArrayList<>();
+        for (Anexa3File file : plan.files()) {
+            anexa3.add(new Anexa3File(numbered(n++, file.baseName()), file.workPointId(), file.workPointName()));
+        }
+        return new YearFiles(single ? "" : year + "/", sheet, centralized, packagingName, anexa3,
+                plan.roleMissing(), single ? numbered(n, PARTNERS) : null);
+    }
+
+    /** „01-evidenta-…”: două cifre, ca ordinea pe alfabet să fie ordinea de citire. */
+    private static String numbered(int n, String name) {
+        return String.format("%02d-%s", n, name);
     }
 
     // --- attachments ---
 
-    private void writeAttachments(ZipOutputStream zip, String prefix, List<WasteMovement> movements,
+    private void writeAttachments(ZipOutputStream zip, String folder, List<WasteMovement> movements,
                                   List<Attachment> attachments) throws IOException {
         // Read once for the year, not through `m.getAttachments()`: the regeneration just before
         // flushes a hundred-odd writes, and after it Hibernate stopped batching that lazy
@@ -275,7 +338,7 @@ public class AuditFileService {
                 n++;
                 String label = m.getDate().format(DATE) + " · " + m.getWasteCode().getCode()
                         + " · " + safe(m.getDocumentReference());
-                String entryName = prefix + "atasamente/" + n + "-" + fileName(a);
+                String entryName = folder + n + "-" + fileName(a);
                 index.append(n).append(". ").append(label).append("\n")
                         .append("   fișier: ").append(fileName(a)).append("\n");
 
@@ -297,7 +360,7 @@ public class AuditFileService {
             index.append("Total: ").append(n).append(" atașamente, ")
                     .append(downloaded).append(" incluse în arhivă.\n");
         }
-        writeEntry(zip, prefix + "atasamente/index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
+        writeEntry(zip, folder + "index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -327,50 +390,90 @@ public class AuditFileService {
 
     // --- partner authorizations PDF ---
 
-    private byte[] partnerAuthorizationsPdf(String companyName, List<Partner> partners, ReportBranding branding) {
-        Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
+    /**
+     * The partner list: a working page, so it carries the consultancy's header, but it sits next to
+     * the official sheets and has to look like it belongs there.
+     *
+     * <p>17.09.2026: until now it was set in the standard Helvetica, whose encoding has no ă, ș or ț —
+     * the page printed „Autorizaii” and „Expir în”. It now uses the Cp1250 Helvetica of the other
+     * generators, lies in landscape for the extra column, repeats its header on every page, colours the
+     * status and names the waste codes each partner carried in the dossier's period, so an inspector can
+     * lay the authorization next to what went through it.
+     */
+    private byte[] partnerAuthorizationsPdf(Company company, List<Partner> partners,
+                                            Map<UUID, Set<String>> codesByPartner, int firstYear, int lastYear,
+                                            ReportBranding branding) {
+        Document doc = new Document(PageSize.A4.rotate(), 36, 36, 36, 48);
+        LocalDate today = LocalDate.now();
+        String period = firstYear == lastYear ? String.valueOf(lastYear) : firstYear + "–" + lastYear;
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            PdfWriter.getInstance(doc, out);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            writer.setPageEvent(new PageFooter(company.getName() + " · Autorizațiile partenerilor"));
             doc.open();
 
             ReportBranding.addPdfHeader(doc, branding);
 
-            Font companyFont = new Font(Font.HELVETICA, 13, Font.BOLD);
-            Font titleFont = new Font(Font.HELVETICA, 11, Font.BOLD);
-            doc.add(new Paragraph(companyName == null ? "" : companyName, companyFont));
-            Paragraph title = new Paragraph("Autorizații parteneri (colectori / transportatori)", titleFont);
-            title.setSpacingAfter(10f);
+            BaseFont plain = centralEuropean(false);
+            BaseFont bold = centralEuropean(true);
+            doc.add(new Paragraph(cp1250(safe(company.getName())), new Font(bold, 14)));
+            if (company.getCui() != null && !company.getCui().isBlank()) {
+                doc.add(new Paragraph(cp1250("CUI " + company.getCui()), new Font(plain, 9, Font.NORMAL, MUTED)));
+            }
+            Paragraph title = new Paragraph(cp1250("Autorizațiile partenerilor"), new Font(bold, 12));
+            title.setSpacingBefore(10f);
             doc.add(title);
+            doc.add(new Paragraph(cp1250("Status citit la " + today.format(DATE)
+                    + " · codurile de deșeu din " + period), new Font(plain, 9, Font.NORMAL, MUTED)));
+            Paragraph summary = new Paragraph(cp1250(summaryLine(partners, today)), new Font(plain, 9));
+            summary.setSpacingBefore(4f);
+            summary.setSpacingAfter(10f);
+            doc.add(summary);
 
             String[] cols = {"Denumire", "CUI", "Tip", "Nr. autorizație", "Viză anuală",
-                    "Valabilă până la", "Status"};
+                    "Valabilă până la", "Coduri de deșeu " + period, "Status"};
             PdfPTable table = new PdfPTable(cols.length);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{22, 12, 13, 14, 15, 11, 13});
+            table.setWidths(new float[]{19, 9, 10, 11, 12, 10, 16, 13});
+            table.setHeaderRows(1);
 
-            Font headFont = new Font(Font.HELVETICA, 8, Font.BOLD);
-            Font bodyFont = new Font(Font.HELVETICA, 8, Font.NORMAL);
+            Font headFont = new Font(bold, 8);
+            Font bodyFont = new Font(plain, 8);
             for (String col : cols) {
-                PdfPCell hc = new PdfPCell(new Phrase(col, headFont));
-                hc.setBackgroundColor(new java.awt.Color(0xEC, 0xFD, 0xF5));
-                hc.setPadding(4f);
+                PdfPCell hc = new PdfPCell(new Phrase(cp1250(col), headFont));
+                hc.setBackgroundColor(HEAD);
+                hc.setBorderColor(LINE);
+                hc.setPadding(5f);
                 table.addCell(hc);
             }
 
-            LocalDate today = LocalDate.now();
-            for (Partner p : partners.stream()
-                    .sorted(Comparator.comparing(Partner::getName, String.CASE_INSENSITIVE_ORDER)).toList()) {
+            List<Partner> sorted = partners.stream()
+                    .sorted(Comparator.comparing(Partner::getName, String.CASE_INSENSITIVE_ORDER)).toList();
+            for (Partner p : sorted) {
                 cell(table, p.getName(), bodyFont);
                 cell(table, safe(p.getCui()), bodyFont);
-                cell(table, partnerType(p.getType()), bodyFont);
+                cell(table, partnerType(p), bodyFont);
                 cell(table, safe(p.getAuthorizationNumber()), bodyFont);
                 cell(table, visaText(p), bodyFont);
                 cell(table, p.authorizationValidUntil() != null
                         ? p.authorizationValidUntil().format(DATE) : "—", bodyFont);
-                cell(table, statusText(p, today), bodyFont);
+                Set<String> codes = codesByPartner.get(p.getId());
+                cell(table, codes == null || codes.isEmpty() ? "—" : String.join(", ", codes), bodyFont);
+                statusCell(table, p, today, bold);
             }
-
+            if (sorted.isEmpty()) {
+                PdfPCell none = new PdfPCell(new Phrase(cp1250("Nu există parteneri înregistrați."), bodyFont));
+                none.setColspan(cols.length);
+                none.setBorderColor(LINE);
+                none.setPadding(6f);
+                table.addCell(none);
+            }
             doc.add(table);
+
+            Paragraph note = new Paragraph(cp1250("„Valabilă până la” este data care vine prima dintre expirarea "
+                    + "autorizației și sfârșitul vizei anuale. Statusul trece pe „Expiră în …” cu 60 de zile înainte."),
+                    new Font(plain, 7.5f, Font.NORMAL, MUTED));
+            note.setSpacingBefore(8f);
+            doc.add(note);
             doc.close();
             return out.toByteArray();
         } catch (IOException ex) {
@@ -378,22 +481,87 @@ public class AuditFileService {
         }
     }
 
-    private String statusText(Partner p, LocalDate today) {
+    /** „8 parteneri · 1 cu autorizația expirată · 2 expiră în 60 de zile · 1 inactiv”, numai ce nu e zero. */
+    private static String summaryLine(List<Partner> partners, LocalDate today) {
+        long expired = 0;
+        long soon = 0;
+        long inactive = 0;
+        for (Partner p : partners) {
+            switch (status(p, today)) {
+                case EXPIRED -> expired++;
+                case SOON -> soon++;
+                case INACTIVE -> inactive++;
+                default -> { }
+            }
+        }
+        StringBuilder sb = new StringBuilder(count(partners.size(), "partener", "parteneri"));
+        if (expired > 0) {
+            sb.append(" · ").append(expired).append(" cu autorizația expirată");
+        }
+        if (soon > 0) {
+            sb.append(" · ").append(soon).append(" expiră în următoarele 60 de zile");
+        }
+        if (inactive > 0) {
+            sb.append(" · ").append(count(inactive, "inactiv", "inactivi"));
+        }
+        return sb.toString();
+    }
+
+    /** „1 partener”, „5 parteneri”, „20 de parteneri”: de la 20 în sus româna cere „de”. */
+    private static String count(long n, String one, String many) {
+        if (n == 1) {
+            return "1 " + one;
+        }
+        long lastTwo = n % 100;
+        return n + (n >= 20 && (lastTwo == 0 || lastTwo >= 20) ? " de " : " ") + many;
+    }
+
+    private enum AuthStatus { INACTIVE, NO_DATE, EXPIRED, SOON, VALID }
+
+    private static AuthStatus status(Partner p, LocalDate today) {
         if (!p.isActive()) {
-            return "Inactiv";
+            return AuthStatus.INACTIVE;
         }
         LocalDate expiry = p.authorizationValidUntil();
         if (expiry == null) {
-            return "Activ";
+            return AuthStatus.NO_DATE;
         }
         long days = ChronoUnit.DAYS.between(today, expiry);
         if (days < 0) {
-            return "Autorizație expirată";
+            return AuthStatus.EXPIRED;
         }
-        if (days <= 60) {
-            return "Expiră în " + days + " zile";
-        }
-        return "Activ";
+        return days <= 60 ? AuthStatus.SOON : AuthStatus.VALID;
+    }
+
+    private static String statusText(Partner p, LocalDate today) {
+        return switch (status(p, today)) {
+            case INACTIVE -> "Inactiv";
+            case NO_DATE, VALID -> "Activ";
+            case EXPIRED -> "Autorizație expirată";
+            case SOON -> {
+                long days = ChronoUnit.DAYS.between(today, p.authorizationValidUntil());
+                yield days == 0 ? "Expiră azi"
+                        : days == 1 ? "Expiră mâine"
+                        : "Expiră în " + count(days, "zi", "zile");
+            }
+        };
+    }
+
+    /** Statusul: verde valabilă, galben aproape de expirare, roșu expirată, gri inactiv, alb fără dată. */
+    private static void statusCell(PdfPTable table, Partner p, LocalDate today, BaseFont bold) {
+        Color[] colors = switch (status(p, today)) {
+            case EXPIRED -> new Color[]{new Color(0xFE, 0xE2, 0xE2), new Color(0x99, 0x1B, 0x1B)};
+            case SOON -> new Color[]{new Color(0xFE, 0xF3, 0xC7), new Color(0x92, 0x40, 0x0E)};
+            case INACTIVE -> new Color[]{new Color(0xF3, 0xF4, 0xF6), MUTED};
+            case VALID -> new Color[]{new Color(0xD1, 0xFA, 0xE5), new Color(0x06, 0x5F, 0x46)};
+            // Fără dată de valabilitate nu știm dacă e valabilă: activ, dar fără verdele care ar spune-o.
+            case NO_DATE -> new Color[]{Color.WHITE, Color.BLACK};
+        };
+        PdfPCell cell = new PdfPCell(new Phrase(cp1250(statusText(p, today)), new Font(bold, 8, Font.NORMAL, colors[1])));
+        cell.setBackgroundColor(colors[0]);
+        cell.setBorderColor(LINE);
+        cell.setPadding(4f);
+        table.addCell(cell);
     }
 
     /** Decizia de viză cum o scrie agenţia: numărul şi data, sau o liniuţă când nu e tastată (V41). */
@@ -406,25 +574,88 @@ public class AuditFileService {
     }
 
     private static void cell(PdfPTable table, String value, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(value == null ? "" : value, font));
-        cell.setPadding(3f);
+        PdfPCell cell = new PdfPCell(new Phrase(cp1250(value == null ? "" : value), font));
+        cell.setPadding(4f);
+        cell.setBorderColor(LINE);
         cell.setHorizontalAlignment(Element.ALIGN_LEFT);
         table.addCell(cell);
+    }
+
+    /** „Firma · Autorizațiile partenerilor” la stânga, „pagina 1 din 3” la dreapta, pe fiecare pagină. */
+    private static final class PageFooter extends PdfPageEventHelper {
+        private final String label;
+        private PdfTemplate total;
+        private BaseFont font;
+
+        PageFooter(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public void onOpenDocument(PdfWriter writer, Document document) {
+            total = writer.getDirectContent().createTemplate(30, 14);
+            font = centralEuropean(false);
+        }
+
+        @Override
+        public void onEndPage(PdfWriter writer, Document document) {
+            PdfContentByte cb = writer.getDirectContent();
+            float y = document.bottom() - 24;
+            String page = "pagina " + writer.getPageNumber() + " din ";
+            float pageWidth = font.getWidthPoint(page, 7.5f);
+            cb.saveState();
+            cb.setColorFill(MUTED);
+            cb.beginText();
+            cb.setFontAndSize(font, 7.5f);
+            cb.setTextMatrix(document.left(), y);
+            cb.showText(cp1250(label));
+            cb.setTextMatrix(document.right() - pageWidth - 14, y);
+            cb.showText(page);
+            cb.endText();
+            cb.addTemplate(total, document.right() - 14, y - 3);
+            cb.restoreState();
+        }
+
+        @Override
+        public void onCloseDocument(PdfWriter writer, Document document) {
+            total.beginText();
+            total.setFontAndSize(font, 7.5f);
+            total.setColorFill(MUTED);
+            total.setTextMatrix(0, 3);
+            // La închidere writer-ul stă deja pe pagina următoarei, necreate: ultima e cu una mai jos.
+            total.showText(String.valueOf(writer.getPageNumber() - 1));
+            total.endText();
+        }
+    }
+
+    /** ș și ț cu virgulă nu sunt în Cp1250; varianta cu sedilă e, și așa scriu și celelalte generatoare. */
+    private static String cp1250(String value) {
+        return value.replace('ș', 'ş').replace('Ș', 'Ş').replace('ț', 'ţ').replace('Ț', 'Ţ');
+    }
+
+    private static BaseFont centralEuropean(boolean bold) {
+        try {
+            return BaseFont.createFont(bold ? BaseFont.HELVETICA_BOLD : BaseFont.HELVETICA,
+                    "Cp1250", BaseFont.NOT_EMBEDDED);
+        } catch (DocumentException | IOException ex) {
+            throw new IllegalStateException("Cannot load the Cp1250 Helvetica for the partner list", ex);
+        }
     }
 
     // --- helpers ---
 
     /**
-     * The cover note. It names the Anexa 1 sheet first because that is the regulated document of
-     * the bundle, and it prints its filing deadline: 15 March of the following year, a legal term
-     * (OUG 92/2021 art. 48 alin. (1)), not an ANMAP custom.
+     * The cover note, {@code 00-cuprins.txt}. It names the Anexa 1 sheet first because that is the
+     * regulated document of the bundle, and it prints its filing deadline: 15 March of the following
+     * year, a legal term (OUG 92/2021 art. 48 alin. (1)), not an ANMAP custom.
      *
      * <p>A dossier covering several years repeats the content block once per year, under the
-     * folder that holds it, and says up front why three is the number that matters.
+     * folder that holds it, and says up front why three is the number that matters. The file names
+     * come from {@link YearFiles}, the same record the archive is written from.
      */
     private String readme(Company company, int firstYear, int lastYear,
                           Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear,
-                          Map<Integer, Anexa3Plan> anexa3ByYear,
+                          Map<Integer, YearFiles> filesByYear, String partnersFile,
                           ReportBranding branding) {
         boolean single = firstYear == lastYear;
         StringBuilder sb = new StringBuilder();
@@ -441,35 +672,47 @@ public class AuditFileService {
                     .append("alin. (5). Pentru transportatori, cel puțin 12 luni.\n");
         }
         sb.append("Generat: ").append(LocalDate.now().format(DATE)).append("\n\n");
+        sb.append("Fișierele sunt numerotate în ordinea în care se citesc: întâi documentele oficiale,\n")
+                .append("apoi autorizațiile partenerilor. Folderul ").append(WORKING_DIR)
+                .append(" are tabelele de lucru, iar\n")
+                .append(ATTACHMENTS_DIR).append(" documentele atașate mișcărilor.\n\n");
+
+        if (!single) {
+            sb.append("La rădăcina arhivei, o singură dată:\n")
+                    .append(entry(partnersFile,
+                            "Autorizațiile partenerilor și statusul lor, citit la data generării,",
+                            "nu pe an, cu codurile de deșeu din toată perioada dosarului."))
+                    .append("\n");
+        }
 
         for (int year = firstYear; year <= lastYear; year++) {
-            String prefix = single ? "" : year + "/";
+            YearFiles files = filesByYear.get(year);
+            String prefix = files.prefix();
             if (!single) {
                 sb.append("== ").append(year).append(" ").append("=".repeat(60)).append("\n");
             }
             sb.append("Conținut:\n")
-                    .append(entry(prefix + "evidenta-gestiunii-deseurilor-" + year + ".pdf",
+                    .append(entry(prefix + files.sheet(),
                             "Evidența gestiunii deșeurilor generate " + year,
                             "(HG 856/2002, anexa 1) — fișa oficială, cu cele patru",
                             "capitole, o pagină per cod de deșeu.",
                             "Termen de depunere: 15 martie " + (year + 1) + "."))
-                    .append(entry(prefix + "evidenta-centralizata-" + year + ".pdf",
+                    .append(entry(prefix + files.centralized(),
                             "Evidența gestiunii deșeurilor centralizată — un rând",
                             "per cod de deșeu, cu stoc inițial, generat, valorificat,",
                             "eliminat, stoc final și prin cine. O pagină per punct de lucru."));
-            if (MarketRole.putsPackagingOnMarket(company.getMarketRoles())) {
-                sb.append(entry(prefix + "anexa1-ambalaje-" + year + ".xls / .pdf",
+            if (files.packaging() != null) {
+                sb.append(entry(prefix + files.packaging() + ".xls / .pdf",
                         "Anexa 1 Ambalaje (Ordinul 794/2012) — declarația de",
                         "ambalaje: .xls pentru depunere, PDF pe hârtie.",
                         "Termen: 25 februarie " + (year + 1) + "."));
             }
-            Anexa3Plan anexa3 = anexa3ByYear.get(year);
             // Termenul de 25 februarie e al celor din art. 4 alin. (1) — colectori, comercianţi,
             // reciclatori, valorificatori. Un generator nu e numit acolo (docs/surse-oficiale.md
-            // §2.11): la el foaia e tipărită la cerere, cu ieşirile, şi README-ul nu-i pune un
+            // §2.11): la el foaia e tipărită la cerere, cu ieşirile, şi cuprinsul nu-i pune un
             // termen pe care nu-l are (proprietarul, 17.09.2026 — scanarea de conformitate, pct. 4).
             boolean owesAnexa3 = company.getType().keepsArt48Register();
-            for (Anexa3File file : anexa3.files()) {
+            for (Anexa3File file : files.anexa3()) {
                 sb.append(owesAnexa3
                         ? entry(prefix + file.baseName() + ".xls / .pdf",
                                 "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
@@ -481,36 +724,27 @@ public class AuditFileService {
                                 "Nu e o obligaţie de depunere a generatorului (art. 4 alin. (1) numeşte",
                                 "colectorii, comercianţii, reciclatorii şi valorificatorii); fără termen."));
             }
-            if (anexa3.roleMissing()) {
+            if (files.anexa3RoleMissing()) {
                 sb.append(entry(prefix + "anexa3-ambalaje-" + year,
                         "LIPSEȘTE: anul are ambalaje, dar profilul firmei nu spune",
                         "dacă e colector, comerciant, reciclator sau valorificator,",
                         "deci nu se știe care tabel se completează. Răspunde în Setări."));
             }
-            sb
-                    .append(entry(prefix + "evidenta-" + year + ".xlsx / .pdf",
-                            "același an ca tabel de lucru (rezumat neoficial)"));
             if (single) {
-                sb.append(entry("autorizatii-parteneri.pdf",
-                        "autorizațiile partenerilor și statusul lor"));
+                sb.append(entry(partnersFile,
+                        "Autorizațiile partenerilor și statusul lor, cu codurile de deșeu din an."));
             }
-            sb.append(entry(prefix + "atasamente/",
-                    "documentele justificative atașate mișcărilor (+ index.txt)"));
+            sb.append(entry(prefix + WORKING_DIR + "evidenta-" + year + ".xlsx / .pdf",
+                            "Același an ca tabel de lucru (rezumat neoficial)."))
+                    .append(entry(prefix + ATTACHMENTS_DIR,
+                            "Documentele justificative atașate mișcărilor, cu index.txt."));
             sb.append(evidenceNote(year, evidenceByYear.get(year)));
             sb.append("\n");
         }
 
-        if (!single) {
-            sb.append("La rădăcina arhivei, o singură dată:\n")
-                    .append(entry("autorizatii-parteneri.pdf",
-                            "autorizațiile partenerilor și statusul lor",
-                            "(status citit la data generării, nu pe an)"))
-                    .append("\n");
-        }
-
         sb.append(marketRoleNote(company))
                 .append(wasteManagerNote(company))
-                .append(otherObligationsNote(company, evidenceByYear))
+                .append(otherObligationsNote(company, evidenceByYear, partnersFile))
                 .append("Notă: în afară de evidența gestiunii deșeurilor de mai sus, dosarul NU înlocuiește\n")
                 .append("formularele oficiale de\n")
                 .append("raportare (SIM / AFM); este un pachet de lucru pentru pregătirea și prezentarea la control.\n");
@@ -518,18 +752,13 @@ public class AuditFileService {
     }
 
     /**
-     * One "  - name : description" line, plus its continuation lines under the description.
-     * The name column is padded to a fixed width so the colons line up whether the file sits at
-     * the root or inside a year folder - the README is read at an inspection, on paper.
+     * One file of the contents: its name on its own line, the description indented under it. The
+     * numbered names are too long for a column beside them, and the contents is read on paper.
      */
     private static String entry(String name, String... lines) {
-        String padded = name.length() < NAME_COLUMN
-                ? name + " ".repeat(NAME_COLUMN - name.length())
-                : name;
-        StringBuilder sb = new StringBuilder("  - ").append(padded).append(" : ").append(lines[0]).append("\n");
-        String indent = " ".repeat(4 + NAME_COLUMN + 3);
-        for (int i = 1; i < lines.length; i++) {
-            sb.append(indent).append(lines[i]).append("\n");
+        StringBuilder sb = new StringBuilder("  ").append(name).append("\n");
+        for (String line : lines) {
+            sb.append("      ").append(line).append("\n");
         }
         return sb.toString();
     }
@@ -657,7 +886,7 @@ public class AuditFileService {
      * and nothing is concluded.
      */
     private String otherObligationsNote(Company company,
-            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear) {
+            Map<Integer, List<MonthlyEvidenceResponse>> evidenceByYear, String partnersFile) {
         List<MonthlyEvidenceResponse> lines = evidenceByYear.values().stream()
                 .filter(java.util.Objects::nonNull)
                 .flatMap(List::stream)
@@ -701,7 +930,7 @@ public class AuditFileService {
                     .append("     Art. 31 alin. (3) cere ca ÎNTREAGA cantitate să fie predată numai operatorilor\n")
                     .append("     autorizați pentru colectarea, valorificarea sau eliminarea uleiurilor uzate —\n")
                     .append("     nu o parte din ea. Autorizațiile partenerilor prin care au plecat sunt în\n")
-                    .append("     autorizatii-parteneri.pdf, din acest dosar.\n\n");
+                    .append("     ").append(partnersFile).append(", din acest dosar.\n\n");
         }
 
         sb.append("  4. Programul de prevenire și reducere a deșeurilor — art. 44 alin. (1) și (3)\n");
@@ -756,16 +985,20 @@ public class AuditFileService {
         };
     }
 
-    /** Null since V28: a pure haulage firm does nothing with the waste, so the column stays empty. */
-    private String partnerType(PartnerType type) {
-        if (type == null) {
-            return "—";
-        }
-        return switch (type) {
+    /**
+     * Null type since V28: a pure haulage firm does nothing with the waste. The carrier is a tick, not
+     * a type, so it is added to whatever the type says — the same firm is often collector and carrier.
+     */
+    private static String partnerType(Partner p) {
+        String type = p.getType() == null ? null : switch (p.getType()) {
             case COLLECTOR -> "Colector";
             case RECOVERER -> "Valorificator";
             case GENERATOR -> "Generator";
         };
+        if (p.isCarrier()) {
+            return type == null ? "Transportator" : type + ", transportator";
+        }
+        return type == null ? "—" : type;
     }
 
     /** Un fişier Anexa 3 din dosar: numele fără extensie şi punctul de lucru pe care îl raportează. */

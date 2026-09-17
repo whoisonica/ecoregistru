@@ -376,7 +376,7 @@ class TenantIsolationMatrixIT {
      * partenerilor. Dacă tenantul s-ar amesteca aici, ar fi cea mai completă
      * scurgere posibilă din aplicaţie, şi ar pleca direct spre un inspector.
      *
-     * <p>Se despachetează şi se citeşte {@code README.txt}, singura intrare în text simplu:
+     * <p>Se despachetează şi se citeşte {@code 00-cuprins.txt}, singura intrare în text simplu:
      * într-un PDF textul e comprimat, deci o căutare de şir pe octeţii bruţi ar trece şi când
      * numele chiar e acolo.
      */
@@ -394,7 +394,7 @@ class TenantIsolationMatrixIT {
                 assertThat(entry.getName())
                         .as("nici măcar numele unei intrări nu poate numi alt tenant")
                         .doesNotContain("Beta");
-                if (entry.getName().endsWith("README.txt")) {
+                if (entry.getName().endsWith("00-cuprins.txt")) {
                     readme.append(new String(in.readAllBytes()));
                 }
             }
