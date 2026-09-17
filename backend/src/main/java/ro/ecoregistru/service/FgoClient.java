@@ -68,6 +68,7 @@ public class FgoClient {
     private final String platformaUrl;
     private final long minIntervalMs;
     private final String tipIncasareCard;
+    private static final int CONFLICT_ATTEMPTS = 3;
     private long lastCallAt;
 
     @Autowired
@@ -217,8 +218,35 @@ public class FgoClient {
         return response;
     }
 
-    /** The answer as FGO gave it, successful or not; only an empty body is an error here. */
+    /**
+     * The answer as FGO gave it, successful or not; only an empty body is an error here.
+     *
+     * <p>A 409 („The page was not displayed because there was a conflict") is FGO's rate limit, and from
+     * Heroku it came on a lone getstatus minutes after any other call of ours (17.09.2026) — the egress
+     * IP is shared. The page is refused before anything is done, so the call is simply asked again.
+     */
     private synchronized JsonNode send(String path, Map<String, Object> body) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return sendOnce(path, body);
+            } catch (Conflict e) {
+                if (attempt >= CONFLICT_ATTEMPTS) {
+                    throw new FgoException(e.getMessage());
+                }
+                // Three intervals, then six: well past the one-a-second FGO asks for.
+                lastCallAt = System.currentTimeMillis() + 3 * minIntervalMs * attempt - minIntervalMs;
+            }
+        }
+    }
+
+    /** FGO's 409 page, kept apart so {@link #send} can ask again. */
+    private static class Conflict extends RuntimeException {
+        Conflict(String message) {
+            super(message);
+        }
+    }
+
+    private JsonNode sendOnce(String path, Map<String, Object> body) {
         throttle();
         return http.post().uri(path)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -235,8 +263,12 @@ public class FgoClient {
                         // "no suitable HttpMessageConverter" — the page itself is what tells why.
                         String page = text.replaceAll("(?s)<(script|style).*?</\\1>", " ")
                                 .replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
-                        throw new FgoException("FGO " + path + ": HTTP " + res.getStatusCode().value()
-                                + ", nu e JSON: " + page.substring(0, Math.min(300, page.length())));
+                        String message = "FGO " + path + ": HTTP " + res.getStatusCode().value()
+                                + ", nu e JSON: " + page.substring(0, Math.min(300, page.length()));
+                        if (res.getStatusCode().value() == 409) {
+                            throw new Conflict(message);
+                        }
+                        throw new FgoException(message);
                     }
                 });
     }

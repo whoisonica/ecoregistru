@@ -164,4 +164,35 @@ class FgoClientTest {
         BigDecimal p = BigDecimal.valueOf(price);
         return new BillingCalculator.Line(label, 1, p, p);
     }
+
+    /** 17.09.2026: FGO's 409 conflict page came from Heroku on a lone getstatus; asked again, it answers. */
+    @Test
+    void aConflictPageIsAskedAgainAndThenGivesUp() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://fgo.test/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        FgoClient fgo = client(builder);
+        String conflict = "<html><body>The page was not displayed because there was a conflict.</body></html>";
+
+        server.expect(requestTo("https://fgo.test/v1/factura/getstatus"))
+                .andRespond(withStatus(HttpStatus.CONFLICT).body(conflict).contentType(MediaType.TEXT_HTML));
+        server.expect(requestTo("https://fgo.test/v1/factura/getstatus"))
+                .andRespond(withSuccess("""
+                        {"Success":true,"Factura":{"Numar":"6","Serie":"WH","Valoare":"389.00","ValoareAchitata":"389.00"}}
+                        """, MediaType.APPLICATION_JSON));
+        assertThat(fgo.status("WH", "6").isPaid()).isTrue();
+        server.verify();
+
+        server.reset();
+        for (int i = 0; i < 3; i++) {
+            server.expect(requestTo("https://fgo.test/v1/factura/getstatus"))
+                    .andRespond(withStatus(HttpStatus.CONFLICT).body(conflict).contentType(MediaType.TEXT_HTML));
+        }
+        assertThatThrownBy(() -> fgo.status("WH", "6"))
+                .isInstanceOf(FgoClient.FgoException.class)
+                .hasMessageContaining("WH 6")
+                .hasMessageContaining("HTTP 409")
+                .hasMessageContaining("conflict");
+        server.verify();
+    }
+
 }
