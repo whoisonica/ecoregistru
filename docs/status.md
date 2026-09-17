@@ -8,7 +8,7 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
-> **17.09.2026, ~21:00 — ✅ pe `main` (`1b82c51`), ⏳ NEDEPLOYAT (deployul din sesiune refuzat de clasificator, îl rulează proprietarul): reparațiile din scanarea codului și a md-urilor** (fără migrare, schema **V63**, liberă **V64**; producția rămâne api **v126** / app **v116** până la deploy).
+> **17.09.2026, 20:43 — ✅ pe producție: reparațiile din scanarea codului și a md-urilor** (`ecoregistru-api` **v127**, `8fdde53`; `ecoregistru-app` **v117**, `f92ab5f`; monorepo `1b82c51`; fără migrare, schema **V63**, liberă **V64**). Deployul din sesiune a fost refuzat de clasificator; l-a rulat proprietarul cu `!`.
 > Proprietarul: „scanează atent codul și toate md files”, apoi „ce ai zis că trebuie fixat, să fixăm neapărat”; depozitul și mobilul lăsate deoparte.
 > Scanarea pe `7f16fcc` (= producția): 921 de teste / 110 clase, 0 eșecuri; `npm test` 43; tsc; build. Șase defecte (BUG-025…030 în `QA-BUGS.md`, repo privat):
 > **(1) BUG-025** — „Am plătit — verifică acum” (F-E) își punea pauza de 2 minute doar după un răspuns FGO, iar `FgoClient.send` era `synchronized`
@@ -24,7 +24,8 @@ rulează local și are testele verzi.
 > **Probe:** backend **931 / 112, 0 eșecuri** (+10 teste), fiecare regulă nouă scoasă o dată → exact testele ei cad; `npm test` 43, tsc, build;
 > e2e **36, 31, 29, 33, 30** verzi pe `eco_e2e_scanfix` (stivă proprie 8097/5197). **Docs:** README (Boot 3.5, 931/112, 37 de probe, kg, fără trimestrial,
 > dosarul nou, Clienți pe taburi și pagini, Facturare, Abonament), `legislatie.md` (AFM fără trimestrial), `frontend/e2e/README.md` (proba 37).
-> **Deploy:** `scripts/deploy-split.sh both --ref origin/main --push`.
+> **Pe producție:** garda `deploy-split.sh` curată pe ambele părți (8 commituri backend, 2 frontend); „No migration necessary”, `Started`, health UP,
+> `POST /api/v1/billing/invoices/{id}/check-payment` → 401 fără token, `/abonament` 200. ⚠️ Rămâne SQL-ul de dubluri CUI rulat o dată pe producție (BUG-026).
 
 > **17.09.2026, 19:49 — ✅ pe producție: `/abonament` la client (F-E) și cache-ul golit la deconectare** (`ecoregistru-api` **v126**, `8fadcb8`; `ecoregistru-app` **v116**, `53c1791`; monorepo `a5a1bfc` + `e90f759` + `7f16fcc`; fără migrare, schema **V63**).
 > **(1) F-E** (`todo-clienti-abonamente.md`, repo privat): sus un bon cu câte un rând pe factură emisă și neplătită, totalul sub linie, „De plată până pe …” /
