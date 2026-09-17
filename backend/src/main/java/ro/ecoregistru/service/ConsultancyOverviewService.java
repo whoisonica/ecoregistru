@@ -103,10 +103,8 @@ public class ConsultancyOverviewService {
                 .findFirst()
                 .map(d -> new NextDeadline(d.getReportType(), d.getDueDate()))
                 .orElse(null);
-        // Aceeași fereastră ca mai sus: după ultimul termen al anului, următorul e abia la anul, iar
-        // firma tot are termenele generate.
         boolean generated = deadlineRepository.existsByCompany_IdAndDueDateBetween(
-                company.getId(), LocalDate.of(year - 1, 1, 1), LocalDate.of(year + 1, 12, 31));
+                company.getId(), LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
 
         EvidenceCalculator.EvidenceBlockers blockers = evidenceCalculator.blockers(company.getId(), year);
         long mirror = movementRepository.countUnprovenMirrorClassifications(

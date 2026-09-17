@@ -24,11 +24,6 @@ public interface SubscriptionInvoiceRepository extends JpaRepository<Subscriptio
             + " left join fetch s.consultancy order by i.createdAt desc")
     List<SubscriptionInvoice> findAllWithPayer();
 
-    /** F-B — each direct client's latest period, one query for the whole Clients table. */
-    @Query("select i from SubscriptionInvoice i join fetch i.subscription s join fetch s.company"
-            + " where i.periodStart = (select max(j.periodStart) from SubscriptionInvoice j where j.subscription = s)")
-    List<SubscriptionInvoice> findLatestOfCompanies();
-
     @Query("select i.id from SubscriptionInvoice i where i.status = :status order by i.createdAt")
     List<UUID> findIdsByStatus(@Param("status") InvoiceStatus status);
 

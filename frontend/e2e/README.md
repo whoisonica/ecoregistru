@@ -1,15 +1,5 @@
 # Probe de interfaţă
 
-👥 **17.09.2026 — proba 30 (`30-clienti-tabel.mjs`), tabelul Clienți ca tablou de lucru (F-B)**: patru cifre sus (activi,
-încasat luna asta, de încasat, cer atenție), iar „Cer atenție” = numărul de pe filtru; Restanți / Emitere căzută / Fără abonament
-arată exact firmele lor, cu „Depășită 6 zile”, numărul facturii și motivul căderii; cele cu probleme stau primele; fișa goală
-„3 lipsuri”, cea plină „Completă”; „Deschide” arată firma, „⋯” are Abonament, Cabinet și Invită; după o invitație firma are 1
-utilizator fără reîncărcare; tasta N; 1440px 1114/1114, 375px fără derulare laterală; administratorul firmei primește 403 pe
-`/companies/overview`. Facturile se scriu cu `psql` (`E2E_DB`), ca la proba 29. **Negative:** fără `sort(byAttention)` cade
-ordinea; fără invalidarea din `useInviteUser` cade numărul de utilizatori. Rândurile se citesc din **primul** tabel al paginii
-(`main table`): sub el stau cererile de cont și cabinetele. Lasă în urmă firmele „Proba 30 … <număr>”. Proba 23 caută acum
-„Client nou”. **30/30** pe `eco_e2e_clienti`.
-
 🧾 **17.09.2026 — proba 29 (`29-facturare.mjs`), ecranul „Facturare” (F-A)**: tasta B îl deschide pentru platformă; ultima
 rulare numește firma căzută, motivul („CUI-ul … nu e valid”) și factura plătită; filtrele Căzute / Restante / Plătite / Toate
 arată exact facturile lor; „Verifică plata” fără cheile FGO spune „lipsesc cheile FGO” și nu marchează nimic; „Corectează”

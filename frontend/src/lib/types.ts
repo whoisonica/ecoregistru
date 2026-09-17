@@ -388,24 +388,6 @@ export interface LastBillingRun {
   result: BillingRunResult;
 }
 
-/** Mirrors backend ClientOverviewResponse: ce arată tabelul Clienți pe lângă firmă (F-B). */
-export interface ClientOverview {
-  companyId: string;
-  /** null = fără abonament propriu; mereu null la consultant. */
-  subscriptionStatus: SubscriptionStatus | null;
-  plan: SubscriptionPlan | null;
-  monthlyPrice: number | null;
-  lastInvoice: {
-    /** „WH 12”; null cât timp FGO n-a emis-o. */
-    number: string | null;
-    total: number;
-    status: InvoiceStatus;
-    dueDate: string | null;
-    lastError: string | null;
-  } | null;
-  userCount: number;
-}
-
 /** Mirrors backend BillingInvoiceRow: o factură a oricărui client, pe ecranul Facturare. */
 export interface BillingInvoiceRow {
   id: string;

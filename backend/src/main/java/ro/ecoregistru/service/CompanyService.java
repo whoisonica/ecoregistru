@@ -12,14 +12,11 @@ import ro.ecoregistru.enums.PriceVisibility;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PRICE_VISIBILITY_REQUIRED;
 import ro.ecoregistru.controller.request.CompanyRequest;
 import ro.ecoregistru.controller.request.InviteUserRequest;
-import ro.ecoregistru.controller.response.ClientOverviewResponse;
 import ro.ecoregistru.controller.response.CompanyResponse;
 import ro.ecoregistru.controller.response.CompanyUserResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Consultancy;
-import ro.ecoregistru.entity.Subscription;
-import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.util.Cui;
 import ro.ecoregistru.exception.BusinessException;
@@ -27,10 +24,8 @@ import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.controller.response.WasteCodeResponse;
 import ro.ecoregistru.entity.WasteCode;
-import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ConsultancyRepository;
-import ro.ecoregistru.repository.SubscriptionInvoiceRepository;
 import ro.ecoregistru.repository.SubscriptionRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.security.SecurityUtils;
@@ -38,11 +33,9 @@ import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -78,8 +71,6 @@ public class CompanyService {
     CompanyRepository companyRepository;
     ConsultancyRepository consultancyRepository;
     SubscriptionRepository subscriptionRepository;
-    SubscriptionInvoiceRepository subscriptionInvoiceRepository;
-    AppUserRepository appUserRepository;
     WasteCodeRepository wasteCodeRepository;
     AuthenticationService authenticationService;
     DeadlineService deadlineService;
@@ -94,48 +85,6 @@ public class CompanyService {
                 .sorted(Comparator.comparing(Company::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(this::toResponse)
                 .toList();
-    }
-
-    /**
-     * F-B — the Clients table beyond the company itself: subscription, latest invoice, users. Three queries for the
-     * whole list, whatever its length (BUG-016 was a per-row query on a list like this one).
-     *
-     * <p>A consultant gets the user counts only: their companies are paid by the cabinet, and the cabinet's money is
-     * the platform's business.
-     */
-    @Transactional(readOnly = true)
-    public List<ClientOverviewResponse> overview() {
-        AppUser me = SecurityUtils.currentUser();
-        boolean platform = me.getRole() != Role.CONSULTANT;
-        List<Company> companies = platform
-                ? companyRepository.findAll()
-                : companyRepository.findAllByConsultancy_Id(consultancyIdOf(me));
-
-        Map<UUID, Long> users = new HashMap<>();
-        for (Object[] row : appUserRepository.countMembersByCompany()) {
-            users.put((UUID) row[0], (Long) row[1]);
-        }
-        Map<UUID, Subscription> subscriptions = new HashMap<>();
-        Map<UUID, SubscriptionInvoice> latest = new HashMap<>();
-        if (platform) {
-            subscriptionRepository.findAllOfCompanies().forEach(s -> subscriptions.put(s.getCompany().getId(), s));
-            subscriptionInvoiceRepository.findLatestOfCompanies()
-                    .forEach(i -> latest.put(i.getSubscription().getCompany().getId(), i));
-        }
-
-        return companies.stream().map(c -> {
-            Subscription s = subscriptions.get(c.getId());
-            SubscriptionInvoice i = latest.get(c.getId());
-            return new ClientOverviewResponse(
-                    c.getId(),
-                    s == null ? null : s.getStatus(),
-                    s == null ? null : s.getPlan(),
-                    s == null ? null : s.getMonthlyPrice(),
-                    i == null ? null : new ClientOverviewResponse.LastInvoice(
-                            i.getFgoNumar() == null ? null : i.getFgoSerie() + " " + i.getFgoNumar(),
-                            i.getTotal(), i.getStatus(), i.getDueDate(), i.getLastError()),
-                    users.getOrDefault(c.getId(), 0L));
-        }).toList();
     }
 
     /** The tenant the request is scoped to. Readable by any member, unlike the rest here. */

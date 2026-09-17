@@ -87,11 +87,10 @@ export function useLastBillingRun() {
 }
 
 /** F-A — facturile tuturor clienților, cele noi primele. */
-export function useAllInvoices(enabled = true) {
+export function useAllInvoices() {
   return useQuery({
     queryKey: ["subscriptions", "invoices"],
     queryFn: async () => (await api.get<BillingInvoiceRow[]>("/api/v1/subscriptions/invoices")).data,
-    enabled,
   });
 }
 

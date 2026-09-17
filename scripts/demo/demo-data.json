@@ -1,0 +1,152 @@
+{
+  "_despre": "Firmele demo WasteHouse. Toate numele și CUI-urile sunt fictive: CUI-uri cu cifră de control corectă, de 9 cifre (peste orice CUI emis azi), verificate ca inexistente la ANAF pe 17.09.2026. Cantitățile în kg; `every` = câte predări pe an; `min`/`max` = kg pe predare; `peak` = lunile cu +40% (sezon).",
+  "from": "2025-09-01",
+  "partners": {
+    "hartie": {
+      "name": "Colector Hârtie Exemplu SRL", "cui": "RO426514368", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Fabricii 12, Cluj-Napoca", "tradeRegisterNumber": "J12/1204/2015",
+      "authorizationNumber": "AM 118/2019", "authorizationIssueDate": "2019-04-10", "authorizationExpiry": "2029-04-10",
+      "visaDecisionNumber": "Viza 43/2026", "visaDecisionDate": "2026-03-02", "visaValidUntil": "2027-03-02"
+    },
+    "ambalaje": {
+      "name": "Colector Ambalaje Exemplu SRL", "cui": "RO439390334", "type": "COLLECTOR", "supplier": true,
+      "address": "Calea Turzii 210, Cluj-Napoca", "tradeRegisterNumber": "J12/877/2012",
+      "authorizationNumber": "AM 76/2018", "authorizationIssueDate": "2018-06-21", "authorizationExpiry": "2028-06-21",
+      "visaDecisionNumber": "Viza 31/2026", "visaDecisionDate": "2026-02-14", "visaValidUntil": "2027-02-14"
+    },
+    "salubritate": {
+      "name": "Salubritate Exemplu SA", "cui": "RO423279691", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Depozitului 3, Cluj-Napoca", "tradeRegisterNumber": "J12/302/2004",
+      "authorizationNumber": "AM 12/2017", "authorizationIssueDate": "2017-01-30", "authorizationExpiry": "2027-01-30",
+      "visaDecisionNumber": "Viza 9/2026", "visaDecisionDate": "2026-01-20", "visaValidUntil": "2027-01-20"
+    },
+    "periculoase": {
+      "name": "Deșeuri Periculoase Exemplu SRL", "cui": "RO410689746", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Industriei 44, Florești", "tradeRegisterNumber": "J12/2291/2016",
+      "authorizationNumber": "AM 205/2016", "authorizationIssueDate": "2016-10-03", "authorizationExpiry": "2026-10-09",
+      "visaDecisionNumber": "Viza 188/2025", "visaDecisionDate": "2025-10-01", "visaValidUntil": "2026-10-09"
+    },
+    "metale": {
+      "name": "Metale Exemplu SRL", "cui": "RO420281581", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Oțelarilor 8, Cluj-Napoca", "tradeRegisterNumber": "J12/3310/2011",
+      "authorizationNumber": "AM 64/2020", "authorizationIssueDate": "2020-05-12", "authorizationExpiry": "2030-05-12",
+      "visaDecisionNumber": "Viza 70/2026", "visaDecisionDate": "2026-05-05", "visaValidUntil": "2027-05-05"
+    },
+    "deee": {
+      "name": "Reciclare Electronice Exemplu SRL", "cui": "RO405678201", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Tehnicienilor 5, Apahida", "tradeRegisterNumber": "J12/4412/2018",
+      "authorizationNumber": "AM 151/2021", "authorizationIssueDate": "2021-08-19", "authorizationExpiry": "2031-08-19",
+      "visaDecisionNumber": "Viza 122/2026", "visaDecisionDate": "2026-08-10", "visaValidUntil": "2027-08-10"
+    },
+    "medicale": {
+      "name": "Neutralizare Medicală Exemplu SRL", "cui": "RO410611178", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Sănătății 21, Cluj-Napoca", "tradeRegisterNumber": "J12/1678/2014",
+      "authorizationNumber": "AM 97/2019", "authorizationIssueDate": "2019-11-04", "authorizationExpiry": "2029-11-04",
+      "visaDecisionNumber": "Viza 141/2026", "visaDecisionDate": "2026-07-01", "visaValidUntil": "2027-07-01"
+    },
+    "uleiuri": {
+      "name": "Uleiuri Uzate Exemplu SRL", "cui": "RO405927000", "type": "COLLECTOR", "supplier": true,
+      "address": "Str. Morii 17, Gilău", "tradeRegisterNumber": "J12/3877/2019",
+      "authorizationNumber": "AM 172/2021", "authorizationIssueDate": "2021-03-22", "authorizationExpiry": "2031-03-22",
+      "visaDecisionNumber": "Viza 55/2026", "visaDecisionDate": "2026-03-18", "visaValidUntil": "2027-03-18"
+    },
+    "anvelope": {
+      "name": "Anvelope Reciclate Exemplu SRL", "cui": "RO419331546", "type": "COLLECTOR", "supplier": true,
+      "address": "Șoseaua Vâlcele 90, Cluj-Napoca", "tradeRegisterNumber": "J12/2950/2017",
+      "authorizationNumber": "AM 133/2020", "authorizationIssueDate": "2020-09-14", "authorizationExpiry": "2030-09-14",
+      "visaDecisionNumber": "Viza 101/2026", "visaDecisionDate": "2026-06-11", "visaValidUntil": "2027-06-11"
+    }
+  },
+  "generator": {
+    "company": {
+      "name": "Tipografia Exemplu SRL", "cui": "RO405809935", "type": "GENERATOR", "afmObligation": true,
+      "address": "Str. Tipografilor 18, Cluj-Napoca", "tradeRegisterNumber": "J12/5120/2009", "caenCode": "1812",
+      "contactName": "Ioana Pop", "contactRole": "Responsabil mediu", "contactPhone": "0740 000 101",
+      "marketRoles": ["PRODUCER"], "afmContributions": ["PACKAGING"],
+      "wasteManagerName": "Ioana Pop", "wasteManagerRole": "Responsabil mediu", "wasteManagerExternal": false,
+      "wasteManagerTraining": "Curs responsabil de mediu, 2024"
+    },
+    "users": [
+      { "alias": "demo-generator", "role": "ADMIN", "firstName": "Ioana", "lastName": "Pop" },
+      { "alias": "demo-operator", "role": "OPERATOR", "firstName": "Andrei", "lastName": "Rusu" }
+    ],
+    "workPoints": [
+      { "key": "hala", "name": "Hala de producție", "address": "Str. Tipografilor 18, Cluj-Napoca",
+        "sections": ["Tipar offset", "Legătorie", "Depozit hârtie"] },
+      { "key": "birouri", "name": "Birouri și showroom", "address": "B-dul 21 Decembrie 1989 nr. 77, Cluj-Napoca",
+        "sections": ["Administrativ"] }
+    ],
+    "streams": [
+      { "code": "15 01 01", "wp": "hala", "section": "Legătorie", "partner": "hartie", "op": "R12", "every": 48, "min": 180, "max": 420, "state": "SOLID", "peak": [10, 11, 12] },
+      { "code": "15 01 02", "wp": "hala", "section": "Depozit hârtie", "partner": "ambalaje", "op": "R12", "every": 12, "min": 60, "max": 140, "state": "SOLID" },
+      { "code": "15 01 03", "wp": "hala", "section": "Depozit hârtie", "partner": "ambalaje", "op": "R3", "every": 4, "min": 220, "max": 380, "state": "SOLID" },
+      { "code": "15 01 04", "wp": "hala", "section": "Tipar offset", "partner": "metale", "op": "R4", "every": 4, "min": 30, "max": 75, "state": "SOLID" },
+      { "code": "08 03 12*", "wp": "hala", "section": "Tipar offset", "partner": "periculoase", "op": "D10", "every": 4, "min": 12, "max": 28, "state": "PASTY" },
+      { "code": "15 02 02*", "wp": "hala", "section": "Tipar offset", "partner": "periculoase", "op": "D10", "every": 12, "min": 8, "max": 19, "state": "SOLID" },
+      { "code": "13 02 05*", "wp": "hala", "section": "Tipar offset", "partner": "periculoase", "op": "R9", "every": 2, "min": 20, "max": 40, "state": "LIQUID" },
+      { "code": "08 03 18", "wp": "birouri", "section": "Administrativ", "partner": "deee", "op": "R12", "every": 4, "min": 4, "max": 12, "state": "SOLID" },
+      { "code": "20 01 36", "wp": "birouri", "section": "Administrativ", "partner": "deee", "op": "R12", "every": 2, "min": 15, "max": 55, "state": "SOLID" },
+      { "code": "20 03 01", "wp": "hala", "section": "Legătorie", "partner": "salubritate", "op": "D1", "every": 52, "min": 70, "max": 140, "state": "SOLID" },
+      { "code": "20 03 01", "wp": "birouri", "section": "Administrativ", "partner": "salubritate", "op": "D1", "every": 26, "min": 25, "max": 60, "state": "SOLID" }
+    ],
+    "packagingMarket": [
+      { "material": "HARTIE_CARTON", "salesPackaging": 8400, "primaryTotal": 8400, "primaryReusable": 0, "secondaryTotal": 1900, "secondaryReusable": 0, "hazardousContent": 0 },
+      { "material": "ALTE_PLASTICE", "salesPackaging": 1150, "primaryTotal": 1150, "primaryReusable": 0, "secondaryTotal": 420, "secondaryReusable": 0, "hazardousContent": 0 },
+      { "material": "LEMN", "salesPackaging": 0, "primaryTotal": 0, "primaryReusable": 0, "secondaryTotal": 2600, "secondaryReusable": 1800, "hazardousContent": 0 }
+    ]
+  },
+  "cabinet": {
+    "consultancy": { "name": "Cabinet Exemplu Mediu SRL", "cui": "RO418349529" },
+    "consultant": { "alias": "demo-cabinet", "firstName": "Mihaela", "lastName": "Stan" },
+    "companies": [
+      {
+        "company": {
+          "name": "Restaurant Exemplu SRL", "cui": "RO437239360", "type": "GENERATOR", "afmObligation": false,
+          "address": "Piața Muzeului 4, Cluj-Napoca", "tradeRegisterNumber": "J12/780/2019", "caenCode": "5610",
+          "contactName": "Radu Ilie", "contactRole": "Administrator", "contactPhone": "0740 000 202",
+          "wasteManagerName": "Mihaela Stan", "wasteManagerRole": "Consultant de mediu", "wasteManagerExternal": true
+        },
+        "workPoints": [{ "key": "local", "name": "Restaurant", "address": "Piața Muzeului 4, Cluj-Napoca", "sections": ["Bucătărie", "Bar"] }],
+        "streams": [
+          { "code": "20 01 08", "wp": "local", "section": "Bucătărie", "partner": "salubritate", "op": "R3", "every": 52, "min": 40, "max": 95, "state": "PASTY", "peak": [6, 7, 8, 12] },
+          { "code": "20 01 25", "wp": "local", "section": "Bucătărie", "partner": "uleiuri", "op": "R9", "every": 12, "min": 15, "max": 35, "state": "LIQUID" },
+          { "code": "15 01 01", "wp": "local", "section": "Bar", "partner": "hartie", "op": "R12", "every": 26, "min": 20, "max": 55, "state": "SOLID" },
+          { "code": "15 01 07", "wp": "local", "section": "Bar", "partner": "ambalaje", "op": "R12", "every": 26, "min": 35, "max": 90, "state": "SOLID", "peak": [6, 7, 8, 12] },
+          { "code": "20 03 01", "wp": "local", "section": "Bucătărie", "partner": "salubritate", "op": "D1", "every": 52, "min": 30, "max": 70, "state": "SOLID" }
+        ]
+      },
+      {
+        "company": {
+          "name": "Service Auto Exemplu SRL", "cui": "RO444610673", "type": "GENERATOR", "afmObligation": false,
+          "address": "Str. Mecanicilor 30, Florești", "tradeRegisterNumber": "J12/1455/2013", "caenCode": "4520",
+          "contactName": "Sorin Moldovan", "contactRole": "Administrator", "contactPhone": "0740 000 303",
+          "wasteManagerName": "Mihaela Stan", "wasteManagerRole": "Consultant de mediu", "wasteManagerExternal": true
+        },
+        "workPoints": [{ "key": "atelier", "name": "Atelier service", "address": "Str. Mecanicilor 30, Florești", "sections": ["Mecanică", "Vulcanizare"] }],
+        "streams": [
+          { "code": "13 02 05*", "wp": "atelier", "section": "Mecanică", "partner": "periculoase", "op": "R9", "every": 12, "min": 80, "max": 160, "state": "LIQUID" },
+          { "code": "16 01 07*", "wp": "atelier", "section": "Mecanică", "partner": "periculoase", "op": "R4", "every": 6, "min": 25, "max": 60, "state": "SOLID" },
+          { "code": "16 06 01*", "wp": "atelier", "section": "Mecanică", "partner": "metale", "op": "R4", "every": 6, "min": 60, "max": 180, "state": "SOLID" },
+          { "code": "15 02 02*", "wp": "atelier", "section": "Mecanică", "partner": "periculoase", "op": "D10", "every": 12, "min": 10, "max": 25, "state": "SOLID" },
+          { "code": "16 01 03", "wp": "atelier", "section": "Vulcanizare", "partner": "anvelope", "op": "R3", "every": 8, "min": 300, "max": 900, "state": "SOLID", "peak": [4, 5, 10, 11] },
+          { "code": "16 01 17", "wp": "atelier", "section": "Mecanică", "partner": "metale", "op": "R4", "every": 4, "min": 120, "max": 340, "state": "SOLID" }
+        ]
+      },
+      {
+        "company": {
+          "name": "Clinica Exemplu SRL", "cui": "RO403954653", "type": "GENERATOR", "afmObligation": false,
+          "address": "Str. Observatorului 55, Cluj-Napoca", "tradeRegisterNumber": "J12/2604/2016", "caenCode": "8622",
+          "contactName": "Dr. Elena Varga", "contactRole": "Manager", "contactPhone": "0740 000 404",
+          "wasteManagerName": "Mihaela Stan", "wasteManagerRole": "Consultant de mediu", "wasteManagerExternal": true
+        },
+        "workPoints": [{ "key": "clinica", "name": "Clinica", "address": "Str. Observatorului 55, Cluj-Napoca", "sections": ["Cabinete medicale", "Recepție"] }],
+        "streams": [
+          { "code": "18 01 03*", "wp": "clinica", "section": "Cabinete medicale", "partner": "medicale", "op": "D10", "every": 52, "min": 6, "max": 18, "state": "SOLID" },
+          { "code": "18 01 04", "wp": "clinica", "section": "Cabinete medicale", "partner": "medicale", "op": "D10", "every": 26, "min": 5, "max": 14, "state": "SOLID" },
+          { "code": "15 01 01", "wp": "clinica", "section": "Recepție", "partner": "hartie", "op": "R12", "every": 12, "min": 15, "max": 40, "state": "SOLID" },
+          { "code": "20 03 01", "wp": "clinica", "section": "Recepție", "partner": "salubritate", "op": "D1", "every": 52, "min": 15, "max": 35, "state": "SOLID" }
+        ]
+      }
+    ]
+  }
+}

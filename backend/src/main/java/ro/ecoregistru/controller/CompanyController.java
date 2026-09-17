@@ -11,7 +11,6 @@ import ro.ecoregistru.controller.request.AssignConsultancyRequest;
 import ro.ecoregistru.controller.request.CompanyRequest;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.request.PriceVisibilityRequest;
-import ro.ecoregistru.controller.response.ClientOverviewResponse;
 import ro.ecoregistru.controller.response.CompanyResponse;
 import ro.ecoregistru.controller.response.CompanyUserResponse;
 import ro.ecoregistru.service.CompanyService;
@@ -44,13 +43,6 @@ public class CompanyController {
     @PreAuthorize(MULTI_COMPANY)
     public List<CompanyResponse> list() {
         return companyService.listAll();
-    }
-
-    /** F-B — subscription, latest invoice and user count per company, for the Clients table. */
-    @GetMapping("/overview")
-    @PreAuthorize(MULTI_COMPANY)
-    public List<ClientOverviewResponse> overview() {
-        return companyService.overview();
     }
 
     /**
