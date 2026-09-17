@@ -250,9 +250,6 @@ public class BillingRunService {
      * that got no answer, FGO is not asked either, and the client is told to come back.
      */
     public void checkPaymentForAccount(AppUser user, UUID tenantId, UUID invoiceId, LocalDate today) {
-        if (!fgo.isConfigured()) {
-            throw new ServiceUnavailableException(ErrorMessageEnum.FGO_NOT_CONFIGURED);
-        }
         SubscriptionInvoice own = tx.execute(status -> {
             Subscription payer = subscriptionService.payerFor(user, tenantId)
                     .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND));
@@ -263,7 +260,7 @@ public class BillingRunService {
                     .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.INVOICE_NOT_FOUND));
             return invoice;
         });
-        // Ce n-ar întreba FGO oricum (fără chei, factură deja plătită) nu pornește pauza.
+        // O factură deja plătită nu mai are ce verifica.
         if (own.getStatus() != InvoiceStatus.ISSUED) {
             throw new UnprocessableEntityException(ErrorMessageEnum.INVOICE_NOT_ISSUED);
         }
@@ -272,6 +269,10 @@ public class BillingRunService {
         Instant cutoff = now.minus(CLIENT_CHECK_PAUSE);
         if (lastChecked != null && lastChecked.isAfter(cutoff)) {
             return;
+        }
+        // Ce n-ar întreba FGO oricum nu pornește pauza: fără chei, fiecare clic spune „lipsesc cheile”.
+        if (!fgo.isConfigured()) {
+            throw new ServiceUnavailableException(ErrorMessageEnum.FGO_NOT_CONFIGURED);
         }
         clientAttempts.values().removeIf(at -> !at.isAfter(cutoff));
         boolean[] mine = {false};
