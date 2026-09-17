@@ -8,7 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -68,7 +68,7 @@ class CompanyUsersIT {
     @Autowired PasswordEncoder passwordEncoder;
 
     /** Mocked so the invite mails go nowhere and can still be counted. */
-    @MockBean EmailService emailService;
+    @MockitoBean EmailService emailService;
 
     private String adminToken;
     private String operatorToken;

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
@@ -48,8 +48,8 @@ class PushAlertsIT {
     @Autowired ReportingDeadlineRepository deadlineRepository;
     @Autowired PartnerRepository partnerRepository;
 
-    @MockBean NotificationService notificationService;
-    @MockBean PushNotifier pushNotifier;
+    @MockitoBean NotificationService notificationService;
+    @MockitoBean PushNotifier pushNotifier;
 
     @Test
     void aDeadlineReminderReachesThePhonesOfTheCompanyAndOpensDeadlines() {

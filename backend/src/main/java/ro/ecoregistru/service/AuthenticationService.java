@@ -196,7 +196,11 @@ public class AuthenticationService {
     /**
      * Platform-admin invite: create a tenant user (disabled, with an unusable random password)
      * and email them a reset link to set their own password. Reuses the RESET_PASSWORD flow —
-     * no separate invite mechanism. Email failures degrade gracefully (blocked on SMTP for now).
+     * no separate invite mechanism.
+     *
+     * <p>{@code noRollbackFor} e regula, nu o amânare: invitația se salvează și atunci când mailul
+     * cade, fiindcă utilizatorul creat e lucrul greu de refăcut, iar mailul se retrimite oricând din
+     * Setări → Utilizatori. Un rollback ar lăsa în urmă numai un ecran cu eroare.
      */
     @Transactional(noRollbackFor = EmailException.class)
     public AppUser inviteUser(Company company, String rawEmail, Role role, String firstName, String lastName) {

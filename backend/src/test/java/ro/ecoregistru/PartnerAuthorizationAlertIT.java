@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
@@ -46,7 +46,7 @@ class PartnerAuthorizationAlertIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired PartnerRepository partnerRepository;
 
-    @MockBean NotificationService notificationService;
+    @MockitoBean NotificationService notificationService;
 
     private Company companyWithUser() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);

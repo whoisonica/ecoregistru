@@ -22,8 +22,8 @@ validated with compliance-reporting specialists.
 /docs       Regulatory research and the product one-pager
 ```
 
-Code, comments and commits are in English; the UI is in Romanian
-(`frontend/src/lib/strings.ts`).
+Code, comments and commits are in English or Romanian, following whichever the file being
+touched already uses (`CLAUDE.md`); the UI is in Romanian (`frontend/src/lib/strings.ts`).
 
 ---
 
@@ -245,7 +245,7 @@ If a comment refers to something you cannot find, that is why — not because it
 
 ## Running it locally
 
-**Requirements:** Java 21 (Temurin is fine), Node 20+, PostgreSQL 15+ (developed on 17).
+**Requirements:** Java 21 (Temurin is fine), Node 20+, PostgreSQL 15+ (production runs 18.3; the test suite runs 15.6 embedded).
 Gradle does not need to be installed — use the wrapper.
 
 ### 1. Database
@@ -468,7 +468,7 @@ cd backend
 ./gradlew.bat test
 ```
 
-931 tests across 112 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+932 tests across 112 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport

@@ -26,9 +26,43 @@ async function rows(page) {
 
 const find = (list, title) => list.find((r) => r.text.includes(title));
 
+// Numărul de parteneri nu e o constantă a bazei: probele 8 și 32 adaugă fiecare câte unul, iar în CI
+// toate probele rulează una după alta pe aceeași bază — proba căuta „6 parteneri” și găsea 7, de trei
+// rulări la rând. Se citește lista pe care o vede și ecranul „Parteneri”, iar expirările se socotesc
+// din datele ei: o a doua socoteală peste date brute, nu aceeaşi cifră întoarsă de unde o ia ecranul.
+async function partnerCounts(page) {
+  return page.evaluate(async () => {
+    const res = await fetch("/api/v1/partners", {
+      headers: { Authorization: "Bearer " + localStorage.getItem("eco_token") },
+    });
+    if (!res.ok) return null;
+    const list = await res.json();
+    const today = new Date();
+    const midnight = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    let expired = 0;
+    let soon = 0;
+    for (const p of list) {
+      // Aceleaşi reguli ca `AuditFileService.status`: inactivul şi cel fără dată nu intră la socoteală.
+      if (!p.active || !p.authorizationValidUntil) continue;
+      const days = Math.round((Date.parse(p.authorizationValidUntil + "T00:00:00Z") - midnight) / 86400000);
+      if (days < 0) expired++;
+      else if (days <= 60) soon++;
+    }
+    return { total: list.length, expired, soon };
+  });
+}
+
+/** „1 partener” · „6 parteneri” · „20 de parteneri”: regula pe care o scrie ecranul (`lib/count.ts`). */
+function parteneri(n) {
+  if (n === 1) return "1 partener";
+  const lastTwo = Math.abs(n) % 100;
+  return `${n}${lastTwo === 0 || lastTwo >= 20 ? " de " : " "}parteneri`;
+}
+
 for (const [width, height] of [[1440, 900], [375, 800]]) {
   const page = await newPage(browser, { width, height });
   await login(page, "admin");
+  const counts = await partnerCounts(page);
   await page.goto(BASE + "/dosar-control?an=2026", { waitUntil: "networkidle" });
   const list = await rows(page);
   const sheet = find(list, "Evidența gestiunii deșeurilor generate");
@@ -48,9 +82,19 @@ for (const [width, height] of [[1440, 900], [375, 800]]) {
       a1?.state === "Nu intră" && /nu spune dacă e producător, importator sau comerciant/.test(a1.text), a1?.text);
     check("Anexa 3 Ambalaje lipsește și spune de ce", a3?.state === "Lipsește" && /colector, comerciant, reciclator/.test(a3.text),
       a3?.text);
-    check("autorizațiile: 6 parteneri, 1 expirată", partners?.state === "Intră" && /6 parteneri/.test(partners.text)
-      && /1 partener cu autorizația expirată/.test(partners.text)
-      && /1 partener cu autorizația care expiră în următoarele 60 de zile/.test(partners.text), partners?.text);
+    check("proba are de unde citi câți parteneri sunt", counts !== null && counts.total > 0, JSON.stringify(counts));
+    if (counts !== null && counts.total > 0) {
+      // Cifra se cere lipită de început de număr: „6 parteneri” e o bucată din „16 parteneri”, iar
+      // fără garda asta un ecran care numără greşit ar trece.
+      const spune = (n, coada) =>
+        new RegExp(`(?<!\\d)${parteneri(n)}${coada}`).test(partners?.text ?? "");
+      check(`autorizațiile: ${parteneri(counts.total)}, ${counts.expired} expirată/e, ${counts.soon} pe terminate`,
+        partners?.state === "Intră" && spune(counts.total, "")
+        // Rândul roşu şi cel galben apar numai când au pe cine număra — la zero, ecranul nu scrie nimic.
+        && spune(counts.expired, " cu autorizația expirată") === (counts.expired > 0)
+        && spune(counts.soon, " cu autorizația care expiră în următoarele 60 de zile") === (counts.soon > 0),
+        partners?.text);
+    }
     check("atașamentele spun câte sunt", att?.state === "Intră" && /atașamente/.test(att.text), att?.text);
     await shot(page, "dosar_continut_1440");
 

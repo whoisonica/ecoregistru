@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
@@ -56,7 +56,7 @@ class DevicePushTokenIT {
     @Autowired DeviceSessionRepository deviceSessionRepository;
     @Autowired PasswordEncoder passwordEncoder;
 
-    @MockBean EmailService emailService;
+    @MockitoBean EmailService emailService;
 
     private AppUser magazioner;
     private AppUser colleague;

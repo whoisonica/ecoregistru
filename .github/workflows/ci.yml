@@ -1,8 +1,9 @@
 # P0.7 — rulează plasa de siguranță pe care o avem deja.
 #
-# 260 de teste de backend și 273 de verificări de interfață, și până azi nimic nu le pornea la push:
-# tot ce ținea proiectul întreg era disciplina de a le rula cu mâna. La a treia felie livrată în
-# grabă, regresia o găsește clientul.
+# Suita de backend și probele de ecran existau de mult, dar până azi nimic nu le pornea la push: tot
+# ce ținea proiectul întreg era disciplina de a le rula cu mâna. La a treia felie livrată în grabă,
+# regresia o găsește clientul. (Fără cifre aici dinadins: se citesc din
+# `backend/build/test-results/test/*.xml` și din `frontend/e2e/run.mjs`, și îmbătrâneau într-o lună.)
 #
 # Suita e2e (`npm run e2e`) are job propriu din 16.09.2026: până atunci cerea o bază „acumulată” din
 # rulări anterioare (a doua firmă, termene depășite) și nu putea porni pe una nouă. `DevDataSeeder`

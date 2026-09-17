@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -78,7 +78,7 @@ class RoleAuthorizationMatrixIT {
     @Autowired DriverRepository driverRepository;
     @Autowired InternalGeneratorRepository internalGeneratorRepository;
 
-    @MockBean CloudinaryStorageService storageService;
+    @MockitoBean CloudinaryStorageService storageService;
 
     /** O cerere gata de trimis, cu eticheta ei — ca eşecul să spună care endpoint a cedat. */
     private record Call(String label, Supplier<MockHttpServletRequestBuilder> request) {}

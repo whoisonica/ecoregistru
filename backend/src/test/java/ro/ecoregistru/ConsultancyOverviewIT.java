@@ -9,7 +9,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -76,7 +76,7 @@ class ConsultancyOverviewIT {
     @Autowired TemplateEngine templateEngine;
     @Autowired VerificationRecordRepository verificationRecordRepository;
 
-    @MockBean EmailService emailService;
+    @MockitoBean EmailService emailService;
 
     private final LocalDate today = LocalDate.now();
 

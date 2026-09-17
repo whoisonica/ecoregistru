@@ -14,9 +14,10 @@ import java.util.UUID;
 /**
  * Seeds the global waste code nomenclator from resources/seed/waste_codes.csv.
  *
- * The CSV is the source of truth. To (re)load an updated official list, add a new
- * versioned migration (copy this class to V3__reseed_waste_codes) — Flyway will not
- * re-run an already-applied version. See the TODO in the CSV.
+ * The CSV is the source of truth. To (re)load an updated official list, replace the CSV
+ * and add a new versioned migration next to this one (copy this class, bump the version):
+ * Flyway will not re-run an already-applied version, so editing this class or the CSV in
+ * place changes nothing on a database that already ran V2.
  */
 public class V2__seed_waste_codes extends BaseJavaMigration {
 

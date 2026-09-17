@@ -56,6 +56,11 @@ for t in $tables; do
   [[ " $SKIP " == *" $t "* ]] && continue
   sql+=$'\n'"\\copy (select * from $t where company_id = '$cid') to '$out/$t.csv' csv header"
 done
+# `analysis_bulletins` (V38) e tabelă istorică: buletinele de analiză au fost închise prin decizia
+# proprietarului şi n-au entitate în aplicaţie, deci nu se mai scrie nimic în ea. Rămâne citită aici
+# fiindcă exportul promis în DPA §10.1 e „tot ce ţine de client”, iar o bază veche poate avea rânduri;
+# pe una nouă `union all` întoarce zero şi nu costă nimic. Decizia din 18.09.2026: rămâne, nu se
+# şterge cu migrare.
 files="coalesce(public_id, ''), coalesce(resource_type, ''), coalesce(delivery_type, ''), coalesce(format, ''), coalesce(url, ''), coalesce(translate(file_name, E'\\t/', ' _'), '')"
 sql+=$'\n'"\\copy (select id, $files from attachments where movement_id in (select id from waste_movements where company_id = '$cid') union all select id, $files from analysis_bulletins where company_id = '$cid') to '$out/.fisiere.tsv' (delimiter E'\x1f')"
 sql+=$'\n'"commit;"

@@ -82,6 +82,8 @@ rulează local și are testele verzi.
 > expirată” deschide tot pasul autorizației. Aspectul aprobat pe localhost.
 > Probe: `tsc` curat, `npm test` 37/37; e2e **32** nouă (16/16), 8, 9 (patru pași), 10 verzi; 1440px 1114/1114, 375px fără derulare. Proba 3 cade
 > doar pe o bază cu peste 10 parteneri (rulările probei 32 îi lasă în urmă).
+> *(Adăugat 18.09.2026: proba 32 a rulat până atunci doar cu mâna — nu era în `frontend/e2e/run.mjs`, deci nici în CI. A intrat în listă
+> pe 18.09; pe baza nouă a CI-ului lasă un singur partener în urmă, departe de pragul de 10 al probei 3.)*
 
 > **17.09.2026, 16:43 — ✅ pe producție: Setările pe carduri, fiecare secțiune pe pagina ei** (`ecoregistru-app` **v110**, `ad3a0f2`; api neatins, rămâne **v119** cu F-C al tabului paralel; monorepo `59f2beb`).
 > Proprietarul: tabul Setări „nu e deloc intuitiv și nici user friendly”. Pagina lungă (până la zece tabele, cuprins lipicios, butonul din cap

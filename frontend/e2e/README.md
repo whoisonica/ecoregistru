@@ -33,7 +33,9 @@ salvat. **Negative:** badge-ul obișnuit pe „Trecute” → 1 cădere; butonul
 🗂️ **17.09.2026 — proba 34 (`34-dosar-continut.mjs`), „Ce intră în arhivă” pe Dosarul de control**: pe firma demo, 2026, șase rânduri
 (fără rezumatul neoficial): fișa și centralizata „Intră” cu mișcările anului și 15 martie 2027; Anexa 1 Ambalaje „Nu intră” fiindcă profilul
 nu spune dacă e producător, importator sau comerciant; Anexa 3 Ambalaje „Lipsește” fiindcă anul are ambalaje, dar rolul (colector, comerciant,
-reciclator, valorificator) nu e ales; autorizațiile: 6 parteneri, 1 expirată, 1 pe expirate; atașamentele cu mărimea (`data-testid`
+reciclator, valorificator) nu e ales; autorizațiile: câți parteneri are firma, câți cu autorizația expirată și câți pe expirate —
+**numerele se citesc din `GET /api/v1/partners` și expirările se socotesc în probă** (18.09.2026: constanta „6 parteneri” cădea în CI,
+unde probele 8 și 32 mai lasă câte unul pe aceeași bază); atașamentele cu mărimea (`data-testid`
 `audit-file-size`, citit și de 22). 2021 fără mișcări → „Intră fără date”; pe 3 ani, fișa numește 2024, 2025, 2026; 375px fără derulare.
 **Negativă:** Anexa 1 mereu „Intră” → 1 cădere. **10/10** pe `eco_e2e_dosar`. Presupune profilul demo necompletat (baza seedată proaspăt);
 nu lasă nimic în urmă.
@@ -55,6 +57,8 @@ lucru” și „+ Șofer”, care deschid fișa pe pasul 4 cu cursorul în rând
 iar numărul deschide pasul 4 fără rând gol în plus; niciun „+ Șofer” la cine nu transportă; 1440px 1114/1114, 375px fără derulare.
 „Dezactivează” e în „⋯” pe rând. Probele 8 și 9 numără acum patru pași. Lasă în urmă „Proba 32 Transport <număr>” — pe o bază
 cu ele, proba 3 („sub 10 rânduri nu apare căutare”) cade din cauza datelor, nu a ecranului.
+**18.09.2026:** proba a intrat în `run.mjs`, unde lipsea de la scriere — până atunci rula doar cu mâna, deci nu și în CI. Pe baza nouă
+a CI-ului lasă un singur partener în urmă, departe de pragul de 10 al probei 3.
 
 ⚙️ **17.09.2026 — Setările pe carduri**: `/setari` e o pagină de carduri pe grupuri, fiecare secțiune stă pe `/setari/<id>`
 (`datele-firmei`, `puncte-de-lucru`, `generatori-interni`, `utilizatori`, `jurnal-audit`, `soferi`, `flota`, `preturi`, `sortimente`).
@@ -274,6 +278,21 @@ npm run e2e -- formular      # rulează doar 4-formular.mjs
 ```bash
 E2E_BASE=http://localhost:4173 npm run e2e
 ```
+
+### ⚠️ `E2E_BASE` fără `E2E_DB` murdărește altă bază
+
+Cinci probe (29, 30, 33, 36, 37) nu-și pot face datele prin API — facturi emise, abonamente restante,
+un consultant al platformei — și le scriu direct cu `psql`, în baza din **`E2E_DB`, implicit
+`ecoregistru`**. `E2E_BASE` mută doar browserul; baza nu se ia după el. Deci pe o stivă pornită pe altă
+bază, cele două variabile se dau **împreună**:
+
+```bash
+E2E_BASE=http://localhost:5174 E2E_DB=eco_e2e_alta npm run e2e
+```
+
+Ce se întâmplă altfel, probat pe 18.09.2026: cele cinci probe au scris în `ecoregistru`, baza de
+dezvoltare rămasă în urmă cu migrările, și au căzut cu „column `payment_checked_at` does not exist”.
+Cu migrările la zi n-ar fi căzut deloc: ar fi lăsat rânduri într-o bază străină, în tăcere.
 
 ### Browserul
 
