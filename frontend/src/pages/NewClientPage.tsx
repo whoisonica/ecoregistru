@@ -87,7 +87,7 @@ function NewClientForm({
 }) {
   const navigate = useNavigate();
   const onboard = useOnboardClient();
-  const { data: founderCount } = useFounderCount();
+  const { data: founderCount } = useFounderCount(withSubscription);
 
   const steps = withSubscription ? [t.step1, t.step2, t.step3, t.step4] : [t.step1, t.step2, t.step4];
   const subscriptionStep = withSubscription ? 2 : -1;

@@ -73,10 +73,11 @@ export function useSubscriptionPreview(plan: SubscriptionPlan, founder: boolean,
   });
 }
 
-/** „X din 30" lângă bifa de fondator. */
-export function useFounderCount() {
+/** „X din 30" lângă bifa de fondator. Doar platforma întreabă: la consultant endpointul răspunde 403 (scanarea din 17.09). */
+export function useFounderCount(enabled = true) {
   return useQuery({
     queryKey: foundersKey,
+    enabled,
     queryFn: async () => (await api.get<number>("/api/v1/subscriptions/founders")).data,
   });
 }
