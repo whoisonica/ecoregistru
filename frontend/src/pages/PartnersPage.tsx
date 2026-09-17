@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Ban, Building2, ChevronRight, Factory, Pencil, Plus, Recycle, RotateCcw, Truck, Users, Warehouse } from "lucide-react";
+import { Ban, Building2, ChevronRight, Factory, MapPin, Pencil, Plus, Recycle, RotateCcw, Truck, Users, Warehouse } from "lucide-react";
 import { CuiField } from "@/components/AnafLookup";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
@@ -46,6 +46,7 @@ import { fold, formatDate } from "@/lib/utils";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Menu, MenuItem } from "@/components/ui/menu";
 import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 import { NaturalPersonsSection } from "@/components/NaturalPersonsSection";
 import { registersFor } from "@/lib/movementScreens";
@@ -55,8 +56,21 @@ const typeLabels = strings.enums.partnerType;
 const roleLabels = strings.enums.partnerRole;
 /** Cardul „Doar le transportă”: tipul gol (`""`), care nu poate fi valoarea unui radio. */
 const NONE_TYPE = "NONE" as const;
-/** Pașii formularului: 0 detalii, 1 ce face, 2 autorizația. */
-const LAST_STEP = 2;
+/** Pașii formularului: 0 detalii, 1 ce face, 2 autorizația, 3 puncte de lucru și șoferi. */
+const AUTH_STEP = 2;
+const PLACES_STEP = 3;
+const LAST_STEP = PLACES_STEP;
+
+/** „1 șofer”, „3 șoferi”, „20 de șoferi”: de la 20 în sus româna cere „de”. */
+function countLabel(n: number, one: string, many: string): string {
+  if (n === 1) return `1 ${one}`;
+  const mod = n % 100;
+  return mod === 0 || mod >= 20 ? `${n} de ${many}` : `${n} ${many}`;
+}
+
+function emptyDriver(): DriverInput {
+  return { name: "", identification: "", cnp: "", vehicleRegistration: "" };
+}
 
 /**
  * Filter values. The first four are the commercial role — "none" surfaces the partners still to be
@@ -88,6 +102,62 @@ function ExpiryBadge({ partner }: { partner: Partner }) {
     return <Badge variant="warning">{`${t.expiringSoon} · ${formatDate(date)}`}</Badge>;
   }
   return <Badge variant="success">{formatDate(date)}</Badge>;
+}
+
+/**
+ * Rândul de sub numele partenerului: punctele de lucru și șoferii lui, la vedere. Până pe 17.09.2026
+ * stăteau doar în fișă, la coada pasului 1 și sub un card de transport, deci cine voia să adauge
+ * unul mai târziu nu știa unde. Numărul deschide fișa pe pasul lor; „+” deschide și un rând gol.
+ * Șoferii se arată numai la cine transportă: doar acolo îi alege formularul de mișcare.
+ */
+function PartnerPlaces({
+  partner,
+  canManage,
+  onOpen,
+}: {
+  partner: Partner;
+  canManage: boolean;
+  onOpen: (addRow?: "workPoint" | "driver") => void;
+}) {
+  const wpCount = partner.workPoints?.length ?? 0;
+  const driverCount = partner.carrier ? partner.drivers?.length ?? 0 : 0;
+  const items: { key: string; icon: typeof MapPin; label: string; addRow?: "workPoint" | "driver" }[] = [];
+  if (wpCount > 0) {
+    items.push({ key: "wp", icon: MapPin, label: countLabel(wpCount, t.workPointOne, t.workPointMany) });
+  } else if (canManage) {
+    items.push({ key: "wp", icon: Plus, label: t.addWorkPointShort, addRow: "workPoint" });
+  }
+  if (driverCount > 0) {
+    items.push({ key: "dr", icon: Truck, label: countLabel(driverCount, t.driverOne, t.driverMany) });
+  } else if (canManage && partner.carrier) {
+    items.push({ key: "dr", icon: Plus, label: t.addDriverShort, addRow: "driver" });
+  }
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+      {items.map(({ key, icon: Icon, label, addRow }) =>
+        canManage ? (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onOpen(addRow)}
+            className={
+              "inline-flex items-center gap-1 whitespace-nowrap underline-offset-2 hover:underline " +
+              (addRow ? "text-brand-700" : "text-content-muted hover:text-content")
+            }
+          >
+            <Icon aria-hidden className="h-3 w-3" />
+            {label}
+          </button>
+        ) : (
+          <span key={key} className="inline-flex items-center gap-1 whitespace-nowrap text-content-muted">
+            <Icon aria-hidden className="h-3 w-3" />
+            {label}
+          </span>
+        )
+      )}
+    </div>
+  );
 }
 
 /**
@@ -312,7 +382,7 @@ export function PartnersPage() {
     const found = (partners ?? []).find((p) => p.id === focusPartner);
     if (found) {
       // Linkul vine din „Autorizație expirată”, deci fișa se deschide direct pe autorizație.
-      openEditRef.current(found, LAST_STEP); // deschide și dialogul
+      openEditRef.current(found, AUTH_STEP); // deschide și dialogul
       setFocusPartner("");
       return;
     }
@@ -328,7 +398,11 @@ export function PartnersPage() {
     if (canManage) openCreateRef.current();
   }, [newParam, setNewParam, canManage]);
 
-  function openEdit(p: Partner, startStep = 0) {
+  /**
+   * `addRow` vine din tabel („+ Punct de lucru”, „+ Șofer”): fișa se deschide pe pasul 4 cu un rând
+   * gol și cursorul în el, ca omul să nu mai caute butonul de adăugare.
+   */
+  function openEdit(p: Partner, startStep = 0, addRow?: "workPoint" | "driver") {
     setSwitchedFrom(null);
     setEditing(p);
     setName(p.name);
@@ -344,19 +418,21 @@ export function PartnersPage() {
     setIsSupplier(p.supplier);
     setIsCarrier(p.carrier);
     setPackagingOrigin(p.packagingOrigin ?? "");
-    setDrivers((p.drivers ?? []).map((d) => ({
+    const loadedDrivers: DriverInput[] = (p.drivers ?? []).map((d) => ({
       id: d.id,
       name: d.name,
       identification: d.identification ?? "",
       cnp: d.cnp ?? "",
       vehicleRegistration: d.vehicleRegistration ?? "",
-    })));
+    }));
+    setDrivers(addRow === "driver" ? [...loadedDrivers, emptyDriver()] : loadedDrivers);
     setAddress(p.address ?? "");
-    setWorkPoints((p.workPoints ?? []).map((wp) => ({
+    const loadedWorkPoints: PartnerWorkPointInput[] = (p.workPoints ?? []).map((wp) => ({
       id: wp.id,
       name: wp.name ?? "",
       address: wp.address,
-    })));
+    }));
+    setWorkPoints(addRow === "workPoint" ? [...loadedWorkPoints, { name: "", address: "" }] : loadedWorkPoints);
     setTradeRegisterNumber(p.tradeRegisterNumber ?? "");
     setHeavyVehicles(p.heavyVehicles);
     setTransportLicenseNumber(p.transportLicenseNumber ?? "");
@@ -371,6 +447,13 @@ export function PartnersPage() {
     setHasOldExpiry(Boolean(p.authorizationExpiry));
     setStep(startStep);
     setDialogOpen(true);
+    if (addRow) {
+      // După ce dialogul și-a pus singur focusul pe prima rubrică.
+      const id = addRow === "driver"
+        ? `p-driver-name-${loadedDrivers.length}`
+        : `p-wp-name-${loadedWorkPoints.length}`;
+      setTimeout(() => document.getElementById(id)?.focus(), 80);
+    }
   }
 
   /**
@@ -555,6 +638,15 @@ export function PartnersPage() {
    * ştie că se aplică.
    */
   /** Ce scrie sub „Ce face pentru tine” în cuprins, ca la pașii trecuți din cererea de cont. */
+  const filledWorkPoints = workPoints.filter((wp) => wp.address.trim() !== "").length;
+  const filledDrivers = isCarrier ? drivers.filter((d) => d.name.trim() !== "").length : 0;
+  const stepFourSummary = [
+    filledWorkPoints > 0 && countLabel(filledWorkPoints, t.workPointOne, t.workPointMany),
+    filledDrivers > 0 && countLabel(filledDrivers, t.driverOne, t.driverMany),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   const stepTwoSummary = [
     type ? typeLabels[type] : t.typeNoneShort,
     isClient && roleLabels.client,
@@ -704,7 +796,14 @@ export function PartnersPage() {
                 )}
                 {visiblePartners.map((p) => (
                   <TR key={p.id}>
-                    <TD className="font-medium text-content">{p.name}</TD>
+                    <TD>
+                      <div className="font-medium text-content">{p.name}</div>
+                      <PartnerPlaces
+                        partner={p}
+                        canManage={Boolean(canManage)}
+                        onOpen={(addRow) => openEdit(p, PLACES_STEP, addRow)}
+                      />
+                    </TD>
                     <TD>{p.cui || "—"}</TD>
                     <TD>
                       <PartnerRoleBadge partner={p} />
@@ -736,27 +835,27 @@ export function PartnersPage() {
                     </TD>
                     {canManage && (
                       <TD sticky="right" className="text-right">
-                        <div className="flex justify-end gap-1">
+                        {/* „Dezactivează” a intrat în „⋯” lângă „Puncte de lucru și șoferi” (17.09.2026):
+                            rândul de sub nume cerea lățimea, iar tabelul nu mai încăpea la 1440px. */}
+                        <div className="flex items-center justify-end gap-1">
                           <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
                             <Pencil className="mr-1 h-3.5 w-3.5" />
                             {strings.common.edit}
                           </Button>
-                          {p.active ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:bg-red-50"
-                              onClick={() => handleDeactivate(p)}
-                            >
-                              <Ban className="mr-1 h-3.5 w-3.5" />
-                              {t.deactivate}
-                            </Button>
-                          ) : (
-                            <Button variant="ghost" size="sm" onClick={() => reactivate(p)}>
-                              <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                              {strings.common.reactivate}
-                            </Button>
-                          )}
+                          <Menu>
+                            <MenuItem icon={MapPin} onClick={() => openEdit(p, PLACES_STEP)}>
+                              {t.step4Name}
+                            </MenuItem>
+                            {p.active ? (
+                              <MenuItem icon={Ban} tone="danger" onClick={() => handleDeactivate(p)}>
+                                {t.deactivate}
+                              </MenuItem>
+                            ) : (
+                              <MenuItem icon={RotateCcw} onClick={() => reactivate(p)}>
+                                {strings.common.reactivate}
+                              </MenuItem>
+                            )}
+                          </Menu>
                         </div>
                       </TD>
                     )}
@@ -829,11 +928,12 @@ export function PartnersPage() {
                   : undefined,
                 invalid: authError,
               },
+              { name: t.step4Name, summary: stepFourSummary || undefined },
             ]}
           />
 
           <form id="partner-form" onSubmit={handleSubmit} className="min-w-0 space-y-5">
-            <Stepper className="md:hidden" steps={[t.stepShort1, t.stepShort2, t.stepShort3]} current={step} />
+            <Stepper className="md:hidden" steps={[t.stepShort1, t.stepShort2, t.stepShort3, t.stepShort4]} current={step} />
 
             {/* Ai venit aici dintr-o sugestie de duplicat: acelaşi dialog, altă faptă. Fără rândul
                 ăsta, singurul semn era titlul — iar cine tocmai a apăsat pe o sugestie se uită la
@@ -857,16 +957,18 @@ export function PartnersPage() {
             <div>
               <div className="eyebrow text-content-muted">{t.stepOf.replace("{n}", String(step + 1))}</div>
               <h3 id="p-step-title" className="mt-1 text-xl font-semibold leading-7 text-content">
-                {[t.step1Title, t.step2Title, t.step3Title][step]}
+                {[t.step1Title, t.step2Title, t.step3Title, t.step4Title][step]}
               </h3>
               <p className="mt-0.5 text-sm text-content-muted">
                 {step === 0
                   ? t.step1Subtitle
                   : step === 1
                     ? t.step2Subtitle
-                    : needsAuthorization
-                      ? t.step3SubtitleRequired
-                      : t.step3SubtitleOptional}
+                    : step === 3
+                      ? t.step4Subtitle
+                      : needsAuthorization
+                        ? t.step3SubtitleRequired
+                        : t.step3SubtitleOptional}
                 {step === 2 && (
                   <>
                     {" "}
@@ -956,63 +1058,6 @@ export function PartnersPage() {
                   onChange={(e) => setTradeRegisterNumber(e.target.value)}
                   placeholder={t.tradeRegisterNumberPlaceholder}
                 />
-              </div>
-              <div>
-                <span className="block text-sm font-medium text-content-strong">{t.workPoints}</span>
-                <p className="mt-0.5 text-xs text-content-muted">{t.workPointsHint}</p>
-                <div className="mt-2 space-y-2">
-                  {workPoints.map((wp, index) => (
-                    <div
-                      key={wp.id ?? `new-${index}`}
-                      className="flex flex-col gap-2 sm:flex-row sm:items-end"
-                    >
-                      <div className="w-full sm:w-52">
-                        <Label htmlFor={`p-wp-name-${index}`}>{t.workPointName}</Label>
-                        <Input
-                          id={`p-wp-name-${index}`}
-                          value={wp.name ?? ""}
-                          placeholder={t.workPointNamePlaceholder}
-                          onChange={(e) =>
-                            setWorkPoints((prev) =>
-                              prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor={`p-wp-address-${index}`}>{t.workPointAddress}</Label>
-                        <Input
-                          id={`p-wp-address-${index}`}
-                          value={wp.address}
-                          onChange={(e) =>
-                            setWorkPoints((prev) =>
-                              prev.map((x, i) => (i === index ? { ...x, address: e.target.value } : x))
-                            )
-                          }
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
-                        onClick={() => setWorkPoints((prev) => prev.filter((_, i) => i !== index))}
-                      >
-                        {t.removeWorkPoint}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => setWorkPoints((prev) => [...prev, { name: "", address: "" }])}
-                >
-                  <Plus className="mr-1 h-3.5 w-3.5" />
-                  {t.addWorkPoint}
-                </Button>
               </div>
             </div>
 
@@ -1124,108 +1169,6 @@ export function PartnersPage() {
                         </div>
                       </div>
                     )}
-                    <div>
-                      <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
-                      <p className="mt-0.5 text-xs text-content-muted">{t.driversHint}</p>
-                      {/* Aceeași notă ca în „Șoferii noștri" din Setări: se scrie o dată, se arată în
-                          amândouă locurile unde chiar se tastează actul de identitate. */}
-                      <p className="mt-0.5 text-xs text-content-subtle">{strings.common.driversPrivacy}</p>
-                      <div className="mt-2 space-y-2">
-                        {drivers.map((d, index) => (
-                          <div
-                            key={d.id ?? `new-${index}`}
-                            className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
-                          >
-                            {/* Numele pe rândul lui: cu CNP-ul (15.09.2026), patru rubrici într-un
-                                rând îl strângeau la câțiva pixeli. */}
-                            <div className="w-full sm:basis-full">
-                              <Label htmlFor={`p-driver-name-${index}`}>{t.driverName}</Label>
-                              <Input
-                                id={`p-driver-name-${index}`}
-                                maxLength={255}
-                                value={d.name}
-                                placeholder={t.driverNamePlaceholder}
-                                onChange={(e) =>
-                                  setDrivers((prev) =>
-                                    prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="w-full sm:w-40">
-                              <Label htmlFor={`p-driver-id-${index}`}>{t.driverIdentification}</Label>
-                              <Input
-                                id={`p-driver-id-${index}`}
-                                maxLength={100}
-                                value={d.identification ?? ""}
-                                placeholder={t.driverIdentificationPlaceholder}
-                                onChange={(e) =>
-                                  setDrivers((prev) =>
-                                    prev.map((x, i) =>
-                                      i === index ? { ...x, identification: e.target.value } : x
-                                    )
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="w-full sm:w-36">
-                              <Label htmlFor={`p-driver-cnp-${index}`}>{strings.common.cnp}</Label>
-                              <Input
-                                id={`p-driver-cnp-${index}`}
-                                inputMode="numeric"
-                                maxLength={13}
-                                value={d.cnp ?? ""}
-                                onChange={(e) =>
-                                  setDrivers((prev) =>
-                                    prev.map((x, i) => (i === index ? { ...x, cnp: e.target.value } : x))
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className="w-full sm:w-36">
-                              <Label htmlFor={`p-driver-plate-${index}`}>{t.driverVehicle}</Label>
-                              <Input
-                                id={`p-driver-plate-${index}`}
-                                maxLength={50}
-                                value={d.vehicleRegistration ?? ""}
-                                placeholder={t.driverVehiclePlaceholder}
-                                onChange={(e) =>
-                                  setDrivers((prev) =>
-                                    prev.map((x, i) =>
-                                      i === index ? { ...x, vehicleRegistration: e.target.value } : x
-                                    )
-                                  )
-                                }
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
-                              onClick={() => setDrivers((prev) => prev.filter((_, i) => i !== index))}
-                            >
-                              {t.removeDriver}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() =>
-                          setDrivers((prev) => [
-                            ...prev,
-                            { name: "", identification: "", cnp: "", vehicleRegistration: "" },
-                          ])
-                        }
-                      >
-                        <Plus className="mr-1 h-3.5 w-3.5" />
-                        {t.addDriver}
-                      </Button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -1412,6 +1355,194 @@ export function PartnersPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* ------------------------------------------------ 4. PUNCTE DE LUCRU ȘI ȘOFERI */}
+            {/* Pas separat din 17.09.2026: punctele de lucru stăteau la coada pasului 1, iar șoferii
+                sub cardul „Vine el și îl ia” — cine voia să adauge unul mai târziu nu-i găsea. Tabelul
+                deschide fișa direct aici. */}
+            <div hidden={step !== 3} className="space-y-6">
+              <div>
+                <span className="block text-sm font-medium text-content-strong">{t.workPoints}</span>
+                <p className="mt-0.5 text-xs text-content-muted">{t.workPointsHint}</p>
+                <div className="mt-2 space-y-2">
+                  {workPoints.map((wp, index) => (
+                    <div
+                      key={wp.id ?? `new-${index}`}
+                      className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                    >
+                      <div className="w-full sm:w-52">
+                        <Label htmlFor={`p-wp-name-${index}`}>{t.workPointName}</Label>
+                        <Input
+                          id={`p-wp-name-${index}`}
+                          value={wp.name ?? ""}
+                          placeholder={t.workPointNamePlaceholder}
+                          onChange={(e) =>
+                            setWorkPoints((prev) =>
+                              prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
+                            )
+                          }
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <Label htmlFor={`p-wp-address-${index}`}>{t.workPointAddress}</Label>
+                        <Input
+                          id={`p-wp-address-${index}`}
+                          value={wp.address}
+                          onChange={(e) =>
+                            setWorkPoints((prev) =>
+                              prev.map((x, i) => (i === index ? { ...x, address: e.target.value } : x))
+                            )
+                          }
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
+                        onClick={() => setWorkPoints((prev) => prev.filter((_, i) => i !== index))}
+                      >
+                        {t.removeWorkPoint}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setWorkPoints((prev) => [...prev, { name: "", address: "" }])}
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  {t.addWorkPoint}
+                </Button>
+              </div>
+              {isCarrier ? (
+                <div id="p-drivers">
+                  <div>
+                    <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
+                    <p className="mt-0.5 text-xs text-content-muted">{t.driversHint}</p>
+                    {/* Aceeași notă ca în „Șoferii noștri" din Setări: se scrie o dată, se arată în
+                        amândouă locurile unde chiar se tastează actul de identitate. */}
+                    <p className="mt-0.5 text-xs text-content-subtle">{strings.common.driversPrivacy}</p>
+                    <div className="mt-2 space-y-2">
+                      {drivers.map((d, index) => (
+                        <div
+                          key={d.id ?? `new-${index}`}
+                          className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+                        >
+                          {/* Numele pe rândul lui: cu CNP-ul (15.09.2026), patru rubrici într-un
+                              rând îl strângeau la câțiva pixeli. */}
+                          <div className="w-full sm:basis-full">
+                            <Label htmlFor={`p-driver-name-${index}`}>{t.driverName}</Label>
+                            <Input
+                              id={`p-driver-name-${index}`}
+                              maxLength={255}
+                              value={d.name}
+                              placeholder={t.driverNamePlaceholder}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) => (i === index ? { ...x, name: e.target.value } : x))
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="w-full sm:w-40">
+                            <Label htmlFor={`p-driver-id-${index}`}>{t.driverIdentification}</Label>
+                            <Input
+                              id={`p-driver-id-${index}`}
+                              maxLength={100}
+                              value={d.identification ?? ""}
+                              placeholder={t.driverIdentificationPlaceholder}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) =>
+                                    i === index ? { ...x, identification: e.target.value } : x
+                                  )
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="w-full sm:w-36">
+                            <Label htmlFor={`p-driver-cnp-${index}`}>{strings.common.cnp}</Label>
+                            <Input
+                              id={`p-driver-cnp-${index}`}
+                              inputMode="numeric"
+                              maxLength={13}
+                              value={d.cnp ?? ""}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) => (i === index ? { ...x, cnp: e.target.value } : x))
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="w-full sm:w-36">
+                            <Label htmlFor={`p-driver-plate-${index}`}>{t.driverVehicle}</Label>
+                            <Input
+                              id={`p-driver-plate-${index}`}
+                              maxLength={50}
+                              value={d.vehicleRegistration ?? ""}
+                              placeholder={t.driverVehiclePlaceholder}
+                              onChange={(e) =>
+                                setDrivers((prev) =>
+                                  prev.map((x, i) =>
+                                    i === index ? { ...x, vehicleRegistration: e.target.value } : x
+                                  )
+                                )
+                              }
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="self-end text-red-600 hover:bg-red-50 sm:mb-1"
+                            onClick={() => setDrivers((prev) => prev.filter((_, i) => i !== index))}
+                          >
+                            {t.removeDriver}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() =>
+                        setDrivers((prev) => [
+                          ...prev,
+                          emptyDriver(),
+                        ])
+                      }
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" />
+                      {t.addDriver}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div id="p-drivers" className="rounded-lg border border-line px-3.5 py-3">
+                  <span className="block text-sm font-medium text-content-strong">{t.drivers}</span>
+                  <p className="mt-0.5 text-xs text-content-muted">{t.driversNotCarrier}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      setIsCarrier(true);
+                      setDrivers((prev) => (prev.length > 0 ? prev : [emptyDriver()]));
+                    }}
+                  >
+                    <Truck className="mr-1 h-3.5 w-3.5" />
+                    {t.driversMakeCarrier}
+                  </Button>
+                </div>
+              )}
             </div>
           </form>
         </div>

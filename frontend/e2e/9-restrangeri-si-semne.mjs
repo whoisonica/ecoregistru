@@ -72,7 +72,7 @@ const colector = await comutaLa(/Demo Reciclare/);
 check("există contul care chiar depune Anexa 3 Ambalaje", colector !== null, colector?.nume ?? "niciunul");
 const laColector = await formularPartener();
 check("provenienţa se cere pe un cont care preia de la terţi", laColector?.arataProvenienta === true);
-check("şi restul formularului e neatins: trei pași", (laColector?.sectiuni ?? []).length === 3,
+check("şi restul formularului e neatins: patru pași", (laColector?.sectiuni ?? []).length === 4,
   (laColector?.sectiuni ?? []).join(" · "));
 
 await shot(page, "9-partener-colector");

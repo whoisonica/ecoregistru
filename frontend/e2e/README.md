@@ -1,5 +1,12 @@
 # Probe de interfaţă
 
+🤝 **17.09.2026 — proba 32 (`32-parteneri-locuri-soferi.mjs`), punctele de lucru și șoferii la vedere**: adăugarea de partener
+are patru pași (al patrulea, „Puncte de lucru și șoferi”, se salvează gol); rândul transportatorului fără nimic arată „+ Punct de
+lucru” și „+ Șofer”, care deschid fișa pe pasul 4 cu cursorul în rândul nou; după salvare rândul spune „1 punct de lucru · 1 șofer”,
+iar numărul deschide pasul 4 fără rând gol în plus; niciun „+ Șofer” la cine nu transportă; 1440px 1114/1114, 375px fără derulare.
+„Dezactivează” e în „⋯” pe rând. Probele 8 și 9 numără acum patru pași. Lasă în urmă „Proba 32 Transport <număr>” — pe o bază
+cu ele, proba 3 („sub 10 rânduri nu apare căutare”) cade din cauza datelor, nu a ecranului.
+
 ⚙️ **17.09.2026 — Setările pe carduri**: `/setari` e o pagină de carduri pe grupuri, fiecare secțiune stă pe `/setari/<id>`
 (`datele-firmei`, `puncte-de-lucru`, `generatori-interni`, `utilizatori`, `jurnal-audit`, `soferi`, `flota`, `preturi`, `sortimente`).
 Proba 1 cere cardurile pe `/setari` și un tabel pe `/setari/puncte-de-lucru`; 7 numără nouă carduri la firma demo și intră pe

@@ -997,7 +997,7 @@ export const strings = {
     driverPickFreeText: "— altcineva (scriu mai jos) —",
     driverPickHint: "Completează singur cele trei rubrici de mai jos. Rămân editabile.",
     driverPickNoneCarrier:
-      "Transportatorul ăsta n-are șoferi configurați. Se adaugă în fișa lui, din Parteneri.",
+      "Transportatorul ăsta n-are șoferi încă. În Parteneri, pe rândul lui, apasă „+ Șofer”.",
     driverPickNoneOwn:
       "N-ai șoferi proprii configurați. Se adaugă în Setări, sub punctele de lucru.",
     driverName: "Delegat (șofer)",
@@ -1645,7 +1645,14 @@ export const strings = {
       "Cere-i autorizația de mediu și ultima decizie de viză — le ai de obicei lângă contract. Numărul autorizației e obligatoriu.",
     step3SubtitleOptional:
       "Pentru o firmă care doar transportă sau doar generează, autorizația nu e obligatorie. Completeaz-o dacă o ai.",
-    stepOf: "Pasul {n} din 3",
+    // Pasul 4 (17.09.2026): punctele de lucru și șoferii, scoși de la coada pasului 1 și de sub
+    // cardul de transport, unde nu-i găsea nimeni când voia să mai adauge unul.
+    step4Name: "Puncte de lucru și șoferi",
+    stepShort4: "Locuri",
+    step4Title: "Puncte de lucru și șoferi",
+    step4Subtitle:
+      "Opțional. Le poți lăsa goale acum și le adaugi oricând din lista de parteneri, de pe rândul lui.",
+    stepOf: "Pasul {n} din 4",
     stepContinue: "Continuă",
     stepBack: "Înapoi",
     stepsLabel: "Pașii formularului",
@@ -1665,8 +1672,8 @@ export const strings = {
     carrierNoCard: "Îl ducem noi sau altă firmă",
     carrierNoCardHint: "El doar primește deșeul. Transportul îl faci tu, cu mașina ta, sau îl face alt partener.",
     carrierNoCardDisabled: "Nu se poate: o firmă care doar transportă vine mereu ea după deșeu.",
-    carrierDetails: "Mașinile și șoferii lui",
-    carrierDetailsHint: "Opțional. Ce scrii aici se completează singur pe Anexa 3, ca să nu tastezi de fiecare dată.",
+    carrierDetails: "Licența de transport",
+    carrierDetailsHint: "Opțional. Șoferii lui îi adaugi la pasul 4, „Puncte de lucru și șoferi”.",
     visaUntilAsk: "Viza e valabilă până la",
     visaUntilHint:
       "Scrie data de pe decizia de viză („se aplică viza pentru perioada …”). Te anunțăm cu 60 de zile înainte să expire.",
@@ -1708,6 +1715,9 @@ export const strings = {
     workPointNamePlaceholder: "ex. Depozit Florești",
     workPointAddress: "Adresa",
     addWorkPoint: "Adaugă punct de lucru",
+    addWorkPointShort: "Punct de lucru",
+    workPointOne: "punct de lucru",
+    workPointMany: "puncte de lucru",
     removeWorkPoint: "Șterge",
     tradeRegisterNumber: "Nr. Registrul Comerțului",
     tradeRegisterNumberPlaceholder: "ex. J12/1351/2011",
@@ -1743,6 +1753,12 @@ export const strings = {
     driverVehicle: "Nr. înmatriculare uzual",
     driverVehiclePlaceholder: "ex. CJ 01 ABC",
     addDriver: "Adaugă șofer",
+    addDriverShort: "Șofer",
+    driverOne: "șofer",
+    driverMany: "șoferi",
+    driversNotCarrier:
+      "Șoferii se țin doar la partenerul care vine el după deșeu. Acum e trecut „Îl ducem noi sau altă firmă” (pasul 2).",
+    driversMakeCarrier: "Vine el cu mașinile lui — adaugă șoferi",
     removeDriver: "Șterge",
     // form placeholders
     cuiPlaceholder: "ex. RO12345678",

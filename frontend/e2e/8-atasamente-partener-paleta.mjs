@@ -123,7 +123,7 @@ const partener = await page.evaluate(() => {
     rubrici,
   };
 });
-check("formularul are trei pași în cuprins", (partener?.pasi ?? []).length === 3,
+check("formularul are patru pași în cuprins", (partener?.pasi ?? []).length === 4,
   (partener?.pasi ?? []).join(" · "));
 check("dialogul s-a lărgit, ca cel de mișcare și cel de firmă", (partener?.latime ?? 0) > 600,
   `${partener?.latime}px`);
