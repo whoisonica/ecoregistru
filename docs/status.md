@@ -14,6 +14,22 @@ rulează local și are testele verzi.
 > site-ul, România). Aceeași corectură în registrul art. 30, DPA Anexa C și PDF-uri (repo-ul privat). **Probe:** tsc, `npm test` 27/27;
 > pe producție bundle-ul `index-CQOz911O.js` are textul nou și niciun „Zoho”, pagina `/confidentialitate` arată cele șapte rânduri.
 
+> **17.09.2026, ~15:00 — în `main`, de deployat doar frontendul: Evidențe în kg, butonul fișei pe înțeles, selectul R/D** (monorepo `9356547`; api neatins, nicio migrare; documentele tipărite neatinse).
+> **(1) Kg pe Evidențe:** panoul „Pentru depunerea din 15 martie — totalul anului, pe cod” trece din tone în kg (coloanele `[kg]`), ca
+> rândul de pe Termene (app v101). Andreea (AF, 14.09): se depune în kg. Pe ecranele generatorului nu mai e nicio cifră în tone, în afară de
+> pragul de 1 t al Anexei 2 (colectori). **(2) Butonul fișei:** cu o predare „de cântărit” în an, butonul deschidea un dialog în locul PDF-ului
+> și părea stricat. Acum nota stă sus pe pagină („2026: 1 linie fără cantitatea de la destinatar…”, cu „Arată predările”), iar dialogul are
+> numele documentului în titlu, „Descarcă oricum” / „Completez întâi” și tokenii „Cântar” în loc de `amber-*` (la fel pe Dosarul de control).
+> **(3) Selectul R/D** din „Adaugă deșeuri” arăta „Câmp obligatoriu.” ca rând gol înainte de orice salvare (văzut pe producție): acum „Alege
+> codul R…” / „Alege codul D…”. **Probe:** tsc, build, `npm test` 26/26; e2e completă pe bază nouă (`eco_e2e_kgfisa`) 25/28 la prima rulare —
+> 11 a prins un acord greșit în nota nouă („1 linie … n-au”, reformulată), 28 aștepta o descărcare în loc de tabul PDF (proba reparată),
+> 18 a căzut o dată pe tasta I în timp ce Vite reîncărca modulele editate; rulate din nou: **10, 11, 18, 28 verzi**. Negative: `/1000` pe
+> panou → proba 10 cade; fără notă și cu titlul vechi → proba 28 cade de 3 ori. Capturi 1440/375: 0px derulare laterală.
+> **Testul formularelor noi pe producție (app v103), pe Demo Reciclare:** partenerul pe 3 pași (rubrica goală marcată la „Continuă”, pașii 2
+> și 3, anulat fără salvare); „Adaugă deșeuri” prin `?nou=1` cu punctul de lucru ales, bonul care se umple, o predare de probă (15 01 01, 5 kg,
+> R3, Colector Autorizat SA) → „Predarea e în evidență” cu Anexa 3 și avizul → „Încă una la fel” cu codul, R3 și partenerul, fără cantitate →
+> „La fel ca data trecută” pe un formular nou → predarea ștearsă din „⋯”. Singurul defect: selectul R/D de la (3).
+
 > **17.09.2026, ~12:40 — ✅ operare: mailul aplicației prin Brevo, monitorizare la 5 minute, CI verde** (`ecoregistru-api` **v112**, doar config; niciun cod de aplicație; `main` `7d774f9`).
 > Din scanarea generatorului cerută de proprietar (17.09 dimineața, 9,4/10, ~98%). **(1) CI roșu pe `main` de la `01e9acf`:** proba e2e 9
 > căuta cifra de sub 15 martie în tone, ecranul o scrie în kg — proba învechită, nu produsul; acum caută „kg”. Proba 27 (anul declarat)
