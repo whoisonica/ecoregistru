@@ -40,6 +40,10 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
             + " or k.id = (select co.consultancy.id from Company co where co.id = :companyId)")
     List<SubscriptionStatus> findStatusPayingFor(@Param("companyId") UUID companyId);
 
+    /** F-B — the direct clients' subscriptions, for the Clients table (the company fetched with them). */
+    @Query("select s from Subscription s join fetch s.company")
+    List<Subscription> findAllOfCompanies();
+
     @Query("select s.status from Subscription s where s.consultancy.id = :consultancyId")
     List<SubscriptionStatus> findStatusOfConsultancy(@Param("consultancyId") UUID consultancyId);
 }

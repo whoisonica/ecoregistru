@@ -102,7 +102,7 @@ const ctx2 = await newPage(browser, { width: 1440, height: 900 });
 await login(ctx2, "platform");
 await ctx2.goto(BASE + "/clienti", { waitUntil: "networkidle" });
 await ctx2.waitForTimeout(800);
-const add = ctx2.locator('button:has-text("Adaugă firmă")').first();
+const add = ctx2.locator('button:has-text("Client nou")').first();
 if ((await add.count()) > 0) {
   await add.click();
   await ctx2.waitForTimeout(600);
@@ -111,7 +111,7 @@ if ((await add.count()) > 0) {
   check("CUI-ul firmei are butonul ANAF", (await ctx2.locator('div[role="dialog"] button:has-text("Completează din ANAF")').count()) === 1);
   await shot(ctx2, "23_firma_noua");
 } else {
-  check("ecranul de firme are „Adaugă firmă”", false);
+  check("ecranul de firme are „Client nou”", false);
 }
 
 // ------------------------------------------------------------ (4) AMBALAJE LA GENERATOR

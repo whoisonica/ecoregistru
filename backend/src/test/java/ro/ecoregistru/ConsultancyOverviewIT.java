@@ -181,6 +181,20 @@ class ConsultancyOverviewIT {
         assertThat(calm.get("nextDeadline").get("dueDate").asText()).isEqualTo(today.plusDays(20).toString());
     }
 
+    /** După ultimul termen al anului, următorul e la anul: firma are termene, nu „negenerate”. */
+    @Test
+    void aCompanyWhoseNextDeadlineIsNextYearHasItsDeadlinesGenerated() throws Exception {
+        Company december = company("December SRL", cabinet, true);
+        deadline(december, LocalDate.of(today.getYear() + 1, 3, 15), DeadlineStatus.UPCOMING);
+
+        JsonNode row = row("December SRL");
+
+        assertThat(row.get("deadlinesGenerated").asBoolean()).isTrue();
+        assertThat(row.get("overdueDeadlines").asInt()).isZero();
+        assertThat(row.get("nextDeadline").get("dueDate").asText())
+                .isEqualTo(LocalDate.of(today.getYear() + 1, 3, 15).toString());
+    }
+
     @Test
     void onlyAConsultantAsksAndNobodyElsesFirmsLeak() throws Exception {
         String body = mockMvc.perform(get("/api/v1/consultancy/overview").header("Authorization", "Bearer " + anaToken))

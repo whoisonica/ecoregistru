@@ -20,7 +20,7 @@ export type CompanyField = "address" | "caenCode" | "wasteManagerName";
 
 export type FirstStep = { id: FirstStepId; done: boolean; missing: CompanyField[] };
 
-const COMPANY_FIELDS: CompanyField[] = ["address", "caenCode", "wasteManagerName"];
+export const COMPANY_FIELDS: CompanyField[] = ["address", "caenCode", "wasteManagerName"];
 
 /**
  * `null` cât timp vreo sursă n-a venit (sau a căzut): o listă socotită din liste goale ar spune

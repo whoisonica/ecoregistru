@@ -1,6 +1,7 @@
 package ro.ecoregistru.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.enums.Role;
 
@@ -26,6 +27,14 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
     Optional<AppUser> findByIdAndConsultancy_Id(UUID id, UUID consultancyId);
 
     long countByConsultancy_Id(UUID consultancyId);
+
+    /**
+     * F-B — utilizatorii fiecărei firme, pentru tabelul Clienți: {@code [companyId, count]}. Invitațiile încă
+     * nefolosite se numără (omul e pe drum), cei dezactivați nu.
+     */
+    @Query("select u.company.id, count(u) from AppUser u where u.company is not null and u.deactivatedAt is null"
+            + " group by u.company.id")
+    List<Object[]> countMembersByCompany();
 
     /** P2.13, felia 2 — consultanții care pot citi rezumatul zilnic; invitațiile nefolosite nu. */
     List<AppUser> findAllByConsultancy_IdAndEnabledTrue(UUID consultancyId);

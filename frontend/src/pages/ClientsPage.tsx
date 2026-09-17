@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Briefcase, Building2, Pencil, Plus, Receipt, UserPlus } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
+import { Briefcase, Building2, Plus, Receipt, UserPlus } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { isMultiCompany } from "@/lib/roles";
 import { AssignConsultancyDialog, ConsultanciesSection } from "@/components/ConsultanciesSection";
@@ -7,6 +7,7 @@ import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { ConsultancyTeamSection } from "@/components/ConsultancyTeamSection";
 import { ConsultancyBrandingSection } from "@/components/ConsultancyBrandingSection";
 import {
+  useClientOverview,
   useCompanies,
   useCreateCompany,
   useUpdateCompany,
@@ -28,6 +29,25 @@ import {
   type CompanyProfileValue,
 } from "@/components/CompanyProfileFields";
 import { AccountRequestsSection } from "@/components/AccountRequestsSection";
+import { useAccountRequests } from "@/hooks/useAccountRequests";
+import { useAllInvoices } from "@/hooks/useSubscriptions";
+import { useHotkey } from "@/hooks/useHotkey";
+import {
+  byAttention,
+  clientRow,
+  CLIENT_FILTERS,
+  CONSULTANT_FILTERS,
+  MATCHES,
+  money,
+  type ClientFilter,
+  type ClientRow,
+} from "@/lib/clients";
+import { countOf } from "@/lib/count";
+import { formatDate } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { Menu, MenuItem } from "@/components/ui/menu";
+import { PillGroup } from "@/components/ui/pill-group";
+import { Tooltip } from "@/components/ui/tooltip";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { isValidCui } from "@/lib/cui";
@@ -42,7 +62,6 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { FormSection } from "@/components/ui/form-section";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
-import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
@@ -124,14 +143,29 @@ export function ClientsPage() {
   const [inviteLastName, setInviteLastName] = useState("");
   const [inviteEmailError, setInviteEmailError] = useState(false);
 
-  const view = useTableView(companies ?? [], {
-    searchText: (c) => [c.name, c.cui].filter(Boolean).join(" "),
-    comparators: {
-      name: (a, b) => a.name.localeCompare(b.name, "ro"),
-      cui: (a, b) => (a.cui ?? "").localeCompare(b.cui ?? "", "ro"),
-    },
-    initialSort: { key: "name", direction: "asc" },
-  });
+  // F-B — abonamentul, ultima factură și oamenii fiecărei firme; banii și cererile doar la platformă.
+  const overview = useClientOverview(multiCompany);
+  const invoices = useAllInvoices(isPlatformAdmin);
+  const requests = useAccountRequests(isPlatformAdmin);
+  const [filter, setFilter] = useState<ClientFilter>("ALL");
+  const today = todayIso();
+
+  const rows = useMemo(() => {
+    const byId = new Map((overview.data ?? []).map((o) => [o.companyId, o]));
+    return (companies ?? []).map((c) => clientRow(c, byId.get(c.id), today)).sort(byAttention);
+  }, [companies, overview.data, today]);
+  const filters = isPlatformAdmin ? CLIENT_FILTERS : CONSULTANT_FILTERS;
+  const counts = Object.fromEntries(filters.map((f) => [f, rows.filter(MATCHES[f]).length])) as Record<
+    ClientFilter,
+    number
+  >;
+
+  const view = useTableView(
+    rows.filter(MATCHES[filter]),
+    { searchText: (r) => [r.company.name, r.company.cui].filter(Boolean).join(" ") }
+  );
+
+  useHotkey("n", () => openCreate(), { enabled: multiCompany && !dialogOpen && !inviteOpen });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -325,44 +359,65 @@ export function ClientsPage() {
         title={t.title}
         description={isConsultant ? t.subtitleConsultant : t.subtitle}
         actions={
-          <Button onClick={openCreate}>
+          <Button onClick={openCreate} hotkey="N">
             <Plus className="mr-2 h-4 w-4" />
             {t.add}
           </Button>
         }
       />
 
+      <ClientFigures
+        rows={rows}
+        overviewFailed={overview.isError}
+        invoices={isPlatformAdmin ? invoices : null}
+        today={today}
+      />
+
+      {isPlatformAdmin && <RequestsBand requests={requests.data} />}
+
       <section className="mt-6">
-        {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+        {isError && <p className="text-sm text-state-bad-text">{t.loadError}</p>}
 
         {!isError && (
           <>
+            <PillGroup
+              name="client-filter"
+              options={filters.map((f) => ({
+                value: f,
+                label: (
+                  <>
+                    {t.filters[f]}{" "}
+                    <span className="font-mono text-xs opacity-70">
+                      {companies && (f === "ALL" || f === "CABINETS" || overview.data) ? counts[f] : t.unknown}
+                    </span>
+                  </>
+                ),
+              }))}
+              selected={[filter]}
+              onToggle={setFilter}
+              className="mb-3"
+            />
             <TableToolbar view={view} placeholder={t.searchPlaceholder} />
             <Table stickyHeader>
               <THead sticky>
                 <TR>
-                  <SortableTH sortKey="name" sort={view.sort} onSort={view.toggleSort}>
-                    {t.name}
-                  </SortableTH>
-                  <SortableTH sortKey="cui" sort={view.sort} onSort={view.toggleSort}>
-                    {t.cui}
-                  </SortableTH>
-                  <TH>{t.type}</TH>
-                  {isPlatformAdmin && <TH>{t.consultancy}</TH>}
-                  <TH>{t.afm}</TH>
-                  <TH>{strings.common.status}</TH>
+                  <TH>{t.colClient}</TH>
+                  {isPlatformAdmin && <TH>{t.colSubscription}</TH>}
+                  {isPlatformAdmin && <TH>{t.colLastInvoice}</TH>}
+                  <TH className="text-right">{t.colUsers}</TH>
+                  <TH>{t.colProfile}</TH>
                   <TH sticky="right" className="text-right">{strings.common.actions}</TH>
                 </TR>
               </THead>
               <TBody>
                 {(isLoading || view.visible.length === 0) && (
                   <TableFallbackRow
-                    columns={isPlatformAdmin ? 7 : 6}
+                    columns={isPlatformAdmin ? 6 : 4}
                     loading={isLoading}
                     icon={Building2}
-                    title={view.emptiedBySearch ? strings.common.noResults : t.empty}
+                    title={view.emptiedBySearch || filter !== "ALL" ? strings.common.noResults : t.empty}
                     description={
-                      view.emptiedBySearch
+                      view.emptiedBySearch || filter !== "ALL"
                         ? strings.common.noResultsHint
                         : isConsultant
                           ? t.emptyHintConsultant
@@ -376,55 +431,56 @@ export function ClientsPage() {
                     }
                   />
                 )}
-                {view.visible.map((c) => (
-                  <TR key={c.id}>
-                    <TD className="font-medium text-content">{c.name}</TD>
-                    <TD>{c.cui}</TD>
-                    <TD>{typeLabels[c.type]}</TD>
+                {view.visible.map((r) => (
+                  <TR key={r.company.id}>
+                    <TD className="min-w-[14rem]">
+                      <span className="font-medium text-content">{r.company.name}</span>
+                      <span className="block font-mono text-xs text-content-muted">
+                        {r.company.cui} · {typeLabels[r.company.type]}
+                      </span>
+                      {!r.company.active && <Badge variant="muted">{t.inactive}</Badge>}
+                    </TD>
                     {isPlatformAdmin && (
-                      <TD>
-                        {c.consultancyName ?? (
-                          <span className="text-content-subtle">{t.directClient}</span>
-                        )}
+                      <TD className="whitespace-nowrap">
+                        <SubscriptionCell row={r} />
                       </TD>
                     )}
-                    <TD>
-                      {c.afmObligation ? (
-                        <Badge variant="warning">{t.afmYes}</Badge>
+                    {isPlatformAdmin && (
+                      <TD className="whitespace-nowrap">
+                        <InvoiceCell row={r} />
+                      </TD>
+                    )}
+                    <TD className="text-right font-mono tabular-nums">
+                      {r.overview ? (
+                        r.noUsers ? <Badge variant="danger">0</Badge> : r.overview.userCount
                       ) : (
-                        <span className="text-content-subtle">{t.afmNo}</span>
+                        t.unknown
                       )}
                     </TD>
-                    <TD>
-                      {c.active ? (
-                        <Badge variant="success">{t.active}</Badge>
-                      ) : (
-                        <Badge variant="muted">{t.inactive}</Badge>
-                      )}
+                    <TD className="whitespace-nowrap">
+                      <ProfileCell row={r} />
                     </TD>
                     <TD sticky="right" className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {isPlatformAdmin && (
-                          <Button variant="ghost" size="sm" onClick={() => setAssigning(c)}>
-                            <Briefcase className="mr-1 h-3.5 w-3.5" />
-                            {t.assignConsultancy}
-                          </Button>
-                        )}
-                        {/* O firmă dintr-un cabinet n-are abonament propriu: o plătește cabinetul. */}
-                        {isPlatformAdmin && !c.consultancyId && (
-                          <Button variant="ghost" size="sm" onClick={() => setBilling(c)}>
-                            <Receipt className="mr-1 h-3.5 w-3.5" />
-                            {strings.subscriptions.action}
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => openInvite(c)}>
-                          <UserPlus className="mr-1 h-3.5 w-3.5" />
-                          {t.invite}
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(r.company)}>
+                          {t.open}
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                          <Pencil className="mr-1 h-3.5 w-3.5" />
-                          {strings.common.edit}
-                        </Button>
+                        <Menu>
+                          {/* O firmă dintr-un cabinet n-are abonament propriu: o plătește cabinetul. */}
+                          {isPlatformAdmin && !r.company.consultancyId && (
+                            <MenuItem icon={Receipt} onClick={() => setBilling(r.company)}>
+                              {t.subscriptionAction}
+                            </MenuItem>
+                          )}
+                          {isPlatformAdmin && (
+                            <MenuItem icon={Briefcase} onClick={() => setAssigning(r.company)}>
+                              {t.assignConsultancy}
+                            </MenuItem>
+                          )}
+                          <MenuItem icon={UserPlus} onClick={() => openInvite(r.company)}>
+                            {t.invite}
+                          </MenuItem>
+                        </Menu>
                       </div>
                     </TD>
                   </TR>
@@ -854,7 +910,9 @@ export function ClientsPage() {
       {/* Inboxul cererilor publice și cabinetele sunt ale platformei; echipa, a consultantului. */}
       {isPlatformAdmin && (
         <>
-          <AccountRequestsSection enabled onOpenCompany={openCompanyById} />
+          <div id="cereri-de-cont">
+            <AccountRequestsSection enabled onOpenCompany={openCompanyById} />
+          </div>
           <ConsultanciesSection />
         </>
       )}
@@ -874,5 +932,176 @@ export function ClientsPage() {
         />
       )}
     </div>
+  );
+}
+
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function lei(n: number) {
+  return `${n.toLocaleString("ro-RO", { maximumFractionDigits: 2 })} lei`;
+}
+
+/** O cifră mare, în mono, ca pe afișaj. Sursa căzută arată „?”, nu „0”. */
+function Figure({ label, value, sub, tone }: { label: string; value: string; sub: string; tone?: "bad" }) {
+  return (
+    <Card data-figure={label}>
+      <div className="eyebrow">{label}</div>
+      <div
+        data-figure-value
+        className={`mt-2 font-mono text-2xl tabular-nums ${tone === "bad" ? "text-state-bad-text" : "text-content"}`}
+      >
+        {value}
+      </div>
+      <div className="mt-1 text-xs text-content-muted">{sub}</div>
+    </Card>
+  );
+}
+
+function ClientFigures({
+  rows,
+  overviewFailed,
+  invoices,
+  today,
+}: {
+  rows: ClientRow[];
+  overviewFailed: boolean;
+  invoices: ReturnType<typeof useAllInvoices> | null;
+  today: string;
+}) {
+  const active = rows.filter((r) => r.company.active).length;
+  const attention = rows.filter((r) => r.reasons.length > 0);
+  const failed = attention.filter((r) => r.reasons.includes("FAILED")).length;
+  const overdue = attention.filter((r) => r.reasons.includes("OVERDUE")).length;
+  const noUsers = attention.filter((r) => r.reasons.includes("NO_USERS")).length;
+  const m = invoices?.data ? money(invoices.data, today) : null;
+  const month = new Date(`${today}T12:00:00`).toLocaleString("ro-RO", { month: "long" });
+  const reasons = [
+    failed > 0 && countOf(failed, t.reasonFailedOne, t.reasonFailedMany),
+    overdue > 0 && countOf(overdue, t.reasonOverdueOne, t.reasonOverdueMany),
+    noUsers > 0 && `${noUsers} ${t.reasonNoUsers}`,
+  ].filter(Boolean);
+
+  return (
+    <div className={`mt-6 grid grid-cols-2 gap-3 ${invoices ? "lg:grid-cols-4" : ""}`} data-testid="client-figures">
+      <Figure label={t.statActive} value={String(active)} sub={t.statActiveSub.replace("{n}", String(rows.length))} />
+      {invoices && (
+        <Figure
+          label={t.statPaid.replace("{month}", month)}
+          value={m ? lei(m.paidTotal) : t.unknown}
+          sub={m && m.paidCount > 0 ? countOf(m.paidCount, t.statPaidOne, t.statPaidMany) : "—"}
+        />
+      )}
+      {invoices && (
+        <Figure
+          label={t.statDue}
+          value={m ? lei(m.dueTotal) : t.unknown}
+          sub={m && m.dueCount > 0 ? countOf(m.dueCount, t.statDueOne, t.statDueMany) : "—"}
+        />
+      )}
+      <Figure
+        label={t.statAttention}
+        value={overviewFailed ? t.unknown : String(attention.length)}
+        sub={overviewFailed ? "—" : reasons.length > 0 ? reasons.join(" · ") : t.statAttentionNone}
+        tone={attention.length > 0 && !overviewFailed ? "bad" : undefined}
+      />
+    </div>
+  );
+}
+
+function RequestsBand({ requests }: { requests: { status: string; companyName?: string }[] | undefined }) {
+  const fresh = (requests ?? []).filter((r) => r.status === "NEW");
+  if (fresh.length === 0) return null;
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-muted px-4 py-3 text-sm">
+      <span className="text-content">
+        <span className="font-semibold">{countOf(fresh.length, t.requestOne, t.requestMany)}</span>
+        {fresh.some((r) => r.companyName) && (
+          <span className="text-content-muted"> · {fresh.map((r) => r.companyName).filter(Boolean).join(", ")}</span>
+        )}
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => document.getElementById("cereri-de-cont")?.scrollIntoView({ behavior: "smooth" })}
+      >
+        {t.requestsSee}
+      </Button>
+    </div>
+  );
+}
+
+const SUBSCRIPTION_BADGE = {
+  PENDING: "warning",
+  ACTIVE: "success",
+  PAST_DUE: "danger",
+  READ_ONLY: "danger",
+  CANCELLED: "muted",
+} as const;
+
+function SubscriptionCell({ row }: { row: ClientRow }) {
+  const o = row.overview;
+  if (row.company.consultancyId) {
+    return (
+      <>
+        <Badge variant="muted">{t.paidByCabinet}</Badge>
+        <span className="block text-xs text-content-muted">{row.company.consultancyName}</span>
+      </>
+    );
+  }
+  if (!o) return <span className="text-content-subtle">{t.unknown}</span>;
+  if (!o.subscriptionStatus || !o.plan) return <Badge variant="muted">{t.noSubscription}</Badge>;
+  return (
+    <>
+      <Badge variant={SUBSCRIPTION_BADGE[o.subscriptionStatus]}>
+        {strings.subscriptions.status[o.subscriptionStatus]}
+      </Badge>
+      <span className="block text-xs text-content-muted">
+        {strings.subscriptions.plans[o.plan]}
+        {o.monthlyPrice != null && ` · ${lei(o.monthlyPrice)}`}
+      </span>
+    </>
+  );
+}
+
+function InvoiceCell({ row }: { row: ClientRow }) {
+  const i = row.overview?.lastInvoice;
+  if (!row.overview) return <span className="text-content-subtle">{t.unknown}</span>;
+  if (!i) return <span className="text-content-subtle">—</span>;
+  const [variant, label] =
+    i.status === "PAID"
+      ? (["success", t.invoicePaid] as const)
+      : row.failed
+        ? (["danger", t.invoiceFailed] as const)
+        : i.status === "DRAFT"
+          ? (["muted", t.invoiceDraft] as const)
+          : row.overdueDays > 0
+            ? (["danger", t.invoiceOverdue.replace("{days}", countOf(row.overdueDays, "zi", "zile"))] as const)
+            : (["warning", t.invoiceDue.replace("{date}", formatDate(i.dueDate).slice(0, 5))] as const);
+  return (
+    <>
+      <span className="font-mono text-sm text-content">
+        {i.number && `${i.number} · `}
+        {lei(i.total)}
+      </span>
+      <span className="block">
+        <Badge variant={variant}>{label}</Badge>
+      </span>
+      {row.failed && (
+        <span className="block max-w-[28ch] whitespace-normal text-xs text-state-bad-text">{i.lastError}</span>
+      )}
+    </>
+  );
+}
+
+function ProfileCell({ row }: { row: ClientRow }) {
+  if (row.cuiInvalid) return <Badge variant="danger">{t.profileCui}</Badge>;
+  if (row.gaps.length === 0) return <Badge variant="success">{t.profileComplete}</Badge>;
+  return (
+    <Tooltip content={t.profileGapsHint.replace("{fields}", row.gaps.map((g) => t.gapFields[g]).join(", "))}>
+      <Badge variant="warning">{countOf(row.gaps.length, t.profileGapOne, t.profileGapMany)}</Badge>
+    </Tooltip>
   );
 }
