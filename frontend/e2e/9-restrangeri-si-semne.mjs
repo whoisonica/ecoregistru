@@ -255,7 +255,7 @@ check("iar clicul chiar deschide documentul, pe anul lui",
 // Singurul dat personal al cuiva din afara firmei pe care aplicaţia îl ţine — şi singurul care se
 // tipăreşte. Nota stă în amândouă locurile unde chiar se tastează: „Şoferii noştri" din Setări şi
 // fişa partenerului. Un singur loc ar fi însemnat că jumătate din cei care scriu rubrica n-o văd.
-await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
+await page.goto(BASE + "/setari/soferi", { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
 const inSetari = await page.evaluate(() => {
   const sectiune = document.querySelector("#soferi");

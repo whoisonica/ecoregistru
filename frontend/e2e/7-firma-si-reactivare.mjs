@@ -22,7 +22,14 @@ function check(name, ok, detail = "") {
 // ------------------------------------------------------- DATELE FIRMEI ÎN SETĂRI
 // Un ADMIN de firmă nu-și vedea nicăieri CAEN-ul, autorizația sau persoana desemnată: toate se
 // editau doar din „Clienți", care e ecran de PLATFORM_ADMIN. Întrebarea n-avea unde primi răspuns.
+// Din 17.09.2026 Setările sunt o pagină de carduri, iar fiecare secțiune are pagina ei.
 await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
+await page.waitForTimeout(800);
+const carduri = await page.$$eval("main a[href^='/setari/']", (as) => as.map((a) => a.getAttribute("href")));
+// Nouă carduri pe firma demo (BOTH, admin): trei la Firma, două la Echipa, Șoferi + Flota, Prețuri + Sortimente.
+check("pagina de start are un card pe secțiune", carduri.length === 9, carduri.join(" "));
+await page.click("a[href='/setari/datele-firmei']");
+await page.waitForURL((u) => u.pathname === "/setari/datele-firmei", { timeout: 10000 }).catch(() => {});
 await page.waitForTimeout(800);
 
 check("secțiunea „Datele firmei” există", await visible(page, "#datele-firmei"));
@@ -46,29 +53,12 @@ check(
 );
 check("golurile se spun, nu se ascund", (firma?.text ?? "").includes("Necompletat"));
 
-// Cuprinsul: cinci secțiuni, dintre care patru tabele cu paginare. A cincea — „Utilizatorii
-// firmei" — a venit cu P1.12 și **apare doar pentru ADMIN / PLATFORM_ADMIN**, fiindcă endpointul
-// e 403 pentru ceilalți; proba rulează ca admin, deci o vede. Numărul e scris aici dinadins: un
-// `length > 0` ar fi trecut și dacă jumătate din cuprins dispărea.
-const cuprins = await page.$$eval("nav[aria-label] a[href^='#']", (as) =>
-  as.map((a) => ({ href: a.getAttribute("href"), text: a.textContent.trim() }))
-);
-// Șapte: „Jurnal de audit" (P1.11, 12.09) numai pentru cine îl poate citi, „Buletine de analiză"
-// (G-7) a ieșit pe 14.09.2026 odată cu buletinele, iar „Sortimente" (D1.6, 15.09.2026) apare doar la
-// firmele cu art. 48 — firma demo e BOTH, deci o are. Tot acolo, „Prețuri” (D1.8, 15.09.2026), „Flota”
-// (D2.1) și „Șoferii noștri” (D2.2, 16.09.2026), deci nouă. Proba rulează ca admin.
-check("pagina are cuprins", cuprins.length === 9, cuprins.map((c) => c.text).join(" · "));
-check(
-  "fiecare intrare din cuprins are ținta ei",
-  await page.evaluate((hrefs) => hrefs.every((h) => !!document.querySelector(h)),
-    cuprins.map((c) => c.href)),
-  cuprins.map((c) => c.href).join(" ")
-);
-
 // ------------------------------------------------------------------ REACTIVAREA
 // Prima greșeală era definitivă: un șofer scos din listă rămânea acolo, cu badge „Inactiv", și nu
 // se mai putea face nimic cu el. Proba face drumul întreg, ca să lase datele cum le-a găsit.
 const NUME = "Probă Reactivare " + Date.now();
+await page.goto(BASE + "/setari/soferi", { waitUntil: "networkidle" });
+await page.waitForTimeout(800);
 await page.click("#soferi button");           // „Adaugă șofer"
 await page.waitForTimeout(500);
 await page.fill("#d-name", NUME);
@@ -163,6 +153,8 @@ await shot(page, "setari_datele_firmei");
 // și tot ce era automat a rămas verde, fiindcă nicio probă nu apăsa butonul. Aceeași gaură ar fi
 // aici, unde fiecare stare are alt set de butoane și ele nu se pot vedea din tipuri.
 const EMAIL_PROBA = `proba.ui.${Date.now()}@client.ro`;
+await page.goto(BASE + "/setari/utilizatori", { waitUntil: "networkidle" });
+await page.waitForTimeout(800);
 await page.click("#utilizatori button");            // „Invită utilizator"
 await page.waitForTimeout(500);
 await page.fill("#cu-email", EMAIL_PROBA);

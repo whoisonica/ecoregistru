@@ -112,23 +112,24 @@ check(
 
 // --------------------------------------------------- Ecranul
 await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
+await page.waitForTimeout(900);
+const card = await page.$('a[href="/setari/jurnal-audit"]');
+check("Setările au cardul jurnalului", card !== null);
+await page.goto(BASE + "/setari/jurnal-audit", { waitUntil: "networkidle" });
 await page.waitForTimeout(1200);
 
 const screen = await page.evaluate(() => {
   const section = document.querySelector("#jurnal-audit");
   if (!section) return null;
-  const nav = [...document.querySelectorAll('a[href^="#"]')].map((a) => a.getAttribute("href"));
   return {
     titlu: section.querySelector("h2")?.textContent?.trim() ?? "",
     randuri: section.querySelectorAll("tbody tr").length,
     text: section.textContent.replace(/\s+/g, " "),
-    inCuprins: nav.includes("#jurnal-audit"),
   };
 });
 
 check("secţiunea există în Setări", screen !== null);
 if (screen) {
-  check("şi e în cuprinsul paginii", screen.inCuprins, JSON.stringify(screen.titlu));
   check("are rânduri", screen.randuri > 0, screen.randuri + " rânduri");
   check(
     "faptele sunt scrise în româneşte, nu ca în backend",
@@ -162,7 +163,11 @@ check("un operator primeşte uşa închisă, nu un tabel gol", asOperator === 40
 const operatorScreen = await (async () => {
   await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
-  return page.evaluate(() => document.querySelector("#jurnal-audit") !== null);
+  const hasCard = await page.$('a[href="/setari/jurnal-audit"]');
+  // Adresa scrisă de mână trimite înapoi la pagina de start, fără secțiune.
+  await page.goto(BASE + "/setari/jurnal-audit", { waitUntil: "networkidle" });
+  await page.waitForTimeout(900);
+  return hasCard !== null || (await page.$("#jurnal-audit")) !== null || new URL(page.url()).pathname !== "/setari";
 })();
 check("şi nu vede secţiunea deloc", operatorScreen === false);
 

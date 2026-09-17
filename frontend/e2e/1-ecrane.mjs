@@ -13,7 +13,8 @@ const SCREENS = [
   ["/termene", "Termene", "table"],
   ["/ambalaje", "Ambalaje", "table"],
   ["/dosar-control", "Dosar de control", "h1"],
-  ["/setari", "Setări", "table"],
+  ["/setari", "Setări", 'a[href="/setari/datele-firmei"]'],
+  ["/setari/puncte-de-lucru", "Setări · Puncte de lucru", "table"],
 ];
 
 // QA-TRACE punctul 18: agenţia se numeşte ANMAP din 11.07.2026 (Legea 26/2026 art. IV). Un şir de

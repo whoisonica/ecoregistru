@@ -316,8 +316,22 @@ export function SettingsPage() {
     return <Navigate to="/setari" replace />;
   }
 
+  // Titlul paginii e al secțiunii; vizibil îl spune deja capul cardului, aici e pentru cititorul de ecran.
+  const sectionTitle: Record<SectionId, string> = {
+    "datele-firmei": h.company,
+    "puncte-de-lucru": h.workPoints,
+    "generatori-interni": h.internalGenerators,
+    utilizatori: h.users,
+    "jurnal-audit": h.audit,
+    soferi: h.drivers,
+    flota: h.vehicles,
+    preturi: h.prices,
+    sortimente: h.articles,
+  };
+
   return (
     <div>
+      <h1 className="sr-only">{`${strings.settings.title} · ${sectionTitle[section as SectionId]}`}</h1>
       <Link
         to="/setari"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-content-muted hover:text-content"

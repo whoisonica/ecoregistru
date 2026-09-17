@@ -1,5 +1,11 @@
 # Probe de interfaţă
 
+⚙️ **17.09.2026 — Setările pe carduri**: `/setari` e o pagină de carduri pe grupuri, fiecare secțiune stă pe `/setari/<id>`
+(`datele-firmei`, `puncte-de-lucru`, `generatori-interni`, `utilizatori`, `jurnal-audit`, `soferi`, `flota`, `preturi`, `sortimente`).
+Proba 1 cere cardurile pe `/setari` și un tabel pe `/setari/puncte-de-lucru`; 7 numără nouă carduri la firma demo și intră pe
+paginile secțiunilor; 9, 15 și 22 merg direct pe `/setari/soferi` / `/setari/jurnal-audit` („Istoric” duce acolo cu `?istoric=`);
+20 și 21 rămân pe `/setari#flota` / `#soferi`, deci apără redirectul legăturilor vechi. **Negativă:** fără redirect, 21 cade.
+
 🆕 **17.09.2026 — proba 31 (`31-client-nou.mjs`), „Client nou” în pași (F-C)**: „Creează contul” pe o cerere duce la
 `/clienti/nou?cerere=` fără să creeze nimic; pașii au CUI-ul, numele, tipul și emailul din cerere; un CUI greșit oprește pasul 1;
 pasul 3 arată prețurile din grilă, prima factură 389 lei și adresa de la pasul 1, iar fără județ nu trece; la final rezumatul

@@ -57,10 +57,10 @@ if (menuBtn) {
   check("meniul are „Istoric”", (await istoric.count()) > 0);
   if ((await istoric.count()) > 0) {
     await istoric.click();
-    await page.waitForURL((u) => u.pathname === "/setari", { timeout: 10000 }).catch(() => {});
+    await page.waitForURL((u) => u.pathname === "/setari/jurnal-audit", { timeout: 10000 }).catch(() => {});
     await page.waitForTimeout(1200);
     const url = new URL(page.url());
-    check("duce în Setări, cu rândul în adresă", url.pathname === "/setari" && url.searchParams.get("istoric") === created,
+    check("duce în Setări, cu rândul în adresă", url.pathname === "/setari/jurnal-audit" && url.searchParams.get("istoric") === created,
       url.pathname + url.search);
     check("jurnalul spune că arată un singur rând", Boolean(await page.$('[data-testid="audit-one-row"]')));
     const labels = await page.$$eval("#jurnal-audit tbody tr", (trs) => trs.map((tr) => tr.textContent));
@@ -82,10 +82,9 @@ const size = await page.$eval('[data-testid="audit-file-size"]', (p) => p.textCo
 check("dosarul spune ce cântărește înainte de descărcare", Boolean(size) && /atașamente/.test(size), size ?? "lipsă");
 
 // ------------------------------------------------------------------- (4) ȘOFERII
-await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
+await page.goto(BASE + "/setari/soferi", { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 await page.evaluate(() => {
-  document.querySelector("#soferi")?.scrollIntoView();
   [...document.querySelectorAll("#soferi button")].find((b) => /Adaugă/.test(b.textContent))?.click();
 });
 await page.waitForTimeout(500);
