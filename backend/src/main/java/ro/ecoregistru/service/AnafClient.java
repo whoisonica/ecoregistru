@@ -1,6 +1,7 @@
 package ro.ecoregistru.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.ErrorMessageEnum;
@@ -147,6 +149,11 @@ public class AnafClient {
                     .body(List.of(Map.of("cui", Long.parseLong(cui), "data", LocalDate.now(clock).toString())))
                     .retrieve()
                     .body(JsonNode.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            // Un CUI pe care ANAF nu-l are vine pe HTTP 404, cu corpul obișnuit {"found":[],"notFound":[cui]}
+            // (verificat 17.09.2026). Citit ca eroare, spunea „Serviciul ANAF nu răspunde”. Un 404 fără listă
+            // (adresa schimbată) rămâne indisponibil, mai jos.
+            body = readQuietly(e.getResponseBodyAsString());
         } catch (RestClientException e) {
             // Includes the HTML "Request Rejected" page ANAF's firewall answers with, which is not JSON.
             log.warn("ANAF lookup failed: {}", e.getMessage());
@@ -173,6 +180,16 @@ public class AnafClient {
                 text(office, "sdenumire_Localitate"),
                 text(general, "stare_inregistrare"),
                 first.path("stare_inactiv").path("statusInactivi").asBoolean(false)));
+    }
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    private static JsonNode readQuietly(String text) {
+        try {
+            return text == null || text.isBlank() ? null : JSON.readTree(text);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static String text(JsonNode node, String field) {

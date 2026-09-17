@@ -2,6 +2,7 @@ package ro.ecoregistru.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
@@ -175,5 +177,30 @@ class AnafClientTest {
         assertThatThrownBy(() -> anaf.lookup("12345678")).isInstanceOf(ServiceUnavailableException.class);
         assertThatThrownBy(() -> anaf.lookup("12345678")).isInstanceOf(ServiceUnavailableException.class);
         server.verify();
+    }
+
+    /** Răspunsul real pentru un CUI inexistent (17.09.2026): HTTP 404, cu listele obișnuite. E „nu există”, nu „ANAF căzut”. */
+    @Test
+    void anUnknownCuiAnsweredWith404IsNotFoundNotUnavailable() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://anaf.test/api");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        AnafClient anaf = new AnafClient(builder.build(), 0, SEPT_15);
+        server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON).body("{\"found\":[],\"notFound\":[998877660]}"));
+
+        assertThat(anaf.lookup("998877660")).isEmpty();
+        server.verify();
+    }
+
+    /** Un 404 fără listele ANAF (adresa serviciului mutată) nu se citește ca „firmă inexistentă”. */
+    @Test
+    void a404WithoutTheListsIsStillUnavailable() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://anaf.test/api");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        AnafClient anaf = new AnafClient(builder.build(), 0, SEPT_15);
+        server.expect(requestTo(URL)).andRespond(withStatus(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.TEXT_HTML).body("<html>Not Found</html>"));
+
+        assertThatThrownBy(() -> anaf.lookup("998877660")).isInstanceOf(ServiceUnavailableException.class);
     }
 }
