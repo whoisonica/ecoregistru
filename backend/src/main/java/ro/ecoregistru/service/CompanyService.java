@@ -18,6 +18,7 @@ import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.util.Cui;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
@@ -258,12 +259,12 @@ public class CompanyService {
     }
 
     /**
-     * Normalizes a CUI to upper-case, no spaces, and validates its shape. Package-visible: a
-     * consultancy's CUI is the same kind of code ({@code ConsultancyService}).
+     * Normalizes a CUI to upper-case, no spaces, and validates its shape and control digit. Package-visible:
+     * a consultancy's CUI is the same kind of code ({@code ConsultancyService}).
      */
     static String normalizeCui(String raw) {
         String cui = raw == null ? "" : raw.replaceAll("\\s", "").toUpperCase();
-        if (!CUI_PATTERN.matcher(cui).matches()) {
+        if (!CUI_PATTERN.matcher(cui).matches() || !Cui.isValid(Cui.digits(cui))) {
             throw new BusinessException(INVALID_CUI);
         }
         return cui;

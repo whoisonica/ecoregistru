@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,7 +100,7 @@ class PriceVisibilityIT {
     @BeforeEach
     void setUp() {
         company = companyRepository.save(Company.builder()
-                .name("Prețuri " + suffix() + " SRL").cui("RO" + ThreadLocalRandom.current().nextInt(10_000_000, 99_999_999))
+                .name("Prețuri " + suffix() + " SRL").cui("RO" + TestCui.random())
                 .type(CompanyType.COLLECTOR).active(true).createdAt(Instant.now()).build());
         // Consultantul are cabinet, nu firmă, iar platforma n-are niciuna: nu se salvează. Serviciile
         // citesc doar rolul din principal.

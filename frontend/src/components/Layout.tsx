@@ -115,7 +115,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   /**
    * Cifrele 1–9, 0 deschid intrările meniului în ordinea afișată; S Setările când meniul trece de
-   * zece intrări; F și C grupul Cabinet. Apeluri fixe de hook, cu tasta ca argument: numărul de
+   * zece intrări; F, C și B grupul Cabinet. Apeluri fixe de hook, cu tasta ca argument: numărul de
    * hook-uri nu poate depinde de meniu.
    */
   const go = useCallback(
@@ -139,6 +139,7 @@ export function Layout({ children }: { children: ReactNode }) {
   useHotkey("s", () => go("S"), { enabled: nav.main.some((i) => i.hotkey === "S") });
   useHotkey("f", () => go("F"), { enabled: nav.cabinet.some((i) => i.hotkey === "F") });
   useHotkey("c", () => go("C"), { enabled: nav.cabinet.some((i) => i.hotkey === "C") });
+  useHotkey("b", () => go("B"), { enabled: nav.cabinet.some((i) => i.hotkey === "B") });
 
   // N / I / E: adaugă deșeuri, intrare, ieșire — pe ecranele care nu-și leagă singure tasta N.
   const canAdd = writable && Boolean(company);

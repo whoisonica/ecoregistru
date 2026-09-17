@@ -8,7 +8,7 @@
 // ⚠️ Formularul public **scrie** o cerere în baza de dev, cu un CUI unic la fiecare rulare. Nu
 // curăță după el: aprobarea ar crea o firmă, iar aplicația n-are ștergere de firmă. Rândurile
 // rămân în inboxul de dev, ceea ce e chiar util — ecranul are pe ce se uita.
-import { launch, newPage, login, shot, BASE } from "./lib.mjs";
+import { launch, newPage, login, shot, validCui, BASE } from "./lib.mjs";
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -63,9 +63,9 @@ await page.fill("#ar-address", "Str. Sediului nr. 1, Cluj-Napoca");
 await page.fill("#ar-caen", "1071");
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
-check("CUI-ul stricat se respinge cu forma cerută", /2–10 cifre/.test(await page.textContent("form")), "");
+check("CUI-ul stricat se respinge cu forma cerută", /cifra de control/.test(await page.textContent("form")), "");
 
-const cui = "RO" + String(Date.now()).slice(-8);
+const cui = validCui();
 await page.fill("#ar-cui", cui);
 await page.click(CONTINUE);
 await page.waitForTimeout(400);

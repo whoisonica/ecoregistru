@@ -10,6 +10,7 @@ import { useAssignConsultancy } from "@/hooks/useCompanies";
 import type { Company, Consultancy } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { isValidCui } from "@/lib/cui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CuiField } from "@/components/AnafLookup";
@@ -42,7 +43,7 @@ export function ConsultanciesSection() {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [cui, setCui] = useState("");
-  const [formError, setFormError] = useState<false | "name" | "cui">(false);
+  const [formError, setFormError] = useState<false | "name" | "cui" | "cuiInvalid">(false);
 
   const [inviting, setInviting] = useState<Consultancy | null>(null);
   const [billing, setBilling] = useState<Consultancy | null>(null);
@@ -71,6 +72,7 @@ export function ConsultanciesSection() {
     e.preventDefault();
     if (!name.trim()) return setFormError("name");
     if (!cui.trim()) return setFormError("cui");
+    if (!isValidCui(cui)) return setFormError("cuiInvalid");
     try {
       await createMut.mutateAsync({ name: name.trim(), cui: cui.trim() });
       notify(t.created, "success");
@@ -217,13 +219,15 @@ export function ConsultanciesSection() {
             value={cui}
             onChange={(v) => {
               setCui(v);
-              if (formError === "cui") setFormError(false);
+              if (formError === "cui" || formError === "cuiInvalid") setFormError(false);
             }}
             placeholder={t.cuiPlaceholder}
-            invalid={{ "aria-invalid": formError === "cui" }}
+            invalid={{ "aria-invalid": formError === "cui" || formError === "cuiInvalid" }}
             error={
-              formError === "cui" && (
-                <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+              (formError === "cui" || formError === "cuiInvalid") && (
+                <p className="mt-1 text-xs text-red-600">
+                  {formError === "cui" ? strings.common.requiredField : strings.common.cuiInvalid}
+                </p>
               )
             }
             targets={[

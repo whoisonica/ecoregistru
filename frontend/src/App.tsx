@@ -20,6 +20,7 @@ import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { BillingPage } from "@/pages/BillingPage";
+import { InvoicingPage } from "@/pages/InvoicingPage";
 import { ConsultancyOverviewPage } from "@/pages/ConsultancyOverviewPage";
 import { ImportPage } from "@/pages/ImportPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -118,6 +119,15 @@ export default function App() {
           />
           {/* Fără ruta asta, o adresă greșită nu randa nimic: pagină albă, fără meniu și fără
               mesaj, adică o aplicație care pare căzută pentru o literă în plus. */}
+          {/* F-A — facturile tuturor clienților; numai platforma, deci fără firmă aleasă. */}
+          <Route
+            path="/facturare"
+            element={
+              <AppShell needsTenant={false}>
+                <InvoicingPage />
+              </AppShell>
+            }
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>

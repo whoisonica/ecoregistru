@@ -44,7 +44,7 @@ public enum ErrorMessageEnum {
 
     // --- Company ---
     COMPANY_NOT_FOUND("company.not.found", "Firma nu a fost găsită."),
-    INVALID_CUI("company.cui.invalid", "CUI invalid. Introdu un cod fiscal valid (ex. RO12345678 sau 12345678)."),
+    INVALID_CUI("company.cui.invalid", "CUI-ul nu e valid: verifică cifrele, ultima e cifra de control și nu se potrivește. Se scrie cu sau fără RO."),
     COMPANY_CUI_ALREADY_EXISTS("company.cui.exists", "Există deja o firmă cu acest CUI."),
     // P2.13 — what a consultant is told instead of COMPANY_CUI_ALREADY_EXISTS. The firm may be a
     // client of another consultancy; the message must not say whose, and moving it is ours to do.
@@ -70,6 +70,10 @@ public enum ErrorMessageEnum {
     // F3 — cardul.
     SUBSCRIPTION_NOT_FOUND("subscription.not.found", "Contul ăsta n-are un abonament de plătit."),
     INVOICE_NOT_FOUND("invoice.not.found", "Factura nu a fost găsită."),
+    INVOICE_NOT_ISSUED("invoice.not.issued", "Plata se verifică doar pe o factură emisă și neplătită."),
+    INVOICE_NOT_DISCARDABLE("invoice.not.discardable", "Se poate renunța doar la o factură pe care FGO a refuzat-o. Una emisă rămâne în FGO."),
+    FGO_NOT_CONFIGURED("fgo.not.configured", "Facturarea e oprită: lipsesc cheile FGO pe server."),
+    FGO_UNAVAILABLE("fgo.unavailable", "FGO n-a răspuns acum. Încearcă din nou peste un minut."),
     INVOICE_NOT_PAYABLE("invoice.not.payable", "Factura e deja plătită sau nu e încă emisă."),
     CARD_PAYMENT_UNAVAILABLE("card.payment.unavailable", "Plata cu cardul nu e disponibilă acum. Poți plăti prin transfer, în contul de pe factură, sau încearcă mai târziu."),
     // F4, §9.3 — oprirea.

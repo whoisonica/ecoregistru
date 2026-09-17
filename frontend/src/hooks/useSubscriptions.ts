@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
   BillingAccount,
+  BillingInvoiceRow,
+  LastBillingRun,
   CardPaymentResult,
   PaymentMethod,
   BillingRunResult,
@@ -70,6 +72,47 @@ export function useRunBilling() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subscriptions"] });
     },
+  });
+}
+
+/** F-A — ultima rulare salvată; `null` înainte de prima. Numai platforma. */
+export function useLastBillingRun() {
+  return useQuery({
+    queryKey: ["subscriptions", "runs", "last"],
+    queryFn: async () => {
+      const res = await api.get<LastBillingRun>("/api/v1/subscriptions/billing/runs/last");
+      return res.status === 204 ? null : res.data;
+    },
+  });
+}
+
+/** F-A — facturile tuturor clienților, cele noi primele. */
+export function useAllInvoices() {
+  return useQuery({
+    queryKey: ["subscriptions", "invoices"],
+    queryFn: async () => (await api.get<BillingInvoiceRow[]>("/api/v1/subscriptions/invoices")).data,
+  });
+}
+
+/** F-A — „Verifică plata acum” pe o factură: FGO întrebat doar de ea. */
+export function useCheckInvoicePayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      await api.post(`/api/v1/subscriptions/invoices/${invoiceId}/check-payment`);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
+  });
+}
+
+/** F-A — „Oprește” pe o factură refuzată de FGO: pleacă ea și abonamentul ei. */
+export function useDiscardInvoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      await api.post(`/api/v1/subscriptions/invoices/${invoiceId}/discard`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscriptions"] }),
   });
 }
 

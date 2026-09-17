@@ -226,7 +226,7 @@ class DbConstraintsIT {
     }
 
     private static String randomCui() {
-        return "RO" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 8);
+        return "RO" + TestCui.random();
     }
 
     private static String randomEmail() {

@@ -512,7 +512,7 @@ class CompanyUsersIT {
         long n = Math.floorMod(UUID.randomUUID().getMostSignificantBits(), 100_000_000L);
         String body = objectMapper.writeValueAsString(Map.of(
                 "name", "Străină " + n + " SRL",
-                "cui", String.format("RO%08d", n),
+                "cui", "RO" + TestCui.random(),
                 "type", "GENERATOR",
                 "afmObligation", false));
         String created = mockMvc.perform(post("/api/v1/companies")

@@ -11,6 +11,7 @@ import ro.ecoregistru.controller.request.SubscriptionRequest;
 import ro.ecoregistru.controller.response.BillingAccessResponse;
 import ro.ecoregistru.controller.response.BillingResponse;
 import ro.ecoregistru.controller.response.CardPaymentResponse;
+import ro.ecoregistru.controller.response.BillingInvoiceRow;
 import ro.ecoregistru.controller.response.SubscriptionInvoiceResponse;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
 import ro.ecoregistru.entity.AppUser;
@@ -44,6 +45,7 @@ import java.util.UUID;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.INVOICE_NOT_DISCARDABLE;
 import static ro.ecoregistru.exception.ErrorMessageEnum.INVOICE_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_ALREADY_CANCELLED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND;
@@ -305,6 +307,44 @@ public class SubscriptionService {
                 s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices,
                 s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), netopia.isConfigured(),
                 s.getEndsOn(), readOnlyOn(s));
+    }
+
+    /** F-A — the Facturare screen: every invoice, newest first. */
+    @Transactional(readOnly = true)
+    public List<BillingInvoiceRow> allInvoices() {
+        return invoiceRepository.findAllWithPayer().stream().map(i -> {
+            Subscription s = i.getSubscription();
+            BillingRunService.Owner owner = BillingRunService.owner(s);
+            return new BillingInvoiceRow(i.getId(), BillingRunService.clientName(s), owner.kind(), owner.id(),
+                    s.getStatus(), i.getPeriodStart(), i.getPeriodEnd(), i.getTotal(), i.getStatus(), i.getDueDate(),
+                    i.getFgoSerie(), i.getFgoNumar(), i.getFgoLink(), i.getAmountPaid(), i.getLastError(),
+                    i.getIssuedAt(), i.getPaidAt(), i.getPaidBy(), i.getEmailedAt(), i.getOverdueMailedAt(),
+                    i.getPaymentCheckedAt());
+        }).toList();
+    }
+
+    /**
+     * F-A, „Oprește” on an invoice FGO refused: the reservation goes, and so does the subscription — a test client
+     * failed every morning at 06:30 (Transilvania ABC, 17.09.2026). Only a refused one: FGO answered, so nothing
+     * of it exists there. Without other invoices the subscription is deleted, the client back to not billed;
+     * with some, it is stopped the day before this period, so the run reserves nothing after it.
+     */
+    @Transactional
+    public void discardFailedInvoice(UUID invoiceId) {
+        SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new NotFoundException(INVOICE_NOT_FOUND));
+        if (invoice.getStatus() != InvoiceStatus.DRAFT || invoice.getLastError() == null) {
+            throw new UnprocessableEntityException(INVOICE_NOT_DISCARDABLE);
+        }
+        Subscription s = invoice.getSubscription();
+        invoiceRepository.delete(invoice);
+        invoiceRepository.flush();
+        if (!invoiceRepository.existsBySubscription_Id(s.getId())) {
+            subscriptionRepository.delete(s);
+            return;
+        }
+        s.setEndsOn(invoice.getPeriodStart().minusDays(1));
+        s.setStatus(SubscriptionStatus.CANCELLED);
     }
 
     @Transactional(readOnly = true)

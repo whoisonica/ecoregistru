@@ -5,7 +5,9 @@ backend/bin/
 *.class
 
 # Node / Vite
-frontend/node_modules/
+# Fără „/” la capăt: un worktree își leagă node_modules cu un symlink, iar `node_modules/` nu-l prinde
+# (commitul 198616e l-a pus în git, iar checkoutul a înlocuit dosarul real cu un link care nu duce nicăieri).
+frontend/node_modules
 frontend/dist/
 frontend/.vite/
 

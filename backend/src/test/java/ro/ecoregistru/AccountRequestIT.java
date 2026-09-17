@@ -216,11 +216,23 @@ class AccountRequestIT {
 
     /** A CUI unique per run: the company created on approval has to be new every time. */
     private String digits() {
-        return String.valueOf(Math.abs(UUID.randomUUID().getLeastSignificantBits() % 100_000_000L));
+        return TestCui.random();
     }
 
     private MockHttpServletRequestBuilder submission(String name, String cui, String type) {
         return submission(name, cui, type, null);
+    }
+
+    /** F-A: a CUI wrong by one digit is refused at the door, not at approval or at the first FGO invoice. */
+    @Test
+    void aCuiWithAWrongControlDigitIsRefused() throws Exception {
+        String cui = TestCui.random();
+        String wrong = cui.substring(0, 7) + (char) ('0' + (cui.charAt(7) - '0' + 1) % 10);
+        mockMvc.perform(submission("Cifra Gresita SRL", "RO" + wrong, "GENERATOR"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("company.cui.invalid")));
+        assertThat(accountRequestRepository.findAllByOrderByCreatedAtDesc())
+                .noneMatch(r -> r.getCui().equals("RO" + wrong));
     }
 
     /** {@code website} is the honeypot; {@code null} omits it, which is what a real form sends. */

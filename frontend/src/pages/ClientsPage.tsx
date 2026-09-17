@@ -30,6 +30,7 @@ import {
 import { AccountRequestsSection } from "@/components/AccountRequestsSection";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { isValidCui } from "@/lib/cui";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
@@ -112,7 +113,7 @@ export function ClientsPage() {
   const [constructionPermitHolder, setConstructionPermitHolder] = useState<"" | "yes" | "no">("");
   // The answers from the client's intake form. Empty is a valid answer: nothing is narrowed.
   const [profile, setProfile] = useState<CompanyProfileValue>(emptyCompanyProfile);
-  const [formError, setFormError] = useState<false | "name" | "cui">(false);
+  const [formError, setFormError] = useState<false | "name" | "cui" | "cuiInvalid">(false);
 
   // --- invite-user dialog ---
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -234,6 +235,10 @@ export function ClientsPage() {
     }
     if (!cui.trim()) {
       setFormError("cui");
+      return;
+    }
+    if (!isValidCui(cui)) {
+      setFormError("cuiInvalid");
       return;
     }
     const input: CompanyInput = {
@@ -476,12 +481,14 @@ export function ClientsPage() {
                   value={cui}
                   onChange={(v) => {
                     setCui(v);
-                    if (formError === "cui") setFormError(false);
+                    if (formError === "cui" || formError === "cuiInvalid") setFormError(false);
                   }}
                   placeholder={t.cuiPlaceholder}
                   error={
-                    formError === "cui" && (
-                      <p className="mt-1 text-xs text-red-600">{strings.common.requiredField}</p>
+                    (formError === "cui" || formError === "cuiInvalid") && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {formError === "cui" ? strings.common.requiredField : strings.common.cuiInvalid}
+                      </p>
                     )
                   }
                   targets={[

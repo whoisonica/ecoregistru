@@ -1,5 +1,14 @@
 # Probe de interfaţă
 
+🧾 **17.09.2026 — proba 29 (`29-facturare.mjs`), ecranul „Facturare” (F-A)**: tasta B îl deschide pentru platformă; ultima
+rulare numește firma căzută, motivul („CUI-ul … nu e valid”) și factura plătită; filtrele Căzute / Restante / Plătite / Toate
+arată exact facturile lor; „Verifică plata” fără cheile FGO spune „lipsesc cheile FGO” și nu marchează nimic; „Corectează”
+deschide abonamentul, fără butonul vechi de rulare; „Oprește” scoate factura căzută și abonamentul, iar rândul din rulare rămâne
+fără butoane; 375px fără derulare laterală; administratorul firmei n-are intrarea și primește 403. **Facturile se scriu cu `psql`**
+în baza locală (`E2E_DB`, implicit `ecoregistru`, ca în CI), fiindcă FGO n-are chei în dev. **Negative:** fără `hotkey: "B"` cade
+tasta; fără `stillFailed` cad butoanele rândului din rulare. Lasă în urmă firma „Proba 29 A <număr>” cu două facturi.
+Din aceeași felie, CUI-ul are cifra de control: probele 6, 12 și 24 folosesc `validCui()` din `lib.mjs`.
+
 📅 **17.09.2026 — proba 28 (`28-fisa-de-cantarit.mjs`) și proba 10 în kg**: pe Evidențe, cu o predare „de cântărit” în an
 (firma demo, plastic pe 22 iulie), nota apare **înainte** de clic și numără liniile; butonul fișei deschide dialogul cu numele
 documentului în titlu („Evidența gestiunii deșeurilor generate: lipsesc cantități”), fără clase `amber-*`, iar „Descarcă oricum”

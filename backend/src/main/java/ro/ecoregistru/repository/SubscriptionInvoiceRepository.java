@@ -19,6 +19,11 @@ public interface SubscriptionInvoiceRepository extends JpaRepository<Subscriptio
 
     List<SubscriptionInvoice> findAllBySubscription_IdOrderByPeriodStartDesc(UUID subscriptionId);
 
+    /** F-A — every client's invoices for the Facturare screen, the payer fetched with them (no N+1). */
+    @Query("select i from SubscriptionInvoice i join fetch i.subscription s left join fetch s.company"
+            + " left join fetch s.consultancy order by i.createdAt desc")
+    List<SubscriptionInvoice> findAllWithPayer();
+
     @Query("select i.id from SubscriptionInvoice i where i.status = :status order by i.createdAt")
     List<UUID> findIdsByStatus(@Param("status") InvoiceStatus status);
 

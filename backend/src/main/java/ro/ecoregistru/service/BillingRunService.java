@@ -9,16 +9,23 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import ro.ecoregistru.entity.BillingRun;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Subscription;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.SubscriptionStatus;
+import ro.ecoregistru.exception.ErrorMessageEnum;
+import ro.ecoregistru.exception.NotFoundException;
+import ro.ecoregistru.exception.ServiceUnavailableException;
+import ro.ecoregistru.exception.UnprocessableEntityException;
+import ro.ecoregistru.repository.BillingRunRepository;
 import ro.ecoregistru.repository.SubscriptionInvoiceRepository;
 import ro.ecoregistru.repository.SubscriptionRepository;
 import ro.ecoregistru.service.notification.BillingReminder;
 import ro.ecoregistru.service.notification.NotificationService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -26,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -64,16 +72,27 @@ public class BillingRunService {
     /**
      * {@code failures} and {@code notStarted} are for whoever pressed the button: „1 căzute" was another
      * company's missing address, and a subscription starting next week was simply absent from the counts.
+     * The issued and paid invoices are named too, since the Facturare screen lists the run row by row.
      */
     public record Result(boolean configured, int reserved, int issued, int failed, int paid,
-                         List<Failure> failures, List<NotStarted> notStarted) {}
+                         List<Failure> failures, List<NotStarted> notStarted,
+                         List<Done> issuedInvoices, List<Done> paidInvoices) {}
 
-    public record Failure(String client, String reason) {}
+    /** Who pays, as the Clients screen opens it: {@code company} or {@code consultancy}. */
+    public record Owner(String kind, UUID id) {}
 
-    public record NotStarted(String client, LocalDate startsOn) {}
+    /** What trying to issue one invoice came to. */
+    sealed interface IssueOutcome permits Done, Failure {}
+
+    public record Failure(UUID invoiceId, Owner owner, String client, String reason) implements IssueOutcome {}
+
+    public record NotStarted(Owner owner, String client, LocalDate startsOn) {}
+
+    public record Done(UUID invoiceId, String client, String number, BigDecimal total) implements IssueOutcome {}
 
     SubscriptionRepository subscriptionRepository;
     SubscriptionInvoiceRepository invoiceRepository;
+    BillingRunRepository billingRunRepository;
     SubscriptionService subscriptionService;
     NotificationService notificationService;
     FgoClient fgo;
@@ -81,23 +100,29 @@ public class BillingRunService {
     TransactionTemplate tx;
     ObjectMapper objectMapper;
 
+    /** The 06:30 run. */
     public Result run(LocalDate today) {
+        return run(today, BillingRun.Kind.SCHEDULED, null);
+    }
+
+    /** Saved once it ends (V63), except without FGO keys, when nothing was run. */
+    public Result run(LocalDate today, BillingRun.Kind kind, UUID triggeredBy) {
         if (!fgo.isConfigured()) {
             log.warn("Facturarea abonamentelor e oprită: lipsesc FGO_COD_UNIC, FGO_PRIVATE_KEY sau FGO_SERIE.");
-            return new Result(false, 0, 0, 0, 0, List.of(), List.of());
+            return new Result(false, 0, 0, 0, 0, List.of(), List.of(), List.of(), List.of());
         }
+        Instant startedAt = Instant.now();
         int reserved = tx.execute(status -> reserveDue(today));
 
-        int issued = 0;
+        List<Done> issuedInvoices = new ArrayList<>();
         List<Failure> failures = new ArrayList<>();
         for (UUID id : invoiceRepository.findIdsByStatus(InvoiceStatus.DRAFT)) {
-            Failure failure = issue(id, today);
-            if (failure == null) {
-                issued++;
-            } else {
-                failures.add(failure);
+            switch (issue(id, today)) {
+                case Done done -> issuedInvoices.add(done);
+                case Failure failure -> failures.add(failure);
             }
         }
+        int issued = issuedInvoices.size();
         int failed = failures.size();
 
         for (UUID id : invoiceRepository.findIdsToEmail()) {
@@ -107,12 +132,11 @@ public class BillingRunService {
         cardPayments.debitSavedCards(today);
         cardPayments.recordCardPaymentsInFgo();
 
-        int paid = 0;
+        List<Done> paidInvoices = new ArrayList<>();
         for (UUID id : invoiceRepository.findIdsByStatus(InvoiceStatus.ISSUED)) {
-            if (readPayment(id)) {
-                paid++;
-            }
+            readPayment(id).ifPresent(paidInvoices::add);
         }
+        int paid = paidInvoices.size();
 
         tx.executeWithoutResult(status -> updateStatuses(today));
         for (UUID id : invoiceRepository.findIdsOverdue(InvoiceStatus.ISSUED, today)) {
@@ -120,13 +144,71 @@ public class BillingRunService {
         }
         List<NotStarted> notStarted = tx.execute(status -> subscriptionRepository
                 .findAllByStatusNotAndStartedAtAfter(SubscriptionStatus.CANCELLED, today).stream()
-                .map(s -> new NotStarted(clientName(s), s.getStartedAt()))
+                .map(s -> new NotStarted(owner(s), clientName(s), s.getStartedAt()))
                 .toList());
-        Result result = new Result(true, reserved, issued, failed, paid, failures, notStarted);
+        Result result = new Result(true, reserved, issued, failed, paid, failures, notStarted,
+                issuedInvoices, paidInvoices);
         if (reserved + issued + failed + paid > 0) {
             log.info("Facturarea abonamentelor, {}: {}", today, result);
         }
+        save(result, startedAt, kind, triggeredBy);
         return result;
+    }
+
+    /** The last run, as it was saved; empty before the first one. */
+    public Optional<LastRun> lastRun() {
+        return billingRunRepository.findFirstByOrderByStartedAtDesc().map(r -> {
+            try {
+                return new LastRun(r.getStartedAt(), r.getFinishedAt(), r.getKind(),
+                        objectMapper.readValue(r.getResultJson(), Result.class));
+            } catch (JsonProcessingException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    public record LastRun(Instant startedAt, Instant finishedAt, BillingRun.Kind kind, Result result) {}
+
+    /** A run that could not be saved still ran: the invoices are in FGO and in their own rows. */
+    private void save(Result result, Instant startedAt, BillingRun.Kind kind, UUID triggeredBy) {
+        try {
+            billingRunRepository.save(BillingRun.builder()
+                    .startedAt(startedAt)
+                    .finishedAt(Instant.now())
+                    .kind(kind)
+                    .triggeredBy(triggeredBy)
+                    .resultJson(objectMapper.writeValueAsString(result))
+                    .build());
+        } catch (RuntimeException | JsonProcessingException e) {
+            log.error("Rezultatul facturării n-a putut fi salvat: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * „Verifică plata acum” on one issued invoice, instead of the whole run. The subscription's status is read
+     * again at once: a paid invoice lifts PAST_DUE without waiting for 06:30.
+     */
+    public void checkPayment(UUID invoiceId, LocalDate today) {
+        if (!fgo.isConfigured()) {
+            throw new ServiceUnavailableException(ErrorMessageEnum.FGO_NOT_CONFIGURED);
+        }
+        SubscriptionInvoice snapshot = tx.execute(status -> invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.INVOICE_NOT_FOUND)));
+        if (snapshot.getStatus() != InvoiceStatus.ISSUED) {
+            throw new UnprocessableEntityException(ErrorMessageEnum.INVOICE_NOT_ISSUED);
+        }
+        FgoClient.Status status;
+        try {
+            status = fgo.status(snapshot.getFgoSerie(), snapshot.getFgoNumar());
+        } catch (RuntimeException e) {
+            log.warn("Plata facturii {} n-a putut fi citită din FGO: {}", invoiceId, e.getMessage());
+            throw new ServiceUnavailableException(ErrorMessageEnum.FGO_UNAVAILABLE);
+        }
+        tx.executeWithoutResult(t -> {
+            SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
+            recordPayment(invoice, status);
+            subscriptionService.refreshStatus(invoice.getSubscription(), today);
+        });
     }
 
     private int reserveDue(LocalDate today) {
@@ -157,8 +239,8 @@ public class BillingRunService {
 
     private record Draft(FgoClient.Buyer buyer, List<BillingCalculator.Line> lines, String explanation) {}
 
-    /** Null once issued; otherwise who could not be invoiced and why, the same reason kept on the row. */
-    private Failure issue(UUID invoiceId, LocalDate today) {
+    /** A {@link Done} once issued; otherwise the {@link Failure}: who, and why, the same reason kept on the row. */
+    private IssueOutcome issue(UUID invoiceId, LocalDate today) {
         try {
             Draft draft = tx.execute(status -> {
                 SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
@@ -169,7 +251,7 @@ public class BillingRunService {
             LocalDate due = today.plusDays(PAYMENT_TERM_DAYS);
             FgoClient.Issued issued = fgo.emit(invoiceId.toString(), draft.buyer(), draft.lines(), today, due,
                     draft.explanation());
-            tx.executeWithoutResult(status -> {
+            return tx.execute(status -> {
                 SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
                 invoice.setStatus(InvoiceStatus.ISSUED);
                 invoice.setFgoSerie(issued.serie());
@@ -179,20 +261,34 @@ public class BillingRunService {
                 invoice.setDueDate(due);
                 invoice.setIssuedAt(Instant.now());
                 invoice.setLastError(null);
+                return new Done(invoiceId, draft.buyer().name(), issued.serie() + " " + issued.numar(),
+                        invoice.getTotal());
             });
-            return null;
         } catch (RuntimeException e) {
             log.error("Factura {} n-a putut fi emisă în FGO: {}", invoiceId, e.getMessage());
             String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            String reason = message.length() > 1000 ? message.substring(0, 1000) : message;
-            String client = tx.execute(status -> invoiceRepository.findById(invoiceId)
+            return tx.execute(status -> invoiceRepository.findById(invoiceId)
                     .map(invoice -> {
+                        String reason = reasonFor(message, invoice.getSubscription());
                         invoice.setLastError(reason);
-                        return clientName(invoice.getSubscription());
+                        Subscription s = invoice.getSubscription();
+                        return new Failure(invoiceId, owner(s), clientName(s), reason);
                     })
-                    .orElse("?"));
-            return new Failure(client, reason);
+                    .orElse(new Failure(invoiceId, null, "?", message)));
         }
+    }
+
+    /**
+     * FGO's refusals, in words the platform can act on. Only the ones seen on the test account are translated
+     * (17.09.2026); anything else is kept as FGO said it, which is still better than a guess.
+     */
+    static String reasonFor(String message, Subscription s) {
+        String reason = message;
+        if (message.contains("CodUnic")) {
+            String cui = s.getCompany() != null ? s.getCompany().getCui() : s.getConsultancy().getCui();
+            reason = "CUI-ul „" + cui + "” nu e valid: FGO nu-l acceptă. Corectează CUI-ul în fișa firmei.";
+        }
+        return reason.length() > 1000 ? reason.substring(0, 1000) : reason;
     }
 
     private record Notice(SubscriptionInvoice invoice, String clientName, String to) {}
@@ -220,24 +316,34 @@ public class BillingRunService {
         }
     }
 
-    private boolean readPayment(UUID invoiceId) {
+    /** The invoice, once FGO says it is paid. */
+    private Optional<Done> readPayment(UUID invoiceId) {
         try {
             SubscriptionInvoice snapshot = invoiceRepository.findById(invoiceId).orElseThrow();
             FgoClient.Status status = fgo.status(snapshot.getFgoSerie(), snapshot.getFgoNumar());
-            return Boolean.TRUE.equals(tx.execute(t -> {
+            return Optional.ofNullable(tx.execute(t -> {
                 SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
-                invoice.setAmountPaid(status.paid());
-                if (!status.isPaid()) {
-                    return false;
-                }
-                invoice.setStatus(InvoiceStatus.PAID);
-                invoice.setPaidAt(Instant.now());
-                return true;
+                return recordPayment(invoice, status)
+                        ? new Done(invoiceId, clientName(invoice.getSubscription()),
+                                invoice.getFgoSerie() + " " + invoice.getFgoNumar(), invoice.getTotal())
+                        : null;
             }));
         } catch (RuntimeException e) {
             log.warn("Plata facturii {} n-a putut fi citită din FGO: {}", invoiceId, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /** True when this answer is what made it paid. Needs a transaction. */
+    private static boolean recordPayment(SubscriptionInvoice invoice, FgoClient.Status status) {
+        invoice.setAmountPaid(status.paid());
+        invoice.setPaymentCheckedAt(Instant.now());
+        if (!status.isPaid()) {
             return false;
         }
+        invoice.setStatus(InvoiceStatus.PAID);
+        invoice.setPaidAt(Instant.now());
+        return true;
     }
 
     private void updateStatuses(LocalDate today) {
@@ -318,6 +424,11 @@ public class BillingRunService {
         String cui = company != null ? company.getCui() : s.getConsultancy().getCui();
         return new FgoClient.Buyer(clientName(s), cui, recipient(s), s.getBillingCounty(), s.getBillingCity(),
                 s.getBillingAddress());
+    }
+
+    static Owner owner(Subscription s) {
+        return s.getCompany() != null ? new Owner("company", s.getCompany().getId())
+                : new Owner("consultancy", s.getConsultancy().getId());
     }
 
     /** The direct company or the cabinet. Needs an open transaction: the owner is lazy. */

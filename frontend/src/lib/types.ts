@@ -354,14 +354,63 @@ export interface SubscriptionInput {
 }
 
 /** Mirrors backend BillingRunService.Result. */
+/** Mirrors backend BillingRunService.Owner: cine plătește, cum se deschide abonamentul lui. */
+export interface BillingOwnerRef {
+  kind: "company" | "consultancy";
+  id: string;
+}
+
+export interface BillingRunDone {
+  invoiceId: string;
+  client: string;
+  /** „WH 14”. */
+  number: string;
+  total: number;
+}
+
 export interface BillingRunResult {
   configured: boolean;
   reserved: number;
   issued: number;
   failed: number;
   paid: number;
-  failures: { client: string; reason: string }[];
-  notStarted: { client: string; startsOn: string }[];
+  failures: { invoiceId: string; owner: BillingOwnerRef | null; client: string; reason: string }[];
+  notStarted: { owner: BillingOwnerRef; client: string; startsOn: string }[];
+  issuedInvoices: BillingRunDone[];
+  paidInvoices: BillingRunDone[];
+}
+
+/** Mirrors backend BillingRunService.LastRun (V63): ultima rulare, cea de la 06:30 sau un clic. */
+export interface LastBillingRun {
+  startedAt: string;
+  finishedAt: string;
+  kind: "SCHEDULED" | "MANUAL";
+  result: BillingRunResult;
+}
+
+/** Mirrors backend BillingInvoiceRow: o factură a oricărui client, pe ecranul Facturare. */
+export interface BillingInvoiceRow {
+  id: string;
+  client: string;
+  ownerKind: "company" | "consultancy";
+  ownerId: string;
+  subscriptionStatus: SubscriptionStatus;
+  periodStart: string;
+  periodEnd: string;
+  total: number;
+  status: InvoiceStatus;
+  dueDate: string | null;
+  fgoSerie: string | null;
+  fgoNumar: string | null;
+  fgoLink: string | null;
+  amountPaid: number | null;
+  lastError: string | null;
+  issuedAt: string | null;
+  paidAt: string | null;
+  paidBy: PaymentMethod | null;
+  emailedAt: string | null;
+  overdueMailedAt: string | null;
+  paymentCheckedAt: string | null;
 }
 
 /**

@@ -26,7 +26,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -490,7 +489,7 @@ class ConsultantAccessIT {
 
     /** CUI-ul trece prin validarea de format la creare, deci numai cifre. */
     private static String digitsCui() {
-        return "RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L);
+        return "RO" + TestCui.random();
     }
 
     private static String suffix() {

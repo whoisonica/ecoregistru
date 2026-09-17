@@ -172,7 +172,7 @@ class DeadlineIT {
     void creatingACompanyBringsItsUpcomingDeadlines() throws Exception {
         String platform = jwtService.generateToken(
                 appUserRepository.findByEmail("platform@ecoregistru.ro").orElseThrow());
-        String cui = "RO" + (10_000_000 + new java.util.Random().nextInt(89_999_999));
+        String cui = "RO" + TestCui.random();
         mockMvc.perform(post("/api/v1/companies")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Termene noi SRL\",\"cui\":\"" + cui

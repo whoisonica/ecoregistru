@@ -6,13 +6,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.SubscriptionRequest;
+import ro.ecoregistru.controller.response.BillingInvoiceRow;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
+import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.BillingRun;
 import ro.ecoregistru.service.BillingRunService;
 import ro.ecoregistru.service.SubscriptionService;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -107,8 +112,38 @@ public class SubscriptionController {
      */
     @PostMapping("/billing/run")
     @PreAuthorize(PLATFORM_ONLY)
-    public BillingRunService.Result runBilling() {
-        return billingRunService.run(LocalDate.now(BillingRunService.ZONE));
+    public BillingRunService.Result runBilling(@AuthenticationPrincipal AppUser user) {
+        return billingRunService.run(LocalDate.now(BillingRunService.ZONE), BillingRun.Kind.MANUAL, user.getId());
+    }
+
+    /** F-A — the last run, the 06:30 one or a button press, row by row. 204 before the first. */
+    @GetMapping("/billing/runs/last")
+    @PreAuthorize(PLATFORM_ONLY)
+    public ResponseEntity<BillingRunService.LastRun> lastRun() {
+        return billingRunService.lastRun().map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /** F-A — every client's invoices, for the Facturare screen. */
+    @GetMapping("/invoices")
+    @PreAuthorize(PLATFORM_ONLY)
+    public List<BillingInvoiceRow> invoices() {
+        return subscriptionService.allInvoices();
+    }
+
+    /** F-A — FGO asked about one invoice now, not at the next run. */
+    @PostMapping("/invoices/{id}/check-payment")
+    @PreAuthorize(PLATFORM_ONLY)
+    public ResponseEntity<Void> checkPayment(@PathVariable UUID id) {
+        billingRunService.checkPayment(id, LocalDate.now(BillingRunService.ZONE));
+        return ResponseEntity.noContent().build();
+    }
+
+    /** F-A — „Oprește” on an invoice FGO refused: the reservation and its subscription go. */
+    @PostMapping("/invoices/{id}/discard")
+    @PreAuthorize(PLATFORM_ONLY)
+    public ResponseEntity<Void> discard(@PathVariable UUID id) {
+        subscriptionService.discardFailedInvoice(id);
+        return ResponseEntity.noContent().build();
     }
 
     private static ResponseEntity<SubscriptionResponse> orNoContent(Optional<SubscriptionResponse> s) {

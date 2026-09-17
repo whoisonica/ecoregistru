@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import {
   useCancelSubscription,
   useDeleteSubscription,
   useFounderCount,
-  useRunBilling,
   useSaveSubscription,
   useSubscription,
 } from "@/hooks/useSubscriptions";
@@ -13,6 +13,7 @@ import type {
   SubscriptionInvoice,
   SubscriptionOwner,
   SubscriptionPlan,
+  SubscriptionStatus,
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -38,6 +39,15 @@ const COUNTIES = [
   "Maramures", "Mehedinti", "Mures", "Neamt", "Olt", "Prahova", "Salaj", "Satu Mare", "Sibiu",
   "Suceava", "Teleorman", "Timis", "Tulcea", "Valcea", "Vaslui", "Vrancea",
 ];
+
+/** Ca pe `/abonament`: „Activ” era galben, ca o așteptare (P7 din todo-clienti-abonamente.md). */
+const STATUS_BADGE: Record<SubscriptionStatus, "muted" | "warning" | "success" | "danger"> = {
+  PENDING: "warning",
+  ACTIVE: "success",
+  PAST_DUE: "danger",
+  READ_ONLY: "danger",
+  CANCELLED: "muted",
+};
 
 const INVOICE_BADGE: Record<InvoiceStatus, "muted" | "warning" | "success"> = {
   DRAFT: "muted",
@@ -73,7 +83,6 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
   const { data: founderCount } = useFounderCount();
   const saveMut = useSaveSubscription(owner);
   const deleteMut = useDeleteSubscription(owner);
-  const runMut = useRunBilling();
   const cancelMut = useCancelSubscription(owner);
   const [confirm, confirmDialog] = useConfirm();
   const { notify } = useToast();
@@ -94,7 +103,7 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
   const currentCounty = billingCounty ?? subscription?.billingCounty ?? "";
   const currentCity = billingCity ?? subscription?.billingCity ?? "";
   const currentAddress = billingAddress ?? subscription?.billingAddress ?? "";
-  const busy = saveMut.isPending || deleteMut.isPending || runMut.isPending || cancelMut.isPending;
+  const busy = saveMut.isPending || deleteMut.isPending || cancelMut.isPending;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -157,32 +166,6 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
     }
   }
 
-  async function handleRunBilling() {
-    try {
-      const result = await runMut.mutateAsync();
-      if (!result.configured) {
-        notify(t.runBillingOff, "error");
-        return;
-      }
-      // Firma și motivul, nu doar cifra: „1 căzute" din testul de pe 15.09 era altă firmă.
-      notify(
-        [
-          t.runBillingDone
-            .replace("{issued}", String(result.issued))
-            .replace("{failed}", String(result.failed))
-            .replace("{paid}", String(result.paid)),
-          ...result.failures.map((f) => t.runBillingFailure.replace("{client}", f.client).replace("{reason}", f.reason)),
-          ...result.notStarted.map((n) =>
-            t.runBillingNotStarted.replace("{client}", n.client).replace("{date}", formatDate(n.startsOn))
-          ),
-        ].join("\n"),
-        result.failed > 0 ? "error" : "success"
-      );
-    } catch (err) {
-      notify(apiErrorMessage(err, t.runBillingError), "error");
-    }
-  }
-
   return (
     <Dialog
       open
@@ -221,7 +204,7 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
           <div className="flex flex-wrap items-center gap-2">
             {subscription ? (
               <>
-                <Badge variant="warning">{t.status[subscription.status]}</Badge>
+                <Badge variant={STATUS_BADGE[subscription.status]}>{t.status[subscription.status]}</Badge>
                 {subscription.endsOn && (
                   <Badge variant="muted">{t.endsOn.replace("{date}", formatDate(subscription.endsOn))}</Badge>
                 )}
@@ -351,9 +334,10 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-medium text-content-strong">{t.invoices}</span>
-                <Button type="button" variant="outline" onClick={handleRunBilling} disabled={busy}>
-                  {t.runBilling}
-                </Button>
+                {/* F-A: rularea e a tuturor clienților, deci stă pe ecranul Facturare, nu aici. */}
+                <Link to="/facturare" className="text-xs font-semibold text-brand-700 hover:underline">
+                  {t.toInvoicing}
+                </Link>
               </div>
               {subscription.invoices.length === 0 ? (
                 <p className="text-sm text-content-muted">{t.noInvoices}</p>

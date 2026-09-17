@@ -88,4 +88,7 @@ public class SubscriptionInvoice {
 
     @Column(nullable = false)
     Instant createdAt;
+
+    /** V63 — the last time FGO answered whether it was paid: „verificat la 10:29”. */
+    Instant paymentCheckedAt;
 }

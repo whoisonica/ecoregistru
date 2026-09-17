@@ -11,6 +11,7 @@ import {
   Home,
   Package,
   Receipt,
+  ReceiptText,
   Scale,
   Settings,
   Users,
@@ -134,6 +135,16 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
       icon: Building2,
       keywords: strings.nav.kwClients,
       hotkey: "C",
+    });
+  }
+  // F-A, 17.09.2026: facturile tuturor clienților. B, fiindcă F e „Firmele mele” la consultant.
+  if (role === "PLATFORM_ADMIN") {
+    cabinet.push({
+      to: "/facturare",
+      label: strings.nav.invoicing,
+      icon: ReceiptText,
+      keywords: strings.nav.kwInvoicing,
+      hotkey: "B",
     });
   }
 

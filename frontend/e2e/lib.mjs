@@ -187,3 +187,16 @@ export async function clickAt(page, selector) {
   if (box.acoperit) throw new Error("ținta e acoperită de alt element: " + selector);
   await page.mouse.click(box.x, box.y);
 }
+
+/**
+ * Un CUI întâmplător cu cifra de control corectă, cu „RO” în față. Din 17.09.2026 (F-A) aplicația refuză un CUI
+ * greșit la o cifră, deci „RO” + ultimele cifre din ceas nu mai trece. Aceeași cheie ca `src/lib/cui.ts`.
+ */
+export function validCui() {
+  const body = String(Math.floor(1_000_000 + Math.random() * 8_999_999));
+  const key = "753217532".slice(9 - body.length);
+  let sum = 0;
+  for (let i = 0; i < body.length; i++) sum += Number(body[i]) * Number(key[i]);
+  const control = (sum * 10) % 11;
+  return "RO" + body + (control === 10 ? 0 : control);
+}

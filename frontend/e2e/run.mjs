@@ -37,6 +37,7 @@ const suites = [
   ["26-dupa-salvare.mjs", "ce urmează după o mișcare nouă: bonul, Anexa 3 și avizul, «Încă una la fel» fără cifre, editarea cu mesajul scurt"],
   ["27-an-declarat.mjs", "anul deja declarat: salvarea, ștergerea și cântarul întreabă; cu termenul redeschis, salvarea trece direct"],
   ["28-fisa-de-cantarit.mjs", "Evidențe: nota „de cântărit” înainte de clic, dialogul numește fișa și „Descarcă oricum” descarcă"],
+  ["29-facturare.mjs", "Facturare: tasta B, ultima rulare cu firma și motivul, filtrele, „Verifică plata” fără chei, „Oprește”, 375px"],
 ];
 
 const only = process.argv[2];

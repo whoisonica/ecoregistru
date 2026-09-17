@@ -15,6 +15,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.BillingRun;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.Subscription;
@@ -38,10 +39,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -53,6 +54,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -386,6 +388,179 @@ class BillingRunIT {
                 .andExpect(status().isForbidden());
     }
 
+    // ─── F-A: ecranul Facturare ──────────────────────────────────────────────
+
+    /**
+     * 17.09.2026: rularea de la 06:30 căzuse pe două firme, iar singurul loc unde se vedea era logul. Rularea își
+     * scrie acum rezultatul, cu firma, motivul pe limba omului și clientul de deschis.
+     */
+    @Test
+    void theRunIsSavedWithWhoFailedWhyAndWhereToFixIt() throws Exception {
+        Company company = company();
+        subscription(company, true);
+        doThrow(new FgoClient.FgoException("FGO /factura/emitere: Client[CodUnic] are format invalid"))
+                .when(fgo).emit(any(), argThat(b -> b != null && b.name().equals(company.getName())),
+                        any(), any(), any(), any());
+        AppUser platform = appUserRepository.findByEmail("platform@ecoregistru.ro").orElseThrow();
+
+        billing.run(START, BillingRun.Kind.MANUAL, platform.getId());
+
+        mockMvc.perform(get("/api/v1/subscriptions/billing/runs/last")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind", is("MANUAL")))
+                .andExpect(jsonPath("$.result.failures[?(@.client == '" + company.getName() + "')].reason",
+                        hasItem(containsString("CUI-ul „" + company.getCui() + "” nu e valid"))))
+                .andExpect(jsonPath("$.result.failures[?(@.client == '" + company.getName() + "')].owner.id",
+                        hasItem(company.getId().toString())));
+        assertThat(invoices(subscriptionRepository.findByCompany_Id(company.getId()).orElseThrow()))
+                .singleElement().satisfies(i -> assertThat(i.getLastError()).startsWith("CUI-ul"));
+    }
+
+    @Test
+    void theRunNamesTheInvoicesItIssuedAndThoseFoundPaid() {
+        Company company = company();
+        Subscription s = subscription(company, true);
+
+        BillingRunService.Result first = billing.run(START);
+        assertThat(first.issuedInvoices()).filteredOn(d -> d.client().equals(company.getName()))
+                .singleElement().satisfies(d -> assertThat(d.number()).startsWith("WH "));
+
+        when(fgo.status("WH", invoices(s).get(0).getFgoNumar()))
+                .thenReturn(new FgoClient.Status(new BigDecimal("389"), new BigDecimal("389")));
+        assertThat(billing.run(START.plusDays(1)).paidInvoices())
+                .anyMatch(d -> d.client().equals(company.getName()));
+    }
+
+    @Test
+    void everyClientsInvoicesAreListedForThePlatformOnly() throws Exception {
+        Company company = company();
+        Subscription s = subscription(company, true);
+        billing.run(START);
+
+        mockMvc.perform(get("/api/v1/subscriptions/invoices").header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + invoices(s).get(0).getId() + "')].client",
+                        hasItem(company.getName())))
+                .andExpect(jsonPath("$[?(@.id == '" + invoices(s).get(0).getId() + "')].ownerKind",
+                        hasItem("company")));
+
+        mockMvc.perform(get("/api/v1/subscriptions/invoices").header("Authorization", "Bearer " + token(admin(company))))
+                .andExpect(status().isForbidden());
+    }
+
+    /** „Verifică plata acum”: o singură factură, fără rularea întreagă, cu ora la care a răspuns FGO. */
+    @Test
+    void thePaymentOfOneInvoiceIsCheckedOnRequest() throws Exception {
+        Subscription s = subscription(company(), true);
+        billing.run(START);
+        SubscriptionInvoice invoice = invoices(s).get(0);
+        when(fgo.status("WH", invoice.getFgoNumar()))
+                .thenReturn(new FgoClient.Status(new BigDecimal("389"), new BigDecimal("389")));
+        clearInvocations(fgo);
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + invoice.getId() + "/check-payment")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isNoContent());
+
+        verify(fgo, times(1)).status(any(), any());
+        assertThat(invoiceRepository.findById(invoice.getId()).orElseThrow()).satisfies(i -> {
+            assertThat(i.getStatus()).isEqualTo(InvoiceStatus.PAID);
+            assertThat(i.getPaymentCheckedAt()).isNotNull();
+        });
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + invoice.getId() + "/check-payment")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("invoice.not.issued")));
+    }
+
+    @Test
+    void anFgoThatDoesNotAnswerIsSaidSoAndNothingIsMarked() throws Exception {
+        Subscription s = subscription(company(), true);
+        billing.run(START);
+        SubscriptionInvoice invoice = invoices(s).get(0);
+        doThrow(new FgoClient.FgoException("FGO /factura/getstatus: HTTP 409"))
+                .when(fgo).status("WH", invoice.getFgoNumar());
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + invoice.getId() + "/check-payment")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$['error-code']", is("fgo.unavailable")));
+        // The run itself asked FGO once; the failed check leaves that hour, not a new one.
+        assertThat(invoiceRepository.findById(invoice.getId()).orElseThrow().getPaymentCheckedAt())
+                .isEqualTo(invoice.getPaymentCheckedAt());
+    }
+
+    @Test
+    void withoutFgoKeysNoPaymentIsChecked() throws Exception {
+        Subscription s = subscription(company(), true);
+        billing.run(START);
+        when(fgo.isConfigured()).thenReturn(false);
+        clearInvocations(fgo);
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + invoices(s).get(0).getId() + "/check-payment")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$['error-code']", is("fgo.not.configured")));
+        verify(fgo, never()).status(any(), any());
+    }
+
+    /** Transilvania ABC, 17.09: un abonament de probă care pica la fiecare rulare. „Oprește” îl scoate de tot. */
+    @Test
+    void discardingTheOnlyRefusedInvoiceRemovesTheSubscription() throws Exception {
+        Company company = company();
+        Subscription s = subscription(company, false);
+        billing.run(START);
+        SubscriptionInvoice draft = invoices(s).get(0);
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + draft.getId() + "/discard")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isNoContent());
+
+        assertThat(subscriptionRepository.findById(s.getId())).isEmpty();
+        assertThat(invoiceRepository.findById(draft.getId())).isEmpty();
+        billing.run(START.plusDays(1));
+        assertThat(subscriptionRepository.findByCompany_Id(company.getId())).isEmpty();
+    }
+
+    /** Cu o factură emisă înainte, abonamentul rămâne (e legătura cu ea), oprit în ziua dinaintea perioadei refuzate. */
+    @Test
+    void discardingARefusedInvoiceAfterAnIssuedOneStopsTheSubscriptionBeforeIt() throws Exception {
+        Subscription s = subscription(company(), true);
+        billing.run(START);
+        s = subscriptionRepository.findById(s.getId()).orElseThrow();
+        s.setBillingAddress(null);
+        subscriptionRepository.save(s);
+        LocalDate next = LocalDate.of(2026, 11, 17);
+        billing.run(next);
+        SubscriptionInvoice draft = invoices(s).get(0);
+        assertThat(draft.getStatus()).isEqualTo(InvoiceStatus.DRAFT);
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + draft.getId() + "/discard")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isNoContent());
+
+        assertThat(subscriptionRepository.findById(s.getId()).orElseThrow()).satisfies(stopped -> {
+            assertThat(stopped.getStatus()).isEqualTo(SubscriptionStatus.CANCELLED);
+            assertThat(stopped.getEndsOn()).isEqualTo(next.minusDays(1));
+        });
+        billing.run(next.plusDays(1));
+        assertThat(invoices(s)).singleElement().satisfies(i -> assertThat(i.getStatus()).isEqualTo(InvoiceStatus.ISSUED));
+    }
+
+    @Test
+    void anIssuedInvoiceCannotBeDiscarded() throws Exception {
+        Subscription s = subscription(company(), true);
+        billing.run(START);
+
+        mockMvc.perform(post("/api/v1/subscriptions/invoices/" + invoices(s).get(0).getId() + "/discard")
+                        .header("Authorization", "Bearer " + platformToken()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("invoice.not.discardable")));
+        assertThat(invoices(s)).hasSize(1);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     private static FgoClient.Issued issued(String externalId) {
@@ -453,7 +628,7 @@ class BillingRunIT {
     }
 
     private static String cui() {
-        return String.valueOf(ThreadLocalRandom.current().nextLong(10_000_000L, 99_999_999L));
+        return TestCui.random();
     }
 
     private static String suffix() {

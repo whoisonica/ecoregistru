@@ -6,6 +6,7 @@ import { useFormDraft } from "@/hooks/useFormDraft";
 import type { AccountRequestInput, CompanyType, MarketRole, WasteOperationCode } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { isValidCui } from "@/lib/cui";
 import { cn, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -55,7 +56,6 @@ const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
 /** Aceeași formă pe care o cere `CompanyService` la crearea firmei din cerere. */
-const CUI_PATTERN = /^(RO)?\d{2,10}$/;
 /** Deliberat larg: validarea de email a browserului respinge deja ce e evident stricat. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -274,7 +274,7 @@ export function AccountRequestPage() {
       need(companyName, "companyName", t.errCompanyName);
       const normalizedCui = cui.replace(/\s/g, "").toUpperCase();
       if (!normalizedCui) errs.cui = t.errCui;
-      else if (!CUI_PATTERN.test(normalizedCui)) errs.cui = t.errCuiFormat;
+      else if (!isValidCui(normalizedCui)) errs.cui = t.errCuiFormat;
       need(companyAddress, "companyAddress");
       need(caenCode, "caenCode");
     }

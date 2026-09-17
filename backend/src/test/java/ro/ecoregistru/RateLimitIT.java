@@ -164,7 +164,7 @@ class RateLimitIT {
     }
 
     private MockHttpServletRequestBuilder intake(String ip) {
-        String suffix = String.valueOf(System.nanoTime()).substring(9);
+        String suffix = TestCui.random();
         return post("/api/v1/account-requests")
                 .header("X-Forwarded-For", ip)
                 .contentType(MediaType.APPLICATION_JSON)

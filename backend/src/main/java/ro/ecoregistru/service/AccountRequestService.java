@@ -220,9 +220,12 @@ public class AccountRequestService {
                 r.getHandledAt(), r.getCreatedAt());
     }
 
-    /** Same shape CompanyService validates; normalized here so the request stores what it sent. */
+    /**
+     * The same check CompanyService makes, here too: a CUI with a wrong digit used to be accepted, and failed only
+     * at approval, or days later at the first FGO invoice.
+     */
     private String normalizeCui(String raw) {
-        return raw.replaceAll("\\s", "").toUpperCase();
+        return CompanyService.normalizeCui(raw);
     }
 
     private String blankToNull(String value) {

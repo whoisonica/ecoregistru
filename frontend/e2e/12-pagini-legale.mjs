@@ -6,7 +6,7 @@
 // de a avea cont. Iar textul lor trece printr-un marcaj de rând scris în casă (`**îngroșat**`,
 // `` `cod` ``, `[text](adresă)`): dacă randarea lui se strică, nu cade nimic — apar semnele în
 // pagină, și le vede clientul, nu compilatorul. De aici verificarea că nu rămâne niciun `**`.
-import { launch, newPage, login, shot, BASE } from "./lib.mjs";
+import { launch, newPage, login, shot, validCui, BASE } from "./lib.mjs";
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -112,7 +112,7 @@ check("linkul din subsol chiar deschide politica", page.url().endsWith("/confide
 // formularul e în trei pași, iar butonul (și rândul) stau la ultimul — se ajunge acolo ca omul.
 await page.goto(BASE + "/cerere-cont", { waitUntil: "networkidle" });
 await page.waitForTimeout(300);
-await page.fill("#ar-cui", "RO12345678");
+await page.fill("#ar-cui", validCui());
 await page.fill("#ar-name", "Proba Legală SRL");
 await page.fill("#ar-address", "Str. Sediului nr. 1");
 await page.fill("#ar-caen", "1071");

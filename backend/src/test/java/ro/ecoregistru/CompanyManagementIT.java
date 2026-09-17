@@ -110,6 +110,30 @@ class CompanyManagementIT {
                 .andExpect(jsonPath("$['error-code']", is("company.cui.invalid")));
     }
 
+    /**
+     * F-A, 17.09.2026: a CUI wrong by one digit has the right shape and passed, then FGO refused the invoice
+     * („Client[CodUnic] are format invalid”). The control digit is what catches it.
+     */
+    @Test
+    void aCuiWithAWrongControlDigitIsRejectedAndSpacesAreNormalized() throws Exception {
+        String cui = TestCui.random();
+        String wrong = cui.substring(0, 7) + (char) ('0' + (cui.charAt(7) - '0' + 1) % 10);
+        mockMvc.perform(post("/api/v1/companies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(companyBody("Cifra Greșită SRL", "RO" + wrong, "GENERATOR", false)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("company.cui.invalid")));
+
+        mockMvc.perform(post("/api/v1/companies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(companyBody("Cu Spații SRL", "ro " + cui.substring(0, 4) + " " + cui.substring(4),
+                                "GENERATOR", false)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cui", is("RO" + cui)));
+    }
+
     @Test
     void duplicateCuiIsRejected() throws Exception {
         String cui = uniqueCui();
@@ -232,8 +256,7 @@ class CompanyManagementIT {
 
     /** A unique, well-formed CUI (RO + 8 digits) so methods don't collide on the unique column. */
     private String uniqueCui() {
-        long n = Math.floorMod(UUID.randomUUID().getMostSignificantBits(), 100_000_000L);
-        return String.format("RO%08d", n);
+        return "RO" + TestCui.random();
     }
 
     private String tokenFor(String email) {

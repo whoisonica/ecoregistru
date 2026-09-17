@@ -6,7 +6,7 @@
 //
 // ⚠️ Lasă în urmă câte o firmă „Proba 24 Primii Pași <număr>” cu un punct de lucru la fiecare rulare: o firmă
 // refolosită ar avea deja punctul de lucru de data trecută, iar proba ar citi pasul gata.
-import { launch, newPage, login, shot, switchCompany, BASE } from "./lib.mjs";
+import { launch, newPage, login, shot, switchCompany, validCui, BASE } from "./lib.mjs";
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -37,14 +37,14 @@ check("firma demo, care are tot, nu vede „Primii pași”", !(await page.$('[d
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
 await page.evaluate(() => localStorage.clear());
 await login(page, "platform");
-const created = await page.evaluate(async (name) => {
+const created = await page.evaluate(async ([name, cui]) => {
   const headers = { Authorization: "Bearer " + localStorage.getItem("eco_token"), "Content-Type": "application/json" };
   const res = await fetch("/api/v1/companies", {
     method: "POST", headers,
-    body: JSON.stringify({ name, cui: "RO" + name.slice(-8), type: "GENERATOR", afmObligation: false, address: "Cluj-Napoca" }),
+    body: JSON.stringify({ name, cui, type: "GENERATOR", afmObligation: false, address: "Cluj-Napoca" }),
   });
   return res.ok ? (await res.json()).id : "HTTP " + res.status;
-}, NAME);
+}, [NAME, validCui()]);
 check("firma nouă există", /^[0-9a-f-]{36}$/.test(String(created)), String(created));
 await page.reload({ waitUntil: "networkidle" });
 check("comutat pe firma nouă", Boolean(await switchCompany(page, new RegExp(RUN))));
