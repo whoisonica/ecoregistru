@@ -12,8 +12,8 @@
 # Când o rulare cade, GitHub trimite mail celui care a modificat ultimul programarea (Settings →
 # Notifications → Actions → „Send notifications for failed workflows only”). Programarea GitHub nu e exactă
 # (poate întârzia câteva minute la aglomerare), iar un repo fără niciun commit 60 de zile își oprește
-# singur rularile programate. Pentru o alertă pe telefon în sub un minut: un cont UptimeRobot/Better Stack
-# pe aceleași trei adrese.
+# singur rularile programate. Măsurat pe 17.09.2026: 6 rulări în 24 h, nu 144. De aceea, din 17.09, alerta
+# principală e UptimeRobot (la 5 minute, mail + telefon) pe aceleași trei adrese; fluxul de aici e a doua plasă.
 name: Uptime
 
 on:

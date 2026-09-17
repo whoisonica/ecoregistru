@@ -8,6 +8,19 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, ~12:40 — ✅ operare: mailul aplicației prin Brevo, monitorizare la 5 minute, CI verde** (`ecoregistru-api` **v112**, doar config; niciun cod de aplicație; `main` `7d774f9`).
+> Din scanarea generatorului cerută de proprietar (17.09 dimineața, 9,4/10, ~98%). **(1) CI roșu pe `main` de la `01e9acf`:** proba e2e 9
+> căuta cifra de sub 15 martie în tone, ecranul o scrie în kg — proba învechită, nu produsul; acum caută „kg”. Proba 27 (anul declarat)
+> nu era în `e2e/run.mjs`, deci CI-ul n-o rula; adăugată. Local, pe bază nouă: 9 și 27 verzi; CI verde (frontend, backend, e2e).
+> **(2) Mailul:** pe 17.09 la 07:15 UTC avertismentul de autorizație a căzut cu `Couldn't connect to host mail.wastehouse.ro:587`
+> (timeout 10 s, de pe Heroku). Mailurile automate pleacă acum prin **Brevo** (SMTP relay, UE): domeniul autentificat (TXT de verificare,
+> DKIM `brevo1`/`brevo2`, `_dmarc` cu `rua`), expeditorul `WasteHouse <contact@wastehouse.ro>` verificat, variabilele `MAIL_*` schimbate
+> (api v112). Probat: „Parolă uitată” → Delivered în Brevo, ajuns în Inbox, linkul pe `app.wastehouse.ro`. ⚠️ Blocarea IP-urilor
+> neautorizate pentru cheile SMTP (Brevo → Security → Authorized IPs) trebuie să rămână **oprită**: Heroku n-are IP fix și primul
+> test a căzut cu `MailAuthenticationException`. Mailul primit pe contact@ rămâne în cPanel (MX neatins). **(3) Monitorizarea:**
+> `uptime.yml` (`*/10`) a rulat de 6 ori în 24 h — GitHub amână cronul. UptimeRobot (5 min, mail + aplicația de telefon) pe API
+> `/actuator/health`, `app.wastehouse.ro` și `wastehouse.ro`; toate Up. `uptime.yml` rămâne a doua plasă.
+
 > **17.09.2026, ~02:40 — ✅ pe producție: agentul economic la tratarea proprie, nota SIM pentru un an fără deșeuri, persoana desemnată după Legea 17/2023, avertismentul pentru anul declarat** (`ecoregistru-api` **v111**, `214b3ac`; `ecoregistru-app` **v102**, `8740902`; din `main` `63e75d4`; nicio migrare).
 > Întrebările AH, BB, AK, AP și C, închise din lege în locul specialistei (temeiul în `ecoregistru-docs/docs/intrebari-specialist.md`).
 > **C:** o operație fără partener o face firma („prin mijloace proprii”, OUG 92/2021 art. 23 alin. (1)), deci fișa (cap. 3/4) și evidența
