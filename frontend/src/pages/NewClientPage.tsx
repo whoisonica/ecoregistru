@@ -11,7 +11,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { isValidCui } from "@/lib/cui";
 import { COUNTIES, fgoCounty } from "@/lib/counties";
-import { formatDate } from "@/lib/utils";
+import { fold, formatDate } from "@/lib/utils";
 import { CompanyProfileFields, emptyCompanyProfile, type CompanyProfileValue } from "@/components/CompanyProfileFields";
 import { CuiField } from "@/components/AnafLookup";
 import { Button } from "@/components/ui/button";
@@ -550,7 +550,12 @@ function NewClientForm({
                         {
                           value: "same",
                           label: t.sameAddress,
-                          description: [address, city, county].map((x) => x.trim()).filter(Boolean).join(", ") || "—",
+                          // Adresa de la ANAF are deja județul și localitatea: nu se lipesc încă o dată.
+                          description:
+                            [address, city, county]
+                              .map((x) => x.trim())
+                              .filter((x, i) => x && (i === 0 || !fold(address).includes(fold(x))))
+                              .join(", ") || "—",
                         },
                         { value: "other", label: t.otherAddress },
                       ]}

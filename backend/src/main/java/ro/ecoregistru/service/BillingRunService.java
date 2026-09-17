@@ -1,5 +1,6 @@
 package ro.ecoregistru.service;
 
+import ro.ecoregistru.util.BillingAddress;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -433,8 +434,10 @@ public class BillingRunService {
         }
         Company company = s.getCompany();
         String cui = company != null ? company.getCui() : s.getConsultancy().getCui();
-        return new FgoClient.Buyer(clientName(s), cui, recipient(s), s.getBillingCounty(), s.getBillingCity(),
-                s.getBillingAddress());
+        // ANAF's address already holds the county and the locality; FGO prints those on rubrics of their own.
+        return new FgoClient.Buyer(clientName(s), cui, recipient(s), s.getBillingCounty(),
+                BillingAddress.city(s.getBillingCity()),
+                BillingAddress.street(s.getBillingAddress(), s.getBillingCounty(), s.getBillingCity()));
     }
 
     static Owner owner(Subscription s) {

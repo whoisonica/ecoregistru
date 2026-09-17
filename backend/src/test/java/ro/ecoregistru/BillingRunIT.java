@@ -163,6 +163,27 @@ class BillingRunIT {
         assertThat(externalIds.getAllValues()).containsOnly(draft.getId().toString());
     }
 
+    /** WH 1, ONSIA S.R.L., 17.09.2026: adresa întreagă de la ANAF ajungea la FGO lângă județ și localitate. */
+    @Test
+    void theAnafAddressReachesFgoWithoutTheCountyAndTheLocalityAgain() {
+        Company company = company();
+        Subscription s = subscription(company, false);
+        s.setBillingCounty("Bihor");
+        s.setBillingCity("Sat Sântandrei Com. Sântandrei");
+        s.setBillingAddress("JUD. BIHOR, SAT SÂNTANDREI COM. SÂNTANDREI, STR. FĂCLIEI, NR.79");
+        subscriptionRepository.save(s);
+        doAnswer(inv -> issued(inv.getArgument(0)))
+                .when(fgo).emit(any(), argThat(b -> b != null && b.name().equals(company.getName())),
+                        any(), any(), any(), any());
+
+        billing.run(START);
+
+        verify(fgo).emit(any(), argThat(b -> b != null && b.name().equals(company.getName())
+                        && "Bihor".equals(b.county()) && "Sântandrei".equals(b.city())
+                        && "STR. FĂCLIEI, NR.79".equals(b.address())),
+                any(), any(), any(), any());
+    }
+
     @Test
     void withoutAnAddressNothingReachesFgo() {
         Company company = company();
