@@ -1,28 +1,40 @@
 package ro.ecoregistru.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public interface SubscriptionInvoiceRepository extends JpaRepository<SubscriptionInvoice, UUID> {
+public interface SubscriptionInvoiceRepository
+        extends JpaRepository<SubscriptionInvoice, UUID>, JpaSpecificationExecutor<SubscriptionInvoice> {
+
+    /** F-B2 — a page of the Facturare table, the payer fetched with it (no N+1). */
+    @Override
+    @EntityGraph(attributePaths = {"subscription", "subscription.company", "subscription.consultancy"})
+    Page<SubscriptionInvoice> findAll(Specification<SubscriptionInvoice> spec, Pageable pageable);
+
+    /** F-B — {@code [sum, count]} of the invoices in a status, optionally paid since an instant. */
+    @Query("select coalesce(sum(i.total), 0), count(i) from SubscriptionInvoice i where i.status = :status"
+            + " and (i.status <> ro.ecoregistru.enums.InvoiceStatus.PAID or i.paidAt >= :paidSince)")
+    List<Object[]> sumAndCount(@Param("status") InvoiceStatus status, @Param("paidSince") Instant paidSince);
 
     boolean existsBySubscription_IdAndPeriodStart(UUID subscriptionId, LocalDate periodStart);
 
     boolean existsBySubscription_Id(UUID subscriptionId);
 
     List<SubscriptionInvoice> findAllBySubscription_IdOrderByPeriodStartDesc(UUID subscriptionId);
-
-    /** F-A — every client's invoices for the Facturare screen, the payer fetched with them (no N+1). */
-    @Query("select i from SubscriptionInvoice i join fetch i.subscription s left join fetch s.company"
-            + " left join fetch s.consultancy order by i.createdAt desc")
-    List<SubscriptionInvoice> findAllWithPayer();
 
     /** F-B — each direct client's latest period, one query for the whole Clients table. */
     @Query("select i from SubscriptionInvoice i join fetch i.subscription s join fetch s.company"

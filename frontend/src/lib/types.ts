@@ -386,6 +386,28 @@ export interface LastBillingRun {
   finishedAt: string;
   kind: "SCHEDULED" | "MANUAL";
   result: BillingRunResult;
+  /** Facturile refuzate ale rulării care încă n-au fost corectate sau oprite (F-B2). */
+  stillFailed: string[];
+}
+
+/** F-B2 — filtrele ecranului Facturare; `ACTION` = căzute + restante, implicit. */
+export type InvoiceFilter = "ACTION" | "FAILED" | "OVERDUE" | "UNPAID" | "PAID" | "ALL";
+
+/** Mirrors backend InvoicePageResponse: o pagină din Facturare și câte facturi are fiecare filtru. */
+export interface InvoicePage {
+  content: BillingInvoiceRow[];
+  total: number;
+  page: number;
+  size: number;
+  counts: Record<InvoiceFilter, number>;
+}
+
+/** Mirrors backend InvoiceMoneyResponse: banii de pe Clienți. */
+export interface InvoiceMoney {
+  paidThisMonth: number;
+  paidThisMonthCount: number;
+  unpaid: number;
+  unpaidCount: number;
 }
 
 /** Mirrors backend ClientOverviewResponse: ce arată tabelul Clienți pe lângă firmă (F-B). */

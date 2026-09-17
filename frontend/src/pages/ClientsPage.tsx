@@ -30,7 +30,9 @@ import {
 } from "@/components/CompanyProfileFields";
 import { AccountRequestsSection } from "@/components/AccountRequestsSection";
 import { useAccountRequests } from "@/hooks/useAccountRequests";
-import { useAllInvoices } from "@/hooks/useSubscriptions";
+import { useInvoiceMoney } from "@/hooks/useSubscriptions";
+import { useConsultancies } from "@/hooks/useConsultancies";
+import { useUrlState } from "@/hooks/useUrlState";
 import { useHotkey } from "@/hooks/useHotkey";
 import {
   byAttention,
@@ -38,7 +40,6 @@ import {
   CLIENT_FILTERS,
   CONSULTANT_FILTERS,
   MATCHES,
-  money,
   type ClientFilter,
   type ClientRow,
 } from "@/lib/clients";
@@ -145,8 +146,11 @@ export function ClientsPage() {
 
   // F-B — abonamentul, ultima factură și oamenii fiecărei firme; banii și cererile doar la platformă.
   const overview = useClientOverview(multiCompany);
-  const invoices = useAllInvoices(isPlatformAdmin);
+  const money = useInvoiceMoney(isPlatformAdmin);
   const requests = useAccountRequests(isPlatformAdmin);
+  const consultancies = useConsultancies(isPlatformAdmin);
+  const [tabParam, setTab] = useUrlState("tab");
+  const newRequests = (requests.data ?? []).filter((r) => r.status === "NEW").length;
   const [filter, setFilter] = useState<ClientFilter>("ALL");
   const today = todayIso();
 
@@ -165,7 +169,21 @@ export function ClientsPage() {
     { searchText: (r) => [r.company.name, r.company.cui].filter(Boolean).join(" ") }
   );
 
-  useHotkey("n", () => openCreate(), { enabled: multiCompany && !dialogOpen && !inviteOpen });
+  // Taburile (F-B2): o singură secțiune pe ecran, ca pagina să se termine sub tabel. Tabul stă în adresă.
+  const tabs: { id: string; label: string; count?: number; alert?: boolean }[] = isPlatformAdmin
+    ? [
+        { id: "", label: t.tabClients, count: companies?.length },
+        { id: "cereri", label: t.tabRequests, count: requests.data ? newRequests : undefined, alert: newRequests > 0 },
+        { id: "cabinete", label: t.tabCabinets, count: consultancies.data?.length },
+      ]
+    : [
+        { id: "", label: t.tabClients, count: companies?.length },
+        { id: "echipa", label: t.tabTeam },
+        { id: "antet", label: t.tabBranding },
+      ];
+  const tab = tabs.some((x) => x.id === tabParam) ? tabParam : "";
+
+  useHotkey("n", () => openCreate(), { enabled: multiCompany && tab === "" && !dialogOpen && !inviteOpen });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
 
@@ -258,6 +276,7 @@ export function ClientsPage() {
       notify(strings.accountRequest.openCompanyMissing, "error");
       return;
     }
+    setTab("");
     openEdit(found);
   }
 
@@ -366,14 +385,41 @@ export function ClientsPage() {
         }
       />
 
+      <div role="tablist" aria-label={t.tabsLabel} className="mt-6 flex gap-1 overflow-x-auto border-b border-line">
+        {tabs.map((item) => {
+          const selected = item.id === tab;
+          return (
+            <button
+              key={item.id || "clienti"}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setTab(item.id)}
+              className={
+                "-mb-px inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium " +
+                (selected
+                  ? "border-brand-600 text-content-strong"
+                  : "border-transparent text-content-muted hover:text-content")
+              }
+            >
+              {item.alert && <span className="h-2 w-2 rounded-sm bg-state-warn" aria-hidden />}
+              {item.label}
+              {item.count !== undefined && <span className="font-mono text-xs opacity-70">{item.count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "" && (
+      <>
       <ClientFigures
         rows={rows}
         overviewFailed={overview.isError}
-        invoices={isPlatformAdmin ? invoices : null}
+        money={isPlatformAdmin ? money : null}
         today={today}
       />
 
-      {isPlatformAdmin && <RequestsBand requests={requests.data} />}
+      {isPlatformAdmin && <RequestsBand count={newRequests} names={(requests.data ?? []).filter((r) => r.status === "NEW").map((r) => r.companyName)} onOpen={() => setTab("cereri")} />}
 
       <section className="mt-6">
         {isError && <p className="text-sm text-state-bad-text">{t.loadError}</p>}
@@ -491,6 +537,8 @@ export function ClientsPage() {
           </>
         )}
       </section>
+      </>
+      )}
 
       {/* Create / edit company */}
       {/* `xl`, ca formularul de mișcare: al doilea ca mărime din aplicație, ~25 de rubrici, și
@@ -908,20 +956,10 @@ export function ClientsPage() {
       </Dialog>
 
       {/* Inboxul cererilor publice și cabinetele sunt ale platformei; echipa, a consultantului. */}
-      {isPlatformAdmin && (
-        <>
-          <div id="cereri-de-cont">
-            <AccountRequestsSection enabled onOpenCompany={openCompanyById} />
-          </div>
-          <ConsultanciesSection />
-        </>
-      )}
-      {isConsultant && (
-        <>
-          <ConsultancyTeamSection />
-          <ConsultancyBrandingSection />
-        </>
-      )}
+      {isPlatformAdmin && tab === "cereri" && <AccountRequestsSection enabled onOpenCompany={openCompanyById} />}
+      {isPlatformAdmin && tab === "cabinete" && <ConsultanciesSection />}
+      {isConsultant && tab === "echipa" && <ConsultancyTeamSection />}
+      {isConsultant && tab === "antet" && <ConsultancyBrandingSection />}
       {assigning && (
         <AssignConsultancyDialog company={assigning} onClose={() => setAssigning(null)} />
       )}
@@ -944,18 +982,20 @@ function lei(n: number) {
   return `${n.toLocaleString("ro-RO", { maximumFractionDigits: 2 })} lei`;
 }
 
-/** O cifră mare, în mono, ca pe afișaj. Sursa căzută arată „?”, nu „0”. */
+/** O cifră în mono, ca pe afișaj, cu eticheta deasupra și explicația lângă. Sursa căzută arată „?”, nu „0”. */
 function Figure({ label, value, sub, tone }: { label: string; value: string; sub: string; tone?: "bad" }) {
   return (
-    <Card data-figure={label}>
+    <Card data-figure={label} className="px-4 py-3">
       <div className="eyebrow">{label}</div>
-      <div
-        data-figure-value
-        className={`mt-2 font-mono text-2xl tabular-nums ${tone === "bad" ? "text-state-bad-text" : "text-content"}`}
-      >
-        {value}
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+        <span
+          data-figure-value
+          className={`font-mono text-xl tabular-nums ${tone === "bad" ? "text-state-bad-text" : "text-content"}`}
+        >
+          {value}
+        </span>
+        <span className="text-xs text-content-muted">{sub}</span>
       </div>
-      <div className="mt-1 text-xs text-content-muted">{sub}</div>
     </Card>
   );
 }
@@ -963,12 +1003,12 @@ function Figure({ label, value, sub, tone }: { label: string; value: string; sub
 function ClientFigures({
   rows,
   overviewFailed,
-  invoices,
+  money,
   today,
 }: {
   rows: ClientRow[];
   overviewFailed: boolean;
-  invoices: ReturnType<typeof useAllInvoices> | null;
+  money: ReturnType<typeof useInvoiceMoney> | null;
   today: string;
 }) {
   const active = rows.filter((r) => r.company.active).length;
@@ -976,7 +1016,7 @@ function ClientFigures({
   const failed = attention.filter((r) => r.reasons.includes("FAILED")).length;
   const overdue = attention.filter((r) => r.reasons.includes("OVERDUE")).length;
   const noUsers = attention.filter((r) => r.reasons.includes("NO_USERS")).length;
-  const m = invoices?.data ? money(invoices.data, today) : null;
+  const m = money?.data;
   const month = new Date(`${today}T12:00:00`).toLocaleString("ro-RO", { month: "long" });
   const reasons = [
     failed > 0 && countOf(failed, t.reasonFailedOne, t.reasonFailedMany),
@@ -985,20 +1025,20 @@ function ClientFigures({
   ].filter(Boolean);
 
   return (
-    <div className={`mt-6 grid grid-cols-2 gap-3 ${invoices ? "lg:grid-cols-4" : ""}`} data-testid="client-figures">
+    <div className={`mt-4 grid grid-cols-2 gap-3 ${money ? "lg:grid-cols-4" : ""}`} data-testid="client-figures">
       <Figure label={t.statActive} value={String(active)} sub={t.statActiveSub.replace("{n}", String(rows.length))} />
-      {invoices && (
+      {money && (
         <Figure
           label={t.statPaid.replace("{month}", month)}
-          value={m ? lei(m.paidTotal) : t.unknown}
-          sub={m && m.paidCount > 0 ? countOf(m.paidCount, t.statPaidOne, t.statPaidMany) : "—"}
+          value={m ? lei(m.paidThisMonth) : t.unknown}
+          sub={m && m.paidThisMonthCount > 0 ? countOf(m.paidThisMonthCount, t.statPaidOne, t.statPaidMany) : "—"}
         />
       )}
-      {invoices && (
+      {money && (
         <Figure
           label={t.statDue}
-          value={m ? lei(m.dueTotal) : t.unknown}
-          sub={m && m.dueCount > 0 ? countOf(m.dueCount, t.statDueOne, t.statDueMany) : "—"}
+          value={m ? lei(m.unpaid) : t.unknown}
+          sub={m && m.unpaidCount > 0 ? countOf(m.unpaidCount, t.statDueOne, t.statDueMany) : "—"}
         />
       )}
       <Figure
@@ -1011,22 +1051,15 @@ function ClientFigures({
   );
 }
 
-function RequestsBand({ requests }: { requests: { status: string; companyName?: string }[] | undefined }) {
-  const fresh = (requests ?? []).filter((r) => r.status === "NEW");
-  if (fresh.length === 0) return null;
+function RequestsBand({ count, names, onOpen }: { count: number; names: string[]; onOpen: () => void }) {
+  if (count === 0) return null;
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-muted px-4 py-3 text-sm">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-muted px-4 py-2 text-sm">
       <span className="text-content">
-        <span className="font-semibold">{countOf(fresh.length, t.requestOne, t.requestMany)}</span>
-        {fresh.some((r) => r.companyName) && (
-          <span className="text-content-muted"> · {fresh.map((r) => r.companyName).filter(Boolean).join(", ")}</span>
-        )}
+        <span className="font-semibold">{countOf(count, t.requestOne, t.requestMany)}</span>
+        {names.length > 0 && <span className="text-content-muted"> · {names.join(", ")}</span>}
       </span>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => document.getElementById("cereri-de-cont")?.scrollIntoView({ behavior: "smooth" })}
-      >
+      <Button size="sm" variant="outline" onClick={onOpen}>
         {t.requestsSee}
       </Button>
     </div>
@@ -1089,8 +1122,11 @@ function InvoiceCell({ row }: { row: ClientRow }) {
       <span className="block">
         <Badge variant={variant}>{label}</Badge>
       </span>
-      {row.failed && (
-        <span className="block max-w-[28ch] whitespace-normal text-xs text-state-bad-text">{i.lastError}</span>
+      {/* Motivul întreg la hover: pe trei rânduri, un client căzut umfla rândul cât trei (F-B2). */}
+      {row.failed && i.lastError && (
+        <Tooltip content={i.lastError}>
+          <span className="block max-w-[28ch] truncate text-xs text-state-bad-text">{i.lastError}</span>
+        </Tooltip>
       )}
     </>
   );

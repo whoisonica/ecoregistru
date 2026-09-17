@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { byAttention, clientRow, MATCHES, money } from "@/lib/clients";
-import type { BillingInvoiceRow, ClientOverview, Company } from "@/lib/types";
+import { byAttention, clientRow, MATCHES } from "@/lib/clients";
+import type { ClientOverview, Company } from "@/lib/types";
 
 const TODAY = "2026-09-17";
 // 18547290 are cifra de control bună (cheia 753217532).
@@ -64,18 +64,4 @@ test("filtrele și ordinea: cele cu probleme primele, apoi după nume", () => {
   assert.equal(MATCHES.ATTENTION(bad), true);
   assert.equal(MATCHES.NO_USERS(ok), false);
   assert.equal(MATCHES.CABINETS(clientRow({ ...company, consultancyId: "k" }, overview, TODAY)), true);
-});
-
-test("banii lunii: plătite luna asta și emise neplătite, oricare ar fi luna lor", () => {
-  const row = (patch: Partial<BillingInvoiceRow>) => ({ total: 99, status: "PAID", paidAt: null, ...patch }) as BillingInvoiceRow;
-  const m = money(
-    [
-      row({ paidAt: "2026-09-02T08:00:00Z" }),
-      row({ total: 149, paidAt: "2026-08-30T08:00:00Z" }),
-      row({ total: 539, status: "ISSUED" }),
-      row({ status: "DRAFT" }),
-    ],
-    TODAY
-  );
-  assert.deepEqual(m, { paidTotal: 99, paidCount: 1, dueTotal: 539, dueCount: 1 });
 });

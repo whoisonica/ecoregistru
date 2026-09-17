@@ -12,6 +12,17 @@ import ro.ecoregistru.controller.response.BillingAccessResponse;
 import ro.ecoregistru.controller.response.BillingResponse;
 import ro.ecoregistru.controller.response.CardPaymentResponse;
 import ro.ecoregistru.controller.response.BillingInvoiceRow;
+import ro.ecoregistru.controller.response.InvoiceMoneyResponse;
+import ro.ecoregistru.controller.response.InvoicePageResponse;
+import ro.ecoregistru.enums.InvoiceFilter;
+import ro.ecoregistru.repository.InvoiceSpecifications;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import java.math.BigDecimal;
+import java.time.YearMonth;
+import java.util.EnumMap;
+import java.util.Map;
 import ro.ecoregistru.controller.response.SubscriptionInvoiceResponse;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
 import ro.ecoregistru.entity.AppUser;
@@ -310,9 +321,19 @@ public class SubscriptionService {
     }
 
     /** F-A — the Facturare screen: every invoice, newest first. */
+    /** F-B2 — one page of the Facturare table, newest first, and the count of every filter key for the same month and search. */
     @Transactional(readOnly = true)
-    public List<BillingInvoiceRow> allInvoices() {
-        return invoiceRepository.findAllWithPayer().stream().map(i -> {
+    public InvoicePageResponse invoicePage(InvoiceFilter filter, YearMonth month, String query, int page, int size) {
+        LocalDate today = LocalDate.now(BillingRunService.ZONE);
+        Page<SubscriptionInvoice> result = invoiceRepository.findAll(
+                InvoiceSpecifications.of(filter, month, query, today),
+                PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 200),
+                        Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
+        Map<InvoiceFilter, Long> counts = new EnumMap<>(InvoiceFilter.class);
+        for (InvoiceFilter f : InvoiceFilter.values()) {
+            counts.put(f, invoiceRepository.count(InvoiceSpecifications.of(f, month, query, today)));
+        }
+        List<BillingInvoiceRow> rows = result.getContent().stream().map(i -> {
             Subscription s = i.getSubscription();
             BillingRunService.Owner owner = BillingRunService.owner(s);
             return new BillingInvoiceRow(i.getId(), BillingRunService.clientName(s), owner.kind(), owner.id(),
@@ -321,6 +342,17 @@ public class SubscriptionService {
                     i.getIssuedAt(), i.getPaidAt(), i.getPaidBy(), i.getEmailedAt(), i.getOverdueMailedAt(),
                     i.getPaymentCheckedAt());
         }).toList();
+        return new InvoicePageResponse(rows, result.getTotalElements(), result.getNumber(), result.getSize(), counts);
+    }
+
+    /** F-B — paid since the 1st of this month (Bucharest), and issued but not paid, whatever the month. */
+    @Transactional(readOnly = true)
+    public InvoiceMoneyResponse invoiceMoney() {
+        Instant monthStart = LocalDate.now(BillingRunService.ZONE).withDayOfMonth(1)
+                .atStartOfDay(BillingRunService.ZONE).toInstant();
+        Object[] paid = invoiceRepository.sumAndCount(InvoiceStatus.PAID, monthStart).get(0);
+        Object[] unpaid = invoiceRepository.sumAndCount(InvoiceStatus.ISSUED, monthStart).get(0);
+        return new InvoiceMoneyResponse((BigDecimal) paid[0], (Long) paid[1], (BigDecimal) unpaid[0], (Long) unpaid[1]);
     }
 
     /**

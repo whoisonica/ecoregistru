@@ -1,6 +1,6 @@
 import { isValidCui } from "@/lib/cui";
 import { COMPANY_FIELDS, type CompanyField } from "@/lib/firstSteps";
-import type { BillingInvoiceRow, ClientOverview, Company } from "@/lib/types";
+import type { ClientOverview, Company } from "@/lib/types";
 
 /**
  * F-B (todo-clienti-abonamente.md, 17.09.2026) — ce cere atenție la un client, citit din firmă și din rândul ei de
@@ -84,13 +84,4 @@ export const MATCHES: Record<ClientFilter, (r: ClientRow) => boolean> = {
 export function byAttention(a: ClientRow, b: ClientRow) {
   const attention = Number(b.reasons.length > 0) - Number(a.reasons.length > 0);
   return attention || a.company.name.localeCompare(b.company.name, "ro");
-}
-
-/** Banii lunii, din facturile tuturor (și ale cabinetelor): plătite luna asta și emise neplătite. */
-export function money(invoices: BillingInvoiceRow[], today: string) {
-  const month = today.slice(0, 7);
-  const paid = invoices.filter((i) => i.status === "PAID" && (i.paidAt ?? "").slice(0, 7) === month);
-  const issued = invoices.filter((i) => i.status === "ISSUED");
-  const sum = (list: BillingInvoiceRow[]) => list.reduce((acc, i) => acc + i.total, 0);
-  return { paidTotal: sum(paid), paidCount: paid.length, dueTotal: sum(issued), dueCount: issued.length };
 }

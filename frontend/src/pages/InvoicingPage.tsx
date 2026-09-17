@@ -1,15 +1,26 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Receipt } from "lucide-react";
 import {
-  useAllInvoices,
   useCheckInvoicePayment,
+  useInvoicePage,
   useDiscardInvoice,
   useLastBillingRun,
   useRunBilling,
 } from "@/hooks/useSubscriptions";
-import type { BillingInvoiceRow, BillingOwnerRef, LastBillingRun, SubscriptionOwner } from "@/lib/types";
-import { apiErrorMessage } from "@/lib/api";
+import type {
+  BillingInvoiceRow,
+  BillingOwnerRef,
+  InvoiceFilter,
+  InvoicePage,
+  LastBillingRun,
+  SubscriptionOwner,
+} from "@/lib/types";
+import { useUrlState } from "@/hooks/useUrlState";
+import { Select } from "@/components/ui/select";
+import { Pagination } from "@/components/ui/table";
+import { TableSearch } from "@/components/ui/table-toolbar";
+import { api, apiErrorMessage } from "@/lib/api";
 import { countOf } from "@/lib/count";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
@@ -25,8 +36,8 @@ import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 
 const t = strings.invoicing;
 
-type Filter = "ALL" | "FAILED" | "UNPAID" | "OVERDUE" | "PAID";
-const FILTERS: Filter[] = ["ALL", "FAILED", "UNPAID", "OVERDUE", "PAID"];
+const FILTERS: InvoiceFilter[] = ["ACTION", "FAILED", "OVERDUE", "UNPAID", "PAID", "ALL"];
+const PAGE_SIZE = 50;
 
 type Variant = "muted" | "warning" | "success" | "danger";
 
@@ -50,14 +61,6 @@ function when(instant: string) {
 const isFailed = (i: BillingInvoiceRow) => i.status === "DRAFT" && Boolean(i.lastError);
 const isOverdue = (i: BillingInvoiceRow) => i.status === "ISSUED" && i.dueDate != null && i.dueDate < todayIso();
 
-const MATCHES: Record<Filter, (i: BillingInvoiceRow) => boolean> = {
-  ALL: () => true,
-  FAILED: isFailed,
-  UNPAID: (i) => i.status === "ISSUED",
-  OVERDUE: isOverdue,
-  PAID: (i) => i.status === "PAID",
-};
-
 function stateOf(i: BillingInvoiceRow): [Variant, string] {
   if (i.status === "PAID") return ["success", t.statePaid];
   if (isOverdue(i)) return ["danger", t.stateOverdue];
@@ -65,28 +68,57 @@ function stateOf(i: BillingInvoiceRow): [Variant, string] {
   return isFailed(i) ? ["danger", t.stateFailed] : ["muted", t.stateDraft];
 }
 
+/** Ultimele 12 luni, cea curentă prima: `2026-09` → „septembrie 2026”. */
+function recentMonths() {
+  const now = new Date();
+  return Array.from({ length: 12 }, (_, k) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+    return {
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleString("ro-RO", { month: "long", year: "numeric" }),
+    };
+  });
+}
+
+/** Căutarea pleacă la server după ce omul se oprește din scris, nu la fiecare tastă. */
+function useDebounced(value: string, ms = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return debounced;
+}
+
 /**
  * F-A (todo-clienti-abonamente.md, 17.09.2026) — facturarea tuturor clienților, pe un ecran al ei. Butonul de
  * rulare stătea în dialogul unei singure firme, dar rula pentru toate, iar rezultatul era un toast care dispărea:
- * „2 căzute” de la 06:30 nu le vedea nimeni. Aici ultima rulare rămâne, rând cu rând, cu ce e de făcut pe fiecare.
+ * „2 căzute” de la 06:30 nu le vedea nimeni. Aici ultima rulare rămâne, cu ce e de făcut pe fiecare.
+ *
+ * <p>F-B2: la 2000 de facturi, tabelul se tăia în browser după ce le primea pe toate. Acum serverul dă o pagină de
+ * 50, filtrată, iar ecranul pornește pe „De rezolvat”: ce cere o mână, nu istoricul.
  */
 export function InvoicingPage() {
   const lastRun = useLastBillingRun();
-  const invoices = useAllInvoices();
+  const [filterParam, setFilterParam] = useUrlState("filtru", "ACTION");
+  const filter = (FILTERS.includes(filterParam as InvoiceFilter) ? filterParam : "ACTION") as InvoiceFilter;
+  const [month, setMonth] = useUrlState("luna");
+  const [search, setSearch] = useState("");
+  const q = useDebounced(search);
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [filter, month, q]);
+
+  const invoices = useInvoicePage({ filter, month, q, page, size: PAGE_SIZE });
   const runMut = useRunBilling();
   const checkMut = useCheckInvoicePayment();
   const discardMut = useDiscardInvoice();
   const [confirm, confirmDialog] = useConfirm();
   const { notify } = useToast();
-  const [filter, setFilter] = useState<Filter>("ALL");
   const [owner, setOwner] = useState<SubscriptionOwner | null>(null);
+  const months = recentMonths();
 
-  const rows = invoices.data ?? [];
-  const counts = useMemo(
-    () => Object.fromEntries(FILTERS.map((f) => [f, rows.filter(MATCHES[f]).length])) as Record<Filter, number>,
-    [rows]
-  );
-  const visible = rows.filter(MATCHES[filter]);
+  const data: InvoicePage | undefined = invoices.data;
+  const rows = data?.content ?? [];
 
   async function run() {
     try {
@@ -101,7 +133,11 @@ export function InvoicingPage() {
     const number = `${invoice.fgoSerie} ${invoice.fgoNumar}`;
     try {
       await checkMut.mutateAsync(invoice.id);
-      const fresh = (await invoices.refetch()).data?.find((i) => i.id === invoice.id);
+      // Factura poate ieși din filtrul curent (o restantă plătită nu mai e „de rezolvat”): se caută după număr.
+      const found = await api.get<InvoicePage>("/api/v1/subscriptions/invoices", {
+        params: { filter: "ALL", q: number, size: 20 },
+      });
+      const fresh = found.data.content.find((i) => i.id === invoice.id);
       if (fresh?.status === "PAID") notify(t.checkedPaid.replace("{number}", number), "success");
       else notify(t.checkedUnpaid.replace("{number}", number), "info");
     } catch (err) {
@@ -149,7 +185,6 @@ export function InvoicingPage() {
         onOpen={open}
         onStop={stop}
         busy={discardMut.isPending}
-        stillFailed={new Set(rows.filter(isFailed).map((i) => i.id))}
       />
 
       <section className="mt-8">
@@ -163,14 +198,30 @@ export function InvoicingPage() {
             value: f,
             label: (
               <>
-                {t.filters[f]} <span className="font-mono text-xs opacity-70">{invoices.data ? counts[f] : "?"}</span>
+                {t.filters[f]} <span className="font-mono text-xs opacity-70">{data ? data.counts[f] : "?"}</span>
               </>
             ),
           }))}
           selected={[filter]}
-          onToggle={setFilter}
+          onToggle={(f) => setFilterParam(f)}
           className="mb-3"
         />
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <TableSearch value={search} onChange={setSearch} placeholder={t.searchPlaceholder} className="flex-1" />
+          <Select
+            aria-label={t.month}
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="sm:w-56"
+          >
+            <option value="">{t.allMonths}</option>
+            {months.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </Select>
+        </div>
         {invoices.isError && <p className="mb-3 text-sm text-state-bad-text">{t.loadError}</p>}
         <Table>
           <THead>
@@ -185,10 +236,15 @@ export function InvoicingPage() {
             </TR>
           </THead>
           <TBody>
-            {visible.length === 0 && (
-              <TableFallbackRow columns={7} loading={invoices.isLoading} icon={Receipt} title={t.noInvoices} />
+            {rows.length === 0 && (
+              <TableFallbackRow
+                columns={7}
+                loading={invoices.isLoading}
+                icon={Receipt}
+                title={filter === "ACTION" && !q && !month ? t.noInvoicesAction : t.noInvoices}
+              />
             )}
-            {visible.map((invoice) => {
+            {rows.map((invoice) => {
               const [variant, label] = stateOf(invoice);
               return (
                 <TR key={invoice.id}>
@@ -276,6 +332,15 @@ export function InvoicingPage() {
             })}
           </TBody>
         </Table>
+        {data && (
+          <Pagination
+            page={data.page}
+            pageCount={Math.max(1, Math.ceil(data.total / PAGE_SIZE))}
+            onPage={setPage}
+            matchCount={data.total}
+            pageSize={PAGE_SIZE}
+          />
+        )}
       </section>
     </div>
   );
@@ -288,7 +353,6 @@ function LastRunPanel({
   onOpen,
   onStop,
   busy,
-  stillFailed,
 }: {
   run: LastBillingRun | null | undefined;
   loading: boolean;
@@ -296,11 +360,16 @@ function LastRunPanel({
   onOpen: (owner: BillingOwnerRef, client: string) => void;
   onStop: (invoiceId: string, client: string) => void;
   busy: boolean;
-  /** Ce a căzut la rulare și e încă de făcut: după o corectare, rândul rămâne istoric, fără butoane. */
-  stillFailed: Set<string>;
 }) {
+  // Emisele și plătitele pot fi sute la o rulare: stau strânse, căderile rămân la vedere (F-B2).
+  const [expanded, setExpanded] = useState(false);
   if (loading) return <p className="mt-6 text-sm text-content-muted">{strings.common.loading}</p>;
   if (error) return <p className="mt-6 text-sm text-state-bad-text">{t.runLoadError}</p>;
+
+  const stillFailed = new Set(run?.stillFailed ?? []);
+  const others = run
+    ? run.result.issuedInvoices.length + run.result.paidInvoices.length + run.result.notStarted.length
+    : 0;
 
   return (
     <section aria-labelledby="last-run" className="mt-6 rounded-md border border-line bg-surface">
@@ -330,6 +399,17 @@ function LastRunPanel({
                 </Badge>
               )}
             </span>
+            {others > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-auto"
+                aria-expanded={expanded}
+                onClick={() => setExpanded((v) => !v)}
+              >
+                {expanded ? t.hideDetails : `${t.details} (${others})`}
+              </Button>
+            )}
           </>
         ) : (
           <span className="text-sm text-content-muted">{t.noRun}</span>
@@ -362,29 +442,35 @@ function LastRunPanel({
               )}
             </RunRow>
           ))}
-          {run.result.issuedInvoices.map((d) => (
-            <RunRow key={`i-${d.invoiceId}`} variant="warning" state={t.rowIssued} number={d.number} client={d.client}
-              detail={lei(d.total)} />
-          ))}
-          {run.result.paidInvoices.map((d) => (
-            <RunRow key={`p-${d.invoiceId}`} variant="success" state={t.rowPaid} number={d.number} client={d.client}
-              detail={lei(d.total)} />
-          ))}
-          {run.result.notStarted.map((n) => (
-            <RunRow
-              key={`n-${n.owner.id}`}
-              variant="muted"
-              state={t.rowNotStarted}
-              client={n.client}
-              detail={t.startsOn.replace("{date}", formatDate(n.startsOn))}
-            >
-              <Button size="sm" variant="outline" onClick={() => onOpen(n.owner, n.client)}>
-                {t.openSubscription}
-              </Button>
-            </RunRow>
-          ))}
+          {expanded &&
+            run.result.issuedInvoices.map((d) => (
+              <RunRow key={`i-${d.invoiceId}`} variant="warning" state={t.rowIssued} number={d.number} client={d.client}
+                detail={lei(d.total)} />
+            ))}
+          {expanded &&
+            run.result.paidInvoices.map((d) => (
+              <RunRow key={`p-${d.invoiceId}`} variant="success" state={t.rowPaid} number={d.number} client={d.client}
+                detail={lei(d.total)} />
+            ))}
+          {expanded &&
+            run.result.notStarted.map((n) => (
+              <RunRow
+                key={`n-${n.owner.id}`}
+                variant="muted"
+                state={t.rowNotStarted}
+                client={n.client}
+                detail={t.startsOn.replace("{date}", formatDate(n.startsOn))}
+              >
+                <Button size="sm" variant="outline" onClick={() => onOpen(n.owner, n.client)}>
+                  {t.openSubscription}
+                </Button>
+              </RunRow>
+            ))}
           {run.result.failed + run.result.issued + run.result.paid + run.result.notStarted.length === 0 && (
             <li className="px-4 py-3 text-sm text-content-muted">{t.nothingToDo}</li>
+          )}
+          {run.result.failures.length === 0 && others > 0 && !expanded && (
+            <li className="px-4 py-3 text-sm text-content-muted">{t.nothingToFix}</li>
           )}
         </ul>
       )}

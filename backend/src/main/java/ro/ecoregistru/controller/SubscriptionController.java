@@ -9,7 +9,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.SubscriptionRequest;
-import ro.ecoregistru.controller.response.BillingInvoiceRow;
+import ro.ecoregistru.controller.response.InvoiceMoneyResponse;
+import ro.ecoregistru.controller.response.InvoicePageResponse;
+import ro.ecoregistru.enums.InvoiceFilter;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.BillingRun;
@@ -17,6 +19,7 @@ import ro.ecoregistru.service.BillingRunService;
 import ro.ecoregistru.service.SubscriptionService;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -123,11 +126,26 @@ public class SubscriptionController {
         return billingRunService.lastRun().map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-    /** F-A — every client's invoices, for the Facturare screen. */
+    /**
+     * F-B2 — the Facturare table, one page at a time: 2000 invoices are not sent to the browser to be filtered there.
+     * {@code month} is the month the period starts in ({@code 2026-09}); {@code q} a client name or an invoice number.
+     */
     @GetMapping("/invoices")
     @PreAuthorize(PLATFORM_ONLY)
-    public List<BillingInvoiceRow> invoices() {
-        return subscriptionService.allInvoices();
+    public InvoicePageResponse invoices(
+            @RequestParam(defaultValue = "ACTION") InvoiceFilter filter,
+            @RequestParam(required = false) YearMonth month,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return subscriptionService.invoicePage(filter, month, q, page, size);
+    }
+
+    /** F-B — the money figures on top of Clienți. */
+    @GetMapping("/invoices/money")
+    @PreAuthorize(PLATFORM_ONLY)
+    public InvoiceMoneyResponse invoiceMoney() {
+        return subscriptionService.invoiceMoney();
     }
 
     /** F-A — FGO asked about one invoice now, not at the next run. */

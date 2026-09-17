@@ -143,7 +143,7 @@ await shot(page, "6-cerere-multumire");
 
 // ══════════════════════════════════════════════ INBOXUL CARE O CITEȘTE
 await login(page, "platform");
-await page.goto(BASE + "/clienti", { waitUntil: "networkidle" });
+await page.goto(BASE + "/clienti?tab=cereri", { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
 
 await page.evaluate(() => {

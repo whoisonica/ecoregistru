@@ -1,8 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
   BillingAccount,
-  BillingInvoiceRow,
+  InvoiceFilter,
+  InvoiceMoney,
+  InvoicePage,
   LastBillingRun,
   CardPaymentResult,
   PaymentMethod,
@@ -86,11 +88,37 @@ export function useLastBillingRun() {
   });
 }
 
-/** F-A — facturile tuturor clienților, cele noi primele. */
-export function useAllInvoices(enabled = true) {
+export interface InvoiceQuery {
+  filter: InvoiceFilter;
+  /** `2026-09`; gol = toate lunile. */
+  month: string;
+  q: string;
+  page: number;
+  size: number;
+}
+
+/**
+ * F-B2 — o pagină din facturile tuturor clienților, tăiată pe server. Pagina de dinainte rămâne pe ecran cât vine
+ * următoarea, ca tabelul să nu clipească la fiecare tastă din căutare.
+ */
+export function useInvoicePage(query: InvoiceQuery) {
   return useQuery({
-    queryKey: ["subscriptions", "invoices"],
-    queryFn: async () => (await api.get<BillingInvoiceRow[]>("/api/v1/subscriptions/invoices")).data,
+    queryKey: ["subscriptions", "invoices", query],
+    queryFn: async () =>
+      (
+        await api.get<InvoicePage>("/api/v1/subscriptions/invoices", {
+          params: { ...query, month: query.month || undefined, q: query.q.trim() || undefined },
+        })
+      ).data,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** F-B — încasat luna asta și de încasat, pentru cifrele de pe Clienți. */
+export function useInvoiceMoney(enabled: boolean) {
+  return useQuery({
+    queryKey: ["subscriptions", "invoices", "money"],
+    queryFn: async () => (await api.get<InvoiceMoney>("/api/v1/subscriptions/invoices/money")).data,
     enabled,
   });
 }

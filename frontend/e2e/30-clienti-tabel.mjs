@@ -111,7 +111,7 @@ async function pick(label) {
 const search = page.locator('input[type="search"]').first();
 const searchable = (await search.count()) > 0;
 if (searchable) {
-  await search.fill("Proba 30");
+  await search.fill(RUN); // numărul rulării: firmele „Proba 30” din rulările vechi ar împinge rândurile pe pagina a doua
   await page.waitForTimeout(400);
 }
 
@@ -167,6 +167,26 @@ const box = await page.evaluate(() => {
   return t ? [t.scrollWidth, t.clientWidth] : [0, 0];
 });
 check("1440px: tabelul nu derulează lateral", box[0] <= box[1], box.join(" / "));
+
+// ---------------------------------------------------------------- F-B2: taburile
+const tab = (label) => page.locator('[role="tab"]', { hasText: label });
+check("trei taburi: Clienți, Cereri de cont, Cabinete", (await page.locator('[role="tab"]').count()) === 3);
+check("pe Clienți nu stau cererile și cabinetele dedesubt",
+  !(await page.$$eval("h2", (hs) => hs.some((h) => /Cereri de cont|Cabinete de consultanță/.test(h.textContent)))));
+await tab("Cereri de cont").click();
+await page.waitForTimeout(600);
+check("tabul Cereri: adresa are tab=cereri", /tab=cereri/.test(page.url()), page.url());
+check("tabul Cereri: lista cererilor, fără cifrele clienților",
+  (await page.$$eval("h2", (hs) => hs.some((h) => /Cereri de cont/.test(h.textContent)))) && !(await page.$('[data-testid="client-figures"]')));
+await page.reload({ waitUntil: "networkidle" });
+await page.waitForTimeout(800);
+check("după reîncărcare rămâne pe Cereri", (await tab("Cereri de cont").getAttribute("aria-selected")) === "true");
+await tab("Cabinete").click();
+await page.waitForTimeout(600);
+check("tabul Cabinete: lista cabinetelor", await page.$$eval("h2", (hs) => hs.some((h) => /Cabinete de consultanță/.test(h.textContent))));
+await tab("Clienți").click();
+await page.waitForTimeout(600);
+check("înapoi pe Clienți: adresa fără tab", !/tab=/.test(page.url()) && Boolean(await page.$('[data-testid="client-figures"]')));
 
 // ---------------------------------------------------------------- (9) 375px
 await page.setViewportSize({ width: 375, height: 812 });

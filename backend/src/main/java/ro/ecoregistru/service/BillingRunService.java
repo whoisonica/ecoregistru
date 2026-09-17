@@ -27,6 +27,9 @@ import ro.ecoregistru.service.notification.NotificationService;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.Objects;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -158,16 +161,24 @@ public class BillingRunService {
     /** The last run, as it was saved; empty before the first one. */
     public Optional<LastRun> lastRun() {
         return billingRunRepository.findFirstByOrderByStartedAtDesc().map(r -> {
+            Result result;
             try {
-                return new LastRun(r.getStartedAt(), r.getFinishedAt(), r.getKind(),
-                        objectMapper.readValue(r.getResultJson(), Result.class));
+                result = objectMapper.readValue(r.getResultJson(), Result.class);
             } catch (JsonProcessingException e) {
                 throw new IllegalStateException(e);
             }
+            // F-B2: the screen no longer holds every invoice, so the server says which refusals are still open.
+            List<UUID> ids = result.failures().stream().map(Failure::invoiceId).filter(Objects::nonNull).toList();
+            Set<UUID> stillFailed = invoiceRepository.findAllById(ids).stream()
+                    .filter(i -> i.getStatus() == InvoiceStatus.DRAFT && i.getLastError() != null)
+                    .map(SubscriptionInvoice::getId)
+                    .collect(Collectors.toSet());
+            return new LastRun(r.getStartedAt(), r.getFinishedAt(), r.getKind(), result, stillFailed);
         });
     }
 
-    public record LastRun(Instant startedAt, Instant finishedAt, BillingRun.Kind kind, Result result) {}
+    /** {@code stillFailed}: the refused invoices of this run not yet corrected or stopped. */
+    public record LastRun(Instant startedAt, Instant finishedAt, BillingRun.Kind kind, Result result, Set<UUID> stillFailed) {}
 
     /** A run that could not be saved still ran: the invoices are in FGO and in their own rows. */
     private void save(Result result, Instant startedAt, BillingRun.Kind kind, UUID triggeredBy) {

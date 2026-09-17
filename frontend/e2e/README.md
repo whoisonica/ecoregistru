@@ -1,5 +1,13 @@
 # Probe de interfaţă
 
+🗂️ **17.09.2026 — F-B2: probele 29 și 30 pe taburi și pe paginarea de pe server.** Proba 30 cere trei taburi (Clienți, Cereri
+de cont, Cabinete), fără cereri și cabinete sub tabelul clienților, `tab=cereri` în adresă și păstrat la reîncărcare; caută după
+numărul rulării, nu după „Proba 30” (rulările vechi împingeau rândurile pe pagina a doua). Proba 29: Facturare pornește pe
+„De rezolvat” (căzute + restante, fără plătite), emisele/plătitele rulării stau sub „Detalii”, căutarea după „WH n” dă un rând,
+luna `2026-08` dă restanța și stă în adresă, 55 de plătite scrise cu `psql` fac „1–50 din 56” și pagina a doua cu 6. Proba 6
+intră pe `/clienti?tab=cereri`. **Negative:** filtrul implicit `ALL` → 2 căderi în 29; cererile randate mereu → 30 cade (la
+rândul de după invitație, nu la taburi). **30/30** pe `eco_e2e_clienti`.
+
 👥 **17.09.2026 — proba 30 (`30-clienti-tabel.mjs`), tabelul Clienți ca tablou de lucru (F-B)**: patru cifre sus (activi,
 încasat luna asta, de încasat, cer atenție), iar „Cer atenție” = numărul de pe filtru; Restanți / Emitere căzută / Fără abonament
 arată exact firmele lor, cu „Depășită 6 zile”, numărul facturii și motivul căderii; cele cu probleme stau primele; fișa goală

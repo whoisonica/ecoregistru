@@ -438,11 +438,11 @@ class BillingRunIT {
         Subscription s = subscription(company, true);
         billing.run(START);
 
-        mockMvc.perform(get("/api/v1/subscriptions/invoices").header("Authorization", "Bearer " + platformToken()))
+        mockMvc.perform(get("/api/v1/subscriptions/invoices?filter=ALL&size=200").header("Authorization", "Bearer " + platformToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.id == '" + invoices(s).get(0).getId() + "')].client",
+                .andExpect(jsonPath("$.content[?(@.id == '" + invoices(s).get(0).getId() + "')].client",
                         hasItem(company.getName())))
-                .andExpect(jsonPath("$[?(@.id == '" + invoices(s).get(0).getId() + "')].ownerKind",
+                .andExpect(jsonPath("$.content[?(@.id == '" + invoices(s).get(0).getId() + "')].ownerKind",
                         hasItem("company")));
 
         mockMvc.perform(get("/api/v1/subscriptions/invoices").header("Authorization", "Bearer " + token(admin(company))))

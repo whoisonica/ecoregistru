@@ -88,7 +88,11 @@ await page.waitForTimeout(800);
 // ---------------------------------------------------------------- (2) ultima rulare
 const panel = await page.textContent('section[aria-labelledby="last-run"]');
 check("rularea numește firma căzută și motivul", panel.includes(B) && panel.includes("nu e valid") && /Nu s-a emis/.test(panel));
-check("rularea numește factura plătită", panel.includes(A) && /Plătită/.test(panel));
+check("emisele și plătitele stau strânse sub „Detalii”", !panel.includes(A) && /Detalii \(1\)/.test(panel), panel.slice(0, 200));
+await page.locator('section[aria-labelledby="last-run"] button:has-text("Detalii")').click();
+await page.waitForTimeout(300);
+const panelOpen = await page.textContent('section[aria-labelledby="last-run"]');
+check("„Detalii” arată factura plătită", panelOpen.includes(A) && /Plătită/.test(panelOpen));
 check("cifrele rulării, acordate", /1 factură plătită/.test(panel) && /1 factură căzută/.test(panel), panel.slice(0, 200));
 await shot(page, "29-facturare-1440");
 
@@ -100,7 +104,14 @@ async function pick(label) {
   await page.waitForTimeout(300);
   return rowsText();
 }
-let rows = await pick("Căzute");
+// F-B2 — ecranul pornește pe „De rezolvat”: căzutele și restantele, nu plătitele.
+let rows = await rowsText();
+const actionPill = page.locator('label:has(input[name="invoice-filter"])').filter({ hasText: /^De rezolvat / });
+check("implicit: „De rezolvat” apăsat", (await actionPill.locator("input").isChecked()));
+check("De rezolvat: B căzută și A restantă, fără plătita lui A",
+  rows.some((r) => r.includes(B) && r.includes("Căzută")) && rows.some((r) => r.includes(A) && r.includes("Restantă")) &&
+  !rows.some((r) => r.includes(A) && r.includes("Plătită")), rows.length + " rânduri");
+rows = await pick("Căzute");
 check("Căzute: firma B, numai căzute", rows.some((r) => r.includes(B)) && rows.every((r) => r.includes("Căzută")), rows.length + " rânduri");
 check("Căzute: fără A", !rows.some((r) => r.includes(A)));
 rows = await pick("Restante");
@@ -109,6 +120,37 @@ rows = await pick("Plătite");
 check("Plătite: factura lui A plătită prin transfer", rows.some((r) => r.includes(A) && /plătită/.test(r) && /transfer/.test(r)));
 rows = await pick("Toate");
 check("Toate: A de două ori și B", rows.filter((r) => r.includes(A)).length === 2 && rows.some((r) => r.includes(B)));
+
+// ---------------------------------------------------------------- F-B2: căutarea, luna, paginarea pe server
+const search = page.locator('input[type="search"]').first();
+await search.fill(`WH 9${RUN.slice(-3)}1`);
+await page.waitForTimeout(900);
+rows = await rowsText();
+check("căutarea după număr: doar factura plătită a lui A", rows.length === 1 && rows[0].includes(`WH 9${RUN.slice(-3)}1`), rows.length + " rânduri");
+await search.fill(A);
+await page.waitForTimeout(900);
+await page.selectOption('select[aria-label="Luna perioadei"]', "2026-08");
+await page.waitForTimeout(700);
+rows = await rowsText();
+check("luna august: doar restanța lui A (perioada 17.08)", rows.length === 1 && rows[0].includes("Restantă"), rows.join(" | ").slice(0, 200));
+check("luna stă în adresă", /luna=2026-08/.test(page.url()), page.url());
+await page.selectOption('select[aria-label="Luna perioadei"]', "");
+// 55 de plătite în plus pe A: pagina are 50, a doua restul.
+sql(`insert into subscription_invoices (id, subscription_id, period_start, period_end, total, lines_json, status, due_date, fgo_serie, fgo_numar, amount_paid, issued_at, paid_at, paid_by, created_at)
+  select gen_random_uuid(), '${ids.aSub}', date '2020-01-01' + (n || ' month')::interval, date '2020-01-28' + (n || ' month')::interval, 99, ${lines}, 'PAID',
+         date '2020-01-10' + (n || ' month')::interval, 'WH', '7${RUN.slice(-3)}' || n, 99, now(), now() - interval '100 day', 'TRANSFER', now() - interval '3 day'
+  from generate_series(0, 54) n`);
+await pick("Plătite");
+await page.waitForTimeout(700);
+rows = await rowsText();
+const range = await page.textContent("body");
+check("pagina 1: 50 de rânduri din 56", rows.length === 50 && /1[–-]50 din 56/.test(range), rows.length + " rânduri");
+await page.locator('button:has-text("Înainte")').last().click();
+await page.waitForTimeout(700);
+rows = await rowsText();
+check("pagina 2: 6 rânduri", rows.length === 6, rows.length + " rânduri");
+await search.fill("");
+await page.waitForTimeout(900);
 
 // ---------------------------------------------------------------- (4) Verifică plata fără chei FGO
 await pick("Restante");
@@ -139,6 +181,7 @@ check("după „Oprește”, B nu mai e între căzute", !rows.some((r) => r.inc
 const bSub = await api("GET", `/api/v1/subscriptions/company/${ids.b}`);
 check("abonamentul lui B e șters (fără alte facturi)", bSub.status === 204, String(bSub.status));
 const panelAfter = page.locator('section[aria-labelledby="last-run"] li', { hasText: B });
+await page.locator('section[aria-labelledby="last-run"]').waitFor();
 check("rândul din rulare rămâne, fără butoane", (await panelAfter.count()) === 1 && (await panelAfter.locator("button").count()) === 0);
 
 // ---------------------------------------------------------------- (7) 375px
