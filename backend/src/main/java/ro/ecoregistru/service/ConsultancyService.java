@@ -76,7 +76,7 @@ public class ConsultancyService {
     @Transactional
     public ConsultancyResponse create(ConsultancyRequest request) {
         String cui = CompanyService.normalizeCui(request.cui());
-        if (consultancyRepository.existsByCui(cui)) {
+        if (consultancyRepository.existsByCuiDigits(ro.ecoregistru.util.Cui.digits(cui))) {
             throw new UnprocessableEntityException(CONSULTANCY_CUI_ALREADY_EXISTS);
         }
         Consultancy consultancy = consultancyRepository.save(Consultancy.builder()

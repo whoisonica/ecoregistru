@@ -1,6 +1,8 @@
 package ro.ecoregistru.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.Company;
 
 import java.util.List;
@@ -11,6 +13,13 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
     Optional<Company> findByCui(String cui);
 
     boolean existsByCui(String cui);
+
+    /**
+     * Aceeași firmă, scrisă cu sau fără „RO” (scanarea din 17.09.2026: „RO51779887” și „51779887” intrau amândouă,
+     * fiindcă unicitatea din V1 e pe text). {@code digits} = {@code Cui.digits(...)}.
+     */
+    @Query("select count(c) > 0 from Company c where upper(c.cui) = :digits or upper(c.cui) = concat('RO', :digits)")
+    boolean existsByCuiDigits(@Param("digits") String digits);
 
     List<Company> findAllByActiveTrue();
 

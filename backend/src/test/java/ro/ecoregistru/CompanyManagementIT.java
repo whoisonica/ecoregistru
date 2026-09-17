@@ -255,6 +255,31 @@ class CompanyManagementIT {
     }
 
     /** A unique, well-formed CUI (RO + 8 digits) so methods don't collide on the unique column. */
+    /** Scanarea din 17.09.2026: aceeași firmă, cu și fără „RO”, nu se creează de două ori — nici la editare. */
+    @Test
+    void theSameCuiWithOrWithoutRoIsADuplicate() throws Exception {
+        String cui = uniqueCui();
+        mockMvc.perform(post("/api/v1/companies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(companyBody("Cu RO SRL", cui, "GENERATOR", false)))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/companies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(companyBody("Fara RO SRL", cui.substring(2), "GENERATOR", false)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("company.cui.exists")));
+
+        String other = createCompany();
+        mockMvc.perform(put("/api/v1/companies/" + other)
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(companyBody("Alta SRL", cui.substring(2), "GENERATOR", false)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("company.cui.exists")));
+    }
+
     private String uniqueCui() {
         return "RO" + TestCui.random();
     }

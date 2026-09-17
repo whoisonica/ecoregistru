@@ -151,7 +151,7 @@ public class CompanyService {
     public CompanyResponse create(CompanyRequest request) {
         AppUser me = SecurityUtils.currentUser();
         String cui = normalizeCui(request.cui());
-        if (companyRepository.existsByCui(cui)) {
+        if (companyRepository.existsByCuiDigits(Cui.digits(cui))) {
             throw cuiTaken(me);
         }
         Company company = Company.builder()
@@ -180,7 +180,8 @@ public class CompanyService {
         AppUser me = SecurityUtils.currentUser();
         Company company = requireManaged(id, me);
         String cui = normalizeCui(request.cui());
-        if (!cui.equals(company.getCui()) && companyRepository.existsByCui(cui)) {
+        if (!Cui.digits(cui).equals(Cui.digits(company.getCui()))
+                && companyRepository.existsByCuiDigits(Cui.digits(cui))) {
             throw cuiTaken(me);
         }
         company.setName(request.name().trim());

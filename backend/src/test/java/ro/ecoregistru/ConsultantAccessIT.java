@@ -383,6 +383,23 @@ class ConsultantAccessIT {
         }
     }
 
+    /** Scanarea din 17.09.2026: același cabinet cu și fără „RO” nu se creează de două ori. */
+    @Test
+    void theSameConsultancyCuiWithOrWithoutRoIsADuplicate() throws Exception {
+        String cui = digitsCui();
+        mockMvc.perform(post("/api/v1/consultancies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("name", "Cabinet Patru", "cui", cui))))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/consultancies")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("name", "Cabinet Patru bis", "cui", cui.substring(2)))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("consultancy.cui.exists")));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Baza de date
     // ─────────────────────────────────────────────────────────────────────────
