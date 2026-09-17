@@ -352,6 +352,23 @@ class BillingSelfServiceIT {
         verify(fgo, never()).status(any(), any());
     }
 
+    /** Fără cheile FGO nu s-a întrebat nimic, deci al doilea clic spune tot „lipsesc cheile”, nu „ai întrebat acum”. */
+    @Test
+    void withoutFgoKeysEveryClickSaysTheKeysAreMissing() throws Exception {
+        Company company = company();
+        SubscriptionInvoice invoice = issuedAnHourAgo(subscription(company));
+        when(fgo.isConfigured()).thenReturn(false);
+        String token = token(admin(company));
+
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/v1/billing/invoices/" + invoice.getId() + "/check-payment")
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$['error-code']", is("fgo.not.configured")));
+        }
+        verify(fgo, never()).statusForClient(any(), any());
+    }
+
     /** Factura altei firme nu există pentru client: 404, nu 403, și FGO nu e întrebat. */
     @Test
     void anotherCompanysInvoiceIsNotFound() throws Exception {

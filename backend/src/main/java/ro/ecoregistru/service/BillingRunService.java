@@ -250,7 +250,10 @@ public class BillingRunService {
      * that got no answer, FGO is not asked either, and the client is told to come back.
      */
     public void checkPaymentForAccount(AppUser user, UUID tenantId, UUID invoiceId, LocalDate today) {
-        Instant lastChecked = tx.execute(status -> {
+        if (!fgo.isConfigured()) {
+            throw new ServiceUnavailableException(ErrorMessageEnum.FGO_NOT_CONFIGURED);
+        }
+        SubscriptionInvoice own = tx.execute(status -> {
             Subscription payer = subscriptionService.payerFor(user, tenantId)
                     .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND));
             SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId)
@@ -258,8 +261,13 @@ public class BillingRunService {
                     // A DRAFT is ours: to the client it does not exist.
                     .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)
                     .orElseThrow(() -> new NotFoundException(ErrorMessageEnum.INVOICE_NOT_FOUND));
-            return invoice.getPaymentCheckedAt();
+            return invoice;
         });
+        // Ce n-ar întreba FGO oricum (fără chei, factură deja plătită) nu pornește pauza.
+        if (own.getStatus() != InvoiceStatus.ISSUED) {
+            throw new UnprocessableEntityException(ErrorMessageEnum.INVOICE_NOT_ISSUED);
+        }
+        Instant lastChecked = own.getPaymentCheckedAt();
         Instant now = Instant.now();
         Instant cutoff = now.minus(CLIENT_CHECK_PAUSE);
         if (lastChecked != null && lastChecked.isAfter(cutoff)) {
