@@ -8,6 +8,34 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, ~21:00 — ✅ pe `main` (`1b82c51`), ⏳ NEDEPLOYAT (deployul din sesiune refuzat de clasificator, îl rulează proprietarul): reparațiile din scanarea codului și a md-urilor** (fără migrare, schema **V63**, liberă **V64**; producția rămâne api **v126** / app **v116** până la deploy).
+> Proprietarul: „scanează atent codul și toate md files”, apoi „ce ai zis că trebuie fixat, să fixăm neapărat”; depozitul și mobilul lăsate deoparte.
+> Scanarea pe `7f16fcc` (= producția): 921 de teste / 110 clase, 0 eșecuri; `npm test` 43; tsc; build. Șase defecte (BUG-025…030 în `QA-BUGS.md`, repo privat):
+> **(1) BUG-025** — „Am plătit — verifică acum” (F-E) își punea pauza de 2 minute doar după un răspuns FGO, iar `FgoClient.send` era `synchronized`
+> (30 s × 3 la 409 + pauze): cu FGO căzut, clicurile clienților stăteau la coadă și țineau pe loc butoanele platformei. Acum încercarea însăși oprește
+> următoarea 2 minute (`fgo.recently.asked`), clientul așteaptă lacătul cel mult 5 s și nu reîncearcă 409; rularea de la 06:30 rămâne neschimbată.
+> Fără chei FGO sau pe o factură plătită, pauza nu pornește (proba 36 a prins ordinea). **(2) BUG-026** — **reprodus**: „RO51779887” și „51779887” făceau
+> două firme (și două cabinete), la creare și la editare; verificarea compară acum cifrele (`existsByCuiDigits`). **(3) BUG-027** — ANAF v9 răspunde
+> **HTTP 404** cu `{"found":[],"notFound":[cui]}` la un CUI necunoscut (verificat cu `curl`), citit ca „ANAF nu răspunde”; acum „ANAF nu are nicio firmă”.
+> **(4) BUG-028** — județul de facturare se verifică pe server după nomenclatorul FGO (`util/FgoCounties`, `billing.county.invalid`). **(5) BUG-029** —
+> șase `@Scheduled` fără `zone` pe un dyno UTC: mementourile de termene plecau la 10:00; toate nouă pe `Europe/Bucharest` (`SchedulerZoneTest`).
+> **(6) BUG-030** — găsit când suita a stat 10 minute: `CloudinaryStorageService.fetch` avea termen doar până la antete, deci un atașament care tăcea la
+> jumătate ținea dosarul (și tranzacția) pe loc; acum termen de 20 s pe toată descărcarea. Plus: consultantul nu mai cere `/subscriptions/founders` (403).
+> **Probe:** backend **931 / 112, 0 eșecuri** (+10 teste), fiecare regulă nouă scoasă o dată → exact testele ei cad; `npm test` 43, tsc, build;
+> e2e **36, 31, 29, 33, 30** verzi pe `eco_e2e_scanfix` (stivă proprie 8097/5197). **Docs:** README (Boot 3.5, 931/112, 37 de probe, kg, fără trimestrial,
+> dosarul nou, Clienți pe taburi și pagini, Facturare, Abonament), `legislatie.md` (AFM fără trimestrial), `frontend/e2e/README.md` (proba 37).
+> **Deploy:** `scripts/deploy-split.sh both --ref origin/main --push`.
+
+> **17.09.2026, 19:49 — ✅ pe producție: `/abonament` la client (F-E) și cache-ul golit la deconectare** (`ecoregistru-api` **v126**, `8fadcb8`; `ecoregistru-app` **v116**, `53c1791`; monorepo `a5a1bfc` + `e90f759` + `7f16fcc`; fără migrare, schema **V63**).
+> **(1) F-E** (`todo-clienti-abonamente.md`, repo privat): sus un bon cu câte un rând pe factură emisă și neplătită, totalul sub linie, „De plată până pe …” /
+> „Restantă de N zile” sau „Totul e plătit” cu următoarea factură; transferul cu beneficiarul, CUI-ul, IBAN-ul și banca din contract (`app.billing.payee.*`),
+> suma și numerele facturilor, fiecare cu „Copiază” (IBAN-ul fără spații); „Am plătit — verifică acum” (`POST /api/v1/billing/invoices/{id}/check-payment`,
+> doar pe facturile contului, fără FGO dacă plata a fost citită în ultimele 2 minute); datele de facturare ținute la zi de client (`PUT /api/v1/billing/details`,
+> contract art. 7.5, fără denumire și CUI), cu rândul `Subscription` în jurnalul firmei și mail pe adresa veche. **(2) `7f16fcc`:** `queryClient.clear()` la
+> autentificare și deconectare — un consultant care intra după platformă în același tab vedea și putea alege firmele platformei (proba **37**).
+> Probe: backend 921 (`BillingSelfServiceIT` 13), `npm test` 43, e2e **36** 29/29 și **37**. CI roșu doar pe proba 34 (date: 6→7 parteneri), deci deployul a
+> fost rulat de proprietar.
+
 > **17.09.2026, 19:08 — ✅ pe producție: Termene pe taburi — De făcut · Bifate · Trecute, cu termenele trecute „Calculat”** (`ecoregistru-api` **v125**, `3c2d983`; `ecoregistru-app` **v115**, `6f1718d`; monorepo `6e4a361` + `292e94a`; fără migrare, schema **V63**, liberă **V64**).
 > Proprietarul: „termene la fel ca la clienți — sus De făcut, Bifate și nou Trecute, doar 2026 ce a trecut”. **(1)** `PageTabs` pe `/termene`
 > (`?tab=bifate|trecute`, ca pe Clienți); „Bifate” păstrează selectorul de an. **(2)** `GET /api/v1/deadlines/past` → `DeadlineService.listPast`: anul
