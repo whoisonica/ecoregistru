@@ -70,6 +70,7 @@ import {
 } from "@/components/movements/movementRules";
 import { PackagingFields } from "@/components/movements/PackagingFields";
 import { Anexa2Fields } from "@/components/movements/Anexa2Fields";
+import { TransportFields } from "@/components/movements/TransportFields";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -1544,141 +1545,27 @@ export function MovementFormDialog({
               </div>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {/* Transportatorul și șoferul stau alături: alegerea firmei decide ce șoferi se
-                  propun, iar alăturarea face legătura vizibilă fără s-o explice nimeni. */}
-              <div>
-                <Label htmlFor="mv-carrier">{t.transportPartner}</Label>
-                <Select
-                  id="mv-carrier"
-                  value={transportPartnerId}
-                  onChange={(ev) => {
-                    setTransportPartnerId(ev.target.value);
-                    // Șoferii sunt ai transportatorului: schimbi firma, alegerea nu mai e a ei.
-                    // Textul deja scris rămâne — poate a fost scris de mână, și nu se șterge munca.
-                    setDriverId("");
-                  }}
-                >
-                  <option value="">{t.transportPartnerPlaceholder}</option>
-                  {carrierPartners.length > 0 && (
-                    <optgroup label={t.carrierGroup}>
-                      {carrierPartners.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {otherPartners.length > 0 && (
-                    <optgroup label={carrierPartners.length > 0 ? t.otherPartnersGroup : t.allPartnersGroup}>
-                      {otherPartners.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </Select>
-                <p className="mt-1 text-xs text-content-muted">
-                  {carrierPartners.length > 0 ? t.transportPartnerHint : t.transportPartnerNoneHint}
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="mv-driver-pick">{t.driverPick}</Label>
-                <Select
-                  id="mv-driver-pick"
-                  value={driverId}
-                  onChange={(ev) => {
-                    const picked = availableDrivers.find((d) => d.id === ev.target.value);
-                    setDriverId(ev.target.value);
-                    if (picked) {
-                      setDriverName(picked.name);
-                      setDriverIdentification(picked.identification ?? "");
-                      setDriverCnp(picked.cnp ?? "");
-                      setVehicleRegistration(picked.vehicleRegistration ?? "");
-                    }
-                  }}
-                  disabled={availableDrivers.length === 0}
-                >
-                  <option value="">{t.driverPickFreeText}</option>
-                  {availableDrivers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                      {d.vehicleRegistration ? ` — ${d.vehicleRegistration}` : ""}
-                    </option>
-                  ))}
-                </Select>
-                <p className="mt-1 text-xs text-content-muted">
-                  {availableDrivers.length > 0
-                    ? t.driverPickHint
-                    : transportPartnerId
-                      ? t.driverPickNoneCarrier
-                      : t.driverPickNoneOwn}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <Label htmlFor="mv-driver">{t.driverName}</Label>
-                <Input
-                  id="mv-driver"
-                  value={driverName}
-                  onChange={(ev) => setDriverName(ev.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="mv-driver-id">{t.driverIdentification}</Label>
-                <Input
-                  id="mv-driver-id"
-                  value={driverIdentification}
-                  onChange={(ev) => setDriverIdentification(ev.target.value)}
-                  placeholder={t.driverIdentificationPlaceholder}
-                />
-              </div>
-              <div>
-                <Label htmlFor="mv-driver-cnp">{strings.common.cnp}</Label>
-                <Input
-                  id="mv-driver-cnp"
-                  inputMode="numeric"
-                  maxLength={13}
-                  value={driverCnp}
-                  onChange={(ev) => setDriverCnp(ev.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="mv-plate">{t.vehicleRegistration}</Label>
-                <Input
-                  id="mv-plate"
-                  value={vehicleRegistration}
-                  onChange={(ev) => setVehicleRegistration(ev.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <span id="mv-destinat-label" className="block text-sm font-medium text-content-strong">
-                {t.askTransportDestinations}
-              </span>
-              <p className="text-xs text-content-muted">
-                {destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}
-              </p>
-              <PillGroup
-                multiple
-                name="mv-destinat"
-                aria-labelledby="mv-destinat-label"
-                className="mt-2"
-                selected={transportDestinations}
-                onToggle={(d) => {
-                  setDestinationsPrefilled(false);
-                  setTransportDestinations((prev) =>
-                    prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]
-                  );
-                }}
-                options={(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => ({
-                  value: d,
-                  label: e.transportDestination[d],
-                }))}
-              />
-            </div>
+            <TransportFields
+              transportPartnerId={transportPartnerId}
+              setTransportPartnerId={setTransportPartnerId}
+              carrierPartners={carrierPartners}
+              otherPartners={otherPartners}
+              driverId={driverId}
+              setDriverId={setDriverId}
+              availableDrivers={availableDrivers}
+              driverName={driverName}
+              setDriverName={setDriverName}
+              driverIdentification={driverIdentification}
+              setDriverIdentification={setDriverIdentification}
+              driverCnp={driverCnp}
+              setDriverCnp={setDriverCnp}
+              vehicleRegistration={vehicleRegistration}
+              setVehicleRegistration={setVehicleRegistration}
+              transportDestinations={transportDestinations}
+              setTransportDestinations={setTransportDestinations}
+              destinationsPrefilled={destinationsPrefilled}
+              setDestinationsPrefilled={setDestinationsPrefilled}
+            />
             {showAnexa2Section && (
               <Anexa2Fields
                 anexa2BelowOneTon={anexa2BelowOneTon}
