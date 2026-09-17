@@ -205,9 +205,9 @@ check("termenul de 15 martie duce la evidenţă", anexa1?.document?.href === `/e
 check("şi duce la anul raportat, nu la anul termenului",
   new RegExp(String(anRaportat)).test(anexa1?.document?.text ?? ""), anexa1?.document?.text);
 
-// Din 16.09.2026, sub document stă starea lui, socotită din evidența anului raportat.
+// Din 16.09.2026, sub document stă starea lui, socotită din evidența anului raportat; din 17.09.2026 în kg (app v101).
 check("termenul de 15 martie arată cifrele anului raportat",
-  new RegExp(`${anRaportat}: \\d+ (cod|coduri|de coduri), [\\d.,]+ t`).test(anexa1?.documentText ?? ""),
+  new RegExp(`${anRaportat}: \\d+ (cod|coduri|de coduri), [\\d.,]+ kg`).test(anexa1?.documentText ?? ""),
   anexa1?.documentText);
 const anexa3 = termene.find((r) => /^Anexa 3 Ambalaje/.test(r.tip));
 check("un colector cu ambalaje preluate primește termenul Anexei 3 (Ordinul 794/2012 art. 4)",

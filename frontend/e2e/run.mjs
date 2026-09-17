@@ -35,6 +35,7 @@ const suites = [
   ["24-primii-pasi.mjs", "«Primii pași» pe Acasă: nu la firma care are tot, pașii bifați din date, «Ascunde» care ține, 375px"],
   ["25-parola-poster.mjs", "«Parolă uitată» și «Alege-ți parola» în PublicShell: fără cod, parole diferite, cod greșit, 375px"],
   ["26-dupa-salvare.mjs", "ce urmează după o mișcare nouă: bonul, Anexa 3 și avizul, «Încă una la fel» fără cifre, editarea cu mesajul scurt"],
+  ["27-an-declarat.mjs", "anul deja declarat: salvarea, ștergerea și cântarul întreabă; cu termenul redeschis, salvarea trece direct"],
 ];
 
 const only = process.argv[2];
