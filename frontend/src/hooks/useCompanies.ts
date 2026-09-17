@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Company, CompanyInput, CompanyUser, InviteUserInput, PriceVisibility } from "@/lib/types";
+import type { ClientOverview, Company, CompanyInput, CompanyUser, InviteUserInput, PriceVisibility } from "@/lib/types";
 
 /**
  * Companies (tenants) — platform admin and consultant. The list drives the tenant switcher AND the
@@ -9,6 +9,17 @@ import type { Company, CompanyInput, CompanyUser, InviteUserInput, PriceVisibili
  * check) to avoid firing it. Mutations invalidate the list.
  */
 export const companiesKey = ["companies"] as const;
+/** Sub „subscriptions”: orice schimbare de abonament sau factură îl reîmprospătează singură. */
+export const clientOverviewKey = ["subscriptions", "client-overview"] as const;
+
+/** F-B — abonamentul, ultima factură și utilizatorii fiecărei firme, pentru tabelul Clienți. */
+export function useClientOverview(enabled: boolean) {
+  return useQuery({
+    queryKey: clientOverviewKey,
+    queryFn: async () => (await api.get<ClientOverview[]>("/api/v1/companies/overview")).data,
+    enabled,
+  });
+}
 
 export function useCompanies(enabled: boolean) {
   return useQuery({
@@ -41,7 +52,10 @@ export function useCreateCompany() {
   return useMutation({
     mutationFn: async (input: CompanyInput) =>
       (await api.post<Company>("/api/v1/companies", input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: companiesKey }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: companiesKey });
+      qc.invalidateQueries({ queryKey: clientOverviewKey });
+    },
   });
 }
 
@@ -88,8 +102,10 @@ export function useAssignConsultancy() {
 }
 
 export function useInviteUser() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: InviteUserInput }) =>
       (await api.post<CompanyUser>(`/api/v1/companies/${id}/users`, input)).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: clientOverviewKey }),
   });
 }
