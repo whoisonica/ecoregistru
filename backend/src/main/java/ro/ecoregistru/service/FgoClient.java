@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -235,11 +237,15 @@ public class FgoClient {
         lastCallAt = System.currentTimeMillis();
     }
 
-    private static SimpleClientHttpRequestFactory timeouts() {
+    /**
+     * Buffered, so the body goes with a Content-Length: unbuffered, Java streams it chunked, which the FGO
+     * test server does not decode (17.09.2026, every getstatus of WH 6 answered HTML; curl chunked → 500).
+     */
+    private static ClientHttpRequestFactory timeouts() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(10_000);
         factory.setReadTimeout(30_000);
-        return factory;
+        return new BufferingClientHttpRequestFactory(factory);
     }
 
     private static void putIfPresent(Map<String, Object> map, String key, String value) {
