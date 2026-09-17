@@ -1941,6 +1941,11 @@ export const strings = {
     todoEmpty: "Niciun termen de făcut.",
     doneTitle: "Bifate",
     doneEmpty: "Niciun termen bifat în {year}.",
+    pastTitle: "Trecute",
+    pastEmpty: "Niciun termen trecut în {year}.",
+    pastHint: "Termenele din {year} cu data înainte de azi, bifate sau nu. Anii dinainte nu apar.",
+    pastOpen: "Nebifat",
+    tabsLabel: "Termene",
     searchPlaceholder: "Caută după tip de raportare sau notă...",
     emptyHint: "Termenele apar singure, câte unul pe fiecare raportare. Dacă lipsește unul, apasă „Verifică termenele”.",
     // Data singură cere o socoteală în cap — Panoul o făcea de mult, tabelul nu. „Azi" și „mâine"

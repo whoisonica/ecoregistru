@@ -112,6 +112,21 @@ public class DeadlineService {
                 .toList();
     }
 
+    /**
+     * Tabul „Trecute” (proprietarul, 17.09.2026): termenele anului în curs cu scadența înainte de azi,
+     * bifate sau nu — și cele pe care {@link #list} le ascunde (generarea veche, dinainte de
+     * {@link MissedDeadlinePolicy}). Aici nu sunt o alarmă, ci ce a fost; anii dinainte nu intră.
+     */
+    @Transactional(readOnly = true)
+    public List<DeadlineResponse> listPast(UUID companyId, LocalDate today) {
+        if (today.getDayOfYear() == 1) return List.of();
+        return deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
+                        companyId, today.withDayOfYear(1), today.minusDays(1))
+                .stream()
+                .map(d -> toResponse(d, today))
+                .toList();
+    }
+
     /** Butonul de pe Termene: completează pe loc ce ar completa dimineața programată. */
     @Transactional
     public DeadlineGenerationResponse regenerate() {

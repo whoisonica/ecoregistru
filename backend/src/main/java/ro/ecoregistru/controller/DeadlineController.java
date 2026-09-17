@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.CompleteDeadlineRequest;
 import ro.ecoregistru.controller.response.DeadlineGenerationResponse;
 import ro.ecoregistru.controller.response.DeadlineResponse;
+import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.DeadlineService;
 
 import java.util.List;
@@ -31,6 +32,11 @@ public class DeadlineController {
     @GetMapping
     public List<DeadlineResponse> list(@RequestParam int year) {
         return deadlineService.list(year);
+    }
+
+    @GetMapping("/past")
+    public List<DeadlineResponse> past() {
+        return deadlineService.listPast(TenantContext.require(), DeadlineService.today());
     }
 
     @PostMapping("/regenerate")

@@ -242,6 +242,7 @@ class RoleAuthorizationMatrixIT {
                 "/api/v1/waste-codes?q=15",
                 "/api/v1/companies/current",
                 "/api/v1/deadlines?year=" + LocalDate.now().getYear(),
+                "/api/v1/deadlines/past",
                 "/api/v1/evidences?year=" + LocalDate.now().getYear(),
                 "/api/v1/packaging/market?year=" + LocalDate.now().getYear(),
                 "/api/v1/packaging/table1?year=" + LocalDate.now().getYear(),

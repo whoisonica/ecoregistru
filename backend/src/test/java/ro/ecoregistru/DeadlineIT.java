@@ -319,6 +319,32 @@ class DeadlineIT {
                 .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
     }
 
+    /**
+     * Tabul „Trecute” (17.09.2026): anul în curs până ieri, bifate și nebifate, fără anul trecut, fără
+     * azi și fără viitor; al altei firme nu intră.
+     */
+    @Test
+    void pastListsThisYearsDeadlinesBeforeToday() {
+        TenantFixture t = newTenant(false);
+        TenantFixture other = newTenant(false);
+        LocalDate today = LocalDate.of(2026, 9, 17);
+        saveDeadline(t, ReportType.OTHER, LocalDate.of(2025, 12, 25), DeadlineStatus.UPCOMING);
+        saveDeadline(t, ReportType.OTHER, LocalDate.of(2026, 1, 25), DeadlineStatus.UPCOMING);
+        saveDeadline(t, ReportType.SIM_ANNUAL, LocalDate.of(2026, 3, 15), DeadlineStatus.DONE);
+        saveDeadline(t, ReportType.OTHER, LocalDate.of(2026, 9, 16), DeadlineStatus.UPCOMING);
+        saveDeadline(t, ReportType.OTHER, today, DeadlineStatus.UPCOMING);
+        saveDeadline(t, ReportType.SIM_ANNUAL, LocalDate.of(2027, 3, 15), DeadlineStatus.UPCOMING);
+        saveDeadline(other, ReportType.OTHER, LocalDate.of(2026, 5, 25), DeadlineStatus.UPCOMING);
+
+        var past = deadlineService.listPast(t.company.getId(), today);
+
+        assertThat(past).extracting(r -> r.dueDate()).containsExactly(
+                LocalDate.of(2026, 1, 25), LocalDate.of(2026, 3, 15), LocalDate.of(2026, 9, 16));
+        assertThat(past).extracting(r -> r.status()).containsExactly(
+                DeadlineStatus.OVERDUE, DeadlineStatus.DONE, DeadlineStatus.OVERDUE);
+        assertThat(deadlineService.listPast(t.company.getId(), LocalDate.of(2026, 1, 1))).isEmpty();
+    }
+
     @Test
     void viewerCannotGenerate() throws Exception {
         String viewerToken = jwtService.generateToken(

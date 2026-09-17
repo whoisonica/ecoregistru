@@ -184,6 +184,7 @@ class TenantIsolationMatrixIT {
                 "/api/v1/drivers",
                 "/api/v1/internal-generators",
                 "/api/v1/deadlines?year=" + LocalDate.now().getYear(),
+                "/api/v1/deadlines/past",
                 "/api/v1/audit-log",
         };
         for (String url : lists) {

@@ -84,6 +84,15 @@ export function useUpcomingDeadlines(enabled = true) {
   };
 }
 
+/** Tabul „Trecute”: anul în curs până ieri, bifate sau nu, inclusiv cele ascunse din „De făcut”. */
+export function usePastDeadlines(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: [...deadlinesRoot, "trecute"],
+    queryFn: async () => (await api.get<Deadline[]>("/api/v1/deadlines/past")).data,
+  });
+}
+
 /** Completează calendarul cu următorul termen al fiecărui fel; pe server, nu pe un an ales. */
 export function useRegenerateDeadlines() {
   const qc = useQueryClient();

@@ -1,5 +1,11 @@
 # Probe de interfaţă
 
+📅 **17.09.2026 — proba 35 (`35-termene-trecute.mjs`), Termene pe taburi**: De făcut · Bifate · Trecute, ca pe Clienți, tabul în
+adresă (`?tab=bifate` / `?tab=trecute`) și păstrat la reîncărcare; implicit doar „De făcut”; „Bifate” păstrează selectorul de an;
+„Trecute” (`GET /deadlines/past`) are doar anul în curs, înainte de azi, bifate sau nu — inclusiv AFM-urile vechi din seeder,
+ascunse din „De făcut” — cu „Nebifat” gri, fără „Depășit” și fără zile; 375px carduri, fără derulare. **Negativă:** badge-ul
+obișnuit pe „Trecute” → 1 cădere. Nu lasă nimic în urmă.
+
 🗂️ **17.09.2026 — proba 34 (`34-dosar-continut.mjs`), „Ce intră în arhivă” pe Dosarul de control**: pe firma demo, 2026, șase rânduri
 (fără rezumatul neoficial): fișa și centralizata „Intră” cu mișcările anului și 15 martie 2027; Anexa 1 Ambalaje „Nu intră” fiindcă profilul
 nu spune dacă e producător, importator sau comerciant; Anexa 3 Ambalaje „Lipsește” fiindcă anul are ambalaje, dar rolul (colector, comerciant,

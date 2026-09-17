@@ -11,6 +11,7 @@ import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
   useDeadlines,
   useUpcomingDeadlines,
+  usePastDeadlines,
   useRegenerateDeadlines,
   useCompleteDeadline,
   useReopenDeadline,
@@ -20,7 +21,8 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { cn, formatDate, withCount } from "@/lib/utils";
 import { daysLabel, documentFor, noteFor } from "@/lib/deadlines";
-import { useUrlNumber } from "@/hooks/useUrlState";
+import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
+import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Label } from "@/components/ui/label";
@@ -60,9 +62,14 @@ export function DeadlinesPage() {
 
   // „De făcut” nu are an: termenele nebifate, câte unul pe fiecare fel, stau des în anul următor
   // (15 martie pentru datele de acum). Anul se alege doar pentru istoricul celor bifate.
+  // Taburile ca pe Clienți (17.09.2026): o singură listă pe ecran, tabul în adresă.
+  const [tabParam, setTab] = useUrlState("tab");
+  const tab = tabParam === "bifate" || tabParam === "trecute" ? tabParam : "";
+  const currentYear = new Date().getFullYear();
   const upcoming = useUpcomingDeadlines();
-  const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
-  const history = useDeadlines(year);
+  const [year, setYear] = useUrlNumber("an", currentYear);
+  const history = useDeadlines(year, tab === "bifate");
+  const past = usePastDeadlines(tab === "trecute");
   const regenerateMut = useRegenerateDeadlines();
   const completeMut = useCompleteDeadline();
   const reopenMut = useReopenDeadline();
@@ -79,6 +86,12 @@ export function DeadlinesPage() {
     () => (history.data ?? []).filter((d) => d.status === "DONE"),
     [history.data],
   );
+
+  const tabs: PageTab[] = [
+    { id: "", label: t.todoTitle, count: upcoming.data ? todo.length : undefined },
+    { id: "bifate", label: t.doneTitle },
+    { id: "trecute", label: t.pastTitle },
+  ];
 
   function handleRegenerate() {
     regenerateMut.mutate(undefined, {
@@ -146,8 +159,10 @@ export function DeadlinesPage() {
         }
       />
 
+      <PageTabs tabs={tabs} selected={tab} onSelect={setTab} label={t.tabsLabel} />
+
+      {tab === "" && (
       <section className="mt-6" data-testid="deadlines-todo">
-        <h2 className="text-base font-semibold text-content">{t.todoTitle}</h2>
         <DeadlinesTable
           rows={todo}
           loading={upcoming.isLoading}
@@ -173,12 +188,11 @@ export function DeadlinesPage() {
           reopenPending={reopenMut.isPending}
         />
       </section>
+      )}
 
-      <section className="mt-10" data-testid="deadlines-done">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-base font-semibold text-content">
-            {t.doneTitle}
-          </h2>
+      {tab === "bifate" && (
+      <section className="mt-6" data-testid="deadlines-done">
+        <div className="flex flex-wrap items-end justify-end gap-3">
           <div>
             <Label htmlFor="dl-year">{t.filterYear}</Label>
             <Select
@@ -206,6 +220,24 @@ export function DeadlinesPage() {
           reopenPending={reopenMut.isPending}
         />
       </section>
+      )}
+
+      {tab === "trecute" && (
+      <section className="mt-6" data-testid="deadlines-past">
+        <p className="text-sm text-content-muted">{t.pastHint.replace("{year}", String(currentYear))}</p>
+        <DeadlinesTable
+          rows={past.data ?? []}
+          loading={past.isLoading}
+          error={past.isError}
+          emptyTitle={t.pastEmpty.replace("{year}", String(currentYear))}
+          past
+          canManage={canManage}
+          onComplete={openComplete}
+          onReopen={handleReopen}
+          reopenPending={reopenMut.isPending}
+        />
+      </section>
+      )}
 
       <Dialog
         open={completing !== null}
@@ -260,6 +292,7 @@ function DeadlinesTable({
   onComplete,
   onReopen,
   reopenPending,
+  past = false,
 }: {
   rows: Deadline[];
   loading: boolean;
@@ -271,6 +304,8 @@ function DeadlinesTable({
   onComplete: (d: Deadline) => void;
   onReopen: (d: Deadline) => void;
   reopenPending: boolean;
+  /** „Trecute”: fără zile rămase și fără „Depășit” roșu — e istorie, nu alarmă. */
+  past?: boolean;
 }) {
   const view = useTableView(rows, {
     searchText: (d) =>
@@ -312,6 +347,7 @@ function DeadlinesTable({
                 onComplete={onComplete}
                 onReopen={onReopen}
                 reopenPending={reopenPending}
+                past={past}
               />
             ))}
           </ul>
@@ -360,7 +396,7 @@ function DeadlinesTable({
             )}
             {view.visible.map((d) => {
               const doc = documentFor(d);
-              const days = daysLabel(d);
+              const days = past ? null : daysLabel(d);
               const note = noteFor(d);
               return (
                 <TR key={d.id}>
@@ -386,9 +422,7 @@ function DeadlinesTable({
                     )}
                   </TD>
                   <TD className="whitespace-nowrap">
-                    <Badge variant={statusVariant[d.status]}>
-                      {strings.enums.deadlineStatus[d.status]}
-                    </Badge>
+                    <StatusBadge d={d} past={past} />
                   </TD>
                   <TD className="min-w-56">
                     {doc ? (
@@ -402,7 +436,7 @@ function DeadlinesTable({
                     ) : (
                       <span className="text-content-subtle">—</span>
                     )}
-                    <DeadlineReadiness deadline={d} />
+                    {!past && <DeadlineReadiness deadline={d} />}
                   </TD>
                   <TD className="max-w-xs truncate text-content-muted">
                     {d.completionNote ?? "—"}
@@ -448,15 +482,17 @@ function DeadlineCard({
   onComplete,
   onReopen,
   reopenPending,
+  past,
 }: {
   d: Deadline;
   canManage: boolean;
   onComplete: (d: Deadline) => void;
   onReopen: (d: Deadline) => void;
   reopenPending: boolean;
+  past: boolean;
 }) {
   const doc = documentFor(d);
-  const days = daysLabel(d);
+  const days = past ? null : daysLabel(d);
   const note = noteFor(d);
   return (
     <li className="space-y-2 py-3">
@@ -471,14 +507,12 @@ function DeadlineCard({
             <span className="ml-1.5 text-xs text-content-subtle">{days}</span>
           )}
         </span>
-        <Badge variant={statusVariant[d.status]}>
-          {strings.enums.deadlineStatus[d.status]}
-        </Badge>
+        <StatusBadge d={d} past={past} />
       </div>
       {d.completionNote && (
         <p className="text-sm text-content-muted">{d.completionNote}</p>
       )}
-      <DeadlineReadiness deadline={d} />
+      {!past && <DeadlineReadiness deadline={d} />}
       {(doc || canManage) && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           {doc ? (
@@ -513,4 +547,9 @@ function DeadlineCard({
       )}
     </li>
   );
+}
+
+function StatusBadge({ d, past }: { d: Deadline; past: boolean }) {
+  if (past && d.status !== "DONE") return <Badge variant="muted">{t.pastOpen}</Badge>;
+  return <Badge variant={statusVariant[d.status]}>{strings.enums.deadlineStatus[d.status]}</Badge>;
 }
