@@ -345,6 +345,35 @@ class DeadlineIT {
         assertThat(deadlineService.listPast(t.company.getId(), LocalDate.of(2026, 1, 1))).isEmpty();
     }
 
+    /**
+     * O firmă nouă n-are termene trecute salvate: „Trecute” le socotește din profil, fără id, fără să
+     * scrie nimic; unul salvat pe aceeași zi nu se dublează.
+     */
+    @Test
+    void pastComputesWhatTheProfileOwedWithoutSavingIt() {
+        TenantFixture t = newTenant(true, AfmContribution.WITHHOLDING_2_PERCENT);
+        LocalDate today = LocalDate.of(2026, 9, 17);
+        saveDeadline(t, ReportType.AFM_MONTHLY, LocalDate.of(2026, 2, 25), DeadlineStatus.DONE);
+
+        var past = deadlineService.listPast(t.company.getId(), today);
+
+        assertThat(past).filteredOn(r -> r.reportType() == ReportType.AFM_MONTHLY)
+                .extracting(r -> r.dueDate().getMonthValue()).containsExactly(1, 2, 3, 4, 5, 6, 7, 8);
+        assertThat(past).filteredOn(r -> r.reportType() == ReportType.SIM_ANNUAL)
+                .extracting(r -> r.dueDate()).containsExactly(LocalDate.of(2026, 3, 15));
+        assertThat(past).filteredOn(r -> r.dueDate().equals(LocalDate.of(2026, 2, 25)))
+                .singleElement().satisfies(r -> {
+                    assertThat(r.computed()).isFalse();
+                    assertThat(r.id()).isNotNull();
+                });
+        assertThat(past).filteredOn(r -> !r.dueDate().equals(LocalDate.of(2026, 2, 25)))
+                .allSatisfy(r -> {
+                    assertThat(r.computed()).isTrue();
+                    assertThat(r.id()).isNull();
+                });
+        assertThat(rows(t)).hasSize(1);
+    }
+
     @Test
     void viewerCannotGenerate() throws Exception {
         String viewerToken = jwtService.generateToken(

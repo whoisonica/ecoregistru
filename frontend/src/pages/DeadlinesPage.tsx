@@ -341,7 +341,7 @@ function DeadlinesTable({
           <ul className="divide-y divide-line border-y border-line">
             {view.visible.map((d) => (
               <DeadlineCard
-                key={d.id}
+                key={rowKey(d)}
                 d={d}
                 canManage={canManage}
                 onComplete={onComplete}
@@ -399,7 +399,7 @@ function DeadlinesTable({
               const days = past ? null : daysLabel(d);
               const note = noteFor(d);
               return (
-                <TR key={d.id}>
+                <TR key={rowKey(d)}>
                   <TD className="font-medium text-content">
                     {strings.enums.reportType[d.reportType]}
                     {note && (
@@ -443,7 +443,7 @@ function DeadlinesTable({
                   </TD>
                   {canManage && (
                     <TD sticky="right" className="whitespace-nowrap text-right">
-                      {d.status === "DONE" ? (
+                      {d.computed ? null : d.status === "DONE" ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -513,7 +513,7 @@ function DeadlineCard({
         <p className="text-sm text-content-muted">{d.completionNote}</p>
       )}
       {!past && <DeadlineReadiness deadline={d} />}
-      {(doc || canManage) && (
+      {(doc || (canManage && !d.computed)) && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           {doc ? (
             <Link
@@ -527,6 +527,7 @@ function DeadlineCard({
             <span />
           )}
           {canManage &&
+            !d.computed &&
             (d.status === "DONE" ? (
               <Button
                 variant="outline"
@@ -549,7 +550,13 @@ function DeadlineCard({
   );
 }
 
+/** Un rând calculat n-are id; tipul și data îl fac unic (așa e și cheia din bază). */
+function rowKey(d: Deadline) {
+  return d.computed ? `${d.reportType}-${d.dueDate}` : d.id;
+}
+
 function StatusBadge({ d, past }: { d: Deadline; past: boolean }) {
+  if (d.computed) return <Badge variant="muted">{t.pastComputed}</Badge>;
   if (past && d.status !== "DONE") return <Badge variant="muted">{t.pastOpen}</Badge>;
   return <Badge variant={statusVariant[d.status]}>{strings.enums.deadlineStatus[d.status]}</Badge>;
 }

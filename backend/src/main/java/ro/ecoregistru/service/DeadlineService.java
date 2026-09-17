@@ -116,15 +116,36 @@ public class DeadlineService {
      * Tabul „Trecute” (proprietarul, 17.09.2026): termenele anului în curs cu scadența înainte de azi,
      * bifate sau nu — și cele pe care {@link #list} le ascunde (generarea veche, dinainte de
      * {@link MissedDeadlinePolicy}). Aici nu sunt o alarmă, ci ce a fost; anii dinainte nu intră.
+     *
+     * <p>Din 16.09.2026 nu se mai salvează termene cu data trecută, deci o firmă nouă n-ar avea nimic aici.
+     * Ce lipsește se socotește pe loc din profilul firmei, după aceleași reguli ca în calendar, și se
+     * întoarce <b>fără id</b> ({@code computed}): nu se salvează, nu se bifează, nu trimite mailuri.
      */
     @Transactional(readOnly = true)
     public List<DeadlineResponse> listPast(UUID companyId, LocalDate today) {
         if (today.getDayOfYear() == 1) return List.of();
-        return deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
-                        companyId, today.withDayOfYear(1), today.minusDays(1))
-                .stream()
-                .map(d -> toResponse(d, today))
-                .toList();
+        LocalDate from = today.withDayOfYear(1);
+        LocalDate to = today.minusDays(1);
+        List<ReportingDeadline> saved = deadlineRepository.findAllByCompany_IdAndDueDateBetweenOrderByDueDateAsc(
+                companyId, from, to);
+        Set<String> savedKeys = saved.stream()
+                .map(d -> d.getReportType() + "|" + d.getDueDate())
+                .collect(java.util.stream.Collectors.toSet());
+        List<DeadlineResponse> rows = new java.util.ArrayList<>(saved.stream().map(d -> toResponse(d, today)).toList());
+
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        for (Rule rule : rules(company)) {
+            for (MonthDay day : rule.days()) {
+                LocalDate due = day.atYear(today.getYear());
+                if (due.isAfter(to) || savedKeys.contains(rule.type() + "|" + due) || !rule.owed().test(due)) {
+                    continue;
+                }
+                rows.add(new DeadlineResponse(null, rule.type(), due, DeadlineStatus.OVERDUE, null, null, true));
+            }
+        }
+        rows.sort(java.util.Comparator.comparing(DeadlineResponse::dueDate));
+        return rows;
     }
 
     /** Butonul de pe Termene: completează pe loc ce ar completa dimineața programată. */
@@ -143,15 +164,26 @@ public class DeadlineService {
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
 
         int created = 0;
-        // SIM annual: 15 March, covering the previous year.
-        created += ensureNext(company, ReportType.SIM_ANNUAL, List.of(MonthDay.of(Month.MARCH, 15)),
-                today, due -> true);
-        created += afmDeadlines(company, today);
-        created += packagingDeadline(company, today);
-        created += packagingWasteDeadline(company, today);
-        created += aprilDeadline(company, today);
-        created += mayDeadline(company, today);
+        for (Rule rule : rules(company)) {
+            created += ensureNext(company, rule.type(), rule.days(), today, rule.owed());
+        }
         return created;
+    }
+
+    /** Un fel de termen pe care firma îl poate datora: zilele din an și, pe o scadență, dacă îl datorează. */
+    private record Rule(ReportType type, List<MonthDay> days, Predicate<LocalDate> owed) {}
+
+    /** Felurile de termen ale firmei, din profilul ei — aceleași pentru calendar și pentru „Trecute”. */
+    private List<Rule> rules(Company company) {
+        List<Rule> rules = new java.util.ArrayList<>();
+        // SIM annual: 15 March, covering the previous year.
+        rules.add(new Rule(ReportType.SIM_ANNUAL, List.of(MonthDay.of(Month.MARCH, 15)), due -> true));
+        rules.addAll(afmDeadlines(company));
+        packagingDeadline(company).ifPresent(rules::add);
+        packagingWasteDeadline(company).ifPresent(rules::add);
+        rules.add(aprilDeadline(company));
+        mayDeadline(company).ifPresent(rules::add);
+        return rules;
     }
 
     public static LocalDate today() {
@@ -197,13 +229,12 @@ public class DeadlineService {
      * A trader gets nothing either — it sells goods somebody else packaged, so it never introduced
      * the packaging and does not file (Legea 249/2015; see {@link MarketRole}).
      */
-    private int packagingDeadline(Company company, LocalDate today) {
+    private Optional<Rule> packagingDeadline(Company company) {
         Set<MarketRole> roles = company.getMarketRoles();
         if (!MarketRole.answered(roles) || !MarketRole.putsPackagingOnMarket(roles)) {
-            return 0;
+            return Optional.empty();
         }
-        return ensureNext(company, ReportType.PACKAGING_ANNUAL,
-                List.of(MonthDay.of(Month.FEBRUARY, 25)), today, due -> true);
+        return Optional.of(new Rule(ReportType.PACKAGING_ANNUAL, List.of(MonthDay.of(Month.FEBRUARY, 25)), due -> true));
     }
 
     /**
@@ -218,13 +249,13 @@ public class DeadlineService {
      * gets printed, not whether the report is owed; a missing role is shown on the deadline as
      * something to fill in, not used to stay silent.
      */
-    private int packagingWasteDeadline(Company company, LocalDate today) {
+    private Optional<Rule> packagingWasteDeadline(Company company) {
         if (!company.getType().keepsArt48Register()) {
-            return 0;
+            return Optional.empty();
         }
-        return ensureNext(company, ReportType.PACKAGING_ANNEX3, List.of(MonthDay.of(Month.FEBRUARY, 25)),
-                today, due -> movementRepository.existsCollectedPackaging(company.getId(),
-                        LocalDate.of(due.getYear() - 1, 1, 1), LocalDate.of(due.getYear() - 1, 12, 31)));
+        return Optional.of(new Rule(ReportType.PACKAGING_ANNEX3, List.of(MonthDay.of(Month.FEBRUARY, 25)),
+                due -> movementRepository.existsCollectedPackaging(company.getId(),
+                        LocalDate.of(due.getYear() - 1, 1, 1), LocalDate.of(due.getYear() - 1, 12, 31))));
     }
 
     /**
@@ -252,10 +283,10 @@ public class DeadlineService {
      * nothing. That is the rule of {@link ReportType}, and here it has teeth — a wrong reminder on
      * this date sends a client to prepare a report that is not theirs.
      */
-    private int aprilDeadline(Company company, LocalDate today) {
+    private Rule aprilDeadline(Company company) {
         boolean holdsPermit = Boolean.TRUE.equals(company.getConstructionPermitHolder());
-        return ensureNext(company, ReportType.APM_ANNUAL_APRIL, List.of(MonthDay.of(Month.APRIL, 30)),
-                today, due -> holdsPermit || holdsUsedOils(company, due.getYear() - 1));
+        return new Rule(ReportType.APM_ANNUAL_APRIL, List.of(MonthDay.of(Month.APRIL, 30)),
+                due -> holdsPermit || holdsUsedOils(company, due.getYear() - 1));
     }
 
     private boolean holdsUsedOils(Company company, int reported) {
@@ -290,13 +321,12 @@ public class DeadlineService {
      * <p>Like {@link #aprilDeadline}, the row carries no document link, because the programme is
      * written by the client (or a third party, alin. (2)), not printed by us.
      */
-    private int mayDeadline(Company company, LocalDate today) {
+    private Optional<Rule> mayDeadline(Company company) {
         String permit = company.getEnvironmentalAuthNumber();
         if (permit == null || permit.isBlank()) {
-            return 0;
+            return Optional.empty();
         }
-        return ensureNext(company, ReportType.APM_ANNUAL_MAY, List.of(MonthDay.of(Month.MAY, 31)),
-                today, due -> true);
+        return Optional.of(new Rule(ReportType.APM_ANNUAL_MAY, List.of(MonthDay.of(Month.MAY, 31)), due -> true));
     }
 
     @Transactional
@@ -338,34 +368,29 @@ public class DeadlineService {
      * on an assumption is worse than leaving one that is too loud, and this way the legacy path
      * fades out as accounts are filled in rather than going quiet all at once.
      */
-    private int afmDeadlines(Company company, LocalDate today) {
+    private List<Rule> afmDeadlines(Company company) {
         // „Economia circulară" a ieşit din configurarea contului (proprietarul, 16.09.2026): e a
         // depozitelor de deşeuri, nu a clienţilor noştri, deci nu mai generează termenul trimestrial.
         // Un cont care o avea ca singur răspuns nu cade pe calea veche (12 termene lunare): a răspuns.
         if (company.getAfmContributions().equals(Set.of(AfmContribution.CIRCULAR_ECONOMY))) {
-            return 0;
+            return List.of();
         }
         Set<AfmContribution> owed = company.getAfmContributions().stream()
                 .filter(c -> c != AfmContribution.CIRCULAR_ECONOMY)
                 .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
         if (owed.isEmpty()) {
             return company.isAfmObligation()
-                    ? ensureNext(company, ReportType.AFM_MONTHLY, EVERY_25TH, today, due -> true)
-                    : 0;
+                    ? List.of(new Rule(ReportType.AFM_MONTHLY, EVERY_25TH, due -> true))
+                    : List.of();
         }
 
-        int created = 0;
-        for (AfmContribution.AfmCadence cadence : owed.stream().map(AfmContribution::getCadence)
-                .distinct().toList()) {
-            created += switch (cadence) {
-                case MONTHLY -> ensureNext(company, ReportType.AFM_MONTHLY, EVERY_25TH, today, due -> true);
-                case QUARTERLY -> ensureNext(company, ReportType.AFM_QUARTERLY, AFTER_EACH_QUARTER, today,
-                        due -> true);
-                case ANNUAL -> ensureNext(company, ReportType.AFM_ANNUAL,
-                        List.of(MonthDay.of(Month.JANUARY, 25)), today, due -> true);
-            };
-        }
-        return created;
+        return owed.stream().map(AfmContribution::getCadence).distinct()
+                .map(cadence -> switch (cadence) {
+                    case MONTHLY -> new Rule(ReportType.AFM_MONTHLY, EVERY_25TH, due -> true);
+                    case QUARTERLY -> new Rule(ReportType.AFM_QUARTERLY, AFTER_EACH_QUARTER, due -> true);
+                    case ANNUAL -> new Rule(ReportType.AFM_ANNUAL, List.of(MonthDay.of(Month.JANUARY, 25)), due -> true);
+                })
+                .toList();
     }
 
     private int create(Company company, ReportType type, LocalDate dueDate) {
@@ -394,7 +419,8 @@ public class DeadlineService {
                 d.getDueDate(),
                 effectiveStatus(d, today),
                 d.getCompletedAt(),
-                d.getCompletionNote());
+                d.getCompletionNote(),
+                false);
     }
 
     /** DONE if completed; otherwise OVERDUE once the due date has passed; else UPCOMING. */

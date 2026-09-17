@@ -17,5 +17,7 @@ public record DeadlineResponse(
         LocalDate dueDate,
         DeadlineStatus status,
         Instant completedAt,
-        String completionNote
+        String completionNote,
+        /** Doar pe „Trecute”: socotit din profilul firmei, nesalvat (fără id, nu se bifează). */
+        boolean computed
 ) {}

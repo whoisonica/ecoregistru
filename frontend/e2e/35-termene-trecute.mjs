@@ -3,8 +3,10 @@
 // Ce se poate strica: (1) pagina arată iar toate listele una sub alta; (2) tabul nu stă în adresă;
 // (3) „Trecute” aduce alt an, azi sau viitorul; (4) cele nebifate de acolo ies roșu „Depășit”, deși
 // sunt istorie — seederul pune termene AFM trecute nebifate, ascunse din „De făcut” din 16.09.2026;
-// (5) la 375px tabul iese din ecran. Nu lasă nimic în urmă.
-import { launch, newPage, login, shot, BASE } from "./lib.mjs";
+// (5) la 375px tabul iese din ecran; (6) o firmă nouă n-are termene trecute salvate, deci „Trecute” le
+// socotește din profil — „Calculat”, fără buton, fără să scrie ceva în bază.
+// ⚠️ Lasă în urmă câte o firmă „Proba 35 <număr>” (cu AFM lunar) la fiecare rulare.
+import { launch, newPage, login, shot, switchCompany, validCui, BASE } from "./lib.mjs";
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -65,6 +67,47 @@ const lat = await tel.evaluate(() => document.documentElement.scrollWidth - wind
 check("375px fără derulare laterală", lat <= 0, `${lat}px`);
 check("375px: carduri pe „Trecute”", (await tel.$$('[data-testid="deadlines-past"] [data-testid="deadlines-cards"] li')).length === randuri.length);
 await shot(tel, "35-termene-trecute-telefon");
+
+// (6) Firmă nouă, cu AFM lunar: nimic trecut salvat, totul calculat.
+const RUN = Date.now().toString().slice(-8);
+await page.goto(BASE + "/login", { waitUntil: "networkidle" });
+await page.evaluate(() => localStorage.clear());
+await login(page, "platform");
+const created = await page.evaluate(async ([name, cui]) => {
+  const headers = { Authorization: "Bearer " + localStorage.getItem("eco_token"), "Content-Type": "application/json" };
+  const res = await fetch("/api/v1/companies", {
+    method: "POST", headers,
+    body: JSON.stringify({ name, cui, type: "GENERATOR", afmObligation: true, address: "Cluj-Napoca" }),
+  });
+  return res.ok ? (await res.json()).id : "HTTP " + res.status;
+}, [`Proba 35 ${RUN}`, validCui()]);
+check("firma nouă există", /^[0-9a-f-]{36}$/.test(String(created)), String(created));
+await page.reload({ waitUntil: "networkidle" });
+check("comutat pe firma nouă", Boolean(await switchCompany(page, new RegExp(RUN))));
+const salvateTrecute = await page.evaluate(async ([id, an]) => {
+  const headers = { Authorization: "Bearer " + localStorage.getItem("eco_token"), "X-Tenant-Id": id };
+  const list = await (await fetch(`/api/v1/deadlines?year=${an}`, { headers })).json();
+  return list.filter((d) => d.dueDate < new Date().toISOString().slice(0, 10)).length;
+}, [created, azi.getFullYear()]);
+check("firma nouă n-are termene trecute salvate", salvateTrecute === 0, `${salvateTrecute}`);
+await page.goto(BASE + "/termene?tab=trecute", { waitUntil: "networkidle" });
+await page.waitForTimeout(1200);
+const noi = await page.$$eval('[data-testid="deadlines-past"] tbody tr', (trs) =>
+  trs.map((tr) => [...tr.querySelectorAll("td")].map((td) => td.textContent.trim())).filter((c) => c.length > 2)
+);
+check("„Trecute” are rânduri calculate", noi.length > 0 && noi.every((c) => c[2] === "Calculat"), noi.map((c) => c[2]).join(","));
+check("15 martie e printre ele", noi.some((c) => /Evidența gestiunii/.test(c[0]) && /15\.03\./.test(c[1])));
+check("AFM lunar, doar înainte de azi", noi.filter((c) => /^AFM/.test(c[0])).length === (azi.getDate() > 25 ? azi.getMonth() + 1 : azi.getMonth()),
+  `${noi.filter((c) => /^AFM/.test(c[0])).length}`);
+check("niciun buton pe rândurile calculate",
+  (await page.$$('[data-testid="deadlines-past"] button:has-text("Marchează finalizat")')).length === 0);
+await shot(page, "35-termene-calculate");
+const dupa = await page.evaluate(async ([id, an]) => {
+  const headers = { Authorization: "Bearer " + localStorage.getItem("eco_token"), "X-Tenant-Id": id };
+  const list = await (await fetch(`/api/v1/deadlines?year=${an}`, { headers })).json();
+  return list.filter((d) => d.dueDate < new Date().toISOString().slice(0, 10)).length;
+}, [created, azi.getFullYear()]);
+check("și nici după ce s-a deschis tabul", dupa === 0, `${dupa}`);
 
 await browser.close();
 console.log(fails ? `\n${fails} căderi` : "\nOK");

@@ -1518,6 +1518,11 @@ export interface Deadline {
   status: DeadlineStatus;
   completedAt: string | null;
   completionNote: string | null;
+  /**
+   * Doar pe „Trecute”: socotit din profilul firmei, nesalvat. Atunci `id` vine `null` de la server,
+   * deci rândul nu se bifează și nu se redeschide.
+   */
+  computed?: boolean;
 }
 
 /** Mirrors backend DeadlineGenerationResponse. */
