@@ -8,6 +8,12 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 12:48 — ✅ pe producție: politica de confidențialitate numește Brevo și cyber_Folks, nu Zoho** (`ecoregistru-app` **v103**, `c9147a7`, din `main` `ca5c5fa`; api neatins).
+> Tabelul de furnizori din `/confidentialitate` scria „Zoho — trimiterea e-mailurilor”, deși Zoho nu fusese niciodată furnizorul (mailul
+> trimis mergea prin cPanel, din 17.09 prin Brevo). Acum: **Brevo** (e-mailurile automate, UE) și **cyber_Folks** (căsuța contact@ și
+> site-ul, România). Aceeași corectură în registrul art. 30, DPA Anexa C și PDF-uri (repo-ul privat). **Probe:** tsc, `npm test` 27/27;
+> pe producție bundle-ul `index-CQOz911O.js` are textul nou și niciun „Zoho”, pagina `/confidentialitate` arată cele șapte rânduri.
+
 > **17.09.2026, ~12:40 — ✅ operare: mailul aplicației prin Brevo, monitorizare la 5 minute, CI verde** (`ecoregistru-api` **v112**, doar config; niciun cod de aplicație; `main` `7d774f9`).
 > Din scanarea generatorului cerută de proprietar (17.09 dimineața, 9,4/10, ~98%). **(1) CI roșu pe `main` de la `01e9acf`:** proba e2e 9
 > căuta cifra de sub 15 martie în tone, ecranul o scrie în kg — proba învechită, nu produsul; acum caută „kg”. Proba 27 (anul declarat)
