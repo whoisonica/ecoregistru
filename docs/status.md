@@ -8,6 +8,30 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 18:01 — ✅ pe producție: Dosarul de control — structură nouă, lista autorizațiilor refăcută, „Ce intră în arhivă” din datele reale** (`ecoregistru-api` **v122**, `ef24174`; `ecoregistru-app` **v112**, `c119c25`; monorepo `fe04437`; fără migrare, schema **V63**, liberă **V64**).
+> Proprietarul: dosarul „să fie mai frumos și să pară făcut de un profesionist”, „cu mare grijă, dosarul și documentele sunt bune”. **Niciun
+> generator de document oficial nu e atins**: diferența e în `AuditFileService` (cum se pun în arhivă), `AuditFileController`, un `count` în
+> `WasteMovementRepository`, ecranul `AuditFilePage` și teste; apelurile către generatoare sunt identice cu cele de dinainte.
+> **(1) Structura arhivei** (`55dea0a` → `81c1a84`): `00-cuprins.txt` (fostul `README.txt`), `autorizatii-parteneri.pdf`, **`rapoarte/`** (fișa,
+> centralizata, Anexa 1 Ambalaje, Anexa 3 Ambalaje pe punct de lucru — aceleași condiții ca înainte) și **`atasamente/`** (+ `index.txt`); pe mai mulți
+> ani `AAAA/rapoarte/`, `AAAA/atasamente/`, lista autorizațiilor o dată la rădăcină. **Rezumatul neoficial (`evidenta-AAAA.xlsx/.pdf`) a ieșit din
+> dosar** — rămâne pe Evidențe → Alte descărcări. Numerotarea `01-…`/`90-de-lucru/` a fost o etapă intermediară, respinsă de proprietar.
+> **(2) `autorizatii-parteneri.pdf`** scria cu Helvetica WinAnsi și **pierdea ă, ș, ț** („Autorizaii”, „Expir în”): acum Cp1250 ca celelalte generatoare,
+> A4 orizontal, antetul tabelului repetat, rezumat („6 parteneri · 1 cu autorizația expirată · …”), status colorat (verde valabilă, galben ≤ 60 de
+> zile, roșu expirată, gri inactiv, **alb fără dată** — nu pare verificat), coloana **„Coduri de deșeu <perioada>”** (partener sau transportator pe
+> mișcările care contează), „Colector, transportator” în Tip, nota despre valabilitate, „pagina X din Y”. Rămâne document de lucru (antetul cabinetului).
+> **(3) „Ce intră în arhivă”** (`906eafc`): lista fixă de pe ecran devine citirea reală — `GET /api/v1/audit-file/contents?year&years` (aceleași
+> reguli ca arhiva: `anexa3Plan`, rolul de piață, mișcările care contează; nu regenerează nimic). Fiecare document are LED-ul lui — **Intră** /
+> **Intră fără date** (an fără mișcări) / **Nu intră** (comerciant; profil fără rol de piață; fără ambalaje în an) / **Lipsește** (anul are ambalaje, dar
+> rolul în lanțul ambalajelor nu e ales) — și motivul; pe mai mulți ani, câte un rând pe an; partenerii cu autorizația expirată sau pe expirate.
+> Probe: suita **906/109, 0 eșecuri**; `AuditFileIT` compară textul foilor din dosar cu descărcarea lor directă și endpointul cu arhiva citită în
+> același moment (demo-ul își schimbă profilul în suita completă — alt test îl face TRADER —, deci nu se presupune profilul); **negative:** fontul
+> vechi și foaia pe alt an → 2 căderi, punctele Anexei 3 golite → 1 cădere. E2E **34** nouă (`34-dosar-continut.mjs`) **10/10** la 1440 și 375px pe
+> `eco_e2e_dosar` (**negativă:** Anexa 1 mereu „Intră” → 1 cădere), 22 verde. Garda: backend `.gitignore` + `SecurityConfiguration` (newline),
+> frontend `.gitignore` + `vite.config.*`. Pe dyno: „Started”, bundle-ul servit are „Ce intră în arhivă”, `/audit-file/contents` → 401 fără token.
+> ⚠️ Proba s-a numit întâi 33; numărul l-a luat pagina firmei (tabul paralel), deci e **34**. Pe producție erau deja, de la tabul paralel (17:05–17:12,
+> api v120/v121, app v111), `ffec2c9`, `54f7036` și `1eeaff6` — intrarea de mai jos („NEDEPLOYAT”) nu mai e de actualitate.
+
 > **17.09.2026, ~17:30 — ✅ pe `main`, ⏸️ NEDEPLOYAT (proprietarul: „să nu le deployăm”): Parteneri — punctele de lucru și șoferii la vedere** (`1eeaff6`, doar frontend, fără migrare; așteaptă la același deploy cu `ffec2c9`, adresa pe factura FGO, backend).
 > Proprietarul: „dacă cineva vrea ulterior să adauge șoferi într-un partener sau puncte de lucru, nu e deloc la vedere și nici intuitiv”. Punctele
 > de lucru stăteau la coada pasului 1, șoferii sub cardul „Vine el și îl ia”. Acum: **pasul 4 „Puncte de lucru și șoferi”** (opțional; la pasul 2

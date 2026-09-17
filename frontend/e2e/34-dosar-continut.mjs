@@ -1,4 +1,4 @@
-// Proba 33: „Ce intră în arhivă” pe Dosarul de control spune ce se generează și ce nu, pentru firma și anul
+// Proba 34: „Ce intră în arhivă” pe Dosarul de control spune ce se generează și ce nu, pentru firma și anul
 // alese, cu motivul (proprietarul, 17.09.2026: „să fie informații reale”).
 //
 // Firma demo are în 2026 mișcări, ambalaje și parteneri, dar profilul nu răspunde la rolul de piață și nici la

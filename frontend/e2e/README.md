@@ -1,5 +1,13 @@
 # Probe de interfaţă
 
+🗂️ **17.09.2026 — proba 34 (`34-dosar-continut.mjs`), „Ce intră în arhivă” pe Dosarul de control**: pe firma demo, 2026, șase rânduri
+(fără rezumatul neoficial): fișa și centralizata „Intră” cu mișcările anului și 15 martie 2027; Anexa 1 Ambalaje „Nu intră” fiindcă profilul
+nu spune dacă e producător, importator sau comerciant; Anexa 3 Ambalaje „Lipsește” fiindcă anul are ambalaje, dar rolul (colector, comerciant,
+reciclator, valorificator) nu e ales; autorizațiile: 6 parteneri, 1 expirată, 1 pe expirate; atașamentele cu mărimea (`data-testid`
+`audit-file-size`, citit și de 22). 2021 fără mișcări → „Intră fără date”; pe 3 ani, fișa numește 2024, 2025, 2026; 375px fără derulare.
+**Negativă:** Anexa 1 mereu „Intră” → 1 cădere. **10/10** pe `eco_e2e_dosar`. Presupune profilul demo necompletat (baza seedată proaspăt);
+nu lasă nimic în urmă.
+
 🏢 **17.09.2026 — proba 33 (`33-pagina-firmei.mjs`), pagina firmei `/clienti/:id` (F-D)**: „Deschide” duce la pagină; capul
 are numele, CUI-ul, starea abonamentului și numărul de utilizatori; taburile Profil · Utilizatori · Abonament și facturi · Istoric
 (în adresă); „Ce lipsește pentru dosar” numește adresa, CAEN-ul și persoana desemnată și dispare după salvare, fără să calce ce
