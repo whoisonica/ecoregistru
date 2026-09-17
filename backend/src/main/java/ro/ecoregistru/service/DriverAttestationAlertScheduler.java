@@ -35,9 +35,9 @@ public class DriverAttestationAlertScheduler {
 
     /** Tranzacțional pe metoda programată, altfel data trimiterii nu se salvează (vezi {@link DeadlineAlertScheduler}). */
     @Transactional
-    @Scheduled(cron = "${app.alerts.driver-attestation-cron:0 25 7 * * *}")
+    @Scheduled(cron = "${app.alerts.driver-attestation-cron:0 25 7 * * *}", zone = "Europe/Bucharest")
     public void runDailyAttestationWarnings() {
-        dispatchWarnings(LocalDate.now());
+        dispatchWarnings(DeadlineService.today());
     }
 
     @Transactional

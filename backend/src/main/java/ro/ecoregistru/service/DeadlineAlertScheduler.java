@@ -49,16 +49,16 @@ public class DeadlineAlertScheduler {
     MissedDeadlinePolicy missedPolicy;
 
     /**
-     * Daily at 07:00 (server time). Cron is overridable via app.alerts.deadline-cron.
+     * Daily at 07:00, ora României (scanarea din 17.09.2026: fără {@code zone} rula la 07:00 UTC, adică 10:00 vara). Cron is overridable via app.alerts.deadline-cron.
      *
      * <p>Transactional here as well: the call below is a self-invocation and bypasses the proxy, so
      * without it the warned flags were set on detached entities and never saved — the same reminder
      * went out every day of the window.
      */
     @Transactional
-    @Scheduled(cron = "${app.alerts.deadline-cron:0 0 7 * * *}")
+    @Scheduled(cron = "${app.alerts.deadline-cron:0 0 7 * * *}", zone = "Europe/Bucharest")
     public void runDailyDeadlineReminders() {
-        dispatchReminders(LocalDate.now());
+        dispatchReminders(DeadlineService.today());
     }
 
     /**

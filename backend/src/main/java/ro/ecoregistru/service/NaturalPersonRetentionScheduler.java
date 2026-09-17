@@ -39,9 +39,9 @@ public class NaturalPersonRetentionScheduler {
      * către {@link #purge} e din aceeași clasă și ocolește proxy-ul (vezi {@code ScheduledTransactionBoundaryTest}).
      */
     @Transactional
-    @Scheduled(cron = "${app.retention.natural-person-cron:0 45 3 * * *}")
+    @Scheduled(cron = "${app.retention.natural-person-cron:0 45 3 * * *}", zone = "Europe/Bucharest")
     public void runDaily() {
-        purge(LocalDate.now());
+        purge(DeadlineService.today());
     }
 
     /** Separată de programare, ca proba să aleagă ziua. Întoarce câte persoane a anonimizat. */

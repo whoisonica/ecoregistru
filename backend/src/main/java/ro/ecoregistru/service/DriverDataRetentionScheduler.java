@@ -46,9 +46,9 @@ public class DriverDataRetentionScheduler {
      * UPDATE-ul a căzut așa în fiecare noapte („Executing an update/delete query”), până la 15.09.2026.
      */
     @Transactional
-    @Scheduled(cron = "${app.retention.driver-data-cron:0 30 3 * * *}")
+    @Scheduled(cron = "${app.retention.driver-data-cron:0 30 3 * * *}", zone = "Europe/Bucharest")
     public void runDaily() {
-        purge(LocalDate.now());
+        purge(DeadlineService.today());
     }
 
     /** Separată de programare, ca proba să aleagă ziua. Întoarce câte mişcări a atins. */

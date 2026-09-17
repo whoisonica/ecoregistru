@@ -67,9 +67,9 @@ public class PartnerAuthorizationAlertScheduler {
      * self-invocation skips the proxy, and the sent-for date would never be saved.
      */
     @Transactional
-    @Scheduled(cron = "${app.alerts.partner-authorization-cron:0 15 7 * * *}")
+    @Scheduled(cron = "${app.alerts.partner-authorization-cron:0 15 7 * * *}", zone = "Europe/Bucharest")
     public void runDailyAuthorizationWarnings() {
-        dispatchWarnings(LocalDate.now());
+        dispatchWarnings(DeadlineService.today());
     }
 
     /**
