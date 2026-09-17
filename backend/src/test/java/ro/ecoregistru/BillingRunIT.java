@@ -181,7 +181,7 @@ class BillingRunIT {
         verify(fgo).emit(any(), argThat(b -> b != null && b.name().equals(company.getName())
                         && "Bihor".equals(b.county()) && "Sântandrei".equals(b.city())
                         && "STR. FĂCLIEI, NR.79".equals(b.address())),
-                any(), any(), any(), any());
+                any(), any(), any(), eq("Abonament WasteHouse, perioada 17.10.2026 - 16.11.2026."));
     }
 
     @Test

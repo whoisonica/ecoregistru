@@ -258,7 +258,8 @@ public class BillingRunService {
                 SubscriptionInvoice invoice = invoiceRepository.findById(invoiceId).orElseThrow();
                 return new Draft(buyer(invoice.getSubscription()), fromJson(invoice.getLinesJson()),
                         "Abonament WasteHouse, perioada " + invoice.getPeriodStart().format(RO_DATE)
-                                + " – " + invoice.getPeriodEnd().format(RO_DATE) + ".");
+                                // A plain hyphen: FGO printed the en dash as „&ndash;” on WH 1 (17.09.2026).
+                                + " - " + invoice.getPeriodEnd().format(RO_DATE) + ".");
             });
             LocalDate due = today.plusDays(PAYMENT_TERM_DAYS);
             FgoClient.Issued issued = fgo.emit(invoiceId.toString(), draft.buyer(), draft.lines(), today, due,
