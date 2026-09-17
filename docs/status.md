@@ -8,6 +8,21 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **17.09.2026, 14:46 — ✅ pe producție: ecranul „Facturare”, CUI-ul cu cifra de control, „Verifică plata” și „Oprește” (F-A din `todo-clienti-abonamente.md`)** (`ecoregistru-api` **v116**, `50f9794`, **V63** aplicată; `ecoregistru-app` **v106**, `21655ad`; monorepo `ec29c53`).
+> **(1) `/facturare`** (numai platforma, grupul Cabinet, tasta **B**): ultima rulare salvată în `billing_runs` (V63), rând cu rând — firma,
+> motivul pe înțeles („CUI-ul „…” nu e valid: FGO nu-l acceptă”), facturile emise și plătite, abonamentele care nu încep; toate facturile
+> tuturor clienților cu filtrele Toate · Căzute · Emise, neplătite · Restante · Plătite. Butonul de rulare a plecat din dialogul de abonament.
+> **(2) „Verifică plata”** pe o factură (`payment_checked_at`, „verificat azi, 10:29”); fără chei FGO → „lipsesc cheile FGO”, fără cerere.
+> **(3) „Oprește”** pe factura refuzată de FGO: se șterge; fără alte facturi, abonamentul se șterge, altfel se oprește în ziua dinaintea perioadei.
+> **(4) CUI-ul** firmei, al cabinetului și al cererii de cont se verifică cu cifra de control (backend `util/Cui`, frontend `lib/cui.ts`).
+> **(5)** Eticheta „Activ” din dialogul de abonament e verde. **(6)** Symlinkul `frontend/node_modules`, intrat în git la `198616e`, scos;
+> `.gitignore` îl prinde și ca link — în arborele principal `frontend/node_modules` trebuie refăcut cu `npm ci`.
+> **Probe:** backend `cleanTest test` **880/105** verde (negativa pe 5 reguli → exact 6 teste); e2e **29/29** pe bază nouă (`eco_e2e_facturare`),
+> proba 29 nouă (facturile scrise cu `psql`, `E2E_DB`), negativă pe tasta B și pe butoanele rândului din rulare; capturi 1440/375.
+> **Pe producție:** V63 „Successfully applied 1 migration”, `Started`, health 200; `GET /subscriptions/invoices` și `/billing/runs/last` → 401
+> fără token (rutele există); bundle-ul `index-CSM5YjRW.js` are „Rulează facturarea acum”, `/facturare`, cheia CUI și nu mai are „Emite facturile scadente acum”.
+> Baza de producție fusese curățată înainte (sesiunea paralelă, backup `b010`): 1 cont `PLATFORM_ADMIN`, 842 coduri, restul gol.
+
 > **17.09.2026, 12:48 — ✅ pe producție: politica de confidențialitate numește Brevo și cyber_Folks, nu Zoho** (`ecoregistru-app` **v103**, `c9147a7`, din `main` `ca5c5fa`; api neatins).
 > Tabelul de furnizori din `/confidentialitate` scria „Zoho — trimiterea e-mailurilor”, deși Zoho nu fusese niciodată furnizorul (mailul
 > trimis mergea prin cPanel, din 17.09 prin Brevo). Acum: **Brevo** (e-mailurile automate, UE) și **cyber_Folks** (căsuța contact@ și
