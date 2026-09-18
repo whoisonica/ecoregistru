@@ -82,7 +82,9 @@ function ContentRow({ state, title, testId, action, zipOnly, children }: {
   return (
     <li className="grid gap-1 sm:grid-cols-[8.5rem_1fr_auto] sm:gap-3">
       <Badge variant={STATE[state].variant} className="self-start sm:mt-0.5">{STATE[state].label}</Badge>
-      <div className="min-w-0">
+      {/* Cardul se întinde cât pagina (18.09.2026); fără limită aici, explicațiile ar ajunge
+          la ~140 de caractere pe rând, iar butonul ar pluti departe de textul lui. */}
+      <div className="min-w-0 max-w-[70ch]">
         <p className="text-sm font-medium text-content-strong">{title}</p>
         <div data-testid={testId} className="mt-0.5 space-y-0.5 text-sm text-content-muted">{children}</div>
       </div>
@@ -339,7 +341,7 @@ export function AuditFilePage() {
       )}
       <PageHeader title={t.title} description={t.subtitle} />
 
-      <Card className="mt-6 max-w-3xl p-6">
+      <Card className="mt-6 p-6">
         <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
             <Label htmlFor="af-year">{t.filterYear}</Label>
@@ -469,7 +471,7 @@ export function AuditFilePage() {
         </div>
       </Card>
 
-      <p className="mt-4 max-w-3xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
         {t.note}
       </p>
     </div>
