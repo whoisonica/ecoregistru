@@ -3396,14 +3396,16 @@ export const strings = {
     // Temeiul legal rămâne, dar unde se citește o dată — nu sub fiecare buton.
     subtitle: "Anexa 1 Ambalaje și Anexa 3, însumate din mișcările pe coduri 15 01 xx. În kilograme.",
     year: "Anul",
-    download: "Descarcă Anexa 1 Ambalaje",
-    // Un singur buton, cu numele documentului, și cele două formate în meniu — ca „Evidența
-    // cronologică" de pe Intrări/Ieșiri (18.09.2026): numele actului o dată, nu de două ori.
+    // Două butoane lipite, cu numele documentelor și **fără text dedesubt** (proprietarul, pe
+    // machetă, 18.09.2026: „perfect arată fără scris așa"). Termenul și formatul stau în meniul
+    // butonului; la Anexa 3, tot acolo se alege punctul de lucru.
+    docAnexa1: "Anexa 1 Ambalaje",
+    docAnexa3: "Anexa 3 Ambalaje",
+    docAnexa1Deadline: "Termen: 25 februarie",
     downloadXls: ".xls",
     downloadXlsHint: "Formatul cerut de art. 6 — ăsta se depune.",
     downloadPdf: "PDF",
     downloadPdfHint: "Pentru dosar și pentru semnătură.",
-    downloadHint: "Ce ai pus tu pe piața națională. Termen: 25 februarie.",
     downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
     saveError: "Cifra nu a putut fi salvată.",
 
@@ -3428,25 +3430,29 @@ export const strings = {
     reusableShort: "reutilizabil",
     hazardousShort: "conținut periculos",
 
-    // --- semnale ---
-    blockedTitle: "Nu intră în declarație",
-    blockedMissingMaterial: "{count} fără materialul ambalajului — codul nu-l decide singur.",
-    blockedMissingCategory: "{count} fără felul ambalajului — fără el n-au coloană în tabelul 1.",
-    awaitingWeighing: "{count} încă de cântărit — cantitatea lipsește din ambele tabele.",
-    missingOperation: "{count} fără cod R/D — operatorul apare, operațiunea rămâne goală.",
-    fix: "Completează",
+    // --- semnale: un rând cu linkuri, nu o cutie (18.09.2026). Fiecare link e chiar semnalul și
+    // duce în „Mișcări", cu tasta potrivită apăsată.
+    blockedLead: "Nu intră încă în declarație:",
+    blockedMissingMaterial: "{count} fără materialul ambalajului",
+    blockedMissingCategory: "{count} fără felul ambalajului",
+    awaitingWeighing: "{count} de cântărit",
+    missingOperation: "{count} fără cod R/D",
+
+    // --- un singur tabel pe ecran, ales din taste; alegerea stă în adresă (`?tabel=`) ---
+    tablePicker: "Tabelul afișat",
+    keyMarket: "Pus pe piață",
+    keyHandedOver: "Predat",
+    keyIntake: "Preluat de la alții",
 
     // --- tabelul 1 ---
-    table1Title: "Tabel 1. Ambalaje introduse pe piața națională",
-    table1Hint: "Materialul dă rândul, felul ambalajului dă coloana. O celulă goală nu e zero.",
-    table1Override:
-      "Tabelul e despre marfa vândută, nu despre deșeu: dacă știi altă cifră, scrie-o aici. Rândul tău îl înlocuiește pe cel calculat.",
+    table1Foot: "Kilograme. O celulă goală nu e zero.",
+    table1NoQuantities: "Fără cantități în {year}: {materials}.",
+    table1Empty: "Nicio cantitate pusă pe piață în {year}",
     overrideOpen: "Scrie cifre proprii",
-    overrideClose: "Ascunde cifrele proprii",
+    overrideDone: "Gata",
     overriddenBadge: "scris de tine",
     computedBadge: "din mișcări",
     overrideClear: "Se salvează singur când ieși din celulă; un rând golit revine la cifra din mișcări.",
-    overrideStatus: "Stare",
     overrideDirty: "nesalvat",
     overrideSaving: "se salvează…",
     overrideSaved: "salvat",
@@ -3456,10 +3462,18 @@ export const strings = {
     overrideUnsavedRows: "{count} cu cifre nesalvate. Ieși din celulă ca să plece.",
 
     // --- tabelul 2 ---
-    table2Title: "Tabelul 2. Deșeuri de ambalaje gestionate",
-    table2Hint: "Un rând pentru fiecare operator care a preluat, din predările pe coduri 15 01 xx.",
+    table2Foot: "Kilograme. Un rând pe operatorul care a preluat.",
 
     material: "Material",
+    // Capul de tabel pe două niveluri, scurt: numele întregi din formular cădeau pe trei rânduri.
+    // Ele rămân în `col*`, pentru numele accesibil al câmpurilor și pentru documentul tipărit.
+    headSales: "Desfacere",
+    headTotal: "Total",
+    headPrimary: "Primare",
+    headSecondary: "Secundare și de transport",
+    headGroupTotal: "total",
+    headGroupReusable: "reutilizabile",
+    headHazardous: "Periculos",
     colSales: "Ambalaje de desfacere fabricate/importate",
     colTotal: "Total (col. 3+5)",
     colPrimary: "Primare — total",
@@ -3529,10 +3543,8 @@ export const strings = {
       "{count} fără materialul ambalajului. Codul nu îl decide singur.",
     anexa3MissingQuantity:
       "{count} încă de cântărit. Fără kilograme nu intră în niciun tabel — completează cantitatea când vine cifra de la cântar.",
-    anexa3Download: "Descarcă Anexa 3",
-    anexa3DownloadHint: "„.xls” pentru depunere, PDF pentru dosar. Se tipărește tabelul care ți se aplică.",
     anexa3DownloadError: "Anexa 3 nu a putut fi generată.",
-    anexa3PickWorkPoint: "Alege un punct de lucru ca să descarci — „Toate” e doar pentru ecran.",
+    anexa3NoWorkPoint: "Niciun punct de lucru activ",
   },
 
   /** Cele patru cuvinte pe care nota 2 a Anexei 3 le permite la „Proveniența". */

@@ -25,6 +25,16 @@ partenerul „Proba 23 Fără Autorizație”, iar proba **3** cere ca „Parten
 arată caseta de căutare — regula, nu o scăpare). Prima rulare vede nouă, a doua zece și cade. Nu e un defect al codului:
 **a doua rulare se face pe bază nouă**, ca oricare alta după o suită dusă până la capăt.
 
+📐 **18.09.2026, seara — proba 38, tabul „Ambalaje” într-un singur ecran**: proprietarul — *„să nu meargă pagina în jos,
+să tot dai scroll”*. Proba mai cere acum: cele două documente ca **butoane cu numele lor, fără text dedesubt**; tastele
+„Pus pe piață · Predat” (niciun „Ieșiri”); **un singur tabel** pe ecran; la 1440 × 900 **pagina nu e mai înaltă decât
+ecranul**, pe „Pus pe piață” și pe „Predat” — măsurat pe `main#continut` **și** pe document (un `sr-only` fără strămoș
+`relative` lungește documentul, nu `main`); „Predat” scris în adresă (`?tabel=predat`); meniul Anexei 3 cu formatele pe
+punct de lucru — iar când butonul e stins (firma colectează și n-a spus rolul), motivul pe tasta „Preluat de la alții”.
+Semnalul din tab e chiar linkul („8 mișcări fără felul ambalajului”), nu „Vezi mișcările”. **Control pozitiv:** modul de
+scris ieșea cu 58px (958/900) înainte de strângerea rândurilor, deci măsura vede derularea. Proba **23** cere la generator
+butonul „Anexa 3 Ambalaje” și tastele fără preluări, în locul secțiunii `#anexa-3`.
+
 📦 **18.09.2026 — proba 38 (`38-ambalaje-in-generare.mjs`), „Ambalaje” ca tab în „Generare”**: proprietarul — *„să scoatem
 mișcări din ambalaje și să facem în generare ambalaje, iar în mișcări niște filtre frumoase, gen ambalaje sau ambalaj pus de
 noi pe piață”*. Proba cere: `/ambalaje?an=…` → `/generare?tab=ambalaje&luna=…`, meniul **fără** intrarea „Ambalaje”, trei

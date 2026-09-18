@@ -1,9 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, FileSpreadsheet, FileText, Package } from "lucide-react";
+import { FileSpreadsheet, FileText, Package } from "lucide-react";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import {
+  downloadPackagingAnexa3,
   downloadPackagingDeclaration,
+  usePackagingAnexa3,
   usePackagingHandovers,
   usePackagingMarket,
   usePackagingMovements,
@@ -17,21 +19,28 @@ import type {
   PackagingTable1Row,
 } from "@/lib/types";
 import { useCurrentCompany } from "@/hooks/useCompanies";
+import { useTableView } from "@/hooks/useTableView";
+import { useUrlState } from "@/hooks/useUrlState";
+import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { withCount } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Menu, MenuItem } from "@/components/ui/menu";
-import { DocAction } from "@/components/ui/doc-action";
+import { Button } from "@/components/ui/button";
+import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu";
+import { PillGroup } from "@/components/ui/pill-group";
 import { Input } from "@/components/ui/input";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow, TableSkeletonRows } from "@/components/ui/table-fallback";
+import { TablePagination } from "@/components/ui/table-toolbar";
 import { useToast } from "@/components/ui/toast";
 import { Anexa3Section } from "@/components/packaging/Anexa3Section";
 import { countMovements, kg, materialLabels } from "@/components/packaging/packagingFormat";
 
 const t = strings.packaging;
-const m = strings.movements;
+
+/** Ce tabel e pe ecran. „Pus pe piață" e cel implicit, deci nu se scrie în adresă. */
+type TableKey = "" | "predat" | "preluat";
 
 /** The six figures of a material row; "Total (col. 3+5)" is a sum and is never typed. */
 const COLUMNS = [
@@ -134,9 +143,17 @@ function RowStatus({ state, dirty }: { state?: "saving" | "saved"; dirty: boolea
  * devenit tastele de deasupra listei de mişcări. Ce e aici nu se mai găseşte nicăieri altundeva:
  * tabelele, suprascrierea şi cele două documente.
  *
- * <p>Grila în care se completau cele şaizeci şi şase de celule ale tabelului 1 nu e ecranul
- * principal: rămâne, pliată, ca **suprascriere** pe material, fiindcă tabelul e legal despre marfa
- * pusă pe piaţă şi o firmă poate şti că cifra ei diferă de ce arată deşeul.
+ * <p>**Totul încape într-un ecran** (proprietarul, 18.09.2026: „să nu meargă pagina în jos, să tot
+ * dai scroll"). Pe ecran stă un singur tabel, ales din taste — „Pus pe piață" (tabelul 1) sau
+ * „Predat" (tabelul 2, paginat la zece) —, cele două documente sunt două butoane lipite, fără text
+ * dedesubt, iar semnalele sunt un rând cu linkuri. Tabelul Anexei 3 a plecat de la generator: acolo
+ * erau aceleaşi predări ca în „Predat", iar documentul era ascuns la fundul paginii. La firma care
+ * şi colectează rămâne a treia tastă, „Preluat de la alții", fiindcă preluările pe provenienţă şi
+ * avertismentul de rol nu se văd nicăieri altundeva.
+ *
+ * <p>Suprascrierea celor şaizeci şi şase de celule ale tabelului 1 nu mai e o a doua grilă sub
+ * tabel: „Scrie cifre proprii" face câmpuri chiar din tabel. Rămâne excepţia, nu regula — tabelul
+ * e legal despre marfa pusă pe piaţă şi o firmă poate şti că cifra ei diferă de ce arată deşeul.
  *
  * @param year anul raportat; vine din filtrul de deasupra, nu din starea componentei
  * @param movementsPath ecranul pe care se repară mişcările — „Generare" la generator, „Ieşiri" la
@@ -150,11 +167,18 @@ export function PackagingReport({
   movementsPath: string;
 }) {
   const canWrite = useCanWrite();
-  // Anexa 3 apare la toți: la colector cu preluări și ieșiri, la generator numai cu ieșirile
-  // (proprietarul, 16.09.2026; până atunci era ascunsă generatorilor). Cât timp firma nu s-a
-  // încărcat, secțiunea nu apare — ca butonul Anexei 2.
+  // Anexa 3 se descarcă la toți: la colector cu preluări și ieșiri, la generator numai cu ieșirile
+  // (proprietarul, 16.09.2026). Tabelul ei pe ecran rămâne doar unde spune ceva ce „Predat" nu
+  // spune — la firma care și colectează. Cât timp firma nu s-a încărcat, tasta nu apare.
   const { data: company } = useCurrentCompany();
-  const companyLoaded = company != null;
+  const collects = company != null && company.type !== "GENERATOR";
+  const { data: workPoints } = useWorkPoints();
+  const activeWorkPoints = useMemo(() => (workPoints ?? []).filter((w) => w.active), [workPoints]);
+  // Fără punct de lucru: doar ca să aflăm dacă profilul a spus care tabel se aplică (`printable`).
+  const { data: anexa3 } = usePackagingAnexa3(year);
+  const [tableParam, setTable] = useUrlState("tabel");
+  const table: TableKey =
+    tableParam === "predat" || (tableParam === "preluat" && collects) ? tableParam : "";
   const { data: movements } = usePackagingMovements(year);
   const { data: table1, isLoading: loadingTable1 } = usePackagingTable1(year);
   const { data: handovers } = usePackagingHandovers(year);
@@ -162,8 +186,8 @@ export function PackagingReport({
   const { data: overrides } = usePackagingMarket(year);
   const saveMut = useSavePackagingMarket();
   const { notify } = useToast();
-  const [downloading, setDownloading] = useState<"xls" | "pdf" | null>(null);
-  const [overridesOpen, setOverridesOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   // Ce s-a tastat şi nu s-a salvat încă, per material. Salvarea e pe rând, la ieşirea din câmp:
   // grila are şaizeci şi şase de celule, iar un buton „salvează tot" ar face o greşeală invizibilă.
@@ -188,6 +212,9 @@ export function PackagingReport({
     setDraft({});
     setRowState({});
   }, [year]);
+
+  // Zece predări pe pagină, ca pe „Totalul anului": ce trece de un ecran se paginează.
+  const handoverView = useTableView(handovers ?? [], { pageSize: 10 });
 
   const rows = table1 ?? [];
   /** Câte rânduri au cifre tastate şi neplecate. Zero e starea normală, deci nu se scrie nimic. */
@@ -214,14 +241,14 @@ export function PackagingReport({
     };
   }, [unclassified, movements]);
 
-  async function handleDownload(format: "xls" | "pdf") {
-    setDownloading(format);
+  async function download(run: () => Promise<void>, errorText: string) {
+    setDownloading(true);
     try {
-      await downloadPackagingDeclaration(year, format);
+      await run();
     } catch (err) {
-      notify(await apiBlobErrorMessage(err, t.downloadError), "error");
+      notify(await apiBlobErrorMessage(err, errorText), "error");
     } finally {
-      setDownloading(null);
+      setDownloading(false);
     }
   }
 
@@ -310,203 +337,250 @@ export function PackagingReport({
     );
   }
 
+  /** Un material are rând pe ecran dacă are măcar o cifră; la scris se văd toate, ca să ai unde tasta. */
+  const hasFigures = (material: PackagingMaterial) => {
+    const row = rowFor(material);
+    return row != null && COLUMNS.some((column) => row[column] != null);
+  };
+  const shown = MATERIAL_ORDER.filter((material) => editing || hasFigures(material));
+  const hidden = MATERIAL_ORDER.filter((material) => !shown.includes(material));
+  const overrideFor = (material: PackagingMaterial) =>
+    (overrides ?? []).find((r) => r.material === material);
+
+  const blocked: { text: string; to: string }[] = [
+    {
+      text: countMovements(t.blockedMissingMaterial, signals.missingMaterial),
+      to: `${movementsPath}?luna=${year}&ambalaje=de-completat`,
+      n: signals.missingMaterial,
+    },
+    {
+      text: countMovements(t.blockedMissingCategory, signals.missingCategory),
+      to: `${movementsPath}?luna=${year}&ambalaje=de-completat`,
+      n: signals.missingCategory,
+    },
+    {
+      text: countMovements(t.missingOperation, signals.missingOperation),
+      to: `${movementsPath}?luna=${year}&problema=cod-rd`,
+      n: signals.missingOperation,
+    },
+    {
+      // „Toate ambalajele", nu „pus de noi pe piață": semnalul e despre kilograme care lipsesc,
+      // iar tasta „pe piață" nici nu există pe ecranul colectorului.
+      text: countMovements(t.awaitingWeighing, signals.awaitingWeighing),
+      to: `${movementsPath}?luna=${year}&ambalaje=toate`,
+      n: signals.awaitingWeighing,
+    },
+  ].filter((signal) => signal.n > 0);
+
   return (
     <div>
-      {/* ---- Ce blochează declaraţia, spus înainte de tabele ----
-           Fiecare semnal duce la rândurile lui. Până pe 18.09.2026 ducea la registrul de dedesubt;
-           de când registrul e unul singur, duce în „Mişcări", cu tasta potrivită deja apăsată —
-           altfel semnalul ar numi vinovatul şi s-ar opri acolo, iar omul ar căuta patru rânduri
-           într-un an de mişcări. */}
-      {(signals.missingMaterial > 0 ||
-        signals.missingCategory > 0 ||
-        signals.awaitingWeighing > 0 ||
-        signals.missingOperation > 0) && (
-        <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-900">
-            <AlertTriangle className="h-4 w-4" />
-            {t.blockedTitle}
-          </h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
-            {signals.missingMaterial > 0 && (
-              <li>
-                {countMovements(t.blockedMissingMaterial, signals.missingMaterial)}{" "}
-                <FixLink to={`${movementsPath}?luna=${year}&ambalaje=de-completat`} />
-              </li>
-            )}
-            {signals.missingCategory > 0 && (
-              <li>
-                {countMovements(t.blockedMissingCategory, signals.missingCategory)}{" "}
-                <FixLink to={`${movementsPath}?luna=${year}&ambalaje=de-completat`} />
-              </li>
-            )}
-            {signals.missingOperation > 0 && (
-              <li>
-                {countMovements(t.missingOperation, signals.missingOperation)}{" "}
-                <FixLink to={`${movementsPath}?luna=${year}&problema=cod-rd`} />
-              </li>
-            )}
-            {signals.awaitingWeighing > 0 && (
-              <li>
-                {countMovements(t.awaitingWeighing, signals.awaitingWeighing)}{" "}
-                {/* „Toate ambalajele", nu „pus de noi pe piață": semnalul e despre kilograme care
-                    lipsesc, iar tasta „pe piață" nici nu există pe ecranul colectorului. */}
-                <FixLink to={`${movementsPath}?luna=${year}&ambalaje=toate`} />
-              </li>
-            )}
-          </ul>
-        </section>
-      )}
-
-      {/* ---- Documentele anului, deasupra tabelelor (aşezarea aprobată pe „Totalul anului",
-           18.09.2026): butonul poartă numele documentului, explicaţia stă dedesubt. Anexa 3 îşi
-           are butoanele ei, lângă tabelul ei, fiindcă se descarcă pe punct de lucru. ---- */}
-      <div className="mt-6 sm:max-w-sm">
-        <DocAction
-          hint={t.downloadHint}
-          action={
-            <Menu label={t.download} align="left" disabled={downloading != null}>
-              <MenuItem icon={FileSpreadsheet} onClick={() => handleDownload("xls")} hint={t.downloadXlsHint}>
-                {t.downloadXls}
-              </MenuItem>
-              <MenuItem icon={FileText} onClick={() => handleDownload("pdf")} hint={t.downloadPdfHint}>
-                {t.downloadPdf}
-              </MenuItem>
-            </Menu>
-          }
+      {/* ---- Documentele și tastele tabelului, pe un rând ----
+           Butoanele poartă numele documentelor și n-au text dedesubt; termenul și formatul stau în
+           meniu. Anexa 3 se descarcă pe punct de lucru (art. 4 alin. (4), decizia 49), deci
+           punctul se alege chiar în meniul ei — nu într-un filtru, la mijlocul paginii. */}
+      {/* `relative`: eticheta `sr-only` de mai jos e poziţionată absolut, iar fără un strămoş
+          `relative` lungeşte documentul — capcana prinsă pe Acasă în aceeaşi zi. */}
+      <div className="relative mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <Menu label={t.docAnexa1} align="left" disabled={downloading}>
+            <MenuLabel>{t.docAnexa1Deadline}</MenuLabel>
+            <MenuItem
+              icon={FileSpreadsheet}
+              hint={t.downloadXlsHint}
+              onClick={() => download(() => downloadPackagingDeclaration(year, "xls"), t.downloadError)}
+            >
+              {t.downloadXls}
+            </MenuItem>
+            <MenuItem
+              icon={FileText}
+              hint={t.downloadPdfHint}
+              onClick={() => download(() => downloadPackagingDeclaration(year, "pdf"), t.downloadError)}
+            >
+              {t.downloadPdf}
+            </MenuItem>
+          </Menu>
+          {/* Profilul n-a spus care tabel se aplică → nimic de tipărit; de ce, scrie pe tasta
+              „Preluat de la alții". La generator `printable` e mereu adevărat. */}
+          <Menu label={t.docAnexa3} align="left" disabled={downloading || !(anexa3?.printable ?? false)}>
+            {activeWorkPoints.length === 0 && <MenuLabel>{t.anexa3NoWorkPoint}</MenuLabel>}
+            {activeWorkPoints.map((wp) => (
+              <Fragment key={wp.id}>
+                <MenuLabel>{wp.name}</MenuLabel>
+                <MenuItem
+                  icon={FileSpreadsheet}
+                  onClick={() => download(() => downloadPackagingAnexa3(year, wp.id, "xls"), t.anexa3DownloadError)}
+                >
+                  {t.downloadXls}
+                </MenuItem>
+                <MenuItem
+                  icon={FileText}
+                  onClick={() => download(() => downloadPackagingAnexa3(year, wp.id, "pdf"), t.anexa3DownloadError)}
+                >
+                  {t.downloadPdf}
+                </MenuItem>
+              </Fragment>
+            ))}
+          </Menu>
+        </div>
+        <span id="pk-table-picker" className="sr-only">
+          {t.tablePicker}
+        </span>
+        <PillGroup<TableKey>
+          name="tabel-ambalaje"
+          aria-labelledby="pk-table-picker"
+          options={[
+            { value: "", label: t.keyMarket },
+            { value: "predat", label: t.keyHandedOver },
+            ...(collects ? [{ value: "preluat" as const, label: t.keyIntake }] : []),
+          ]}
+          selected={[table]}
+          onToggle={(value) => {
+            setEditing(false);
+            setTable(value);
+          }}
         />
       </div>
 
-      {/* ---- Tabelul 1, însumat din registrul de mai sus ---- */}
-      <section id="tabelul-1" className="mt-10 scroll-mt-20">
-        <h2 className="text-lg font-semibold">{t.table1Title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table1Hint}</p>
-        <div className="mt-3">
-          <Table stickyHeader>
-            <THead sticky>
+      {/* ---- Ce blochează declaraţia: un rând, fiecare semnal e linkul spre rândurile lui ----
+           Până pe 18.09.2026 era o cutie cu titlu şi listă. Linkul duce în „Mişcări" cu tasta
+           potrivită deja apăsată — altfel semnalul ar numi vinovatul şi s-ar opri acolo. */}
+      {(blocked.length > 0 || (table === "" && canWrite)) && table !== "preluat" && (
+        <div className="mt-4 flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            {blocked.length > 0 && <Badge variant="warning">{t.blockedLead}</Badge>}
+            {blocked.map((signal) => (
+              <Link
+                key={signal.text}
+                to={signal.to}
+                className="font-medium text-state-warn-text underline hover:no-underline"
+              >
+                {signal.text}
+              </Link>
+            ))}
+          </div>
+          {table === "" && canWrite && (
+            <Button variant="muted" size="sm" onClick={() => setEditing((on) => !on)}>
+              {editing ? t.overrideDone : t.overrideOpen}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* ---- Tabelul 1, însumat din mişcări. La scris, celulele devin câmpuri pe loc. ---- */}
+      {table === "" && (
+        <section id="tabelul-1" className="mt-3">
+          <Table>
+            <THead>
               <TR>
-                <TH>{t.material}</TH>
-                <TH className="text-right">{t.colSales}</TH>
-                <TH className="text-right">{t.colTotal}</TH>
-                <TH className="text-right">{t.colPrimary}</TH>
-                <TH className="text-right">{t.colPrimaryReusable}</TH>
-                <TH className="text-right">{t.colSecondary}</TH>
-                <TH className="text-right">{t.colSecondaryReusable}</TH>
-                <TH className="text-right">{t.colHazardous}</TH>
+                <TH rowSpan={2}>{t.material}</TH>
+                <TH rowSpan={2} className="text-right">{t.headSales}</TH>
+                <TH rowSpan={2} className="text-right">{t.headTotal}</TH>
+                <TH colSpan={2} className="border-b border-line-strong text-center">{t.headPrimary}</TH>
+                <TH colSpan={2} className="border-b border-line-strong text-center">{t.headSecondary}</TH>
+                <TH rowSpan={2} className="text-right">{t.headHazardous}</TH>
+              </TR>
+              <TR>
+                <TH className="text-right">{t.headGroupTotal}</TH>
+                <TH className="text-right">{t.headGroupReusable}</TH>
+                <TH className="text-right">{t.headGroupTotal}</TH>
+                <TH className="text-right">{t.headGroupReusable}</TH>
               </TR>
             </THead>
             <TBody>
-              {loadingTable1 && <TableSkeletonRows columns={8} rows={8} />}
+              {loadingTable1 && <TableSkeletonRows columns={8} rows={5} />}
+              {!loadingTable1 && shown.length === 0 && (
+                <TableFallbackRow
+                  columns={8}
+                  loading={false}
+                  icon={Package}
+                  title={t.table1Empty.replace("{year}", String(year))}
+                />
+              )}
               {!loadingTable1 &&
-                MATERIAL_ORDER.map((material) => {
+                shown.map((material) => {
                   const row = rowFor(material);
+                  const override = editing ? overrideFor(material) : undefined;
+                  const cell = (column: Column) =>
+                    override ? (
+                      <Input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        aria-label={`${materialLabels[material]} — ${COLUMN_LABELS[column]}`}
+                        // Cifra din mişcări rămâne la vedere cât scrii, dar nu e o valoare: un
+                        // câmp gol nu suprascrie nimic.
+                        placeholder={row?.overridden || row?.[column] == null ? "" : kg(row[column])}
+                        className="ml-auto h-8 w-24 text-right"
+                        value={cellValue(override, column)}
+                        onChange={(ev) => edit(material, column, ev.target.value)}
+                        onBlur={() => saveOverride(override)}
+                      />
+                    ) : (
+                      kg(row?.[column])
+                    );
+                  // La scris, rândul cu câmpuri se strânge: opt rânduri de 53px împingeau pagina cu
+                  // 58px peste un ecran de 900 (măsurat, 18.09.2026).
+                  const num = editing ? "py-1.5 text-right" : "text-right";
                   return (
                     <Fragment key={material}>
                       <TR>
                         <TD className="whitespace-nowrap font-medium">
                           {materialLabels[material]}
-                          {row?.overridden && (
+                          {row?.overridden && !editing && (
                             <Badge className="ml-2" variant="default">
                               {t.overriddenBadge}
                             </Badge>
                           )}
+                          {/* `aria-live` fiindcă starea se schimbă singură, fără ca nimeni să apese
+                              ceva: altfel un cititor de ecran n-ar afla niciodată că cifra a plecat. */}
+                          {editing && (
+                            <span className="ml-2 text-xs" aria-live="polite">
+                              <RowStatus state={rowState[material]} dirty={Boolean(draft[material])} />
+                            </span>
+                          )}
                         </TD>
-                        <TD className="text-right">{kg(row?.salesPackaging)}</TD>
+                        <TD className={num}>{cell("salesPackaging")}</TD>
                         <TD className="text-right text-content-muted">{kg(packagedGoodsTotal(row))}</TD>
-                        <TD className="text-right">{kg(row?.primaryTotal)}</TD>
-                        <TD className="text-right">{kg(row?.primaryReusable)}</TD>
-                        <TD className="text-right">{kg(row?.secondaryTotal)}</TD>
-                        <TD className="text-right">{kg(row?.secondaryReusable)}</TD>
-                        <TD className="text-right">{kg(row?.hazardousContent)}</TD>
+                        <TD className={num}>{cell("primaryTotal")}</TD>
+                        <TD className={num}>{cell("primaryReusable")}</TD>
+                        <TD className={num}>{cell("secondaryTotal")}</TD>
+                        <TD className={num}>{cell("secondaryReusable")}</TD>
+                        <TD className={num}>{cell("hazardousContent")}</TD>
                       </TR>
-                      {material === "ALTE_PLASTICE" && sumRow(rows, t.totalPlastic, PLASTIC_PARTS)}
-                      {material === "OTEL" && sumRow(rows, t.totalMetal, METAL_PARTS)}
+                      {/* Suma apare după ultimul ei material care se vede, nu după unul ascuns. */}
+                      {material === lastShown(shown, PLASTIC_PARTS) && sumRow(rows, t.totalPlastic, PLASTIC_PARTS)}
+                      {material === lastShown(shown, METAL_PARTS) && sumRow(rows, t.totalMetal, METAL_PARTS)}
                     </Fragment>
                   );
                 })}
-              {!loadingTable1 && sumRow(rows, t.total, MATERIAL_ORDER)}
+              {!loadingTable1 && shown.length > 0 && sumRow(rows, t.total, MATERIAL_ORDER)}
             </TBody>
           </Table>
-        </div>
-
-        {/* Suprascrierea: pliată, fiindcă e excepţia, nu regula. */}
-        {canWrite && (
-          <div className="mt-4">
-            <button
-              type="button"
-              className="text-sm font-medium text-emerald-700 hover:underline"
-              onClick={() => setOverridesOpen((open) => !open)}
-            >
-              {overridesOpen ? t.overrideClose : t.overrideOpen}
-            </button>
-            {overridesOpen && (
-              <div className="mt-3 rounded-lg border border-line p-4">
-                <p className="max-w-3xl text-sm text-content-muted">{t.table1Override}</p>
-                <p className="mt-1 text-xs text-content-subtle">{t.overrideClear}</p>
-                <div className="mt-3">
-                  <Table stickyHeader>
-                    <THead sticky>
-                      <TR>
-                        <TH>{t.material}</TH>
-                        <TH className="text-right">{t.colSales}</TH>
-                        <TH className="text-right">{t.colPrimary}</TH>
-                        <TH className="text-right">{t.colPrimaryReusable}</TH>
-                        <TH className="text-right">{t.colSecondary}</TH>
-                        <TH className="text-right">{t.colSecondaryReusable}</TH>
-                        <TH className="text-right">{t.colHazardous}</TH>
-                        <TH>{t.overrideStatus}</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {(overrides ?? []).map((row) => (
-                        <TR key={row.material}>
-                          <TD className="whitespace-nowrap font-medium">
-                            {materialLabels[row.material]}
-                          </TD>
-                          {COLUMNS.map((column) => (
-                            <TD key={column} className="text-right">
-                              <Input
-                                type="number"
-                                step="0.001"
-                                min="0"
-                                aria-label={`${materialLabels[row.material]} — ${COLUMN_LABELS[column]}`}
-                                className="w-28 text-right"
-                                value={cellValue(row, column)}
-                                onChange={(ev) => edit(row.material, column, ev.target.value)}
-                                onBlur={() => saveOverride(row)}
-                              />
-                            </TD>
-                          ))}
-                          {/* Ce s-a întâmplat cu rândul, în cuvinte. `aria-live` fiindcă starea se
-                              schimbă singură, fără ca nimeni să apese ceva: altfel un cititor de
-                              ecran n-ar afla niciodată că cifra a plecat. */}
-                          <TD className="whitespace-nowrap text-xs" aria-live="polite">
-                            <RowStatus state={rowState[row.material]} dirty={Boolean(draft[row.material])} />
-                          </TD>
-                        </TR>
-                      ))}
-                    </TBody>
-                  </Table>
-                </div>
-                {/* Cifra de care întreba felia: „câte au ajuns". Coloana o spune pe rând, dar un
-                    rând nesalvat poate fi derulat afară din ochi — aici se vede oricum. */}
-                {dirtyRows > 0 && (
-                  <p className="mt-2 text-xs text-amber-700">
-                    {withCount(t.overrideUnsavedRows, dirtyRows, "rând", "rânduri")}
-                  </p>
-                )}
-              </div>
+          <p className="mt-2 text-xs text-content-muted">
+            {editing ? t.overrideClear : t.table1Foot}
+            {!editing && !loadingTable1 && shown.length > 0 && hidden.length > 0 && (
+              <>
+                {" "}
+                {t.table1NoQuantities
+                  .replace("{year}", String(year))
+                  .replace("{materials}", hidden.map((material) => materialLabels[material]).join(", "))}
+              </>
             )}
-          </div>
-        )}
-      </section>
+          </p>
+          {/* Un rând nesalvat poate fi al unui material pe care nu te uiți — aici se vede oricum. */}
+          {editing && dirtyRows > 0 && (
+            <p className="mt-1 text-xs text-state-warn-text">
+              {withCount(t.overrideUnsavedRows, dirtyRows, "rând", "rânduri")}
+            </p>
+          )}
+        </section>
+      )}
 
-      {/* ---- Tabelul 2, calculat din predări ---- */}
-      <section id="tabelul-2" className="mt-10 scroll-mt-20">
-        <h2 className="text-lg font-semibold">{t.table2Title}</h2>
-        <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.table2Hint}</p>
-        <div className="mt-3">
-          <Table stickyHeader>
-            <THead sticky>
+      {/* ---- Tabelul 2, calculat din predări; zece pe pagină ---- */}
+      {table === "predat" && (
+        <section id="tabelul-2" className="mt-3">
+          <Table>
+            <THead>
               <TR>
                 <TH>{t.material}</TH>
                 <TH className="text-right">{t.quantity}</TH>
@@ -519,38 +593,30 @@ export function PackagingReport({
               {(handovers ?? []).length === 0 && (
                 <TableFallbackRow columns={5} loading={false} icon={Package} title={t.noHandovers} />
               )}
-              {(handovers ?? []).map((row, i) => (
+              {handoverView.visible.map((row, i) => (
                 <TR key={`${row.material}-${row.operatorCui}-${row.operation}-${i}`}>
                   <TD className="whitespace-nowrap">{materialLabels[row.material]}</TD>
                   <TD className="text-right">{kg(row.quantity)}</TD>
-                  <TD>
-                    {row.operatorName}
-                    {row.operatorAddress ? (
-                      <span className="block text-xs text-content-muted">{row.operatorAddress}</span>
-                    ) : null}
-                  </TD>
+                  <TD>{row.operatorName}</TD>
                   <TD>{row.operatorCui ?? "—"}</TD>
                   <TD>{row.operation || "—"}</TD>
                 </TR>
               ))}
             </TBody>
           </Table>
-        </div>
-      </section>
+          <p className="mt-2 text-xs text-content-muted">{t.table2Foot}</p>
+          <TablePagination view={handoverView} />
+        </section>
+      )}
 
-      {companyLoaded && <Anexa3Section year={year} />}
+      {table === "preluat" && <Anexa3Section year={year} />}
     </div>
   );
 }
 
-
-/** „Vezi mişcările" — acelaşi link pe fiecare semnal, deci scris o dată. */
-function FixLink({ to }: { to: string }) {
-  return (
-    <Link to={to} className="font-medium underline hover:no-underline">
-      {m.packagingSeeMovements}
-    </Link>
-  );
+/** Ultimul material dintr-un grup care chiar are rând pe ecran; `undefined` când n-are niciunul. */
+function lastShown(shown: PackagingMaterial[], parts: PackagingMaterial[]) {
+  return shown.filter((material) => parts.includes(material)).pop();
 }
 
 /** Un rând de sumă din formular — Total plastic, Total metal, TOTAL. */

@@ -3,21 +3,18 @@
  * ținea două documente diferite în același fișier. Secțiunea nu împrumuta nimic din starea paginii —
  * primește doar anul —, deci mutarea e o tăiere, nu o refacere.
  */
-import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, FileSpreadsheet, FileText } from "lucide-react";
-import { downloadPackagingAnexa3, usePackagingAnexa3 } from "@/hooks/usePackaging";
+import { useEffect, useMemo } from "react";
+import { AlertTriangle } from "lucide-react";
+import { usePackagingAnexa3 } from "@/hooks/usePackaging";
 import type { PackagingAnexa3 } from "@/lib/types";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
-import { apiBlobErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { withCount } from "@/lib/utils";
 import { useUrlState } from "@/hooks/useUrlState";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/toast";
 import { countMovements, kg, materialLabels } from "./packagingFormat";
 
 const t = strings.packaging;
@@ -29,6 +26,10 @@ const t = strings.packaging;
  * <p>Se arată **un singur tabel**, cel care i se aplică firmei (art. 4 alin. (1): „tabelul 1 sau,
  * după caz, tabelul 2"), iar când profilul n-a răspuns nu se arată niciunul şi ecranul spune ce e
  * de completat. Un ecran e o ofertă, un document e o afirmaţie — vezi decizia 37.
+ *
+ * <p>Din 18.09.2026 e tabelul de sub tasta „Preluat de la alții", numai la firma care şi
+ * colectează; descărcarea a urcat în butonul „Anexa 3 Ambalaje" de deasupra, cu punctul de lucru
+ * în meniul lui. Selectorul de aici alege doar ce se vede pe ecran.
  */
 export function Anexa3Section({ year }: { year: number }) {
   const { data: workPoints } = useWorkPoints();
@@ -45,32 +46,14 @@ export function Anexa3Section({ year }: { year: number }) {
   // anume nu putea exista, iar alegerea se pierdea la fiecare navigare.
   const [workPointId, setWorkPointId] = useUrlState("punctA3");
 
-  // Cu un singur punct de lucru, alegerea nu e o alegere: se selectează singur, ca butonul de
-  // descărcare să fie activ din prima. Cu mai multe, rămâne pe „Toate" până alege omul.
+  // Cu un singur punct de lucru, alegerea nu e o alegere: se selectează singur, ca ecranul să arate
+  // din prima ce se depune. Cu mai multe, rămâne pe „Toate" până alege omul.
   useEffect(() => {
     if (!workPointId && activeWorkPoints.length === 1) {
       setWorkPointId(activeWorkPoints[0].id);
     }
   }, [activeWorkPoints, workPointId, setWorkPointId]);
   const { data, isLoading } = usePackagingAnexa3(year, workPointId || undefined);
-  const { notify } = useToast();
-  const [downloading, setDownloading] = useState<"xls" | "pdf" | null>(null);
-
-  async function download(format: "xls" | "pdf") {
-    setDownloading(format);
-    try {
-      await downloadPackagingAnexa3(year, workPointId || undefined, format);
-    } catch (err) {
-      notify(await apiBlobErrorMessage(err, t.anexa3DownloadError), "error");
-    } finally {
-      setDownloading(null);
-    }
-  }
-
-  // „Toate punctele de lucru" e util pe ecran şi nedepunibil pe hârtie: art. 4 alin. (4) cere
-  // raportarea per punct de lucru, iar alin. (3) o trimite la agenţia din raza lui. Un fişier cu
-  // rubrica „Punct de lucru" goală ar fi un formular pe care clientul nu-l poate folosi.
-  const canDownload = (data?.printable ?? false) && workPointId !== "";
   const table2 = data?.usesTable2 ?? false;
   const exitsOnly = data?.exitsOnly ?? false;
   const missingOrigin = (data?.unclassified ?? []).filter((r) => r.missingOrigin).length;
@@ -78,7 +61,7 @@ export function Anexa3Section({ year }: { year: number }) {
   const missingQuantity = (data?.unclassified ?? []).filter((r) => r.missingQuantity).length;
 
   return (
-    <section id="anexa-3" className="mt-10 scroll-mt-20">
+    <section id="anexa-3" className="mt-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
           <h2 className="text-lg font-semibold text-content">
@@ -98,32 +81,9 @@ export function Anexa3Section({ year }: { year: number }) {
               ))}
             </Select>
           </div>
-          {/* `loading`, ca butoanele de sus: starea `downloading` exista deja, dar nu o citea
-              nimeni, deci un `.xls` care se construiește câteva secunde arăta ca un buton mort. */}
-          <Button
-            variant="outline"
-            disabled={!canDownload || downloading !== null}
-            loading={downloading === "xls"}
-            onClick={() => download("xls")}
-          >
-            {downloading !== "xls" && <FileSpreadsheet className="mr-2 h-4 w-4" />}
-            {t.anexa3Download}
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!canDownload || downloading !== null}
-            loading={downloading === "pdf"}
-            onClick={() => download("pdf")}
-          >
-            {downloading !== "pdf" && <FileText className="mr-2 h-4 w-4" />}
-            PDF
-          </Button>
         </div>
       </div>
       <p className="mt-1 text-xs text-content-muted">{t.anexa3WorkPointHint}</p>
-      {data?.printable && workPointId === "" && (
-        <p className="mt-1 text-xs text-amber-700">{t.anexa3PickWorkPoint}</p>
-      )}
 
       {/* Scheletul ține forma a ce urmează — o casetă de avertisment sau un tabel mic — ca
           secțiunea să nu sară când vin datele. */}
@@ -272,8 +232,6 @@ export function Anexa3Section({ year }: { year: number }) {
               </TBody>
             </Table>
           </div>
-
-          <p className="mt-3 text-xs text-content-muted">{t.anexa3DownloadHint}</p>
         </>
       )}
     </section>

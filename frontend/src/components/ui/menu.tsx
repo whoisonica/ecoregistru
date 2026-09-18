@@ -141,7 +141,7 @@ export function Menu({
           ref={boxRef}
           role="menu"
           style={pos}
-          className="fixed z-30 w-64 animate-slide-up overflow-hidden rounded-md border border-line-strong bg-surface py-1 shadow-popover"
+          className="fixed z-30 max-h-[70vh] w-64 animate-slide-up overflow-y-auto rounded-md border border-line-strong bg-surface py-1 shadow-popover"
           onClick={() => setOpen(false)}
         >
           {children}
@@ -191,4 +191,14 @@ export function MenuItem({
       </span>
     </button>
   );
+}
+
+/**
+ * Un titlu mic într-un meniu: grupează rândurile de sub el și nu se apasă.
+ *
+ * <p>Prima folosire: meniul „Anexa 3 Ambalaje" (18.09.2026), unde fiecare punct de lucru își are
+ * cele două formate — și termenul de depunere din meniul Anexei 1, mutat acolo de sub buton.
+ */
+export function MenuLabel({ children }: { children: ReactNode }) {
+  return <div className="eyebrow px-3 pb-1 pt-2">{children}</div>;
 }

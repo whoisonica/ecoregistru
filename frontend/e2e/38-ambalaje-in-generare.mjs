@@ -41,10 +41,68 @@ check("Generare are trei taburi", taburi.join(" · ") === "Mișcări · Totalul 
 
 // --------------------------------------------------- (2) TABUL: TABELE, DOCUMENT, FĂRĂ REGISTRU
 const text = await page.evaluate(() => document.body.innerText);
-check("tabul are tabelul 1", /Tabel 1\. Ambalaje introduse pe piața națională/.test(text));
-check("… tabelul 2", /Tabelul 2\. Deșeuri de ambalaje gestionate/.test(text));
-check("… și Anexa 3", /Anexa 3/.test(text));
-check("documentul poartă numele din act", /Descarcă Anexa 1 Ambalaje/.test(text));
+// Din 18.09.2026 seara: un singur tabel pe ecran, ales din taste; două butoane de document lipite,
+// fără text dedesubt; nimic de derulat la 1440 × 900 (proprietarul: „să nu meargă pagina în jos").
+const butoane = await page.evaluate(() =>
+  [...document.querySelectorAll('main button[aria-haspopup="menu"]')].map((b) => b.innerText.trim())
+);
+check("cele două documente sunt butoane cu numele lor",
+  butoane.includes("Anexa 1 Ambalaje") && butoane.includes("Anexa 3 Ambalaje"), butoane.join(" · "));
+check("… fără explicație sub ele", !/Ce ai pus tu pe piața națională/.test(text));
+const tasteTabel = await page.evaluate(() =>
+  [...document.querySelectorAll('input[name="tabel-ambalaje"]')].map((i) => i.closest("label").innerText.trim())
+);
+check("tastele tabelului: Pus pe piață · Predat (+ Preluat de la alții la cine colectează)",
+  tasteTabel.slice(0, 2).join(" · ") === "Pus pe piață · Predat" && !tasteTabel.includes("Ieșiri"),
+  tasteTabel.join(" · "));
+check("un singur tabel pe ecran", (await page.locator("main table").count()) === 1);
+const inaltime = await page.evaluate(() => {
+  const el = document.getElementById("continut");
+  const doc = document.scrollingElement;
+  return {
+    pagina: Math.max(el.scrollHeight, doc.scrollHeight),
+    ecran: Math.max(el.clientHeight, doc.clientHeight),
+  };
+});
+check("la 1440 × 900 pagina nu se derulează", inaltime.pagina <= inaltime.ecran, `${inaltime.pagina}/${inaltime.ecran}`);
+
+// Meniul Anexei 3 își alege punctul de lucru singur: fiecare punct cu cele două formate. La firma
+// care colectează și n-a spus ce rol are în lanțul ambalajelor, butonul e stins (nu se tipărește
+// nimic — decizia 42), iar motivul se citește pe tasta „Preluat de la alții".
+const butonA3 = page.getByRole("button", { name: "Anexa 3 Ambalaje" });
+if (await butonA3.isEnabled()) {
+  await butonA3.click();
+  await page.waitForTimeout(300);
+  const meniuA3 = await page.evaluate(() => document.querySelector('[role="menu"]')?.innerText ?? "");
+  check("meniul Anexei 3 are formatele pe punct de lucru", /\.xls/.test(meniuA3) && /PDF/.test(meniuA3), meniuA3.replace(/\n/g, " · "));
+  await page.keyboard.press("Escape");
+} else {
+  await page.locator('input[name="tabel-ambalaje"][value="preluat"]').check({ force: true });
+  await page.waitForTimeout(800);
+  const motiv = await page.evaluate(() => document.getElementById("anexa-3")?.innerText ?? "");
+  check("Anexa 3 stinsă își spune motivul pe „Preluat de la alții”", /Nu știm care tabel ți se aplică/.test(motiv), motiv.slice(0, 80));
+  check("… iar secțiunea nu mai are butoane de descărcare", !/Descarcă Anexa 3/.test(motiv));
+}
+
+// „Predat" schimbă tabelul și scrie alegerea în adresă; tot fără derulare.
+await page.locator('input[name="tabel-ambalaje"][value="predat"]').check({ force: true });
+await page.waitForTimeout(500);
+check("„Predat” stă în adresă", new URL(page.url()).searchParams.get("tabel") === "predat", page.url());
+const capPredat = await page.evaluate(() =>
+  [...document.querySelectorAll("main table thead th")].map((h) => h.innerText.trim()).join("|")
+);
+check("… și arată predările, pe operator", /Operatorul care a preluat/i.test(capPredat), capPredat);
+const inaltimePredat = await page.evaluate(() => {
+  const el = document.getElementById("continut");
+  const doc = document.scrollingElement;
+  return {
+    pagina: Math.max(el.scrollHeight, doc.scrollHeight),
+    ecran: Math.max(el.clientHeight, doc.clientHeight),
+  };
+});
+check("… tot fără derulare", inaltimePredat.pagina <= inaltimePredat.ecran, `${inaltimePredat.pagina}/${inaltimePredat.ecran}`);
+await page.locator('input[name="tabel-ambalaje"][value=""]').check({ force: true });
+await page.waitForTimeout(400);
 
 // Registrul se recunoaște după capul lui: un tabel cu „Data” și „Cod”. Tabelele declarației au
 // „Material” pe prima coloană. Se citesc **capetele**, nu textul paginii: „Data” apare și în altă parte.
@@ -168,7 +226,8 @@ check("mișcările de probă s-au șters după ele", sterse === 4, `${sterse} ș
 // --------------------------------------------------- (5) SEMNALUL DIN TAB DUCE LA RÂNDURILE LUI
 await page.goto(BASE + `/generare?tab=ambalaje&luna=${AN}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(1000);
-const link = page.getByRole("link", { name: "Vezi mișcările" }).first();
+// Semnalul e chiar linkul (un rând, nu o cutie cu „Vezi mișcările").
+const link = page.getByRole("link", { name: /fără (felul|materialul) ambalajului/ }).first();
 check("semnalul are un drum spre mișcări", (await link.count()) > 0);
 if (await link.count()) {
   await link.click();
