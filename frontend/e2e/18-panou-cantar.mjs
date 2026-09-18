@@ -1,5 +1,6 @@
-// Proba 18: panoul „Cântar” (15.09.2026) — firma ca etichetă, afișajul lunii, tastele de adăugare,
-// meniul cu cifre și indicatori, strângerea cu `[`, ecranele Intrări / Ieșiri separate, totalurile
+// Proba 18: panoul „Cântar” (15.09.2026), în forma „E3” din 18.09.2026 — firma pe plăcuța ei, căutarea
+// ca iconiță, taburile sub intrarea deschisă; FĂRĂ afișajul lunii, tastele mari de adăugare, rândul
+// „Caută oriunde” și orice „+” pe rânduri (toate scoase de proprietar); meniul cu cifre și indicatori, strângerea cu `[`, ecranele Intrări / Ieșiri separate, totalurile
 // de deasupra listei și culoarea pubelei pe codul de deșeu.
 //
 // Firma demo e „Generator și colector”, deci vede toate cele trei ecrane de mișcări și toate cele
@@ -21,15 +22,30 @@ await page.waitForTimeout(900);
 const panel = await page.evaluate(() => {
   const aside = document.getElementById("navigatie-principala");
   const label = aside.querySelector('[data-testid="company-label"]')?.textContent ?? "";
-  const lcd = aside.querySelector('[data-testid="month-display"]')?.textContent ?? "";
-  const actions = [...aside.querySelectorAll('[data-testid="panel-actions"] a')].map((a) => a.textContent.trim());
   const keys = [...aside.querySelectorAll("nav kbd")].map((k) => k.textContent.trim());
-  const items = [...aside.querySelectorAll("nav a")].map((a) => a.getAttribute("href"));
-  return { label, lcd, actions, keys, items, width: Math.round(aside.getBoundingClientRect().width) };
+  // Rândurile meniului, nu orice link din `nav`: acolo stau acum și taburile.
+  const items = [...aside.querySelectorAll('nav a[data-nav="row"]')].map((a) => a.getAttribute("href"));
+  // Orice link din panou care deschide un formular (`?nou=1`): din 18.09.2026 nu mai e niciunul.
+  const adds = [...aside.querySelectorAll('a[href*="nou=1"]')].map((a) => a.getAttribute("href"));
+  const icons = aside.querySelectorAll('nav a[data-nav="row"] svg').length;
+  return {
+    label, keys, items, adds, icons,
+    gone: {
+      lcd: Boolean(aside.querySelector('[data-testid="month-display"]')),
+      actions: Boolean(aside.querySelector('[data-testid="panel-actions"]')),
+      searchRow: /Caută oriunde/.test(aside.textContent),
+    },
+    search: aside.querySelector('[data-testid="panel-search"]')?.getAttribute("aria-label") ?? "",
+    navTop: Math.round(aside.querySelector("nav").getBoundingClientRect().top),
+    width: Math.round(aside.getBoundingClientRect().width),
+  };
 });
 check("firma e etichetă: nume + CUI + tip", /Demo Reciclare/.test(panel.label) && /RO\d+/.test(panel.label), panel.label);
-check("afișajul lunii are luna, kg și un verdict", /kg/.test(panel.lcd) && panel.lcd.length > 20, panel.lcd.slice(0, 60));
-check("tastele de adăugare: Deșeuri proprii · Intrare · Ieșire", panel.actions.join("|") === "Deșeuri propriiN|IntrareI|IeșireE", panel.actions.join(" · "));
+check("au plecat afișajul lunii, tastele mari și rândul „Caută oriunde”", !panel.gone.lcd && !panel.gone.actions && !panel.gone.searchRow, JSON.stringify(panel.gone));
+check("căutarea e o iconiță cu nume", /Caută oriunde/.test(panel.search), panel.search);
+check("din panou nu se adaugă nimic: niciun „+”, nicio tastă de adăugare", panel.adds.length === 0, panel.adds.join(" | "));
+check("rândurile n-au iconiță cât panoul e lat", panel.icons === 0, String(panel.icons));
+check("meniul începe sus, sub firmă", panel.navTop < 140, panel.navTop + "px");
 // Cifrele merg în ordine, câte intrări are firma — 1…9, apoi 0 pentru a zecea. Firma asta are
 // nouă de pe 18.09.2026, de când „Ambalaje" e tab în „Generare" și a ieșit din meniu; a zecea
 // cifră se probează unde chiar există a zecea intrare, nu cerută pe de rost aici.
@@ -45,6 +61,28 @@ const indicators = await page.$$eval("#navigatie-principala nav a span.font-mono
 check("niciun indicator nu scrie „0”", indicators.every((i) => !/^0 /.test(i)), indicators.join(" · "));
 check("niciun indicator nu e „?” cu serverul sus", indicators.every((i) => i !== "?"), indicators.join(" · "));
 await shot(page, "18-panou");
+
+// ---------------------------------------------------------------- TABURILE SUB INTRAREA DESCHISĂ
+const tabsOf = () => page.$$eval('#navigatie-principala nav a[data-nav="tab"]', (a) => a.map((x) => ({ text: x.textContent.trim(), on: x.getAttribute("aria-current") === "page" })));
+check("pe Acasă niciun rând nu e desfăcut", (await tabsOf()).length === 0);
+await page.click('#navigatie-principala nav a[data-nav="row"][href="/generare"]');
+await page.waitForURL((u) => u.pathname === "/generare", { timeout: 5000 }).catch(() => {});
+await page.waitForTimeout(600);
+let subs = await tabsOf();
+const pageTabs = await page.$$eval('[role="tablist"] [role="tab"]', (b) => b.map((x) => x.innerText.trim()));
+check("Generare își arată taburile, aceleași ca pagina", subs.map((x) => x.text.replace(/\s*\d+ de cântărit$/, "")).join(" · ") === pageTabs.join(" · "), `${subs.map((x) => x.text).join(" · ")} vs ${pageTabs.join(" · ")}`);
+check("primul e cel ales", subs[0]?.on && subs.slice(1).every((x) => !x.on), JSON.stringify(subs));
+await page.goto(BASE + "/generare?luna=2026&tab=total", { waitUntil: "networkidle" });
+await page.click('#navigatie-principala nav a[data-nav="tab"]:has-text("Ambalaje")');
+await page.waitForTimeout(600);
+const afterTab = new URL(page.url());
+check("tabul din meniu schimbă doar `tab`, luna rămâne", afterTab.searchParams.get("tab") === "ambalaje" && afterTab.searchParams.get("luna") === "2026", afterTab.search);
+subs = await tabsOf();
+check("… și e cel aprins, în meniu și în pagină", subs.find((x) => x.on)?.text === "Ambalaje" && (await page.getAttribute('[role="tab"][aria-selected="true"]', "aria-selected")) === "true" && /Ambalaje/.test(await page.innerText('[role="tab"][aria-selected="true"]')), JSON.stringify(subs));
+await shot(page, "18-panou-taburi");
+
+await page.goto(BASE + "/", { waitUntil: "networkidle" });
+await page.waitForTimeout(500);
 
 // ---------------------------------------------------------------- TASTELE
 await page.click("h1");
@@ -95,6 +133,11 @@ const collapsed = await page.evaluate(() => {
   return { w: Math.round(aside.getBoundingClientRect().width), flag: aside.dataset.collapsed, stored: (() => { try { return localStorage.getItem("wh.panel"); } catch { return null; } })() };
 });
 check("„[” strânge panoul la 64px și ține minte", collapsed.w === 64 && collapsed.flag === "true" && collapsed.stored === "collapsed", JSON.stringify(collapsed));
+const rail = await page.evaluate(() => {
+  const nav = document.querySelector("#navigatie-principala nav");
+  return { icons: nav.querySelectorAll('a[data-nav="row"] svg').length, rows: nav.querySelectorAll('a[data-nav="row"]').length, extra: nav.querySelectorAll('a[data-nav="tab"]').length };
+});
+check("pe șină rândurile au iconiță și nimic altceva", rail.icons === rail.rows && rail.extra === 0, JSON.stringify(rail));
 await shot(page, "18-panou-strans");
 await page.keyboard.press("[");
 await page.waitForTimeout(300);

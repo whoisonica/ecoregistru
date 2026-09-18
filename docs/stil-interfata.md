@@ -35,7 +35,7 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 | Acțiunea principală | `bg-brand`, scara `brand-50…950` | Punctul Verde `#009A44`, apăsat `#007A36`, tasta `#00622F` |
 | Intrarea în depozit | `bg-inbound`, `variant="inbound"` la `Button` | albastru `#1C6FD1` — cealaltă direcție față de verde |
 | Panoul (bara stângă) | `bg-panel`, `-hover`, `-active`, `-line`, `-key`, `text-panel-text/-mid/-dim/-faint` | grafit `#1B201D`; intrarea activă `#2A322E` cu linie interioară de 3px `lcd-digit` la stânga |
-| Afișajul LCD | `bg-lcd`, `text-lcd-digit/-unit/-warn/-bad` | `#0D1210`; cifra `#7CF2A9`, unitatea `#4FB57C`, galben `#FFB020`, roșu `#FF6B5E` |
+| Negrul de afișaj | `bg-lcd`, `text-lcd-digit/-unit/-warn/-bad` | `#0D1210` — plăcuța firmei și banda de sus de pe telefon; `#7CF2A9` linia intrării active, galben `#FFB020` și roșu `#FF6B5E` la indicatori |
 | Stări | `Badge` (LED) · `text-state-ok/-warn/-bad-text` | **pătrățel de 8px + cuvânt**, nu pastilă colorată. Sensul nu se schimbă: verde = gata; **galben = o așteptare legitimă** (cântarul); **roșu = nu se poate depune așa** |
 | Pubela | `BinSwatch` + `lib/binColor.ts` | pătrățel de 10×12px înaintea codului de deșeu: albastru hârtie, galben plastic/metal-ambalaje, verde sticlă, maro bio, gri rezidual, roșu periculoase, gri-metal fier vechi. **Listă explicită cod → pubelă, nu prefix ghicit**; codul necunoscut n-are culoare. Galbenul pubelei nu înseamnă „așteaptă” |
 | Colțuri | scara `borderRadius` (înlocuită, nu extinsă) | 4–8px peste tot: `rounded-md` 5px butoane și câmpuri, `rounded-lg` 6px cutii; `rounded-xl/2xl/3xl` scrise în ecrane cad tot pe 6–8px. **Fără pastile.** `rounded-full` doar pentru avatar și rotița de încărcare |
@@ -49,24 +49,34 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 
 ## Panoul — bara din stânga (262px; 64px strâns cu `[`)
 
+*Forma „E2" din machetele „Meniul după fuziuni" (proprietarul a ales E3 pe 18.09.2026, apoi a scos pe localhost
+„+"-urile de pe rânduri: „arată urâțel"), după ce „Evidențe" și
+„Ambalaje" au intrat ca taburi în „Generare": generatorul rămăsese cu șase intrări într-un panou desenat pentru
+unsprezece, iar până la primul rând de meniu stăteau cinci blocuri.*
+
 `components/panel/*`, orchestrate de `Layout.tsx`. De sus în jos:
 
-1. Logo + tasta `[` (strânge la o șină de iconițe; ținută în `localStorage`, cu try/catch).
-2. **Firma, ca eticheta de pe cântar** (`CompanyLabel`): nume, `CUI · tip` în mono. La consultant și platformă e
+1. Logo, **căutarea ca iconiță** (paleta, Ctrl K) și tasta `[` (strânge la o șină de iconițe; ținută în
+   `localStorage`, cu try/catch).
+2. **Firma, pe plăcuța ei** (`CompanyLabel`, fond `bg-lcd`): nume, `CUI · tip` în mono. La consultant și platformă e
    buton → popover cu căutare, grupat „Cer atenție” (cu motivul) și „În regulă · N”.
-3. **Afișajul lunii** (`MonthDisplay`): luna și ce măsoară („SEPTEMBRIE · INTRAT” la colector, „GENERAT” la
-   generator), cifra în kg, iar jos **cel mai urgent lucru** — același verdict ca banda de pe Acasă, din aceeași
-   socoteală (`useDashboardData`). O sursă căzută → „?”, nu „0”.
-4. **Tastele de adăugare**, după tipul firmei: generator **+ Adaugă deșeuri** (N); colector **↓ Intrare** (I) ·
-   **↑ Ieșire** (E); amândouă: **+ Deșeuri proprii** · Intrare · Ieșire. Ascunse fără drept de scriere.
-5. „Caută oriunde · Ctrl K” — paleta.
-6. **Meniul** (`lib/navItems.ts`): o tastă (1–9, 0) și un indicator pe fiecare intrare („1 de cântărit”, „1 fără cod
-   R/D”, „2 depășite”, „2 expiră”). Fiecare ecran de lucru e intrare proprie: Acasă · Generare · Intrări · Ieșiri ·
-   Cântar · Termene · Dosar de control · Parteneri · Setări; grupul **Cabinet** (F, C) la consultant și
-   platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou. **„Ambalaje" nu mai e în meniu**
-   (18.09.2026): e al treilea tab al „Generării", și rămâne intrare proprie numai la firma care n-are „Generare"
-   (colectorul pur, care are totuși Anexa 3). Paleta îl găsește oricum, din `hidden`.
-7. Jos: Abonament (doar cine administrează) și contul, cu meniul Termeni · Confidențialitate · Scurtături · Deconectare.
+3. **Meniul** (`lib/navItems.ts`): pe fiecare rând **tasta (1–9, 0), numele și indicatorul** („1 de cântărit”,
+   „1 fără cod R/D”, „2 depășite”, „2 expiră”). **Fără iconiță cât panoul e lat** — tasta și iconița erau două semne de
+   citit până la cuvânt; iconița rămâne pe șina strânsă, unde ține locul numelui. Fiecare ecran de lucru e intrare
+   proprie: Acasă · Generare · Intrări · Ieșiri · Cântar · Termene · Dosar de control · Parteneri · Setări; grupul
+   **Cabinet** (F, C, B) la consultant și platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
+   „Ambalaje" e intrare proprie numai la firma care n-are „Generare" (colectorul pur).
+4. **Taburile, sub intrarea deschisă** — Generare (Mișcări · Totalul anului · Ambalaje), Termene (De făcut · Bifate ·
+   Trecute), Parteneri (Firme · Persoane fizice, numai cu depozit). **O singură listă, `lib/screenTabs.ts`, citită și de
+   pagină, și de panou.** Tabul din meniu schimbă doar `?tab=`, ca `setTab` din pagină: luna, punctul și filtrele
+   rămân. Cât taburile sunt desfăcute, indicatorul coboară pe primul: cifrele lui sunt despre lista implicită.
+5. Jos: Abonament (doar cine administrează) și contul, cu meniul Termeni · Confidențialitate · Scurtături · Deconectare.
+
+⚠️ **Ce a plecat și nu se pune la loc** (proprietarul, 18.09.2026: „nu îmi place"): **afișajul lunii** (LCD-ul cu
+kilogramele și alerta), **tastele mari de adăugare**, rândul **„Caută oriunde"** și **orice „+" pe rândurile meniului** (încercat și scos în
+aceeași seară). Din panou nu se adaugă nimic. Toate trei repetau ceva: cifra
+lunii e pe Acasă („{an} pe luni"), iar alerta e banda de acolo; „Adaugă deșeuri" e sus pe Acasă și pe ecranul de
+mișcări, iar N / I / E merg de oriunde; căutarea e Ctrl K. Ce e de făcut se vede în panou din indicatorii de pe rânduri.
 
 **Telefon:** sus o bandă grafit cu firma, cifra lunii și alerta; jos bara **Acasă · lista principală · + · Termene ·
 Mai mult** (`MobileBar`). „+” oferă doar ce e permis tipului de firmă.
@@ -171,7 +181,7 @@ Apare „Predarea e în evidență” (Intrarea / Ieșirea), cu bonul citit din 
 documentele pe care rândul le poate tipări — aceleași reguli ca meniul „⋯” (`canPrintAnexa3`, `canPrintAviz`,
 `canPrintAnexa2`) — plus, la o predare fără cântar, unde se scrie cantitatea când vine bonul. „Încă una la fel” pornește
 formularul cu alegerile ei (`sameAs`), fără cantitate, volum, cântărire, notițe, dată sau document; „Gata” închide. **Editarea**
-păstrează mesajul scurt. Formularul deschis prin `?nou=1` (butonul „+” de pe telefon, panoul, „Primii pași”) ia punctul de
+păstrează mesajul scurt. Formularul deschis prin `?nou=1` (butonul „+” de pe telefon, „Primii pași”, tastele N / I / E) ia punctul de
 lucru implicit și când lista sosește după deschidere.
 
 ## Ecranele de mișcări

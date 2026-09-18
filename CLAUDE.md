@@ -9,7 +9,9 @@
   unui `Button`.
 - **Fără temă întunecată.** Panoul e grafit, pagina e albă: o singură lume de culori.
 - **Meniul și tastele se citesc din cod înainte de a propune ecrane** (`frontend/src/lib/navItems.ts`,
-  `lib/movementScreens.ts`, `App.tsx`): proprietarul nu vrea să explice ce există deja. Tasta N e acțiunea principală
+  `lib/movementScreens.ts`, `lib/screenTabs.ts`, `App.tsx`): proprietarul nu vrea să explice ce există deja. Un tab nou
+  se scrie în `screenTabs.ts`: de acolo îl citesc și pagina, și panoul. În panou nu se pun la loc afișajul lunii,
+  tastele mari de adăugare, rândul „Caută oriunde" sau „+" pe rânduri (scoase pe 18.09.2026). Tasta N e acțiunea principală
   a ecranului curent; cifrele, S (Setări, când meniul trece de zece intrări), I, E, `/`, `[` și Ctrl K sunt legate în
   `Layout.tsx`.
 - Textele de ecran stau în `frontend/src/lib/strings.ts`, în română, pe înțelesul unui client care nu e specialist de

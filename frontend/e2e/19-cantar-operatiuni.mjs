@@ -21,7 +21,7 @@ await page.waitForTimeout(900);
 // ---------------------------------------------------------------- MENIUL
 const menu = await page.evaluate(() => {
   const aside = document.getElementById("navigatie-principala");
-  const links = [...aside.querySelectorAll("nav a")];
+  const links = [...aside.querySelectorAll('nav a[data-nav="row"]')];
   const cantar = links.find((a) => a.getAttribute("href") === "/cantar");
   const settings = links.find((a) => a.getAttribute("href") === "/setari");
   const keyOf = (a) => a?.querySelector("kbd")?.textContent.trim() ?? null;

@@ -11,14 +11,15 @@ import type {
   Partner,
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
+import { PARTNER_TABS } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { PageTabs } from "@/components/ui/page-tabs";
 import { Select } from "@/components/ui/select";
 import {
   PartnerFormDialog,
@@ -272,6 +273,29 @@ export function PartnersPage() {
   }
 
 
+  const roleFilterControl = (
+    <label className="flex items-center gap-2">
+      <span className="eyebrow">{t.filterRole}</span>
+      <Select
+        id="filter-role"
+        aria-label={t.filterRole}
+        value={roleFilter}
+        onChange={(ev) => setRoleFilter(ev.target.value as RoleFilter)}
+        className="w-48"
+      >
+        <option value="">{t.filterRoleAll}</option>
+        <option value="client">{roleLabels.client}</option>
+        <option value="supplier">{roleLabels.supplier}</option>
+        <option value="none">{roleLabels.none}</option>
+        {/* Altă axă, același select: e o singură valoare, iar un al doilea dropdown ar
+            costa mai mult decât explică. */}
+        <optgroup label={t.carrierColumn}>
+          <option value="carrier">{t.filterCarrier}</option>
+        </optgroup>
+      </Select>
+    </label>
+  );
+
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
   useHotkey("n", () => dialogRef.current?.openCreate(), { enabled: Boolean(canManage) && !personsTab });
@@ -292,66 +316,31 @@ export function PartnersPage() {
         }
       />
 
+      {/* Filtrul de rol stă pe linia taburilor, lipit la dreapta, cu eticheta mică lângă el — ca luna
+          și anul pe „Generare" (proprietarul, 18.09.2026). Pe „Persoane fizice" nu filtrează nimic,
+          deci nu se arată. */}
       {hasDepot && (
-        <div role="tablist" className="mt-6 flex gap-1 border-b border-line">
-          {[
-            { id: "", label: strings.naturalPersons.tabFirms },
-            { id: "persoane-fizice", label: strings.naturalPersons.tab },
-          ].map((item) => {
-            const selected = (item.id === "persoane-fizice") === personsTab;
-            return (
-              <button
-                key={item.id || "firme"}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setTab(item.id)}
-                className={
-                  "-mb-px border-b-2 px-3 py-2 text-sm font-medium " +
-                  (selected
-                    ? "border-brand-600 text-content-strong"
-                    : "border-transparent text-content-muted hover:text-content")
-                }
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+        <PageTabs
+          tabs={PARTNER_TABS}
+          selected={personsTab ? "persoane-fizice" : ""}
+          onSelect={setTab}
+          label={t.title}
+          right={personsTab ? undefined : roleFilterControl}
+        />
       )}
 
       {personsTab ? (
         <NaturalPersonsSection canManage={Boolean(canManage)} />
       ) : (
       <>
-      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
-        <div>
-          <Label htmlFor="filter-role">{t.filterRole}</Label>
-          <Select
-            id="filter-role"
-            value={roleFilter}
-            onChange={(ev) => setRoleFilter(ev.target.value as RoleFilter)}
-            className="w-full sm:w-56"
-          >
-            <option value="">{t.filterRoleAll}</option>
-            <option value="client">{roleLabels.client}</option>
-            <option value="supplier">{roleLabels.supplier}</option>
-            <option value="none">{roleLabels.none}</option>
-            {/* Altă axă, același select: e o singură valoare, iar un al doilea dropdown ar
-                costa mai mult decât explică. */}
-            <optgroup label={t.carrierColumn}>
-              <option value="carrier">{t.filterCarrier}</option>
-            </optgroup>
-          </Select>
-        </div>
-      </div>
-
-      <section className="mt-4">
+      <section className={hasDepot ? "mt-4" : "mt-6"}>
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
           <>
             <TableToolbar view={view} placeholder={t.searchPlaceholder}>
+              {/* Firma fără depozit n-are taburi, deci nici linia lor: filtrul stă lângă căutare. */}
+              {!hasDepot && roleFilterControl}
               {activeFilter}
             </TableToolbar>
             <Table stickyHeader>

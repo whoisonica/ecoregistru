@@ -38,6 +38,7 @@ import {
 } from "@/hooks/useMovements";
 import type { MovementFilters, PackagingMovementFilter, WasteMovement } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
+import { GENERATION_TABS } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
 import { useUrlState } from "@/hooks/useUrlState";
@@ -487,11 +488,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   }[screen];
 
   /** Intrările și Ieșirile își au documentul lor, „Evidența cronologică”, în meniul din antet. */
-  const tabs: PageTab[] = [
-    { id: "", label: t.tabMovements },
-    { id: "total", label: t.tabAnnual },
-    { id: "ambalaje", label: t.tabPackaging },
-  ];
+  const tabs: PageTab[] = GENERATION_TABS;
 
   return (
     <div>

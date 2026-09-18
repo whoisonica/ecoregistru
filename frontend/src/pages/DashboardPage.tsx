@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
-import { useAuth } from "@/auth/AuthContext";
 import { useDashboardData, type NextAction } from "@/hooks/useDashboardData";
 import { FirstSteps } from "@/components/panel/FirstSteps";
 import { DeadlineStrip } from "@/components/home/DeadlineStrip";
@@ -9,7 +7,7 @@ import { WasteCodesCard, YearMonthsCard } from "@/components/home/YearCards";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { strings } from "@/lib/strings";
 import { cn, countOf } from "@/lib/utils";
-import { screensFor, SCREEN_PATH } from "@/lib/movementScreens";
+import { screensFor } from "@/lib/movementScreens";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
@@ -111,12 +109,6 @@ function greeting(now: Date): string {
   return h < 11 ? t.greetingMorning : h < 18 ? t.greetingDay : t.greetingEvening;
 }
 
-/** „Vineri, 18 septembrie 2026” — ziua, ca pe o foaie de calendar. */
-function today(now: Date): string {
-  const s = new Intl.DateTimeFormat("ro-RO", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(now);
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 /**
  * Acasă, varianta A (aleasă de proprietar pe 18.09.2026, din cinci desenate): banda cu lucrul de
  * făcut, anul pe luni, deșeurile anului și termenele pe douăsprezece luni. Din machetă au ieșit,
@@ -124,27 +116,18 @@ function today(now: Date): string {
  * Totul din listele pe care Panoul le avea deja.
  */
 export function DashboardPage() {
-  const { user } = useAuth();
-  const canAdd = user?.role !== "CLIENT_VIEWER";
   const { data: company } = useCurrentCompany();
   const d = useDashboardData();
   const screens = screensFor(company?.type);
-  const firstScreen = screens[0];
   const generator = screens.includes("GENERATED");
-  const addLabel =
-    firstScreen === "IN"
-      ? strings.panel.addInbound
-      : screens.includes("IN")
-        ? strings.panel.addOwnWaste
-        : strings.panel.addWaste;
   const now = new Date();
   const points = (d.workPoints ?? []).filter((w) => w.active).length;
 
   return (
     <div>
-      <p className="eyebrow">{today(now)}</p>
+      {/* Fără ziua și data deasupra salutului și fără butonul de adăugare din antet: scoase de
+          proprietar pe 18.09.2026. Adăugarea e pe ecranul de mișcări și pe tastele N / I / E. */}
       <PageHeader
-        className="mt-1.5"
         title={greeting(now)}
         description={
           company && (
@@ -152,14 +135,6 @@ export function DashboardPage() {
               {company.name}
               {d.workPoints && <> · {countOf(points, "punct de lucru", "puncte de lucru")}</>}
             </>
-          )
-        }
-        actions={
-          canAdd && (
-            <LinkButton to={`${SCREEN_PATH[firstScreen]}?nou=1`}>
-              <Plus className="mr-2 h-4 w-4" />
-              {addLabel}
-            </LinkButton>
           )
         }
       />

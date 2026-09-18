@@ -20,6 +20,7 @@ import type { Role } from "@/auth/AuthContext";
 import type { CompanyType } from "@/lib/types";
 import { canImport, canManage, isMultiCompany } from "@/lib/roles";
 import { SCREEN_PATH, registersFor, screensFor, type MovementScreen } from "@/lib/movementScreens";
+import { DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, type ScreenTab } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 
 export interface NavEntry {
@@ -37,6 +38,11 @@ export interface NavEntry {
   hotkey?: string;
   /** Ecranul de mișcări din spatele intrării, când e unul: după el se aleg indicatorii. */
   screen?: MovementScreen;
+  /**
+   * Taburile ecranului, când are: panoul le arată sub intrarea deschisă (18.09.2026). Aceeași
+   * listă pe care o randează pagina (`lib/screenTabs.ts`), nu o copie.
+   */
+  tabs?: ScreenTab[];
 }
 
 export interface NavModel {
@@ -68,6 +74,7 @@ const SCREEN_ENTRY: Record<MovementScreen, Omit<NavEntry, "hotkey">> = {
     icon: Factory,
     keywords: strings.nav.kwMovements,
     screen: "GENERATED",
+    tabs: GENERATION_TABS,
   },
   IN: {
     to: SCREEN_PATH.IN,
@@ -128,9 +135,16 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
     });
   }
   main.push(
-    { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock, keywords: strings.nav.kwDeadlines },
+    { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock, keywords: strings.nav.kwDeadlines, tabs: DEADLINE_TABS },
     { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile },
-    { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },
+    {
+      to: "/parteneri",
+      label: strings.nav.partners,
+      icon: Users,
+      keywords: strings.nav.kwPartners,
+      // „Persoane fizice" există numai unde e depozit (art. 48) — aceeași condiție ca în pagină.
+      tabs: companyType && registersFor(companyType).includes("ART_48") ? PARTNER_TABS : undefined,
+    },
     { to: "/setari", label: strings.nav.settings, icon: Settings, keywords: strings.nav.kwSettings }
   );
 

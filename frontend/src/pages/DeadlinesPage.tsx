@@ -18,6 +18,7 @@ import {
 } from "@/hooks/useDeadlines";
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
+import { DEADLINE_TABS } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 import { cn, formatDate, withCount } from "@/lib/utils";
 import { daysLabel, documentFor, noteFor } from "@/lib/deadlines";
@@ -87,11 +88,11 @@ export function DeadlinesPage() {
     [history.data],
   );
 
-  const tabs: PageTab[] = [
-    { id: "", label: t.todoTitle, count: upcoming.data ? todo.length : undefined },
-    { id: "bifate", label: t.doneTitle },
-    { id: "trecute", label: t.pastTitle },
-  ];
+  // Numele și ordinea vin din lista comună cu panoul (`lib/screenTabs.ts`); aici se adaugă doar
+  // numărătoarea, pe care numai pagina o știe.
+  const tabs: PageTab[] = DEADLINE_TABS.map((tab) =>
+    tab.id === "" ? { ...tab, count: upcoming.data ? todo.length : undefined } : tab
+  );
 
   function handleRegenerate() {
     regenerateMut.mutate(undefined, {

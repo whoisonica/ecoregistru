@@ -39,10 +39,20 @@ const api = await page.evaluate(async (year) => {
 // ------------------------------------------------------ 1. ANTETUL
 const antet = await page.evaluate(() => ({
   h1: document.querySelector("h1")?.textContent.trim() ?? "",
-  zi: document.querySelector("p.eyebrow")?.textContent.trim() ?? "",
+  // Ce stă în `main` înaintea titlului: de pe 18.09.2026, nimic — ziua și data au fost scoase.
+  inainte: (() => {
+    const h1 = document.querySelector("main h1");
+    return [...document.querySelectorAll("main p, main span")]
+      .filter((el) => h1 && el.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_FOLLOWING && !el.contains(h1))
+      .map((el) => el.textContent.trim())
+      .filter((x) => /\d{4}/.test(x));
+  })(),
 }));
 check("titlul e salutul zilei", /^Bună (dimineața|ziua|seara)$/.test(antet.h1), antet.h1);
-check("deasupra lui, ziua în cuvinte", /^[A-ZĂÂÎȘȚ][a-zăâîșț]+, \d{1,2} [a-zăâîșț]+ \d{4}$/.test(antet.zi), antet.zi);
+check("deasupra lui nu mai stă ziua și data", antet.inainte.length === 0, antet.inainte.join(" | "));
+// Tot de pe 18.09.2026: antetul n-are buton de adăugare. Adăugarea e pe ecranul de mișcări și pe N / I / E.
+const adaugari = await page.$$eval("main a", (a) => a.map((x) => x.textContent.trim()).filter((x) => /^(Deșeuri proprii|Adaugă deșeuri|Intrare)$/.test(x)));
+check("antetul n-are buton de adăugare", adaugari.length === 0, adaugari.join(" | "));
 
 // ------------------------------------------------------ 2. ANUL PE LUNI, SOCOTIT A DOUA OARĂ
 const kg = Array(12).fill(0);

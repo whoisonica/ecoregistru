@@ -126,7 +126,7 @@ export function CompanyLabel({
 
   if (!multiCompany) {
     return (
-      <div className="flex w-full items-center gap-2 rounded-md border border-panel-line bg-panel-hover px-2.5 py-1.5" data-testid="company-label">
+      <div className="flex w-full items-center gap-2 rounded-md border border-panel-line bg-lcd px-2.5 py-2" data-testid="company-label">
         {body}
       </div>
     );
@@ -141,7 +141,7 @@ export function CompanyLabel({
         aria-expanded={open}
         aria-label={t.companyPick}
         data-testid="company-label"
-        className="flex w-full items-center gap-2 rounded-md border border-panel-line bg-panel-hover px-2.5 py-1.5 text-left transition-colors hover:border-panel-key focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0"
+        className="flex w-full items-center gap-2 rounded-md border border-panel-line bg-lcd px-2.5 py-2 text-left transition-colors hover:border-panel-key focus-visible:ring-2 focus-visible:ring-lcd-digit focus-visible:ring-offset-0"
       >
         {body}
       </button>
