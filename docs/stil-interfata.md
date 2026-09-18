@@ -245,6 +245,25 @@ serverului (`?packaging=ANY|ON_MARKET|INCOMPLETE`), cu banda de totaluri filtrat
 într-un 1114 (derulare laterală, la 1440). Și se arată **ori ce lipsește, ori ce e** — nu amândouă.
 `/ambalaje` rămâne ecran întreg numai la firma fără „Generare"; la restul e redirect spre `?tab=ambalaje`.
 
+**Un ecran de lucru nu se derulează** (18.09.2026, seara — proprietarul, la prima machetă a tabului „Ambalaje": *„să
+nu meargă pagina în jos, să tot dai scroll"*). Ținta e **1440 × 900 fără derulare verticală**, și se măsoară
+(`scrollHeight` față de `clientHeight`, pe `main#continut` **și** pe document — proba 38). Cum se ajunge acolo:
+- **un singur tabel pe ecran**, ales din taste (`PillGroup`), cu alegerea în adresă — pe „Ambalaje": *Pus pe piață ·
+  Predat* (`?tabel=predat`); ce trece de zece rânduri se **paginează**, ca pe „Totalul anului", nu se derulează într-o cutie;
+- **documentele sunt butoane lipite, cu numele lor și fără text dedesubt** („Anexa 1 Ambalaje", „Anexa 3 Ambalaje"):
+  termenul și formatul stau în meniul butonului (`MenuLabel`, `MenuItem.hint`), iar la Anexa 3 tot acolo se alege
+  punctul de lucru — nu într-un filtru la mijlocul paginii;
+- **semnalele sunt un rând cu linkuri**, nu o cutie cu titlu și listă: fiecare semnal e chiar linkul spre rândurile lui;
+- **editarea se face în același tabel** („Scrie cifre proprii" face câmpuri din celule), nu într-o a doua grilă dedesubt;
+- tabelul arată **doar rândurile cu cifre**; restul se numesc pe un rând gri sub el. Capul de tabel pe două niveluri
+  („Primare: total · reutilizabile"), nu nume din formular rupte pe trei rânduri.
+
+⚠️ **Tabelul Anexei 3 nu mai e pe tab la generator** (proprietarul: *„nu își are locul acolo, e ascunsă așa cumva"*):
+erau aceleași predări ca în „Predat", iar documentul ei stătea la fundul paginii. A rămas butonul. Numai la firma care
+**și colectează** apare a treia tastă, „Preluat de la alții" (preluările pe proveniență și avertismentul de rol nu se
+văd nicăieri altundeva); tasta aceea are voie să deruleze. Nu se repropun: tasta „Ieșiri", tabele față în față,
+explicații sub butoanele de document.
+
 **Dosarul de control e locul hârtiilor.** Lista „Documentele anului" (`GET /api/v1/audit-file/contents`) are de acum
 un buton pe fiecare rând: fișa, centralizata, Anexa 1 și Anexa 3 Ambalaje (`.xls` / PDF), plus rezumatele neoficiale
 sub linie. Ce se naște numai înăuntrul arhivei — lista autorizațiilor, atașamentele — scrie „în arhivă"; ce nu se
