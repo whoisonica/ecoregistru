@@ -331,6 +331,8 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
       open
       onClose={onClose}
       title={t.title.replace("{name}", owner.name)}
+      // Patru butoane în subsol („Șterge”, „Oprește”, „Închide”, „Salvează”) nu încap în 512px și ieșeau din chenar.
+      size="xl"
       footer={
         <>
           {subscription && subscription.invoices.length === 0 && (
