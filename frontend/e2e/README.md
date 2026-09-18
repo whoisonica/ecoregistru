@@ -20,12 +20,17 @@ rânduri; plătite cu `psql` → „Totul e plătit”, fără transfer; operato
 abonamentul firmei din comutator, deci nu cere un administrator nou. **Negative:** suma luată doar din cea mai veche factură → 2
 căderi; IBAN-ul copiat cu spații → 2 căderi; starea verificării păstrată după o eroare → 1 cădere. **29/29** pe `eco_e2e_abonament`. Lasă în urmă „Proba 36 <număr>” cu două facturi plătite.
 
-📄 **18.09.2026 — documentele sus, fără coloană de stoc** (proba **10**, secțiunea 7): proprietarul, după ce a văzut tabul pe producție —
-*„butoanele de evidențele gestiunii sus, nu ascunse jos"* și *„scoate «în stoc», oamenii nu au stoc la generatori"*. Proba cere acum (a) că
-tabelul vine **după** primul „Descarcă" în DOM (`compareDocumentPosition`, nu pixeli: o probă pe coordonate ar fi trecut și cu tabelul gol) și
-(b) că antetul are **cinci** capete, niciunul cu „stoc". **Negativă:** cu versiunea de dinainte pusă la loc din git (`AnnualTotals.tsx`,
-`annualTotals.ts`, `strings.ts`), cad **exact** aceste două verificări, nimic altceva. Stocul socotit pe ultima lună a ieșit și din probă, și din
-`lib/annualTotals.ts` — pe Anexa 1 cifra e zero prin construcție de la `V58`; testele unitare au rămas pe socoteala care contează (`npm test` 56).
+📄 **18.09.2026 — antetul tabului „Totalul anului", fără coloană de stoc** (proba **10**, secțiunea 7): proprietarul, după ce a văzut tabul pe
+producție — *„butoanele de evidențele gestiunii sus, nu ascunse jos"* și *„scoate «în stoc», oamenii nu au stoc la generatori"*. Proba cere acum
+(a) că butoanele își poartă **numele documentului** („Evidența gestiunii deșeurilor", „Evidența centralizată"), nu „Descarcă"; (b) că tabelul vine
+**după** primul dintre ele în DOM (`compareDocumentPosition`, nu pixeli: o probă pe coordonate ar fi trecut și cu tabelul gol); (c) că
+„Recalculează acum" stă **după** documente și are **alt chenar și alt fundal** decât ele — citite din `getComputedStyle`, nu din numele claselor,
+fiindcă ce contează e ce vede omul, nu cum se cheamă varianta; și (d) că antetul are **cinci** capete, niciunul cu „stoc".
+**Negativă:** cu versiunea de dinainte pusă la loc din git (`AnnualTotals.tsx`, `annualTotals.ts`, `strings.ts`), cad **exact** verificările noi,
+nimic altceva. Stocul socotit pe ultima lună a ieșit și din probă, și din `lib/annualTotals.ts` — pe Anexa 1 cifra e zero prin construcție de la
+`V58`; testele unitare au rămas pe socoteala care contează (`npm test` 56).
+⚠️ **Capcană de rulare:** o suită oprită la jumătate lasă baza într-o stare în care proba 10 cade pe „banda își schimbă tonul" (firma de control
+are deja mișcări). Pe bază murdărită, verdictul nu e al codului — se ia bază nouă înainte de a crede o cădere.
 
 🧾 **18.09.2026 — „Evidențe" fuzionat în „Generare"** (probele **1, 3, 5, 6, 9, 10, 11, 28** atinse): ecranul `/evidente` a fost scos — agrega exact
 mișcările registrului `ANEXA_1`, adică rândurile lui `/generare` — iar adresa lui e redirect. **Proba 10, secțiunea 7** e rescrisă pe tabul nou:

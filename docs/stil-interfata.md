@@ -189,9 +189,20 @@ Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
 **Generare are două taburi** (18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
 sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
 („Gata" · „N de cântărit" · „N kg fără cod R/D"). Tabul stă în adresă (`?tab=total`), ca la Termene și Clienți.
-**Documentele stau sus, nu sub tabel** (proprietarul, în aceeași zi: „butoanele de evidențele gestiunii sus, nu ascunse
-jos"): întâi banda cu ce blochează depunerea, apoi fișa și centralizata, abia apoi tabelul. Pe 15 martie omul vine după
-hârtie, nu după un tabel; cu douăzeci de coduri, butoanele de dedesubt cădeau sub marginea ecranului.
+**Filtrele tabului stau pe linia taburilor**, lipite la dreapta, cu eticheta mică lângă ele, nu deasupra (`PageTabs`,
+slotul `right`; în afara lui `role="tablist"`). Două liste derulante cu etichetă deasupra ocupau o bandă întreagă sub
+taburi.
+**Documentele stau sus, deasupra tabelului, niciodată sub el** (proprietarul: „butoanele de evidențele gestiunii sus, nu
+ascunse jos"), un rând de butoane cu explicația fiecăruia dedesubt. Pe 15 martie omul vine după hârtie, nu după un
+tabel; cu douăzeci de coduri, butoanele de dedesubt cădeau sub marginea ecranului. **Tabelul rămâne întreg pe toată
+lățimea** — o coloană de documente lângă el îi fura din lățime și „arăta rău tăiat în dreapta".
+**Butonul poartă numele documentului**, nu „Descarcă": „Evidența gestiunii deșeurilor" și „Evidența centralizată". Două
+butoane la fel de anonime, unul lângă altul, sunt felul în care cineva depune hârtia greșită. Numele întreg din act
+stă în explicația de dedesubt, în `aria-label` și pe hârtie.
+⚠️ **Un buton care schimbă date nu se îmbracă la fel cu unul care dă un fișier.** „Recalculează acum" rescrie evidența,
+și anii de după (stocul se reportează), deci stă **ultimul** pe rând și poartă **`variant="muted"`** — cutia lui, ca să
+nu pară în aer, dar fundal stins și chenar subțire, ca să nu pară al treilea document. Fără chenar deloc plutea; cu
+chenarul lor era apăsat de cine credea că scoate o hârtie.
 **Fără coloană de stoc**, ca pe tot ecranul „Generare" de la `V58` încoace: generatorul n-are cântar și nu ține stoc,
 deșeul stă în pubelă până vine colectorul, iar cantitatea se află abia la predare. Pe Anexa 1 cifra iese zero prin
 construcție, iar o coloană de zerouri nu e o informație. „Rămasă în stoc" rămâne unde o cere actul: pe fișa tipărită

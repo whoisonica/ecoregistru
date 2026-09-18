@@ -283,15 +283,19 @@ const documente = await page.evaluate(() => {
   const panou = document.querySelector('[role="tabpanel"]') ?? document.body;
   return [...panou.querySelectorAll("button")].map((b) => b.textContent.replace(/\s+/g, " ").trim());
 });
-check("fișa și centralizata au fiecare butonul ei",
-  documente.filter((b) => /^Descarcă$/.test(b)).length === 2, documente.join(" | "));
+// Butonul poartă numele documentului, nu „Descarcă" (18.09.2026): două butoane la fel de anonime,
+// unul lângă altul, sunt felul în care cineva depune hârtia greșită.
+check("fișa și centralizata își poartă numele pe buton",
+  documente.some((b) => /^Evidența gestiunii deșeurilor$/.test(b))
+    && documente.some((b) => /^Evidența centralizată$/.test(b)), documente.join(" | "));
 
 // Sus, nu sub tabel (proprietarul, 18.09.2026: „butoanele de evidențele gestiunii sus, nu ascunse
 // jos"). Cu douăzeci de coduri, un buton de sub tabel e sub marginea ecranului. Se compară locul în
 // DOM, nu pixelii: o probă pe coordonate ar fi trecut și cu tabelul gol.
 const ordinea = await page.evaluate(() => {
   const panou = document.querySelector('[role="tabpanel"]') ?? document.body;
-  const buton = [...panou.querySelectorAll("button")].find((b) => /^Descarcă$/.test(b.textContent.trim()));
+  const buton = [...panou.querySelectorAll("button")]
+    .find((b) => /^Evidența gestiunii deșeurilor$/.test(b.textContent.trim()));
   const tabel = panou.querySelector("table");
   if (!buton || !tabel) return null;
   // DOCUMENT_POSITION_FOLLOWING = tabelul vine DUPĂ buton.
@@ -302,6 +306,27 @@ check("iar documentele stau deasupra tabelului, nu sub el",
 check("iar exporturile generice stau în meniu",
   documente.some((b) => /Alte descărcări/.test(b)) && !documente.some((b) => /^Rezumat (Excel|PDF)$/.test(b)),
   documente.join(" | "));
+
+// „Recalculează acum" e singurul buton de aici care SCHIMBĂ date — rescrie evidența, și anii de
+// după, fiindcă stocul se reportează. Stă ultimul și cu fundal stins (`variant="muted"`), ca să nu
+// fie apăsat pe 15 martie de cineva care crede că scoate un document. Proba cere ca el să nu aibă
+// chenarul celor două evidențe oficiale.
+const recalc = await page.evaluate(() => {
+  const panou = document.querySelector('[role="tabpanel"]') ?? document.body;
+  const nume = (b) => b.textContent.replace(/\s+/g, " ").trim();
+  const buton = [...panou.querySelectorAll("button")].find((b) => /^Recalculează acum$/.test(nume(b)));
+  const fisa = [...panou.querySelectorAll("button")]
+    .find((b) => /^Evidența gestiunii deșeurilor$/.test(nume(b)));
+  if (!buton || !fisa) return null;
+  const c = getComputedStyle(buton);
+  return {
+    ultimul: Boolean(fisa.compareDocumentPosition(buton) & Node.DOCUMENT_POSITION_FOLLOWING),
+    altChenar: c.borderColor !== getComputedStyle(fisa).borderColor,
+    altFundal: c.backgroundColor !== getComputedStyle(fisa).backgroundColor,
+  };
+});
+check("«Recalculează acum» stă după documente și nu arată ca ele",
+  recalc !== null && recalc.ultimul && recalc.altChenar && recalc.altFundal, JSON.stringify(recalc));
 
 await page.evaluate(() => {
   [...document.querySelectorAll("button")]

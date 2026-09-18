@@ -27,6 +27,12 @@ const buttonVariants = cva(
         default: "border-brand bg-brand text-brand-fg hover:border-brand-700 hover:bg-brand-700",
         outline: "border-line-strong bg-surface text-content hover:bg-surface-muted",
         ghost: "border-transparent hover:bg-surface-sunken",
+        // Un buton care **face** ceva, lângă butoane care dau un fișier: are cutia lui, deci nu
+        // plutește, dar fundalul stins și chenarul subțire îl scot din rândul celorlalte. Prima
+        // folosire: „Recalculează acum" de pe Generare → Totalul anului (18.09.2026), lângă cele
+        // două evidențe oficiale — fără chenar părea în aer, cu chenarul lor părea al treilea
+        // document.
+        muted: "border-line bg-surface-muted text-content hover:bg-surface-sunken",
         // Intrarea în depozit: albastru, cealaltă direcție față de verde.
         inbound: "border-inbound bg-inbound text-white hover:border-inbound-key hover:bg-inbound-key",
         // Pentru fapta care nu se ia înapoi. Până acum se scria pe loc, ca

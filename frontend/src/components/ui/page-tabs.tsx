@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export interface PageTab {
   /** `""` = tabul implicit, care nu se scrie în adresă. */
   id: string;
@@ -10,20 +12,28 @@ export interface PageTab {
 /**
  * Taburile unei pagini, cu tabul ales în adresă (`useUrlState`). Clienți (F-B2) și pagina firmei (F-D): o singură
  * secțiune pe ecran, ca pagina să se termine sub ea.
+ *
+ * <p>`right` pune filtrele tabului pe **aceeași linie** cu taburile, lipite la dreapta (Generare →
+ * „Totalul anului", 18.09.2026): două liste derulante cu eticheta deasupra ocupau o bandă întreagă
+ * sub taburi, iar proprietarul le-a spus „arată rău acolo". Stau **în afara** lui `role="tablist"`,
+ * ca între taburi să nu se plimbe cu săgețile peste ceva ce nu e tab.
  */
 export function PageTabs({
   tabs,
   selected,
   onSelect,
   label,
+  right,
 }: {
   tabs: PageTab[];
   selected: string;
   onSelect: (id: string) => void;
   label: string;
+  right?: ReactNode;
 }) {
   return (
-    <div role="tablist" aria-label={label} className="mt-6 flex gap-1 overflow-x-auto border-b border-line">
+    <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-line">
+    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto">
       {tabs.map((item) => {
         const isSelected = item.id === selected;
         return (
@@ -46,6 +56,8 @@ export function PageTabs({
           </button>
         );
       })}
+    </div>
+      {right && <div className="flex flex-wrap items-center gap-3 pb-2">{right}</div>}
     </div>
   );
 }

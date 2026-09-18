@@ -503,7 +503,53 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
       />
 
       {isGeneration && (
-        <PageTabs tabs={tabs} selected={tab} onSelect={setTab} label={t.tabsLabel} />
+        <PageTabs
+          tabs={tabs}
+          selected={tab}
+          onSelect={setTab}
+          label={t.tabsLabel}
+          // Un singur filtru de an: tabelul e anual, luna n-are ce filtra în el. Scrie tot în
+          // `luna`, ca anul să rămână același când te întorci pe „Mișcări".
+          right={
+            tab === "total" ? (
+              <>
+                <label className="flex items-center gap-2">
+                  <span className="eyebrow">{strings.evidences.filterYear}</span>
+                  <Select
+                    id="filter-year"
+                    aria-label={strings.evidences.filterYear}
+                    value={monthFilter.slice(0, 4)}
+                    onChange={(ev) => setMonthFilter(ev.target.value)}
+                    className="w-24"
+                  >
+                    {yearOptions(Number(monthFilter.slice(0, 4))).map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="flex items-center gap-2">
+                  <span className="eyebrow">{t.filterWorkPoint}</span>
+                  <Select
+                    id="filter-wp-total"
+                    aria-label={t.filterWorkPoint}
+                    value={workPointFilter}
+                    onChange={(ev) => setWorkPointFilter(ev.target.value)}
+                    className="w-44"
+                  >
+                    <option value="">{t.filterAll}</option>
+                    {activeWorkPoints.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              </>
+            ) : undefined
+          }
+        />
       )}
 
       {company?.type === "COLLECTOR" && screen === "IN" && (
@@ -519,44 +565,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
       )}
 
       {tab === "total" && (
-        <>
-          {/* Un singur filtru: tabelul e anual, luna n-are ce filtra în el. Scrie tot în `luna`,
-              ca anul să rămână același când te întorci pe „Mișcări”. */}
-          <div className="mt-5 flex flex-wrap items-end gap-3">
-            <div>
-              <Label htmlFor="filter-year">{strings.evidences.filterYear}</Label>
-              <Select
-                id="filter-year"
-                value={monthFilter.slice(0, 4)}
-                onChange={(ev) => setMonthFilter(ev.target.value)}
-                className="w-full sm:w-32"
-              >
-                {yearOptions(Number(monthFilter.slice(0, 4))).map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="filter-wp-total">{t.filterWorkPoint}</Label>
-              <Select
-                id="filter-wp-total"
-                value={workPointFilter}
-                onChange={(ev) => setWorkPointFilter(ev.target.value)}
-                className="w-full sm:w-56"
-              >
-                <option value="">{t.filterAll}</option>
-                {activeWorkPoints.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-          <AnnualTotals year={Number(monthFilter.slice(0, 4))} workPointId={workPointFilter || undefined} />
-        </>
+        <AnnualTotals year={Number(monthFilter.slice(0, 4))} workPointId={workPointFilter || undefined} />
       )}
 
       {showList && (

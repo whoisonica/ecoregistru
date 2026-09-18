@@ -1826,13 +1826,18 @@ export const strings = {
     // 24.08.2026, la cererea specialistei: așa îi zice clientul. Documentul de aici își
     // poartă de-acum numele întreg, care e și titlul tipărit pe el.
     anexa1: "Evidența gestiunii deșeurilor generate",
+    // Numele de pe buton, nu cel din act: „Evidența gestiunii deșeurilor generate" nu intră pe un
+    // rând lângă celălalt document (proprietarul, 18.09.2026). Numele întreg rămâne în explicația
+    // de dedesubt, în `aria-label` și, acolo unde chiar contează, pe documentul tipărit.
+    anexa1Button: "Evidența gestiunii deșeurilor",
+    annualDeclarationButton: "Evidența centralizată",
     anexa1Hint:
-      "Formularul oficial (HG 856/2002, anexa 1): antet + cele 4 capitole, o pagină per cod de deșeu.",
+      "„Evidența gestiunii deșeurilor generate” — formularul din HG 856/2002, anexa 1.",
     anexa1Error: "Evidența gestiunii deșeurilor nu a putut fi generată.",
     // Fosta „Declarația anuală", redenumită la cererea specialistei pe 15.09.2026.
     annualDeclaration: "Evidența gestiunii deșeurilor centralizată",
     annualDeclarationHint:
-      "Centralizatorul anului: un rând per cod de deșeu — stoc inițial, generat, valorificat, eliminat, stoc final și prin cine. O pagină per punct de lucru.",
+      "„Evidența gestiunii deșeurilor centralizată” — o pagină per punct de lucru.",
     annualDeclarationError: "Evidența centralizată nu a putut fi generată.",
 
     // --- Totalul anului pe cod: tabul „Totalul anului” de pe Generare (18.09.2026) ---
@@ -1841,7 +1846,7 @@ export const strings = {
     // formularele: se depune în kg (Andreea, 14.09.2026, AF). Până pe 17.09.2026 era în tone,
     // după OUG 92/2021 art. 48 alin. (1), și „1,060” se citea greșit.
     annualIntro:
-      "Cifrele pe care le treci în SIM pe 15 martie, pe fiecare cod de deșeu: cât ai generat în {year}, cât s-a valorificat și cât s-a eliminat. Aceleași kilograme ca pe fișa tipărită.",
+      "Cifrele pe care le treci în SIM pe 15 martie — aceleași kilograme ca pe fișa tipărită.",
     annualTotalRow: "{count} de deșeu",
     annualEmptyHint:
       "Anul se umple singur, din deșeurile înregistrate pe tabul „Mișcări”.",
@@ -1854,6 +1859,7 @@ export const strings = {
     blockerMissingCode: "{kg} kg au plecat fără cod R/D",
     blockerAwaiting: "{count} așteaptă cântarul destinatarului",
     download: "Descarcă",
+    staleNote: "Se recalculează singure din deșeurile înregistrate.",
     regenerateNow: "Recalculează acum",
     // Cele două exporturi generice au stat până pe 08.09 în antet, la fel de vizibile ca cele două
     // documente oficiale — cinci butoane pe un rând, care strângeau titlul paginii pe trei rânduri.
@@ -1862,7 +1868,7 @@ export const strings = {
     exportsMenu: "Alte descărcări",
     exportExcel: "Rezumat Excel",
     exportPdf: "Rezumat PDF",
-    exportsHint: "Rezumat neoficial al evidenței — pentru lucru, nu pentru depunere.",
+    exportsHint: "Pentru lucru, nu pentru depunere.",
     exportError: "Exportul a eșuat. Încearcă din nou.",
     // filters
     filterYear: "An",
@@ -1897,7 +1903,6 @@ export const strings = {
     // Evidența e un cache derivat din mișcări, iar citirea îl reconstruiește când a rămas în
     // urmă. Linkul rămâne pentru reconstrucția cerută explicit — după o migrare, sau când vrei
     // să vezi cifra recalculată sub ochii tăi.
-    staleNote: "Cifrele se recalculează singure din deșeurile înregistrate.",
     pendingWeighingShow: "Arată mișcările",
   },
 
