@@ -69,7 +69,7 @@ Termenul de păstrare **al operatorului economic** e la OUG 92/2021 art. 48 alin
 > avea deja un singur `ReportType.SIM_ANNUAL`; nu se adaugă un al doilea.
 
 **Art. 4 alin. (3)** — cum se scrie un cod periculos. *Citat adăugat pe 02.09.2026, la auditul de
-conformitate; e temeiul punctului 2 din `audit-conformitate.md`.*
+conformitate; e temeiul punctului 2 din `istoric/audit-conformitate.md`.*
 
 > Deşeurile periculoase prevăzute în anexa nr. 2 sunt marcate cu un **asterisc (*)**.
 
@@ -189,8 +189,9 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 > pe foaia `simboluri` din cele trei fişiere Oradea — deci o avem din două surse independente, actul
 > şi un fişier de lucru al specialistei. Cele cinci enum-uri (`StorageType`, `TreatmentMethod`,
 > `TransportMeans`, `WasteDestination`, `TreatmentPurpose`) conţin **exact** valorile de aici, în
-> aceeaşi ordine, cu o singură abatere deliberată: `TreatmentPurpose` n-are `E` — motivul e la §1.3,
-> punctul 1. Nimic de corectat.
+> aceeaşi ordine. *La verificarea din 02.09 exista o abatere deliberată — `TreatmentPurpose` n-avea `E` (motivul, la
+> §1.3 punctul 1); din **16.09.2026** enum-ul are amândouă literele notei 3, `V` şi `E`, la cererea proprietarului, deci
+> nu mai e nicio abatere.*
 
 **CAPITOLUL 3 — Valorificarea deşeurilor**
 
@@ -300,7 +301,10 @@ Romania. Diferenţa contează: Hamburger tratează efectiv (balotează), Panemar
 1. **Litera „E” din cap. 2 nota 3 nu se scrie.** Nota defineşte `V - pentru valorificare` şi
    `E - în vederea eliminării`, dar pe toate cele 13 fişiere `E` apare **într-o singură foaie**
    (Cluj 2022, codul 19 12 12), pe 11 rânduri, iar acelaşi client a pus liniuţă în 2023 şi 2024.
-   → `TreatmentPurpose` are un singur membru.
+   → `TreatmentPurpose` avea un singur membru.
+   ⚠️ **Înlocuit pe 16.09.2026 (decizia proprietarului):** se scriu amândouă literele notei 3 — `V` lângă un cod R, `E`
+   lângă un cod D, derivate din codul R/D al mişcării (`WasteOperationCode.treatmentPurpose()`) —, ca o fişă depusă să nu
+   aibă niciodată „Scopul” gol. Numărătoarea de mai jos rămâne ca descriere a practicii din corpus, nu ca regulă a codului.
    ✅ **Întărit pe 02.09.2026, din două direcţii.** Întâi: cele 11 rânduri cu `E` sunt **greşite în
    fişierul lor** — cap. 1 al aceleiaşi foi arată cantitatea trecută la *valorificat* (6 · 20,48 ·
    4,42 · 9,26 t), cu *eliminat* zero pe toate lunile. Au scris „în vederea eliminării" peste o
@@ -391,7 +395,7 @@ fişierul, nu ce versiune era în el.
 > ⚠️ **Redenumirea e în OUG 92/2021. Nu e un `sed` peste tot proiectul.** Dacă Ordinul 794/2012 şi
 > HG 856/2002 n-au fost redenumite la rândul lor, formularele tipărite după ele trebuie să păstreze
 > numele din **actul care le cere**, nu din legea-cadru. E o verificare separată, per act — vezi
-> `todo-lansare.md` P3.8.
+> P3.8, închisă pe 11.09.2026 chiar mai jos (istoria ei în `istoric/status-pana-la-14.09.2026.md`).
 >
 > ✅ **Verificarea s-a făcut pe 11.09.2026, şi a răspuns în amândouă capetele** (felia G-5):
 >
@@ -403,7 +407,7 @@ fişierul, nu ce versiune era în el.
 >
 > 🔴 **Şi inventarul feliei era greşit exact pe partea care o făcea grea.** Cele două locuri notate
 > „ajunge pe hârtie? **da**" **nu ajung pe hârtie**: `PackagingOperatorRole.addressee()` n-are azi
-> niciun apel, iar `anexa3AddresseeAnpm` se randează în `PackagingPage`, pe ecran. **Niciunul dintre
+> niciun apel, iar `anexa3AddresseeAnpm` (azi `anexa3AddresseeAnmap`, în `components/packaging/Anexa3Section.tsx`) se randează pe ecran. **Niciunul dintre
 > cele şase documente oficiale pe care le tipărim nu poartă numele agenţiei** — modelele n-au
 > rubrică de destinatar. Deci întreaga dilemă „numele actului sau numele de azi?" se juca pe patru
 > şiruri de ecran, nu pe hârtie.
@@ -471,6 +475,8 @@ fişierul, nu ce versiune era în el.
 > 2. **15 martie e termen legal**, nu cutumă ANPM. Închide C3.
 > 3. Evidența lunară se ține în kg (practica fișei Anexa 1), dar **raportarea de la art. 48 e în
 >    tone**. Conversia trebuie să existe într-un singur loc în cod, nu presărată prin export.
+>    *(Notă 19.09.2026, verificat în cod: la generator, „Totalul anului” din Generare e în **kg** din 17.09.2026 —
+>    specialista, AF: în SIM se tastează kg. Tonele rămân pe exportul registrului art. 48 al colectorului, `art48Hint`.)*
 > 4. ~~🔴 **Articolul descrie conţinutul, nu forma — şi n-are anexă cu facsimil.** [...] e nevoie de
 >    un exemplar completat. Vezi întrebarea **AD** — nu avem niciunul.~~ **Închis pe 15.09.2026, pe
 >    text — vezi §2.1-bis.** Premisa „formatul există, doar că nu-l avem" era falsă.
@@ -543,10 +549,14 @@ anuale așezate ca în tabelele de mai sus, ca ajutor de copiat în portal.
 > **Consecință.** Ataşamentele generice de pe mişcare pot ţine fişierul, dar nimic nu leagă un
 > buletin de un cod periculos şi nimic nu semnalează absenţa lui în dosarul de control. Pentru un
 > client cu coduri periculoase, dosarul e incomplet legal fără să se vadă. Întrebarea **AL**.
+>
+> ⚠️ *(Notă 19.09.2026, verificat în cod: buletinele s-au construit pe 11.09 (`V38`) şi **s-au scos pe 14.09.2026, la sfatul
+> specialistei**. Tabela din `V38` a rămas în schemă, fără cod care s-o citească. Obligaţia de la alin. (2)
+> rămâne a clientului; aplicaţia n-o mai urmăreşte.)*
 
 ### 2.1b ARTICOLUL 23 — cui poţi preda deşeul, şi cine răspunde de el
 
-*Adăugat 02.09.2026, la audit. E temeiul punctelor 5 şi 8 din `audit-conformitate.md`.*
+*Adăugat 02.09.2026, la audit. E temeiul punctelor 5 şi 8 din `istoric/audit-conformitate.md`.*
 
 **Alin. (1):**
 
@@ -590,11 +600,12 @@ anuale așezate ca în tabelele de mai sus, ca ajutor de copiat în portal.
 >    expirarea autorizației lui. Azi nimic nu compară expirarea cu **data mișcării** — `expiringSoon`
 >    se calculează față de *azi* și e doar un badge în lista de Parteneri. Deci putem tipări un
 >    formular care documentează o predare către un operator neautorizat la acea dată. Întrebarea
->    **AH**.
+>    **AH**. *(Notă 19.09.2026, verificat în cod: construit; avertismentul compară data mişcării cu expirarea sau cu sfârşitul vizei
+>    anuale, `WasteMovementMapper.authorizationExpiredAtHandover`, `V41`. AH e închisă pe 17.09.2026: avertisment, nu refuz.)*
 > 2. ~~Alin. (4)–(5) sunt o rubrică de dosar pe care n-o ținem nicăieri.~~ *Construită (`V29`), corectată pe forma în vigoare 17.09.2026.* `contactName`/`contactRole`
 >    sunt blocul de semnătură al declarației, nu persoana desemnată, și nu poartă certificatul de
 >    instruire. Notă de produs: **consultantul de mediu e chiar „terța persoană" de la alin. (4)** —
->    rubrica se completează singură pentru portofoliul specialistei. Întrebarea **AK**.
+>    rubrica se completează singură pentru portofoliul specialistei. Întrebarea **AK**, închisă pe text pe 17.09.2026.
 > 3. Art. 24 alin. (1) explică de ce predarea nu închide subiectul: clientul rămâne răspunzător.
 >    Argument în plus pentru avertismentul de la pct. 1, nu doar pentru un badge.
 
@@ -667,7 +678,7 @@ D15 Stocarea înaintea oricărei operaţiuni numerotate de la D1 la D14 (excluz�
 > 🔴 **De aici a ieșit prima abatere confirmată a auditului.** `Anexa1FormGenerator` tipărea pe
 > cap. 4 „conform **anexei nr. 2** din OUG 92/2021" — care e lista de instrumente economice.
 > Presupunerea din javadoc, că OUG 92/2021 a păstrat numerotarea din Legea 211/2011 (unde eliminarea
-> era anexa 2), e adevărată doar pentru valorificare, rămasă la 3. Vezi `audit-conformitate.md`
+> era anexa 2), e adevărată doar pentru valorificare, rămasă la 3. Vezi `istoric/audit-conformitate.md`
 > pct. 1. **Nu e o întrebare pentru specialistă** — actul o spune de două ori.
 
 > **Nuanța D1 / D5 NU e tranșată de sursa primară.** Specialista a spus că deșeul menajer dus la
@@ -739,7 +750,7 @@ persoane juridice.
 
 > 💰 **„Provenienţa dovedită" e literalmente produsul.** Un registru ţinut la zi e dovada de
 > provenienţă; fără el, marfa cu valoare se confiscă, nu se amendează. E cel mai direct argument
-> comercial din tot actul şi merită pe pagina publică (`todo-lansare.md` P2.16).
+> comercial din tot actul şi merită pe pagina publică.
 
 ---
 
@@ -772,7 +783,8 @@ Ce se raportează, pe cele două categorii:
 > ✅ **Semnalul e derivabil din date, nu trebuie întrebat.** Dacă firma are mişcări pe coduri de ulei
 > uzat, are termenul — la fel cum `PACKAGING_ANNUAL` se generează doar la un profil care pune
 > ambalaje pe piaţă. Regula rămâne cea din `ReportType`: **o alertă e o afirmaţie**, deci se
-> generează pe semnal pozitiv, nu pe tăcere. Felia: `todo-lansare.md` **P3.7**.
+> generează pe semnal pozitiv, nu pe tăcere. Felia: `todo-lansare.md` **P3.7**. ✅ **Construită:** `ReportType.APM_ANNUAL_APRIL`, `DeadlineService.aprilDeadline` — pe
+> autorizaţia de construire din profil sau pe un cod de ulei uzat în anul raportat.
 
 **Art. 31 alin. (3)** — obligaţia de fond, care explică de ce e nevoie de raportare:
 
@@ -825,7 +837,8 @@ Deci regimul uleiurilor uzate e în întregime în art. 31–32.*
 >
 > ⚠️ **Şi conţine un câmp pe care nu-l modelăm deloc: viza anuală.** O autorizaţie poate fi în
 > termen şi viza refuzată — caz în care operatorul nu mai poate primi deşeu legal, iar
-> `Partner.authorizationExpiry` din model spune „e bună". Nu e o nuanţă: art. 34¹ alin. (2) pune
+> `Partner.authorizationExpiry` din model spune „e bună". ✅ *Viza e în model din `V41`
+> (`Partner.authorizationValidUntil()`: expirarea sau sfârşitul vizei, care vine întâi) — §2.6-bis.* Nu e o nuanţă: art. 34¹ alin. (2) pune
 > suspendarea şi anularea în acelaşi rând cu viza, deci sunt evenimente aşteptate, nu excepţii.
 >
 > ⏳ ~~**Cele 60 de zile ale ANMAP s-au împlinit pe ~09.09.2026** — adică ieri. Primul pas al feliei
@@ -1133,6 +1146,7 @@ LIPSESC pentru: …" —, în loc să numească obligaţia şi să se oprească.
 ⚠️ **Tabela nu are dată de expirare, şi tocmai fiindcă întrebarea de mai sus e deschisă:** actul nu
 dă niciun termen buletinului, iar a inventa unul ar însemna să-l tipărim într-un dosar citit de un
 inspector. Când vine răspunsul la frecvenţa reanalizei, coloana se adaugă **aditiv**.
+⚠️ *(Notă 19.09.2026, verificat în cod: buletinele s-au scos pe 14.09.2026, la sfatul specialistei — vezi nota de la §2.1 alin. (2).)*
 
 ⚠️ **Şi o lărgire a lui art. 8 alin. (4) pe care n-o citisem:** caracterizarea nu e cerută doar
 pentru codurile cu asterisc, ci şi pentru *„deşeurile care **pot fi considerate periculoase din
@@ -1190,8 +1204,9 @@ zero generări în an, se trimite gol sau se face sesizarea?*
 > următoarele coduri [...] **15 01** [...]
 
 Aici chiar se poate deduce din mișcări. Un colector, reciclator, valorificator sau comerciant care a gestionat un cod
-**15 01** în anul raportat datorează Anexa 3 până pe 25 februarie. `DeadlineService` creează azi 25 februarie numai
-pentru Anexa 1 (`PACKAGING_ANNUAL`, din rolul de piață).
+**15 01** în anul raportat datorează Anexa 3 până pe 25 februarie. `DeadlineService` crea atunci 25 februarie numai
+pentru Anexa 1 (`PACKAGING_ANNUAL`, din rolul de piață). ✅ Construit în aceeași zi: `PACKAGING_ANNEX3`, numai la firmele cu
+registrul art. 48 care au o preluare `15 01` în anul raportat (`DeadlineService.packagingWasteDeadline`).
 ⚠️ **Generatorul nu e în art. 4.** Anexa 3 la generator, cu ieșirile (16.09.2026), e o decizie a proprietarului, nu o
 obligație din ordin. Din ea nu se deduce un termen.
 
@@ -1331,6 +1346,10 @@ dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
 > iar de pe **10.09.2026** trimite la un formular care **există**: `Anexa2FormGenerator`, migrarea
 > `V35`. Regulile şi modelul verbatim sunt în **§4.1** de mai jos.
 >
+> ⚠️ *(Notă 19.09.2026, verificat în cod: din 14.09.2026 Anexa 2 se tipăreşte **numai la colectori** —
+> `ANEXA2_COLLECTORS_ONLY`, la sfatul specialistei. La un generator, butonul Anexa 3 nu apare pe un cod periculos
+> (`canPrintAnexa3`), deci mesajul de mai sus, care trimite la „butonul Anexa 2”, se vede doar la un apel direct al API-ului.)*
+>
 > 🟠 ~~**Dar nu punem nimic în loc.**~~ *(adevărat până pe 10.09.2026, păstrat fiindcă spune de ce
 > felia era cea mai valoroasă rămasă)* Un generator obişnuit *are* coduri periculoase — un service
 > auto are ulei uzat (`13 02 xx*`) şi filtre, o clinică are `18 01 03*`, un birou are tuburi
@@ -1341,7 +1360,7 @@ dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
 > art. 7 peste 1 t/an — o procedură la APM, cu 7 zile lucrătoare (art. 4 alin. (5)), nu o pagină.
 > Numărul ei se tastează pe formular, iar ecranul spune ce mai lipseşte când bifa cade peste prag.
 > ⛔ Şi fluxul art. 24 al **deşeurilor medicale**, care e al transportatorului. Vezi
-> `audit-conformitate.md` pct. 6.
+> `istoric/audit-conformitate.md` pct. 6.
 
 Formularul de încărcare-descărcare deșeuri nepericuloase (anexa nr. 3) — câmpuri:
 
@@ -1815,7 +1834,7 @@ Actul din care provin cele două fișiere primite de la specialistă:
 > | Act | HG 856/2002, anexa 1 (§1 de mai sus) | **Ordinul 794/2012, anexa 1** (aici) |
 > | Cine o ține | orice generator, per cod de deșeu | cine pune pe piață marfă ambalată |
 > | Formă | 4 capitole × 12 luni, o pagină per cod | tabele pe materiale, în kg |
-> | În aplicație | G5, livrat | modulul de ambalaje, nescris |
+> | În aplicație | G5, livrat | modulul de ambalaje *(nescris la 22.08; construit din 25.08, azi tabul „Ambalaje” din Generare)* |
 >
 > Titlul de mai sus se citește **până la capăt**: nu „producători şi importatori *de ambalaje*", ci
 > „*de ambalaje de desfacere, de produse ambalate*, supraambalatori de produse ambalate". Deci nu
@@ -1865,7 +1884,7 @@ accesată 25.08.2026. Confirmă ce știam și adaugă **trei lucruri pe care nu 
 
 **1. Formatul cerut e `.xls`, scris în act.** Art. 6 nu spune „un document", spune formatul. Asta
 transformă exportul XLSX din comoditate în **cerință**: cele două foi, cu structura pe care ANPM o
-publică. De aici vine `PackagingDeclarationXlsxGenerator`, iar PDF-ul rămâne pentru dosarul de
+publică. De aici vine `PackagingDeclarationXlsGenerator` (până pe 04.09.2026 `…XlsxGenerator`, vezi §5.4), iar PDF-ul rămâne pentru dosarul de
 control, nu pentru depunere.
 
 **2. Întrebarea Y se lămurește pe jumătate: sunt două depuneri diferite, nu una.**
@@ -1915,7 +1934,8 @@ fiindcă FEPRA e gazdă secundară, nu sursă primară. Art. 1, 3, 4 şi 6 şi n
 Deci o firmă care şi-a transferat integral obligaţiile către un OIREP **nu depune anexa 1** — OIREP-ul
 raportează în locul ei, prin anexele 2A/2B. Nu ştiam asta, şi e chiar populaţia despre care vorbea
 specialista când zicea „Anexa 1 e strict pentru...". **Nu restrânge tabul azi** (nu întrebăm pe
-nimeni dacă a transferat obligaţiile), dar e o întrebare de pus.
+nimeni dacă a transferat obligaţiile), dar e o întrebare de pus. *(Notă 19.09.2026, verificat în cod: profilul tot nu întreabă, dar
+explicaţia termenului spune regula — cu un OIREP nu se depune Anexa 1, `strings.ts`.)*
 
 #### 2. Formatul: `.xls` **protejat**, şi **pe hârtie**
 
@@ -1924,7 +1944,7 @@ nimeni dacă a transferat obligaţiile), dar e o întrebare de pus.
 > an pentru anul anterior celui pentru care se realizează raportarea."
 
 Două consecinţe directe: foile generate sunt **protejate** (parolă goală, ca să poată fi ridicată —
-vezi `PackagingDeclarationXlsxGenerator`), iar **PDF-ul nu e un moft**: e exemplarul pe hârtie.
+vezi `PackagingDeclarationXlsGenerator`), iar **PDF-ul nu e un moft**: e exemplarul pe hârtie.
 Art. 7: ANPM publică formatul „xls" pe pagina de internet.
 
 #### 3. Regulile de completare — art. 8 alin. (1), pe care ne sprijinim acum în cod
@@ -2065,6 +2085,8 @@ Art. 7 spune că **ANPM publică formatul pe pagina proprie**, deci depunerea se
 — iar un portal care validează extensia sau semnătura de fişier respinge un `.xlsx`.
 🟡 **Cât de strict e în practică e singurul lucru neclar**, şi numai ea ştie: întrebarea **AG**.
 Reparaţia se face oricum, fiindcă actul e explicit.
+✅ **Făcută pe 04.09.2026:** `HSSFWorkbook`, `.xls` BIFF8 — `PackagingDeclarationXlsGenerator` şi, din 16.09,
+`PackagingAnexa3XlsGenerator`.
 
 **2. Două note ale Tabelului 1 citează acte abrogate.** Reproduse verbatim din model:
 
@@ -2359,6 +2381,10 @@ Alte litere relevante: **d)** 2 lei/kg la ambalaje (ținte nerealizate); **i)** 
 > datorează firma: lunar (inclusiv contribuția de 2% a colectorului), trimestrial (economia circulară
 > — depozitele), anual pe 25 ianuarie (ambalaje, anvelope, UAT). Flagul boolean `afmObligation` e prea
 > sărac: are nevoie să devină un **set de contribuții datorate**, fiecare cu cadența ei.
+>
+> ✅ **Construit în `V21`:** `AfmContribution` e set pe firmă — `WITHHOLDING_2_PERCENT` lunar, `CIRCULAR_ECONOMY`
+> trimestrial, `PACKAGING` anual. `CIRCULAR_ECONOMY` a fost scoasă din configurarea contului pe 16.09.2026 (`V60`):
+> e a gropilor de deşeuri, nu a clienţilor aplicaţiei.
 
 > **Ce a spus specialista pe 24.08 (R25), și ce rămâne de lămurit.** Întrebată cine are obligație
 > AFM, a răspuns: *„doar generatorii de deșeuri de ambalaj — producători/importatorii"*. Adică

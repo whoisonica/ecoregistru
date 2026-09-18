@@ -9,7 +9,8 @@ e un defect, nu o preferință.*
 
 ## De unde vine
 
-Pornește de la cântarul de la colector și de la bonul lui: **panou grafit** cu taste și un **afișaj LCD**, pagina
+Pornește de la cântarul de la colector și de la bonul lui: **panou grafit** cu taste (afișajul LCD al lunii, din
+prima formă, a fost scos din panou pe 18.09.2026 — negrul lui a rămas pe plăcuța firmei și pe banda de sus de pe telefon), pagina
 **albă ca bonul**, cifre în mono aliniate în coloane, linii subțiri, nicio umbră. Verdele e cel de pe Punctul
 Verde al ambalajelor. Nimic nu plutește: cutiile stau pe chenar, nu pe umbră; colțurile sunt mici, ca la un
 aparat, nu rotunde ca la o aplicație de telefon.
@@ -41,7 +42,7 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 | Colțuri | scara `borderRadius` (înlocuită, nu extinsă) | 4–8px peste tot: `rounded-md` 5px butoane și câmpuri, `rounded-lg` 6px cutii; `rounded-xl/2xl/3xl` scrise în ecrane cad tot pe 6–8px. **Fără pastile.** `rounded-full` doar pentru avatar și rotița de încărcare |
 | Umbre | `shadow-card` = **niciuna**; `shadow-popover` | umbra există doar pe ce plutește cu adevărat: popover, meniu, dialog |
 | Tasta | `.key` + `.key-dark` / `.key-light` (`index.css`) | chenar de 1px, „grosime” de 3px jos, mono 10,5px. Butoanele o arată prin `hotkey="N"` |
-| Eticheta mică | `.eyebrow` | mono 11px, majuscule, spațiere 0,07em — capul de tabel, eticheta unui total, luna de pe afișaj |
+| Eticheta mică | `.eyebrow` | mono 11px, majuscule, spațiere 0,07em — capul de tabel, eticheta unui total |
 
 **Fără temă întunecată.** Panoul e grafit, pagina e albă — o singură lume de culori, cerută explicit.
 
@@ -75,8 +76,8 @@ unsprezece, iar până la primul rând de meniu stăteau cinci blocuri.*
 ⚠️ **Ce a plecat și nu se pune la loc** (proprietarul, 18.09.2026: „nu îmi place"): **afișajul lunii** (LCD-ul cu
 kilogramele și alerta), **tastele mari de adăugare**, rândul **„Caută oriunde"** și **orice „+" pe rândurile meniului** (încercat și scos în
 aceeași seară). Din panou nu se adaugă nimic. Toate trei repetau ceva: cifra
-lunii e pe Acasă („{an} pe luni"), iar alerta e banda de acolo; „Adaugă deșeuri" e sus pe Acasă și pe ecranul de
-mișcări, iar N / I / E merg de oriunde; căutarea e Ctrl K. Ce e de făcut se vede în panou din indicatorii de pe rânduri.
+lunii e pe Acasă („{an} pe luni"), iar alerta e banda de acolo; „Adaugă deșeuri" e în antetul ecranului de
+mișcări (butonul de pe Acasă a fost scos și el, tot pe 18.09.2026), iar N / I / E merg de oriunde; căutarea e Ctrl K. Ce e de făcut se vede în panou din indicatorii de pe rânduri.
 
 **Telefon:** sus o bandă grafit cu firma, cifra lunii și alerta; jos bara **Acasă · lista principală · + · Termene ·
 Mai mult** (`MobileBar`). „+” oferă doar ce e permis tipului de firmă.
@@ -154,13 +155,15 @@ pătrățel), aceeași pe login și pe cele două pagini.
 Proprietarul a cerut „fă 1 și 2, dar hai să le gândim frumos; nu schimba informația”. Ce s-a luat de la cererea de cont
 e **felul de a întreba**, nu paleta paginilor publice: înăuntru rămâne „Cântar” (alb, `brand`, colțuri mici).
 
-**Partenerul, pe trei pași** (`PartnersPage.tsx`, `FormStepRail` din `components/ui/form-steps.tsx`): „Despre partener”
-(CUI-ul întâi, cu ANAF, apoi denumirea cu sugestia de duplicat, adresa, Registrul Comerțului, punctele de lucru) · „Ce
+**Partenerul, pe patru pași** (`components/partners/PartnerFormDialog.tsx`, `FormStepRail` din `components/ui/form-steps.tsx`;
+au fost trei până pe 17.09.2026, când punctele de lucru și șoferii au primit pasul lor): „Despre partener”
+(CUI-ul întâi, cu ANAF, apoi denumirea cu sugestia de duplicat, adresa, Registrul Comerțului) · „Ce
 face pentru tine” (tipul pe carduri; „Generator” nu apare la un cont de generator pur, care doar predă, decât pe un partener care îl are deja — „Doar le transportă” e tipul gol și pune singur bifa de transportator —, cine pe cine
-facturează ca două comutatoare, proveniența ambalajelor ca taste, cu întrebarea „Cine duce deșeul de la tine la el?” pe două carduri imediat sub tip, cu mașinile și șoferii lui dedesubt) · „Autorizația de
+facturează ca două comutatoare, proveniența ambalajelor ca taste, cu întrebarea „Cine duce deșeul de la tine la el?” pe două carduri imediat sub tip, cu licența de transport dedesubt — șoferii lui se scriu la pasul 4) · „Autorizația de
 mediu” (sus numărul — obligatoriu la colector/valorificator — și „Viza e valabilă până la”; emiterea, decizia de viză
 și bifa „Autorizație integrată veche, cu termen?” sub „Detalii de pe hârtii”, deschis singur la editare când are ceva;
-temeiul sub „De ce?”; în listă, „Viză necompletată” galben — întrebarea BB). În stânga dialogului stă cuprinsul: cifra
+temeiul sub „De ce?”; în listă, „Viză necompletată” galben — întrebarea BB) · „Puncte de lucru și șoferi” (punctele
+de lucru ale partenerului și, numai la cine transportă, șoferii lui; din tabel, „+ Punct de lucru” / „+ Șofer” deschid direct pasul ăsta). În stânga dialogului stă cuprinsul: cifra
 în mono, pasul curent cu linia grafit, sub pașii completați ce s-a scris, pătrățel roșu pe pasul cu greșeala. Pe telefon,
 `Stepper` sus, cu nume scurte. La adăugare „Continuă” își verifică pasul; la editare Salvează stă pe orice pas, iar linkul
 „Autorizație expirată” deschide direct pasul 3. **Pașii sunt toți montați** (`hidden`), deci id-urile rubricilor și
@@ -198,8 +201,8 @@ peste toate rândurile filtrului (`GET /api/v1/movements/totals`), nu peste pagi
 Formularul e același (`MovementFormDialog`); ecranul îi dă registrul și direcția, deci pornește pe preluare la
 Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
 
-**Generare are două taburi** (18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
-sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
+**Generare are trei taburi** (`GENERATION_TABS` din `lib/screenTabs.ts`; 18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
+sus, tabul implicit), **Totalul anului** și **Ambalaje** (mai jos). Totalul anului are un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
 („Gata" · „N de cântărit" · „N kg fără cod R/D"). Tabul stă în adresă (`?tab=total`), ca la Termene și Clienți.
 **Filtrele tabului stau pe linia taburilor**, lipite la dreapta, cu eticheta mică lângă ele, nu deasupra (`PageTabs`,
 slotul `right`; în afara lui `role="tablist"`).
