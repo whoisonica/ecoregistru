@@ -47,6 +47,7 @@ const suites = [
   ["36-abonament-client.mjs", "Abonamentul la client: de plată, transferul de copiat, verifică plata, datele de facturare, 375px"],
   ["37-deconectare-cache.mjs", "Deconectarea golește cache-ul: consultantul nu vede firmele platformei"],
   ["38-ambalaje-in-generare.mjs", "„Ambalaje” ca tab în Generare, cu tastele de filtrare pe Mișcări"],
+  ["39-acasa.mjs", "Acasă: anul pe luni, deșeurile anului, termenele și calendarul"],
 ];
 
 const only = process.argv[2];

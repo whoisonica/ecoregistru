@@ -257,18 +257,7 @@ export const strings = {
     // --- M1c: „A venit controlul” ---
     // Rândurile sunt exact ce socotește Panoul web (`lib/readiness.ts`), nu lista din prototip: ce nu
     // verifică aplicația nicăieri nu se afirmă nici pe telefon.
-    controlTitle: "A venit controlul",
-    controlLcdLabel: "PREGĂTIT PENTRU CONTROL",
-    controlLcdState: "ACUM",
     controlOf: (n: number) => `din ${n}`,
-    controlAllOk: "Nimic de văzut acum",
-    controlUnknown: "Un rând n-a putut încărca",
-    controlChecks: "Ce găsește inspectorul",
-    controlOk: "în regulă",
-    controlWarn: "de văzut",
-    controlBad: "de rezolvat",
-    controlUnknownChip: "?",
-    controlUnknownRow: "Nu am putut încărca. Deschide ecranul din nou când ai semnal.",
     checkDeadlines: "Termene",
     checkDeadlinesOk: "Niciunul depășit",
     checkMissingCode: (year: number) => `Codul R/D pe predări, ${year}`,
@@ -462,26 +451,21 @@ export const strings = {
     // 13) — deci ultimul.
     nextTitle: "Următoarea acțiune",
     nextOverdue: "{count} depășite",
-    nextOverdueHint:
-      "Depunerea se face oricum; marchează termenul finalizat după ce ai depus, cu numărul de înregistrare în notă.",
+    nextOverdueHint: "După depunere, bifează termenul și notează numărul de înregistrare.",
     nextOverdueCta: "Vezi termenele",
     nextMissingCode: "Completează codul R/D pe {count}",
-    nextMissingCodeHint:
-      "Cantitatea a plecat de pe amplasament și nu intră în nicio coloană oficială — fișa nu se poate depune așa.",
+    nextMissingCodeHint: "Fără cod R/D, cantitatea nu intră pe fișă, iar fișa nu se poate depune.",
     nextDeadline: "{label} — {days}",
-    nextDeadlineHint: "Documentul se scoate din aplicație; termenul se marchează finalizat după depunere.",
+    nextDeadlineHint: "Documentul se scoate din aplicație; bifezi termenul după depunere.",
     nextDeadlineCta: "Vezi termenul",
     nextExpiring: "{count} cu autorizația aproape expirată",
-    nextExpiringHint:
-      "Predarea e legală doar către un operator autorizat (OUG 92/2021 art. 23), iar răspunderea rămâne a ta.",
+    nextExpiringHint: "Predai legal doar unui operator autorizat: cere-le autorizația nouă.",
     nextExpiringCta: "Vezi partenerii",
     nextWeighing: "{count} așteaptă cântarul",
-    nextWeighingHint:
-      "Cifra vine de la destinatar. Până atunci linia e provizorie — nu e o greșeală, dar documentele o poartă așa.",
+    nextWeighingHint: "Cifra vine de la destinatar; până atunci linia e provizorie.",
     nextWeighingCta: "Vezi mișcările",
     nextNothing: "Ești la zi",
-    nextNothingHint:
-      "Niciun termen deschis apropiat, nicio linie de lămurit și nicio autorizație pe terminate.",
+    nextNothingHint: "Niciun termen apropiat, nicio linie de lămurit, nicio autorizație pe terminate.",
     // Contul pe care nu s-a înregistrat încă nimic. „Eşti la zi" e **adevărat** acolo — n-are
     // nimic de făcut din ce ştie aplicaţia —, dar e răspunsul la altă întrebare: cine tocmai a
     // primit contul întreabă „de unde încep?", iar un verde cu bifă îi spune că a terminat.
@@ -491,13 +475,41 @@ export const strings = {
     // Iar evidenţa, fişa şi declaraţiile se calculează **din** mişcări, deci fără prima mişcare
     // n-are ce raporta. Amândouă sunt dependenţe din cod, nu preferinţe de flux.
     nextStartWorkPoint: "Adaugă primul punct de lucru",
-    nextStartWorkPointHint:
-      "O mișcare se înregistrează pe un punct de lucru, deci ăsta e primul pas. Adresa lui e cea care ajunge pe fișa de evidență.",
+    nextStartWorkPointHint: "Mișcările se înregistrează pe un punct de lucru, iar adresa lui ajunge pe fișă.",
     nextStartWorkPointCta: "Deschide Setări",
     nextStartMovement: "Înregistrează prima mișcare",
-    nextStartMovementHint:
-      "Evidența, fișa Anexa 1 și declarațiile se construiesc din mișcări — fiecare intrare și ieșire de deșeu. Până nu e înregistrată una, nu e nimic de raportat.",
+    nextStartMovementHint: "Evidența și fișa se construiesc din mișcări; fără una, nu e nimic de raportat.",
     nextStartMovementCta: "Adaugă mișcare",
+
+    // --- Acasă, varianta A (18.09.2026): anul pe luni, codurile anului, termenele pe 12 luni ---
+    greetingMorning: "Bună dimineața",
+    greetingDay: "Bună ziua",
+    greetingEvening: "Bună seara",
+    moreActions: "+ încă {n}",
+    lessActions: "Ascunde",
+    yearTitle: "{year} pe luni",
+    yearHint: "Kilograme generate, din evidența anului.",
+    yearGap: "{month} fără înregistrări — n-ai predat nimic?",
+    yearEmpty: "Nicio cantitate pe {year} încă.",
+    codesTitle: "Deșeurile anului",
+    codesAll: "Totalul anului",
+    codesEmpty: "Nicio cantitate pe {year} încă.",
+    timelineTitle: "Termenele pe următoarele 12 luni",
+    timelineIcs: "Adaugă în calendar",
+    timelineIcsFile: "termene-wastehouse.ics",
+    timelineIcsHint: "Un fișier .ics pentru Google Calendar sau Outlook, cu memento cu 3 zile înainte.",
+    // Numele scurt al termenului, pe coloana lunii. Cel întreg rămâne în `enums.reportType`.
+    reportShort: {
+      SIM_ANNUAL: "Evidența anuală",
+      AFM_MONTHLY: "AFM lunar",
+      AFM_QUARTERLY: "AFM trimestrial",
+      AFM_ANNUAL: "AFM anual",
+      PACKAGING_ANNUAL: "Anexa 1 Ambalaje",
+      PACKAGING_ANNEX3: "Anexa 3 Ambalaje",
+      APM_ANNUAL_APRIL: "Raportare la APM",
+      APM_ANNUAL_MAY: "Programul de prevenire",
+      OTHER: "Altă raportare",
+    },
     // „Primii pași" (16.09.2026): drumul unui cont nou până la primul document. Pașii se bifează singuri.
     firstSteps: {
       title: "Primii pași",

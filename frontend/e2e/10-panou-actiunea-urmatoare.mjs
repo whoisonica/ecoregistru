@@ -99,31 +99,22 @@ if (/an=/.test(dus)) {
 }
 
 // ------------------------------------------------------ 4. CE ERA MAI JOS N-A DISPĂRUT
-// Banda **dublează** dinadins caseta de blocaje: una spune ce se face acum, cealaltă tot ce e de
-// lămurit. Dacă una a înlocuit-o pe cealaltă, felia s-a înțeles greșit.
+// Banda **dublează** dinadins ce e dedesubt: una spune ce se face acum, cealaltă tot ce e de
+// lămurit. Din 18.09.2026 (Acasă, varianta A) „dedesubt” e anul pe luni, deșeurile anului și
+// termenele pe douăsprezece luni; dala de termene a devenit propoziția de sub titlul benzii de
+// termene (`stat-deadlines`), cu același text. „Dacă vine controlul azi” și „Ultimele predări”
+// au ieșit în aceeași zi, după ce proprietarul le-a văzut.
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
-const panou = await page.evaluate(() => {
-  const txt = document.body.textContent.replace(/\s+/g, " ");
-  const dale = [...document.querySelectorAll("div")].filter(
-    (d) => d.children.length === 0 && /^(Termene de făcut)$/.test(d.textContent.trim())
-  ).length;
-  return {
-    areStarea: /Starea evidenței pe \d{4}/.test(txt),
-    areDale: dale,
-    areTermene: /Termene următoare/.test(txt),
-    areAutorizatii: /Autorizații care expiră curând/.test(txt),
-    // Numărul de mișcări s-a întors lângă kilograme, de unde ieșise pe 08.09.
-    // Numeralul are trei forme: „pe 1 mișcare", „pe 3 mișcări", „pe 20 de mișcări" (`countOf`).
-    numaraMiscari:
-      /pe \d+ (de )?mișc(are|ări) din luna aceasta|nicio mișcare înregistrată luna aceasta/.test(txt),
-  };
-});
-check("caseta «Starea evidenței» a rămas", panou.areStarea);
-// „Coduri cu stoc” a ieșit dinadins pe 16.09.2026 (V58): pe Anexa 1 stocul e zero prin construcție.
-check("dala de termene a rămas", panou.areDale === 1, panou.areDale + " din 1");
-check("listele au rămas", panou.areTermene && panou.areAutorizatii);
-check("dala de cantitate spune și pe câte mișcări", panou.numaraMiscari);
+const panou = await page.evaluate(() => ({
+  an: /\d{4} pe luni/.test(document.querySelector('[data-testid="home-year"]')?.textContent ?? ""),
+  coduri: Boolean(document.querySelector('[data-testid="home-codes"]')),
+  scoase: Boolean(document.querySelector('[data-testid="home-control"], [data-testid="home-recent"]')),
+  termene: document.querySelectorAll('[data-testid="stat-deadlines"]').length,
+}));
+check("anul pe luni și deșeurile anului sunt pe pagină", panou.an && panou.coduri);
+check("controlul și ultimele predări nu mai sunt", !panou.scoase);
+check("propoziția de termene e o singură dată", panou.termene === 1, panou.termene + " din 1");
 
 // ------------------------------------------------------ 5. BANDA DEPINDE DE DATE, NU E UN ȘIR FIX
 // Verificările de până aici ar trece la fel de bine dacă banda ar scrie mereu același lucru: pe

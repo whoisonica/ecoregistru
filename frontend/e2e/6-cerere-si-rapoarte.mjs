@@ -200,27 +200,25 @@ await login(page, "admin");
 // pe (punct de lucru, cod, lună) și nu se poate deschide nicio mișcare.
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(900);
-const panel = await page.textContent("body");
-// Cele două blocaje au acum rânduri în seed-ul demo, deci se probează pe date, nu pe gol.
-// „1 linie fără cod R/D la ieșire", de la felia de numeral din 09.09: complementul zicea „ieșiri"
-// și pe un rând singur. Regexul prinde amândouă formele de plural, plus singularul.
-check("panoul numără ieșirile fără cod R/D",
-  /lini(e|i) fără cod R\/D la ieșire/.test(panel), "");
-check("și le ține separate de cele care așteaptă cântarul", /lini(e|i) care așteaptă cântarul/.test(panel), "");
-
-// Din 15.09.2026 banda „Următoarea acțiune” duce și ea cu „Vezi liniile”; aici se numără doar
-// drumurile din caseta de blocaje, nu și verdictul de deasupra.
-const fixHref = await page.$$eval("a", (a) =>
-  a.filter((x) => x.textContent.trim() === "Vezi liniile" && !x.closest('[data-testid="next-action"]')).map((x) => x.getAttribute("href"))
-);
-check("panoul are un drum pentru fiecare blocaj", fixHref.length === 2, fixHref.join(" | "));
+// Din 18.09.2026 caseta „Starea evidenței” nu mai e pe Acasă (varianta A, fără „Dacă vine controlul
+// azi”): cele două blocaje stau în bandă — cel roșu numit, cântarul sub „+ încă N”. Proba cere tot
+// ce cerea: amândouă numărate, separate, și drumul roșu spre rândurile filtrate.
+const banda = await page.evaluate(() => {
+  const b = document.querySelector('[data-testid="next-action"]');
+  return { text: b?.textContent.replace(/\s+/g, " ") ?? "", href: b?.querySelector("a")?.getAttribute("href") ?? null };
+});
+check("banda numără ieșirile fără cod R/D", /codul R\/D pe \d+ lini(e|i)/.test(banda.text), banda.text.slice(0, 80));
+const maiMult = page.locator('[data-testid="next-action"] button[aria-expanded]');
+if (await maiMult.count()) await maiMult.click();
+const restul = (await page.textContent('[data-testid="more-actions"]').catch(() => "")) ?? "";
+check("și le ține separate de cele care așteaptă cântarul", /lini(e|i) așteaptă cântarul/.test(restul), "");
 // Ducea la vederea lunară a fostului ecran „Evidențe", unde rândul e un agregat și nu se poate
 // deschide nicio mișcare. Din 18.09.2026 duce pe lista de mișcări a anului, cu filtrul pus.
 const AN_BLOCAJ = new Date().getFullYear();
 check(
   "blocajul roșu duce la rândurile care se pot repara, filtrate",
-  fixHref.includes(`/generare?luna=${AN_BLOCAJ}&problema=cod-rd`),
-  fixHref.join(" | ")
+  banda.href === `/generare?luna=${AN_BLOCAJ}&problema=cod-rd`,
+  banda.href ?? "(lipsă)"
 );
 
 // Filtrul „doar ce blochează depunerea” se vede și se poate scoate — altfel tabelul pare gol pe

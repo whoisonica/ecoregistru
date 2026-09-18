@@ -75,27 +75,29 @@ export function useDashboardData(enabled = true) {
   const movementCount = summary?.movements ?? 0;
 
   /**
-   * Un singur lucru de făcut, ales după cât costă dacă rămâne nefăcut. Ordinea: termen depășit,
+   * Tot ce e de făcut, în ordinea costului dacă rămâne nefăcut; banda îl numește pe primul, iar
+   * „+ încă N” de pe Acasă le desface pe celelalte (18.09.2026). Ordinea: termen depășit,
    * ieșire fără cod R/D, termen apropiat, autorizație pe terminate, cântar (așteptare legitimă —
    * decizia 13 — deci ultimul). Contribuțiile AFM cad pe `/termene`, nu pe un document:
    * `documentFor` întoarce `null` tocmai ca să nu promitem unul.
    */
-  const nextAction = useMemo<NextAction | null>(() => {
+  const actions = useMemo<NextAction[]>(() => {
     // 0. Dacă vreuna dintre surse n-a răspuns, nu se alege nimic: fiecare ramură de mai jos
     //    citeşte o listă care ar fi **goală din alt motiv**. Se spune că nu se ştie.
     if (failedDeadlines || failedEvidences || failedPartners || failedWorkPoints) {
-      return {
+      return [{
         tone: "unknown",
         title: t.nextUnknown,
         hint: t.nextUnknownHint,
         to: "/",
         cta: t.nextUnknownCta,
-      };
+      }];
     }
+    const list: NextAction[] = [];
     if (overdue.length === 1) {
       const d = overdue[0];
       const doc = documentFor(d);
-      return {
+      list.push({
         tone: "danger",
         title: t.nextDeadline
           .replace("{label}", strings.enums.reportType[d.reportType])
@@ -103,29 +105,28 @@ export function useDashboardData(enabled = true) {
         hint: t.nextOverdueHint,
         to: doc?.to ?? "/termene",
         cta: doc?.label ?? t.nextOverdueCta,
-      };
-    }
-    if (overdue.length > 1) {
-      return {
+      });
+    } else if (overdue.length > 1) {
+      list.push({
         tone: "danger",
         title: t.nextOverdue.replace("{count}", countOf(overdue.length, "termen", "termene")),
         hint: t.nextOverdueHint,
         to: "/termene",
         cta: t.nextOverdueCta,
-      };
+      });
     }
     if (blockers.missingCode > 0) {
-      return {
+      list.push({
         tone: "danger",
         title: t.nextMissingCode.replace("{count}", countOf(blockers.missingCode, "linie", "linii")),
         hint: t.nextMissingCodeHint,
         to: `/generare?luna=${year}&problema=cod-rd`,
         cta: t.blockerFix,
-      };
+      });
     }
     if (nearDeadline) {
       const doc = documentFor(nearDeadline);
-      return {
+      list.push({
         tone: "warning",
         title: t.nextDeadline
           .replace("{label}", strings.enums.reportType[nearDeadline.reportType])
@@ -133,50 +134,51 @@ export function useDashboardData(enabled = true) {
         hint: t.nextDeadlineHint,
         to: doc?.to ?? "/termene",
         cta: doc?.label ?? t.nextDeadlineCta,
-      };
+      });
     }
     if (expiringPartners.length > 0) {
-      return {
+      list.push({
         tone: "warning",
         title: t.nextExpiring.replace("{count}", countOf(expiringPartners.length, "partener", "parteneri")),
         hint: t.nextExpiringHint,
         to: "/parteneri",
         cta: t.nextExpiringCta,
-      };
+      });
     }
     if (blockers.awaitingWeighing > 0) {
-      return {
+      list.push({
         tone: "warning",
         title: t.nextWeighing.replace("{count}", countOf(blockers.awaitingWeighing, "linie", "linii")),
         hint: t.nextWeighingHint,
         to: "/miscari",
         cta: t.nextWeighingCta,
-      };
+      });
     }
     // „Nimic de făcut" are două înţelesuri: un cont pe care nu s-a scris încă nimic nu e la zi, e
     // neînceput. O mişcare se înregistrează **pe** un punct de lucru; evidenţa se calculează **din**
     // mişcări — amândouă sunt dependenţe din cod, nu preferinţe de flux.
+    if (list.length > 0) return list;
     if ((workPoints ?? []).length === 0) {
-      return {
+      return [{
         tone: "start",
         title: t.nextStartWorkPoint,
         hint: t.nextStartWorkPointHint,
         to: "/setari/puncte-de-lucru",
         cta: t.nextStartWorkPointCta,
-      };
+      }];
     }
     // Trei liste goale deodată, nu una: o firmă care lucrează are parteneri chiar şi într-o lună
     // fără mişcări.
     if (movementCount === 0 && (evidences ?? []).length === 0 && (partners ?? []).length === 0) {
-      return {
+      return [{
         tone: "start",
         title: t.nextStartMovement,
         hint: t.nextStartMovementHint,
         to: "/miscari",
         cta: t.nextStartMovementCta,
-      };
+      }];
     }
-    return { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/generare?tab=total", cta: t.viewAll };
+    return [{ tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/generare?tab=total", cta: t.viewAll }];
   }, [
     overdue,
     nearDeadline,
@@ -191,6 +193,7 @@ export function useDashboardData(enabled = true) {
     partners,
     movementCount,
   ]);
+  const nextAction: NextAction | null = actions[0] ?? null;
 
   /**
    * Banda tace până vin **toate** sursele din care alege. Fără garda asta, un `partners` întârziat
@@ -225,6 +228,10 @@ export function useDashboardData(enabled = true) {
     generatedThisMonth,
     movementCount,
     nextAction,
+    /** Tot ce e deschis, în aceeași ordine; primul e `nextAction`. „+ încă N” de pe Acasă le arată pe celelalte. */
+    actions,
     nextActionLoading,
   };
 }
+
+export type DashboardData = ReturnType<typeof useDashboardData>;
