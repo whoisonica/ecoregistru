@@ -187,9 +187,15 @@ Formularul e același (`MovementFormDialog`); ecranul îi dă registrul și dire
 Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
 
 **Generare are două taburi** (18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
-sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat, ce a rămas în
-stoc și starea lui („Gata" · „N de cântărit" · „N kg fără cod R/D"), plus cele două documente oficiale dedesubt. Tabul
-stă în adresă (`?tab=total`), ca la Termene și Clienți. Ecranul **„Evidențe" a fost scos**: `EvidenceCalculator` agregă
+sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
+(„Gata" · „N de cântărit" · „N kg fără cod R/D"). Tabul stă în adresă (`?tab=total`), ca la Termene și Clienți.
+**Documentele stau sus, nu sub tabel** (proprietarul, în aceeași zi: „butoanele de evidențele gestiunii sus, nu ascunse
+jos"): întâi banda cu ce blochează depunerea, apoi fișa și centralizata, abia apoi tabelul. Pe 15 martie omul vine după
+hârtie, nu după un tabel; cu douăzeci de coduri, butoanele de dedesubt cădeau sub marginea ecranului.
+**Fără coloană de stoc**, ca pe tot ecranul „Generare" de la `V58` încoace: generatorul n-are cântar și nu ține stoc,
+deșeul stă în pubelă până vine colectorul, iar cantitatea se află abia la predare. Pe Anexa 1 cifra iese zero prin
+construcție, iar o coloană de zerouri nu e o informație. „Rămasă în stoc" rămâne unde o cere actul: pe fișa tipărită
+(HG 856/2002, anexa 1, cap. 1) și pe centralizator. Ecranul **„Evidențe" a fost scos**: `EvidenceCalculator` agregă
 exact mișcările registrului `ANEXA_1`, adică exact rândurile ecranului de generare — două intrări în meniu pentru
 același registru, cu aceleași filtre și aceleași butoane de document. `/evidente` e redirect (`EvidencesRedirect`):
 `?problema=cod-rd` duce pe lista anului cu filtrul pus, restul pe tabul totalului. Registrul art. 48 nu se atinge:

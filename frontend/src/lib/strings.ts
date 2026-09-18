@@ -1841,7 +1841,7 @@ export const strings = {
     // formularele: se depune în kg (Andreea, 14.09.2026, AF). Până pe 17.09.2026 era în tone,
     // după OUG 92/2021 art. 48 alin. (1), și „1,060” se citea greșit.
     annualIntro:
-      "Cifrele pe care le treci în SIM pe 15 martie, pe fiecare cod de deșeu: cât ai generat în {year}, cât s-a valorificat, cât s-a eliminat și cât ți-a rămas. Aceleași kilograme ca pe fișa tipărită.",
+      "Cifrele pe care le treci în SIM pe 15 martie, pe fiecare cod de deșeu: cât ai generat în {year}, cât s-a valorificat și cât s-a eliminat. Aceleași kilograme ca pe fișa tipărită.",
     annualTotalRow: "{count} de deșeu",
     annualEmptyHint:
       "Anul se umple singur, din deșeurile înregistrate pe tabul „Mișcări”.",
@@ -1880,7 +1880,6 @@ export const strings = {
     colRecovered: "Valorificat",
     colDisposed: "Eliminat",
     colUnclassified: "Neclasificat",
-    colStock: "În stoc",
     hazardous: "Periculos",
     // Roșu, nu galben: o ieșire fără cod R/D nu e o rubrică de completat cândva, e o cantitate
     // care lipsește din evidență. Se cere la orice ieșire nouă, deci rândurile astea sunt vechi.

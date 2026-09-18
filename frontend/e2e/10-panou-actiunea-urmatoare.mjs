@@ -235,22 +235,6 @@ const total = await page.evaluate(async (an) => {
     k[1] += r.totalRecovered;
     k[2] += r.totalDisposed;
   }
-  // Stocul NU se adună peste luni: `closingStock` e deja cumulativ pe (punct de lucru, cod) și
-  // poartă și anii dinainte. Se ia al ultimei luni cu date, pe fiecare punct, și se adună între
-  // puncte. Proba face socoteala pe drumul ei — dacă ecranul ar aduna cele douăsprezece luni,
-  // aici s-ar vedea.
-  const ultima = {};
-  for (const r of linii) {
-    const cheie = r.wasteCode + "|" + r.workPointId;
-    if (!ultima[cheie] || r.month > ultima[cheie].month) {
-      ultima[cheie] = { month: r.month, stoc: r.closingStock };
-    }
-  }
-  const stoc = {};
-  for (const [cheie, v] of Object.entries(ultima)) {
-    const cod = cheie.slice(0, cheie.indexOf("|"));
-    stoc[cod] = (stoc[cod] ?? 0) + v.stoc;
-  }
   const tabel = document.querySelector('[role="tabpanel"] table') ?? document.querySelector("table");
   if (!tabel) return null;
   const antet = [...tabel.querySelectorAll("thead th")].map((th) => th.textContent.trim());
@@ -259,14 +243,10 @@ const total = await page.evaluate(async (an) => {
     .map((tr) => {
       const td = [...tr.querySelectorAll("td")];
       const cod = td[0]?.querySelector("span")?.textContent.trim() ?? "";
-      return {
-        cod,
-        cifre: td.slice(1, 4).map((c) => c.textContent.trim()),
-        stoc: td[4]?.textContent.trim() ?? "",
-      };
+      return { cod, cifre: td.slice(1, 4).map((c) => c.textContent.trim()) };
     })
     .filter((r) => /^\d/.test(r.cod) && r.cod.includes(" "));
-  return { kg, stoc, antet, randuri };
+  return { kg, antet, randuri };
 }, ANUL_TOTAL);
 check("tabelul totalului există", total !== null);
 if (total) {
@@ -287,14 +267,10 @@ if (total) {
   }
   check("fiecare cifră e exact kilogramele din API", gresite.length === 0,
     gresite.slice(0, 3).join(" | ") || `${total.randuri.length * 3} cifre`);
-  const stocGresit = total.randuri
-    .filter(({ cod, stoc }) => {
-      const valoare = Number(stoc.replace(/\./g, "").replace(",", "."));
-      return Math.abs(valoare - (total.stoc[cod] ?? NaN)) > 0.0005;
-    })
-    .map(({ cod, stoc }) => `${cod} ${stoc} ≠ ${total.stoc[cod]}`);
-  check("iar „În stoc” e stocul ultimei luni, nu suma lunilor", stocGresit.length === 0,
-    stocGresit.slice(0, 3).join(" | ") || `${total.randuri.length} coduri`);
+  // La generator nu există stoc (proprietarul, 18.09.2026; aceeași decizie ca `V58`): coloana a
+  // ieșit, iar tabelul are cinci capete — cod, generat, valorificat, eliminat, stare.
+  check("și nicio coloană de stoc — generatorul n-are stoc",
+    !total.antet.some((h) => /stoc/i.test(h)) && total.antet.length === 5, total.antet.join(" | "));
   // Garda: o probă care compară numai zerouri n-ar vedea un factor greșit.
   check("și cel puțin o cifră e peste 1 kg",
     total.randuri.some((r) => r.cifre.some((c) => Number(c.replace(/\./g, "").replace(",", ".")) >= 1)));
@@ -309,6 +285,20 @@ const documente = await page.evaluate(() => {
 });
 check("fișa și centralizata au fiecare butonul ei",
   documente.filter((b) => /^Descarcă$/.test(b)).length === 2, documente.join(" | "));
+
+// Sus, nu sub tabel (proprietarul, 18.09.2026: „butoanele de evidențele gestiunii sus, nu ascunse
+// jos"). Cu douăzeci de coduri, un buton de sub tabel e sub marginea ecranului. Se compară locul în
+// DOM, nu pixelii: o probă pe coordonate ar fi trecut și cu tabelul gol.
+const ordinea = await page.evaluate(() => {
+  const panou = document.querySelector('[role="tabpanel"]') ?? document.body;
+  const buton = [...panou.querySelectorAll("button")].find((b) => /^Descarcă$/.test(b.textContent.trim()));
+  const tabel = panou.querySelector("table");
+  if (!buton || !tabel) return null;
+  // DOCUMENT_POSITION_FOLLOWING = tabelul vine DUPĂ buton.
+  return { inainte: Boolean(buton.compareDocumentPosition(tabel) & Node.DOCUMENT_POSITION_FOLLOWING) };
+});
+check("iar documentele stau deasupra tabelului, nu sub el",
+  ordinea !== null && ordinea.inainte, JSON.stringify(ordinea));
 check("iar exporturile generice stau în meniu",
   documente.some((b) => /Alte descărcări/.test(b)) && !documente.some((b) => /^Rezumat (Excel|PDF)$/.test(b)),
   documente.join(" | "));

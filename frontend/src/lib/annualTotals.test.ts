@@ -6,8 +6,8 @@ import type { MonthlyEvidence } from "./types";
 /**
  * Totalul anului pe cod — tabul „Totalul anului" de pe Generare (18.09.2026).
  *
- * <p>Testul există pentru **stoc**: e singura cifră care nu se adună. Pe baza demo toate stocurile
- * sunt zero, deci proba de ecran (10) compară numai zerouri și n-ar vedea greșeala; aici se vede.
+ * <p>Socoteala e scoasă din componentă ca să se poată proba pe date alese, nu pe baza demo: acolo
+ * toate cifrele care contează sunt mici sau zero, deci o probă de ecran ar compara prea puțin.
  */
 function linie(over: Partial<MonthlyEvidence>): MonthlyEvidence {
   return {
@@ -44,32 +44,18 @@ test("cantitățile se adună pe cod, peste luni și puncte de lucru", () => {
   assert.equal(rand.disposed, 25);
 });
 
-test("stocul e al ultimei luni cu date, nu suma lunilor", () => {
-  // Aceeași marfă, văzută în trei luni: 100 rămase în ianuarie, 60 în februarie, 80 în martie.
-  // Suma ar da 240 — de trei ori aceleași kilograme. Adevărul e ultima lună: 80.
+test("stocul liniilor nu ajunge în totaluri — la generator nu există stoc", () => {
+  // Decizia proprietarului (18.09.2026), aceeași ca la `V58`: un generator n-are cântar și nu ține
+  // stoc, iar pe Anexa 1 cifra iese zero prin construcție. Liniile vechi pot purta un `closingStock`
+  // nenul (cumulativ, cu anii dinainte în el); totalurile ecranului nu-l ating.
   const [rand] = byCode([
-    linie({ month: 1, totalGenerated: 100, closingStock: 100 }),
-    linie({ month: 2, totalRecovered: 40, closingStock: 60 }),
-    linie({ month: 3, totalGenerated: 20, closingStock: 80 }),
+    linie({ month: 1, totalGenerated: 100, totalRecovered: 60, closingStock: 40 }),
+    linie({ month: 2, totalGenerated: 20, closingStock: 60 }),
+    linie({ month: 3, workPointId: "wp-2", workPointName: "Punct 2", closingStock: -15 }),
   ]);
-  assert.equal(rand.stock, 80);
   assert.equal(rand.generated, 120);
-});
-
-test("stocul ultimei luni se adună între punctele de lucru", () => {
-  // Fiecare punct își poartă stocul lui, iar ultima lună a unuia nu e neapărat ultima a celuilalt.
-  const [rand] = byCode([
-    linie({ month: 3, closingStock: 30 }),
-    linie({ month: 1, workPointId: "wp-2", workPointName: "Punct 2", closingStock: 999 }),
-    linie({ month: 7, workPointId: "wp-2", workPointName: "Punct 2", closingStock: 12 }),
-  ]);
-  assert.equal(rand.stock, 42);
-});
-
-test("stocul negativ trece mai departe, nu se rotunjește la zero", () => {
-  // Ieșiri mai mari decât intrările într-o fereastră: cifra e roșie pe ecran, dar rămâne cifra.
-  const [rand] = byCode([linie({ month: 5, closingStock: -15 })]);
-  assert.equal(rand.stock, -15);
+  assert.equal(rand.recovered, 60);
+  assert.deepEqual(Object.keys(rand).filter((k) => /stoc|stock/i.test(k)), []);
 });
 
 test("liniile care așteaptă cântarul se numără, kilogramele fără cod R/D se adună", () => {

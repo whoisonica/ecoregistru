@@ -40,6 +40,13 @@ const kg = (value: number) => kgFormat.format(value);
  *
  * <p>Nu socotește nimic nou și nu cere niciun endpoint nou: aceleași linii de evidență
  * (`GET /api/v1/evidences`) pe care le citesc deja Acasă, Termene și Dosarul de control.
+ *
+ * <p><b>Ordinea de pe ecran, din 18.09.2026:</b> întâi ce blochează depunerea, apoi **documentele**,
+ * abia apoi tabelul. Omul vine aici pe 15 martie după hârtie; cu douăzeci de coduri, butoanele de
+ * sub tabel cădeau sub marginea ecranului.
+ *
+ * <p><b>Fără coloană de stoc</b>, ca pe tot ecranul „Generare" din `V58`: un generator n-are cântar
+ * și nu ține stoc, iar pe Anexa 1 cifra iese zero prin construcție. Vezi `lib/annualTotals.ts`.
  */
 export function AnnualTotals({
   year,
@@ -80,9 +87,8 @@ export function AnnualTotals({
           generated: acc.generated + c.generated,
           recovered: acc.recovered + c.recovered,
           disposed: acc.disposed + c.disposed,
-          stock: acc.stock + c.stock,
         }),
-        { generated: 0, recovered: 0, disposed: 0, stock: 0 }
+        { generated: 0, recovered: 0, disposed: 0 }
       ),
     [codes]
   );
@@ -169,131 +175,6 @@ export function AnnualTotals({
         {t.annualIntro.replace("{year}", String(year))}
       </p>
 
-      {/* Pe telefon, câte un card pe cod: tabelul are șase coloane, iar pe 375px se vedea „GENERAT"
-          tăiat în două. Aceeași soluție ca pe Termene, din 16.09.2026. */}
-      <div className="mt-4 sm:hidden">
-        {!isLoading && codes.length === 0 && (
-          <EmptyState
-            icon={FileSpreadsheet}
-            title={t.empty.replace("{year}", String(year))}
-            description={t.annualEmptyHint}
-          />
-        )}
-      </div>
-      <ul className="mt-4 divide-y divide-line border-y border-line sm:hidden" data-testid="annual-cards">
-        {codes.map((c) => (
-          <li key={c.wasteCode} className="py-3">
-            <div className="flex items-start justify-between gap-3">
-              <span className="min-w-0 font-medium text-content">
-                <BinSwatch code={c.wasteCode} hazardous={c.hazardous} />
-                {c.wasteCode}
-                <span className="block truncate text-xs font-normal text-content-subtle">
-                  {c.wasteCodeName}
-                </span>
-              </span>
-              {c.unclassified > 0 ? (
-                <Link to={missingCodeHref}>
-                  <Badge variant="danger">{t.stateMissingCode.replace("{kg}", kg(c.unclassified))}</Badge>
-                </Link>
-              ) : c.awaiting > 0 ? (
-                <Badge variant="warning">{withCount(t.stateAwaiting, c.awaiting, "linie", "linii")}</Badge>
-              ) : (
-                <Badge variant="success">{t.stateReady}</Badge>
-              )}
-            </div>
-            <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-content-muted">
-              <div>
-                <dt className="eyebrow">{t.colGenerated}</dt>
-                <dd className="font-mono text-sm text-content">{kg(c.generated)}</dd>
-              </div>
-              <div>
-                <dt className="eyebrow">{t.colRecovered}</dt>
-                <dd className="font-mono text-sm text-content">{kg(c.recovered)}</dd>
-              </div>
-              <div>
-                <dt className="eyebrow">{t.colDisposed}</dt>
-                <dd className="font-mono text-sm text-content">{kg(c.disposed)}</dd>
-              </div>
-              <div>
-                <dt className="eyebrow">{t.colStock}</dt>
-                <dd className="font-mono text-sm text-content">{kg(c.stock)}</dd>
-              </div>
-            </dl>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-4 hidden sm:block">
-        <Table stickyHeader>
-          <THead sticky>
-            <TR>
-              <TH>{t.colWasteCode}</TH>
-              <TH className="text-right">{t.colGenerated}</TH>
-              <TH className="text-right">{t.colRecovered}</TH>
-              <TH className="text-right">{t.colDisposed}</TH>
-              <TH className="text-right">{t.colStock}</TH>
-              <TH>{t.colState}</TH>
-            </TR>
-          </THead>
-          <TBody>
-            {(isLoading || codes.length === 0) && (
-              <TableFallbackRow
-                columns={6}
-                loading={isLoading}
-                icon={FileSpreadsheet}
-                title={t.empty.replace("{year}", String(year))}
-                description={t.annualEmptyHint}
-              />
-            )}
-            {codes.map((c) => (
-              <TR key={c.wasteCode}>
-                <TD>
-                  <span className="font-medium text-content">
-                    <BinSwatch code={c.wasteCode} hazardous={c.hazardous} />
-                    {c.wasteCode}
-                  </span>
-                  <span className="block max-w-xs truncate text-xs text-content-subtle">
-                    {c.wasteCodeName}
-                  </span>
-                </TD>
-                <TD className="text-right">{kg(c.generated)}</TD>
-                <TD className="text-right">{kg(c.recovered)}</TD>
-                <TD className="text-right">{kg(c.disposed)}</TD>
-                <TD className={`text-right ${c.stock < 0 ? "text-state-bad-text" : ""}`}>
-                  {kg(c.stock)}
-                </TD>
-                <TD>
-                  {/* Roșu = nu se poate depune așa; galben = o așteptare legitimă (cântarul). */}
-                  {c.unclassified > 0 ? (
-                    <Link to={missingCodeHref} className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
-                      <Badge variant="danger" className="underline decoration-dotted underline-offset-2">
-                        {t.stateMissingCode.replace("{kg}", kg(c.unclassified))}
-                      </Badge>
-                    </Link>
-                  ) : c.awaiting > 0 ? (
-                    <Badge variant="warning">
-                      {withCount(t.stateAwaiting, c.awaiting, "linie", "linii")}
-                    </Badge>
-                  ) : (
-                    <Badge variant="success">{t.stateReady}</Badge>
-                  )}
-                </TD>
-              </TR>
-            ))}
-            {codes.length > 0 && (
-              <TR className="border-t-2 border-content font-semibold">
-                <TD>{withCount(t.annualTotalRow, codes.length, "cod", "coduri")}</TD>
-                <TD className="text-right">{kg(totals.generated)}</TD>
-                <TD className="text-right">{kg(totals.recovered)}</TD>
-                <TD className="text-right">{kg(totals.disposed)}</TD>
-                <TD className="text-right">{kg(totals.stock)}</TD>
-                <TD />
-              </TR>
-            )}
-          </TBody>
-        </Table>
-      </div>
-
       {(missingCodeKg > 0 || pendingWeighing.length > 0) && (
         <div data-testid="pending-weighing-note" className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           {missingCodeKg > 0 && (
@@ -317,9 +198,12 @@ export function AnnualTotals({
         </div>
       )}
 
-      {/* Documentele, lângă cifrele din care ies. Aceleași două formulare se iau și din Dosarul de
-          control, care le adună pe toate — un buton nu e un ecran, iar Termene îl are deja pe primul
-          pe termenul de 15 martie. */}
+      {/* Documentele SUS, nu sub tabel (proprietarul, 18.09.2026: „butoanele de evidențele gestiunii
+          sus, nu ascunse jos"). Pe 15 martie omul vine aici ca să ia hârtia, nu ca să citească un
+          tabel: cu douăzeci de coduri, butoanele cădeau sub marginea ecranului și păreau că nu
+          există. Banda de blocaje stă deasupra lor dinadins — se vede ce lipsește *înainte* de clic,
+          nu abia în dialogul de după. Aceleași două formulare se iau și din Dosarul de control, care
+          le adună pe toate; Termene îl are deja pe primul, pe termenul de 15 martie. */}
       <div className="mt-6 divide-y divide-line rounded-lg border border-line">
         <DocRow
           title={t.anexa1}
@@ -370,6 +254,122 @@ export function AnnualTotals({
             </MenuItem>
           </Menu>
         </div>
+      </div>
+
+      {/* Pe telefon, câte un card pe cod: tabelul are cinci coloane, iar pe 375px se vedea „GENERAT"
+          tăiat în două. Aceeași soluție ca pe Termene, din 16.09.2026. */}
+      <div className="mt-4 sm:hidden">
+        {!isLoading && codes.length === 0 && (
+          <EmptyState
+            icon={FileSpreadsheet}
+            title={t.empty.replace("{year}", String(year))}
+            description={t.annualEmptyHint}
+          />
+        )}
+      </div>
+      <ul className="mt-4 divide-y divide-line border-y border-line sm:hidden" data-testid="annual-cards">
+        {codes.map((c) => (
+          <li key={c.wasteCode} className="py-3">
+            <div className="flex items-start justify-between gap-3">
+              <span className="min-w-0 font-medium text-content">
+                <BinSwatch code={c.wasteCode} hazardous={c.hazardous} />
+                {c.wasteCode}
+                <span className="block truncate text-xs font-normal text-content-subtle">
+                  {c.wasteCodeName}
+                </span>
+              </span>
+              {c.unclassified > 0 ? (
+                <Link to={missingCodeHref}>
+                  <Badge variant="danger">{t.stateMissingCode.replace("{kg}", kg(c.unclassified))}</Badge>
+                </Link>
+              ) : c.awaiting > 0 ? (
+                <Badge variant="warning">{withCount(t.stateAwaiting, c.awaiting, "linie", "linii")}</Badge>
+              ) : (
+                <Badge variant="success">{t.stateReady}</Badge>
+              )}
+            </div>
+            <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-content-muted">
+              <div>
+                <dt className="eyebrow">{t.colGenerated}</dt>
+                <dd className="font-mono text-sm text-content">{kg(c.generated)}</dd>
+              </div>
+              <div>
+                <dt className="eyebrow">{t.colRecovered}</dt>
+                <dd className="font-mono text-sm text-content">{kg(c.recovered)}</dd>
+              </div>
+              <div>
+                <dt className="eyebrow">{t.colDisposed}</dt>
+                <dd className="font-mono text-sm text-content">{kg(c.disposed)}</dd>
+              </div>
+            </dl>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-4 hidden sm:block">
+        <Table stickyHeader>
+          <THead sticky>
+            <TR>
+              <TH>{t.colWasteCode}</TH>
+              <TH className="text-right">{t.colGenerated}</TH>
+              <TH className="text-right">{t.colRecovered}</TH>
+              <TH className="text-right">{t.colDisposed}</TH>
+              <TH>{t.colState}</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {(isLoading || codes.length === 0) && (
+              <TableFallbackRow
+                columns={5}
+                loading={isLoading}
+                icon={FileSpreadsheet}
+                title={t.empty.replace("{year}", String(year))}
+                description={t.annualEmptyHint}
+              />
+            )}
+            {codes.map((c) => (
+              <TR key={c.wasteCode}>
+                <TD>
+                  <span className="font-medium text-content">
+                    <BinSwatch code={c.wasteCode} hazardous={c.hazardous} />
+                    {c.wasteCode}
+                  </span>
+                  <span className="block max-w-xs truncate text-xs text-content-subtle">
+                    {c.wasteCodeName}
+                  </span>
+                </TD>
+                <TD className="text-right">{kg(c.generated)}</TD>
+                <TD className="text-right">{kg(c.recovered)}</TD>
+                <TD className="text-right">{kg(c.disposed)}</TD>
+                <TD>
+                  {/* Roșu = nu se poate depune așa; galben = o așteptare legitimă (cântarul). */}
+                  {c.unclassified > 0 ? (
+                    <Link to={missingCodeHref} className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+                      <Badge variant="danger" className="underline decoration-dotted underline-offset-2">
+                        {t.stateMissingCode.replace("{kg}", kg(c.unclassified))}
+                      </Badge>
+                    </Link>
+                  ) : c.awaiting > 0 ? (
+                    <Badge variant="warning">
+                      {withCount(t.stateAwaiting, c.awaiting, "linie", "linii")}
+                    </Badge>
+                  ) : (
+                    <Badge variant="success">{t.stateReady}</Badge>
+                  )}
+                </TD>
+              </TR>
+            ))}
+            {codes.length > 0 && (
+              <TR className="border-t-2 border-content font-semibold">
+                <TD>{withCount(t.annualTotalRow, codes.length, "cod", "coduri")}</TD>
+                <TD className="text-right">{kg(totals.generated)}</TD>
+                <TD className="text-right">{kg(totals.recovered)}</TD>
+                <TD className="text-right">{kg(totals.disposed)}</TD>
+                <TD />
+              </TR>
+            )}
+          </TBody>
+        </Table>
       </div>
 
       {canManage && (
