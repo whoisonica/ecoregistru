@@ -1,7 +1,7 @@
 // Proba 28: butonul fișei când anul are cantități „de cântărit” (evaluarea din 17.09.2026).
 //
 // Butonul „Evidența gestiunii deșeurilor generate” deschidea un dialog în locul fișierului, cu un titlu
-// care nu numea documentul — părea că butonul nu merge. (1) Nota apare pe Evidențe înainte de clic și
+// care nu numea documentul — părea că butonul nu merge. (1) Nota apare pe „Totalul anului” (Generare, `?tab=total`; până la 18.09 era ecranul Evidențe) înainte de clic și
 // numără liniile. (2) Dialogul poartă numele documentului, iar „Descarcă oricum” chiar deschide fișa în tab.
 // (3) Dialogul nu mai scrie culori de mână (amber), doar tokenii „Cântar”.
 //
