@@ -218,6 +218,24 @@ const taburi = await page.evaluate(() =>
   }))
 );
 check("ecranul are două taburi", taburi.length === 2, JSON.stringify(taburi));
+// Banda de taburi nu e o cutie care derulează: `overflow-x` o face și pe verticală `auto`, iar
+// butoanele ies 1px în jos (`-mb-px`, ca subliniera să acopere chenarul) — atât i-a trebuit ca
+// macOS să deseneze un fir gri lipit după ultimul tab, luat drept buton (18.09.2026).
+const bandaTaburi = await page.evaluate(() => {
+  const t = document.querySelector('[role="tablist"]');
+  if (!t) return null;
+  const c = getComputedStyle(t);
+  return {
+    x: c.overflowX,
+    y: c.overflowY,
+    deruleaza: t.scrollHeight > t.clientHeight || t.scrollWidth > t.clientWidth,
+  };
+});
+// Se cere `overflow: visible` pe amândouă axele, nu absența depășirii: cei 1px în jos rămân
+// (`-mb-px` e chiar rostul lor), dar pe o cutie `visible` niciun browser nu desenează indicator.
+check("iar banda lor nu e o cutie care derulează, deci n-are fir gri după ultimul tab",
+  bandaTaburi !== null && bandaTaburi.x === "visible" && bandaTaburi.y === "visible",
+  JSON.stringify(bandaTaburi));
 check("iar cel ales e tabul totalului", taburi.find((t) => t.ales)?.text === "Totalul anului",
   JSON.stringify(taburi));
 

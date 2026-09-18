@@ -33,7 +33,13 @@ export function PageTabs({
 }) {
   return (
     <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-line">
-    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto">
+    {/* ⚠️ Fără `overflow-x-auto`: taburile **se rup pe două rânduri**, nu derulează.
+        `overflow-x` diferit de `visible` face și `overflow-y` să devină `auto` (regula din CSS), iar
+        butoanele au `-mb-px` ca subliniera să acopere chenarul de jos — adică exact 1px de depășire
+        pe verticală. Atât i-a trebuit: pe macOS, cu mausul pe zonă, apărea un **indicator de
+        derulare** lipit după ultimul tab, pe care proprietarul l-a luat drept buton (18.09.2026).
+        Până atunci banda ținea toată lățimea și firul gri cădea departe, la marginea paginii. */}
+    <div role="tablist" aria-label={label} className="flex flex-wrap gap-1">
       {tabs.map((item) => {
         const isSelected = item.id === selected;
         return (

@@ -26,7 +26,11 @@ producție — *„butoanele de evidențele gestiunii sus, nu ascunse jos"* și 
 **după** primul dintre ele în DOM (`compareDocumentPosition`, nu pixeli: o probă pe coordonate ar fi trecut și cu tabelul gol); (c) că
 „Recalculează acum" stă **după** documente și are **alt chenar și alt fundal** decât ele — citite din `getComputedStyle`, nu din numele claselor,
 fiindcă ce contează e ce vede omul, nu cum se cheamă varianta; și (d) că antetul are **cinci** capete, niciunul cu „stoc".
-Din 18.09 mai cere (e) că tabelul arată **cel mult zece coduri pe pagină** și (f) că **rândul de total numără toate codurile anului**, nu
+Din 18.09 mai cere (g) că **banda de taburi nu e o cutie care derulează** (`overflow: visible` pe amândouă axele): butoanele au
+`-mb-px`, iar `overflow-x` face și `overflow-y` `auto`, deci un pixel de depășire era destul ca macOS să deseneze un fir gri lipit după
+ultimul tab — proprietarul l-a luat drept buton. Se cere `visible`, **nu** absența depășirii: cei 1px sunt chiar rostul lui `-mb-px`.
+**Negativă:** cu `overflow-x-auto` pus la loc cade exact verificarea asta, cu regula la vedere (`{"x":"auto","y":"auto"}`).
+Tot din 18.09 mai cere (e) că tabelul arată **cel mult zece coduri pe pagină** și (f) că **rândul de total numără toate codurile anului**, nu
 câte se văd — altfel, pe pagina a doua, cifra pe care omul o tastează în SIM ar fi alta. Pe baza demo sunt șase coduri, deci în CI se
 verifică plafonul, nu a doua pagină; paginarea plină s-a probat cu mâna, pe **18 coduri**: 10 rânduri, „1–10 din 18", total „18 coduri".
 **Negativă:** cu versiunea de dinainte pusă la loc din git (`AnnualTotals.tsx`, `annualTotals.ts`, `strings.ts`), cad **exact** verificările noi,

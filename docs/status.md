@@ -8,6 +8,13 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
+> **18.09.2026, ~14:15 — 🟡 pe `main`, nedeployat: banda de taburi nu mai derulează — firul gri de după ultimul tab a dispărut** (o clasă; numai frontend, schema **V63**, liberă **V64**).
+> Proprietarul, cu mausul pe antet: *„ce e după «Totalul anului», butonul ăla?"* Nu era buton și nu delimita nimic: era **indicatorul de derulare** desenat de macOS peste `[role="tablist"]`.
+> **De ce tocmai acolo:** butoanele de tab au `-mb-px`, ca linia tabului ales să acopere chenarul de jos — un pixel de depășire pe verticală. Iar `overflow-x` diferit de `visible` face **și** `overflow-y` să devină `auto` (regulă CSS), deci banda se socotea derulabilă. Cât ținea toată lățimea paginii, firul cădea la marginea din dreapta și nu-l vedea nimeni; de când s-a strâns, ca să încapă filtrele lângă ea, se termină fix după ultimul tab — în mijlocul antetului.
+> **Reparația:** `overflow-x-auto` → `flex-wrap` pe `[role="tablist"]`. Taburile se rup pe două rânduri dacă nu încap, în loc să deruleze pe o bară pe care oricum n-o vedea nimeni. **Atinge toate ecranele cu taburi** (Generare, Termene, Clienți, pagina firmei) — pe cele de acum, două până la patru taburi, nu se rupe la nicio lățime (măsurat 1440, 1280, 375).
+> **Probe:** `tsc`, build, `npm test` **56/56**; verificare nouă în proba 10: banda cere `overflow: visible` pe **amândouă** axele. Se cere asta, nu absența depășirii — cei 1px rămân, fiindcă `-mb-px` e chiar rostul lor, dar pe o cutie `visible` niciun browser nu desenează indicator.
+> **Negativă:** cu `overflow-x-auto` pus la loc cade exact verificarea nouă și arată chiar regula CSS — `{"x":"auto","y":"auto"}`.
+
 > **18.09.2026, ~13:30 — 🟡 pe `main`, nedeployat: totalul anului pe pagini de zece, iar „Mișcări" primește aceleași filtre pe linia taburilor** (numai frontend; backendul, migrările și generatoarele de documente neatinse, schema **V63**, liberă **V64**).
 > Proprietarul: *„să se vadă primele intrări, să nu se lungească pe tot ecranul lista"* și *„în generare/mișcări vreau dropdownurile cu ani să fie ca la Totalul anului"*.
 > **(1) Zece coduri pe pagină** (`useTableView` + `TablePagination`, primitivele casei), nu douăzeci și cinci cât e implicit: tabelul stă sub un antet înalt, deci la o firmă cu treizeci de coduri **rândul de total** — cifra pentru care se deschide tabul — ajungea mult sub marginea ecranului.

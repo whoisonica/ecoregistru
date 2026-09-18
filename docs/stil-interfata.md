@@ -190,7 +190,12 @@ Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
 sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
 („Gata" · „N de cântărit" · „N kg fără cod R/D"). Tabul stă în adresă (`?tab=total`), ca la Termene și Clienți.
 **Filtrele tabului stau pe linia taburilor**, lipite la dreapta, cu eticheta mică lângă ele, nu deasupra (`PageTabs`,
-slotul `right`; în afara lui `role="tablist"`). Liste derulante cu etichetă deasupra ocupau o bandă întreagă sub taburi.
+slotul `right`; în afara lui `role="tablist"`).
+⚠️ **Banda de taburi nu derulează** — taburile se rup pe două rânduri dacă nu încap. `overflow-x` diferit de `visible`
+face și `overflow-y` să devină `auto` (regulă CSS), iar butoanele de tab ies 1px în jos (`-mb-px`, ca subliniera să
+acopere chenarul): atât i-a trebuit ca macOS să deseneze un **indicator de derulare** lipit după ultimul tab, luat
+drept buton. Cât banda ținea toată lățimea, firul cădea la marginea paginii și nu-l vedea nimeni; de când se termină
+după ultimul tab, stă în mijlocul antetului. Liste derulante cu etichetă deasupra ocupau o bandă întreagă sub taburi.
 La fel pe **amândouă** taburile „Generare": luna și punctul de lucru pe „Mișcări", anul și punctul pe „Totalul anului".
 Intrări și Ieșiri n-au taburi, deci își păstrează banda.
 **Tabelul totalului arată zece coduri pe pagină**, nu douăzeci și cinci ca restul: stă sub un antet înalt, iar rândul de
