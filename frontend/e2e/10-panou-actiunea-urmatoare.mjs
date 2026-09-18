@@ -217,7 +217,9 @@ const taburi = await page.evaluate(() =>
     ales: t.getAttribute("aria-selected") === "true",
   }))
 );
-check("ecranul are două taburi", taburi.length === 2, JSON.stringify(taburi));
+// Trei de pe 18.09.2026: „Ambalaje" a venit după „Totalul anului", din același motiv — își ținea
+// un al doilea registru al acelorași mișcări.
+check("ecranul are trei taburi", taburi.length === 3, JSON.stringify(taburi));
 // Banda de taburi nu e o cutie care derulează: `overflow-x` o face și pe verticală `auto`, iar
 // butoanele ies 1px în jos (`-mb-px`, ca subliniera să acopere chenarul) — atât i-a trebuit ca
 // macOS să deseneze un fir gri lipit după ultimul tab, luat drept buton (18.09.2026).

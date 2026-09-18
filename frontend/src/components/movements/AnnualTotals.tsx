@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { Download, FileSpreadsheet, FileText, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -18,6 +18,7 @@ import { withCount } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { BinSwatch } from "@/components/ui/bin-swatch";
 import { Button } from "@/components/ui/button";
+import { DocAction } from "@/components/ui/doc-action";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
@@ -418,12 +419,3 @@ export function AnnualTotals({
   );
 }
 
-/** Un document: butonul, iar sub el ce anume descarci — numele întreg din act și ce conține. */
-function DocAction({ hint, action }: { hint: string; action: ReactNode }) {
-  return (
-    <div>
-      {action}
-      <p className="mt-1.5 text-xs leading-snug text-content-muted">{hint}</p>
-    </div>
-  );
-}

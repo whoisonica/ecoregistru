@@ -7,6 +7,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.AccessLevel;
@@ -23,6 +24,8 @@ import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.MovementDirection;
+import ro.ecoregistru.enums.PackagingFilter;
+import ro.ecoregistru.enums.PackagingMaterial;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
@@ -80,12 +83,13 @@ public class MovementQueryService {
     public PageResponse<WasteMovementResponse> list(Integer year, Integer month, UUID workPointId,
                                                     UUID wasteCodeId, boolean leftSite,
                                                     boolean missingOperationCode, WasteRegister register,
-                                                    MovementDirection direction, String search,
+                                                    MovementDirection direction, PackagingFilter packaging,
+                                                    String search,
                                                     int page, int size, String sortKey, boolean ascending) {
         UUID tenantId = TenantContext.require();
         LocalDate[] window = window(year, month);
         Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, wasteCodeId,
-                window[0], window[1], leftSite, missingOperationCode, register, direction);
+                window[0], window[1], leftSite, missingOperationCode, register, direction, packaging);
         Specification<WasteMovement> spec = ordered(withSearch(filter, search), sortKey, ascending);
         Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
 
@@ -104,11 +108,12 @@ public class MovementQueryService {
      */
     @Transactional(readOnly = true)
     public MovementTotalsResponse totals(Integer year, Integer month, UUID workPointId,
-                                         WasteRegister register, MovementDirection direction) {
+                                         WasteRegister register, MovementDirection direction,
+                                         PackagingFilter packaging) {
         UUID tenantId = TenantContext.require();
         LocalDate[] window = window(year, month);
         Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, null,
-                window[0], window[1], false, false, register, direction);
+                window[0], window[1], false, false, register, direction, packaging);
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Tuple> query = cb.createTupleQuery();
@@ -346,7 +351,8 @@ public class MovementQueryService {
     private Specification<WasteMovement> buildFilter(UUID tenantId, UUID workPointId,
                                                      UUID wasteCodeId, LocalDate fromDate, LocalDate toDate,
                                                      boolean leftSite, boolean missingOperationCode,
-                                                     WasteRegister register, MovementDirection direction) {
+                                                     WasteRegister register, MovementDirection direction,
+                                                     PackagingFilter packaging) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
             predicates.add(cb.equal(root.get("company").get("id"), tenantId));
@@ -395,6 +401,29 @@ public class MovementQueryService {
             } else if (direction == MovementDirection.OUT) {
                 predicates.add(root.get("operation").in(
                         WasteOperation.RECOVERED, WasteOperation.DISPOSED, WasteOperation.UNCLASSIFIED_OUT));
+            }
+            /*
+             * Tastele de ambalaje de pe „Mișcări" (18.09.2026), de când tabul „Ambalaje" nu-și mai
+             * ține propriul registru. Aceleași trei întrebări pe care le punea el, puse listei.
+             *
+             * <p>`like '15 01%'` e chiar `PackagingMaterial.isPackagingCode`, scris în SQL: codul e
+             * un șir cu spații, iar capitolul se citește din primele cinci caractere.
+             */
+            if (packaging != null) {
+                Path<String> code = root.get("wasteCode").get("code");
+                predicates.add(cb.like(code, "15 01%"));
+                if (packaging != PackagingFilter.ANY) {
+                    // Bifa neatinsă se comportă ca „da", ca în `WasteMovementMapper`: un rând de
+                    // dinaintea întrebării intră în declarație până când cineva spune altceva.
+                    predicates.add(cb.or(cb.isNull(root.get("packagingOnMarket")),
+                            cb.isTrue(root.get("packagingOnMarket"))));
+                }
+                if (packaging == PackagingFilter.INCOMPLETE) {
+                    predicates.add(cb.or(
+                            cb.and(cb.isNull(root.get("packagingMaterial")),
+                                    cb.not(code.in(PackagingMaterial.settledCodes()))),
+                            cb.isNull(root.get("packagingCategory"))));
+                }
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

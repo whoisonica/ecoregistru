@@ -120,7 +120,7 @@ await ctx2.goto(BASE + "/", { waitUntil: "networkidle" });
 await ctx2.waitForTimeout(600);
 const switched = await switchCompany(ctx2, /Proba Automata/i);
 check("comutat pe generatorul de probă", Boolean(switched), switched ?? "");
-await ctx2.goto(BASE + `/ambalaje?an=${AN}`, { waitUntil: "networkidle" });
+await ctx2.goto(BASE + `/generare?tab=ambalaje&luna=${AN}`, { waitUntil: "networkidle" });
 await ctx2.waitForTimeout(1200);
 const a3 = await ctx2.$("#anexa-3");
 const a3Text = a3 ? await a3.textContent() : "";

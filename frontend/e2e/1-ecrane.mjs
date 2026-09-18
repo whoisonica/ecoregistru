@@ -12,7 +12,8 @@ const SCREENS = [
   ["/evidente", "Evidențe (adresa veche)", "table"],
   ["/parteneri", "Parteneri", "table"],
   ["/termene", "Termene", "table"],
-  ["/ambalaje", "Ambalaje", "table"],
+  // Adresa veche a ecranului „Ambalaje" (tab în „Generare" de pe 18.09.2026): redirect spre tab.
+  ["/ambalaje", "Ambalaje (adresa veche)", "table"],
   ["/dosar-control", "Dosar de control", "h1"],
   ["/setari", "Setări", 'a[href="/setari/datele-firmei"]'],
   ["/setari/puncte-de-lucru", "Setări · Puncte de lucru", "table"],

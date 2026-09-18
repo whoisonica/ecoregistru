@@ -1365,7 +1365,19 @@ export interface MovementFilters {
   direction?: MovementDirection;
   /** Numai rândurile fără cod R/D — „arată-mi ce blochează depunerea", trimis de pe Panou. */
   missingOperationCode?: boolean;
+  /**
+   * Tastele de ambalaje de deasupra listei (18.09.2026): numai mișcările pe coduri `15 01 xx`
+   * (`ANY`), numai cele care hrănesc Anexa 1 Ambalaje (`ON_MARKET`), sau numai cele cărora le
+   * lipsește materialul ori felul ambalajului (`INCOMPLETE`).
+   *
+   * <p>Au venit din tabul „Ambalaje", care până atunci își ținea propriul registru cu aceleași
+   * rânduri — al doilea tabel de mișcări din aplicație, fără căutare și fără sortare la server.
+   */
+  packaging?: PackagingMovementFilter;
 }
+
+/** Mirrors backend `PackagingFilter`. */
+export type PackagingMovementFilter = "ANY" | "ON_MARKET" | "INCOMPLETE";
 
 /** Mirrors backend MovementDirection. */
 export type MovementDirection = "IN" | "OUT";

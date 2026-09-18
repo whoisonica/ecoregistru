@@ -83,7 +83,7 @@ await shot(page, "9-partener-colector");
 // verifică salvată după reîncărcare, apoi **goleşte celula**, fiindcă un rând golit şterge
 // suprascrierea (backendul o spune explicit) şi baza de dev rămâne cum a fost găsită.
 await login(page, "admin");
-await page.goto(BASE + "/ambalaje?an=2026", { waitUntil: "networkidle" });
+await page.goto(BASE + "/generare?tab=ambalaje&luna=2026", { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 
 async function deschideGrila() {

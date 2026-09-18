@@ -21,6 +21,7 @@ import ro.ecoregistru.controller.response.MovementTotalsResponse;
 import ro.ecoregistru.controller.response.PageResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.enums.MovementDirection;
+import ro.ecoregistru.enums.PackagingFilter;
 import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.service.MovementAttachmentService;
 import ro.ecoregistru.service.MovementDocumentService;
@@ -63,6 +64,11 @@ public class WasteMovementController {
      *                             depunerea", sent from the dashboard
      * @param register             only one register's rows: „Generare" asks for {@code ANEXA_1},
      *                             „Intrări" and „Ieșiri" for {@code ART_48}
+     * @param packaging            only packaging movements ({@code 15 01 xx}), and of those only
+     *                             the ones that feed Anexa 1 Ambalaje or only the ones still
+     *                             missing an answer — the three keys on the „Mișcări" tab since
+     *                             18.09.2026, when the packaging tab stopped keeping a second
+     *                             register of the same rows
      * @param direction            only what came in ({@code IN}: takeovers) or only what went out
      *                             ({@code OUT}: the same rows as {@code leftSite}) — the two art. 48
      *                             screens, separate since 15.09.2026
@@ -80,13 +86,14 @@ public class WasteMovementController {
             @RequestParam(defaultValue = "false") boolean missingOperationCode,
             @RequestParam(required = false) WasteRegister register,
             @RequestParam(required = false) MovementDirection direction,
+            @RequestParam(required = false) PackagingFilter packaging,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "false") boolean asc) {
         return queryService.list(year, month, workPointId, wasteCodeId, leftSite,
-                missingOperationCode, register, direction, search, page, size, sort, asc);
+                missingOperationCode, register, direction, packaging, search, page, size, sort, asc);
     }
 
     /**
@@ -100,8 +107,9 @@ public class WasteMovementController {
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) UUID workPointId,
             @RequestParam(required = false) WasteRegister register,
-            @RequestParam(required = false) MovementDirection direction) {
-        return queryService.totals(year, month, workPointId, register, direction);
+            @RequestParam(required = false) MovementDirection direction,
+            @RequestParam(required = false) PackagingFilter packaging) {
+        return queryService.totals(year, month, workPointId, register, direction, packaging);
     }
 
     /**

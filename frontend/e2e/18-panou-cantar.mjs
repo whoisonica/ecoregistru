@@ -30,7 +30,12 @@ const panel = await page.evaluate(() => {
 check("firma e etichetă: nume + CUI + tip", /Demo Reciclare/.test(panel.label) && /RO\d+/.test(panel.label), panel.label);
 check("afișajul lunii are luna, kg și un verdict", /kg/.test(panel.lcd) && panel.lcd.length > 20, panel.lcd.slice(0, 60));
 check("tastele de adăugare: Deșeuri proprii · Intrare · Ieșire", panel.actions.join("|") === "Deșeuri propriiN|IntrareI|IeșireE", panel.actions.join(" · "));
-check("meniul are cifrele 1–9, 0 în ordine", panel.keys.slice(0, 10).join("") === "1234567890", panel.keys.join(""));
+// Cifrele merg în ordine, câte intrări are firma — 1…9, apoi 0 pentru a zecea. Firma asta are
+// nouă de pe 18.09.2026, de când „Ambalaje" e tab în „Generare" și a ieșit din meniu; a zecea
+// cifră se probează unde chiar există a zecea intrare, nu cerută pe de rost aici.
+check("meniul are cifrele în ordine, câte intrări are",
+  panel.keys.slice(0, 10).join("") === "1234567890".slice(0, panel.items.length),
+  `${panel.keys.join("")} pe ${panel.items.length} intrări`);
 check("Generare, Intrări, Ieșiri sunt intrări proprii", ["/generare", "/intrari", "/iesiri"].every((h) => panel.items.includes(h)), panel.items.join(" "));
 check("Import și Abonament nu sunt în meniu (sunt în paletă și în Setări)", !panel.items.includes("/import"), panel.items.join(" "));
 check("panoul are 262px", panel.width === 262, panel.width + "px");

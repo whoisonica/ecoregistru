@@ -56,6 +56,9 @@ public enum PackagingMaterial {
     /** Kept because the form has the row. Only ever used when the client picks it deliberately. */
     ALTELE("Altele", Set.of());
 
+    /** {@code 15 01 02} propune „Alte plastice" fără să fie trecut în {@link #wasteCodes}: vezi {@link #suggestedFor}. */
+    private static final String PLASTIC_CODE = "15 01 02";
+
     private final String officialLabel;
 
     /**
@@ -94,7 +97,23 @@ public enum PackagingMaterial {
         return Arrays.stream(values())
                 .filter(m -> m.wasteCodes.contains(code))
                 .findFirst()
-                .or(() -> "15 01 02".equals(code) ? Optional.of(ALTE_PLASTICE) : Optional.empty());
+                .or(() -> PLASTIC_CODE.equals(code) ? Optional.of(ALTE_PLASTICE) : Optional.empty());
+    }
+
+    /**
+     * Codurile care decid singure materialul — exact cele pentru care {@link #suggestedFor}
+     * răspunde fără ca cineva să fi ales ceva pe mișcare.
+     *
+     * <p>Se citește din aceleași date ca răspunsul lui, ca lista să nu poată rămâne în urmă:
+     * o interogare care caută mișcările cu material lipsă trebuie să întrebe fix ce întreabă
+     * ecranul, altfel ar arăta rânduri pe care nu le poate repara nimeni.
+     */
+    public static Set<String> settledCodes() {
+        Set<String> codes = Arrays.stream(values())
+                .flatMap(m -> m.wasteCodes.stream())
+                .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+        codes.add(PLASTIC_CODE);
+        return codes;
     }
 
     /**

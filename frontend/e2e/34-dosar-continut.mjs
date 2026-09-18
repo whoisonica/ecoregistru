@@ -78,10 +78,12 @@ for (const [width, height] of [[1440, 900], [375, 800]]) {
     check("fișa intră, cu mișcările anului și termenul de 15 martie 2027",
       sheet?.state === "Intră" && /\d+ (de )?mișcăr/.test(sheet.text) && /15 martie 2027/.test(sheet.text), sheet?.text);
     check("centralizata intră", central?.state === "Intră", central?.text);
+    // Textele au fost scurtate pe 18.09.2026 („sunt foarte lungi, prost aranjate"), deci proba
+    // cere **ce spun**, nu cum sunau: profilul nu răspunde, iar cine completează e consultantul.
     check("Anexa 1 Ambalaje nu intră și spune că profilul nu răspunde",
-      a1?.state === "Nu intră" && /nu spune dacă e producător, importator sau comerciant/.test(a1.text), a1?.text);
-    check("Anexa 3 Ambalaje lipsește și spune de ce", a3?.state === "Lipsește" && /colector, comerciant, reciclator/.test(a3.text),
-      a3?.text);
+      a1?.state === "Nu intră" && /[Pp]rofilul nu spune/.test(a1.text) && /consultantul/.test(a1.text), a1?.text);
+    check("Anexa 3 Ambalaje lipsește și spune de ce",
+      a3?.state === "Lipsește" && /profilul nu spune ce tabel/.test(a3.text), a3?.text);
     check("proba are de unde citi câți parteneri sunt", counts !== null && counts.total > 0, JSON.stringify(counts));
     if (counts !== null && counts.total > 0) {
       // Cifra se cere lipită de început de număr: „6 parteneri” e o bucată din „16 parteneri”, iar

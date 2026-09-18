@@ -54,8 +54,9 @@ const DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
  * Cifrele ajung fix pentru zece intrări, iar a unsprezecea — Setări — ar primi litera ei: o literă
  * e mai ușor de ținut minte decât a unsprezecea cifră, care oricum nu există.
  *
- * <p>Din 18.09.2026 nicio firmă nu mai trece de zece: „Evidențe” a fost scos (era raportul
- * registrului Anexa 1, adică al ecranului „Generare”), iar firma cu depozit are fix zece intrări.
+ * <p>Din 18.09.2026 nicio firmă nu mai trece de zece — ba nici măcar nu le atinge: „Evidențe” a
+ * fost scos dimineața, „Ambalaje” după-amiaza (amândouă arătau aceleași mișcări ca „Generare”),
+ * deci firma cu depozit are nouă intrări, iar generatorul pur șase.
  * Litera rămâne, fiindcă rândul de rezervă nu se scoate până nu e sigur că nimic nu-l mai cere.
  */
 const OVERFLOW_KEY = "S";
@@ -111,8 +112,22 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
       });
     }
   }
+  /**
+   * „Ambalaje" a intrat, pe 18.09.2026, ca al treilea tab în „Generare": Anexa 1 Ambalaje se
+   * însumează din deșeul propriu al firmei, adică din chiar rândurile acelui ecran. Rămâne intrare
+   * de meniu **numai** la firmele care n-au „Generare" — colectorul pur, care are totuși Anexa 3
+   * (deșeurile de ambalaje preluate de la terți). La restul o găsește paleta, mai jos.
+   */
+  const packagingIsTab = Boolean(companyType) && screensFor(companyType).includes("GENERATED");
+  if (!packagingIsTab) {
+    main.push({
+      to: "/ambalaje",
+      label: strings.nav.packaging,
+      icon: Package,
+      keywords: strings.nav.kwPackaging,
+    });
+  }
   main.push(
-    { to: "/ambalaje", label: strings.nav.packaging, icon: Package, keywords: strings.nav.kwPackaging },
     { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock, keywords: strings.nav.kwDeadlines },
     { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile },
     { to: "/parteneri", label: strings.nav.partners, icon: Users, keywords: strings.nav.kwPartners },
@@ -150,6 +165,16 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
 
   const hidden: NavEntry[] = [];
+  // Tabul are nevoie de un nume pe care paleta să-l găsească: cine caută „ambalaje" nu trebuie să
+  // știe că ecranul a devenit un tab al „Generării".
+  if (packagingIsTab) {
+    hidden.push({
+      to: `${SCREEN_PATH.GENERATED}?tab=ambalaje`,
+      label: strings.nav.packaging,
+      icon: Package,
+      keywords: strings.nav.kwPackaging,
+    });
+  }
   if (canImport(role)) {
     hidden.push({ to: "/import", label: strings.nav.importExcel, icon: FileUp, keywords: strings.nav.kwImport });
   }

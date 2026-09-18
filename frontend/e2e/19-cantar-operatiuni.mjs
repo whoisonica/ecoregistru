@@ -35,9 +35,11 @@ const menu = await page.evaluate(() => {
 });
 check("firma cu depozit are „Cântar” în meniu", menu.hasCantar && /Cântar/.test(menu.label), menu.label);
 check("stă imediat după Ieșiri", menu.afterIesiri);
-// Cifrele ajung fix pentru zece intrări. De când „Evidențe" a fost scos (18.09.2026), meniul firmei
-// cu depozit are exact zece — deci Setările sunt iar pe „0", nu pe litera de rezervă.
-check("Setările au ultima cifră, nu litera de rezervă", menu.settingsKey === "0", String(menu.settingsKey));
+// Cifrele ajung fix pentru zece intrări, și niciun tip de firmă nu mai are atâtea: „Evidențe" a
+// ieșit din meniu dimineața, „Ambalaje" după-amiaza (18.09.2026), amândouă fiindcă arătau aceleași
+// mișcări ca „Generare". Firma cu depozit are nouă, deci Setările poartă „9" — o cifră, nu litera
+// de rezervă, care rămâne în cod pentru ziua în care meniul trece iar de zece.
+check("Setările au o cifră, nu litera de rezervă", /^[0-9]$/.test(menu.settingsKey ?? ""), String(menu.settingsKey));
 
 // ---------------------------------------------------------------- ECRANUL
 await page.goto(BASE + "/cantar", { waitUntil: "networkidle" });

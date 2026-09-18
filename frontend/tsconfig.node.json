@@ -1,6 +1,11 @@
 {
   "compilerOptions": {
     "composite": true,
+    // ⚠️ `composite` **emite**, iar fără `outDir` emitea chiar lângă sursă: `vite.config.js` și
+    // `vite.config.d.ts`, ajunse și în git (14.09.2026). Vite preferă `.js`-ul celui `.ts`, deci
+    // orice schimbare în `vite.config.ts` rămânea fără efect până la următorul `npm run build` —
+    // o capcană tăcută, găsită pe 18.09.2026 când o ținta de proxy mutată din mediu n-a pornit.
+    "outDir": "./node_modules/.tmp/tsconfig-node",
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",

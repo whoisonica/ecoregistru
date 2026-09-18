@@ -55,6 +55,7 @@ export function useMovements(
       if (filters.direction) params.direction = filters.direction;
       if (filters.missingOperationCode) params.missingOperationCode = true;
       if (filters.register) params.register = filters.register;
+      if (filters.packaging) params.packaging = filters.packaging;
       if (table.search) params.search = table.search;
       if (table.sort) {
         params.sort = table.sort;
@@ -121,6 +122,9 @@ export function useMovementTotals(filters: MovementFilters, enabled = true) {
       if (filters.workPointId) params.workPointId = filters.workPointId;
       if (filters.register) params.register = filters.register;
       if (filters.direction) params.direction = filters.direction;
+      // Banda stă deasupra listei, deci descrie aceleași rânduri: o tastă de ambalaje apăsată
+      // schimbă și cifrele de sus, altfel „Predat 12.640 kg" ar fi al altui tabel decât cel citit.
+      if (filters.packaging) params.packaging = filters.packaging;
       return (await api.get<MovementTotals>("/api/v1/movements/totals", { params })).data;
     },
   });

@@ -10,7 +10,7 @@ const SCREENS = [
   [`/intrari?luna=${AN}`, "intrari"],
   [`/iesiri?luna=${AN}`, "iesiri"],
   ["/generare?tab=total", "totalul-anului"],
-  ["/ambalaje", "ambalaje"],
+  ["/generare?tab=ambalaje", "ambalaje"],
   ["/termene", "termene"],
   ["/parteneri", "parteneri"],
   ["/setari", "setari"],

@@ -10,6 +10,11 @@ backend/bin/
 frontend/node_modules
 frontend/dist/
 frontend/.vite/
+# Ieșirea lui `tsc -b` pentru `vite.config.ts`: `composite` emite, iar **vite preferă `.js`-ul
+# fișierului `.ts`**, deci o copie veche lăsată aici face ca orice schimbare de configurație să
+# n-aibă efect (pierdut o oră pe 18.09.2026). `tsconfig.node.json` o trimite acum în `.tmp`.
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # IDE
 .idea/

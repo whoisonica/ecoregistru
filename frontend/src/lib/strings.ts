@@ -601,7 +601,7 @@ export const strings = {
     // „Generare" — Anexa 1: deșeul firmei și ce se întâmplă cu el. Pe 14.09.2026 specialista a
     // cerut „Ieșiri"; proprietarul l-a numit în aceeași seară după ce se înregistrează: generarea.
     generatorTitle: "Generare de deșeuri",
-    generatorSubtitle: "Deșeurile generate de firmă și ce se întâmplă cu ele, pentru fișa Anexa 1 și rapoartele de generator.",
+    generatorSubtitle: "Deșeurile firmei și ce s-a întâmplat cu ele, pentru fișa Anexa 1.",
     // Taburile ecranului de generare (18.09.2026, proprietarul: „și Generare și Evidența e la
     // fel?"). Ecranul „Evidențe" a fost scos: agrega exact mișcările registrului `ANEXA_1`, adică
     // exact rândurile de aici. Ce avea numai el — totalul anului pe cod — a devenit al doilea tab;
@@ -609,10 +609,27 @@ export const strings = {
     tabsLabel: "Generare",
     tabMovements: "Mișcări",
     tabAnnual: "Totalul anului",
+    // Al treilea tab, 18.09.2026, din același motiv ca al doilea: „Ambalaje" era un ecran care
+    // își ținea propriul registru cu mișcările pe coduri 15 01 xx — aceleași rânduri de aici,
+    // într-un al doilea tabel. Registrul a rămas unul singur, iar întrebările lui au devenit
+    // tastele de mai jos.
+    tabPackaging: "Ambalaje",
+
+    // --- tastele de ambalaje de deasupra listei ---
+    packagingFilterLabel: "Filtrează",
+    packagingFilterAll: "Toate mișcările",
+    packagingFilterAny: "Ambalaje",
+    packagingFilterOnMarket: "Ambalaj pus de noi pe piață",
+    packagingFilterIncomplete: "De completat",
+    // Legătura în celălalt sens: de pe tabul „Ambalaje", fiecare semnal duce la rândurile lui.
+    packagingSeeMovements: "Vezi mișcările",
     // Filtrul care leagă Acasă, panoul și totalul anului de rândurile vinovate. Stă în adresă,
     // deci linkul se poate și trimite.
     onlyMissingCode: "Doar mișcările fără cod R/D",
     onlyMissingCodeOff: "Arată toate mișcările",
+    // Coloanele care apar numai cu o tastă de ambalaje apăsată își iau numele din `packaging`:
+    // sunt chiar coloanele tabului „Ambalaje", iar un al doilea rând de texte care spun același
+    // lucru ajunge întotdeauna să nu-l mai spună.
     // „Adaugă deșeuri" pe generator, „Deșeuri proprii" acolo unde firma e și colector (proprietarul,
     // 15.09.2026): numele spune ce face omul, nu ce coloană se umple.
     generatorAdd: "Adaugă deșeuri",
@@ -1604,8 +1621,7 @@ export const strings = {
   },
   partners: {
     title: "Parteneri",
-    subtitle:
-      "Firmele cu care lucrezi: clienții (le predai deșeu și le facturezi) și furnizorii (îți prestează serviciul și îți facturează).",
+    subtitle: "Firmele cu care lucrezi: cui predai deșeul și cine îți prestează serviciul.",
     add: "Adaugă partener",
     addTitle: "Adaugă partener",
     editTitle: "Editează partenerul",
@@ -1831,13 +1847,15 @@ export const strings = {
     // de dedesubt, în `aria-label` și, acolo unde chiar contează, pe documentul tipărit.
     anexa1Button: "Evidența gestiunii deșeurilor",
     annualDeclarationButton: "Evidența centralizată",
-    anexa1Hint:
-      "„Evidența gestiunii deșeurilor generate” — formularul din HG 856/2002, anexa 1.",
+    // ⚠️ Sub 40 de semne, ca să stea pe **un rând** în coloana lui de 270px (18.09.2026): scrise
+    // mai lung, cele patru explicații de sub documente se rupeau fiecare pe alt număr de rânduri și
+    // rândul de butoane arăta neîngrijit. Numele întreg din act e pe buton și pe `aria-label`,
+    // deci explicația spune ce e documentul, nu cum îl cheamă a doua oară.
+    anexa1Hint: "Formularul din HG 856/2002, anexa 1.",
     anexa1Error: "Evidența gestiunii deșeurilor nu a putut fi generată.",
     // Fosta „Declarația anuală", redenumită la cererea specialistei pe 15.09.2026.
     annualDeclaration: "Evidența gestiunii deșeurilor centralizată",
-    annualDeclarationHint:
-      "„Evidența gestiunii deșeurilor centralizată” — o pagină per punct de lucru.",
+    annualDeclarationHint: "O pagină per punct de lucru.",
     annualDeclarationError: "Evidența centralizată nu a putut fi generată.",
 
     // --- Totalul anului pe cod: tabul „Totalul anului” de pe Generare (18.09.2026) ---
@@ -1859,7 +1877,7 @@ export const strings = {
     blockerMissingCode: "{kg} kg au plecat fără cod R/D",
     blockerAwaiting: "{count} așteaptă cântarul destinatarului",
     download: "Descarcă",
-    staleNote: "Se recalculează singure din deșeurile înregistrate.",
+    staleNote: "Se recalculează din ce ai înregistrat.",
     regenerateNow: "Recalculează acum",
     // Cele două exporturi generice au stat până pe 08.09 în antet, la fel de vizibile ca cele două
     // documente oficiale — cinci butoane pe un rând, care strângeau titlul paginii pe trei rânduri.
@@ -1908,8 +1926,7 @@ export const strings = {
 
   deadlines: {
     title: "Termene de raportare",
-    subtitle:
-      "Următorul termen al fiecărei raportări pe care o datorează firma. Când unul e bifat sau trece, apare următorul.",
+    subtitle: "Următorul termen al fiecărei raportări pe care o datorează firma.",
     generate: "Verifică termenele",
     generating: "Se verifică...",
     // „Termene generate: 1 noi" — substantivul și adjectivul intră amândouă în `countOf`, iar
@@ -1943,7 +1960,7 @@ export const strings = {
     doneEmpty: "Niciun termen bifat în {year}.",
     pastTitle: "Trecute",
     pastEmpty: "Niciun termen trecut în {year}.",
-    pastHint: "Termenele din {year} cu data înainte de azi, bifate sau nu. Anii dinainte nu apar. „Calculat” e socotit din profilul firmei, pentru perioada în care termenul nu era urmărit în aplicație, și nu se bifează.",
+    pastHint: "Termenele din {year} trecute de azi, bifate sau nu. „Calculat” vine din profil și nu se bifează.",
     pastOpen: "Nebifat",
     pastComputed: "Calculat",
     tabsLabel: "Termene",
@@ -1997,8 +2014,10 @@ export const strings = {
 
   auditFile: {
     title: "Dosar de control",
-    subtitle:
-      "Descarcă într-o singură arhivă tot ce ai nevoie la un control: evidența, autorizațiile partenerilor și documentele atașate.",
+    // Scurte, ca rândurile listei „Ce intră în arhivă" să se citească dintr-o privire: fiecare
+    // stă lângă o stare („Intră" / „Nu intră" / „Lipsește"), iar o explicație de trei rânduri
+    // sub fiecare făcea lista un perete de text (proprietarul, 18.09.2026).
+    subtitle: "Într-o arhivă: evidența, autorizațiile partenerilor și atașamentele.",
     filterYear: "An",
     // Perioada acoperită. Trei ani e termenul de păstrare din OUG 92/2021 art. 48 alin. (5) —
     // exact cât poate cere un control —, dar implicit rămâne un an: cel mai des se descarcă
@@ -2048,8 +2067,8 @@ export const strings = {
     docPartners: "Autorizațiile partenerilor",
     docAttachments: "Atașamente",
     /** {count} = „12 mișcări”. */
-    sheetYes: "{count} în {year}: cele 4 capitole, o pagină pe fiecare cod de deșeu. Termen de depunere: 15 martie {next}.",
-    centralizedYes: "{count} în {year}: un rând pe fiecare cod de deșeu, o pagină pe punct de lucru.",
+    sheetYes: "{count} în {year}: o pagină pe cod de deșeu. Termen: 15 martie {next}.",
+    centralizedYes: "{count} în {year}: un rând pe cod, o pagină pe punct de lucru.",
     noMovements: "Nicio mișcare înregistrată în {year}, deci foaia iese fără date.",
     yearMovements: "{year}: {count}",
     yearNoMovements: "{year}: fără mișcări, foaia iese fără date",
@@ -2057,10 +2076,9 @@ export const strings = {
     movementMany: "mișcări",
     packagingIncluded:
       ".xls și PDF: firma pune ambalaje pe piață (producător sau importator). Termen: 25 februarie.",
-    packagingTrader:
-      "Firma e doar comerciant: vinde marfă ambalată de alții, deci nu depune declarația de ambalaje.",
+    packagingTrader: "Firma e doar comerciant, deci nu depune declarația de ambalaje.",
     packagingNotAnswered:
-      "Profilul firmei nu spune dacă e producător, importator sau comerciant, deci nu se știe dacă o datorează. Îl completează consultantul care îți administrează contul.",
+      "Profilul nu spune dacă firma pune ambalaje pe piață. Îl completează consultantul.",
     anexa3Yes: ".xls și PDF pe fiecare punct de lucru cu deșeuri de ambalaje: {points}.",
     anexa3YesYear: "{year}: {points}",
     anexa3ExitsOnly: "Firma e generator: anexa are numai predările și nu are termen de depunere.",
@@ -2068,7 +2086,7 @@ export const strings = {
     anexa3None: "Niciun punct de lucru n-a avut deșeuri de ambalaje (coduri 15 01) în {year}.",
     anexa3NonePeriod: "Niciun punct de lucru n-a avut deșeuri de ambalaje (coduri 15 01) în perioada aleasă.",
     anexa3RoleMissing:
-      "{year} are deșeuri de ambalaje, dar profilul firmei nu spune dacă e colector, comerciant, reciclator sau valorificator, deci nu se știe ce tabel se completează. Îl completează consultantul care îți administrează contul.",
+      "{year} are deșeuri de ambalaje, dar profilul nu spune ce tabel se completează. Îl completează consultantul.",
     /** {count} = „6 parteneri”. */
     partnersYes: "{count}, cu autorizația, viza și statusul citit azi.",
     partnerOne: "partener",
@@ -2078,7 +2096,7 @@ export const strings = {
     expiredMany: "parteneri",
     partnersSoon: "{count} cu autorizația care expiră în următoarele 60 de zile.",
     partnersNone: "Nu ai parteneri înregistrați, deci lista iese goală.",
-    note: "Notă: în afară de evidența gestiunii deșeurilor, dosarul NU înlocuiește formularele oficiale (SIM / AFM); e un pachet de lucru pentru pregătirea controlului.",
+    note: "Dosarul nu înlocuiește formularele oficiale (SIM, AFM) — e pachetul de lucru pentru control.",
   },
 
   clients: {
@@ -3360,33 +3378,27 @@ export const strings = {
 
 
   packaging: {
-    searchPlaceholder: "Caută după cod, denumire, partener...",
     title: "Ambalaje",
-    subtitle:
-      "Tot ce ține de ambalaje, într-un loc. Mișcările pe coduri 15 01 xx sunt registrul; din ele se însumează cele două tabele ale Anexei 1 Ambalaje (Ordinul 794/2012), care se depune la agenția județeană de mediu până pe 25 februarie, pentru anul anterior. Totul în kilograme, cum cere art. 8 din ordin.",
+    // ⚠️ Scurt, dinadins (proprietarul, 18.09.2026: explicațiile de sub butoane „sunt foarte lungi,
+    // prost aranjate"). Regula ecranului: **o linie** sub fiecare lucru, ca la „Totalul anului".
+    // Temeiul legal rămâne, dar unde se citește o dată — nu sub fiecare buton.
+    subtitle: "Anexa 1 Ambalaje și Anexa 3, însumate din mișcările pe coduri 15 01 xx. În kilograme.",
     year: "Anul",
     download: "Descarcă Anexa 1 Ambalaje",
-    downloadXls: "XLS — formatul de depunere",
-    downloadPdf: "PDF — pentru dosar",
-    downloadHint:
-      "Art. 6 din Ordinul 794/2012 cere raportarea „în format electronic «.xls»”, cu cele două foi. PDF-ul e aceeași declarație, pentru dosarul de control.",
+    // Un singur buton, cu numele documentului, și cele două formate în meniu — ca „Evidența
+    // cronologică" de pe Intrări/Ieșiri (18.09.2026): numele actului o dată, nu de două ori.
+    downloadXls: ".xls",
+    downloadXlsHint: "Formatul cerut de art. 6 — ăsta se depune.",
+    downloadPdf: "PDF",
+    downloadPdfHint: "Pentru dosar și pentru semnătură.",
+    downloadHint: "Ce ai pus tu pe piața națională. Termen: 25 februarie.",
     downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
     saveError: "Cifra nu a putut fi salvată.",
 
-    // --- cuprinsul paginii ---
-    // Patru tabele mari unul sub altul plus grila de suprascriere: cea mai lungă pagină din
-    // aplicație. Etichetele sunt scurte dinadins — bara stă pe un rând, și pe telefon. Titlurile
-    // întregi, cu temeiul legal, rămân pe secțiuni.
-    sections: "Pe pagină",
-    navRegister: "Mișcări",
-    navTable1: "Tabelul 1",
-    navTable2: "Tabelul 2",
-    navAnexa3: "Anexa 3",
-
-    // --- registrul ---
-    registerTitle: "Mișcări de ambalaje",
-    registerHint:
-      "Fiecare mișcare înregistrată pe un cod 15 01 xx. Astea sunt kilogramele din care se face declarația — cartonul înregistrat pe 20 01 01 nu intră aici, intră în evidența gestiunii deșeurilor.",
+    // Cuprinsul paginii și registrul de mișcări au plecat pe 18.09.2026: patru tabele mari unul
+    // sub altul, dintre care unul dubla lista de la „Generare". Registrul e unul singur, în
+    // „Mișcări", cu tastele de ambalaje deasupra; aici au rămas tabelele și documentele, care nu
+    // se găsesc nicăieri altundeva. Textele lui au plecat cu el.
     inAnexa1: "În Anexa 1",
     inAnexa1Yes: "Da",
     inAnexa1No: "Nu — nu l-am pus noi pe piață",
@@ -3395,52 +3407,33 @@ export const strings = {
       "Mișcare de dinaintea bifei. Intră în declarație ca până acum; deschide-o și confirmă, ca să nu rămână o presupunere pe un formular depus.",
     inAnexa1NoHint:
       "Ambalajul l-a pus pe piață altcineva, deci nu intră în Anexa 1 Ambalaje. Rămâne în evidența gestiunii deșeurilor.",
-    origin: "Proveniența",
-    originOwnShort: "Deșeu propriu",
-    originTakeoverShort: "Preluat de la terți",
-    originTakeoverInTab:
-      "Marfă preluată de la terți: apare aici fiindcă e ambalaj, dar NU intră în Anexa 1 — nu e deșeul tău. Raportul ei e Anexa 3 la Ordinul 794/2012, mai jos.",
-    registerEmpty:
-      "Nicio mișcare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
-    date: "Data",
-    code: "Cod",
     kind: "Felul ambalajului",
-    partner: "Partener",
-    workPoint: "Punct de lucru",
     fromCode: "din cod",
-    goToMovements: "Deschide în Mișcări",
-    addMovement: "Adaugă mișcare",
+    // Scurte, fiindcă stau sub codul de deșeu, în lista de mișcări: acolo „Completează" singur
+    // n-ar spune ce anume, iar rândul are deja alte trei lucruri de citit.
+    missingMaterialShort: "Fără material",
+    missingKindShort: "Fără felul ambalajului",
+    reusableShort: "reutilizabil",
+    hazardousShort: "conținut periculos",
 
     // --- semnale ---
     blockedTitle: "Nu intră în declarație",
-    blockedMissingMaterial:
-      "{count} fără materialul ambalajului. Codul nu îl decide singur: 15 01 04 acoperă și aluminiul, și oțelul; 15 01 02 și PET-ul, și navetele. Alege-l pe mișcare.",
-    blockedMissingCategory:
-      "{count} fără felul ambalajului (desfacere / primar / secundar și de transport) — fără el nu există coloană în tabelul 1.",
+    blockedMissingMaterial: "{count} fără materialul ambalajului — codul nu-l decide singur.",
+    blockedMissingCategory: "{count} fără felul ambalajului — fără el n-au coloană în tabelul 1.",
     awaitingWeighing: "{count} încă de cântărit — cantitatea lipsește din ambele tabele.",
     missingOperation: "{count} fără cod R/D — operatorul apare, operațiunea rămâne goală.",
     fix: "Completează",
-    // Badge-ul „Completează" spune ce lipsește; acțiunea de pe rând duce chiar la mișcarea unde
-    // se completează. Registrul de ambalaje era al treilea raport care numea vinovatul și se
-    // oprea acolo.
-    fixOnMovement: "Completează",
 
     // --- tabelul 1 ---
     table1Title: "Tabel 1. Ambalaje introduse pe piața națională",
-    table1Hint:
-      "Se însumează din mișcări: materialul dă rândul, felul ambalajului dă coloana. Coloana „Total (col. 3+5)” e o sumă. O celulă fără nicio mișcare rămâne goală — „gol” nu înseamnă „zero”, și pe un formular depus e altceva.",
+    table1Hint: "Materialul dă rândul, felul ambalajului dă coloana. O celulă goală nu e zero.",
     table1Override:
-      "Dacă cifra reală de piață diferă de ce arată mișcările — tabelul e despre marfa vândută, nu despre deșeu — o poți scrie tu, pe materialul respectiv. Rândul scris de tine înlocuiește rândul calculat și e marcat ca atare.",
+      "Tabelul e despre marfa vândută, nu despre deșeu: dacă știi altă cifră, scrie-o aici. Rândul tău îl înlocuiește pe cel calculat.",
     overrideOpen: "Scrie cifre proprii",
     overrideClose: "Ascunde cifrele proprii",
     overriddenBadge: "scris de tine",
     computedBadge: "din mișcări",
-    overrideClear: "Golește rândul ca să revii la cifra din mișcări.",
-    // Grila are șaizeci și șase de celule și se salvează singură, un rând odată, la ieșirea din
-    // celulă. Până pe 08.09.2026 se vedeau numai erorile: o salvare reușită nu spunea nimic, deci
-    // cine completa tot tabelul n-avea de unde ști câte cifre au ajuns.
-    overrideAutosaveHint:
-      "Se salvează singur, un rând odată, când ieși din celulă. Coloana „Stare” spune ce s-a salvat și ce nu.",
+    overrideClear: "Se salvează singur când ieși din celulă; un rând golit revine la cifra din mișcări.",
     overrideStatus: "Stare",
     overrideDirty: "nesalvat",
     overrideSaving: "se salvează…",
@@ -3452,8 +3445,7 @@ export const strings = {
 
     // --- tabelul 2 ---
     table2Title: "Tabelul 2. Deșeuri de ambalaje gestionate",
-    table2Hint:
-      "Se completează singur, din predările înregistrate pe coduri 15 01 xx — un rând pentru fiecare operator care a preluat, cum cere nota 1 a formularului.",
+    table2Hint: "Un rând pentru fiecare operator care a preluat, din predările pe coduri 15 01 xx.",
 
     material: "Material",
     colSales: "Ambalaje de desfacere fabricate/importate",
@@ -3470,20 +3462,20 @@ export const strings = {
     operator: "Operatorul care a preluat",
     operatorCui: "CUI",
     operation: "Operațiunea",
-    noHandovers:
-      "Nicio predare pe coduri 15 01 xx în anul ales. Dacă ai predat ambalaje, verifică sub ce cod le-ai înregistrat.",
+    noHandovers: "Nicio predare pe coduri 15 01 xx în anul ales.",
 
     // --- Anexa 3: raportul anual al colectorilor, comercianților, reciclatorilor și valorificatorilor ---
     anexa3Title: "Anexa 3. Deșeuri de ambalaje preluate de la terți",
-    anexa3Hint:
-      "Celălalt capăt al lanțului față de Anexa 1: aceea raportează ce ai pus tu pe piață, asta raportează ce ai preluat de la alții și ce ai făcut cu marfa. Se însumează din mișcările de preluare pe coduri 15 01 xx. Termen: 25 februarie, ca și Anexa 1.",
+    anexa3Hint: "Ce ai preluat de la alții și ce ai făcut cu marfa. Termen: 25 februarie.",
     anexa3WorkPoint: "Punct de lucru",
     anexa3AllWorkPoints: "Toate punctele de lucru",
-    anexa3WorkPointHint:
-      "Art. 4 alin. (4) cere raportarea „pentru fiecare punct de lucru în parte”, iar alin. (3) o trimite la agenția din raza punctului de lucru — deci două puncte de lucru în două județe înseamnă două depuneri, la doi destinatari. Alege punctul de lucru înainte să descarci.",
+    // Scurtate pe 18.09.2026: erau paragrafe de 150–325 de semne sub controale și sub titluri,
+    // rupte pe două–patru rânduri. O linie fiecare, cu articolul în paranteză unde chiar schimbă
+    // ce faci; restul temeiului stă în `docs/surse-oficiale.md`, nu sub fiecare buton.
+    anexa3WorkPointHint: "Se depune pe fiecare punct de lucru, la agenția lui (art. 4).",
     anexa3RoleMissing: "Nu știm care tabel ți se aplică",
     anexa3RoleMissingHint:
-      "Ordinul 794/2012 art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2” — tabelul 1 pentru colectori și comercianți, tabelul 2 pentru reciclatori și valorificatori. Care anume ține de calitatea firmei, pe care numai tu o știi. Până răspunzi, nu tipărim nimic: un formular depus ar afirma în locul tău o calitate juridică.",
+      "Tabelul 1 e al colectorilor și comercianților, tabelul 2 al reciclatorilor și valorificatorilor (art. 4). Care ți se aplică o știi numai tu, deci până răspunzi nu tipărim nimic.",
     anexa3RoleMissingAction: "Completează calitatea în profilul firmei",
     anexa3Addressee: "Se depune la",
     // Cei doi destinatari din art. 4 alin. (3): toți depun la agenția din raza punctului de lucru,
@@ -3500,14 +3492,12 @@ export const strings = {
     anexa3AddresseeAnmap: "ANMAP",
     anexa3AddresseeLocal: "agenția județeană pentru protecția mediului din raza punctului de lucru",
     anexa3ExitsTitle: "Anexa 3. Deșeuri de ambalaje predate — ieșiri",
-    anexa3ExitsHint:
-      "Ambalajele pe care le-ai predat în anul ales, pe material și pe firma care le-a preluat. Se însumează din predările de pe Generare, pe coduri 15 01 xx.",
+    anexa3ExitsHint: "Ce ai predat, pe material și pe firma care a preluat.",
     anexa3ExitsTableTitle: "Ieșiri — ce ai predat și cui",
     anexa3Table1Title: "Tabelul 1 — colectori și comercianți",
     anexa3Table2Title: "Tabelul 2 — reciclatori și valorificatori",
     anexa3IntakeTitle: "Cantitatea preluată",
-    anexa3IntakeHint:
-      "Un rând pentru fiecare material și fiecare proveniență, cum desenează formularul. Proveniența se răspunde o dată pe partener; „populație” se alege pe mișcare, fiindcă o persoană fizică nu e partener.",
+    anexa3IntakeHint: "Un rând pe material și proveniență, cum desenează formularul.",
     anexa3ColTotal: "Total (kg)",
     anexa3ColHazardous: "din care periculoase",
     anexa3ColOrigin: "Proveniența",
@@ -3518,9 +3508,8 @@ export const strings = {
     anexa3ColOtherRecovery: "Cantitatea valorificată prin alte metode (kg)",
     anexa3ColMethods: "Metoda",
     anexa3RecyclingHint:
-      "Împărțirea se citește din act, nu se ghicește: OUG 92/2021 anexa nr. 3 numește „Reciclarea/Recuperarea” exact trei operațiuni — R3, R4 și R5. Restul codurilor R sunt valorificare prin alte metode; R1 e arderea pentru energie, deci sigur nu reciclare. Codurile D nu intră în niciuna: eliminarea nu e valorificare.",
-    anexa3Empty:
-      "Nicio preluare de ambalaje în anul ales. Anexa 3 se completează din mișcări cu operațiunea „Preluare” pe coduri 15 01 xx.",
+      "Reciclare = R3, R4, R5 (OUG 92/2021, anexa 3). Restul codurilor R sunt alte metode; codurile D nu intră deloc.",
+    anexa3Empty: "Nicio preluare de ambalaje în anul ales (operațiunea „Preluare”, coduri 15 01 xx).",
     anexa3UnclassifiedTitle: "Nu intră în tabel",
     anexa3MissingOrigin:
       "{count} fără proveniență. Răspunde o dată pe partener, în Parteneri — sau pe mișcare, dacă marfa vine de la populație.",
@@ -3529,11 +3518,9 @@ export const strings = {
     anexa3MissingQuantity:
       "{count} încă de cântărit. Fără kilograme nu intră în niciun tabel — completează cantitatea când vine cifra de la cântar.",
     anexa3Download: "Descarcă Anexa 3",
-    anexa3DownloadHint:
-      "Același art. 6 ca la Anexa 1: „.xls” protejat pentru depunere, plus exemplarul pe hârtie. Se tipărește un singur tabel — cel care ți se aplică.",
+    anexa3DownloadHint: "„.xls” pentru depunere, PDF pentru dosar. Se tipărește tabelul care ți se aplică.",
     anexa3DownloadError: "Anexa 3 nu a putut fi generată.",
-    anexa3PickWorkPoint:
-      "Alege un punct de lucru ca să descarci. „Toate” e doar o privire de ansamblu pe ecran: art. 4 alin. (4) cere raportarea pentru fiecare punct de lucru în parte, iar un formular cu rubrica „Punct de lucru” goală nu se poate depune.",
+    anexa3PickWorkPoint: "Alege un punct de lucru ca să descarci — „Toate” e doar pentru ecran.",
   },
 
   /** Cele patru cuvinte pe care nota 2 a Anexei 3 le permite la „Proveniența". */

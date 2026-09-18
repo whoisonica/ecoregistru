@@ -1,5 +1,9 @@
-// Proba 8: atașamentele citite din tabel, formularul de partener pe secțiuni, cuprinsul de pe
-// Ambalaje și paleta care găsește documente și pornește acțiuni.
+// Proba 8: atașamentele citite din tabel, formularul de partener pe secțiuni, cuprinsul fișei de
+// firmă și paleta care găsește documente și pornește acțiuni.
+//
+// ⚠️ Cuprinsul se proba pe „Ambalaje" până pe 18.09.2026, când ecranul a devenit tab în „Generare"
+// și cuprinsul lui a plecat cu totul. Primitiva a rămas pe fișa firmei (`/clienti/:id`), deci
+// acolo s-a mutat și proba — aceleași trei defecte, altă pagină.
 //
 // Cele patru felii au un lucru comun: `tsc` le vede compilate în toate cele patru cazuri, iar în
 // trei din patru „gata" ar fi însemnat ceva ce nu se poate apăsa. Atașamentele erau o cifră fără
@@ -139,26 +143,41 @@ await shot(page, "partener_sectiuni");
 await page.keyboard.press("Escape");
 await page.waitForTimeout(400);
 
-// ---------------------------------------------------------- CUPRINSUL DE PE AMBALAJE
-// Patru tabele mari unul sub altul plus grila de 66 de celule: cea mai lungă pagină din aplicație.
-await page.goto(BASE + "/ambalaje", { waitUntil: "networkidle" });
-await page.waitForTimeout(1000);
+// ---------------------------------------------------------- CUPRINSUL, PE FIȘA FIRMEI
+// Era pe „Ambalaje", cea mai lungă pagină din aplicație — până pe 18.09.2026, când tabelele ei au
+// intrat ca tab în „Generare" și cuprinsul a plecat (un cuprins înăuntrul unui tab e tab în tab).
+// Primitiva `SectionNav` a rămas, pe fișa firmei, cu șapte secțiuni; acolo se probează mai departe,
+// fiindcă cele trei defecte de mai jos sunt ale ei, nu ale ecranului pe care stătea.
+const paginaFirmei = await newPage(browser, { width: 1440, height: 900 });
+await login(paginaFirmei, "platform");
+const firmaId = await paginaFirmei.evaluate(async () => {
+  const auth = { Authorization: "Bearer " + localStorage.getItem("eco_token") };
+  const res = await fetch("/api/v1/companies", { headers: auth });
+  const list = res.ok ? await res.json() : [];
+  return list[0]?.id ?? null;
+});
+check("s-a găsit o firmă pe care să se deschidă fișa", Boolean(firmaId), firmaId ?? "niciuna");
+await paginaFirmei.goto(BASE + "/clienti/" + firmaId, { waitUntil: "networkidle" });
+await paginaFirmei.waitForTimeout(1200);
 
-const cuprins = await page.$$eval("nav[aria-label] a[href^='#']", (as) =>
+const cuprins = await paginaFirmei.$$eval("nav[aria-label] a[href^='#']", (as) =>
   as.map((a) => ({ href: a.getAttribute("href"), text: a.textContent.trim() }))
 );
-check("pagina are cuprins", cuprins.length === 4, cuprins.map((c) => c.text).join(" · "));
+check("fișa are cuprins", cuprins.length >= 4, cuprins.map((c) => c.text).join(" · "));
 check(
   "fiecare intrare are ținta ei",
-  await page.evaluate((hs) => hs.every((h) => !!document.querySelector(h)), cuprins.map((c) => c.href)),
+  cuprins.length > 0 &&
+    (await paginaFirmei.evaluate((hs) => hs.every((h) => !!document.querySelector(h)), cuprins.map((c) => c.href))),
   cuprins.map((c) => c.href).join(" ")
 );
 
 // Cele trei defecte ale cuprinsului din „Setări" s-au văzut abia pe captură, cu DOM-ul verde:
 // coloana de acțiuni a tabelelor e și ea lipicioasă și vine după bară în DOM. Aici se măsoară.
-await page.evaluate(() => document.querySelector("#tabelul-1")?.scrollIntoView({ block: "start" }));
-await page.waitForTimeout(500);
-const bara = await page.evaluate(() => {
+const aDoua = cuprins[1]?.href ?? "";
+const ultima = cuprins[cuprins.length - 1]?.href ?? "";
+await paginaFirmei.evaluate((sel) => document.querySelector(sel)?.scrollIntoView({ block: "start" }), aDoua);
+await paginaFirmei.waitForTimeout(500);
+const bara = await paginaFirmei.evaluate(() => {
   const nav = document.querySelector("nav[aria-label] a[href^='#']")?.closest("nav");
   if (!nav) return null;
   const r = nav.getBoundingClientRect();
@@ -174,46 +193,58 @@ check("și nimic nu trece peste ea", bara && !bara.acoperita);
 
 // Clicul chiar duce acolo, și marcajul se mută pe secțiunea curentă.
 //
-// Se probează pe **Tabelul 1**, nu pe una de la coadă: `scroll-mt-20` duce secțiunea sub bară
-// numai dacă pagina mai are unde curge. Ultimele două intră amândouă în ultimul ecran — clicul pe
-// ele ajunge la fundul paginii, nu la titlul lor — și tocmai de asta `SectionNav` are ramura „la
-// fund", scrisă după ce prima variantă a fost văzută greșind pe o captură.
-await clickAt(page, "nav[aria-label] a[href='#tabelul-1']");
-await page.waitForTimeout(900);
-const laMijloc = await page.evaluate(() => ({
+// Se probează pe **a doua** secțiune, nu pe una de la coadă: `scroll-mt` duce secțiunea sub bară
+// numai dacă pagina mai are unde curge. Ultimele intră toate în ultimul ecran — clicul pe ele
+// ajunge la fundul paginii, nu la titlul lor — și tocmai de asta `SectionNav` are ramura „la fund",
+// scrisă după ce prima variantă a fost văzută greșind pe o captură.
+await clickAt(paginaFirmei, `nav[aria-label] a[href='${aDoua}']`);
+await paginaFirmei.waitForTimeout(900);
+const laMijloc = await paginaFirmei.evaluate((sel) => ({
   activ: document.querySelector("nav[aria-label] a[aria-current='true']")?.getAttribute("href"),
-  sus: Math.round(document.querySelector("#tabelul-1").getBoundingClientRect().top),
-}));
+  sus: Math.round(document.querySelector(sel).getBoundingClientRect().top),
+}), aDoua);
 check("clicul duce la secțiune", laMijloc.sus >= 0 && laMijloc.sus < 200, `${laMijloc.sus}px`);
-check("și marcajul o urmează", laMijloc.activ === "#tabelul-1", laMijloc.activ ?? "niciunul");
-// `scroll-mt-20` = 80px. Sub 40 ar însemna că titlul intră pe sub bara lipicioasă.
+check("și marcajul o urmează", laMijloc.activ === aDoua, laMijloc.activ ?? "niciunul");
+// `scroll-mt-24` = 96px. Sub 40 ar însemna că titlul intră pe sub bara lipicioasă.
 check("titlul nu intră sub bară", laMijloc.sus > 40, `${laMijloc.sus}px sub antet`);
 
-// Ultima secțiune: marcajul trebuie să ajungă pe ea chiar dacă titlul ei rămâne la jumătatea
-// ecranului. Prima variantă a primitivei marca aici secțiunea de dinainte.
-await clickAt(page, "nav[aria-label] a[href='#anexa-3']");
-await page.waitForTimeout(900);
-const laCoada = await page.evaluate(() => {
-  const sec = document.querySelector("#anexa-3");
+// Ultima secțiune: marcajul trebuie să ajungă pe ea chiar dacă titlul ei nu urcă niciodată sus —
+// pagina se termină înaintea lui. Prima variantă a primitivei marca aici secțiunea de dinainte.
+//
+// Se probează **ramura „la fund"**, prin derulare până jos, nu prin clic pe ultima intrare: pe o
+// pagină destul de lungă clicul îi duce titlul sus, fără să atingă fundul, și atunci verificarea
+// ar spune ceva despre lungimea paginii, nu despre cuprins.
+await clickAt(paginaFirmei, `nav[aria-label] a[href='${ultima}']`);
+await paginaFirmei.waitForTimeout(900);
+check("clicul pe ultima intrare mută marcajul pe ea",
+  (await paginaFirmei.evaluate(() => document.querySelector("nav[aria-label] a[aria-current='true']")?.getAttribute("href"))) === ultima);
+
+const laCoada = await paginaFirmei.evaluate(async (sel) => {
+  const sec = document.querySelector(sel);
   let sc = sec.parentElement;
   while (sc && !(getComputedStyle(sc).overflowY.match(/auto|scroll/) && sc.scrollHeight > sc.clientHeight)) {
     sc = sc.parentElement;
   }
+  if (sc) sc.scrollTop = sc.scrollHeight;
+  else window.scrollTo(0, document.body.scrollHeight);
+  await new Promise((r) => setTimeout(r, 600));
   return {
     activ: document.querySelector("nav[aria-label] a[aria-current='true']")?.getAttribute("href"),
-    laFund: sc ? sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4 : false,
+    laFund: sc ? sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4 : true,
   };
-});
-check("ultima secțiune duce la capătul paginii", laCoada.laFund);
-check("și marcajul ajunge pe ea, deși titlul nu urcă sus",
-  laCoada.activ === "#anexa-3", laCoada.activ ?? "niciunul");
+}, ultima);
+check("derulat până jos, pagina chiar e la fund", laCoada.laFund);
+check("și marcajul e pe ultima secțiune, deși titlul ei nu urcă sus",
+  laCoada.activ === ultima, laCoada.activ ?? "niciunul");
+await shot(paginaFirmei, "cuprins_fisa_firmei");
+await paginaFirmei.close();
 
 await shot(page, "ambalaje_cuprins");
 
 // `min-w-max` pe `<ul>` a făcut o dată pagina să se deruleze lateral cu 129px la 375px.
 const telefon = await newPage(browser, { width: 375, height: 812 });
 await login(telefon, "admin");
-await telefon.goto(BASE + "/ambalaje", { waitUntil: "networkidle" });
+await telefon.goto(BASE + "/generare?tab=ambalaje", { waitUntil: "networkidle" });
 await telefon.waitForTimeout(1000);
 const lateral = await telefon.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 check("pagina nu se derulează lateral la 375px", lateral <= 0, `${lateral}px`);

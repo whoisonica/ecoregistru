@@ -36,7 +36,7 @@ import {
   useMovementTotals,
   useDeleteMovement,
 } from "@/hooks/useMovements";
-import type { MovementFilters, WasteMovement } from "@/lib/types";
+import type { MovementFilters, PackagingMovementFilter, WasteMovement } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useHotkey } from "@/hooks/useHotkey";
@@ -71,6 +71,9 @@ import {
 import { canPrintAnexa2, useAnexa2Download } from "@/hooks/useAnexa2";
 import { TotalsStrip } from "@/components/movements/TotalsStrip";
 import { AnnualTotals } from "@/components/movements/AnnualTotals";
+import { PackagingReport } from "@/components/packaging/PackagingReport";
+import { materialLabels } from "@/components/packaging/packagingFormat";
+import { PillGroup } from "@/components/ui/pill-group";
 import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
 import { AttachmentsDialog } from "@/components/movements/AttachmentsDialog";
 import { RecordWeightDialog } from "@/components/movements/RecordWeightDialog";
@@ -79,6 +82,8 @@ import { MovementSavedDialog } from "@/components/movements/MovementSavedDialog"
 
 const t = strings.movements;
 const e = strings.enums;
+/** Textele ambalajelor stau la ele acasă: coloanele de mai jos sunt chiar cele din tabul „Ambalaje". */
+const pk = strings.packaging;
 
 /**
  * `/miscari`, adresa de dinainte de cele două ecrane. Linkurile vechi — din rapoarte, de pe Panou,
@@ -180,6 +185,15 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
    */
   const [tabParam, setTab] = useUrlState("tab");
   /**
+   * Tasta de ambalaje de deasupra listei (18.09.2026): „toate" = orice mișcare pe cod 15 01 xx,
+   * „piata" = numai ce hrănește Anexa 1 Ambalaje, „de-completat" = numai ce nu poate intra în ea.
+   *
+   * <p>Stă în adresă, ca filtrul de lună: semnalele de pe tabul „Ambalaje" trimit aici cu tasta
+   * apăsată, iar linkul se poate și trimite. Valorile din adresă sunt în română; enumul serverului
+   * (`PackagingFilter`) rămâne al serverului.
+   */
+  const [packagingParam, setPackaging] = useUrlState("ambalaje");
+  /**
    * „Arată-mi doar ce blochează depunerea”, trimis prin adresă de pe Acasă, din panou și din tabul
    * „Totalul anului”. Serverul știe întrebarea (`missingOperationCode`); ecranul doar o poartă, ca
    * linkul să se poată și trimite. Până pe 18.09.2026 filtrul trăia în registrul de predări al
@@ -192,8 +206,22 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
    * (15 martie). Pe tabul totalului, lista și banda de totaluri nici nu se cer de la server.
    */
   const isGeneration = screen === "GENERATED";
-  const tab = isGeneration && tabParam === "total" ? "total" : "";
+  const tab = isGeneration && (tabParam === "total" || tabParam === "ambalaje") ? tabParam : "";
   const showList = tab === "";
+  /**
+   * Ce tastă de ambalaje e apăsată, tradusă pentru server. O valoare necunoscută în adresă nu
+   * filtrează nimic — ca la lună: o adresă scrisă de mână nu golește ecranul.
+   */
+  const packaging: PackagingMovementFilter | undefined =
+    packagingParam === "toate"
+      ? "ANY"
+      : packagingParam === "piata" && isGeneration
+        ? "ON_MARKET"
+        : packagingParam === "de-completat"
+          ? "INCOMPLETE"
+          : undefined;
+  /** Rândul își spune ambalajul numai cât e o tastă apăsată: altfel ar fi gol pe orice alt cod. */
+  const showPackagingInfo = packaging != null;
   // O adresă editată cu mâna (`?luna=` sau `?luna=august`) nu golește ecranul și nu-l pune să
   // aducă tot: cade pe luna curentă, ca `useUrlNumber` pe implicitul lui.
   const monthFilter = isMonthValue(monthParam) ? monthParam : thisMonth;
@@ -212,8 +240,9 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     // O ieșire fără cod R/D a plecat și ea de pe amplasament: `leftSite` n-are ce căuta aici,
     // rândul căutat e tocmai cel care n-a fost clasificat.
     if (onlyMissingCode) f.missingOperationCode = true;
+    if (packaging) f.packaging = packaging;
     return f;
-  }, [monthFilter, workPointFilter, register, direction, onlyMissingCode]);
+  }, [monthFilter, workPointFilter, register, direction, onlyMissingCode, packaging]);
 
   /**
    * Căutarea, sortarea și paginarea se fac **la server** (P3.1).
@@ -263,7 +292,9 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   // „Șterge filtrele" apare doar când e ceva de șters. Luna curentă nu e un filtru pus de cineva,
   // e punctul de plecare al ecranului — iar ștergerea o readuce, fiindcă „nicio lună" ar însemna
   // din nou toate mișcările.
-  const hasFilters = Boolean(monthFilter !== thisMonth || workPointFilter || onlyMissingCode);
+  const hasFilters = Boolean(
+    monthFilter !== thisMonth || workPointFilter || onlyMissingCode || packagingParam
+  );
   // O lună anume, nu un an întreg — ce hotărăște dacă golul se explică prin filtru.
   const isSingleMonth = monthFilter.includes("-");
   const monthLabel = isSingleMonth
@@ -459,6 +490,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const tabs: PageTab[] = [
     { id: "", label: t.tabMovements },
     { id: "total", label: t.tabAnnual },
+    { id: "ambalaje", label: t.tabPackaging },
   ];
 
   return (
@@ -546,13 +578,14 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                       setMonthFilter(thisMonth);
                       setWorkPointFilter("");
                       setProblem("");
+                      setPackaging("");
                     }}
                   >
                     {t.clearFilters}
                   </Button>
                 )}
               </>
-            ) : tab === "total" ? (
+            ) : (
               <>
                 <label className="flex items-center gap-2">
                   <span className="eyebrow">{strings.evidences.filterYear}</span>
@@ -570,25 +603,30 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                     ))}
                   </Select>
                 </label>
-                <label className="flex items-center gap-2">
-                  <span className="eyebrow">{t.filterWorkPoint}</span>
-                  <Select
-                    id="filter-wp-total"
-                    aria-label={t.filterWorkPoint}
-                    value={workPointFilter}
-                    onChange={(ev) => setWorkPointFilter(ev.target.value)}
-                    className="w-44"
-                  >
-                    <option value="">{t.filterAll}</option>
-                    {activeWorkPoints.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
+                {/* Punctul de lucru filtrează totalul anului; Anexa 1 Ambalaje e a firmei întregi
+                    (Ordinul 794/2012 n-o cere pe punct de lucru — numai Anexa 3, care își are
+                    selectul ei, lângă tabelul ei). */}
+                {tab === "total" && (
+                  <label className="flex items-center gap-2">
+                    <span className="eyebrow">{t.filterWorkPoint}</span>
+                    <Select
+                      id="filter-wp-total"
+                      aria-label={t.filterWorkPoint}
+                      value={workPointFilter}
+                      onChange={(ev) => setWorkPointFilter(ev.target.value)}
+                      className="w-44"
+                    >
+                      <option value="">{t.filterAll}</option>
+                      {activeWorkPoints.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
               </>
-            ) : undefined
+            )
           }
         />
       )}
@@ -607,6 +645,10 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
 
       {tab === "total" && (
         <AnnualTotals year={Number(monthFilter.slice(0, 4))} workPointId={workPointFilter || undefined} />
+      )}
+
+      {tab === "ambalaje" && (
+        <PackagingReport year={Number(monthFilter.slice(0, 4))} movementsPath={SCREEN_PATH.GENERATED} />
       )}
 
       {showList && (
@@ -649,6 +691,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                 setMonthFilter(thisMonth);
                 setWorkPointFilter("");
                 setProblem("");
+                setPackaging("");
               }}
             >
               {t.clearFilters}
@@ -657,6 +700,32 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         </div>
       )}
 
+      {/* ---- Tastele de ambalaje (18.09.2026) ----
+          Tabul „Ambalaje" își ținea până acum propriul registru: aceleași mișcări, într-un al
+          doilea tabel, fără căutare și fără sortare la server. Registrul a rămas unul singur, iar
+          întrebările lui sunt tastele astea. Sunt taste, nu un `Select`: sub șapte opțiuni, și se
+          citesc dintr-o privire (`CLAUDE.md`, „Cântar").
+          „Pus de noi pe piață" numai la Generare: Anexa 1 Ambalaje e despre deșeul propriu, iar pe
+          marfa preluată întrebarea n-are răspuns. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <span className="eyebrow" id="filter-packaging-label">
+          {t.packagingFilterLabel}
+        </span>
+        <PillGroup
+          name="ambalaje"
+          aria-labelledby="filter-packaging-label"
+          selected={[packagingParam || "tot"]}
+          onToggle={(value) => setPackaging(value === "tot" ? "" : value)}
+          options={[
+            { value: "tot", label: t.packagingFilterAll },
+            { value: "toate", label: t.packagingFilterAny },
+            ...(isGeneration
+              ? [{ value: "piata", label: t.packagingFilterOnMarket }]
+              : []),
+            { value: "de-completat", label: t.packagingFilterIncomplete },
+          ]}
+        />
+      </div>
       <section className="mt-4">
         {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel
             tabelul pare gol pe nedrept, iar omul caută rânduri care există. */}
@@ -778,6 +847,47 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                           ]
                             .filter(Boolean)
                             .join(" · ")}
+                        </span>
+                      )}
+                      {/* Ce ştie mişcarea despre ambalaj, sub cod, numai cât e o tastă apăsată.
+                          **Nu** coloane proprii: măsurat la 1440px, trei coloane duceau tabelul la
+                          1415 într-un 1114, adică la derulare laterală — iar informaţia e despre
+                          încadrarea codului, deci stă unde stau şi celelalte lucruri spuse despre
+                          el (codul-oglindă, felul stocării).
+                          ⚠️ **Ce lipseşte, sau ce e — nu amândouă.** Materialul scris lângă un
+                          „Fără felul ambalajului" e trei rânduri de mărunţişuri sub fiecare cod;
+                          rândul care are ceva de reparat spune doar atât, iar cel întreg îşi spune
+                          încadrarea, pe un rând. */}
+                      {showPackagingInfo && (
+                        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-content-muted">
+                          {!m.effectivePackagingMaterial && (
+                            <Badge variant="warning">{pk.missingMaterialShort}</Badge>
+                          )}
+                          {!m.packagingCategory && <Badge variant="warning">{pk.missingKindShort}</Badge>}
+                          {m.effectivePackagingMaterial && m.packagingCategory && (
+                            <span>
+                              {materialLabels[m.effectivePackagingMaterial]}
+                              {m.packagingMaterial == null && (
+                                <span className="ml-1 text-content-subtle">({pk.fromCode})</span>
+                              )}
+                              {" · "}
+                              {e.packagingCategory[m.packagingCategory]}
+                              {m.packagingReusable && ` · ${pk.reusableShort}`}
+                              {m.packagingHazardousContent && ` · ${pk.hazardousShort}`}
+                            </span>
+                          )}
+                          {/* Starea faţă de Anexa 1 se spune numai când nu e cea aşteptată: un „Da"
+                              pe fiecare rând ar fi o afirmaţie repetată degeaba. */}
+                          {isGeneration && m.packagingOnMarket === false && (
+                            <Tooltip content={pk.inAnexa1NoHint}>
+                              <Badge variant="muted">{pk.inAnexa1No}</Badge>
+                            </Tooltip>
+                          )}
+                          {isGeneration && m.packagingOnMarket == null && (
+                            <Tooltip content={pk.inAnexa1LegacyHint}>
+                              <Badge variant="warning">{pk.inAnexa1Legacy}</Badge>
+                            </Tooltip>
+                          )}
                         </span>
                       )}
                     </TD>

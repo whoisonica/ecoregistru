@@ -266,27 +266,27 @@ class WeighingOperationStatusIT {
     void theMovementListShowsOnlyFinalizedWeighingLines() {
         UUID id = weighedOperation("300");
         assertThat(listed()).isEmpty();
-        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
+        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN, null).rows()).isZero();
 
         service.finalizeOperation(id);
         assertThat(listed()).containsExactly(300);
-        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isEqualTo(1);
+        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN, null).rows()).isEqualTo(1);
         // Rândul își spune operațiunea, ca ecranul să trimită omul acolo în loc să-i ofere o
         // editare pe care serviciul o refuză (BUG-018).
         assertThat(queryService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
-                        null, 0, 25, null, false)
+                        null, null, 0, 25, null, false)
                 .content().get(0).weighingOperationId()).isEqualTo(id);
 
         service.cancel(id, "Cântărire dublă");
         assertThat(listed()).isEmpty();
-        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN).rows()).isZero();
+        assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN, null).rows()).isZero();
     }
 
     // --- helpers ---
 
     private List<Integer> listed() {
         return queryService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
-                        null, 0, 25, null, false)
+                        null, null, 0, 25, null, false)
                 .content().stream().map(m -> m.quantity().intValue()).toList();
     }
 

@@ -62,8 +62,10 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 5. „Caută oriunde · Ctrl K” — paleta.
 6. **Meniul** (`lib/navItems.ts`): o tastă (1–9, 0) și un indicator pe fiecare intrare („1 de cântărit”, „1 fără cod
    R/D”, „2 depășite”, „2 expiră”). Fiecare ecran de lucru e intrare proprie: Acasă · Generare · Intrări · Ieșiri ·
-   Ambalaje · Termene · Dosar de control · Parteneri · Setări; grupul **Cabinet** (F, C) la consultant și
-   platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
+   Cântar · Termene · Dosar de control · Parteneri · Setări; grupul **Cabinet** (F, C) la consultant și
+   platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou. **„Ambalaje" nu mai e în meniu**
+   (18.09.2026): e al treilea tab al „Generării", și rămâne intrare proprie numai la firma care n-are „Generare"
+   (colectorul pur, care are totuși Anexa 3). Paleta îl găsește oricum, din `hidden`.
 7. Jos: Abonament (doar cine administrează) și contul, cu meniul Termeni · Confidențialitate · Scurtături · Deconectare.
 
 **Telefon:** sus o bandă grafit cu firma, cifra lunii și alerta; jos bara **Acasă · lista principală · + · Termene ·
@@ -92,7 +94,7 @@ listei; `[` strânge panoul. Tastele tac în câmpuri de text (`useHotkey`).
 | `PillGroup` | Răspunsuri scurte ca **taste**: cea apăsată e grafit cu text alb. Codul oficial stă mic lângă cuvinte |
 | `Switch` | Un da/nu cu o propoziție |
 | `Stepper` | Un formular împărțit pe întrebări. **Împarte, nu rearanjează** ordinea rubricilor |
-| `SectionNav` | Cuprinsul unei pagini lungi, ca taste; secțiunea curentă e grafit (Ambalaje). **Nu** în Setări: acolo pagina de start are carduri pe grupuri, cu starea pe scurt, iar fiecare secțiune stă pe `/setari/<id>` (17.09.2026) |
+| `SectionNav` | Cuprinsul unei pagini lungi, ca taste; secțiunea curentă e grafit (fișa firmei, `/clienti/:id`). **Nu** în Setări: acolo pagina de start are carduri pe grupuri, cu starea pe scurt, iar fiecare secțiune stă pe `/setari/<id>` (17.09.2026). **Nu** într-un tab: un cuprins înăuntrul unui tab e tab în tab — de asta a plecat de pe Ambalaje (18.09.2026) |
 | `Menu`, `MenuItem` | Un buton cu listă (descărcări, acțiunile rândului) |
 | `Tooltip` | Orice explicație la cerere, pe grafit. **Niciodată `title=`**; și niciodată în jurul unui `Button` — bula își randează propriul buton |
 | `Toast` | Mesaje scurte, pe grafit, ca de la aparat |
@@ -221,6 +223,18 @@ același registru, cu aceleași filtre și aceleași butoane de document. `/evid
 `?problema=cod-rd` duce pe lista anului cu filtrul pus, restul pe tabul totalului. Registrul art. 48 nu se atinge:
 rămâne pe Intrări / Ieșiri, cu „Evidența cronologică" în meniul lui.
 
+**Și „Ambalaje" a intrat, ca al treilea tab** (18.09.2026, proprietarul: *„să scoatem mișcări din ambalaje și să facem
+în generare ambalaje, iar în mișcări niște filtre frumoase"*). Același motiv: ecranul își ținea propriul registru cu
+mișcările pe coduri `15 01 xx` — al treilea tabel de mișcări din aplicație, fără căutare și fără sortare la server,
+peste aceleași rânduri ca „Generare" (`PackagingDeclarationBuilder` filtrează chiar registrul `ANEXA_1`). Ce a rămas
+pe tab e ce nu se găsește altundeva: cele două tabele ale declarației, suprascrierea, Anexa 3 și documentul.
+Întrebările registrului au devenit **tastele de deasupra listei de mișcări** — `PillGroup`, nu `Select`: *Toate
+mișcările · Ambalaje · Ambalaj pus de noi pe piață · De completat*, scrise în adresă (`?ambalaje=…`) și cerute
+serverului (`?packaging=ANY|ON_MARKET|INCOMPLETE`), cu banda de totaluri filtrată la fel.
+⚠️ **Ce știe mișcarea despre ambalaj stă sub cod, nu în coloane proprii:** trei coloane noi duceau tabelul la 1415px
+într-un 1114 (derulare laterală, la 1440). Și se arată **ori ce lipsește, ori ce e** — nu amândouă.
+`/ambalaje` rămâne ecran întreg numai la firma fără „Generare"; la restul e redirect spre `?tab=ambalaje`.
+
 **Dosarul de control e locul hârtiilor.** Lista „Documentele anului" (`GET /api/v1/audit-file/contents`) are de acum
 un buton pe fiecare rând: fișa, centralizata, Anexa 1 și Anexa 3 Ambalaje (`.xls` / PDF), plus rezumatele neoficiale
 sub linie. Ce se naște numai înăuntrul arhivei — lista autorizațiilor, atașamentele — scrie „în arhivă"; ce nu se
@@ -248,6 +262,17 @@ aplică anului scrie „—", niciodată „în arhivă".
 - Textele stau în `frontend/src/lib/strings.ts`, în română, și numesc **ce face omul**: „Adaugă deșeuri”, „Intrare”, „Ieșire”, „Poate vinde metal”.
 - Temeiul legal (actul, articolul) se păstrează, dar în explicație, nu în etichetă.
 - Numeralul are trei forme (`1 linie · 2 linii · 20 de linii`) — trece prin `countOf` / `withCount`.
+- ⚠️ **Explicația de sub un lucru e de un rând** (proprietarul, 18.09.2026: *„textele de sub chestii care explică
+  sunt foarte lungi, prost aranjate și par neîngrijite"*). Măsura e lățimea în care cade textul, nu numărul de
+  semne: sub un buton dintr-un rând de patru (≈270px) înseamnă **sub 40 de semne**; sub un titlu de secțiune
+  (≈600px), sub 90. Etalonul e rândul de documente de pe „Totalul anului": *„Formularul din HG 856/2002, anexa 1."*,
+  *„O pagină per punct de lucru."*, *„Pentru lucru, nu pentru depunere."*, *„Se recalculează din ce ai înregistrat."*
+  — patru explicații, patru rânduri egale.
+- Ce nu încape într-un rând nu se scrie mai mic, se mută: **detaliul de format** în `MenuItem` (`hint`),
+  **motivul** în `Tooltip`, **temeiul întreg** în `docs/surse-oficiale.md`. Numele documentului stă pe buton și în
+  `aria-label` — nu se repetă în explicația de sub el.
+- Explicația spune ceva **nou** față de eticheta de deasupra. Dacă o repetă cu alte cuvinte, se șterge: sub tastele
+  de filtrare („Ambalaje", „Ambalaj pus de noi pe piață") n-a mai rămas niciuna.
 
 ## Ce nu se schimbă, orice stil
 

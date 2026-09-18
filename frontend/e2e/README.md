@@ -20,6 +20,27 @@ rânduri; plătite cu `psql` → „Totul e plătit”, fără transfer; operato
 abonamentul firmei din comutator, deci nu cere un administrator nou. **Negative:** suma luată doar din cea mai veche factură → 2
 căderi; IBAN-ul copiat cu spații → 2 căderi; starea verificării păstrată după o eroare → 1 cădere. **29/29** pe `eco_e2e_abonament`. Lasă în urmă „Proba 36 <număr>” cu două facturi plătite.
 
+⚠️ **Suita nu e idempotentă pe aceeași bază** (văzut pe 18.09.2026, la a doua rulare completă): proba **23** lasă în urmă
+partenerul „Proba 23 Fără Autorizație”, iar proba **3** cere ca „Parteneri” să aibă **sub zece rânduri** (sub prag nu se
+arată caseta de căutare — regula, nu o scăpare). Prima rulare vede nouă, a doua zece și cade. Nu e un defect al codului:
+**a doua rulare se face pe bază nouă**, ca oricare alta după o suită dusă până la capăt.
+
+📦 **18.09.2026 — proba 38 (`38-ambalaje-in-generare.mjs`), „Ambalaje” ca tab în „Generare”**: proprietarul — *„să scoatem
+mișcări din ambalaje și să facem în generare ambalaje, iar în mișcări niște filtre frumoase, gen ambalaje sau ambalaj pus de
+noi pe piață”*. Proba cere: `/ambalaje?an=…` → `/generare?tab=ambalaje&luna=…`, meniul **fără** intrarea „Ambalaje”, trei
+taburi, tabul cu tabelele și documentul dar **niciun tabel de mișcări** (se citesc capetele, nu textul paginii: „Data|Cod…”
+ar fi registrul), tastele care filtrează **la server**, rândul care-și spune ambalajul sub cod fără să lățească tabelul
+(`scrollWidth === clientWidth` la 1440), și semnalul din tab care duce pe lista filtrată, cu tasta apăsată acolo.
+⚠️ **Cele patru mișcări ale probei se scriu prin API într-un an gol (2033) și se șterg la final** — pe datele demo toate
+ambalajele sunt și „ale noastre”, și incomplete, deci verificările ar fi trecut din motivul greșit (`4 → 3 → 2 → 1` e chiar
+rostul lor). **Negativă (backend):** scos predicatul din `MovementQueryService.buildFilter`, cad exact cele două teste din
+`PackagingMovementFilterIT` („expected:<3> but was:<4>”, „expected:<2> but was:<4>”). Nu lasă nimic în urmă.
+**Atinse odată cu ea:** proba **1** (`/ambalaje` e redirect), **8** (cuprinsul s-a mutat pe fișa firmei — `SectionNav` n-a
+mai rămas pe niciun ecran de generator; ramura „la fund” se probează prin derulare, nu prin clic pe ultima intrare, fiindcă
+pe o pagină lungă clicul duce titlul sus fără să atingă fundul), **9**, **11**, **23** (tabul în loc de `/ambalaje`),
+**10** (trei taburi), **18** și **19** (meniul are acum nouă intrări, deci Setările poartă o cifră — nu se mai cere „0”),
+**34** (textele dosarului, scurtate: proba cere ce spun, nu cum sunau).
+
 📄 **18.09.2026 — antetul tabului „Totalul anului", fără coloană de stoc** (proba **10**, secțiunea 7): proprietarul, după ce a văzut tabul pe
 producție — *„butoanele de evidențele gestiunii sus, nu ascunse jos"* și *„scoate «în stoc», oamenii nu au stoc la generatori"*. Proba cere acum
 (a) că butoanele își poartă **numele documentului** („Evidența gestiunii deșeurilor", „Evidența centralizată"), nu „Descarcă"; (b) că tabelul vine

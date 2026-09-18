@@ -156,7 +156,7 @@ const ECRANE = [
   ["/", "Acasă"],
   [`/miscari?luna=${AN}`, "Mișcări"],
   [`/generare?tab=total&luna=${AN}`, "Totalul anului"],
-  [`/ambalaje?an=${AN}`, "Ambalaje"],
+  [`/generare?tab=ambalaje&luna=${AN}`, "Ambalaje"],
   ["/parteneri", "Parteneri"],
   ["/termene", "Termene"],
   ["/dosar-control", "Dosar de control"],
