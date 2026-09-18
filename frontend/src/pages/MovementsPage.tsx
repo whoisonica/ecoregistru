@@ -511,7 +511,48 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
           // Un singur filtru de an: tabelul e anual, luna n-are ce filtra în el. Scrie tot în
           // `luna`, ca anul să rămână același când te întorci pe „Mișcări".
           right={
-            tab === "total" ? (
+            showList ? (
+              <>
+                <label className="flex items-center gap-2">
+                  <span className="eyebrow">{t.filterMonth}</span>
+                  <MonthInput
+                    id="filter-month"
+                    value={monthFilter}
+                    onChange={setMonthFilter}
+                    allowWholeYear
+                  />
+                </label>
+                <label className="flex items-center gap-2">
+                  <span className="eyebrow">{t.filterWorkPoint}</span>
+                  <Select
+                    id="filter-wp"
+                    aria-label={t.filterWorkPoint}
+                    value={workPointFilter}
+                    onChange={(ev) => setWorkPointFilter(ev.target.value)}
+                    className="w-44"
+                  >
+                    <option value="">{t.filterAll}</option>
+                    {activeWorkPoints.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                {hasFilters && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setMonthFilter(thisMonth);
+                      setWorkPointFilter("");
+                      setProblem("");
+                    }}
+                  >
+                    {t.clearFilters}
+                  </Button>
+                )}
+              </>
+            ) : tab === "total" ? (
               <>
                 <label className="flex items-center gap-2">
                   <span className="eyebrow">{strings.evidences.filterYear}</span>
@@ -572,46 +613,49 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         <>
       <TotalsStrip screen={screen} totals={totals.data} loading={totals.isLoading} failed={totals.isError} />
 
-      {/* Filters */}
-      <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
-        <div>
-          <Label htmlFor="filter-month">{t.filterMonth}</Label>
-          <MonthInput
-            id="filter-month"
-            value={monthFilter}
-            onChange={setMonthFilter}
-            allowWholeYear
-          />
+      {/* Filtrele listei stau pe linia taburilor la Generare (ca pe „Totalul anului", 18.09.2026).
+          Intrări și Ieșiri n-au taburi, deci își păstrează banda lor. */}
+      {!isGeneration && (
+        <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
+          <div>
+            <Label htmlFor="filter-month">{t.filterMonth}</Label>
+            <MonthInput
+              id="filter-month"
+              value={monthFilter}
+              onChange={setMonthFilter}
+              allowWholeYear
+            />
+          </div>
+          <div>
+            <Label htmlFor="filter-wp">{t.filterWorkPoint}</Label>
+            <Select
+              id="filter-wp"
+              value={workPointFilter}
+              onChange={(ev) => setWorkPointFilter(ev.target.value)}
+              className="w-full sm:w-56"
+            >
+              <option value="">{t.filterAll}</option>
+              {activeWorkPoints.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setMonthFilter(thisMonth);
+                setWorkPointFilter("");
+                setProblem("");
+              }}
+            >
+              {t.clearFilters}
+            </Button>
+          )}
         </div>
-        <div>
-          <Label htmlFor="filter-wp">{t.filterWorkPoint}</Label>
-          <Select
-            id="filter-wp"
-            value={workPointFilter}
-            onChange={(ev) => setWorkPointFilter(ev.target.value)}
-            className="w-full sm:w-56"
-          >
-            <option value="">{t.filterAll}</option>
-            {activeWorkPoints.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        {hasFilters && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setMonthFilter(thisMonth);
-              setWorkPointFilter("");
-              setProblem("");
-            }}
-          >
-            {t.clearFilters}
-          </Button>
-        )}
-      </div>
+      )}
 
       <section className="mt-4">
         {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel

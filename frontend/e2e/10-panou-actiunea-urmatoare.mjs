@@ -238,6 +238,9 @@ const total = await page.evaluate(async (an) => {
   const tabel = document.querySelector('[role="tabpanel"] table') ?? document.querySelector("table");
   if (!tabel) return null;
   const antet = [...tabel.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+  // Rândul de total, citit întreg: eticheta lui trebuie să numere TOATE codurile anului, nu câte
+  // se văd pe pagină.
+  const randTotal = [...tabel.querySelectorAll("tbody tr")].pop()?.textContent.replace(/\s+/g, " ").trim() ?? "";
   // Ultimul rând e totalul general („5 coduri de deșeu"), nu un cod — nu intră la socoteală.
   const randuri = [...tabel.querySelectorAll("tbody tr")]
     .map((tr) => {
@@ -246,14 +249,22 @@ const total = await page.evaluate(async (an) => {
       return { cod, cifre: td.slice(1, 4).map((c) => c.textContent.trim()) };
     })
     .filter((r) => /^\d/.test(r.cod) && r.cod.includes(" "));
-  return { kg, antet, randuri };
+  return { kg, antet, randuri, randTotal };
 }, ANUL_TOTAL);
 check("tabelul totalului există", total !== null);
 if (total) {
   const coduri = Object.keys(total.kg);
-  check("are câte un rând pentru fiecare cod din evidența anului",
-    total.randuri.length === coduri.length && coduri.length > 0,
+  // Zece coduri pe pagină (18.09.2026: „să se vadă primele intrări, să nu se lungească pe tot
+  // ecranul"). Pe baza demo sunt sub zece, deci aici se verifică plafonul, nu a doua pagină;
+  // paginarea cu adevărat plină s-a probat cu mâna, pe 18 coduri — vezi `README.md`.
+  check("arată primele coduri ale anului, cel mult zece pe pagină",
+    total.randuri.length === Math.min(coduri.length, 10) && coduri.length > 0,
     `${total.randuri.length} rânduri, ${coduri.length} coduri în ${ANUL_TOTAL}`);
+  // Rândul de total e al ANULUI, nu al paginii: altfel, pe pagina a doua, cifra din SIM ar fi alta.
+  check("iar rândul de total numără toate codurile anului, nu câte se văd",
+    total.randTotal.startsWith(`${coduri.length} coduri de deșeu`)
+      || total.randTotal.startsWith(`${coduri.length} cod de deșeu`),
+    `${total.randTotal.slice(0, 40)} · ${coduri.length} coduri`);
   check("și o coloană de stare, ca să știi dacă se poate depune",
     total.antet.includes("Stare"), total.antet.join(" | "));
   const gresite = [];

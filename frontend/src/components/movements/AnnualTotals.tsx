@@ -23,6 +23,8 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
+import { useTableView } from "@/hooks/useTableView";
+import { TablePagination } from "@/components/ui/table-toolbar";
 
 const t = strings.evidences;
 
@@ -80,6 +82,19 @@ export function AnnualTotals({
   );
 
   const codes = useMemo(() => byCode(lines), [lines]);
+  /**
+   * Zece coduri pe pagină, nu douăzeci și cinci ca pe celelalte tabele (proprietarul, 18.09.2026:
+   * „să se vadă primele intrări, să nu se lungească pe tot ecranul").
+   *
+   * <p>Tabelul ăsta stă sub un antet înalt — filtre, documente, introducere, banda de blocaje —
+   * deci o firmă cu treizeci de coduri împingea **rândul de total** mult sub marginea ecranului,
+   * iar el e tocmai cifra pentru care se deschide tabul.
+   *
+   * <p>⚠️ Rândul de total rămâne al **anului întreg**, nu al paginii: se socotește din `codes`, nu
+   * din `view.visible`, iar eticheta numără toate codurile. Altfel, pe pagina a doua, „N coduri de
+   * deșeu" ar fi mințit exact omul care tastează cifrele în SIM.
+   */
+  const view = useTableView(codes, { pageSize: 10 });
   const totals = useMemo(
     () =>
       codes.reduce(
@@ -294,7 +309,7 @@ export function AnnualTotals({
           )}
         </div>
         <ul className="mt-4 divide-y divide-line border-y border-line sm:hidden" data-testid="annual-cards">
-          {codes.map((c) => (
+          {view.visible.map((c) => (
             <li key={c.wasteCode} className="py-3">
               <div className="flex items-start justify-between gap-3">
                 <span className="min-w-0 font-medium text-content">
@@ -353,7 +368,7 @@ export function AnnualTotals({
                   description={t.annualEmptyHint}
                 />
               )}
-              {codes.map((c) => (
+              {view.visible.map((c) => (
                 <TR key={c.wasteCode}>
                   <TD>
                     <span className="font-medium text-content">
@@ -396,6 +411,7 @@ export function AnnualTotals({
               )}
             </TBody>
           </Table>
+          <TablePagination view={view} />
         </div>
 
     </section>

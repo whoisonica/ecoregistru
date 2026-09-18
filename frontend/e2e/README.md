@@ -26,11 +26,19 @@ producție — *„butoanele de evidențele gestiunii sus, nu ascunse jos"* și 
 **după** primul dintre ele în DOM (`compareDocumentPosition`, nu pixeli: o probă pe coordonate ar fi trecut și cu tabelul gol); (c) că
 „Recalculează acum" stă **după** documente și are **alt chenar și alt fundal** decât ele — citite din `getComputedStyle`, nu din numele claselor,
 fiindcă ce contează e ce vede omul, nu cum se cheamă varianta; și (d) că antetul are **cinci** capete, niciunul cu „stoc".
+Din 18.09 mai cere (e) că tabelul arată **cel mult zece coduri pe pagină** și (f) că **rândul de total numără toate codurile anului**, nu
+câte se văd — altfel, pe pagina a doua, cifra pe care omul o tastează în SIM ar fi alta. Pe baza demo sunt șase coduri, deci în CI se
+verifică plafonul, nu a doua pagină; paginarea plină s-a probat cu mâna, pe **18 coduri**: 10 rânduri, „1–10 din 18", total „18 coduri".
 **Negativă:** cu versiunea de dinainte pusă la loc din git (`AnnualTotals.tsx`, `annualTotals.ts`, `strings.ts`), cad **exact** verificările noi,
-nimic altceva. Stocul socotit pe ultima lună a ieșit și din probă, și din `lib/annualTotals.ts` — pe Anexa 1 cifra e zero prin construcție de la
+nimic altceva; cu `variant="outline"` pe „Recalculează acum" cade exact verificarea lui. Stocul socotit pe ultima lună a ieșit și din probă, și din `lib/annualTotals.ts` — pe Anexa 1 cifra e zero prin construcție de la
 `V58`; testele unitare au rămas pe socoteala care contează (`npm test` 56).
-⚠️ **Capcană de rulare:** o suită oprită la jumătate lasă baza într-o stare în care proba 10 cade pe „banda își schimbă tonul" (firma de control
-are deja mișcări). Pe bază murdărită, verdictul nu e al codului — se ia bază nouă înainte de a crede o cădere.
+⚠️ **Capcană de rulare, plătită de două ori pe 18.09:** suita și **omul care se uită pe localhost împart aceeași bază**. Două rânduri din
+`DevDataSeeder` sunt stricate **dinadins** — „Aviz nr. 369 (fără cod)" (iunie 2026, fără cod R/D) și „Aviz nr. 391" (iulie 2026, fără
+cantitate) — și sunt chiar **premisa** probelor **10** (banda roșie „Completează codul R/D") și **28** (nota „de cântărit"). Completate cu
+mâna, cad opt verificări deodată, din două probe, și niciuna nu e despre cod. La fel murdărește baza o suită **oprită la jumătate**.
+**Cum se citește o cădere:** înainte de a o crede, `select action, label from audit_log where entity_type = 'WasteMovement' order by
+occurred_at` spune cine a atins rândurile și când — jurnalul de audit al aplicației e cel mai scurt drum către „nu codul a stricat-o".
+Și: nu se rulează suita pe stiva pe care tocmai ai dat-o cuiva să se uite.
 
 🧾 **18.09.2026 — „Evidențe" fuzionat în „Generare"** (probele **1, 3, 5, 6, 9, 10, 11, 28** atinse): ecranul `/evidente` a fost scos — agrega exact
 mișcările registrului `ANEXA_1`, adică rândurile lui `/generare` — iar adresa lui e redirect. **Proba 10, secțiunea 7** e rescrisă pe tabul nou:

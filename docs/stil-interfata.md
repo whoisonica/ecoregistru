@@ -190,8 +190,12 @@ Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
 sus, tabul implicit) și **Totalul anului** — un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
 („Gata" · „N de cântărit" · „N kg fără cod R/D"). Tabul stă în adresă (`?tab=total`), ca la Termene și Clienți.
 **Filtrele tabului stau pe linia taburilor**, lipite la dreapta, cu eticheta mică lângă ele, nu deasupra (`PageTabs`,
-slotul `right`; în afara lui `role="tablist"`). Două liste derulante cu etichetă deasupra ocupau o bandă întreagă sub
-taburi.
+slotul `right`; în afara lui `role="tablist"`). Liste derulante cu etichetă deasupra ocupau o bandă întreagă sub taburi.
+La fel pe **amândouă** taburile „Generare": luna și punctul de lucru pe „Mișcări", anul și punctul pe „Totalul anului".
+Intrări și Ieșiri n-au taburi, deci își păstrează banda.
+**Tabelul totalului arată zece coduri pe pagină**, nu douăzeci și cinci ca restul: stă sub un antet înalt, iar rândul de
+total — cifra pentru care se deschide tabul — ajungea sub marginea ecranului. ⚠️ Rândul de total rămâne al **anului**,
+nu al paginii.
 **Documentele stau sus, deasupra tabelului, niciodată sub el** (proprietarul: „butoanele de evidențele gestiunii sus, nu
 ascunse jos"), un rând de butoane cu explicația fiecăruia dedesubt. Pe 15 martie omul vine după hârtie, nu după un
 tabel; cu douăzeci de coduri, butoanele de dedesubt cădeau sub marginea ecranului. **Tabelul rămâne întreg pe toată
