@@ -8,7 +8,7 @@ rulează local și are testele verzi.
 > intrările noi; o intrare nouă se scrie tot în capul acestui fișier.
 
 
-> **18.09.2026, ~19:30 — panoul din stânga, după fuziuni; „Rol" pe linia taburilor la Parteneri; Acasă fără dată și fără buton de adăugare** (numai frontend; backendul, migrările și documentele tipărite neatinse, schema **V63**, liberă **V64**).
+> **18.09.2026, 19:00 — ✅ PE PRODUCȚIE (`ecoregistru-app` v126, `3601caf`; monorepo `88216fe`): panoul din stânga, după fuziuni; „Rol" pe linia taburilor la Parteneri; Acasă fără dată și fără buton de adăugare** (numai frontend; backendul, migrările și documentele tipărite neatinse, schema **V63**, liberă **V64**).
 > Proprietarul, după ce „Evidențe" și „Ambalaje" au intrat ca taburi în „Generare": *„vreau să vedem niște variante de improve pentru meniul din stânga"*. Din machete („Meniul după fuziuni", două runde) a spus întâi ce nu-i place — *„Adaugă deșeuri și Septembrie generat și Caută oriunde"* —, apoi că varianta E *„e frumoasă"*, a ales **E3** și, pe localhost, a scos „+"-urile de pe rânduri: *„arată urâțel"*.
 > **Ce a rămas în panou:** logo · căutarea ca **iconiță** · `[`; firma pe **plăcuța ei** (`bg-lcd`); meniul cu **tastă, nume, indicator** — fără iconiță cât panoul e lat (iconița rămâne pe șina de 64px); **taburile ecranului sub intrarea deschisă** (Generare, Termene, Parteneri la firma cu depozit), cu indicatorul coborât pe primul tab; Abonament și contul jos. Meniul începe la **118px**, nu la ~355.
 > **Ce a plecat și nu se pune la loc:** afișajul lunii (`MonthDisplay.tsx` șters), tastele mari de adăugare, rândul „Caută oriunde", orice „+" pe rânduri. Din panou nu se mai adaugă nimic: adăugarea e butonul din antetul ecranului de mișcări și N / I / E; pe telefon, „+" din bara de jos.
