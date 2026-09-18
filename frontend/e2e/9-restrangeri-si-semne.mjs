@@ -98,12 +98,15 @@ const CELULA = 'input[aria-label="Sticlă — Ambalaje de desfacere fabricate/im
 const stareRand = () =>
   page.evaluate((sel) => {
     const input = document.querySelector(sel);
+    // Din 18.09.2026 (seara) câmpurile sunt chiar celulele tabelului 1, iar starea rândului stă
+    // lângă numele materialului, nu într-o coloană proprie: o coloană în plus lățea tabelul.
     const rand = input?.closest("tr");
-    return rand ? rand.lastElementChild.textContent.trim() : null;
+    return rand ? (rand.querySelector("[aria-live]")?.textContent.trim() ?? null) : null;
   }, CELULA);
 
 const areCelula = await visible(page, CELULA);
 check("grila de suprascriere se deschide şi are celule etichetate", areCelula);
+check("… în acelaşi tabel, nu într-o a doua grilă", (await page.locator("main table").count()) === 1);
 check("rândul neatins nu spune nimic", (await stareRand()) === "");
 
 await page.fill(CELULA, "12.5");
@@ -116,7 +119,7 @@ check("şi se numără, pentru rândul derulat afară din ochi", rezumat);
 await shot(page, "9-grila-nesalvat");
 
 // Ieşirea din celulă e chiar declanşatorul salvării.
-await page.click("h2");
+await page.click("h1");
 await page.waitForTimeout(1200);
 check("după ieşirea din celulă rândul spune «salvat»", (await stareRand()) === "salvat");
 const rezumatDupa = await page.evaluate(() =>
@@ -128,19 +131,20 @@ await shot(page, "9-grila-salvat");
 // Semnul nu e o promisiune: cifra chiar a ajuns pe server.
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(800);
-await deschideGrila();
-const dupaReincarcare = await page.$eval(CELULA, (el) => el.value);
-check("şi cifra chiar a ajuns pe server", dupaReincarcare === "12.5", dupaReincarcare);
+// Semnul „scris de tine" se citeşte cu tabelul închis: la scris, locul lui îl ia starea rândului.
 const marcatScris = await page.evaluate(() =>
   [...document.querySelectorAll("td")].some(
     (td) => /Sticlă/.test(td.textContent) && /scris de tine/.test(td.textContent)
   )
 );
 check("iar tabelul 1 marchează rândul ca scris de mână", marcatScris);
+await deschideGrila();
+const dupaReincarcare = await page.$eval(CELULA, (el) => el.value);
+check("şi cifra chiar a ajuns pe server", dupaReincarcare === "12.5", dupaReincarcare);
 
 // Curăţenie: rândul golit şterge suprascrierea, deci baza rămâne cum era.
 await page.fill(CELULA, "");
-await page.click("h2");
+await page.click("h1");
 await page.waitForTimeout(1200);
 check("golirea rândului se salvează şi ea", (await stareRand()) === "salvat");
 await page.reload({ waitUntil: "networkidle" });
