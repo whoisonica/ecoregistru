@@ -172,6 +172,12 @@ async function createCompany(spec) {
           transportMeans: "AS",
           wasteDestination: wasteDestinationFor(s.op),
           partnerId: partners[s.partner],
+          // Ambalajele cer felul lor, iar 15 01 04 și materialul: codul nu spune dacă e aluminiu
+          // sau oțel. Fără ele, rândul se naște „de completat” și lipsește de pe Anexa 3.
+          ...(s.code.startsWith("15 01")
+            ? { packagingCategory: "SECONDARY", packagingReusable: false,
+                ...(s.pkMaterial ? { packagingMaterial: s.pkMaterial } : {}) }
+            : {}),
           transportDestinations: destinationsFor(s.op),
           documentReference: `FEI ${String(1000 + count).padStart(5, "0")}`,
         },

@@ -80,7 +80,7 @@
       { "code": "15 01 01", "wp": "hala", "section": "Legătorie", "partner": "hartie", "op": "R12", "every": 48, "min": 180, "max": 420, "state": "SOLID", "peak": [10, 11, 12] },
       { "code": "15 01 02", "wp": "hala", "section": "Depozit hârtie", "partner": "ambalaje", "op": "R12", "every": 12, "min": 60, "max": 140, "state": "SOLID" },
       { "code": "15 01 03", "wp": "hala", "section": "Depozit hârtie", "partner": "ambalaje", "op": "R3", "every": 4, "min": 220, "max": 380, "state": "SOLID" },
-      { "code": "15 01 04", "wp": "hala", "section": "Tipar offset", "partner": "metale", "op": "R4", "every": 4, "min": 30, "max": 75, "state": "SOLID" },
+      { "code": "15 01 04", "pkMaterial": "OTEL", "wp": "hala", "section": "Tipar offset", "partner": "metale", "op": "R4", "every": 4, "min": 30, "max": 75, "state": "SOLID" },
       { "code": "08 03 12*", "wp": "hala", "section": "Tipar offset", "partner": "periculoase", "op": "D10", "every": 4, "min": 12, "max": 28, "state": "PASTY" },
       { "code": "15 02 02*", "wp": "hala", "section": "Tipar offset", "partner": "periculoase", "op": "D10", "every": 12, "min": 8, "max": 19, "state": "SOLID" },
       { "code": "13 02 05*", "wp": "hala", "section": "Tipar offset", "partner": "periculoase", "op": "R9", "every": 2, "min": 20, "max": 40, "state": "LIQUID" },
