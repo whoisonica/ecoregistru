@@ -113,7 +113,9 @@ const dup = await page.evaluate(() => ({
   data: document.querySelector("#mv-date")?.value,
   document: document.querySelector("#mv-doc")?.value,
 }));
-const azi = new Date().toISOString().slice(0, 10);
+// Ziua locală, ca aplicația (BUG-037): `toISOString()` dă ziua din UTC și pica între 00:00 și 03:00.
+const acum = new Date();
+const azi = `${acum.getFullYear()}-${String(acum.getMonth() + 1).padStart(2, "0")}-${String(acum.getDate()).padStart(2, "0")}`;
 check("duplicarea aduce codul", !!dup.cod && dup.cod !== "Caută codul de deșeu", dup.cod);
 check("duplicarea pune data de azi", dup.data === azi, `${dup.data} (azi: ${azi})`);
 check("duplicarea golește documentul", dup.document === "", JSON.stringify(dup.document));

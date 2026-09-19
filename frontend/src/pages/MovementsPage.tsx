@@ -262,6 +262,8 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
    */
   const table = useRemoteTableView<WasteMovement>({
     initialSort: { key: "date", direction: "desc" },
+    // BUG-066: fără derulare la 1440×900 — la 25 de rânduri, „Tot anul” se derula 220px.
+    pageSize: 10,
     resetOn: filters,
   });
   const { data: movements, isLoading, isError } = useMovements(filters, table.params, showList);
@@ -731,6 +733,28 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
             { value: "de-completat", label: t.packagingFilterIncomplete },
           ]}
         />
+        {/* Decizia 19.09.2026: predările vechi fără tot ce cer rapoartele nu se blochează, se
+            numără aici și se listează la un clic. Pe linia tastelor, nu într-o bandă: o bandă în
+            plus împingea tabelul sub marginea ecranului (regula „fără derulare”). */}
+        {onlyIncomplete ? (
+          <span className="ml-auto flex items-center gap-2 text-sm font-medium text-state-warn-text">
+            {t.onlyIncomplete}
+            <button type="button" onClick={() => setProblem("")} className="underline hover:no-underline">
+              {t.onlyMissingCodeOff}
+            </button>
+          </span>
+        ) : (
+          !onlyMissingCode &&
+          (totals.data?.incomplete ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => setProblem("de-completat")}
+              className="ml-auto text-sm font-medium text-state-warn-text underline hover:no-underline"
+            >
+              {t.incompleteRows(totals.data!.incomplete)}
+            </button>
+          )
+        )}
       </div>
       <section className="mt-4">
         {/* Un filtru pus din altă parte trebuie să se vadă și să se poată scoate de aici: altfel
@@ -747,30 +771,13 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
             </button>
           </div>
         )}
-        {onlyIncomplete ? (
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-state-warn bg-surface-muted px-3 py-2 text-sm text-state-warn-text">
-            <span className="font-medium">{t.onlyIncomplete}</span>
-            <button type="button" onClick={() => setProblem("")} className="shrink-0 font-medium underline hover:no-underline">
-              {t.onlyMissingCodeOff}
-            </button>
-          </div>
-        ) : (
-          !onlyMissingCode &&
-          (totals.data?.incomplete ?? 0) > 0 && (
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-state-warn bg-surface-muted px-3 py-2 text-sm text-state-warn-text">
-              <span className="font-medium">{t.incompleteRows(totals.data!.incomplete)}</span>
-              <button type="button" onClick={() => setProblem("de-completat")} className="shrink-0 font-medium underline hover:no-underline">
-                {t.incompleteShow}
-              </button>
-            </div>
-          )
-        )}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
         {!isError && (
           <>
             <TableToolbar view={view} placeholder={t.searchPlaceholder} />
-            <Table stickyHeader>
+            {/* BUG-066: sub antet, taburi, totaluri și taste, 70vh ieșea sub marginea ecranului. */}
+            <Table stickyHeader maxHeightClass="max-h-[calc(100vh-28rem)]">
               <THead sticky>
                 <TR>
                   <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>

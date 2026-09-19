@@ -19,8 +19,13 @@ import type { SortState } from "@/hooks/useTableView";
 export function Table({
   className,
   stickyHeader = false,
+  maxHeightClass = "max-h-[70vh]",
   ...props
-}: TableHTMLAttributes<HTMLTableElement> & { stickyHeader?: boolean }) {
+}: TableHTMLAttributes<HTMLTableElement> & {
+  stickyHeader?: boolean;
+  /** Înălțimea cutiei care derulează, când 70vh de sub un antet înalt ar împinge pagina (BUG-066). */
+  maxHeightClass?: string;
+}) {
   return (
     <div
       className={cn(
@@ -29,7 +34,7 @@ export function Table({
         "overflow-x-auto bg-surface",
         // Înălțimea maximă e ce face antetul lipicios să însemne ceva: fără ea, containerul
         // crește cât tabelul și nu se derulează nimic pe dinăuntru.
-        stickyHeader && "max-h-[70vh] overflow-y-auto"
+        stickyHeader && [maxHeightClass, "overflow-y-auto"]
       )}
     >
       {/* 14px, nu `text-sm`: la 15px, Mișcări ieșea din 1440px și coloana de atașamente intra sub
