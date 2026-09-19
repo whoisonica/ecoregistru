@@ -515,6 +515,52 @@ class Anexa1FormIT {
                 .andReturn().getResponse().getContentAsByteArray();
     }
 
+
+    /**
+     * Starea fizică se scrie în română pe fişă, nu cu numele constantei Java.
+     *
+     * <p>Până pe 20.09.2026, {@code Anexa1SheetBuilder} tipărea {@code value.name()} pentru toate
+     * rubricile de enum. Pentru celelalte e corect — tipul de stocare, metoda, mijlocul de transport
+     * şi destinaţia <b>sunt</b> coduri pe care formularul le tipăreşte ca atare (`CT`, `TM`, `AN`,
+     * `Vr`). Starea fizică e singura care cere un cuvânt, deci fişa unui client cu deşeu păstos ieşea
+     * scrisă „PASTY" — engleză pe un formular oficial în română.
+     *
+     * <p>Proba a lipsit fiindcă <b>toate</b> celelalte teste şi toate datele demo folosesc
+     * {@code SOLID}, care arată la fel în amândouă limbile. De aceea proba de aici cere dinadins o
+     * stare care se traduce: cere „Păstos" şi refuză explicit „PASTY".
+     */
+    @Test
+    void thePhysicalStateIsPrintedInRomanianNotAsTheEnumName() throws Exception {
+        Company company = admin.getCompany();
+        UUID workPointId = workPointRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+        UUID codeId = wasteCodeRepository.findByCode("15 01 01").orElseThrow().getId();
+        UUID partnerId = partnerRepository.findAllByCompany_Id(company.getId()).get(0).getId();
+
+        String body = """
+                {
+                  "workPointId": "%s", "date": "%d-04-12", "wasteCodeId": "%s",
+                  "unit": "KG", "quantity": 70,
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "PASTY", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
+                  "partnerId": "%s"
+                }
+                """.formatted(workPointId, YEAR, codeId, partnerId);
+        mockMvc.perform(post("/api/v1/movements")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/evidences/regenerate?year=" + YEAR)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        Anexa1Sheet sheet = sheets().stream()
+                .filter(s -> s.wasteCode().equals("15 01 01"))
+                .findFirst().orElseThrow();
+
+        assertThat(sheet.physicalState()).isEqualTo("Păstos");
+        assertThat(sheet.physicalState()).doesNotContain("PASTY");
+    }
+
     private List<Anexa1Sheet> sheets() {
         TenantContext.set(admin.getCompany().getId());
         try {

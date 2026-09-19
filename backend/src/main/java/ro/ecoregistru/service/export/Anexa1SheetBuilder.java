@@ -226,7 +226,10 @@ public class Anexa1SheetBuilder {
     private String physicalState(Map<Integer, List<WasteMovement>> byMonth) {
         Set<String> states = byMonth.values().stream()
                 .flatMap(List::stream)
-                .map(m -> name(m.getPhysicalState()))
+                // Din etichetă, nu din `name()`: e singura rubrică a fişei care cere un cuvânt, nu
+                // un cod, iar numele constantei e englezesc — fişa scria „PASTY" pe un formular
+                // oficial în română. Vezi `PhysicalState`.
+                .map(m -> m.getPhysicalState() == null ? null : m.getPhysicalState().getLabel())
                 .filter(v -> v != null)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         return states.size() == 1 ? states.iterator().next() : "";
