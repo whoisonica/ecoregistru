@@ -175,9 +175,17 @@ public class WasteMovementController {
     }
 
     /**
-     * Avizul de însoţire a mărfii, as a PDF. A read, like Anexa 2: nothing is allocated.
+     * Avizul de însoţire a mărfii, as a PDF. Nothing is allocated — but it is gated to writers all
+     * the same (BUG-053).
+     *
+     * <p>The form carries the driver's CNP in full, because the law asks for it. Every list already
+     * masks that CNP for a CLIENT_VIEWER (BUG-002, BUG-043); leaving this PDF open would make that
+     * masking decorative, since anyone curious just downloads the aviz instead. Nothing is lost
+     * operationally: the aviz is printed by whoever hands the waste to the driver, and that person
+     * creates the movement, so they can write anyway. A viewer has no reason to print one.
      */
     @GetMapping("/{id}/aviz")
+    @PreAuthorize(CAN_WRITE)
     public ResponseEntity<byte[]> aviz(@PathVariable UUID id) {
         byte[] body = documentService.renderAviz(id);
         ContentDisposition disposition = ContentDisposition.inline()

@@ -4,15 +4,18 @@
  * dintr-o pagină — două lucruri pe care le repară același fișier mic.
  */
 import { strings } from "@/lib/strings";
+import { formatKg } from "@/lib/units";
 import { withCount } from "@/lib/utils";
 
 export const materialLabels = strings.enums.packagingMaterial;
 
-const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
-
-/** Kilograme cu cel mult trei zecimale; gol se scrie „—”, niciodată „0” (vezi CLAUDE.md). */
+/**
+ * Kilograme, prin formatorul din `lib/units` — trei zecimale întotdeauna (G06): o a doua
+ * formatare aici ar scrie aceeași cantitate altfel decât o scrie ecranul de alături.
+ * Gol se scrie „—”, niciodată „0” (vezi CLAUDE.md).
+ */
 export function kg(value: number | null | undefined) {
-  return value == null ? "—" : kgFormat.format(value);
+  return value == null ? "—" : formatKg(value);
 }
 
 /** „1 mișcare” · „2 mișcări” · „20 de mișcări” — numeralul românesc din `lib/count.ts`. */

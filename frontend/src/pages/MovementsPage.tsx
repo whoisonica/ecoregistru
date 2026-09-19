@@ -1073,7 +1073,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                 </RowAction>
                               </>
                             )}
-                            {canPrintAnexa3(m) && (
+                            {canPrintAnexa3(m, canWrite) && (
                               <RowAction
                                 icon={FileText}
                                 disabled={downloadingId === m.id}
@@ -1082,7 +1082,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                 {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
                               </RowAction>
                             )}
-                            {canPrintAviz(m) && (
+                            {canPrintAviz(m, canWrite) && (
                               <RowAction
                                 icon={FileText}
                                 disabled={downloadingAvizId === m.id}

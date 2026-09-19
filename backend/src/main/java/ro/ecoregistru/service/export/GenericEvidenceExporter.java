@@ -225,9 +225,22 @@ public class GenericEvidenceExporter {
 
     private static final java.text.DecimalFormat KG_FMT = buildKgFormat();
 
+    /**
+     * Trei zecimale mereu, ca pe ecran şi ca pe formularele tipărite (G06, 20.09.2026).
+     *
+     * <p>Cu {@code #,##0.###} aceeaşi cantitate se scria „35.125" aici şi „35.125,000" pe fişă —
+     * iar „35.125" în românește e treizeci şi cinci de mii, nu treizeci şi cinci virgulă o sută
+     * douăzeci şi cinci. Grupul de după virgulă are acum mereu trei cifre, deci virgula e mereu
+     * ultima şi punctul e mereu la mii.
+     *
+     * <p>Exportul ăsta e al nostru, nu reproduce un formular din act (art. 48 n-are model tipărit),
+     * deci separatorul îl alege regula casei: românesc, ca ecranul. Formularele care <b>au</b>
+     * model — fişa, declaraţia anuală, avizul, Anexa 2 — îşi păstrează fiecare semnul din modelul
+     * lui; acolo nu e o scăpare, e copia a ceea ce compară inspectorul.
+     */
     private static java.text.DecimalFormat buildKgFormat() {
         java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(java.util.Locale.of("ro", "RO"));
-        return new java.text.DecimalFormat("#,##0.###", symbols);
+        return new java.text.DecimalFormat("#,##0.000", symbols);
     }
 
     private static void numCell(PdfPTable table, double value, Font font) {

@@ -13,16 +13,21 @@ import { useToast } from "@/components/ui/toast";
  * names an expeditor and a destinatar. The backend refuses the other cases with a message; the
  * button simply does not offer them.
  */
-export function canPrintAnexa3(m: WasteMovement): boolean {
-  return !m.hazardous && canPrintAviz(m);
+export function canPrintAnexa3(m: WasteMovement, canWrite: boolean): boolean {
+  return !m.hazardous && canPrintAviz(m, canWrite);
 }
 
 /**
  * Avizul de însoțire (15.09.2026): orice predare către un partener, periculoasă sau nu — avizul
  * însoțește marfa, nu descrie deșeul.
+ *
+ * <p>`canWrite` e obligatoriu, nu opțional (BUG-053, 20.09.2026): serverul cere `CAN_WRITE` pe
+ * amândouă PDF-urile — Anexa 3 fiindcă alocă numărul formularului, avizul fiindcă tipărește CNP-ul
+ * șoferului întreg, pe care listele îl maschează pentru „Vizualizare". Cât timp regula stătea numai
+ * pe server, butonul se vedea și dădea 403 la clic. Fiind parametru, un ecran nou nu-l poate uita.
  */
-export function canPrintAviz(m: WasteMovement): boolean {
-  return m.partnerId != null && (m.operation === "RECOVERED" || m.operation === "DISPOSED");
+export function canPrintAviz(m: WasteMovement, canWrite: boolean): boolean {
+  return canWrite && m.partnerId != null && (m.operation === "RECOVERED" || m.operation === "DISPOSED");
 }
 
 /** Deschide PDF-ul unei mișcări într-un tab — Anexa 3 sau avizul, după `document`. */

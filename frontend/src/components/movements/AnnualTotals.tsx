@@ -13,6 +13,7 @@ import { useCanWrite } from "@/hooks/useBillingAccess";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import type { EvidenceFilters } from "@/lib/types";
 import { byCode } from "@/lib/annualTotals";
+import { formatKg } from "@/lib/units";
 import { strings } from "@/lib/strings";
 import { withCount } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -29,9 +30,12 @@ import { TablePagination } from "@/components/ui/table-toolbar";
 
 const t = strings.evidences;
 
-/** Cantitățile vin în kilograme; se scriu cu locale-ul românesc, fără unitate pe fiecare celulă. */
-const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
-const kg = (value: number) => kgFormat.format(value);
+/**
+ * Cantitățile vin în kilograme, fără unitate pe fiecare celulă. Formatarea vine din `lib/units`,
+ * nu dintr-un `Intl.NumberFormat` al fișierului: tabelul ăsta e „totalul" din G06, adică tocmai
+ * locul unde o a doua formatare scria aceeași cantitate altfel decât lista de lângă.
+ */
+const kg = (value: number) => formatKg(value);
 
 /**
  * Totalul anului pe cod de deșeu — cifrele care se tastează în SIM pe 15 martie.
@@ -316,6 +320,7 @@ export function AnnualTotals({
                 <span className="min-w-0 font-medium text-content">
                   <BinSwatch code={c.wasteCode} hazardous={c.hazardous} />
                   {c.wasteCode}
+                  {c.hazardous ? "*" : ""}
                   <span className="block truncate text-xs font-normal text-content-subtle">
                     {c.wasteCodeName}
                   </span>
@@ -375,6 +380,7 @@ export function AnnualTotals({
                     <span className="font-medium text-content">
                       <BinSwatch code={c.wasteCode} hazardous={c.hazardous} />
                       {c.wasteCode}
+                      {c.hazardous ? "*" : ""}
                     </span>
                     <span className="block max-w-xs truncate text-xs text-content-subtle">
                       {c.wasteCodeName}

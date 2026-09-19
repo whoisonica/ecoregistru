@@ -64,6 +64,7 @@ import {
   R_CODES,
   D_CODES,
   suggestedDestinations,
+  destinationsFor,
   type FieldErrors,
   type ExitOperation,
 } from "@/components/movements/movementRules";
@@ -74,8 +75,15 @@ import { TransportFields } from "@/components/movements/TransportFields";
 const t = strings.movements;
 const e = strings.enums;
 
-/** Nota 5 a fișei, cum o folosesc clienții: groapa orașului, incinerare, valorificare, altele. */
-const OFFERED_DESTINATIONS: string[] = ["DO", "I", "Vr", "A"];
+/*
+ * Destinația se oferă **întreagă**, toate cele opt valori ale notei 5 (HG 856/2002, anexa 1, cap. 2),
+ * în ordinea din act: DO, HP, HC, I, Vr, P, Ve, A.
+ *
+ * Pe 16.09.2026 ecranul arăta doar patru (DO, I, Vr, A). Erau date ca **exemplu**, nu ca listă
+ * închisă, și au rămas în cod ca filtru — așa că un client care valorifică în propria întreprindere
+ * (`P`), are haldă proprie (`HP`) sau dă la valorificare energetică (`Ve`) n-avea ce alege, deși
+ * enumul și nota tipărită le aveau. Corectat 20.09.2026, la cererea proprietarului.
+ */
 
 /**
  * Un cod din Lista europeană, citit după denumire (proprietarul, 16.09.2026): denumirea întâi,
@@ -516,6 +524,23 @@ export function MovementFormDialog({
    * mişcare iese pe fişă generat 100 · valorificat 100 · stoc 0.
    */
   const effectiveOperation: WasteOperation = fate || operation;
+  /**
+   * Destinațiile din tabăra operațiunii alese (nota 5, `destinationsFor`). Când omul schimbă
+   * valorificarea în eliminare, valoarea aleasă înainte se golește — altfel ar rămâne pe ecran una
+   * din tabăra cealaltă și s-ar salva tocmai combinația pentru care există regula.
+   */
+  const offeredDestinations = useMemo(() => destinationsFor(effectiveOperation), [effectiveOperation]);
+  useEffect(() => {
+    if (
+      wasteDestination &&
+      !offeredDestinations.includes(wasteDestination) &&
+      // Rândul vechi, salvat înainte de regulă, se deschide cu valoarea lui neatinsă: altfel
+      // deschiderea singură l-ar modifica, fără ca nimeni să fi cerut asta.
+      wasteDestination !== initial?.wasteDestination
+    ) {
+      setWasteDestination("");
+    }
+  }, [offeredDestinations, wasteDestination, initial?.wasteDestination]);
   // A legacy row is the one case the form shows an operation nobody may choose: it has to be
   // editable, and editing it is exactly how it gets completed — alegând mai jos ce s-a întâmplat.
   const isLegacyExit = effectiveOperation === "UNCLASSIFIED_OUT";
@@ -1291,9 +1316,8 @@ export function MovementFormDialog({
               {t.askDestination}
               {screenRegister === "ANEXA_1" && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
             </span>
-            {/* Patru destinații (proprietarul, 16.09.2026); una veche din afara lor rămâne la
-                editare, ca rândul să se poată salva neschimbat. Pe o predare de deșeu propriu
-                rubrica e obligatorie, deci „Fără” nu se oferă acolo. */}
+            {/* Toate cele opt valori ale notei 5, în ordinea din act (20.09.2026). Pe o predare de
+                deșeu propriu rubrica e obligatorie, deci „Fără” nu se oferă acolo. */}
             <div id="mv-destination" tabIndex={-1} {...invalidProps("mv-destination-err", errors.wasteDestination)}>
               <PillGroup
                 name="mv-destination"
@@ -1304,7 +1328,11 @@ export function MovementFormDialog({
                   ...(screenRegister === "ANEXA_1" ? [] : [{ value: "" as const, label: t.pillNone }]),
                   ...nomenclatorPills<WasteDestination>(
                     e.wasteDestination,
-                    (value) => OFFERED_DESTINATIONS.includes(value) || value === initial?.wasteDestination
+                    // Tabăra operațiunii alese; o valoare veche din afara ei rămâne pe ecran, ca
+                    // rândul de dinainte de regulă să se poată deschide și salva.
+                    (value) =>
+                      offeredDestinations.includes(value as WasteDestination) ||
+                      value === initial?.wasteDestination
                   ),
                 ]}
               />

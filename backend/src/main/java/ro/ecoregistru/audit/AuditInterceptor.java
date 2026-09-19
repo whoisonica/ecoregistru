@@ -281,7 +281,8 @@ public class AuditInterceptor implements Interceptor {
      * uneori şi ar fi aruncat {@code LazyInitializationException} în rest — adică ar fi picat
      * tocmai pe rândurile vechi, la care nimeni nu se uită până la un control.
      */
-    private String format(Object value) {
+    /** Pachet, nu privat, ca normalizarea de scară să se poată proba fără context Spring. */
+    static String format(Object value) {
         if (value == null) {
             return null;
         }
@@ -294,6 +295,13 @@ public class AuditInterceptor implements Interceptor {
             } catch (ReflectiveOperationException e) {
                 return null;
             }
+        }
+        // `400.000` și `400` sunt același număr, dar `toString()` păstrează scara, iar comparația
+        // din `onFlushDirty` se face pe șiruri: baza întoarce NUMERIC(…,3), formularul trimite
+        // scara lui, și orice salvare scria „Cantitate: 400.000 → 400" ca schimbare reală.
+        // Normalizarea stă aici, nu la câmpul cantității: pe aici trec toate câmpurile auditate.
+        if (value instanceof java.math.BigDecimal number) {
+            return number.stripTrailingZeros().toPlainString();
         }
         return String.valueOf(value);
     }

@@ -106,7 +106,15 @@ export function YearMonthsCard({ d }: { d: DashboardData }) {
 
 /** Deșeurile anului, după cantitate: pubela, codul, numele și o bară față de cel mai mare. */
 export function WasteCodesCard({ d }: { d: DashboardData }) {
-  const codes = topCodes(d.evidences, 5);
+  /**
+   * Cinci rânduri, dar cardul spune și ce a rămas pe dinafară: fără „și încă N", lista aduna
+   * 18.449 kg sub un grafic al anului care arăta 18.699 și părea că una din cele două greșește.
+   * Rândul stă în afara listei, ca numărătoarea de coduri să rămână cea cerută (proba 39).
+   */
+  const all = topCodes(d.evidences, Number.POSITIVE_INFINITY);
+  const codes = all.slice(0, 5);
+  const rest = all.slice(5);
+  const restKg = rest.reduce((sum, c) => sum + c.kg, 0);
   const max = codes[0]?.kg ?? 1;
   return (
     <Card data-testid="home-codes">
@@ -122,19 +130,28 @@ export function WasteCodesCard({ d }: { d: DashboardData }) {
       ) : codes.length === 0 ? (
         <p className="mt-4 text-sm text-content-subtle">{t.codesEmpty.replace("{year}", String(d.year))}</p>
       ) : (
-        <ul className="mt-1">
-          {codes.map((c) => (
-            <li key={c.code} className="flex items-center gap-3 border-t border-line py-2.5 text-sm first:border-t-0">
-              <BinSwatch code={c.code} hazardous={c.hazardous} />
-              <span className="w-[4.75rem] shrink-0 font-mono text-content">{c.code}</span>
-              <span className="min-w-0 flex-1 truncate text-content">{c.name}</span>
-              <span className="hidden h-1.5 w-24 shrink-0 bg-surface-muted sm:block" aria-hidden>
-                <span className="block h-1.5 bg-content" style={{ width: `${Math.max((c.kg / max) * 100, 2)}%` }} />
-              </span>
-              <span className="w-20 shrink-0 text-right font-mono text-content">{formatKg(Math.round(c.kg))} kg</span>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-1">
+            {codes.map((c) => (
+              <li key={c.code} className="flex items-center gap-3 border-t border-line py-2.5 text-sm first:border-t-0">
+                <BinSwatch code={c.code} hazardous={c.hazardous} />
+                <span className="w-[4.75rem] shrink-0 font-mono text-content">{c.code}</span>
+                <span className="min-w-0 flex-1 truncate text-content">{c.name}</span>
+                <span className="hidden h-1.5 w-24 shrink-0 bg-surface-muted sm:block" aria-hidden>
+                  <span className="block h-1.5 bg-content" style={{ width: `${Math.max((c.kg / max) * 100, 2)}%` }} />
+                </span>
+                <span className="w-20 shrink-0 text-right font-mono text-content">{formatKg(Math.round(c.kg))} kg</span>
+              </li>
+            ))}
+          </ul>
+          {rest.length > 0 && (
+            <p className="border-t border-line pt-2.5 text-sm text-content-subtle">
+              {t.codesMore
+                .replace("{n}", String(rest.length))
+                .replace("{kg}", formatKg(Math.round(restKg)))}
+            </p>
+          )}
+        </>
       )}
     </Card>
   );

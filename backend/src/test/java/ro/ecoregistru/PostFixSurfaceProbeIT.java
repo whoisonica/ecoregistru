@@ -99,9 +99,8 @@ class PostFixSurfaceProbeIT {
      * tipărește {@code m.getDriverCnp()} direct, fără {@code SecurityUtils.cnpForCurrentUser}. Același
      * cont care primește „190********57" în {@code GET /movements} descarcă PDF-ul cu CNP-ul întreg.
      */
-    @org.junit.jupiter.api.Disabled("BUG-053 — de hotărât de proprietar: avizul cere CNP-ul prin lege")
     @Test
-    void aViewerReadsTheWholeCnpOnTheAviz() throws Exception {
+    void aViewerCannotReachTheAvizAtAll() throws Exception {
         String body = mockMvc.perform(post("/api/v1/movements").header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -118,9 +117,16 @@ class PostFixSurfaceProbeIT {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(asJson).doesNotContain(CNP).contains("190********57");
 
-        byte[] pdf = mockMvc.perform(get("/api/v1/movements/" + id + "/aviz").header("Authorization", "Bearer " + viewerToken))
+        // Decizia (20.09.2026): avizul trece pe `CAN_WRITE`. Mascarea din liste ar fi fost decorativă
+        // cât timp același cont descarcă PDF-ul cu CNP-ul întreg, iar un vizualizator n-are de ce
+        // să tipărească un aviz — îl tipărește cel care predă deșeul, adică cel care scrie mișcarea.
+        mockMvc.perform(get("/api/v1/movements/" + id + "/aviz").header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isForbidden());
+
+        // Iar pentru cine are dreptul, CNP-ul e tot acolo: legea îl cere pe formular.
+        byte[] pdf = mockMvc.perform(get("/api/v1/movements/" + id + "/aviz").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-        assertThat(pdfText(pdf)).doesNotContain(CNP);
+        assertThat(pdfText(pdf)).contains(CNP);
     }
 
     // ---------- BUG-033/040: importul lasă să treacă ce coloana nu ține ----------

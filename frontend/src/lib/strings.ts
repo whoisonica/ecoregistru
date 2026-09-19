@@ -494,6 +494,7 @@ export const strings = {
     codesTitle: "Deșeurile anului",
     codesAll: "Totalul anului",
     codesEmpty: "Nicio cantitate pe {year} încă.",
+    codesMore: "și încă {n} pe „Totalul anului”: {kg} kg",
     timelineTitle: "Termenele pe următoarele 12 luni",
     timelineIcs: "Adaugă în calendar",
     timelineIcsFile: "termene-wastehouse.ics",
@@ -796,7 +797,7 @@ export const strings = {
     treatmentPurpose: "Tratare — scopul",
     treatmentPurposeHint:
       "Nu se alege: îl dă unde pleacă deșeul. V la valorificare, E la eliminare — așa apare în coloana „Scopul” de pe fișă.",
-    wasteDestinationRequired: "Alege destinația: DO, I, Vr sau A.",
+    wasteDestinationRequired: "Alege destinația deșeului.",
     physicalStateRequired: "Alege starea fizică: apare pe fișă.",
     storageTypeRequired: "Alege în ce îl ții: apare pe fișă.",
     transportMeansRequired: "Alege mijlocul de transport: apare pe fișă.",

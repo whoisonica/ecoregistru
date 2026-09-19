@@ -117,7 +117,12 @@ await page.waitForSelector('[data-testid="new-client-done"]', { timeout: 10000 }
 const done = await text();
 check("rezumat: firma e gata", done.includes(`${NAME} e gata`));
 check("rezumat: abonament și prima factură", done.includes("Abonament Generator, prima factură 389 lei"));
-check("rezumat: invitația", done.includes(`Invitație trimisă la ${CONTACT}`));
+// Fără SMTP (CI), contul se creează dar mailul nu pleacă: rezumatul spune atunci „n-a putut fi trimis”.
+// Oricare din cele două, dar cu emailul în el — „Nimeni invitat încă.” tot cade.
+check(
+  "rezumat: invitația",
+  done.includes(`Invitație trimisă la ${CONTACT}`) || done.includes(`Contul pentru ${CONTACT} e creat`),
+);
 await shot(page, "31_gata");
 
 const companies = await api(page, "GET", "/api/v1/companies");

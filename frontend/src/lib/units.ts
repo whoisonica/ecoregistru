@@ -12,9 +12,22 @@
  */
 
 /**
- * Kilograme, cu punct la mii și fără zecimale forțate: „1.060”, nu „1,060” (care arată ca tone).
+ * Kilograme: punct la mii, virgulă la zecimale, **întotdeauna trei zecimale** — „1.060,000”.
+ *
+ * <p>Zecimalele sunt forțate dinadins (G06, 20.09.2026). Până acum aceeași cantitate se scria în
+ * patru feluri: „35.125" în listă, „35,125" pe total, „35.125" pe fișă, „120,500" pe aviz — iar
+ * „35.125" și „35,125" sunt, în românește, două numere care diferă de o mie de ori. Un cititor
+ * n-avea din ce să deducă ce convenție s-a folosit pe hârtia din mână.
+ *
+ * <p>Regula care omoară ambiguitatea nu e „alegem punctul" sau „alegem virgula", ci **grupul de
+ * după virgulă are mereu exact trei cifre**: atunci virgula e mereu ultima și punctul e mereu la
+ * mii, indiferent de cifră. Răspunde și obiecției de la 17.09 („1,060” arată ca tone): „1.060,000”
+ * nu poate fi citit ca tone.
  */
-const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
+const kgFormat = new Intl.NumberFormat("ro-RO", {
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
 
 export function formatKg(kilograms: number): string {
   return kgFormat.format(kilograms);

@@ -54,7 +54,25 @@ else await page.locator('[role="listbox"] [role="option"]').first().click();
 await page.waitForTimeout(300);
 
 const destinations = await page.$$eval('#mv-destination input[name="mv-destination"]', (os) => os.map((o) => o.value).filter(Boolean));
-check("destinația are patru opțiuni: DO, I, Vr, A", destinations.join(",") === "DO,I,Vr,A", destinations.join(","));
+// Toate cele opt valori ale notei 5 (HG 856/2002, anexa 1, cap. 2), în ordinea din act. Până pe
+// 20.09.2026 ecranul oferea patru — erau date ca exemplu și rămăseseră în cod ca filtru, așa că
+// `P`, `HP`, `HC` și `Ve` nu se puteau alege deși nota tipărită le are.
+check("destinația are toate cele opt valori ale notei 5",
+  destinations.join(",") === "DO,HP,HC,I,Vr,P,Ve,A", destinations.join(","));
+
+// Iar după ce se alege ce se întâmplă cu deșeul, rămâne tabăra lui (20.09.2026): „valorificare, R3
+// spre groapa orașului" era combinația care se salva fără niciun semn.
+const camp = async () =>
+  (await page.$$eval('#mv-destination input[name="mv-destination"]', (os) => os.map((o) => o.value).filter(Boolean))).join(",");
+const fate = async (value) => {
+  // Pastila: `input`-ul e `sr-only`, deci se apasă eticheta care îl conține (ca în proba 26).
+  await page.locator(`label:has(input[name="mv-fate"][value="${value}"])`).click();
+  await page.waitForTimeout(300);
+};
+await fate("RECOVERED");
+check("valorificarea oferă numai destinațiile ei", (await camp()) === "Vr,P,Ve,A", await camp());
+await fate("DISPOSED");
+check("eliminarea oferă numai destinațiile ei", (await camp()) === "DO,HP,HC,I,A", await camp());
 
 await page.fill("#mv-qty", "12");
 await page.locator('label:has(input[name="mv-fate"])').nth(1).click(); // spre eliminare

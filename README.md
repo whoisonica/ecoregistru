@@ -127,6 +127,11 @@ file them, and the rules are being rewritten.
 endpoint level. A consultant belongs to a consultancy (`V40`) and may pick only the companies that
 consultancy manages; any other `X-Tenant-Id` answers exactly like an id that does not exist.
 
+A `CLIENT_VIEWER` reads; it does not print the two transport papers. **Anexa 3** is gated because
+rendering it allocates the form's number, and the **aviz** because it carries the driver's CNP in
+full — every list masks that CNP for a viewer, so leaving the PDF open would have made the masking
+decorative. Both buttons are hidden for the role rather than failing on click.
+
 Current status and the feature-by-feature log: [`docs/status.md`](docs/status.md).
 
 ---

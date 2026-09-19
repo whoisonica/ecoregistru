@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   D_CODES,
+  destinationsFor,
   R_CODES,
   isExit,
   operationsFor,
@@ -37,4 +38,24 @@ test("casetele „Destinat:” de pe Anexa 3 urmează destinatarul, iar eliminar
   assert.deepEqual(suggestedDestinations("RECOVERER", "RECOVERED"), ["VALORIFICARE"]);
   assert.deepEqual(suggestedDestinations("COLLECTOR", "DISPOSED"), []);
   assert.deepEqual(suggestedDestinations(undefined, "RECOVERED"), []);
+});
+
+/**
+ * Nota 5 pe tabere (20.09.2026). Proba ține două lucruri deodată: că regula chiar desparte, și că
+ * **nu pierde niciun cod** — reducerea listei la patru valori a fost tocmai greșeala de reparat.
+ */
+test("destinațiile se oferă pe tabăra operațiunii, fără să dispară vreun cod al notei 5", () => {
+  assert.deepEqual(destinationsFor("RECOVERED"), ["Vr", "P", "Ve", "A"]);
+  assert.deepEqual(destinationsFor("DISPOSED"), ["DO", "HP", "HC", "I", "A"]);
+
+  // Fără operațiune aleasă (o intrare, o generare fără soartă) se oferă toate opt.
+  assert.equal(destinationsFor("").length, 8);
+
+  // Niciun cod al notei 5 nu rămâne pe dinafară: reuniunea celor două tabere le acoperă pe toate.
+  const reunite = new Set([...destinationsFor("RECOVERED"), ...destinationsFor("DISPOSED")]);
+  assert.deepEqual([...reunite].sort(), ["A", "DO", "HC", "HP", "I", "P", "Ve", "Vr"]);
+
+  // „Altele" e singura din amândouă: e rubrica pentru ce nu intră nicăieri.
+  const inAmandoua = destinationsFor("RECOVERED").filter((d) => destinationsFor("DISPOSED").includes(d));
+  assert.deepEqual(inAmandoua, ["A"]);
 });

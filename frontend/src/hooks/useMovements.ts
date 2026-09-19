@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { evidencesRoot } from "@/hooks/useEvidences";
 import type { PageSlice, RemoteTableParams } from "@/hooks/useTableView";
 import type {
   Attachment,
@@ -131,8 +132,20 @@ export function useMovementTotals(filters: MovementFilters, enabled = true) {
   });
 }
 
+/**
+ * Orice scriere de mișcare schimbă și evidența lunară, iar „Totalul anului" și Acasă se citesc din
+ * `["evidences"]`, nu din `["movements"]`. Fără a doua invalidare, omul salva o predare și rămânea
+ * cu cifra dinainte pe ecran până reîncărca pagina cu mâna.
+ *
+ * <p>Stă aici, în funcția prin care trec toate mutațiile de mișcare, nu în fiecare `onSuccess`:
+ * altfel următoarea mutație adăugată o uită. `useWeighingOperations` le invalidează deja pe
+ * amândouă, din același motiv.
+ */
 function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
-  return qc.invalidateQueries({ queryKey: movementsRoot });
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: movementsRoot }),
+    qc.invalidateQueries({ queryKey: evidencesRoot }),
+  ]);
 }
 
 export function useCreateMovement() {

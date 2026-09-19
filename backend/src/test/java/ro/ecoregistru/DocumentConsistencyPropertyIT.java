@@ -707,13 +707,16 @@ class DocumentConsistencyPropertyIT {
     private String checkExportPdf(Run run, int year) throws Exception {
         Map<Key, Cell4> oracle = oracle(run, year);
         String text = Golden.flat(Golden.pdfText(bytes(run, "/api/v1/evidences/export?year=" + year + "&format=pdf")));
-        DecimalFormat ro = new DecimalFormat("#,##0.###", DecimalFormatSymbols.getInstance(Locale.of("ro", "RO")));
+        // Trei zecimale mereu, ca exportul (G06, 20.09.2026 — vezi `GenericEvidenceExporter`).
+        DecimalFormat ro = new DecimalFormat("#,##0.000", DecimalFormatSymbols.getInstance(Locale.of("ro", "RO")));
         for (Map.Entry<Key, Cell4> e : oracle.entrySet()) {
             Key k = e.getKey();
             Cell4 c = e.getValue();
             String row = Golden.flat(run.pointNames[k.point()] + MONTHS[k.month() - 1] + CODES[k.code()]
                     + run.codeNames[k.code()] + (CODES[k.code()].equals(HAZARDOUS) ? "Da" : "Nu")
-                    + ro.format(c.generated()) + ro.format(c.recovered()) + ro.format(c.disposed()) + "0" + "0");
+                    + ro.format(c.generated()) + ro.format(c.recovered()) + ro.format(c.disposed())
+                    // Cele două coloane de stoc, tot prin formatul exportului: „0" a devenit „0,000".
+                    + ro.format(0) + ro.format(0));
             if (!text.contains(row)) return "export pdf " + year + ": lipsește rândul „" + row + "”";
         }
         return null;

@@ -17,7 +17,9 @@ function check(name, ok, detail = "") {
     fails++;
   }
 }
-const digits = (s) => (s ?? "").replace(/\D/g, "");
+/** „18.699,000 kg" → 18699: punctul e la mii, virgula la zecimale (G06, 20.09.2026). */
+const kgNumber = (s) =>
+  Number((s ?? "").replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
 
 await login(page, "admin");
 await page.goto(BASE + "/", { waitUntil: "networkidle" });
@@ -70,7 +72,7 @@ const an = await page.evaluate(() => {
   };
 });
 check("douăsprezece luni", an.bare === 12, String(an.bare));
-check("totalul anului e suma evidenței din API", digits(an.total) === digits(String(Math.round(total))),
+check("totalul anului e suma evidenței din API", Math.round(kgNumber(an.total)) === Math.round(total),
   `${an.total} față de ${Math.round(total)} kg`);
 check("lunile goale sunt exact cele socotite din API", JSON.stringify(an.goluri) === JSON.stringify(gaps),
   `${JSON.stringify(an.goluri)} față de ${JSON.stringify(gaps)}`);

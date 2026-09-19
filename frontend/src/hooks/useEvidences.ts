@@ -9,7 +9,7 @@ import type { EvidenceFilters, EvidenceRegenerationResponse, MonthlyEvidence } f
  * useMovements. Evidence is a regenerable cache: the list reflects the last
  * regeneration, so useRegenerateEvidence invalidates the whole family on success.
  */
-const evidencesRoot = ["evidences"] as const;
+export const evidencesRoot = ["evidences"] as const;
 export const evidencesKey = (filters: EvidenceFilters) => [...evidencesRoot, filters] as const;
 
 /**

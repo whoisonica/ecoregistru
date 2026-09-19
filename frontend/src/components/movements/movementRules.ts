@@ -1,6 +1,6 @@
 /** Regulile pure ale formularului de mișcare, fără React: ce operațiuni, coduri și casete se oferă. */
 import { strings } from "@/lib/strings";
-import type { MovementDirection, PackagingMaterial, PartnerType, TransportDestination, WasteOperation, WasteOperationCode, WasteRegister } from "@/lib/types";
+import type { MovementDirection, PackagingMaterial, PartnerType, TransportDestination, WasteDestination, WasteOperation, WasteOperationCode, WasteRegister } from "@/lib/types";
 
 const e = strings.enums;
 
@@ -112,3 +112,24 @@ export function suggestedDestinations(
   return [];
 }
 
+
+/**
+ * Ce destinații din nota 5 se potrivesc cu operațiunea aleasă (20.09.2026, proprietarul).
+ *
+ * <p>Până acum cele două rubrici se alegeau independent, deci se putea salva „valorificare, R3" cu
+ * destinația `DO` — groapa de gunoi a orașului — iar fișa o tipărea așa. Pe hârtie nu se vedea,
+ * fiindcă **cap. 2 se tipărește pe lună**, unde „DO, Vr" e legitim: neconcordanța era în rândul
+ * din aplicație.
+ *
+ * <p>Gruparea **nu e o deducție**, e chiar textul notei 5: `I` scrie „Incinerarea în scopul
+ * **eliminării**", `Vr` și `Ve` scriu „**Valorificare** …", `HP`/`HC` sunt halde, `DO` e depozitul
+ * de gunoi. `A` („Altele") stă în amândouă: e rubrica pentru ce nu intră nicăieri.
+ *
+ * <p>Cât timp operațiunea nu e aleasă (o intrare, o generare fără soartă), se oferă toate opt: n-ai
+ * după ce filtra, iar o listă scurtată fără motiv ascunde valori pe care nota tipărită le are.
+ */
+export function destinationsFor(operation: WasteOperation | ""): WasteDestination[] {
+  if (operation === "RECOVERED") return ["Vr", "P", "Ve", "A"];
+  if (operation === "DISPOSED") return ["DO", "HP", "HC", "I", "A"];
+  return ["DO", "HP", "HC", "I", "Vr", "P", "Ve", "A"];
+}

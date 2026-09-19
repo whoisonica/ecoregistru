@@ -113,8 +113,10 @@ class AuditLogIT {
         updateMovement(id, "2031-02-05", "7.500", null);
 
         JsonNode change = onlyChangeOf(latestEntryFor(id), "quantity");
-        assertThat(change.get("from").asText()).startsWith("5.0");
-        assertThat(change.get("to").asText()).startsWith("7.5");
+        // Scara e normalizată (`5.000` din bază și `5` din formular dau același șir — vezi
+        // `AuditInterceptorFormatTest`), deci aici se poate cere egalitate, nu „începe cu".
+        assertThat(change.get("from").asText()).isEqualTo("5");
+        assertThat(change.get("to").asText()).isEqualTo("7.5");
         // `updatedAt` se schimbă la fiecare scriere; dacă ar intra, ar fi pe fiecare rând de jurnal.
         assertThat(fieldsOf(latestEntryFor(id))).containsExactly("quantity");
     }
