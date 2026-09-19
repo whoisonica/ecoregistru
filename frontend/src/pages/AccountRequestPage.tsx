@@ -466,7 +466,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Input
                     className={fieldClass}
-                    id="ar-cui"
+                    id="ar-cui" maxLength={20}
                     value={cui}
                     onChange={(e) => setCui(e.target.value)}
                     placeholder={t.cuiPlaceholder}
@@ -481,7 +481,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Input
                     className={fieldClass}
-                    id="ar-name"
+                    id="ar-name" maxLength={255}
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     autoComplete="organization"
@@ -514,7 +514,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Textarea
                     className={areaClass}
-                    id="ar-address"
+                    id="ar-address" maxLength={500}
                     rows={2}
                     value={companyAddress}
                     onChange={(e) => setCompanyAddress(e.target.value)}
@@ -528,7 +528,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Input
                     className={cn(fieldClass, "font-mono")}
-                    id="ar-caen"
+                    id="ar-caen" maxLength={10}
                     value={caenCode}
                     onChange={(e) => setCaenCode(e.target.value)}
                     placeholder={t.caenCodePlaceholder}
@@ -550,7 +550,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Input
                     className={fieldClass}
-                    id="ar-wp-name"
+                    id="ar-wp-name" maxLength={255}
                     value={workPointName}
                     onChange={(e) => setWorkPointName(e.target.value)}
                     placeholder={t.workPointNamePlaceholder}
@@ -565,7 +565,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Textarea
                     className={areaClass}
-                    id="ar-wp-address"
+                    id="ar-wp-address" maxLength={500}
                     rows={2}
                     value={workPointAddress}
                     onChange={(e) => setWorkPointAddress(e.target.value)}
@@ -583,7 +583,7 @@ export function AccountRequestPage() {
                     </Label>
                     <Input
                       className={fieldClass}
-                      id="ar-auth-number"
+                      id="ar-auth-number" maxLength={255}
                       value={authNumber}
                       onChange={(e) => setAuthNumber(e.target.value)}
                       disabled={skipsEnvAuth}
@@ -635,7 +635,7 @@ export function AccountRequestPage() {
                     </Label>
                     <Textarea
                       className={areaClass}
-                      id="ar-transport-means"
+                      id="ar-transport-means" maxLength={500}
                       rows={2}
                       value={transportMeans}
                       onChange={(e) => setTransportMeans(e.target.value)}
@@ -651,7 +651,7 @@ export function AccountRequestPage() {
                       </Label>
                       <Input
                         className={fieldClass}
-                        id="ar-transport-licence"
+                        id="ar-transport-licence" maxLength={255}
                         value={transportLicenseNumber}
                         onChange={(e) => setTransportLicenseNumber(e.target.value)}
                         {...invalidProps("ar-transport-licence-err", errors.transportLicenseNumber)}
@@ -686,7 +686,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Input
                     className={fieldClass}
-                    id="ar-contact-name"
+                    id="ar-contact-name" maxLength={255}
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     autoComplete="name"
@@ -701,7 +701,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Input
                     className={fieldClass}
-                    id="ar-contact-phone"
+                    id="ar-contact-phone" maxLength={50}
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
                     autoComplete="tel"
@@ -716,7 +716,7 @@ export function AccountRequestPage() {
                 </Label>
                 <Input
                   className={fieldClass}
-                  id="ar-contact-email"
+                  id="ar-contact-email" maxLength={255}
                   type="email"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
@@ -731,7 +731,7 @@ export function AccountRequestPage() {
                 </Label>
                 <Input
                   className={fieldClass}
-                  id="ar-contact-role"
+                  id="ar-contact-role" maxLength={120}
                   value={contactRole}
                   onChange={(e) => setContactRole(e.target.value)}
                   placeholder={t.contactRolePlaceholder}
@@ -762,7 +762,7 @@ export function AccountRequestPage() {
                   </Label>
                   <Textarea
                     className={areaClass}
-                    id="ar-waste-text"
+                    id="ar-waste-text" maxLength={2000}
                     rows={2}
                     value={wasteCodesText}
                     onChange={(e) => setWasteCodesText(e.target.value)}
@@ -869,7 +869,7 @@ export function AccountRequestPage() {
                 </Label>
                 <Textarea
                   className={areaClass}
-                  id="ar-notes"
+                  id="ar-notes" maxLength={2000}
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

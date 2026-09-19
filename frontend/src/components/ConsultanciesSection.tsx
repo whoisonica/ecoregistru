@@ -104,7 +104,7 @@ export function ConsultanciesSection() {
           lastName: lastName.trim() || null,
         },
       });
-      notifyInvited(notify, invited, t.invited);
+      notifyInvited(notify, invited, t.invited, strings.common.inviteMailFailedNoList);
       setInviting(null);
     } catch (err) {
       notify(apiErrorMessage(err, t.inviteError), "error");
@@ -200,7 +200,7 @@ export function ConsultanciesSection() {
           <div>
             <Label htmlFor="cons-name">{t.name}</Label>
             <Input
-              id="cons-name"
+              id="cons-name" maxLength={255}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -266,7 +266,7 @@ export function ConsultanciesSection() {
           <div>
             <Label htmlFor="cons-email">{u.email}</Label>
             <Input
-              id="cons-email"
+              id="cons-email" maxLength={255}
               type="email"
               value={email}
               onChange={(e) => {
@@ -282,11 +282,11 @@ export function ConsultanciesSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="cons-first">{u.firstName}</Label>
-              <Input id="cons-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <Input id="cons-first" maxLength={128} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="cons-last">{u.lastName}</Label>
-              <Input id="cons-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <Input id="cons-last" maxLength={128} value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
           </div>
         </form>

@@ -279,7 +279,7 @@ export function InternalGeneratorsSection({
           <div>
             <Label htmlFor="ig-name">{t.name}</Label>
             <Input
-              id="ig-name"
+              id="ig-name" maxLength={255}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -293,7 +293,7 @@ export function InternalGeneratorsSection({
           <div>
             <Label htmlFor="ig-description">{t.description}</Label>
             <Textarea
-              id="ig-description"
+              id="ig-description" maxLength={1000}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}

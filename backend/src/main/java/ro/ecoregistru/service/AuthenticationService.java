@@ -6,9 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,7 +46,6 @@ public class AuthenticationService {
     final JwtService jwtService;
     final EmailService emailService;
     final PasswordEncoder passwordEncoder;
-    final AuthenticationManager authenticationManager;
     final AppUserRepository appUserRepository;
     final VerificationRecordRepository verificationRecordRepository;
     final RateLimiter rateLimiter;
@@ -80,6 +76,12 @@ public class AuthenticationService {
         AppUser user = appUserRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(INVALID_CREDENTIALS));
 
+        // BUG-065: întâi parola, apoi starea contului — altfel „cont dezactivat” / „neconfirmat” spunea
+        // oricui că adresa are cont. Direct cu encoderul: `authenticationManager` verifică `enabled`
+        // înaintea parolei și ar fi spus același lucru.
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(INVALID_CREDENTIALS);
+        }
         // Before `enabled`: a row that is both enabled and deactivated could only have come from the
         // reset hole closed below, and it must not sign in either.
         if (user.getDeactivatedAt() != null) {
@@ -87,13 +89,6 @@ public class AuthenticationService {
         }
         if (!user.isEnabled()) {
             throw new BusinessException(EMAIL_NOT_VERIFIED);
-        }
-
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getEmail(), request.password()));
-        } catch (BadCredentialsException e) {
-            throw new BusinessException(INVALID_CREDENTIALS);
         }
 
         // The password was right, so this attempt costs nothing: give the token back.
@@ -144,8 +139,12 @@ public class AuthenticationService {
         // Silent no-op if the account does not exist (avoid leaking which emails are registered).
         // A deactivated account gets no link either — same silent 200, so the answer still says nothing.
         appUserRepository.findByEmail(email.toLowerCase()).filter(u -> u.getDeactivatedAt() == null).ifPresent(user -> {
-            verificationRecordRepository
-                    .deleteByUserAndVerificationRecordTypeAndConfirmedFalse(user, RESET_PASSWORD);
+            // BUG-063: un invitat (cont încă neactivat) are în aceeași tabelă linkul de 7 zile al
+            // invitației; oricine scria adresa lui aici i-l anula. Linkul nou se adaugă lângă el.
+            if (user.isEnabled()) {
+                verificationRecordRepository
+                        .deleteByUserAndVerificationRecordTypeAndConfirmedFalse(user, RESET_PASSWORD);
+            }
             String code = newCode();
             saveRecord(user, code, RESET_PASSWORD);
             try {
@@ -176,6 +175,10 @@ public class AuthenticationService {
         // "Parolă uitată" and walk back in. Only reactivation brings an account back.
         if (user.getDeactivatedAt() != null) {
             throw new BusinessException(ACCOUNT_DEACTIVATED);
+        }
+        // BUG-057: BCrypt refuză peste 72 de octeți, iar o literă cu diacritice ține doi — era 500.
+        if (request.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new BusinessException(PASSWORD_TOO_LONG);
         }
         user.setPassword(passwordEncoder.encode(request.password()));
         // P0.4 — the new password takes the old sessions with it. Without this, someone who took

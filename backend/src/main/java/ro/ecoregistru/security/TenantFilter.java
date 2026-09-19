@@ -88,7 +88,9 @@ public class TenantFilter extends OncePerRequestFilter {
         try {
             return Optional.of(UUID.fromString(header.trim()));
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid {} header: {}", TENANT_HEADER, header);
+            // Headerul vine de la client: tăiat și fără rânduri noi, ca să nu poată scrie linii false în log.
+            log.warn("Invalid {} header: {}", TENANT_HEADER,
+                    header.replaceAll("[\\r\\n]", "_").substring(0, Math.min(header.length(), 64)));
             return Optional.empty();
         }
     }

@@ -581,7 +581,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
               <div>
                 <Label htmlFor="p-name">{t.name}</Label>
                 <Input
-                  id="p-name"
+                  id="p-name" maxLength={255}
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
@@ -613,13 +613,13 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
               </div>
               <div>
                 <Label htmlFor="p-address">{t.address}</Label>
-                <Input id="p-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+                <Input id="p-address" maxLength={500} value={address} onChange={(e) => setAddress(e.target.value)} />
                 <p className="mt-1 text-xs text-content-muted">{t.anexa3Hint}</p>
               </div>
               <div>
                 <Label htmlFor="p-reg">{t.tradeRegisterNumber}</Label>
                 <Input
-                  id="p-reg"
+                  id="p-reg" maxLength={50}
                   value={tradeRegisterNumber}
                   onChange={(e) => setTradeRegisterNumber(e.target.value)}
                   placeholder={t.tradeRegisterNumberPlaceholder}
@@ -720,7 +720,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                         <div>
                           <Label htmlFor="p-licence">{t.transportLicenseNumber}</Label>
                           <Input
-                            id="p-licence"
+                            id="p-licence" maxLength={255}
                             value={transportLicenseNumber}
                             onChange={(e) => setTransportLicenseNumber(e.target.value)}
                           />
@@ -807,7 +807,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                     {t.authorizationNumber}
                   </Label>
                   <Input
-                    id="p-auth-number"
+                    id="p-auth-number" maxLength={128}
                     value={authorizationNumber}
                     onChange={(e) => {
                       setAuthorizationNumber(e.target.value);
@@ -874,7 +874,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                     <div>
                       <Label htmlFor="p-visa-number">{t.visaDecisionNumber}</Label>
                       <Input
-                        id="p-visa-number"
+                        id="p-visa-number" maxLength={100}
                         value={visaDecisionNumber}
                         onChange={(e) => setVisaDecisionNumber(e.target.value)}
                       />
@@ -940,7 +940,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                       <div className="w-full sm:w-52">
                         <Label htmlFor={`p-wp-name-${index}`}>{t.workPointName}</Label>
                         <Input
-                          id={`p-wp-name-${index}`}
+                          id={`p-wp-name-${index}`} maxLength={255}
                           value={wp.name ?? ""}
                           placeholder={t.workPointNamePlaceholder}
                           onChange={(e) =>
@@ -953,7 +953,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                       <div className="flex-1">
                         <Label htmlFor={`p-wp-address-${index}`}>{t.workPointAddress}</Label>
                         <Input
-                          id={`p-wp-address-${index}`}
+                          id={`p-wp-address-${index}`} maxLength={500}
                           value={wp.address}
                           onChange={(e) =>
                             setWorkPoints((prev) =>

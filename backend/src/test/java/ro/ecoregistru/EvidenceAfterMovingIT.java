@@ -161,7 +161,6 @@ class EvidenceAfterMovingIT {
         assertKg(next.rows().get(0).recovered(), "300");
     }
 
-    /** Codul greșit, corectat: 400 kg trec de pe hârtie pe sticlă, în aceeași lună. */
     /**
      * Anul părăsit e primul an cu linii și duce stoc în anul următor. Prima reparație a BUG-031
      * ștergea liniile anului părăsit: citit primul, 2026 nu mai găsea nimic pe 2025, se deschidea
@@ -198,6 +197,7 @@ class EvidenceAfterMovingIT {
         assertThat(evidenceCalculator.anexa1(2025, pointA)).isEmpty();
     }
 
+    /** Codul greșit, corectat: 400 kg trec de pe hârtie pe sticlă, în aceeași lună. */
     @Test
     void aMovementMovedToAnotherCodeLeavesTheOldCodesSheet() throws Exception {
         handover(pointA, paper, "2026-02-10", "100");

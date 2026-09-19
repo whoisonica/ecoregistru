@@ -68,7 +68,12 @@ export function DeadlinesPage() {
   const tab = tabParam === "bifate" || tabParam === "trecute" ? tabParam : "";
   const currentYear = new Date().getFullYear();
   const upcoming = useUpcomingDeadlines();
-  const [year, setYear] = useUrlNumber("an", currentYear);
+  // BUG-059: „Bifate” pornește pe anul celui mai recent termen bifat — un 15 martie bifat acum stă
+  // în anul următor, iar deschis din nou pe anul curent, tabul părea gol.
+  const latestDoneYear = (upcoming.data ?? [])
+    .filter((d) => d.status === "DONE" && d.dueDate)
+    .reduce((y, d) => Math.max(y, Number(d.dueDate!.slice(0, 4))), currentYear);
+  const [year, setYear] = useUrlNumber("an", latestDoneYear);
   const history = useDeadlines(year, tab === "bifate");
   const past = usePastDeadlines(tab === "trecute");
   const regenerateMut = useRegenerateDeadlines();

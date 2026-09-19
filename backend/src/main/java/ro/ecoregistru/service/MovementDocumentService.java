@@ -32,6 +32,7 @@ public class MovementDocumentService {
     ro.ecoregistru.service.export.Anexa2FormGenerator anexa2FormGenerator;
     ro.ecoregistru.service.export.AvizGenerator avizGenerator;
     Anexa2ThresholdCalculator anexa2ThresholdCalculator;
+    SubscriptionService subscriptionService;
 
     /**
      * Renders Anexa 3 la HG 1061/2008 for a movement that is already recorded, allocating the
@@ -69,6 +70,12 @@ public class MovementDocumentService {
             throw new BusinessException(ANEXA3_HAZARDOUS_NOT_ALLOWED);
         }
         if (movement.getAnexa3Number() == null) {
+            // BUG-064: alocarea e o scriere, deși vine printr-un GET, pe care doar-citirea îl lasă să treacă.
+            if (subscriptionService.readOnlyEnabled()
+                    && subscriptionService.access(ro.ecoregistru.security.SecurityUtils.currentUser(), tenantId,
+                    DeadlineService.today()).readOnly()) {
+                throw new BusinessException(ANEXA3_NUMBER_READ_ONLY);
+            }
             movement.setAnexa3Number(anexa3Numbering.next(tenantId));
             movement.setAnexa3Series(company.getAnexa3Series());
         }

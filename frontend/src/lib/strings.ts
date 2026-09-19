@@ -3697,6 +3697,9 @@ export const strings = {
     /** BUG-038 — contul e creat, dar mailul cu linkul n-a plecat; fără asta, omul aștepta un link care nu vine. */
     inviteMailFailed:
       "Contul e creat, dar emailul cu invitația n-a putut fi trimis. Încearcă „Retrimite invitația” din lista de utilizatori.",
+    /** BUG-060 — pe drumul platformă → consultant nu e listă de utilizatori; „Parolă uitată” trimite un link nou. */
+    inviteMailFailedNoList:
+      "Contul e creat, dar emailul cu invitația n-a putut fi trimis. Spune-i consultantului să aleagă „Parolă uitată” cu adresa lui: primește un link nou.",
     /** Rubrica de parolă: „Arată” și bara de putere de la o parolă nouă. */
     password: {
       show: "Arată parola",

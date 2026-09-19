@@ -58,7 +58,6 @@ function lei(n: number) {
   return `${n.toLocaleString("ro-RO", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })} lei`;
 }
 
-/** Ziua de azi în ora locală a omului, nu în UTC: la 01:00 în România, UTC e încă ieri. */
 function timeOf(iso: string) {
   return new Date(iso).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
 }

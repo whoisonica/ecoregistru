@@ -9,7 +9,9 @@ export function notifyInvited(
   notify: (message: string, variant?: "success" | "error" | "info") => void,
   user: CompanyUser,
   sent: string,
+  /** BUG-060: unde nu e listă cu „Retrimite invitația” (platforma → consultant), alt drum. */
+  failed: string = strings.common.inviteMailFailed,
 ) {
-  if (user.inviteEmailSent === false) notify(strings.common.inviteMailFailed, "error");
+  if (user.inviteEmailSent === false) notify(failed, "error");
   else notify(sent, "success");
 }

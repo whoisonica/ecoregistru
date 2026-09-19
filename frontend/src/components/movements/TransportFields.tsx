@@ -143,7 +143,7 @@ export function TransportFields({
               <div>
                 <Label htmlFor="mv-driver">{t.driverName}</Label>
                 <Input
-                  id="mv-driver"
+                  id="mv-driver" maxLength={255}
                   value={driverName}
                   onChange={(ev) => setDriverName(ev.target.value)}
                 />
@@ -151,7 +151,7 @@ export function TransportFields({
               <div>
                 <Label htmlFor="mv-driver-id">{t.driverIdentification}</Label>
                 <Input
-                  id="mv-driver-id"
+                  id="mv-driver-id" maxLength={100}
                   value={driverIdentification}
                   onChange={(ev) => setDriverIdentification(ev.target.value)}
                   placeholder={t.driverIdentificationPlaceholder}
@@ -170,7 +170,7 @@ export function TransportFields({
               <div>
                 <Label htmlFor="mv-plate">{t.vehicleRegistration}</Label>
                 <Input
-                  id="mv-plate"
+                  id="mv-plate" maxLength={50}
                   value={vehicleRegistration}
                   onChange={(ev) => setVehicleRegistration(ev.target.value)}
                 />

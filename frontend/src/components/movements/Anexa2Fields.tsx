@@ -71,7 +71,7 @@ export function Anexa2Fields({
         <div>
           <Label htmlFor="mv-anexa2-approval">{t.anexa2ApprovalNumber}</Label>
           <Input
-            id="mv-anexa2-approval"
+            id="mv-anexa2-approval" maxLength={60}
             value={anexa2ApprovalNumber}
             onChange={(ev) => setAnexa2ApprovalNumber(ev.target.value)}
           />
@@ -113,7 +113,7 @@ export function Anexa2Fields({
       <div>
         <Label htmlFor="mv-anexa2-packaging">{t.anexa2Packaging}</Label>
         <Input
-          id="mv-anexa2-packaging"
+          id="mv-anexa2-packaging" maxLength={255}
           value={anexa2Packaging}
           onChange={(ev) => setAnexa2Packaging(ev.target.value)}
           placeholder={t.anexa2PackagingPlaceholder}

@@ -269,7 +269,7 @@ export function CompanyProfileFields({
           <div>
             <Label htmlFor="cp-transport-means">{t.transportMeans}</Label>
             <Textarea
-              id="cp-transport-means"
+              id="cp-transport-means" maxLength={500}
               rows={2}
               value={value.transportMeans}
               onChange={(e) => patch({ transportMeans: e.target.value })}
@@ -280,7 +280,7 @@ export function CompanyProfileFields({
             <div>
               <Label htmlFor="cp-transport-licence">{t.transportLicenseNumber}</Label>
               <Input
-                id="cp-transport-licence"
+                id="cp-transport-licence" maxLength={255}
                 value={value.transportLicenseNumber}
                 onChange={(e) => patch({ transportLicenseNumber: e.target.value })}
               />

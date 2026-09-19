@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mock, test } from "node:test";
-import { todayIso } from "@/components/movements/movementRules";
+import { todayIso } from "@/lib/utils";
 
 // QA de lansare, generator — G16. `todayIso()` dă data implicită a unei mișcări noi
 // (MovementFormDialog.tsx:196). E luată din `toISOString()`, adică din UTC: între 00:00 și 03:00,

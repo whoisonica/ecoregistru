@@ -173,7 +173,6 @@ class PostFixSecurityQaIT {
      * cere anul 1 pune serverul să reconstruiască ~2025 de ani într-o singură tranzacție, sub lacătul firmei.
      */
     @Test
-    @Disabled("QA-SEC-6: Regenerează fără margine de an, cascadă de ~2025 de ani")
     void regenerateRefusesAYearNobodyCanHaveMovementsIn() throws Exception {
         createMovement(operatorA, handover("2026-03-10", ""));
         mockMvc.perform(get("/api/v1/evidences").param("year", "2026").header("Authorization", "Bearer " + operatorA))
@@ -194,7 +193,6 @@ class PostFixSecurityQaIT {
 
     /** Un an în afara domeniului Postgres (sau al lui LocalDate): 4xx, nu 500. */
     @Test
-    @Disabled("QA-SEC-6: ?year= în afara domeniului Postgres → 500 pe 13 rute")
     void aYearOutsideTheDatabaseRangeIsNotAServerError() throws Exception {
         java.util.List<String> fiveHundreds = new java.util.ArrayList<>();
         for (String year : new String[]{"-300000", "300000000", "2147483647"}) {
@@ -219,7 +217,6 @@ class PostFixSecurityQaIT {
 
     /** Data mișcării n-are margini: anul 1 și anul 9999 se primesc, iar 9999 duce cache-ul până acolo. */
     @Test
-    @Disabled("QA-SEC-6: data mișcării fără margini (0001, 9999)")
     void aMovementDatedInYearOneOrYear9999IsRefused() throws Exception {
         for (String date : new String[]{"0001-06-01", "9999-12-31"}) {
             int status = mockMvc.perform(post("/api/v1/movements").header("Authorization", "Bearer " + operatorA)
@@ -297,7 +294,6 @@ class PostFixSecurityQaIT {
 
     /** Parola aleasă din link (invitație sau reset): 73–100 de semne trec de {@code @Size(max = 100)}. */
     @Test
-    @Disabled("QA-SEC-4: parolă de 73–100 de octeți → BCrypt aruncă → 500")
     void aLongPassphraseOnTheInvitationLinkIsNotAServerError() throws Exception {
         String email = "lunga+" + UUID.randomUUID().toString().substring(0, 8) + "@client.ro";
         mockMvc.perform(post("/api/v1/users").header("Authorization", "Bearer " + adminA)
@@ -401,7 +397,6 @@ class PostFixSecurityQaIT {
      * înainte să verifice parola, deci oricine află că adresa are cont și în ce stare e.
      */
     @Test
-    @Disabled("QA-SEC-5: login spune starea contului înainte de parolă")
     void aWrongPasswordOnADeactivatedAccountAnswersLikeAnyWrongPassword() throws Exception {
         AppUser off = user(a, Role.OPERATOR);
         off.setEnabled(false);
@@ -424,7 +419,6 @@ class PostFixSecurityQaIT {
      * îl poate anula fără cont (omul primește în schimb un link de 30 de minute).
      */
     @Test
-    @Disabled("QA-SEC-8: Parolă uitată anonim șterge linkul invitației")
     void anAnonymousResetRequestDoesNotKillAPendingInvitationLink() throws Exception {
         String email = "anulat+" + UUID.randomUUID().toString().substring(0, 8) + "@client.ro";
         mockMvc.perform(post("/api/v1/users").header("Authorization", "Bearer " + adminA)

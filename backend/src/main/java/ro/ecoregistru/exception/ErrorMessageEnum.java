@@ -11,6 +11,7 @@ public enum ErrorMessageEnum {
 
     // --- Authentication ---
     PASSWORDS_NOT_MATCH("passwords.not.match", "Parolele nu coincid."),
+    PASSWORD_TOO_LONG("password.too.long", "Parola e prea lungă: cel mult 72 de litere fără diacritice (o literă cu diacritice ține cât două)."),
     WEAK_PASSWORD("weak.password", "Parola trebuie să aibă minim 8 caractere, cu literă mare, literă mică și cifră."),
     ACCOUNT_ALREADY_EXISTS("account.already.exists", "Există deja un cont cu acest email."),
     ACCOUNT_ALREADY_VERIFIED("account.already.verified", "Acest cont este deja verificat."),
@@ -207,6 +208,9 @@ public enum ErrorMessageEnum {
     WASTE_DESTINATION_REQUIRED("movement.destination.required", "Alege destinația deșeului predat: DO, I, Vr sau A."),
     // Decizia proprietarului, 19.09.2026: ce tipăresc rapoartele nu rămâne gol pe o predare nouă.
     // BUG-050: o cantitate peste 1.000.000 t pe un rând strica toată evidența anului.
+    YEAR_OUT_OF_RANGE("year.out.of.range", "Anul nu e valid: trebuie să fie de la 2000 încoace și nu mai departe de zece ani de acum."),
+    MOVEMENT_DATE_OUT_OF_RANGE("movement.date.out.of.range", "Data nu e validă: anul trebuie să fie de la 2000 încoace și nu mai departe de zece ani de acum."),
+    ANEXA3_NUMBER_READ_ONLY("anexa3.number.read.only", "Contul e doar pentru citire: o Anexa 3 tipărită deja se descarcă, dar una nouă ia un număr din serie, deci cere contul activ. Plata, din Abonament, îl redeschide imediat."),
     QUANTITY_TOO_LARGE("movement.quantity.too.large", "Cantitatea e prea mare: cel mult 1.000.000 t (1.000.000.000 kg) pe un rând. Verifică unitatea."),
     PHYSICAL_STATE_REQUIRED("movement.physical.state.required", "Alege starea fizică a deșeului: apare pe fișa Anexa 1."),
     STORAGE_TYPE_REQUIRED("movement.storage.type.required", "Alege în ce ții deșeul până la predare: apare pe fișa Anexa 1."),

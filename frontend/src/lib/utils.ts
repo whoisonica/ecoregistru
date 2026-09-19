@@ -45,6 +45,15 @@ export function fold(text: string): string {
  */
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "";
+  // BUG-062: un moment (`2026-03-12T22:30:00Z`, bifa unui termen, data unei cereri) e altceva decât
+  // o zi: tăiat, o bifă de la 01:30, ora României, arăta ziua de ieri. Se citește în ora locală.
+  if (iso.includes("T")) {
+    const t = new Date(iso);
+    if (!Number.isNaN(t.getTime())) {
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${pad(t.getDate())}.${pad(t.getMonth() + 1)}.${t.getFullYear()}`;
+    }
+  }
   const [y, m, d] = iso.slice(0, 10).split("-");
   return d && m && y ? `${d}.${m}.${y}` : iso;
 }

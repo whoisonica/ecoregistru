@@ -361,7 +361,7 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
           <div>
             <Label htmlFor="cu-email">{t.email}</Label>
             <Input
-              id="cu-email"
+              id="cu-email" maxLength={255}
               type="email"
               value={email}
               onChange={(e) => {
@@ -392,11 +392,11 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="cu-first">{t.firstName}</Label>
-              <Input id="cu-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <Input id="cu-first" maxLength={128} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="cu-last">{t.lastName}</Label>
-              <Input id="cu-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <Input id="cu-last" maxLength={128} value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
           </div>
         </form>

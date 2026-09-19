@@ -20,7 +20,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayIso } from "@/lib/utils";
 import { COUNTIES } from "@/lib/counties";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,17 +59,12 @@ function periodLabel(invoice: InvoicePreview) {
   return `${formatDate(invoice.from)} – ${formatDate(invoice.to)}`;
 }
 
-function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 /** „azi, 10:29” sau „16.09.2026 06:30”, pe ora de pe calculatorul omului. */
 export function checkedWhen(instant: string) {
   const d = new Date(instant);
   const time = d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
   const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return day === today() ? strings.invoicing.today.replace("{time}", time) : `${formatDate(day)} ${time}`;
+  return day === todayIso() ? strings.invoicing.today.replace("{time}", time) : `${formatDate(day)} ${time}`;
 }
 
 /**
@@ -100,7 +95,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
 
   const values = {
     plan: plan ?? subscription?.plan ?? (isConsultancy ? "CONSULTANCY" : "GENERATOR"),
-    startedAt: startedAt ?? subscription?.startedAt ?? today(),
+    startedAt: startedAt ?? subscription?.startedAt ?? todayIso(),
     founder: founder ?? subscription?.founder ?? false,
     billingEmail: billingEmail ?? subscription?.billingEmail ?? "",
     billingCounty: billingCounty ?? subscription?.billingCounty ?? "",

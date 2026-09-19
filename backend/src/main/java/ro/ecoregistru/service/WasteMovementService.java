@@ -327,6 +327,10 @@ public class WasteMovementService {
     }
 
     private void validateDates(WasteMovementRequest request) {
+        // BUG-056: 0001-06-01 și 9999-12-31 se salvau.
+        if (!ro.ecoregistru.config.YearRangeGuard.inRange(request.date().getYear())) {
+            throw new BusinessException(MOVEMENT_DATE_OUT_OF_RANGE);
+        }
         LocalDate loaded = request.loadDate() != null ? request.loadDate() : request.date();
         if (request.unloadDate() != null && request.unloadDate().isBefore(loaded)) {
             throw new BusinessException(UNLOAD_BEFORE_LOAD);

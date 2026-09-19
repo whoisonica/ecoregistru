@@ -112,4 +112,3 @@ export function suggestedDestinations(
   return [];
 }
 
-export { todayIso } from "@/lib/utils";

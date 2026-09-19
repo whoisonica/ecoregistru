@@ -80,8 +80,9 @@ const variantStyle: Record<ToastVariant, string> = {
 function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
   return (
     // Pe telefon se lipesc de marginea de jos pe toată lățimea: colțul din dreapta al unui ecran
-    // de 360px lăsa mesajul să atârne pe jumătate afară.
-    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col gap-2 sm:inset-x-auto sm:right-4 sm:w-80">
+    // de 360px lăsa mesajul să atârne pe jumătate afară. Pe ecran lat stau sus: jos-dreapta
+    // acopereau „Salvează” din dialoguri la 1440×900 (BUG-058).
+    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col gap-2 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:w-80">
       {toasts.map((toast) => {
         const Icon = variantIcon[toast.variant];
         const isError = toast.variant === "error";

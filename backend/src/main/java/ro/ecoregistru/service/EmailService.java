@@ -72,7 +72,8 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-            log.info("Sent '{}' email to {}", templateName, to);
+            // Adresa nu intră în logurile INFO (date personale păstrate la furnizorul de loguri).
+            log.info("Sent '{}' email", templateName);
         } catch (Exception e) {
             log.error("Failed to send '{}' email to {}", templateName, to, e);
             throw new EmailException(EMAIL_SEND_FAILED);

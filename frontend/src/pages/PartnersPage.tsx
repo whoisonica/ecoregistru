@@ -30,7 +30,7 @@ import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { missingLast, useTableView } from "@/hooks/useTableView";
 import { useActiveFilter } from "@/components/ui/active-filter";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayIso } from "@/lib/utils";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
@@ -65,7 +65,8 @@ function ExpiryBadge({ partner }: { partner: Partner }) {
     return <span className="text-content-subtle">{t.noAuthorization}</span>;
   }
   const date = partner.authorizationValidUntil;
-  const isExpired = new Date(date) < new Date(new Date().toDateString());
+  // BUG-062: zile comparate ca șiruri `yyyy-MM-dd`; `new Date("yyyy-MM-dd")` e miezul nopții UTC.
+  const isExpired = date < todayIso();
   if (isExpired) {
     return <Badge variant="danger">{t.expired}</Badge>;
   }

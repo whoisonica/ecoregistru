@@ -108,13 +108,65 @@ public class AdviceController {
         StringBuilder message = new StringBuilder();
         List<ParamException> params = new ArrayList<>();
         for (FieldError error : e.getBindingResult().getFieldErrors()) {
-            message.append(error.getField()).append(": ").append(error.getDefaultMessage()).append("; ");
+            message.append(humanMessage(error)).append(' ');
             params.add(new ParamException(error.getField(), error.getDefaultMessage()));
         }
         errors.put(ERROR_MESSAGE, message.toString());
         errors.put(PARAMS, params);
         return errors;
     }
+
+    /**
+     * BUG-058. Mesajul pe care îl citește omul: „Observațiile sunt prea lungi: cel mult 1000 de
+     * caractere.”, nu „notes: size must be between 0 and 1000”. Numele tehnic rămâne în {@code params}.
+     */
+    static String humanMessage(FieldError error) {
+        String field = error.getField();
+        String leaf = field.substring(field.lastIndexOf('.') + 1);
+        String label = FIELD_LABELS.getOrDefault(leaf, "Un câmp");
+        Map<String, Object> attrs = error.contains(jakarta.validation.ConstraintViolation.class)
+                ? error.unwrap(jakarta.validation.ConstraintViolation.class).getConstraintDescriptor().getAttributes()
+                : Map.of();
+        String code = error.getCode() == null ? "" : error.getCode();
+        return label + ": " + switch (code) {
+            case "Size" -> "cel mult " + count(attrs.get("max"), "caractere") + ".";
+            case "Digits" -> "cel mult " + count(attrs.get("fraction"), "zecimale") + ".";
+            case "NotBlank", "NotNull", "NotEmpty" -> "câmp obligatoriu.";
+            case "Email" -> "adresa de email nu e validă.";
+            case "DecimalMin", "Positive", "Min" -> "trebuie să fie mai mare decât zero.";
+            case "PositiveOrZero" -> "nu poate fi sub zero.";
+            default -> "valoare nevalidă.";
+        };
+    }
+
+    /** „13 caractere”, dar „50 de caractere”: de la 20 în sus, și la sute rotunde, numeralul cere „de”. */
+    private static String count(Object n, String noun) {
+        int v = n instanceof Number num ? num.intValue() : 0;
+        int lastTwo = Math.abs(v) % 100;
+        return v + ((lastTwo == 0 || lastTwo >= 20) ? " de " : " ") + noun;
+    }
+
+    private static final Map<String, String> FIELD_LABELS = Map.ofEntries(
+            Map.entry("notes", "Observații"),
+            Map.entry("documentReference", "Nr. documentului"),
+            Map.entry("quantity", "Cantitatea"),
+            Map.entry("volumeM3", "Volumul"),
+            Map.entry("driverName", "Numele șoferului"),
+            Map.entry("driverIdentification", "Actul șoferului"),
+            Map.entry("vehicleRegistration", "Nr. de înmatriculare"),
+            Map.entry("name", "Denumirea"),
+            Map.entry("companyName", "Denumirea firmei"),
+            Map.entry("email", "Emailul"),
+            Map.entry("firstName", "Prenumele"),
+            Map.entry("lastName", "Numele"),
+            Map.entry("address", "Adresa"),
+            Map.entry("cui", "CUI-ul"),
+            Map.entry("phone", "Telefonul"),
+            Map.entry("authorizationNumber", "Nr. autorizației"),
+            Map.entry("tradeRegisterNumber", "Nr. Registrului Comerțului"),
+            Map.entry("password", "Parola"),
+            Map.entry("contactName", "Persoana de contact"),
+            Map.entry("message", "Mesajul"));
 
     /**
      * Malformed request body: bad JSON, or an unknown enum constant (e.g. the frontend

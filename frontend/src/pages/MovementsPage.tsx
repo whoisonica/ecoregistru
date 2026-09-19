@@ -342,6 +342,11 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         navigate(SCREEN_PATH[own] + location.search, { replace: true });
         return;
       }
+      // BUG-061: cine doar citește nu primește formularul de editare cu „Salvează” activ.
+      if (!canWrite) {
+        setFocusId("");
+        return;
+      }
       // Aceleași trei atribuiri ca `openEdit`, scrise aici ca efectul să nu atârne de o funcție
       // rescrisă la fiecare randare — exact felul de dependență care fura focusul din `Dialog`.
       setEditing(focused.data);
@@ -367,6 +372,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     company,
     navigate,
     location.search,
+    canWrite,
   ]);
 
   /**

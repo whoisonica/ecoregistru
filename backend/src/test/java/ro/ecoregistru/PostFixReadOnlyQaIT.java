@@ -60,7 +60,6 @@ class PostFixReadOnlyQaIT {
      * o scriere. Pe un cont doar-citire, numărul se alocă totuși.
      */
     @Test
-    @Disabled("QA-SEC-9: GET /movements/{id}/anexa3 alocă numărul și pe doar-citire")
     void aReadOnlyAccountDoesNotAllocateAnAnexa3Number() throws Exception {
         Company c = companyRepository.save(Company.builder()
                 .name("Doar Citire QA SRL").cui(TestCui.random()).type(CompanyType.GENERATOR)

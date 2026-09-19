@@ -33,7 +33,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { formatDate, withCount } from "@/lib/utils";
+import { formatDate, todayIso, withCount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,7 +64,6 @@ import {
   R_CODES,
   D_CODES,
   suggestedDestinations,
-  todayIso,
   type FieldErrors,
   type ExitOperation,
 } from "@/components/movements/movementRules";
@@ -1543,7 +1542,7 @@ export function MovementFormDialog({
                 <div>
                   <Label htmlFor="mv-anexa2-number">{t.anexa2Number}</Label>
                   <Input
-                    id="mv-anexa2-number"
+                    id="mv-anexa2-number" maxLength={30}
                     value={anexa2Number}
                     onChange={(ev) => setAnexa2Number(ev.target.value)}
                   />
@@ -1609,7 +1608,7 @@ export function MovementFormDialog({
           <div>
             <Label htmlFor="mv-doc">{t.documentReference}</Label>
             <Input
-              id="mv-doc"
+              id="mv-doc" maxLength={255}
               value={documentReference}
               onChange={(ev) => setDocumentReference(ev.target.value)}
               placeholder={t.documentReferencePlaceholder}
@@ -1619,7 +1618,7 @@ export function MovementFormDialog({
           <div>
             <Label htmlFor="mv-notes">{t.notes}</Label>
             <Textarea
-              id="mv-notes"
+              id="mv-notes" maxLength={1000}
               value={notes}
               onChange={(ev) => setNotes(ev.target.value)}
               rows={2}

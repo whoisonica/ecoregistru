@@ -172,7 +172,7 @@ export function CompanyForm({ company }: { company: Company }) {
           <div>
             <Label htmlFor="c-name">{t.name}</Label>
             <Input
-              id="c-name"
+              id="c-name" maxLength={255}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -226,7 +226,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-reg">{strings.settings.company.tradeRegisterNumber}</Label>
               <Input
-                id="c-reg"
+                id="c-reg" maxLength={50}
                 value={tradeRegisterNumber}
                 onChange={(e) => setTradeRegisterNumber(e.target.value)}
                 placeholder={strings.partners.tradeRegisterNumberPlaceholder}
@@ -249,7 +249,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-caen">{t.caenCode}</Label>
               <Input
-                id="c-caen"
+                id="c-caen" maxLength={10}
                 value={caenCode}
                 onChange={(e) => setCaenCode(e.target.value)}
                 placeholder={t.caenCodePlaceholder}
@@ -259,7 +259,7 @@ export function CompanyForm({ company }: { company: Company }) {
           </div>
           <div>
             <Label htmlFor="c-address">{t.address}</Label>
-            <Input id="c-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <Input id="c-address" maxLength={512} value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
         </FormSection>
 </div>
@@ -270,7 +270,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-auth-number">{t.environmentalAuthNumber}</Label>
               <Input
-                id="c-auth-number"
+                id="c-auth-number" maxLength={128}
                 value={environmentalAuthNumber}
                 onChange={(e) => setEnvironmentalAuthNumber(e.target.value)}
               />
@@ -295,7 +295,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-wm-name">{t.wasteManagerName}</Label>
               <Input
-                id="c-wm-name"
+                id="c-wm-name" maxLength={160}
                 value={wasteManagerName}
                 onChange={(e) => setWasteManagerName(e.target.value)}
                 placeholder={t.wasteManagerNamePlaceholder}
@@ -304,7 +304,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-wm-role">{t.wasteManagerRole}</Label>
               <Input
-                id="c-wm-role"
+                id="c-wm-role" maxLength={120}
                 value={wasteManagerRole}
                 onChange={(e) => setWasteManagerRole(e.target.value)}
                 placeholder={t.wasteManagerRolePlaceholder}
@@ -327,7 +327,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-wm-training">{t.wasteManagerTraining}</Label>
               <Input
-                id="c-wm-training"
+                id="c-wm-training" maxLength={255}
                 value={wasteManagerTraining}
                 onChange={(e) => setWasteManagerTraining(e.target.value)}
                 placeholder={t.wasteManagerTrainingPlaceholder}
@@ -369,7 +369,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-anexa3-series">{t.anexa3Series}</Label>
               <Input
-                id="c-anexa3-series"
+                id="c-anexa3-series" maxLength={20}
                 value={anexa3Series}
                 onChange={(e) => setAnexa3Series(e.target.value)}
                 placeholder={t.anexa3SeriesPlaceholder}
@@ -463,7 +463,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-contact-name">{t.contactName}</Label>
               <Input
-                id="c-contact-name"
+                id="c-contact-name" maxLength={255}
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
               />
@@ -471,7 +471,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-contact-role">{t.contactRole}</Label>
               <Input
-                id="c-contact-role"
+                id="c-contact-role" maxLength={120}
                 value={contactRole}
                 onChange={(e) => setContactRole(e.target.value)}
                 placeholder={t.contactRolePlaceholder}
@@ -481,7 +481,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-contact-email">{t.contactEmail}</Label>
               <Input
-                id="c-contact-email"
+                id="c-contact-email" maxLength={255}
                 type="email"
                 value={contactEmail}
                 onChange={(e) => setContactEmail(e.target.value)}
@@ -490,7 +490,7 @@ export function CompanyForm({ company }: { company: Company }) {
             <div>
               <Label htmlFor="c-contact-phone">{t.contactPhone}</Label>
               <Input
-                id="c-contact-phone"
+                id="c-contact-phone" maxLength={64}
                 value={contactPhone}
                 onChange={(e) => setContactPhone(e.target.value)}
               />

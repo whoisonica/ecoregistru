@@ -282,7 +282,7 @@ export function ConsultancyTeamSection() {
           <div>
             <Label htmlFor="team-email">{u.email}</Label>
             <Input
-              id="team-email"
+              id="team-email" maxLength={255}
               type="email"
               value={email}
               onChange={(e) => {
@@ -297,11 +297,11 @@ export function ConsultancyTeamSection() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="team-first">{u.firstName}</Label>
-              <Input id="team-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <Input id="team-first" maxLength={128} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="team-last">{u.lastName}</Label>
-              <Input id="team-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <Input id="team-last" maxLength={128} value={lastName} onChange={(e) => setLastName(e.target.value)} />
             </div>
           </div>
         </form>

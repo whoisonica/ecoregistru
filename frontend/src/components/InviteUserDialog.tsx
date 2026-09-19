@@ -70,7 +70,7 @@ export function InviteUserDialog({ company, onClose }: { company: Company; onClo
         <div>
           <Label htmlFor="i-email">{t.inviteEmail}</Label>
           <Input
-            id="i-email"
+            id="i-email" maxLength={255}
             type="email"
             value={email}
             onChange={(e) => {
@@ -95,11 +95,11 @@ export function InviteUserDialog({ company, onClose }: { company: Company; onClo
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="i-first">{t.inviteFirstName}</Label>
-            <Input id="i-first" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <Input id="i-first" maxLength={128} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
           <div>
             <Label htmlFor="i-last">{t.inviteLastName}</Label>
-            <Input id="i-last" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <Input id="i-last" maxLength={128} value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
         </div>
       </form>
