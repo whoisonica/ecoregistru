@@ -345,8 +345,8 @@ E2E_BASE=http://localhost:4173 npm run e2e
 
 ### ⚠️ `E2E_BASE` fără `E2E_DB` murdărește altă bază
 
-Cinci probe (29, 30, 33, 36, 37) nu-și pot face datele prin API — facturi emise, abonamente restante,
-un consultant al platformei — și le scriu direct cu `psql`, în baza din **`E2E_DB`, implicit
+Șase probe (29, 30, 33, 36, 37, 38) nu-și pot face datele prin API — facturi emise, abonamente restante,
+un consultant al platformei, o predare veche fără material (38, din 20.09.2026: API-ul n-o mai primește) — și le scriu direct cu `psql`, în baza din **`E2E_DB`, implicit
 `ecoregistru`**. `E2E_BASE` mută doar browserul; baza nu se ia după el. Deci pe o stivă pornită pe altă
 bază, cele două variabile se dau **împreună**:
 
