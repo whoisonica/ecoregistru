@@ -51,7 +51,7 @@ public class ConsultantDigestScheduler {
     @Transactional(readOnly = true)
     @Scheduled(cron = "${app.alerts.consultant-digest-cron:0 30 7 * * *}", zone = "Europe/Bucharest")
     public void runDailyDigest() {
-        dispatch(LocalDate.now());
+        dispatch(DeadlineService.today());
     }
 
     /** Separat de programare, ca testele să aleagă ziua. Întoarce câte cabinete au primit rezumatul. */

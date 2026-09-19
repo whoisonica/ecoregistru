@@ -60,7 +60,7 @@ import { SETTINGS_CARD } from "@/components/ui/card";
 import { useInternalGenerators } from "@/hooks/useInternalGenerators";
 import { useUsers } from "@/hooks/useUsers";
 import { useDrivers } from "@/hooks/useDrivers";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayIso } from "@/lib/utils";
 
 const t = strings.settings.workPoints;
 const h = strings.settings.hub;
@@ -426,7 +426,7 @@ function SettingsHub({
   const { data: users } = useUsers(canManage);
   const { data: drivers } = useDrivers();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   const authExpiry = company?.environmentalAuthExpiry;
   const companySummary = !company
     ? undefined

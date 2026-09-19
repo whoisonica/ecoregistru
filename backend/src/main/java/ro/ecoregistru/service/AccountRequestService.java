@@ -195,6 +195,9 @@ public class AccountRequestService {
             null);
     }
 
+    /** {@code account_requests.notes} is VARCHAR(2000). */
+    private static final int NOTES_MAX = 2000;
+
     @Transactional
     public void reject(UUID id, RejectAccountRequest body) {
         AccountRequest request = require(id);
@@ -202,8 +205,15 @@ public class AccountRequestService {
         request.setStatus(AccountRequestStatus.REJECTED);
         String reason = body == null ? null : blankToNull(body.reason());
         if (reason != null) {
-            String existing = request.getNotes() == null ? "" : request.getNotes() + "\n";
-            request.setNotes(existing + "Respins: " + reason);
+            // BUG-041: the reason rides on the notes, which the public form can fill to the column's
+            // 2000. The reason is ours and is kept whole; the client's notes give way, cut with "…".
+            String suffix = "Respins: " + reason;
+            String existing = request.getNotes() == null ? "" : request.getNotes();
+            int room = NOTES_MAX - suffix.length() - 1;
+            if (existing.length() > room) {
+                existing = existing.substring(0, Math.max(0, room - 1)) + "…";
+            }
+            request.setNotes(existing.isEmpty() ? suffix : existing + "\n" + suffix);
         }
         stamp(request);
     }

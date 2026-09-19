@@ -369,6 +369,8 @@ export interface OnboardClientResult {
   plan: SubscriptionPlan | null;
   firstInvoice: InvoicePreview | null;
   invitedEmail: string | null;
+  /** `false` când mailul invitației n-a plecat (BUG-038); `null` fără invitație. */
+  inviteEmailSent: boolean | null;
 }
 
 /** Mirrors backend SubscriptionPreviewResponse. */
@@ -578,6 +580,8 @@ export interface CompanyUser {
   status: CompanyUserStatus;
   createdAt: string;
   deactivatedAt: string | null;
+  /** Doar pe răspunsul la o invitație: `false` când mailul n-a plecat (BUG-038). */
+  inviteEmailSent?: boolean | null;
 }
 
 // --- Work points ---

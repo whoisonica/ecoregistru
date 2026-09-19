@@ -29,6 +29,7 @@ import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.DriverRepository;
+import ro.ecoregistru.repository.MonthlyEvidenceRepository;
 import ro.ecoregistru.repository.NaturalPersonRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.VehicleRepository;
@@ -80,6 +81,7 @@ public class WeighingOperationService {
     NaturalPersonRepository naturalPersonRepository;
     DriverRepository driverRepository;
     VehicleRepository vehicleRepository;
+    MonthlyEvidenceRepository evidenceRepository;
     ro.ecoregistru.repository.AppUserRepository userRepository;
     ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
 
@@ -192,6 +194,10 @@ public class WeighingOperationService {
                 : vehicleRepository.findByIdAndCompany_Id(request.vehicleId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(VEHICLE_NOT_FOUND));
 
+        // BUG-031, same as WasteMovementService.update: a later year hides the move from the old one.
+        if (operation.getDate().getYear() < request.date().getYear()) {
+            evidenceRepository.deleteYears(tenantId, operation.getDate().getYear(), request.date().getYear());
+        }
         operation.setWorkPoint(workPoint);
         operation.setDate(request.date());
         operation.setPartner(partner);

@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.request;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import ro.ecoregistru.enums.Unit;
@@ -21,6 +22,6 @@ import java.math.BigDecimal;
  * @param unit the unit the figure came back in; null keeps the unit the movement was recorded with
  */
 public record RecordWeightRequest(
-        @NotNull @Positive BigDecimal quantity,
+        @NotNull @Positive @Digits(integer = 11, fraction = 3) BigDecimal quantity,
         Unit unit
 ) {}

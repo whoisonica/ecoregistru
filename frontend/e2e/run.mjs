@@ -48,6 +48,10 @@ const suites = [
   ["37-deconectare-cache.mjs", "Deconectarea golește cache-ul: consultantul nu vede firmele platformei"],
   ["38-ambalaje-in-generare.mjs", "„Ambalaje” ca tab în Generare: un singur ecran fără derulare, două documente, tastele tabelului și filtrarea pe Mișcări"],
   ["39-acasa.mjs", "Acasă: anul pe luni, deșeurile anului, termenele și calendarul"],
+  // QA de lansare (19.09.2026): BUG-042, BUG-043, BUG-044.
+  ["40-invitatia-valabilitate.mjs", "Dialogul de invitație spune cât ține linkul (7 zile)"],
+  ["41-cnp-in-liste.mjs", "CNP-ul șoferului nu pleacă întreg în liste la „Vizualizare”"],
+  ["42-bifate-anul.mjs", "Termenul tocmai bifat se vede pe „Bifate”"],
 ];
 
 const only = process.argv[2];

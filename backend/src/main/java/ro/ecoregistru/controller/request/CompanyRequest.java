@@ -3,6 +3,7 @@ package ro.ecoregistru.controller.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.AfmContribution;
 import ro.ecoregistru.enums.MarketRole;
@@ -24,16 +25,16 @@ import java.util.UUID;
 import ro.ecoregistru.enums.Unit;
 
 public record CompanyRequest(
-        @NotBlank String name,
-        @NotBlank String cui,
+        @NotBlank @Size(max = 255) String name,
+        @NotBlank @Size(max = 32) String cui,
         @NotNull CompanyType type,
         boolean afmObligation,
-        String environmentalAuthNumber,
+        @Size(max = 128) String environmentalAuthNumber,
         LocalDate environmentalAuthExpiry,
-        String address,
-        String contactName,
-        @Email String contactEmail,
-        String contactPhone,
+        @Size(max = 512) String address,
+        @Size(max = 255) String contactName,
+        @Email @Size(max = 255) String contactEmail,
+        @Size(max = 64) String contactPhone,
 
         /** The R/D operations this account works with; narrows the movement form. */
         Set<WasteOperationCode> authorizedOperationCodes,
@@ -51,13 +52,13 @@ public record CompanyRequest(
         /** The waste codes its authorization covers; narrows the code picker. */
         Set<UUID> authorizedWasteCodeIds,
         /** Asked of a collector: what it transports with, and its goods-transport licence. */
-        String transportMeans,
-        String transportLicenseNumber,
+        @Size(max = 500) String transportMeans,
+        @Size(max = 255) String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
 
         /** Printed by Anexa 3 next to the CUI, and the series of this company's forms. */
-        String tradeRegisterNumber,
-        String anexa3Series,
+        @Size(max = 50) String tradeRegisterNumber,
+        @Size(max = 20) String anexa3Series,
 
         /**
          * The header of the annual declaration: the CAEN activity code, and the job title of the
@@ -69,18 +70,18 @@ public record CompanyRequest(
          * question unanswered, and then neither table prints.
          */
         PackagingOperatorRole packagingOperatorRole,
-        String caenCode,
+        @Size(max = 10) String caenCode,
         Unit anexa3Unit,
-        String contactRole,
+        @Size(max = 120) String contactRole,
 
         /**
          * The person designated for waste management (OUG 92/2021 art. 23 alin. (4)-(5)). Distinct
          * from {@code contactRole}, which is the annual declaration's signature block.
          */
-        String wasteManagerName,
-        String wasteManagerRole,
+        @Size(max = 160) String wasteManagerName,
+        @Size(max = 120) String wasteManagerRole,
         Boolean wasteManagerExternal,
-        String wasteManagerTraining,
+        @Size(max = 255) String wasteManagerTraining,
 
         /**
          * Whether the company holds a building or demolition permit — the profile half of the

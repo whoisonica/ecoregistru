@@ -1080,7 +1080,7 @@ export function MovementFormDialog({
               <Input
                 id="mv-qty"
                 type="number"
-                step="any"
+                step="0.001"
                 min="0"
                 value={quantityOpen ? quantity : ""}
                 onChange={(ev) => setQuantity(ev.target.value)}
@@ -1124,7 +1124,7 @@ export function MovementFormDialog({
                 <Input
                   id="mv-volume"
                   type="number"
-                  step="any"
+                  step="0.001"
                   min="0"
                   value={volumeM3}
                   onChange={(ev) => setVolumeM3(ev.target.value)}

@@ -1,5 +1,6 @@
 package ro.ecoregistru.service;
 
+import ro.ecoregistru.security.SecurityUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -160,7 +161,7 @@ public class DriverService {
         return new DriverResponse(d.getId(),
                 partner == null ? null : partner.getId(),
                 partner == null ? null : partner.getName(),
-                d.getName(), d.getIdentification(), d.getCnp(), d.getVehicleRegistration(),
+                d.getName(), d.getIdentification(), SecurityUtils.cnpForCurrentUser(d.getCnp()), d.getVehicleRegistration(),
                 home == null ? null : home.getId(), home == null ? null : home.getName(),
                 d.getAttestationNumber(), d.getAttestationExpiry(),
                 d.isActive());

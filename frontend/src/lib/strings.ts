@@ -1415,7 +1415,7 @@ export const strings = {
       invite: "Invită utilizator",
       inviteTitle: "Invită un utilizator",
       inviteHint:
-        "Primește un email cu un link valabil 30 de minute, din care își alege parola. Până atunci contul apare „În așteptare” și nu se poate autentifica.",
+        "Primește un email cu un link valabil 7 zile, din care își alege parola. Până atunci contul apare „În așteptare” și nu se poate autentifica.",
       email: "Email",
       emailPlaceholder: "ex. maria@firma.ro",
       firstName: "Prenume",
@@ -3123,6 +3123,8 @@ export const strings = {
     doneNoSubscription: "Fără abonament: nu se facturează.",
     doneInvited: "Invitație trimisă la {email}.",
     doneNotInvited: "Nimeni invitat încă.",
+    doneInviteMailFailed:
+      "Contul pentru {email} e creat, dar emailul cu invitația n-a putut fi trimis. Retrimite-l din tabul „Utilizatori” al firmei.",
     doneToClients: "Înapoi la clienți",
     doneAnother: "Alt client nou",
     stepSummaryNoSubscription: "fără abonament",
@@ -3683,6 +3685,9 @@ export const strings = {
   },
 
   common: {
+    /** BUG-038 — contul e creat, dar mailul cu linkul n-a plecat; fără asta, omul aștepta un link care nu vine. */
+    inviteMailFailed:
+      "Contul e creat, dar emailul cu invitația n-a putut fi trimis. Încearcă „Retrimite invitația” din lista de utilizatori.",
     /** Rubrica de parolă: „Arată” și bara de putere de la o parolă nouă. */
     password: {
       show: "Arată parola",

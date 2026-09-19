@@ -94,7 +94,7 @@ public class EvidenceCalculator {
         // apăsat în timp ce altcineva deschide raportul cade cu conflictul de concurenţă.
         // Aici nu se verifică nimic după: apăsarea butonului e o cerere explicită de recalculare,
         // nu o întrebare despre prospeţime — vezi javadocul lui `refreshIfStale`.
-        evidenceRepository.lockForRebuild(tenantId, year);
+        evidenceRepository.lockForRebuild(tenantId);
 
         int lines = regenerateSingleYear(tenantId, year);
 
@@ -373,7 +373,7 @@ public class EvidenceCalculator {
         }
         // De aici încolo se **scrie**, deci intră unul singur. Lacătul e ţinut până la finalul
         // tranzacţiei, deci al doilea cititor aşteaptă exact cât durează reconstrucţia primului.
-        evidenceRepository.lockForRebuild(tenantId, year);
+        evidenceRepository.lockForRebuild(tenantId);
         // Şi a doua verificare, care e miezul: cine a aşteptat la uşă găseşte treaba făcută şi
         // pleacă. Fără ea, lacătul ar fi doar serializat aceeaşi muncă de N ori — corect, dar
         // plătit de N ori. Sub READ COMMITTED interogarea de aici vede ce a comis primul.

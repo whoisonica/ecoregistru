@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.request.OnboardClientRequest;
 import ro.ecoregistru.controller.response.CompanyResponse;
+import ro.ecoregistru.controller.response.CompanyUserResponse;
 import ro.ecoregistru.controller.response.OnboardClientResponse;
 import ro.ecoregistru.controller.response.SubscriptionResponse;
 import ro.ecoregistru.enums.Role;
@@ -47,17 +48,20 @@ public class ClientOnboardingService {
                 : subscriptionService.saveForCompany(company.id(), request.subscription());
 
         String invited = null;
+        Boolean inviteEmailSent = null;
         if (request.admin() != null) {
             OnboardClientRequest.Admin admin = request.admin();
-            invited = companyService.inviteUser(company.id(),
+            CompanyUserResponse user = companyService.inviteUser(company.id(),
                     new InviteUserRequest(admin.email().trim(), Role.ADMIN,
-                            blankToNull(admin.firstName()), blankToNull(admin.lastName()))).email();
+                            blankToNull(admin.firstName()), blankToNull(admin.lastName())));
+            invited = user.email();
+            inviteEmailSent = user.inviteEmailSent();
         }
 
         return new OnboardClientResponse(company,
                 subscription == null ? null : subscription.plan(),
                 subscription == null ? null : subscription.firstInvoice(),
-                invited);
+                invited, inviteEmailSent);
     }
 
     private static String blankToNull(String value) {

@@ -63,7 +63,7 @@ public class ConsultancyOverviewService {
     MissedDeadlinePolicy missedPolicy;
 
     public List<ConsultancyOverviewResponse> overview() {
-        return overview(LocalDate.now());
+        return overview(DeadlineService.today());
     }
 
     /**

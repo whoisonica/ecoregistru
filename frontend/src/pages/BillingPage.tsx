@@ -24,7 +24,7 @@ import {
 } from "@/lib/billing";
 import { COUNTIES } from "@/lib/counties";
 import { strings } from "@/lib/strings";
-import { cn, formatDate, withCount } from "@/lib/utils";
+import { cn, formatDate, withCount, todayIso } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,11 +59,6 @@ function lei(n: number) {
 }
 
 /** Ziua de azi în ora locală a omului, nu în UTC: la 01:00 în România, UTC e încă ieri. */
-function todayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 function timeOf(iso: string) {
   return new Date(iso).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
 }

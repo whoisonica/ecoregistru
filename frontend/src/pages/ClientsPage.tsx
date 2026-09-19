@@ -25,7 +25,7 @@ import {
   type ClientRow,
 } from "@/lib/clients";
 import { countOf } from "@/lib/count";
-import { formatDate } from "@/lib/utils";
+import { formatDate, todayIso } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
@@ -270,11 +270,6 @@ export function ClientsPage() {
       )}
     </div>
   );
-}
-
-function todayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function lei(n: number) {

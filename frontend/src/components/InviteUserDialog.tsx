@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { notifyInvited } from "@/lib/inviteNotice";
 import { useInviteUser } from "@/hooks/useCompanies";
 import type { Company, InviteRole, InviteUserInput } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -40,8 +41,8 @@ export function InviteUserDialog({ company, onClose }: { company: Company; onClo
       lastName: lastName.trim() || null,
     };
     try {
-      await inviteMut.mutateAsync({ id: company.id, input });
-      notify(t.invited, "success");
+      const invited = await inviteMut.mutateAsync({ id: company.id, input });
+      notifyInvited(notify, invited, t.invited);
       onClose();
     } catch (err) {
       notify(apiErrorMessage(err, t.inviteError), "error");

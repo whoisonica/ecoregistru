@@ -91,7 +91,7 @@ public class ConsultancyService {
     public CompanyUserResponse inviteConsultant(UUID consultancyId, InviteConsultantRequest request) {
         Consultancy consultancy = consultancyRepository.findById(consultancyId)
                 .orElseThrow(() -> new NotFoundException(CONSULTANCY_NOT_FOUND));
-        return CompanyUserResponse.from(authenticationService.inviteConsultant(
+        return CompanyUserResponse.invited(authenticationService.inviteConsultant(
                 consultancy, request.email(), request.firstName(), request.lastName()));
     }
 
@@ -108,7 +108,7 @@ public class ConsultancyService {
     @Transactional
     public CompanyUserResponse inviteColleague(InviteConsultantRequest request) {
         Consultancy consultancy = consultancyRepository.getReferenceById(myConsultancy().getId());
-        return CompanyUserResponse.from(authenticationService.inviteConsultant(
+        return CompanyUserResponse.invited(authenticationService.inviteConsultant(
                 consultancy, request.email(), request.firstName(), request.lastName()));
     }
 

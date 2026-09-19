@@ -1,5 +1,6 @@
 package ro.ecoregistru.mapper;
 
+import ro.ecoregistru.security.SecurityUtils;
 import org.springframework.stereotype.Component;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
@@ -64,7 +65,7 @@ public class WasteMovementMapper {
                 carrier != null ? carrier.getName() : null,
                 m.getDriverName(),
                 m.getDriverIdentification(),
-                m.getDriverCnp(),
+                SecurityUtils.cnpForCurrentUser(m.getDriverCnp()),
                 m.getVehicleRegistration(),
                 new java.util.LinkedHashSet<>(m.getTransportDestinations()),
                 m.getAnexa3Series(),

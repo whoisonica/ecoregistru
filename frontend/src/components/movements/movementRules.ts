@@ -107,6 +107,4 @@ export function suggestedDestinations(
   return [];
 }
 
-export function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
+export { todayIso } from "@/lib/utils";

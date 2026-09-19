@@ -103,7 +103,8 @@ public class AnnualDeclarationBuilder {
                     last.closingStock(),
                     through(yearly, WasteOperation.RECOVERED, companyName),
                     through(yearly, WasteOperation.DISPOSED, companyName),
-                    unclassified));
+                    unclassified,
+                    months.stream().anyMatch(MonthlyEvidenceResponse::awaitingWeighing)));
         }
         rows.sort(Comparator.comparing(AnnualDeclaration.Row::wasteCode));
         return rows;

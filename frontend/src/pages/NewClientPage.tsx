@@ -11,7 +11,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { isValidCui } from "@/lib/cui";
 import { COUNTIES, fgoCounty } from "@/lib/counties";
-import { fold, formatDate } from "@/lib/utils";
+import { fold, formatDate, todayIso } from "@/lib/utils";
 import { CompanyProfileFields, emptyCompanyProfile, type CompanyProfileValue } from "@/components/CompanyProfileFields";
 import { CuiField } from "@/components/AnafLookup";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,6 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function lei(n: number) {
   return `${n.toLocaleString("ro-RO", { maximumFractionDigits: 2 })} lei`;
-}
-
-function todayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /**
@@ -269,7 +264,12 @@ function NewClientForm({
               : t.doneNoSubscription}
           </p>
           <p className="text-content">
-            {done.invitedEmail ? t.doneInvited.replace("{email}", done.invitedEmail) : t.doneNotInvited}
+            {!done.invitedEmail
+              ? t.doneNotInvited
+              : (done.inviteEmailSent === false ? t.doneInviteMailFailed : t.doneInvited).replace(
+                  "{email}",
+                  done.invitedEmail,
+                )}
           </p>
           <div className="flex flex-wrap gap-2 pt-3">
             <Button onClick={() => navigate("/clienti")}>{t.doneToClients}</Button>

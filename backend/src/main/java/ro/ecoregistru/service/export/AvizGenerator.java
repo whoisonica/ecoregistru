@@ -18,6 +18,7 @@ import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.PartnerWorkPoint;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.enums.Unit;
+import ro.ecoregistru.util.WasteCodeLabel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -143,7 +144,9 @@ public class AvizGenerator {
 
         for (WasteMovement m : lines) {
             table.addCell(line(new Phrase(cp1250(m.getWasteCode().getName()), body), Element.ALIGN_LEFT));
-            table.addCell(line(new Phrase(cp1250(m.getWasteCode().getCode()), body), Element.ALIGN_LEFT));
+            // BUG-034: the star marks a hazardous code (HG 856/2002 art. 4 alin. (3)), as on every other document.
+            table.addCell(line(new Phrase(cp1250(WasteCodeLabel.official(
+                    m.getWasteCode().getCode(), m.getWasteCode().isHazardous())), body), Element.ALIGN_LEFT));
             // Fără cantitate când cântăreşte destinatarul — acelaşi motiv ca pe Anexa 3: o cifră
             // inventată pe un document care pleacă cu camionul e mai rea decât un loc gol.
             String quantity = m.getQuantity() == null ? "" : quantity(m.getQuantity());

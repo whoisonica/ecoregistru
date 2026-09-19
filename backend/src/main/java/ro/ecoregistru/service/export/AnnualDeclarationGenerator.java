@@ -92,6 +92,9 @@ public class AnnualDeclarationGenerator {
         if (d.hasUnclassifiedOut()) {
             doc.add(unclassifiedNote());
         }
+        if (d.hasAwaitingWeighing()) {
+            doc.add(awaitingWeighingNote());
+        }
         doc.add(signature(d));
     }
 
@@ -160,7 +163,10 @@ public class AnnualDeclarationGenerator {
             cell(t, WasteCodeLabel.official(row.wasteCode(), row.hazardous()), Element.ALIGN_CENTER);
             cell(t, row.wasteCodeName(), Element.ALIGN_LEFT);
             num(t, row.openingStock());
-            num(t, row.generated());
+            // BUG-032: the load waiting for its weight is missing from "Generat" and from the exit
+            // column alike, so the row balances and would look complete without the mark.
+            cell(t, kg(row.generated()) + (row.awaitingWeighing() ? "  (**)" : ""),
+                    Element.ALIGN_RIGHT);
             num(t, row.recovered());
             num(t, row.disposed());
             // The marker rides on the stock, because the stock is the figure that does not add up
@@ -197,6 +203,23 @@ public class AnnualDeclarationGenerator {
                         + "mişcările respective (ecranul Mişcări) şi regeneraţi evidenţa înainte "
                         + "de depunere. (Asteriscul de după codul de deşeu are alt înţeles: "
                         + "marchează un deşeu periculos, conform HG 856/2002 art. 4 alin. (3).)"),
+                note);
+        p.setSpacingAfter(6f);
+        return p;
+    }
+
+    /**
+     * BUG-032 — why a "(**)" row is provisional. A load handed over with "se cântăreşte la
+     * descărcare" has no quantity until the recipient sends it back, so it is counted nowhere;
+     * without this note the declaration would under-report the year and look finished.
+     */
+    private Paragraph awaitingWeighingNote() {
+        Paragraph p = new Paragraph(cp1250(
+                "(**) după cifra din coloana „Generat\": pe rând sunt încărcături predate care "
+                        + "aşteaptă cântărirea la destinatar, deci cantitatea lor nu e cuprinsă nici în "
+                        + "„Generat\", nici în „Valorificat\" sau „Eliminat\". Declaraţia e provizorie: "
+                        + "completaţi cantitatea primită (ecranul Mişcări) şi regeneraţi evidenţa "
+                        + "înainte de depunere."),
                 note);
         p.setSpacingAfter(6f);
         return p;

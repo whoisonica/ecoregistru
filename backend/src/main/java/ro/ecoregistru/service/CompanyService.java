@@ -203,7 +203,7 @@ public class CompanyService {
         Company company = requireManaged(companyId, SecurityUtils.currentUser());
         AppUser user = authenticationService.inviteUser(
                 company, request.email(), request.role(), request.firstName(), request.lastName());
-        return CompanyUserResponse.from(user);
+        return CompanyUserResponse.invited(user);
     }
 
     /**

@@ -1,5 +1,6 @@
 package ro.ecoregistru.service;
 
+import io.sentry.Sentry;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -247,7 +248,11 @@ public class AuthenticationService {
         try {
             emailService.sendInviteEmail(user, code, INVITE_TTL_DAYS);
         } catch (EmailException e) {
+            // BUG-038: the account stays pending and can be re-invited; the admin is told in the
+            // response, and Sentry hears of it, since it only reports the 500s on its own.
             log.error("Failed to send invite email to {}", user.getEmail(), e);
+            Sentry.captureException(e);
+            user.setInviteEmailFailed(true);
         }
         return user;
     }
@@ -280,7 +285,11 @@ public class AuthenticationService {
         try {
             emailService.sendInviteEmail(user, code, INVITE_TTL_DAYS);
         } catch (EmailException e) {
+            // BUG-038: a 204 here read as "sent". The error rolls the new link back, so the old
+            // one, if the first mail did arrive, keeps working.
             log.error("Failed to resend invite email to {}", user.getEmail(), e);
+            Sentry.captureException(e);
+            throw new BusinessException(EMAIL_SEND_FAILED);
         }
     }
 

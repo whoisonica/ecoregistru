@@ -384,7 +384,7 @@ class EvidenceCalculatorIT {
             TransactionTemplate tt = new TransactionTemplate(transactionManager);
             try {
                 tt.executeWithoutResult(status -> {
-                    evidenceRepository.lockForRebuild(tenantId, 2025);
+                    evidenceRepository.lockForRebuild(tenantId);
                     lockHeld.countDown();
                     await(releaseLock);
                 });

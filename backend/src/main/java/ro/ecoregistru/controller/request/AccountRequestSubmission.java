@@ -3,6 +3,7 @@ package ro.ecoregistru.controller.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.WasteOperationCode;
@@ -19,29 +20,29 @@ import java.util.Set;
  * and an email to answer on. Everything else is what support will have to chase otherwise.
  */
 public record AccountRequestSubmission(
-        @NotBlank String companyName,
-        @NotBlank String cui,
+        @NotBlank @Size(max = 255) String companyName,
+        @NotBlank @Size(max = 20) String cui,
         @NotNull CompanyType companyType,
-        String companyAddress,
-        String workPointName,
-        String workPointAddress,
+        @Size(max = 500) String companyAddress,
+        @Size(max = 255) String workPointName,
+        @Size(max = 500) String workPointAddress,
 
-        String contactName,
-        @NotBlank @Email String contactEmail,
-        String contactPhone,
+        @Size(max = 255) String contactName,
+        @NotBlank @Email @Size(max = 255) String contactEmail,
+        @Size(max = 50) String contactPhone,
         /**
          * The two rubrics the annual declaration's header and signature block need. Optional, like
          * everything that is not needed in order to answer the request; blank prints blank.
          */
-        String contactRole,
-        String caenCode,
+        @Size(max = 120) String contactRole,
+        @Size(max = 10) String caenCode,
 
-        String environmentalAuthNumber,
+        @Size(max = 255) String environmentalAuthNumber,
         LocalDate environmentalAuthExpiry,
 
         /** Asked only of a collector; the form hides these for a plain generator. */
-        String transportMeans,
-        String transportLicenseNumber,
+        @Size(max = 500) String transportMeans,
+        @Size(max = 255) String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
 
         /**
@@ -51,8 +52,8 @@ public record AccountRequestSubmission(
         Set<MarketRole> marketRoles,
 
         Set<WasteOperationCode> operationCodes,
-        String wasteCodesText,
-        String notes,
+        @Size(max = 2000) String wasteCodesText,
+        @Size(max = 2000) String notes,
 
         /**
          * The honeypot, and the only field here nobody is meant to answer. The form renders it

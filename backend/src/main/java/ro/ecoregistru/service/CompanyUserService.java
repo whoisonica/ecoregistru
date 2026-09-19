@@ -98,7 +98,7 @@ public class CompanyUserService {
         Company company = companyRepository.getReferenceById(tenantId);
         AppUser user = authenticationService.inviteUser(
                 company, request.email(), request.role(), request.firstName(), request.lastName());
-        return CompanyUserResponse.from(user);
+        return CompanyUserResponse.invited(user);
     }
 
     /**

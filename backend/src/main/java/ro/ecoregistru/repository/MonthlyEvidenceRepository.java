@@ -1,6 +1,7 @@
 package ro.ecoregistru.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ro.ecoregistru.entity.MonthlyEvidence;
@@ -14,7 +15,7 @@ public interface MonthlyEvidenceRepository extends JpaRepository<MonthlyEvidence
     List<MonthlyEvidence> findByCompany_IdAndYear(UUID companyId, int year);
 
     /**
-     * Takes the rebuild lock for one (tenant, year), waiting for whoever holds it.
+     * Takes the tenant's evidence rebuild lock, waiting for whoever holds it.
      *
      * <p>It exists because reading the evidence <b>writes</b>: {@code list()} rebuilds a year that
      * has fallen behind its movements. Two reads landing on the same stale year both entered the
@@ -28,17 +29,39 @@ public interface MonthlyEvidenceRepository extends JpaRepository<MonthlyEvidence
      * locks the pair itself, needs no column and therefore no migration, and Postgres releases it
      * at commit or rollback, so a rebuild that throws cannot leave it held.
      *
-     * <p>The key is the tenant's uuid hashed into an int4 plus the year, which is what the two-key
-     * form of the function takes. A hash collision between two tenants costs one of them a wait,
-     * never a wrong answer.
+     * <p><b>One lock per tenant, not per year</b> (BUG-036). A rebuild cascades: reading 2026 after a
+     * 2024 correction rewrites 2024 and 2025 too, and a "Regenerează" walks forward. Under a lock
+     * per (tenant, year), three reads on three years rebuilt 2024 under three different locks, and
+     * two of them failed on rows the third had already deleted. Serialising a tenant's rebuilds
+     * costs a wait only when two of them are due at once; the fresh path takes no lock at all.
+     *
+     * <p>The key is the tenant's uuid hashed into an int4, with 0 as the second key of the two-key
+     * form. A hash collision between two tenants costs one of them a wait, never a wrong answer.
      */
     @Query(value = "select 1 from (select pg_advisory_xact_lock("
-            + "hashtext(cast(:companyId as text)), cast(:year as int))) locked",
+            + "hashtext(cast(:companyId as text)), 0)) locked",
             nativeQuery = true)
-    Integer lockForRebuild(@Param("companyId") UUID companyId, @Param("year") int year);
+    Integer lockForRebuild(@Param("companyId") UUID companyId);
 
     /** Wipe a tenant's cached lines for a year before regenerating them from movements. */
     void deleteByCompany_IdAndYear(UUID companyId, int year);
+
+    /**
+     * BUG-031 — drops the cached lines of the years a movement was moved out of.
+     *
+     * <p>Staleness is read from the movements dated up to the end of the year, by their
+     * <b>current</b> date. A movement moved from 2025 into 2026 no longer passes the 2025 filter,
+     * so 2025 looked fresh and kept counting it. A year with no lines is stale by definition
+     * ({@code generatedAt == null}), so wiping them is enough to make the next read rebuild.
+     * No {@code clearAutomatically}: it runs in the middle of an update and would detach the
+     * movement being edited.
+     */
+    @Modifying
+    @Query("delete from MonthlyEvidence e where e.company.id = :companyId "
+            + "and e.year >= :fromYear and e.year < :toYear")
+    int deleteYears(@Param("companyId") UUID companyId,
+                    @Param("fromYear") int fromYear,
+                    @Param("toYear") int toYear);
 
     /**
      * Last year the tenant has cached lines for; null when nothing was ever generated. Bounds the

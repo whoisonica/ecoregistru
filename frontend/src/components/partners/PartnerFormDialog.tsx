@@ -33,7 +33,7 @@ import type {
 } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { fold } from "@/lib/utils";
+import { fold, todayIso } from "@/lib/utils";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -828,7 +828,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                   {authorizationIssueDate && !visaValidUntil && (() => {
                     const proposal = nextAnniversary(
                       authorizationIssueDate,
-                      visaDecisionDate || new Date().toISOString().slice(0, 10)
+                      visaDecisionDate || todayIso()
                     );
                     return (
                       <Button

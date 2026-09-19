@@ -27,7 +27,9 @@ public record CompanyUserResponse(
         boolean enabled,
         CompanyUserStatus status,
         Instant createdAt,
-        Instant deactivatedAt
+        Instant deactivatedAt,
+        /** BUG-038 — only on the answer to an invite: false when the mail did not go out. */
+        Boolean inviteEmailSent
 ) {
 
     /** The one place the three states are read off the two columns. */
@@ -43,6 +45,13 @@ public record CompanyUserResponse(
         return new CompanyUserResponse(
                 user.getId(), user.getEmail(), user.getRole(),
                 user.getFirstName(), user.getLastName(), user.isEnabled(),
-                status, user.getCreatedAt(), user.getDeactivatedAt());
+                status, user.getCreatedAt(), user.getDeactivatedAt(), null);
+    }
+
+    /** The answer to an invite: the same row, plus whether the mail went out. */
+    public static CompanyUserResponse invited(AppUser user) {
+        CompanyUserResponse r = from(user);
+        return new CompanyUserResponse(r.id, r.email, r.role, r.firstName, r.lastName, r.enabled,
+                r.status, r.createdAt, r.deactivatedAt, !user.isInviteEmailFailed());
     }
 }

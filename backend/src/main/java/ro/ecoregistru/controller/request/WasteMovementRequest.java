@@ -1,7 +1,9 @@
 package ro.ecoregistru.controller.request;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import ro.ecoregistru.enums.PhysicalState;
 import ro.ecoregistru.enums.StorageType;
 import ro.ecoregistru.enums.TransportDestination;
@@ -35,9 +37,10 @@ public record WasteMovementRequest(
         @NotNull LocalDate date,
         @NotNull UUID wasteCodeId,
         /** Required unless weighedAtUnloading is set: the recipient weighs the load. */
-        @DecimalMin(value = "0.0", inclusive = false) BigDecimal quantity,
+        // BUG-039: NUMERIC(14,3). A fourth decimal was rounded away in silence (0.0001 → 0.000).
+        @DecimalMin(value = "0.0", inclusive = false) @Digits(integer = 11, fraction = 3) BigDecimal quantity,
         boolean weighedAtUnloading,
-        @DecimalMin(value = "0.0", inclusive = false) BigDecimal volumeM3,
+        @DecimalMin(value = "0.0", inclusive = false) @Digits(integer = 9, fraction = 3) BigDecimal volumeM3,
         @NotNull Unit unit,
         @NotNull WasteOperation operation,
         WasteRegister register,
@@ -49,8 +52,8 @@ public record WasteMovementRequest(
         WasteOperationCode operationCode,
         UUID partnerId,
         UUID internalGeneratorId,
-        String documentReference,
-        String notes,
+        @Size(max = 255) String documentReference,
+        @Size(max = 1000) String notes,
 
         // --- Anexa 3 la HG 1061/2008: filled in when the transport form is going to be printed ---
         /** "Data încărcării"; null = the movement date. */
@@ -59,10 +62,10 @@ public record WasteMovementRequest(
         /** Which of the recipient's work points received the load; null = the only one. */
         UUID partnerWorkPointId,
         UUID transportPartnerId,
-        String driverName,
-        String driverIdentification,
+        @Size(max = 255) String driverName,
+        @Size(max = 100) String driverIdentification,
         @ro.ecoregistru.util.ValidCnp String driverCnp,
-        String vehicleRegistration,
+        @Size(max = 50) String vehicleRegistration,
         Set<TransportDestination> transportDestinations,
         /**
          * The unit this one form prints in. Null falls back to the company setting, and then
@@ -76,11 +79,11 @@ public record WasteMovementRequest(
          * The form's own number, as the agency writes it. Typed, never allocated — the note under
          * the official model reserves it for the county environmental agency.
          */
-        String anexa2Number,
+        @Size(max = 30) String anexa2Number,
         /** "Nr. formularului de aprobare al transportului", required above 1 t/an by art. 7. */
-        String anexa2ApprovalNumber,
+        @Size(max = 60) String anexa2ApprovalNumber,
         /** "Numar şi tip de ambalaje utilizate pentru transportul deşeurilor periculoase". */
-        String anexa2Packaging,
+        @Size(max = 255) String anexa2Packaging,
         /**
          * The "&lt; 1t/an" tick. Null leaves it to the yearly total for this code, which is what
          * the screen proposes; a value is the client's own answer and is printed as given.

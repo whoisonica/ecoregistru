@@ -8,5 +8,7 @@ public record OnboardClientResponse(
         CompanyResponse company,
         SubscriptionPlan plan,
         Invoice firstInvoice,
-        String invitedEmail
+        String invitedEmail,
+        /** BUG-038 — null without an invite, false when its mail did not go out. */
+        Boolean inviteEmailSent
 ) {}

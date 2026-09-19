@@ -1,5 +1,6 @@
 package ro.ecoregistru.service;
 
+import ro.ecoregistru.security.SecurityUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -267,7 +268,7 @@ public class PartnerService {
     private PartnerResponse toResponse(Partner p) {
         LocalDate validUntil = p.authorizationValidUntil();
         boolean expiringSoon = validUntil != null
-                && !validUntil.isAfter(LocalDate.now().plusDays(EXPIRY_WARNING_DAYS));
+                && !validUntil.isAfter(DeadlineService.today().plusDays(EXPIRY_WARNING_DAYS));
         return new PartnerResponse(
                 p.getId(), p.getName(), p.getCui(), p.getAuthorizationNumber(),
                 p.getAuthorizationExpiry(), p.getAuthorizationIssueDate(), p.getVisaDecisionNumber(),
@@ -283,7 +284,7 @@ public class PartnerService {
                 p.getTransportLicenseNumber(), p.getTransportLicenseExpiry(),
                 p.getDrivers().stream()
                         .map(d -> new DriverResponse(d.getId(), p.getId(), p.getName(), d.getName(),
-                                d.getIdentification(), d.getCnp(), d.getVehicleRegistration(),
+                                d.getIdentification(), SecurityUtils.cnpForCurrentUser(d.getCnp()), d.getVehicleRegistration(),
                                 null, null, d.getAttestationNumber(), d.getAttestationExpiry(),
                                 d.isActive()))
                         .toList());

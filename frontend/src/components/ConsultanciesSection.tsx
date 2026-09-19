@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { notifyInvited } from "@/lib/inviteNotice";
 import { Briefcase, Plus, Receipt, UserPlus } from "lucide-react";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import {
@@ -95,7 +96,7 @@ export function ConsultanciesSection() {
     if (!inviting) return;
     if (!email.trim()) return setEmailError(true);
     try {
-      await inviteMut.mutateAsync({
+      const invited = await inviteMut.mutateAsync({
         id: inviting.id,
         input: {
           email: email.trim(),
@@ -103,7 +104,7 @@ export function ConsultanciesSection() {
           lastName: lastName.trim() || null,
         },
       });
-      notify(t.invited, "success");
+      notifyInvited(notify, invited, t.invited);
       setInviting(null);
     } catch (err) {
       notify(apiErrorMessage(err, t.inviteError), "error");

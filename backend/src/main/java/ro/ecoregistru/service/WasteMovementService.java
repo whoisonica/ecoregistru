@@ -42,6 +42,7 @@ public class WasteMovementService {
     PartnerRepository partnerRepository;
     PartnerWorkPointRepository partnerWorkPointRepository;
     InternalGeneratorRepository internalGeneratorRepository;
+    MonthlyEvidenceRepository evidenceRepository;
     WasteMovementMapper mapper;
 
     @Transactional
@@ -145,6 +146,14 @@ public class WasteMovementService {
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner);
+
+        // BUG-031: moved into a later year, the movement drops out of the old year's staleness
+        // check, so the old year (and any in between) would keep counting it from the cache.
+        int oldYear = movement.getDate().getYear();
+        int newYear = request.date().getYear();
+        if (oldYear < newYear) {
+            evidenceRepository.deleteYears(tenantId, oldYear, newYear);
+        }
 
         movement.setWorkPoint(workPoint);
         movement.setDate(request.date());

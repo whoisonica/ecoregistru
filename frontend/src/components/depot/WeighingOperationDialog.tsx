@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { todayIso } from "@/lib/utils";
 
 const t = strings.weighing;
 const codeLabels = strings.enums.wasteOperationCode;
@@ -167,7 +168,7 @@ export function WeighingOperationDialog({
     }
   }
 
-  const [date, setDate] = useState(operation?.date ?? new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(operation?.date ?? todayIso());
   const [workPointId, setWorkPointId] = useState(operation?.workPointId ?? "");
   const [fromPerson, setFromPerson] = useState(Boolean(operation?.naturalPersonId));
   const [partnerId, setPartnerId] = useState(operation?.partnerId ?? "");
@@ -186,7 +187,7 @@ export function WeighingOperationDialog({
   const fleetDocumentsExpired = Boolean(
     fleetVehicle &&
       [fleetVehicle.itpExpiry, fleetVehicle.transportLicenseExpiry].some(
-        (d) => d && d < new Date().toISOString().slice(0, 10)
+        (d) => d && d < todayIso()
       )
   );
   const drivers = useDrivers();
@@ -201,7 +202,7 @@ export function WeighingOperationDialog({
     return matches.length === 1 ? matches[0] : null;
   }, [driverName, drivers.data]);
   const driverAttestationExpired = Boolean(
-    listedDriver?.attestationExpiry && listedDriver.attestationExpiry < new Date().toISOString().slice(0, 10)
+    listedDriver?.attestationExpiry && listedDriver.attestationExpiry < todayIso()
   );
   function changeDriverName(value: string) {
     setDriverName(value);

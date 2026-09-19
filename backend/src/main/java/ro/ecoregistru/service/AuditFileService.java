@@ -264,7 +264,7 @@ public class AuditFileService {
                 : PackagingDeclaration.NOT_ANSWERED;
 
         List<Partner> partners = partnerRepository.findAllByCompany_Id(tenantId);
-        LocalDate today = LocalDate.now();
+        LocalDate today = DeadlineService.today();
         long expired = partners.stream().filter(p -> status(p, today) == AuthStatus.EXPIRED).count();
         long soon = partners.stream().filter(p -> status(p, today) == AuthStatus.SOON).count();
 
@@ -439,7 +439,7 @@ public class AuditFileService {
                                             Map<UUID, Set<String>> codesByPartner, int firstYear, int lastYear,
                                             ReportBranding branding) {
         Document doc = new Document(PageSize.A4.rotate(), 36, 36, 36, 48);
-        LocalDate today = LocalDate.now();
+        LocalDate today = DeadlineService.today();
         String period = firstYear == lastYear ? String.valueOf(lastYear) : firstYear + "–" + lastYear;
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter writer = PdfWriter.getInstance(doc, out);
@@ -706,7 +706,7 @@ public class AuditFileService {
                     .append("Termenul de păstrare a evidenței: cel puțin 3 ani — OUG 92/2021, art. 48\n")
                     .append("alin. (5). Pentru transportatori, cel puțin 12 luni.\n");
         }
-        sb.append("Generat: ").append(LocalDate.now().format(DATE)).append("\n\n");
+        sb.append("Generat: ").append(DeadlineService.today().format(DATE)).append("\n\n");
         sb.append("Rapoartele oficiale sunt în folderul ").append(REPORTS_DIR)
                 .append(", iar documentele atașate mișcărilor\nîn ").append(ATTACHMENTS_DIR).append(".\n\n");
 

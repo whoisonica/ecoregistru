@@ -2,6 +2,7 @@ package ro.ecoregistru.controller.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.enums.PackagingOrigin;
 
@@ -17,13 +18,13 @@ import java.util.List;
  * pure haulage firm does nothing with the waste. The service rejects a partner with neither.
  */
 public record PartnerRequest(
-        @NotBlank String name,
-        String cui,
-        String authorizationNumber,
+        @NotBlank @Size(max = 255) String name,
+        @Size(max = 32) String cui,
+        @Size(max = 128) String authorizationNumber,
         LocalDate authorizationExpiry,
         /** Ziua emiterii autorizaţiei iniţiale — ancora anului de viză (V41). */
         LocalDate authorizationIssueDate,
-        String visaDecisionNumber,
+        @Size(max = 100) String visaDecisionNumber,
         LocalDate visaDecisionDate,
         /** Ultima zi a perioadei scrise pe decizia de viză. */
         LocalDate visaValidUntil,
@@ -40,16 +41,16 @@ public record PartnerRequest(
         PackagingOrigin packagingOrigin,
 
         // --- What Anexa 3 prints about them, as recipient or as carrier ---
-        String address,
+        @Size(max = 500) String address,
         /**
          * The partner's work points, replacing the list wholesale on save. Empty clears it — this
          * is a small, fully visible list on one screen, so "what you see is what is stored".
          */
         @Valid List<PartnerWorkPointRequest> workPoints,
-        String tradeRegisterNumber,
+        @Size(max = 50) String tradeRegisterNumber,
         /** Vehicule peste 3,5 t; fără bifă (sau fără {@code carrier}) licenţa se ignoră. */
         boolean heavyVehicles,
-        String transportLicenseNumber,
+        @Size(max = 255) String transportLicenseNumber,
         LocalDate transportLicenseExpiry,
         /**
          * This carrier's drivers, replaced wholesale on save like the work points. Null leaves them

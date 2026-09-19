@@ -71,12 +71,21 @@ public record AnnualDeclaration(
             BigDecimal closingStock,
             String recoveredThrough,
             String disposedThrough,
-            BigDecimal unclassifiedOut
+            BigDecimal unclassifiedOut,
+            boolean awaitingWeighing
     ) {
         /** Whether this row carries a quantity that left the site with no operation code. */
         public boolean hasUnclassifiedOut() {
             return unclassifiedOut != null && unclassifiedOut.signum() > 0;
         }
+    }
+
+    /**
+     * BUG-032 — whether any row has a load that left without a weight, waiting for the recipient's
+     * weighing. Its quantity is in no column yet, so the declaration is provisional and has to say so.
+     */
+    public boolean hasAwaitingWeighing() {
+        return rows.stream().anyMatch(Row::awaitingWeighing);
     }
 
     /** Whether any row needs the "ieşiri fără cod R/D" footnote. */

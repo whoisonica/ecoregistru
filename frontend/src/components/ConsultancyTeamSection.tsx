@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { notifyInvited } from "@/lib/inviteNotice";
 import { Ban, Mail, Plus, RotateCcw, Users, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
@@ -78,8 +79,8 @@ export function ConsultancyTeamSection() {
       lastName: lastName.trim() || null,
     };
     try {
-      await inviteMut.mutateAsync(input);
-      notify(t.invited, "success");
+      const invited = await inviteMut.mutateAsync(input);
+      notifyInvited(notify, invited, t.invited);
       setInviteOpen(false);
     } catch (err) {
       notify(apiErrorMessage(err, u.inviteError), "error");

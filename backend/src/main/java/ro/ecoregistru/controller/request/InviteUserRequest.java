@@ -3,6 +3,7 @@ package ro.ecoregistru.controller.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import ro.ecoregistru.enums.Role;
 
 /**
@@ -10,8 +11,8 @@ import ro.ecoregistru.enums.Role;
  * role (ADMIN/OPERATOR/CLIENT_VIEWER) — never PLATFORM_ADMIN (rejected as INVALID_INVITE_ROLE).
  */
 public record InviteUserRequest(
-        @NotBlank @Email String email,
+        @NotBlank @Email @Size(max = 255) String email,
         @NotNull Role role,
-        String firstName,
-        String lastName
+        @Size(max = 128) String firstName,
+        @Size(max = 128) String lastName
 ) {}

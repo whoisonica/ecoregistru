@@ -59,7 +59,7 @@ public class AccountRequestController {
     @PostMapping("/{id}/reject")
     @PreAuthorize(PLATFORM_ONLY)
     public ResponseEntity<Void> reject(@PathVariable UUID id,
-                                       @RequestBody(required = false) RejectAccountRequest body) {
+                                       @Valid @RequestBody(required = false) RejectAccountRequest body) {
         accountRequestService.reject(id, body);
         return ResponseEntity.noContent().build();
     }

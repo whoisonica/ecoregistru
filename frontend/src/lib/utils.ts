@@ -66,3 +66,12 @@ export { countOf };
 export function withCount(template: string, n: number, one: string, many: string): string {
   return template.replace("{count}", countOf(n, one, many));
 }
+
+/**
+ * Ziua de azi, `yyyy-MM-dd`, din calendarul local. BUG-037: `toISOString()` dă ziua din UTC, deci
+ * între 00:00 și 03:00, ora României, propunea ziua de ieri — la 1 ianuarie, anul trecut.
+ */
+export function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

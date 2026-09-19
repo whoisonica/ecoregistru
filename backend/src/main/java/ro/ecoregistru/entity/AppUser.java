@@ -31,6 +31,13 @@ public class AppUser implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
+    /**
+     * BUG-038 — set by {@code AuthenticationService} when the invite mail just failed, so the
+     * response can say so. Not stored: it describes one request, not the account.
+     */
+    @Transient
+    boolean inviteEmailFailed;
+
     @Column(unique = true, nullable = false)
     String email;
 

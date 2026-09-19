@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { notifyInvited } from "@/lib/inviteNotice";
 import { SETTINGS_CARD } from "@/components/ui/card";
 import { Ban, Mail, Plus, RotateCcw, ShieldCheck, Users, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -99,8 +100,8 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
       lastName: lastName.trim() || null,
     };
     try {
-      await inviteMut.mutateAsync(input);
-      notify(t.invited, "success");
+      const invited = await inviteMut.mutateAsync(input);
+      notifyInvited(notify, invited, t.invited);
       setInviteOpen(false);
     } catch (err) {
       notify(apiErrorMessage(err, t.inviteError), "error");

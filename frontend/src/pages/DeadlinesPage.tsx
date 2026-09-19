@@ -121,11 +121,15 @@ export function DeadlinesPage() {
 
   function submitComplete() {
     if (!completing) return;
+    // BUG-044: „Bifate” filtrează după anul scadenței, iar termenul abia bifat stă des în anul
+    // următor. Anul trece pe al lui, ca termenul să fie acolo, cu „Redeschide”, fără căutat.
+    const dueYear = Number(completing.dueDate.slice(0, 4));
     completeMut.mutate(
       { id: completing.id, note: note.trim() || undefined },
       {
         onSuccess: () => {
           notify(t.completed, "success");
+          setYear(dueYear);
           setCompleting(null);
         },
         onError: (err) => notify(apiErrorMessage(err, t.actionError), "error"),

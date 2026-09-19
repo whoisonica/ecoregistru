@@ -21,14 +21,10 @@ import { Button } from "@/components/ui/button";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
+import { todayIso } from "@/lib/utils";
 
 const t = strings.clients;
 const p = strings.companyPage;
-
-function todayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 /**
  * F-D (todo-clienti-abonamente.md, macheta B) — pagina unei firme, `/clienti/:id`. Înlocuiește dialogul `xl` al firmei

@@ -4,7 +4,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { isMultiCompany } from "@/lib/roles";
 import { strings } from "@/lib/strings";
-import { formatDate, withCount } from "@/lib/utils";
+import { formatDate, withCount, todayIso } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -252,5 +252,5 @@ export function CompanyDetailsSection() {
 
 /** Ziua de azi trece drept validă: autorizația expiră la sfârșitul zilei înscrise pe ea. */
 function expired(iso: string): boolean {
-  return iso < new Date().toISOString().slice(0, 10);
+  return iso < todayIso();
 }
