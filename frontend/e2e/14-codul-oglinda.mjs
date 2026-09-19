@@ -64,7 +64,7 @@ const setup = await page.evaluate(
           quantity: 1.5,
           unit: "KG",
           physicalState: "SOLID",
-          operation: "RECOVERED", register: "ANEXA_1", operationCode: "R13", wasteDestination: "Vr",
+          operation: "RECOVERED", register: "ANEXA_1", operationCode: "R13", storageType: "CT", transportMeans: "AN", physicalState: "SOLID", wasteDestination: "Vr",
           notes: "proba 14 — cod-oglindă",
         }),
       });

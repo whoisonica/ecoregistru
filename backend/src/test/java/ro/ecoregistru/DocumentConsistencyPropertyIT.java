@@ -394,6 +394,9 @@ class DocumentConsistencyPropertyIT {
         body.put("register", "ANEXA_1");
         body.put("operation", mv.recovered() ? "RECOVERED" : "DISPOSED");
         body.put("wasteDestination", mv.recovered() ? "Vr" : "I");
+        body.put("storageType", "CT");
+        body.put("transportMeans", "AN");
+        body.put("packagingCategory", "SECONDARY");
         body.put("operationCode", mv.recovered() ? "R13" : "D10");
         if (mv.partner() != null) {
             body.put("partnerId", run.partners[mv.partner()].toString());

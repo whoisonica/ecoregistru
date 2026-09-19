@@ -183,8 +183,9 @@ public class AuditFileService {
                 .toList();
         boolean single = years == 1;
         boolean packaging = MarketRole.putsPackagingOnMarket(company.getMarketRoles());
+        // One regeneration of the first year rebuilds the whole chain, earlier years included (BUG-045).
+        evidenceCalculator.regenerateYear(firstYear);
         for (int y = firstYear; y <= year; y++) {
-            evidenceCalculator.regenerateYear(y);
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
             filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(y, workPoints)));
         }
@@ -342,14 +343,14 @@ public class AuditFileService {
      * null când firma n-o depune.
      */
     private record YearFiles(String prefix, String sheet, String centralized, String packaging,
-                             List<Anexa3File> anexa3, boolean anexa3RoleMissing) {}
+                             List<Anexa3File> anexa3, boolean anexa3RoleMissing, int anexa3Unplaced) {}
 
     private static YearFiles yearFiles(int year, boolean single, boolean packaging, Anexa3Plan plan) {
         return new YearFiles(single ? "" : year + "/",
                 "evidenta-gestiunii-deseurilor-" + year + ".pdf",
                 "evidenta-centralizata-" + year + ".pdf",
                 packaging ? "anexa1-ambalaje-" + year : null,
-                plan.files(), plan.roleMissing());
+                plan.files(), plan.roleMissing(), plan.unplaced());
     }
 
     // --- attachments ---
@@ -763,6 +764,12 @@ public class AuditFileService {
                         "dacă e colector, comerciant, reciclator sau valorificator,",
                         "deci nu se știe care tabel se completează. Răspunde în Setări."));
             }
+            if (files.anexa3Unplaced() > 0) {
+                sb.append(entry(prefix + "anexa3-ambalaje-" + year,
+                        "LIPSEȘTE: " + (files.anexa3Unplaced() == 1 ? "o ieșire de ambalaj fără material nu apare"
+                                : files.anexa3Unplaced() + " ieșiri de ambalaj fără material nu apar") + " pe Anexa 3.",
+                        "Alege materialul pe „Generare”, la „De completat”, apoi descarcă din nou."));
+            }
             if (single) {
                 sb.append(entry(PARTNERS,
                         "Autorizațiile partenerilor și statusul lor, cu codurile de deșeu din an."));
@@ -1036,7 +1043,8 @@ public class AuditFileService {
     private record Anexa3File(String baseName, UUID workPointId, String workPointName) {}
 
     /** Ce Anexe 3 intră într-un an, şi dacă a rămas vreuna pe dinafară fiindcă lipseşte rolul din profil. */
-    private record Anexa3Plan(List<Anexa3File> files, boolean roleMissing) {}
+    /** {@code unplaced}: ieșiri vechi fără material, pe care formularul nu le poate așeza (BUG-049). */
+    private record Anexa3Plan(List<Anexa3File> files, boolean roleMissing, int unplaced) {}
 
     /**
      * Anexele 3 Ambalaje ale unui an: câte una pe fiecare punct de lucru care are rânduri (preluări,
@@ -1047,9 +1055,12 @@ public class AuditFileService {
         List<Anexa3File> files = new java.util.ArrayList<>();
         Set<String> used = new java.util.HashSet<>();
         boolean roleMissing = false;
+        int unplaced = 0;
         for (WorkPoint wp : workPoints) {
             PackagingAnexa3 doc = packagingService.anexa3(year, wp.getId());
-            if (doc.intake().isEmpty() && doc.handovers().isEmpty() && doc.treatments().isEmpty()) {
+            unplaced += (int) doc.unclassified().stream().filter(PackagingAnexa3.UnclassifiedRow::missingMaterial).count();
+            if (doc.intake().isEmpty() && doc.handovers().isEmpty() && doc.treatments().isEmpty()
+                    && doc.unclassified().isEmpty()) {
                 continue;
             }
             if (!doc.printable()) {
@@ -1063,7 +1074,7 @@ public class AuditFileService {
             }
             files.add(new Anexa3File(name, wp.getId(), wp.getName()));
         }
-        return new Anexa3Plan(files, roleMissing);
+        return new Anexa3Plan(files, roleMissing, unplaced);
     }
 
     /** „Punct de lucru Cluj" → „punct-de-lucru-cluj": un nume de fişier care nu se strică pe nicio arhivă. */

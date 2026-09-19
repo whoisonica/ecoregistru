@@ -1369,6 +1369,8 @@ export interface MovementFilters {
   direction?: MovementDirection;
   /** Numai rândurile fără cod R/D — „arată-mi ce blochează depunerea", trimis de pe Panou. */
   missingOperationCode?: boolean;
+  /** Numai predările vechi care n-au tot ce cer rapoartele (decizia 19.09.2026). */
+  incomplete?: boolean;
   /**
    * Tastele de ambalaje de deasupra listei (18.09.2026): numai mișcările pe coduri `15 01 xx`
    * (`ANY`), numai cele care hrănesc Anexa 1 Ambalaje (`ON_MARKET`), sau numai cele cărora le
@@ -1401,6 +1403,8 @@ export interface MovementTotals {
   missingOperationCode: number;
   /** Intrări de la persoane fizice, prin operațiunea de cântar (D1.7). */
   fromNaturalPersonsKg: number;
+  /** Predări de pe Anexa 1 cărora le lipsește ceva ce tipăresc rapoartele (decizia 19.09.2026). */
+  incomplete: number;
 }
 
 /**

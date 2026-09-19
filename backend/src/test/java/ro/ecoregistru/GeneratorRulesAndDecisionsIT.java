@@ -243,7 +243,7 @@ class GeneratorRulesAndDecisionsIT {
         return """
                 {"workPointId": "%s", "date": "%s", "wasteCodeId": "%s", "quantity": %s,
                  "unit": "%s", "physicalState": "SOLID", "operation": "RECOVERED", "register": "ANEXA_1",
-                 "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
+                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
                 """.formatted(workPoint, date, code.getId(), qty, unit, collector);
     }
 
@@ -251,7 +251,7 @@ class GeneratorRulesAndDecisionsIT {
         return """
                 {"workPointId": "%s", "date": "2025-05-10", "wasteCodeId": "%s", "quantity": 5,
                  "unit": "KG", "physicalState": "SOLID", "operation": "DISPOSED", "register": "ANEXA_1",
-                 "wasteDestination": "DO", "operationCode": "%s", "partnerId": "%s"}
+                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "DO", "operationCode": "%s", "partnerId": "%s"}
                 """.formatted(workPoint, paper.getId(), operationCode, collector);
     }
 

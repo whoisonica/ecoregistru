@@ -197,7 +197,8 @@ class PackagingDeclarationIT {
      */
     @Test
     void metalPackagingIsReportedAsUnclassifiedRatherThanSweptIntoAltele() throws Exception {
-        handover("15 01 04", "120", collector.getId(), "R4", "SECONDARY", null);
+        handover("15 01 04", "120", collector.getId(), "R4", "SECONDARY", "OTEL");
+        legacyWithout("packaging_material", "15 01 04");
 
         PackagingDeclaration d = declaration();
 
@@ -228,6 +229,7 @@ class PackagingDeclarationIT {
     @Test
     void aMovementWithoutTheKindOfPackagingIsReportedTooRatherThanCounted() throws Exception {
         handover("15 01 01", "300", collector.getId(), "R13", null, null);
+        legacyWithout("packaging_category", "15 01 01");
 
         PackagingDeclaration d = declaration();
 
@@ -593,7 +595,7 @@ class PackagingDeclarationIT {
                 {
                   "workPointId": "%s", "date": "%d-05-12", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s,
-                  "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "%s", "partnerId": "%s",
+                  "operation": "RECOVERED", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "%s", "partnerId": "%s",
                   "packagingOnMarket": true%s
                 }
                 """.formatted(workPointId, YEAR, codeId, quantity, operationCode, partnerId, extra));
@@ -606,7 +608,7 @@ class PackagingDeclarationIT {
                 {
                   "workPointId": "%s", "date": "%d-06-12", "wasteCodeId": "%s",
                   "unit": "KG", "quantity": %s,
-                  "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "packagingOnMarket": false
                 }
                 """.formatted(workPointId, YEAR, codeId, quantity, partnerId));
@@ -622,5 +624,13 @@ class PackagingDeclarationIT {
     @SuppressWarnings("unused")
     private static BigDecimal kg(String value) {
         return new BigDecimal(value);
+    }
+
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    /** Un rând de dinainte de 19.09.2026: API-ul nu mai primește rubrica goală, deci o golim direct în bază. */
+    private void legacyWithout(String column, String code) {
+        jdbc.update("update waste_movements set " + column + " = null where work_point_id = ? "
+                + "and waste_code_id = (select id from waste_codes where code = ?)", workPointId, code);
     }
 }

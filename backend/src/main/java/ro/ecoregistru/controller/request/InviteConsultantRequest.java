@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.request;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -8,7 +9,7 @@ import jakarta.validation.constraints.NotBlank;
  * {@code CONSULTANT}, with the same rights (decided 14.09.2026 — a role can be added later).
  */
 public record InviteConsultantRequest(
-        @NotBlank @Email String email,
-        String firstName,
-        String lastName
+        @NotBlank @Email @Size(max = 255) String email,
+        @Size(max = 128) String firstName,
+        @Size(max = 128) String lastName
 ) {}

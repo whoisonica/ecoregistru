@@ -79,7 +79,8 @@ class PackagingMovementFilterIT {
         // (1) Completă: codul decide materialul (15 01 01 → Hârtie carton), felul e răspuns.
         exit("15 01 01", "100", ", \"packagingCategory\": \"SECONDARY\"");
         // (2) Fără material: 15 01 04 acoperă și aluminiul, și oțelul — se alege pe mișcare.
-        exit("15 01 04", "200", ", \"packagingCategory\": \"SECONDARY\"");
+        exit("15 01 04", "200", ", \"packagingCategory\": \"SECONDARY\", \"packagingMaterial\": \"OTEL\"");
+        legacyWithout("packaging_material", "15 01 04");
         // (3) Ambalaj pus pe piață de furnizor: e ambalaj, dar nu hrănește Anexa 1.
         exit("15 01 01", "300", ", \"packagingCategory\": \"SECONDARY\", \"packagingOnMarket\": false");
         // (4) Nu e ambalaj deloc: cartonul de birou pe 20 01 01 rămâne în evidența gestiunii.
@@ -132,8 +133,16 @@ class PackagingMovementFilterIT {
                         .content("""
                                 {"workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
                                  "unit": "KG", "quantity": %s, "operation": "RECOVERED",
-                                 "wasteDestination": "Vr", "operationCode": "R3"%s}
+                                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3"%s}
                                 """.formatted(workPointId, YEAR, codeId, quantity, extra)))
                 .andExpect(status().isOk());
+    }
+
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    /** Un rând de dinainte de 19.09.2026: API-ul nu mai primește rubrica goală, deci o golim direct în bază. */
+    private void legacyWithout(String column, String code) {
+        jdbc.update("update waste_movements set " + column + " = null where work_point_id = ? "
+                + "and waste_code_id = (select id from waste_codes where code = ?)", workPointId, code);
     }
 }

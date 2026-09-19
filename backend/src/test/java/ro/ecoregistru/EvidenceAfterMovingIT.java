@@ -67,6 +67,7 @@ class EvidenceAfterMovingIT {
     @Autowired WorkPointRepository workPointRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired PartnerRepository partnerRepository;
+    @Autowired WasteMovementRepository movementRepository;
 
     private UUID tenantId;
     private String token;
@@ -75,6 +76,7 @@ class EvidenceAfterMovingIT {
     private UUID paper;
     private UUID glass;
     private UUID collector;
+    private UUID adminId;
 
     @BeforeEach
     void setUp() {
@@ -88,6 +90,7 @@ class EvidenceAfterMovingIT {
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
         token = jwtService.generateToken(admin);
+        adminId = admin.getId();
         pointA = workPointRepository.save(WorkPoint.builder()
                 .company(company).name("PL Nord").active(true).createdAt(Instant.now()).build()).getId();
         pointB = workPointRepository.save(WorkPoint.builder()
@@ -159,6 +162,42 @@ class EvidenceAfterMovingIT {
     }
 
     /** Codul greșit, corectat: 400 kg trec de pe hârtie pe sticlă, în aceeași lună. */
+    /**
+     * Anul părăsit e primul an cu linii și duce stoc în anul următor. Prima reparație a BUG-031
+     * ștergea liniile anului părăsit: citit primul, 2026 nu mai găsea nimic pe 2025, se deschidea
+     * la zero și, proaspăt după aceea, păstra zero-ul și după ce 2025 se reconstruia.
+     *
+     * <p>De mână: 1000 kg generate în iunie 2025 (linie veche, rămasă în stoc), 300 kg predate pe
+     * 15 decembrie și mutate pe 10 ianuarie. 2025 se închide cu 1000, deci 2026 se deschide cu 1000.
+     */
+    @Test
+    void theNextYearKeepsItsOpeningStockAfterTheMove() throws Exception {
+        legacyGenerated(pointA, paper, "2025-06-10", "1000");
+        String december = handover(pointA, paper, "2025-12-15", "300");
+        readEvidence(2025);
+        readEvidence(2026);
+        assertKg(onlySheet(2026, pointA).openingStock(), "700");
+
+        update(december, pointA, paper, "2026-01-10", "300");
+        readEvidence(2026);
+        readEvidence(2025);
+
+        assertKg(onlySheet(2025, pointA).rows().get(11).closingStock(), "1000");
+        assertKg(onlySheet(2026, pointA).openingStock(), "1000");
+    }
+
+    /** Singura mișcare a anului pleacă în anul următor: anul rămas fără mișcări nu mai tipărește nimic. */
+    @Test
+    void aYearLeftWithoutMovementsDropsItsLines() throws Exception {
+        String only = handover(pointA, paper, "2025-12-15", "300");
+        readEvidence(2025);
+
+        update(only, pointA, paper, "2026-01-10", "300");
+
+        TenantContext.set(tenantId);
+        assertThat(evidenceCalculator.anexa1(2025, pointA)).isEmpty();
+    }
+
     @Test
     void aMovementMovedToAnotherCodeLeavesTheOldCodesSheet() throws Exception {
         handover(pointA, paper, "2026-02-10", "100");
@@ -243,6 +282,16 @@ class EvidenceAfterMovingIT {
         return JsonPath.read(json, "$.id");
     }
 
+    private void legacyGenerated(UUID workPoint, UUID code, String date, String kg) {
+        movementRepository.saveAndFlush(WasteMovement.builder()
+                .company(companyRepository.getReferenceById(tenantId))
+                .workPoint(workPointRepository.getReferenceById(workPoint))
+                .date(java.time.LocalDate.parse(date)).wasteCode(wasteCodeRepository.getReferenceById(code))
+                .quantity(new BigDecimal(kg)).unit(Unit.KG)
+                .operation(WasteOperation.GENERATED).register(WasteRegister.ANEXA_1)
+                .deleted(false).createdBy(adminId).build());
+    }
+
     private void update(String id, UUID workPoint, UUID code, String date, String kg) throws Exception {
         mockMvc.perform(put("/api/v1/movements/" + id)
                         .header("Authorization", "Bearer " + token)
@@ -258,7 +307,7 @@ class EvidenceAfterMovingIT {
                         .content("""
                                 {"workPointId": "%s", "date": "%s", "wasteCodeId": "%s",
                                  "unit": "KG", "physicalState": "SOLID", "weighedAtUnloading": true,
-                                 "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr",
+                                 "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr",
                                  "operationCode": "R13", "partnerId": "%s"}
                                 """.formatted(workPoint, date, code, collector)))
                 .andExpect(status().isOk());
@@ -268,7 +317,7 @@ class EvidenceAfterMovingIT {
         return """
                 {"workPointId": "%s", "date": "%s", "wasteCodeId": "%s", "quantity": %s,
                  "unit": "KG", "physicalState": "SOLID", "operation": "RECOVERED", "register": "ANEXA_1",
-                 "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
+                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
                 """.formatted(workPoint, date, code, kg, collector);
     }
 

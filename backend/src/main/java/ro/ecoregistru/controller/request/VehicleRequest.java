@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.request;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -16,7 +17,7 @@ import java.util.UUID;
 public record VehicleRequest(
         @Size(max = 20) String registration,
         @Size(max = 100) String kind,
-        BigDecimal standardTareKg,
+        @Digits(integer = 11, fraction = 3) BigDecimal standardTareKg,
         boolean heavy,
         LocalDate itpExpiry,
         @Size(max = 100) String transportLicenseNumber,

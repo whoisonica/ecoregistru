@@ -51,6 +51,10 @@ await page.locator('label:has(input[name="mv-fate"][value="RECOVERED"])').click(
 await page.waitForTimeout(200);
 await page.selectOption("#mv-code-rd", { index: 1 });
 await page.locator('label:has(input[name="mv-destination"][value="Vr"])').click();
+// Decizia 19.09.2026: ce tipărește fișa se alege înainte de salvare.
+await page.locator('label:has(input[name="mv-state"][value="SOLID"])').click();
+await page.selectOption("#mv-storage", "CT");
+await page.locator('label:has(input[name="mv-transport-means"][value="AN"])').click();
 await page.selectOption("#mv-partner", authorized.id);
 await page.fill("#mv-doc", DOC);
 await page.click('button[type="submit"][form="movement-form"]');

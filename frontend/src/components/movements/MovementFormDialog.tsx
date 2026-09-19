@@ -544,6 +544,8 @@ export function MovementFormDialog({
       : operation === "UNCLASSIFIED_OUT"
         ? (initial?.register ?? null)
         : screen;
+  /** Decizia 19.09.2026: pe o predare de deșeu propriu, ce tipărește fișa se alege (vezi `validate`). */
+  const reportFieldsRequired = screenRegister === "ANEXA_1" && requiresCode;
   const familyCodes =
     effectiveOperation === "RECOVERED"
       ? R_CODES
@@ -685,6 +687,17 @@ export function MovementFormDialog({
       errs.partnerId = t.partnerNeedsAuthorization;
     // Nota 5 a fișei: pe o predare de deșeu propriu destinația nu rămâne goală.
     if (screenRegister === "ANEXA_1" && !wasteDestination) errs.wasteDestination = t.wasteDestinationRequired;
+    // Decizia 19.09.2026: ce tipăresc fișa și anexele de ambalaje nu rămâne gol. Serverul pune
+    // aceleași întrebări (`validateOwnWasteHandover`); transportul Anexei 3 rămâne opțional.
+    if (reportFieldsRequired) {
+      if (!physicalState) errs.physicalState = t.physicalStateRequired;
+      if (!storageType) errs.storageType = t.storageTypeRequired;
+      if (!transportMeans) errs.transportMeans = t.transportMeansRequired;
+      if (isPackagingCode && !packagingMaterial && !suggestedMaterial)
+        errs.packagingMaterial = t.packagingMaterialRequired;
+      if (isPackagingCode && packagingOnMarket !== false && !packagingCategory)
+        errs.packagingCategory = t.packagingCategoryRequired;
+    }
     if (isLegacyExit) errs.form = t.legacyExitHint;
     return errs;
   }
@@ -1164,9 +1177,10 @@ export function MovementFormDialog({
               />
             </div>
             )}
-            <div id="mv-state">
+            <div id="mv-state" tabIndex={-1} {...invalidProps("mv-state-err", errors.physicalState)}>
               <span id="mv-state-label" className="mb-1 block text-xs font-medium text-content-muted">
                 {t.physicalState}
+                {reportFieldsRequired && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
               </span>
               <PillGroup
                 name="mv-state"
@@ -1174,10 +1188,11 @@ export function MovementFormDialog({
                 selected={[physicalState]}
                 onToggle={(value) => setPhysicalState(value)}
                 options={[
-                  { value: "" as const, label: t.pillNone },
+                  ...(reportFieldsRequired ? [] : [{ value: "" as const, label: t.pillNone }]),
                   ...nomenclatorPills<PhysicalState>(e.physicalState),
                 ]}
               />
+              <FieldError id="mv-state-err" message={errors.physicalState} />
             </div>
           </div>
 
@@ -1201,9 +1216,13 @@ export function MovementFormDialog({
         <FormSection title={t.askHandling}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="mv-storage">{t.askStorage}</Label>
+              <Label htmlFor="mv-storage">
+                {t.askStorage}
+                {reportFieldsRequired && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
+              </Label>
               <Select
                 id="mv-storage"
+                {...invalidProps("mv-storage-err", errors.storageType)}
                 value={storageType}
                 onChange={(ev) => setStorageType(ev.target.value as typeof storageType)}
               >
@@ -1214,6 +1233,7 @@ export function MovementFormDialog({
                   </option>
                 ))}
               </Select>
+              <FieldError id="mv-storage-err" message={errors.storageType} />
             </div>
             <div>
               <Label htmlFor="mv-treatment">{t.askTreatment}</Label>
@@ -1250,9 +1270,10 @@ export function MovementFormDialog({
         </FormSection>
 
         <FormSection title={t.askTransport}>
-          <div id="mv-transport-means">
+          <div id="mv-transport-means" tabIndex={-1} {...invalidProps("mv-transport-means-err", errors.transportMeans)}>
             <span id="mv-transport-means-label" className="mb-1 block text-xs font-medium text-content-muted">
               {t.askTransportMeans}
+              {reportFieldsRequired && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
             </span>
             <PillGroup
               name="mv-transport-means"
@@ -1260,10 +1281,11 @@ export function MovementFormDialog({
               selected={[transportMeans]}
               onToggle={(value) => setTransportMeans(value)}
               options={[
-                { value: "" as const, label: t.pillNone },
+                ...(reportFieldsRequired ? [] : [{ value: "" as const, label: t.pillNone }]),
                 ...nomenclatorPills<TransportMeans>(e.transportMeans),
               ]}
             />
+            <FieldError id="mv-transport-means-err" message={errors.transportMeans} />
           </div>
           <div>
             <span id="mv-destination-label" className="mb-1 block text-xs font-medium text-content-muted">
@@ -1428,6 +1450,8 @@ export function MovementFormDialog({
             packagingOrigin={packagingOrigin}
             setPackagingOrigin={setPackagingOrigin}
             packagingMaterial={packagingMaterial}
+            materialError={errors.packagingMaterial}
+            categoryError={errors.packagingCategory}
             setPackagingMaterial={setPackagingMaterial}
             packagingCategory={packagingCategory}
             setPackagingCategory={setPackagingCategory}

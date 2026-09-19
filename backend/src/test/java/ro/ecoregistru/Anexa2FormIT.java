@@ -96,7 +96,7 @@ class Anexa2FormIT {
     @Test
     void aHazardousHandoverPrintsTheConsignmentForm() throws Exception {
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 200, "transportDestinations": ["ELIMINARE"],
                   "driverName": "Musat Liviu", "vehicleRegistration": "B69BMA",
                   "transportMeans": "AN", "anexa2Packaging": "2 butoaie metalice 200 l"
@@ -132,7 +132,7 @@ class Anexa2FormIT {
     @Test
     void theQuantitiesTheOtherPartiesDeclarePrintEmpty() throws Exception {
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 200
                 """.formatted(partnerId), hazardousCodeId);
 
@@ -154,7 +154,7 @@ class Anexa2FormIT {
     @Test
     void theFormNumberIsNeverAllocatedAndIsPrintedAsTyped() throws Exception {
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 200
                 """.formatted(partnerId), hazardousCodeId);
 
@@ -167,7 +167,7 @@ class Anexa2FormIT {
                 .andExpect(jsonPath("$.anexa2Number", is(nullValue())));
 
         UUID typed = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 200, "anexa2Number": "1047"
                 """.formatted(partnerId), hazardousCodeId);
         assertThat(firstPage(pdfOf(typed))).contains("1047");
@@ -183,7 +183,7 @@ class Anexa2FormIT {
         // A code the demo seed does not touch, so the yearly total is this movement alone.
         UUID code = wasteCodeRepository.findByCode("20 01 21").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 40
                 """.formatted(partnerId), code);
 
@@ -201,7 +201,7 @@ class Anexa2FormIT {
     void aboveOneTonneTheFormPrintsSixCopies() throws Exception {
         UUID code = wasteCodeRepository.findByCode("08 01 17").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 1500
                 """.formatted(partnerId), code);
 
@@ -219,7 +219,7 @@ class Anexa2FormIT {
         // used by two of them would carry the other one's tonnes into this year's total.
         UUID code = wasteCodeRepository.findByCode("06 01 01").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 840
                 """.formatted(partnerId), code);
 
@@ -245,7 +245,7 @@ class Anexa2FormIT {
     void theClientsAnswerOverridesTheProposal() throws Exception {
         UUID code = wasteCodeRepository.findByCode("07 01 03").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 40, "anexa2BelowOneTon": false,
                   "anexa2ApprovalNumber": "APM BH 118/2026"
                 """.formatted(partnerId), code);
@@ -275,8 +275,8 @@ class Anexa2FormIT {
     void aFullyFilledFormIsStillOnePagePerCopy() throws Exception {
         UUID longNamed = wasteCodeRepository.findByCode("15 01 10").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
-                  "partnerId": "%s", "quantity": 120, "transportMeans": "AS",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
+                  "partnerId": "%s", "quantity": 120, "transportMeans": "AS", "packagingMaterial": "ALTELE",
                   "transportDestinations": ["COLECTARE", "STOCARE_TEMPORARA", "TRATARE",
                                             "VALORIFICARE", "ELIMINARE"],
                   "driverName": "Musat Liviu Constantin", "driverIdentification": "CJ 157812",
@@ -298,7 +298,7 @@ class Anexa2FormIT {
     @Test
     void everyValueIsPrintedUnderItsOwnRubric() throws Exception {
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 1234.5, "transportMeans": "AS",
                   "transportDestinations": ["TRATARE"],
                   "driverName": "Musat Liviu", "driverIdentification": "CJ 157812",
@@ -342,7 +342,7 @@ class Anexa2FormIT {
     void aNonHazardousCodeIsSentToAnexa3() throws Exception {
         UUID clean = wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
                   "partnerId": "%s", "quantity": 100
                 """.formatted(partnerId), clean);
 
@@ -356,7 +356,7 @@ class Anexa2FormIT {
     @Test
     void anexa3StillRefusesAHazardousCodeAndNamesThisForm() throws Exception {
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 200
                 """.formatted(partnerId), hazardousCodeId);
 
@@ -374,7 +374,7 @@ class Anexa2FormIT {
     /** The form records a consignment from an expeditor to a destinatar. */
     @Test
     void aMovementWithoutARecipientIsRefused() throws Exception {
-        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"quantity\": 200",
+        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"quantity\": 200",
                 hazardousCodeId);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/anexa2")
@@ -394,7 +394,7 @@ class Anexa2FormIT {
     void medicalWasteIsRefusedBecauseArticle24GivesTheFormToTheCarrier() throws Exception {
         UUID medical = wasteCodeRepository.findByCode("18 01 03").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 30
                 """.formatted(partnerId), medical);
 
@@ -411,7 +411,7 @@ class Anexa2FormIT {
     @Test
     void aGeneratorAccountDoesNotPrintTheForm() throws Exception {
         UUID id = createMovement("""
-                  "operation": "DISPOSED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "D5",
+                  "operation": "DISPOSED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "D5",
                   "partnerId": "%s", "quantity": 25
                 """.formatted(partnerId), hazardousCodeId);
         var company = companyRepository.findById(tenantId).orElseThrow();

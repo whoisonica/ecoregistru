@@ -112,7 +112,7 @@ class OwnWasteHandoverIT {
                 .content("""
                         {"workPointId": "%s", "date": "2026-07-05", "wasteCodeId": "%s", "quantity": 120,
                          "unit": "KG", "operation": "RECOVERED", "operationCode": "R3", "register": "%s",
-                         "partnerId": "%s", "wasteDestination": %s}
+                         "partnerId": "%s", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": %s}
                         """.formatted(workPointId, codeId, register, partnerId,
                         destination == null ? "null" : "\"" + destination + "\"")));
     }

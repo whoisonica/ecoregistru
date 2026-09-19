@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller;
 
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -112,21 +113,21 @@ public class WeighingOperationController {
 
     @PostMapping
     @PreAuthorize(CAN_WRITE)
-    public WeighingOperationResponse create(@RequestBody WeighingOperationRequest request) {
+    public WeighingOperationResponse create(@Valid @RequestBody WeighingOperationRequest request) {
         return service.create(request);
     }
 
     /** Capul unei operațiuni în lucru. Tipul nu se schimbă; restul, da. */
     @PutMapping("/{id}")
     @PreAuthorize(CAN_WRITE)
-    public WeighingOperationResponse update(@PathVariable UUID id, @RequestBody WeighingOperationRequest request) {
+    public WeighingOperationResponse update(@PathVariable UUID id, @Valid @RequestBody WeighingOperationRequest request) {
         return service.update(id, request);
     }
 
     /** Tot formularul odată: liniile trimise le înlocuiesc pe cele salvate. */
     @PutMapping("/{id}/lines")
     @PreAuthorize(CAN_WRITE)
-    public WeighingOperationResponse replaceLines(@PathVariable UUID id, @RequestBody WeighingLinesRequest request) {
+    public WeighingOperationResponse replaceLines(@PathVariable UUID id, @Valid @RequestBody WeighingLinesRequest request) {
         return service.replaceLines(id, request);
     }
 
@@ -139,7 +140,7 @@ public class WeighingOperationController {
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize(CAN_APPROVE)
-    public WeighingOperationResponse cancel(@PathVariable UUID id, @RequestBody WeighingCancelRequest request) {
+    public WeighingOperationResponse cancel(@PathVariable UUID id, @Valid @RequestBody WeighingCancelRequest request) {
         return service.cancel(id, request.reason());
     }
 }

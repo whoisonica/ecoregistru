@@ -159,7 +159,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-07-02", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": 120, "operation": "RECOVERED", "wasteDestination": "Vr", "operationCode": "R3",
+                  "unit": "KG", "quantity": 120, "operation": "RECOVERED", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
                   "partnerId": "%s", "register": "ANEXA_1"
                 }
                 """.formatted(workPointId, YEAR, codeId("15 01 01"), recipient.getId()));
@@ -304,7 +304,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-05-10", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": 500, "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                  "unit": "KG", "quantity": 500, "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                   "register": "ANEXA_1", "packagingOnMarket": true
                 }
                 """.formatted(workPointId, YEAR, codeId("15 01 01")));
@@ -809,7 +809,7 @@ class PackagingAnexa3IT {
         createMovement("""
                 {
                   "workPointId": "%s", "date": "%d-06-12", "wasteCodeId": "%s",
-                  "unit": "KG", "quantity": %s, "operation": "%s", "wasteDestination": "Vr", "operationCode": "%s",
+                  "unit": "KG", "quantity": %s, "operation": "%s", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "%s",
                   "partnerId": "%s", "register": "ART_48"
                 }
                 """.formatted(workPointId, YEAR, codeId(code), quantity,

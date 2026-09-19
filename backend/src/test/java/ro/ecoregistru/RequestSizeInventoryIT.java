@@ -44,12 +44,27 @@ class RequestSizeInventoryIT {
         SCOPE.put(AccountRequestSubmission.class, "account_requests");
         SCOPE.put(CompleteDeadlineRequest.class, "reporting_deadlines");
         SCOPE.put(RejectAccountRequest.class, "account_requests");
+        // BUG-054 (19.09.2026): restul cererilor care scriu text, nu doar primele unsprezece.
+        SCOPE.put(InviteConsultantRequest.class, "app_users");
+        SCOPE.put(OnboardClientRequest.Admin.class, "app_users");
+        SCOPE.put(ConsultancyRequest.class, "consultancies");
+        SCOPE.put(ConsultancyBrandingRequest.class, "consultancy_branding");
+        SCOPE.put(WeighingCancelRequest.class, "weighing_operations");
+        SCOPE.put(WeighingOperationRequest.class, "weighing_operations");
+        SCOPE.put(WeighingLinesRequest.Line.class, "waste_movements");
+        SCOPE.put(NaturalPersonRequest.class, "natural_persons");
+        SCOPE.put(VehicleRequest.class, "vehicles");
+        SCOPE.put(WasteArticleRequest.class, "waste_articles");
+        SCOPE.put(BillingDetailsRequest.class, "subscriptions");
+        SCOPE.put(PushTokenRequest.class, "device_sessions");
     }
 
     /** Câmp → coloană, unde numele diferă. Completat după prima rulare, din entități. */
     private static final Map<String, String> RENAMED = Map.of(
             "CompleteDeadlineRequest.note", "completion_note",       // DeadlineService.java:337
-            "RejectAccountRequest.reason", "notes");                 // AccountRequestService.reject: „Respins: …” adăugat la notes
+            "RejectAccountRequest.reason", "notes",                  // AccountRequestService.reject: „Respins: …” adăugat la notes
+            "WeighingCancelRequest.reason", "cancel_reason",
+            "PushTokenRequest.token", "push_token");
 
     /** Câmpuri care nu se scriu într-o coloană. */
     private static final Set<String> NOT_STORED = Set.of(

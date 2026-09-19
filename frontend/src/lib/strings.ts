@@ -639,6 +639,10 @@ export const strings = {
     // deci linkul se poate și trimite.
     onlyMissingCode: "Doar mișcările fără cod R/D",
     onlyMissingCodeOff: "Arată toate mișcările",
+    onlyIncomplete: "Doar predările de completat",
+    incompleteRows: (n: number) =>
+      n === 1 ? "O predare n-are tot ce cer rapoartele" : `${n} predări n-au tot ce cer rapoartele`,
+    incompleteShow: "Arată-le",
     // Coloanele care apar numai cu o tastă de ambalaje apăsată își iau numele din `packaging`:
     // sunt chiar coloanele tabului „Ambalaje", iar un al doilea rând de texte care spun același
     // lucru ajunge întotdeauna să nu-l mai spună.
@@ -793,6 +797,11 @@ export const strings = {
     treatmentPurposeHint:
       "Nu se alege: îl dă unde pleacă deșeul. V la valorificare, E la eliminare — așa apare în coloana „Scopul” de pe fișă.",
     wasteDestinationRequired: "Alege destinația: DO, I, Vr sau A.",
+    physicalStateRequired: "Alege starea fizică: apare pe fișă.",
+    storageTypeRequired: "Alege în ce îl ții: apare pe fișă.",
+    transportMeansRequired: "Alege mijlocul de transport: apare pe fișă.",
+    packagingMaterialRequired: "Alege materialul: îl cere Anexa 3.",
+    packagingCategoryRequired: "Alege tipul: îl cere Anexa 1 Ambalaje.",
     partnerNeedsAuthorization:
       "Partenerul n-are trecut numărul autorizației de mediu. Cine preia deșeul trebuie să fie autorizat: completează-l în fișa lui, la Parteneri.",
     nomenclatorPlaceholder: "— fără —",

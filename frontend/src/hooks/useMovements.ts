@@ -54,6 +54,7 @@ export function useMovements(
       if (filters.leftSite) params.leftSite = true;
       if (filters.direction) params.direction = filters.direction;
       if (filters.missingOperationCode) params.missingOperationCode = true;
+      if (filters.incomplete) params.incomplete = true;
       if (filters.register) params.register = filters.register;
       if (filters.packaging) params.packaging = filters.packaging;
       if (table.search) params.search = table.search;

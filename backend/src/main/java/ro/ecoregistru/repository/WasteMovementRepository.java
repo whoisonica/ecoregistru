@@ -204,6 +204,13 @@ public interface WasteMovementRepository
     Instant findLastChangeUpTo(@Param("companyId") UUID companyId, @Param("until") LocalDate until);
 
     /**
+     * Year of the tenant's earliest movement, deleted ones included; null when it has none. Where
+     * the evidence chain starts: stock carries forward, so a rebuild begins here.
+     */
+    @Query("select min(extract(year from m.date)) from WasteMovement m where m.company.id = :companyId")
+    Integer findFirstYear(@Param("companyId") UUID companyId);
+
+    /**
      * AO — numele şi actul de identitate ale delegatului, şterse de pe mişcările mai vechi decât
      * termenul de păstrare (OUG 92/2021 art. 48 alin. (5): cel puţin 3 ani). Numărul maşinii rămâne.
      * Actualizare în bloc, deci fără rânduri de jurnal de audit; jobul scrie în log câte a atins.

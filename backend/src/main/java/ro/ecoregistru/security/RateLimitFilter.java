@@ -11,6 +11,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UrlPathHelper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -50,15 +51,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain) throws ServletException, IOException {
 
+        // BUG-051: calea decodată, cum o rutează Spring — `/api/v1/auth/%6Cogin` ajungea la login
+        // fără să treacă pe aici, fiindcă URI-ul brut nu era în listă.
+        String path = UrlPathHelper.defaultInstance.getPathWithinApplication(request);
         RateLimiter.Rule rule = "POST".equalsIgnoreCase(request.getMethod())
-                ? LIMITED_POSTS.get(request.getRequestURI())
+                ? LIMITED_POSTS.get(path)
                 : null;
 
         if (rule != null) {
             String ip = clientIp(request);
             long retryAfter = rateLimiter.tryConsume(rule, ip);
             if (retryAfter > 0) {
-                log.warn("Rate limit {} hit by {} on {}", rule.name(), ip, request.getRequestURI());
+                log.warn("Rate limit {} hit by {} on {}", rule.name(), ip, path);
                 TooManyRequests.write(response, retryAfter);
                 return;
             }

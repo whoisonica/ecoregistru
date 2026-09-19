@@ -292,7 +292,7 @@ class AuditLogIT {
                   %s%s
                 }
                 """.formatted(workPointId, date, wasteCodeId, quantity,
-                extra == null ? "\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\"" : extra,
+                extra == null ? "\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\"" : extra,
                 partner == null ? "" : ",\n  \"partnerId\": \"" + partner + "\"");
     }
 

@@ -89,7 +89,7 @@ class Anexa3FormIT {
     @Test
     void aLoadWeighedByTheRecipientIsRecordedWithoutAQuantity() throws Exception {
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                           "partnerId": "%s", "weighedAtUnloading": true, "volumeM3": 1.5
                         """.formatted(partnerId)))
                 .andExpect(status().isOk())
@@ -102,7 +102,7 @@ class Anexa3FormIT {
     @Test
     void aMissingQuantityIsRejectedUnlessTheRecipientWeighsIt() throws Exception {
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"
                         """.formatted(partnerId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.quantity.required")));
@@ -111,7 +111,7 @@ class Anexa3FormIT {
     /** Somebody has to do the weighing, and it is the party taking the waste over. */
     @Test
     void weighingAtUnloadingNeedsARecipient() throws Exception {
-        mockMvc.perform(movement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"weighedAtUnloading\": true"))
+        mockMvc.perform(movement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"weighedAtUnloading\": true"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.weighing.recipient")));
     }
@@ -120,7 +120,7 @@ class Anexa3FormIT {
     @Test
     void anUnweighedExitMakesItsEvidenceLineProvisional() throws Exception {
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                           "partnerId": "%s", "weighedAtUnloading": true
                         """.formatted(partnerId)))
                 .andExpect(status().isOk());
@@ -150,7 +150,7 @@ class Anexa3FormIT {
         setAuthorizationExpiry(partnerId, LocalDate.of(2026, 6, 30)); // movement is 2026-07-05
 
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                           "partnerId": "%s", "quantity": 100
                         """.formatted(partnerId)))
                 .andExpect(status().isOk())
@@ -168,7 +168,7 @@ class Anexa3FormIT {
         setAuthorizationExpiry(partnerId, LocalDate.of(2026, 6, 30));
 
         String id = movementId("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                   "partnerId": "%s", "quantity": 100
                 """.formatted(partnerId));
 
@@ -188,7 +188,7 @@ class Anexa3FormIT {
     void anAuthorizationExpiringOnTheDayOrNotRecordedAtAllIsNotFlagged() throws Exception {
         setAuthorizationExpiry(partnerId, LocalDate.of(2026, 7, 5)); // the movement's own date
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                           "partnerId": "%s", "quantity": 100
                         """.formatted(partnerId)))
                 .andExpect(status().isOk())
@@ -196,7 +196,7 @@ class Anexa3FormIT {
 
         setAuthorizationExpiry(partnerId, null);
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                           "partnerId": "%s", "quantity": 100
                         """.formatted(partnerId)))
                 .andExpect(status().isOk())
@@ -222,7 +222,7 @@ class Anexa3FormIT {
     void theFormIsRefusedForHazardousWaste() throws Exception {
         UUID hazardous = wasteCodeRepository.findByCode("13 02 08").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s", "quantity": 5.0
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s", "quantity": 5.0
                 """.formatted(partnerId), hazardous);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/anexa3")
@@ -233,7 +233,7 @@ class Anexa3FormIT {
 
     @Test
     void theFormIsRefusedWhenNothingWasHandedOver() throws Exception {
-        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"quantity\": 5.0", wasteCodeId);
+        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"quantity\": 5.0", wasteCodeId);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/anexa3")
                         .header("Authorization", "Bearer " + token))
@@ -246,7 +246,7 @@ class Anexa3FormIT {
     @Test
     void theFormIsAPdfAndKeepsItsNumberOnAReprint() throws Exception {
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s",
                   "weighedAtUnloading": true, "volumeM3": 17,
                   "unloadDate": "2026-07-06",
                   "driverName": "Musat Liviu", "driverIdentification": "RK 157812",
@@ -283,7 +283,7 @@ class Anexa3FormIT {
     @Test
     void theFormPrintsThreeIdenticalCopies() throws Exception {
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "quantity": 120
                 """.formatted(partnerId), wasteCodeId);
 
@@ -311,7 +311,7 @@ class Anexa3FormIT {
     @Test
     void aTypedLoadDateIsPrintedAndBoundsTheUnloadDate() throws Exception {
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
                           "partnerId": "%s", "quantity": 10,
                           "loadDate": "2026-07-08", "unloadDate": "2026-07-07"
                         """.formatted(partnerId)))
@@ -319,7 +319,7 @@ class Anexa3FormIT {
                 .andExpect(jsonPath("$['error-code']", is("movement.unload.before.load")));
 
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
                   "partnerId": "%s", "quantity": 10,
                   "loadDate": "2026-07-08", "unloadDate": "2026-07-09"
                 """.formatted(partnerId), wasteCodeId);
@@ -339,7 +339,7 @@ class Anexa3FormIT {
     @Test
     void theAvizCarriesTheHandoverAndItsNumber() throws Exception {
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "quantity": 7800, "driverName": "Bozar Bogdan", "driverIdentification": "SM 847849",
                   "driverCnp": "1900101123457",
                   "vehicleRegistration": "SM74ALP", "documentReference": "AVZ-A 14"
@@ -368,12 +368,12 @@ class Anexa3FormIT {
     @Test
     void aDriverCnpWithAWrongControlDigitIsRefused() throws Exception {
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
                           "partnerId": "%s", "quantity": 10, "driverCnp": "1900101123450"
                         """.formatted(partnerId)))
                 .andExpect(status().isUnprocessableEntity());
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3",
                           "partnerId": "%s", "quantity": 10, "driverCnp": "1900101123457"
                         """.formatted(partnerId)))
                 .andExpect(status().isOk())
@@ -383,7 +383,7 @@ class Anexa3FormIT {
     /** Fără destinatar nu e nicio predare de însoţit. */
     @Test
     void theAvizNeedsAHandover() throws Exception {
-        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"quantity\": 5", wasteCodeId);
+        UUID id = createMovement("\"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"quantity\": 5", wasteCodeId);
 
         mockMvc.perform(get("/api/v1/movements/" + id + "/aviz")
                         .header("Authorization", "Bearer " + token))
@@ -399,7 +399,7 @@ class Anexa3FormIT {
     @Test
     void everyValueIsPrintedUnderItsOwnRubric() throws Exception {
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "quantity": 1234.5, "anexa3Unit": "TONS", "volumeM3": 17, "unloadDate": "2026-07-06",
                   "driverName": "Musat Liviu", "driverIdentification": "RK 157812",
                   "vehicleRegistration": "B69BMA", "transportDestinations": ["COLECTARE", "VALORIFICARE"],
@@ -459,7 +459,7 @@ class Anexa3FormIT {
                 .active(true).createdAt(java.time.Instant.now()).build());
 
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "quantity": 90, "partnerWorkPointId": "%s"
                 """.formatted(partnerId, depot.getId()), wasteCodeId);
 
@@ -489,7 +489,7 @@ class Anexa3FormIT {
                         .active(true).createdAt(java.time.Instant.now()).build());
 
         mockMvc.perform(movement("""
-                          "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                          "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                           "quantity": 10, "partnerWorkPointId": "%s"
                         """.formatted(partnerId, foreign.getId())))
                 .andExpect(status().isBadRequest())
@@ -509,7 +509,7 @@ class Anexa3FormIT {
         // and not the seeded July traffic on 20 01 01.
         UUID ownCode = wasteCodeRepository.findByCode("15 01 01").orElseThrow().getId();
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s",
                   "weighedAtUnloading": true, "volumeM3": 17
                 """.formatted(partnerId), ownCode);
 
@@ -538,7 +538,7 @@ class Anexa3FormIT {
     @Test
     void theWeightEndpointRefusesAMovementThatAlreadyHasOne() throws Exception {
         UUID id = createMovement("""
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R3", "partnerId": "%s",
                   "quantity": 120
                 """.formatted(partnerId), wasteCodeId);
 

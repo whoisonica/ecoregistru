@@ -55,6 +55,10 @@ public class MovementAttachmentService {
         if (file.getSize() > MAX_ATTACHMENT_BYTES) {
             throw new BadRequestException(ATTACHMENT_TOO_LARGE);
         }
+        // BUG-054: `content_type` e VARCHAR(128); verificat după urcare, fișierul rămânea orfan în Cloudinary.
+        if (file.getContentType() != null && file.getContentType().length() > 128) {
+            throw new BadRequestException(ATTACHMENT_TYPE_INVALID);
+        }
 
         var stored = storageService.upload(file, "movements/" + movementId);
         Attachment attachment = Attachment.builder()

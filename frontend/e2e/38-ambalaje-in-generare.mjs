@@ -9,7 +9,16 @@
 // tabelele și documentul, dar **niciun** registru de mișcări; (3) tastele filtrează chiar la server,
 // fiecare altceva; (4) rândul filtrat își spune ambalajul sub cod, fără să lățească tabelul;
 // (5) semnalul din tab duce la rândurile lui. Nu lasă nimic în urmă.
+import { execFileSync } from "node:child_process";
 import { launch, newPage, login, shot, BASE } from "./lib.mjs";
+
+/** Ca la proba 37: `E2E_DB`. Rândul „fără material” e unul vechi, pe care API-ul nu-l mai primește. */
+function sql(statement) {
+  return execFileSync("psql", ["-h", "localhost", "-U", "eco", "-d", process.env.E2E_DB ?? "ecoregistru", "-tAc", statement], {
+    env: { ...process.env, PGPASSWORD: process.env.E2E_DB_PASSWORD ?? "eco" },
+    encoding: "utf8",
+  }).trim();
+}
 
 const browser = await launch();
 const page = await newPage(browser, { width: 1440, height: 900 });
@@ -147,7 +156,7 @@ const scrise = await page.evaluate(async (an) => {
         operation: "RECOVERED",
         register: "ANEXA_1",
         operationCode: "R3",
-        wasteDestination: "Vr",
+        storageType: "CT", transportMeans: "AN", physicalState: "SOLID", wasteDestination: "Vr",
         notes: "proba 38 — tastele de ambalaje",
         ...extra,
       }),
@@ -157,13 +166,15 @@ const scrise = await page.evaluate(async (an) => {
     // completă: 15 01 01 dă singur materialul, felul e răspuns
     completa: await scrie(carton, 100, { packagingCategory: "SECONDARY" }),
     // fără material: 15 01 04 acoperă și aluminiul, și oțelul
-    faraMaterial: await scrie(metal, 200, { packagingCategory: "SECONDARY" }),
+    // (din 19.09.2026 serverul nu mai primește rândul fără material: se scrie cu, apoi se golește în bază)
+    faraMaterial: await scrie(metal, 200, { packagingCategory: "SECONDARY", packagingMaterial: "OTEL" }),
     // ambalaj pus pe piață de furnizor: e ambalaj, dar nu hrănește Anexa 1
     aAltuia: await scrie(carton, 300, { packagingCategory: "SECONDARY", packagingOnMarket: false }),
     // nu e ambalaj deloc
     neambalaj: await scrie(hartie, 400, {}),
   };
 }, PROBA_AN);
+if (scrise?.faraMaterial) sql(`update waste_movements set packaging_material = null where id = '${scrise.faraMaterial.id}'`);
 check("cele patru mișcări de probă s-au scris", scrise != null && Object.values(scrise).every(Boolean),
   scrise ? Object.keys(scrise).filter((k) => scrise[k]).join(" ") : "niciuna");
 

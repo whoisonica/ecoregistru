@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import ro.ecoregistru.enums.PackagingMaterial;
 
+import jakarta.validation.constraints.Digits;
 import java.math.BigDecimal;
 
 /**
@@ -15,10 +16,10 @@ import java.math.BigDecimal;
 public record PackagingMarketRequest(
         @NotNull PackagingMaterial material,
         @NotNull Integer year,
-        @PositiveOrZero BigDecimal salesPackaging,
-        @PositiveOrZero BigDecimal primaryTotal,
-        @PositiveOrZero BigDecimal primaryReusable,
-        @PositiveOrZero BigDecimal secondaryTotal,
-        @PositiveOrZero BigDecimal secondaryReusable,
-        @PositiveOrZero BigDecimal hazardousContent
+        @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal salesPackaging,
+        @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal primaryTotal,
+        @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal primaryReusable,
+        @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal secondaryTotal,
+        @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal secondaryReusable,
+        @PositiveOrZero @Digits(integer = 11, fraction = 3) BigDecimal hazardousContent
 ) {}

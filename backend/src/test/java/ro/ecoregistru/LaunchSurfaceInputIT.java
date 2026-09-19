@@ -329,10 +329,13 @@ class LaunchSurfaceInputIT {
     }
 
     private Map<String, Object> movement() {
-        return new LinkedHashMap<>(Map.of("workPointId", workPoint.toString(), "date", "2026-07-05",
+        Map<String, Object> body = new LinkedHashMap<>(Map.of("workPointId", workPoint.toString(), "date", "2026-07-05",
                 "wasteCodeId", paper.toString(), "quantity", 5, "unit", "KG", "physicalState", "SOLID",
                 "operation", "RECOVERED", "wasteDestination", "Vr", "operationCode", "R13",
                 "partnerId", partner.toString()));
+        // Decizia 19.09.2026: ce tipăresc rapoartele se trimite pe orice predare de pe Anexa 1.
+        body.putAll(Map.of("storageType", "CT", "transportMeans", "AN", "packagingCategory", "SECONDARY"));
+        return body;
     }
 
     private Map<String, Object> partnerBody() {

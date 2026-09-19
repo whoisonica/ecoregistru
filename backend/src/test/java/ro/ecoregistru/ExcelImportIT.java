@@ -93,14 +93,14 @@ class ExcelImportIT {
     }
 
     private Object[] disposal() {
-        return new Object[]{LocalDate.of(2026, 3, 10), workPoint, "15 01 01", "Eliminare", 1200, "kg",
-                "D5", "Deșeu propriu", null, "Fișa 3", "Solid", "CT", null, null, "DO", null};
+        return new Object[]{LocalDate.of(2026, 3, 10), workPoint, "20 01 01", "Eliminare", 1200, "kg",
+                "D5", "Deșeu propriu", null, "Fișa 3", "Solid", "CT", null, "AN", "DO", null};
     }
 
     /** Text, nu celule tipate: aşa arată un Excel lipit din altă parte. */
     private Object[] recovery() {
-        return new Object[]{"20.03.2026", workPoint, "150101*", "valorificare", "1,2", "tone",
-                "R3", "Deseu propriu", cui, "Aviz 7", null, null, null, null, "Vr", null};
+        return new Object[]{"20.03.2026", workPoint, "200101*", "valorificare", "1,2", "tone",
+                "R3", "Deseu propriu", cui, "Aviz 7", "solid", "CT", null, "AN", "Vr", null};
     }
 
     @Test
@@ -151,7 +151,7 @@ class ExcelImportIT {
         WasteMovement recovered = movements.stream()
                 .filter(m -> m.getOperation() == WasteOperation.RECOVERED).findFirst().orElseThrow();
         assertThat(recovered.getDate()).isEqualTo(LocalDate.of(2026, 3, 20));
-        assertThat(recovered.getWasteCode().getId()).isEqualTo(wasteCodeRepository.findByCode("15 01 01").orElseThrow().getId());
+        assertThat(recovered.getWasteCode().getId()).isEqualTo(wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId());
         assertThat(recovered.getQuantity()).isEqualByComparingTo(new BigDecimal("1.2"));
         assertThat(recovered.getUnit()).isEqualTo(Unit.TONS);
         assertThat(recovered.getOperationCode()).isEqualTo(WasteOperationCode.R3);
@@ -494,6 +494,7 @@ class ExcelImportIT {
         Object[] carrier = {"Transport Rapid SRL", carrierCui, "Colector", "Nu", "Da", "Da",
                 "AM 7/2025", null, null, null};
         Object[] row = Arrays.copyOf(disposal(), 28);
+        row[2] = "15 01 01";
         row[16] = "Da";
         row[17] = "Hârtie carton";
         row[18] = "Ambalaje secundare şi de transport";

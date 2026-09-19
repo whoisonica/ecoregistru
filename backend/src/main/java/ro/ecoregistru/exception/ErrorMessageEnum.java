@@ -58,6 +58,7 @@ public enum ErrorMessageEnum {
     // --- Antetul cabinetului pe rapoarte (P2.14) ---
     BRANDING_LOGO_INVALID("branding.logo.invalid", "Logoul trebuie să fie o imagine PNG sau JPG."),
     BRANDING_LOGO_TOO_LARGE("branding.logo.too.large", "Logoul e prea mare. Cel mult 500 KB."),
+    BRANDING_LOGO_TOO_MANY_PIXELS("branding.logo.too.many.pixels", "Logoul e prea mare: cel mult 2000 × 2000 de pixeli."),
     BRANDING_LOGO_NOT_FOUND("branding.logo.not.found", "Cabinetul nu are logo încărcat."),
     BRANDING_HEADER_TOO_LONG("branding.header.too.long", "Rândul de antet are cel mult 200 de caractere."),
 
@@ -177,6 +178,7 @@ public enum ErrorMessageEnum {
     // --- Attachments ---
     ATTACHMENT_NOT_FOUND("attachment.not.found", "Atașamentul nu a fost găsit."),
     ATTACHMENT_FETCH_FAILED("attachment.fetch.failed", "Fișierul nu a putut fi descărcat. Încearcă din nou peste câteva momente."),
+    ATTACHMENT_TYPE_INVALID("attachment.type.invalid", "Tipul fișierului nu se poate citi. Salvează-l din nou ca PDF sau imagine și reîncearcă."),
     ATTACHMENT_TOO_LARGE("attachment.too.large", "Fișierul e prea mare. Cel mult 10 MB per fișier."),
 
 
@@ -203,6 +205,14 @@ public enum ErrorMessageEnum {
     OPERATION_CODE_NOT_ALLOWED("movement.operation.code.not.allowed", "Codul de operație R/D se completează doar la valorificare sau eliminare."),
     OPERATION_NOT_ALLOWED_FOR_COMPANY_TYPE("movement.operation.not.allowed", "Operațiunea nu este disponibilă pentru tipul firmei."),
     WASTE_DESTINATION_REQUIRED("movement.destination.required", "Alege destinația deșeului predat: DO, I, Vr sau A."),
+    // Decizia proprietarului, 19.09.2026: ce tipăresc rapoartele nu rămâne gol pe o predare nouă.
+    // BUG-050: o cantitate peste 1.000.000 t pe un rând strica toată evidența anului.
+    QUANTITY_TOO_LARGE("movement.quantity.too.large", "Cantitatea e prea mare: cel mult 1.000.000 t (1.000.000.000 kg) pe un rând. Verifică unitatea."),
+    PHYSICAL_STATE_REQUIRED("movement.physical.state.required", "Alege starea fizică a deșeului: apare pe fișa Anexa 1."),
+    STORAGE_TYPE_REQUIRED("movement.storage.type.required", "Alege în ce ții deșeul până la predare: apare pe fișa Anexa 1."),
+    TRANSPORT_MEANS_REQUIRED("movement.transport.means.required", "Alege mijlocul de transport: apare pe fișa Anexa 1."),
+    PACKAGING_MATERIAL_REQUIRED("movement.packaging.material.required", "Alege materialul ambalajului: codul nu-l spune, iar Anexa 3 Ambalaje îl cere."),
+    PACKAGING_CATEGORY_REQUIRED("movement.packaging.category.required", "Alege tipul ambalajului (primar, secundar, terțiar): Anexa 1 Ambalaje îl cere."),
     HANDOVER_PARTNER_NEEDS_AUTHORIZATION("movement.partner.authorization.required", "Partenerul n-are trecut numărul autorizației de mediu. Cine preia deșeul trebuie să fie autorizat: completează-l în fișa lui, la Parteneri."),
     OPERATION_CODE_NOT_IN_PROFILE("movement.operation.code.not.in.profile", "Codul de operație nu e printre cele declarate de firmă. Completează profilul firmei dacă a apărut o operațiune nouă."),
     GENERATION_NEEDS_EXIT("movement.generation.needs.exit", "Deșeul generat se înregistrează la predare: alege valorificare (cod R) sau eliminare (cod D) și partenerul care îl preia. „Rămâne în stoc” nu mai există."),

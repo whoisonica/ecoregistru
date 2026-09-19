@@ -174,7 +174,7 @@ class ConcurrentMovementUpdateIT {
                   "quantity": %s,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13"
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13"
                 }
                 """.formatted(workPointId, wasteCodeId, quantity);
     }

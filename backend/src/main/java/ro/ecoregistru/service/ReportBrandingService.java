@@ -88,7 +88,20 @@ public class ReportBrandingService {
         }
         // The bytes decide, not the name or the browser's content type: a renamed .txt stays a .txt.
         String contentType = imageType(bytes);
-        if (contentType == null || !decodes(bytes)) {
+        if (contentType == null) {
+            throw new BadRequestException(BRANDING_LOGO_INVALID);
+        }
+        // BUG-052: 500 KB comprimați pot fi 20000 × 20000 de pixeli, adică 400 MB la decodare, la
+        // fiecare raport cu antet — peste heap-ul dyno-ului. Dimensiunile se citesc din antet, fără
+        // decodare, înainte de orice altceva.
+        long pixels = pixels(bytes);
+        if (pixels < 0) {
+            throw new BadRequestException(BRANDING_LOGO_INVALID);
+        }
+        if (pixels > MAX_LOGO_SIDE * MAX_LOGO_SIDE) {
+            throw new BadRequestException(BRANDING_LOGO_TOO_MANY_PIXELS);
+        }
+        if (!decodes(bytes)) {
             throw new BadRequestException(BRANDING_LOGO_INVALID);
         }
         Consultancy consultancy = myConsultancy();
@@ -150,6 +163,27 @@ public class ReportBrandingService {
             return "image/jpeg";
         }
         return null;
+    }
+
+    static final long MAX_LOGO_SIDE = 2000;
+
+    /** Lățime × înălțime din antetul imaginii, fără s-o decodeze; -1 dacă nu se poate citi. */
+    private static long pixels(byte[] bytes) {
+        try (var in = ImageIO.createImageInputStream(new ByteArrayInputStream(bytes))) {
+            var readers = ImageIO.getImageReaders(in);
+            if (!readers.hasNext()) {
+                return -1;
+            }
+            var reader = readers.next();
+            try {
+                reader.setInput(in);
+                return (long) reader.getWidth(0) * reader.getHeight(0);
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException | RuntimeException ex) {
+            return -1;
+        }
     }
 
     private static boolean decodes(byte[] bytes) {

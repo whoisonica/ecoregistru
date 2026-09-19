@@ -82,7 +82,8 @@ public class MovementQueryService {
     @Transactional(readOnly = true)
     public PageResponse<WasteMovementResponse> list(Integer year, Integer month, UUID workPointId,
                                                     UUID wasteCodeId, boolean leftSite,
-                                                    boolean missingOperationCode, WasteRegister register,
+                                                    boolean missingOperationCode, boolean incomplete,
+                                                    WasteRegister register,
                                                     MovementDirection direction, PackagingFilter packaging,
                                                     String search,
                                                     int page, int size, String sortKey, boolean ascending) {
@@ -90,6 +91,9 @@ public class MovementQueryService {
         LocalDate[] window = window(year, month);
         Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, wasteCodeId,
                 window[0], window[1], leftSite, missingOperationCode, register, direction, packaging);
+        if (incomplete) {
+            filter = filter.and((r, q, cb) -> incomplete(r, cb));
+        }
         Specification<WasteMovement> spec = ordered(withSearch(filter, search), sortKey, ascending);
         Pageable pageable = PageRequest.of(Math.max(0, page), clampSize(size));
 
@@ -142,6 +146,8 @@ public class MovementQueryService {
                 cb.sum(cb.<Integer>selectCase()
                         .when(cb.equal(root.get("operation"), WasteOperation.UNCLASSIFIED_OUT), one).otherwise(none))
                         .alias("missingOperationCode"),
+                cb.sum(cb.<Integer>selectCase().when(incomplete(root, cb), one).otherwise(none))
+                        .alias("incomplete"),
                 cb.coalesce(cb.sum(cb.<BigDecimal>selectCase()
                         .when(cb.isNotNull(op.get("naturalPerson")), kg).otherwise(zero)), zero)
                         .alias("fromNaturalPersonsKg"));
@@ -155,7 +161,32 @@ public class MovementQueryService {
                 decimal(t.get("recoveredKg")),
                 decimal(t.get("disposedKg")),
                 number(t.get("missingOperationCode")),
-                decimal(t.get("fromNaturalPersonsKg")));
+                decimal(t.get("fromNaturalPersonsKg")),
+                number(t.get("incomplete")));
+    }
+
+    /**
+     * Decizia 19.09.2026: o predare de pe Anexa 1 căreia îi lipsește ceva ce tipăresc rapoartele —
+     * aceleași întrebări pe care {@code WasteMovementService.validateOwnWasteHandover} le pune la
+     * salvare. Rândurile vechi nu se blochează, se listează ca să poată fi completate.
+     */
+    static Predicate incomplete(Root<WasteMovement> root, CriteriaBuilder cb) {
+        Path<String> code = root.get("wasteCode").get("code");
+        Predicate packagingGap = cb.and(cb.like(code, "15 01%"), cb.or(
+                cb.and(cb.isNull(root.get("packagingMaterial")),
+                        cb.not(code.in(PackagingMaterial.settledCodes()))),
+                cb.and(cb.or(cb.isNull(root.get("packagingOnMarket")), cb.isTrue(root.get("packagingOnMarket"))),
+                        cb.isNull(root.get("packagingCategory")))));
+        return cb.and(
+                cb.equal(root.get("register"), WasteRegister.ANEXA_1),
+                cb.or(
+                        cb.equal(root.get("operation"), WasteOperation.UNCLASSIFIED_OUT),
+                        cb.and(root.get("operation").in(WasteOperation.RECOVERED, WasteOperation.DISPOSED),
+                                cb.or(cb.isNull(root.get("physicalState")),
+                                        cb.isNull(root.get("storageType")),
+                                        cb.isNull(root.get("transportMeans")),
+                                        cb.isNull(root.get("wasteDestination")),
+                                        packagingGap))));
     }
 
     /** Sumele de întregi ies `Long` sau `Integer` după dialect; `null` când nu e niciun rând. */

@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.request;
 
+import jakarta.validation.constraints.Size;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -21,5 +22,6 @@ public record OnboardClientRequest(
         @Valid SubscriptionRequest subscription,
         @Valid Admin admin
 ) {
-    public record Admin(@NotBlank @Email String email, String firstName, String lastName) {}
+    public record Admin(@NotBlank @Email @Size(max = 255) String email,
+                        @Size(max = 128) String firstName, @Size(max = 128) String lastName) {}
 }

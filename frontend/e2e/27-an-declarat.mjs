@@ -47,7 +47,7 @@ const created = await api("/api/v1/movements", {
   method: "POST",
   body: JSON.stringify({
     workPointId: workPoint.id, date: `${AN}-07-20`, wasteCodeId: code.id, quantity: 7.777, unit: "KG",
-    operation: "RECOVERED", register: "ANEXA_1", physicalState: "SOLID", wasteDestination: "P",
+    operation: "RECOVERED", register: "ANEXA_1", physicalState: "SOLID", storageType: "CT", transportMeans: "AN", physicalState: "SOLID", packagingCategory: "SECONDARY", wasteDestination: "P",
     operationCode: "R3", documentReference: DOC,
   }),
 });

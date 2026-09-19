@@ -211,7 +211,7 @@ class LaunchSurfaceSecurityIT {
         return """
                 {"workPointId": "%s", "date": "2026-07-05", "wasteCodeId": "%s", "quantity": 5,
                  "unit": "KG", "physicalState": "SOLID", "operation": "RECOVERED",
-                 "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
+                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
                 """.formatted(workPointA, wasteCodeRepository.findByCode("20 01 01").orElseThrow().getId(), partnerA);
     }
 

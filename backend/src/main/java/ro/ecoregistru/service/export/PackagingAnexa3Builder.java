@@ -256,17 +256,20 @@ public class PackagingAnexa3Builder {
     }
 
     /**
-     * Exits whose weight has not come back yet. They carry no kilograms, so neither right-hand half
-     * can use them; naming them here is what keeps the omission visible instead of silent.
+     * Exits whose weight has not come back yet, or — rows from before 19.09.2026 — whose material
+     * nobody chose (BUG-049). Neither right-hand half can use them; naming them here is what keeps
+     * the omission visible instead of silent.
      */
     private void collectUnweighed(List<WasteMovement> exits,
                                   List<PackagingAnexa3.UnclassifiedRow> unclassified) {
         for (WasteMovement m : exits) {
-            if (m.getQuantity() == null) {
+            boolean noMaterial = PackagingDeclarationBuilder.materialOf(m).isEmpty();
+            if (m.getQuantity() == null || noMaterial) {
                 unclassified.add(new PackagingAnexa3.UnclassifiedRow(
-                        m.getId(), m.getDate(), m.getWasteCode().getCode(), null,
+                        m.getId(), m.getDate(), m.getWasteCode().getCode(),
+                        m.getQuantity() == null ? null : kg(m),
                         m.getPartner() == null ? null : m.getPartner().getName(),
-                        false, false, true));
+                        noMaterial, false, m.getQuantity() == null));
             }
         }
     }

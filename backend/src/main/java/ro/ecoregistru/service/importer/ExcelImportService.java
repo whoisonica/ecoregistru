@@ -103,12 +103,16 @@ public class ExcelImportService {
     WorkPointRepository workPointRepository;
     WasteCodeRepository wasteCodeRepository;
     WasteMovementRepository movementRepository;
+    ro.ecoregistru.repository.MonthlyEvidenceRepository evidenceRepository;
     WorkPointService workPointService;
     ImportBatchRepository batchRepository;
 
     @Transactional
     public ImportResultResponse run(MultipartFile file, boolean save) {
         UUID tenantId = TenantContext.require();
+        if (save) {
+            evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
+        }
         byte[] bytes = bytesOf(file);
         List<RowError> errors = new ArrayList<>();
         List<RowError> warnings = new ArrayList<>();
@@ -180,7 +184,7 @@ public class ExcelImportService {
             Cells c = new Cells(sheet, r, WORK_POINT_COLUMNS, errors);
             if (c.blank()) continue;
             String name = c.required(0, 255);
-            String address = c.text(1, 1000);
+            String address = c.text(1, 512); // BUG-055: work_points.address e VARCHAR(512)
             if (!c.ok()) continue;
             if (existing.contains(fold(name))) {
                 counts[5]++;
@@ -211,10 +215,10 @@ public class ExcelImportService {
             boolean client = Boolean.TRUE.equals(c.choice(3, YES_NO));
             boolean supplier = Boolean.TRUE.equals(c.choice(4, YES_NO));
             boolean carrier = Boolean.TRUE.equals(c.choice(5, YES_NO));
-            String authorization = c.text(6, 255);
+            String authorization = c.text(6, 128); // BUG-055: coloanele partenerului
             LocalDate expiry = c.date(7);
-            String address = c.text(8, 1000);
-            String tradeRegister = c.text(9, 255);
+            String address = c.text(8, 500);
+            String tradeRegister = c.text(9, 50);
             if (!c.ok()) continue;
 
             c.attempt(() -> {
@@ -257,6 +261,9 @@ public class ExcelImportService {
             WasteOperation operation = c.choice(3, OPERATIONS);
             c.requirePresent(3, operation);
             BigDecimal quantity = c.number(4);
+            if (quantity != null && quantity.stripTrailingZeros().scale() > 3) {
+                c.error(4, "are mai mult de trei zecimale."); // BUG-055: s-ar fi rotunjit în tăcere
+            }
             c.requirePresent(4, quantity);
             Unit unit = c.choice(5, UNITS);
             c.requirePresent(5, unit);
@@ -273,7 +280,7 @@ public class ExcelImportService {
             TreatmentMethod treatmentMethod = c.enumName(12, TreatmentMethod.class);
             TransportMeans transportMeans = c.enumName(13, TransportMeans.class);
             WasteDestination destination = c.enumName(14, WasteDestination.class);
-            String notes = c.text(15, 2000);
+            String notes = c.text(15, 1000); // BUG-055: waste_movements.notes e VARCHAR(1000)
 
             // A doua felie: ambalajele și transportul. Fără coloane, totul rămâne null, ca înainte.
             int x = MOVEMENT_COLUMNS.size();

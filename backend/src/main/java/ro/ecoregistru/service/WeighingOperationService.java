@@ -88,6 +88,7 @@ public class WeighingOperationService {
     @Transactional
     public WeighingOperationResponse create(WeighingOperationRequest request) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         Company company = companyRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         if (!company.getType().keepsArt48Register()) {
@@ -161,6 +162,7 @@ public class WeighingOperationService {
     @Transactional
     public WeighingOperationResponse update(UUID id, WeighingOperationRequest request) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
@@ -196,7 +198,7 @@ public class WeighingOperationService {
 
         // BUG-031, same as WasteMovementService.update: a later year hides the move from the old one.
         if (operation.getDate().getYear() < request.date().getYear()) {
-            evidenceRepository.deleteYears(tenantId, operation.getDate().getYear(), request.date().getYear());
+            evidenceRepository.markYearsStale(tenantId, operation.getDate().getYear(), request.date().getYear(), java.time.Instant.EPOCH);
         }
         operation.setWorkPoint(workPoint);
         operation.setDate(request.date());
@@ -236,6 +238,7 @@ public class WeighingOperationService {
     @Transactional
     public WeighingOperationResponse replaceLines(UUID id, WeighingLinesRequest request) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
@@ -279,6 +282,7 @@ public class WeighingOperationService {
     @Transactional
     public WeighingOperationResponse finalizeOperation(UUID id) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
         requireApprover(user);
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
@@ -315,6 +319,7 @@ public class WeighingOperationService {
     @Transactional
     public WeighingOperationResponse cancel(UUID id, String reason) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
         requireApprover(user);
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)

@@ -316,6 +316,10 @@ class Art48RegisterIT {
     private void movement(String date, String code, String unit, String quantity, String operation,
                           String operationCode, Partner partner, String register) throws Exception {
         StringBuilder extra = new StringBuilder();
+        if (operationCode != null && !"ART_48".equals(register)) {
+            // Decizia 19.09.2026: o predare de deșeu propriu poartă tot ce tipărește fișa.
+            extra.append(", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\"");
+        }
         if (operationCode != null) extra.append(", \"wasteDestination\": \"Vr\", \"operationCode\": \"").append(operationCode).append('"');
         if (partner != null) extra.append(", \"partnerId\": \"").append(partner.getId()).append('"');
         if (register != null) extra.append(", \"register\": \"").append(register).append('"');

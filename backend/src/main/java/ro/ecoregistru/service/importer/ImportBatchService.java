@@ -41,6 +41,7 @@ public class ImportBatchService {
 
     ImportBatchRepository batchRepository;
     WasteMovementRepository movementRepository;
+    ro.ecoregistru.repository.MonthlyEvidenceRepository evidenceRepository;
 
     @Transactional(readOnly = true)
     public List<ImportBatchResponse> list() {
@@ -57,6 +58,7 @@ public class ImportBatchService {
     @Transactional
     public ImportUndoResponse undo(UUID id) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         ImportBatch batch = batchRepository.findByIdAndCompanyId(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(IMPORT_BATCH_NOT_FOUND));
         if (batch.getUndoneAt() != null) {

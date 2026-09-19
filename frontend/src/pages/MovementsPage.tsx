@@ -202,6 +202,8 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
    */
   const [problem, setProblem] = useUrlState("problema");
   const onlyMissingCode = problem === "cod-rd";
+  /** Decizia 19.09.2026: rândurile vechi nu se blochează, se listează ca să poată fi completate. */
+  const onlyIncomplete = problem === "de-completat";
   /**
    * Taburile stau numai pe „Generare”: registrul Anexa 1 e singurul cu un raport anual de depus
    * (15 martie). Pe tabul totalului, lista și banda de totaluri nici nu se cer de la server.
@@ -241,9 +243,10 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     // O ieșire fără cod R/D a plecat și ea de pe amplasament: `leftSite` n-are ce căuta aici,
     // rândul căutat e tocmai cel care n-a fost clasificat.
     if (onlyMissingCode) f.missingOperationCode = true;
+    if (onlyIncomplete) f.incomplete = true;
     if (packaging) f.packaging = packaging;
     return f;
-  }, [monthFilter, workPointFilter, register, direction, onlyMissingCode, packaging]);
+  }, [monthFilter, workPointFilter, register, direction, onlyMissingCode, onlyIncomplete, packaging]);
 
   /**
    * Căutarea, sortarea și paginarea se fac **la server** (P3.1).
@@ -294,7 +297,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   // e punctul de plecare al ecranului — iar ștergerea o readuce, fiindcă „nicio lună" ar însemna
   // din nou toate mișcările.
   const hasFilters = Boolean(
-    monthFilter !== thisMonth || workPointFilter || onlyMissingCode || packagingParam
+    monthFilter !== thisMonth || workPointFilter || onlyMissingCode || onlyIncomplete || packagingParam
   );
   // O lună anume, nu un an întreg — ce hotărăște dacă golul se explică prin filtru.
   const isSingleMonth = monthFilter.includes("-");
@@ -737,6 +740,24 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
               {t.onlyMissingCodeOff}
             </button>
           </div>
+        )}
+        {onlyIncomplete ? (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-state-warn bg-surface-muted px-3 py-2 text-sm text-state-warn-text">
+            <span className="font-medium">{t.onlyIncomplete}</span>
+            <button type="button" onClick={() => setProblem("")} className="shrink-0 font-medium underline hover:no-underline">
+              {t.onlyMissingCodeOff}
+            </button>
+          </div>
+        ) : (
+          !onlyMissingCode &&
+          (totals.data?.incomplete ?? 0) > 0 && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-state-warn bg-surface-muted px-3 py-2 text-sm text-state-warn-text">
+              <span className="font-medium">{t.incompleteRows(totals.data!.incomplete)}</span>
+              <button type="button" onClick={() => setProblem("de-completat")} className="shrink-0 font-medium underline hover:no-underline">
+                {t.incompleteShow}
+              </button>
+            </div>
+          )
         )}
         {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 

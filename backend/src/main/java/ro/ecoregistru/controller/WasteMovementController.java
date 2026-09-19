@@ -62,6 +62,8 @@ public class WasteMovementController {
      *                             question, and not the same as „needs an R/D code"
      * @param missingOperationCode only the rows without an R/D code: „arată-mi ce blochează
      *                             depunerea", sent from the dashboard
+     * @param incomplete           only the Anexa 1 exits missing something the reports print — the
+     *                             old rows the 19.09.2026 rule would refuse today
      * @param register             only one register's rows: „Generare" asks for {@code ANEXA_1},
      *                             „Intrări" and „Ieșiri" for {@code ART_48}
      * @param packaging            only packaging movements ({@code 15 01 xx}), and of those only
@@ -84,6 +86,7 @@ public class WasteMovementController {
             @RequestParam(required = false) UUID wasteCodeId,
             @RequestParam(defaultValue = "false") boolean leftSite,
             @RequestParam(defaultValue = "false") boolean missingOperationCode,
+            @RequestParam(defaultValue = "false") boolean incomplete,
             @RequestParam(required = false) WasteRegister register,
             @RequestParam(required = false) MovementDirection direction,
             @RequestParam(required = false) PackagingFilter packaging,
@@ -93,7 +96,7 @@ public class WasteMovementController {
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "false") boolean asc) {
         return queryService.list(year, month, workPointId, wasteCodeId, leftSite,
-                missingOperationCode, register, direction, packaging, search, page, size, sort, asc);
+                missingOperationCode, incomplete, register, direction, packaging, search, page, size, sort, asc);
     }
 
     /**

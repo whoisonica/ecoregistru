@@ -47,21 +47,25 @@ public interface MonthlyEvidenceRepository extends JpaRepository<MonthlyEvidence
     void deleteByCompany_IdAndYear(UUID companyId, int year);
 
     /**
-     * BUG-031 — drops the cached lines of the years a movement was moved out of.
+     * BUG-031 — marks stale the cached lines of the years a movement was moved out of.
      *
      * <p>Staleness is read from the movements dated up to the end of the year, by their
      * <b>current</b> date. A movement moved from 2025 into 2026 no longer passes the 2025 filter,
-     * so 2025 looked fresh and kept counting it. A year with no lines is stale by definition
-     * ({@code generatedAt == null}), so wiping them is enough to make the next read rebuild.
-     * No {@code clearAutomatically}: it runs in the middle of an update and would detach the
-     * movement being edited.
+     * so 2025 looked fresh and kept counting it. Backdating {@code generatedAt} to the epoch makes
+     * the next read of any of these years, or of a later one, rebuild from here.
+     *
+     * <p>Marked, not deleted: the lines are the next year's opening balance until they are rebuilt.
+     * Wiped, a rebuild of 2026 found no 2025 lines, opened 2026 at zero and, being fresh after that,
+     * kept the zero for good. No {@code clearAutomatically}: it runs in the middle of an update and
+     * would detach the movement being edited.
      */
     @Modifying
-    @Query("delete from MonthlyEvidence e where e.company.id = :companyId "
+    @Query("update MonthlyEvidence e set e.generatedAt = :stale where e.company.id = :companyId "
             + "and e.year >= :fromYear and e.year < :toYear")
-    int deleteYears(@Param("companyId") UUID companyId,
-                    @Param("fromYear") int fromYear,
-                    @Param("toYear") int toYear);
+    int markYearsStale(@Param("companyId") UUID companyId,
+                       @Param("fromYear") int fromYear,
+                       @Param("toYear") int toYear,
+                       @Param("stale") Instant stale);
 
     /**
      * Last year the tenant has cached lines for; null when nothing was ever generated. Bounds the
@@ -81,17 +85,7 @@ public interface MonthlyEvidenceRepository extends JpaRepository<MonthlyEvidence
             + "where e.company.id = :companyId and e.year = :year")
     Instant findOldestGeneratedAt(@Param("companyId") UUID companyId, @Param("year") int year);
 
-    /**
-     * The earliest year, at or before {@code year}, whose lines were written before
-     * {@code changedAt}; null when every cached year up to it is newer than that.
-     *
-     * <p>It exists because stock carries: a correction on a 2024 movement leaves the 2026 opening
-     * balance wrong, so rebuilding 2026 alone would rebuild it on the same wrong figure. This says
-     * where the rebuild has to start.
-     */
-    @Query("select min(e.year) from MonthlyEvidence e where e.company.id = :companyId "
-            + "and e.year <= :year and e.generatedAt < :changedAt")
-    Integer findEarliestStaleYear(@Param("companyId") UUID companyId,
-                                  @Param("year") int year,
-                                  @Param("changedAt") Instant changedAt);
+    /** First year the tenant has cached lines for; null when nothing was ever generated. */
+    @Query("select min(e.year) from MonthlyEvidence e where e.company.id = :companyId")
+    Integer findMinYear(@Param("companyId") UUID companyId);
 }

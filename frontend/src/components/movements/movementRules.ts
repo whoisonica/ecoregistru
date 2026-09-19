@@ -64,6 +64,11 @@ export type FieldErrors = Partial<
     | "fate"
     | "operationCode"
     | "wasteDestination"
+    | "physicalState"
+    | "storageType"
+    | "transportMeans"
+    | "packagingMaterial"
+    | "packagingCategory"
     | "form",
     string
   >

@@ -80,10 +80,11 @@ public class EvidenceCalculator {
     private record CarriedOver(WorkPoint workPoint, WasteCode wasteCode, BigDecimal openingStock) {}
 
     /**
-     * Recomputes the tenant's evidence for the given year from its movements, then for every later
-     * year up to the last one cached. Stock is cumulative across years, so regenerating 2025 after
-     * a correction leaves 2026 wrong unless it is rebuilt too — the cascade is what makes a
-     * back-dated fix land everywhere it is visible.
+     * Recomputes the tenant's evidence for the given year from its movements, together with every
+     * year before it (BUG-045) and every later year up to the last one cached. Stock is cumulative
+     * across years: regenerating 2026 on a 2025 left stale opens it on the wrong stock and marks it
+     * fresh for good, and regenerating 2025 after a correction leaves 2026 wrong unless it is
+     * rebuilt too.
      */
     @Transactional
     public EvidenceRegenerationResponse regenerateYear(int year) {
@@ -96,18 +97,14 @@ public class EvidenceCalculator {
         // nu o întrebare despre prospeţime — vezi javadocul lui `refreshIfStale`.
         evidenceRepository.lockForRebuild(tenantId);
 
-        int lines = regenerateSingleYear(tenantId, year);
-
         Integer lastCachedYear = evidenceRepository.findMaxYear(tenantId);
+        int to = lastCachedYear == null ? year : Math.max(year, lastCachedYear);
+        int lines = rebuildChain(tenantId, year, to);
+        // Walk the whole range, gaps included: a year with no cached lines still has to be rebuilt,
+        // otherwise it stays the hole that stops the stock from reaching the years after it.
         List<Integer> cascaded = new ArrayList<>();
-        if (lastCachedYear != null) {
-            // Walk the whole range, gaps included: a year with no cached lines still has to be
-            // rebuilt, otherwise it stays the hole that stops the stock from reaching the years
-            // after it.
-            for (int later = year + 1; later <= lastCachedYear; later++) {
-                lines += regenerateSingleYear(tenantId, later);
-                cascaded.add(later);
-            }
+        for (int later = year + 1; later <= to; later++) {
+            cascaded.add(later);
         }
         /*
          * Regenerarea se scrie în jurnal ca UN rând, nu ca o mie (P1.11).
@@ -356,8 +353,8 @@ public class EvidenceCalculator {
      *
      * <p><b>Where the rebuild starts.</b> Not at the year asked for: stock carries across years, so
      * a correction made on a 2024 movement leaves the 2026 opening balance wrong, and rebuilding
-     * 2026 alone would rebuild it on that same wrong figure. It starts at the earliest year whose
-     * lines predate the change, and walks forward to the one asked for.
+     * 2026 alone would rebuild it on that same wrong figure. It starts at the tenant's first year
+     * and walks forward to the one asked for — see {@link #rebuildChain}.
      *
      * <p><b>Where it stops.</b> At the year asked for, deliberately — the years after it are left
      * alone, because they answer the same question the moment somebody opens them. That is the one
@@ -380,20 +377,47 @@ public class EvidenceCalculator {
         if (!isStale(tenantId, year)) {
             return;
         }
-        Instant lastChange = movementRepository.findLastChangeUpTo(
-                tenantId, LocalDate.of(year, 12, 31));
-        Integer earliestStale = evidenceRepository.findEarliestStaleYear(tenantId, year, lastChange);
-        int from = earliestStale != null ? Math.min(earliestStale, year) : year;
-        for (int y = from; y <= year; y++) {
-            regenerateSingleYear(tenantId, y);
+        rebuildChain(tenantId, year, year);
+    }
+
+    /**
+     * BUG-045/046/047 — the one rule every rebuild follows: it starts at the tenant's first year
+     * (earliest movement or cached line) and walks forward to {@code to}, so each year opens on a
+     * previous year rebuilt in the same pass. Finding the earliest stale year instead missed the
+     * years nobody had opened (no lines to be stale), and a "Recalculează" or a dossier that
+     * started at the year asked for built on whatever the year before had cached.
+     *
+     * <p>Rebuilds from {@code atLeastFrom} too when it is earlier (a year before any movement).
+     * Returns the lines written.
+     */
+    // ponytail: rebuilds every year since the first one, a few years per tenant; start at the
+    // earliest stale year (tracked per year, gaps included) if this ever shows up in a profile.
+    private int rebuildChain(UUID tenantId, int atLeastFrom, int to) {
+        int from = atLeastFrom;
+        Integer firstMovement = movementRepository.findFirstYear(tenantId);
+        Integer firstLine = evidenceRepository.findMinYear(tenantId);
+        if (firstMovement != null) {
+            from = Math.min(from, firstMovement);
         }
+        if (firstLine != null) {
+            from = Math.min(from, firstLine);
+        }
+        int lines = 0;
+        for (int y = from; y <= to; y++) {
+            int written = regenerateSingleYear(tenantId, y);
+            if (y >= atLeastFrom) {
+                lines += written;
+            }
+        }
+        return lines;
     }
 
     /**
      * Cache-ul anului a rămas în urma mişcărilor?
      *
      * <p>Trei cazuri, în ordinea în care sunt ieftine de răspuns: fără nicio mişcare până la finele
-     * anului nu e nimic de derivat, deci ce e în cache (nimic, de obicei) e cât se poate de corect;
+     * anului nu e nimic de derivat, deci anul e la zi dacă n-are nici linii (cu linii, singura
+     * mişcare a fost mutată într-un an mai târziu — BUG-031 — şi liniile trebuie golite);
      * mişcări fără linii înseamnă că nimeni n-a apăsat „Regenerează", sau că o migrare a golit
      * cache-ul; iar cu amândouă prezente, învechit înseamnă că ultima schimbare de mişcare e
      * **strict** după cea mai veche linie — strict, ca o reconstrucţie care cade în aceeaşi clipă
@@ -402,10 +426,11 @@ public class EvidenceCalculator {
     private boolean isStale(UUID tenantId, int year) {
         Instant lastChange = movementRepository.findLastChangeUpTo(
                 tenantId, LocalDate.of(year, 12, 31));
-        if (lastChange == null) {
-            return false;
-        }
         Instant generatedAt = evidenceRepository.findOldestGeneratedAt(tenantId, year);
+        if (lastChange == null) {
+            // Lines with no movement left under them: the only one was moved into a later year (BUG-031).
+            return generatedAt != null;
+        }
         return generatedAt == null || lastChange.isAfter(generatedAt);
     }
 

@@ -11,6 +11,7 @@ import ro.ecoregistru.controller.request.WasteMovementRequest;
 import ro.ecoregistru.controller.response.WasteMovementResponse;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.PackagingMaterial;
+import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.exception.BusinessException;
@@ -20,6 +21,7 @@ import ro.ecoregistru.repository.*;
 import ro.ecoregistru.security.SecurityUtils;
 import ro.ecoregistru.security.TenantContext;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -48,6 +50,7 @@ public class WasteMovementService {
     @Transactional
     public WasteMovementResponse create(WasteMovementRequest request) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
 
         // Idempotency: if the client already created this movement, return it unchanged.
         if (request.clientGeneratedId() != null) {
@@ -70,7 +73,7 @@ public class WasteMovementService {
         validateDates(request);
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
-        validateOwnWasteHandover(request, register, partner);
+        validateOwnWasteHandover(request, register, partner, wasteCode);
 
         WasteMovement movement = WasteMovement.builder()
                 .company(company)
@@ -131,6 +134,7 @@ public class WasteMovementService {
     @Transactional
     public WasteMovementResponse update(UUID id, WasteMovementRequest request) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WasteMovement movement = requireEditableMovement(id, tenantId);
 
         Company company = requireCompany(tenantId);
@@ -145,14 +149,14 @@ public class WasteMovementService {
         validateDates(request);
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
-        validateOwnWasteHandover(request, register, partner);
+        validateOwnWasteHandover(request, register, partner, wasteCode);
 
         // BUG-031: moved into a later year, the movement drops out of the old year's staleness
         // check, so the old year (and any in between) would keep counting it from the cache.
         int oldYear = movement.getDate().getYear();
         int newYear = request.date().getYear();
         if (oldYear < newYear) {
-            evidenceRepository.deleteYears(tenantId, oldYear, newYear);
+            evidenceRepository.markYearsStale(tenantId, oldYear, newYear, java.time.Instant.EPOCH);
         }
 
         movement.setWorkPoint(workPoint);
@@ -215,6 +219,7 @@ public class WasteMovementService {
     @Transactional
     public WasteMovementResponse recordWeight(UUID id, RecordWeightRequest request) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WasteMovement movement = requireEditableMovement(id, tenantId);
 
         if (movement.getQuantity() != null) {
@@ -223,6 +228,7 @@ public class WasteMovementService {
         if (request.quantity() == null || request.quantity().signum() <= 0) {
             throw new BusinessException(INVALID_QUANTITY);
         }
+        requireRealisticKg(request.quantity(), request.unit() != null ? request.unit() : movement.getUnit());
         movement.setQuantity(request.quantity());
         if (request.unit() != null) {
             movement.setUnit(request.unit());
@@ -239,6 +245,7 @@ public class WasteMovementService {
     @Transactional
     public void delete(UUID id) {
         UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WasteMovement movement = requireEditableMovement(id, tenantId);
         movement.setDeleted(true);
         movement.setDeletedAt(Instant.now());
@@ -337,7 +344,24 @@ public class WasteMovementService {
         if (request.quantity() == null) {
             throw new BusinessException(QUANTITY_REQUIRED);
         }
+        requireRealisticKg(request.quantity(), request.unit());
     }
+
+    /**
+     * BUG-050. {@code @Digits} se verifică în unitatea tastată, dar evidența ține kilograme în
+     * NUMERIC(16,3) ({@code implied_generated} în NUMERIC(14,3)): 100.000.000 t trecea validarea și
+     * făcea din orice citire a anului un 500, pentru toată firma, până se ștergea rândul.
+     */
+    // ponytail: limită pe rând; ~100 de rânduri la limită în aceeași lună ar depăși tot
+    // implied_generated — lărgește coloanele dacă apare vreodată o firmă cu asemenea cifre.
+    private static void requireRealisticKg(BigDecimal quantity, Unit unit) {
+        BigDecimal kg = unit == Unit.TONS ? quantity.multiply(BigDecimal.valueOf(1000)) : quantity;
+        if (kg.compareTo(MAX_KG_PER_ROW) > 0) {
+            throw new BusinessException(QUANTITY_TOO_LARGE);
+        }
+    }
+
+    private static final BigDecimal MAX_KG_PER_ROW = new BigDecimal("1000000000");
 
     /**
      * The recipient's work point that took the load, if one was picked.
@@ -471,12 +495,32 @@ public class WasteMovementService {
      * Numai pe registrul Anexa 1, adică la generator (decizia proprietarului: doar generatorul). Ieșirile de
      * marfă preluată (art. 48) rămân cum erau. Expirarea autorizației rămâne avertisment (decizia 36).
      */
-    private void validateOwnWasteHandover(WasteMovementRequest request, WasteRegister register, Partner partner) {
+    private void validateOwnWasteHandover(WasteMovementRequest request, WasteRegister register, Partner partner,
+                                          WasteCode wasteCode) {
         if (!request.operation().isExit() || register != WasteRegister.ANEXA_1) {
             return;
         }
         if (request.wasteDestination() == null) {
             throw new BusinessException(WASTE_DESTINATION_REQUIRED);
+        }
+        // Decizia 19.09.2026: tot ce tipăresc fișa și anexele de ambalaje e ales înainte de salvare.
+        // Transportul Anexei 3 (șofer, mașină, transportator) rămâne opțional.
+        if (request.physicalState() == null) {
+            throw new BusinessException(PHYSICAL_STATE_REQUIRED);
+        }
+        if (request.storageType() == null) {
+            throw new BusinessException(STORAGE_TYPE_REQUIRED);
+        }
+        if (request.transportMeans() == null) {
+            throw new BusinessException(TRANSPORT_MEANS_REQUIRED);
+        }
+        if (PackagingMaterial.isPackagingCode(wasteCode.getCode())) {
+            if (PackagingMaterial.resolve(request.packagingMaterial(), wasteCode.getCode()).isEmpty()) {
+                throw new BusinessException(PACKAGING_MATERIAL_REQUIRED); // BUG-049
+            }
+            if (!Boolean.FALSE.equals(request.packagingOnMarket()) && request.packagingCategory() == null) {
+                throw new BusinessException(PACKAGING_CATEGORY_REQUIRED);
+            }
         }
         if (partner != null && blankToNull(partner.getAuthorizationNumber()) == null) {
             throw new BusinessException(HANDOVER_PARTNER_NEEDS_AUTHORIZATION);

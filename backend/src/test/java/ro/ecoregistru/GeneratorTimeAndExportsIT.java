@@ -202,20 +202,20 @@ class GeneratorTimeAndExportsIT {
 
     /**
      * Celula xlsx trece prin {@code double}. Valorile de mână, adunate exact: 0,001 + 1.234.567,891
-     * + 3 × 0,1 = 1.234.568,192 kg în iulie. Plus o lună cu maximul coloanei {@code quantity},
-     * NUMERIC(14,3): 99.999.999.999,999 kg. Celula citită înapoi trebuie să fie exact valoarea din DB.
+     * + 3 × 0,1 = 1.234.568,192 kg în iulie. Plus o lună cu cea mai mare cantitate primită pe un rând
+     * (BUG-050: 1.000.000 t): 999.999.999,999 kg. Celula citită înapoi trebuie să fie exact valoarea din DB.
      */
     @Test
     void theXlsxCellsCarryTheExactDatabaseValue() throws Exception {
         for (String kg : new String[]{"0.001", "1234567.891", "0.1", "0.1", "0.1"}) {
             handover("2026-07-05", kg, "");
         }
-        handover("2026-08-05", "99999999999.999", "");
+        handover("2026-08-05", "999999999.999", "");
 
         List<BigDecimal> numbers = xlsxNumbers(2026);
 
         assertThat(numbers).anySatisfy(v -> assertThat(v).isEqualByComparingTo("1234568.192"));
-        assertThat(numbers).anySatisfy(v -> assertThat(v).isEqualByComparingTo("99999999999.999"));
+        assertThat(numbers).anySatisfy(v -> assertThat(v).isEqualByComparingTo("999999999.999"));
         assertThat(numbers).noneSatisfy(v -> assertThat(v.scale()).isGreaterThan(3));
     }
 
@@ -306,7 +306,7 @@ class GeneratorTimeAndExportsIT {
         return """
                 {"workPointId": "%s", "date": "%s", "wasteCodeId": "%s", "quantity": %s,
                  "unit": "KG", "physicalState": "SOLID", "operation": "RECOVERED", "register": "ANEXA_1",
-                 "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"%s}
+                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"%s}
                 """.formatted(workPoint.getId(), date, paper.getId(), kg, collector.getId(), extra);
     }
 

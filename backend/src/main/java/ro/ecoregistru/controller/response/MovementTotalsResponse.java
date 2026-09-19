@@ -22,6 +22,7 @@ import java.math.BigDecimal;
  * @param missingOperationCode câte ieșiri n-au cod R/D — ce blochează depunerea
  * @param fromNaturalPersonsKg kg intrate de la persoane fizice, prin operațiunea de cântar (D1.7);
  *                             restul intrărilor sunt de la firme
+ * @param incomplete           câte predări n-au tot ce tipăresc rapoartele (decizia 19.09.2026)
  */
 public record MovementTotalsResponse(long rows,
                                      BigDecimal quantityKg,
@@ -29,5 +30,6 @@ public record MovementTotalsResponse(long rows,
                                      BigDecimal recoveredKg,
                                      BigDecimal disposedKg,
                                      long missingOperationCode,
-                                     BigDecimal fromNaturalPersonsKg) {
+                                     BigDecimal fromNaturalPersonsKg,
+                                     long incomplete) {
 }

@@ -14,7 +14,7 @@ import java.util.UUID;
  * @param tareKg  mașina goală, pe toată operațiunea (opțional)
  * @param lines   în ordinea cântăririi
  */
-public record WeighingLinesRequest(BigDecimal grossKg, BigDecimal tareKg, List<Line> lines) {
+public record WeighingLinesRequest(BigDecimal grossKg, BigDecimal tareKg, @jakarta.validation.Valid List<Line> lines) {
 
     /**
      * @param grossKg       și {@code tareKg}: cântărirea liniei; dacă lipsesc, se trece direct {@code netKg}
@@ -30,6 +30,6 @@ public record WeighingLinesRequest(BigDecimal grossKg, BigDecimal tareKg, List<L
                        BigDecimal finalKg,
                        BigDecimal unitPrice,
                        WasteOperationCode operationCode,
-                       String notes) {
+                       @jakarta.validation.constraints.Size(max = 1000) String notes) {
     }
 }

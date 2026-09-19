@@ -374,7 +374,7 @@ class SensitiveDataExposureIT {
     private String movementJson(String driverIdentification) {
         return """
                 {"workPointId":"%s","date":"%s","wasteCodeId":"%s","quantity":1.000,
-                 "unit":"KG","operation":"RECOVERED","register":"ANEXA_1","wasteDestination": "Vr", "operationCode":"R13","physicalState":"SOLID"%s}
+                 "unit":"KG","operation":"RECOVERED","register":"ANEXA_1","physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode":"R13","physicalState":"SOLID"%s}
                 """.formatted(workPointId, LocalDate.now(), wasteCodeId,
                 driverIdentification == null ? ""
                         : ",\"driverName\":\"Ion Popescu\",\"driverIdentification\":\"" + driverIdentification + "\"");

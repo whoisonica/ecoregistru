@@ -304,7 +304,7 @@ class MovementWriteGuardsIT {
         String body = """
                 {"workPointId": "%s", "date": "2026-07-05", "wasteCodeId": "%s",
                  "unit": "KG", "physicalState": "SOLID", "weighedAtUnloading": true,
-                 "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr",
+                 "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr",
                  "operationCode": "R13", "partnerId": "%s"}
                 """.formatted(t.workPoint(), paper, t.partner());
         String json = postMovement(t, body).andExpect(status().isOk())
@@ -323,7 +323,7 @@ class MovementWriteGuardsIT {
         return """
                 {"workPointId": "%s", "date": "2026-07-05", "wasteCodeId": "%s", "quantity": %s,
                  "unit": "KG", "physicalState": "SOLID", "operation": "RECOVERED", "register": "ANEXA_1",
-                 "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"%s}
+                 "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"%s}
                 """.formatted(t.workPoint(), paper, kg, t.partner(), extra);
     }
 }

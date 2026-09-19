@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.request;
 
+import jakarta.validation.constraints.Size;
 import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PaymentMethod;
 import ro.ecoregistru.enums.WeighingOperationType;
@@ -32,11 +33,11 @@ public record WeighingOperationRequest(
         PackagingOrigin origin,
         UUID driverId,
         UUID vehicleId,
-        String driverName,
-        String vehicleRegistration,
-        String orderNumber,
+        @Size(max = 255) String driverName,
+        @Size(max = 50) String vehicleRegistration,
+        @Size(max = 60) String orderNumber,
         PaymentMethod paymentMethod,
-        String receiptNumber,
+        @Size(max = 60) String receiptNumber,
         Boolean ownHousehold,
-        String notes) {
+        @Size(max = 1000) String notes) {
 }

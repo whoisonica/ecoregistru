@@ -246,6 +246,9 @@ public class Anexa1SheetBuilder {
                 .map(of)
                 .filter(v -> v != null && !v.isBlank())
                 .distinct()
+                // Sortat: mișcările vin din bază fără ordine garantată, iar dosarul și descărcarea
+                // directă a fișei trebuie să tipărească același „CT, RP".
+                .sorted()
                 .collect(Collectors.joining(", "));
     }
 

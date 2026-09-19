@@ -273,7 +273,7 @@ class WeighingOperationStatusIT {
         assertThat(queryService.totals(2026, 9, depot.getId(), null, MovementDirection.IN, null).rows()).isEqualTo(1);
         // Rândul își spune operațiunea, ca ecranul să trimită omul acolo în loc să-i ofere o
         // editare pe care serviciul o refuză (BUG-018).
-        assertThat(queryService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
+        assertThat(queryService.list(2026, 9, depot.getId(), null, false, false, false, null, MovementDirection.IN,
                         null, null, 0, 25, null, false)
                 .content().get(0).weighingOperationId()).isEqualTo(id);
 
@@ -285,7 +285,7 @@ class WeighingOperationStatusIT {
     // --- helpers ---
 
     private List<Integer> listed() {
-        return queryService.list(2026, 9, depot.getId(), null, false, false, null, MovementDirection.IN,
+        return queryService.list(2026, 9, depot.getId(), null, false, false, false, null, MovementDirection.IN,
                         null, null, 0, 25, null, false)
                 .content().stream().map(m -> m.quantity().intValue()).toList();
     }

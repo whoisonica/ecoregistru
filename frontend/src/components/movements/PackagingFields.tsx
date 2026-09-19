@@ -1,4 +1,5 @@
 import type { PackagingCategory, PackagingMaterial, PackagingOrigin } from "@/lib/types";
+import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { strings } from "@/lib/strings";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -19,6 +20,8 @@ export function PackagingFields({
   packagingOrigin,
   setPackagingOrigin,
   packagingMaterial,
+  materialError,
+  categoryError,
   setPackagingMaterial,
   packagingCategory,
   setPackagingCategory,
@@ -36,6 +39,8 @@ export function PackagingFields({
   packagingOrigin: PackagingOrigin | "";
   setPackagingOrigin: (value: PackagingOrigin | "") => void;
   packagingMaterial: PackagingMaterial | "";
+  materialError?: string;
+  categoryError?: string;
   setPackagingMaterial: (value: PackagingMaterial | "") => void;
   packagingCategory: PackagingCategory | "";
   setPackagingCategory: (value: PackagingCategory | "") => void;
@@ -87,14 +92,14 @@ export function PackagingFields({
         </p>
       )}
 
-      {/* Rubricile de mai jos dau rândul şi coloana din tabelul 1, deci n-au sens dacă
-          mişcarea nu ajunge în tabel. */}
-      {packagingOnMarket !== false && (
+      {/* Materialul îl citește și Anexa 3 Ambalaje, deci se cere mereu (BUG-049); tipul dă doar
+          coloana din tabelul 1, deci n-are sens dacă mişcarea nu ajunge în tabel. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="mv-pk-material">{t.packagingMaterial}</Label>
           <Select
             id="mv-pk-material"
+            {...invalidProps("mv-pk-material-err", materialError)}
             value={packagingMaterial}
             onChange={(ev) =>
               setPackagingMaterial(ev.target.value as PackagingMaterial | "")
@@ -111,14 +116,19 @@ export function PackagingFields({
               </option>
             ))}
           </Select>
-          {!suggestedMaterial && !packagingMaterial && (
-            <p className="mt-1 text-xs text-amber-700">{t.packagingMaterialNeeded}</p>
+          {materialError ? (
+            <FieldError id="mv-pk-material-err" message={materialError} />
+          ) : (
+            !suggestedMaterial &&
+            !packagingMaterial && <p className="mt-1 text-xs text-amber-700">{t.packagingMaterialNeeded}</p>
           )}
         </div>
+        {packagingOnMarket !== false && (
         <div>
           <Label htmlFor="mv-pk-category">{t.packagingCategory}</Label>
           <Select
             id="mv-pk-category"
+            {...invalidProps("mv-pk-category-err", categoryError)}
             value={packagingCategory}
             onChange={(ev) => setPackagingCategory(ev.target.value as PackagingCategory | "")}
           >
@@ -127,10 +137,14 @@ export function PackagingFields({
             <option value="PRIMARY">{e.packagingCategory.PRIMARY}</option>
             <option value="SECONDARY">{e.packagingCategory.SECONDARY}</option>
           </Select>
-          <p className="mt-1 text-xs text-content-muted">{t.packagingCategoryHint}</p>
+          {categoryError ? (
+            <FieldError id="mv-pk-category-err" message={categoryError} />
+          ) : (
+            <p className="mt-1 text-xs text-content-muted">{t.packagingCategoryHint}</p>
+          )}
         </div>
+        )}
       </div>
-      )}
       {packagingOnMarket !== false && (
       <div className="flex flex-wrap gap-4">
         <label className="flex items-center gap-2 text-sm">

@@ -110,7 +110,7 @@ class RegisterSeamIT {
     void handedOverIsNoLongerAnOperation() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"HANDED_OVER\", \"partnerId\": \"" + partnerId
-                                + "\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\""))
+                                + "\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\""))
                 .andExpect(status().isBadRequest());
     }
 
@@ -127,7 +127,7 @@ class RegisterSeamIT {
     void recoveryByAPartnerLandsInTheValorificataColumn() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
-                                + "\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\""))
+                                + "\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.register", is("ANEXA_1")))
                 .andExpect(jsonPath("$.partnerId", is(partnerId.toString())))
@@ -144,7 +144,7 @@ class RegisterSeamIT {
     void disposalByAPartnerCarriesItsDCodeAndTheScopulLetterE() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"DISPOSED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
-                                + "\", \"wasteDestination\": \"Vr\", \"operationCode\": \"D5\""))
+                                + "\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"D5\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operationCode", is("D5")))
                 .andExpect(jsonPath("$.treatmentPurpose", is("E")));
@@ -154,7 +154,7 @@ class RegisterSeamIT {
     @Test
     void recoveryOnOurOwnSiteNeedsNoPartner() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
-                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.partnerId", is(nullValue())));
     }
@@ -192,7 +192,7 @@ class RegisterSeamIT {
     void passingOnCollectedGoodsStaysOutOfAnexa1() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"partnerId\": \"" + partnerId
-                                + "\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\", \"register\": \"ART_48\""))
+                                + "\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\", \"register\": \"ART_48\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.register", is("ART_48")));
     }
@@ -207,7 +207,7 @@ class RegisterSeamIT {
     void anExitFromAnAccountThatTakesWasteOverMustSayWhichRegister() throws Exception {
         mockMvc.perform(movement(collectorToken, workPointId,
                         "  \"operation\": \"RECOVERED\", \"partnerId\": \"" + partnerId
-                                + "\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\""))
+                                + "\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R13\""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.register.required")));
     }

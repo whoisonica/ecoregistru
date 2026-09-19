@@ -125,7 +125,7 @@ class GeneratorModuleIT {
         UUID id = createSection(workPointId, "Depozit ambalaje");
 
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"internalGeneratorId\": \"" + id + "\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"internalGeneratorId\": \"" + id + "\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.internalGeneratorId", is(id.toString())))
                 .andExpect(jsonPath("$.internalGeneratorName", is("Depozit ambalaje")));
@@ -137,7 +137,7 @@ class GeneratorModuleIT {
         UUID id = createSection(otherWorkPoint(), "Hala 2");
 
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"internalGeneratorId\": \"" + id + "\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"internalGeneratorId\": \"" + id + "\""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("internal.generator.wrong.work.point")));
     }
@@ -191,7 +191,7 @@ class GeneratorModuleIT {
     @Test
     void anOperationCodeOutsideTheProfileIsRejected() throws Exception {
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R1\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R1\""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$['error-code']", is("movement.operation.code.not.in.profile")));
     }
@@ -199,7 +199,7 @@ class GeneratorModuleIT {
     @Test
     void anOperationCodeInsideTheProfileIsAccepted() throws Exception {
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\""))
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.operationCode", is("R3")));
     }
@@ -208,7 +208,7 @@ class GeneratorModuleIT {
     @Test
     void aMovementCarriesTheStorageAndTreatmentOfCapitolul2() throws Exception {
         mockMvc.perform(movement(workPointId,
-                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"storageType\": \"CT\","
+                        "  \"operation\": \"RECOVERED\", \"register\": \"ANEXA_1\", \"physicalState\": \"SOLID\", \"storageType\": \"CT\", \"transportMeans\": \"AN\", \"packagingCategory\": \"SECONDARY\", \"wasteDestination\": \"Vr\", \"operationCode\": \"R3\", \"storageType\": \"CT\","
                                 + " \"treatmentMethod\": \"TM\""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.storageType", is("CT")))

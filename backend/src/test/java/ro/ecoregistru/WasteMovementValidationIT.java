@@ -127,7 +127,7 @@ class WasteMovementValidationIT {
                   "unit": "KG",
                   "operation": "%s",
                   "physicalState": "%s",
-                  "wasteDestination": "Vr", "operationCode": %s,
+                  "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": %s,
                   "register": "ANEXA_1"
                 }
                 """.formatted(workPointId, wasteCodeId, operation, physicalState, opCodeJson);

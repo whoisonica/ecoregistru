@@ -272,7 +272,7 @@ class EvidenceFreshnessIT {
                   "quantity": %s,
                   "unit": "KG",
                   "physicalState": "SOLID",
-                  "operation": "RECOVERED", "register": "ANEXA_1", "wasteDestination": "Vr", "operationCode": "R13",
+                  "operation": "RECOVERED", "register": "ANEXA_1", "physicalState": "SOLID", "storageType": "CT", "transportMeans": "AN", "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13",
                   "register": "ANEXA_1"%s
                 }
                 """.formatted(workPointId, code.getId(), qty,
