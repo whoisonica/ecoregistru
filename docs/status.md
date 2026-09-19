@@ -14,6 +14,8 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
+> **20.09.2026, 00:35 — ✅ PE PRODUCȚIE (`ecoregistru-api` v130, `ecoregistru-app` v129; monorepo `7c0673b`): reparațiile din QA-ul de lansare a generatorului, BUG-031…066** (fără BUG-053, care așteaptă decizia). Fără migrații: schema **V63**, liberă **V64**. Backend 1053/6 sărite/0, `npm test` 65, e2e 42/42. Detaliile, în repo-ul privat de documentație (`qa/`).
+
 > **18.09.2026, ~23:55 — documentația, recitită față de cod (fără cod de aplicație, fără deploy; producția rămâne `ecoregistru-api` v129 / `ecoregistru-app` v127, schema V63, liberă V64).**
 > Proprietarul: *„citește atent tot codul și toate md files… dacă găsești 2 informații diferite în md-uri caută în cod sau oficial, nu presupune"*.
 > **Măsurat, nu copiat:** `./gradlew cleanTest test` → **934 de teste / 113 clase, 0 eșecuri, 3 sărite**, zero avertismente `[removal]` (intrarea de la 16:22 scria „932+2 / 112"; clasele sunt 113, cu `PackagingMovementFilterIT`); `npm test` **61/61**; `npm run build` curat, bundle **993 kB** (gzip 283 kB); **39 de probe** în `e2e/run.mjs` = 39 de fișiere; ce rulează pe dyno-uri e egal cu `main` (`git diff --stat main:frontend ferepo/main` → doar `.gitignore`; backend → `.gitignore` + newline-ul din `SecurityConfiguration.java`).
