@@ -389,12 +389,15 @@ public class PackagingAnexa3Generator {
         return value == null || value.signum() == 0 ? null : value;
     }
 
-    private static final DecimalFormat KG =
-            new DecimalFormat("#0.000", new DecimalFormatSymbols(Locale.ROOT));
+    // Unul nou la fiecare cifră: `DecimalFormat` nu e sincronizat, iar generatorul e singleton —
+    // două descărcări în aceeaşi clipă pot scrie o cifră greşită pe un document depus.
+    private static DecimalFormat kgFormat() {
+        return new DecimalFormat("#0.000", new DecimalFormatSymbols(Locale.ROOT));
+    }
 
     /** Null prints as an empty cell: "not answered" is not zero. */
     private String kg(BigDecimal value) {
-        return value == null ? "" : KG.format(value);
+        return value == null ? "" : kgFormat().format(value);
     }
 
     private static String cp1250(String value) {

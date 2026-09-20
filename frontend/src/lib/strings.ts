@@ -3419,6 +3419,7 @@ export const strings = {
     downloadPdf: "PDF",
     downloadPdfHint: "Pentru dosar și pentru semnătură.",
     downloadError: "Anexa 1 Ambalaje nu a putut fi generată.",
+    loadError: "Nu am putut încărca datele de ambalaje.",
     saveError: "Cifra nu a putut fi salvată.",
 
     // Cuprinsul paginii și registrul de mișcări au plecat pe 18.09.2026: patru tabele mari unul

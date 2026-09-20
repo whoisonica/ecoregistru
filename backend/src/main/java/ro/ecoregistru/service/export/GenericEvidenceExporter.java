@@ -223,8 +223,6 @@ public class GenericEvidenceExporter {
         table.addCell(cell);
     }
 
-    private static final java.text.DecimalFormat KG_FMT = buildKgFormat();
-
     /**
      * Trei zecimale mereu, ca pe ecran şi ca pe formularele tipărite (G06, 20.09.2026).
      *
@@ -237,6 +235,10 @@ public class GenericEvidenceExporter {
      * deci separatorul îl alege regula casei: românesc, ca ecranul. Formularele care <b>au</b>
      * model — fişa, declaraţia anuală, avizul, Anexa 2 — îşi păstrează fiecare semnul din modelul
      * lui; acolo nu e o scăpare, e copia a ceea ce compară inspectorul.
+     *
+     * <p><b>Unul nou la fiecare cifră, nu unul pe clasă.</b> {@code DecimalFormat} nu e sincronizat,
+     * iar componenta e singleton: două descărcări în aceeaşi clipă împart un formator cu stare şi pot
+     * scrie o cifră greşită de kilograme, fără nimic în log. Construcţia e nimic pe lângă un PDF.
      */
     private static java.text.DecimalFormat buildKgFormat() {
         java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(java.util.Locale.of("ro", "RO"));
@@ -244,7 +246,7 @@ public class GenericEvidenceExporter {
     }
 
     private static void numCell(PdfPTable table, double value, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(KG_FMT.format(value), font));
+        PdfPCell cell = new PdfPCell(new Phrase(buildKgFormat().format(value), font));
         cell.setPadding(3f);
         cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         table.addCell(cell);

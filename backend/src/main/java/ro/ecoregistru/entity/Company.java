@@ -262,6 +262,20 @@ public class Company {
     @Column(name = "afm_obligation", nullable = false)
     boolean afmObligation;
 
+    /**
+     * Urma ultimei reconstrucții de evidență: când a trecut și până la ce an a ajuns (V65).
+     *
+     * <p>Prospețimea stă pe linia lunară, dar un an poate ieși <b>gol pe drept</b> — fără mișcări
+     * proprii și fără stoc adus din decembrie — și atunci n-are nicio linie pe care s-o noteze.
+     * Fără cele două coloane, un asemenea an era „învechit" la fiecare citire, deci fiecare
+     * deschidere de ecran reconstruia lanțul întreg (20.09.2026).
+     */
+    @Column(name = "evidence_generated_at")
+    Instant evidenceGeneratedAt;
+
+    @Column(name = "evidence_generated_through")
+    Integer evidenceGeneratedThrough;
+
     @Column(nullable = false)
     Instant createdAt;
 }

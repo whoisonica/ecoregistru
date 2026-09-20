@@ -426,8 +426,8 @@ public class Anexa1FormGenerator {
         return value == null || value.isBlank() ? "-" : value;
     }
 
-    private static final DecimalFormat KG = kgFormat();
-
+    // Unul nou la fiecare cifră: `DecimalFormat` nu e sincronizat, iar generatorul e singleton —
+    // două descărcări în aceeaşi clipă pot scrie o cifră greşită pe un document depus.
     private static DecimalFormat kgFormat() {
         // Three decimals with a dot, exactly as every filled sheet prints them: "53.000",
         // "636.000". Not the Romanian comma — the models are what an inspector will compare against.
@@ -435,7 +435,7 @@ public class Anexa1FormGenerator {
     }
 
     private String kg(BigDecimal value) {
-        return value == null ? "" : KG.format(value);
+        return value == null ? "" : kgFormat().format(value);
     }
 
     private static String cp1250(String value) {

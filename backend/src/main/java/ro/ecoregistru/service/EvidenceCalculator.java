@@ -1,5 +1,6 @@
 package ro.ecoregistru.service;
 
+import jakarta.persistence.EntityManager;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -67,6 +68,8 @@ public class EvidenceCalculator {
     private static final BigDecimal KG_PER_TON = BigDecimal.valueOf(1000);
 
     MonthlyEvidenceRepository evidenceRepository;
+    /** Pentru golirea contextului între ani — vezi {@link #rebuildChain}. */
+    EntityManager entityManager;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
     ro.ecoregistru.service.export.Anexa1SheetBuilder anexa1SheetBuilder;
@@ -119,7 +122,7 @@ public class EvidenceCalculator {
 
         Integer lastCachedYear = evidenceRepository.findMaxYear(tenantId);
         int to = lastCachedYear == null ? year : Math.max(year, lastCachedYear);
-        int lines = rebuildChain(tenantId, year, to);
+        int lines = rebuildChain(tenantId, year, to, true);
         // Walk the whole range, gaps included: a year with no cached lines still has to be rebuilt,
         // otherwise it stays the hole that stops the stock from reaching the years after it.
         List<Integer> cascaded = new ArrayList<>();
@@ -159,7 +162,7 @@ public class EvidenceCalculator {
     }
 
     /** Rebuilds one year in isolation; returns how many lines it wrote. */
-    private int regenerateSingleYear(UUID tenantId, int year) {
+    private int regenerateSingleYear(UUID tenantId, int year, boolean ownsContext) {
         List<WasteMovement> movements = movementRepository
                 .findCountedBetween(
                         tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
@@ -243,6 +246,39 @@ public class EvidenceCalculator {
         }
 
         evidenceRepository.saveAll(lines);
+
+        /*
+         * Anul socotit pleacă din memorie înainte de următorul (20.09.2026).
+         *
+         * `rebuildChain` merge de la primul an al firmei până la cel cerut, iar fără rândurile astea
+         * toţi anii stăteau deodată în acelaşi context: mişcările fiecăruia, plus liniile scrise. La
+         * opt ani × zece mii de mişcări, un dyno de 300 MB — aceeaşi formă ca BUG-017, numai că
+         * plătită la o **citire** banală, fiindcă drumul porneşte din `refreshIfStale`.
+         *
+         * Se detaşează punctual, nu cu `clear()`: golirea întregului context detaşează şi ce ţine
+         * apelantul (firma, punctele de lucru), iar dosarul şi ecranele cad cu
+         * `LazyInitializationException` — probat, cade toată suita de evidenţă.
+         *
+         * `flush` înaintea detaşării liniilor noi, obligatoriu: `saveAll` doar le marchează, iar o
+         * entitate nouă detaşată înainte de flush nu se mai scrie niciodată.
+         *
+         * ⚠️ Mişcările se dau drumul **numai când reconstrucţia îşi deţine contextul** —
+         * `regenerateYear`, adică butonul şi dosarul (care are şi `REQUIRES_NEW`). Chemată din
+         * `refreshIfStale`, reconstrucţia stă în tranzacţia cititorului, iar acolo mişcarea
+         * detaşată poate fi chiar cea pe care o tipăreşte apelantul: Anexa 2 cade cu
+         * `LazyInitializationException` pe `transportDestinations` — probat, cad toate cele opt
+         * probe ale ei. Liniile lunare se detaşează oricum: sunt scrise aici şi citite pe urmă din
+         * bază.
+         */
+        evidenceRepository.flush();
+        for (MonthlyEvidence line : lines) {
+            entityManager.detach(line);
+        }
+        if (ownsContext) {
+            for (WasteMovement m : movements) {
+                entityManager.detach(m);
+            }
+        }
         return lines.size();
     }
 
@@ -397,7 +433,7 @@ public class EvidenceCalculator {
         if (!isStale(tenantId, year)) {
             return;
         }
-        rebuildChain(tenantId, year, year);
+        rebuildChain(tenantId, year, year, false);
     }
 
     /**
@@ -412,7 +448,7 @@ public class EvidenceCalculator {
      */
     // ponytail: rebuilds every year since the first one, a few years per tenant; start at the
     // earliest stale year (tracked per year, gaps included) if this ever shows up in a profile.
-    private int rebuildChain(UUID tenantId, int atLeastFrom, int to) {
+    private int rebuildChain(UUID tenantId, int atLeastFrom, int to, boolean ownsContext) {
         int from = atLeastFrom;
         Integer firstMovement = movementRepository.findFirstYear(tenantId);
         Integer firstLine = evidenceRepository.findMinYear(tenantId);
@@ -424,11 +460,19 @@ public class EvidenceCalculator {
         }
         int lines = 0;
         for (int y = from; y <= to; y++) {
-            int written = regenerateSingleYear(tenantId, y);
+            int written = regenerateSingleYear(tenantId, y, ownsContext);
             if (y >= atLeastFrom) {
                 lines += written;
             }
         }
+        // Urma trecerii (V65): un an golit pe drept n-are nicio linie pe care s-o noteze, deci se
+        // notează aici. `to`, fiindcă până acolo a ajuns lanţul.
+        Company company = companyRepository.getReferenceById(tenantId);
+        company.setEvidenceGeneratedAt(Instant.now());
+        if (company.getEvidenceGeneratedThrough() == null || company.getEvidenceGeneratedThrough() < to) {
+            company.setEvidenceGeneratedThrough(to);
+        }
+        companyRepository.save(company);
         return lines;
     }
 
@@ -451,7 +495,26 @@ public class EvidenceCalculator {
             // Lines with no movement left under them: the only one was moved into a later year (BUG-031).
             return generatedAt != null;
         }
-        return generatedAt == null || lastChange.isAfter(generatedAt);
+        if (generatedAt == null) {
+            /*
+             * Anul n-are nicio linie — şi poate să n-aibă pe drept: fără mişcări proprii şi fără
+             * stoc adus din decembrie, reconstrucţia n-are ce scrie. Numai că atunci anul n-are
+             * unde să-şi noteze că a fost socotit, deci până pe 20.09.2026 ieşea „învechit" la
+             * fiecare citire, iar fiecare citire reconstruia lanţul întreg al firmei. Se declanşa
+             * singur la 1 ianuarie, când anul nou e gol prin definiţie.
+             *
+             * Reperul e urma trecerii, ţinută pe firmă (`V65`): când s-a socotit ultima oară şi
+             * până la ce an s-a ajuns. Anul gol e la zi dacă trecerea l-a cuprins (`through >= an`)
+             * şi e mai nouă decât ultima schimbare de mişcare. Nu se poate deduce din linii: o
+             * citire reconstruieşte **până la anul cerut**, nu mai departe, deci o linie proaspătă
+             * într-un an mai vechi n-ar dovedi nimic despre ăsta.
+             */
+            Company company = companyRepository.getReferenceById(tenantId);
+            Instant pass = company.getEvidenceGeneratedAt();
+            Integer through = company.getEvidenceGeneratedThrough();
+            return pass == null || through == null || through < year || !pass.isAfter(lastChange);
+        }
+        return lastChange.isAfter(generatedAt);
     }
 
     /**

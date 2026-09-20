@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu";
 import { PillGroup } from "@/components/ui/pill-group";
 import { Input } from "@/components/ui/input";
+import { LoadError } from "@/components/ui/load-error";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TableFallbackRow, TableSkeletonRows } from "@/components/ui/table-fallback";
 import { TablePagination } from "@/components/ui/table-toolbar";
@@ -175,15 +176,21 @@ export function PackagingReport({
   const { data: workPoints } = useWorkPoints();
   const activeWorkPoints = useMemo(() => (workPoints ?? []).filter((w) => w.active), [workPoints]);
   // Fără punct de lucru: doar ca să aflăm dacă profilul a spus care tabel se aplică (`printable`).
-  const { data: anexa3 } = usePackagingAnexa3(year);
+  const anexa3Q = usePackagingAnexa3(year);
+  const anexa3 = anexa3Q.data;
   const [tableParam, setTable] = useUrlState("tabel");
   const table: TableKey =
     tableParam === "predat" || (tableParam === "preluat" && collects) ? tableParam : "";
-  const { data: movements } = usePackagingMovements(year);
-  const { data: table1, isLoading: loadingTable1 } = usePackagingTable1(year);
-  const { data: handovers } = usePackagingHandovers(year);
-  const { data: unclassified } = usePackagingUnclassified(year);
-  const { data: overrides } = usePackagingMarket(year);
+  const movementsQ = usePackagingMovements(year);
+  const movements = movementsQ.data;
+  const table1Q = usePackagingTable1(year);
+  const { data: table1, isLoading: loadingTable1 } = table1Q;
+  const handoversQ = usePackagingHandovers(year);
+  const handovers = handoversQ.data;
+  const unclassifiedQ = usePackagingUnclassified(year);
+  const unclassified = unclassifiedQ.data;
+  const overridesQ = usePackagingMarket(year);
+  const overrides = overridesQ.data;
   const saveMut = useSavePackagingMarket();
   const { notify } = useToast();
   const [downloading, setDownloading] = useState(false);
@@ -371,6 +378,29 @@ export function PackagingReport({
       n: signals.awaitingWeighing,
     },
   ].filter((signal) => signal.n > 0);
+
+  /**
+   * Un ecran gol nu e un răspuns.
+   *
+   * <p>Cele şase cereri ale tabului n-aveau nicio ramură de eroare: la un 500 sau la rețea căzută,
+   * Tabelul 1 apărea gol — adică „n-ai pus nimic pe piaţă în 2026" —, „Predat" la fel, iar banda de
+   * semnale se socoteşte din liste goale, deci ieşea zero: ecranul spunea tăcut că **nimic nu
+   * opreşte depunerea**, chiar înainte de termen. Pe un tab de conformitate, asta e mai rău decât o
+   * eroare. Una singură pentru tot tabul, fiindcă toate şase descriu acelaşi an: şase casete roşii
+   * n-ar spune mai mult decât una.
+   */
+  const failed = [anexa3Q, movementsQ, table1Q, handoversQ, unclassifiedQ, overridesQ].filter(
+    (q) => q.isError
+  );
+  if (failed.length > 0) {
+    return (
+      <LoadError
+        className="mt-3"
+        message={t.loadError}
+        onRetry={() => failed.forEach((q) => void q.refetch())}
+      />
+    );
+  }
 
   return (
     <div>

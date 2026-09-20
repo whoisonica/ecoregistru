@@ -68,6 +68,8 @@ class EvidenceAfterMovingIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired PartnerRepository partnerRepository;
     @Autowired WasteMovementRepository movementRepository;
+    @Autowired ro.ecoregistru.repository.MonthlyEvidenceRepository evidenceRepository;
+    @Autowired jakarta.persistence.EntityManager entityManager;
 
     private UUID tenantId;
     private String token;
@@ -195,6 +197,104 @@ class EvidenceAfterMovingIT {
 
         TenantContext.set(tenantId);
         assertThat(evidenceCalculator.anexa1(2025, pointA)).isEmpty();
+    }
+
+    /**
+     * <b>R1, jumătatea a doua (20.09.2026).</b> Dosarul de control reconstruieşte <b>toţi</b> anii
+     * dinaintea descărcării, într-o tranzacţie care comite — nu doar primul.
+     *
+     * <p>{@code AuditFileService} chema {@code regenerateYearBeforeStreaming(firstYear)}, iar
+     * {@code regenerateYear} merge de la anul cerut până la ultimul an <b>din cache</b>. La o firmă
+     * care n-a deschis niciodată evidenţa, cache-ul e gol, deci se oprea la {@code firstYear}: anii
+     * de după rămâneau nereconstruiţi, iar citirea lor de mai încolo îi regenera <b>în tranzacţia
+     * lungă a dosarului</b>, cu lacătul pe firmă ţinut până la ultimul octet al arhivei. Adică exact
+     * blocarea pe care R1 o scosese, rămasă la primul dosar al fiecărui client nou.
+     *
+     * <p>Proba poartă în ea şi controlul negativ: chemarea veche, cu primul an, lasă 2026 fără linii.
+     */
+    @Test
+    void theDossierRebuildsEveryYearBeforeItStreams() {
+        legacyGenerated(pointA, paper, "2024-03-10", "500");
+        legacyGenerated(pointA, paper, "2026-03-10", "700");
+        TenantContext.set(tenantId);
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2026)).isEmpty();
+
+        // Chemarea veche, cu primul an al dosarului: 2024 se reconstruieşte, 2026 rămâne gol —
+        // adică tocmai el ar fi fost regenerat mai încolo, în tranzacţia lungă. Ăsta e motivul
+        // reparaţiei, scris ca probă, nu ca poveste.
+        TenantContext.set(tenantId);
+        evidenceCalculator.regenerateYearBeforeStreaming(2024);
+        TenantContext.set(tenantId);
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2024)).isNotEmpty();
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2026)).isEmpty();
+
+        // Chemarea de acum: anul cel mai nou al arhivei.
+        TenantContext.set(tenantId);
+        evidenceCalculator.regenerateYearBeforeStreaming(2026);
+
+        TenantContext.set(tenantId);
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2024)).isNotEmpty();
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2026)).isNotEmpty();
+    }
+
+    /**
+     * Anul socotit pleacă din memorie înainte de următorul.
+     *
+     * <p>Reconstrucţia merge de la primul an al firmei până la cel cerut, iar până pe 20.09.2026 toţi
+     * anii rămâneau în acelaşi context: mişcările fiecăruia, plus liniile scrise. La opt ani × zece
+     * mii de mişcări, un dyno de 300 MB — aceeaşi formă ca BUG-017, numai că plătită la o
+     * <b>citire</b>, fiindcă drumul porneşte din {@code refreshIfStale}.
+     *
+     * <p>Se cere chiar mecanismul: după reconstrucţie, mişcările anului nu mai sunt în context.
+     * O măsurătoare de memorie ar fi zgomot pe o maşină de test; asta e deterministă. Proba rulează
+     * în tranzacţia ei, ca să împartă sesiunea cu serviciul — altfel n-ar avea ce întreba.
+     *
+     * <p>Controlul negativ e făcut: fără detaşare, amândouă mişcările rămân în context.
+     */
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    void theRebuildLetsGoOfEachYearsMovements() {
+        legacyGenerated(pointA, paper, "2024-03-10", "500");
+        legacyGenerated(pointA, paper, "2026-03-10", "700");
+        List<WasteMovement> all = movementRepository.findCounted(tenantId);
+        assertThat(all).isNotEmpty();
+        assertThat(all).allMatch(entityManager::contains);
+
+        TenantContext.set(tenantId);
+        evidenceCalculator.regenerateYear(2026);
+
+        assertThat(all).noneMatch(entityManager::contains);
+    }
+
+    /**
+     * Un an gol pe drept nu mai reconstruieşte lanţul la fiecare citire.
+     *
+     * <p>2024 predă tot ce a generat, deci închide pe zero; 2025 n-are nici mişcări proprii, nici
+     * stoc adus, deci reconstrucţia lui scrie, corect, <b>zero linii</b>. Numai că un an fără linii
+     * n-are unde să-şi noteze că a fost socotit: până pe 20.09.2026, {@code isStale} îl găsea
+     * „învechit" şi la a suta citire, iar fiecare citire reconstruia toţi anii firmei, de la primul.
+     * Se declanşa singur la 1 ianuarie, când anul nou e gol prin definiţie. Urma trecerii stă acum
+     * pe firmă ({@code V65}).
+     *
+     * <p>Se cere prin ce se vede: dacă a doua citire ar reconstrui, liniile lui 2024 ar fi rescrise,
+     * deci {@code generatedAt} al lor s-ar schimba. Controlul negativ e făcut — fără reper, se
+     * schimbă.
+     */
+    @Test
+    void anEmptyYearIsNotRebuiltOnEveryRead() throws Exception {
+        handover(pointA, paper, "2024-06-15", "300");
+
+        TenantContext.set(tenantId);
+        assertThat(evidenceCalculator.list(2025, null, null)).isEmpty();
+        TenantContext.set(tenantId);
+        Instant firstPass = evidenceRepository.findByCompany_IdAndYear(tenantId, 2024).get(0).getGeneratedAt();
+
+        TenantContext.set(tenantId);
+        assertThat(evidenceCalculator.list(2025, null, null)).isEmpty();
+
+        TenantContext.set(tenantId);
+        assertThat(evidenceRepository.findByCompany_IdAndYear(tenantId, 2024).get(0).getGeneratedAt())
+                .isEqualTo(firstPass);
     }
 
     /** Codul greșit, corectat: 400 kg trec de pe hârtie pe sticlă, în aceeași lună. */

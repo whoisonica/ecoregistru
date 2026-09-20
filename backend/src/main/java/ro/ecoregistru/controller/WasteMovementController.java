@@ -109,10 +109,15 @@ public class WasteMovementController {
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) UUID workPointId,
+            @RequestParam(required = false) UUID wasteCodeId,
+            @RequestParam(defaultValue = "false") boolean leftSite,
+            @RequestParam(defaultValue = "false") boolean missingOperationCode,
+            @RequestParam(defaultValue = "false") boolean incomplete,
             @RequestParam(required = false) WasteRegister register,
             @RequestParam(required = false) MovementDirection direction,
             @RequestParam(required = false) PackagingFilter packaging) {
-        return queryService.totals(year, month, workPointId, register, direction, packaging);
+        return queryService.totals(year, month, workPointId, wasteCodeId, leftSite,
+                missingOperationCode, incomplete, register, direction, packaging);
     }
 
     /**

@@ -185,7 +185,18 @@ public class PackagingService {
      */
     @Transactional(readOnly = true)
     public byte[] render(int year, ExportFormat format) {
-        PackagingDeclaration declaration = declaration(year);
+        return render(declaration(year), format);
+    }
+
+    /**
+     * Aceeaşi randare, dintr-un document <b>deja socotit</b>.
+     *
+     * <p>Pentru dosarul de control, care scrie acelaşi an în amândouă formatele: cu
+     * {@link #render(int, ExportFormat)} chemat de două ori, anul se socotea de două ori, adică se
+     * citeau de două ori mişcările lui. Documentul e acelaşi obiect, deci formatul se alege la
+     * sfârşit, nu la început (20.09.2026).
+     */
+    public byte[] render(PackagingDeclaration declaration, ExportFormat format) {
         return format == ExportFormat.XLS
                 ? xlsGenerator.render(declaration)
                 : pdfGenerator.render(declaration);
@@ -247,7 +258,11 @@ public class PackagingService {
      */
     @Transactional(readOnly = true)
     public byte[] renderAnexa3(int year, UUID workPointId, ExportFormat format) {
-        PackagingAnexa3 document = anexa3(year, workPointId);
+        return renderAnexa3(anexa3(year, workPointId), format);
+    }
+
+    /** Aceeaşi randare, dintr-un document deja socotit — vezi {@link #render(PackagingDeclaration, ExportFormat)}. */
+    public byte[] renderAnexa3(PackagingAnexa3 document, ExportFormat format) {
         if (!document.printable()) {
             throw new BusinessException(PACKAGING_OPERATOR_ROLE_REQUIRED);
         }

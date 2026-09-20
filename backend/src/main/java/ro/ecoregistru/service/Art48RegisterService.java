@@ -19,6 +19,7 @@ import ro.ecoregistru.service.export.Art48RegisterBuilder;
 import ro.ecoregistru.service.export.Art48RegisterGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.ART48_REGISTER_COLLECTORS_ONLY;
@@ -53,9 +54,13 @@ public class Art48RegisterService {
         WorkPoint workPoint = workPointId == null ? null : workPointRepository.findById(workPointId)
                 .filter(wp -> wp.getCompany().getId().equals(tenantId))
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
-        // Every year up to this one, not just this one: the opening stock is what the earlier years left.
+        // Anul cerut, rând cu rând — plus soldul de la 1 ianuarie, care vine din anii dinainte ca
+        // **sumă** (`art48OpeningBefore`). Până pe 20.09.2026 se citeau aici toate mișcările firmei,
+        // din toți anii, pentru acel singur sold; vezi javadocul interogării.
+        LocalDate start = LocalDate.of(year, 1, 1);
         return builder.build(company, workPoint, year,
-                movementRepository.findCounted(tenantId));
+                movementRepository.findCountedBetween(tenantId, start, LocalDate.of(year, 12, 31)),
+                movementRepository.art48OpeningBefore(tenantId, workPointId, start));
     }
 
     @Transactional(readOnly = true)

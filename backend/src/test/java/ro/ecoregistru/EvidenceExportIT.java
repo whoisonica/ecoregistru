@@ -110,6 +110,19 @@ class EvidenceExportIT {
         assertThat(new String(body, 0, 4)).isEqualTo("%PDF"); // valid PDF magic bytes
     }
 
+    /**
+     * Diacriticele româneşti ajung întregi pe pagină.
+     *
+     * <p>Scrisă pe 20.09.2026, când o citire de cod a raportat că fonturile PDF-ului
+     * ({@code new Font(Font.HELVETICA, …)}, fără codare cerută) ar arunca ş şi ţ, aşa cum le aruncă
+     * pe formularele cu model — de unde şi {@code Cp1250} pe Anexa 1 şi pe fişă. <b>Nu e adevărat
+     * aici:</b> pe codul dinainte de orice reparaţie, extractorul citeşte „Evidența gestiunii
+     * deșeurilor" cu virgula dedesubt, forma corectă în română. Diferenţa e că formularele cu model
+     * cer un {@code BaseFont} explicit, iar acolo Cp1250 <b>impune</b> forma cu sedilă.
+     *
+     * <p>Rămâne ca gardă, nu ca reparaţie: dacă cineva „aliniază" şi exportul ăsta la Cp1250, testul
+     * cade şi spune de ce nu trebuie.
+     */
     @Test
     void unknownFormatIsCleanBadRequest() throws Exception {
         mockMvc.perform(get("/api/v1/evidences/export")

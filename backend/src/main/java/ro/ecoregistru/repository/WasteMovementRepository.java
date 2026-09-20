@@ -184,6 +184,52 @@ public interface WasteMovementRepository
     }
 
     /**
+     * Soldul registrului art. 48 la 1 ianuarie, pe cod de deșeu — <b>o sumă, nu rândurile</b>.
+     *
+     * <p>Registrul se tipărea citind {@link #findCounted}, adică <b>toate</b> mișcările firmei, din
+     * toți anii și din ambele registre, ca să afle un singur lucru din anii dinainte: cât rămăsese
+     * în stoc. La cinci ani × zece mii de mișcări, asta e o sesiune cu cincizeci de mii de entități
+     * pe un dyno de 300 MB — aceeași formă ca BUG-017, plătită de clientul cu cel mai mult istoric.
+     * Anii dinainte nu se citesc rând cu rând, se adună aici (20.09.2026).
+     *
+     * <p>Semnul e chiar regula soldului: preluarea adaugă, predarea și ieșirea fără cod R/D scad.
+     * {@code GENERATED} nu intră — deșeul propriu e pe anexa 1, niciodată aici. Rândurile fără
+     * cantitate se sar, ca peste tot: „de cântărit" nu e zero.
+     */
+    @Query("""
+            select m.wasteCode.code as code,
+                   m.wasteCode.hazardous as hazardous,
+                   m.wasteCode.name as name,
+                   coalesce(sum((case when m.operation = ro.ecoregistru.enums.WasteOperation.COLLECTED
+                                      then 1 else -1 end)
+                                * (case when m.unit = ro.ecoregistru.enums.Unit.TONS
+                                        then m.quantity * 1000 else m.quantity end)), 0) as kg
+            from WasteMovement m left join m.weighingOperation o
+            where m.company.id = :companyId and m.deleted = false
+              and m.register = ro.ecoregistru.enums.WasteRegister.ART_48
+              and m.date < :before
+              and m.quantity is not null
+              and m.operation <> ro.ecoregistru.enums.WasteOperation.GENERATED
+              and (:workPointId is null or m.workPoint.id = :workPointId)
+              and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)
+            group by m.wasteCode.code, m.wasteCode.hazardous, m.wasteCode.name
+            """)
+    List<Art48Opening> art48OpeningBefore(@Param("companyId") UUID companyId,
+                                          @Param("workPointId") UUID workPointId,
+                                          @Param("before") LocalDate before);
+
+    /** The shape {@link #art48OpeningBefore} returns; the names are the aliases of its select list. */
+    interface Art48Opening {
+        String getCode();
+
+        boolean getHazardous();
+
+        String getName();
+
+        java.math.BigDecimal getKg();
+    }
+
+    /**
      * The last time anything dated on or before {@code until} changed. Feeds the staleness check
      * that decides whether the cached evidence of a year still describes the movements.
      *

@@ -18,6 +18,30 @@ import type {
  * caches independently; every mutation invalidates the whole family.
  */
 const movementsRoot = ["movements"] as const;
+
+/**
+ * Filtrele, aşa cum pleacă pe sârmă — **un singur loc**, citit şi de listă, şi de banda de totaluri.
+ *
+ * <p>Erau două liste scrise de mână, iar a totalurilor rămăsese în urmă cu patru: codul de deşeu,
+ * „a ieşit pe poartă", „fără cod R/D" şi „de completat" stăteau în cheia de cache, dar nu ajungeau
+ * în cerere. Cine intra pe „2 linii fără cod R/D" de pe Acasă vedea două rânduri, iar deasupra lor
+ * „Generat 412.000 kg" — totalul anului întreg, care arată exact ca totalul celor două rânduri
+ * (20.09.2026). Un filtru nou intră de acum în amândouă odată.
+ */
+function filterParams(filters: MovementFilters): Record<string, string | number | boolean> {
+  const params: Record<string, string | number | boolean> = {};
+  if (filters.year != null) params.year = filters.year;
+  if (filters.month != null) params.month = filters.month;
+  if (filters.workPointId) params.workPointId = filters.workPointId;
+  if (filters.wasteCodeId) params.wasteCodeId = filters.wasteCodeId;
+  if (filters.leftSite) params.leftSite = true;
+  if (filters.direction) params.direction = filters.direction;
+  if (filters.missingOperationCode) params.missingOperationCode = true;
+  if (filters.incomplete) params.incomplete = true;
+  if (filters.register) params.register = filters.register;
+  if (filters.packaging) params.packaging = filters.packaging;
+  return params;
+}
 export const movementsKey = (filters: MovementFilters, table?: RemoteTableParams) =>
   [...movementsRoot, filters, table ?? null] as const;
 
@@ -45,19 +69,10 @@ export function useMovements(
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const params: Record<string, string | number | boolean> = {
+        ...filterParams(filters),
         page: table.page,
         size: table.size,
       };
-      if (filters.year != null) params.year = filters.year;
-      if (filters.month != null) params.month = filters.month;
-      if (filters.workPointId) params.workPointId = filters.workPointId;
-      if (filters.wasteCodeId) params.wasteCodeId = filters.wasteCodeId;
-      if (filters.leftSite) params.leftSite = true;
-      if (filters.direction) params.direction = filters.direction;
-      if (filters.missingOperationCode) params.missingOperationCode = true;
-      if (filters.incomplete) params.incomplete = true;
-      if (filters.register) params.register = filters.register;
-      if (filters.packaging) params.packaging = filters.packaging;
       if (table.search) params.search = table.search;
       if (table.sort) {
         params.sort = table.sort;
@@ -117,18 +132,10 @@ export function useMovementTotals(filters: MovementFilters, enabled = true) {
     queryKey: [...movementsRoot, "totals", filters] as const,
     enabled,
     placeholderData: keepPreviousData,
-    queryFn: async () => {
-      const params: Record<string, string | number | boolean> = {};
-      if (filters.year != null) params.year = filters.year;
-      if (filters.month != null) params.month = filters.month;
-      if (filters.workPointId) params.workPointId = filters.workPointId;
-      if (filters.register) params.register = filters.register;
-      if (filters.direction) params.direction = filters.direction;
-      // Banda stă deasupra listei, deci descrie aceleași rânduri: o tastă de ambalaje apăsată
-      // schimbă și cifrele de sus, altfel „Predat 12.640 kg" ar fi al altui tabel decât cel citit.
-      if (filters.packaging) params.packaging = filters.packaging;
-      return (await api.get<MovementTotals>("/api/v1/movements/totals", { params })).data;
-    },
+    queryFn: async () =>
+      // Banda stă deasupra listei, deci descrie aceleași rânduri: aceleași filtre, din același loc.
+      (await api.get<MovementTotals>("/api/v1/movements/totals", { params: filterParams(filters) }))
+        .data,
   });
 }
 

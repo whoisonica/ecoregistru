@@ -112,12 +112,21 @@ public class MovementQueryService {
      */
     @Transactional(readOnly = true)
     public MovementTotalsResponse totals(Integer year, Integer month, UUID workPointId,
+                                         UUID wasteCodeId, boolean leftSite,
+                                         boolean missingOperationCode, boolean incomplete,
                                          WasteRegister register, MovementDirection direction,
                                          PackagingFilter packaging) {
         UUID tenantId = TenantContext.require();
         LocalDate[] window = window(year, month);
-        Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, null,
-                window[0], window[1], false, false, register, direction, packaging);
+        // Toate filtrele listei, nu doar şase. Patru dintre ele — codul de deşeu, „a ieşit pe
+        // poartă", „fără cod R/D" şi „de completat" — se trimiteau goale, deşi lista le aplică: cine
+        // intra pe „2 linii fără cod R/D" de pe Acasă vedea două rânduri, iar deasupra lor totalul
+        // anului întreg. Banda stă peste listă, deci descrie chiar rândurile de sub ea (20.09.2026).
+        Specification<WasteMovement> filter = buildFilter(tenantId, workPointId, wasteCodeId,
+                window[0], window[1], leftSite, missingOperationCode, register, direction, packaging);
+        if (incomplete) {
+            filter = filter.and((r, q, cb) -> incomplete(r, cb));
+        }
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Tuple> query = cb.createTupleQuery();

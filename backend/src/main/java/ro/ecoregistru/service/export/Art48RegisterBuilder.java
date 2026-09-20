@@ -10,6 +10,7 @@ import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
+import ro.ecoregistru.repository.WasteMovementRepository.Art48Opening;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -39,21 +40,21 @@ public class Art48RegisterBuilder {
 
     private static final BigDecimal KG_PER_TON = new BigDecimal("1000");
 
+    /**
+     * @param movementsOfYear mișcările anului cerut, din amândouă registrele (se alege ART_48 aici)
+     * @param opening         soldul la 1 ianuarie, pe cod, adunat de bază din anii dinainte —
+     *                        {@code WasteMovementRepository#art48OpeningBefore}. Anii vechi nu se mai
+     *                        încarcă rând cu rând (20.09.2026); singurul lucru cerut de la ei era
+     *                        chiar suma asta.
+     */
     public Art48Register build(Company company, WorkPoint workPoint, int year,
-                               List<WasteMovement> movements) {
-        LocalDate start = LocalDate.of(year, 1, 1);
-        LocalDate end = LocalDate.of(year, 12, 31);
-
-        List<WasteMovement> scoped = WasteRegister.ART_48.select(movements).stream()
+                               List<WasteMovement> movementsOfYear, List<Art48Opening> opening) {
+        List<WasteMovement> inYear = WasteRegister.ART_48.select(movementsOfYear).stream()
                 .filter(m -> workPoint == null || (m.getWorkPoint() != null
                         && workPoint.getId().equals(m.getWorkPoint().getId())))
-                .filter(m -> !m.getDate().isAfter(end))
                 .sorted(Comparator.comparing(WasteMovement::getDate)
                         .thenComparing(WasteMovement::getCreatedAt,
                                 Comparator.nullsLast(Comparator.<Instant>naturalOrder())))
-                .toList();
-        List<WasteMovement> inYear = scoped.stream()
-                .filter(m -> !m.getDate().isBefore(start))
                 .toList();
 
         return new Art48Register(
@@ -62,7 +63,7 @@ public class Art48RegisterBuilder {
                 workPoint == null ? null : workPoint.getName(),
                 year,
                 inYear.stream().map(this::entry).toList(),
-                collection(scoped, start),
+                collection(inYear, opening),
                 handovers(inYear, WasteOperation.RECOVERED),
                 handovers(inYear, WasteOperation.DISPOSED),
                 (int) inYear.stream().filter(m -> m.getQuantity() == null).count());
@@ -109,19 +110,20 @@ public class Art48RegisterBuilder {
      * Cap. 1, tabel 1: per code, what was in stock on 1 January, what came in, what left and how.
      * A code shows when it moved during the year or still had stock from before it.
      */
-    private List<Art48Register.CodeTotal> collection(List<WasteMovement> scoped, LocalDate start) {
+    private List<Art48Register.CodeTotal> collection(List<WasteMovement> inYear, List<Art48Opening> opening) {
         Map<String, Totals> byCode = new TreeMap<>();
-        for (WasteMovement m : scoped) {
+        // Anii dinainte, ca sold: un rând pe cod, socotit de bază. Codul tipărit se compune la fel
+        // ca în `printedCode`, ca rândurile anului să cadă peste soldul lor, nu lângă el.
+        for (Art48Opening o : opening) {
+            byCode.computeIfAbsent(o.getCode() + (o.getHazardous() ? "*" : ""),
+                    k -> new Totals(o.getName())).opening = o.getKg();
+        }
+        for (WasteMovement m : inYear) {
             if (m.getQuantity() == null || !countsInStock(m.getOperation())) {
                 continue;
             }
             Totals t = byCode.computeIfAbsent(printedCode(m), k -> new Totals(m.getWasteCode().getName()));
             BigDecimal kg = kg(m);
-            if (m.getDate().isBefore(start)) {
-                t.opening = m.getOperation() == WasteOperation.COLLECTED
-                        ? t.opening.add(kg) : t.opening.subtract(kg);
-                continue;
-            }
             t.moved = true;
             switch (m.getOperation()) {
                 case COLLECTED -> t.collected = t.collected.add(kg);

@@ -191,7 +191,14 @@ public class AuditFileService {
         // pe firmă, iar un lacăt de tranzacție ține până la commit: chemată în tranzacția asta,
         // ținea firma blocată pe toată durata descărcării, iar orice salvare de mișcare aștepta.
         // Vezi `EvidenceCalculator.regenerateYearBeforeStreaming`.
-        evidenceCalculator.regenerateYearBeforeStreaming(firstYear);
+        //
+        // Anul **cel mai nou**, nu `firstYear`: reconstrucţia porneşte oricum de la primul an al
+        // firmei (`rebuildChain`) şi merge până la anul cerut, deci cerându-l pe cel mai nou se
+        // reconstruieşte tot dosarul într-o singură tranzacţie, care comite aici. Cu `firstYear`,
+        // o firmă care n-a deschis niciodată evidenţa (`findMaxYear == null`) lăsa anii de după
+        // nereconstruiţi, iar `list()` de mai jos îi regenera **în tranzacţia asta** — adică exact
+        // lacătul pe toată descărcarea pe care R1 îl scosese.
+        evidenceCalculator.regenerateYearBeforeStreaming(year);
         for (int y = firstYear; y <= year; y++) {
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
             filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(y, workPoints)));
@@ -369,19 +376,21 @@ public class AuditFileService {
         // Anexa 1 Ambalaje lipsea din dosar (specialista, 15.09.2026). Numai la firma care pune
         // ambalaje pe piaţă: un comerciant n-o depune, iar la un profil nerăspuns nu ghicim.
         if (files.packaging() != null) {
+            // Un singur calcul al anului, două formate din el.
+            var declaration = packagingService.declaration(year);
             writeEntry(zip, written, prefix + files.packaging() + ".xls",
-                    packagingService.render(year, ExportFormat.XLS));
+                    packagingService.render(declaration, ExportFormat.XLS));
             writeEntry(zip, written, prefix + files.packaging() + ".pdf",
-                    packagingService.render(year, ExportFormat.PDF));
+                    packagingService.render(declaration, ExportFormat.PDF));
         }
         // Anexa 3 Ambalaje (proprietarul, 16.09.2026): una per punct de lucru, fiindcă aşa se depune
         // (Ordinul 794/2012 art. 4 alin. (4)), şi numai unde anul are ambalaje — o foaie oficială
         // goală n-are ce căuta la control.
         for (Anexa3File file : files.anexa3()) {
             writeEntry(zip, written, prefix + file.baseName() + ".xls",
-                    packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.XLS));
+                    packagingService.renderAnexa3(file.document(), ExportFormat.XLS));
             writeEntry(zip, written, prefix + file.baseName() + ".pdf",
-                    packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.PDF));
+                    packagingService.renderAnexa3(file.document(), ExportFormat.PDF));
         }
         writeAttachments(zip, written, files.prefix() + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
@@ -1091,7 +1100,14 @@ public class AuditFileService {
     }
 
     /** Un fişier Anexa 3 din dosar: numele fără extensie şi punctul de lucru pe care îl raportează. */
-    private record Anexa3File(String baseName, UUID workPointId, String workPointName) {}
+    /**
+     * {@code document}: Anexa 3 a punctului, <b>socotită o dată</b>. Planul o calcula ca să afle dacă
+     * anul are ce tipări, iar pe urmă fiecare dintre cele două formate o calcula din nou — de trei ori
+     * pe punct şi pe an, fiecare citind mişcările anului întreg. La cinci ani şi zece puncte, o sută
+     * cincizeci de citiri, toate în aceeaşi tranzacţie, deci nimic nu se elibera (20.09.2026).
+     */
+    private record Anexa3File(String baseName, UUID workPointId, String workPointName,
+                              PackagingAnexa3 document) {}
 
     /** Ce Anexe 3 intră într-un an, şi dacă a rămas vreuna pe dinafară fiindcă lipseşte rolul din profil. */
     /** {@code unplaced}: ieșiri vechi fără material, pe care formularul nu le poate așeza (BUG-049). */
@@ -1123,7 +1139,7 @@ public class AuditFileService {
             for (int i = 2; !used.add(name); i++) {
                 name = base + "-" + i;
             }
-            files.add(new Anexa3File(name, wp.getId(), wp.getName()));
+            files.add(new Anexa3File(name, wp.getId(), wp.getName(), doc));
         }
         return new Anexa3Plan(files, roleMissing, unplaced);
     }

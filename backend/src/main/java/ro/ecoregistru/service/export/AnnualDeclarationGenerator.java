@@ -280,15 +280,15 @@ public class AnnualDeclarationGenerator {
         return value == null || value.isBlank() ? "-" : value;
     }
 
-    private static final DecimalFormat KG = kgFormat();
-
+    // Unul nou la fiecare cifră: `DecimalFormat` nu e sincronizat, iar generatorul e singleton —
+    // două descărcări în aceeaşi clipă pot scrie o cifră greşită pe un document depus.
     private static DecimalFormat kgFormat() {
         // Same three decimals with a dot as the fişa, so the two documents of one year read alike.
         return new DecimalFormat("#0.000", new DecimalFormatSymbols(Locale.ROOT));
     }
 
     private String kg(BigDecimal value) {
-        return value == null ? "" : KG.format(value);
+        return value == null ? "" : kgFormat().format(value);
     }
 
     private static String cp1250(String value) {

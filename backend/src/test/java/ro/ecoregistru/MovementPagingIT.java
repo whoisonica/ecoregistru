@@ -404,6 +404,37 @@ class MovementPagingIT {
         assertThat(empty.get("quantityKg").asDouble()).isZero();
     }
 
+    /**
+     * <b>20.09.2026.</b> Banda poartă <b>toate</b> filtrele listei, nu şase din zece.
+     *
+     * <p>Codul de deşeu, „a ieşit pe poartă", „fără cod R/D" şi „de completat" stăteau în cheia de
+     * cache a benzii, dar nu plecau în cerere, iar serverul nici nu le primea. Cine intra pe „2 linii
+     * fără cod R/D" de pe Acasă vedea două rânduri şi, deasupra lor, kilogramele anului întreg —
+     * un total care arată exact ca totalul celor două rânduri şi nu spune că e al altceva.
+     *
+     * <p>Controlul negativ e făcut: cu filtrul trecut gol, cele două verificări de jos cer 2 şi 1007.
+     */
+    @Test
+    void totalsFollowTheProblemFiltersTheListApplies() throws Exception {
+        String year = "2029"; // an propriu: firma e împărţită cu restul suitei
+        create(year + "-06-01", "20 01 01", null, null, "1000.000");
+        UUID broken = createPassedOn(year + "-06-02", "7.000");
+        WasteMovement legacy = movementRepository.findById(broken).orElseThrow();
+        legacy.setOperationCode(null);
+        legacy.setOperation(ro.ecoregistru.enums.WasteOperation.UNCLASSIFIED_OUT);
+        movementRepository.save(legacy);
+
+        JsonNode all = totals("year", year);
+        JsonNode problem = totals("year", year, "missingOperationCode", "true");
+
+        // Rândul stricat, şi numai el: kilogramele lui, nu ale anului.
+        assertThat(problem.get("rows").asLong()).isEqualTo(1);
+        assertThat(problem.get("quantityKg").asDouble()).isEqualTo(7.0);
+        // Şi contrastul, relativ: anul are mai multe rânduri decât filtrul. Absolut n-ar ţine —
+        // clasele suitei împart o firmă, deci altcineva mai poate scrie în acelaşi an.
+        assertThat(all.get("rows").asLong()).isGreaterThan(problem.get("rows").asLong());
+    }
+
     private JsonNode totals(String... params) throws Exception {
         var request = get("/api/v1/movements/totals").header("Authorization", "Bearer " + token);
         for (int i = 0; i < params.length; i += 2) request = request.param(params[i], params[i + 1]);

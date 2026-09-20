@@ -51,6 +51,8 @@ class AuditFileIT {
     @Autowired CompanyRepository companyRepository;
     @Autowired AppUserRepository appUserRepository;
     @Autowired WorkPointRepository workPointRepository;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    ro.ecoregistru.service.PackagingService packagingService;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired PartnerRepository partnerRepository;
     @Autowired WasteMovementRepository movementRepository;
@@ -329,6 +331,7 @@ class AuditFileIT {
      */
     @Test
     void theDossierCarriesAnexa3PackagingPerWorkPointThatMovedPackaging() throws Exception {
+        org.mockito.Mockito.clearInvocations(packagingService);
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         Company gen = companyRepository.save(Company.builder()
                 .name("Ambalaje Dosar SRL").cui("ROA" + suffix).type(CompanyType.GENERATOR)
@@ -367,6 +370,14 @@ class AuditFileIT {
         // generatorul, deci README-ul nu-i pune termenul de 25 februarie pe o foaie tipărită la cerere.
         // Anexa 1 Ambalaje nu intră aici (profilul n-are rol de piaţă), deci „25 februarie" ar putea
         // veni numai de la Anexa 3.
+        // <b>O dată pe punct de lucru, nu de trei ori</b> (20.09.2026). Planul chema `anexa3` ca să
+        // afle dacă punctul are ce tipări, iar pe urmă fiecare dintre cele două formate o chema din
+        // nou — trei calcule pe punct şi pe an, fiecare citind mişcările anului întreg, toate în
+        // aceeaşi tranzacţie. Se cere numărul de calcule, nu timpul: ce s-a reparat e numărătoarea.
+        // Firma are două puncte, deci două calcule; înainte erau patru (două + două randări).
+        // Control negativ făcut: cu randarea întoarsă pe `(an, punct, format)`, cade cu 4.
+        org.mockito.Mockito.verify(packagingService, org.mockito.Mockito.times(2))
+                .anexa3(org.mockito.ArgumentMatchers.eq(2026), org.mockito.ArgumentMatchers.any());
         assertThat(readme).contains("tipărită la cerere").contains("fără termen")
                 .doesNotContain("Termen: 25 februarie");
 
