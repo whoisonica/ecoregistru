@@ -86,10 +86,10 @@ dependencies {
 	// version on CI and another on the machine that wrote the code, which is the kind of difference
 	// that shows up as one failing migration, once, in the worst week. Pinned to the same version
 	// everywhere; darwin-arm64v8 is here so an Apple Silicon machine stops going through Rosetta.
-	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64:15.6.0'
-	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-darwin-amd64:15.6.0'
-	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-darwin-arm64v8:15.6.0'
-	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-windows-amd64:15.6.0'
+	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-linux-amd64:18.6.0'
+	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-darwin-amd64:18.6.0'
+	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-darwin-arm64v8:18.6.0'
+	testImplementation 'io.zonky.test.postgres:embedded-postgres-binaries-windows-amd64:18.6.0'
 }
 
 tasks.named('test') {
