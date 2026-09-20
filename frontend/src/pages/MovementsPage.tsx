@@ -26,6 +26,7 @@ import { BinSwatch } from "@/components/ui/bin-swatch";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { useCanWrite } from "@/hooks/useBillingAccess";
 import { useAuth } from "@/auth/AuthContext";
+import { formatQuantity } from "@/lib/units";
 import { canManage as roleCanManage } from "@/lib/roles";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useCurrentCompany } from "@/hooks/useCompanies";
@@ -455,7 +456,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         <>
           <strong className="text-content">{m.wasteCode}</strong> — {m.wasteCodeName},{" "}
           {formatDate(m.date)}
-          {m.quantity != null ? `, ${m.quantity} ${e.unit[m.unit]}` : ""}
+          {m.quantity != null ? `, ${formatQuantity(m.quantity, m.unit)} ${e.unit[m.unit]}` : ""}
           {m.partnerName ? `, ${m.partnerName}` : ""}. {t.confirmDelete}
           {declaration && (
             <span className="mt-2 block font-medium text-content">
@@ -926,7 +927,8 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                     <TD className="whitespace-nowrap text-right font-mono font-medium">
                       {m.quantity != null ? (
                         <>
-                          {m.quantity} <span className="text-xs font-normal text-content-muted">{e.unit[m.unit]}</span>
+                          {formatQuantity(m.quantity, m.unit)}{" "}
+                          <span className="text-xs font-normal text-content-muted">{e.unit[m.unit]}</span>
                         </>
                       ) : (
                         <Tooltip content={t.awaitingWeighingHint}>

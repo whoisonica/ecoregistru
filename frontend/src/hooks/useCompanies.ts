@@ -78,7 +78,20 @@ export function useUpdateCompany() {
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: CompanyInput }) =>
       (await api.put<Company>(`/api/v1/companies/${id}`, input)).data,
-    onSuccess: () => qc.invalidateQueries({ queryKey: companiesKey }),
+    /**
+     * Şi firma curentă, nu doar lista (20.09.2026).
+     *
+     * <p>`currentCompanyKey` are `staleTime` de cinci minute şi e citită din vreo douăzeci de locuri,
+     * printre care formularul de mişcare, ecranul de mişcări şi tabul Ambalaje. Un consultant care
+     * schimba din `/clienti/X` tipul firmei, rolurile de piaţă sau seria Anexei 3 primea „Salvat", dar
+     * ecranele rămâneau pe vechiul profil până la cinci minute: „Intrări"/„Ieşiri" ascunse, alt set de
+     * operaţiuni în formular, butonul Anexei 2 lipsă. Câmpurile astea se **tipăresc** pe documente
+     * depuse, deci nu pot aştepta un cache.
+     */
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: companiesKey });
+      qc.invalidateQueries({ queryKey: currentCompanyKey });
+    },
   });
 }
 

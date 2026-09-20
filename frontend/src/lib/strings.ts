@@ -2055,6 +2055,8 @@ export const strings = {
     download: "Descarcă dosarul (.zip)",
     downloading: "Se pregătește arhiva...",
     downloadError: "Descărcarea dosarului a eșuat. Încearcă din nou.",
+    weighingCheckFailed:
+      "Nu am putut verifica dacă există linii necântărite, deci documentul nu se descarcă încă. Încearcă din nou.",
     /** Estimarea de dinainte de descărcare. {count} atașamente, {size} deja formatat. */
     sizeNone: "Nicio mișcare din perioada aleasă nu are fișiere atașate.",
     sizeKnown: "{count} atașamente, cam {size} de descărcat.",

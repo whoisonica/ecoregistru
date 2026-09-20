@@ -1,3 +1,5 @@
+import type { Unit } from "@/lib/types";
+
 /**
  * Formatarea cantităților de deșeu. Un singur loc, fiindcă un factor 1000 pus de mână în două
  * ecrane e cum se raportează de o mie de ori mai mult sau mai puțin.
@@ -44,4 +46,21 @@ const tonnesFormat = new Intl.NumberFormat("ro-RO", {
 
 export function formatTonnesValue(tonnes: number): string {
   return tonnesFormat.format(tonnes);
+}
+
+/**
+ * O cantitate de pe un rând, în unitatea ei — **singurul mod în care se scrie una pe ecran**.
+ *
+ * <p>Până pe 20.09.2026, lista de mişcări tipărea cifra brută din JSON (`{m.quantity}`), adică aşa
+ * cum o scrie JavaScript: „35.125", cu punct zecimal. Deasupra ei, banda de totaluri scria „12.640"
+ * — douăsprezece mii şase sute patruzeci, rotunjite dinadins, fiindcă e un rezumat. Cele două stăteau
+ * una sub alta şi **nu se puteau deosebi**: acelaşi semn, două înţelesuri care diferă de o mie de ori.
+ * Chiar invariantul pe care fişierul ăsta îl declară rezolvat (G06).
+ *
+ * <p>Acum orice cifră de transcris trece pe aici, deci are mereu virgulă şi exact trei zecimale, în
+ * unitatea rândului. Banda şi panoul rămân rotunjite la kilogram întreg, tot dinadins — sunt
+ * rezumate, nu cifre de transcris —, iar lipsa virgulei e chiar semnul că e un rezumat.
+ */
+export function formatQuantity(value: number, unit: Unit): string {
+  return unit === "TONS" ? formatTonnesValue(value) : formatKg(value);
 }

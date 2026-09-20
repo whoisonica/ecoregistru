@@ -256,6 +256,20 @@ export function AuditFilePage() {
         .filter((r) => r.awaitingWeighing),
     [y0.data, y1.data, y2.data, y3.data, y4.data]
   );
+  /**
+   * Un an care n-a putut fi citit nu e un an fără linii necântărite.
+   *
+   * <p>Până pe 20.09.2026 se citea numai `.data`: la un 500 sau la rețea căzută, lista ieșea goală,
+   * gărzile de mai jos săreau peste avertisment, iar fișa, evidența centralizată și arhiva plecau
+   * **fără** el — tăcut, pe documente care se duc la control. Aici nu se ghicește: dacă n-am putut
+   * verifica, nu se descarcă. Cererea se reia singură la următoarea apăsare (`refetch`).
+   */
+  const weighingUnknown = [y0, y1, y2, y3, y4].some((q) => q.isError);
+  const recheckWeighing = () => {
+    for (const q of [y0, y1, y2, y3, y4]) {
+      if (q.isError) void q.refetch();
+    }
+  };
   const [confirming, setConfirming] = useState(false);
   /**
    * Documentul care se pregătește acum, sau cel care așteaptă confirmarea „sunt linii necântărite".
@@ -287,6 +301,11 @@ export function AuditFilePage() {
   }
 
   function askOfficial(key: "sheet" | "centralized") {
+    if (weighingUnknown) {
+      notify(t.weighingCheckFailed, "error");
+      recheckWeighing();
+      return;
+    }
     if (pendingWeighing.length > 0) {
       setAskingFor(key);
       return;
@@ -295,6 +314,11 @@ export function AuditFilePage() {
   }
 
   async function handleDownload() {
+    if (weighingUnknown) {
+      notify(t.weighingCheckFailed, "error");
+      recheckWeighing();
+      return;
+    }
     if (pendingWeighing.length > 0) {
       setConfirming(true);
       return;

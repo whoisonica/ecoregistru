@@ -5,6 +5,14 @@ import { cn } from "@/lib/utils";
 
 const t = strings.movements;
 
+/**
+ * Rotunjit la kilogram întreg, **dinadins** (G06, 20.09.2026): banda e un rezumat, nu o cifră de
+ * transcris pe un formular. De aceea nu foloseşte `formatKg` şi nu se „aliniază" la el.
+ *
+ * <p>Lipsa virgulei e chiar semnul că e un rezumat: orice cifră de transcris trece prin
+ * `formatQuantity` şi are mereu virgulă cu trei zecimale, deci „12.640" de aici nu se poate
+ * confunda cu „35,125" din listă.
+ */
 const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 
 /**

@@ -1,4 +1,5 @@
 import { Copy, FileText, Scale } from "lucide-react";
+import { formatQuantity } from "@/lib/units";
 import type { MovementDirection, WasteMovement, WasteRegister } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
@@ -103,7 +104,9 @@ export function MovementSavedDialog({
           </dd>
           <dt className="text-content-muted">{t.receiptQuantity}</dt>
           <dd className="font-mono text-content">
-            {movement.quantity == null ? t.receiptAwaiting : `${movement.quantity} ${e.unit[movement.unit]}`}
+            {movement.quantity == null
+              ? t.receiptAwaiting
+              : `${formatQuantity(movement.quantity, movement.unit)} ${e.unit[movement.unit]}`}
           </dd>
           {movement.partnerName && (
             <>
