@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
 
       # Gradle 8.5 din wrapper; cache-ul e al acțiunii, nu al nostru de întreținut.
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # Postgres-ul e **embedded** (zonky), deci nu e nevoie de niciun serviciu pornit aici.
       # Binarele sunt fixate în `build.gradle` pe fiecare platformă, la aceeași versiune —
@@ -117,7 +117,7 @@ jobs:
         with:
           java-version: "21"
           distribution: temurin
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - uses: actions/setup-node@v4
         with:
