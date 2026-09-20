@@ -1,0 +1,30 @@
+# Cine ne spune de următorul CVE.
+#
+# Stiva e la zi azi, dar asta e o stare, nu un mecanism: până acum o versiune vulnerabilă se afla
+# doar dacă cineva rula `npm audit` din mână. Dependabot deschide un PR, iar CI-ul (`ci.yml`) îi
+# spune în aceeași oră dacă actualizarea trece testele.
+#
+# Săptămânal, nu zilnic, și cu o limită mică de PR-uri deschise: un robot care umple lista de
+# PR-uri ajunge să fie ignorat, și atunci nu mai apără nimic.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, backend]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend]
+
+  # Acțiunile din `ci.yml` și `uptime.yml` sunt și ele dependențe: rulează cu jetonul repo-ului.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencies, ci]

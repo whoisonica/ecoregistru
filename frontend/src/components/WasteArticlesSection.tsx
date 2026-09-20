@@ -26,6 +26,7 @@ import { useActiveFilter } from "@/components/ui/active-filter";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.articles;
 
@@ -37,7 +38,7 @@ const t = strings.settings.articles;
  * 15.09.2026); `canManage` vine din `canWrite`, iar serverul are același prag.
  */
 export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
-  const { data: articles, isLoading, isError } = useWasteArticles();
+  const { data: articles, isLoading, isError, refetch } = useWasteArticles();
   const createMut = useCreateWasteArticle();
   const updateMut = useUpdateWasteArticle();
   const deactivateMut = useDeactivateWasteArticle();
@@ -167,7 +168,7 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
         )}
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <>

@@ -26,11 +26,17 @@ import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.VerificationRecordRepository;
 import ro.ecoregistru.security.RateLimiter;
+import ro.ecoregistru.security.SecurityUtils;
 import ro.ecoregistru.security.TooManyRequestsException;
+import ro.ecoregistru.util.LogSafe;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
 
@@ -69,7 +75,7 @@ public class AuthenticationService {
         String email = request.email().toLowerCase();
         long retryAfter = rateLimiter.tryConsume(RateLimiter.LOGIN_PER_EMAIL, email);
         if (retryAfter > 0) {
-            log.warn("Rate limit login/email hit for {}", email);
+            log.warn("Rate limit login/email hit for {}", LogSafe.email(email));
             throw new TooManyRequestsException(retryAfter);
         }
 
@@ -133,7 +139,7 @@ public class AuthenticationService {
         // Three an hour is the second, not the first.
         long retryAfter = rateLimiter.tryConsume(RateLimiter.RESET_PER_EMAIL, email.toLowerCase());
         if (retryAfter > 0) {
-            log.warn("Rate limit reset/email hit for {}", email.toLowerCase());
+            log.warn("Rate limit reset/email hit for {}", LogSafe.email(email));
             throw new TooManyRequestsException(retryAfter);
         }
         // Silent no-op if the account does not exist (avoid leaking which emails are registered).
@@ -150,7 +156,7 @@ public class AuthenticationService {
             try {
                 emailService.sendPasswordResetEmail(user, code);
             } catch (EmailException e) {
-                log.error("Failed to send reset email to {}", user.getEmail(), e);
+                log.error("Failed to send reset email to user {}", user.getId(), e);
             }
         });
     }
@@ -163,7 +169,7 @@ public class AuthenticationService {
         validatePasswordStrength(request.password());
 
         VerificationRecord record = verificationRecordRepository
-                .findByCodeAndVerificationRecordType(request.code(), RESET_PASSWORD)
+                .findByCodeAndVerificationRecordType(fingerprint(request.code()), RESET_PASSWORD)
                 .orElseThrow(() -> new NotFoundException(VERIFICATION_RECORD_NOT_FOUND));
         if (!record.isValid()) {
             throw new UnprocessableEntityException(VERIFICATION_CODE_EXPIRED);
@@ -253,7 +259,7 @@ public class AuthenticationService {
         } catch (EmailException e) {
             // BUG-038: the account stays pending and can be re-invited; the admin is told in the
             // response, and Sentry hears of it, since it only reports the 500s on its own.
-            log.error("Failed to send invite email to {}", user.getEmail(), e);
+            log.error("Failed to send invite email to user {}", user.getId(), e);
             Sentry.captureException(e);
             user.setInviteEmailFailed(true);
         }
@@ -278,7 +284,7 @@ public class AuthenticationService {
     public void resendInvite(AppUser user) {
         long retryAfter = rateLimiter.tryConsume(RateLimiter.RESET_PER_EMAIL, user.getEmail().toLowerCase());
         if (retryAfter > 0) {
-            log.warn("Rate limit resend-invite hit for {}", user.getEmail());
+            log.warn("Rate limit resend-invite hit for user {}", user.getId());
             throw new TooManyRequestsException(retryAfter);
         }
         verificationRecordRepository
@@ -290,10 +296,31 @@ public class AuthenticationService {
         } catch (EmailException e) {
             // BUG-038: a 204 here read as "sent". The error rolls the new link back, so the old
             // one, if the first mail did arrive, keeps working.
-            log.error("Failed to resend invite email to {}", user.getEmail(), e);
+            log.error("Failed to resend invite email to user {}", user.getId(), e);
             Sentry.captureException(e);
             throw new BusinessException(EMAIL_SEND_FAILED);
         }
+    }
+
+    /**
+     * „Deconectare” din aplicația web, dusă până la server.
+     *
+     * <p>Tokenul de acces trăiește opt ore și nu stă nicăieri pe server, deci ieșirea din cont era
+     * numai o golire de {@code localStorage}: cine copiase valoarea înainte intra cu ea mai departe,
+     * până la expirare. Se folosește exact mecanismul probat la resetarea parolei — contorul de
+     * sesiune urcă, deci orice token emis înainte cade la următoarea cerere ({@code JwtService}).
+     *
+     * <p><b>Închide toate sesiunile vii ale omului, nu doar fila de unde s-a apăsat.</b> Ăsta e și
+     * înțelesul pe care îl are cineva care apasă „Deconectare” pe un calculator străin. Fără a doua
+     * linie reparația ar fi fost pe jumătate: o sesiune lungă ar fi cerut un token nou și l-ar fi
+     * primit — același motiv pentru care {@code resetPassword} face amândouă.
+     */
+    @Transactional
+    public void signOut() {
+        AppUser user = appUserRepository.findById(SecurityUtils.currentUser().getId()).orElseThrow();
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        deviceSessionService.revokeAllOf(user);
+        appUserRepository.save(user);
     }
 
     // --- helpers ---
@@ -301,7 +328,7 @@ public class AuthenticationService {
     private void saveRecord(AppUser user, String code, ro.ecoregistru.enums.VerificationRecordType type) {
         verificationRecordRepository.save(VerificationRecord.builder()
                 .user(user)
-                .code(code)
+                .code(fingerprint(code))
                 .verificationRecordType(type)
                 .confirmed(false)
                 .createdAt(LocalDateTime.now())
@@ -313,7 +340,7 @@ public class AuthenticationService {
     private void saveInviteRecord(AppUser user, String code) {
         verificationRecordRepository.save(VerificationRecord.builder()
                 .user(user)
-                .code(code)
+                .code(fingerprint(code))
                 .verificationRecordType(RESET_PASSWORD)
                 .confirmed(false)
                 .createdAt(LocalDateTime.now())
@@ -340,6 +367,33 @@ public class AuthenticationService {
 
     private String newCode() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * Codul pleacă pe mail întreg; în bază stă numai amprenta lui.
+     *
+     * <p>Până acum coloana ținea chiar valoarea din link, deci un dump al bazei sau un backup scurs
+     * era o listă de preluări de conturi gata făcute: cine îl citea își punea singur parola pe orice
+     * cont cu o invitație sau o resetare nefolosită, fără să știe vreo parolă.
+     *
+     * <p><b>De ce SHA-256 și nu BCrypt, ca la parole:</b> codul nu e ales de om, e o valoare
+     * aleatoare de 128 de biți ({@link #newCode()}), deci nu se ghicește prin încercări și n-are
+     * nevoie de un KDF lent. În schimb are nevoie ca regăsirea să rămână o potrivire exactă pe
+     * indexul {@code idx_verification_code} — cu BCrypt, fiecare verificare ar fi cerut citirea
+     * tuturor rândurilor. Hexul are exact 64 de semne, cât {@code VARCHAR(64)} din {@code V1}.
+     *
+     * <p>Publică fiindcă o probă care pornește de la codul din mail are nevoie să găsească rândul
+     * lui — altfel fiecare test și-ar scrie propriul SHA-256 și ar putea să-l scrie altfel.
+     */
+    public static String fingerprint(String code) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(code.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 e obligatoriu în orice JVM; dacă lipsește, nu e o eroare de cerere.
+            throw new IllegalStateException(e);
+        }
     }
 
     private void validatePasswordStrength(String password) {

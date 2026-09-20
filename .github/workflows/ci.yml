@@ -54,7 +54,7 @@ jobs:
           retention-days: 7
 
   frontend:
-    name: frontend — tsc + build
+    name: frontend — tsc + eslint + build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,6 +74,13 @@ jobs:
       - name: tsc --noEmit
         working-directory: frontend
         run: npx tsc --noEmit
+
+      # Ce nu poate spune `tsc`: dependenţele unui hook şi accesibilitatea (20.09.2026). Regulile şi
+      # motivul fiecărei scutiri sunt în `frontend/eslint.config.js`. Avertismentele nu opresc CI —
+      # erorile da.
+      - name: eslint
+        working-directory: frontend
+        run: npx eslint src
 
       - name: vite build
         working-directory: frontend

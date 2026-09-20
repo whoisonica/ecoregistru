@@ -39,6 +39,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.clients;
 const typeLabels = strings.enums.companyType;
@@ -50,7 +51,7 @@ export function ClientsPage() {
   const isConsultant = user?.role === "CONSULTANT";
   const multiCompany = isMultiCompany(user?.role);
 
-  const { data: companies, isLoading, isError } = useCompanies(multiCompany);
+  const { data: companies, isLoading, isError, refetch } = useCompanies(multiCompany);
   const [assigning, setAssigning] = useState<Company | null>(null);
   const [inviting, setInviting] = useState<Company | null>(null);
   const navigate = useNavigate();
@@ -141,7 +142,7 @@ export function ClientsPage() {
       {isPlatformAdmin && <RequestsBand count={newRequests} names={(requests.data ?? []).filter((r) => r.status === "NEW").map((r) => r.companyName)} onOpen={() => setTab("cereri")} />}
 
       <section className="mt-6">
-        {isError && <p className="text-sm text-state-bad-text">{t.loadError}</p>}
+        {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
         {!isError && (
           <>

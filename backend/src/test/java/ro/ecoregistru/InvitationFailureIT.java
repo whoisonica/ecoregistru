@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.VerificationRecord;
 import ro.ecoregistru.enums.VerificationRecordType;
 import ro.ecoregistru.exception.EmailException;
 import ro.ecoregistru.exception.ErrorMessageEnum;
@@ -116,7 +117,9 @@ class InvitationFailureIT {
         invite(email).andExpect(status().isOk());
         String code = lastInviteCode();
         var record = verificationRecordRepository
-                .findByCodeAndVerificationRecordType(code, VerificationRecordType.RESET_PASSWORD).orElseThrow();
+                .findByCodeAndVerificationRecordType(
+                        ro.ecoregistru.service.AuthenticationService.fingerprint(code),
+                        VerificationRecordType.RESET_PASSWORD).orElseThrow();
         record.setExpiresAt(LocalDateTime.now().minusMinutes(1));
         verificationRecordRepository.save(record);
 
@@ -143,6 +146,52 @@ class InvitationFailureIT {
         choosePassword(oldCode).andExpect(status().isNotFound());
         choosePassword(newCode).andExpect(status().isOk());
         assertThat(appUserRepository.findByEmail(email)).get().extracting(AppUser::isEnabled).isEqualTo(true);
+    }
+
+    /**
+     * Codul din mail nu se regăsește nicăieri în bază — stă numai amprenta lui.
+     *
+     * <p>Cât timp coloana ținea valoarea din link, un dump al bazei sau un backup scurs era o listă
+     * de preluări de conturi gata făcute: cine îl citea alegea parola pe orice cont cu o invitație
+     * sau o resetare nefolosită. Proba caută codul în <b>toate</b> rândurile, nu doar în al ei, ca
+     * un al doilea loc de scriere (o invitație nouă, alt tip de cod) să cadă și el aici.
+     *
+     * <p>Perechea ei — că linkul tot funcționează — e
+     * {@link #aResentInvitationWorksAndTheOldLinkIsDead()}: acolo {@code choosePassword(newCode)}
+     * cere 200. Fără ea, „nu se mai potrivește nimic” ar trece drept reparație.
+     */
+    @Test
+    void theMailedCodeIsNowhereInTheDatabase() throws Exception {
+        String email = uniqueEmail("amprenta");
+        invite(email).andExpect(status().isOk());
+        String code = lastInviteCode();
+
+        assertThat(verificationRecordRepository.findAll())
+                .as("codul din mail nu are voie să stea în clar în nicio coloană `code`")
+                .noneMatch(r -> code.equals(r.getCode()));
+
+        assertThat(verificationRecordRepository
+                .findByCodeAndVerificationRecordType(
+                        ro.ecoregistru.service.AuthenticationService.fingerprint(code),
+                        VerificationRecordType.RESET_PASSWORD))
+                .as("dar amprenta lui da, altfel linkul n-ar mai deschide nimic")
+                .isPresent();
+
+        // Control pozitiv al măsurătorii: scriem noi un rând cu codul în clar — exact forma pe care
+        // o avea baza până la V64 — și cerem ca prima verificare să-l vadă. Fără pasul ăsta,
+        // „nu s-a găsit nimic în clar" ar fi putut însemna doar că proba se uită unde nu trebuie.
+        VerificationRecord inTheClear = verificationRecordRepository.save(VerificationRecord.builder()
+                .user(appUserRepository.findByEmail(email).orElseThrow())
+                .code(code)
+                .verificationRecordType(VerificationRecordType.RESET_PASSWORD)
+                .confirmed(false)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusDays(1))
+                .build());
+        assertThat(verificationRecordRepository.findAll())
+                .as("măsurătoarea chiar vede un cod în clar când există unul")
+                .anyMatch(r -> code.equals(r.getCode()));
+        verificationRecordRepository.delete(inTheClear);
     }
 
     // --- helpers ---

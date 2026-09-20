@@ -137,6 +137,9 @@ export function Menu({
         )}
       </button>
       {open && (
+        // `onClick` pe cutie e doar „închide după ce s-a ales": rândurile dinăuntru sunt `button`-uri,
+        // iar un buton trimite click şi la Enter sau Space, deci tastatura trece pe acelaşi drum.
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus
         <div
           ref={boxRef}
           role="menu"

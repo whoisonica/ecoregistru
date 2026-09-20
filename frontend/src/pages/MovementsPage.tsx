@@ -80,6 +80,7 @@ import { AttachmentsDialog } from "@/components/movements/AttachmentsDialog";
 import { RecordWeightDialog } from "@/components/movements/RecordWeightDialog";
 import { MovementFormDialog } from "@/components/movements/MovementFormDialog";
 import { MovementSavedDialog } from "@/components/movements/MovementSavedDialog";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.movements;
 const e = strings.enums;
@@ -266,7 +267,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
     pageSize: 10,
     resetOn: filters,
   });
-  const { data: movements, isLoading, isError } = useMovements(filters, table.params, showList);
+  const { data: movements, isLoading, isError, refetch } = useMovements(filters, table.params, showList);
   const view = table.bind(movements);
   /** Rândurile paginii aduse. Nu mai e „tot ce are firma" — vezi mai sus. */
   const rows = view.visible;
@@ -771,7 +772,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
             </button>
           </div>
         )}
-        {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+        {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
         {!isError && (
           <>

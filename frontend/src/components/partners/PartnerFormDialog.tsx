@@ -432,13 +432,38 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
 
   const asksPackagingOrigin =
     (company != null && company.type !== "GENERATOR") || packagingOrigin !== "";
+  /**
+   * Închiderea cerută de om — Escape, clic pe fundal, „×" sau „Anulează".
+   *
+   * <p>Formularul are patru paşi; până acum oricare din cele patru gesturi îl ştergea pe tot, fără
+   * să întrebe, inclusiv de pe pasul 4. Tiparul e cel din `MovementFormDialog`: pe un formular
+   * neatins nu întreabă nimic, pe unul început întreabă o dată.
+   *
+   * <p>„Atins" include şi numele singur, spre deosebire de {@link formHasMoreThanName}, care
+   * răspunde la altceva (ce s-ar pierde la comutarea pe un partener sugerat — acolo numele tocmai
+   * se înlocuieşte, deci nu contează).
+   */
+  function requestClose() {
+    if (!name && !formHasMoreThanName) {
+      setDialogOpen(false);
+      return;
+    }
+    confirm({
+      title: strings.common.discardTitle,
+      message: strings.common.discardMessage,
+      confirmLabel: strings.common.discardConfirm,
+      tone: "danger",
+      onConfirm: () => setDialogOpen(false),
+    });
+  }
+
   useImperativeHandle(ref, () => ({ openCreate, openEdit }));
 
   return (
     <>
       <Dialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={requestClose}
         title={editing ? t.editTitle : t.addTitle}
         // `2xl`: în stânga stă cuprinsul pașilor, ca la cererea de cont; rândul unui șofer are
         // nevoie și el de lățimea de dinainte.
@@ -455,7 +480,7 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
                 ← {t.stepBack}
               </Button>
             )}
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
+            <Button variant="outline" onClick={requestClose} disabled={isSubmitting}>
               {strings.common.cancel}
             </Button>
             {/* La editare se salvează de pe orice pas: cine a venit să schimbe viza nu trece prin

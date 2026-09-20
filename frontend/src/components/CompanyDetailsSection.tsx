@@ -8,6 +8,7 @@ import { formatDate, withCount, todayIso } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.company;
 // Etichetele rubricilor sunt scrise o dată, în ecranul unde se **editează** (Clienți). Aici se
@@ -59,14 +60,14 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
  */
 export function CompanyDetailsSection() {
   const { user } = useAuth();
-  const { data: company, isLoading, isError } = useCurrentCompany();
+  const { data: company, isLoading, isError, refetch } = useCurrentCompany();
   // Numele rămâne, dar înseamnă „cine editează din Clienți": platforma și, de la P2.13, consultantul.
   const isPlatformAdmin = isMultiCompany(user?.role);
 
   if (isError) {
     return (
       <section id="datele-firmei" className="scroll-mt-20">
-        <p className="text-sm text-red-600">{t.loadError}</p>
+        <LoadError message={t.loadError} onRetry={refetch} />
       </section>
     );
   }

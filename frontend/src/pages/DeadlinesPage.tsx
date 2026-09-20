@@ -40,6 +40,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { DeadlineReadiness } from "@/components/DeadlineReadiness";
 import { useToast } from "@/components/ui/toast";
 import type { BadgeProps } from "@/components/ui/badge";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.deadlines;
 
@@ -177,6 +178,7 @@ export function DeadlinesPage() {
           rows={todo}
           loading={upcoming.isLoading}
           error={upcoming.isError}
+          onRetry={upcoming.refetch}
           emptyTitle={t.todoEmpty}
           emptyHint={canManage ? t.emptyHint : undefined}
           emptyAction={
@@ -223,6 +225,7 @@ export function DeadlinesPage() {
           rows={done}
           loading={history.isLoading}
           error={history.isError}
+          onRetry={history.refetch}
           emptyTitle={t.doneEmpty.replace("{year}", String(year))}
           canManage={canManage}
           onComplete={openComplete}
@@ -239,6 +242,7 @@ export function DeadlinesPage() {
           rows={past.data ?? []}
           loading={past.isLoading}
           error={past.isError}
+          onRetry={past.refetch}
           emptyTitle={t.pastEmpty.replace("{year}", String(currentYear))}
           past
           canManage={canManage}
@@ -295,6 +299,7 @@ function DeadlinesTable({
   rows,
   loading,
   error,
+  onRetry,
   emptyTitle,
   emptyHint,
   emptyAction,
@@ -307,6 +312,7 @@ function DeadlinesTable({
   rows: Deadline[];
   loading: boolean;
   error: boolean;
+  onRetry: () => void;
   emptyTitle: string;
   emptyHint?: string;
   emptyAction?: ReactNode;
@@ -333,7 +339,7 @@ function DeadlinesTable({
     initialSort: { key: "dueDate", direction: "asc" },
   });
 
-  if (error) return <p className="mt-3 text-sm text-red-600">{t.loadError}</p>;
+  if (error) return <LoadError className="mt-3" message={t.loadError} onRetry={onRetry} />;
 
   return (
     <div className="mt-3">

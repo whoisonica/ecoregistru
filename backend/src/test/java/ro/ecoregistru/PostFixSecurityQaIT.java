@@ -6,7 +6,6 @@ import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -148,23 +147,13 @@ class PostFixSecurityQaIT {
     }
 
     // ───────────────────────── BUG-043: CNP-ul pe aviz ─────────────────────────
-
-    /**
-     * BUG-043 a mascat CNP-ul în {@code GET /drivers} și {@code GET /movements} pentru „Vizualizare”, dar
-     * {@code GET /movements/{id}/aviz} e deschis oricărui rol și tipărește CNP-ul întreg.
-     */
-    @Test
-    @Disabled("QA-SEC-2: BUG-043 incomplet, avizul tipărește CNP-ul întreg pentru CLIENT_VIEWER")
-    void aViewerDoesNotGetTheWholeCnpThroughTheAviz() throws Exception {
-        String id = createMovement(operatorA, handover("2026-07-05", ",\"driverName\":\"Ion Sofer\",\"driverCnp\":\"" + CNP + "\""));
-
-        String listForViewer = mockMvc.perform(get("/api/v1/movements/" + id).header("Authorization", "Bearer " + viewerA))
-                .andReturn().getResponse().getContentAsString();
-        assertThat(listForViewer).as("controlul: JSON-ul e mascat").doesNotContain(CNP);
-
-        assertThat(pdfText("/api/v1/movements/" + id + "/aviz", viewerA)).as("avizul descărcat de „Vizualizare”")
-                .doesNotContain(CNP);
-    }
+    //
+    // Aici stătea `aViewerDoesNotGetTheWholeCnpThroughTheAviz`, `@Disabled` de la QA-SEC-2. Şters pe
+    // 20.09.2026: întrebarea lui — „ce vede «Vizualizare» în PDF-ul avizului?” — n-a rămas fără
+    // răspuns, i s-a schimbat răspunsul. BUG-053 a dus avizul pe `CAN_WRITE` (decizia
+    // proprietarului), deci un vizualizator nu mai primeşte documentul deloc, ci 403 — testul, aşa
+    // cum era scris, ar fi căzut la reactivare, cerând un PDF de la un rol care nu-l mai capătă.
+    // Regula de azi e probată de `PostFixSurfaceProbeIT`, care cere chiar acel 403.
 
     // ───────────────────────── ani fără margine ─────────────────────────
 

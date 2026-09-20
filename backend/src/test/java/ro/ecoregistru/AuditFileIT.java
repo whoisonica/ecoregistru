@@ -819,6 +819,76 @@ class AuditFileIT {
         return readme.replaceAll("\\s+", " ");
     }
 
+    /**
+     * R1 — reconstrucția evidenței comite înainte să înceapă scrisul în răspuns.
+     *
+     * <p>{@code lockForRebuild} ia un {@code pg_advisory_xact_lock} pe firmă, iar un lacăt de
+     * tranzacție ține până la commit. Cât timp dosarul chema reconstrucția din propria lui
+     * tranzacție — cea care ține toată descărcarea, inclusiv aducerea atașamentelor de la
+     * Cloudinary — firma rămânea blocată tot atâta: orice salvare de mișcare începe cu același
+     * lacăt, la fel importul și anularea lui.
+     *
+     * <p><b>Ce dovedește proba și ce nu:</b> că metoda pe care o cheamă dosarul își deschide
+     * tranzacția ei ({@code REQUIRES_NEW}), deci lacătul pleacă la întoarcerea din ea. Nu măsoară
+     * un client blocat — asta ar cere două fire și o descărcare încetinită dinadins, adică o probă
+     * care cade din când în când degeaba. Regresia pe care o prinde e cea probabilă: cineva scoate
+     * adnotarea sau întoarce apelul la {@code regenerateYear}.
+     */
+    @Test
+    void theDossierRebuildsTheEvidenceInATransactionOfItsOwn() throws Exception {
+        var method = ro.ecoregistru.service.EvidenceCalculator.class
+                .getMethod("regenerateYearBeforeStreaming", int.class);
+        var tx = method.getAnnotation(org.springframework.transaction.annotation.Transactional.class);
+
+        assertThat(tx).as("metoda chemată de dosar își deschide tranzacția ei").isNotNull();
+        assertThat(tx.propagation())
+                .isEqualTo(org.springframework.transaction.annotation.Propagation.REQUIRES_NEW);
+
+        // Controlul: metoda obișnuită NU are REQUIRES_NEW, altfel egalitatea de mai sus ar fi
+        // trecut şi dacă toate metodele ar fi fost la fel, iar proba n-ar fi spus nimic.
+        var plain = ro.ecoregistru.service.EvidenceCalculator.class.getMethod("regenerateYear", int.class);
+        assertThat(plain.getAnnotation(org.springframework.transaction.annotation.Transactional.class).propagation())
+                .isEqualTo(org.springframework.transaction.annotation.Propagation.REQUIRED);
+    }
+
+    /**
+     * R2 — arhiva spune singură dacă e întreagă.
+     *
+     * <p>Odată scris primul octet, răspunsul e comis cu 200: o excepţie la jumătate lăsa clientul
+     * cu un ZIP care se deschide şi pare în regulă, dar căruia îi lipsesc ani — iar dosarul ăsta se
+     * duce la control. Foaia se scrie <b>ultima</b>, deci prezenţa ei cu „DOSAR COMPLET" e chiar
+     * dovada că tot ce e înaintea ei a trecut.
+     *
+     * <p>De aceea proba cere şi că e <b>ultima intrare</b>, nu doar că există: o scriere adăugată
+     * după ea ar face-o să mintă, şi atunci cade aici, nu la client.
+     */
+    @Test
+    void theDossierEndsWithAVerificationSheetThatSaysItIsComplete() throws Exception {
+        byte[] zip = mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        List<String> entries = zipEntryNames(zip);
+        assertThat(entries).contains("99-verificare.txt");
+        assertThat(entries.get(entries.size() - 1))
+                .as("foaia de verificare se scrie ultima, altfel nu dovedeşte nimic")
+                .isEqualTo("99-verificare.txt");
+
+        String check = new String(readEntryBytes(zip, "99-verificare.txt"), StandardCharsets.UTF_8);
+        assertThat(check).startsWith("DOSAR COMPLET");
+        assertThat(check).doesNotContain("INCOMPLET");
+        // Numără ce a intrat cu adevărat, nu ce s-a plănuit: fiecare intrare, cu octeţii ei.
+        assertThat(check).contains("Fișiere scrise: " + (entries.size() - 1));
+        for (String name : entries) {
+            if (!name.equals("99-verificare.txt")) {
+                assertThat(check).as("fişierul %s trebuie numit în foaia de verificare", name)
+                        .contains(name + "\t");
+            }
+        }
+    }
+
     private List<String> zipEntryNames(byte[] zipBytes) throws Exception {
         List<String> names = new ArrayList<>();
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {

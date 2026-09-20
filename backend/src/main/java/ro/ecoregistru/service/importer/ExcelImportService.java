@@ -16,6 +16,7 @@ import ro.ecoregistru.controller.response.ImportResultResponse.RowError;
 import ro.ecoregistru.entity.ImportBatch;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteCode;
+import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.exception.BadRequestException;
@@ -232,6 +233,32 @@ public class ExcelImportService {
         }
     }
 
+    /** R3 — de la cea mai veche până la cea mai nouă dată din fişier; {@code null} dacă n-are niciuna. */
+    private record DateWindow(LocalDate from, LocalDate to) {}
+
+    /**
+     * O trecere ieftină peste foaie, numai pe coloana datei, ca deduplicarea să citească din bază
+     * doar intervalul fişierului.
+     *
+     * <p>Foloseşte <b>acelaşi</b> {@code Cells.date} ca trecerea adevărată, cu o listă de erori
+     * aruncată: dacă ar fi parsat datele altfel, fereastra ar fi putut rata un rând pe care apoi
+     * trecerea principală îl consideră duplicat — adică exact bugul pe care îl repară.
+     */
+    private DateWindow dateWindowOf(Sheet sheet, List<String> columns) {
+        List<RowError> ignored = new ArrayList<>();
+        LocalDate from = null;
+        LocalDate to = null;
+        for (int r = 1; r <= sheet.getLastRowNum(); r++) {
+            Cells c = new Cells(sheet, r, columns, ignored);
+            if (c.blank()) continue;
+            LocalDate d = c.date(0);
+            if (d == null) continue;
+            if (from == null || d.isBefore(from)) from = d;
+            if (to == null || d.isAfter(to)) to = d;
+        }
+        return from == null ? null : new DateWindow(from, to);
+    }
+
     // --- movements ---
 
     private void importMovements(Sheet sheet, boolean extras, UUID tenantId, String fingerprint,
@@ -240,8 +267,20 @@ public class ExcelImportService {
         List<String> columns = new ArrayList<>(MOVEMENT_COLUMNS);
         if (extras) columns.addAll(MOVEMENT_EXTRA_COLUMNS);
         // Ce era în firmă înainte de import, numărat pe conţinut. Rândurile create acum nu intră aici.
+        //
+        // R3 — numai fereastra de date a fişierului, nu toate mişcările firmei. Interogarea de
+        // dinainte (`findAllByCompany_IdAndDeletedFalse`) aducea în memorie fiecare rând viu, plus
+        // atingeri leneşe pe punct, cod şi partener pentru fiecare: la o firmă cu doi ani importaţi
+        // deja, asta e exact bomba de memorie pe care `guardInflatedSize` o opreşte la intrare şi
+        // pe care deduplicarea o reintroducea. Cheia de conţinut are data în ea, deci un rând din
+        // afara ferestrei n-ar putea oricum să se potrivească cu vreunul din fişier.
         Map<String, Integer> alreadyThere = new HashMap<>();
-        movementRepository.findAllByCompany_IdAndDeletedFalse(tenantId).forEach(m -> alreadyThere.merge(
+        DateWindow window = dateWindowOf(sheet, columns);
+        List<WasteMovement> existing = window == null
+                ? List.of()
+                : movementRepository.findAllByCompany_IdAndDeletedFalseAndDateBetween(
+                        tenantId, window.from(), window.to());
+        existing.forEach(m -> alreadyThere.merge(
                 contentKey(m.getDate(), m.getWorkPoint().getId(), m.getWasteCode().getId(), m.getQuantity(),
                         m.getUnit(), m.getOperation(), m.getPartner() == null ? null : m.getPartner().getId(),
                         m.getDocumentReference()), 1, Integer::sum));

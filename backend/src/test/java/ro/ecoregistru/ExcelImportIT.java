@@ -1,6 +1,9 @@
 package ro.ecoregistru;
 
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +59,7 @@ class ExcelImportIT {
     @Autowired WasteMovementRepository movementRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired ImportTemplate template;
+    @Autowired EntityManagerFactory entityManagerFactory;
     @Autowired ConsultancyRepository consultancyRepository;
 
     private String platformToken;
@@ -583,6 +587,65 @@ class ExcelImportIT {
             wb.write(out);
             send("/api/v1/import/verificare", out.toByteArray(), platformToken)
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    /**
+     * R3 — un import costă după fişier, nu după cât are firma în spate.
+     *
+     * <p>Deduplicarea citea <b>toate</b> mişcările vii ale firmei ca să numere cheile de conţinut,
+     * plus atingeri leneşe pe punct, cod şi partener pentru fiecare. La clientul cu cei mai mulţi
+     * ani importaţi — adică exact cel care importă din nou — asta e aceeaşi clasă de problemă ca
+     * BUG-017: heap-ul dyno-ului e de 300 MB şi cade pentru toţi.
+     *
+     * <p>Se măsoară <b>entităţile încărcate</b>, nu timpul: e mărimea care creşte cu istoricul, şi
+     * singura care se poate cere să nu crească. Fişierul are aceleaşi rânduri de fiecare dată, pe
+     * 2026; între măsurători creşte numai trecutul firmei, pe 2024. Cheia de conţinut are data în
+     * ea, deci un rând din 2024 n-avea oricum cum să se potrivească cu unul din fişier.
+     */
+    @Test
+    void anImportCostsTheSameWhateverTheCompanyHasBehindIt() throws Exception {
+        List<Object[]> rows = List.<Object[]>of(disposal());
+
+        seedHistory(2024, 5);
+        long few = entitiesLoadedByImport(rows);
+
+        seedHistory(2024, 60);
+        long many = entitiesLoadedByImport(rows);
+
+        System.out.printf("[R3] import: 5 rânduri de istoric → %d entităţi, 65 → %d%n", few, many);
+        assertThat(many).as("entităţi încărcate de un import, cu 65 de mişcări vechi faţă de 5")
+                .isLessThanOrEqualTo(few);
+    }
+
+    private long entitiesLoadedByImport(List<Object[]> movements) throws Exception {
+        Statistics stats = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        // Pornite aici, nu din `@SpringBootTest(properties=…)` ca în `PerformanceIT`: altfel clasa
+        // asta ar cere un context Spring al ei, pentru o singură probă.
+        stats.setStatisticsEnabled(true);
+        stats.clear();
+        send("/api/v1/import/verificare", file(List.of(), movements), platformToken)
+                .andExpect(status().isOk());
+        long loaded = stats.getEntityLoadCount();
+        // Control pozitiv al măsurătorii. Fără el, statisticile oprite dau 0 de fiecare dată, iar
+        // „0 <= 0" trece — proba ar fi fost verde exact şi când reparaţia lipseşte.
+        assertThat(loaded).as("măsurătoarea chiar numără: un import încarcă entităţi").isPositive();
+        return loaded;
+    }
+
+    /** Mişcări vechi, în afara ferestrei fişierului — trecutul pe care importul nu trebuie să-l citească. */
+    private void seedHistory(int year, int count) {
+        UUID seedAuthor = appUserRepository.findByEmail("admin@demo.ro").orElseThrow().getId();
+        WorkPoint wp = workPointRepository.findAllByCompany_Id(companyId).get(0);
+        WasteCode code = wasteCodeRepository.findByCode("20 01 01").orElseThrow();
+        for (int i = movementRepository.findAllByCompany_IdAndDeletedFalse(companyId).size(); i < count; i++) {
+            movementRepository.save(WasteMovement.builder()
+                    .company(companyRepository.findById(companyId).orElseThrow())
+                    .workPoint(wp).wasteCode(code)
+                    .date(LocalDate.of(year, 1 + i % 12, 1 + i % 28))
+                    .quantity(new BigDecimal("7.000")).unit(Unit.KG)
+                    .operation(WasteOperation.DISPOSED).operationCode(WasteOperationCode.D5)
+                    .deleted(false).createdBy(seedAuthor).createdAt(Instant.now()).build());
         }
     }
 

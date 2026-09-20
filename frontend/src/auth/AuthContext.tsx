@@ -90,7 +90,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTenantId(id);
   }
 
+  /**
+   * Ieșirea din cont se cere întâi serverului, care ridică contorul de sesiune și stinge tokenul —
+   * altfel „Deconectare" golea numai `localStorage`, iar valoarea copiată înainte rămânea bună opt
+   * ore. Cererea pleacă înaintea golirii, fiindcă tocmai tokenul care se șterge o autorizează.
+   *
+   * Ecranul nu așteaptă răspunsul și nu se oprește dacă el nu vine: dacă rețeaua e căzută, omul tot
+   * trebuie să iasă din cont pe calculatorul din fața lui. Partea de server e cea care se poate
+   * relua (la următorul login), cea locală nu.
+   */
   function logout() {
+    api.post("/auth/sign-out").catch(() => {});
     clearSession();
     queryClient.clear();
     setUser(null);

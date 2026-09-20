@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { AccountRequest, AccountRequestInput, Company } from "@/lib/types";
-import { companiesKey } from "@/hooks/useCompanies";
+import type { AccountRequest, AccountRequestInput } from "@/lib/types";
 
 /**
  * The intake form. Submitting is public — it is the only unauthenticated write in the app, and it
@@ -26,19 +25,6 @@ export function useAccountRequests(enabled: boolean) {
     queryKey: accountRequestsKey,
     queryFn: async () => (await api.get<AccountRequest[]>("/api/v1/account-requests")).data,
     enabled,
-  });
-}
-
-export function useApproveAccountRequest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) =>
-      (await api.post<Company>(`/api/v1/account-requests/${id}/approve`)).data,
-    onSuccess: () => {
-      // Approving creates a company, so both lists are stale.
-      qc.invalidateQueries({ queryKey: accountRequestsKey });
-      qc.invalidateQueries({ queryKey: companiesKey });
-    },
   });
 }
 

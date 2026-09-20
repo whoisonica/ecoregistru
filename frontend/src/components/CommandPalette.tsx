@@ -199,6 +199,9 @@ export function CommandPalette({
             <div key={group.items[0].command.id}>
               <div className="eyebrow px-4 pb-1 pt-2">{group.name}</div>
               {group.items.map(({ command, index }) => (
+                // Ca la combobox: săgeţile şi Enter sunt pe câmpul de căutare, iar rândul activ e numit prin
+                // `aria-activedescendant`. Opţiunile nu primesc focus — asta e pattern-ul, nu o scăpare.
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus
                 <div
                   key={command.id}
                   data-index={index}

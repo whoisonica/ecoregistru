@@ -56,18 +56,6 @@ export function useCurrentCompany(enabled = true) {
   });
 }
 
-export function useCreateCompany() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: CompanyInput) =>
-      (await api.post<Company>("/api/v1/companies", input)).data,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: companiesKey });
-      qc.invalidateQueries({ queryKey: clientOverviewKey });
-    },
-  });
-}
-
 /**
  * F-C — „Client nou”: firma, cererea aprobată, abonamentul și invitația într-o singură cerere. Schimbă lista de firme,
  * cererile și tot ce e sub „subscriptions” (tabelul Clienți, fondatorii).

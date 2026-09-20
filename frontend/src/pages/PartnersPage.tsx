@@ -38,6 +38,7 @@ import { Menu, MenuItem } from "@/components/ui/menu";
 import { PartnerRoleBadge } from "@/components/PartnerRoleBadge";
 import { NaturalPersonsSection } from "@/components/NaturalPersonsSection";
 import { registersFor } from "@/lib/movementScreens";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.partners;
 const typeLabels = strings.enums.partnerType;
@@ -138,7 +139,7 @@ function PartnerPlaces({
 export function PartnersPage() {
   const canManage = useCanWrite();
 
-  const { data: partners, isLoading, isError } = usePartners();
+  const { data: partners, isLoading, isError, refetch } = usePartners();
   const { data: company } = useCurrentCompany();
   // D1.7b: persoanele fizice sunt ale depozitului, deci tabul apare doar la firma cu art. 48.
   const hasDepot = Boolean(company) && registersFor(company?.type).includes("ART_48");
@@ -335,7 +336,7 @@ export function PartnersPage() {
       ) : (
       <>
       <section className={hasDepot ? "mt-4" : "mt-6"}>
-        {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+        {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
         {!isError && (
           <>

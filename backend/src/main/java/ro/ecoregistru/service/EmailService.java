@@ -13,6 +13,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.exception.EmailException;
+import ro.ecoregistru.util.LogSafe;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -75,7 +76,7 @@ public class EmailService {
             // Adresa nu intră în logurile INFO (date personale păstrate la furnizorul de loguri).
             log.info("Sent '{}' email", templateName);
         } catch (Exception e) {
-            log.error("Failed to send '{}' email to {}", templateName, to, e);
+            log.error("Failed to send '{}' email to {}", templateName, LogSafe.email(to), e);
             throw new EmailException(EMAIL_SEND_FAILED);
         }
     }

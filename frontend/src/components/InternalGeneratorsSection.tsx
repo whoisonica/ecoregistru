@@ -26,6 +26,7 @@ import { useActiveFilter } from "@/components/ui/active-filter";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.internalGenerators;
 
@@ -46,7 +47,7 @@ export function InternalGeneratorsSection({
   workPoints: WorkPoint[];
   canManage: boolean;
 }) {
-  const { data: generators, isLoading, isError } = useInternalGenerators();
+  const { data: generators, isLoading, isError, refetch } = useInternalGenerators();
   const createMut = useCreateInternalGenerator();
   const updateMut = useUpdateInternalGenerator();
   const deactivateMut = useDeactivateInternalGenerator();
@@ -167,7 +168,7 @@ export function InternalGeneratorsSection({
         </p>
       )}
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <>

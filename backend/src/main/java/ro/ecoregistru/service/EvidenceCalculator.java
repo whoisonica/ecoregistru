@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.response.EvidenceRegenerationResponse;
 import ro.ecoregistru.controller.response.MonthlyEvidenceResponse;
@@ -86,6 +87,25 @@ public class EvidenceCalculator {
      * fresh for good, and regenerating 2025 after a correction leaves 2026 wrong unless it is
      * rebuilt too.
      */
+    /**
+     * R1 — aceeași reconstrucție, dar într-o tranzacție a ei, care <b>comite înainte</b> să se
+     * întoarcă.
+     *
+     * <p>Pentru dosarul de control, care e singurul apelant. {@code lockForRebuild} ia un
+     * {@code pg_advisory_xact_lock} pe firmă, iar un lacăt de tranzacție se eliberează abia la
+     * commit — deci, chemat din tranzacția lungă a dosarului, ținea firma blocată cât dura
+     * <b>descărcarea întreagă a arhivei</b>, inclusiv aducerea atașamentelor de la Cloudinary. În
+     * tot acel timp orice salvare de mișcare a firmei aștepta la ușă: fiecare începe cu același
+     * {@code lockForRebuild} ({@code WasteMovementService}), la fel importul și anularea lui.
+     *
+     * <p>Cu {@code REQUIRES_NEW}, tranzacția dosarului e suspendată, asta comite, lacătul pleacă,
+     * și abia apoi începe scrisul în răspuns.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public EvidenceRegenerationResponse regenerateYearBeforeStreaming(int year) {
+        return regenerateYear(year);
+    }
+
     @Transactional
     public EvidenceRegenerationResponse regenerateYear(int year) {
         UUID tenantId = TenantContext.require();

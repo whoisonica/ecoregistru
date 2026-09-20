@@ -12,6 +12,7 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useRemoteTableView } from "@/hooks/useTableView";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.audit;
 const e = strings.enums;
@@ -79,7 +80,7 @@ export function AuditLogSection({ canManage, companyId }: { canManage: boolean; 
     setSearchParams(next, { replace: true });
   }
   const table = useRemoteTableView<AuditLogEntry>({ resetOn: filters });
-  const { data, isLoading, isError } = useAuditLog(filters, table.params, canManage, companyId);
+  const { data, isLoading, isError, refetch } = useAuditLog(filters, table.params, canManage, companyId);
   const view = table.bind(data);
 
   if (!canManage) return null;
@@ -104,7 +105,7 @@ export function AuditLogSection({ canManage, companyId }: { canManage: boolean; 
         </div>
       )}
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <div>

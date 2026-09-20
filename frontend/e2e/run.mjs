@@ -52,6 +52,8 @@ const suites = [
   ["40-invitatia-valabilitate.mjs", "Dialogul de invitație spune cât ține linkul (7 zile)"],
   ["41-cnp-in-liste.mjs", "CNP-ul șoferului nu pleacă întreg în liste la „Vizualizare”"],
   ["42-bifate-anul.mjs", "Termenul tocmai bifat se vede pe „Bifate”"],
+  // 20.09.2026: fundăturile — ecranul căzut fără ieşire, formularul pierdut la Escape.
+  ["43-fundaturi.mjs", "Eroarea de încărcare are „Încearcă din nou”, iar fişa de partener întreabă înainte să se închidă"],
 ];
 
 const only = process.argv[2];

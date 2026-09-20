@@ -23,6 +23,7 @@ import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.consultancies;
 const u = strings.settings.users;
@@ -36,7 +37,7 @@ const u = strings.settings.users;
  * decizie despre firmă.
  */
 export function ConsultanciesSection() {
-  const { data: consultancies, isLoading, isError } = useConsultancies(true);
+  const { data: consultancies, isLoading, isError, refetch } = useConsultancies(true);
   const createMut = useCreateConsultancy();
   const inviteMut = useInviteConsultant();
   const { notify } = useToast();
@@ -124,7 +125,7 @@ export function ConsultanciesSection() {
         </Button>
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <>

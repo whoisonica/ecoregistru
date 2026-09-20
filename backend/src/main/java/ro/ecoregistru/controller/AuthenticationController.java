@@ -76,8 +76,24 @@ public class AuthenticationController {
     }
 
     /**
-     * „Dispozitive conectate”, din Setări. Singurele două rute de sub {@code /auth} care cer un
-     * token — vezi lista din {@code SecurityConfiguration}, unde sunt scoase din whitelist pe nume.
+     * „Deconectare” din aplicația web. Cere un token tocmai fiindcă pe el îl stinge: până acum
+     * ieșirea din cont se petrecea numai în browser, iar tokenul copiat înainte mergea opt ore.
+     *
+     * <p>{@code isAuthenticated()} și nu un prag pe rol, din același motiv ca la „scoate
+     * dispozitivul ăsta”: e o scriere despre sesiunea celui care o cere, nu despre datele unei
+     * firme, deci și un cont de vizualizare trebuie să poată ieși din el.
+     */
+    @PostMapping("/sign-out")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> signOut() {
+        authenticationService.signOut();
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * „Dispozitive conectate”, din Setări. Ca {@code /sign-out}, o rută de sub {@code /auth} care
+     * cere un token — vezi lista din {@code SecurityConfiguration}, unde sunt scoase din whitelist
+     * pe nume.
      */
     @GetMapping("/devices")
     public ResponseEntity<List<DeviceSessionResponse>> devices() {

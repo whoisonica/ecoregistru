@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.consultancyBranding;
 /** Aceeași limită ca serverul (`ReportBrandingService.MAX_LOGO_BYTES`), spusă înainte de urcare. */
@@ -26,7 +27,7 @@ const MAX_HEADER_LINE = 200;
  * stânga, „Pregătit de …" și rândul în dreapta, o linie sub ele.
  */
 export function ConsultancyBrandingSection() {
-  const { data: branding, isLoading, isError } = useConsultancyBranding(true);
+  const { data: branding, isLoading, isError, refetch } = useConsultancyBranding(true);
   const logoUrl = useLogoUrl(branding);
   const saveMut = useSaveHeaderLine();
   const uploadMut = useUploadLogo();
@@ -86,7 +87,7 @@ export function ConsultancyBrandingSection() {
         <p className="mt-1 max-w-2xl text-xs text-content-subtle">{t.officialNote}</p>
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && !isLoading && branding && (
         <div className="grid gap-6 rounded-lg border border-line bg-surface p-4 lg:grid-cols-2">

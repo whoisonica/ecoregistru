@@ -75,7 +75,9 @@ public class SecurityConfiguration {
                         // G1 — „Dispozitive conectate” stă sub /auth din obișnuință, dar e treaba
                         // contului, nu o ușă publică. Înaintea whitelistului, fiindcă în Spring
                         // Security câștigă prima potrivire, iar /api/v1/auth/** ar înghiți-o.
-                        .requestMatchers("/api/v1/auth/devices", "/api/v1/auth/devices/**").authenticated()
+                        // La fel „Deconectare”: stinge chiar tokenul cu care vine, deci îl cere.
+                        .requestMatchers("/api/v1/auth/devices", "/api/v1/auth/devices/**",
+                                "/api/v1/auth/sign-out").authenticated()
 
                         // Public authentication endpoints
                         .requestMatchers(WHITELIST).permitAll()

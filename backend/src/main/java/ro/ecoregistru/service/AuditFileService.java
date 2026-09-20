@@ -119,6 +119,8 @@ public class AuditFileService {
     private static final String PARTNERS = "autorizatii-parteneri.pdf";
     private static final String REPORTS_DIR = "rapoarte/";
     private static final String ATTACHMENTS_DIR = "atasamente/";
+    /** R2 — ultima intrare din arhivă; prezenţa ei cu „DOSAR COMPLET" e dovada că nimic n-a căzut. */
+    private static final String CHECK = "99-verificare.txt";
 
     private static final Color LINE = new Color(0xD1, 0xD5, 0xDB);
     private static final Color MUTED = new Color(0x4B, 0x55, 0x63);
@@ -184,32 +186,81 @@ public class AuditFileService {
         boolean single = years == 1;
         boolean packaging = MarketRole.putsPackagingOnMarket(company.getMarketRoles());
         // One regeneration of the first year rebuilds the whole chain, earlier years included (BUG-045).
-        evidenceCalculator.regenerateYear(firstYear);
+        //
+        // R1 — într-o tranzacție a ei, care comite aici. Reconstrucția ia `pg_advisory_xact_lock`
+        // pe firmă, iar un lacăt de tranzacție ține până la commit: chemată în tranzacția asta,
+        // ținea firma blocată pe toată durata descărcării, iar orice salvare de mișcare aștepta.
+        // Vezi `EvidenceCalculator.regenerateYearBeforeStreaming`.
+        evidenceCalculator.regenerateYearBeforeStreaming(firstYear);
         for (int y = firstYear; y <= year; y++) {
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
             filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(y, workPoints)));
         }
 
+        List<String> written = new java.util.ArrayList<>();
+
         try (ZipOutputStream zip = new ZipOutputStream(target)) {
+            try {
+                writeEntry(zip, written, CONTENTS,
+                        readme(company, firstYear, year, evidenceByYear, filesByYear, branding)
+                                .getBytes(StandardCharsets.UTF_8));
+                // Codurile de deșeu pe care le-a purtat fiecare partener în perioada dosarului, strânse din
+                // aceleași mișcări pe care le citesc anii — coloana din lista autorizațiilor.
+                Map<UUID, Set<String>> codesByPartner = new HashMap<>();
+                for (int y = firstYear; y <= year; y++) {
+                    // A single year stays where it always was; several would collide on the file
+                    // names, so each gets a folder named after it.
+                    writeYear(zip, written, tenantId, y, filesByYear.get(y), codesByPartner);
+                }
+                writeEntry(zip, written, PARTNERS,
+                        partnerAuthorizationsPdf(company, partners, codesByPartner, firstYear, year, branding));
 
-            writeEntry(zip, CONTENTS,
-                    readme(company, firstYear, year, evidenceByYear, filesByYear, branding)
-                            .getBytes(StandardCharsets.UTF_8));
-            // Codurile de deșeu pe care le-a purtat fiecare partener în perioada dosarului, strânse din
-            // aceleași mișcări pe care le citesc anii — coloana din lista autorizațiilor.
-            Map<UUID, Set<String>> codesByPartner = new HashMap<>();
-            for (int y = firstYear; y <= year; y++) {
-                // A single year stays where it always was; several would collide on the file
-                // names, so each gets a folder named after it.
-                writeYear(zip, tenantId, y, filesByYear.get(y), codesByPartner);
+                // R2 — ultima intrare, şi numai dacă tot ce e mai sus a reuşit. Vezi `CHECK`.
+                writeEntry(zip, written, CHECK, checkList(written, true));
+            } catch (IOException | RuntimeException ex) {
+                // Răspunsul e deja comis cu 200 de la primul octet — statusul nu se mai poate
+                // schimba. Singurul lucru cinstit care a mai rămas e ca arhiva să **spună** că e
+                // incompletă, în locul în care cineva se uită: lipseşte `99-verificare.txt` cu
+                // „DOSAR COMPLET", iar în loc apare unul care numeşte ce lipseşte.
+                log.error("Dosarul de control s-a întrerupt după {} intrări", written.size(), ex);
+                io.sentry.Sentry.captureException(ex);
+                try {
+                    writeEntry(zip, written, CHECK, checkList(written, false));
+                } catch (IOException ignored) {
+                    // Conexiunea a căzut de tot: n-avem unde scrie avertismentul. Jurnalul rămâne.
+                }
+                throw (ex instanceof IOException io) ? new UncheckedIOException(io) : (RuntimeException) ex;
             }
-            writeEntry(zip, PARTNERS,
-                    partnerAuthorizationsPdf(company, partners, codesByPartner, firstYear, year, branding));
-
             zip.finish();
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to build audit-file ZIP", ex);
         }
+    }
+
+    /**
+     * R2 — foaia care spune dacă arhiva e întreagă.
+     *
+     * <p>Odată scris primul octet, răspunsul e comis cu 200: o excepţie la jumătatea dosarului
+     * lăsa clientul cu un ZIP care se deschidea şi părea în regulă, dar căruia îi lipseau ani
+     * întregi — iar dosarul ăsta se duce la control. „Incomplet, dar aparent valid" e cel mai prost
+     * mod de a pierde date, fiindcă nimeni nu caută ce nu ştie că lipseşte.
+     *
+     * <p>Foaia se scrie <b>ultima</b>, deci simpla ei prezenţă cu „DOSAR COMPLET" e dovada că tot
+     * ce e înaintea ei a trecut. Lista de fişiere şi mărimi e pentru omul care compară.
+     */
+    private static byte[] checkList(List<String> written, boolean complete) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(complete ? "DOSAR COMPLET\n" : "⚠️ DOSAR INCOMPLET — generarea s-a întrerupt\n");
+        sb.append("Generat: ").append(java.time.LocalDateTime.now().format(
+                java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))).append("\n");
+        sb.append("Fișiere scrise: ").append(written.size()).append("\n\n");
+        if (!complete) {
+            sb.append("Arhiva se deschide, dar NU conține tot ce trebuia. Descarcă dosarul din nou;\n")
+                    .append("dacă se întrerupe iar, anunță-ne — mai jos e exact ce a apucat să intre.\n\n");
+        }
+        sb.append("fișier\tocteți\n");
+        written.forEach(line -> sb.append(line).append("\n"));
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     /**
@@ -289,7 +340,7 @@ public class AuditFileService {
     public enum PackagingDeclaration { INCLUDED, TRADER_ONLY, NOT_ANSWERED }
 
     /** Everything that belongs to one reporting year, written under {@code files.prefix()}. */
-    private void writeYear(ZipOutputStream zip, UUID tenantId, int year, YearFiles files,
+    private void writeYear(ZipOutputStream zip, List<String> written, UUID tenantId, int year, YearFiles files,
                            Map<UUID, Set<String>> codesByPartner) throws IOException {
         String prefix = files.prefix() + REPORTS_DIR;
         List<WasteMovement> movements = movementRepository
@@ -306,33 +357,33 @@ public class AuditFileService {
 
         // The regulated document of the bundle, and the reason the dossier gets printed at
         // all: one page per waste code, carrying the four chapters of the form.
-        writeEntry(zip, prefix + files.sheet(),
+        writeEntry(zip, written, prefix + files.sheet(),
                 anexa1FormGenerator.render(evidenceCalculator.anexa1(year, null)));
         // The summary page that goes in front of those sheets: same figures, folded to the
         // year, which is what the authority reads before it opens the twelve-row detail.
         // „Evidenţa gestiunii deşeurilor centralizată" — numele cerut de specialistă pe 15.09.2026
         // pentru ce se numea până atunci „declaraţia anuală".
-        writeEntry(zip, prefix + files.centralized(),
+        writeEntry(zip, written, prefix + files.centralized(),
                 annualDeclarationGenerator.render(
                         evidenceCalculator.annualDeclaration(year, null)));
         // Anexa 1 Ambalaje lipsea din dosar (specialista, 15.09.2026). Numai la firma care pune
         // ambalaje pe piaţă: un comerciant n-o depune, iar la un profil nerăspuns nu ghicim.
         if (files.packaging() != null) {
-            writeEntry(zip, prefix + files.packaging() + ".xls",
+            writeEntry(zip, written, prefix + files.packaging() + ".xls",
                     packagingService.render(year, ExportFormat.XLS));
-            writeEntry(zip, prefix + files.packaging() + ".pdf",
+            writeEntry(zip, written, prefix + files.packaging() + ".pdf",
                     packagingService.render(year, ExportFormat.PDF));
         }
         // Anexa 3 Ambalaje (proprietarul, 16.09.2026): una per punct de lucru, fiindcă aşa se depune
         // (Ordinul 794/2012 art. 4 alin. (4)), şi numai unde anul are ambalaje — o foaie oficială
         // goală n-are ce căuta la control.
         for (Anexa3File file : files.anexa3()) {
-            writeEntry(zip, prefix + file.baseName() + ".xls",
+            writeEntry(zip, written, prefix + file.baseName() + ".xls",
                     packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.XLS));
-            writeEntry(zip, prefix + file.baseName() + ".pdf",
+            writeEntry(zip, written, prefix + file.baseName() + ".pdf",
                     packagingService.renderAnexa3(year, file.workPointId(), ExportFormat.PDF));
         }
-        writeAttachments(zip, files.prefix() + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
+        writeAttachments(zip, written, files.prefix() + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
     }
 
@@ -355,7 +406,7 @@ public class AuditFileService {
 
     // --- attachments ---
 
-    private void writeAttachments(ZipOutputStream zip, String folder, List<WasteMovement> movements,
+    private void writeAttachments(ZipOutputStream zip, List<String> written, String folder, List<WasteMovement> movements,
                                   List<Attachment> attachments) throws IOException {
         // Read once for the year, not through `m.getAttachments()`: the regeneration just before
         // flushes a hundred-odd writes, and after it Hibernate stopped batching that lazy
@@ -380,7 +431,7 @@ public class AuditFileService {
 
                 byte[] bytes = tryDownload(a);
                 if (bytes != null) {
-                    writeEntry(zip, entryName, bytes);
+                    writeEntry(zip, written, entryName, bytes);
                     downloaded++;
                     index.append("   inclus în arhivă: da\n");
                 } else {
@@ -396,7 +447,7 @@ public class AuditFileService {
             index.append("Total: ").append(n).append(" atașamente, ")
                     .append(downloaded).append(" incluse în arhivă.\n");
         }
-        writeEntry(zip, folder + "index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
+        writeEntry(zip, written, folder + "index.txt", index.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -1084,10 +1135,13 @@ public class AuditFileService {
         return folded.isEmpty() ? "punct" : folded;
     }
 
-    private static void writeEntry(ZipOutputStream zip, String name, byte[] bytes) throws IOException {
+    private static void writeEntry(ZipOutputStream zip, List<String> written, String name, byte[] bytes)
+            throws IOException {
         zip.putNextEntry(new ZipEntry(name));
         zip.write(bytes);
         zip.closeEntry();
+        // R2 — ce s-a scris chiar, nu ce s-a plănuit: din lista asta se naşte `99-verificare.txt`.
+        written.add(name + "\t" + bytes.length);
     }
 
     private static String safe(String s) {

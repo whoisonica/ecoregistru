@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +29,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -394,10 +398,19 @@ class DeviceSessionIT {
         return deviceSessionRepository.findByUserAndRevokedAtIsNullOrderByLastUsedAtDesc(user).getFirst();
     }
 
+    /**
+     * Codul se ia de unde îl ia și omul — din mail.
+     *
+     * <p>Înainte se citea din bază, iar asta a încetat să meargă când coloana a trecut pe amprenta
+     * SHA-256 (V64): codul citit de acolo, trimis înapoi la {@code /reset-password}, ajungea să fie
+     * hashuit a doua oară și nu se mai potrivea cu nimic — 404. Nici nu se putea repara acolo,
+     * fiindcă tocmai asta e ideea amprentei: din bază nu se mai poate afla codul.
+     */
     private String resetCodeOf(AppUser u) {
-        return verificationRecordRepository.findAll().stream()
-                .filter(r -> r.getUser().getId().equals(u.getId()) && !r.isConfirmed())
-                .findFirst().orElseThrow().getCode();
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+        verify(emailService, atLeastOnce()).sendPasswordResetEmail(
+                argThat(sent -> sent != null && sent.getId().equals(u.getId())), code.capture());
+        return code.getValue();
     }
 
     @Autowired ro.ecoregistru.repository.VerificationRecordRepository verificationRecordRepository;

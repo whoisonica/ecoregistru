@@ -19,6 +19,7 @@ import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZO
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,6 +86,40 @@ class SessionRevocationIT {
         String reissued = jwtService.generateToken(appUserRepository.findByEmail("viewer@demo.ro").orElseThrow());
         mockMvc.perform(get("/api/v1/work-points").header("Authorization", "Bearer " + reissued))
                 .andExpect(status().isOk());
+    }
+
+    /**
+     * „Deconectare" stinge tokenul pe server, nu doar în browser.
+     *
+     * <p>Până acum ieșirea din cont golea {@code localStorage} și atât: valoarea copiată înainte —
+     * de pe un calculator străin, dintr-un `devtools` lăsat deschis — mergea mai departe opt ore.
+     * Proba cere exact secvența omului: token bun → „Deconectare" → același token refuzat.
+     */
+    @Test
+    void signingOutClosesTheTokenItWasCalledWith() throws Exception {
+        AppUser user = appUserRepository.findByEmail("operator@demo.ro").orElseThrow();
+        String token = jwtService.generateToken(user);
+
+        mockMvc.perform(get("/api/v1/work-points").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/auth/sign-out").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/work-points").header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+
+        // Și contul rămâne bun: e o deconectare, nu o pedeapsă. Fără asta, „merge" ar fi putut
+        // însemna că omul a rămas pe dinafară.
+        String afterLogin = jwtService.generateToken(appUserRepository.findByEmail("operator@demo.ro").orElseThrow());
+        mockMvc.perform(get("/api/v1/work-points").header("Authorization", "Bearer " + afterLogin))
+                .andExpect(status().isOk());
+    }
+
+    /** Ușa nu e publică: fără token n-are ce stinge, iar altfel ar fi fost o deconectare a oricui. */
+    @Test
+    void signingOutWithoutATokenIsRefused() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/sign-out")).andExpect(status().isUnauthorized());
     }
 
     /**

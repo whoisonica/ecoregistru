@@ -24,6 +24,7 @@ import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.consultancyTeam;
 // Etichetele comune — email, stare, dezactivare — sunt ale ecranului de utilizatori al firmei:
@@ -39,7 +40,7 @@ const u = strings.settings.users;
  */
 export function ConsultancyTeamSection() {
   const { user: me } = useAuth();
-  const { data: team, isLoading, isError } = useConsultancyTeam(true);
+  const { data: team, isLoading, isError, refetch } = useConsultancyTeam(true);
   const inviteMut = useInviteColleague();
   const deactivateMut = useDeactivateColleague();
   const reactivateMut = useReactivateColleague();
@@ -165,7 +166,7 @@ export function ConsultancyTeamSection() {
         </Button>
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <>

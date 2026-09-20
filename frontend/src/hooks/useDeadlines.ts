@@ -81,6 +81,13 @@ export function useUpcomingDeadlines(enabled = true) {
     data,
     isLoading: previous.isLoading || current.isLoading || next.isLoading,
     isError: previous.isError || current.isError || next.isError,
+    // Trei ani, deci trei cereri: reîncercarea le ia pe toate. Dacă a căzut doar una, celelalte
+    // două se întorc din cache — `refetch` nu e o cerere nouă dacă nu e nevoie de ea.
+    refetch: () => {
+      void previous.refetch();
+      void current.refetch();
+      void next.refetch();
+    },
   };
 }
 

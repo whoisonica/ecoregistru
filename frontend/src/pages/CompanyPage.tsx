@@ -22,6 +22,7 @@ import { Menu, MenuItem } from "@/components/ui/menu";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
 import { todayIso } from "@/lib/utils";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.clients;
 const p = strings.companyPage;
@@ -85,7 +86,7 @@ export function CompanyPage() {
 
   if (!multiCompany) return <PageHeader title={t.title} description={t.onlyPlatformAdmin} />;
   if (companies.isLoading) return <div>{back}<p className="mt-6 text-sm text-content-muted">{strings.common.loading}</p></div>;
-  if (companies.isError) return <div>{back}<p className="mt-6 text-sm text-state-bad-text">{t.loadError}</p></div>;
+  if (companies.isError) return <div>{back}<LoadError className="mt-6" message={t.loadError} onRetry={companies.refetch} /></div>;
   if (!company || !row) {
     return (
       <div>

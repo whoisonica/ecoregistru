@@ -27,6 +27,7 @@ import { useTableView } from "@/hooks/useTableView";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.users;
 const roleLabels = strings.enums.inviteRole;
@@ -50,7 +51,7 @@ const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
  */
 export function CompanyUsersSection({ canManage, companyId }: { canManage: boolean; companyId?: string }) {
   const { user: me } = useAuth();
-  const { data: users, isLoading, isError } = useUsers(canManage, companyId);
+  const { data: users, isLoading, isError, refetch } = useUsers(canManage, companyId);
   const inviteMut = useInviteCompanyUser(companyId);
   const resendMut = useResendInvite(companyId);
   const cancelMut = useCancelInvite(companyId);
@@ -206,7 +207,7 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
         </Button>
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <>

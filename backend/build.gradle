@@ -1,5 +1,10 @@
 plugins {
 	id 'java'
+	// „1060 de teste" spune câte rulează, nu ce **nu** e atins: golurile BUG-045…047 le-a găsit o
+	// citire de cod, nu suita. Raportul se generează la fiecare `test` şi se citeşte din
+	// `build/reports/jacoco/test/html/index.html`; fără prag, dinadins — un procent impus pe tot
+	// repo-ul se satisface cu teste care nu verifică nimic.
+	id 'jacoco'
 	id 'org.springframework.boot' version '3.5.16'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -44,9 +49,6 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-impl:0.12.7'
 	implementation 'io.jsonwebtoken:jjwt-jackson:0.12.7'
 
-	// DTO mapping
-	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-
 	// OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
@@ -67,7 +69,10 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	// MapStruct a plecat pe 20.09.2026: era declarat din şablonul de la care a pornit proiectul, dar
+	// nu-l folosea nimeni — singurul mapper, `mapper/WasteMovementMapper`, e scris de mână ca
+	// `@Component`. Un procesor de adnotări care nu procesează nimic tot se descarcă şi tot rulează
+	// la fiecare compilare.
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
@@ -89,6 +94,15 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport') {
+	dependsOn tasks.named('test')
+	reports {
+		xml.required = true
+		html.required = true
+	}
 }
 
 // Single deployable: bootJar is the runnable artifact served on Heroku.

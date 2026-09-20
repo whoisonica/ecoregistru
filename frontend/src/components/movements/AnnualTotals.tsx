@@ -27,6 +27,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { useTableView } from "@/hooks/useTableView";
 import { TablePagination } from "@/components/ui/table-toolbar";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.evidences;
 
@@ -68,7 +69,7 @@ export function AnnualTotals({
     () => (workPointId ? { year, workPointId } : { year }),
     [year, workPointId]
   );
-  const { data: rows, isLoading, isError } = useEvidences(filters);
+  const { data: rows, isLoading, isError, refetch } = useEvidences(filters);
   const regenerateMut = useRegenerateEvidence();
 
   /**
@@ -174,7 +175,7 @@ export function AnnualTotals({
     });
   }
 
-  if (isError) return <p className="mt-6 text-sm text-state-bad-text">{t.loadError}</p>;
+  if (isError) return <LoadError className="mt-6" message={t.loadError} onRetry={refetch} />;
 
   return (
     <section className="mt-5">

@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Table, THead, TBody, TR, TH, TD, SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.consultancyOverview;
 
@@ -50,7 +51,7 @@ export function ConsultancyOverviewPage() {
   const isConsultant = user?.role === "CONSULTANT";
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { data: rows, isLoading, isError } = useConsultancyOverview(isConsultant);
+  const { data: rows, isLoading, isError, refetch } = useConsultancyOverview(isConsultant);
 
   const view = useTableView(rows ?? [], {
     searchText: (r) => [r.name, r.cui].filter(Boolean).join(" "),
@@ -94,7 +95,7 @@ export function ConsultancyOverviewPage() {
       />
 
       <section className="mt-6">
-        {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+        {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
         {!isError && !isLoading && rows?.length === 0 && (
           <EmptyState

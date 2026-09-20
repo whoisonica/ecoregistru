@@ -61,6 +61,7 @@ import { useInternalGenerators } from "@/hooks/useInternalGenerators";
 import { useUsers } from "@/hooks/useUsers";
 import { useDrivers } from "@/hooks/useDrivers";
 import { formatDate, todayIso } from "@/lib/utils";
+import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.workPoints;
 const h = strings.settings.hub;
@@ -97,7 +98,7 @@ export function SettingsPage() {
   const { data: company } = useCurrentCompany();
   const hasDepot = Boolean(company) && registersFor(company?.type).includes("ART_48");
 
-  const { data: workPoints, isLoading, isError } = useWorkPoints();
+  const { data: workPoints, isLoading, isError, refetch } = useWorkPoints();
   const createMut = useCreateWorkPoint();
   const updateMut = useUpdateWorkPoint();
   const deactivateMut = useDeactivateWorkPoint();
@@ -201,7 +202,7 @@ export function SettingsPage() {
         )}
       </div>
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {isError && <LoadError message={t.loadError} onRetry={refetch} />}
 
       {!isError && (
         <>

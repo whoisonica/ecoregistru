@@ -238,7 +238,9 @@ class ConsultancyOverviewIT {
         verify(emailService).sendInviteEmail(argThat(u -> u.getId().equals(pending.getId())), code.capture(), eq(7));
         verify(emailService, never()).sendPasswordResetEmail(any(), anyString());
         VerificationRecord record = verificationRecordRepository
-                .findByCodeAndVerificationRecordType(code.getValue(), VerificationRecordType.RESET_PASSWORD).orElseThrow();
+                .findByCodeAndVerificationRecordType(
+                        ro.ecoregistru.service.AuthenticationService.fingerprint(code.getValue()),
+                        VerificationRecordType.RESET_PASSWORD).orElseThrow();
         assertThat(record.getExpiresAt()).isAfter(java.time.LocalDateTime.now().plusDays(6));
 
         Context ctx = new Context();

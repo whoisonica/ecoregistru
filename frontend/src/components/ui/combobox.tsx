@@ -260,6 +260,9 @@ export function Combobox({
             )}
             {!loading &&
               items.map((item, index) => (
+                // Tiparul ARIA de combobox: tastatura stă pe `input` (`onKeyDown` + `aria-activedescendant`),
+                // nu pe fiecare opţiune. Un `tabIndex` pe rânduri ar strica exact ce face pattern-ul corect.
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus
                 <div
                   key={item.id}
                   id={optionId(index)}

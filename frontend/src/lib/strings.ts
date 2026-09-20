@@ -3736,6 +3736,8 @@ export const strings = {
     status: "Status",
     actions: "Acțiuni",
     requiredField: "Câmp obligatoriu.",
+    // `LoadError` — butonul de lângă orice „nu am putut încărca...".
+    retry: "Încearcă din nou",
     cuiInvalid: "CUI-ul nu e valid: verifică cifrele, ultima e cifra de control. Se scrie cu sau fără RO.",
     // Citit doar de cititorul de ecran, în locul asteriscului. Vezi `Label`.
     requiredMarker: "obligatoriu",
