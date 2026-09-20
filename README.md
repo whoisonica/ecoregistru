@@ -211,7 +211,7 @@ plus what never changes: the movement form's field order, the printed documents,
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Thirty-nine probes (listed in `frontend/e2e/run.mjs`, run in CI on a fresh database): every screen opens clean, the action column stays reachable when a table scrolls, search
+download — against the local dev server and a backend on the `dev` profile. Forty-three probes (listed in `frontend/e2e/run.mjs`, run in CI on a fresh database): every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
 it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started
@@ -481,7 +481,7 @@ cd backend
 ./gradlew.bat test
 ```
 
-934 tests across 113 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+1069 tests across 134 classes, on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport
