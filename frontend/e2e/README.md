@@ -1,3 +1,14 @@
+🧭 **19–20.09.2026 — probele 39–43**, fiecare cu antetul ei în fișier:
+**39** (`39-acasa.mjs`) — „Acasă”, varianta A: anul pe luni, deșeurile anului și termenele pe 12 luni; cifrele se socotesc a doua oară
+din API și se compară cu ecranul. Nu scrie nimic.
+**40** (`40-invitatia-valabilitate.mjs`, BUG-042) — dialogul „Invită utilizator” spune 7 zile (`AuthenticationService.INVITE_TTL_DAYS`),
+nu 30 de minute. Nu scrie nimic (dialogul se închide cu „Anulează”).
+**41** (`41-cnp-in-liste.mjs`, BUG-043) — CNP-ul șoferului nu pleacă întreg în `GET /drivers` și în lista de mișcări, citite ca
+vizualizator. ⚠️ Lasă în urmă șoferul „Proba 41 <număr>”.
+**42** (`42-bifate-anul.mjs`, BUG-044) — termenul tocmai bifat se vede pe „Bifate” fără să schimbi anul; la final îl redeschide.
+**43** (`43-fundaturi.mjs`) — o eroare de rețea (`page.route(... abort)`) lasă un buton care chiar reîncarcă, iar Escape pe fișa de
+partener în patru pași întreabă înainte să șteargă.
+
 🔓 **17.09.2026 — proba 37 (`37-deconectare-cache.mjs`), deconectarea golește cache-ul**: platforma se deconectează, un consultant
 intră în același tab fără reîncărcare, iar selectorul de firme îi arată doar firmele cabinetului lui (înainte rămânea lista platformei,
 din React Query, cu firme pe care le putea și alege). Consultantul se scrie cu `psql` (`E2E_DB`). **Negativă:** fără `queryClient.clear()`
@@ -43,7 +54,7 @@ ar fi registrul), tastele care filtrează **la server**, rândul care-și spune 
 (`scrollWidth === clientWidth` la 1440), și semnalul din tab care duce pe lista filtrată, cu tasta apăsată acolo.
 ⚠️ **Cele patru mișcări ale probei se scriu prin API într-un an gol (2033) și se șterg la final** — pe datele demo toate
 ambalajele sunt și „ale noastre”, și incomplete, deci verificările ar fi trecut din motivul greșit (`4 → 3 → 2 → 1` e chiar
-rostul lor). **Negativă (backend):** scos predicatul din `MovementQueryService.buildFilter`, cad exact cele două teste din
+rostul lor). Din 20.09.2026 una dintre ele își pierde materialul prin `psql` (API-ul nu mai primește o predare fără material), deci proba cere `E2E_DB`. **Negativă (backend):** scos predicatul din `MovementQueryService.buildFilter`, cad exact cele două teste din
 `PackagingMovementFilterIT` („expected:<3> but was:<4>”, „expected:<2> but was:<4>”). Nu lasă nimic în urmă.
 **Atinse odată cu ea:** proba **1** (`/ambalaje` e redirect), **8** (cuprinsul s-a mutat pe fișa firmei — `SectionNav` n-a
 mai rămas pe niciun ecran de generator; ramura „la fund” se probează prin derulare, nu prin clic pe ultima intrare, fiindcă
@@ -66,7 +77,7 @@ câte se văd — altfel, pe pagina a doua, cifra pe care omul o tastează în S
 verifică plafonul, nu a doua pagină; paginarea plină s-a probat cu mâna, pe **18 coduri**: 10 rânduri, „1–10 din 18", total „18 coduri".
 **Negativă:** cu versiunea de dinainte pusă la loc din git (`AnnualTotals.tsx`, `annualTotals.ts`, `strings.ts`), cad **exact** verificările noi,
 nimic altceva; cu `variant="outline"` pe „Recalculează acum" cade exact verificarea lui. Stocul socotit pe ultima lună a ieșit și din probă, și din `lib/annualTotals.ts` — pe Anexa 1 cifra e zero prin construcție de la
-`V58`; testele unitare au rămas pe socoteala care contează (`npm test` 56).
+`V58`; testele unitare au rămas pe socoteala care contează (`npm test`: 56 la 18.09.2026, 68 la 22.09).
 ⚠️ **Capcană de rulare, plătită de două ori pe 18.09:** suita și **omul care se uită pe localhost împart aceeași bază**. Două rânduri din
 `DevDataSeeder` sunt stricate **dinadins** — „Aviz nr. 369 (fără cod)" (iunie 2026, fără cod R/D) și „Aviz nr. 391" (iulie 2026, fără
 cantitate) — și sunt chiar **premisa** probelor **10** (banda roșie „Completează codul R/D") și **28** (nota „de cântărit"). Completate cu
@@ -226,7 +237,7 @@ dalele Panoului după poziția etichetei. Acum trec prin `companies()` / `switch
 `data-testid="stat-stock"` / `"stat-deadlines"`. Proba 7 numără nouă secțiuni în Setări (Flota și Șoferii noștri, D2.1–D2.2).
 Capitolul de mai jos despre „baza acumulată” e istoric: nu mai trebuie păstrată baza de dezvoltare ca să treacă suita.
 
-Optsprezece suite, care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea. **Toate rulate.**
+Patruzeci și trei de probe (`run.mjs`, 22.09.2026), care deschid aplicaţia într-un Chrome adevărat şi apasă pe ea; toate rulează şi în CI (jobul `e2e`).
 
 🎛️ **15.09.2026, noaptea — direcția „Cântar” (`docs/stil-interfata.md`), toate cele 18 suite rulate** pe baza
 `eco_e2e_stil`: **15 trec**; 9, 10 și 11 cad **pe date** (baza n-are termene generate, nici depășite) — identic cu
@@ -347,14 +358,14 @@ E2E_BASE=http://localhost:4173 npm run e2e
 
 Șase probe (29, 30, 33, 36, 37, 38) nu-și pot face datele prin API — facturi emise, abonamente restante,
 un consultant al platformei, o predare veche fără material (38, din 20.09.2026: API-ul n-o mai primește) — și le scriu direct cu `psql`, în baza din **`E2E_DB`, implicit
-`ecoregistru`**. `E2E_BASE` mută doar browserul; baza nu se ia după el. Deci pe o stivă pornită pe altă
+`ecoregistru`**. `E2E_BASE` mută doar browserul; baza nu se ia după el. `psql` intră ca `eco@localhost`, cu parola din `E2E_DB_PASSWORD` (implicit `eco`). Deci pe o stivă pornită pe altă
 bază, cele două variabile se dau **împreună**:
 
 ```bash
 E2E_BASE=http://localhost:5174 E2E_DB=eco_e2e_alta npm run e2e
 ```
 
-Ce se întâmplă altfel, probat pe 18.09.2026: cele cinci probe au scris în `ecoregistru`, baza de
+Ce se întâmplă altfel, probat pe 18.09.2026: cele cinci probe de atunci (38 a venit pe 20.09) au scris în `ecoregistru`, baza de
 dezvoltare rămasă în urmă cu migrările, și au căzut cu „column `payment_checked_at` does not exist”.
 Cu migrările la zi n-ar fi căzut deloc: ar fi lăsat rânduri într-o bază străină, în tăcere.
 
@@ -385,9 +396,9 @@ ramură nu atinge `node_modules`.
 
 ## Ce acoperă
 
-> **Tabelul de mai jos descrie probele 1–19.** Probele **20–39** au fiecare intrarea ei datată în capul acestui fişier, iar
-> lista întreagă, cu un rând pe probă, e cea din `run.mjs` — **39 de probe la 18.09.2026**; o probă care nu e în `run.mjs` nu
-> rulează nici local, nici în CI.
+> **Tabelul de mai jos descrie probele 1–19.** Probele **20–43** au intrarea lor datată în capul acestui fişier (20 și 21 doar
+> pomenite, la Setările pe carduri), iar lista întreagă, cu un rând pe probă, e cea din `run.mjs` — **43 de probe la 22.09.2026**;
+> o probă care nu e în `run.mjs` nu rulează nici local, nici în CI.
 
 | Suita | Ce probează |
 |---|---|
@@ -397,7 +408,7 @@ ramură nu atinge `node_modules`.
 | `4-formular.mjs` | Cele opt secţiuni, lăţimea dialogului, banda de efect. Trimiterea unui formular gol marchează rubricile şi le leagă de mesaje prin `aria-describedby`. Duplicarea aduce codul, pune data de azi, goleşte documentul. Confirmarea de ştergere numeşte rândul — şi **anulează**, nu şterge. Deschide Mişcări pe **anul curent** (`?luna=AN`, ca proba 3): pe luna curentă, într-o lună fără mişcări, primul rând e mesajul de gol şi duplicarea aştepta 30 s până cădea (14.09.2026). O gardă spune acum „0 rânduri" în loc de timeout. |
 | `5-telefon.mjs` | La 375px: nicio pagină nu se derulează lateral — **inclusiv `/cerere-cont`, probat înainte de autentificare**, fiindcă aşa îl vede prospectul —, paşii cererii se stivuiesc, sertarul se deschide din buton şi se închide la navigare şi cu Escape, dialogul urcă de la marginea de jos, grilele de formular sunt pe o coloană. |
 | `6-cerere-si-rapoarte.mjs` | Formularul public: marcajele de obligatoriu, erorile pe rubrici cu derulare la prima greşită, CUI-ul respins cu forma cerută, lista de coduri R/D pliată, pagina de mulţumire cu emailul şi termenul. Inboxul: dialogul citeşte toate rubricile, inclusiv textul liber, iar cele necompletate se **arată** goale. Drumul cap-coadă de la banda roşie de pe Acasă („Completează codul R/D…”), prin lista filtrată de pe Generare, până la mişcarea deschisă. Cererea e în **patru paşi** din 16.09.2026, iar proba îi parcurge pe rând. ⚠️ **Scrie o cerere** în baza de dev la fiecare rulare, cu CUI unic; nu curăţă după ea, fiindcă aprobarea ar crea o firmă şi firmele nu se şterg. |
-| `7-firma-si-reactivare.mjs` | „Datele firmei" din Setări: cele şase grupe, rubricile care se tipăresc pe documente, golurile spuse ca goluri, şi cuprinsul paginii (şapte intrări pe firma demo, cu „Sortimente”) cu ţinta fiecărei intrări. Drumul întreg al reactivării: creează un şofer, îl dezactivează prin confirmare, verifică faptul că **iese din listă** şi că filtrul de stare abia acum apare, îl regăseşte prin „Inactive", îl reactivează. Garda formularului de mişcare: neatins se închide direct, atins întreabă, iar Escape peste întrebare închide **doar** întrebarea, cu ce s-a scris neatins. ⚠️ **Lasă în urmă un şofer dezactivat** la fiecare rulare. |
+| `7-firma-si-reactivare.mjs` | „Datele firmei" din Setări: cele şase grupe, rubricile care se tipăresc pe documente, golurile spuse ca goluri, şi pagina `/setari` cu nouă carduri pe firma demo (din 17.09.2026: Firma ×3, Echipa ×2, Șoferi + Flota, Prețuri + Sortimente), cu intrarea pe paginile secţiunilor. Drumul întreg al reactivării: creează un şofer, îl dezactivează prin confirmare, verifică faptul că **iese din listă** şi că filtrul de stare abia acum apare, îl regăseşte prin „Inactive", îl reactivează. Garda formularului de mişcare: neatins se închide direct, atins întreabă, iar Escape peste întrebare închide **doar** întrebarea, cu ce s-a scris neatins. ⚠️ **Lasă în urmă un şofer dezactivat** la fiecare rulare. |
 | `8-atasamente-partener-paleta.mjs` | Coloana „📎" e un buton care deschide lista fişierelor, fiecare cu numele lui şi cu `target="_blank"`, fără buton de ştergere — ştergerea rămâne în formular. Formularul de partener: **patru paşi** în cuprins (din 17.09.2026; înainte, cinci secţiuni titrate), dialogul lărgit, şi **ordinea rubricilor** (CUI-ul prima rubrică, denumirea imediat după; autorizaţia după rol şi transport). Cuprinsul (`SectionNav`) se probează pe **fişa firmei** (`/clienti/:id`) — de pe Ambalaje a plecat pe 18.09.2026, când ecranul a devenit tab: bara stă lipită şi **nimic nu trece peste ea** (măsurat cu `elementFromPoint` în trei puncte), clicul duce sub bară la 80px, ultima secţiune duce la fundul paginii cu marcajul pe ea, iar la 375px pagina nu se derulează lateral. Paleta: „fisa" → Generare (ecranul „Evidenţe” nu mai există din 18.09.2026), „anexa 1" → **amândouă** documentele **şi nimic altceva**, „inspector" → Dosarul de control, „soferi" → Setări şi Parteneri, „predare" → acţiunea „Deşeuri proprii”, care duce pe `/generare` cu formularul deschis şi cu `?nou=1` consumat. Plus verificarea că nicio comandă nu recalculează un dosar. |
 | `9-restrangeri-si-semne.mjs` | Provenienţa ambalajelor se cere **numai** pe un cont care preia de la terţi — probat pe amândouă tipurile, comutând tenantul ca administrator de platformă, fiindcă o restrângere care ascunde tuturor e la fel de greşită ca una care nu ascunde nimănui. Suprascrierea de pe tabul Ambalaje — din 18.09.2026 câmpuri **în acelaşi tabel**, nu o a doua grilă: „nesalvat" cât s-a tastat, „salvat" după ieşirea din celulă, cifra regăsită după reîncărcare, apoi **golită la loc** ca proba să nu lase nimic în urmă. Acasă **nu mai are dala de stoc** (scoasă pe 16.09.2026 — generatorul nu ţine stoc), dar o are pe cea de termene. Un colector cu ambalaje preluate primeşte termenul Anexei 3 Ambalaje (Ordinul 794/2012 art. 4). Termenele: zilele rămase pe fiecare rând, depăşirea scrisă ca depăşire, linkul către documentul care stinge termenul — **pe anul raportat**, nu pe anul termenului — şi absenţa lui la contribuţiile AFM, pentru care nu tipărim nimic; plus înălţimea butonului de acţiune, fiindcă a şasea coloană l-a rupt pe două rânduri prima oară. Nota de retenţie a actului de identitate, în amândouă locurile unde se tastează. |
 | `10-panou-actiunea-urmatoare.mjs` | Banda „Următoarea acţiune" din capul Panoului: **tace** până vin toate cele trei surse (un „Eşti la zi" peste `partners` neîncărcat ar fi un verde fals), alege cel mai scump lucru deschis dintre cele cinci, şi **duce chiar unde numeşte** — pe anul **raportat** la termene, nu pe anul termenului. Din 18.09.2026 (Acasă, varianta A) caseta de blocaje nu mai există: restul lucrurilor deschise stau sub bandă, la „+ încă N”; proba cere şi „anul pe luni” cu „deşeurile anului” pe pagină şi **absenţa** casetei „Dacă vine controlul azi” şi a „Ultimelor predări”. Tot aici se probează tabul **Totalul anului** (trei taburi pe Generare, banda lor fără derulare, zece coduri pe pagină cu rândul de total al anului, nicio coloană de stoc, documentele deasupra tabelului cu numele lor pe buton, „Recalculează acum” cu alt chenar, exporturile generice în meniu), sugestia de duplicat din formularul de partener şi redirectul `/evidente`. Plus badge-ul „Autorizaţie expirată" de pe Mişcări, care duce la fişa partenerului prin `?partener=`, consumat la deschidere. |
@@ -409,7 +420,7 @@ ramură nu atinge `node_modules`.
 | ~~`16-buletine.mjs`~~ | 🗑️ **Ştearsă pe 14.09.2026, seara, odată cu buletinele** (specialista: un generator nu le completează). Istoric: ✅ **Scrisă şi rulată pe 14.09.2026, verde — 22 de verificări, 2 nerulate şi scrise ca atare.** Buletinele de analiză din Setări (G-7): formularul gol marchează **toate patru** rubricile, fiecare legată de mesajul ei, şi nu pleacă la server; **controlul** — laboratorul completat îşi pierde marcajul, celelalte trei nu. Rubrica de dată are `max` = azi. Prin API: data în viitor, fişierul lipsă şi laboratorul gol sunt refuzate **fiecare cu codul lui**, iar controlul pozitiv (aceeaşi cerere, data de azi) nu mai e refuzat pentru dată; nimic scris. Cititorul vede lista, nu vede butonul, şi ia **403** pe lângă ecran. **Proba negativă:** verificarea laboratorului scoasă din `AnalysisBulletinsSection` → cad exact cele două verificări despre ea. ⬜ **Nerulate:** „Anterior" pe al doilea buletin şi stingerea badge-ului „Cod-oglindă" — cer Cloudinary. Local, controlul pozitiv ia **500** la urcare (clientul Cloudinary gol), nu un mesaj: pe producţie cheia există. Nu scrie nimic în bază. |
 | `16-import.mjs` | Importul din Excel (P2.15), pe ecran: „Importă” rămâne blocat până când **acelaşi** fişier a trecut o verificare fără erori, alegerea altui fişier îl blochează la loc, un fişier stricat îşi spune mesajul pe ecran, iar şablonul chiar se descarcă. Intră ca **platformă**, pe firma demo; administratorul firmei nu vede butonul din Setări, iar `/import` îl duce acasă (din 16.09.2026 importul îl facem noi). Regulile de import sunt ale `ExcelImportIT`. Nu salvează nimic: verifică doar şablonul gol. |
 | `18-panou-cantar.mjs` | ✅ **Scrisă și rulată pe 15.09.2026, verde.** **Din 18.09.2026 cere panoul nou:** fără afișajul lunii, fără tastele mari, fără rândul „Caută oriunde” (căutarea e iconiță) și fără niciun link `?nou=1` în panou („+”-urile de pe rânduri au fost încercate și scoase), rânduri fără iconiță cât panoul e lat (iconițe numai pe șină), taburile sub intrarea deschisă — aceleași ca în pagină, iar tabul din meniu schimbă doar `?tab=`. Rândurile meniului se aleg cu `nav a[data-nav="row"]`, fiindcă în `nav` stau și taburile (`tab`). *Înainte:* Panoul „Cântar”: firma ca etichetă (nume, CUI, tip), afișajul lunii cu kg și verdict, cele trei taste de adăugare pe firma demo (`BOTH`), cifrele 1–9, 0 pe meniu în ordine, Generare / Intrări / Ieșiri ca intrări proprii, Import și Abonament **absente** din meniu, panoul de 262px; indicatorii nu scriu niciodată „0” și nici „?” cu serverul sus; tastele 3 și 4 deschid Intrări și Ieșiri, cu totalurile și coloanele fiecăruia (Cod R/D și Către pe Ieșiri, fără Secția); I și E deschid formularele potrivite de pe Acasă; `[` strânge panoul la 64px și scrie în `localStorage`; culoarea pubelei pe fiecare cod cunoscut din listă, roșu pe periculoase, **nimic** pe un cod necunoscut; `/intrari-iesiri` duce la `/intrari`; pe telefon bara de jos cu cele cinci intrări, nimic lateral, sertarul din „Mai mult”. Nu scrie nimic în bază. |
-| `19-cantar-operatiuni.mjs` | ✅ **Scrisă și rulată pe 16.09.2026, verde.** Ecranul „Cântar” (D1.15): intrarea de meniu apare doar la firmele cu registrul art. 48 și stă imediat după Ieșiri; Setările păstrează o tastă (**S**) după ce a unsprezecea intrare împinge meniul peste cele zece cifre; ecranul are taburile Intrări / Ieșiri, coloanele listei și banda reținerilor; tabelul încape în 1440px și pagina nu se lățește nici la 375px; formularul are cele patru secțiuni, calculează **neto = brut − tara** (câmpul se blochează) și arată cât se reține din plată, cu cotele venite de la server (2% AFM din 20.000 lei → 400 lei, rămân 19.600). Din 16.09.2026 (D1.14) descarcă și **„Registrul lunii”**: numele fișierului poartă luna din filtru și vine un xlsx, nu o eroare (coloanele le apără `DepotRegisterIT`). Nu scrie nimic în bază: tastează în formular și îl închide cu Escape. |
+| `19-cantar-operatiuni.mjs` | ✅ **Scrisă și rulată pe 16.09.2026, verde.** Ecranul „Cântar” (D1.15): intrarea de meniu apare doar la firmele cu registrul art. 48 și stă imediat după Ieșiri; meniul firmei cu depozit are nouă intrări, deci Setările poartă o cifră (9), nu litera de rezervă **S** (din 18.09.2026); ecranul are taburile Intrări / Ieșiri, coloanele listei și banda reținerilor; tabelul încape în 1440px și pagina nu se lățește nici la 375px; formularul are cele patru secțiuni, calculează **neto = brut − tara** (câmpul se blochează) și arată cât se reține din plată, cu cotele venite de la server (2% AFM din 20.000 lei → 400 lei, rămân 19.600). Din 16.09.2026 (D1.14) descarcă și **„Registrul lunii”**: numele fișierului poartă luna din filtru și vine un xlsx, nu o eroare (coloanele le apără `DepotRegisterIT`). Nu scrie nimic în bază: tastează în formular și îl închide cu Escape. |
 | `17-persoane-fizice.mjs` | Tabul „Persoane fizice” de lângă Parteneri (D1.7b): se deschide din clic şi din URL, un CNP cu cifra de control greşită îşi marchează rubrica fără să salveze, lista arată doar ultimele 4 cifre şi caută după ele, editarea primeşte CNP-ul întreg, iar vizualizatorul vede lista fără „Adaugă persoană”. Regulile sunt ale `NaturalPersonRegistryIT`. Persoana creată se dezactivează şi se şterge la final. Merge şi pe o bază proaspăt seedată (cere doar firma demo, care are art. 48). |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
@@ -428,7 +439,7 @@ nu trebuie pierdută — ea a prins meniul acoperit de celulele fixate) şi apas
 ceva acolo, scrie de ce: un filtru fără motiv ascunde exact defectul următor.
 
 **Pragul de căutare e 10 rânduri.** Pe un tabel cu mai puţine, caseta nu se randează — nu e o
-scăpare, e regula din `TableToolbar`. Proba de pe Parteneri (5 rânduri) o verifică explicit.
+scăpare, e regula din `TableToolbar`. Proba de pe Parteneri (sub 10 rânduri; 6 pe o bază nouă) o verifică explicit.
 
 **Pune o gardă care spune că proba a avut ce verifica.** O probă care trece pe zero rânduri nu
 probează nimic, dar arată la fel cu una care trece. Vezi mai jos.
@@ -511,7 +522,7 @@ cereri, nu filtrări locale — aşteptările de după o tastare în `[data-tabl
 250 ms de întârziere plus drumul până la bază.
 
 **Ce rămâne cu adevărat neprobabil aici:** ce se **tipăreşte**. Un PDF randat nu se citeşte din DOM
-— pentru feliile care ating documente oficiale, regula rămâne cea din `todo-ui-ux.md`: randează
+— pentru feliile care ating documente oficiale, regula rămâne: randează
 pagina şi uită-te la ea.
 
 ---

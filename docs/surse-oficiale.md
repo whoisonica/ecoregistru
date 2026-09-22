@@ -83,7 +83,7 @@ conformitate; e temeiul punctului 2 din `istoric/audit-conformitate.md`.*
 > marcajul de periculozitate. Anexa 2 tipărește 406 coduri cu asterisc; lista 2014 are 408.
 > `waste_codes.csv` ține deliberat codul fără asterisc și periculozitatea ca boolean separat, ceea
 > ce e corect pentru stocare — dar la **tipărire** asteriscul trebuie pus la loc, altfel un deșeu
-> periculos arată pe fișă exact ca unul nepericulos.
+> periculos arată pe fișă exact ca unul nepericulos. ✅ Pus la loc la tipărire: `util/WasteCodeLabel.official`.
 >
 > ⚠️ Sursa e Portalul Legislativ, nu PDF-ul din `documente oficiale/` — acela vine de pe lege6.ro și
 > are erori de transcriere confirmate (vezi `.gitignore`). Ambele spun același lucru aici, dar
@@ -189,7 +189,7 @@ Notele oficiale — **nomenclatoare închise**, verbatim:
 > pe foaia `simboluri` din cele trei fişiere Oradea — deci o avem din două surse independente, actul
 > şi un fişier de lucru al specialistei. Cele cinci enum-uri (`StorageType`, `TreatmentMethod`,
 > `TransportMeans`, `WasteDestination`, `TreatmentPurpose`) conţin **exact** valorile de aici, în
-> aceeaşi ordine. *La verificarea din 02.09 exista o abatere deliberată — `TreatmentPurpose` n-avea `E` (motivul, la
+> aceeaşi ordine — cu o excepţie fără efect: `TreatmentMethod` are `TT` înainte de `D`; legenda tipărită e în ordinea notei, fixată de `Anexa1FormIT`. *La verificarea din 02.09 exista o abatere deliberată — `TreatmentPurpose` n-avea `E` (motivul, la
 > §1.3 punctul 1); din **16.09.2026** enum-ul are amândouă literele notei 3, `V` şi `E`, la cererea proprietarului, deci
 > nu mai e nicio abatere.*
 
@@ -471,7 +471,7 @@ fişierul, nu ce versiune era în el.
 > gestionare au fost efectuate.
 
 > **Trei consecințe.**
-> 1. Dosarul de control se dimensionează la **3 ani** (12 luni la transportatori). Închide D1. ✅ **Construit pe 24.08.2026** (Etapa 6): `years=1..3`, folder per an.
+> 1. Dosarul de control se dimensionează la **3 ani** (12 luni la transportatori). Închide D1. ✅ **Construit pe 24.08.2026** (Etapa 6): folder per an; azi `years=1..5` (`AuditFileService.MAX_YEARS`: 3 = termenul, 5 = marja cerută de specialistă).
 > 2. **15 martie e termen legal**, nu cutumă ANPM. Închide C3.
 > 3. Evidența lunară se ține în kg (practica fișei Anexa 1), dar **raportarea de la art. 48 e în
 >    tone**. Conversia trebuie să existe într-un singur loc în cod, nu presărată prin export.
@@ -1023,7 +1023,7 @@ citat, nu în actul care citează.
 ### 2.8 Obligaţii ale clientului pe care actul le cere şi dosarul de control nu le numeşte
 
 *Toate citite pe 10.09.2026, toate în lista sancţionată de art. 62 alin. (1) lit. a) cu
-**40.000–60.000 lei** pentru persoane juridice. Niciuna nu era pomenită în vreun document.*
+**40.000–60.000 lei** pentru persoane juridice. Niciuna nu era pomenită în vreun document.* ✅ *De atunci dosarul le numește: `AuditFileService.otherObligationsNote()`, blocul „Alte obligații pe care le verifică inspectorul”.*
 
 **Art. 17 alin. (3)** — colectarea separată, obligaţie a **oricărui** producător şi deţinător:
 
@@ -1068,13 +1068,13 @@ citat, nu în actul care citează.
 >    păstrează** — actul tace, şi aia chiar e practica inspectorului.
 > 2. **Art. 8 alin. (2) e o regulă verificabilă, nu o notă.** Dacă un cod-oglindă e declarat
 >    nepericulos fără buletin, încadrarea e nelegală prin construcţie. Aplicaţia ştie ambele lucruri
->    (codul are pereche cu asterisc; există sau nu un buletin ataşat) — deci poate să o spună.
+>    (codul are pereche cu asterisc; există sau nu un buletin ataşat — din 14.09.2026, orice document ataşat pe mişcare, fiindcă buletinele pe cod au ieşit: `WasteMovementMapper`) — deci poate să o spună.
 >    ✅ **Construită pe 11.09.2026** (felia G-4): `V37` pune perechea în nomenclator, iar registrul
 >    de mişcări poartă badge-ul „Cod-oglindă". Ce a ieşit din construcţie şi merită ştiut e mai jos,
 >    la **§3.4**: perechea e derivabilă din numele oficial, dar **nu după o frază**.
 > 3. **Art. 17 alin. (3) şi art. 36 alin. (2) sunt rubrici de dosar**, în acelaşi tipar cu persoana
 >    desemnată de la art. 23 alin. (4): **absenţa unei obligaţii legale e ea însăşi constatarea.**
->    Nu cer ecrane noi, cer o propoziţie în dosarul de control.
+>    Nu cer ecrane noi, cer o propoziţie în dosarul de control. ✅ Construit: `AuditFileService.otherObligationsNote()`, punctele 1–2.
 
 ---
 
@@ -1115,7 +1115,7 @@ autorizaţie stinsă între timp nu şterge ce se datora cât a ţinut. A citi `
 aici ar tăcea exact pentru clientul rămas în urmă.
 
 **Unde e în cod:** `ReportType.APM_ANNUAL_MAY`, `DeadlineService.mayDeadline()`,
-`AuditFileService.otherObligationsNote()` (a cincea obligaţie). **Fără migrare** — coloana
+`AuditFileService.otherObligationsNote()` (azi punctul 4 din patru). **Fără migrare** — coloana
 `report_type` e `VARCHAR(20)` şi valoarea încape, iar semnalul exista deja.
 
 ---
@@ -1339,7 +1339,7 @@ dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
 | Anexă | Ce e | Îl generăm? |
 |---|---|---|
 | **nr. 1** | Formular pentru **aprobarea** transportului deşeurilor periculoase | ❌ nu |
-| **nr. 2** | Formular de **expediţie/transport deşeuri periculoase** | ✅ da *(10.09.2026)* — model în §4.1 |
+| **nr. 2** | Formular de **expediţie/transport deşeuri periculoase** | ✅ da *(10.09.2026)*, doar la colectori din 14.09.2026 — model în §4.1 |
 | **nr. 3** | Formular de **încărcare-descărcare deşeuri nepericuloase** | ✅ da |
 
 > ✅ Mesajul `ANEXA3_HAZARDOUS_NOT_ALLOWED` trimite corect la anexa 2 pentru un cod periculos —
@@ -1411,7 +1411,7 @@ Observaţii: aviz
 2. **„Destinat:” admite mai multe bife.** Pe același model sunt bifate două: *Colectării* și
    *Valorificării*. De aceea e un set, nu o alegere unică.
 3. **Destinatarul e scris cu punctul de lucru, nu cu sediul** („P.L. ILFOV, Şos. de Centura nr. 2-8,
-   Bragadiru”). De aceea partenerul are două adrese.
+   Bragadiru”). De aceea partenerul are sediul și punctele lui de lucru (`PartnerWorkPoint`, `V23`).
 
 **Art. 20 alin. (2): formularul se completează de expeditor în 3 exemplare** — unul rămâne la
 expeditor, unul la transportator, unul ajunge la destinatar prin transportator. Generatorul produce
@@ -2155,7 +2155,7 @@ Sursă: [sgglegis.gov.ro — proiect HG, mai 2026](https://sgglegis.gov.ro/legis
 Consultare publică MMAP, mai 2026. Accesat 22.08.2026.
 
 > **Stare: PROIECT.** Nu se codează nimic pe baza lui. E consemnat aici pentru că definește câmpurile
-> unei viitoare entități `Reception` și pentru că e argumentul comercial al modulului de depozit.
+> unei eventuale înregistrări de recepție (depozitul cântărește azi prin `WeighingOperation`; `Reception` a rămas cusătură nefolosită, P3.6) și pentru că e argumentul comercial al modulului de depozit.
 
 Sistem centralizat administrat de **AFM**, pentru trasabilitatea deșeurilor municipale reciclabile
 predate de **persoane fizice** către operatori autorizați. Se instituie în **180 de zile**,
@@ -2343,8 +2343,8 @@ versiune consolidată, accesat 22.08.2026.
 > **Cel mai important lucru găsit pentru modulul de depozit.** Contribuția o *datorează* vânzătorul,
 > dar o **reține și o virează colectorul** — adică exact clientul-depozit. Deci un centru de colectare
 > are o obligație AFM **lunară**, structural, prin simplul fapt că cumpără deșeu. Nu e opțională și nu
-> depinde de ambalaje. Calculul se face pe fiecare achiziție → cade direct pe entitatea `Reception`,
-> care oricum are prețul.
+> depinde de ambalaje. Calculul se face pe fiecare achiziție → ✅ din 16.09.2026 pe intrarea de depozit: `DepotRetentions`, pe
+> `WeighingOperation` (`V46` + `V51`), la finalizare. (`Reception`, gândită inițial pentru asta, a rămas nefolosită.)
 
 > 🆕 **Baza de calcul, citită pe 15.09.2026** (forma consolidată din 07.03.2025). **Art. 10 alin. (5):**
 > baza pentru procentele de la art. 9 alin. (1) lit. a), e), f) şi j) este *„valoarea de vânzare,
@@ -2376,7 +2376,7 @@ Alte litere relevante: **d)** 2 lei/kg la ambalaje (ținte nerealizate); **i)** 
 > **Alin. (2):** Sumele prevăzute la art. 9 alin. (1) **lit. d), i), j), p), v), w) şi x)** se declară
 > şi se plătesc **anual** [...] până la data de **25 ianuarie inclusiv a anului următor**.
 
-> **Consecință pe modulul Termene — gap confirmat.** Azi generăm un singur termen AFM, lunar pe 25,
+> **Consecință pe modulul Termene — gap confirmat (închis în `V21`, vezi dedesubt).** Până la `V21` generam un singur termen AFM, lunar pe 25,
 > pentru orice firmă cu `afmObligation`. Realitatea are **trei cadențe**, după *care* contribuție o
 > datorează firma: lunar (inclusiv contribuția de 2% a colectorului), trimestrial (economia circulară
 > — depozitele), anual pe 25 ianuarie (ambalaje, anvelope, UAT). Flagul boolean `afmObligation` e prea
@@ -2391,7 +2391,7 @@ Alte litere relevante: **d)** 2 lei/kg la ambalaje (ținte nerealizate); **i)** 
 > **cine pune pe piață marfă ambalată**, nu fabricanții de ambalaje.
 >
 > Asta se potrivește peste **lit. d)**, contribuția pe ambalaje, care e **anuală** (alin. (2)) — și
-> confirmă că termenul lunar generat azi pentru un generator obișnuit e greșit. Ce **nu** spune
+> confirmă că termenul lunar generat atunci (până la `V21`) pentru un generator obișnuit era greșit. Ce **nu** spune
 > răspunsul e dacă acoperă și celelalte două cadențe, care aparțin unor tipuri de client fără ecrane
 > încă: cei **2%** ai colectorului (lit. a, lunar, §10.1) și **economia circulară** a gropilor
 > (lit. c, trimestrial, §10.2). Formularea ei vine din contextul modulului de generatori, unde
@@ -2544,7 +2544,7 @@ text inițial; 15.09.2026):
   verificare depăşit”*.
 
 🟠 Amenzile din textul inițial sunt în lei vechi; cuantumul actual n-a fost citit.
-**Consecință:** cântarul depozitului are o dată de expirare a verificării și primește alertă.
+**Consecință (de proiect, modulul de depozit — neconstruit la 22.09.2026):** cântarul depozitului ar trebui să aibă o dată de expirare a verificării și să primească alertă.
 
 ---
 

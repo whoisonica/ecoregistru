@@ -10,7 +10,7 @@ e un defect, nu o preferință.*
 ## De unde vine
 
 Pornește de la cântarul de la colector și de la bonul lui: **panou grafit** cu taste (afișajul LCD al lunii, din
-prima formă, a fost scos din panou pe 18.09.2026 — negrul lui a rămas pe plăcuța firmei și pe banda de sus de pe telefon), pagina
+prima formă, a fost scos din panou pe 18.09.2026 — negrul lui a rămas doar pe plăcuța firmei; banda de sus de pe telefon e grafit, ca panoul, cu cifrele în culorile afișajului), pagina
 **albă ca bonul**, cifre în mono aliniate în coloane, linii subțiri, nicio umbră. Verdele e cel de pe Punctul
 Verde al ambalajelor. Nimic nu plutește: cutiile stau pe chenar, nu pe umbră; colțurile sunt mici, ca la un
 aparat, nu rotunde ca la o aplicație de telefon.
@@ -36,7 +36,7 @@ Nicio culoare, colț sau umbră nu se scrie de mână într-un ecran. Se foloses
 | Acțiunea principală | `bg-brand`, scara `brand-50…950` | Punctul Verde `#009A44`, apăsat `#007A36`, tasta `#00622F` |
 | Intrarea în depozit | `bg-inbound`, `variant="inbound"` la `Button` | albastru `#1C6FD1` — cealaltă direcție față de verde |
 | Panoul (bara stângă) | `bg-panel`, `-hover`, `-active`, `-line`, `-key`, `text-panel-text/-mid/-dim/-faint` | grafit `#1B201D`; intrarea activă `#2A322E` cu linie interioară de 3px `lcd-digit` la stânga |
-| Negrul de afișaj | `bg-lcd`, `text-lcd-digit/-unit/-warn/-bad` | `#0D1210` — plăcuța firmei și banda de sus de pe telefon; `#7CF2A9` linia intrării active, galben `#FFB020` și roșu `#FF6B5E` la indicatori |
+| Negrul de afișaj | `bg-lcd`, `text-lcd-digit/-unit/-warn/-bad` | `#0D1210` — plăcuța firmei (`CompanyLabel`); banda de telefon e `bg-panel` și ia de aici doar `text-lcd-digit/-warn/-bad`; `#7CF2A9` linia intrării active, galben `#FFB020` și roșu `#FF6B5E` la indicatori |
 | Stări | `Badge` (LED) · `text-state-ok/-warn/-bad-text` | **pătrățel de 8px + cuvânt**, nu pastilă colorată. Sensul nu se schimbă: verde = gata; **galben = o așteptare legitimă** (cântarul); **roșu = nu se poate depune așa** |
 | Pubela | `BinSwatch` + `lib/binColor.ts` | pătrățel de 10×12px înaintea codului de deșeu: albastru hârtie, galben plastic/metal-ambalaje, verde sticlă, maro bio, gri rezidual, roșu periculoase, gri-metal fier vechi. **Listă explicită cod → pubelă, nu prefix ghicit**; codul necunoscut n-are culoare. Galbenul pubelei nu înseamnă „așteaptă” |
 | Colțuri | scara `borderRadius` (înlocuită, nu extinsă) | 4–8px peste tot: `rounded-md` 5px butoane și câmpuri, `rounded-lg` 6px cutii; `rounded-xl/2xl/3xl` scrise în ecrane cad tot pe 6–8px. **Fără pastile.** `rounded-full` doar pentru avatar și rotița de încărcare |
@@ -83,8 +83,9 @@ mișcări (butonul de pe Acasă a fost scos și el, tot pe 18.09.2026), iar N / 
 Mai mult** (`MobileBar`). „+” oferă doar ce e permis tipului de firmă.
 
 **Tastele:** cifrele deschid intrările meniului; **N = acțiunea principală a ecranului curent** (pe ecranele fără
-adăugare, N = adaugă deșeuri); I și E deschid formularele de intrare și ieșire de oriunde; `/` sare în căutarea
-listei; `[` strânge panoul. Tastele tac în câmpuri de text (`useHotkey`).
+adăugare, N = adaugă deșeuri); I și E deschid formularele de intrare și ieșire de oriunde, **numai la firmele care preiau de la
+alții**; S = Setări când meniul trece de zece intrări; F / C / B în grupul Cabinet; `/` sare în căutarea listei; `[` strânge
+panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de text (`useHotkey`).
 
 ---
 
@@ -92,7 +93,7 @@ listei; `[` strânge panoul. Tastele tac în câmpuri de text (`useHotkey`).
 
 | Primitivă | Când |
 |---|---|
-| `Button`, `LinkButton` | Orice acțiune. Colț de 5px, text 600. `default` = pasul principal al ecranului (unul singur, verde), `inbound` = intrarea (albastru), `outline` = celelalte, `ghost` = acțiunile de rând, `danger` = ce nu se ia înapoi. `hotkey="N"` arată tasta |
+| `Button`, `LinkButton` | Orice acțiune. Colț de 5px, text 600. `default` = pasul principal al ecranului (unul singur, verde), `inbound` = intrarea (albastru), `outline` = celelalte, `ghost` = acțiunile de rând, `muted` = acțiunea care schimbă date lângă butoane de document („Recalculează acum”), `danger` = ce nu se ia înapoi, `danger-ghost` = ștergerea pe rând. `hotkey="N"` arată tasta |
 | `Input`, `Select`, `Textarea`, `DateInput` | Rubrici. Aceleași clase (`fieldClasses`): chenar de 1px, focus verde |
 | `Badge` | Starea unui rând, ca LED: pătrățel + cuvânt („De cântărit”, „Fără cod R/D”, „Activ”) |
 | `BinSwatch` | Pubela dinaintea unui cod de deșeu, pe liste și în formular |
@@ -109,6 +110,14 @@ listei; `[` strânge panoul. Tastele tac în câmpuri de text (`useHotkey`).
 | `Menu`, `MenuItem` | Un buton cu listă (descărcări, acțiunile rândului) |
 | `Tooltip` | Orice explicație la cerere, pe grafit. **Niciodată `title=`**; și niciodată în jurul unui `Button` — bula își randează propriul buton |
 | `Toast` | Mesaje scurte, pe grafit, ca de la aparat |
+| `LoadError` | Orice ecran sau bloc care n-a putut încărca: `role="alert"`, text în `state-bad`, „Încearcă din nou” (20.09.2026) |
+| `PageTabs` | Taburile unui ecran (din `lib/screenTabs.ts`), cu filtrele pe aceeași linie în slotul `right` |
+| `DocAction` | Butonul unui document, cu explicația în `Tooltip`, nu dedesubt |
+| `TableToolbar`, `TableSearch`, `TablePagination`, `RowActions` | Căutarea (de la 10 rânduri), paginarea și meniul de rând al unui tabel (`table-toolbar.tsx`) |
+| `MonthInput`, `Combobox`, `PasswordInput`, `FileDropzone` | Luna/anul, alegerea dintr-o listă lungă cu căutare, parola cu tăria ei, atașamentele (10 MB) |
+| `EmptyState`, `Skeleton`, `TableFallbackRow` | Lista goală spusă în cuvinte; locul ținut cât se încarcă |
+| `useConfirm` | Întrebarea de dinaintea unei fapte care nu se ia înapoi (`confirm-dialog.tsx`) |
+| `FormStepRail` | Pașii unui formular lung (partenerul în patru pași, clientul nou), `form-steps.tsx` |
 
 Select-ul nativ rămâne pentru liste lungi (parteneri, puncte de lucru, coduri R/D din profil). **Sub șapte opțiuni,
 într-un formular nou, se folosesc `ChoiceCards` sau `PillGroup`.**
@@ -211,7 +220,8 @@ face și `overflow-y` să devină `auto` (regulă CSS), iar butoanele de tab ies
 acopere chenarul): atât i-a trebuit ca macOS să deseneze un **indicator de derulare** lipit după ultimul tab, luat
 drept buton. Cât banda ținea toată lățimea, firul cădea la marginea paginii și nu-l vedea nimeni; de când se termină
 după ultimul tab, stă în mijlocul antetului. Liste derulante cu etichetă deasupra ocupau o bandă întreagă sub taburi.
-La fel pe **amândouă** taburile „Generare": luna și punctul de lucru pe „Mișcări", anul și punctul pe „Totalul anului".
+La fel pe toate trei taburile „Generare": luna și punctul de lucru pe „Mișcări", anul și punctul pe „Totalul anului", doar anul pe
+„Ambalaje" (punctul de lucru se alege din meniul butonului Anexa 3).
 Intrări și Ieșiri n-au taburi, deci își păstrează banda.
 **Tabelul totalului arată zece coduri pe pagină**, nu douăzeci și cinci ca restul: stă sub un antet înalt, iar rândul de
 total — cifra pentru care se deschide tabul — ajungea sub marginea ecranului. ⚠️ Rândul de total rămâne al **anului**,
