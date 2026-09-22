@@ -17,7 +17,7 @@
  * locală. Termenii au 17 capitole (erau 16): proba de ecran 12 numără la fel.
  *
  * <p>v2.1, 22.09.2026 (după validarea juristului): documentele după activitatea firmei, importul făcut de noi,
- * cardul de la activare, excepția de rambursare din DPA art. 6.3; în politică: Brevo, Google Fonts pe site,
+ * cardul de la activare, excepția de rambursare din DPA art. 6.3; în politică: Brevo, site-ul fără cookie-uri și fără terți,
  * stocarea locală așa cum e în cod, CNP-ul la ștergerea automată.
  */
 
@@ -617,13 +617,6 @@ export const PRIVACY: LegalDoc = {
             "nici invitațiile și resetările de parolă până nu ne scrieți.",
         },
         {
-          kind: "p",
-          text:
-            "**Site-ul de prezentare wastehouse.ro** încarcă fonturile de la **Google Fonts** (Google): browserul " +
-            "le cere direct de la Google, care vede astfel adresa IP a vizitatorului. Aplicația " +
-            "(app.wastehouse.ro) folosește fonturi găzduite de noi și nu trimite nimic la Google.",
-        },
-        {
           kind: "note",
           text:
             "**Fișierele pe care le atașați în aplicație se stochează la Cloudinary, în Statele Unite.** Vă " +
@@ -665,7 +658,8 @@ export const PRIVACY: LegalDoc = {
           text:
             "**Nu folosim cookie-uri de urmărire, nu avem instrumente de analiză a traficului și nu avem " +
             "publicitate.** De aceea nu vedeți la noi o casetă de consimțământ pentru cookie-uri: n-am pus nimic " +
-            "pentru care să fie nevoie de ea.",
+            "pentru care să fie nevoie de ea. Site-ul de prezentare wastehouse.ro nu pune niciun cookie, nu scrie " +
+            "nimic în browser și nu încarcă nimic de la terți, nici măcar fonturile.",
         },
         {
           kind: "p",
