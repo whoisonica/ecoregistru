@@ -226,10 +226,15 @@ public class SubscriptionService {
         s.setPaymentMethod(method);
         if (method == SubscriptionPaymentMethod.TRANSFER) {
             // Choosing transfer is saying „do not debit my card": the token goes, not only the flag.
-            s.setCardToken(null);
-            s.setCardPanMasked(null);
-            s.setCardExpiry(null);
+            forgetCard(s);
         }
+    }
+
+    /** Contract art. 5.8 and 13.3: the saved card goes on a switch to transfer and when the contract ends. */
+    private static void forgetCard(Subscription s) {
+        s.setCardToken(null);
+        s.setCardPanMasked(null);
+        s.setCardExpiry(null);
     }
 
     /**
@@ -365,6 +370,9 @@ public class SubscriptionService {
         s.setStatus(SubscriptionStatusRules.statusOn(today,
                 invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()),
                 s.getEndsOn(), readOnlyEnabled, s.getStatus()));
+        if (s.getStatus() == SubscriptionStatus.CANCELLED) {
+            forgetCard(s);
+        }
     }
 
     public boolean readOnlyEnabled() {
@@ -469,6 +477,7 @@ public class SubscriptionService {
         }
         s.setEndsOn(invoice.getPeriodStart().minusDays(1));
         s.setStatus(SubscriptionStatus.CANCELLED);
+        forgetCard(s);
     }
 
     /**

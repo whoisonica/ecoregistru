@@ -15,6 +15,10 @@
  * doar-citirea la neplată), oprirea și rambursările, utilizatorii invitați, datele după încetare;
  * în politică: datele de facturare și de plată, NETOPIA, FGO, ANAF, a treia intrare din stocarea
  * locală. Termenii au 17 capitole (erau 16): proba de ecran 12 numără la fel.
+ *
+ * <p>v2.1, 22.09.2026 (după validarea juristului): documentele după activitatea firmei, importul făcut de noi,
+ * cardul de la activare, excepția de rambursare din DPA art. 6.3; în politică: Brevo, Google Fonts pe site,
+ * stocarea locală așa cum e în cod, CNP-ul la ștergerea automată.
  */
 
 /** Ce poate să conțină un capitol. Cât ne trebuie ca să scriem exact documentele astea, nimic mai mult. */
@@ -48,7 +52,7 @@ export interface LegalDoc {
  * ajunge în altă zi, se schimbă aici — într-un singur loc, pentru amândouă documentele — și în cele
  * două rânduri de dată din `juridic/`.
  */
-export const LEGAL_DATE = "15 septembrie 2026";
+export const LEGAL_DATE = "22 septembrie 2026";
 
 const COMPANY =
   "**ONSIA S.R.L.**, societate română cu sediul în sat Sântandrei, comuna Sântandrei, " +
@@ -114,18 +118,19 @@ export const TERMS: LegalDoc = {
           kind: "p",
           text:
             "WasteHouse vă ajută să **țineți evidența** gestiunii deșeurilor și **pregătește documentele** " +
-            "cerute de legislația română, în forma cerută la data generării: fișa de evidență a gestiunii " +
-            "deșeurilor, evidența centralizată anuală, formularele de transport al deșeurilor (inclusiv cele " +
-            "pentru deșeuri periculoase) și avizul de însoțire a mărfii, evidența cronologică a colectorilor, " +
-            "declarațiile de ambalaje, dosarul de control și celelalte documente pe care aplicația le pune la " +
-            "dispoziție la un moment dat.",
+            "cerute de legislația română, în forma cerută la data generării, potrivit activității firmei: fișa " +
+            "de evidență a gestiunii deșeurilor, evidența centralizată anuală, formularul de transport al " +
+            "deșeurilor nepericuloase și avizul de însoțire a mărfii, declarațiile de ambalaje, dosarul de " +
+            "control și celelalte documente pe care aplicația le pune la dispoziție la un moment dat. Formularul " +
+            "de transport pentru deșeurile periculoase și evidența cronologică a deșeurilor preluate de la terți " +
+            "se generează numai pentru firmele care preiau deșeuri de la terți.",
         },
         {
           kind: "p",
           text:
-            "Aplicația ține și **calendarul termenelor legale**, cu alerte, și poate importa evidența existentă " +
-            "din fișiere Excel în formatul acceptat. Alertele sunt informative și nu înlocuiesc urmărirea " +
-            "termenelor de către dumneavoastră.",
+            "Aplicația ține și **calendarul termenelor legale**, cu alerte. Alertele sunt informative și nu " +
+            "înlocuiesc urmărirea termenelor de către dumneavoastră. Evidența pe care o țineți deja în fișiere " +
+            "Excel o aducem noi în aplicație, dacă ne-o trimiteți la contact@wastehouse.ro în formatul acceptat.",
         },
       ],
     },
@@ -304,7 +309,8 @@ export const TERMS: LegalDoc = {
           text:
             "**11.4.** Puteți plăti prin **transfer bancar**, în contul de pe factură, sau cu **cardul**, pe " +
             "pagina securizată a procesatorului de plăți **NETOPIA Payments**. Datele cardului le introduceți " +
-            "numai acolo; noi nu le vedem și nu le stocăm.",
+            "numai acolo; noi nu le vedem și nu le stocăm. Plata cu cardul se poate alege din ziua în care o " +
+            "activăm în aplicație; până atunci plătiți prin transfer bancar.",
         },
         {
           kind: "p",
@@ -343,7 +349,9 @@ export const TERMS: LegalDoc = {
           kind: "p",
           text:
             "**12.2.** Sumele facturate pentru o perioadă începută **nu se restituie**. Taxa de implementare " +
-            "plătită nu se restituie.",
+            "plătită nu se restituie. Excepție: dacă opriți abonamentul pentru că nu acceptați un furnizor nou " +
+            "care ar prelucra datele din aplicație (contractul de împuternicire, art. 6.3), vă restituim partea " +
+            "plătită în avans pentru zilele rămase.",
         },
         {
           kind: "p",
@@ -369,7 +377,8 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "**13.2.** Nu răspundem pentru datele introduse sau importate de dumneavoastră, pentru interpretarea " +
+            "**13.2.** Nu răspundem pentru datele introduse de dumneavoastră sau aduse de noi în aplicație din " +
+            "fișierele trimise de dumneavoastră, pentru interpretarea " +
             "legislației, pentru nedepunerea sau depunerea eronată a documentelor, pentru sancțiunile care " +
             "decurg din acestea, ori pentru consecințele trecerii în doar-citire pentru neplată.",
         },
@@ -600,6 +609,21 @@ export const PRIVACY: LegalDoc = {
         },
         { kind: "p", text: "**Baza de date, e-mailurile și rapoartele de eroare sunt stocate în Uniunea Europeană.**" },
         {
+          kind: "p",
+          text:
+            "**E-mailurile automate** pleacă prin Brevo. Brevo trece linkurile din ele printr-o adresă proprie " +
+            "de redirecționare și numără deschiderile și clicurile **anonim**, fără să le lege de adresa " +
+            "dumneavoastră. Mesajele au și un link de dezabonare, pus de Brevo: dacă îl folosiți, nu mai primiți " +
+            "nici invitațiile și resetările de parolă până nu ne scrieți.",
+        },
+        {
+          kind: "p",
+          text:
+            "**Site-ul de prezentare wastehouse.ro** încarcă fonturile de la **Google Fonts** (Google): browserul " +
+            "le cere direct de la Google, care vede astfel adresa IP a vizitatorului. Aplicația " +
+            "(app.wastehouse.ro) folosește fonturi găzduite de noi și nu trimite nimic la Google.",
+        },
+        {
           kind: "note",
           text:
             "**Fișierele pe care le atașați în aplicație se stochează la Cloudinary, în Statele Unite.** Vă " +
@@ -646,22 +670,23 @@ export const PRIVACY: LegalDoc = {
         {
           kind: "p",
           text:
-            "Aplicația folosește **stocarea locală a browserului** (`localStorage`), pentru trei lucruri, toate " +
-            "strict necesare funcționării:",
+            "Aplicația folosește **stocarea locală a browserului** (`localStorage` și, pentru firma deschisă în " +
+            "fiecare tab, `sessionStorage`), pentru lucruri strict necesare funcționării:",
         },
         {
           kind: "list",
           items: [
             "**jetonul de sesiune** — ca să rămâneți autentificat între pagini; expiră în 8 ore;",
             "**contul autentificat și firma selectată** — numele, adresa de e-mail și rolul dumneavoastră, ca să nu le cerem serverului la fiecare pagină, și firma pe care lucrați;",
-            "**ciornele de formular** — ca să nu pierdeți ce ați scris dacă închideți din greșeală pagina.",
+            "**preferințele de ecran** — dacă panoul lateral e restrâns și dacă ați ascuns cardul „Primii pași” al unei firme;",
+            "**ciorna cererii de cont** — ca să nu pierdeți ce ați scris dacă închideți din greșeală pagina; se șterge când trimiteți cererea și nu se mai folosește după 7 zile.",
           ],
         },
         {
           kind: "p",
           text:
-            "Toate stau **în browserul dumneavoastră** și se șterg la deconectare sau când goliți datele " +
-            "site-ului.",
+            "Toate stau **în browserul dumneavoastră**. Jetonul, contul și firma selectată se șterg la " +
+            "deconectare; preferințele de ecran rămân până când goliți datele site-ului.",
         },
         {
           kind: "p",
@@ -687,7 +712,7 @@ export const PRIVACY: LegalDoc = {
         {
           kind: "p",
           text:
-            "Numele și actele de identitate ale conducătorilor auto de pe înregistrările de transport mai vechi " +
+            "Numele, actele de identitate și CNP-urile conducătorilor auto de pe înregistrările de transport mai vechi " +
             "de trei ani calendaristici întregi se șterg automat, indiferent de starea contului.",
         },
         {

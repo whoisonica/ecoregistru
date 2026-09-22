@@ -23,6 +23,7 @@ import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.repository.AppUserRepository;
@@ -242,6 +243,29 @@ class BillingRunIT {
 
         assertThat(invoices(s).get(0).getStatus()).isEqualTo(InvoiceStatus.PAID);
         assertThat(subscriptionStatus(s)).isEqualTo(SubscriptionStatus.ACTIVE);
+    }
+
+    /** Contract art. 13.3: when the contract ends, the saved card goes with it. */
+    @Test
+    void theSavedCardIsForgottenOnceTheLastPeriodIsOver() {
+        Subscription s = subscription(company(), true);
+        s.setPaymentMethod(SubscriptionPaymentMethod.CARD);
+        s.setCardToken("tok-" + suffix());
+        s.setCardPanMasked("****1234");
+        s.setCardExpiry("12/2029");
+        s.setEndsOn(START.plusDays(40));
+        subscriptionRepository.save(s);
+
+        billing.run(START.plusDays(40));
+        assertThat(subscriptionRepository.findById(s.getId()).orElseThrow().getCardToken()).isNotNull();
+
+        billing.run(START.plusDays(41));
+        assertThat(subscriptionRepository.findById(s.getId()).orElseThrow()).satisfies(ended -> {
+            assertThat(ended.getStatus()).isEqualTo(SubscriptionStatus.CANCELLED);
+            assertThat(ended.getCardToken()).isNull();
+            assertThat(ended.getCardPanMasked()).isNull();
+            assertThat(ended.getCardExpiry()).isNull();
+        });
     }
 
     @Test
