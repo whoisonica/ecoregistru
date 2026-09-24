@@ -302,6 +302,8 @@ export interface Subscription {
   companyPriceTier3: number | null;
   packagingCompanyPrice: number | null;
   founder: boolean;
+  /** Contract art. 4.3: implementarea nu se plătește la început, ci doar la o oprire înainte de 12 luni. */
+  twelveMonthCommitment: boolean;
   startedAt: string; // yyyy-MM-dd
   firstInvoice: InvoicePreview;
   monthlyInvoice: InvoicePreview;
@@ -348,6 +350,8 @@ export interface SubscriptionInvoice {
 export interface SubscriptionInput {
   plan: SubscriptionPlan;
   founder: boolean;
+  /** Contract art. 4.3: implementarea nu se plătește la început, ci doar la o oprire înainte de 12 luni. */
+  twelveMonthCommitment: boolean;
   startedAt: string; // yyyy-MM-dd
   billingEmail: string | null;
   billingCounty: string | null;
@@ -489,6 +493,8 @@ export interface BillingAccount {
   status: SubscriptionStatus;
   startedAt: string; // yyyy-MM-dd
   founder: boolean;
+  /** Contract art. 4.3: implementarea nu se plătește la început, ci doar la o oprire înainte de 12 luni. */
+  twelveMonthCommitment: boolean;
   nextInvoice: InvoicePreview;
   /** Unde pleacă facturile: emailul de facturare sau, lipsă, cel de contact al firmei. */
   billingEmail: string | null;

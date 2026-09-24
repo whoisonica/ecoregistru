@@ -88,6 +88,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [founder, setFounder] = useState<boolean | null>(null);
+  const [commitment, setCommitment] = useState<boolean | null>(null);
   const [billingEmail, setBillingEmail] = useState<string | null>(null);
   const [billingCounty, setBillingCounty] = useState<string | null>(null);
   const [billingCity, setBillingCity] = useState<string | null>(null);
@@ -97,12 +98,13 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     plan: plan ?? subscription?.plan ?? (isConsultancy ? "CONSULTANCY" : "GENERATOR"),
     startedAt: startedAt ?? subscription?.startedAt ?? todayIso(),
     founder: founder ?? subscription?.founder ?? false,
+    twelveMonthCommitment: commitment ?? subscription?.twelveMonthCommitment ?? false,
     billingEmail: billingEmail ?? subscription?.billingEmail ?? "",
     billingCounty: billingCounty ?? subscription?.billingCounty ?? "",
     billingCity: billingCity ?? subscription?.billingCity ?? "",
     billingAddress: billingAddress ?? subscription?.billingAddress ?? "",
   };
-  const setters = { setPlan, setStartedAt, setFounder, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
+  const setters = { setPlan, setStartedAt, setFounder, setCommitment, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
   const busy = saveMut.isPending || deleteMut.isPending || cancelMut.isPending;
 
   async function save(e: FormEvent) {
@@ -112,6 +114,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
         plan: values.plan,
         startedAt: values.startedAt,
         founder: values.founder,
+        twelveMonthCommitment: values.twelveMonthCommitment,
         billingEmail: values.billingEmail || null,
         billingCounty: values.billingCounty || null,
         billingCity: values.billingCity || null,
@@ -129,6 +132,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
       setPlan(null);
       setStartedAt(null);
       setFounder(null);
+      setCommitment(null);
       setBillingEmail(null);
       setBillingCounty(null);
       setBillingCity(null);
@@ -143,7 +147,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   function cancel() {
     confirm({
       title: t.cancel,
-      message: t.cancelConfirm,
+      message: subscription?.twelveMonthCommitment ? `${t.cancelConfirm} ${t.cancelConfirmCommitted}` : t.cancelConfirm,
       confirmLabel: t.cancel,
       tone: "danger",
       onConfirm: async () => {
@@ -239,6 +243,21 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
           )}
         </span>
       </label>
+
+      {values.plan !== "FULL_SERVICE" && (
+        <label className="flex items-start gap-2 text-sm text-content-strong">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+            checked={values.twelveMonthCommitment}
+            onChange={(e) => setters.setCommitment(e.target.checked)}
+          />
+          <span>
+            {t.commitment}
+            <span className="block text-xs text-content-muted">{t.commitmentHint}</span>
+          </span>
+        </label>
+      )}
 
       <fieldset className="space-y-3 rounded-md border border-line p-3">
         <legend className="px-1 text-sm font-medium text-content-strong">{t.billing}</legend>

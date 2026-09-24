@@ -16,6 +16,7 @@ import java.time.LocalDate;
 public record SubscriptionRequest(
         @NotNull SubscriptionPlan plan,
         boolean founder,
+        boolean twelveMonthCommitment,
         @NotNull LocalDate startedAt,
         @Email @Size(max = 100) String billingEmail,
         @Size(max = 100) String billingCounty,

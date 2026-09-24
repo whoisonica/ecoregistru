@@ -125,6 +125,77 @@ class BillingCalculatorTest {
                 .containsExactly("Generator", "Implementare (client fondator, gratuită)");
     }
 
+    /** Contract art. 4.3: cu angajament, prima factură arată implementarea gratuită, nu o încasează. */
+    @Test
+    void aTwelveMonthCommitmentPaysNoImplementationUpFront() {
+        Invoice invoice = BillingCalculator.invoice(committed(SubscriptionPlan.GENERATOR, null), 1, 0, 0, 0);
+        assertThat(invoice.total()).isEqualByComparingTo("99");
+        assertThat(invoice.lines()).extracting(Line::label)
+                .containsExactly("Generator", "Implementare (angajament 12 luni, gratuită)");
+    }
+
+    /**
+     * Oprit în a cincea lună: ultima perioadă facturată poartă implementarea, o singură dată, iar
+     * perioadele dinainte rămân la 99. Lunile rămase până la 12 nu apar nicăieri.
+     */
+    @Test
+    void stoppingBeforeTwelveMonthsBillsTheImplementationOnTheLastInvoice() {
+        LocalDate lastDay = BillingCalculator.periodStart(committed(SubscriptionPlan.GENERATOR, null), 5).minusDays(1);
+        Subscription s = committed(SubscriptionPlan.GENERATOR, lastDay);
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 3).total()).isEqualByComparingTo("99");
+        Invoice last = BillingCalculator.invoice(s, 1, 0, 0, 4);
+        assertThat(last.to()).isEqualTo(lastDay);
+        assertThat(last.total()).isEqualByComparingTo("389");
+        assertThat(last.lines()).extracting(Line::label)
+                .containsExactly("Generator", "Implementare (oprire înainte de 12 luni)");
+    }
+
+    /** Oprit cu a 11-a lună ca ultimă: încă înainte de termen. Hotarul de lângă cel de mai jos. */
+    @Test
+    void stoppingAfterElevenMonthsStillBillsTheImplementation() {
+        Subscription probe = committed(SubscriptionPlan.GENERATOR, null);
+        Subscription s = committed(SubscriptionPlan.GENERATOR,
+                BillingCalculator.periodStart(probe, BillingCalculator.COMMITMENT_PERIODS - 1).minusDays(1));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, BillingCalculator.COMMITMENT_PERIODS - 2).total())
+                .isEqualByComparingTo("389");
+    }
+
+    @Test
+    void stoppingAfterTwelveMonthsBillsNoImplementation() {
+        Subscription probe = committed(SubscriptionPlan.GENERATOR, null);
+        Subscription s = committed(SubscriptionPlan.GENERATOR,
+                BillingCalculator.periodStart(probe, BillingCalculator.COMMITMENT_PERIODS).minusDays(1));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, BillingCalculator.COMMITMENT_PERIODS - 1).total())
+                .isEqualByComparingTo("99");
+    }
+
+    /** Proba negativă a regulii: fără angajament, oprirea timpurie nu mai adaugă nimic pe ultima factură. */
+    @Test
+    void withoutCommitmentAnEarlyStopAddsNothing() {
+        Subscription s = direct(SubscriptionPlan.GENERATOR, false, START);
+        s.setEndsOn(BillingCalculator.periodStart(s, 5).minusDays(1));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 4).total()).isEqualByComparingTo("99");
+    }
+
+    @Test
+    void aCommittedFounderPaysNoImplementationEvenWhenStoppingEarly() {
+        Subscription s = committed(SubscriptionPlan.GENERATOR, null);
+        s.setFounder(true);
+        s.setEndsOn(BillingCalculator.periodStart(s, 3).minusDays(1));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 2).total()).isEqualByComparingTo("99");
+    }
+
+    @Test
+    void aCommittedCabinetPaysTheStartOnlyWhenStoppingEarly() {
+        Subscription s = cabinet();
+        s.setTwelveMonthCommitment(true);
+        assertThat(BillingCalculator.invoice(s, 0, 5, 0, 0).total()).isEqualByComparingTo("344");
+        s.setEndsOn(BillingCalculator.periodStart(s, 2).minusDays(1));
+        assertThat(BillingCalculator.invoice(s, 0, 5, 0, 1).lines()).extracting(Line::label)
+                .contains("Pornirea cabinetului (oprire înainte de 12 luni)");
+        assertThat(BillingCalculator.invoice(s, 0, 5, 0, 1).total()).isEqualByComparingTo("834");
+    }
+
     @Test
     void fullServiceHasNoImplementationLine() {
         Invoice invoice = BillingCalculator.invoice(direct(SubscriptionPlan.FULL_SERVICE, false, START), 1, 0, 0, 0);
@@ -143,6 +214,13 @@ class BillingCalculatorTest {
                 .monthlyPrice(plan.monthlyPrice()).implementationFee(plan.implementationFee())
                 .extraWorkPointPrice(SubscriptionPlan.EXTRA_WORK_POINT_PRICE)
                 .founder(founder).startedAt(start).build();
+    }
+
+    private static Subscription committed(SubscriptionPlan plan, LocalDate endsOn) {
+        Subscription s = direct(plan, false, START);
+        s.setTwelveMonthCommitment(true);
+        s.setEndsOn(endsOn);
+        return s;
     }
 
     private static Subscription cabinet() {

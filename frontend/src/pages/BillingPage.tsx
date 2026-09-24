@@ -382,10 +382,14 @@ function PackageCard({ account }: { account: BillingAccount }) {
       </p>
       <dl className="mt-2 space-y-1 text-sm">
         <Row label={t.startedAt}>{formatDate(account.startedAt)}</Row>
+        {account.twelveMonthCommitment && (
+          <Row label={t.commitment}>{t.commitmentValue.replace("{date}", formatDate(account.startedAt))}</Row>
+        )}
         <Row label={t.method}>
           {account.cardPaymentAvailable && method === "CARD" ? t.methodCard : t.methodTransfer}
         </Row>
       </dl>
+      {account.twelveMonthCommitment && <p className="mt-1 text-xs text-content-muted">{t.commitmentHint}</p>}
 
       {account.cardPaymentAvailable ? (
         <fieldset className="mt-4 space-y-2">

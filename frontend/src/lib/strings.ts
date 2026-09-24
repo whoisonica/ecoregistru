@@ -2408,6 +2408,9 @@ export const strings = {
     plan: "Pachet",
     founder: "client fondator",
     startedAt: "Început pe",
+    commitment: "Angajament",
+    commitmentValue: "12 luni de la {date}",
+    commitmentHint: "Dacă oprești înainte, implementarea intră pe ultima factură.",
     method: "Cum plătești",
     methodCard: "Card",
     methodTransfer: "Transfer bancar",
@@ -2593,6 +2596,8 @@ export const strings = {
       "Ziua de la care se facturează. Fiecare lună se plătește întreagă, din ziua asta până în ziua dinaintea ei din luna următoare.",
     founder: "Client fondator: implementare gratuită, preț blocat 2 ani",
     founderCount: "{n} din 30 folosite",
+    commitment: "Angajament 12 luni: fără implementare la început",
+    commitmentHint: "Oprit înainte de 12 luni, implementarea intră pe ultima factură.",
     status: {
       PENDING: "Așteaptă prima plată",
       ACTIVE: "Activ",
@@ -2621,6 +2626,8 @@ export const strings = {
     cancel: "Oprește abonamentul",
     cancelConfirm:
       "Se facturează încă perioada de preaviz (o lună), apoi abonamentul se oprește și contul rămâne doar pentru citire. Continui?",
+    cancelConfirmCommitted:
+      "Are angajament de 12 luni: dacă ultima perioadă cade înainte de a 12-a lună, implementarea intră pe ultima factură.",
     cancelled: "Abonament oprit. Ultima zi facturată: {date}.",
     cancelError: "Abonamentul nu a putut fi oprit.",
     resume: "Anulează oprirea",
@@ -3100,6 +3107,10 @@ export const strings = {
     founderNo: "Nu",
     founderYes: "Da, implementare gratuită",
     founderCount: "{n} din 30 de locuri ocupate.",
+    commitmentLabel: "Angajament 12 luni",
+    commitmentNo: "Nu",
+    commitmentYes: "Da, implementare gratuită",
+    commitmentHint: "Oprit înainte de 12 luni, implementarea intră pe ultima factură.",
     billingTo: "Facturăm către",
     billingEmail: "Email pentru facturi",
     billingEmailHint: "Aici pleacă factura în fiecare lună.",

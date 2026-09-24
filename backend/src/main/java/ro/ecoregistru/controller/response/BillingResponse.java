@@ -28,6 +28,7 @@ public record BillingResponse(
         SubscriptionStatus status,
         LocalDate startedAt,
         boolean founder,
+        boolean twelveMonthCommitment,
         Invoice nextInvoice,
         String billingEmail,
         String billingCounty,

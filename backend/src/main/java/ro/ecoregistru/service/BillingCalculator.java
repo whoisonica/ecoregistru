@@ -21,11 +21,16 @@ import java.util.List;
  * on — active work points for a company, active companies for a consultancy — when the period
  * starts, so a company added to a consultancy mid-period is paid from the next period (decision of
  * 15.09.2026). The first period also carries the implementation fee.
+ *
+ * <p>With the 12-month commitment (contract art. 4.3, 24.09.2026) the fee moves: the first period
+ * shows it as free, and it is billed only on the last period of a subscription stopped before the
+ * 12th. Only the remaining months are forgiven, never the fee itself. A founder pays it in no case.
  */
 public final class BillingCalculator {
 
     static final int TIER1_UP_TO = 10;
     static final int TIER2_UP_TO = 30;
+    public static final int COMMITMENT_PERIODS = 12;
 
     public record Line(String label, int quantity, BigDecimal unitPrice, BigDecimal amount) {}
 
@@ -81,18 +86,35 @@ public final class BillingCalculator {
             recurring(lines, "Punct de lucru în plus", Math.max(activeWorkPoints - 1, 0), s.getExtraWorkPointPrice());
         }
 
-        if (period == 0) {
-            String label = s.getPlan().forConsultancy() ? "Pornirea cabinetului" : "Implementare";
-            if (s.isFounder()) {
+        String label = s.getPlan().forConsultancy() ? "Pornirea cabinetului" : "Implementare";
+        boolean fee = s.getImplementationFee().signum() > 0;
+        if (s.isFounder()) {
+            if (period == 0) {
                 lines.add(new Line(label + " (client fondator, gratuită)", 1, BigDecimal.ZERO, BigDecimal.ZERO));
-            } else if (s.getImplementationFee().signum() > 0) {
+            }
+        } else if (!s.isTwelveMonthCommitment()) {
+            if (period == 0 && fee) {
                 lines.add(new Line(label, 1, s.getImplementationFee(), s.getImplementationFee()));
             }
+        } else if (fee && stoppedEarlyIn(s, period)) {
+            lines.add(new Line(label + " (oprire înainte de 12 luni)", 1, s.getImplementationFee(),
+                    s.getImplementationFee()));
+        } else if (period == 0 && fee) {
+            lines.add(new Line(label + " (angajament 12 luni, gratuită)", 1, BigDecimal.ZERO, BigDecimal.ZERO));
         }
 
         BigDecimal total = lines.stream().map(Line::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new Invoice(periodStart(s, period), periodStart(s, period + 1).minusDays(1),
                 List.copyOf(lines), total);
+    }
+
+    /**
+     * The last billed period of a stopped subscription, before the 12th: periods count from 0, so a
+     * last period of 11 is the twelfth month and the commitment is kept.
+     */
+    static boolean stoppedEarlyIn(Subscription s, int period) {
+        return s.getEndsOn() != null && period < COMMITMENT_PERIODS - 1
+                && !periodStart(s, period + 1).minusDays(1).isBefore(s.getEndsOn());
     }
 
     private static void recurring(List<Line> lines, String label, int quantity, BigDecimal unitPrice) {

@@ -53,14 +53,21 @@ export function useSubscription(owner: SubscriptionOwner) {
  * F-C — facturile unui abonament încă nesalvat, pentru pasul „Abonamentul”. Datele de facturare nu schimbă suma, deci
  * nu intră în cheie.
  */
-export function useSubscriptionPreview(plan: SubscriptionPlan, founder: boolean, startedAt: string, enabled: boolean) {
+export function useSubscriptionPreview(
+  plan: SubscriptionPlan,
+  founder: boolean,
+  startedAt: string,
+  enabled: boolean,
+  twelveMonthCommitment = false
+) {
   return useQuery({
-    queryKey: ["subscriptions", "preview", plan, founder, startedAt],
+    queryKey: ["subscriptions", "preview", plan, founder, twelveMonthCommitment, startedAt],
     queryFn: async () =>
       (
         await api.post<SubscriptionPreview>("/api/v1/subscriptions/preview", {
           plan,
           founder,
+          twelveMonthCommitment,
           startedAt,
           billingEmail: null,
           billingCounty: null,

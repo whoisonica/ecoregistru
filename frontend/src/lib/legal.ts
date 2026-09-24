@@ -52,7 +52,7 @@ export interface LegalDoc {
  * ajunge în altă zi, se schimbă aici — într-un singur loc, pentru amândouă documentele — și în cele
  * două rânduri de dată din `juridic/`.
  */
-export const LEGAL_DATE = "22 septembrie 2026";
+export const LEGAL_DATE = "24 septembrie 2026";
 
 const COMPANY =
   "**ONSIA S.R.L.**, societate română cu sediul în sat Sântandrei, comuna Sântandrei, " +
@@ -343,7 +343,10 @@ export const TERMS: LegalDoc = {
           text:
             "**12.1.** Puteți opri abonamentul oricând, cu **preaviz de o lună**, din contract sau printr-un " +
             "e-mail la contact@wastehouse.ro trimis de la adresa de facturare. Ultima perioadă facturată e cea " +
-            "în care cade ziua de peste o lună de la cerere. Nu există termen minim și nici penalitate de oprire.",
+            "în care cade ziua de peste o lună de la cerere. Fără angajament, nu există termen minim și nici " +
+            "penalitate de oprire. Dacă ați ales angajamentul de 12 luni (contract art. 4.3), taxa de implementare " +
+            "nu s-a plătit la început; dacă ultima perioadă facturată se încheie înainte de a 12-a lună, ea se " +
+            "facturează odată cu ultima perioadă. Lunile rămase până la 12 nu se datorează.",
         },
         {
           kind: "p",

@@ -124,6 +124,7 @@ function NewClientForm({
   );
   const [startedAt, setStartedAt] = useState(todayIso());
   const [founder, setFounder] = useState<"no" | "yes">("no");
+  const [commitment, setCommitment] = useState<"no" | "yes">("no");
   const [billingEmail, setBillingEmail] = useState(request?.contactEmail ?? "");
   const [otherAddress, setOtherAddress] = useState<"same" | "other">("same");
   const [billingCounty, setBillingCounty] = useState("");
@@ -141,7 +142,14 @@ function NewClientForm({
     GENERATOR_PACKAGING: useSubscriptionPreview("GENERATOR_PACKAGING", false, startedAt, withSubscription),
     FULL_SERVICE: useSubscriptionPreview("FULL_SERVICE", false, startedAt, withSubscription),
   };
-  const preview = useSubscriptionPreview(plan, founder === "yes", startedAt, withSubscription && subscriptionOn);
+  const committed = commitment === "yes" && plan !== "FULL_SERVICE";
+  const preview = useSubscriptionPreview(
+    plan,
+    founder === "yes",
+    startedAt,
+    withSubscription && subscriptionOn,
+    committed
+  );
 
   const invoiceCounty = otherAddress === "same" ? county : billingCounty;
   const invoiceCity = otherAddress === "same" ? city : billingCity;
@@ -224,6 +232,7 @@ function NewClientForm({
             ? {
                 plan,
                 founder: founder === "yes",
+                twelveMonthCommitment: committed,
                 startedAt,
                 billingEmail: billingEmail.trim() || null,
                 billingCounty: invoiceCounty || null,
@@ -525,6 +534,26 @@ function NewClientForm({
                       )}
                     </div>
                   </div>
+
+                  {plan !== "FULL_SERVICE" && (
+                    <div>
+                      <span id="nc-commitment-label" className="mb-1 block text-xs font-medium text-content-muted">
+                        {t.commitmentLabel}
+                      </span>
+                      <ChoiceCards
+                        name="nc-commitment"
+                        aria-labelledby="nc-commitment-label"
+                        columns={2}
+                        value={commitment}
+                        onChange={setCommitment}
+                        options={[
+                          { value: "no", label: t.commitmentNo },
+                          { value: "yes", label: t.commitmentYes },
+                        ]}
+                      />
+                      <p className="mt-1 text-xs text-content-muted">{t.commitmentHint}</p>
+                    </div>
+                  )}
 
                   <fieldset className="space-y-3 rounded-md border border-line p-4">
                     <legend className="px-1 text-sm font-semibold text-content">{t.billingTo}</legend>

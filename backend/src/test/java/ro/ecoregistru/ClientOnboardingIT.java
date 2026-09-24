@@ -169,6 +169,11 @@ class ClientOnboardingIT {
                 .andExpect(jsonPath("$.firstInvoice.to", is("2026-10-31")));
         preview(subscription("GENERATOR", true))
                 .andExpect(jsonPath("$.firstInvoice.total").value(99));
+        Map<String, Object> committed = new HashMap<>(subscription("GENERATOR", false));
+        committed.put("twelveMonthCommitment", true);
+        preview(committed)
+                .andExpect(jsonPath("$.firstInvoice.total").value(99))
+                .andExpect(jsonPath("$.firstInvoice.lines[1].label", is("Implementare (angajament 12 luni, gratuită)")));
         preview(subscription("CONSULTANCY", false))
                 .andExpect(status().isUnprocessableEntity());
     }

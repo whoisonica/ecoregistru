@@ -28,6 +28,7 @@ public record SubscriptionResponse(
         BigDecimal companyPriceTier3,
         BigDecimal packagingCompanyPrice,
         boolean founder,
+        boolean twelveMonthCommitment,
         LocalDate startedAt,
         Invoice firstInvoice,
         Invoice monthlyInvoice,

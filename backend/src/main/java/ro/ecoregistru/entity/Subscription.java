@@ -74,6 +74,13 @@ public class Subscription {
     @Column(nullable = false)
     boolean founder;
 
+    /**
+     * Contract art. 4.3 (V66): 12 periods in a row, billed monthly. No implementation fee on the first
+     * invoice; stopped before the 12th period, the fee goes on the last one instead.
+     */
+    @Column(nullable = false)
+    boolean twelveMonthCommitment;
+
     /** The first billed day. A first month that starts after the 1st is billed by the day. */
     @Column(nullable = false)
     LocalDate startedAt;

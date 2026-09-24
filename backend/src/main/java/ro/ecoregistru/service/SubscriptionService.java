@@ -412,7 +412,7 @@ public class SubscriptionService {
                         i.getPaymentCheckedAt()))
                 .toList();
         return new BillingResponse(BillingRunService.clientName(s), s.getPlan(), s.getStatus(), s.getStartedAt(),
-                s.isFounder(), invoiceFor(s, next), BillingRunService.recipient(s),
+                s.isFounder(), s.isTwelveMonthCommitment(), invoiceFor(s, next), BillingRunService.recipient(s),
                 s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices,
                 s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), netopia.isConfigured(),
                 s.getEndsOn(), readOnlyOn(s),
@@ -488,7 +488,8 @@ public class SubscriptionService {
         if (request.plan().forConsultancy()) {
             throw new UnprocessableEntityException(SUBSCRIPTION_PLAN_MISMATCH);
         }
-        Subscription s = pending().founder(request.founder()).startedAt(request.startedAt()).build();
+        Subscription s = pending().founder(request.founder())
+                .twelveMonthCommitment(request.twelveMonthCommitment()).startedAt(request.startedAt()).build();
         applyGrid(s, request.plan());
         return new SubscriptionPreviewResponse(BillingCalculator.invoice(s, 1, 0, 0, 0),
                 BillingCalculator.invoice(s, 1, 0, 0, 1));
@@ -539,6 +540,7 @@ public class SubscriptionService {
             applyGrid(s, request.plan());
         }
         s.setFounder(request.founder());
+        s.setTwelveMonthCommitment(request.twelveMonthCommitment());
         s.setStartedAt(request.startedAt());
         s.setBillingEmail(trimToNull(request.billingEmail()));
         s.setBillingCounty(trimToNull(request.billingCounty()));
@@ -580,7 +582,7 @@ public class SubscriptionService {
         return new SubscriptionResponse(s.getId(), s.getPlan(), s.getStatus(),
                 s.getMonthlyPrice(), s.getImplementationFee(), s.getExtraWorkPointPrice(),
                 s.getCompanyPriceTier1(), s.getCompanyPriceTier2(), s.getCompanyPriceTier3(),
-                s.getPackagingCompanyPrice(), s.isFounder(), s.getStartedAt(),
+                s.getPackagingCompanyPrice(), s.isFounder(), s.isTwelveMonthCommitment(), s.getStartedAt(),
                 invoiceFor(s, 0), invoiceFor(s, 1),
                 s.getBillingEmail(), s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(),
                 invoices, s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), s.getEndsOn());
