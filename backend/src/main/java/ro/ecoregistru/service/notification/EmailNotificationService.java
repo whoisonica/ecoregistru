@@ -11,10 +11,12 @@ import org.thymeleaf.context.Context;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
+import ro.ecoregistru.entity.Scale;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.entity.Vehicle;
 import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.ReportType;
+import ro.ecoregistru.service.DeadlineService;
 import ro.ecoregistru.service.EmailService;
 import ro.ecoregistru.service.SubscriptionStatusRules;
 
@@ -106,6 +108,22 @@ public class EmailNotificationService implements NotificationService {
             ctx.setVariable("whenText", whenExpiry(daysUntil));
             ctx.setVariable("settingsUrl", frontendBaseUrl + "/setari#flota");
             emailService.send(to, subject, "mail/vehicle_expiring", ctx);
+        }
+    }
+
+    /** D2.3 — ca la vehicul: subiectul numește cântarul și depozitul. */
+    @Override
+    public void sendScaleExpiryWarning(Scale scale, List<String> recipientEmails, long daysUntil) {
+        String subject = "Verificarea metrologică a cântarului „" + scale.getName() + "” " + whenExpiry(daysUntil);
+        for (String to : recipientEmails) {
+            Context ctx = new Context(Locale.of("ro"));
+            ctx.setVariable("name", scale.getName());
+            ctx.setVariable("depot", scale.getWorkPoint().getName());
+            ctx.setVariable("serialNumber", scale.getSerialNumber());
+            ctx.setVariable("validUntil", DeadlineService.today().plusDays(daysUntil).format(DATE));
+            ctx.setVariable("whenText", whenExpiry(daysUntil));
+            ctx.setVariable("settingsUrl", frontendBaseUrl + "/setari/cantare");
+            emailService.send(to, subject, "mail/scale_expiring", ctx);
         }
     }
 

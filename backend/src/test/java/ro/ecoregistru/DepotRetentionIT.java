@@ -348,7 +348,7 @@ class DepotRetentionIT {
     private WeighingOperationRequest head(ro.ecoregistru.enums.WeighingOperationType type,
                                           UUID partnerId, UUID personId, Boolean ownHousehold) {
         return new WeighingOperationRequest(type, depot.getId(), DAY, partnerId, personId,
-                null, null, null, null, null, null, null, null, ownHousehold, null);
+                null, null, null, null, null, null, null, null, ownHousehold, null, null);
     }
 
     private static Line line(WasteArticle article, String kg, String price) {

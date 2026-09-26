@@ -222,7 +222,7 @@ class DriverFleetIT {
     private WeighingOperationRequest operation(UUID driverId, String driverName, String typedRegistration) {
         Partner recipient = partner(company, false);
         return new WeighingOperationRequest(OUT, depot.getId(), TODAY, recipient.getId(), null, null,
-                driverId, null, driverName, typedRegistration, null, null, null, null, null);
+                driverId, null, driverName, typedRegistration, null, null, null, null, null, null);
     }
 
     private static void clearThread() {

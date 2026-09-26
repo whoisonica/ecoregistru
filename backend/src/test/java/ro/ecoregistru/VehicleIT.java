@@ -286,7 +286,7 @@ class VehicleIT {
     private WeighingOperationRequest operation(UUID vehicleId, String typedRegistration) {
         Partner recipient = partner(company, false);
         return new WeighingOperationRequest(OUT, depot.getId(), TODAY, recipient.getId(), null, null,
-                null, vehicleId, null, typedRegistration, null, null, null, null, null);
+                null, vehicleId, null, typedRegistration, null, null, null, null, null, null);
     }
 
     private static void clearThread() {

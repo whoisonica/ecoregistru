@@ -246,7 +246,7 @@ class WeighingLinesIT {
 
     private WeighingOperationRequest head(WeighingOperationType type) {
         return new WeighingOperationRequest(type, depot.getId(), LocalDate.of(2026, 9, 15),
-                partner.getId(), null, null, null, null, null, null, null, null, null, null, null);
+                partner.getId(), null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private static WeighingLinesRequest lines(Line... lines) {

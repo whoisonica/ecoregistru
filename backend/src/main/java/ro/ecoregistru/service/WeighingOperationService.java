@@ -14,6 +14,7 @@ import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.NaturalPerson;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteArticle;
+import ro.ecoregistru.entity.Scale;
 import ro.ecoregistru.entity.Vehicle;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WeighingOperation;
@@ -23,6 +24,7 @@ import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteOperationCode;
 import ro.ecoregistru.enums.WasteRegister;
+import ro.ecoregistru.enums.ScaleStatus;
 import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.enums.WeighingOperationType;
 import ro.ecoregistru.exception.BusinessException;
@@ -32,6 +34,7 @@ import ro.ecoregistru.repository.DriverRepository;
 import ro.ecoregistru.repository.MonthlyEvidenceRepository;
 import ro.ecoregistru.repository.NaturalPersonRepository;
 import ro.ecoregistru.repository.PartnerRepository;
+import ro.ecoregistru.repository.ScaleRepository;
 import ro.ecoregistru.repository.VehicleRepository;
 import ro.ecoregistru.repository.WasteArticleRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
@@ -81,6 +84,8 @@ public class WeighingOperationService {
     NaturalPersonRepository naturalPersonRepository;
     DriverRepository driverRepository;
     VehicleRepository vehicleRepository;
+    ScaleRepository scaleRepository;
+    ScaleService scaleService;
     MonthlyEvidenceRepository evidenceRepository;
     ro.ecoregistru.repository.AppUserRepository userRepository;
     ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
@@ -120,6 +125,8 @@ public class WeighingOperationService {
                 : vehicleRepository.findByIdAndCompany_Id(request.vehicleId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(VEHICLE_NOT_FOUND));
 
+        Scale scale = usableScale(request.scaleId(), workPoint, tenantId);
+
         operationRepository.lockNumbering(tenantId + ":" + type);
         Integer max = operationRepository.findMaxNumber(tenantId, type);
 
@@ -136,6 +143,7 @@ public class WeighingOperationService {
                 .driverName(firstNonBlank(request.driverName(), driver == null ? null : driver.getName()))
                 .vehicle(vehicle)
                 .vehicleRegistration(resolveRegistration(request, driver, vehicle))
+                .scale(scale)
                 .orderNumber(blankToNull(request.orderNumber()))
                 .paymentMethod(request.paymentMethod())
                 .receiptNumber(blankToNull(request.receiptNumber()))
@@ -196,6 +204,8 @@ public class WeighingOperationService {
                 : vehicleRepository.findByIdAndCompany_Id(request.vehicleId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(VEHICLE_NOT_FOUND));
 
+        Scale scale = usableScale(request.scaleId(), workPoint, tenantId);
+
         // BUG-031, same as WasteMovementService.update: a later year hides the move from the old one.
         if (operation.getDate().getYear() < request.date().getYear()) {
             evidenceRepository.markYearsStale(tenantId, operation.getDate().getYear(), request.date().getYear(), java.time.Instant.EPOCH);
@@ -209,6 +219,7 @@ public class WeighingOperationService {
         operation.setDriverName(firstNonBlank(request.driverName(), driver == null ? null : driver.getName()));
         operation.setVehicle(vehicle);
         operation.setVehicleRegistration(resolveRegistration(request, driver, vehicle));
+        operation.setScale(scale);
         operation.setOrderNumber(blankToNull(request.orderNumber()));
         operation.setPaymentMethod(request.paymentMethod());
         operation.setReceiptNumber(blankToNull(request.receiptNumber()));
@@ -279,8 +290,19 @@ public class WeighingOperationService {
      * modifică. O fac doar cei care aprobă (decizia proprietarului, 15.09.2026: admin și consultant);
      * operatorul de la cântar introduce, dar nu dă drumul în registre.
      */
-    @Transactional
+    @Transactional // chemarea de mai jos e prin `this`, fără proxy: tranzacția trebuie să fie deja aici
     public WeighingOperationResponse finalizeOperation(UUID id) {
+        return finalizeOperation(id, null);
+    }
+
+    /**
+     * @param scaleReason D2.3 — de ce se finalizează cu un cântar care nu era legal la data cântăririi
+     *                    (expirat, respins, reparat, nedeclarat la BRML). Decizia proprietarului, 26.09.2026:
+     *                    nu se blochează, dar cine aprobă confirmă cu motiv, iar motivul rămâne pe operațiune
+     *                    și în jurnal. Cu un cântar legal (sau fără cântar) motivul se ignoră.
+     */
+    @Transactional
+    public WeighingOperationResponse finalizeOperation(UUID id, String scaleReason) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
@@ -297,6 +319,7 @@ public class WeighingOperationService {
         // A doua oară aici: fișa persoanei se poate edita între cântărire și finalizare.
         requireMetalIdentity(operation, lines);
         requireOwnHouseholdDeclaration(operation, lines);
+        recordScaleConfirmation(operation, scaleReason);
         // D1.9 și D1.10 — reținerile se calculează acum și rămân așa: o cotă schimbată mâine nu
         // rescrie declarația de luna trecută.
         DepotRetentions.Amounts retained = DepotRetentions.of(operation, lines);
@@ -421,8 +444,14 @@ public class WeighingOperationService {
         Map<UUID, List<WasteMovement>> lines = movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
                         operations.stream().map(WeighingOperation::getId).toList())
                 .stream().collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
+        // D2.3 — starea cântarului la cele în lucru se calculează; istoricul tuturor dintr-o interogare.
+        Map<UUID, List<ro.ecoregistru.entity.ScaleEvent>> scaleEvents = scaleService.eventsOf(operations.stream()
+                .filter(o -> o.getScaleState() == null && o.getScale() != null
+                        && o.getStatus() == WeighingOperationStatus.IN_PROGRESS)
+                .map(o -> o.getScale().getId()).collect(Collectors.toSet()));
         return operations.stream()
-                .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of()), pricesVisible))
+                .map(o -> toResponse(o, lines.getOrDefault(o.getId(), List.of()), pricesVisible,
+                        scaleState(o, () -> scaleEvents.getOrDefault(o.getScale().getId(), List.of()))))
                 .toList();
     }
 
@@ -568,6 +597,27 @@ public class WeighingOperationService {
     }
 
     /**
+     * Cine vede totalul de plată: cine vede prețurile și, la „Doar administratorul”, operatorul — el
+     * plătește omul la cântar (decizia proprietarului, 26.09.2026). Prețul pe kg rămâne ascuns.
+     */
+    private static boolean seesPayment(Company company) {
+        return pricesVisible(company) || (company.getPriceVisibility() == ro.ecoregistru.enums.PriceVisibility.ADMIN_ONLY
+                && SecurityUtils.currentUser().getRole() == ro.ecoregistru.enums.Role.OPERATOR);
+    }
+
+    /** Doar la intrări: acolo depozitul plătește. În lucru se calculează, după finalizare se citește. */
+    private static WeighingOperationResponse.Payment payment(WeighingOperation o, List<WasteMovement> lines) {
+        if (o.getType() != WeighingOperationType.IN || !seesPayment(o.getCompany())) {
+            return null;
+        }
+        DepotRetentions.Amounts amounts = o.getAfmBase() != null
+                ? new DepotRetentions.Amounts(o.getAfmBase(), o.getAfmContribution(), o.getIncomeTaxBase(), o.getIncomeTax())
+                : DepotRetentions.of(o, lines);
+        return new WeighingOperationResponse.Payment(amounts.afmBase(), amounts.afm(), amounts.incomeTax(),
+                amounts.afmBase().subtract(amounts.afm()).subtract(amounts.incomeTax()));
+    }
+
+    /**
      * D1.8 — cine nu vede prețurile nici nu le poate schimba sau șterge. Formularul lui vine fără preț,
      * deci prețul se ia din liniile salvate, pe sortiment și în ordine: a doua linie de „Cupru” trimisă
      * primește prețul celei de-a doua linii de „Cupru” salvate. O linie fără pereche rămâne fără preț,
@@ -679,8 +729,66 @@ public class WeighingOperationService {
         return value == null || value.trim().isEmpty() ? null : value.trim();
     }
 
+    /**
+     * D2.3 — cântarul ales trebuie să fie al depozitului operațiunii și în uz: unul sigilat sau scos din uz
+     * nu e mijloc de măsurare legal (OG 20/1992 art. 19 alin. 2), deci nici motivul nu-l face folosibil.
+     */
+    private Scale usableScale(UUID scaleId, WorkPoint workPoint, UUID tenantId) {
+        if (scaleId == null) {
+            return null;
+        }
+        Scale scale = scaleRepository.findByIdAndCompany_Id(scaleId, tenantId)
+                .orElseThrow(() -> new NotFoundException(SCALE_NOT_FOUND));
+        if (!scale.getWorkPoint().getId().equals(workPoint.getId())) {
+            throw new BusinessException(SCALE_OTHER_DEPOT);
+        }
+        if (scale.getStatus() != ScaleStatus.IN_USE) {
+            throw new BusinessException(SCALE_NOT_USABLE);
+        }
+        return scale;
+    }
+
+    /** Starea cântarului la data cântăririi se fixează la finalizare, cu motivul când nu era legal. */
+    private void recordScaleConfirmation(WeighingOperation operation, String reason) {
+        Scale scale = operation.getScale();
+        if (scale == null) {
+            return;
+        }
+        ScaleLegality.Verdict verdict = scaleService.verdictAt(scale, operation.getDate());
+        if (verdict.refused()) {
+            throw new BusinessException(SCALE_NOT_USABLE);
+        }
+        String motive = verdict.legal() ? null : blankToNull(reason);
+        if (!verdict.legal() && motive == null) {
+            throw new BusinessException(SCALE_REASON_REQUIRED);
+        }
+        operation.setScaleState(verdict.state().name());
+        operation.setScaleOverrideReason(motive);
+    }
+
+    /**
+     * Starea cântarului pe ecran: cea fixată la finalizare, altfel cea de acum, la data cântăririi — ca
+     * operatorul să vadă înainte de finalizare că va fi nevoie de un motiv.
+     */
+    private ScaleLegality.State scaleState(WeighingOperation o,
+                                          java.util.function.Supplier<List<ro.ecoregistru.entity.ScaleEvent>> events) {
+        if (o.getScaleState() != null) {
+            return ScaleLegality.State.valueOf(o.getScaleState());
+        }
+        if (o.getScale() == null || o.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
+            return null;
+        }
+        return ScaleService.verdict(o.getScale(), events.get(), o.getDate()).state();
+    }
+
+    private WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> lines,
+                                                 boolean pricesVisible) {
+        return toResponse(o, lines, pricesVisible, scaleState(o,
+                () -> scaleService.eventsOf(List.of(o.getScale().getId())).getOrDefault(o.getScale().getId(), List.of())));
+    }
+
     private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> lines,
-                                                        boolean pricesVisible) {
+                                                        boolean pricesVisible, ScaleLegality.State scaleState) {
         Partner partner = o.getPartner();
         NaturalPerson person = o.getNaturalPerson();
         return new WeighingOperationResponse(o.getId(), o.getType(), o.getNumber(), o.getDate(),
@@ -695,6 +803,10 @@ public class WeighingOperationService {
                 pricesVisible ? o.getIncomeTaxBase() : null, pricesVisible ? o.getIncomeTax() : null,
                 DepotRetentions.AFM_RATE, DepotRetentions.INCOME_TAX_RATE,
                 o.getCancelReason(),
+                o.getScale() == null ? null : o.getScale().getId(),
+                o.getScale() == null ? null : o.getScale().getName(),
+                scaleState, o.getScaleOverrideReason(),
+                payment(o, lines),
                 lines.stream().map(m -> toLine(m, pricesVisible)).toList());
     }
 

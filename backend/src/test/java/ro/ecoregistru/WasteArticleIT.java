@@ -177,7 +177,7 @@ class WasteArticleIT {
                 .company(company).name("Ion Popescu").cnp("1900101123457").identification("CJ 123456")
                 .address("Cluj, str. X 1").active(true).createdAt(Instant.now()).build());
         UUID fromPerson = operations.create(new WeighingOperationRequest(IN, depot.getId(), LocalDate.of(2026, 9, 15),
-                null, person.getId(), null, null, null, null, null, null, null, null, null, null)).id();
+                null, person.getId(), null, null, null, null, null, null, null, null, null, null, null)).id();
 
         assertThatThrownBy(() -> operations.replaceLines(fromPerson, lines(rail)))
                 .isInstanceOfSatisfying(BusinessException.class, e -> assertThat(e.getErrorCode())
@@ -190,7 +190,7 @@ class WasteArticleIT {
                 .type(PartnerType.COLLECTOR).supplier(true).packagingOrigin(PackagingOrigin.COLECTOR)
                 .active(true).createdAt(Instant.now()).build());
         UUID fromPartner = operations.create(new WeighingOperationRequest(IN, depot.getId(), LocalDate.of(2026, 9, 15),
-                partner.getId(), null, null, null, null, null, null, null, null, null, null, null)).id();
+                partner.getId(), null, null, null, null, null, null, null, null, null, null, null, null)).id();
         assertThat(operations.replaceLines(fromPartner, lines(rail)).lines()).hasSize(1);
     }
 

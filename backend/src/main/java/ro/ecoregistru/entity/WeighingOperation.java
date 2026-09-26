@@ -82,6 +82,19 @@ public class WeighingOperation {
     @JoinColumn(name = "vehicle_id")
     Vehicle vehicle;
 
+    /** Cântarul folosit (D2.3, V68). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scale_id")
+    Scale scale;
+
+    /** Starea cântarului la finalizare ({@code ScaleLegality.State}); rămâne așa și dacă istoricul se completează. */
+    @Column(name = "scale_state", length = 16)
+    String scaleState;
+
+    /** De ce s-a finalizat cu un cântar nelegal — confirmarea celui care aprobă. */
+    @Column(name = "scale_override_reason", length = 1000)
+    String scaleOverrideReason;
+
     @Column(name = "vehicle_registration", length = 50)
     String vehicleRegistration;
 

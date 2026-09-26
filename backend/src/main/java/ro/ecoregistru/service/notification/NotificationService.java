@@ -3,6 +3,7 @@ package ro.ecoregistru.service.notification;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
+import ro.ecoregistru.entity.Scale;
 import ro.ecoregistru.entity.SubscriptionInvoice;
 import ro.ecoregistru.entity.Vehicle;
 
@@ -47,6 +48,14 @@ public interface NotificationService {
      * @throws RuntimeException if delivery fails — the caller must then leave the vehicle unmarked.
      */
     void sendVehicleExpiryWarning(Vehicle vehicle, List<String> recipientEmails, long daysUntil);
+
+    /**
+     * D2.3 — verificarea metrologică a unui cântar în uz expiră în 30 de zile.
+     *
+     * @param daysUntil zile întregi până la „valabil până la” (0 = azi)
+     * @throws RuntimeException if delivery fails — the caller must then leave the scale unmarked.
+     */
+    void sendScaleExpiryWarning(Scale scale, List<String> recipientEmails, long daysUntil);
 
     /**
      * D2.2 — atestatul unui șofer al firmei expiră în 30 de zile.

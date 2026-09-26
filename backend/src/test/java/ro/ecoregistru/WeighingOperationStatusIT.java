@@ -304,7 +304,7 @@ class WeighingOperationStatusIT {
 
     private WeighingOperationRequest head() {
         return new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
-                null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private AppUser user(Role role) {

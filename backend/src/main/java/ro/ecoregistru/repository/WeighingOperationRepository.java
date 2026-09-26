@@ -19,6 +19,8 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
 
     boolean existsByNaturalPerson_Id(UUID naturalPersonId);
 
+    boolean existsByScale_Id(UUID scaleId);
+
     /**
      * Lista ecranului (D1.15), cu partenerul, persoana și depozitul aduse odată: altfel fiecare rând
      * ar cere încă trei interogări (BUG-016). {@code type} lipsă înseamnă amândouă direcțiile.
@@ -28,6 +30,7 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
               left join fetch o.partner
               left join fetch o.naturalPerson
               join fetch o.workPoint
+              left join fetch o.scale
             where o.company.id = :companyId
               and o.date between :from and :to
               and (:type is null or o.type = :type)

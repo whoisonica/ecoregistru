@@ -758,6 +758,17 @@ export interface WeighingOperation {
   afmRate: number;
   incomeTaxRate: number;
   cancelReason: string | null;
+  /** D2.3 — cântarul folosit și starea lui la data cântăririi (fixată la finalizare). */
+  scaleId: string | null;
+  scaleName: string | null;
+  scaleState: ScaleState | null;
+  /** De ce s-a finalizat cu un cântar care nu era legal — confirmarea celui care a aprobat. */
+  scaleOverrideReason: string | null;
+  /**
+   * Totalul de plată al unei intrări, de la server. Îl vede și operatorul la „Doar administratorul”, fără
+   * prețul pe kg (decizia proprietarului, 26.09.2026). În lucru e previzualizarea ultimei salvări.
+   */
+  payment: { value: number; afm: number; incomeTax: number; net: number } | null;
   lines: WeighingLine[];
 }
 
@@ -777,6 +788,7 @@ export interface WeighingOperationInput {
   receiptNumber: string | null;
   ownHousehold: boolean | null;
   notes: string | null;
+  scaleId?: string | null;
 }
 
 /** Tot cântarul odată: liniile trimise le înlocuiesc pe cele salvate. */
@@ -1087,6 +1099,83 @@ export interface VehicleInput {
   transportLicenseExpiry: string | null;
   homeWorkPointId: string | null;
   partnerId: string | null;
+}
+
+/**
+ * D2.3 — e legal cântarul la o dată? Calculat de server (`ScaleLegality`): verificare ADMIS în termen
+ * (sau primul an de la punerea în funcțiune) și declarat la BRML. Sigilat / scos din uz = nu se cântărește.
+ */
+export type ScaleState =
+  | "VALID"
+  | "NO_VERIFICATION"
+  | "EXPIRED"
+  | "REJECTED"
+  | "REPAIRED"
+  | "INCIDENT"
+  | "NOT_DECLARED"
+  | "SEALED"
+  | "OUT_OF_USE";
+
+export type ScaleStatus = "IN_USE" | "OUT_OF_USE" | "SEALED";
+export type ScaleEventKind = "VERIFICATION" | "REPAIR" | "INCIDENT";
+export type ScaleAccuracyClass = "I" | "II" | "III" | "IIII";
+
+export interface ScaleEvent {
+  id: string;
+  kind: ScaleEventKind;
+  date: string;
+  /** ADMIS / RESPINS; doar la verificare. */
+  admitted: boolean | null;
+  bulletinNumber: string | null;
+  validUntil: string | null;
+  laboratory: string | null;
+  verifier: string | null;
+  notes: string | null;
+}
+
+export interface Scale {
+  id: string;
+  workPointId: string;
+  workPointName: string;
+  name: string;
+  serialNumber: string | null;
+  kind: string | null;
+  accuracyClass: ScaleAccuracyClass | null;
+  divisionKg: number | null;
+  commissionedOn: string | null;
+  brmlDeclaredOn: string | null;
+  brmlReference: string | null;
+  status: ScaleStatus;
+  /** Starea de azi. */
+  state: ScaleState;
+  validUntil: string | null;
+  /** Istoricul, cel mai nou primul. */
+  events: ScaleEvent[];
+}
+
+export interface ScaleInput {
+  workPointId: string;
+  name: string;
+  serialNumber: string | null;
+  kind: string | null;
+  accuracyClass: ScaleAccuracyClass | null;
+  divisionKg: number | null;
+  commissionedOn: string | null;
+  brmlDeclaredOn: string | null;
+  brmlReference: string | null;
+  status: ScaleStatus;
+}
+
+export interface ScaleEventInput {
+  kind: ScaleEventKind;
+  date: string;
+  admitted: boolean | null;
+  bulletinNumber: string | null;
+  /** Lipsă = data + 12 luni. */
+  validUntil: string | null;
+  laboratory: string | null;
+  verifier: string | null;
+  notes: string | null;
 }
 
 export interface Driver {

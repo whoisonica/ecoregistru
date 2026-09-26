@@ -1,3 +1,11 @@
+⚖️ **26.09.2026 — proba 44 (`44-cantare.mjs`), cântarele depozitului (D2.3)**: Setări → „Cântare”: un cântar pus în funcțiune
+acum doi ani, fără verificare, e „Verificare expirată”; o verificare ADMIS fără dată îl face „Verificat” pe un an; o reparație de
+azi îl face „Reparat, de reverificat”; istoricul încape în dialog. La cântar tasta cântarului e apăsată, cu starea alături;
+finalizarea cere motiv, iar starea și motivul se citesc pe operațiunea finalizată. Operatorul la „Doar administratorul” vede
+„Rămâne de plătit” (490,00 din 1.000 kg × 0,50), fără nicio rubrică „Lei/kg”. Vizualizatorul vede cântarele fără butoane;
+375px fără lățire. **Negative:** fără dialogul de motiv → „finalizarea cere motiv” cade (serverul refuză 400). Verde pe
+`eco_e2e_cantar`, stivă proprie 8090/5190. ⚠️ Lasă în urmă cântarul „Proba 44 <număr>” (scos din uz) și două intrări anulate.
+
 🧭 **19–20.09.2026 — probele 39–43**, fiecare cu antetul ei în fișier:
 **39** (`39-acasa.mjs`) — „Acasă”, varianta A: anul pe luni, deșeurile anului și termenele pe 12 luni; cifrele se socotesc a doua oară
 din API și se compară cu ecranul. Nu scrie nimic.

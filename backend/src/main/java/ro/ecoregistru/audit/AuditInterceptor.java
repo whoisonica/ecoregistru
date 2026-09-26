@@ -63,6 +63,9 @@ public class AuditInterceptor implements Interceptor {
             InternalGenerator.class,
             Driver.class,
             Vehicle.class,
+            // D2.3 — cine a trecut ce buletin și cine a schimbat starea cântarului.
+            Scale.class,
+            ScaleEvent.class,
             Attachment.class,
             AppUser.class,
             // Modulul de depozit (V46): operațiunea e document justificativ, iar persoana fizică
@@ -87,6 +90,8 @@ public class AuditInterceptor implements Interceptor {
             Map.entry(InternalGenerator.class, List.of("name")),
             Map.entry(Driver.class, List.of("name")),
             Map.entry(Vehicle.class, List.of("registration")),
+            Map.entry(Scale.class, List.of("name")),
+            Map.entry(ScaleEvent.class, List.of("kind", "date")),
             Map.entry(Attachment.class, List.of("fileName")),
             Map.entry(AppUser.class, List.of("email")),
             Map.entry(WeighingOperation.class, List.of("type", "number", "date")),

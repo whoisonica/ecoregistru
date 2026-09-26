@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.WeighingCancelRequest;
+import ro.ecoregistru.controller.request.WeighingFinalizeRequest;
 import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
 import ro.ecoregistru.controller.response.DepotRetentionReport;
@@ -134,8 +135,9 @@ public class WeighingOperationController {
     /** POST, ca `/{id}/reactivate` de la șoferi: e o faptă, nu o resursă. */
     @PostMapping("/{id}/finalize")
     @PreAuthorize(CAN_APPROVE)
-    public WeighingOperationResponse finalizeOperation(@PathVariable UUID id) {
-        return service.finalizeOperation(id);
+    public WeighingOperationResponse finalizeOperation(@PathVariable UUID id,
+                                                       @Valid @RequestBody(required = false) WeighingFinalizeRequest request) {
+        return service.finalizeOperation(id, request == null ? null : request.scaleReason());
     }
 
     @PostMapping("/{id}/cancel")

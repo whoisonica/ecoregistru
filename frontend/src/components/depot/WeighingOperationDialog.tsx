@@ -7,6 +7,8 @@ import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useNaturalPersons } from "@/hooks/useNaturalPersons";
 import { useWasteArticles } from "@/hooks/useWasteArticles";
 import { useVehicles } from "@/hooks/useVehicles";
+import { useScales } from "@/hooks/useScales";
+import { ScaleStateBadge } from "@/components/depot/ScaleStateBadge";
 import { useDrivers } from "@/hooks/useDrivers";
 import {
   useCancelWeighingOperation,
@@ -213,6 +215,29 @@ export function WeighingOperationDialog({
       setVehicle(matches[0].vehicleRegistration);
     }
   }
+  // D2.3 — cântarul: doar cele în uz ale depozitului ales (plus cel deja salvat pe operațiune). Cât omul
+  // n-a ales, la o operațiune nouă cu un singur cântar în depozit se ia el — e o alegere, nu o cifră pe
+  // formular. O alegere dintr-un depozit părăsit cade singură.
+  const scales = useScales();
+  const [scaleChoice, setScaleChoice] = useState<string | null>(operation?.scaleId ?? null);
+  const depotScales = useMemo(
+    () =>
+      (scales.data ?? []).filter(
+        (s) => s.workPointId === workPointId && (s.status === "IN_USE" || s.id === operation?.scaleId)
+      ),
+    [scales.data, workPointId, operation?.scaleId]
+  );
+  const scaleId =
+    scaleChoice !== null
+      ? depotScales.some((s) => s.id === scaleChoice)
+        ? scaleChoice
+        : ""
+      : !operation && depotScales.length === 1
+        ? depotScales[0].id
+        : "";
+  const chosenScale = depotScales.find((s) => s.id === scaleId) ?? null;
+  const [scaleReasonFor, setScaleReasonFor] = useState<WeighingOperation | null>(null);
+  const [scaleReason, setScaleReason] = useState("");
   const [orderNumber, setOrderNumber] = useState(operation?.orderNumber ?? "");
   const [notes, setNotes] = useState(operation?.notes ?? "");
   const [truckGross, setTruckGross] = useState(operation?.grossKg?.toString() ?? "");
@@ -319,18 +344,21 @@ export function WeighingOperationDialog({
       receiptNumber: receipt.trim() || null,
       ownHousehold: fromPerson ? ownHousehold : null,
       notes: notes.trim() || null,
+      scaleId: scaleId || null,
     };
   }
 
-  async function save(): Promise<string | null> {
+  /** Întoarce operațiunea cum a salvat-o serverul — cu starea cântarului la data cântăririi. */
+  async function save(): Promise<WeighingOperation> {
     const head = headInput();
-    const id = savedId
-      ? (await updateMut.mutateAsync({ id: savedId, input: head })).id
-      : (await createMut.mutateAsync(head)).id;
+    let saved = savedId
+      ? await updateMut.mutateAsync({ id: savedId, input: head })
+      : await createMut.mutateAsync(head);
+    const id = saved.id;
     setSavedId(id);
     const filled = lines.filter((l) => l.articleId && (netOf(l) != null || num(l.final) != null));
     if (filled.length > 0) {
-      await linesMut.mutateAsync({
+      saved = await linesMut.mutateAsync({
         id,
         input: {
           grossKg: num(truckGross),
@@ -350,7 +378,7 @@ export function WeighingOperationDialog({
         },
       });
     }
-    return id;
+    return saved;
   }
 
   async function handleSave() {
@@ -376,8 +404,14 @@ export function WeighingOperationDialog({
       confirmLabel: t.finalize,
       onConfirm: async () => {
         try {
-          const id = await save();
-          if (id) await finalizeMut.mutateAsync(id);
+          const saved = await save();
+          // D2.3 — un cântar care nu era legal la cântărire cere motiv; serverul îl refuză fără.
+          if (saved.scaleState && saved.scaleState !== "VALID") {
+            setScaleReason("");
+            setScaleReasonFor(saved);
+            return;
+          }
+          await finalizeMut.mutateAsync({ id: saved.id });
           notify(t.finalized, "success");
           onClose();
         } catch (err) {
@@ -385,6 +419,18 @@ export function WeighingOperationDialog({
         }
       },
     });
+  }
+
+  async function finalizeWithReason() {
+    if (!scaleReasonFor || !scaleReason.trim()) return;
+    try {
+      await finalizeMut.mutateAsync({ id: scaleReasonFor.id, scaleReason: scaleReason.trim() });
+      setScaleReasonFor(null);
+      notify(t.finalized, "success");
+      onClose();
+    } catch (err) {
+      notify(apiErrorMessage(err, t.saveError), "error");
+    }
   }
 
   async function handleCancel() {
@@ -642,6 +688,44 @@ export function WeighingOperationDialog({
           </FormSection>
 
           <FormSection title={t.sectionScale} description={t.truckHint}>
+            <div>
+              <Label id="wo-scale-label">{t.scale}</Label>
+              {editable ? (
+                depotScales.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <PillGroup
+                      name="wo-scale"
+                      aria-labelledby="wo-scale-label"
+                      options={depotScales.map((s) => ({ value: s.id, label: s.name }))}
+                      selected={scaleId ? [scaleId] : []}
+                      onToggle={(value) => setScaleChoice(value === scaleId ? "" : value)}
+                    />
+                    {chosenScale && <ScaleStateBadge state={chosenScale.state} validUntil={chosenScale.validUntil} />}
+                  </div>
+                ) : (
+                  <p className="text-sm text-content-muted">{t.scaleNone}</p>
+                )
+              ) : operation?.scaleName ? (
+                <div className="space-y-1 text-sm">
+                  <p className="flex flex-wrap items-center gap-2">
+                    <span className="text-content">{operation.scaleName}</span>
+                    {operation.scaleState && (
+                      <>
+                        <span className="text-content-muted">{t.scaleAtWeighing}</span>
+                        <ScaleStateBadge state={operation.scaleState} />
+                      </>
+                    )}
+                  </p>
+                  {operation.scaleOverrideReason && (
+                    <p className="text-content-muted">
+                      {t.scaleReason} <span className="text-content">{operation.scaleOverrideReason}</span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-content-muted">—</p>
+              )}
+            </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="wo-gross">{t.truckGross}</Label>
@@ -911,6 +995,26 @@ export function WeighingOperationDialog({
               </dl>
             )}
 
+            {/* Operatorul la „Doar administratorul”: totalul de la server, fără prețul pe kg. */}
+            {!pricesVisible && operation?.payment && (
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-2 border border-line bg-surface-sunken p-3 sm:grid-cols-4">
+                <Figure label={t.totalValue} value={lei(operation.payment.value)} />
+                <Figure label={t.withheldAfm} value={`− ${lei(operation.payment.afm)}`} />
+                {operation.naturalPersonId && (
+                  <Figure label={t.withheldTax} value={`− ${lei(operation.payment.incomeTax)}`} />
+                )}
+                <div className="col-span-2 sm:col-span-4">
+                  <dt className="text-xs text-content-muted">
+                    {t.withheldNet}
+                    <Tooltip content={t.paymentFromServerHint}>
+                      <span className="ml-2 cursor-help font-mono text-content-subtle">?</span>
+                    </Tooltip>
+                  </dt>
+                  <dd className="font-mono text-lg tabular-nums text-content-strong">{lei(operation.payment.net)}</dd>
+                </div>
+              </dl>
+            )}
+
             <div>
               <Label htmlFor="wo-notes">{t.notes}</Label>
               <Textarea
@@ -953,6 +1057,39 @@ export function WeighingOperationDialog({
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
           placeholder={t.cancelReasonPlaceholder}
+        />
+      </Dialog>
+
+      <Dialog
+        open={scaleReasonFor != null}
+        onClose={() => setScaleReasonFor(null)}
+        title={t.scaleReasonTitle}
+        description={t.scaleReasonBody}
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setScaleReasonFor(null)}>
+              {strings.common.close}
+            </Button>
+            <Button onClick={finalizeWithReason} disabled={!scaleReason.trim() || finalizeMut.isPending}>
+              {t.finalizeWithReason}
+            </Button>
+          </>
+        }
+      >
+        {scaleReasonFor?.scaleState && (
+          <p className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-content">{scaleReasonFor.scaleName}</span>
+            <ScaleStateBadge state={scaleReasonFor.scaleState} />
+          </p>
+        )}
+        <Label htmlFor="wo-scale-reason">{t.scaleReasonLabel}</Label>
+        <Textarea
+          id="wo-scale-reason"
+          rows={3}
+          value={scaleReason}
+          onChange={(e) => setScaleReason(e.target.value)}
+          placeholder={t.scaleReasonPlaceholder}
         />
       </Dialog>
 

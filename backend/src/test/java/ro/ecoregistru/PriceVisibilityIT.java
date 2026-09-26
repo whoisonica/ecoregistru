@@ -38,6 +38,7 @@ import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteArticleRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
+import ro.ecoregistru.repository.WeighingOperationRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.CompanyService;
@@ -77,6 +78,7 @@ class PriceVisibilityIT {
 
     private static final LocalDate DAY = LocalDate.of(2026, 9, 15);
 
+    @Autowired WeighingOperationRepository operationRepository;
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired WeighingOperationService service;
@@ -151,6 +153,51 @@ class PriceVisibilityIT {
                 assertThat(companyService.current().pricesVisible()).as(who + ": firma curentă").isEqualTo(expected);
             }
         }
+    }
+
+    /**
+     * Decizia proprietarului, 26.09.2026: la „Doar administratorul”, operatorul de la cântar plătește
+     * omul, deci vede totalul de plată și reținerile — dar nu prețul pe kg. Vizualizatorul și
+     * consultantul nu văd nici totalul. În lucru e o previzualizare; după finalizare, sumele fixate.
+     */
+    @Test
+    void atAdminOnlyTheOperatorSeesTheTotalToPayButNotThePricePerKilo() {
+        UUID id = pricedOperation(); // 100 kg × 40,5 lei, de la o firmă: 4.050 − 2% AFM (81) = 3.969
+        setVisibility(ADMIN_ONLY);
+
+        actAs(Role.OPERATOR);
+        WeighingOperationResponse seen = service.get(id);
+        assertThat(seen.lines().get(0).unitPrice()).isNull();
+        assertThat(seen.lines().get(0).totalValue()).isNull();
+        assertThat(seen.payment()).as("în lucru").isNotNull();
+        assertThat(seen.payment().value()).isEqualByComparingTo("4050.00");
+        assertThat(seen.payment().afm()).isEqualByComparingTo("81.00");
+        assertThat(seen.payment().incomeTax()).isEqualByComparingTo("0.00");
+        assertThat(seen.payment().net()).isEqualByComparingTo("3969.00");
+        assertThat(service.list().get(0).payment()).as("și în listă").isNotNull();
+
+        for (Role role : List.of(Role.CLIENT_VIEWER, Role.CONSULTANT, Role.PLATFORM_ADMIN)) {
+            actAs(role);
+            assertThat(service.get(id).payment()).as(role + " la ADMIN_ONLY").isNull();
+        }
+        actAs(Role.ADMIN);
+        assertThat(service.get(id).payment()).as("adminul").isNotNull();
+        service.finalizeOperation(id);
+
+        actAs(Role.OPERATOR);
+        assertThat(service.get(id).payment().net()).as("după finalizare").isEqualByComparingTo("3969.00");
+        // Fixat, nu recalculat: o cotă schimbată mâine nu rescrie ce s-a plătit azi.
+        operationRepository.findById(id).ifPresent(o -> {
+            o.setAfmContribution(new BigDecimal("80.00"));
+            operationRepository.saveAndFlush(o);
+        });
+        assertThat(service.get(id).payment().afm()).as("sumele fixate la finalizare").isEqualByComparingTo("80.00");
+
+        setVisibility(NO_CONSULTANT);
+        actAs(Role.CONSULTANT);
+        assertThat(service.get(id).payment()).as("consultantul, când nu vede prețurile").isNull();
+        actAs(Role.CLIENT_VIEWER);
+        assertThat(service.get(id).payment()).as("vizualizatorul, când vede prețurile").isNotNull();
     }
 
     /**
@@ -334,7 +381,7 @@ class PriceVisibilityIT {
 
     private WeighingOperationRequest head() {
         return new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
-                null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private static WeighingLinesRequest lines(Line... lines) {

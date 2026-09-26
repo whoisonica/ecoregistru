@@ -179,7 +179,7 @@ class WeighingOperationIT {
                 .company(other).name("Depozit străin").active(true).createdAt(Instant.now()).build());
 
         assertThatThrownBy(() -> service.create(new WeighingOperationRequest(IN, foreign.getId(),
-                LocalDate.of(2026, 9, 15), collector.getId(), null, null, null, null, null, null, null, null, null, null, null)))
+                LocalDate.of(2026, 9, 15), collector.getId(), null, null, null, null, null, null, null, null, null, null, null, null)))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -189,7 +189,7 @@ class WeighingOperationIT {
         service.create(request(IN, collector.getId(), null));
         service.create(request(OUT, collector.getId(), null));
         UUID august = service.create(new WeighingOperationRequest(IN, depot.getId(), LocalDate.of(2026, 8, 3),
-                collector.getId(), null, null, null, null, null, null, null, null, null, null, null)).id();
+                collector.getId(), null, null, null, null, null, null, null, null, null, null, null, null)).id();
 
         assertThat(service.list()).hasSize(3);
         assertThat(service.list(IN, null, null)).hasSize(2);
@@ -212,7 +212,7 @@ class WeighingOperationIT {
 
     private WeighingOperationRequest request(WeighingOperationType type, UUID partnerId, UUID personId) {
         return new WeighingOperationRequest(type, depot.getId(), LocalDate.of(2026, 9, 15),
-                partnerId, personId, null, null, null, null, null, null, null, null, null, null);
+                partnerId, personId, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private Company company(CompanyType type) {

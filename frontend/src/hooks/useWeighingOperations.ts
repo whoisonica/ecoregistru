@@ -106,8 +106,10 @@ export function useFinalizeWeighingOperation() {
   const invalidate = useInvalidate();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) =>
-      (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/finalize`)).data,
+    // `scaleReason` doar când cântarul nu era legal la cântărire (D2.3); serverul îl cere atunci.
+    mutationFn: async ({ id, scaleReason }: { id: string; scaleReason?: string }) =>
+      (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/finalize`, scaleReason ? { scaleReason } : undefined))
+        .data,
     onSuccess: () => {
       invalidate();
       // Din clipa asta liniile contează în stoc, în registre și în totalurile de pe Intrări/Ieșiri.

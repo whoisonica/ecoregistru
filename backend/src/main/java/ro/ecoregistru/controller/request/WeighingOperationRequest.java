@@ -21,6 +21,7 @@ import java.util.UUID;
  * @param paymentMethod cum se plătește marfa; la o persoană fizică, numerarul are plafon zilnic
  *                      (Legea 70/2015 art. 4), iar viramentul se face în 3 zile lucrătoare
  * @param receiptNumber chitanța, când s-a plătit numerar (OUG 31/2011 art. 1 alin. (1^2) lit. a))
+ * @param scaleId       cântarul depozitului (D2.3); sigilat, scos din uz sau al altui depozit = refuz
  * @param ownHousehold  declarația persoanei fizice că deșeul provine din gospodăria proprie;
  *                      obligatorie la metal (art. 1 alin. (1^1))
  */
@@ -39,5 +40,6 @@ public record WeighingOperationRequest(
         PaymentMethod paymentMethod,
         @Size(max = 60) String receiptNumber,
         Boolean ownHousehold,
-        @Size(max = 1000) String notes) {
+        @Size(max = 1000) String notes,
+        UUID scaleId) {
 }

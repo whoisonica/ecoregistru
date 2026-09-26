@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
+import ro.ecoregistru.controller.request.ScaleEventRequest;
+import ro.ecoregistru.controller.request.ScaleRequest;
 import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingLinesRequest.Line;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
@@ -24,6 +26,7 @@ import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.enums.ScaleEventKind;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
@@ -31,6 +34,7 @@ import ro.ecoregistru.repository.WasteArticleRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.ScaleService;
 import ro.ecoregistru.service.WeighingOperationService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -70,6 +74,7 @@ class DepotListPerformanceIT {
 
     private static final LocalDate DAY = LocalDate.of(2031, 3, 10);
 
+    @Autowired ScaleService scaleService;
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired EntityManagerFactory entityManagerFactory;
@@ -161,12 +166,20 @@ class DepotListPerformanceIT {
         for (int i = 0; i < count; i++) {
             WasteArticle first = article();
             WasteArticle second = article();
+            // D2.3 — fiecare cu cântarul ei, cu istoric: starea cântarului nu are voie să coste o
+            // interogare pe rând, nici la cele în lucru (calculată), nici la cele finalizate (fixată).
+            UUID scaleId = scaleService.create(new ScaleRequest(depot.getId(), "Cântar " + UUID.randomUUID(), null,
+                    null, null, null, DAY.minusYears(2), DAY.minusYears(2), null, null)).id();
+            scaleService.addEvent(scaleId, new ScaleEventRequest(ScaleEventKind.VERIFICATION, DAY.minusMonths(2),
+                    true, "B-" + i, null, null, null, null));
             UUID id = service.create(new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
-                    null, null, null, null, null, null, null, null, null, null, null)).id();
+                    null, null, null, null, null, null, null, null, null, null, null, scaleId)).id();
             service.replaceLines(id, new WeighingLinesRequest(null, null, List.of(
                     new Line(first.getId(), null, null, new BigDecimal("100"), null, new BigDecimal("0.5"), null, null),
                     new Line(second.getId(), null, null, new BigDecimal("50"), null, new BigDecimal("20"), null, null))));
-            service.finalizeOperation(id);
+            if (i % 2 == 0) {
+                service.finalizeOperation(id);
+            }
         }
     }
 

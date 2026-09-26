@@ -48,7 +48,22 @@ public record WeighingOperationResponse(
         BigDecimal afmRate,
         BigDecimal incomeTaxRate,
         String cancelReason,
+        /** D2.3 — cântarul, starea lui la data cântăririi (fixată la finalizare) și motivul confirmării. */
+        UUID scaleId,
+        String scaleName,
+        ro.ecoregistru.service.ScaleLegality.State scaleState,
+        String scaleOverrideReason,
+        /** Cât se plătește la o intrare, cu reținerile; null pentru cine nu-l vede ({@code seesPayment}). */
+        Payment payment,
         List<Line> lines) {
+
+    /**
+     * Totalul de plată al unei intrări: valoarea, reținerile și ce primește omul. Îl vede și operatorul
+     * la „Doar administratorul” (decizia proprietarului, 26.09.2026: el plătește la cântar), fără prețul
+     * pe kg. În lucru e previzualizarea; după finalizare, sumele fixate atunci.
+     */
+    public record Payment(BigDecimal value, BigDecimal afm, BigDecimal incomeTax, BigDecimal net) {
+    }
 
     /** O linie de cântar. {@code finalKg} e ce intră în stoc și în registre. */
     public record Line(UUID id,
