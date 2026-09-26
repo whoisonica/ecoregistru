@@ -91,6 +91,7 @@ public class WeighingOperationService {
     ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
     DepotAccess depotAccess;
     ReceivedFormService receivedForms;
+    StockService stockService;
 
     /** Operațiunea firmei, dacă e pe un depozit al utilizatorului (D2.4); altfel 404, ca una inexistentă. */
     WeighingOperation requireOperation(UUID id, UUID tenantId) {
@@ -355,6 +356,9 @@ public class WeighingOperationService {
         operation.setFinalizedAt(java.time.Instant.now());
         operation.setFinalizedBy(user.getId());
         operationRepository.saveAndFlush(operation);
+        if (operation.getType() == WeighingOperationType.OUT) {
+            return withStockWarnings(operation, lines);
+        }
         return toResponse(operation, lines, pricesVisible(operation.getCompany()));
     }
 
@@ -812,7 +816,7 @@ public class WeighingOperationService {
         operation.setDispatchedAt(java.time.Instant.now());
         operation.setDispatchedBy(userId);
         operationRepository.saveAndFlush(operation);
-        return toResponse(operation, lines, pricesVisible(operation.getCompany()));
+        return withStockWarnings(operation, lines);
     }
 
     /**
@@ -1027,6 +1031,12 @@ public class WeighingOperationService {
 
     private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> all,
                                                         boolean pricesVisible, ScaleLegality.State scaleState) {
+        return toResponse(o, all, pricesVisible, scaleState, List.of());
+    }
+
+    private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> all,
+                                                        boolean pricesVisible, ScaleLegality.State scaleState,
+                                                        List<ro.ecoregistru.controller.response.StockResponse.Row> stockWarnings) {
         List<WasteMovement> lines = all.stream().filter(m -> m.getOperation() != WasteOperation.TRANSFERRED_IN).toList();
         Partner partner = o.getPartner();
         NaturalPerson person = o.getNaturalPerson();
@@ -1047,7 +1057,23 @@ public class WeighingOperationService {
                 scaleState, o.getScaleOverrideReason(),
                 payment(o, lines),
                 lines.stream().map(m -> toLine(m, pricesVisible)).toList(),
-                transfer(o, lines, all.stream().filter(m -> m.getOperation() == WasteOperation.TRANSFERRED_IN).toList()));
+                transfer(o, lines, all.stream().filter(m -> m.getOperation() == WasteOperation.TRANSFERRED_IN).toList()),
+                stockWarnings);
+    }
+
+    /**
+     * D3.2 — după ce liniile unei ieșiri (sau ale plecării unui transfer) au ieșit din depozit: perechile sortiment × cod
+     * ale operațiunii care au rămas cu sold negativ la data ei. Avertisment, nu refuz.
+     */
+    private WeighingOperationResponse withStockWarnings(WeighingOperation operation, List<WasteMovement> lines) {
+        java.util.Set<String> keys = lines.stream()
+                .map(l -> StockService.key(l.getArticle() == null ? null : l.getArticle().getId(), l.getWasteCode().getId()))
+                .collect(Collectors.toSet());
+        var warnings = stockService.negativeAfter(operation.getWorkPoint().getId(), operation.getDate(), keys);
+        return toResponse(operation, lines, pricesVisible(operation.getCompany()), scaleState(operation,
+                () -> operation.getScale() == null ? List.of()
+                        : scaleService.eventsOf(List.of(operation.getScale().getId()))
+                                .getOrDefault(operation.getScale().getId(), List.of())), warnings);
     }
 
     private static WeighingOperationResponse.Transfer transfer(WeighingOperation o, List<WasteMovement> sent,

@@ -273,4 +273,82 @@ public interface WasteMovementRepository
             + "m.driverCnp = null where m.date < :cutoff and (m.driverName is not null "
             + "or m.driverIdentification is not null or m.driverCnp is not null)")
     int clearDriverDataBefore(@Param("cutoff") LocalDate cutoff);
+
+    // --- F3 (D3.1): soldul pe depozit × sortiment × cod, calculat din linii (fără tabel de solduri) ---
+
+    /** Un rând de sold sau de cantitate în mișcare; aliasurile select-ului. */
+    interface StockLine {
+        UUID getWorkPointId();
+
+        UUID getArticleId();
+
+        String getArticleName();
+
+        UUID getWasteCodeId();
+
+        String getCode();
+
+        String getName();
+
+        boolean getHazardous();
+
+        java.math.BigDecimal getKg();
+    }
+
+    /**
+     * Soldul fiecărui depozit la sfârșitul zilei {@code upTo}: preluările și transferurile primite adaugă, predările,
+     * ieșirile fără cod și transferurile trimise scad. Aceleași linii care contează în registre (D1.3, D2.5).
+     */
+    @Query("""
+            select m.workPoint.id as workPointId, a.id as articleId, a.name as articleName,
+                   c.id as wasteCodeId, c.code as code, c.name as name, c.hazardous as hazardous,
+                   coalesce(sum((case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
+                                                           ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN)
+                                      then 1 else -1 end)
+                                * (case when m.unit = ro.ecoregistru.enums.Unit.TONS
+                                        then m.quantity * 1000 else m.quantity end)), 0) as kg
+            from WasteMovement m left join m.weighingOperation o left join m.article a join m.wasteCode c
+            where m.company.id = :companyId and m.deleted = false
+              and m.register = ro.ecoregistru.enums.WasteRegister.ART_48
+              and m.operation <> ro.ecoregistru.enums.WasteOperation.GENERATED
+              and m.quantity is not null and m.date <= :upTo
+              and (:workPointId is null or m.workPoint.id = :workPointId)
+              and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
+            group by m.workPoint.id, a.id, a.name, c.id, c.code, c.name, c.hazardous
+            """)
+    List<StockLine> stockAt(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
+                            @Param("upTo") LocalDate upTo);
+
+    /**
+     * Marfa în tranzit spre un depozit la sfârșitul zilei {@code upTo}: plecată până atunci, nerecepționată până
+     * atunci (recepția poate fi de după). {@code workPointId} e aici depozitul de <b>destinație</b>.
+     */
+    @Query("""
+            select o.targetWorkPoint.id as workPointId, a.id as articleId, a.name as articleName,
+                   c.id as wasteCodeId, c.code as code, c.name as name, c.hazardous as hazardous,
+                   coalesce(sum(m.quantity), 0) as kg
+            from WasteMovement m join m.weighingOperation o left join m.article a join m.wasteCode c
+            where m.company.id = :companyId and m.deleted = false
+              and m.operation = ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT
+              and o.status in (ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT, ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)
+              and m.date <= :upTo and (o.receivedOn is null or o.receivedOn > :upTo)
+              and (:workPointId is null or o.targetWorkPoint.id = :workPointId)
+            group by o.targetWorkPoint.id, a.id, a.name, c.id, c.code, c.name, c.hazardous
+            """)
+    List<StockLine> inTransitAt(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
+                                @Param("upTo") LocalDate upTo);
+
+    /** Angajat: liniile ieșirilor și ale transferurilor încă în lucru — marfa care urmează să plece din depozit. */
+    @Query("""
+            select m.workPoint.id as workPointId, a.id as articleId, a.name as articleName,
+                   c.id as wasteCodeId, c.code as code, c.name as name, c.hazardous as hazardous,
+                   coalesce(sum(m.quantity), 0) as kg
+            from WasteMovement m join m.weighingOperation o left join m.article a join m.wasteCode c
+            where m.company.id = :companyId and m.deleted = false
+              and o.status = ro.ecoregistru.enums.WeighingOperationStatus.IN_PROGRESS
+              and o.type in (ro.ecoregistru.enums.WeighingOperationType.OUT, ro.ecoregistru.enums.WeighingOperationType.TRANSFER)
+              and (:workPointId is null or m.workPoint.id = :workPointId)
+            group by m.workPoint.id, a.id, a.name, c.id, c.code, c.name, c.hazardous
+            """)
+    List<StockLine> committed(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId);
 }

@@ -741,6 +741,30 @@ export interface WeighingTransfer {
   receivedLines: WeighingLine[];
 }
 
+/** F3 (D3.1) — soldul unui depozit sau al firmei la o dată, pe sortiment și cod. */
+export interface StockRow {
+  articleId: string | null;
+  articleName: string | null;
+  wasteCodeId: string;
+  wasteCode: string;
+  wasteName: string;
+  hazardous: boolean;
+  stockKg: number;
+  inTransitKg: number;
+  committedKg: number;
+  /** Sold − angajat. */
+  availableKg: number;
+  /** D3.2 — de corectat: a ieșit mai mult decât s-a înregistrat că a intrat. */
+  negative: boolean;
+}
+
+export interface StockReport {
+  date: string;
+  workPointId: string | null;
+  rows: StockRow[];
+  negativeRows: number;
+}
+
 /** D2.6 — un rând din registrul formularelor primite (append-only; corectura e un rând nou). */
 export interface ReceivedForm {
   id: string;
@@ -863,6 +887,8 @@ export interface WeighingOperation {
   lines: WeighingLine[];
   /** D2.5 — doar la transfer. */
   transfer: WeighingTransfer | null;
+  /** D3.2 — doar pe răspunsul finalizării unei ieșiri / plecării unui transfer: soldurile rămase negative. */
+  stockWarnings?: StockRow[];
 }
 
 export interface WeighingOperationInput {

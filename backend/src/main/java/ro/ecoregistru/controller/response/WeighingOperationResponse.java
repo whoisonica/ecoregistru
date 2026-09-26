@@ -58,7 +58,12 @@ public record WeighingOperationResponse(
         /** Liniile de la plecare; la transfer, cele de la recepție sunt în {@link Transfer#receivedLines}. */
         List<Line> lines,
         /** D2.5 — doar la transfer. */
-        Transfer transfer) {
+        Transfer transfer,
+        /**
+         * D3.2 — doar pe răspunsul la finalizarea unei ieșiri sau la plecarea unui transfer: soldurile depozitului care au
+         * ieșit negative. Nu blochează nimic; ecranul le arată ca avertisment. Gol în rest.
+         */
+        List<StockResponse.Row> stockWarnings) {
 
     /**
      * D2.5 — destinația, plecarea și recepția unui transfer. Cântăririle de la B, diferența (primit − plecat) și

@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiBlobErrorMessage } from "@/lib/api";
 import { WeighingOperationDialog } from "@/components/depot/WeighingOperationDialog";
 import { ReceivedFormsTab } from "@/components/depot/ReceivedFormsTab";
+import { StockTab } from "@/components/depot/StockTab";
 
 const t = strings.weighing;
 
@@ -56,9 +57,11 @@ export function WeighingOperationsPage() {
   const writes = canWrite(user?.role);
 
   // D2.6 — al patrulea tab nu e un tip de operațiune: registrul formularelor primite.
-  const [tab, setTab] = useState<WeighingOperationType | "FORMS">("IN");
+  const [tab, setTab] = useState<WeighingOperationType | "FORMS" | "STOCK">("IN");
   const forms = tab === "FORMS";
-  const type: WeighingOperationType = forms ? "IN" : tab;
+  // F3 — stocul n-are acțiune principală: se citește.
+  const stockTab = tab === "STOCK";
+  const type: WeighingOperationType = forms || stockTab ? "IN" : tab;
   const [month, setMonth] = useState(currentMonth());
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -75,7 +78,7 @@ export function WeighingOperationsPage() {
     return [Number(y), Number(m)];
   }, [month]);
 
-  const { data, isLoading, isError } = useWeighingOperations({ type, year, month: monthNumber }, !forms);
+  const { data, isLoading, isError } = useWeighingOperations({ type, year, month: monthNumber }, !forms && !stockTab);
   // Banda reținerilor o vede doar cine administrează firma și vede prețurile. Regula e pe server, dar
   // operatorul nici n-o cere: un 403 la fiecare deschidere de ecran e zgomot, nu informație.
   const retentions = useDepotRetentions(year, monthNumber, canManage(user?.role));
@@ -104,7 +107,7 @@ export function WeighingOperationsPage() {
   });
 
   useHotkey("n", () => {
-    if (writes) setCreating(true);
+    if (writes && !stockTab) setCreating(true);
   });
 
   const inbound = type === "IN";
@@ -127,7 +130,7 @@ export function WeighingOperationsPage() {
         title={t.title}
         description={t.subtitle}
         actions={
-          writes && (
+          writes && !stockTab && (
             <Button hotkey="N" onClick={() => setCreating(true)}>
               {forms ? (
                 <FilePlus className="mr-2 h-4 w-4" />
@@ -151,6 +154,7 @@ export function WeighingOperationsPage() {
             { id: "OUT", label: t.tabOut },
             { id: "TRANSFER", label: t.tabTransfer },
             { id: "FORMS", label: t.tabForms },
+            { id: "STOCK", label: t.tabStock },
           ] as const).map((item) => (
             <button
               key={item.id}
@@ -169,7 +173,7 @@ export function WeighingOperationsPage() {
             </button>
           ))}
         </div>
-        {!forms && (
+        {!forms && !stockTab && (
         <div className="flex flex-wrap items-end gap-2">
           <MonthInput id="weighing-month" value={month} onChange={setMonth} />
           {/* Amândouă direcțiile, oricare tab e deschis: e registrul intrărilor și al ieșirilor. */}
@@ -182,12 +186,13 @@ export function WeighingOperationsPage() {
       </div>
 
       {forms && <ReceivedFormsTab canWrite={writes} creating={creating} onCreatingChange={setCreating} />}
+      {stockTab && <StockTab />}
 
-      {!forms && retentions.data && <RetentionsStrip report={retentions.data} />}
+      {!forms && !stockTab && retentions.data && <RetentionsStrip report={retentions.data} />}
 
-      {!forms && isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {!forms && !stockTab && isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
-      {!forms && !isError && (
+      {!forms && !stockTab && !isError && (
         <>
           <TableToolbar view={view} placeholder={t.searchPlaceholder} />
           <Table stickyHeader>

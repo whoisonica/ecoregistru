@@ -1,3 +1,10 @@
+📦 **26.09.2026 — proba 49 (`49-stoc.mjs`), stocul (F3, D3.1–D3.2)**: tabul „Stoc” din „Cântar” (fără acțiune principală):
+pe un depozit nou o intrare de 1.000 kg și o ieșire în lucru de 300 dau „1.000 · Angajat 300 · Disponibil 700”, la fel ca
+`/api/v1/stock`; o ieșire de 2.000 kg peste stoc se finalizează, dar răspunsul are `stockWarnings` (-1.000), rândul are
+„Negativ”, banda spune câte sunt de corectat și filtrul „Doar de corectat” îl păstrează; ieri stocul era gol; 1440 și 375
+fără lățire. **Negativă:** fără insigna „Negativ” → 2 căderi. Proba **19** cere acum cinci taburi. ⚠️ Lasă în urmă depozitul
+„Proba 49 <număr>” (dezactivat) cu operațiunile lui.
+
 📒 **26.09.2026 — proba 48 (`48-formulare-primite.mjs`), registrul formularelor primite (D2.6)**: tabul „Formulare primite”
 din „Cântar”; butonul principal e „Trece formular” și **tasta N îl deschide** — până acum N pe `/cantar` pornea și „Adaugă
 deșeuri” din panou (`Layout.tsx` `OWNS_N` fără `/cantar`, defect vechi, și pe Intrări/Ieșiri); rândul intră cu nr. 1;

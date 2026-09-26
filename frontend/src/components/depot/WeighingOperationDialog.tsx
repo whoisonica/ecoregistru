@@ -419,8 +419,9 @@ export function WeighingOperationDialog({
             setScaleReasonFor(saved);
             return;
           }
-          await finalizeMut.mutateAsync({ id: saved.id });
+          const done = await finalizeMut.mutateAsync({ id: saved.id });
           notify(transfer ? t.dispatched : t.finalized, "success");
+          warnNegativeStock(done);
           onClose();
         } catch (err) {
           notify(apiErrorMessage(err, t.saveError), "error");
@@ -432,13 +433,22 @@ export function WeighingOperationDialog({
   async function finalizeWithReason() {
     if (!scaleReasonFor || !scaleReason.trim()) return;
     try {
-      await finalizeMut.mutateAsync({ id: scaleReasonFor.id, scaleReason: scaleReason.trim() });
+      const done = await finalizeMut.mutateAsync({ id: scaleReasonFor.id, scaleReason: scaleReason.trim() });
       setScaleReasonFor(null);
       notify(transfer ? t.dispatched : t.finalized, "success");
+      warnNegativeStock(done);
       onClose();
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
     }
+  }
+
+  /** D3.2 — stocul negativ nu oprește ieșirea; se spune, ca omul să caute intrarea lipsă. */
+  function warnNegativeStock(done: WeighingOperation) {
+    const items = (done.stockWarnings ?? []).map(
+      (w) => `${w.articleName ?? w.wasteCode} (${w.stockKg.toLocaleString("ro-RO")} kg)`
+    );
+    if (items.length > 0) notify(t.stockWarning.replace("{items}", items.join(", ")), "info");
   }
 
   async function handleCancel() {
