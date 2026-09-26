@@ -27,7 +27,7 @@ appId: ro.wastehouse.app
       - tapOn: Connect
 # Meniul clientului de dezvoltare se deschide singur la prima pornire și acoperă formularul.
 - extendedWaitUntil:
-    visible: "Runtime version.*|Autentificare"
+    visible: "Runtime version.*|Autentificare|Intră în cont"
     timeout: 60000
 - tapOn:
     text: Continue

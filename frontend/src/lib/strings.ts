@@ -219,6 +219,13 @@ export const strings = {
     devicesError: "Nu am putut încărca dispozitivele.",
     deviceThis: "telefonul ăsta",
     deviceLastUsed: (date: string) => `Folosit ${date}`,
+    // Scoaterea unui telefon (G1, `DELETE /auth/devices/{id}`): intră din nou numai cu parola.
+    deviceRemove: "Scoate",
+    deviceRemoveTitle: (name: string) => `Scoți „${name}”?`,
+    deviceRemoveBody: "Telefonul iese din cont și poate intra din nou numai cu parola.",
+    deviceRemoveConfirm: "Scoate telefonul",
+    deviceRemoveCancel: "Renunță",
+    deviceRemoveFailed: "Telefonul n-a putut fi scos. Încearcă din nou când ai semnal.",
     // Bara de jos a colectorului: „Intrare” albastru în locul listei de generare (todo-mobil §6).
     tabIn: "Intrări",
     tabOut: "Ieșiri",

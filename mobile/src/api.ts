@@ -151,6 +151,11 @@ export function devices(auth: Auth) {
   return request<DeviceSessionRow[]>("/api/v1/auth/devices", { auth });
 }
 
+/** Scoate un telefon din cont — numai de pe contul propriu (serverul refuză altfel, `DeviceSessionIT`). */
+export function removeDevice(auth: Auth, id: string) {
+  return request<void>(`/api/v1/auth/devices/${id}`, { method: "DELETE", auth });
+}
+
 /**
  * G2 — tokenul de push al telefonului, pe sesiunea lui de dispozitiv. Numai sesiunea proprie; `null`
  * îl șterge. Fără `X-Tenant-Id`: e despre telefon, nu despre o firmă.

@@ -1,0 +1,45 @@
+# G1 — „Scoate” din „Dispozitive conectate” (26.09.2026). Înainte, un al doilea telefon pe același cont,
+# din linia de comandă (login cu `deviceName`), ca să aibă ce scoate:
+#   curl -s <API>/api/v1/auth/login -H 'Content-Type: application/json' \
+#     -d '{"email":"admin@demo.ro","password":"<ceva>","deviceName":"Telefon de probă","devicePlatform":"ANDROID"}'
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/dispozitive.yaml
+# După flux, `POST /auth/refresh` cu tokenul lung al acelui login trebuie să fie refuzat.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- extendedWaitUntil:
+    visible:
+      id: devices
+    timeout: 20000
+- tapOn:
+    id: devices
+- extendedWaitUntil:
+    visible: Telefon de probă
+    timeout: 15000
+# „Telefonul ăsta” n-are buton: pentru el e „Ieși din cont”.
+- assertVisible: telefonul ăsta
+- takeScreenshot: 01-lista
+
+- tapOn:
+    id: device-remove
+- extendedWaitUntil:
+    visible: "Scoți „Telefon de probă”?"
+    timeout: 5000
+- takeScreenshot: 02-confirmare
+# Întâi „Renunță”: nimic nu pleacă fără a doua apăsare.
+- tapOn: Renunță
+- assertVisible: Telefon de probă
+
+- tapOn:
+    id: device-remove
+- extendedWaitUntil:
+    visible: "Scoți „Telefon de probă”?"
+    timeout: 5000
+- tapOn: Scoate telefonul
+- extendedWaitUntil:
+    notVisible: Telefon de probă
+    timeout: 10000
+- assertVisible: telefonul ăsta
+- takeScreenshot: 03-scos

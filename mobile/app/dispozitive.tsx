@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import { Stack } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { devices } from "../src/api";
+import { devices, removeDevice } from "../src/api";
+import { PrimaryButton } from "../src/components/Form";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
 import { Icon } from "../src/components/Icon";
 import { formatDate } from "../src/format";
@@ -16,17 +17,28 @@ import { colors } from "../src/theme";
  * <p>Care e cel din mână se vede de aici, nu de la server: aplicația își știe id-ul sesiunii de la
  * login sau de la ultima reîmprospătare.
  *
- * <p>Scoaterea unui telefon (`DELETE /auth/devices/{id}`) e scrisă pe server și probată
- * (`DeviceSessionIT`), dar butonul nu e aici: pe ecranul ăsta nu e nimic de <em>reparat</em> în M1a,
- * iar o ștergere cu confirmare vine cu felia în care aplicația chiar scrie (M1b).
+ * <p>„Scoate” (`DELETE /auth/devices/{id}`, 26.09.2026): un telefon pierdut sau al unui om plecat iese
+ * din cont fără să se schimbe parola tuturor. Cu confirmare, fiindcă nu se desface. Nu și pe „telefonul
+ * ăsta”: pentru el e „Ieși din cont”, care stinge și tokenul de push.
  */
 export default function DispozitiveScreen() {
   const { auth, session } = useSession();
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: ["devices"],
     queryFn: () => devices(auth!),
     enabled: !!auth,
   });
+  const remove = useMutation({
+    mutationFn: (id: string) => removeDevice(auth!, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
+    onError: () => Alert.alert(strings.mobile.deviceRemoveFailed),
+  });
+  const confirmRemove = (id: string, name: string) =>
+    Alert.alert(strings.mobile.deviceRemoveTitle(name), strings.mobile.deviceRemoveBody, [
+      { text: strings.mobile.deviceRemoveCancel, style: "cancel" },
+      { text: strings.mobile.deviceRemoveConfirm, style: "destructive", onPress: () => remove.mutate(id) },
+    ]);
 
   return (
     <>
@@ -55,7 +67,17 @@ export default function DispozitiveScreen() {
                   <Text style={rowStyles.title} numberOfLines={1}>{d.deviceName}</Text>
                   <Text style={rowStyles.sub}>{strings.mobile.deviceLastUsed(formatDate(d.lastUsedAt))}</Text>
                 </View>
-                {d.id === session?.deviceSessionId ? <Chip label={strings.mobile.deviceThis} tone="ok" /> : null}
+                {d.id === session?.deviceSessionId ? (
+                  <Chip label={strings.mobile.deviceThis} tone="ok" />
+                ) : (
+                  <PrimaryButton
+                    tone="quiet"
+                    label={strings.mobile.deviceRemove}
+                    testID="device-remove"
+                    disabled={remove.isPending}
+                    onPress={() => confirmRemove(d.id, d.deviceName)}
+                  />
+                )}
               </View>
             ))
           )}
