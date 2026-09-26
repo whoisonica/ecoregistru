@@ -159,6 +159,12 @@ public enum ErrorMessageEnum {
     SCALE_DIVISION_NOT_POSITIVE("scale.division.not.positive", "Diviziunea trebuie să fie mai mare decât zero."),
     SCALE_HAS_WEIGHINGS("scale.has.weighings", "Cu cântarul ăsta s-au făcut cântăriri, deci fișa lui rămâne. Trece-l „Scos din uz”."),
     SCALE_EVENT_NOT_FOUND("scale.event.not.found", "Rândul din istoricul cântarului nu a fost găsit."),
+    // F3 — pragurile de stoc (D3.3) și limitele din autorizație (D3.4).
+    STOCK_SETTING_NOT_FOUND("stock.setting.not.found", "Pragul sau limita nu a fost găsită."),
+    STOCK_THRESHOLD_EMPTY("stock.threshold.empty", "Scrie cel puțin un prag: minimul, maximul sau amândouă."),
+    STOCK_THRESHOLD_INVALID("stock.threshold.invalid", "Minimul nu poate fi negativ sau mai mare decât maximul, iar maximul trebuie să fie peste zero."),
+    AUTHORIZED_LIMIT_INVALID("authorized.limit.invalid", "Alege felul limitei, unitatea și perioada, cum scrie în autorizație."),
+    AUTHORIZED_LIMIT_QUANTITY("authorized.limit.quantity", "Cantitatea din autorizație trebuie să fie mai mare decât zero."),
     // D2.6 — registrul formularelor primite.
     RECEIVED_FORM_NOT_FOUND("received.form.not.found", "Rândul din registru nu a fost găsit."),
     RECEIVED_FORM_DEPOT_REQUIRED("received.form.depot.required", "Alege depozitul în al cărui registru se trece formularul."),

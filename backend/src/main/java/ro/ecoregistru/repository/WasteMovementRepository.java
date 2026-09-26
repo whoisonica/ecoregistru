@@ -351,4 +351,36 @@ public interface WasteMovementRepository
             group by m.workPoint.id, a.id, a.name, c.id, c.code, c.name, c.hazardous
             """)
     List<StockLine> committed(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId);
+
+    /** O mișcare de stoc a unui depozit, cu semn: pentru vechimea stocului (FIFO pe loturi, D3.4). */
+    interface StockMove {
+        UUID getWasteCodeId();
+
+        LocalDate getDate();
+
+        java.math.BigDecimal getKg();
+    }
+
+    /**
+     * Intrările (+) și ieșirile (−) unui depozit până la o dată, în ordinea zilelor și, în aceeași zi, intrările întâi:
+     * o marfă nu pleacă înainte să vină. Aceleași linii ca {@link #stockAt}.
+     */
+    @Query("""
+            select c.id as wasteCodeId, m.date as date,
+                   (case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
+                                              ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN)
+                         then 1 else -1 end)
+                   * (case when m.unit = ro.ecoregistru.enums.Unit.TONS then m.quantity * 1000 else m.quantity end) as kg
+            from WasteMovement m left join m.weighingOperation o join m.wasteCode c
+            where m.company.id = :companyId and m.deleted = false and m.workPoint.id = :workPointId
+              and m.register = ro.ecoregistru.enums.WasteRegister.ART_48
+              and m.operation <> ro.ecoregistru.enums.WasteOperation.GENERATED
+              and m.quantity is not null and m.date <= :upTo
+              and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
+            order by m.date,
+                     (case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
+                                                ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN) then 0 else 1 end)
+            """)
+    List<StockMove> stockMoves(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
+                               @Param("upTo") LocalDate upTo);
 }

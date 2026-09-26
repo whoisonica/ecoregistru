@@ -1,3 +1,8 @@
+🎚️ **26.09.2026 — proba 50 (`50-praguri-limite.mjs`), pragurile și limitele (F3, D3.3–D3.4)**: pe un depozit nou cu 1.000 kg,
+adminul pune din „Praguri și limite” maximul de 500 kg → „Peste maxim”; limita „Stocat pe amplasament, 0,5 t la un moment dat”
+→ banda spune „1 / 0.5 t … Depășit”; o limită în m³ e „fără comparație”; „Vechime” arată „0 zile”; operatorul n-are butonul;
+1440 fără lățire. **Negativă:** fără insigna „Peste maxim” → cade. ⚠️ Lasă în urmă depozitul „Proba 50 <număr>” (dezactivat).
+
 📦 **26.09.2026 — proba 49 (`49-stoc.mjs`), stocul (F3, D3.1–D3.2)**: tabul „Stoc” din „Cântar” (fără acțiune principală):
 pe un depozit nou o intrare de 1.000 kg și o ieșire în lucru de 300 dau „1.000 · Angajat 300 · Disponibil 700”, la fel ca
 `/api/v1/stock`; o ieșire de 2.000 kg peste stoc se finalizează, dar răspunsul are `stockWarnings` (-1.000), rândul are

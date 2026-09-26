@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { Boxes } from "lucide-react";
+import { Boxes, SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { StockSettingsDialog } from "@/components/depot/StockSettingsDialog";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useStock } from "@/hooks/useStock";
 import { strings } from "@/lib/strings";
@@ -24,7 +26,7 @@ const kg = (value: number) => kgFormat.format(value);
  * F3 (D3.1, D3.2) — stocul, pe depozit sau pe firmă, la zi sau la o dată din trecut. Sold, în tranzit, angajat și
  * disponibil; un sold negativ se vede („Negativ”) și are filtrul lui — raportul „de corectat”, fără să blocheze nimic.
  */
-export function StockTab() {
+export function StockTab({ canManage }: { canManage: boolean }) {
   const workPoints = useWorkPoints();
   const depots = useMemo(() => (workPoints.data ?? []).filter((w) => w.active), [workPoints.data]);
   const [depot, setDepot] = useState<string>("");
@@ -32,6 +34,8 @@ export function StockTab() {
   const [onlyNegative, setOnlyNegative] = useState(false);
   const { data, isLoading, isError } = useStock(depot || null, date);
   const all = !depot;
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const depotName = depots.find((w) => w.id === depot)?.name ?? "";
 
   const rows = useMemo(
     () => (data?.rows ?? []).filter((r) => !onlyNegative || r.negative),
@@ -75,7 +79,41 @@ export function StockTab() {
         <Tooltip content={t.stockHint}>
           <span className="mb-2 cursor-help font-mono text-content-subtle">?</span>
         </Tooltip>
+        {canManage && !all && (
+          <Button variant="outline" className="ml-auto" onClick={() => setSettingsOpen(true)}>
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            {t.stockSettings}
+          </Button>
+        )}
       </div>
+
+      {all && <p className="mb-3 text-xs text-content-muted">{t.stockPickDepot}</p>}
+
+      {!all && data && data.limits.length > 0 && (
+        <section aria-label={t.stockLimitsTitle} className="mb-3 border border-line bg-surface-sunken px-4 py-3">
+          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-content-muted">{t.stockLimitsTitle}</h2>
+          <ul className="space-y-1 text-sm">
+            {data.limits.map((l) => (
+              <li key={l.id} className="flex flex-wrap items-baseline gap-x-3">
+                <span>
+                  {t.stockLimitKind[l.kind]} · {l.wasteCode ?? t.stockLimitAllCodes}
+                </span>
+                <span className="font-mono tabular-nums">
+                  {l.usedKg != null && `${kg(l.unit === "T" ? l.usedKg / 1000 : l.usedKg)} / `}
+                  {l.quantity} {l.unit === "M3" ? "m³" : l.unit.toLowerCase()} {t.stockLimitPeriod[l.period]}
+                </span>
+                {l.comparable ? (
+                  <Badge variant={l.exceeded ? "danger" : "success"}>
+                    {l.exceeded ? t.stockLimitExceeded : t.stockLimitOk}
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-content-muted">{t.stockLimitNotCompared}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {data && data.negativeRows > 0 && (
         <p role="status" className="mb-3 text-sm text-state-warn-text">
@@ -96,12 +134,20 @@ export function StockTab() {
                 {!all && <TH className="text-right">{t.stockInTransit}</TH>}
                 <TH className="text-right">{t.stockCommitted}</TH>
                 <TH className="text-right">{t.stockAvailable}</TH>
+                {!all && (
+                  <TH className="text-right">
+                    {t.stockAge}
+                    <Tooltip content={t.stockAgeHint}>
+                      <span className="ml-1 cursor-help text-content-subtle">?</span>
+                    </Tooltip>
+                  </TH>
+                )}
               </TR>
             </THead>
             <TBody>
               {(isLoading || view.visible.length === 0) && (
                 <TableFallbackRow
-                  columns={all ? 5 : 6}
+                  columns={all ? 5 : 7}
                   loading={isLoading}
                   icon={Boxes}
                   title={view.emptiedBySearch ? strings.common.noResults : t.stockEmpty}
@@ -125,17 +171,46 @@ export function StockTab() {
                         {t.stockNegative}
                       </Badge>
                     )}
+                    {r.belowMin && (
+                      <Badge variant="warning" className="mr-2">
+                        {t.stockBelowMin}
+                      </Badge>
+                    )}
+                    {r.aboveMax && (
+                      <Badge variant="warning" className="mr-2">
+                        {t.stockAboveMax}
+                      </Badge>
+                    )}
                     {kg(r.stockKg)}
                   </TD>
                   {!all && <TD className="text-right font-mono tabular-nums">{r.inTransitKg ? kg(r.inTransitKg) : "—"}</TD>}
                   <TD className="text-right font-mono tabular-nums">{r.committedKg ? kg(r.committedKg) : "—"}</TD>
                   <TD className="text-right font-mono tabular-nums text-content-strong">{kg(r.availableKg)}</TD>
+                  {!all && (
+                    <TD className="whitespace-nowrap text-right font-mono tabular-nums">
+                      {r.ageFlag && (
+                        <Badge variant={r.ageFlag === "ONE_YEAR" ? "warning" : "danger"} className="mr-2">
+                          {t.stockAgeFlag[r.ageFlag]}
+                        </Badge>
+                      )}
+                      {r.oldestDays == null ? "—" : t.stockAgeDays.replace("{n}", String(r.oldestDays))}
+                    </TD>
+                  )}
                 </TR>
               ))}
             </TBody>
           </Table>
           <TablePagination view={view} />
         </>
+      )}
+
+      {settingsOpen && (
+        <StockSettingsDialog
+          workPointId={depot}
+          depotName={depotName}
+          limits={data?.limits ?? []}
+          onClose={() => setSettingsOpen(false)}
+        />
       )}
     </div>
   );

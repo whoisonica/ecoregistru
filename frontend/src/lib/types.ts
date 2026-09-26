@@ -756,6 +756,56 @@ export interface StockRow {
   availableKg: number;
   /** D3.2 — de corectat: a ieșit mai mult decât s-a înregistrat că a intrat. */
   negative: boolean;
+  /** D3.3 — pragurile firmei pe sortiment, doar pe un depozit. */
+  minKg: number | null;
+  maxKg: number | null;
+  belowMin: boolean;
+  aboveMax: boolean;
+  /** D3.4 — vechimea celui mai vechi lot rămas (FIFO pe cod), doar pe un depozit. */
+  oldestDays: number | null;
+  ageFlag: "ONE_YEAR" | "THREE_YEARS" | "LIMIT" | null;
+}
+
+export type LimitKind = "STORED" | "TREATED" | "OUTPUT";
+export type LimitUnit = "T" | "KG" | "M3";
+export type LimitPeriod = "AT_ONCE" | "MONTH" | "YEAR";
+
+/** D3.4 — o limită din autorizație, cu starea ei față de ce a cântărit aplicația. */
+export interface StockLimitStatus {
+  id: string;
+  kind: LimitKind;
+  wasteCodeId: string | null;
+  wasteCode: string | null;
+  quantity: number;
+  unit: LimitUnit;
+  period: LimitPeriod;
+  maxStorageDays: number | null;
+  approximate: boolean;
+  note: string | null;
+  comparable: boolean;
+  usedKg: number | null;
+  exceeded: boolean;
+}
+
+export interface StockThreshold {
+  id: string;
+  workPointId: string;
+  articleId: string;
+  articleName: string;
+  minKg: number | null;
+  maxKg: number | null;
+}
+
+export interface AuthorizedLimitInput {
+  workPointId: string;
+  kind: LimitKind;
+  wasteCodeId: string | null;
+  quantity: number;
+  unit: LimitUnit;
+  period: LimitPeriod;
+  maxStorageDays: number | null;
+  approximate: boolean;
+  note: string | null;
 }
 
 export interface StockReport {
@@ -763,6 +813,7 @@ export interface StockReport {
   workPointId: string | null;
   rows: StockRow[];
   negativeRows: number;
+  limits: StockLimitStatus[];
 }
 
 /** D2.6 — un rând din registrul formularelor primite (append-only; corectura e un rând nou). */

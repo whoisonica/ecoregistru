@@ -186,7 +186,7 @@ export function WeighingOperationsPage() {
       </div>
 
       {forms && <ReceivedFormsTab canWrite={writes} creating={creating} onCreatingChange={setCreating} />}
-      {stockTab && <StockTab />}
+      {stockTab && <StockTab canManage={canManage(user?.role)} />}
 
       {!forms && !stockTab && retentions.data && <RetentionsStrip report={retentions.data} />}
 
