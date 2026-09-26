@@ -1,6 +1,7 @@
 import type {
   Company,
   Deadline,
+  Driver,
   MonthlyEvidence,
   MovementSummary,
   MovementTotals,
@@ -297,6 +298,11 @@ export function workPoints(auth: Auth) {
 /** Toată lista, fără filtru (G4): telefonul o ține în cache și caută în ea CUI-ul citit. */
 export function partners(auth: Auth) {
   return request<Partner[]>("/api/v1/partners", { auth });
+}
+
+/** Șoferii firmei — ai noștri (`partnerId` null) și ai transportatorilor —, pentru rubricile Anexei 3. */
+export function drivers(auth: Auth) {
+  return request<Driver[]>("/api/v1/drivers", { auth });
 }
 
 /**

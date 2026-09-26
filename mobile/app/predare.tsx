@@ -7,6 +7,7 @@ import type {
   PartnerType,
   PhysicalState,
   StorageType,
+  TransportDestination,
   TransportMeans,
   Unit,
   WasteCode,
@@ -16,8 +17,10 @@ import type {
 import {
   destinationsFor,
   PACKAGING_MATERIALS,
+  suggestedDestinations,
   suggestedPackagingMaterial,
 } from "@/components/movements/movementRules";
+import { isValidCnp } from "@/lib/cnp";
 import * as Crypto from "expo-crypto";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { extractTextFromImage, isSupported } from "expo-text-extractor";
@@ -27,7 +30,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, View } 
 import * as api from "../src/api";
 import { parseAviz, cuiDigits, type AvizReading } from "../src/aviz/parse";
 import { canWrite } from "../src/auth";
-import { Field, Input, Pills, PrimaryButton } from "../src/components/Form";
+import { Field, Input, MultiPills, Pills, PrimaryButton } from "../src/components/Form";
 import { Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
 import { formatDate, formatKg } from "../src/format";
 import { useHandoverData } from "../src/handover";
@@ -67,7 +70,7 @@ export default function PredareScreen() {
   const { auth, session } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { company, workPoints, partners, recent } = useHandoverData();
+  const { company, workPoints, partners, recent, drivers } = useHandoverData();
 
   // Cheia de idempotență a predării, dată o dată, la deschiderea formularului (todo-mobil §10).
   const id = useRef(Crypto.randomUUID()).current;
@@ -95,6 +98,18 @@ export default function PredareScreen() {
   const [wasteDestination, setWasteDestination] = useState<WasteDestination | "">("");
   const [documentReference, setDocumentReference] = useState("");
   const [vehicle, setVehicle] = useState("");
+  // ── Anexa 3: transportul (ca `TransportFields` pe web) ──
+  const [partnerWorkPointId, setPartnerWorkPointId] = useState("");
+  const [loadDate, setLoadDate] = useState("");
+  const [unloadDate, setUnloadDate] = useState("");
+  const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">("");
+  const [transportPartnerId, setTransportPartnerId] = useState("");
+  const [driverId, setDriverId] = useState("");
+  const [driverName, setDriverName] = useState("");
+  const [driverIdentification, setDriverIdentification] = useState("");
+  const [driverCnp, setDriverCnp] = useState("");
+  const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>([]);
+  const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
 
   // ── citirea avizului ───────────────────────────────────────────────────────
@@ -194,6 +209,17 @@ export default function PredareScreen() {
     setPackagingMaterial(last.packagingMaterial ?? "");
     setPackagingCategory(last.packagingCategory ?? "");
     if (last.packagingOnMarket != null) setPackagingOnMarket(last.packagingOnMarket);
+    // Transportul, ca pe web: aceeași firmă, același șofer, aceeași mașină. Datele nu — sunt ale drumului de azi.
+    setPartnerWorkPointId(last.partnerWorkPointId ?? "");
+    setAnexa3Unit(last.anexa3Unit ?? "");
+    setTransportPartnerId(last.transportPartnerId ?? "");
+    setDriverId("");
+    setDriverName(last.driverName ?? "");
+    setDriverIdentification(last.driverIdentification ?? "");
+    setDriverCnp(last.driverCnp ?? "");
+    if (last.vehicleRegistration) setVehicle(last.vehicleRegistration);
+    setTransportDestinations(last.transportDestinations ?? []);
+    setDestinationsPrefilled(false);
   };
 
   // Destinația din tabăra soartei alese (nota 5); schimbarea soartei golește una din tabăra cealaltă.
@@ -204,6 +230,55 @@ export default function PredareScreen() {
 
   // ── destinatarul ───────────────────────────────────────────────────────────
   const partner = (partners.data ?? []).find((p) => p.id === partnerId) ?? null;
+
+  /**
+   * Alegerea destinatarului, ca pe web: punctul lui de lucru se golește (era al celuilalt), iar
+   * „Destinat:” se propune din felul partenerului numai peste o rubrică neatinsă.
+   */
+  const pickPartner = (id: string) => {
+    setPartnerId(id);
+    setPartnerWorkPointId("");
+    if (transportDestinations.length === 0 && fate) {
+      const chosen = (partners.data ?? []).find((p) => p.id === id);
+      const suggested = suggestedDestinations(chosen?.type, fate);
+      if (suggested.length > 0) {
+        setTransportDestinations(suggested);
+        setDestinationsPrefilled(true);
+      }
+    }
+  };
+
+  /**
+   * Cine poate transporta: cei bifați „Transportator” în Parteneri, plus destinatarul — de cele mai
+   * multe ori chiar el vine cu mașina. Pe web lista are toți partenerii (grupați); pe telefon ar fi o
+   * listă derulantă lungă, deci restul rămân pe web.
+   */
+  const carrierOptions = useMemo(() => {
+    const active = (partners.data ?? []).filter((p) => p.active);
+    const list = active.filter((p) => p.carrier);
+    if (partner && !list.some((p) => p.id === partner.id)) list.push(partner);
+    const chosen = active.find((p) => p.id === transportPartnerId);
+    if (chosen && !list.some((p) => p.id === chosen.id)) list.push(chosen);
+    return list;
+  }, [partners.data, partner, transportPartnerId]);
+  /** Șoferii transportatorului ales; fără transportator, ai noștri (`partnerId` null). */
+  const availableDrivers = useMemo(
+    () =>
+      (drivers.data ?? []).filter(
+        (d) => d.active && (transportPartnerId ? d.partnerId === transportPartnerId : d.partnerId === null),
+      ),
+    [drivers.data, transportPartnerId],
+  );
+  const pickDriver = (id: string) => {
+    setDriverId(id);
+    const d = availableDrivers.find((x) => x.id === id);
+    if (!d) return;
+    // Alegerea precompletează cele trei rubrici (rămân editabile) și mașina, dacă e goală.
+    setDriverName(d.name);
+    setDriverIdentification(d.identification ?? "");
+    setDriverCnp(d.cnp ?? "");
+    if (d.vehicleRegistration && !vehicle.trim()) setVehicle(d.vehicleRegistration);
+  };
   const [partnerQuery, setPartnerQuery] = useState("");
   const partnerMatches = useMemo(() => {
     const q = partnerQuery.trim().toLowerCase();
@@ -230,6 +305,9 @@ export default function PredareScreen() {
 
   // ── validarea ──────────────────────────────────────────────────────────────
   const isoDate = parseDate(date);
+  // Rubricile Anexei 3 se văd (și pleacă) numai cu destinatar ales; fără el nu le cerem și nu le trimitem.
+  const isoLoad = partner && loadDate.trim() ? parseDate(loadDate) : null;
+  const isoUnload = partner && unloadDate.trim() ? parseDate(unloadDate) : null;
   const amount = Number(quantity.replace(/\./g, "").replace(",", "."));
   const errors = {
     workPoint: !workPointId ? strings.common.requiredField : undefined,
@@ -257,6 +335,14 @@ export default function PredareScreen() {
       isPackaging && !packagingMaterial && !suggestedMaterial ? t.packagingMaterialRequired : undefined,
     packagingCategory:
       isPackaging && packagingOnMarket && !packagingCategory ? t.packagingCategoryRequired : undefined,
+    loadDate: partner && loadDate.trim() && !isoLoad ? m.dateFormat : undefined,
+    driverCnp: partner && driverCnp.trim() && !isValidCnp(driverCnp.trim()) ? strings.naturalPersons.cnpInvalid : undefined,
+    unloadDate:
+      partner && unloadDate.trim() && !isoUnload
+        ? m.dateFormat
+        : isoUnload && isoUnload < (isoLoad ?? isoDate ?? "")
+          ? m.unloadBeforeLoad
+          : undefined,
   };
   const unconfirmed = Object.keys(pending).length;
   const valid = Object.values(errors).every((v) => !v);
@@ -282,6 +368,19 @@ export default function PredareScreen() {
         partnerId: partnerId || null,
         documentReference: documentReference.trim() || null,
         vehicleRegistration: vehicle.trim() || null,
+        ...(partner
+          ? {
+              partnerWorkPointId: partnerWorkPointId || null,
+              loadDate: isoLoad,
+              unloadDate: isoUnload,
+              anexa3Unit: anexa3Unit || null,
+              transportPartnerId: transportPartnerId || null,
+              driverName: driverName.trim() || null,
+              driverIdentification: driverIdentification.trim() || null,
+              driverCnp: driverCnp.trim() || null,
+              transportDestinations,
+            }
+          : {}),
         physicalState,
         storageType,
         transportMeans,
@@ -309,6 +408,19 @@ export default function PredareScreen() {
   };
 
   const err = (k: keyof typeof errors) => (showErrors ? errors[k] : undefined);
+
+  const vehicleField = (
+    <Field label={t.vehicleRegistration} read={pending.vehicle} onConfirm={() => confirm("vehicle")} testID="f-vehicle">
+      <Input
+        value={vehicle}
+        onChangeText={(v) => {
+          setVehicle(v);
+          confirm("vehicle");
+        }}
+        autoCapitalize="characters"
+      />
+    </Field>
+  );
 
   return (
     <>
@@ -536,7 +648,7 @@ export default function PredareScreen() {
                 title={partner.name}
                 sub={partner.cui ?? ""}
                 onChange={() => {
-                  setPartnerId("");
+                  pickPartner("");
                   confirm("partner");
                 }}
               />
@@ -548,7 +660,7 @@ export default function PredareScreen() {
                     canAdd={canWrite(session?.role)}
                     onAdded={(p) => {
                       setUnknownCui(null);
-                      setPartnerId(p.id);
+                      pickPartner(p.id);
                     }}
                   />
                 ) : null}
@@ -569,7 +681,7 @@ export default function PredareScreen() {
                         title={p.name}
                         sub={p.cui ?? ""}
                         testID="partner-option"
-                        onPress={() => setPartnerId(p.id)}
+                        onPress={() => pickPartner(p.id)}
                       />
                     ))}
                   </>
@@ -577,6 +689,24 @@ export default function PredareScreen() {
               </>
             )}
           </Field>
+          {/* Punctul de lucru al destinatarului — numai când are mai multe; cu unul, Anexa 3 îl scrie pe acela. */}
+          {partner && partner.workPoints.length > 1 ? (
+            <>
+              <Sep />
+              <Field label={t.partnerWorkPoint}>
+                <Pills
+                  testID="partner-wp"
+                  options={partner.workPoints.map((wp) => ({
+                    value: wp.id,
+                    label: wp.name ? `${wp.name}, ${wp.address}` : wp.address,
+                  }))}
+                  value={partnerWorkPointId}
+                  onChange={setPartnerWorkPointId}
+                />
+                <Text style={styles.hint}>{t.partnerWorkPointHint}</Text>
+              </Field>
+            </>
+          ) : null}
         </Group>
 
         {isPackaging ? (
@@ -616,7 +746,121 @@ export default function PredareScreen() {
           </Group>
         ) : null}
 
-        <SectionHead>{t.sectionTransport}</SectionHead>
+        {/* Anexa 3 (la periculoase, doar transportul): aceleași rubrici și aceeași ordine ca pe web
+            (`TransportFields`), numai când există destinatar — fără el nu pleacă nimic nicăieri. */}
+        {partner ? (
+          <>
+            <SectionHead>{wasteCode?.hazardous ? t.sectionTransport : t.anexa3Section}</SectionHead>
+            <Group>
+              <Field label={t.loadDate} error={err("loadDate")} testID="f-load">
+                <Input
+                  value={loadDate}
+                  onChangeText={setLoadDate}
+                  keyboardType="numbers-and-punctuation"
+                  placeholder="zz.ll.aaaa"
+                />
+                <Text style={styles.hint}>{t.loadDateHint}</Text>
+              </Field>
+              <Sep />
+              <Field label={t.unloadDate} error={err("unloadDate")} testID="f-unload">
+                <Input
+                  value={unloadDate}
+                  onChangeText={setUnloadDate}
+                  keyboardType="numbers-and-punctuation"
+                  placeholder="zz.ll.aaaa"
+                />
+              </Field>
+              {!wasteCode?.hazardous ? (
+                <>
+                  <Sep />
+                  <Field label={t.anexa3Unit}>
+                    <Pills
+                      testID="a3unit"
+                      options={[
+                        { value: "COMPANY", label: t.anexa3UnitCompany },
+                        { value: "KG", label: e.unit.KG },
+                        { value: "TONS", label: e.unit.TONS },
+                      ]}
+                      value={anexa3Unit || "COMPANY"}
+                      onChange={(v) => setAnexa3Unit(v === "COMPANY" ? "" : (v as Unit))}
+                    />
+                  </Field>
+                </>
+              ) : null}
+              <Sep />
+              <Field label={t.transportPartner}>
+                <Pills
+                  testID="carrier"
+                  options={[
+                    { value: "OWN", label: m.carrierOwn },
+                    ...carrierOptions.map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                  value={transportPartnerId || "OWN"}
+                  onChange={(v) => {
+                    // Șoferii sunt ai transportatorului: schimbi firma, alegerea nu mai e a ei. Textul rămâne.
+                    setTransportPartnerId(v === "OWN" ? "" : v);
+                    setDriverId("");
+                  }}
+                />
+              </Field>
+              {availableDrivers.length > 0 ? (
+                <>
+                  <Sep />
+                  <Field label={t.driverPick}>
+                    <Pills
+                      testID="driver"
+                      options={[
+                        ...availableDrivers.map((d) => ({ value: d.id, label: d.name })),
+                        { value: "OTHER", label: m.driverOther },
+                      ]}
+                      value={driverId || "OTHER"}
+                      onChange={(v) => (v === "OTHER" ? setDriverId("") : pickDriver(v))}
+                    />
+                  </Field>
+                </>
+              ) : null}
+              <Sep />
+              <Field label={t.driverName} testID="f-driver">
+                <Input value={driverName} onChangeText={setDriverName} autoCapitalize="words" />
+              </Field>
+              <Sep />
+              <Field label={t.driverIdentification} testID="f-driver-id">
+                <Input
+                  value={driverIdentification}
+                  onChangeText={setDriverIdentification}
+                  placeholder={t.driverIdentificationPlaceholder}
+                  autoCapitalize="characters"
+                />
+              </Field>
+              <Sep />
+              <Field label={strings.common.cnp} error={err("driverCnp")} testID="f-driver-cnp">
+                <Input value={driverCnp} onChangeText={setDriverCnp} keyboardType="number-pad" maxLength={13} />
+              </Field>
+              <Sep />
+              {vehicleField}
+              <Sep />
+              <Field label={t.askTransportDestinations}>
+                <MultiPills
+                  testID="tdest"
+                  options={(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => ({
+                    value: d,
+                    label: e.transportDestination[d],
+                  }))}
+                  value={transportDestinations}
+                  onChange={(v) => {
+                    setTransportDestinations(v);
+                    setDestinationsPrefilled(false);
+                  }}
+                />
+                <Text style={styles.hint}>
+                  {destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}
+                </Text>
+              </Field>
+            </Group>
+          </>
+        ) : null}
+
+        <SectionHead>{t.askDocument}</SectionHead>
         <Group>
           <Field
             label={t.documentReference}
@@ -634,22 +878,13 @@ export default function PredareScreen() {
               autoCapitalize="characters"
             />
           </Field>
-          <Sep />
-          <Field
-            label={t.vehicleRegistration}
-            read={pending.vehicle}
-            onConfirm={() => confirm("vehicle")}
-            testID="f-vehicle"
-          >
-            <Input
-              value={vehicle}
-              onChangeText={(v) => {
-                setVehicle(v);
-                confirm("vehicle");
-              }}
-              autoCapitalize="characters"
-            />
-          </Field>
+          {/* Fără destinatar mașina stă aici: avizul citit din poză o poate aduce oricum. */}
+          {!partner ? (
+            <>
+              <Sep />
+              {vehicleField}
+            </>
+          ) : null}
         </Group>
 
         {photo ? <Text style={styles.hint}>{m.photoAttached}</Text> : null}

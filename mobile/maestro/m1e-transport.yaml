@@ -1,0 +1,166 @@
+# M1e — rubricile Anexei 3 pe formularul de predare (proprietarul, 26.09.2026: „când adaug mișcare nu pot adăuga
+# detalii pt anexa 3 transport”). Predare fără poză cu data încărcării, delegatul, actul, CNP-ul, mașina și
+# „Destinat:”; apoi predarea deschisă le arată, iar Anexa 3 pleacă în foaia de partajare.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1e-transport.yaml
+# CNP-urile sunt de probă: întâi unul cu cifra de control greșită (refuzat pe telefon, nu din coadă), apoi unul corect.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-adauga
+- tapOn:
+    id: without-photo
+- extendedWaitUntil:
+    visible: Punct de lucru Cluj
+    timeout: 15000
+- tapOn: Punct de lucru Cluj
+- tapOn: "15 01 02.*"
+- scrollUntilVisible:
+    element:
+      id: qty
+- tapOn:
+    id: qty
+- inputText: "321"
+- scroll
+
+# Destinatarul, apoi „La fel ca data trecută” pune fișa (R3, solid, RP, AN, Vr).
+- scrollUntilVisible:
+    element:
+      id: partner-search
+- tapOn:
+    id: partner-search
+- inputText: Eco Valorificare
+- pressKey: Enter
+- tapOn:
+    id: partner-option
+- scrollUntilVisible:
+    element:
+      id: same-as-last
+    direction: UP
+- tapOn:
+    id: same-as-last
+
+# --- Anexa 3: secțiunea apare numai cu destinatar ---
+- scrollUntilVisible:
+    element: "Anexa 3.*"
+- scrollUntilVisible:
+    element:
+      id: f-load
+    centerElement: true
+- tapOn:
+    id: f-load
+- inputText: "25.09.2026"
+- pressKey: Enter
+# Descărcarea înaintea încărcării se refuză pe telefon, înainte de coadă.
+- tapOn:
+    id: f-unload
+- inputText: "24.09.2026"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: carrier-OWN
+    centerElement: true
+# „La fel ca data trecută” aduce și delegatul de data trecută: fiecare rubrică se golește înainte.
+- scrollUntilVisible:
+    element:
+      id: f-driver
+    centerElement: true
+- tapOn:
+    id: f-driver
+- eraseText: 20
+- inputText: "Popescu Ion"
+- pressKey: Enter
+- tapOn:
+    id: f-driver-id
+- eraseText: 20
+- inputText: "CJ 123456"
+- pressKey: Enter
+- tapOn:
+    id: f-driver-cnp
+- eraseText: 20
+- inputText: "1800101400010"
+- scroll
+- scrollUntilVisible:
+    element:
+      id: f-vehicle
+    centerElement: true
+# „La fel ca data trecută” a pus mașina de data trecută (ca pe web); azi e alta.
+- tapOn:
+    id: f-vehicle
+- eraseText: 20
+- inputText: "CJ 77 WHM"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: tdest-VALORIFICARE
+    centerElement: true
+- tapOn:
+    id: tdest-VALORIFICARE
+- takeScreenshot: 01-anexa3-rubrici
+- scrollUntilVisible:
+    element:
+      id: handover-save
+- tapOn:
+    id: handover-save
+- scrollUntilVisible:
+    element: "Verifică cifrele: un CNP.*"
+    direction: UP
+    centerElement: true
+- takeScreenshot: 02-cnp-refuzat
+- tapOn:
+    id: f-driver-cnp
+- eraseText: 15
+- inputText: "1800101400016"
+- scroll
+- scrollUntilVisible:
+    element: "Data descărcării nu poate fi înaintea datei încărcării."
+    direction: UP
+    centerElement: true
+- takeScreenshot: 03-descarcare-refuzata
+- tapOn:
+    id: f-unload
+- eraseText: 12
+- inputText: "26.09.2026"
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: handover-save
+- tapOn:
+    id: handover-save
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 15000
+
+# --- Predarea deschisă: rubricile au ajuns pe server ---
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible:
+      id: movement-row
+    timeout: 15000
+- tapOn:
+    text: ".*Eco Valorificare.*"
+    index: 0
+- extendedWaitUntil:
+    visible: Pe fișă
+    timeout: 15000
+- scrollUntilVisible:
+    element: "Popescu Ion"
+    centerElement: true
+- assertVisible: "CJ 77 WHM"
+- assertVisible: "25.09.2026"
+- assertVisible: "26.09.2026"
+- takeScreenshot: 04-predarea-cu-transport
+- scrollUntilVisible:
+    element:
+      id: movement-anexa3
+    centerElement: true
+- tapOn:
+    id: movement-anexa3
+- extendedWaitUntil:
+    visible: "anexa3-150102-.*"
+    timeout: 20000
+- takeScreenshot: 05-anexa3

@@ -86,6 +86,39 @@ export function Pills<T extends string>({
   );
 }
 
+/** Ca `Pills`, dar cu mai multe alese deodată — casetele de bifat de pe formular (ex. „Destinat:” pe Anexa 3). */
+export function MultiPills<T extends string>({
+  options,
+  value,
+  onChange,
+  testID,
+}: {
+  options: { value: T; label: string }[];
+  value: T[];
+  onChange: (v: T[]) => void;
+  testID?: string;
+}) {
+  return (
+    <View style={styles.pills}>
+      {options.map((o) => {
+        const on = value.includes(o.value);
+        return (
+          <Pressable
+            key={o.value}
+            testID={testID ? `${testID}-${o.value}` : undefined}
+            onPress={() => onChange(on ? value.filter((v) => v !== o.value) : [...value, o.value])}
+            style={[styles.pill, on && styles.pillOn]}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: on }}
+          >
+            <Text style={[styles.pillText, on && styles.pillTextOn]}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function PrimaryButton({
   label,
   onPress,

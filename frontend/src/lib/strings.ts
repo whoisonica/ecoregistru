@@ -321,6 +321,11 @@ export const strings = {
     movementDocumentsHint: "PDF-ul se deschide pe telefon; de acolo îl tipărești sau îl trimiți.",
     movementDocumentOffline: "Documentul se face pe server. Fără semnal nu îl pot pregăti.",
     movementAttachmentOffline: "Atașamentul n-a putut fi adus. Încearcă din nou când ai semnal.",
+    // Rubricile Anexei 3 pe formularul de predare (26.09.2026, proprietarul: „nu pot adăuga detalii pt anexa 3
+    // transport”). Etichetele sunt ale webului; aici doar ce pe telefon e buton, nu listă derulantă.
+    carrierOwn: "Transportăm noi",
+    driverOther: "Altcineva",
+    unloadBeforeLoad: "Data descărcării nu poate fi înaintea datei încărcării.",
   },
 
   login: {
