@@ -1,7 +1,7 @@
 import type { Deadline, MonthlyEvidence, ReportType } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/count";
-import { formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/dates";
 
 /**
  * Socotelile pe termene, într-un singur loc.

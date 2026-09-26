@@ -54,7 +54,9 @@ appId: ro.wastehouse.app
       id: handover-save
 - tapOn:
     id: handover-save
-- assertVisible: "Confirmă cele .* câmpuri citite din poză."
+# Erorile rubricilor goale apar deasupra și împing nota sub marginea ecranului.
+- scrollUntilVisible:
+    element: "Confirmă cele .* câmpuri citite din poză."
 - takeScreenshot: 03-neconfirmat
 
 # --- Confirmarea, de sus în jos, în ordinea formularului. ---
@@ -76,19 +78,11 @@ appId: ro.wastehouse.app
     direction: UP
 - tapOn: Punct de lucru Cluj
 
-# G3: codul R/D al ultimei predări de 15 01 02 către Eco Valorificare, aplicat numai la apăsare.
 - scrollUntilVisible:
     element:
       id: f-partner-confirm
 - tapOn:
     id: f-partner-confirm
-- scrollUntilVisible:
-    element:
-      id: same-as-last
-    direction: UP
-- assertVisible: "La fel ca data trecută: R3.*"
-- tapOn:
-    id: same-as-last
 - scrollUntilVisible:
     element:
       id: f-doc-confirm
@@ -97,10 +91,44 @@ appId: ro.wastehouse.app
 - tapOn:
     id: f-vehicle-confirm
 - assertNotVisible: "Confirmă .* citit.* din poză."
+
+# --- BUG-023 (serverul, din 16/19.09): starea, depozitarea, transportul, destinația și codul R/D nu
+# rămân goale. Telefonul refuză înainte de coadă — altfel predarea ar fi ieșit „refuzată” abia la
+# trimitere.
 - scrollUntilVisible:
     element:
       id: handover-save
-- takeScreenshot: 04-confirmat
+- tapOn:
+    id: handover-save
+- scrollUntilVisible:
+    element: "Alege în ce îl ții: apare pe fișă."
+    direction: UP
+- assertVisible: "Alege destinația deșeului."
+- takeScreenshot: 04-rubrici-cerute
+
+# G3 + „La fel ca data trecută”: ultima predare de 15 01 02 către Eco Valorificare (seed-ul: R3, solid,
+# RP, AN, Vr), aplicată numai la apăsare — cu tot ce pune și webul, nu doar codul.
+- scrollUntilVisible:
+    element:
+      id: same-as-last
+- assertVisible: "La fel ca data trecută: R3.*"
+- tapOn:
+    id: same-as-last
+- scrollUntilVisible:
+    element: "RP — Recipient de plastic"
+    direction: UP
+- assertVisible: "AN — Auto nespecial"
+- assertVisible: "Vr — Valorificare prin agenți economici autorizați"
+# Soarta e valorificare, deci destinațiile oferite sunt numai din tabăra ei: Vr, P, Ve, A.
+- assertNotVisible:
+    id: dest-DO
+- takeScreenshot: 05-la-fel
+# 15 01 02 își spune singur materialul, deci nu se cere.
+- scrollUntilVisible:
+    element: "Alte plastice \\(propus din cod\\)"
+- scrollUntilVisible:
+    element:
+      id: handover-save
 - tapOn:
     id: handover-save
 
@@ -109,4 +137,4 @@ appId: ro.wastehouse.app
     visible:
       id: pick-aviz
     timeout: 15000
-- takeScreenshot: 05-dupa-salvare
+- takeScreenshot: 06-dupa-salvare

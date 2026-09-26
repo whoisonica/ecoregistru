@@ -4,6 +4,10 @@ const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 
 const config = getDefaultConfig(__dirname);
-config.watchFolders = [path.resolve(__dirname, "../frontend/src/lib")];
+// `movementRules.ts` (ce destinații și ce material se oferă) e cod pur, fără React: regula se importă, nu se rescrie.
+config.watchFolders = [
+  path.resolve(__dirname, "../frontend/src/lib"),
+  path.resolve(__dirname, "../frontend/src/components/movements"),
+];
 
 module.exports = config;

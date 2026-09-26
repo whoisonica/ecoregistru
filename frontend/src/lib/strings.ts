@@ -240,7 +240,7 @@ export const strings = {
     partnerWhoInvoices: "Cine facturează",
     addPartner: "Adaugă partenerul",
     addPartnerFailed: "Nu am putut adăuga partenerul.",
-    packagingOnWeb: "Materialul și categoria ambalajului se completează pe web.",
+    packagingOnWeb: "Dacă da, alegi mai jos și felul ambalajului.",
     wasteCodeNoProfile: "Scrie codul sau denumirea ca să cauți în nomenclator.",
     listUnavailable: "Lista nu e pe telefon încă. Deschide ecranul o dată cu semnal.",
     dateFormat: "Scrie data ca zz.ll.aaaa.",
@@ -257,7 +257,18 @@ export const strings = {
     // --- M1c: „A venit controlul” ---
     // Rândurile sunt exact ce socotește Panoul web (`lib/readiness.ts`), nu lista din prototip: ce nu
     // verifică aplicația nicăieri nu se afirmă nici pe telefon.
+    controlTitle: "A venit controlul",
+    controlLcdLabel: "PREGĂTIT PENTRU CONTROL",
+    controlLcdState: "ACUM",
     controlOf: (n: number) => `din ${n}`,
+    controlAllOk: "Nimic de văzut acum",
+    controlUnknown: "Un rând n-a putut încărca",
+    controlChecks: "Ce găsește inspectorul",
+    controlOk: "în regulă",
+    controlWarn: "de văzut",
+    controlBad: "de rezolvat",
+    controlUnknownChip: "?",
+    controlUnknownRow: "Nu am putut încărca. Deschide ecranul din nou când ai semnal.",
     checkDeadlines: "Termene",
     checkDeadlinesOk: "Niciunul depășit",
     checkMissingCode: (year: number) => `Codul R/D pe predări, ${year}`,

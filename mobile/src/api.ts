@@ -287,6 +287,7 @@ export interface NewPartner {
   cui: string;
   address: string | null;
   tradeRegisterNumber: string | null;
+  authorizationNumber: string;
   type: PartnerType;
   client: boolean;
   supplier: boolean;

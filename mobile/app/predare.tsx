@@ -1,6 +1,23 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
-import type { Partner, PartnerType, Unit, WasteCode, WasteOperationCode } from "@web/types";
+import type {
+  PackagingCategory,
+  PackagingMaterial,
+  Partner,
+  PartnerType,
+  PhysicalState,
+  StorageType,
+  TransportMeans,
+  Unit,
+  WasteCode,
+  WasteDestination,
+  WasteOperationCode,
+} from "@web/types";
+import {
+  destinationsFor,
+  PACKAGING_MATERIALS,
+  suggestedPackagingMaterial,
+} from "@/components/movements/movementRules";
 import * as Crypto from "expo-crypto";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { extractTextFromImage, isSupported } from "expo-text-extractor";
@@ -33,8 +50,14 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  * Exact ce salvează „Generare” pe web (`MovementsPage.buildInput`): `operation` e soarta aleasă,
  * `register` e `ANEXA_1`, codul R/D e obligatoriu (G3).
  *
- * <p>Rubricile stau în ordinea formularului web: punct de lucru, dată, cod · cantitate · soarta și
- * codul R/D · destinatarul · ambalajul · documentul și mașina.
+ * <p>Rubricile stau în ordinea formularului web: punct de lucru, dată, cod · cantitate · starea ·
+ * depozitarea · transportul și destinația · soarta și codul R/D · destinatarul · ambalajul ·
+ * documentul și mașina.
+ *
+ * <p>Din 19.09.2026 serverul refuză o predare pe Anexa 1 fără ce tipăresc fișa și anexele de
+ * ambalaje (`validateOwnWasteHandover`, BUG-023): starea, depozitarea, mijlocul de transport,
+ * destinația, materialul și felul ambalajului, partenerul autorizat. Le cere și telefonul, înainte
+ * ca predarea să intre în coadă — altfel ar fi ieșit „refuzată” abia la trimitere.
  *
  * <p>Ce vine din poză e o propunere cu rândul ei de pe aviz; „Salvează” nu pleacă până nu e confirmată
  * fiecare. Schimbarea unei valori o confirmă și ea: omul a pus-o, nu camera.
@@ -64,6 +87,12 @@ export default function PredareScreen() {
   const [operationCode, setOperationCode] = useState<WasteOperationCode | "">("");
   const [partnerId, setPartnerId] = useState("");
   const [packagingOnMarket, setPackagingOnMarket] = useState(false);
+  const [packagingMaterial, setPackagingMaterial] = useState<PackagingMaterial | "">("");
+  const [packagingCategory, setPackagingCategory] = useState<PackagingCategory | "">("");
+  const [physicalState, setPhysicalState] = useState<PhysicalState | "">("");
+  const [storageType, setStorageType] = useState<StorageType | "">("");
+  const [transportMeans, setTransportMeans] = useState<TransportMeans | "">("");
+  const [wasteDestination, setWasteDestination] = useState<WasteDestination | "">("");
   const [documentReference, setDocumentReference] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [showErrors, setShowErrors] = useState(false);
@@ -153,6 +182,26 @@ export default function PredareScreen() {
     );
   }, [recent.data, partnerId, wasteCode]);
 
+  /** „La fel ca data trecută” pune ce ar pune și pe web (`applyLast`), fără cantitate, dată și document. */
+  const applyLast = () => {
+    if (!last?.operationCode) return;
+    setFate(last.operationCode.startsWith("R") ? "RECOVERED" : "DISPOSED");
+    setOperationCode(last.operationCode);
+    setPhysicalState(last.physicalState ?? "");
+    setStorageType(last.storageType ?? "");
+    setTransportMeans(last.transportMeans ?? "");
+    setWasteDestination(last.wasteDestination ?? "");
+    setPackagingMaterial(last.packagingMaterial ?? "");
+    setPackagingCategory(last.packagingCategory ?? "");
+    if (last.packagingOnMarket != null) setPackagingOnMarket(last.packagingOnMarket);
+  };
+
+  // Destinația din tabăra soartei alese (nota 5); schimbarea soartei golește una din tabăra cealaltă.
+  const offeredDestinations = useMemo(() => destinationsFor(fate), [fate]);
+  useEffect(() => {
+    if (wasteDestination && !offeredDestinations.includes(wasteDestination)) setWasteDestination("");
+  }, [offeredDestinations, wasteDestination]);
+
   // ── destinatarul ───────────────────────────────────────────────────────────
   const partner = (partners.data ?? []).find((p) => p.id === partnerId) ?? null;
   const [partnerQuery, setPartnerQuery] = useState("");
@@ -176,6 +225,8 @@ export default function PredareScreen() {
   });
   const shownCodes = codeQuery.trim().length >= 2 ? (codeSearch.data ?? []).slice(0, 8) : profileCodes;
   const isPackaging = wasteCode?.code.startsWith("15 01") ?? false;
+  // Codul care își spune singur materialul nu-l mai cere (ca pe web și ca `PackagingMaterial.resolve`).
+  const suggestedMaterial = wasteCode ? suggestedPackagingMaterial(wasteCode.code) : null;
 
   // ── validarea ──────────────────────────────────────────────────────────────
   const isoDate = parseDate(date);
@@ -192,7 +243,20 @@ export default function PredareScreen() {
         : fate === "DISPOSED" && !operationCode.startsWith("D")
           ? t.disposalCodeRequired
           : undefined,
-    partner: weighed && !partnerId ? t.weighingNeedsPartner : undefined,
+    partner:
+      weighed && !partnerId
+        ? t.weighingNeedsPartner
+        : partner && !partner.authorizationNumber?.trim()
+          ? t.partnerNeedsAuthorization
+          : undefined,
+    physicalState: !physicalState ? t.physicalStateRequired : undefined,
+    storageType: !storageType ? t.storageTypeRequired : undefined,
+    transportMeans: !transportMeans ? t.transportMeansRequired : undefined,
+    wasteDestination: !wasteDestination ? t.wasteDestinationRequired : undefined,
+    packagingMaterial:
+      isPackaging && !packagingMaterial && !suggestedMaterial ? t.packagingMaterialRequired : undefined,
+    packagingCategory:
+      isPackaging && packagingOnMarket && !packagingCategory ? t.packagingCategoryRequired : undefined,
   };
   const unconfirmed = Object.keys(pending).length;
   const valid = Object.values(errors).every((v) => !v);
@@ -218,7 +282,13 @@ export default function PredareScreen() {
         partnerId: partnerId || null,
         documentReference: documentReference.trim() || null,
         vehicleRegistration: vehicle.trim() || null,
+        physicalState,
+        storageType,
+        transportMeans,
+        wasteDestination,
         packagingOnMarket: isPackaging ? packagingOnMarket : null,
+        packagingMaterial: isPackaging ? packagingMaterial || null : null,
+        packagingCategory: isPackaging && packagingOnMarket ? packagingCategory || null : null,
       },
       summary: {
         wasteCode: wasteCode.code,
@@ -376,6 +446,44 @@ export default function PredareScreen() {
           </View>
         </Group>
 
+        <SectionHead>{t.askState}</SectionHead>
+        <Group>
+          <Field label={t.physicalState} error={err("physicalState")}>
+            <Pills testID="state" options={nomenclator(e.physicalState)} value={physicalState} onChange={setPhysicalState} />
+          </Field>
+        </Group>
+
+        <SectionHead>{t.askHandling}</SectionHead>
+        <Group>
+          <Field label={t.askStorage} error={err("storageType")}>
+            <Pills testID="storage" options={codes(e.storageType)} value={storageType} onChange={setStorageType} />
+            {storageType ? <Text style={styles.hint}>{e.storageType[storageType]}</Text> : null}
+          </Field>
+        </Group>
+
+        <SectionHead>{t.askTransport}</SectionHead>
+        <Group>
+          <Field label={t.askTransportMeans} error={err("transportMeans")}>
+            <Pills
+              testID="means"
+              options={codes(e.transportMeans)}
+              value={transportMeans}
+              onChange={setTransportMeans}
+            />
+            {transportMeans ? <Text style={styles.hint}>{e.transportMeans[transportMeans]}</Text> : null}
+          </Field>
+          <Sep />
+          <Field label={t.askDestination} error={err("wasteDestination")}>
+            <Pills
+              testID="dest"
+              options={offeredDestinations.map((d) => ({ value: d, label: d }))}
+              value={wasteDestination}
+              onChange={setWasteDestination}
+            />
+            {wasteDestination ? <Text style={styles.hint}>{e.wasteDestination[wasteDestination]}</Text> : null}
+          </Field>
+        </Group>
+
         <SectionHead>{t.fateTitle}</SectionHead>
         <Group>
           <Field label={t.operation} error={err("fate")}>
@@ -399,10 +507,7 @@ export default function PredareScreen() {
                 tone="quiet"
                 testID="same-as-last"
                 label={m.sameAsLast(last.operationCode, formatDate(last.date))}
-                onPress={() => {
-                  setFate(last.operationCode!.startsWith("R") ? "RECOVERED" : "DISPOSED");
-                  setOperationCode(last.operationCode!);
-                }}
+                onPress={applyLast}
               />
             ) : null}
             {fate ? (
@@ -483,6 +588,31 @@ export default function PredareScreen() {
               </View>
               <Switch value={packagingOnMarket} onValueChange={setPackagingOnMarket} />
             </View>
+            <Sep />
+            <Field label={t.packagingMaterial} error={err("packagingMaterial")}>
+              <Pills
+                testID="material"
+                options={PACKAGING_MATERIALS.map((v) => ({ value: v, label: e.packagingMaterial[v] }))}
+                value={packagingMaterial || suggestedMaterial}
+                onChange={setPackagingMaterial}
+              />
+              {!packagingMaterial && suggestedMaterial ? (
+                <Text style={styles.hint}>{`${e.packagingMaterial[suggestedMaterial]} ${t.packagingFromCode}`}</Text>
+              ) : null}
+            </Field>
+            {packagingOnMarket ? (
+              <>
+                <Sep />
+                <Field label={t.packagingCategory} error={err("packagingCategory")}>
+                  <Pills
+                    testID="category"
+                    options={nomenclator(e.packagingCategory)}
+                    value={packagingCategory}
+                    onChange={setPackagingCategory}
+                  />
+                </Field>
+              </>
+            ) : null}
           </Group>
         ) : null}
 
@@ -541,6 +671,8 @@ function UnknownPartner({ cui, canAdd, onAdded }: { cui: string; canAdd: boolean
   const [asked, setAsked] = useState(false);
   const [type, setType] = useState<PartnerType | "">("");
   const [role, setRole] = useState<"supplier" | "client">("supplier");
+  // Serverul nu primește un colector sau un valorificator fără numărul autorizației de mediu.
+  const [authorizationNumber, setAuthorizationNumber] = useState("");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -552,7 +684,7 @@ function UnknownPartner({ cui, canAdd, onAdded }: { cui: string; canAdd: boolean
   });
 
   const add = async () => {
-    if (!lookup.data || !type || !auth) return;
+    if (!lookup.data || !type || !authorizationNumber.trim() || !auth) return;
     setAdding(true);
     setAddError(null);
     try {
@@ -561,6 +693,7 @@ function UnknownPartner({ cui, canAdd, onAdded }: { cui: string; canAdd: boolean
         cui: lookup.data.cui,
         address: lookup.data.address,
         tradeRegisterNumber: lookup.data.tradeRegisterNumber,
+        authorizationNumber: authorizationNumber.trim(),
         type,
         client: role === "client",
         supplier: role === "supplier",
@@ -617,8 +750,20 @@ function UnknownPartner({ cui, canAdd, onAdded }: { cui: string; canAdd: boolean
                 value={role}
                 onChange={setRole}
               />
+              <Text style={styles.subLabel}>{strings.partners.authorizationNumber}</Text>
+              <Input
+                value={authorizationNumber}
+                onChangeText={setAuthorizationNumber}
+                placeholder={strings.partners.authorizationNumberPlaceholder}
+                testID="pauth"
+              />
               {addError ? <Text style={styles.warn}>{addError}</Text> : null}
-              <PrimaryButton label={m.addPartner} onPress={add} disabled={!type || adding} testID="add-partner" />
+              <PrimaryButton
+                label={m.addPartner}
+                onPress={add}
+                disabled={!type || !authorizationNumber.trim() || adding}
+                testID="add-partner"
+              />
             </>
           ) : null}
         </View>
@@ -660,6 +805,16 @@ function OptionRow({
       {sub ? <Text style={rowStyles.sub}>{`  ${sub}`}</Text> : null}
     </Text>
   );
+}
+
+/** Pastilele unui nomenclator scurt, cu eticheta întreagă. */
+function nomenclator<T extends string>(labels: Record<T, string>) {
+  return (Object.keys(labels) as T[]).map((v) => ({ value: v, label: labels[v] }));
+}
+
+/** Pastilele unui nomenclator cu etichete lungi: numai codul; denumirea stă sub ele, după alegere. */
+function codes<T extends string>(labels: Record<T, string>) {
+  return (Object.keys(labels) as T[]).map((v) => ({ value: v, label: v }));
 }
 
 function Sep() {

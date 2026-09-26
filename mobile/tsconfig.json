@@ -11,6 +11,9 @@
       ],
       "@/lib/*": [
         "../frontend/src/lib/*"
+      ],
+      "@/components/movements/movementRules": [
+        "../frontend/src/components/movements/movementRules.ts"
       ]
     }
   },

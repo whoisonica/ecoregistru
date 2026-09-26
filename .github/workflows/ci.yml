@@ -91,6 +91,38 @@ jobs:
         working-directory: frontend
         run: npm test
 
+  # Aplicația mobilă importă texte și reguli din `frontend/src/lib` (todo-mobil §5). Pe 18.09.2026 o
+  # curățenie pe web a șters din `strings.mobile` textele ecranului „Control”: webul nu le citea, deci
+  # nimic din jobul `frontend` n-a căzut, iar telefonul nu mai compila. De aici `tsc` și pe `mobile/`.
+  # **Fără `npm ci` în `frontend/`, dinadins:** Metro vede din web numai folderele din `watchFolders`,
+  # nu și `frontend/node_modules`. Pe 17.09 `deadlines.ts` a început să tragă `clsx` prin `utils.ts`;
+  # cu dependențele webului instalate `tsc` trecea, iar aplicația nu mai pornea. Fără ele, `tsc` cade
+  # exact acolo unde ar cădea Metro.
+  mobile:
+    name: mobile — tsc + parserul avizului
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # `--legacy-peer-deps`: peer-ul `react-native-worklets` din `@expo/ui` (todo-mobil §12).
+      - name: npm ci (mobile)
+        working-directory: mobile
+        run: npm ci --legacy-peer-deps
+
+      - name: tsc --noEmit
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      - name: npm run test:aviz
+        working-directory: mobile
+        run: npm run test:aviz
+
   e2e:
     name: e2e — Chrome peste backend + frontend pe o bază nouă
     runs-on: ubuntu-latest
