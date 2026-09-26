@@ -1,0 +1,54 @@
+# M1b: un aviz de la un cumpărător care nu e printre partenerii firmei → „Caută la ANAF” → ANAF nu-l găsește.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1b-cui-necunoscut.yaml
+# Avizul e `fixtures/aviz-necunoscut.png` (inventat, CUI 99900010, 404 la ANAF), pus ULTIMUL în galerie înainte
+# (fixtures/README.md). Backendul întreabă ANAF de-adevăratelea, deci fluxul cere internet.
+# Adăugarea partenerului cere datele de la ANAF, deci nu se poate face cu un CUI inventat; forma cererii e probată cu curl (todo-mobil §17).
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 20000
+- tapOn:
+    id: pick-aviz
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: Photos
+          timeout: 15000
+      # Galeria pune poza cea mai nouă prima, în stânga sus.
+      - tapOn:
+          point: "17%,24%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: ".*[Pp]hoto.*"
+          timeout: 15000
+      - tapOn:
+          text: "Photo taken on.*"
+          index: 1
+
+- scrollUntilVisible:
+    element:
+      id: unknown-cui
+    timeout: 30000
+- assertVisible: "CUI-ul 99900010 de pe aviz nu e printre partenerii firmei."
+- takeScreenshot: 01-cui-necunoscut
+- tapOn:
+    id: anaf-lookup
+- extendedWaitUntil:
+    visible: "ANAF nu găsește CUI-ul ăsta.*"
+    timeout: 30000
+- assertNotVisible:
+    id: add-partner
+- takeScreenshot: 02-anaf-nu-gaseste
