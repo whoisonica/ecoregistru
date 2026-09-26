@@ -14,6 +14,22 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
+> **26.09.2026, seara — 🚚 ÎN `main`, DEPLOY ÎN CURS (monorepo `ac18b23` … `a53777c`): modulul de depozit — F2 închisă (cântarul, accesul pe depozit, transferurile, registrul formularelor primite) și F3 până la D3.4 (stocul, pragurile, limitele din autorizație, vechimea); adresa SuportSIM corectată.** Migrări noi **`V68`–`V73`**, următoarea liberă **`V74`**. Totul e sub `hasDepot` / „Cântar”: o firmă fără depozit nu vede nimic nou, în afară de adresa SuportSIM.
+>
+> **D2.3 cântarul** (`ac18b23`, V68, V70 în `4136bc6`). Fișa cântarului (serie, clasă, diviziunea „e”, pus în funcțiune, declarat la BRML, stare) și istoricul (verificare ADMIS/RESPINS cu buletinul atașat, reparație, incident); `ScaleLegality`: legal = în uz, verificare ADMIS în termen (sau primul an de la punerea în funcțiune) și declarat la BRML înainte (OG 20/1992 art. 19, 24). Sigilat / scos din uz / al altui depozit = refuz; nelegal = finalizare doar cu motiv (decizia proprietarului), păstrat pe operațiune, în jurnal și pe registrul intern xlsx — **nu** pe aviz sau Anexa 3. Alertă pe mail la 30 de zile. La „Doar administratorul”, operatorul vede totalul de plată, nu prețul pe kg.
+>
+> **D2.4 accesul pe depozit** (`4136bc6`, V69). `app_users.all_work_points` (implicit toate, decizia din 16.09) + `user_work_points`; `DepotAccess` — restrâns poate fi doar OPERATOR/CLIENT_VIEWER; ce e al altui depozit e 404. Setări → Utilizatori: coloana „Depozite” doar la firma cu mai multe depozite active. Totalurile pe firmă rămân pe firmă.
+>
+> **D2.5 transferurile** (`c0e3c68`, V71). „Pleacă” → „În tranzit” → „Recepționează” la depozitul B, fiecare linie recântărită; toleranța din clasa celor două cântare (HG 710/2015), peste ea NIR + decizia comisiei; destinația fără autorizație valabilă = refuz (HG 1061/2008 art. 1 alin. (3)); aviz „Fără factură”, Anexa 3 cu cantitatea expeditorului. `WasteOperation.TRANSFERRED_OUT/IN` — pe firmă transferul iese din liste, totaluri, Acasă și art. 48; pe depozit se vede. **D2.6** (V72): registrul formularelor primite, append-only în bază (trigger), număr fără goluri, corectura = rând nou, PDF cu „Pagina X din Y”.
+>
+> **D3.1–D3.4** (`1981677`, `8a35438`, V73). Stocul pe depozit × sortiment × cod, la zi și la orice dată, cu tranzitul și angajatul (fără tabel de solduri); avertisment de stoc negativ la finalizarea unei ieșiri, fără blocare; praguri min/max; limitele din autorizație tastate ca rânduri (fel, cod, unitate, perioadă, durata maximă) și vechimea stocului FIFO („Peste 1 an / 3 ani / Peste autorizație”). Tabul „Stoc” și dialogul „Praguri și limite” în „Cântar”.
+>
+> **Generator** (`a53777c`): textul pentru un an încheiat fără generări trimitea la `suportsim@anpm.ro` — `anpm.ro` n-are MX; acum `suportsim@anmap.gov.ro` (din 01.06.2025). Plus `surse-oficiale.md` și `legislatie.md` din cercetarea în lege (HG 349/2005 abrogată, OG 20/1992 în forma în vigoare).
+>
+> **Găsit pe drum:** tasta N pe `/cantar` pornea și „Adaugă deșeuri” din panou (`OWNS_N`) — reparat.
+>
+> **Probe** (pe ramură, înainte de rebazare): suita 1141/144, 0 căderi; negative exacte pe fiecare felie (22, 18 + 10, 31 + 10 + 15, 12, 17 reguli); e2e 44–50 (+ negative) și 19/20/21 verzi pe o stivă proprie. **După rebazarea peste `bc83873`:** `tsc` 0 erori (29 de avertismente ESLint, aceleași), `npm test` 68/68, `vite build` verde; suita backend **1141 de teste, 144 de clase, 0 eșecuri, 4 sărite**.
+
 > **26.09.2026, 17:03 — ✅ PE PRODUCȚIE (`ecoregistru-app` **v136**, `d1a478a`, la 16:38 și **v137**, `6def2ba`; `ecoregistru-api` neschimbat, v135; monorepo `a38e83e`, `8b59da5`): M1e — predarea deschisă pe telefon, și rubricile Anexei 3 pe formularul de predare.**
 >
 > **Predarea deschisă** (`a38e83e`). Rândul din Mișcări duce la `mobile/app/miscare/[id].tsx` (`GET /movements/{id}`): deșeul, rubricile fișei, partenerul, transportul, notele, atașamentele (prin `/continut`, în foaia de partajare) și **Anexa 3** / **Aviz de însoțire** ca PDF în foaia de partajare, după regula de pe web — mutată din `hooks/useAnexa3.ts` în `frontend/src/lib/movementPrint.ts` (cu numele fișierului), ca s-o citească și telefonul. OPERATOR vede butoanele (are `CAN_WRITE`); „Vizualizare” nu.
