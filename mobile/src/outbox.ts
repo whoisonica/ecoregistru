@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite";
 import { useEffect, useState } from "react";
 
 import * as api from "./api";
+import { reportError } from "./monitoring";
 
 /**
  * M1b — coada predărilor care n-au plecat încă. Rampa n-are semnal; predarea se salvează pe telefon
@@ -210,6 +211,11 @@ function isRejection(error: unknown): error is api.ApiError {
   return error instanceof api.ApiError && error.status >= 400 && error.status < 500 && error.status !== 429;
 }
 
+/** `fetch` din React Native cade cu `TypeError: Network request failed` când nu e semnal. */
+function isNetworkFailure(error: unknown) {
+  return error instanceof TypeError && /network request failed/i.test(error.message);
+}
+
 let draining: Promise<number> | null = null;
 
 /**
@@ -263,6 +269,11 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         );
         changed();
         continue;
+      }
+      // O eroare care nu e nici de rețea, nici a serverului e a noastră (cum a fost FormData pe 16.09):
+      // se reîncearcă tot, dar se raportează o dată, la prima cădere, nu la fiecare pauză.
+      if (item.attempts === 0 && !(error instanceof api.ApiError) && !isNetworkFailure(error)) {
+        reportError(error, { where: "outbox", step: movementId ? "photo" : "movement" });
       }
       const attempts = item.attempts + 1;
       await d.runAsync(

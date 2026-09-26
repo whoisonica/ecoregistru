@@ -11,15 +11,19 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 
+import { initMonitoring, wrap } from "../src/monitoring";
 import { SessionProvider, useSession } from "../src/session";
 
+initMonitoring();
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 
-export default function RootLayout() {
+export default wrap(RootLayout);
+
+function RootLayout() {
   // Fonturile vin din pachetele @expo-google-fonts (fișiere TTF, OFL) legate în aplicație, nu descărcate de pe Google.
   const [fontsLoaded] = useFonts({
     IBMPlexSans_400Regular,
