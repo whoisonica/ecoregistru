@@ -36,7 +36,9 @@ function readCollapsed(): boolean {
  * Ecranele care își leagă singure tasta N (acțiunea lor principală). Pe restul, N = adaugă deșeuri.
  * Regula din `todo-ui-cantar.md` §6: N e acțiunea principală a ecranului curent.
  */
-const OWNS_N = new Set<string>([...Object.values(SCREEN_PATH), "/parteneri", "/setari"]);
+// `/cantar` își leagă N singur (operațiune, transfer sau formular nou, după tab); până pe 26.09.2026 N de acolo
+// pornea și „Adaugă deșeuri” din panou, peste formularul ecranului (prins de proba 48).
+const OWNS_N = new Set<string>([...Object.values(SCREEN_PATH), "/parteneri", "/setari", "/cantar"]);
 
 /**
  * Cadrul aplicației: panoul din stânga (direcția „Cântar”), pagina, bara de jos pe telefon,

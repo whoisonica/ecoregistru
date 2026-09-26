@@ -24,6 +24,7 @@ import java.util.UUID;
  * @param scaleId       cântarul depozitului (D2.3); sigilat, scos din uz sau al altui depozit = refuz
  * @param ownHousehold  declarația persoanei fizice că deșeul provine din gospodăria proprie;
  *                      obligatorie la metal (art. 1 alin. (1^1))
+ * @param targetWorkPointId D2.5 — la transfer, depozitul de destinație; la celelalte tipuri se ignoră
  */
 public record WeighingOperationRequest(
         WeighingOperationType type,
@@ -41,5 +42,16 @@ public record WeighingOperationRequest(
         @Size(max = 60) String receiptNumber,
         Boolean ownHousehold,
         @Size(max = 1000) String notes,
-        UUID scaleId) {
+        UUID scaleId,
+        UUID targetWorkPointId) {
+
+    /** Forma de dinainte de transferuri (D2.5): fără destinație. */
+    public WeighingOperationRequest(WeighingOperationType type, UUID workPointId, LocalDate date, UUID partnerId,
+                                    UUID naturalPersonId, PackagingOrigin origin, UUID driverId, UUID vehicleId,
+                                    String driverName, String vehicleRegistration, String orderNumber,
+                                    PaymentMethod paymentMethod, String receiptNumber, Boolean ownHousehold,
+                                    String notes, UUID scaleId) {
+        this(type, workPointId, date, partnerId, naturalPersonId, origin, driverId, vehicleId, driverName,
+                vehicleRegistration, orderNumber, paymentMethod, receiptNumber, ownHousehold, notes, scaleId, null);
+    }
 }

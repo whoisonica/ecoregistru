@@ -85,6 +85,14 @@ public class AvizGenerator {
             heading.setAlignment(Element.ALIGN_CENTER);
             heading.setSpacingAfter(8f);
             doc.add(heading);
+            // D2.5 — marfa rămâne în firmă (același CUI la ambele capete): avizul circulă „Fără factură” (14-3-6A).
+            Partner to = m.getPartner();
+            if (to != null && to.getCui() != null && to.getCui().equals(sender.getCui())) {
+                Paragraph noInvoice = new Paragraph(cp1250("Fără factură — transfer între punctele de lucru proprii"), section);
+                noInvoice.setAlignment(Element.ALIGN_CENTER);
+                noInvoice.setSpacingAfter(6f);
+                doc.add(noInvoice);
+            }
 
             String number = m.getDocumentReference();
             doc.add(sectionTitle("1. Antet document"));

@@ -145,4 +145,12 @@ public class WeighingOperationController {
     public WeighingOperationResponse cancel(@PathVariable UUID id, @Valid @RequestBody WeighingCancelRequest request) {
         return service.cancel(id, request.reason());
     }
+
+    /** D2.5 — recepția unui transfer la depozitul de destinație; o face cine aprobă, ca finalizarea. */
+    @PostMapping("/{id}/receive")
+    @PreAuthorize(CAN_APPROVE)
+    public WeighingOperationResponse receive(@PathVariable UUID id,
+                                             @Valid @RequestBody ro.ecoregistru.controller.request.TransferReceiptRequest request) {
+        return service.receive(id, request);
+    }
 }

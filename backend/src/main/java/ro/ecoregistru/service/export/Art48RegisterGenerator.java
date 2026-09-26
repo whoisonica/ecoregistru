@@ -64,6 +64,33 @@ public class Art48RegisterGenerator {
             "Valorificată din colectat (t)", "Eliminată din colectat (t)", "Ieșită fără cod R/D (t)",
             "Stoc la sfârșitul anului (t)", "Coduri R", "Coduri D"
     };
+    /**
+     * D2.5 — pe registrul unui depozit care a primit sau a trimis prin transfer intern, două coloane în plus: marfa
+     * rămâne în firmă, deci nu e nici colectare, nici valorificare. Pe firmă (și fără transferuri) tabelul rămâne cel
+     * de dinainte.
+     */
+    static String[] cap1Columns(boolean transfers) {
+        if (!transfers) {
+            return CAP1_COLUMNS;
+        }
+        return new String[]{"Cod deșeu", "Denumire", "Stoc la începutul anului (t)", "Cantitate colectată (t)",
+                "Primită prin transfer intern (t)", "Valorificată din colectat (t)", "Eliminată din colectat (t)",
+                "Ieșită fără cod R/D (t)", "Trimisă prin transfer intern (t)", "Stoc la sfârșitul anului (t)",
+                "Coduri R", "Coduri D"};
+    }
+
+    static List<BigDecimal> cap1Quantities(Art48Register.CodeTotal c, boolean transfers) {
+        return transfers
+                ? List.of(c.openingKg(), c.collectedKg(), c.transferredInKg(), c.recoveredKg(), c.disposedKg(),
+                        c.unclassifiedKg(), c.transferredOutKg(), c.closingKg())
+                : List.of(c.openingKg(), c.collectedKg(), c.recoveredKg(), c.disposedKg(), c.unclassifiedKg(),
+                        c.closingKg());
+    }
+
+    static boolean hasTransfers(Art48Register r) {
+        return r.collection().stream().anyMatch(Art48Register.CodeTotal::hasTransfers);
+    }
+
     static final String[] CAP2A_COLUMNS = {
             "Unitatea care preia", "CUI", "Adresa", "Cod deșeu", "Denumire", "Cantitate preluată (t)", "Cod R"
     };
@@ -112,20 +139,19 @@ public class Art48RegisterGenerator {
                 text(chrono.createRow(row++), 0, note);
             }
 
-            Sheet cap1 = sheet(wb, s, "Cap. 1 Colectare", r, CAP1_COLUMNS);
+            boolean transfers = hasTransfers(r);
+            Sheet cap1 = sheet(wb, s, "Cap. 1 Colectare", r, cap1Columns(transfers));
             row = XLSX_HEADER_ROW + 1;
             for (Art48Register.CodeTotal c : r.collection()) {
                 Row x = cap1.createRow(row++);
                 text(x, 0, c.wasteCode());
                 text(x, 1, c.wasteName());
-                number(x, 2, tons(c.openingKg()), s.tons);
-                number(x, 3, tons(c.collectedKg()), s.tons);
-                number(x, 4, tons(c.recoveredKg()), s.tons);
-                number(x, 5, tons(c.disposedKg()), s.tons);
-                number(x, 6, tons(c.unclassifiedKg()), s.tons);
-                number(x, 7, tons(c.closingKg()), s.tons);
-                text(x, 8, String.join(", ", c.recoveryCodes()));
-                text(x, 9, String.join(", ", c.disposalCodes()));
+                int col = 2;
+                for (BigDecimal kg : cap1Quantities(c, transfers)) {
+                    number(x, col++, tons(kg), s.tons);
+                }
+                text(x, col++, String.join(", ", c.recoveryCodes()));
+                text(x, col, String.join(", ", c.disposalCodes()));
             }
 
             handoverSheet(wb, s, "Cap. 2A Valorificare", r, CAP2A_COLUMNS, r.recovery());
@@ -257,11 +283,13 @@ public class Art48RegisterGenerator {
             if (r.collection().isEmpty()) {
                 doc.add(new Paragraph(cp1250("Nicio cantitate de raportat."), small));
             } else {
-                PdfPTable t = table(CAP1_COLUMNS, head, new float[]{7, 22, 9, 9, 9, 9, 9, 9, 8, 8});
+                boolean transfers = hasTransfers(r);
+                PdfPTable t = table(cap1Columns(transfers), head, transfers
+                        ? new float[]{6, 18, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6}
+                        : new float[]{7, 22, 9, 9, 9, 9, 9, 9, 8, 8});
                 for (Art48Register.CodeTotal c : r.collection()) {
                     cells(t, body, c.wasteCode(), c.wasteName());
-                    numbers(t, body, tonsText(c.openingKg()), tonsText(c.collectedKg()), tonsText(c.recoveredKg()),
-                            tonsText(c.disposedKg()), tonsText(c.unclassifiedKg()), tonsText(c.closingKg()));
+                    numbers(t, body, cap1Quantities(c, transfers).stream().map(kg -> tonsText(kg)).toArray(String[]::new));
                     cells(t, body, String.join(", ", c.recoveryCodes()), String.join(", ", c.disposalCodes()));
                 }
                 doc.add(t);

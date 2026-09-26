@@ -6,5 +6,8 @@ public record WorkPointResponse(
         UUID id,
         String name,
         String address,
-        boolean active
+        boolean active,
+        String environmentalAuthNumber,
+        java.time.LocalDate environmentalAuthExpiry,
+        String receivedFormsSeries
 ) {}

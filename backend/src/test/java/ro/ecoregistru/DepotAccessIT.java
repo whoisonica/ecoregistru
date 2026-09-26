@@ -150,6 +150,9 @@ class DepotAccessIT {
         actAs(operator);
         assertThat(operations.list()).extracting(WeighingOperationResponse::id).containsExactly(inBaciu);
         assertThat(workPoints.list()).extracting(WorkPointResponse::id).containsExactly(baciu.getId());
+        // D2.5 — dar poate trimite un transfer spre Turda: destinațiile sunt toate, doar cu nume.
+        assertThat(workPoints.transferTargets()).extracting(WorkPointService.TransferTarget::id)
+                .contains(baciu.getId(), turda.getId());
 
         // Și înapoi: „Toate depozitele” le include și pe cele deschise după.
         actAs(admin);

@@ -3,7 +3,7 @@ package ro.ecoregistru.enums;
 /**
  * Ce face o operațiune de depozit cu stocul (V46). Numerotarea e separată pe fiecare tip.
  *
- * <p>Felia 1 folosește doar {@link #IN} și {@link #OUT}. Celelalte sunt în constrângerea din bază de
+ * <p>Felia 1 folosește {@link #IN} și {@link #OUT}, F2 (D2.5) și {@link #TRANSFER}. Celelalte sunt în constrângerea din bază de
  * acum, ca numerotarea și filtrele să nu se schimbe la fiecare felie, dar serviciul le refuză până
  * vine felia lor.
  */
@@ -26,6 +26,6 @@ public enum WeighingOperationType {
 
     /** Ce se poate înregistra în felia de acum. */
     public boolean isAvailable() {
-        return this == IN || this == OUT;
+        return this == IN || this == OUT || this == TRANSFER;
     }
 }

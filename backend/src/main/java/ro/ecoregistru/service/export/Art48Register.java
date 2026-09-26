@@ -64,7 +64,15 @@ public record Art48Register(
                             BigDecimal unclassifiedKg,
                             BigDecimal closingKg,
                             List<String> recoveryCodes,
-                            List<String> disposalCodes) {
+                            List<String> disposalCodes,
+                            /** D2.5 — doar pe depozit: primit de la alt depozit al firmei (pe firmă se anulează, deci zero). */
+                            BigDecimal transferredInKg,
+                            /** D2.5 — doar pe depozit: trimis la alt depozit al firmei. */
+                            BigDecimal transferredOutKg) {
+
+        public boolean hasTransfers() {
+            return transferredInKg.signum() != 0 || transferredOutKg.signum() != 0;
+        }
     }
 
     public record Handover(String recipient,

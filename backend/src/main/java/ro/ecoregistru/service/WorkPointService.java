@@ -42,6 +42,18 @@ public class WorkPointService {
                 .map(this::toResponse).toList();
     }
 
+    /** D2.5 — un depozit la care poate pleca un transfer: numai ce trebuie ca să-l alegi. */
+    public record TransferTarget(UUID id, String name) {
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransferTarget> transferTargets() {
+        return workPointRepository.findAllByCompany_Id(TenantContext.require()).stream()
+                .filter(WorkPoint::isActive)
+                .map(w -> new TransferTarget(w.getId(), w.getName()))
+                .toList();
+    }
+
     @Transactional
     public WorkPointResponse create(WorkPointRequest request) {
         UUID tenantId = TenantContext.require();
@@ -49,6 +61,9 @@ public class WorkPointService {
                 .company(companyRepository.getReferenceById(tenantId))
                 .name(request.name())
                 .address(request.address())
+                .environmentalAuthNumber(blankToNull(request.environmentalAuthNumber()))
+                .environmentalAuthExpiry(request.environmentalAuthExpiry())
+                .receivedFormsSeries(blankToNull(request.receivedFormsSeries()))
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
@@ -87,6 +102,9 @@ public class WorkPointService {
         WorkPoint workPoint = require(id);
         workPoint.setName(request.name());
         workPoint.setAddress(request.address());
+        workPoint.setEnvironmentalAuthNumber(blankToNull(request.environmentalAuthNumber()));
+        workPoint.setEnvironmentalAuthExpiry(request.environmentalAuthExpiry());
+        workPoint.setReceivedFormsSeries(blankToNull(request.receivedFormsSeries()));
         return toResponse(workPoint);
     }
 
@@ -119,6 +137,11 @@ public class WorkPointService {
     }
 
     private WorkPointResponse toResponse(WorkPoint w) {
-        return new WorkPointResponse(w.getId(), w.getName(), w.getAddress(), w.isActive());
+        return new WorkPointResponse(w.getId(), w.getName(), w.getAddress(), w.isActive(),
+                w.getEnvironmentalAuthNumber(), w.getEnvironmentalAuthExpiry(), w.getReceivedFormsSeries());
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

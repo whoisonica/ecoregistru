@@ -55,7 +55,33 @@ public record WeighingOperationResponse(
         String scaleOverrideReason,
         /** Cât se plătește la o intrare, cu reținerile; null pentru cine nu-l vede ({@code seesPayment}). */
         Payment payment,
-        List<Line> lines) {
+        /** Liniile de la plecare; la transfer, cele de la recepție sunt în {@link Transfer#receivedLines}. */
+        List<Line> lines,
+        /** D2.5 — doar la transfer. */
+        Transfer transfer) {
+
+    /**
+     * D2.5 — destinația, plecarea și recepția unui transfer. Cântăririle de la B, diferența (primit − plecat) și
+     * toleranța celor două cântare; peste ea, NIR-ul și decizia comisiei.
+     */
+    public record Transfer(UUID targetWorkPointId,
+                           String targetWorkPointName,
+                           java.time.Instant dispatchedAt,
+                           LocalDate receivedOn,
+                           UUID receiptScaleId,
+                           String receiptScaleName,
+                           String receiptScaleState,
+                           String receiptScaleOverrideReason,
+                           BigDecimal receiptGrossKg,
+                           BigDecimal receiptTareKg,
+                           BigDecimal sentKg,
+                           BigDecimal receivedKg,
+                           BigDecimal toleranceKg,
+                           BigDecimal differenceKg,
+                           String nirNumber,
+                           String differenceReason,
+                           List<Line> receivedLines) {
+    }
 
     /**
      * Totalul de plată al unei intrări: valoarea, reținerile și ce primește omul. Îl vede și operatorul

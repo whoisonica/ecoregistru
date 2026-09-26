@@ -8,6 +8,7 @@ import type {
   WeighingOperation,
   WeighingOperationInput,
   WeighingOperationType,
+  TransferReceiptInput,
 } from "@/lib/types";
 
 /**
@@ -116,6 +117,31 @@ export function useFinalizeWeighingOperation() {
       qc.invalidateQueries({ queryKey: ["movements"] });
       qc.invalidateQueries({ queryKey: ["evidences"] });
     },
+  });
+}
+
+/** D2.5 — recepția unui transfer la depozitul de destinație: liniile intră în B, cu greutatea lui B. */
+export function useReceiveTransfer() {
+  const invalidate = useInvalidate();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: TransferReceiptInput }) =>
+      (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/receive`, input)).data,
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["evidences"] });
+    },
+  });
+}
+
+/** D2.5 — toate depozitele active ale firmei, doar id și nume: destinațiile unui transfer. */
+export function useTransferTargets(enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: ["work-points", "transfer-targets"],
+    queryFn: async () =>
+      (await api.get<{ id: string; name: string }[]>("/api/v1/work-points/transfer-targets")).data,
   });
 }
 

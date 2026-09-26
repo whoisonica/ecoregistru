@@ -1,3 +1,19 @@
+📒 **26.09.2026 — proba 48 (`48-formulare-primite.mjs`), registrul formularelor primite (D2.6)**: tabul „Formulare primite”
+din „Cântar”; butonul principal e „Trece formular” și **tasta N îl deschide** — până acum N pe `/cantar` pornea și „Adaugă
+deșeuri” din panou (`Layout.tsx` `OWNS_N` fără `/cantar`, defect vechi, și pe Intrări/Ieșiri); rândul intră cu nr. 1;
+„Corectează” pornește din rândul greșit și îl trece ca rând nou: cel greșit rămâne cu „Corectat de nr. 2”, corectura are
+„Corectează nr. 1: <motiv>”, iar rândul corectat nu mai are butonul; PDF-ul se descarcă; 1440 și 375 fără lățire. **Negativă:**
+fără `/cantar` în `OWNS_N` → „tasta N” cade. ⚠️ Registrul e append-only: lasă în urmă rândurile „P48-<număr>”. Proba **19**
+cere acum patru taburi (Intrări · Ieșiri · Transferuri · Formulare primite).
+
+🚚 **26.09.2026 — proba 47 (`47-transfer.mjs`), transferul între depozite (D2.5)**: tabul „Transferuri” din „Cântar” are
+„Traseu” și „Diferență”; „Transfer nou” cere depozitul de destinație (din `/work-points/transfer-targets`, deci și un operator
+restrâns poate trimite) și n-are partener, preț, cod R/D sau plată; „Pleacă” trece rândul „În tranzit”; avizul se deschide;
+„Recepționează” arată plecat / primit / diferența înainte de trimitere și rubricile NIR; fără cântar la destinație toleranța e
+necunoscută, deci fără NIR serverul refuză și mesajul ajunge pe ecran; cu NIR rândul e „Recepționat”, „1.000 / 900”, „-100 kg”;
+1440 și 375 fără lățire. Își creează singură un sortiment dacă baza n-are niciunul. **Negativă:** fără butonul „Recepționează” →
+cade. ⚠️ Lasă în urmă depozitul „Proba 47 <număr>” (dezactivat), sortimentul „Carton Proba 47” și transferuri anulate.
+
 📎 **26.09.2026 — proba 46 (`46-fisiere-cantar.mjs`), fișierele cântarului (V70)**: dialogul „Istoric” are „Dovada declarării
 la BRML” cu „Atașează”; buletinul se poate atașa doar pe rândul unei verificări (reparația n-are buton); după urcare apare numele
 fișierului, care se deschide într-un tab din `blob:` (prin sesiune), iar „Scoate fișierul” îl scoate. ⚠️ Local nu există chei

@@ -403,7 +403,12 @@ public class MovementQueryService {
             // nici lista, nici totalurile de deasupra ei nu le arată.
             Join<WasteMovement, WeighingOperation> weighing = root.join("weighingOperation", JoinType.LEFT);
             predicates.add(cb.or(cb.isNull(weighing.get("id")),
-                    cb.equal(weighing.get("status"), WeighingOperationStatus.FINALIZED)));
+                    weighing.get("status").in(WeighingOperationStatus.FINALIZED, WeighingOperationStatus.IN_TRANSIT)));
+            // D2.5 — pe firmă, transferul intern se anulează cu el însuși: nu e nici intrare, nici ieșire. Pe un
+            // depozit ales se vede, ca intrare (primit) sau ieșire (trimis).
+            if (workPointId == null) {
+                predicates.add(cb.not(root.get("operation").in(WasteOperation.TRANSFERRED_OUT, WasteOperation.TRANSFERRED_IN)));
+            }
             if (workPointId != null) {
                 predicates.add(cb.equal(root.get("workPoint").get("id"), workPointId));
             }
@@ -443,10 +448,10 @@ public class MovementQueryService {
             // „Intrări" / „Ieșiri", separate (proprietarul, 15.09.2026). `OUT` e același set ca
             // `leftSite`: și rândul fără cod a ieșit pe poartă.
             if (direction == MovementDirection.IN) {
-                predicates.add(cb.equal(root.get("operation"), WasteOperation.COLLECTED));
+                predicates.add(root.get("operation").in(WasteOperation.COLLECTED, WasteOperation.TRANSFERRED_IN));
             } else if (direction == MovementDirection.OUT) {
-                predicates.add(root.get("operation").in(
-                        WasteOperation.RECOVERED, WasteOperation.DISPOSED, WasteOperation.UNCLASSIFIED_OUT));
+                predicates.add(root.get("operation").in(WasteOperation.RECOVERED, WasteOperation.DISPOSED,
+                        WasteOperation.UNCLASSIFIED_OUT, WasteOperation.TRANSFERRED_OUT));
             }
             /*
              * Tastele de ambalaje de pe „Mișcări" (18.09.2026), de când tabul „Ambalaje" nu-și mai

@@ -87,7 +87,7 @@ public interface WasteMovementRepository
     /** All movements that count, every year — the art. 48 register carries stock from earlier years. */
     @Query("select m from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false "
-            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))")
     List<WasteMovement> findCounted(@Param("companyId") UUID companyId);
 
     /**
@@ -96,7 +96,8 @@ public interface WasteMovementRepository
      */
     @Query("select count(m) from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "
-            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED) "
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT)) "
+            + "and m.operation not in (ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT, ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN) "
             + "and m.wasteCode.mirrorOf is not null and m.attachments is empty")
     long countUnprovenMirrorClassifications(@Param("companyId") UUID companyId,
                                             @Param("from") LocalDate from, @Param("to") LocalDate to);
@@ -104,7 +105,7 @@ public interface WasteMovementRepository
     /** Câte mișcări contează într-un interval — aceeași regulă ca {@link #findCountedBetween}, numai numărul. */
     @Query("select count(m) from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "
-            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))")
     long countCountedBetween(@Param("companyId") UUID companyId,
                              @Param("from") LocalDate from,
                              @Param("to") LocalDate to);
@@ -112,7 +113,7 @@ public interface WasteMovementRepository
     /** The movements that count within a date range — the evidence engine's input. */
     @Query("select m from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "
-            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))")
     List<WasteMovement> findCountedBetween(@Param("companyId") UUID companyId,
                                            @Param("from") LocalDate from,
                                            @Param("to") LocalDate to);
@@ -130,7 +131,7 @@ public interface WasteMovementRepository
     @Query("select distinct m.wasteCode.code from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.deleted = false "
             + "and m.date between :from and :to "
-            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))")
     List<String> findDistinctWasteCodes(@Param("companyId") UUID companyId,
                                         @Param("from") LocalDate from,
                                         @Param("to") LocalDate to);
@@ -145,7 +146,7 @@ public interface WasteMovementRepository
             + "and m.operation = ro.ecoregistru.enums.WasteOperation.COLLECTED "
             + "and m.wasteCode.code like '15 01%' "
             + "and m.date between :from and :to "
-            + "and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)")
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))")
     boolean existsCollectedPackaging(@Param("companyId") UUID companyId,
                                      @Param("from") LocalDate from,
                                      @Param("to") LocalDate to);
@@ -170,7 +171,8 @@ public interface WasteMovementRepository
             from WasteMovement m left join m.weighingOperation o
             where m.company.id = :companyId and m.deleted = false
               and m.date between :from and :to
-              and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)
+              and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
+              and m.operation not in (ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT, ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN)
             """)
     MovementTotals summarise(@Param("companyId") UUID companyId,
                              @Param("from") LocalDate from,
@@ -192,7 +194,8 @@ public interface WasteMovementRepository
      * pe un dyno de 300 MB — aceeași formă ca BUG-017, plătită de clientul cu cel mai mult istoric.
      * Anii dinainte nu se citesc rând cu rând, se adună aici (20.09.2026).
      *
-     * <p>Semnul e chiar regula soldului: preluarea adaugă, predarea și ieșirea fără cod R/D scad.
+     * <p>Semnul e chiar regula soldului: preluarea adaugă, predarea și ieșirea fără cod R/D scad. Transferul intern
+     * (D2.5) adaugă la B și scade la A; pe firmă se anulează, deci fără depozit nu intră deloc.
      * {@code GENERATED} nu intră — deșeul propriu e pe anexa 1, niciodată aici. Rândurile fără
      * cantitate se sar, ca peste tot: „de cântărit" nu e zero.
      */
@@ -200,7 +203,8 @@ public interface WasteMovementRepository
             select m.wasteCode.code as code,
                    m.wasteCode.hazardous as hazardous,
                    m.wasteCode.name as name,
-                   coalesce(sum((case when m.operation = ro.ecoregistru.enums.WasteOperation.COLLECTED
+                   coalesce(sum((case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
+                                                           ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN)
                                       then 1 else -1 end)
                                 * (case when m.unit = ro.ecoregistru.enums.Unit.TONS
                                         then m.quantity * 1000 else m.quantity end)), 0) as kg
@@ -211,7 +215,9 @@ public interface WasteMovementRepository
               and m.quantity is not null
               and m.operation <> ro.ecoregistru.enums.WasteOperation.GENERATED
               and (:workPointId is null or m.workPoint.id = :workPointId)
-              and (o is null or o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)
+              and (:workPointId is not null or m.operation not in (ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT,
+                                                                    ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN))
+              and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
             group by m.wasteCode.code, m.wasteCode.hazardous, m.wasteCode.name
             """)
     List<Art48Opening> art48OpeningBefore(@Param("companyId") UUID companyId,

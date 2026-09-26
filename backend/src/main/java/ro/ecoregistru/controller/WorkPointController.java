@@ -29,6 +29,15 @@ public class WorkPointController {
         return workPointService.list();
     }
 
+    /**
+     * D2.5 — unde poate pleca un transfer: toate depozitele active ale firmei, doar id și nume. Un operator restrâns la
+     * Baciu (D2.4) nu vede Turda, dar trebuie să poată trimite marfa acolo; restul datelor lui Turda rămân ascunse.
+     */
+    @GetMapping("/transfer-targets")
+    public List<WorkPointService.TransferTarget> transferTargets() {
+        return workPointService.transferTargets();
+    }
+
     @PostMapping
     @PreAuthorize(CAN_MANAGE)
     public ResponseEntity<WorkPointResponse> create(@RequestBody @Valid WorkPointRequest request) {

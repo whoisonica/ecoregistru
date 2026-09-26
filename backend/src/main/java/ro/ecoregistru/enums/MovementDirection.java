@@ -15,6 +15,9 @@ package ro.ecoregistru.enums;
  *       {@code leftSite}.</li>
  * </ul>
  *
+ * <p>D2.5 — the two legs of an internal transfer count on their depot: received is an entry, sent an exit. On the
+ * company's view they are filtered out before the direction ({@code MovementQueryService.buildFilter}).
+ *
  * <p>{@link WasteOperation#GENERATED} is in neither: it is the company's own waste sitting on the
  * site, and „Generare" shows it without a direction.
  */
@@ -24,9 +27,10 @@ public enum MovementDirection {
 
     public boolean matches(WasteOperation operation) {
         return this == IN
-                ? operation == WasteOperation.COLLECTED
+                ? operation == WasteOperation.COLLECTED || operation == WasteOperation.TRANSFERRED_IN
                 : operation == WasteOperation.RECOVERED
                         || operation == WasteOperation.DISPOSED
-                        || operation == WasteOperation.UNCLASSIFIED_OUT;
+                        || operation == WasteOperation.UNCLASSIFIED_OUT
+                        || operation == WasteOperation.TRANSFERRED_OUT;
     }
 }

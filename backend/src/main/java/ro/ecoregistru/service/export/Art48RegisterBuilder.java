@@ -52,6 +52,8 @@ public class Art48RegisterBuilder {
         List<WasteMovement> inYear = WasteRegister.ART_48.select(movementsOfYear).stream()
                 .filter(m -> workPoint == null || (m.getWorkPoint() != null
                         && workPoint.getId().equals(m.getWorkPoint().getId())))
+                // D2.5 — pe firmă transferul intern se anulează cu el însuși; pe depozit se vede.
+                .filter(m -> workPoint != null || !m.getOperation().isTransfer())
                 .sorted(Comparator.comparing(WasteMovement::getDate)
                         .thenComparing(WasteMovement::getCreatedAt,
                                 Comparator.nullsLast(Comparator.<Instant>naturalOrder())))
@@ -78,13 +80,23 @@ public class Art48RegisterBuilder {
                 printedCode(m),
                 m.getWasteCode().getName(),
                 m.getQuantity() == null ? null : kg(m),
-                partner == null ? null : partner.getName(),
+                partner == null ? otherDepot(m) : partner.getName(),
                 partner == null ? null : partner.getCui(),
                 origin(m),
                 m.getOperationCode() == null ? null : m.getOperationCode().name(),
                 m.getTransportMeans() == null ? null : m.getTransportMeans().getOfficialLabel(),
                 m.getTreatmentMethod() == null ? null : m.getTreatmentMethod().getOfficialLabel(),
                 m.getDocumentReference());
+    }
+
+    /** D2.5 — pe rândul unui transfer, „partenerul” e celălalt depozit al firmei. */
+    private static String otherDepot(WasteMovement m) {
+        WeighingOperation op = m.getWeighingOperation();
+        if (op == null || !m.getOperation().isTransfer()) {
+            return null;
+        }
+        WorkPoint other = m.getOperation() == WasteOperation.TRANSFERRED_OUT ? op.getTargetWorkPoint() : op.getWorkPoint();
+        return other == null ? null : "Depozitul " + other.getName();
     }
 
     /**
@@ -136,6 +148,8 @@ public class Art48RegisterBuilder {
                     if (m.getOperationCode() != null) t.disposalCodes.add(m.getOperationCode().name());
                 }
                 case UNCLASSIFIED_OUT -> t.unclassified = t.unclassified.add(kg);
+                case TRANSFERRED_IN -> t.transferredIn = t.transferredIn.add(kg);
+                case TRANSFERRED_OUT -> t.transferredOut = t.transferredOut.add(kg);
                 default -> { }
             }
         }
@@ -145,11 +159,11 @@ public class Art48RegisterBuilder {
             if (!t.moved && t.opening.signum() == 0) {
                 return;
             }
-            BigDecimal closing = t.opening.add(t.collected)
-                    .subtract(t.recovered).subtract(t.disposed).subtract(t.unclassified);
+            BigDecimal closing = t.opening.add(t.collected).add(t.transferredIn)
+                    .subtract(t.recovered).subtract(t.disposed).subtract(t.unclassified).subtract(t.transferredOut);
             rows.add(new Art48Register.CodeTotal(code, t.name, t.opening, t.collected, t.recovered,
                     t.disposed, t.unclassified, closing,
-                    List.copyOf(t.recoveryCodes), List.copyOf(t.disposalCodes)));
+                    List.copyOf(t.recoveryCodes), List.copyOf(t.disposalCodes), t.transferredIn, t.transferredOut));
         });
         return rows;
     }
@@ -181,7 +195,7 @@ public class Art48RegisterBuilder {
 
     private static boolean countsInStock(WasteOperation operation) {
         return operation == WasteOperation.COLLECTED || operation.isExit()
-                || operation == WasteOperation.UNCLASSIFIED_OUT;
+                || operation == WasteOperation.UNCLASSIFIED_OUT || operation.isTransfer();
     }
 
     static String operationLabel(WasteOperation operation) {
@@ -191,6 +205,8 @@ public class Art48RegisterBuilder {
             case DISPOSED -> "Predare la eliminare";
             case UNCLASSIFIED_OUT -> "Ieșire fără cod R/D";
             case GENERATED -> "Generare";
+            case TRANSFERRED_OUT -> "Transfer trimis la alt depozit";
+            case TRANSFERRED_IN -> "Transfer primit de la alt depozit";
         };
     }
 
@@ -211,6 +227,8 @@ public class Art48RegisterBuilder {
         BigDecimal recovered = BigDecimal.ZERO;
         BigDecimal disposed = BigDecimal.ZERO;
         BigDecimal unclassified = BigDecimal.ZERO;
+        BigDecimal transferredIn = BigDecimal.ZERO;
+        BigDecimal transferredOut = BigDecimal.ZERO;
         final TreeSet<String> recoveryCodes = new TreeSet<>(Comparator.comparingInt(Art48RegisterBuilder::codeNumber));
         final TreeSet<String> disposalCodes = new TreeSet<>(Comparator.comparingInt(Art48RegisterBuilder::codeNumber));
         boolean moved;

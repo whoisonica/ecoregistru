@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowDownToLine, ArrowUpFromLine, FileSpreadsheet, Scale } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, FilePlus, FileSpreadsheet, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import {
@@ -29,6 +29,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { apiBlobErrorMessage } from "@/lib/api";
 import { WeighingOperationDialog } from "@/components/depot/WeighingOperationDialog";
+import { ReceivedFormsTab } from "@/components/depot/ReceivedFormsTab";
 
 const t = strings.weighing;
 
@@ -54,7 +55,10 @@ export function WeighingOperationsPage() {
   const { data: company } = useCurrentCompany();
   const writes = canWrite(user?.role);
 
-  const [type, setType] = useState<WeighingOperationType>("IN");
+  // D2.6 — al patrulea tab nu e un tip de operațiune: registrul formularelor primite.
+  const [tab, setTab] = useState<WeighingOperationType | "FORMS">("IN");
+  const forms = tab === "FORMS";
+  const type: WeighingOperationType = forms ? "IN" : tab;
   const [month, setMonth] = useState(currentMonth());
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -71,7 +75,7 @@ export function WeighingOperationsPage() {
     return [Number(y), Number(m)];
   }, [month]);
 
-  const { data, isLoading, isError } = useWeighingOperations({ type, year, month: monthNumber });
+  const { data, isLoading, isError } = useWeighingOperations({ type, year, month: monthNumber }, !forms);
   // Banda reținerilor o vede doar cine administrează firma și vede prețurile. Regula e pe server, dar
   // operatorul nici n-o cere: un 403 la fiecare deschidere de ecran e zgomot, nu informație.
   const retentions = useDepotRetentions(year, monthNumber, canManage(user?.role));
@@ -90,7 +94,7 @@ export function WeighingOperationsPage() {
   const operations = useMemo(() => data ?? [], [data]);
   const view = useTableView(operations, {
     searchText: (o) =>
-      [String(o.number), o.partnerName, o.naturalPersonName, o.workPointName]
+      [String(o.number), o.partnerName, o.naturalPersonName, o.workPointName, o.transfer?.targetWorkPointName]
         .filter(Boolean)
         .join(" "),
     comparators: {
@@ -104,6 +108,7 @@ export function WeighingOperationsPage() {
   });
 
   const inbound = type === "IN";
+  const transfers = type === "TRANSFER";
 
   // Firmele fără registru art. 48 n-au depozit, deci nici intrare în meniu. Linkul direct se
   // explică, nu se randează gol.
@@ -124,12 +129,16 @@ export function WeighingOperationsPage() {
         actions={
           writes && (
             <Button hotkey="N" onClick={() => setCreating(true)}>
-              {inbound ? (
+              {forms ? (
+                <FilePlus className="mr-2 h-4 w-4" />
+              ) : transfers ? (
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+              ) : inbound ? (
                 <ArrowDownToLine className="mr-2 h-4 w-4" />
               ) : (
                 <ArrowUpFromLine className="mr-2 h-4 w-4" />
               )}
-              {inbound ? t.newIn : t.newOut}
+              {forms ? t.formsNew : transfers ? t.newTransfer : inbound ? t.newIn : t.newOut}
             </Button>
           )
         }
@@ -140,16 +149,18 @@ export function WeighingOperationsPage() {
           {([
             { id: "IN", label: t.tabIn },
             { id: "OUT", label: t.tabOut },
+            { id: "TRANSFER", label: t.tabTransfer },
+            { id: "FORMS", label: t.tabForms },
           ] as const).map((item) => (
             <button
               key={item.id}
               type="button"
               role="tab"
-              aria-selected={type === item.id}
-              onClick={() => setType(item.id)}
+              aria-selected={tab === item.id}
+              onClick={() => setTab(item.id)}
               className={
                 "-mb-px border-b-2 px-3 py-2 text-sm font-medium " +
-                (type === item.id
+                (tab === item.id
                   ? "border-brand-600 text-content-strong"
                   : "border-transparent text-content-muted hover:text-content")
               }
@@ -158,6 +169,7 @@ export function WeighingOperationsPage() {
             </button>
           ))}
         </div>
+        {!forms && (
         <div className="flex flex-wrap items-end gap-2">
           <MonthInput id="weighing-month" value={month} onChange={setMonth} />
           {/* Amândouă direcțiile, oricare tab e deschis: e registrul intrărilor și al ieșirilor. */}
@@ -166,13 +178,16 @@ export function WeighingOperationsPage() {
             {t.exportRegister}
           </Button>
         </div>
+        )}
       </div>
 
-      {retentions.data && <RetentionsStrip report={retentions.data} />}
+      {forms && <ReceivedFormsTab canWrite={writes} creating={creating} onCreatingChange={setCreating} />}
 
-      {isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+      {!forms && retentions.data && <RetentionsStrip report={retentions.data} />}
 
-      {!isError && (
+      {!forms && isError && <p className="text-sm text-red-600">{t.loadError}</p>}
+
+      {!forms && !isError && (
         <>
           <TableToolbar view={view} placeholder={t.searchPlaceholder} />
           <Table stickyHeader>
@@ -184,10 +199,10 @@ export function WeighingOperationsPage() {
                 <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>
                   {t.date}
                 </SortableTH>
-                <TH>{inbound ? t.counterpartyIn : t.counterpartyOut}</TH>
+                <TH>{transfers ? t.route : inbound ? t.counterpartyIn : t.counterpartyOut}</TH>
                 <TH>{t.articles}</TH>
-                <TH className="text-right">{t.quantity}</TH>
-                <TH className="text-right">{t.value}</TH>
+                <TH className="text-right">{transfers ? t.sentReceived : t.quantity}</TH>
+                <TH className="text-right">{transfers ? t.difference : t.value}</TH>
                 <TH>{t.status}</TH>
                 <TH sticky="right" className="text-right">
                   {strings.common.actions}
@@ -213,7 +228,7 @@ export function WeighingOperationsPage() {
         </>
       )}
 
-      {(creating || openId || linked.data) && (
+      {((creating && !forms) || openId || linked.data) && (
         <WeighingOperationDialog
           open
           type={type}
@@ -238,7 +253,10 @@ function OperationRow({ operation, onOpen }: { operation: WeighingOperation; onO
   const kg = operation.lines.reduce((sum, l) => sum + (l.finalKg ?? 0), 0);
   const value = operation.lines.reduce((sum, l) => sum + (l.totalValue ?? 0), 0);
   const priced = operation.lines.some((l) => l.totalValue != null);
-  const counterparty = operation.partnerName ?? operation.naturalPersonName;
+  const transfer = operation.transfer;
+  const counterparty = transfer
+    ? `${operation.workPointName} → ${transfer.targetWorkPointName}`
+    : operation.partnerName ?? operation.naturalPersonName;
 
   return (
     <TR>
@@ -261,9 +279,22 @@ function OperationRow({ operation, onOpen }: { operation: WeighingOperation; onO
           {operation.lines.length === 0 && <span className="text-content-subtle">—</span>}
         </span>
       </TD>
-      <TD className="text-right font-mono tabular-nums">{formatKg(kg)}</TD>
       <TD className="text-right font-mono tabular-nums">
-        {priced ? formatLei(value) : <span className="text-content-subtle">—</span>}
+        {formatKg(kg)}
+        {transfer?.receivedKg != null && <> / {formatKg(transfer.receivedKg)}</>}
+      </TD>
+      <TD className="text-right font-mono tabular-nums">
+        {transfer ? (
+          transfer.differenceKg != null ? (
+            `${transfer.differenceKg > 0 ? "+" : ""}${formatKg(transfer.differenceKg)} kg`
+          ) : (
+            <span className="text-content-subtle">—</span>
+          )
+        ) : priced ? (
+          formatLei(value)
+        ) : (
+          <span className="text-content-subtle">—</span>
+        )}
       </TD>
       <TD>
         <StatusBadge operation={operation} />
@@ -278,7 +309,9 @@ function OperationRow({ operation, onOpen }: { operation: WeighingOperation; onO
 }
 
 function StatusBadge({ operation }: { operation: WeighingOperation }) {
-  if (operation.status === "FINALIZED") return <Badge variant="success">{t.statusFinalized}</Badge>;
+  if (operation.status === "FINALIZED")
+    return <Badge variant="success">{operation.transfer ? t.statusReceived : t.statusFinalized}</Badge>;
+  if (operation.status === "IN_TRANSIT") return <Badge variant="warning">{t.statusInTransit}</Badge>;
   if (operation.status === "IN_PROGRESS") return <Badge variant="warning">{t.statusInProgress}</Badge>;
   return (
     <Tooltip content={`${t.cancelledBecause} ${operation.cancelReason ?? ""}`}>

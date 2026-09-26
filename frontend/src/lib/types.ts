@@ -15,7 +15,10 @@ export type WasteOperation =
   | "COLLECTED"
   | "RECOVERED"
   | "DISPOSED"
-  | "UNCLASSIFIED_OUT";
+  | "UNCLASSIFIED_OUT"
+  /** D2.5 — cele două capete ale unui transfer între depozitele firmei; nu se aleg din formularul de mișcare. */
+  | "TRANSFERRED_OUT"
+  | "TRANSFERRED_IN";
 
 /**
  * Which legal register a quantity belongs to. ANEXA_1 = waste generated in the company's own
@@ -600,11 +603,19 @@ export interface WorkPoint {
   name: string;
   address: string | null;
   active: boolean;
+  /** D2.5 — autorizația de mediu a amplasamentului; goală = a firmei. */
+  environmentalAuthNumber?: string | null;
+  environmentalAuthExpiry?: string | null;
+  /** D2.6 — seria registrului formularelor primite. */
+  receivedFormsSeries?: string | null;
 }
 
 export interface WorkPointInput {
   name: string;
   address?: string | null;
+  environmentalAuthNumber?: string | null;
+  environmentalAuthExpiry?: string | null;
+  receivedFormsSeries?: string | null;
 }
 
 // --- Internal generators (Anexa 1 cap. 2 "Secţia") ---
@@ -698,11 +709,87 @@ export interface NaturalPersonInput {
 
 // --- Depozit: operațiunile de cântar (D1.4–D1.10, ecranul D1.15) ---
 
-/** Felia 1 înregistrează doar intrări și ieșiri; transferul și inventarul vin cu F2/F3. */
-export type WeighingOperationType = "IN" | "OUT";
+/** Intrări, ieșiri și (D2.5) transferuri între depozitele firmei; inventarul vine cu F3. */
+export type WeighingOperationType = "IN" | "OUT" | "TRANSFER";
 
-/** În lucru → Finalizată (nemodificabilă) sau Anulată cu motiv. Doar cele finalizate intră în registre. */
-export type WeighingOperationStatus = "IN_PROGRESS" | "FINALIZED" | "CANCELLED";
+/**
+ * În lucru → Finalizată (nemodificabilă) sau Anulată cu motiv. La transfer, între ele: „În tranzit” — a plecat din
+ * A, n-a ajuns încă în B. Contează în registre cele finalizate și, la transfer, plecarea din A.
+ */
+export type WeighingOperationStatus = "IN_PROGRESS" | "IN_TRANSIT" | "FINALIZED" | "CANCELLED";
+
+/** D2.5 — destinația, plecarea și recepția unui transfer (`WeighingOperationResponse.Transfer`). */
+export interface WeighingTransfer {
+  targetWorkPointId: string;
+  targetWorkPointName: string;
+  dispatchedAt: string | null;
+  receivedOn: string | null;
+  receiptScaleId: string | null;
+  receiptScaleName: string | null;
+  receiptScaleState: ScaleState | null;
+  receiptScaleOverrideReason: string | null;
+  receiptGrossKg: number | null;
+  receiptTareKg: number | null;
+  sentKg: number;
+  receivedKg: number | null;
+  /** Cât pot diferi cele două cântare (HG 710/2015, dublat în exploatare); null = necunoscut. */
+  toleranceKg: number | null;
+  /** Primit − plecat; negativ = lipsă la B. */
+  differenceKg: number | null;
+  nirNumber: string | null;
+  differenceReason: string | null;
+  receivedLines: WeighingLine[];
+}
+
+/** D2.6 — un rând din registrul formularelor primite (append-only; corectura e un rând nou). */
+export interface ReceivedForm {
+  id: string;
+  workPointId: string;
+  workPointName: string;
+  entryNo: number;
+  receivedOn: string;
+  formKind: "ANEXA_3" | "ANEXA_2";
+  formSeries: string | null;
+  formNumber: string;
+  formDate: string | null;
+  senderName: string;
+  senderCui: string | null;
+  wasteDescription: string | null;
+  quantityKg: number | null;
+  weighingOperationId: string | null;
+  /** Rândul pe care îl corectează acesta. */
+  correctsEntryNo: number | null;
+  correctionReason: string | null;
+  /** Rândul care îl corectează pe acesta. */
+  correctedBy: number | null;
+  createdAt: string;
+}
+
+export interface ReceivedFormInput {
+  workPointId: string;
+  receivedOn: string;
+  formKind: "ANEXA_3" | "ANEXA_2";
+  formSeries: string | null;
+  formNumber: string;
+  formDate: string | null;
+  senderName: string;
+  senderCui: string | null;
+  wasteDescription: string | null;
+  quantityKg: number | null;
+  weighingOperationId?: string | null;
+  correctionReason?: string | null;
+}
+
+export interface TransferReceiptInput {
+  receivedOn: string;
+  scaleId: string | null;
+  grossKg: number | null;
+  tareKg: number | null;
+  lines: { lineId: string; grossKg: number | null; tareKg: number | null; netKg: number | null; finalKg: number | null }[];
+  nirNumber: string | null;
+  differenceReason: string | null;
+  scaleReason: string | null;
+}
 
 /** Cum se plătește marfa. Numerarul către o persoană fizică are plafon zilnic (Legea 70/2015 art. 4). */
 export type DepotPaymentMethod = "VIREMENT" | "NUMERAR";
@@ -772,7 +859,10 @@ export interface WeighingOperation {
    * prețul pe kg (decizia proprietarului, 26.09.2026). În lucru e previzualizarea ultimei salvări.
    */
   payment: { value: number; afm: number; incomeTax: number; net: number } | null;
+  /** Liniile de la plecare; la transfer, cele de la recepție sunt în `transfer.receivedLines`. */
   lines: WeighingLine[];
+  /** D2.5 — doar la transfer. */
+  transfer: WeighingTransfer | null;
 }
 
 export interface WeighingOperationInput {
@@ -792,6 +882,8 @@ export interface WeighingOperationInput {
   ownHousehold: boolean | null;
   notes: string | null;
   scaleId?: string | null;
+  /** D2.5 — la transfer, depozitul de destinație. */
+  targetWorkPointId?: string | null;
 }
 
 /** Tot cântarul odată: liniile trimise le înlocuiesc pe cele salvate. */

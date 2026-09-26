@@ -89,13 +89,18 @@ public class DepotRegisterGenerator {
             for (WeighingOperation o : operations) {
                 for (WasteMovement m : lines.getOrDefault(o.getId(), List.of())) {
                     Row x = sheet.createRow(r++);
-                    text(x, 0, o.getDate().format(DATE));
-                    text(x, 1, o.getType() == WeighingOperationType.IN ? "Intrare" : "Ieșire");
+                    // D2.5 — un transfer are două feluri de rânduri: plecarea (din A, la data plecării) și recepția (în B,
+                    // la data recepției); fiecare poartă depozitul și data ei, iar celălalt depozit stă în locul partenerului.
+                    boolean received = m.getOperation() == ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN;
+                    text(x, 0, m.getDate().format(DATE));
+                    text(x, 1, type(o, m));
                     number(x, 2, BigDecimal.valueOf(o.getNumber()), kg);
                     text(x, 3, o.getOrderNumber());
-                    text(x, 4, o.getWorkPoint().getName());
+                    text(x, 4, m.getWorkPoint().getName());
                     text(x, 5, role(o));
-                    text(x, 6, o.getPartner() != null ? o.getPartner().getName()
+                    text(x, 6, o.getType() == WeighingOperationType.TRANSFER
+                            ? (received ? o.getWorkPoint() : o.getTargetWorkPoint()).getName()
+                            : o.getPartner() != null ? o.getPartner().getName()
                             : o.getNaturalPerson() != null ? o.getNaturalPerson().getName() : null);
                     text(x, 7, m.getArticle() == null ? null : m.getArticle().getName());
                     text(x, 8, m.getWasteCode().getCode() + (m.getWasteCode().isHazardous() ? "*" : ""));
@@ -141,8 +146,20 @@ public class DepotRegisterGenerator {
             "INCIDENT", "Incident, de reverificat", "NOT_DECLARED", "Nedeclarat la BRML",
             "SEALED", "Sigilat", "OUT_OF_USE", "Scos din uz");
 
+    static String type(WeighingOperation o, WasteMovement m) {
+        return switch (o.getType()) {
+            case IN -> "Intrare";
+            case TRANSFER -> m.getOperation() == ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN
+                    ? "Transfer primit" : "Transfer trimis";
+            default -> "Ieșire";
+        };
+    }
+
     /** Cum numește exportul depozitului cele trei roluri. */
     static String role(WeighingOperation o) {
+        if (o.getType() == WeighingOperationType.TRANSFER) {
+            return "Depozit propriu";
+        }
         if (o.getType() == WeighingOperationType.OUT) {
             return "Destinatar";
         }
@@ -155,6 +172,7 @@ public class DepotRegisterGenerator {
     static String status(WeighingOperationStatus status) {
         return switch (status) {
             case IN_PROGRESS -> "În lucru";
+            case IN_TRANSIT -> "În tranzit";
             case FINALIZED -> "Finalizată";
             case CANCELLED -> "Anulată";
         };

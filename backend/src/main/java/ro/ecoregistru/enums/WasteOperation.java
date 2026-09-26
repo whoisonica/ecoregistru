@@ -43,7 +43,23 @@ public enum WasteOperation {
      * leaves the stock and enters neither official column, and the line is reported incomplete
      * until someone completes it.
      */
-    UNCLASSIFIED_OUT;
+    UNCLASSIFIED_OUT,
+
+    /**
+     * D2.5 — the leg of an internal transfer that left depot A for another depot of the same company. Neither a
+     * handover nor an R/D operation: the waste stays with the company. It leaves A's stock and art. 48 register; on
+     * the company's totals it cancels out with its {@link #TRANSFERRED_IN} and is left out. Written only by a
+     * weighing operation of type TRANSFER, never from the movement form.
+     */
+    TRANSFERRED_OUT,
+
+    /** D2.5 — the same transfer received at depot B, with B's own weight. See {@link #TRANSFERRED_OUT}. */
+    TRANSFERRED_IN;
+
+    /** The two legs of an internal transfer (D2.5): per depot they move stock, per company they cancel out. */
+    public boolean isTransfer() {
+        return this == TRANSFERRED_OUT || this == TRANSFERRED_IN;
+    }
 
     /** Whether this operation takes waste off the site, and therefore needs an R/D code. */
     public boolean isExit() {
@@ -52,6 +68,6 @@ public enum WasteOperation {
 
     /** Whether an operator may choose this when recording a movement. */
     public boolean isSelectable() {
-        return this != UNCLASSIFIED_OUT && this != GENERATED;
+        return this != UNCLASSIFIED_OUT && this != GENERATED && !isTransfer();
     }
 }

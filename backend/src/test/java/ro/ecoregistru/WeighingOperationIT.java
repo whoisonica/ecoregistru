@@ -166,10 +166,14 @@ class WeighingOperationIT {
     }
 
     @Test
-    void onlyInAndOutAreAvailableInThisSlice() {
-        assertThatThrownBy(() -> service.create(request(WeighingOperationType.TRANSFER, null, null)))
+    void inventoryAdjustmentAndProcessingAreNotAvailableYet() {
+        // D2.5 a deschis transferul (TransferIT); ajustarea (F3) și procesarea (F5) rămân închise.
+        assertThatThrownBy(() -> service.create(request(WeighingOperationType.ADJUSTMENT, null, null)))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("doar intrări și ieșiri");
+                .hasMessageContaining("Deocamdată se înregistrează");
+        assertThatThrownBy(() -> service.create(request(WeighingOperationType.PROCESSING, null, null)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Deocamdată se înregistrează");
     }
 
     @Test

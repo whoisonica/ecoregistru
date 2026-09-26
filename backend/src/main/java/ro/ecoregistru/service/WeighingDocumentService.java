@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.WasteMovement;
+import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WeighingOperation;
+import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.enums.WeighingOperationType;
@@ -65,7 +67,7 @@ public class WeighingDocumentService {
         UUID tenantId = TenantContext.require();
         WeighingOperation operation = requireHandover(id, tenantId);
         Company company = requireCompany(tenantId);
-        List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id).stream()
+        List<WasteMovement> lines = departureLines(id).stream()
                 .filter(line -> !line.getWasteCode().isHazardous())
                 .toList();
         if (lines.isEmpty()) {
@@ -85,7 +87,7 @@ public class WeighingDocumentService {
         UUID tenantId = TenantContext.require();
         WeighingOperation operation = requireHandover(id, tenantId);
         Company company = requireCompany(tenantId);
-        List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
+        List<WasteMovement> lines = departureLines(id);
         if (lines.isEmpty()) {
             throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
         }
@@ -168,7 +170,7 @@ public class WeighingDocumentService {
     private WeighingOperation requireOperation(UUID id, UUID tenantId) {
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
-        if (!depotAccess.allows(operation.getWorkPoint().getId())) {
+        if (!WeighingOperationService.visible(operation, depotAccess.allowed())) {
             throw new NotFoundException(WEIGHING_OPERATION_NOT_FOUND);
         }
         return operation;
@@ -176,7 +178,9 @@ public class WeighingDocumentService {
 
     private WeighingOperation requireHandover(UUID id, UUID tenantId) {
         WeighingOperation operation = requireOperation(id, tenantId);
-        if (operation.getType() != WeighingOperationType.OUT || operation.getPartner() == null) {
+        // D2.5 — și transferul între depozite are aviz și Anexa 3 (HG 1061/2008 art. 20 alin. (4), fără scutire internă).
+        boolean transfer = operation.getType() == WeighingOperationType.TRANSFER;
+        if (!transfer && (operation.getType() != WeighingOperationType.OUT || operation.getPartner() == null)) {
             throw new BusinessException(WEIGHING_DOCUMENT_REQUIRES_HANDOVER);
         }
         if (operation.getStatus() == WeighingOperationStatus.CANCELLED) {
@@ -190,17 +194,69 @@ public class WeighingDocumentService {
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
     }
 
+    /** Ce a plecat: la transfer, fără liniile de recepție ale lui B (D2.5). */
+    private List<WasteMovement> departureLines(UUID id) {
+        return movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id).stream()
+                .filter(l -> l.getOperation() != ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN)
+                .toList();
+    }
+
+    /**
+     * D2.5 — la transfer destinatarul e chiar firma, la depozitul B: aceeași denumire și CUI, adresa și autorizația
+     * depozitului (altfel ale firmei). Un partener nesalvat, doar pentru hârtie.
+     */
+    private static Partner internalRecipient(WeighingOperation o, Company company) {
+        WorkPoint target = o.getTargetWorkPoint();
+        boolean own = target.getEnvironmentalAuthNumber() != null;
+        return Partner.builder()
+                .company(company)
+                .name(company.getName())
+                .cui(company.getCui())
+                .tradeRegisterNumber(company.getTradeRegisterNumber())
+                .address(company.getAddress())
+                .authorizationNumber(own ? target.getEnvironmentalAuthNumber() : company.getEnvironmentalAuthNumber())
+                .authorizationExpiry(own ? target.getEnvironmentalAuthExpiry() : company.getEnvironmentalAuthExpiry())
+                .build();
+    }
+
+    /**
+     * Pe Anexa 3 cantitatea e a expeditorului (art. 20 alin. (2)); B își notează greutatea la „Observații”
+     * (`surse-oficiale.md` §4, runda 2), cu NIR-ul când diferența a trecut de toleranță.
+     */
+    private static String transferObservations(WeighingOperation o, List<WasteMovement> received) {
+        String order = o.getOrderNumber();
+        if (o.getReceivedOn() == null) {
+            return order;
+        }
+        java.math.BigDecimal kg = received.stream().map(WasteMovement::getQuantity)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        String note = "Recepționat la " + o.getTargetWorkPoint().getName() + " pe "
+                + o.getReceivedOn().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")) + ": "
+                + kg.stripTrailingZeros().toPlainString() + " kg"
+                + (o.getNirNumber() == null ? "" : o.getNirNumber().toUpperCase().startsWith("NIR")
+                        ? " (" + o.getNirNumber() + ")" : " (NIR " + o.getNirNumber() + ")");
+        return order == null ? note : order + ". " + note;
+    }
+
     /**
      * Capul transportului, ca mișcare nesalvată: generatoarele citesc de pe ea expeditorul, destinatarul,
      * șoferul, mașina, data și numărul. Nu se persistă și nu intră în nicio listă.
      */
-    private static WasteMovement head(WeighingOperation o, Company company) {
+    private WasteMovement head(WeighingOperation o, Company company) {
         Driver driver = o.getDriver();
+        boolean transfer = o.getType() == WeighingOperationType.TRANSFER;
+        WorkPoint target = o.getTargetWorkPoint();
         return WasteMovement.builder()
                 .company(company)
                 .workPoint(o.getWorkPoint())
-                .partner(o.getPartner())
+                .partner(transfer ? internalRecipient(o, company) : o.getPartner())
+                .partnerWorkPoint(!transfer ? null : ro.ecoregistru.entity.PartnerWorkPoint.builder()
+                        .name(target.getName())
+                        .address(target.getAddress() != null ? target.getAddress() : company.getAddress())
+                        .build())
                 .date(o.getDate())
+                // D2.5 — la transfer, data descărcării e cea a recepției la B.
+                .unloadDate(transfer ? o.getReceivedOn() : null)
                 .unit(Unit.KG)
                 .driverName(o.getDriverName())
                 .driverIdentification(driver == null ? null : driver.getIdentification())
@@ -209,7 +265,10 @@ public class WeighingDocumentService {
                 .notes(o.getNotes())
                 // „Nr. comandă / aviz” din formular: numărul avizului și, pe Anexa 3, rubrica „Observaţii”,
                 // exact ce face referința documentului pe o mișcare.
-                .documentReference(o.getOrderNumber())
+                .documentReference(transfer ? transferObservations(o, movementRepository
+                        .findAllByWeighingOperation_IdOrderByLineNoAsc(o.getId()).stream()
+                        .filter(l -> l.getOperation() == ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN).toList())
+                        : o.getOrderNumber())
                 .anexa3Series(o.getAnexa3Series())
                 .anexa3Number(o.getAnexa3Number())
                 .build();

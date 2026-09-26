@@ -95,6 +95,56 @@ public class WeighingOperation {
     @Column(name = "scale_override_reason", length = 1000)
     String scaleOverrideReason;
 
+    // --- D2.5 (V71): transferul între depozitele firmei ---
+
+    /** Depozitul de destinație; doar la TRANSFER (constrângere în bază). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_work_point_id")
+    WorkPoint targetWorkPoint;
+
+    /** Plecarea: de aici marfa e „în tranzit”. */
+    @Column(name = "dispatched_at")
+    java.time.Instant dispatchedAt;
+
+    @Column(name = "dispatched_by")
+    UUID dispatchedBy;
+
+    /** Data recepției la destinație — data intrării în registrul depozitului B. */
+    @Column(name = "received_on")
+    java.time.LocalDate receivedOn;
+
+    /** Cântarul depozitului B și starea lui la recepție, ca la plecare. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "receipt_scale_id")
+    Scale receiptScale;
+
+    @Column(name = "receipt_scale_state", length = 20)
+    String receiptScaleState;
+
+    @Column(name = "receipt_scale_override_reason", length = 500)
+    String receiptScaleOverrideReason;
+
+    @Column(name = "receipt_gross_kg", precision = 12, scale = 3)
+    BigDecimal receiptGrossKg;
+
+    @Column(name = "receipt_tare_kg", precision = 12, scale = 3)
+    BigDecimal receiptTareKg;
+
+    /** Cât pot diferi cele două cântare, la recepție (HG 710/2015, dublat în exploatare); null = necunoscut. */
+    @Column(name = "tolerance_kg", precision = 12, scale = 3)
+    BigDecimal toleranceKg;
+
+    /** Primit − plecat, în kg. Negativ = lipsă la B. */
+    @Column(name = "difference_kg", precision = 12, scale = 3)
+    BigDecimal differenceKg;
+
+    /** Peste toleranță: NIR-ul 14-3-1A și decizia comisiei (OMFP 2634/2015). */
+    @Column(name = "nir_number", length = 40)
+    String nirNumber;
+
+    @Column(name = "difference_reason", length = 1000)
+    String differenceReason;
+
     @Column(name = "vehicle_registration", length = 50)
     String vehicleRegistration;
 

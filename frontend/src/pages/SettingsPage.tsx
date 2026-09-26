@@ -35,6 +35,7 @@ import { useHotkey } from "@/hooks/useHotkey";
 import { Button, LinkButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +114,10 @@ export function SettingsPage() {
   const [editing, setEditing] = useState<WorkPoint | null>(null);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  // D2.5 — autorizația de mediu a depozitului; goală = a firmei. Doar la firmele cu depozit.
+  const [authNumber, setAuthNumber] = useState("");
+  const [authExpiry, setAuthExpiry] = useState("");
+  const [formsSeries, setFormsSeries] = useState("");
   const [nameError, setNameError] = useState(false);
 
   const { rows: visibleWorkPoints, control: activeFilter } = useActiveFilter(workPoints ?? []);
@@ -127,6 +132,9 @@ export function SettingsPage() {
     setEditing(null);
     setName("");
     setAddress("");
+    setAuthNumber("");
+    setAuthExpiry("");
+    setFormsSeries("");
     setNameError(false);
     setDialogOpen(true);
   }
@@ -135,6 +143,9 @@ export function SettingsPage() {
     setEditing(wp);
     setName(wp.name);
     setAddress(wp.address ?? "");
+    setAuthNumber(wp.environmentalAuthNumber ?? "");
+    setAuthExpiry(wp.environmentalAuthExpiry ?? "");
+    setFormsSeries(wp.receivedFormsSeries ?? "");
     setNameError(false);
     setDialogOpen(true);
   }
@@ -145,7 +156,13 @@ export function SettingsPage() {
       setNameError(true);
       return;
     }
-    const input = { name: name.trim(), address: address.trim() || null };
+    const input = {
+      name: name.trim(),
+      address: address.trim() || null,
+      environmentalAuthNumber: authNumber.trim() || null,
+      environmentalAuthExpiry: authExpiry || null,
+      receivedFormsSeries: formsSeries.trim() || null,
+    };
     try {
       if (editing) {
         await updateMut.mutateAsync({ id: editing.id, input });
@@ -409,6 +426,23 @@ export function SettingsPage() {
               rows={2}
             />
           </div>
+          {hasDepot && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="wp-auth">{t.authNumber}</Label>
+                <Input id="wp-auth" maxLength={100} value={authNumber} onChange={(e) => setAuthNumber(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="wp-auth-expiry">{t.authExpiry}</Label>
+                <DateInput id="wp-auth-expiry" value={authExpiry} onChange={(e) => setAuthExpiry(e.target.value)} />
+              </div>
+              <p className="text-xs text-content-muted sm:col-span-2">{t.authHint}</p>
+              <div className="sm:col-span-2">
+                <Label htmlFor="wp-forms-series">{t.formsSeries}</Label>
+                <Input id="wp-forms-series" maxLength={20} value={formsSeries} onChange={(e) => setFormsSeries(e.target.value)} />
+              </div>
+            </div>
+          )}
         </form>
       </Dialog>
 

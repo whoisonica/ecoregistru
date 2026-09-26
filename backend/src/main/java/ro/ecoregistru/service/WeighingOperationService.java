@@ -90,15 +90,22 @@ public class WeighingOperationService {
     ro.ecoregistru.repository.AppUserRepository userRepository;
     ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
     DepotAccess depotAccess;
+    ReceivedFormService receivedForms;
 
     /** Operațiunea firmei, dacă e pe un depozit al utilizatorului (D2.4); altfel 404, ca una inexistentă. */
     WeighingOperation requireOperation(UUID id, UUID tenantId) {
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
-        if (!depotAccess.allows(operation.getWorkPoint().getId())) {
+        if (!visible(operation, depotAccess.allowed())) {
             throw new NotFoundException(WEIGHING_OPERATION_NOT_FOUND);
         }
         return operation;
+    }
+
+    /** D2.4 + D2.5 — o operațiune se vede din depozitul ei și, la transfer, și din cel de destinație. */
+    static boolean visible(WeighingOperation o, java.util.Set<UUID> allowed) {
+        return allowed == null || allowed.contains(o.getWorkPoint().getId())
+                || (o.getTargetWorkPoint() != null && allowed.contains(o.getTargetWorkPoint().getId()));
     }
 
     @Transactional
@@ -123,6 +130,7 @@ public class WeighingOperationService {
 
         WorkPoint workPoint = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
+        WorkPoint target = transferTarget(type, request, workPoint, tenantId);
         Partner partner = request.partnerId() == null ? null
                 : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
@@ -155,9 +163,11 @@ public class WeighingOperationService {
                 .vehicle(vehicle)
                 .vehicleRegistration(resolveRegistration(request, driver, vehicle))
                 .scale(scale)
+                .targetWorkPoint(target)
                 .orderNumber(blankToNull(request.orderNumber()))
-                .paymentMethod(request.paymentMethod())
-                .receiptNumber(blankToNull(request.receiptNumber()))
+                // Transferul rămâne în firmă: nu se plătește nimic.
+                .paymentMethod(target != null ? null : request.paymentMethod())
+                .receiptNumber(target != null ? null : blankToNull(request.receiptNumber()))
                 // Declarația e a persoanei fizice; pe o operațiune cu partener n-are obiect.
                 .ownHousehold(person == null ? null : request.ownHousehold())
                 .notes(blankToNull(request.notes()))
@@ -201,6 +211,7 @@ public class WeighingOperationService {
 
         WorkPoint workPoint = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
+        WorkPoint target = transferTarget(operation.getType(), request, workPoint, tenantId);
         Partner partner = request.partnerId() == null ? null
                 : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
@@ -230,9 +241,10 @@ public class WeighingOperationService {
         operation.setVehicle(vehicle);
         operation.setVehicleRegistration(resolveRegistration(request, driver, vehicle));
         operation.setScale(scale);
+        operation.setTargetWorkPoint(target);
         operation.setOrderNumber(blankToNull(request.orderNumber()));
-        operation.setPaymentMethod(request.paymentMethod());
-        operation.setReceiptNumber(blankToNull(request.receiptNumber()));
+        operation.setPaymentMethod(target != null ? null : request.paymentMethod());
+        operation.setReceiptNumber(target != null ? null : blankToNull(request.receiptNumber()));
         operation.setOwnHousehold(person == null ? null : request.ownHousehold());
         operation.setNotes(blankToNull(request.notes()));
 
@@ -281,7 +293,8 @@ public class WeighingOperationService {
         List<WasteMovement> lines = new ArrayList<>();
         for (int i = 0; i < request.lines().size(); i++) {
             WeighingLinesRequest.Line sent = request.lines().get(i);
-            BigDecimal unitPrice = pricesVisible ? sent.unitPrice() : nextKept(keptPrices, sent.articleId());
+            BigDecimal unitPrice = operation.getType() == WeighingOperationType.TRANSFER ? null
+                    : pricesVisible ? sent.unitPrice() : nextKept(keptPrices, sent.articleId());
             lines.add(line(operation, sent, unitPrice, i + 1, tenantId, userId));
         }
 
@@ -323,6 +336,9 @@ public class WeighingOperationService {
         List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
         if (lines.isEmpty()) {
             throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
+        }
+        if (operation.getType() == WeighingOperationType.TRANSFER) {
+            return dispatch(operation, lines, scaleReason, user.getId());
         }
         // A doua oară aici: fișa persoanei se poate edita între cântărire și finalizare.
         requireMetalIdentity(operation, lines);
@@ -442,8 +458,9 @@ public class WeighingOperationService {
             from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
             to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
         }
-        List<WeighingOperation> operations = depotAccess.filter(
-                operationRepository.findForScreen(tenantId, type, from, to), o -> o.getWorkPoint().getId());
+        java.util.Set<UUID> allowed = depotAccess.allowed();
+        List<WeighingOperation> operations = operationRepository.findForScreen(tenantId, type, from, to).stream()
+                .filter(o -> visible(o, allowed)).toList();
         if (operations.isEmpty()) {
             return List.of();
         }
@@ -475,8 +492,9 @@ public class WeighingOperationService {
         java.time.YearMonth period = month == null ? null : java.time.YearMonth.of(year, month);
         java.time.LocalDate from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
         java.time.LocalDate to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
-        List<WeighingOperation> operations = new ArrayList<>(depotAccess.filter(
-                operationRepository.findForScreen(tenantId, null, from, to), o -> o.getWorkPoint().getId()));
+        java.util.Set<UUID> allowed = depotAccess.allowed();
+        List<WeighingOperation> operations = new ArrayList<>(operationRepository.findForScreen(tenantId, null, from, to)
+                .stream().filter(o -> visible(o, allowed)).toList());
         operations.sort(java.util.Comparator.comparing(WeighingOperation::getDate)
                 .thenComparing(WeighingOperation::getType)
                 .thenComparingInt(WeighingOperation::getNumber));
@@ -680,6 +698,13 @@ public class WeighingOperationService {
      * proprietarului, 15.09.2026), iar familia codului dă operația, ca la mișcarea obișnuită.
      */
     private static WasteOperation resolveOperation(WeighingOperation operation, WasteOperationCode code) {
+        // D2.5 — plecarea unui transfer nu e o predare: fără cod R/D, marfa rămâne în firmă.
+        if (operation.getType() == WeighingOperationType.TRANSFER) {
+            if (code != null) {
+                throw new BusinessException(OPERATION_CODE_NOT_ALLOWED);
+            }
+            return WasteOperation.TRANSFERRED_OUT;
+        }
         if (operation.getType() == WeighingOperationType.IN) {
             if (code != null) {
                 throw new BusinessException(OPERATION_CODE_NOT_ALLOWED);
@@ -735,6 +760,211 @@ public class WeighingOperationService {
 
     private static String blankToNull(String value) {
         return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
+    // --- D2.5: transferul între depozitele firmei ---
+
+    /**
+     * Destinația unui transfer: alt depozit al firmei, cu autorizație de mediu valabilă la data transferului (a lui,
+     * altfel a firmei — HG 1061/2008 art. 1 alin. (3)). Transferul n-are partener, persoană fizică sau plată. La
+     * celelalte tipuri destinația se ignoră.
+     */
+    private WorkPoint transferTarget(WeighingOperationType type, WeighingOperationRequest request, WorkPoint source,
+                                     UUID tenantId) {
+        if (type != WeighingOperationType.TRANSFER) {
+            return null;
+        }
+        if (request.partnerId() != null || request.naturalPersonId() != null) {
+            throw new BusinessException(TRANSFER_NO_COUNTERPARTY);
+        }
+        if (request.targetWorkPointId() == null) {
+            throw new BusinessException(TRANSFER_TARGET_REQUIRED);
+        }
+        WorkPoint target = workPointRepository.findByIdAndCompany_Id(request.targetWorkPointId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        if (target.getId().equals(source.getId())) {
+            throw new BusinessException(TRANSFER_SAME_DEPOT);
+        }
+        requireAuthorized(target, request.date());
+        return target;
+    }
+
+    /** Autorizația amplasamentului, altfel a firmei; fără număr sau expirată la data transferului = refuz. */
+    private static void requireAuthorized(WorkPoint target, java.time.LocalDate date) {
+        boolean own = target.getEnvironmentalAuthNumber() != null;
+        Company company = target.getCompany();
+        String number = own ? target.getEnvironmentalAuthNumber() : company.getEnvironmentalAuthNumber();
+        java.time.LocalDate expiry = own ? target.getEnvironmentalAuthExpiry() : company.getEnvironmentalAuthExpiry();
+        if (number == null || number.isBlank() || (expiry != null && expiry.isBefore(date))) {
+            throw new BusinessException(TRANSFER_TARGET_NOT_AUTHORIZED);
+        }
+    }
+
+    /**
+     * Plecarea: liniile ies din depozitul A și marfa e „în tranzit” — nu e în stocul nimănui până la recepție. Cântarul
+     * de la plecare se confirmă ca la finalizare (D2.3), autorizația destinației se verifică din nou.
+     */
+    private WeighingOperationResponse dispatch(WeighingOperation operation, List<WasteMovement> lines,
+                                               String scaleReason, UUID userId) {
+        requireAuthorized(operation.getTargetWorkPoint(), operation.getDate());
+        recordScaleConfirmation(operation, scaleReason);
+        operation.setStatus(WeighingOperationStatus.IN_TRANSIT);
+        operation.setDispatchedAt(java.time.Instant.now());
+        operation.setDispatchedBy(userId);
+        operationRepository.saveAndFlush(operation);
+        return toResponse(operation, lines, pricesVisible(operation.getCompany()));
+    }
+
+    /**
+     * D2.5 — recepția la B: fiecare linie plecată se cântărește din nou, cu cântarul lui B, și intră în depozitul B la
+     * data recepției. Diferența (primit − plecat) se compară cu toleranța celor două cântare; peste ea — sau când
+     * toleranța nu se poate calcula și diferența nu e zero — cere NIR și decizia comisiei, în ambele sensuri. O
+     * recepționează cine aprobă, pe un depozit al lui.
+     */
+    @Transactional
+    public WeighingOperationResponse receive(UUID id, ro.ecoregistru.controller.request.TransferReceiptRequest request) {
+        UUID tenantId = TenantContext.require();
+        evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
+        var user = SecurityUtils.currentUser();
+        requireApprover(user);
+        WeighingOperation operation = requireOperation(id, tenantId);
+        if (operation.getType() != WeighingOperationType.TRANSFER
+                || operation.getStatus() != WeighingOperationStatus.IN_TRANSIT) {
+            throw new BusinessException(TRANSFER_NOT_IN_TRANSIT);
+        }
+        WorkPoint target = depotAccess.require(operation.getTargetWorkPoint());
+        if (request.receivedOn() == null) {
+            throw new BusinessException(TRANSFER_RECEIVED_ON_REQUIRED);
+        }
+        if (request.receivedOn().isBefore(operation.getDate())) {
+            throw new BusinessException(TRANSFER_RECEIVED_BEFORE_DEPARTURE);
+        }
+        requireNonNegative(request.grossKg());
+        requireNonNegative(request.tareKg());
+        if (request.grossKg() != null && request.tareKg() != null
+                && request.tareKg().compareTo(request.grossKg()) >= 0) {
+            throw new BusinessException(WEIGHING_OPERATION_TARE_ABOVE_GROSS);
+        }
+        List<WasteMovement> sent = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id).stream()
+                .filter(m -> m.getOperation() == WasteOperation.TRANSFERRED_OUT).toList();
+        Map<UUID, WeighingLinesRequest.Line> byLine = new HashMap<>();
+        for (var line : request.lines() == null ? List.<ro.ecoregistru.controller.request.TransferReceiptRequest.Line>of()
+                : request.lines()) {
+            if (line.lineId() == null || byLine.put(line.lineId(), new WeighingLinesRequest.Line(null, line.grossKg(),
+                    line.tareKg(), line.netKg(), line.finalKg(), null, null, null)) != null) {
+                throw new BusinessException(TRANSFER_RECEIPT_LINES_MISMATCH);
+            }
+        }
+        if (byLine.size() != sent.size() || !sent.stream().allMatch(m -> byLine.containsKey(m.getId()))) {
+            throw new BusinessException(TRANSFER_RECEIPT_LINES_MISMATCH);
+        }
+
+        Scale receiptScale = usableScale(request.scaleId(), target, tenantId);
+        String receiptState = null;
+        String receiptReason = null;
+        if (receiptScale != null) {
+            ScaleLegality.Verdict verdict = scaleService.verdictAt(receiptScale, request.receivedOn());
+            if (verdict.refused()) {
+                throw new BusinessException(SCALE_NOT_USABLE);
+            }
+            receiptReason = verdict.legal() ? null : blankToNull(request.scaleReason());
+            if (!verdict.legal() && receiptReason == null) {
+                throw new BusinessException(SCALE_REASON_REQUIRED);
+            }
+            receiptState = verdict.state().name();
+        }
+
+        List<WasteMovement> received = new ArrayList<>();
+        for (WasteMovement out : sent) {
+            WeighingLinesRequest.Line weighed = byLine.get(out.getId());
+            BigDecimal net = resolveNet(weighed);
+            BigDecimal finalKg = weighed.finalKg() == null ? net : weighed.finalKg();
+            if (finalKg.signum() <= 0) {
+                throw new BusinessException(WEIGHING_LINE_FINAL_NOT_POSITIVE);
+            }
+            if (finalKg.compareTo(net) > 0) {
+                throw new BusinessException(WEIGHING_LINE_FINAL_ABOVE_NET);
+            }
+            received.add(WasteMovement.builder()
+                    .company(operation.getCompany())
+                    .workPoint(target)
+                    .date(request.receivedOn())
+                    .wasteCode(out.getWasteCode())
+                    .article(out.getArticle())
+                    .quantity(finalKg)
+                    .unit(Unit.KG)
+                    .operation(WasteOperation.TRANSFERRED_IN)
+                    .register(WasteRegister.ART_48)
+                    .driverName(operation.getDriverName())
+                    .vehicleRegistration(operation.getVehicleRegistration())
+                    .weighingOperation(operation)
+                    .lineNo(out.getLineNo())
+                    .grossKg(weighed.grossKg())
+                    .tareKg(weighed.tareKg())
+                    .netKg(net)
+                    .deleted(false)
+                    .createdBy(user.getId())
+                    .build());
+        }
+
+        BigDecimal sentKg = total(sent);
+        BigDecimal receivedKg = total(received);
+        BigDecimal difference = receivedKg.subtract(sentKg);
+        BigDecimal tolerance = TransferTolerance.of(
+                side(operation.getScale(), operation.getGrossKg(), operation.getTareKg(), sent),
+                side(receiptScale, request.grossKg(), request.tareKg(), received));
+        String nir = blankToNull(request.nirNumber());
+        String reason = blankToNull(request.differenceReason());
+        boolean explained = difference.signum() == 0
+                || (tolerance != null && difference.abs().compareTo(tolerance) <= 0);
+        if (!explained && (nir == null || reason == null)) {
+            throw new BusinessException(TRANSFER_DIFFERENCE_NEEDS_NIR);
+        }
+
+        operation.setReceivedOn(request.receivedOn());
+        operation.setReceiptScale(receiptScale);
+        operation.setReceiptScaleState(receiptState);
+        operation.setReceiptScaleOverrideReason(receiptReason);
+        operation.setReceiptGrossKg(request.grossKg());
+        operation.setReceiptTareKg(request.tareKg());
+        operation.setToleranceKg(tolerance);
+        operation.setDifferenceKg(difference);
+        operation.setNirNumber(explained ? null : nir);
+        operation.setDifferenceReason(explained ? null : reason);
+        operation.setStatus(WeighingOperationStatus.FINALIZED);
+        operation.setFinalizedAt(java.time.Instant.now());
+        operation.setFinalizedBy(user.getId());
+        movementRepository.saveAll(received);
+        operationRepository.saveAndFlush(operation);
+        // D2.6 — B trece în registrul lui formularul cu care a venit marfa (Anexa 3 a lui A, dacă e tipărită).
+        receivedForms.recordTransferReceipt(operation, sentKg, sent.stream()
+                .map(m -> m.getWasteCode().getCode() + " " + (m.getArticle() != null ? m.getArticle().getName()
+                        : m.getWasteCode().getName()))
+                .distinct().collect(Collectors.joining("; ")));
+        List<WasteMovement> all = new ArrayList<>(sent);
+        all.addAll(received);
+        return toResponse(operation, all, pricesVisible(operation.getCompany()));
+    }
+
+    private static BigDecimal total(List<WasteMovement> lines) {
+        return lines.stream().map(WasteMovement::getQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * O parte a transferului, pentru toleranță: încărcătura cea mai mare cântărită (camionul întreg, altfel cea mai
+     * grea linie brută, altfel totalul) și dacă netul a ieșit din două cântăriri.
+     */
+    private static TransferTolerance.Side side(Scale scale, BigDecimal grossKg, BigDecimal tareKg,
+                                               List<WasteMovement> lines) {
+        if (scale == null) {
+            return null;
+        }
+        BigDecimal load = grossKg != null ? grossKg
+                : lines.stream().map(WasteMovement::getGrossKg).filter(java.util.Objects::nonNull)
+                        .max(BigDecimal::compareTo).orElse(total(lines));
+        boolean twice = (grossKg != null && tareKg != null)
+                || lines.stream().anyMatch(l -> l.getGrossKg() != null && l.getTareKg() != null);
+        return new TransferTolerance.Side(scale.getAccuracyClass(), scale.getDivisionKg(), load, twice);
     }
 
     /**
@@ -795,8 +1025,9 @@ public class WeighingOperationService {
                 () -> scaleService.eventsOf(List.of(o.getScale().getId())).getOrDefault(o.getScale().getId(), List.of())));
     }
 
-    private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> lines,
+    private static WeighingOperationResponse toResponse(WeighingOperation o, List<WasteMovement> all,
                                                         boolean pricesVisible, ScaleLegality.State scaleState) {
+        List<WasteMovement> lines = all.stream().filter(m -> m.getOperation() != WasteOperation.TRANSFERRED_IN).toList();
         Partner partner = o.getPartner();
         NaturalPerson person = o.getNaturalPerson();
         return new WeighingOperationResponse(o.getId(), o.getType(), o.getNumber(), o.getDate(),
@@ -815,7 +1046,23 @@ public class WeighingOperationService {
                 o.getScale() == null ? null : o.getScale().getName(),
                 scaleState, o.getScaleOverrideReason(),
                 payment(o, lines),
-                lines.stream().map(m -> toLine(m, pricesVisible)).toList());
+                lines.stream().map(m -> toLine(m, pricesVisible)).toList(),
+                transfer(o, lines, all.stream().filter(m -> m.getOperation() == WasteOperation.TRANSFERRED_IN).toList()));
+    }
+
+    private static WeighingOperationResponse.Transfer transfer(WeighingOperation o, List<WasteMovement> sent,
+                                                               List<WasteMovement> received) {
+        if (o.getType() != WeighingOperationType.TRANSFER) {
+            return null;
+        }
+        WorkPoint target = o.getTargetWorkPoint();
+        Scale scale = o.getReceiptScale();
+        return new WeighingOperationResponse.Transfer(target.getId(), target.getName(), o.getDispatchedAt(),
+                o.getReceivedOn(), scale == null ? null : scale.getId(), scale == null ? null : scale.getName(),
+                o.getReceiptScaleState(), o.getReceiptScaleOverrideReason(), o.getReceiptGrossKg(), o.getReceiptTareKg(),
+                total(sent), received.isEmpty() ? null : total(received), o.getToleranceKg(), o.getDifferenceKg(),
+                o.getNirNumber(), o.getDifferenceReason(),
+                received.stream().map(m -> toLine(m, false)).toList());
     }
 
     /** D1.8 — prețul și valoarea pleacă doar către cine le vede. */

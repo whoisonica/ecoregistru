@@ -18,7 +18,9 @@ import {
   openWeighingDocument,
   useCashCheck,
   useUpdateWeighingOperation,
+  useTransferTargets,
 } from "@/hooks/useWeighingOperations";
+import { ReceiveTransferDialog } from "@/components/depot/ReceiveTransferDialog";
 import { canManage, canWrite } from "@/lib/roles";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
@@ -132,6 +134,11 @@ export function WeighingOperationDialog({
 
   const direction = operation?.type ?? type;
   const inbound = direction === "IN";
+  // D2.5 — transferul între depozitele firmei: destinație în loc de partener, fără preț, cod R/D sau plată.
+  const transfer = direction === "TRANSFER";
+  const transferTargets = useTransferTargets(transfer);
+  const [targetWorkPointId, setTargetWorkPointId] = useState(operation?.transfer?.targetWorkPointId ?? "");
+  const [receiving, setReceiving] = useState(false);
   const editable = !operation || operation.status === "IN_PROGRESS";
   // Serverul spune dacă omul ăsta vede prețurile (D1.8); regula nu se reface aici. Cât firma nu s-a
   // încărcat, rubrica lipsește — mai bine o rubrică apărută târziu decât una care se ia înapoi.
@@ -333,18 +340,19 @@ export function WeighingOperationDialog({
       type: direction,
       workPointId,
       date,
-      partnerId: fromPerson ? null : partnerId || null,
-      naturalPersonId: fromPerson ? personId || null : null,
+      partnerId: fromPerson || transfer ? null : partnerId || null,
+      naturalPersonId: fromPerson && !transfer ? personId || null : null,
       driverId: listedDriver?.id ?? null,
       driverName: driverName.trim() || null,
       vehicleId: fleetVehicle?.id ?? null,
       vehicleRegistration: vehicle.trim() || null,
       orderNumber: orderNumber.trim() || null,
-      paymentMethod: payment || null,
-      receiptNumber: receipt.trim() || null,
+      paymentMethod: transfer ? null : payment || null,
+      receiptNumber: transfer ? null : receipt.trim() || null,
       ownHousehold: fromPerson ? ownHousehold : null,
       notes: notes.trim() || null,
       scaleId: scaleId || null,
+      targetWorkPointId: transfer ? targetWorkPointId || null : null,
     };
   }
 
@@ -371,8 +379,8 @@ export function WeighingOperationDialog({
             // care nu se potrivește cu cântărirea.
             netKg: num(l.gross) != null && num(l.tare) != null ? null : num(l.net),
             finalKg: num(l.final),
-            unitPrice: pricesVisible ? num(l.price) : null,
-            operationCode: inbound ? null : (l.code || null) as WasteOperationCode | null,
+            unitPrice: pricesVisible && !transfer ? num(l.price) : null,
+            operationCode: inbound || transfer ? null : (l.code || null) as WasteOperationCode | null,
             notes: null,
           })),
         },
@@ -399,9 +407,9 @@ export function WeighingOperationDialog({
       return;
     }
     confirm({
-      title: t.confirmFinalizeTitle,
-      message: t.confirmFinalize,
-      confirmLabel: t.finalize,
+      title: transfer ? t.confirmDispatchTitle : t.confirmFinalizeTitle,
+      message: transfer ? t.confirmDispatch : t.confirmFinalize,
+      confirmLabel: transfer ? t.dispatch : t.finalize,
       onConfirm: async () => {
         try {
           const saved = await save();
@@ -412,7 +420,7 @@ export function WeighingOperationDialog({
             return;
           }
           await finalizeMut.mutateAsync({ id: saved.id });
-          notify(t.finalized, "success");
+          notify(transfer ? t.dispatched : t.finalized, "success");
           onClose();
         } catch (err) {
           notify(apiErrorMessage(err, t.saveError), "error");
@@ -426,7 +434,7 @@ export function WeighingOperationDialog({
     try {
       await finalizeMut.mutateAsync({ id: scaleReasonFor.id, scaleReason: scaleReason.trim() });
       setScaleReasonFor(null);
-      notify(t.finalized, "success");
+      notify(transfer ? t.dispatched : t.finalized, "success");
       onClose();
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
@@ -445,10 +453,12 @@ export function WeighingOperationDialog({
   }
 
   const title = operation
-    ? `${inbound ? t.tabIn : t.tabOut} · ${operation.number}`
-    : inbound
-      ? t.newIn
-      : t.newOut;
+    ? `${transfer ? t.tabTransfer : inbound ? t.tabIn : t.tabOut} · ${operation.number}`
+    : transfer
+      ? t.newTransfer
+      : inbound
+        ? t.newIn
+        : t.newOut;
 
   return (
     <>
@@ -508,11 +518,16 @@ export function WeighingOperationDialog({
             {editable &&
               (approver ? (
                 <Button onClick={handleFinalize} disabled={busy}>
-                  {t.finalize}
+                  {transfer ? t.dispatch : t.finalize}
                 </Button>
               ) : (
                 <p className="self-center text-xs text-content-muted">{t.finalizeHint}</p>
               ))}
+            {operation?.status === "IN_TRANSIT" && approver && (
+              <Button onClick={() => setReceiving(true)} disabled={busy}>
+                {t.receive}
+              </Button>
+            )}
             {operation && operation.status !== "CANCELLED" && approver && (
               <Button
                 variant="ghost"
@@ -539,7 +554,7 @@ export function WeighingOperationDialog({
                 />
               </div>
               <div>
-                <Label htmlFor="wo-wp">{t.workPoint}</Label>
+                <Label htmlFor="wo-wp">{transfer ? t.transferFrom : t.workPoint}</Label>
                 <Select
                   id="wo-wp"
                   value={workPointId}
@@ -568,7 +583,27 @@ export function WeighingOperationDialog({
               />
             )}
 
-            {fromPerson && inbound ? (
+            {transfer ? (
+              <div>
+                <Label htmlFor="wo-target">{t.transferTo}</Label>
+                <Select
+                  id="wo-target"
+                  value={targetWorkPointId}
+                  onChange={(e) => setTargetWorkPointId(e.target.value)}
+                  disabled={!editable}
+                >
+                  <option value="">{t.transferToPlaceholder}</option>
+                  {(transferTargets.data ?? [])
+                    .filter((w) => w.id !== workPointId || w.id === targetWorkPointId)
+                    .map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))}
+                </Select>
+                <p className="mt-1 text-xs text-content-muted">{t.transferHint}</p>
+              </div>
+            ) : fromPerson && inbound ? (
               <div>
                 <Label htmlFor="wo-person">{t.person}</Label>
                 <Select
@@ -846,7 +881,7 @@ export function WeighingOperationDialog({
                           disabled={!editable}
                         />
                       </div>
-                      {pricesVisible && (
+                      {pricesVisible && !transfer && (
                         <div>
                           <Label htmlFor={`wo-p-${line.key}`}>{t.linePrice}</Label>
                           <Input
@@ -858,7 +893,7 @@ export function WeighingOperationDialog({
                           />
                         </div>
                       )}
-                      {!inbound && (
+                      {!inbound && !transfer && (
                         <div>
                           <Label htmlFor={`wo-c-${line.key}`}>{t.lineCode}</Label>
                           <Select
@@ -878,7 +913,7 @@ export function WeighingOperationDialog({
                           </Select>
                         </div>
                       )}
-                      {pricesVisible && final != null && num(line.price) != null && (
+                      {pricesVisible && !transfer && final != null && num(line.price) != null && (
                         <div className="self-end">
                           <span className="text-xs text-content-muted">{t.lineTotal}</span>
                           <p className="font-mono tabular-nums text-content">
@@ -900,6 +935,22 @@ export function WeighingOperationDialog({
             </div>
           </FormSection>
 
+          {transfer && operation?.transfer && operation.status !== "IN_PROGRESS" && (
+            <TransferReceipt transfer={operation.transfer} />
+          )}
+
+          {transfer ? (
+            <div>
+              <Label htmlFor="wo-notes">{t.notes}</Label>
+              <Textarea
+                id="wo-notes"
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={!editable}
+              />
+            </div>
+          ) : (
           <FormSection title={t.sectionPayment}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
@@ -1026,8 +1077,20 @@ export function WeighingOperationDialog({
               />
             </div>
           </FormSection>
+          )}
         </div>
       </Dialog>
+
+      {receiving && operation && (
+        <ReceiveTransferDialog
+          operation={operation}
+          onClose={() => setReceiving(false)}
+          onReceived={() => {
+            setReceiving(false);
+            onClose();
+          }}
+        />
+      )}
 
       <Dialog
         open={cancelling}
@@ -1095,6 +1158,41 @@ export function WeighingOperationDialog({
 
       {confirmDialog}
     </>
+  );
+}
+
+const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
+
+/** D2.5 — ce s-a întâmplat la destinație: data, cântarul, cât a ajuns și diferența față de plecare. */
+function TransferReceipt({ transfer }: { transfer: NonNullable<WeighingOperation["transfer"]> }) {
+  const kg = (value: number | null) => (value == null ? "—" : `${kgFormat.format(value)} kg`);
+  return (
+    <FormSection title={t.receiptSection}>
+      {transfer.receivedOn == null ? (
+        <p className="text-sm text-content-muted">
+          {t.statusInTransit} · {transfer.targetWorkPointName}
+        </p>
+      ) : (
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-2 border border-line bg-surface-sunken p-3 sm:grid-cols-4">
+          <Figure label={t.receivedOn} value={transfer.receivedOn.split("-").reverse().join(".")} />
+          <Figure label={t.receiptSent} value={kg(transfer.sentKg)} />
+          <Figure label={t.receiptReceived} value={kg(transfer.receivedKg)} />
+          <Figure label={t.difference} value={kg(transfer.differenceKg)} />
+          <Figure
+            label={t.tolerance}
+            value={transfer.toleranceKg == null ? t.toleranceUnknown : `± ${kg(transfer.toleranceKg)}`}
+          />
+          {transfer.receiptScaleName && <Figure label={t.scale} value={transfer.receiptScaleName} />}
+          {transfer.nirNumber && <Figure label={t.nirNumber} value={transfer.nirNumber} />}
+          {transfer.differenceReason && (
+            <div className="col-span-2 sm:col-span-4">
+              <dt className="text-xs text-content-muted">{t.differenceReason}</dt>
+              <dd className="text-sm text-content">{transfer.differenceReason}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+    </FormSection>
   );
 }
 
