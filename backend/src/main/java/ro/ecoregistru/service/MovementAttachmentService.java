@@ -48,10 +48,21 @@ public class MovementAttachmentService {
     CloudinaryStorageService storageService;
     WasteMovementMapper mapper;
 
+    /**
+     * @param clientUploadId cheia de idempotență a aplicației mobile (V67), sau null. Cu o cheie deja
+     *     folosită pe aceeași mișcare, întoarce atașamentul existent și nu urcă nimic: telefonul care
+     *     și-a pierdut răspunsul reîncearcă, nu trimite o a doua poză.
+     */
     @Transactional
-    public AttachmentResponse addAttachment(UUID movementId, MultipartFile file) {
+    public AttachmentResponse addAttachment(UUID movementId, MultipartFile file, UUID clientUploadId) {
         UUID tenantId = TenantContext.require();
         WasteMovement movement = requireMovement(movementId, tenantId);
+        if (clientUploadId != null) {
+            var existing = attachmentRepository.findByMovement_IdAndClientUploadId(movementId, clientUploadId);
+            if (existing.isPresent()) {
+                return mapper.toAttachmentResponse(existing.get());
+            }
+        }
         if (file.getSize() > MAX_ATTACHMENT_BYTES) {
             throw new BadRequestException(ATTACHMENT_TOO_LARGE);
         }
@@ -71,6 +82,7 @@ public class MovementAttachmentService {
                 .fileName(safeFileName(file.getOriginalFilename()))
                 .contentType(file.getContentType())
                 .sizeBytes(file.getSize())
+                .clientUploadId(clientUploadId)
                 .createdAt(Instant.now())
                 .build();
         movement.getAttachments().add(attachment);

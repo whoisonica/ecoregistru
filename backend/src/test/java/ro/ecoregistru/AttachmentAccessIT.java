@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -318,5 +319,68 @@ class AttachmentAccessIT {
                 .andExpect(content().string(containsString("aviz.pdf")))
                 .andExpect(content().string(not(containsString("cloudinary"))))
                 .andExpect(content().string(not(containsString("http"))));
+    }
+
+    // ---------- V67 · reîncercarea telefonului nu dublează poza ----------
+
+    /**
+     * Coada de pe telefon trimite aceeași poză din nou când răspunsul s-a pierdut pe drum. Cu aceeași
+     * cheie, a doua cerere primește atașamentul deja urcat — un singur rând, o singură urcare.
+     */
+    @Test
+    void theSameClientUploadIdTwiceIsOneAttachmentAndOneUpload() throws Exception {
+        stubUpload();
+        String key = UUID.randomUUID().toString();
+
+        String first = uploadPhoto(key);
+        String second = uploadPhoto(key);
+
+        assertThat(second).isEqualTo(first);
+        verify(storageService, times(1)).upload(any(), anyString());
+        assertThat(attachmentsOf(movementA)).isEqualTo(1);
+    }
+
+    /** Controlul: două poze diferite (două chei) rămân două — altfel regula ar înghiți poze. */
+    @Test
+    void twoClientUploadIdsAreTwoAttachments() throws Exception {
+        stubUpload();
+
+        assertThat(uploadPhoto(UUID.randomUUID().toString()))
+                .isNotEqualTo(uploadPhoto(UUID.randomUUID().toString()));
+        assertThat(attachmentsOf(movementA)).isEqualTo(2);
+    }
+
+    /** Webul nu trimite cheie: două urcări rămân două, ca până acum. */
+    @Test
+    void withoutAKeyEveryUploadIsANewAttachment() throws Exception {
+        stubUpload();
+
+        assertThat(uploadPhoto(null)).isNotEqualTo(uploadPhoto(null));
+        assertThat(attachmentsOf(movementA)).isEqualTo(2);
+    }
+
+    private void stubUpload() {
+        when(storageService.upload(any(), anyString())).thenAnswer(inv -> new CloudinaryStorageService.StoredFile(
+                "https://res.cloudinary.com/x/y.jpg", "ecoregistru/movements/x/" + UUID.randomUUID(),
+                "image", "authenticated", "jpg"));
+    }
+
+    private String uploadPhoto(String clientUploadId) throws Exception {
+        var photo = new MockMultipartFile("file", "aviz.jpg", "image/jpeg", FILE_BYTES);
+        var request = multipart("/api/v1/movements/" + movementA + "/attachments").file(photo)
+                .header("Authorization", "Bearer " + tokenA);
+        if (clientUploadId != null) {
+            request.param("clientUploadId", clientUploadId);
+        }
+        return com.jayway.jsonpath.JsonPath.read(
+                mockMvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(),
+                "$.id");
+    }
+
+    private long attachmentsOf(UUID movementId) {
+        return attachmentRepository.findAll().stream()
+                .filter(a -> a.getMovement().getId().equals(movementId))
+                .filter(a -> !a.getId().equals(attachmentA))
+                .count();
     }
 }

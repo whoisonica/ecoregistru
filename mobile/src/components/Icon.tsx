@@ -31,8 +31,12 @@ export function Icon({ name, size = 24, color, strokeWidth = 1.8 }: {
   return <SvgXml xml={xml} width={size} height={size} />;
 }
 
+/**
+ * Semnul WasteHouse — „bucla-casă”, alb pe #047857 (proprietarul, 15.09.2026: „peste tot, același logo”);
+ * același path ca `frontend/src/components/BrandName.tsx` și iconițele din `assets/`.
+ */
 export function Logo({ size = 20 }: { size?: number }) {
   const xml =
-    '<svg viewBox="0 0 24 24"><rect x="3" y="14" width="18" height="6" rx="1.5" fill="#009A44"/><path d="M6 14 12 5l6 9" fill="none" stroke="#7CF2A9" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="5" r="1.6" fill="#7CF2A9"/></svg>';
+    '<svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#047857"/><path d="M11.5 23.5H7V13L16 5l9 8v10.5h-7.5M21 20l-3.5 3.5L21 27" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   return <SvgXml xml={xml} width={size} height={size} />;
 }

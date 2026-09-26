@@ -243,8 +243,10 @@ public class WasteMovementController {
     @PreAuthorize(CAN_WRITE)
     public ResponseEntity<AttachmentResponse> addAttachment(
             @PathVariable UUID id,
-            @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(attachmentService.addAttachment(id, file));
+            @RequestParam("file") MultipartFile file,
+            // Numai aplicația mobilă o trimite (V67): aceeași la fiecare reîncercare a aceleiași poze.
+            @RequestParam(value = "clientUploadId", required = false) UUID clientUploadId) {
+        return ResponseEntity.ok(attachmentService.addAttachment(id, file, clientUploadId));
     }
 
     /**

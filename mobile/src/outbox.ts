@@ -246,7 +246,8 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         );
         sent++;
       }
-      if (item.photoUri) await api.uploadAttachment(itemAuth, movementId, item.photoUri);
+      // Cheia rândului e și cheia pozei (V67): o reîncercare după un răspuns pierdut nu mai dublează poza.
+      if (item.photoUri) await api.uploadAttachment(itemAuth, movementId, item.photoUri, item.id);
       await d.runAsync("DELETE FROM outbox WHERE id = ?", item.id);
       dropPhoto(item.photoUri);
       changed();

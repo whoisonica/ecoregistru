@@ -67,6 +67,12 @@ public class Attachment {
     /** Mărimea fișierului primit, pentru estimarea dosarului (V57). Null pe rândurile de dinainte. */
     Long sizeBytes;
 
+    /**
+     * Cheia de idempotență trimisă de aplicația mobilă (V67): aceeași la fiecare reîncercare a
+     * aceleiași poze. Null pe web și pe rândurile de dinainte.
+     */
+    UUID clientUploadId;
+
     @Column(nullable = false)
     Instant createdAt;
 }

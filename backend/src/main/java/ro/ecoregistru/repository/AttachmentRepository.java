@@ -13,6 +13,8 @@ import java.util.UUID;
 public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
     Optional<Attachment> findByIdAndMovement_Id(UUID id, UUID movementId);
 
+    Optional<Attachment> findByMovement_IdAndClientUploadId(UUID movementId, UUID clientUploadId);
+
     /**
      * Every attachment of a year's live movements, in one statement — for the control dossier,
      * which used to read them movement by movement (BUG-016). Filtered by date, not by a list of

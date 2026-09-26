@@ -325,8 +325,13 @@ export function createMovement(auth: Auth, body: unknown) {
   return request<WasteMovement>("/api/v1/movements", { method: "POST", auth, body });
 }
 
-export function uploadAttachment(auth: Auth, movementId: string, photoUri: string) {
+/**
+ * @param clientUploadId aceeași la fiecare reîncercare a aceleiași poze (V67): serverul întoarce atunci
+ *     atașamentul deja urcat. Un server de dinainte de V67 ignoră câmpul — deci nimic nu se strică.
+ */
+export function uploadAttachment(auth: Auth, movementId: string, photoUri: string, clientUploadId: string) {
   const form = new FormData();
+  form.append("clientUploadId", clientUploadId);
   // Fișierul de pe disc ca Blob (`expo-file-system`). Forma veche `{ uri, name, type }` e refuzată de
   // `fetch`-ul din Expo 57 („Unsupported FormDataPart implementation”) — prinsă pe simulator la M1b.
   form.append("file", new File(photoUri), "aviz.jpg");

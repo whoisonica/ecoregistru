@@ -14,7 +14,7 @@
     "android": {
       "package": "ro.wastehouse.app",
       "adaptiveIcon": {
-        "backgroundColor": "#161B18",
+        "backgroundColor": "#047857",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -36,7 +36,14 @@
           "microphonePermission": false
         }
       ],
-      "./plugins/mlkit-bundled"
+      "./plugins/mlkit-bundled",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#047857"
+        }
+      ]
     ],
     "owner": "wastehouses-team",
     "extra": {
