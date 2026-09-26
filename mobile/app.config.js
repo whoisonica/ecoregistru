@@ -5,7 +5,21 @@
 const fs = require("fs");
 const path = require("path");
 
-module.exports = ({ config }) => {
+// `WH_FARA_PUSH=1`: build semnat cu o echipă Apple personală (gratuită), care nu are voie la Push Notifications —
+// fără dreptul `aps-environment` semnarea trece. Înregistrarea tokenului
+// cade atunci prinsă (`src/push.ts`), restul aplicației merge. Pe 26.09.2026, pentru iPhone-ul proprietarului.
+// Pluginul se aplică automat pentru pachetul instalat, deci nu ajunge scos din listă: dreptul se șterge după el.
+function withoutPush(config) {
+  if (process.env.WH_FARA_PUSH !== "1") return config;
+  const { withEntitlementsPlist } = require("expo/config-plugins");
+  return withEntitlementsPlist(config, (c) => {
+    delete c.modResults["aps-environment"];
+    return c;
+  });
+}
+
+module.exports = ({ config: base }) => {
+  const config = withoutPush(base);
   const file = config.android?.googleServicesFile;
   if (file && !fs.existsSync(path.resolve(__dirname, file))) {
     console.warn(
