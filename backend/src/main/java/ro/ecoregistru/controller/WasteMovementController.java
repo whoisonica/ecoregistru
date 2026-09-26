@@ -296,7 +296,7 @@ public class WasteMovementController {
      * a fost ales. Orice altceva (docx, xls, csv, txt, tipuri stricate, tipuri necunoscute) se
      * descarcă în loc să se deschidă. Nimic nu se refuză: fişierul iese întreg, doar nu se execută.
      */
-    private static MediaType safeInlineType(String declared) {
+    static MediaType safeInlineType(String declared) {
         if (declared == null) {
             return MediaType.APPLICATION_OCTET_STREAM;
         }

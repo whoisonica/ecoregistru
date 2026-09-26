@@ -87,6 +87,11 @@ public enum ErrorMessageEnum {
 
     // --- Utilizatorii firmei (P1.12) ---
     CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),
+    // D2.4 — accesul pe depozit.
+    USER_WORK_POINTS_REQUIRED("user.work.points.required",
+            "Alege cel puțin un depozit sau lasă „Toate depozitele”."),
+    USER_WORK_POINTS_ROLE("user.work.points.role",
+            "Administratorul vede toate depozitele. Depozitele se aleg doar pentru operatori și conturile de vizualizare."),
     LAST_ADMIN("user.last.admin", "E singurul administrator activ al firmei. Fă întâi pe altcineva administrator, apoi revino."),
     USER_NOT_PENDING("user.not.pending", "Invitația se retrimite doar unui cont care n-a intrat încă. Contul ăsta are deja parolă."),
     USER_NOT_DEACTIVATED("user.not.deactivated", "Contul nu e dezactivat, deci n-are ce reactiva."),
@@ -154,6 +159,9 @@ public enum ErrorMessageEnum {
     SCALE_DIVISION_NOT_POSITIVE("scale.division.not.positive", "Diviziunea trebuie să fie mai mare decât zero."),
     SCALE_HAS_WEIGHINGS("scale.has.weighings", "Cu cântarul ăsta s-au făcut cântăriri, deci fișa lui rămâne. Trece-l „Scos din uz”."),
     SCALE_EVENT_NOT_FOUND("scale.event.not.found", "Rândul din istoricul cântarului nu a fost găsit."),
+    SCALE_DOCUMENT_REQUIRED("scale.document.required", "Alege fișierul: o poză sau un PDF al documentului."),
+    SCALE_BULLETIN_ONLY_VERIFICATION("scale.bulletin.only.verification",
+            "Buletinul se atașează doar la o verificare. La reparație sau incident, scrie în observații."),
     SCALE_EVENT_KIND_REQUIRED("scale.event.kind.required", "Alege ce s-a întâmplat: verificare, reparație sau incident."),
     SCALE_EVENT_DATE_REQUIRED("scale.event.date.required", "Scrie data."),
     SCALE_RESULT_REQUIRED("scale.result.required", "Alege rezultatul verificării de pe buletin: ADMIS sau RESPINS."),

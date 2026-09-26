@@ -30,7 +30,13 @@ public record ScaleResponse(
         ScaleStatus status,
         ScaleLegality.State state,
         LocalDate validUntil,
+        /** V70 — dovada declarării la BRML, ca fișier; null dacă n-a fost urcată. */
+        Document brmlProof,
         List<Event> events) {
+
+    /** Un fișier al cântarului; conținutul se citește prin {@code /scales/{id}/documents/{documentId}}. */
+    public record Document(UUID id, String fileName, String contentType) {
+    }
 
     public record Event(UUID id,
                         ScaleEventKind kind,
@@ -40,6 +46,8 @@ public record ScaleResponse(
                         LocalDate validUntil,
                         String laboratory,
                         String verifier,
-                        String notes) {
+                        String notes,
+                        /** V70 — buletinul ca fișier, doar la verificare; null dacă n-a fost urcat. */
+                        Document bulletinFile) {
     }
 }

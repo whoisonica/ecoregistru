@@ -97,6 +97,15 @@ public class AppUser implements UserDetails {
     @Column(name = "deactivated_at")
     Instant deactivatedAt;
 
+    /**
+     * D2.4 — true: every depot of the firm, including the ones opened later (the default, and what every
+     * account created before V69 has — the owner's decision, 16.09.2026). False: only the depots listed in
+     * {@code user_work_points}. Read only for OPERATOR and CLIENT_VIEWER; see {@code DepotAccess}.
+     */
+    @Builder.Default
+    @Column(name = "all_work_points", nullable = false)
+    boolean allWorkPoints = true;
+
     @Column(nullable = false)
     Instant createdAt;
 

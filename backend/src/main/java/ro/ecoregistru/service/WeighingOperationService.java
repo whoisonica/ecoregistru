@@ -89,6 +89,17 @@ public class WeighingOperationService {
     MonthlyEvidenceRepository evidenceRepository;
     ro.ecoregistru.repository.AppUserRepository userRepository;
     ro.ecoregistru.service.export.DepotRegisterGenerator registerGenerator;
+    DepotAccess depotAccess;
+
+    /** Operațiunea firmei, dacă e pe un depozit al utilizatorului (D2.4); altfel 404, ca una inexistentă. */
+    WeighingOperation requireOperation(UUID id, UUID tenantId) {
+        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
+                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (!depotAccess.allows(operation.getWorkPoint().getId())) {
+            throw new NotFoundException(WEIGHING_OPERATION_NOT_FOUND);
+        }
+        return operation;
+    }
 
     @Transactional
     public WeighingOperationResponse create(WeighingOperationRequest request) {
@@ -110,8 +121,8 @@ public class WeighingOperationService {
             throw new BusinessException(WEIGHING_OPERATION_PERSON_ONLY_IN);
         }
 
-        WorkPoint workPoint = workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
-                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        WorkPoint workPoint = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
         Partner partner = request.partnerId() == null ? null
                 : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
@@ -171,8 +182,7 @@ public class WeighingOperationService {
     public WeighingOperationResponse update(UUID id, WeighingOperationRequest request) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
@@ -189,8 +199,8 @@ public class WeighingOperationService {
             throw new BusinessException(WEIGHING_OPERATION_PERSON_ONLY_IN);
         }
 
-        WorkPoint workPoint = workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
-                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        WorkPoint workPoint = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
         Partner partner = request.partnerId() == null ? null
                 : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
                         .orElseThrow(() -> new NotFoundException(PARTNER_NOT_FOUND));
@@ -250,8 +260,7 @@ public class WeighingOperationService {
     public WeighingOperationResponse replaceLines(UUID id, WeighingLinesRequest request) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
@@ -307,8 +316,7 @@ public class WeighingOperationService {
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
         requireApprover(user);
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
@@ -345,8 +353,7 @@ public class WeighingOperationService {
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
         requireApprover(user);
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         if (operation.getStatus() == WeighingOperationStatus.CANCELLED) {
             throw new BusinessException(WEIGHING_OPERATION_ALREADY_CANCELLED);
         }
@@ -410,8 +417,7 @@ public class WeighingOperationService {
     @Transactional(readOnly = true)
     public WeighingOperationResponse get(UUID id) {
         UUID tenantId = TenantContext.require();
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id),
                 pricesVisible(operation.getCompany()));
     }
@@ -436,7 +442,8 @@ public class WeighingOperationService {
             from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
             to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
         }
-        List<WeighingOperation> operations = operationRepository.findForScreen(tenantId, type, from, to);
+        List<WeighingOperation> operations = depotAccess.filter(
+                operationRepository.findForScreen(tenantId, type, from, to), o -> o.getWorkPoint().getId());
         if (operations.isEmpty()) {
             return List.of();
         }
@@ -468,7 +475,8 @@ public class WeighingOperationService {
         java.time.YearMonth period = month == null ? null : java.time.YearMonth.of(year, month);
         java.time.LocalDate from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
         java.time.LocalDate to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
-        List<WeighingOperation> operations = new ArrayList<>(operationRepository.findForScreen(tenantId, null, from, to));
+        List<WeighingOperation> operations = new ArrayList<>(depotAccess.filter(
+                operationRepository.findForScreen(tenantId, null, from, to), o -> o.getWorkPoint().getId()));
         operations.sort(java.util.Comparator.comparing(WeighingOperation::getDate)
                 .thenComparing(WeighingOperation::getType)
                 .thenComparingInt(WeighingOperation::getNumber));

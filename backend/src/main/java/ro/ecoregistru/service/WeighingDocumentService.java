@@ -57,6 +57,7 @@ public class WeighingDocumentService {
     Anexa3FormGenerator anexa3Generator;
     AvizGenerator avizGenerator;
     ro.ecoregistru.service.export.BorderouGenerator borderouGenerator;
+    DepotAccess depotAccess;
 
     /** Alocă numărul la prima tipărire și îl păstrează: retipărirea e același document. */
     @Transactional
@@ -102,8 +103,7 @@ public class WeighingDocumentService {
     @Transactional
     public byte[] renderBorderou(UUID id) {
         UUID tenantId = TenantContext.require();
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         Company company = requireCompany(tenantId);
         requirePricesVisible(company, "Borderoul arată prețurile depozitului.");
         if (operation.getType() != WeighingOperationType.IN || operation.getNaturalPerson() == null) {
@@ -134,8 +134,7 @@ public class WeighingDocumentService {
     @Transactional(readOnly = true)
     public CashCheck cashCheck(UUID id) {
         UUID tenantId = TenantContext.require();
-        WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
-                .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        WeighingOperation operation = requireOperation(id, tenantId);
         if (operation.getNaturalPerson() == null) {
             return new CashCheck(false, null, CASH_DAILY_LIMIT);
         }
@@ -165,9 +164,18 @@ public class WeighingDocumentService {
         }
     }
 
-    private WeighingOperation requireHandover(UUID id, UUID tenantId) {
+    /** D2.4 — documentele unei operațiuni din alt depozit decât ale utilizatorului: 404, ca operațiunea. */
+    private WeighingOperation requireOperation(UUID id, UUID tenantId) {
         WeighingOperation operation = operationRepository.findByIdAndCompany_Id(id, tenantId)
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
+        if (!depotAccess.allows(operation.getWorkPoint().getId())) {
+            throw new NotFoundException(WEIGHING_OPERATION_NOT_FOUND);
+        }
+        return operation;
+    }
+
+    private WeighingOperation requireHandover(UUID id, UUID tenantId) {
+        WeighingOperation operation = requireOperation(id, tenantId);
         if (operation.getType() != WeighingOperationType.OUT || operation.getPartner() == null) {
             throw new BusinessException(WEIGHING_DOCUMENT_REQUIRES_HANDOVER);
         }

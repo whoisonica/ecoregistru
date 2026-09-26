@@ -44,6 +44,7 @@ public class MovementAttachmentService {
     public static final long MAX_ATTACHMENT_BYTES = 10L * 1024 * 1024;
 
     WasteMovementRepository movementRepository;
+    DepotAccess depotAccess;
     AttachmentRepository attachmentRepository;
     CloudinaryStorageService storageService;
     WasteMovementMapper mapper;
@@ -171,8 +172,10 @@ public class MovementAttachmentService {
 
     public record AttachmentContent(byte[] bytes, String contentType, String fileName) {}
 
+    /** D2.4 — o mișcare dintr-un depozit care nu e al utilizatorului e „negăsită”, ca una a altei firme. */
     private WasteMovement requireMovement(UUID id, UUID tenantId) {
         return movementRepository.findByIdAndCompany_IdAndDeletedFalse(id, tenantId)
+                .filter(m -> depotAccess.allows(m.getWorkPoint().getId()))
                 .orElseThrow(() -> new NotFoundException(MOVEMENT_NOT_FOUND));
     }
 }

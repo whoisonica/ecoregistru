@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.InviteUserRequest;
+import ro.ecoregistru.controller.request.UserWorkPointsRequest;
 import ro.ecoregistru.controller.response.CompanyUserResponse;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
@@ -32,6 +33,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_INVITATION;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_NOT_PENDING;
 import static ro.ecoregistru.exception.ErrorMessageEnum.USER_STILL_PENDING;
+import static ro.ecoregistru.exception.ErrorMessageEnum.USER_WORK_POINTS_REQUIRED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.USER_WORK_POINTS_ROLE;
+import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
 
 /**
  * P1.12 — a client firm administers its own users.
@@ -68,6 +72,7 @@ public class CompanyUserService {
     VerificationRecordRepository verificationRecordRepository;
     AuthenticationService authenticationService;
     DeviceSessionService deviceSessionService;
+    ro.ecoregistru.repository.WorkPointRepository workPointRepository;
 
     /**
      * The tenant's members: active, invited and switched-off alike.
@@ -79,9 +84,13 @@ public class CompanyUserService {
     @Transactional(readOnly = true)
     public List<CompanyUserResponse> list() {
         UUID tenantId = TenantContext.require();
+        java.util.Map<UUID, List<UUID>> depots = appUserRepository.findWorkPointsOfCompany(tenantId).stream()
+                .collect(java.util.stream.Collectors.groupingBy(AppUserRepository.UserWorkPoint::getUserId,
+                        java.util.stream.Collectors.mapping(AppUserRepository.UserWorkPoint::getWorkPointId,
+                                java.util.stream.Collectors.toList())));
         return appUserRepository.findAllByCompany_Id(tenantId).stream()
                 .sorted(Comparator.comparing(AppUser::getEmail, String.CASE_INSENSITIVE_ORDER))
-                .map(CompanyUserResponse::from)
+                .map(u -> CompanyUserResponse.from(u, depots.getOrDefault(u.getId(), List.of())))
                 .toList();
     }
 
@@ -216,6 +225,34 @@ public class CompanyUserService {
         user.setRole(role);
         appUserRepository.save(user);
         return CompanyUserResponse.from(user);
+    }
+
+    /**
+     * D2.4 — pe ce depozite lucrează un operator sau un cont de vizualizare. Adminul nu se restrânge (vede
+     * mereu tot, {@code DepotAccess}), deci o cerere pentru el e o greșeală, nu o setare ignorată. Pe sine
+     * nu se restrânge nimeni: rolul care poate ajunge aici oricum vede tot.
+     */
+    @Transactional
+    public CompanyUserResponse changeWorkPoints(UUID id, UserWorkPointsRequest request) {
+        UUID tenantId = TenantContext.require();
+        AppUser user = require(id);
+        if (!request.allWorkPoints() && !(user.getRole() == Role.OPERATOR || user.getRole() == Role.CLIENT_VIEWER)) {
+            throw new BusinessException(USER_WORK_POINTS_ROLE);
+        }
+        List<UUID> ids = request.allWorkPoints() || request.workPointIds() == null ? List.of()
+                : request.workPointIds().stream().distinct().toList();
+        if (!request.allWorkPoints() && ids.isEmpty()) {
+            throw new BusinessException(USER_WORK_POINTS_REQUIRED);
+        }
+        for (UUID workPointId : ids) {
+            workPointRepository.findByIdAndCompany_Id(workPointId, tenantId)
+                    .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        }
+        user.setAllWorkPoints(request.allWorkPoints());
+        appUserRepository.save(user);
+        appUserRepository.clearWorkPoints(user.getId());
+        ids.forEach(workPointId -> appUserRepository.addWorkPoint(user.getId(), workPointId));
+        return CompanyUserResponse.from(user, ids);
     }
 
     // --- guards ---

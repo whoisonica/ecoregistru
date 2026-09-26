@@ -5,6 +5,7 @@ import ro.ecoregistru.enums.CompanyUserStatus;
 import ro.ecoregistru.enums.Role;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,11 +30,19 @@ public record CompanyUserResponse(
         Instant createdAt,
         Instant deactivatedAt,
         /** BUG-038 — only on the answer to an invite: false when the mail did not go out. */
-        Boolean inviteEmailSent
+        Boolean inviteEmailSent,
+        /** D2.4 — true: every depot, including later ones. False: only {@link #workPointIds}. */
+        boolean allWorkPoints,
+        List<UUID> workPointIds
 ) {
 
     /** The one place the three states are read off the two columns. */
     public static CompanyUserResponse from(AppUser user) {
+        return from(user, List.of());
+    }
+
+    /** With the depots of a restricted user (D2.4); the list is empty when {@code allWorkPoints}. */
+    public static CompanyUserResponse from(AppUser user, List<UUID> workPointIds) {
         CompanyUserStatus status;
         if (user.isEnabled()) {
             status = CompanyUserStatus.ACTIVE;
@@ -45,13 +54,14 @@ public record CompanyUserResponse(
         return new CompanyUserResponse(
                 user.getId(), user.getEmail(), user.getRole(),
                 user.getFirstName(), user.getLastName(), user.isEnabled(),
-                status, user.getCreatedAt(), user.getDeactivatedAt(), null);
+                status, user.getCreatedAt(), user.getDeactivatedAt(), null,
+                user.isAllWorkPoints(), user.isAllWorkPoints() ? List.of() : List.copyOf(workPointIds));
     }
 
     /** The answer to an invite: the same row, plus whether the mail went out. */
     public static CompanyUserResponse invited(AppUser user) {
         CompanyUserResponse r = from(user);
         return new CompanyUserResponse(r.id, r.email, r.role, r.firstName, r.lastName, r.enabled,
-                r.status, r.createdAt, r.deactivatedAt, !user.isInviteEmailFailed());
+                r.status, r.createdAt, r.deactivatedAt, !user.isInviteEmailFailed(), r.allWorkPoints, r.workPointIds);
     }
 }

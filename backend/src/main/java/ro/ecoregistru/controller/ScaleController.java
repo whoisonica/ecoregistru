@@ -68,4 +68,43 @@ public class ScaleController {
     public ScaleResponse deleteEvent(@PathVariable UUID id, @PathVariable UUID eventId) {
         return service.deleteEvent(id, eventId);
     }
+
+    // --- V70: buletinul verificării și dovada BRML, ca fișiere ---
+
+    @PostMapping(value = "/{id}/brml-proof", consumes = "multipart/form-data")
+    @PreAuthorize(CAN_WRITE)
+    public ScaleResponse attachBrmlProof(@PathVariable UUID id,
+                                         @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return service.attach(id, null, file);
+    }
+
+    @PostMapping(value = "/{id}/events/{eventId}/bulletin", consumes = "multipart/form-data")
+    @PreAuthorize(CAN_WRITE)
+    public ScaleResponse attachBulletin(@PathVariable UUID id, @PathVariable UUID eventId,
+                                        @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return service.attach(id, eventId, file);
+    }
+
+    @DeleteMapping("/{id}/documents/{documentId}")
+    @PreAuthorize(CAN_WRITE)
+    public ScaleResponse detach(@PathVariable UUID id, @PathVariable UUID documentId) {
+        return service.detach(id, documentId);
+    }
+
+    /** Ca la atașamentele mișcărilor: se citește prin API, iar ce nu e PDF sau imagine se descarcă. */
+    @GetMapping("/{id}/documents/{documentId}")
+    public ResponseEntity<byte[]> content(@PathVariable UUID id, @PathVariable UUID documentId) {
+        var content = service.content(id, documentId);
+        org.springframework.http.MediaType type = WasteMovementController.safeInlineType(content.contentType());
+        var disposition = (type == org.springframework.http.MediaType.APPLICATION_OCTET_STREAM
+                        ? org.springframework.http.ContentDisposition.attachment()
+                        : org.springframework.http.ContentDisposition.inline())
+                .filename(content.fileName() == null ? "document" : content.fileName(),
+                        java.nio.charset.StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(type)
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(content.bytes());
+    }
 }

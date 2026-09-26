@@ -156,25 +156,26 @@ class DepotRegisterIT {
                     "Brut (kg)", "Tara (kg)", "Neto (kg)", "Final (kg)",
                     "Brut operațiune (kg)", "Tara operațiune (kg)", "Cod R/D",
                     "Stare", "Data finalizării", "Data anulării", "Anulat de", "Motiv anulare",
+                    "Cântar", "Starea cântarului", "Motiv cântar",
                     "Preț (lei/kg)", "Valoare (lei)");
             String finalizedOn = LocalDate.now(java.time.ZoneId.of("Europe/Bucharest"))
                     .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-            assertThat(dataRows(sheet, 27)).containsExactly(
+            assertThat(dataRows(sheet, 30)).containsExactly(
                     List.of("02.03.2026", "Intrare", 1.0, "", "Depozit Sud", "Partener PF", "Ion Popescu",
                             "Fier vechi", "17 04 05", name("17 04 05"), 35.0, "B 01 ABC", "Vasile Șofer",
-                            "", "", 35.0, 35.0, "", "", "", "În lucru", "", "", "", "", 1.1, 38.5),
+                            "", "", 35.0, 35.0, "", "", "", "În lucru", "", "", "", "", "", "", "", 1.1, 38.5),
                     List.of("05.03.2026", "Intrare", 2.0, "", "Depozit Sud", "Client / generator", "Magazin Alfa SRL",
                             "Carton", "15 01 01", name("15 01 01"), 390.0, "B 01 ABC", "Vasile Șofer",
-                            8000.0, 7600.0, 400.0, 390.0, 8000.0, 7000.0, "", "Finalizată", finalizedOn, "", "", "",
+                            8000.0, 7600.0, 400.0, 390.0, 8000.0, 7000.0, "", "Finalizată", finalizedOn, "", "", "", "", "", "",
                             0.5, 195.0),
                     List.of("05.03.2026", "Intrare", 2.0, "", "Depozit Sud", "Client / generator", "Magazin Alfa SRL",
                             "Fier vechi", "17 04 05", name("17 04 05"), 600.0, "B 01 ABC", "Vasile Șofer",
-                            7600.0, 7000.0, 600.0, 600.0, 8000.0, 7000.0, "", "Finalizată", finalizedOn, "", "", "",
+                            7600.0, 7000.0, 600.0, 600.0, 8000.0, 7000.0, "", "Finalizată", finalizedOn, "", "", "", "", "", "",
                             1.2, 720.0),
                     List.of("05.03.2026", "Ieșire", 7.0, "CMD-12", "Depozit Sud", "Destinatar", "Reciclator Beta SA",
                             "Carton", "15 01 01", name("15 01 01"), 480.0, "B 01 ABC", "Vasile Șofer",
                             2000.0, 1500.0, 500.0, 480.0, "", "", "R3", "Anulată", "", "06.03.2026",
-                            "Maria Ionescu", "Cântărire greșită", 0.4, 192.0));
+                            "Maria Ionescu", "Cântărire greșită", "", "", "", 0.4, 192.0));
         }
     }
 
@@ -186,9 +187,9 @@ class DepotRegisterIT {
         companyRepository.save(company);
         try (Workbook wb = xlsx(operator, "3")) {
             Sheet sheet = wb.getSheet("Registru");
-            assertThat(columnNames(sheet)).hasSize(25).doesNotContain("Preț (lei/kg)", "Valoare (lei)");
-            assertThat(dataRows(sheet, 30)).hasSize(4)
-                    .allSatisfy(row -> assertThat(row.subList(25, 30)).containsOnly(""));
+            assertThat(columnNames(sheet)).hasSize(28).doesNotContain("Preț (lei/kg)", "Valoare (lei)");
+            assertThat(dataRows(sheet, 33)).hasSize(4)
+                    .allSatisfy(row -> assertThat(row.subList(28, 33)).containsOnly(""));
         }
     }
 

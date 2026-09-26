@@ -588,6 +588,9 @@ export interface CompanyUser {
   deactivatedAt: string | null;
   /** Doar pe răspunsul la o invitație: `false` când mailul n-a plecat (BUG-038). */
   inviteEmailSent?: boolean | null;
+  /** D2.4 — `true`: toate depozitele, și cele de mâine. Altfel doar `workPointIds`. */
+  allWorkPoints: boolean;
+  workPointIds: string[];
 }
 
 // --- Work points ---
@@ -1131,6 +1134,15 @@ export interface ScaleEvent {
   laboratory: string | null;
   verifier: string | null;
   notes: string | null;
+  /** V70 — buletinul ca fișier, doar la verificare. */
+  bulletinFile: ScaleDocument | null;
+}
+
+/** Un fișier al cântarului; conținutul vine prin `/scales/{id}/documents/{documentId}`. */
+export interface ScaleDocument {
+  id: string;
+  fileName: string | null;
+  contentType: string | null;
 }
 
 export interface Scale {
@@ -1149,6 +1161,8 @@ export interface Scale {
   /** Starea de azi. */
   state: ScaleState;
   validUntil: string | null;
+  /** V70 — dovada declarării la BRML, ca fișier. */
+  brmlProof: ScaleDocument | null;
   /** Istoricul, cel mai nou primul. */
   events: ScaleEvent[];
 }

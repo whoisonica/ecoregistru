@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { notifyInvited } from "@/lib/inviteNotice";
 import { SETTINGS_CARD } from "@/components/ui/card";
-import { Ban, Mail, Plus, RotateCcw, ShieldCheck, Users, X } from "lucide-react";
+import { Ban, Mail, Plus, RotateCcw, ShieldCheck, Users, Warehouse, X } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import {
   useUsers,
@@ -12,7 +12,8 @@ import {
   useDeactivateUser,
   useReactivateUser,
 } from "@/hooks/useUsers";
-import type { CompanyUser, InviteRole, InviteUserInput } from "@/lib/types";
+import type { CompanyUser, InviteRole, InviteUserInput, WorkPoint } from "@/lib/types";
+import { UserDepotsDialog } from "@/components/UserDepotsDialog";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,18 @@ const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
  * <p>Rândul propriu n-are butoane, iar serverul refuză oricum: cine se dezactivează singur nu se
  * mai poate repara din aplicaţie.
  */
-export function CompanyUsersSection({ canManage, companyId }: { canManage: boolean; companyId?: string }) {
+export function CompanyUsersSection({
+  canManage,
+  companyId,
+  workPoints = [],
+  hasDepot = false,
+}: {
+  canManage: boolean;
+  companyId?: string;
+  /** D2.4 — la o firmă cu depozit și cu mai multe depozite, fiecare operator își are depozitele lui. */
+  workPoints?: WorkPoint[];
+  hasDepot?: boolean;
+}) {
   const { user: me } = useAuth();
   const { data: users, isLoading, isError, refetch } = useUsers(canManage, companyId);
   const inviteMut = useInviteCompanyUser(companyId);
@@ -62,6 +74,8 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
   const [confirm, confirmDialog] = useConfirm();
 
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [depotsOf, setDepotsOf] = useState<CompanyUser | null>(null);
+  const showDepots = hasDepot && workPoints.filter((wp) => wp.active).length > 1;
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("OPERATOR");
   const [firstName, setFirstName] = useState("");
@@ -190,6 +204,14 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
     return <Badge variant="muted">{t.statusDeactivated}</Badge>;
   }
 
+  /** „Toate”, numele singurului depozit, sau „2 din 3”. */
+  function depotsLabel(u: CompanyUser) {
+    if (u.allWorkPoints) return t.depotsAll;
+    const names = workPoints.filter((wp) => u.workPointIds.includes(wp.id)).map((wp) => wp.name);
+    if (names.length === 1) return names[0];
+    return t.depotsSome.replace("{n}", String(names.length)).replace("{total}", String(workPoints.filter((wp) => wp.active).length));
+  }
+
   function fullName(u: CompanyUser) {
     return [u.firstName, u.lastName].filter(Boolean).join(" ") || "—";
   }
@@ -222,6 +244,7 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
                 <SortableTH sortKey="role" sort={view.sort} onSort={view.toggleSort}>
                   {t.role}
                 </SortableTH>
+                {showDepots && <TH>{t.depots}</TH>}
                 <TH>{t.status}</TH>
                 <TH sticky="right" className="text-right">
                   {strings.common.actions}
@@ -231,7 +254,7 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
             <TBody>
               {(isLoading || view.visible.length === 0) && (
                 <TableFallbackRow
-                  columns={5}
+                  columns={showDepots ? 6 : 5}
                   loading={isLoading}
                   icon={Users}
                   title={view.emptiedBySearch ? strings.common.noResults : t.empty}
@@ -280,6 +303,19 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
                         </Select>
                       )}
                     </TD>
+                    {showDepots && (
+                      <TD>
+                        {/* Adminul vede mereu tot (DepotAccess): o alegere pe rândul lui n-ar schimba nimic. */}
+                        {u.role === "OPERATOR" || u.role === "CLIENT_VIEWER" ? (
+                          <Button variant="ghost" size="sm" aria-label={t.depotsChange} onClick={() => setDepotsOf(u)}>
+                            <Warehouse className="mr-1 h-3.5 w-3.5" />
+                            {depotsLabel(u)}
+                          </Button>
+                        ) : (
+                          <span className="text-content-subtle">{t.depotsAll}</span>
+                        )}
+                      </TD>
+                    )}
                     <TD>{statusBadge(u)}</TD>
                     <TD sticky="right" className="text-right">
                       <div className="flex justify-end gap-1">
@@ -402,6 +438,16 @@ export function CompanyUsersSection({ canManage, companyId }: { canManage: boole
           </div>
         </form>
       </Dialog>
+
+      {depotsOf && (
+        <UserDepotsDialog
+          key={depotsOf.id}
+          user={depotsOf}
+          workPoints={workPoints}
+          companyId={companyId}
+          onClose={() => setDepotsOf(null)}
+        />
+      )}
 
       {confirmDialog}
     </section>

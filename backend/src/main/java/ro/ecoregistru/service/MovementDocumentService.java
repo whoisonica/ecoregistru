@@ -26,6 +26,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 public class MovementDocumentService {
 
     WasteMovementRepository movementRepository;
+    DepotAccess depotAccess;
     CompanyRepository companyRepository;
     Anexa3Numbering anexa3Numbering;
     ro.ecoregistru.service.export.Anexa3FormGenerator anexa3FormGenerator;
@@ -184,8 +185,10 @@ public class MovementDocumentService {
                 .orElseThrow(() -> new NotFoundException(TENANT_NOT_FOUND));
     }
 
+    /** D2.4 — o mișcare dintr-un depozit care nu e al utilizatorului e „negăsită”, ca una a altei firme. */
     private WasteMovement requireMovement(UUID id, UUID tenantId) {
         return movementRepository.findByIdAndCompany_IdAndDeletedFalse(id, tenantId)
+                .filter(m -> depotAccess.allows(m.getWorkPoint().getId()))
                 .orElseThrow(() -> new NotFoundException(MOVEMENT_NOT_FOUND));
     }
 

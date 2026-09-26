@@ -49,7 +49,12 @@ public class DepotRegisterGenerator {
             "Cantitate (kg)", "Mașină", "Șofer / delegat",
             "Brut (kg)", "Tara (kg)", "Neto (kg)", "Final (kg)",
             "Brut operațiune (kg)", "Tara operațiune (kg)", "Cod R/D",
-            "Stare", "Data finalizării", "Data anulării", "Anulat de", "Motiv anulare");
+            "Stare", "Data finalizării", "Data anulării", "Anulat de", "Motiv anulare",
+            // D2.3 — cântarul și starea lui la cântărire, fixate la finalizare; motivul când nu era legal
+            // (decizia proprietarului, 26.09.2026: „salvat în jurnal și pe document”). Stau aici, în registrul
+            // intern, nu pe aviz sau Anexa 3: pe formularul care pleacă la destinatar ar fi o acuzație a firmei
+            // împotriva ei însăși.
+            "Cântar", "Starea cântarului", "Motiv cântar");
     static final List<String> PRICE_COLUMNS = List.of("Preț (lei/kg)", "Valoare (lei)");
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -110,9 +115,12 @@ public class DepotRegisterGenerator {
                     text(x, 22, day(o.getCancelledAt()));
                     text(x, 23, o.getCancelledBy() == null ? null : userNames.get(o.getCancelledBy()));
                     text(x, 24, o.getCancelReason());
+                    text(x, 25, o.getScale() == null ? null : o.getScale().getName());
+                    text(x, 26, o.getScaleState() == null ? null : SCALE_STATES.get(o.getScaleState()));
+                    text(x, 27, o.getScaleOverrideReason());
                     if (pricesVisible) {
-                        number(x, 25, m.getUnitPrice(), lei);
-                        number(x, 26, m.getTotalValue(), lei);
+                        number(x, 28, m.getUnitPrice(), lei);
+                        number(x, 29, m.getTotalValue(), lei);
                     }
                 }
             }
@@ -125,6 +133,13 @@ public class DepotRegisterGenerator {
             throw new UncheckedIOException("Failed to build the depot register (xlsx)", ex);
         }
     }
+
+    /** Aceleași cuvinte ca pe ecran (`strings.scaleState`). */
+    static final Map<String, String> SCALE_STATES = Map.of(
+            "VALID", "Verificat", "NO_VERIFICATION", "Fără verificare", "EXPIRED", "Verificare expirată",
+            "REJECTED", "Respins la verificare", "REPAIRED", "Reparat, de reverificat",
+            "INCIDENT", "Incident, de reverificat", "NOT_DECLARED", "Nedeclarat la BRML",
+            "SEALED", "Sigilat", "OUT_OF_USE", "Scos din uz");
 
     /** Cum numește exportul depozitului cele trei roluri. */
     static String role(WeighingOperation o) {

@@ -53,4 +53,28 @@ public interface AppUserRepository extends JpaRepository<AppUser, UUID> {
      * anybody.
      */
     long countByCompany_IdAndRoleAndEnabledTrue(UUID companyId, Role role);
+
+    // --- D2.4: the depots of a restricted user (V69). Native: the join table has no entity. ---
+
+    @Query(value = "select work_point_id from user_work_points where user_id = :userId", nativeQuery = true)
+    List<UUID> findWorkPointIds(@org.springframework.data.repository.query.Param("userId") UUID userId);
+
+    interface UserWorkPoint {
+        UUID getUserId();
+        UUID getWorkPointId();
+    }
+
+    @Query(value = "select uwp.user_id as userId, uwp.work_point_id as workPointId from user_work_points uwp"
+            + " join app_users u on u.id = uwp.user_id where u.company_id = :companyId", nativeQuery = true)
+    List<UserWorkPoint> findWorkPointsOfCompany(@org.springframework.data.repository.query.Param("companyId") UUID companyId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(value = "delete from user_work_points where user_id = :userId", nativeQuery = true)
+    void clearWorkPoints(@org.springframework.data.repository.query.Param("userId") UUID userId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(value = "insert into user_work_points (user_id, work_point_id) values (:userId, :workPointId)",
+            nativeQuery = true)
+    void addWorkPoint(@org.springframework.data.repository.query.Param("userId") UUID userId,
+                      @org.springframework.data.repository.query.Param("workPointId") UUID workPointId);
 }

@@ -50,16 +50,24 @@ public class ScaleService {
     CompanyRepository companyRepository;
     WorkPointRepository workPointRepository;
     WeighingOperationRepository operationRepository;
+    DepotAccess depotAccess;
+    ro.ecoregistru.repository.ScaleDocumentRepository documentRepository;
+    CloudinaryStorageService storageService;
 
     @Transactional(readOnly = true)
     public List<ScaleResponse> list() {
-        List<Scale> scales = scaleRepository.findAllForCompany(TenantContext.require());
+        List<Scale> scales = depotAccess.filter(scaleRepository.findAllForCompany(TenantContext.require()),
+                s -> s.getWorkPoint().getId());
         Map<UUID, List<ScaleEvent>> events = eventRepository
                 .findAllByScale_IdIn(scales.stream().map(Scale::getId).toList()).stream()
                 .collect(Collectors.groupingBy(e -> e.getScale().getId()));
+        Map<UUID, List<ro.ecoregistru.entity.ScaleDocument>> documents = documentRepository
+                .findAllByScale_IdIn(scales.stream().map(Scale::getId).toList()).stream()
+                .collect(Collectors.groupingBy(d -> d.getScale().getId()));
         LocalDate today = DeadlineService.today();
         return scales.stream()
-                .map(s -> toResponse(s, newestFirst(events.getOrDefault(s.getId(), List.of())), today))
+                .map(s -> toResponse(s, newestFirst(events.getOrDefault(s.getId(), List.of())),
+                        documents.getOrDefault(s.getId(), List.of()), today))
                 .toList();
     }
 
@@ -72,7 +80,7 @@ public class ScaleService {
                 .build();
         apply(scale, request, tenantId);
         scaleRepository.save(scale);
-        return toResponse(scale, List.of(), DeadlineService.today());
+        return toResponse(scale, List.of(), List.of(), DeadlineService.today());
     }
 
     @Transactional
@@ -90,6 +98,7 @@ public class ScaleService {
         if (operationRepository.existsByScale_Id(id)) {
             throw new BusinessException(SCALE_HAS_WEIGHINGS);
         }
+        documentRepository.findAllByScale_Id(id).forEach(this::dropFile);
         scaleRepository.delete(scale);
     }
 
@@ -116,6 +125,7 @@ public class ScaleService {
     @Transactional
     public ScaleResponse deleteEvent(UUID scaleId, UUID eventId) {
         Scale scale = require(scaleId, TenantContext.require());
+        documentRepository.findByScale_IdAndScaleEventId(scaleId, eventId).ifPresent(this::dropFile);
         eventRepository.delete(requireEvent(eventId, scaleId));
         eventRepository.flush();
         return response(scale);
@@ -140,8 +150,8 @@ public class ScaleService {
         if (name == null) {
             throw new BusinessException(SCALE_NAME_REQUIRED);
         }
-        WorkPoint depot = workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
-                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
+        WorkPoint depot = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
         scaleRepository.findByCompany_IdAndWorkPoint_IdAndName(tenantId, depot.getId(), name)
                 .filter(other -> !other.getId().equals(scale.getId()))
                 .ifPresent(other -> {
@@ -213,8 +223,84 @@ public class ScaleService {
 
     private ScaleResponse response(Scale scale) {
         eventRepository.flush();
+        documentRepository.flush();
         return toResponse(scale, eventRepository.findAllByScale_IdOrderByDateDescCreatedAtDesc(scale.getId()),
-                DeadlineService.today());
+                documentRepository.findAllByScale_Id(scale.getId()), DeadlineService.today());
+    }
+
+    // --- V70: fișierele cântarului ---
+
+    /**
+     * Dovada declarării la BRML ({@code eventId} null) sau buletinul unei verificări. Un fișier nou pe același
+     * loc îl înlocuiește pe cel vechi; reparația și incidentul n-au buletin. Aceeași limită ca la mișcări:
+     * 10 MB, zidul planului Cloudinary.
+     */
+    @Transactional
+    public ScaleResponse attach(UUID scaleId, UUID eventId, org.springframework.web.multipart.MultipartFile file) {
+        Scale scale = require(scaleId, TenantContext.require());
+        if (eventId != null && requireEvent(eventId, scaleId).getKind() != ScaleEventKind.VERIFICATION) {
+            throw new BusinessException(SCALE_BULLETIN_ONLY_VERIFICATION);
+        }
+        if (file == null || file.isEmpty()) {
+            throw new ro.ecoregistru.exception.BadRequestException(SCALE_DOCUMENT_REQUIRED);
+        }
+        if (file.getSize() > MovementAttachmentService.MAX_ATTACHMENT_BYTES) {
+            throw new ro.ecoregistru.exception.BadRequestException(ATTACHMENT_TOO_LARGE);
+        }
+        if (file.getContentType() != null && file.getContentType().length() > 128) {
+            throw new ro.ecoregistru.exception.BadRequestException(ATTACHMENT_TYPE_INVALID);
+        }
+        (eventId == null ? documentRepository.findByScale_IdAndScaleEventIdIsNull(scaleId)
+                : documentRepository.findByScale_IdAndScaleEventId(scaleId, eventId)).ifPresent(this::dropFile);
+        documentRepository.flush();
+        var stored = storageService.upload(file, "scales/" + scaleId);
+        documentRepository.save(ro.ecoregistru.entity.ScaleDocument.builder()
+                .scale(scale)
+                .scaleEventId(eventId)
+                .publicId(stored.publicId())
+                .resourceType(stored.resourceType())
+                .deliveryType(stored.deliveryType())
+                .format(stored.format())
+                .fileName(MovementAttachmentService.safeFileName(file.getOriginalFilename()))
+                .contentType(file.getContentType())
+                .sizeBytes(file.getSize())
+                .createdBy(SecurityUtils.currentUser().getId())
+                .createdAt(Instant.now())
+                .build());
+        return response(scale);
+    }
+
+    @Transactional
+    public ScaleResponse detach(UUID scaleId, UUID documentId) {
+        Scale scale = require(scaleId, TenantContext.require());
+        dropFile(documentRepository.findByIdAndScale_Id(documentId, scaleId)
+                .orElseThrow(() -> new NotFoundException(ATTACHMENT_NOT_FOUND)));
+        return response(scale);
+    }
+
+    /** Conținutul, pentru cine vede cântarul (și depozitul lui, D2.4). */
+    @Transactional(readOnly = true)
+    public MovementAttachmentService.AttachmentContent content(UUID scaleId, UUID documentId) {
+        require(scaleId, TenantContext.require());
+        var document = documentRepository.findByIdAndScale_Id(documentId, scaleId)
+                .orElseThrow(() -> new NotFoundException(ATTACHMENT_NOT_FOUND));
+        try {
+            return new MovementAttachmentService.AttachmentContent(
+                    storageService.fetch(storageService.signedUrl(document.getPublicId(), document.getResourceType(),
+                            document.getDeliveryType(), document.getFormat())),
+                    document.getContentType(), document.getFileName());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(ATTACHMENT_FETCH_FAILED.getMessage(), e);
+        } catch (Exception e) {
+            throw new IllegalStateException(ATTACHMENT_FETCH_FAILED.getMessage(), e);
+        }
+    }
+
+    /** Activul din Cloudinary întâi: rândul șters fără el ar lăsa un fișier pe care nu-l mai găsește nimeni. */
+    private void dropFile(ro.ecoregistru.entity.ScaleDocument document) {
+        storageService.delete(document.getPublicId(), document.getResourceType(), document.getDeliveryType());
+        documentRepository.delete(document);
     }
 
     static ScaleLegality.Verdict verdict(Scale scale, List<ScaleEvent> events, LocalDate date) {
@@ -231,8 +317,10 @@ public class ScaleService {
                 .toList();
     }
 
+    /** D2.4 — cântarul altui depozit decât ale utilizatorului e „negăsit”, ca al altei firme. */
     private Scale require(UUID id, UUID tenantId) {
         return scaleRepository.findByIdAndCompany_Id(id, tenantId)
+                .filter(s -> depotAccess.allows(s.getWorkPoint().getId()))
                 .orElseThrow(() -> new NotFoundException(SCALE_NOT_FOUND));
     }
 
@@ -245,14 +333,26 @@ public class ScaleService {
         return value == null || value.trim().isEmpty() ? null : value.trim();
     }
 
-    static ScaleResponse toResponse(Scale s, List<ScaleEvent> events, LocalDate today) {
+    static ScaleResponse toResponse(Scale s, List<ScaleEvent> events, List<ro.ecoregistru.entity.ScaleDocument> documents,
+                                    LocalDate today) {
         ScaleLegality.Verdict now = verdict(s, events, today);
         WorkPoint depot = s.getWorkPoint();
+        Map<UUID, ScaleResponse.Document> byEvent = new java.util.HashMap<>();
+        ScaleResponse.Document brml = null;
+        for (var d : documents) {
+            var doc = new ScaleResponse.Document(d.getId(), d.getFileName(), d.getContentType());
+            if (d.getScaleEventId() == null) {
+                brml = doc;
+            } else {
+                byEvent.put(d.getScaleEventId(), doc);
+            }
+        }
         return new ScaleResponse(s.getId(), depot.getId(), depot.getName(), s.getName(), s.getSerialNumber(),
                 s.getKind(), s.getAccuracyClass(), s.getDivisionKg(), s.getCommissionedOn(), s.getBrmlDeclaredOn(),
-                s.getBrmlReference(), s.getStatus(), now.state(), now.validUntil(),
+                s.getBrmlReference(), s.getStatus(), now.state(), now.validUntil(), brml,
                 events.stream().map(e -> new ScaleResponse.Event(e.getId(), e.getKind(), e.getDate(), e.getAdmitted(),
-                        e.getBulletinNumber(), e.getValidUntil(), e.getLaboratory(), e.getVerifier(), e.getNotes()))
+                        e.getBulletinNumber(), e.getValidUntil(), e.getLaboratory(), e.getVerifier(), e.getNotes(),
+                        byEvent.get(e.getId())))
                         .toList());
     }
 }

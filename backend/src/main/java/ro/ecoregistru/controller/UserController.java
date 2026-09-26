@@ -63,6 +63,14 @@ public class UserController {
         return companyUserService.changeRole(id, request.role());
     }
 
+    /** D2.4 — depozitele pe care lucrează un operator sau un cont de vizualizare. */
+    @PutMapping("/{id}/work-points")
+    @PreAuthorize(CAN_MANAGE)
+    public CompanyUserResponse changeWorkPoints(
+            @PathVariable UUID id, @RequestBody ro.ecoregistru.controller.request.UserWorkPointsRequest request) {
+        return companyUserService.changeWorkPoints(id, request);
+    }
+
     /**
      * DELETE deactivates, it does not delete — the same contract as work points and partners.
      * A user row is referenced by every movement they recorded ({@code createdBy}), so removing it

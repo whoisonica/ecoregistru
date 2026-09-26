@@ -65,6 +65,17 @@ export function useChangeUserRole(companyId?: string) {
   });
 }
 
+/** D2.4 — depozitele unui operator sau ale unui cont de vizualizare. */
+export function useChangeUserWorkPoints(companyId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, allWorkPoints, workPointIds }: { id: string; allWorkPoints: boolean; workPointIds: string[] }) =>
+      (await api.put<CompanyUser>(`/api/v1/users/${id}/work-points`, { allWorkPoints, workPointIds }, tenant(companyId)))
+        .data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: usersKey }),
+  });
+}
+
 /**
  * Dezactivează contul. `DELETE`, dar nu șterge nimic — rândul rămâne, fiindcă e cel din
  * `createdBy` al fiecărei mișcări pe care omul a înregistrat-o. Sesiunile deschise se închid la

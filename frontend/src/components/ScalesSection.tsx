@@ -28,6 +28,7 @@ import { TableFallbackRow } from "@/components/ui/table-fallback";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { ScaleStateBadge } from "@/components/depot/ScaleStateBadge";
+import { ScaleFile } from "@/components/depot/ScaleFile";
 
 const t = strings.settings.scales;
 const CLASSES: ScaleAccuracyClass[] = ["I", "II", "III", "IIII"];
@@ -386,6 +387,16 @@ export function ScalesSection({ workPoints, canManage }: { workPoints: WorkPoint
         {historyScale && (
           <div className="space-y-5">
             <ScaleStateBadge state={historyScale.state} validUntil={historyScale.validUntil} />
+            {/* V70 — dovada declarării la BRML, lângă starea pe care o condiționează. */}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-content-muted">{t.brmlProof}</span>
+              <ScaleFile
+                scaleId={historyScale.id}
+                document={historyScale.brmlProof}
+                canManage={canManage}
+                label={t.brmlProof}
+              />
+            </div>
 
             {historyScale.events.length === 0 ? (
               <p className="text-sm text-content-muted">{t.historyEmpty}</p>
@@ -409,6 +420,17 @@ export function ScalesSection({ workPoints, canManage }: { workPoints: WorkPoint
                         {t.eventKindLabels[ev.kind]}
                         {ev.admitted != null && ` · ${ev.admitted ? t.admitted : t.rejected}`}
                         {ev.bulletinNumber && <span className="ml-2 whitespace-nowrap font-mono text-xs">{ev.bulletinNumber}</span>}
+                        {ev.kind === "VERIFICATION" && (
+                          <span className="block">
+                            <ScaleFile
+                              scaleId={historyScale.id}
+                              eventId={ev.id}
+                              document={ev.bulletinFile}
+                              canManage={canManage}
+                              label={t.bulletinFile}
+                            />
+                          </span>
+                        )}
                         {(ev.laboratory || ev.verifier || ev.notes) && (
                           <span className="block text-xs text-content-muted">
                             {[ev.laboratory, ev.verifier, ev.notes].filter(Boolean).join(" · ")}

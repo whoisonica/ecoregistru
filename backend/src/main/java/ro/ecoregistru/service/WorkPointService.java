@@ -29,6 +29,7 @@ public class WorkPointService {
     WorkPointRepository workPointRepository;
     InternalGeneratorRepository internalGeneratorRepository;
     CompanyRepository companyRepository;
+    DepotAccess depotAccess;
 
     /** Verbatim what the filled sheets carry in the "Secţia" column: "birouri", "productie". */
     private static final List<String> DEFAULT_SECTIONS = List.of("Birouri", "Producţie");
@@ -36,7 +37,9 @@ public class WorkPointService {
     @Transactional(readOnly = true)
     public List<WorkPointResponse> list() {
         UUID tenantId = TenantContext.require();
-        return workPointRepository.findAllByCompany_Id(tenantId).stream().map(this::toResponse).toList();
+        // D2.4 — un utilizator restrâns își vede doar depozitele; de aici le iau toate selectoarele.
+        return depotAccess.filter(workPointRepository.findAllByCompany_Id(tenantId), WorkPoint::getId).stream()
+                .map(this::toResponse).toList();
     }
 
     @Transactional

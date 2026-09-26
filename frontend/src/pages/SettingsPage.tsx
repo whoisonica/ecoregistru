@@ -351,7 +351,9 @@ export function SettingsPage() {
         {section === "generatori-interni" && (
           <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
         )}
-        {section === "utilizatori" && <CompanyUsersSection canManage={canManage} />}
+        {section === "utilizatori" && (
+          <CompanyUsersSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />
+        )}
         {section === "jurnal-audit" && <AuditLogSection canManage={canManage} />}
         {section === "soferi" && (
           <OwnDriversSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />

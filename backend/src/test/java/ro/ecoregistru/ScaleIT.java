@@ -293,6 +293,26 @@ class ScaleIT {
         service.addEvent(expired.id(), verification(today.minusMonths(1), true, null));
         assertThat(operations.get(id).scaleState()).isEqualTo(State.EXPIRED);
 
+        // …și în registrul intern exportat: cântarul, starea și motivul, pe rândul operațiunii.
+        try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(
+                operations.renderRegister(today.getYear(), today.getMonthValue())))) {
+            var sheet = wb.getSheet("Registru");
+            var head = sheet.getRow(3);
+            int scaleCol = -1;
+            for (int c = 0; c < head.getLastCellNum(); c++) {
+                if ("Cântar".equals(head.getCell(c).getStringCellValue())) {
+                    scaleCol = c;
+                }
+            }
+            assertThat(scaleCol).isPositive();
+            var row = sheet.getRow(4);
+            assertThat(row.getCell(scaleCol).getStringCellValue()).isEqualTo("Expirat");
+            assertThat(row.getCell(scaleCol + 1).getStringCellValue()).isEqualTo("Verificare expirată");
+            assertThat(row.getCell(scaleCol + 2).getStringCellValue()).isEqualTo("verificarea programată pe 30.09");
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+
         ScaleResponse undeclared = service.create(scale("Nedeclarat", today.minusMonths(2), null));
         UUID second = weighed(undeclared.id());
         assertThatThrownBy(() -> operations.finalizeOperation(second, null))

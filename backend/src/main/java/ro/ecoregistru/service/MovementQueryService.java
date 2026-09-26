@@ -54,6 +54,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 public class MovementQueryService {
 
     WasteMovementRepository movementRepository;
+    DepotAccess depotAccess;
     WasteMovementMapper mapper;
     /** Pentru totaluri: o interogare Criteria cu agregate, peste același filtru ca lista. */
     EntityManager entityManager;
@@ -393,6 +394,7 @@ public class MovementQueryService {
                                                      boolean leftSite, boolean missingOperationCode,
                                                      WasteRegister register, MovementDirection direction,
                                                      PackagingFilter packaging) {
+        java.util.Set<UUID> allowed = depotAccess.allowed();
         return (root, query, cb) -> {
             List<Predicate> predicates = new java.util.ArrayList<>();
             predicates.add(cb.equal(root.get("company").get("id"), tenantId));
@@ -404,6 +406,10 @@ public class MovementQueryService {
                     cb.equal(weighing.get("status"), WeighingOperationStatus.FINALIZED)));
             if (workPointId != null) {
                 predicates.add(cb.equal(root.get("workPoint").get("id"), workPointId));
+            }
+            // D2.4 — un utilizator restrâns vede doar rândurile depozitelor lui, oricare ar fi filtrul cerut.
+            if (allowed != null) {
+                predicates.add(allowed.isEmpty() ? cb.disjunction() : root.get("workPoint").get("id").in(allowed));
             }
             if (wasteCodeId != null) {
                 predicates.add(cb.equal(root.get("wasteCode").get("id"), wasteCodeId));

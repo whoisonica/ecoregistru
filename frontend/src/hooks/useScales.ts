@@ -48,3 +48,21 @@ export function useDeleteScaleEvent() {
     (await api.delete<Scale>(`/api/v1/scales/${scaleId}/events/${eventId}`)).data,
   );
 }
+
+/** V70 — dovada BRML (`eventId` lipsă) sau buletinul unei verificări; unul nou îl înlocuiește pe cel vechi. */
+export function useAttachScaleDocument() {
+  return useScaleMutation(async ({ scaleId, eventId, file }: { scaleId: string; eventId?: string; file: File }) => {
+    const form = new FormData();
+    form.append("file", file);
+    const url = eventId
+      ? `/api/v1/scales/${scaleId}/events/${eventId}/bulletin`
+      : `/api/v1/scales/${scaleId}/brml-proof`;
+    return (await api.post<Scale>(url, form)).data;
+  });
+}
+
+export function useDetachScaleDocument() {
+  return useScaleMutation(async ({ scaleId, documentId }: { scaleId: string; documentId: string }) =>
+    (await api.delete<Scale>(`/api/v1/scales/${scaleId}/documents/${documentId}`)).data,
+  );
+}

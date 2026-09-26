@@ -1,3 +1,18 @@
+📎 **26.09.2026 — proba 46 (`46-fisiere-cantar.mjs`), fișierele cântarului (V70)**: dialogul „Istoric” are „Dovada declarării
+la BRML” cu „Atașează”; buletinul se poate atașa doar pe rândul unei verificări (reparația n-are buton); după urcare apare numele
+fișierului, care se deschide într-un tab din `blob:` (prin sesiune), iar „Scoate fișierul” îl scoate. ⚠️ Local nu există chei
+Cloudinary, deci urcarea, conținutul și scoaterea sunt interceptate cu `page.route` — regulile serverului sunt în `ScaleDocumentIT`.
+Tabul se deschide întâi gol (`openFileInTab`), deci proba așteaptă `blob:`, nu primul `load`. Nu lasă nimic în urmă.
+
+🏭 **26.09.2026 — proba 45 (`45-acces-depozit.mjs`), accesul pe depozit (D2.4)**: Setări → Utilizatori are coloana „Depozite”
+doar la o firmă cu depozit și cu mai multe depozite active; operatorul pornește cu „Toate”, rândul adminului n-are buton (vede
+mereu tot). Din dialog operatorul e restrâns la un depozit, iar rândul arată numele lui; „Doar cele alese” fără niciun depozit
+nu trimite nimic. Operatorul restrâns primește 404 pe intrarea din celălalt depozit, n-o vede în listă, `/work-points` îi dă doar
+depozitul lui și nu poate porni o intrare în celălalt; 1440 și 375 fără lățire. La final operatorul primește înapoi „Toate”.
+**Negativă:** fără verificarea „cel puțin un depozit” din dialog → 2 căderi + 400 de la server. Verde pe `eco_e2e_acces`, stivă
+proprie 8091/5191 (backendul din jar, ca suita să ruleze alături). ⚠️ Lasă în urmă depozitul „Proba 45 <număr>” (dezactivat) și o
+intrare anulată.
+
 ⚖️ **26.09.2026 — proba 44 (`44-cantare.mjs`), cântarele depozitului (D2.3)**: Setări → „Cântare”: un cântar pus în funcțiune
 acum doi ani, fără verificare, e „Verificare expirată”; o verificare ADMIS fără dată îl face „Verificat” pe un an; o reparație de
 azi îl face „Reparat, de reverificat”; istoricul încape în dialog. La cântar tasta cântarului e apăsată, cu starea alături;

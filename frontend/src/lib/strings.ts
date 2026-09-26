@@ -1412,6 +1412,17 @@ export const strings = {
       loadError: "Nu am putut încărca cântarele.",
       saved: "Cântar salvat.",
       saveError: "Nu am putut salva cântarul.",
+      // V70 — fișierele cântarului.
+      brmlProof: "Dovada declarării la BRML",
+      bulletinFile: "Buletinul",
+      attachFile: "Atașează",
+      replaceFile: "Înlocuiește",
+      removeFile: "Scoate fișierul",
+      fileSaved: "Fișierul a fost atașat.",
+      fileRemoved: "Fișierul a fost scos.",
+      fileError: "Nu am putut atașa fișierul.",
+      fileOpenError: "Nu am putut deschide fișierul.",
+      noFile: "Niciun fișier",
     },
     drivers: {
       title: "Șoferii noștri",
@@ -1583,6 +1594,20 @@ export const strings = {
       searchPlaceholder: "Caută după nume, email sau rol...",
       loadError: "Nu am putut încărca utilizatorii.",
       saveError: "Operațiunea a eșuat. Încearcă din nou.",
+      // D2.4 — pe ce depozite lucrează un operator; coloana apare doar la firmele cu mai multe depozite.
+      depots: "Depozite",
+      depotsAll: "Toate",
+      depotsSome: "{n} din {total}",
+      depotsChange: "Alege depozitele",
+      depotsTitle: "Pe ce depozite lucrează",
+      depotsHint:
+        "Vede și înregistrează doar pe depozitele alese: operațiuni, cântare, rânduri din registru. Administratorul vede mereu tot.",
+      depotsAllOption: "Toate depozitele",
+      depotsAllDescription: "Și pe cele pe care le deschideți de acum încolo.",
+      depotsChosenOption: "Doar cele alese",
+      depotsChosenDescription: "Restul nu le vede deloc.",
+      depotsRequired: "Alege cel puțin un depozit.",
+      depotsSaved: "Depozitele au fost salvate.",
     },
   },
 
