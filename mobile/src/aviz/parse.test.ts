@@ -54,16 +54,18 @@ test("3. partenerul salvat fără RO se găsește și când avizul scrie RO", ()
   assert.equal(r.partnerId?.value, "p-hartie");
 });
 
+// 99900010: cifra de control corectă și **inexistent la ANAF** (404, verificat 26.09.2026). Cel de dinainte
+// (un număr crezut inventat) era la ANAF al unei persoane fizice reale.
 test("4. un CUI valid necunoscut se propune pentru ANAF; unul cu cifra de control greșită, nu", () => {
-  const valid = parseAviz(["Cumparator: Eco Deal SRL", "CUI: 28104567"], ctx);
-  assert.equal(valid.unknownCui?.value, "28104567");
-  const wrong = parseAviz(["Cumparator: Eco Deal SRL", "CUI: 28104568"], ctx);
+  const valid = parseAviz(["Cumparator: Eco Deal SRL", "CUI: 99900010"], ctx);
+  assert.equal(valid.unknownCui?.value, "99900010");
+  const wrong = parseAviz(["Cumparator: Eco Deal SRL", "CUI: 99900011"], ctx);
   assert.equal(wrong.unknownCui, undefined);
 });
 
 test("5. un număr gol devine CUI numai pe un rând care spune cod fiscal", () => {
-  // 28104567 e un CUI valid, dar aici e numărul unui contract.
-  const r = parseAviz(["Contract 28104567", "Remat Nordic SRL"], ctx);
+  // 99900010 e un CUI valid, dar aici e numărul unui contract.
+  const r = parseAviz(["Contract 99900010", "Remat Nordic SRL"], ctx);
   assert.equal(r.unknownCui, undefined);
   assert.equal(r.partnerId, undefined);
 });
