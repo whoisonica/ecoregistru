@@ -46,7 +46,7 @@ jobs:
         run: ./gradlew test --no-daemon --console=plain
 
       # Raportul HTML al testelor, ca un eșec să nu se citească din log.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: raport-teste-backend
@@ -185,7 +185,7 @@ jobs:
         working-directory: frontend
         run: npm run e2e
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: e2e-capturi-si-loguri
