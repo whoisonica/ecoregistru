@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { directionOf, registerOf, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@web/strings";
 import { useEffect, useState, type ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { movements, movementTotals, UnauthorizedError } from "../api";
 import { formatDate, formatKg } from "../format";
@@ -104,7 +105,13 @@ export function MovementList({ title, screen, tabRow }: {
             <Note>{strings.mobile.movementsEmpty}</Note>
           ) : (
             list.data.content.map((m, i) => (
-              <View key={m.id} testID="movement-row" style={[rowStyles.row, i > 0 && rowStyles.sep, styles.row]}>
+              // M1e: rândul deschide predarea, cu tot ce e în ea și cu Anexa 3 / avizul.
+              <Pressable
+                key={m.id}
+                testID="movement-row"
+                onPress={() => router.push({ pathname: "/miscare/[id]", params: { id: m.id } })}
+                style={({ pressed }) => [rowStyles.row, i > 0 && rowStyles.sep, styles.row, pressed && rowStyles.pressed]}
+              >
                 {/* Pubela pe codul de deșeu, ca pe web (`lib/binColor.ts`) — aceeași listă explicită.
                     Un cod care nu e în ea nu primește un pătrat gol: locul rămâne liber. */}
                 <Bin code={m.wasteCode} hazardous={m.hazardous} />
@@ -124,7 +131,7 @@ export function MovementList({ title, screen, tabRow }: {
                     </Text>
                   )}
                 </View>
-              </View>
+              </Pressable>
             ))
           )}
         </Group>

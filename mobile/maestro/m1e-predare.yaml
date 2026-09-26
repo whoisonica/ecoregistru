@@ -1,0 +1,112 @@
+# M1e — predarea deschisă: rândul din Mișcări → tot ce e în ea → Anexa 3 / avizul în foaia de partajare.
+# Apoi, cu „Vizualizare”, aceeași predare fără butoane (serverul cere CAN_WRITE pe ambele PDF-uri).
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1e-predare.yaml
+# Seed-ul are în septembrie două predări 15 01 02 spre valorificare, cu partener: amândouă tipăresc ambele documente.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+# Predările generatorului stau pe „Generare” (Anexa 1), primul tab; „Ieșiri” e registrul colectorului.
+- extendedWaitUntil:
+    visible:
+      id: movement-row
+    timeout: 15000
+- tapOn:
+    id: movement-row
+    index: 0
+
+# Predarea: deșeul, rubricile fișei, partenerul, transportul.
+- extendedWaitUntil:
+    visible: Pe fișă
+    timeout: 15000
+- assertVisible: Deșeul
+- assertVisible: Stare fizică
+- assertVisible: Partenerul
+- takeScreenshot: 01-predarea
+- scrollUntilVisible:
+    element:
+      id: movement-anexa3
+    centerElement: true
+- assertVisible:
+    id: movement-aviz
+- takeScreenshot: 02-documente
+
+# Anexa 3: PDF-ul de pe server ajunge în foaia de partajare, cu numele de pe web.
+- tapOn:
+    id: movement-anexa3
+- extendedWaitUntil:
+    visible: "anexa3-150102-.*"
+    timeout: 20000
+- takeScreenshot: 03-anexa3-partajare
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      # Foaia de partajare se închide apăsând deasupra ei („dismiss popup”).
+      - tapOn:
+          point: "50%,12%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: movement-aviz
+    timeout: 10000
+- tapOn:
+    id: movement-aviz
+- extendedWaitUntil:
+    visible: "aviz-150102-.*"
+    timeout: 20000
+- takeScreenshot: 04-aviz-partajare
+
+# --- „Vizualizare”: aceeași predare, fără documente ---
+- runFlow: pornire.yaml
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 20000
+- tapOn:
+    id: login-email
+- inputText: viewer@demo.ro
+- tapOn:
+    id: login-password
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: login-submit
+- tapOn:
+    text: Not Now
+    optional: true
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+# Predările generatorului stau pe „Generare” (Anexa 1), primul tab; „Ieșiri” e registrul colectorului.
+- extendedWaitUntil:
+    visible:
+      id: movement-row
+    timeout: 15000
+- tapOn:
+    id: movement-row
+    index: 0
+- extendedWaitUntil:
+    visible: Pe fișă
+    timeout: 15000
+- scrollUntilVisible:
+    element: Transportul
+    centerElement: true
+- assertNotVisible:
+    id: movement-anexa3
+- assertNotVisible:
+    id: movement-aviz
+- assertNotVisible: Documente
+- takeScreenshot: 05-vizualizare

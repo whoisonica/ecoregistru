@@ -1,34 +1,13 @@
 import { useState } from "react";
 import { api, apiBlobErrorMessage } from "@/lib/api";
 import { openPdfInTab } from "@/lib/openFileInTab";
+import { movementPdfName } from "@/lib/movementPrint";
 import type { WasteMovement } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { useToast } from "@/components/ui/toast";
 
-/**
- * Anexa 3 la HG 1061/2008 is printed from two screens — the movements list and the handover
- * register — so the rule for when it may be printed lives here, once.
- *
- * <p>The form covers a handover of NON-hazardous waste: its own title says "nepericuloase", and it
- * names an expeditor and a destinatar. The backend refuses the other cases with a message; the
- * button simply does not offer them.
- */
-export function canPrintAnexa3(m: WasteMovement, canWrite: boolean): boolean {
-  return !m.hazardous && canPrintAviz(m, canWrite);
-}
-
-/**
- * Avizul de însoțire (15.09.2026): orice predare către un partener, periculoasă sau nu — avizul
- * însoțește marfa, nu descrie deșeul.
- *
- * <p>`canWrite` e obligatoriu, nu opțional (BUG-053, 20.09.2026): serverul cere `CAN_WRITE` pe
- * amândouă PDF-urile — Anexa 3 fiindcă alocă numărul formularului, avizul fiindcă tipărește CNP-ul
- * șoferului întreg, pe care listele îl maschează pentru „Vizualizare". Cât timp regula stătea numai
- * pe server, butonul se vedea și dădea 403 la clic. Fiind parametru, un ecran nou nu-l poate uita.
- */
-export function canPrintAviz(m: WasteMovement, canWrite: boolean): boolean {
-  return canWrite && m.partnerId != null && (m.operation === "RECOVERED" || m.operation === "DISPOSED");
-}
+// Regula și numele fișierului stau în `lib/` (M1e): le citește și telefonul, care nu vede `hooks/`.
+export { canPrintAnexa3, canPrintAviz } from "@/lib/movementPrint";
 
 /** Deschide PDF-ul unei mișcări într-un tab — Anexa 3 sau avizul, după `document`. */
 function useMovementPdf(document: "anexa3" | "aviz", errorMessage: string) {
@@ -42,7 +21,7 @@ function useMovementPdf(document: "anexa3" | "aviz", errorMessage: string) {
         async () =>
           (await api.get(`/api/v1/movements/${m.id}/${document}`, { responseType: "blob" }))
             .data as Blob,
-        `${document}-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`
+        movementPdfName(document, m)
       );
     } catch (err) {
       notify(await apiBlobErrorMessage(err, errorMessage), "error");

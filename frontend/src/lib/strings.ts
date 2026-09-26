@@ -307,6 +307,20 @@ export const strings = {
     dossierThreeYears: "Ultimii 3 ani",
     sendDossierOffline: "Dosarul se face pe server. Fără semnal nu îl pot pregăti.",
     shareUnavailable: "Telefonul ăsta nu poate trimite fișiere din aplicație.",
+    // Predarea deschisă (M1e): rândul din Mișcări duce aici. Etichetele rubricilor sunt cele de pe web
+    // (`strings.movements`); aici stau doar titlurile grupelor și mesajele telefonului.
+    movementError: "Mișcarea nu s-a putut încărca. Încearcă din nou când ai semnal.",
+    movementWaste: "Deșeul",
+    movementSheet: "Pe fișă",
+    movementPartner: "Partenerul",
+    movementTransport: "Transportul",
+    movementAttachments: "Atașamente",
+    movementDocuments: "Documente",
+    movementWorkPoint: "Punctul de lucru",
+    movementAuthorizationExpired: "Autorizație expirată la predare",
+    movementDocumentsHint: "PDF-ul se deschide pe telefon; de acolo îl tipărești sau îl trimiți.",
+    movementDocumentOffline: "Documentul se face pe server. Fără semnal nu îl pot pregăti.",
+    movementAttachmentOffline: "Atașamentul n-a putut fi adus. Încearcă din nou când ai semnal.",
   },
 
   login: {

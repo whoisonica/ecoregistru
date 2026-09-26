@@ -255,14 +255,37 @@ export function evidences(auth: Auth, year: number) {
  * <p>Numele e cel de pe web (`useAuditFile.ts`), ca inspectorul să primească același fișier de oriunde.
  */
 export async function downloadAuditFile(auth: Auth, year: number, years: number): Promise<string> {
-  const res = await send(`/api/v1/audit-file?year=${year}&years=${years}`, { auth });
-  const bytes = new Uint8Array(await res.arrayBuffer());
   const name = years === 1 ? `dosar-control-${year}.zip` : `dosar-control-${year - years + 1}-${year}.zip`;
+  return saveToCache(await send(`/api/v1/audit-file?year=${year}&years=${years}`, { auth }), name);
+}
+
+/** Corpul unui răspuns, scris în cache sub `name` (înlocuiește o copie mai veche); întoarce adresa fișierului. */
+async function saveToCache(res: Response, name: string): Promise<string> {
+  const bytes = new Uint8Array(await res.arrayBuffer());
   const file = new File(Paths.cache, name);
   if (file.exists) file.delete();
   file.create();
   file.write(bytes);
   return file.uri;
+}
+
+// ── predarea deschisă (M1e) ─────────────────────────────────────────────────
+
+export function movement(auth: Auth, id: string) {
+  return request<WasteMovement>(`/api/v1/movements/${id}`, { auth });
+}
+
+/**
+ * Anexa 3 sau avizul (`GET /movements/{id}/anexa3|aviz`, `CAN_WRITE`), în cache, sub numele de pe web —
+ * de acolo îl deschide foaia de partajare. Cache, ca dosarul: se refac la fiecare cerere.
+ */
+export async function downloadMovementPdf(auth: Auth, id: string, document: "anexa3" | "aviz", name: string) {
+  return saveToCache(await send(`/api/v1/movements/${id}/${document}`, { auth }), name);
+}
+
+/** Un atașament al mișcării (poza avizului, un buletin), prin server — nu există adresă publică la Cloudinary. */
+export async function downloadAttachment(auth: Auth, movementId: string, attachmentId: string, name: string) {
+  return saveToCache(await send(`/api/v1/movements/${movementId}/attachments/${attachmentId}/continut`, { auth }), name);
 }
 
 // ── predarea (M1b) ──────────────────────────────────────────────────────────
