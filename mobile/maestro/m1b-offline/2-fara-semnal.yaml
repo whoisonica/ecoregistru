@@ -17,6 +17,25 @@ appId: ro.wastehouse.app
 - inputText: "77"
 # Tastatura numerică de pe iOS n-are „Gata”; formularul o închide la derulare.
 - scroll
+# BUG-023: starea, depozitarea, mijlocul de transport și destinația nu rămân goale.
+- scrollUntilVisible:
+    element:
+      id: state-SOLID
+    centerElement: true
+- tapOn:
+    id: state-SOLID
+- scrollUntilVisible:
+    element:
+      id: storage-RP
+    centerElement: true
+- tapOn:
+    id: storage-RP
+- scrollUntilVisible:
+    element:
+      id: means-AN
+    centerElement: true
+- tapOn:
+    id: means-AN
 - scrollUntilVisible:
     element:
       id: fate-DISPOSED
@@ -24,6 +43,14 @@ appId: ro.wastehouse.app
     id: fate-DISPOSED
 - tapOn:
     id: op-D5
+# Destinațiile oferite depind de operațiune: la eliminare, DO e printre ele.
+- scrollUntilVisible:
+    element:
+      id: dest-DO
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: dest-DO
 - scrollUntilVisible:
     element:
       id: partner-search

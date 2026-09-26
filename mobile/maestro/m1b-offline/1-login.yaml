@@ -3,13 +3,15 @@
 #
 # Tot drumul (criteriul din todo-mobil §7 M1b):
 #   1. maestro test … m1b-offline/1-login.yaml
-#   2. se taie legătura la server — Android: `adb shell cmd connectivity airplane-mode enable`;
+#   2. se taie legătura la server — Android: `adb shell cmd connectivity airplane-mode enable` ȘI, dacă aplicația
+#      vorbește cu `localhost:<port>` prin `adb reverse`, `adb reverse --remove tcp:<port>` (tunelul adb nu trece
+#      prin rețeaua emulatorului: în modul avion predarea pleca pe loc, 26.09);
 #      iOS (simulatorul n-are mod avion): se oprește backendul local
 #   3. maestro test … m1b-offline/2-fara-semnal.yaml   → predarea stă în „De trimis”
 #   4. se repornește telefonul — Android: `adb reboot`, apoi `adb reverse tcp:8081 tcp:8081`;
 #      iOS: `xcrun simctl terminate booted ro.wastehouse.app`
 #   5. maestro test … m1b-offline/3-dupa-repornire.yaml cu legătura încă tăiată → tot acolo
-#   6. se redă legătura (`airplane-mode disable` / backendul pornit) și 3-dupa-repornire.yaml cu
+#   6. se redă legătura (`airplane-mode disable` + `adb reverse tcp:<port> tcp:<port>` / backendul pornit) și 3-dupa-repornire.yaml cu
 #      `-e ONLINE=1` → rândul pleacă singur; în bază predarea „OFFLINE-M1B” există O SINGURĂ dată.
 appId: ro.wastehouse.app
 ---

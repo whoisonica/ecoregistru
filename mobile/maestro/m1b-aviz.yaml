@@ -1,7 +1,7 @@
 # M1b: avizul din galerie → câmpurile citite → confirmate unul câte unul → predarea salvată.
 #   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1b-aviz.yaml
-# Avizul e INVENTAT (`aviz-partener.png`, randat din HTML: Demo Reciclare SRL → Eco Valorificare SA, 15 01 02,
-# 1.250 kg, seria DRS nr. 000417) și pus în galerie înainte: `xcrun simctl addmedia booted …` pe iOS,
+# Avizul e INVENTAT (`fixtures/aviz-partener.png`, randat din HTML: Demo Reciclare SRL → Eco Valorificare SA, 15 01 02,
+# 1.250 kg, seria DRS nr. 000417) și pus în galerie CHIAR ÎNAINTE de rulare (fluxul alege cea mai nouă poză): `xcrun simctl addmedia booted …` pe iOS,
 # `adb push … /sdcard/Pictures/` + scanarea media pe Android. Simulatorul n-are cameră, deci poza vine din galerie;
 # restul drumului e același.
 appId: ro.wastehouse.app
@@ -19,7 +19,7 @@ appId: ro.wastehouse.app
 - tapOn:
     id: pick-aviz
 
-# Selectorul de poze al sistemului. Cea mai nouă poză e prima; `aviz-partener` e a doua.
+# Selectorul de poze al sistemului: cea mai nouă poză e prima (stânga sus pe iOS) — `aviz-partener`, pus chiar înainte.
 - runFlow:
     when:
       platform: iOS
@@ -28,7 +28,7 @@ appId: ro.wastehouse.app
           visible: Photos
           timeout: 15000
       - tapOn:
-          point: "50%,24%"
+          point: "17%,24%"
 - runFlow:
     when:
       platform: Android
@@ -38,7 +38,7 @@ appId: ro.wastehouse.app
           timeout: 15000
       - tapOn:
           text: "Photo taken on.*"
-          index: 1
+          index: 0
 
 # --- Citirea: fiecare câmp citit are rândul lui de pe aviz și butonul „Corect”. ---
 - extendedWaitUntil:
@@ -48,10 +48,12 @@ appId: ro.wastehouse.app
 - takeScreenshot: 02-citit
 - assertVisible: '.*Seria DRS Nr. 000417.*'
 
+# Formularul e lung (din 26.09 și cu rubricile Anexei 3): derularea până la „Salvează” trece de cele 20 s implicite.
 # „Salvează” nu pleacă până nu sunt confirmate toate: ecranul rămâne și spune câte mai sunt.
 - scrollUntilVisible:
     element:
       id: handover-save
+    timeout: 60000
 - tapOn:
     id: handover-save
 # Erorile rubricilor goale apar deasupra și împing nota sub marginea ecranului.
@@ -64,6 +66,10 @@ appId: ro.wastehouse.app
     element:
       id: f-date-confirm
     direction: UP
+    timeout: 60000
+    # Fără centrare, „Corect” ajunge sus, sub rotița plutitoare a clientului de dezvoltare (dreapta sus), și
+    # apăsarea deschide meniul lui în loc să confirme data. O aplicație de magazin n-are rotița.
+    centerElement: true
 - tapOn:
     id: f-date-confirm
 - tapOn:
@@ -88,6 +94,11 @@ appId: ro.wastehouse.app
       id: f-doc-confirm
 - tapOn:
     id: f-doc-confirm
+# Butonul mașinii poate cădea sub marginea ecranului după confirmarea documentului.
+- scrollUntilVisible:
+    element:
+      id: f-vehicle-confirm
+    centerElement: true
 - tapOn:
     id: f-vehicle-confirm
 - assertNotVisible: "Confirmă .* citit.* din poză."
@@ -98,6 +109,7 @@ appId: ro.wastehouse.app
 - scrollUntilVisible:
     element:
       id: handover-save
+    timeout: 60000
 - tapOn:
     id: handover-save
 - scrollUntilVisible:
@@ -129,6 +141,7 @@ appId: ro.wastehouse.app
 - scrollUntilVisible:
     element:
       id: handover-save
+    timeout: 60000
 - tapOn:
     id: handover-save
 
