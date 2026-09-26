@@ -13,7 +13,7 @@ appId: ro.wastehouse.app
 - tapOn: Luna anterioară
 - tapOn: Luna anterioară
 - extendedWaitUntil:
-    visible: 7 mișcări în lună
+    visible: 6 mișcări în lună
     timeout: 10000
-- assertVisible: "790,5"
+- assertVisible: "502"
 - takeScreenshot: 03-acasa-iulie

@@ -54,8 +54,13 @@ appId: ro.wastehouse.app
 - takeScreenshot: 03-generare-iulie
 
 # --- Comutatorul: „Intrări" e alt filtru pe același ecran, nu altă filă în bară ---
+# Rândul are cinci taburi (Generare · Totalul anului · Ambalaje · Intrări · Ieșiri) și se derulează.
+- swipe:
+    from:
+      id: st-ambalaje
+    direction: LEFT
 - tapOn:
-    id: screen-IN
+    id: st-IN
 - extendedWaitUntil:
     visible: Mișcările lunii
     timeout: 15000
@@ -64,9 +69,9 @@ appId: ro.wastehouse.app
 - assertVisible: Control
 
 # --- Termene. Baza demo n-are termene până la o regenerare, deci ecranul e verde și când e goală:
-#     ce se cere e un răspuns („Termen ..." sau „Niciun termen deschis."), nu un ecran care atârnă.
+#     ce se cere e un răspuns („Termen ..." sau „Niciun termen de făcut."), nu un ecran care atârnă.
 - tapOn: Termene
 - extendedWaitUntil:
-    visible: "Termen .*|Niciun termen deschis."
+    visible: "Termen .*|Niciun termen de făcut."
     timeout: 15000
 - takeScreenshot: 05-termene

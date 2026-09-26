@@ -4,6 +4,8 @@ import type {
   MonthlyEvidence,
   MovementSummary,
   MovementTotals,
+  PackagingHandoverRow,
+  PackagingTable1Row,
   Partner,
   PartnerType,
   WasteCode,
@@ -214,6 +216,23 @@ export async function upcomingDeadlines(auth: Auth) {
   const year = new Date().getFullYear();
   const lists = await Promise.all([year - 1, year, year + 1].map((y) => deadlines(auth, y)));
   return lists.flat();
+}
+
+/** Tabul „Trecute” (ca pe web): anul în curs până ieri, bifate sau nu. */
+export function pastDeadlines(auth: Auth) {
+  return request<Deadline[]>("/api/v1/deadlines/past", { auth });
+}
+
+// ── tabul „Ambalaje” (aceleași cereri ca `hooks/usePackaging.ts` de pe web) ──
+
+/** Tabelul 1 al Anexei 1 Ambalaje: pus pe piață, pe material. */
+export function packagingTable1(auth: Auth, year: number) {
+  return request<PackagingTable1Row[]>(`/api/v1/packaging/table1?year=${year}`, { auth });
+}
+
+/** Tabelul 2: ce s-a predat, pe material și operator. */
+export function packagingHandovers(auth: Auth, year: number) {
+  return request<PackagingHandoverRow[]>(`/api/v1/packaging/handovers?year=${year}`, { auth });
 }
 
 // ── controlul (M1c) ─────────────────────────────────────────────────────────

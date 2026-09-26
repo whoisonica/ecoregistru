@@ -177,6 +177,20 @@ export const strings = {
     lcdError: "Nu am putut încărca luna",
     previousMonth: "Luna anterioară",
     nextMonth: "Luna următoare",
+    previousYear: "Anul anterior",
+    nextYear: "Anul următor",
+    // --- Taburile de pe web (`lib/screenTabs.ts`), pe un singur rând (26.09.2026) ---
+    // Pe o firmă cu mai multe ecrane, primul tab poartă numele ecranului („Generare”), nu „Mișcări”:
+    // lângă „Intrări” și „Ieșiri”, „Mișcări” n-ar spune care.
+    lcdLabelYear: (year: number) => `${year} · GENERAT`,
+    lcdLabelPackaging: (year: number) => `${year} · AMBALAJE PREDATE`,
+    annualByCode: "Pe cod de deșeu",
+    annualCodes: (n: number) => (n === 1 ? "1 cod de deșeu" : `${n} coduri de deșeu`),
+    annualBlocked: (n: number) => (n === 1 ? "1 cod fără cod R/D" : `${n} coduri fără cod R/D`),
+    doneInYear: (year: number) => `Bifate în ${year}`,
+    // Rândurile tabelului 2 sunt strânse pe material și operator, nu câte unul pe predare.
+    packagingHandoverRows: (n: number) =>
+      n === 0 ? "nicio predare" : `${n === 1 ? "1 rând" : `${n} rânduri`} · material și operator`,
     serverUnreachable: "Nu ajung la server. Verifică legătura la internet și încearcă din nou.",
     comingSoon: "Ecranul ăsta vine în versiunea următoare a aplicației.",
     account: "Contul",

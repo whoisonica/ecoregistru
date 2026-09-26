@@ -22,6 +22,21 @@ export function MonthArrows({ cursor, onChange }: { cursor: Cursor; onChange: (c
   );
 }
 
+/** Aceleași săgeți, pe an. Anul următor e stins, ca luna următoare. */
+export function YearArrows({ year, onChange }: { year: number; onChange: (y: number) => void }) {
+  return (
+    <View style={styles.arrows}>
+      <Arrow name="left" label={strings.mobile.previousYear} onPress={() => onChange(year - 1)} />
+      <Arrow
+        name="right"
+        label={strings.mobile.nextYear}
+        onPress={() => onChange(year + 1)}
+        disabled={year >= new Date().getFullYear()}
+      />
+    </View>
+  );
+}
+
 function Arrow({ name, label, onPress, disabled }: {
   name: "left" | "right";
   label: string;

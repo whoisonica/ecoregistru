@@ -11,9 +11,9 @@ appId: ro.wastehouse.app
 # Două înfățișări ale aceluiași ecran: ori a găsit Metro pe rețea și îl listează, ori cere adresa scrisă.
 - runFlow:
     when:
-      visible: ".*:8081"
+      visible: ".*:808[0-9]"
     commands:
-      - tapOn: ".*:8081"
+      - tapOn: ".*:808[0-9]"
 - runFlow:
     when:
       visible: Connect

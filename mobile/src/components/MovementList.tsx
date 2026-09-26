@@ -1,15 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { binFor } from "@/lib/binColor";
 import { directionOf, registerOf, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@web/strings";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { movements, movementTotals, UnauthorizedError } from "../api";
 import { formatDate, formatKg } from "../format";
-import { SCREEN_LABEL } from "../company";
 import { useSession } from "../session";
-import { binColors, colors, fonts, radius } from "../theme";
+import { colors, radius } from "../theme";
+import { Bin } from "./Bin";
 import { GraphiteHeader } from "./GraphiteHeader";
 import { Chip, Group, Note, rowStyles, SectionHead } from "./Rows";
 import { Lcd } from "./Lcd";
@@ -22,12 +21,12 @@ import { MonthArrows } from "./MonthArrows";
  * <p>Cifra de sus vine de la `/movements/totals`, nu din rândurile aduse: pagina nu e luna, iar un
  * total adunat din 50 de rânduri ar fi mai mic decât adevărul fără să spună că e mai mic.
  */
-export function MovementList({ title, screen, tabs }: {
+export function MovementList({ title, screen, tabRow }: {
   title: string;
   /** Ecranul al cărui filtru se aplică. Lipsește cât timp tipul firmei nu se știe. */
   screen?: MovementScreen;
-  /** Comutatorul dintre ecranele firmei. Lipsește când firma are unul singur. */
-  tabs?: { screens: MovementScreen[]; current: MovementScreen; onPick: (s: MovementScreen) => void };
+  /** Rândul de taburi al ecranului (`TabRow`), deasupra listei. */
+  tabRow?: ReactNode;
 }) {
   const { session, auth, signOut } = useSession();
   const now = new Date();
@@ -94,27 +93,7 @@ export function MovementList({ title, screen, tabs }: {
       </GraphiteHeader>
 
       <View style={styles.sheet}>
-        {tabs ? (
-          <View style={styles.tabs}>
-            {tabs.screens.map((s) => {
-              const on = s === tabs.current;
-              return (
-                <Pressable
-                  key={s}
-                  testID={`screen-${s}`}
-                  onPress={() => tabs.onPick(s)}
-                  style={[styles.tab, on && styles.tabOn]}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: on }}
-                >
-                  <Text style={[styles.tabText, on && styles.tabTextOn]} numberOfLines={1}>
-                    {SCREEN_LABEL[s]}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
+        {tabRow}
         <SectionHead>{strings.mobile.monthMovements}</SectionHead>
         <Group>
           {list.isError ? (
@@ -154,12 +133,6 @@ export function MovementList({ title, screen, tabs }: {
   );
 }
 
-/** Pătrățelul pubelei. Nimic pentru un cod din afara listei — un pătrat gol ar fi o afirmație. */
-function Bin({ code, hazardous }: { code: string; hazardous: boolean }) {
-  const bin = binFor(code, hazardous);
-  return bin ? <View style={[styles.bin, { backgroundColor: binColors[bin] }]} /> : <View style={styles.binGap} />;
-}
-
 /**
  * Eticheta afișajului urmează filtrul ecranului, nu ecranul.
  *
@@ -185,14 +158,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     gap: 8,
   },
-  tabs: { flexDirection: "row", backgroundColor: "#E2E6E3", borderRadius: 12, padding: 3, gap: 3 },
-  tab: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 9, borderRadius: 9 },
-  tabOn: { backgroundColor: colors.card },
-  tabText: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.ink2 },
-  tabTextOn: { color: colors.ink },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  bin: { width: 10, height: 13, borderRadius: 2 },
-  binGap: { width: 10 },
   rowBody: { flex: 1 },
   rowEnd: { alignItems: "flex-end" },
 });

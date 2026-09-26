@@ -25,21 +25,27 @@ appId: ro.wastehouse.app
 - assertVisible:
     id: check-weighing
 - assertVisible: "din 4"
-- assertVisible: ".*termene depășite"
+# Un termen depășit se numește, mai multe se numără. Din 16.09.2026 calendarul ține doar următorul
+# termen al fiecărui fel, deci baza demo are de obicei unul singur („… depășit de 1 zi”).
+- assertVisible: ".*termene depășite|.*depășit de .*"
 - assertVisible: "1 linie fără cod R/D la ieșire"
 - assertVisible: "1 linie care așteaptă cântarul"
 - assertVisible: "2 parteneri cu autorizația aproape expirată"
 - takeScreenshot: 01-control
+# La mijloc: sub bara translucidă de jos butonul e „vizibil” pentru Maestro, dar apăsarea prinde bara.
 - scrollUntilVisible:
     element:
       id: send-dossier
     direction: DOWN
+    centerElement: true
 - takeScreenshot: 02-dosar
 - tapOn:
     id: send-dossier
 # Foaia de partajare a sistemului, cu arhiva descărcată de pe server: ambele sisteme scriu numele fișierului (iOS, după încărcare, fără „.zip”).
+# 60 s: seed-ul are două atașamente pe imaginile publice `res.cloudinary.com/demo`, iar serverul
+# așteaptă până la 20 s pe fiecare descărcare care nu vine (`AuditFileService`) înainte de arhivă.
 - extendedWaitUntil:
     visible: "dosar-control-2026.*"
-    timeout: 30000
+    timeout: 60000
 - waitForAnimationToEnd
 - takeScreenshot: 03-foaia-de-partajare

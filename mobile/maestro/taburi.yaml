@@ -1,0 +1,76 @@
+# Taburile de pe web, pe telefon, toate pe același rând (26.09.2026): „Generare” cu Totalul anului și
+# Ambalaje (`lib/screenTabs.ts`), apoi Intrări și Ieșiri; Termene cu De făcut · Bifate · Trecute.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/taburi.yaml
+# Firma demo e „generator și colector” (CompanyType.BOTH), deci rândul de mișcări are cinci taburi.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+# --- Mișcări: un singur rând, în ordinea webului ---
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- assertVisible:
+    id: st-GENERATED
+- assertVisible: Generare
+- assertVisible: Totalul anului
+- takeScreenshot: 01-generare
+
+# Totalul anului: cifrele pe cod, cu starea fiecăruia (aceeași socoteală ca pe web).
+- tapOn:
+    id: st-total
+- extendedWaitUntil:
+    visible: ".* · GENERAT"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Pe cod de deșeu"
+    timeout: 15000
+- takeScreenshot: 02-total
+
+# Ambalaje: ce s-a predat și ce s-a pus pe piață.
+- tapOn:
+    id: st-ambalaje
+- extendedWaitUntil:
+    visible: ".* · AMBALAJE PREDATE"
+    timeout: 15000
+- assertVisible: Predat
+- takeScreenshot: 03-ambalaje
+
+# Rândul se derulează spre Intrări și Ieșiri, pe același rând.
+- swipe:
+    from:
+      id: st-ambalaje
+    direction: LEFT
+- tapOn:
+    id: st-OUT
+- extendedWaitUntil:
+    visible: ".* · PREDAT"
+    timeout: 15000
+- takeScreenshot: 04-iesiri
+
+# --- Termene: De făcut · Bifate · Trecute ---
+- tapOn:
+    id: tab-termene
+- extendedWaitUntil:
+    visible:
+      id: st-default
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Termen .*|Niciun termen de făcut."
+    timeout: 15000
+- takeScreenshot: 05-de-facut
+- tapOn:
+    id: st-bifate
+- extendedWaitUntil:
+    visible: "Bifate în .*"
+    timeout: 15000
+- takeScreenshot: 06-bifate
+- tapOn:
+    id: st-trecute
+- extendedWaitUntil:
+    visible: "Termenele din .*"
+    timeout: 15000
+- takeScreenshot: 07-trecute
