@@ -395,7 +395,7 @@ rulează local și are testele verzi.
 > **C:** o operație fără partener o face firma („prin mijloace proprii”, OUG 92/2021 art. 23 alin. (1)), deci fișa (cap. 3/4) și evidența
 > centralizată scriu denumirea firmei, nu „în activitatea proprie” (HG 856/2002 anexa 1; ghidul SIM, PRODDES tabelul 2a și corelația
 > PRODDES005). Schimbă un document tipărit: validarea specialistei se redeschide pentru fișă și evidența centralizată. **AP:** sub 15 martie,
-> un an încheiat fără generări trimite la suportsim@anpm.ro (ghidul SIM, p. 8). **AK:** art. 23 alin. (4)–(5) în forma din 12.01.2023 —
+> un an încheiat fără generări trimite la SuportSIM (ghidul SIM, p. 8; adresa e suportsim@anmap.gov.ro din 01.06.2025, corectată în aplicație pe 26.09.2026). **AK:** art. 23 alin. (4)–(5) în forma din 12.01.2023 —
 > orice generator desemnează persoana, instruirea se cere doar cu autorizație de mediu; README-ul dosarului, explicația din profil și
 > `surse-oficiale.md` §2.1b citau forma veche. **Anul declarat:** cu 15 martie bifat pentru anul mișcării, salvarea întreabă („Salvează
 > oricum”), ștergerea și „Adaugă cantitatea” avertizează; doar web, doar avertisment. **Probe:** backend 864/104, 0 eșecuri (negative pe C și

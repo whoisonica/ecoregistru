@@ -2301,10 +2301,11 @@ export const strings = {
       yearOpen: "Anul {year} nu s-a încheiat — cifrele cresc până la 31 decembrie.",
       evidenceEmpty: "Nicio generare înregistrată în {year}.",
       // AP, 17.09.2026: fără deșeu n-ai cod, cantitate sau fișă (OUG 92/2021 art. 48 alin. (1); HG 856/2002
-      // art. 1). Chestionarul din SIM îl alocă însă ANMAP, iar ghidul SIM (p. 8) trimite la suportsim@anpm.ro
-      // când nu corespunde activității. Numai după ce anul s-a încheiat.
+      // art. 1). Chestionarul din SIM îl alocă însă ANMAP, iar ghidul SIM (p. 8) trimite la SuportSIM
+      // când nu corespunde activității. Numai după ce anul s-a încheiat. Adresa e suportsim@anmap.gov.ro din
+      // 01.06.2025 (anunțul DJM-urilor ANMAP); vechiul domeniu anpm.ro n-are server de mail (verificat 26.09.2026).
       evidenceEmptyClosed:
-        "Nicio generare înregistrată în {year}. Dacă firma chiar n-a avut deșeuri în {year}, n-ai fișă de depus: anunță la suportsim@anpm.ro că chestionarul PRODDES n-are date pe {year} (Ghidul SIM al ANMAP, p. 8).",
+        "Nicio generare înregistrată în {year}. Dacă firma chiar n-a avut deșeuri în {year}, n-ai fișă de depus: anunță la suportsim@anmap.gov.ro că chestionarul PRODDES n-are date pe {year} (Ghidul SIM al ANMAP, p. 8).",
       // Kilograme, nu tone: evidența se depune în kg (Andreea, 14.09.2026, AF), iar „1,060 t” se
       // citea ca o mie de tone (proprietarul, 17.09.2026).
       evidenceFigures: "{year}: {codes}, {kg} kg",

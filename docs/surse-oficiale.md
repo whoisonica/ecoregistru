@@ -20,6 +20,20 @@
 > există ca s-o prevină. Un citat verbatim îmbătrâneşte; **data accesării nu e o formalitate, e
 > termenul lui de valabilitate.** Regula nouă: la fiecare recitire se ia forma consolidată, nu
 > forma de bază, şi se notează versiunea, nu doar ziua în care am deschis pagina.
+>
+> 🔁 **Recitit pe 26.09.2026 pentru punctele deschise ale modulului de depozit** (`ecoregistru-docs/docs/todo-colector.md`).
+> Corectate: **§4** (art. 1 alin. (3), art. 20 alin. (5), art. 25 alin. (2) lit. a)), **§6** (6 fotografii, GPS-ul nu e pe
+> tranzacție, termenele curg de la recepție, amenzile, cine intră în SIATD), **§7** (calendarul TRACE-DM, încă proiect),
+> **§8** (**HG 349/2005 e abrogată din 2021** prin OG 2/2021), **§10** (forma curentă a OUG 196/2005), **§13** (art. 4
+> alin. (2), nu art. 3), **§15** (inventarul și costul stocului, pe sursă primară), **§17** (**art. 29 din OG 20/1992 era
+> textul din 1992**; interdicția e la art. 19), **§18.3** (borderoul PF devine implicit), **§18.6** (lit. a) și j)).
+> Notele de cercetare, cu toate citatele: `ecoregistru-docs/research_notes/Depozit puncte deschise în lege/`; raportul:
+> `ecoregistru-docs/reports/Depozit puncte deschise în lege.md`.
+> **Runda 2 (aceeași zi, fișierele `runda2_*.md`)** a închis din text și ce lăsase prima rundă „la oameni”: calculul
+> termenelor SIATD (Codul civil, §6.1), obligația SIATD a colectorilor de municipale (ierarhia actelor + anunțul AFM,
+> §6.1), limita de 10 MB (§6.1), evidența pe punct de lucru, „regimul special”, registrul și diferența de cântar (§4),
+> perisabilitatea, stocul degradat și preluarea gratuită (§15.1, §15.3), practica metodei de cost (§15.2), Ordinul 1271/2018
+> (§18.3), codul după sortare, R12 și pierderile 99 99 99 (§18.6–18.7), autorizațiile reale și **`anpm.ro` dispărut** (§18.6).
 
 ---
 
@@ -1183,7 +1197,7 @@ unde se depune: „Producătorii şi deţinătorii de deşeuri prevăzuţi la al
 adică pe o calitate dată de activitate, nu pe cantitatea din anul raportat. În ghidul SIM, la p. 7, chestionarele sunt
 „**alocate** spre completare” de ANMAP: „Proddes — este completat de operatorii economici generatori de deşeuri”. La
 p. 8 scrie: „Daca chestionarele alocate nu corespund activitatii dvs, va rugam efectuati sesizari la adresa
-suportsim@anpm.ro”. Deci depunerea se leagă de chestionarul alocat firmei, nu de faptul că există generări. **Termenul de 15
+suportsim@anpm.ro”. ⚠️ *(26.09.2026: adresa e **suportsim@anmap.gov.ro** din 01.06.2025, anunțată pe paginile DJM ale ANMAP, ex. [djmcs.anmap.gov.ro](https://djmcs.anmap.gov.ro/); domeniul anpm.ro n-are server de mail. Textul aplicației e corectat.)* Deci depunerea se leagă de chestionarul alocat firmei, nu de faptul că există generări. **Termenul de 15
 martie rămâne pentru orice generator.** Întrebare de practică pentru specialistă: *cu chestionarul PRODDES alocat și
 zero generări în an, se trimite gol sau se face sesizarea?*
 
@@ -1330,6 +1344,58 @@ consolidare 23.01.2026. **În vigoare.** Accesat 22.08.2026.
 > **Art. 1 alin. (3):** transportul se face numai către operatori cu autorizație de mediu.
 > **Consecință:** un transfer între două depozite ale aceleiași firme **are Anexa 3**. Nu există
 > scutire pentru rută internă.
+
+> 🆕 **Recitit 26.09.2026 (forma din 23.01.2026, nemodificată de atunci; niciun proiect care s-o înlocuiască).**
+> MMAP a confirmat pe 22.08.2025 că HG 1061/2008 e actul aplicabil transportului intern
+> ([FAQ MMAP pct. 9](https://mmediu.ro/domenii/mediu/deseuri/faq-si-prezentari/30-cele-mai-frecvente-intrebari-privind-gestionarea-deseurilor-si-a-siturilor-contaminate/)).
+> Trei lucruri care nu erau aici:
+> - **art. 1 alin. (3)**, destinatarul trebuie să fie autorizat; încălcarea costă **15.000–30.000 lei** (art. 25 alin. (2)
+>   lit. a)). Deci **un transfer spre un depozit fără autorizație valabilă nu se creează** (blocare, nu avertisment);
+> - **art. 20 alin. (5)**: destinatarul înregistrează formularul primit *„într-un registru securizat, înseriat și
+>   numerotat”*. E o obligație a oricărei recepții cu Anexa 3, nu doar a transferului, iar aplicația **nu are** încă un
+>   asemenea registru;
+> - **art. 4 alin. (11)** (deja în tabelul din §4.1): la periculoase procedura se aplică și când expeditorul,
+>   transportatorul și destinatarul sunt același operator.
+>
+> **Rămâne deschis (întrebări la Andreea):** dacă evidența art. 48 și SIM se țin pe punct de lucru sau pe firmă (textul
+> numește doar „unitățile și întreprinderile”) și ce cantitate se scrie pe formular când cântarul de la sosire diferă de
+> cel de la plecare (Anexa 3 are o singură rubrică de cantitate). Până la răspuns: ieșire la A, intrare la B, marcate
+> „transfer intern”; pe formular cantitatea de la sosire; diferența, rând de ajustare la A (D3.6).
+
+> 🔁 **Runda 2, 26.09.2026** (note: `runda2_mediu.md`):
+> - **Pe punct de lucru — da, în practică.** Legea tace („punct de lucru” apare de 0 ori în OUG 92/2021 art. 48–49 și HG
+>   856/2002), dar tot ce e operațional e legat de punctul de lucru: contul SIM *„va fi asociat unui singur punct de lucru”*
+>   (DJM/ANMAP), chestionarul COL/TRAT are bloc de identificare cu adresa, SIRUTA și coordonatele, autorizația se emite pe
+>   amplasament, iar raportarea de ambalaje e *„pentru fiecare punct de lucru în parte”* (Ordinul 794/2012 art. 4 alin. (4)).
+>   **Pentru cod:** evidența art. 48 și totalurile COL/TRAT se țin și se exportă **pe depozit**; vederea pe firmă e o sumă
+>   din care se scad transferurile interne. La Andreea rămâne doar cum declară A un transfer spre B cu același CUI.
+> - **„Tipizat, cu regim special” nu mai are conținut legal.** Tipărirea și înserierea cu regim special s-au oprit la
+>   01.01.2007 (OMFP 2226/2006 art. 2); HG 831/1997 e abrogată (HG 105/2009); OMFP 2634/2015 nu mai cunoaște „regim special”
+>   și admite formulare *„pretipărite sau editate cu ajutorul sistemelor informatice”* (pct. 22), cu numerotare internă
+>   stabilită de firmă, eventual pe punct de lucru (pct. 24). **Și alin. (1) privește doar deșeurile nepericuloase
+>   „destinate eliminării”**; transportul spre colectare/stocare/valorificare e la art. 21, fără „regim special”.
+>   **Pentru cod:** Anexa 3 generată cu serie proprie pe depozit, numere secvențiale fără goluri, anulatele păstrate în
+>   șir, needitabilă după emitere.
+> - **Diferența de cântar la transfer (runda 2, `runda2_autorizatii_cantar.md`):**
+>   - Anexa 3 are **o singură rubrică de cantitate**, completată de expeditor (art. 20 alin. (2)), plus date de încărcare /
+>     descărcare și „Observații”; **nicio rubrică de cantitate primită**. Doar Anexa 2 (periculoase) are cantități predate,
+>     primite, acceptate și respinse separat.
+>   - Toleranța legală: HG 710/2015 anexa 1 tabelul 3, clasa III — ±0,5 e până la 500 e, ±1 e până la 2 000 e, ±1,5 e până
+>     la 10 000 e; pct. 4.2 le **dublează în exploatare**. La ~10 t cu diviziunea de 20 kg, fiecare pod poate greși cu cel mult
+>     ±20 kg, deci două poduri conforme diferă cu cel mult ~40 kg (80 kg dacă netul vine din două cântăriri). **180 kg nu e
+>     toleranță, e diferență reală.**
+>   - Contabil: diferența la recepție cere **NIR 14-3-1A** (verso „Diferențe (+/-)” și concluziile comisiei); transferul între
+>     depozite cu adrese diferite merge cu **Aviz de însoțire a mărfii 14-3-6A** marcat „Fără factură” (bonul de transfer
+>     14-3-3A e doar în aceeași incintă).
+>   - Nicio îndrumare ANPM/ANMAP/MMAP despre ce greutate intră în evidența art. 48.
+>   - **Pentru cod (deducție, nu text):** Anexa 3 poartă cantitatea expeditorului (10,00 t), B își notează 9,82 t la
+>     „Observații”; în evidența art. 48, A are ieșire 10,00 t, B intrare 9,82 t; cele 0,18 t se închid prin NIR și decizia
+>     comisiei; pragul de toleranță se calculează din clasa și diviziunea celor două cântare (registrul D2.3); diferențele în
+>     ambele sensuri cer NIR. ~~Pe formular cantitatea de la sosire~~ (regula provizorie de mai sus se înlocuiește).
+> - **„Registru securizat” nu e definit nicăieri.** eIDAS art. 46 interzice refuzul unui document doar pentru că e
+>   electronic, dar „înseriat și numerotat pe fiecare pagină” descrie un registru paginat. **Pentru cod (D2.6):** jurnal
+>   append-only pe depozit (corectura = rând nou), export PDF cu seria registrului și „Pagina X din Y”, tipăribil și
+>   șnuruibil. La Andreea rămâne doar dacă APM/GNM cer hârtie tipografică.
 > 🟠 **Neclar:** persoana fizică ce își aduce singură deșeul la centru. Actul n-o scutește explicit,
 > dar nici n-o numește; practica nu cere formular. E întrebarea **AX** din `intrebari-specialist.md`.
 
@@ -1461,7 +1527,7 @@ observaţiile) şi scurtează legenda semnăturii destinatarului. **Se construie
 | Formularul aprobat, la **ISU** | **art. 4 alin. (8) lit. b)** | îl duce **expeditorul**, la ISU-ul judeţului său, „pentru **autorizarea rutei** transportului" |
 | Notificarea de **48 de ore** | art. 14 alin. (1) | o face **ISU-ul**, nu clientul: anunţă celelalte ISU-uri judeţene şi inspectoratele de poliţie de pe traseu |
 | ⛔ **Deşeurile medicale** | **art. 24** | **transportatorul** — „chiar dacă acesta este şi destinatar" — întocmeşte formularele, cu „cantitatea cumulată […] pe un transport dintr-o anumită zonă" şi „o anexă cu expeditorii şi cantităţile individuale" |
-| Sancţiuni | art. 25 alin. (2) | lit. b) nerespectarea **art. 8**: **10.000–20.000 lei** · lit. c) art. 9, 10, 12, 15(2): **5.000–10.000 lei** |
+| Sancţiuni | art. 25 alin. (2) | lit. a) **art. 1 alin. (3)** (destinatar fără autorizație) şi **art. 19**: **15.000–30.000 lei** · lit. b) art. 4, 7, **8**, 14(3)–(5), **20** şi 21: **10.000–20.000 lei** · lit. c) art. 9, 10, 12, 15(2), 18(3), 22, 23(2): **5.000–10.000 lei** *(lit. a) şi lista completă adăugate 26.09.2026)* |
 
 ⚠️ **Art. 2 trimite definiţiile la „anexa nr. I A la OUG nr. 78/2000" — act abrogat.** Deci
 „**aceeaşi categorie** de deşeuri periculoase", cuvântul pe care stă pragul de 1 t/an (art. 5, 7,
@@ -2142,10 +2208,116 @@ Monitorul Oficial nr. 331 din 10.04.2024. Accesat 22.08.2026.
   municipale.
 - **Termene de confirmare după recepţie (art. 18):**
   `deşeuri municipale 3 zile · ambalaje 5 zile · anvelope 5 zile · DEEE şi baterii 15 zile`
-- **Date per tranzacţie (art. 18 alin. 2):** identificarea contractorului, cantităţi şi tipuri,
-  documente însoţitoare (formular de încărcare-descărcare, factură), **coordonate GPS ale punctului
-  de lucru**, **fotografii (2–4 unghiuri la ambalaje)**.
-- **Sancţiune:** suspendarea accesului.
+- ~~**Date per tranzacţie (art. 18 alin. 2):** [...] coordonate GPS ale punctului de lucru, fotografii (2–4 unghiuri la
+  ambalaje).~~ **Greșit — corectat mai jos, 26.09.2026.**
+- ~~**Sancţiune:** suspendarea accesului.~~ **Incomplet — amenzile sunt în OUG 196/2005, mai jos.**
+
+### 6.1 Recitit integral pe 26.09.2026 (Ordinul și Instrucțiunile, nemodificate)
+
+Pe Portal, „Acțiuni suferite” răspunde *„Nu exista actiuni suferite de acest act”* atât pentru Ordin (281611), cât și
+pentru Instrucțiuni (281612). Nu există ordin SIATD mai nou; 1595/2020 e abrogat. siatd.afm.ro funcționează (HTTP 200,
+26.09.2026) și nu s-a găsit nicio amânare.
+
+**Termenele, art. 18 alin. (6)–(10), verbatim pe scurt:**
+- alin. (6), ambalaje: cine preia *„în vederea valorificării/reciclării/tratării/**revânzării**”* confirmă *„într-un termen
+  de maximum 5 zile **de la data recepției deșeurilor**”*;
+- alin. (7), DEEE și baterii portabile: 15 zile; alin. (8), anvelope: 5 zile;
+- alin. (9), municipale: 3 zile, **numai** pentru cine preia *„în vederea sortării/tratării/compostării/digestării/depozitării”*
+  — colectarea pură nu e numită;
+- alin. (10): dacă recepția a fost înainte de înrolare, termenul curge **de la înrolare**.
+
+~~Textul spune „zile”, fără „lucrătoare” [...] → zile calendaristice, fără prelungire la weekend (conservator).~~
+🔁 **Runda 2, 26.09.2026 — calculul e al Codului civil.** Nici Instrucțiunile, nici OUG 196/2005 n-au o regulă proprie, deci
+se aplică dreptul comun ([Codul civil, 109884](https://legislatie.just.ro/Public/DetaliiDocument/109884), consolidare 03.05.2026):
+> **Art. 2.551:** Durata termenelor, fără deosebire de natura și izvorul lor, se calculează potrivit regulilor stabilite de
+> prezentul titlu.
+> **Art. 2.553 (1)–(2):** Când termenul se stabilește pe zile, nu se ia în calcul prima și ultima zi a termenului. Termenul
+> se va împlini la ora 24,00 a ultimei zile.
+> **Art. 2.554:** Dacă ultima zi a termenului este o zi nelucrătoare, termenul se consideră împlinit la sfârșitul primei
+> zile lucrătoare care îi urmează.
+
+Codul de procedură civilă art. 181–182 dă aceeași dată; Codul de procedură fiscală art. 75 trimite la el; OG 2/2001 și
+Codul administrativ n-au regulă proprie. **Formula:** termen = prima zi lucrătoare ≥ (data recepției sau a înrolării + N + 1),
+ora 24:00; zilele nelucrătoare = weekend + sărbătorile legale (Codul muncii art. 139). **Exemple de probă:** recepție vineri
+02.10.2026 → 5 zile: **joi 08.10**; 3 zile: marți 06.10; 15 zile: duminică 18.10 → **luni 19.10**; recepție duminică 04.10,
+5 zile: sâmbătă 10.10 → **luni 12.10**. Prudență: ÎCCJ (RIL 8/2024) a înlăturat art. 2.553 alin. (1) la preavizul din Codul
+muncii, deci mementoul aplicației vine cu o zi înainte (recepție + N). La AFM rămâne doar cum numără platforma.
+
+**Dovezile pe tranzacție, art. 18 alin. (2)** — pentru persoanele de la art. 2 lit. b), c), e), f), h), i), k), l):
+> a) datele de identificare și coordonatele de contact ale contractanților; b) cantitățile și tipul de deșeuri
+> tranzacționate; c) operatorii economici autorizați pentru implementarea răspunderii extinse a producătorului [...];
+> d) avizul de însoțire a mărfii și informații cuprinse în factură, astfel: seria și numărul, data emiterii, cumpărătorul
+> și vânzătorul; e) **fotografii din cel puțin două unghiuri ale încărcăturii**, în cazul deșeurilor de ambalaje;
+> f) **fotografii din cel puțin 4 unghiuri ale mijlocului de transport încărcat înaintea deplasării**, după cum urmează: o
+> fotografie din față, o fotografie laterală, o fotografie cu kilometrajul indicat la bord și o fotografie din spate care va
+> trebui să cuprindă întreaga încărcătură și numărul de înmatriculare al mijlocului de transport, în cazul deșeurilor de
+> ambalaje; [...]
+
+Deci la ambalaje **6 fotografii** (2 + 4). **GPS-ul nu e pe tranzacție:** *„punctele de lucru, inclusiv coordonatele GPS ale
+acestora”* sunt date pe care OIREP/UAT le înregistrează despre cocontractanți (alin. (1) lit. c)). La o tranzacție cu
+ambalaje platforma **generează singură** Anexa 3 (HG 1061/2008) și, după caz, Anexa VII (alin. (4)), cu un cod unic de
+tranzacție (alin. (5)). Orice transmitere cere **semnătură electronică calificată** (art. 4). Mărimea și formatul
+fișierelor nu sunt în ordin (trimite la „caracteristicile tehnice”, nepublicate); ~~manualul AFM e v1.0 din 2018~~; **nu există
+API public** (`/api/account` → 401). Aplicația poate doar **pregăti pachetul** tranzacției pentru introducerea manuală.
+
+🔁 **Runda 2 — limita e 10 MB pe fișier**, din codul public al platformei: [i18n/ro/transactions.json](https://siatd.afm.ro/i18n/ro/transactions.json)
+→ `"file-exceeds": "Fișierul încărcat depășește dimensiunea maxim admisă (10MB)!"` (serverul răspunde 413). Cele 6 sloturi
+de fotografii n-au restricție de format în client; „doar PDF” e la documente (înrolare, acte semnate). **Manualele AFM la zi
+sunt publice:** [ambalaje, 03.2022](https://siatd.afm.ro/api/document/download-manual),
+[DEEE, 12.2025](https://siatd.afm.ro/api/document/download-manual-deee), [municipale, 02.2026](https://siatd.afm.ro/api/document/download-manual-mw).
+Ele cer PDF ≤ 10 MB pentru contract, autorizație, viză, licență; la DEEE și la municipale documentele tranzacției se
+**referă fără fișier** — *„Pentru fiecare tranzacție va fi referit bonul de cântar, fără a încărca documentul propriu-zis.”*
+**Pentru cod:** fotografii JPEG ≤ 10 MB (țintă ~2 MB), una pe slot; documente PDF ≤ 10 MB; aviz/factură/borderou/bon doar
+cu număr și dată. Formatele de imagine acceptate de server rămân neprobate (ar cere un POST real).
+
+Alte articole: **art. 6** — *„Utilizarea aplicației SIATD se face în limita cantităților prevăzute în autorizația de
+mediu”*; **art. 5** — garanție de 50 lei/t pentru cine raportează pentru OIREP.
+
+**Cine intră — conflict nerezolvat (D6.4, întrebare la AFM):**
+- **Instrucțiunile, art. 2**, listează colectorii numai când *„gestionează deșeuri pentru”* o OIREP (lit. b), e), h), k));
+  la municipale doar UAT/ADI (lit. m), salubrizarea (lit. n) și valorificarea/reciclarea (lit. o);
+- **OUG 196/2005 art. 10 alin. (12)**, act superior: *„Începând cu data de 1 ianuarie 2024, aplicația informatică SIATD se
+  utilizează de către persoanele juridice care gestionează deșeuri municipale, astfel cum sunt prevăzute la pct. 13 din
+  anexa nr. 1 la Ordonanța de urgență a Guvernului nr. 92/2021”* — iar „gestionarea” include colectarea (OUG 92/2021
+  anexa 1 pct. 19). Hârtia și PET-ul aduse de o PF sunt municipale după pct. 13.
+
+**Sancțiunile sunt în OUG 196/2005** ([Portal 67529](https://legislatie.just.ro/Public/DetaliiDocument/67529), forma din
+07.03.2025), nu doar suspendarea accesului:
+
+| Faptă | Articol | Amendă |
+|---|---|---|
+| neutilizarea SIATD de cei de la art. 10 alin. (9), (11)–(13) | art. 15 alin. (5) | **80.000–100.000 lei** |
+| nerespectarea termenelor din Instrucțiuni | art. 15 alin. (6) | **9.000–10.000 lei** |
+| raportare de date false | art. 15 alin. (12) | **200.000–250.000 lei** |
+
+Plus: cantitățile de ambalaje (din 2023) și de anvelope/DEEE/baterii (din 2024) care nu sunt în SIATD nu se iau în
+calcul la obiective (art. 12 alin. (8)–(9)).
+
+~~**Pentru cod:** flag pe firmă „utilizator SIATD (modul)”, **nebifat implicit** [...] până răspunde AFM.~~
+
+🔁 **Runda 2 — conflictul se rezolvă pe ierarhia actelor: OUG-ul se aplică direct.** Legea 24/2000
+([art. 77–78](https://legislatie.just.ro/Public/DetaliiDocument/21698)):
+> **Art. 77:** Ordinele cu caracter normativ, instrucțiunile și alte asemenea acte ale conducătorilor ministerelor [...] se
+> emit numai pe baza și în executarea legilor, a hotărârilor și a ordonanțelor Guvernului.
+> **Art. 78:** Ordinele, instrucțiunile și alte asemenea acte trebuie să se limiteze strict la cadrul stabilit de actele pe
+> baza și în executarea cărora au fost emise și nu pot conține soluții care să contravină prevederilor acestora.
+
+Ordinul 701/2024 se emite chiar *„în temeiul prevederilor art. 10 alin. (9) - (12)”* din OUG 196/2005, iar art. 2 din
+Instrucțiuni nu se declară exhaustiv. Deci **colectorul care preia deșeuri municipale din gospodării (hârtie, PET, sticlă,
+metal, ambalaje — anexa 1 pct. 13 lit. a) la OUG 92/2021) trebuie să folosească SIATD din 01.01.2024**, oricare ar fi lista
+ordinului; altfel 80.000–100.000 lei. AFM spune același lucru într-un anunț adresat
+*„OPERATORILOR ECONOMICI CARE GESTIONEAZĂ DEȘEURI MUNICIPALE”* ([PDF](https://www.afm.ro/main/venituri/anunt_utilizare_aplicatie_siatd.pdf),
+fișier din 05.06.2025): *„aveți obligația de a va înrola [...] în aplicația informatică SIATD și de a adera la modulul
+"Deșeuri municipale"”* (ghid: municipale.siatd@afm.ro). Pentru aceste intrări, art. 18 alin. (3) scutește tocmai de
+încărcarea sursei (borderoul PF).
+
+**Pentru cod:** la o firmă de colectare care cumpără de la populație, flagul „utilizator SIATD — modul Deșeuri municipale”
+se **propune bifat**, cu avertismentul amenzii; D6.1/D6.2 apar când e bifat. **La AFM rămâne doar practica:** ce trece un
+colector la „Număr contract delegare” / „Număr licență” în cererea de înrolare (anexa 3), ce înregistrează pe tranzacție
+(art. 18 alin. (2) nu numește lit. m)–o)) și dacă termenul de 3 zile îl privește (doar dacă preia „în vederea sortării”).
+
+Surse: [Portal 281612](https://legislatie.just.ro/Public/DetaliiDocument/281612), [Portal 281611](https://legislatie.just.ro/Public/DetaliiDocument/281611),
+[siatd.afm.ro](https://siatd.afm.ro/), [afm.ro — FAQ SIATD](https://www.afm.ro/siatd-intrebari_raspunsuri.php); toate accesate 26.09.2026.
 
 ---
 
@@ -2189,11 +2361,48 @@ generează în format electronic prin sistemul TRACE-DM**.
 10.000–20.000 lei pentru lipsa declarației; complementar, suspendarea dreptului de utilizare 15–30
 de zile şi reanalizarea autorizaţiei de mediu.
 
+### 7.1 Recitit pe 26.09.2026: **tot PROIECT**, cu trei lucruri care lipseau
+
+**Starea:** nicio HG adoptată. Pagina MMAP are doar consultarea din 08.05.2026, fără versiune revizuită; căutarea după
+titlu pe Portal întoarce 0 rezultate; comunicatele ședințelor de Guvern din 11, 18 și 24.09.2026 nu-l pomenesc.
+
+**Calendarul (art. 16–18)** — „180 de zile” de mai sus nu e tot:
+- art. 18: HG-ul intră în vigoare *„la 30 de zile de la data publicării”*;
+- art. 16: ordinul de procedură și formatul declarațiilor, *„în termen de 180 de zile de la data publicării”*;
+- art. 10 lit. b): ghidul tehnic AFM, la 60 de zile de la ordin (proiectul trimite greșit la „art. 14”);
+- art. 17: înregistrarea operatorilor în 60 de zile de la ghid, iar *„Obligațiile prevăzute la art. 8 devin aplicabile
+  după expirarea termenului prevăzut la alin. (1)”*.
+
+Deci obligațiile vin la ~10 luni după publicare, în cel mai rău caz: **nimic TRACE-DM nu se poate aplica în 2026**.
+
+**Art. 13 alin. (1) are trei trepte, nu două:** a) art. 12 lit. a), b), d), **e)** (inclusiv nepăstrarea evidențelor) —
+20.000–40.000 lei; b) art. 12 lit. c) — 10.000–20.000 lei; **c) art. 12 lit. f)**, *„utilizarea sistemului TRACE-DM cu
+încălcarea condițiilor tehnice și procedurale”* — **5.000–10.000 lei**. Suspendarea și reanalizarea autorizației țin doar
+de lit. a), b) și d).
+
+**Pragurile sunt ambigue:** art. 5 cere datele *„pentru fiecare tranzacție”*, dar art. 3 lit. c) definește pragul ca
+cantitatea anuală *„peste care se aplică regimul prevăzut la art. 8”* (verificarea actului, 24 h, declarația). Textul nu
+spune dacă sub prag se înregistrează. Art. 6 alin. (2) exceptează calamitățile. Trimiterile greșite arată un text
+nefinalizat: forma adoptată probabil va diferi.
+
 ---
 
-## 8. HG 349/2005 — depozitarea deșeurilor (profilul „groapă")
+## 8. ~~HG 349/2005~~ OG 2/2021 — depozitarea deșeurilor (profilul „groapă")
 
-Sursă: [legislatie.just.ro/Public/DetaliiDocument/61498](https://legislatie.just.ro/Public/DetaliiDocument/61498),
+> 🔴 **Găsit 26.09.2026: HG 349/2005 e ABROGATĂ din 2021.** OG 2/2021 art. 39 alin. (2): *„La data intrării în vigoare a
+> prezentei ordonanțe se abrogă Hotărârea Guvernului nr. 349/2005 privind depozitarea deșeurilor, [...] și orice trimitere
+> la aceasta se consideră a fi făcută la prezenta ordonanță.”* ([OG 2/2021](https://legislatie.just.ro/Public/DetaliiDocument/245381),
+> forma din 03.11.2023, accesat 26.09.2026). **Citatele din §8.1 și §8.2 de mai jos sunt din actul abrogat** și se
+> recitesc pe OG 2/2021 înainte de orice cod pe profilul „groapă”. Aceeași lecție ca la art. 29 alin. (2) din OUG 92/2021
+> (§2.7): o trimitere îmbătrânește fără să se schimbe o literă în actul care o poartă.
+>
+> **Ce contează din OG 2/2021 pentru depozitul-colector (D3.4), art. 3 alin. (2) lit. b):** „depozit” include *„o
+> suprafață permanent amenajată, respectiv pentru o perioadă de peste un an, pentru stocarea temporară a deșeurilor, dar
+> exclusiv: [...] (ii) stocarea deșeurilor înainte de valorificare sau tratare pentru o perioadă **mai mică de 3 ani**, ca
+> regulă generală, sau stocarea deșeurilor înainte de eliminare, pentru o perioadă **mai mică de un an**”*. Un centru
+> de colectare unde deșeul stă peste aceste durate devine deci, juridic, o groapă neautorizată.
+
+Sursă (istoric, act abrogat): [legislatie.just.ro/Public/DetaliiDocument/61498](https://legislatie.just.ro/Public/DetaliiDocument/61498),
 accesat 22.08.2026. Transpune Directiva 1999/31/CE. Abrogă HG 162/2002.
 
 ### 8.1 Art. 15 — procedura de recepție în depozit
@@ -2332,6 +2541,10 @@ neidentificat se confiscă.
 
 Sursă: [legislatie.just.ro/Public/DetaliiDocumentAfis/258980](https://legislatie.just.ro/Public/DetaliiDocumentAfis/258980),
 versiune consolidată, accesat 22.08.2026.
+⚠️ **26.09.2026:** pagina 258980 e o formă din 20.09.2022. Forma curentă e
+[DetaliiDocument/67529](https://legislatie.just.ro/Public/DetaliiDocument/67529) (consolidare **07.03.2025**, ultimul act
+modificator OUG 9/2025). Textul art. 9 alin. (1) lit. a) și art. 11 citat mai jos e **identic** în forma curentă; SIATD
+(art. 10 alin. (9)–(14) și amenzile de la art. 15) e în §6.1.
 
 ### 10.1 Art. 9 alin. (1) lit. a) — contribuția de 2%, reținută la sursă
 
@@ -2470,8 +2683,13 @@ Sursă: [legislatie.just.ro/Public/DetaliiDocument/167088](https://legislatie.ju
 consolidare 01.01.2026, accesat 15.09.2026.
 
 **Art. 4:** operațiunile de încasări și plăți în numerar între persoane juridice și persoane fizice
-*„se efectuează cu încadrarea în plafonul zilnic de **10.000 lei** către/de la o persoană”*. **Art. 3
-alin. (2)–(3)** interzice fragmentarea plăților ca să rămână sub plafon.
+*„se efectuează cu încadrarea în plafonul zilnic de **10.000 lei** către/de la o persoană”* (forma dată de OUG
+115/2023). **Art. 4 alin. (2)**: *„Sunt interzise încasările și plățile fragmentate de la/către o persoană, pentru
+operațiunile de încasări/plăți în numerar prevăzute la alin. (1), cu o valoare mai mare decât plafonul prevăzut la
+alin. (1)”*. *(Corectat 26.09.2026: aici scria „art. 3 alin. (2)–(3)”; art. 3 privește plățile între persoane juridice —
+5.000 lei/zi către o persoană, 10.000 lei/zi în total.)*
+🆕 **Legea 239/2025, din 01.01.2026:** persoana juridică trebuie să aibă un cont de plăți (art. 1 alin. (1^2)–(1^3)),
+sub amendă de 3.000–10.000 lei. Plafonul și art. 4 nu s-au schimbat (reverificat 26.09.2026, fără act ulterior).
 **Consecință:** un depozit plătește cash unei PF cel mult 10.000 lei pe zi, iar restul prin virament
 (OUG 31/2011 art. 1 alin. (1^2) lit. a), §9.1).
 
@@ -2500,12 +2718,106 @@ consolidare 04.02.2025, accesat 15.09.2026.
 > art. 1, timp de **10 ani**, cu începere de la data încheierii exerciţiului financiar în cursul căruia
 > au fost întocmite, cu excepţia statelor de salarii, care se păstrează timp de 50 de ani.
 
-**Art. 7** (citit prin surse secundare): inventarierea generală a elementelor de activ și de pasiv
-*„cel puțin o dată în cursul exercițiului financiar”*. Procedura e în **OMFP 2861/2009**
-([legislatie.just.ro/112430](https://legislatie.just.ro/Public/DetaliiDocument/112430)): comisie numită
-prin decizie scrisă, liste de inventariere, proces-verbal.
+~~**Art. 7** (citit prin surse secundare)~~ — **citit pe sursă primară pe 26.09.2026** (consolidare 04.02.2025, [Portal 58588](https://legislatie.just.ro/Public/DetaliiDocument/58588)):
+
+> **Art. 6 alin. (1):** Orice operațiune economico-financiară efectuată se consemnează **în momentul efectuării ei** într-un
+> document care stă la baza înregistrărilor în contabilitate, dobândind astfel calitatea de document justificativ.
+>
+> **Art. 7 alin. (1):** Persoanele prevăzute la art. 1 au obligația să efectueze inventarierea generală a elementelor de
+> natura activelor, datoriilor și capitalurilor proprii deținute la începutul activității, **cel puțin o dată în cursul
+> exercițiului financiar**, precum și în cazul fuziunii, divizării ori transformării sau al lichidării și în alte situații
+> prevăzute de lege.
+
+Art. 41 pct. 2 lit. d) + art. 42 alin. (1) lit. d): nerespectarea normelor de inventariere — **3.000–20.000 lei** (amenda
+e a firmei clientului).
+
 **Consecințe:** borderoul PF și CNP-ul de pe el se păstrează 10 ani, nu 3 cum rămân datele șoferului.
 Stocul depozitului trebuie inventariat cel puțin anual.
+
+### 15.1 Normele de inventariere — OMFP 2861/2009, în vigoare (citit 26.09.2026)
+
+[Ordinul, 112430](https://legislatie.just.ro/Public/DetaliiDocument/112430) · [Normele, 112431](https://legislatie.just.ro/Public/DetaliiDocument/112431).
+Portalul nu arată abrogare și nu s-a găsit un act care să-l înlocuiască (lista de modificări n-a putut fi consultată —
+mică incertitudine). Ordinul, art. 1 alin. (5): firma emite **proceduri proprii** de inventariere, aprobate de administrator.
+
+Pașii, cu punctul din Norme:
+1. **Decizia de numire** cu cinci elemente: comisia, modul, metoda, gestiunea, datele de început și sfârșit (pct. 6 alin. (1)).
+   **Gestionarul și contabilul gestiunii nu pot fi în comisie** (pct. 6 alin. (5)); la firmele mici, o singură persoană
+   (alin. (2)); fără salariați, administratorul (alin. (7)).
+2. **Declarația gestionarului**, cu ultimul document de intrare și de ieșire (pct. 8 lit. a)).
+3. Stocul faptic prin cântărire, numărare, măsurare sau **„calcule tehnice”** — la grămezi, cu datele tehnice scrise în
+   listă (pct. 15 alin. (3)–(4)).
+4. **Liste pe loc de depozitare, gestiune, categorie** (pct. 18); bunurile terților pe liste separate (pct. 19); semnătură
+   pe fiecare filă, mențiunea gestionarului pe ultima (pct. 33).
+5. Faptic față de scriptic pe fiecare poziție, după corectarea erorilor (pct. 35); explicații scrise pentru fiecare
+   diferență (pct. 39); compensarea lipsurilor cu plusurile doar pe lista anuală de sorturi confundabile (pct. 40);
+   perisabilitățile *„nu se aplică anticipat [...] nu se aplică automat”* (pct. 41 alin. (2)).
+6. **Procesul-verbal** cu treisprezece elemente (pct. 42), la administrator în **7 zile lucrătoare** (pct. 43).
+7. Rezultatul se înregistrează în **cel mult 7 zile lucrătoare** de la aprobare (pct. 45 alin. (1)).
+
+**Formularele, OMFP 2634/2015** ([173682](https://legislatie.just.ro/Public/DetaliiDocument/173682), anexele 2–3 la
+[286045](https://legislatie.just.ro/Public/DetaliiDocument/286045) / [286046](https://legislatie.just.ro/Public/DetaliiDocument/286046)):
+**Lista de inventariere 14-3-12** (15 coloane; variantele 14-3-12/b și /a), Registrul-inventar 14-1-2 (al contabilului,
+nu al modulului), Decizia de imputare 14-8-2. **Procesul-verbal n-are model oficial** — conținutul e cel din pct. 42.
+Art. 3–4: obligatoriu e doar conținutul minim (anexa 1 pct. 2 și 10); *„Fiecare entitate poate adapta [...] modelele”*.
+
+**Perisabilitate: nu există pentru deșeuri.** HG 831/2004 are 60 de grupe de mărfuri, **niciuna de deșeuri, metale,
+maculatură sau plastic** ([Norme, 52624](https://legislatie.just.ro/Public/DetaliiDocument/52624)); art. 2 scoate oricum
+furtul și neglijența. Lipsa neimputabilă e nedeductibilă (Codul fiscal art. 25 alin. (4) lit. c)), iar TVA-ul dedus —
+inclusiv cel autolichidat (art. 331 alin. (3)) — se ajustează după art. 304. **Aplicația nu oferă „perisabilitate” ca
+motiv de ajustare la deșeuri.**
+
+🔁 **Runda 2, 26.09.2026** (note: `runda2_contabil.md`; Codul fiscal 08.08.2026, Normele HG 1/2016 31.03.2026):
+- **HG 831/2004 e în vigoare** și se leagă de codul actual prin art. 502 alin. (2) (trimiterile la Legea 571/2003 *„se
+  consideră a fi făcute la prezentul cod”*), adică la art. 25 alin. (3) lit. d) — perisabilitățile *„potrivit legii”*.
+  Normele HG 1/2016 nu o numesc. Art. 1 o limitează la *„rețeaua de distribuție”*; art. 10 permite cote proprii doar în
+  limitele grupei; art. 11: peste norme, nedeductibil. La microîntreprinderi (art. 12 privește doar impozitul pe profit)
+  contează doar ajustarea TVA. **Singura normă proprie cu efect fiscal** e norma de consum tehnologic (pct. 78 alin. (10)
+  lit. e) din Norme, la TVA) — pentru sortare/presare, nu pentru depozitare. Minusurile de depozit rămân *lipsă
+  neimputabilă*: nedeductibile, cu TVA de ajustat.
+- **Stocul degradat trimis la eliminare:** Codul fiscal art. 25 alin. (4) lit. c) pct. 3 cere *„se face dovada
+  distrugerii”*, iar **Normele, Titlul II, pct. 17 alin. (3)**: *„condiția referitoare la distrugerea stocurilor [...] se
+  consideră îndeplinită atât în situația în care distrugerea se efectuează prin mijloace proprii, cât și în cazul în care
+  stocurile [...] sunt predate către unități specializate.”* Deci **predarea la un operator autorizat, cu Anexa 3 și factura
+  lui, e dovada**; la TVA, pct. 78 alin. (10) lit. d), (11), (12). Condiția de fond: bunul e degradat și nevalorificabil
+  (vânzarea la reciclare e livrare, nu distrugere). La contabil rămâne doar dacă predarea **gratuită** la un reciclator
+  (cod R) contează ca „unitate specializată”.
+- ⚠️ În notele primei runde art. 25 alin. (4) lit. c) era citat cu 7 puncte; textul în vigoare are 4. Concluzia rămâne.
+
+### 15.2 Valoarea stocului — OMFP 1802/2014 (consolidare 19.11.2025, [294347](https://legislatie.just.ro/Public/DetaliiDocument/294347))
+
+> **Pct. 96 alin. (1):** Costul de achiziție [...] al stocurilor din aceeași categorie [...] se calculează prin aplicarea
+> uneia din următoarele metode: a) metoda costului mediu ponderat - CMP; b) metoda primul intrat-primul ieșit - FIFO;
+> c) metoda ultimul intrat-primul ieșit - LIFO.
+> **Alin. (2):** [...] Media poate fi calculată periodic sau după fiecare recepție. Perioada de calcul nu trebuie să
+> depășească durata medie de stocare.
+>
+> **Pct. 287 alin. (4):** O diferență în localizarea geografică nu este suficientă pentru a justifica alegerea de metode
+> diferite.
+
+Deci CMP e **o opțiune, nu o regulă**; metoda e politica contabilă a firmei, consecventă de la un exercițiu la altul (pct.
+50, 287 alin. (1)) și **aceeași pe toate depozitele**. La inventar, valoarea e minimul dintre valoarea contabilă și
+valoarea realizabilă netă (pct. 88). Pct. 95 alin. (2): lipsurile *„se scot din evidență la data constatării”*.
+**Pentru D3.7:** setare pe firmă „Metoda de cost”, fixă pe exercițiu; valoarea afișată e „evidență de gestiune”.
+
+🔁 **Runda 2 — ce folosește sectorul** (politici contabile publicate, note: `runda2_siatd_fisiere_cost.md`): colector de
+maculatură cu fabrică de hârtie — **FIFO**; reciclator de aluminiu — FIFO la materii prime, CMP la produse finite;
+reciclator de mase plastice — **CMP**; grup cu reciclare PVC — **CMP** la materii prime și mărfuri; un colector pur de fier
+vechi nu-și declară metoda. Nicio normă sau îndrumare ANAF nu preferă o metodă la deșeuri (Codul fiscal pomenește FIFO doar la
+titluri, art. 97). **Pentru cod:** implicit CMP pe fiecare recepție (decizia din 26.09); opțiuni CMP lunar (cu avertismentul
+„perioada ≤ durata medie de stocare”) și FIFO; **LIFO nu apare în interfață**.
+
+### 15.3 Preluarea gratuită de la o persoană fizică — NIR, nu borderou (runda 2, 26.09.2026)
+
+**OMFP 2634/2015, anexa 2 — NIR 14-3-1A**, document de recepție obligatoriu între altele pentru *„bunurilor materiale
+procurate de la persoane fizice”* și *„bunurilor materiale care sosesc neînsoțite de documente de livrare”*
+([static.anaf.ro](https://static.anaf.ro/static/10/Anaf/legislatie/OMFP_2634_2015.pdf)). Borderoul 14-4-13 e pentru
+*„bunuri cumpărate”* și *„sume plătite”* — un borderou cu preț 0 ar descrie o cumpărare care n-a avut loc.
+**OMFP 1802/2014 pct. 75 alin. (1) lit. d):** bunurile obținute cu titlu gratuit intră *„la valoarea justă”* (371 = 758);
+venitul e impozabil și la impozitul pe profit (art. 19), și la microîntreprinderi (art. 53).
+**Pentru cod:** intrare PF **fără plată** → NIR (furnizor = numele persoanei; CNP doar la metal), valoare propusă = prețul
+curent de achiziție al firmei, marcată „de confirmat de contabil”; preluările gratuite de ambalaje se țin separat de cele
+cumpărate (Legea 249/2015 art. 20 alin. (7) lit. b) și (10) vorbesc de predare „contra cost” și de cantități „achiziționate”).
 
 ## 16. Legea 190/2018 art. 4 — CNP-ul
 
@@ -2535,16 +2847,64 @@ sursă secundară; 15.09.2026): **taxarea inversă** se aplică între plătitor
 4. materialele de la pct. 1–3 după curăţare, selecţie, tăiere, presare etc.
 
 **Consecință:** prețurile din depozit se țin **fără TVA**, la fel ca baza de 2% (§10.1).
+🆕 **26.09.2026, pe sursă primară** ([Codul fiscal, 171282](https://legislatie.just.ro/Public/DetaliiDocument/171282),
+consolidare 08.08.2026): lit. a) **nu expiră** — termenul de la alin. (6) privește doar lit. c)–f) și i)–l). Art. 331 nu
+are nicio regulă despre inventar.
 
-**OG 20/1992 privind metrologia** ([Lege5](https://lege5.ro/gratuit/gyztgnzx/ordonanta-nr-20-1992-privind-activitatea-de-metrologie),
-text inițial; 15.09.2026):
-- art. 3 și 21 pun sub control metrologic legal măsurările *„efectuate în cadrul unor tranzacţii comerciale”*;
-- art. 24: deținătorul asigură legalitatea mijloacelor de măsurare;
-- art. 29 sancționează *„utilizarea mijloacelor de măsurare neverificate metrologic sau cu termenul de
-  verificare depăşit”*.
+### 17.1 OG 20/1992 — cântarul (recitit pe forma în vigoare, 26.09.2026)
 
-🟠 Amenzile din textul inițial sunt în lei vechi; cuantumul actual n-a fost citit.
-**Consecință (de proiect, modulul de depozit — neconstruit la 22.09.2026):** cântarul depozitului ar trebui să aibă o dată de expirare a verificării și să primească alertă.
+> 🔴 **Ce stătea aici era textul inițial, de pe Lege5.** Art. 29 a fost modificat de Legea 211/1998, OG 104/1999,
+> Legea 178/2003 și Legea 98/2004; fraza *„utilizarea mijloacelor de măsurare neverificate [...] cu termenul de verificare
+> depăşit”* **nu mai e în vigoare**. Interdicția stă acum la **art. 19**.
+
+Sursă: [Portal 2171](https://legislatie.just.ro/Public/DetaliiDocument/2171), consolidare 29.08.2010 (ultima modificare OG
+23/2010; nerepublicată, neabrogată), accesat 26.09.2026.
+
+> **Art. 19:** Mijloacele de măsurare care nu au corespuns la controlul metrologic legal sau pe care sunt aplicate
+> marcaje de verificare cu termen de valabilitate depăşit **nu au calitatea de mijloace de măsurare legale**. Este interzisă
+> introducerea pe piaţă, punerea în funcţiune sau **utilizarea** pentru măsurările din domeniile de interes public prevăzute
+> la art. 3 alin. 1 a mijloacelor de măsurare prevăzute la alin. 1. Deţinătorii acestor mijloace de măsurare sunt obligaţi,
+> după caz, să le retragă de pe piaţă sau să le scoată din uz. [...]
+>
+> **Art. 24 alin. 1:** Persoanele fizice sau juridice care utilizează ori încredinţează spre utilizare, în calitate de
+> proprietar, mijloace de măsurare supuse controlului metrologic legal sunt obligate să asigure legalitatea acestora şi
+> **să le declare, înainte de punerea în funcţiune/utilizare, Biroului Român de Metrologie Legala**.
+
+Art. 3 și 21 lit. a) pun sub control măsurările din *„tranzacţii comerciale”*. BRML are declarare online
+([brml.ro](https://www.brml.ro/declararea-mijloacelor-de-m%C4%83surare-0)).
+
+**Amenzile, art. 29** (în lei vechi; ÷ 10.000 după Legea 348/2004 — conversie aritmetică, **de confirmat de jurist**
+înainte de a apărea în aplicație sau pe landing):
+
+| Faptă | Lit. | Lei vechi | Lei noi | Complementar |
+|---|---|---|---|---|
+| folosirea unui cântar nelegal (art. 19 alin. 2) | c) | 50–150 mil. | 5.000–15.000 | sigilare |
+| nedeclarare la BRML (art. 24 alin. 1) | h) | 50–100 mil. | 5.000–10.000 | — |
+| deținerea în locul de cântărire a unui cântar fără marcaj în termen (art. 24 alin. 2) | i) | 50–200 mil. | 5.000–20.000 | sigilare/confiscare |
+
+La persoane fizice limitele se înjumătățesc (art. 31). Nicio normă găsită nu anulează cântăririle făcute cu un cântar
+expirat: sunt interzise și sancționabile, nu nule.
+
+**Intervalul — L.O.-2022** (Ordinul BRML 77/2022, modificat doar de 204/2024, [Portal 253632](https://legislatie.just.ro/Public/DetaliiDocument/253632)):
+cântare neautomate L52-1 (inclusiv podul basculă static), automate L53-1…L53-5, cântărire în mers L55-1 — toate
+**VP 1 an**. Art. 8: intervalul e *„între două verificări metrologice succesive, oricare ar fi acestea”* (inclusiv după
+reparare). Art. 9: la un cântar nou, primul an curge **de la punerea în funcțiune**.
+
+**Verificarea — IML 3-05 / IML 4-05** (anexe la HG 1660/2005, nearogate, [121475](https://legislatie.just.ro/Public/DetaliiDocument/121475), [121476](https://legislatie.just.ro/Public/DetaliiDocument/121476)):
+- art. 17 alin. (2), conținutul minim al buletinului: laboratorul; numărul și data; identificarea cântarului;
+  reglementarea aplicată; etalonul; **ADMIS / RESPINS**; **valabilitatea**; verificatorul metrolog; cine a primit cântarul;
+- art. 13: după un incident, deținătorul **scoate cântarul din uz și îl prezintă la verificare, indiferent de termen**;
+- art. 7 lit. d) + art. 14 alin. (2): după orice reparație sau modificare, reverificare (o prezintă reparatorul);
+- IML 4-05 art. 7: marcajul e valabil *„numai în intervalul de timp precizat în buletinul de verificare metrologică”*.
+
+Stratul UE: 2014/31/UE (neautomate) e transpusă prin **HG 710/2015**, 2014/32/UE prin **HG 711/2015** — ambele privesc
+doar punerea pe piață (CE + „M”); verificarea periodică rămâne pe OG 20/1992 și L.O.-2022. Nu există registru public al
+buletinelor, deci aplicația nu poate verifica un buletin automat.
+
+**Pentru D2.3:** cântar (serie, tip, punere în funcțiune, declarat la BRML — dată și dovadă, stare în uz / scos din uz /
+sigilat) + istoric de verificări (nr. buletin, dată, ADMIS/RESPINS, „valabil până la” = data + 12 luni, editabil doar în
+jos, laborator, verificator, buletinul atașat). Scadența = ultima verificare ADMIS; RESPINS nu dă valabilitate; o
+reparație sau un incident înregistrat o anulează pe loc; alerta la 30 de zile e alegerea noastră, legea nu cere preaviz.
 
 ---
 
@@ -2552,7 +2912,7 @@ text inițial; 15.09.2026):
 
 Întrebările C1–C3 (contabil) și AX–AZ (specialistă) din `intrebari-specialist.md` au fost citite pe
 sursă primară în aceeași zi. Formele citite, toate de pe Portalul Legislativ: Codul fiscal **08.08.2026**
-(171282), OUG 31/2011 **05.06.2022** (127186), OUG 196/2005 **07.03.2025** (258980), OUG 92/2021
+(171282), OUG 31/2011 **05.06.2022** (127186), OUG 196/2005 **07.03.2025** (~~258980~~ **67529** — 258980 e forma din 2022, corectat 26.09.2026), OUG 92/2021
 **11.07.2026** (245846), HG 1061/2008 **23.01.2026** (97706), HG 1132/2008 **17.12.2021** (97608),
 Ordinul 701/2024 (281612). Regulamentul (UE) 2023/1542 e citit din CELLAR, în română.
 
@@ -2614,12 +2974,60 @@ Două texte trag în direcții opuse:
 În plus, **art. 2** face SIATD obligatoriu doar pentru operatorii care *„gestionează deșeuri pentru”* o
 OIREP, pentru anvelope sau pentru deșeuri municipale. Nu orice centru de colectare e în SIATD.
 
-**Ce decide până la răspuns:**
-- borderoul e **obligatoriu doar la metal** (OUG 31/2011), cu CNP, act și domiciliu (D1.7, deja în cod);
-- la celelalte intrări PF, borderoul se poate tipări **la cerere**, fără CNP (minimizarea din Legea 190/2018 art. 4, §16);
+~~**Ce decide până la răspuns:**~~ *(înlocuit pe 26.09.2026, vezi mai jos)*
+- ~~borderoul e **obligatoriu doar la metal** (OUG 31/2011), cu CNP, act și domiciliu (D1.7, deja în cod);~~
+- ~~la celelalte intrări PF, borderoul se poate tipări **la cerere**, fără CNP (minimizarea din Legea 190/2018 art. 4, §16);~~
 - impozitul se calculează doar pe liniile de metal, iar AFM pe toate.
 
 Întrebarea e trecută la specialistă ca **BA** (`intrebari-specialist.md`).
+
+#### 🔁 26.09.2026 — BA închisă pe partea contabilă: **borderoul e implicit la orice cumpărare plătită de la PF**
+
+Temeiul nu e de mediu, e contabil:
+- **Legea 82/1991 art. 6 alin. (1)** (§15): orice operațiune se consemnează *„în momentul efectuării ei”* într-un document
+  justificativ;
+- **OMFP 2634/2015, anexa 2 — „BORDEROU DE ACHIZIŢIE (Cod 14-4-13)”**: *„document de înregistrare în gestiune a bunurilor
+  cumpărate de la persoane fizice [...] Borderoul de achiziție se întocmeşte de către persoana care efectuează
+  aprovizionarea cu bunuri de la persoane fizice, în momentul achiziţiei.”* ([mfinante.gov.ro](https://mfinante.gov.ro/documents/35673/219198/anexe2_3ordin2634_2015.pdf));
+- **anexa 1 pct. 2**: elementele obligatorii cer *„menţionarea părţilor”*, **nu CNP-ul**; **pct. 6**: documentele de
+  cumpărare de la PF *„pot fi înregistrate în contabilitate numai în cazul în care se face dovada intrării în gestiune”*
+  (bonul de cântar) ([static.anaf.ro](https://static.anaf.ro/static/10/Anaf/legislatie/OMFP_2634_2015.pdf)).
+  Modificările OMFP 2634 (1447/2023, 4058/2024) nu ating aceste puncte.
+
+Metodologia AFM a contribuției (Ordinul 578/2006, [72607](https://legislatie.just.ro/Public/DetaliiDocument/72607)) vorbește
+încă de „3%” și numai la metale; pentru reținerea de 2% la nemetale **nu există text care să numească documentul** —
+borderoul acoperă și golul acesta.
+
+**Ce decide acum:**
+- borderoul 14-4-13 se emite **implicit la orice intrare PF plătită**, fără opțiunea de a-l omite;
+- **CNP, act și declarația de gospodărie proprie rămân doar la metal** (OUG 31/2011; minimizarea din Legea 190/2018 art. 4, §16);
+- impozitul doar pe liniile de metal, AFM pe toate (neschimbat).
+
+**Obligație nouă, Legea 249/2015 art. 20** ([172506](https://legislatie.just.ro/Public/DetaliiDocument/172506)):
+> **(8)** Operatorii economici autorizați care preiau prin achiziție ambalaje folosite de la populație prin puncte de
+> colectare [...] au obligația să notifice desfășurarea activității asociației de dezvoltare intercomunitară sau, după caz,
+> unității administrativ-teritoriale [...] și să raporteze trimestrial acesteia cantitățile de deșeuri de ambalaje
+> colectate de la persoanele fizice.
+> **(10)** În cazul achiziției ambalajelor de la populație [...] operatorii economici autorizați au obligația să țină o
+> evidență și să raporteze distinct cantitățile achiziționate.
+
+Amendă **20.000–40.000 lei** (art. 26 alin. (1) lit. d)), constată Garda de Mediu. Alin. (7) lit. c) trimite încă la Legea
+211/2011, abrogată (echivalent: OUG 92/2021 art. 60 pct. A lit. h)/i)). ~~Ordinul de la alin. (11) n-a fost căutat.~~
+🔁 **Runda 2: ordinul există — Ordinul MM nr. 1.271/29.11.2018** (M.Of. 34/11.01.2019,
+[209942](https://legislatie.just.ro/Public/DetaliiDocument/209942), procedura [209943](https://legislatie.just.ro/Public/DetaliiDocument/209943)),
+fără modificări. Privește formal doar alin. (9) (achiziția „de la locul de generare”, cu dosar de înregistrare la UAT);
+un depozit fix e la alin. (8) — notificare + raport trimestrial fără formă prescrisă, pentru care **anexa 3 a procedurii
+e forma firească**: un raport pe punct de lucru, în kg, pe rânduri Hârtie/Carton, Plastic, Sticlă, Oțel, Aluminiu, Total
+metal, Lemn, Altele; coloane cantitatea preluată, cantitatea comercializată și cumpărătorul (CUI, denumire, adresa punctului
+de lucru, țara la export). Niciun termen în trimestru. Art. 20 n-a mai fost modificat din 2019.
+**Pentru cod:** câmp „ambalaj de la populație” pe linie, raport trimestrial pe depozit în forma anexei 3, fișa notificării
+către ADI/UAT pe depozit și memento trimestrial. La Andreea: forma și termenul cerute efectiv de UAT și dacă „cantitatea
+comercializată” e toată vânzarea materialului sau doar partea de la PF.
+
+**Rămâne deschisă doar latura SIATD** (dacă borderoul și CNP-ul PF se încarcă în SIATD), legată acum de OUG 196/2005
+art. 10 alin. (12) (§6.1). Observație din platformă, nu normă: clientul web SIATD **cere CNP valid** la orice sursă PF
+declarată. Risc de practică: ANAF a recalificat ca venit impozabil cumpărări mari de la PF când deșeul nu era „din
+patrimoniul personal” (caz din 2023, [avocatnet.ro](https://www.avocatnet.ro/articol_65817/Impunere-suplimentar%C4%83-la-o-firm%C4%83-care-cump%C4%83ra-de%C8%99euri-reciclabile-de-la-persoane-fizice-dar-nu-pl%C4%83tea-impozitul-aferent-pl%C4%83%C8%9Bilor.html), sursă secundară).
 
 ### 18.4 AX — PF care își aduce singură deșeul: **borderou, nu Anexa 3**
 
@@ -2685,6 +3093,111 @@ exhaustivă”*:
 autorizație: lit. d) spune explicit „tone/an” pentru ce iese, iar lit. c) nu fixează perioada pentru ce
 intră. Deci perioada („la un moment dat” sau „pe an”) e un câmp al rândului de capacitate, nu o
 presupunere a aplicației.
+
+#### 🔁 26.09.2026 — citit doar pe jumătate: art. 34 alin. (2) mai are **lit. a)** și **lit. j)**
+
+([OUG 92/2021](https://legislatie.just.ro/Public/DetaliiDocument/245846), forma din 11.07.2026)
+- **lit. a):** *„codul/codurile operațiilor de eliminare/valorificare potrivit anexelor nr. 3 și 7”*; **lit. b):**
+  *„tehnologia aplicată pentru fiecare tip de operațiune”*;
+- **lit. j):** *„specificarea perioadei de timp și a capacității de stocare exprimate în volum și tone a deșeurilor de pe
+  amplasament”*.
+
+**Ce decide pentru D3.4 (înlocuiește paragraful de mai sus):** trei limite distincte pe depozit —
+1. **stocul de pe amplasament** (lit. j), în t și m³, cu **durata maximă de stocare**, comparat cu stocul la zi;
+2. **cantitățile tratate** (lit. c), cu perioada scrisă în autorizație;
+3. **ieșirile** (lit. d), în t/an.
+
+Plus **vechimea stocului** pe depozit × cod (FIFO pe loturi), cu plafonul legal când autorizația tace: 3 ani înainte de
+valorificare, 1 an înainte de eliminare (OG 2/2021 art. 3 alin. (2) lit. b), §8). Pe ecran, avertisment ferm, fără
+blocare (deșeul e deja pe amplasament), ca la stocul negativ.
+
+**Sancțiunea nu e în OUG 92/2021** (art. 62 alin. (1) lit. a) sancționează doar art. 34 alin. (1) și (5)), ci în **OUG
+195/2005 art. 96 alin. (3) pct. 1**: *„obligația [...] persoanelor juridice de a funcționa cu respectarea prevederilor
+autorizației”* — **50.000–100.000 lei** la persoane juridice ([67634](https://legislatie.just.ro/Public/DetaliiDocument/67634),
+consolidare 07.04.2022 — un modificator ulterior nu e exclus).
+
+**Pentru D5.2 (lit. a)):** fiecare depozit ține lista codurilor R/D din autorizația lui; o procesare poate purta **numai un
+cod din listă** — R12 pentru sortare, balotare, compactare, mărunțire înainte de reciclare (nota 5, §2.2), D13/D14 înainte
+de eliminare; R13/D15 e starea stocului, nu o operațiune de înregistrat. Fără R12 în autorizație, aplicația avertizează.
+Niciun cod propus implicit. ~~**Rămâne deschis:** dacă sortarea colectorului schimbă codul (20 01 01 → 19 12 01)~~ — lista
+deșeurilor pune 19 12 la *„tratarea mecanică a deșeurilor (de exemplu, sortare, sfărâmare, compactare, peletizare)”*, dar
+definiția colectării (anexa 1 pct. 6) include și ea „sortarea” ([Decizia 2014/955/UE](http://publications.europa.eu/resource/celex/32014D0955);
+[Comunicarea 2018/C 124/01](http://publications.europa.eu/resource/celex/52018XC0409%2801%29)). Aplicația permite un cod de ieșire
+diferit, nu îl impune. Refuzul de la sortare (19 12 12) e o ieșire cu cod R/D, nu o ajustare.
+
+#### 🔁 Runda 2, 26.09.2026 — codul după sortare: **regula e scrisă de ANPM** (note: `runda2_inventar_coduri.md`)
+
+Sursa: ANPM, *„Statistica deșeurilor — Probleme întâmpinate la verificarea/validarea datelor”*, rev. 2022
+([PDF, anmap.gov.ro](https://anmap.gov.ro/documents/14457/2230184/Recomandari%20completare%20chestionare%20SIM-SD%20_rev2022%20(003).pdf)):
+*„chestionarul TRAT este singurul chestionar în care se poate schimba cod-ul de deșeu ca urmare a tratării acestuia”*;
+ambalajele sortate separat de restul materialului **rămân la capitolul 15**, restul trece la 19; ieșirea pe material, fără
+separarea ambalajelor, e **19 12**; deșeul de ambalaj colectat e 15 01, nu 20 01. Ordinul 794/2012 art. 8 alin. (3):
+deșeurile de ambalaje se identifică numai cu coduri 15 01. Manualul Eurostat (2024): stocarea R13/D15 *nu* schimbă codul;
+R12 nu e în lista operațiunilor care păstrează deșeul. Ghidurile SEPA (Scoția) și Schleswig-Holstein spun la fel
+(sursă persuasivă, nu normă).
+
+**Pentru cod (D5.2):**
+- balotarea/compactarea **unui singur flux** păstrează codul de intrare (propus în formular);
+- sortarea unui amestec pe fracții → **19 12 xx**, refuzul 19 12 12; fracția de ambalaj ținută separat rămâne **15 01 xx**;
+- 15 01 01 + 20 01 01 balotate **împreună** → 19 12 01 și ies din raportarea de ambalaje ⇒ aplicația ține originea
+  „ambalaj / neambalaj” pe tot drumul procesării și avertizează înainte de amestec;
+- metale: colectarea, stocarea, sortarea pe calități păstrează codul; mărunțirea (shredder) → 19 10 01/02; capitolul 17
+  nu se folosește niciodată pentru ieșiri de tratare;
+- o schimbare de cod poartă avertismentul „se raportează în chestionarul TRAT”.
+
+**R12 la sortarea preliminară (runda 2, `runda2_mediu.md`) — textul trage în ambele sensuri** (anexa 1 pct. 6 pune sortarea
+în colectare; pct. 19 adaugă, doar în versiunea română, *„valorificarea (inclusiv sortarea)”*; nota de la R12 numește
+sortarea și compactarea). **Regula de lucru:** separarea pe tipuri la recepție (fără refuz, fără schimbare de cod) nu cere
+R12; orice procesare cu intrări și ieșiri cântărite (balotare, compactare, sortare cu refuz, 20 xx → 19 12 xx) cere R12 în
+lista depozitului, altfel avertisment (fără blocare). Presele sunt „instalații” în TRAT cap. 8 (ANPM 2022).
+
+#### 🔁 Runda 2, 26.09.2026 — cum scriu autorizațiile reale lit. c), d), j) (`runda2_autorizatii_cantar.md`)
+
+> ⚠️ **`anpm.ro` nu mai există** (NXDOMAIN): agențiile județene sunt acum **Direcții Județene de Mediu ale ANMAP**, pe
+> `djm<județ>.anmap.gov.ro` (WordPress; `/wp-json/wp/v2/media?search=<termen>` listează PDF-urile de autorizații). Orice
+> link `apm*.anpm.ro` din documentele noastre e mort.
+
+Citite: 7 autorizații emise (2022–2026) și 1 proiect (2026), din 7 DJM — fier vechi, hârtie/plastic/ambalaje, DEEE:
+- **Niciuna nu scrie lit. j) cum o cere legea** (perioadă + capacitate în volum și tone).
+- Cantitățile vin în patru forme: pe cod în t/an, pe cod în t sau kg pe lună, pe grupe de coduri în t/an, sau **deloc**
+  (o autorizație are coloana goală la toate cele 13 coduri).
+- „Stocate temporar” repetă de obicei cantitatea colectată, ca flux (ex. 600 t/an în ambele rubrici) — nu e o limită de
+  stoc. **Doar două dau o limită reală:** un centru DEEE — *„Cantitatea maxima de deseuri existenta pe amplasament la un
+  moment dat nu poate fi mai mare de 30 to”* — și un colector de hârtie/plastic (2022), cu coloană „Capacitate stocare” în t
+  pe cod.
+- m³ apar doar în proiect, ca m³/an; altfel capacitatea e dată în m² și volume de containere.
+- Durata maximă apare într-o singură autorizație și repetă regula de 3 ani / 1 an din OG 2/2021.
+- **R12 domină**, chiar unde autorizația spune că pe amplasament nu se sortează; una scrie că cântărirea, sortarea și
+  stocarea sunt *„incluse în codul R12”*. R13 apare o dată. Balotarea și tăierea sunt descrise în text, fără cod separat.
+- **Fiecare centru fix are autorizație pe punct de lucru**, cu adresă.
+
+**Pentru cod (D3.4, înlocuiește „trei limite fixe”):** limita din autorizație e un rând tastat din PDF, cu **fel**
+(colectat / stocat / valorificat), **bază** (pe cod / pe grupă / pe amplasament), **unitate** (t, kg, m³), **perioadă**
+(an, lună, „la un moment dat”, niciuna) și **marcaj „aproximativ”** („cca.”, „aprox.”). Doar „la un moment dat” se compară cu
+stocul la zi; an/lună se compară cu totalul perioadei. Fără durată în autorizație → 3 ani / 1 an (OG 2/2021). Lista R/D a
+depozitului se copiază tot din autorizație, cu R12 frecvent pus „din oficiu”.
+
+### 18.7 D3.6 — ajustarea de inventar: **legea deșeurilor tace** (26.09.2026)
+
+OUG 92/2021 nu conține „perisabil”, „inventar” sau „umiditate”. Singurele „pierderi” sunt ratele medii de sortare de la
+art. 19 alin. (5)–(6), folosite de ANMAP pentru obiectivele naționale, nu în evidența operatorului. „Cantitatea [...] care
+rezultă” de la art. 48 alin. (1) lit. a) e ce iese dintr-o **operațiune** de valorificare/eliminare, nu o diferență de
+inventar. Ghidul MMAP 2436/2023 ([276420](https://legislatie.just.ro/Public/DetaliiDocument/276420)) nu spune nimic.
+Partea contabilă e închisă prin §15.1. **Până răspunde Andreea:** ajustarea e un document propriu, legat de
+procesul-verbal, fără cod R/D, inclus în stoc, ținut în afara intrărilor și ieșirilor art. 48.
+
+🔁 **Runda 2 — ce spune statistica (ANPM 2022, `runda2_inventar_coduri.md`):** chestionarul COLECTARE/TRATARE n-are coloană de
+pierderi; pe fiecare cod trebuie să iasă *stoc inițial + colectat = valorificat + eliminat + stoc final* (verificarea
+REC_002), deci o lipsă ascunsă doar în stocul final strică bilanțul. **Pentru pierderile de proces la o instalație de
+tratare** ANPM a scris regula: *„pentru corelarea cantităților se va utiliza codul 99 99 99, iar în nota de introducere se va
+preciza că au loc pierderi materiale”* — în tone, la ID-ul propriei instalații, cu codul R/D al ei. **Pentru o lipsă pură la
+colectare (furt, eroare de cântar, uscare în stoc) nu există regulă scrisă**; „furt”/„sustragere” nu apar în OUG 92/2021,
+HG 1061/2008 sau HG 856/2002 — furtul rămâne o chestiune contabilă.
+**Pentru cod:** ajustarea rămâne document propriu; exportul pentru SIM calculează dezechilibrul pe cod și îl arată **ca rând
+separat**, niciodată ascuns în stocul final; eticheta „99 99 99” doar pentru pierderile de proces ale unei instalații
+declarate (presă, R12), nu pentru lipsuri sau furt. **La Andreea, restrâns:** la o lipsă a unui colector care depune doar
+COLECTARE/TRATARE, APM acceptă rândul 99 99 99 sau doar stocul mai mic, cu verificarea în roșu și o notă? Un colector cu presă
+depune și TRAT?
 
 ## Anexă — de ce „sursă primară" nu e pedanterie
 

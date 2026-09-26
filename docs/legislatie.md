@@ -62,7 +62,7 @@
   - `TRAT` — instalații de tratare
   - `MUN` — operatori de deșeuri municipale
   - `NĂMOL` — stații de epurare
-- Autentificare separată pe `raportare.anpm.ro`. **Transmiterea automată e ÎN AFARA Fazei 1** — noi pregătim datele, clientul le încarcă.
+- Autentificare separată pe `raportare.anpm.ro` (încă răspunde pe 26.09.2026; suportul e **suportsim@anmap.gov.ro** din 01.06.2025, iar paginile agențiilor județene sunt acum `djm<județ>.anmap.gov.ro` — `apm*.anpm.ro` nu mai există). **Transmiterea automată e ÎN AFARA Fazei 1** — noi pregătim datele, clientul le încarcă.
 
 ### D. Declarația AFM (Fondul pentru Mediu) — LUNARĂ ✅
 - „Declarație privind obligațiile la Fondul pentru mediu", **electronic exclusiv** prin AFM-online (din iulie 2022). ✅
@@ -138,7 +138,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 3. **Motorul de evidență trebuie să calculeze STOC**, nu doar totaluri. ⚠️ **CORECTAT 22.08.2026** — formula scrisă aici înainte (`+ generat − valorificat − eliminat − predat`) era **greșită** și era implementată greșit și în `EvidenceCalculator` (✅ **reparat pe 23.08.2026, `V6`** — vezi tabelul de mai sus, rândul `MonthlyEvidence`; fraza de la capătul punctului descrie codul de dinainte). Cap. 1 nu are coloană de predare, deci predarea nu e un termen separat: **`stoc = stoc_anterior + generat − valorificat − eliminat`**. Predarea la un colector intră în „valorificat" sau „eliminat", după scop. Ce e acum în cod scade și `handedOver`, și `recovered`, și `disposed` — dublă scădere.
 4. **Codurile R/D și starea fizică** trebuie capturate la nivel de mișcare, altfel fișa oficială nu se poate genera corect. ⚠️ **EXTINS 23.08.2026:** codul R/D nu e cerut doar la valorificare/eliminare cu mijloace proprii, ci la **orice cantitate care iese de pe amplasament** — Cap. 3 și Cap. 4 raportează cantitatea alături de „Operaţia" **și** de „Agentul economic care efectuează operaţia". Un câmp de scop V/E ar fi fost strict mai puțină informație decât cere formularul; litera se derivă din cod (`WasteOperationCode.treatmentPurpose()`).
 5. **SIM = anual, per chestionar pe tip de operator.** Tipul firmei (GENERATOR/COLLECTOR/BOTH) determină chestionarul (PRODDES vs COL/TRAT). Deci `CompanyType` e relevant direct pentru raportare.
-6. **Sunt trei evidențe, nu două.** Anexa 1 (deșeu propriu) · registrul cronologic art. 48 (marfa tranzacționată) · registrul de recepție al depozitului (HG 349/2005 art. 15(1) lit. d). Primele două sunt separate în model de la Etapa 2a prin `WasteMovement.register`; a treia vine cu profilul de groapă (Etapa 10).
+6. **Sunt trei evidențe, nu două.** Anexa 1 (deșeu propriu) · registrul cronologic art. 48 (marfa tranzacționată) · registrul de recepție al depozitului (~~HG 349/2005~~ abrogată din 2021; azi OG 2/2021 — `surse-oficiale.md` §8). Primele două sunt separate în model de la Etapa 2a prin `WasteMovement.register`; a treia vine cu profilul de groapă (Etapa 10).
 
 ---
 
@@ -157,7 +157,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | 15 | Cine depune Anexa 1 Ambalaje | doar cine își îndeplinește obiectivele **în mod individual**; cine a transferat către un OIREP nu o depune (raportează OIREP-ul, anexele 2A/2B). **Nu se întreabă în profil** — decizia proprietarului din 17.09.2026: o **notă despre OIREP sub termenul de 25 februarie**, pe Termene (`lib/deadlines.ts`, `noteFor`), nu o întrebare | Ordin 794/2012 art. 1 alin. (1)–(2) |
 | 16 | „Altele" pe formularele de ambalaje | rubrica cuprinde **numai alte materiale decât cele nominalizate**; compozitele merg pe **materialul preponderent**; exportul și tranzitul **nu se raportează** | Ordin 794/2012 art. 8 alin. (1) lit. b), d) și alin. (2) — ✅ în cod din 25.08 |
 | 13 | Unde se depune Anexa 1 Ambalaje | **agenţia judeţeană/regională de mediu**, din raza sediului social, pe **25 februarie**. Notificarea de la art. 3 e altceva: la **AFM**, pe **25 ianuarie** | Ordin 794/2012 art. 1, 3, 6 |
-| 9 | SIATD — cine intră | 15 categorii de operatori EPR; **generatorii mici nu** | Ordin 701/2024 art. 2 |
+| 9 | SIATD — cine intră | 15 categorii de operatori EPR; **generatorii mici nu**. 🔁 26.09: **și orice colector de deșeuri municipale** din gospodării (OUG 196/2005 art. 10 alin. (12), peste lista ordinului) | Ordin 701/2024 art. 2; OUG 196/2005 art. 10 alin. (12) — `surse-oficiale.md` §6.1 |
 | — | Referința R/D de pus în export | **OUG 92/2021 anexa 3 și anexa 7** | `surse-oficiale.md` §2.2–2.3 |
 | — | Care listă de coduri | **Decizia 2014/955/UE**, 842 coduri | `surse-oficiale.md` §3 |
 | — | Termenul SIM | 15 martie, **termen legal** | OUG 92/2021 art. 48(1) |
@@ -236,7 +236,7 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 - **Cine e obligat:** operatori profesioniști din lanț — OIREP, colectare/brokeraj/salubritate/sortare/tratare, valorificare/reciclare, UAT-uri. **NU generatorii mici tipici** (clientul nostru de bază). ✅ (surse secundare confirmă explicit)
 - **Obligația:** validezi **coduri unice de tranzacție** la recepția deșeului, în **3/5/15 zile** (după tip). Acces doar cu **semnătură electronică calificată** (înrolare). ✅
 - **API / import terți:** **nedocumentat** pe sursele oficiale. 🟡 (absență de dovezi, nu dovadă de absență)
-- **Impact la noi:** în afara scopului de bază. Eventual modul opțional viitor „alerte de validare SIATD (3/5/15 zile)" **doar** pentru clienții din lanț EPR. NU în Faza 1.
+- **Impact la noi:** în afara scopului de bază. Eventual modul opțional viitor „alerte de validare SIATD (3/5/15 zile)" **doar** pentru clienții din lanț EPR. NU în Faza 1. *(26.09.2026: și pentru colectorii de deșeuri municipale — OUG 196/2005 art. 10 alin. (12); modulul de depozit, D6.4.)*
 
 ### B. Declarația la Fondul pentru mediu — „AFM – Declarații" + eTAX AFM-online (`online.afm.ro`)
 - E despre **contribuții la fondul de mediu** (ambalaje/EPR, anvelope, uleiuri, baterii, EEE, taxa la groapă), **NU** evidența deșeurilor. O datorează doar firmele cu obligații AFM (avem deja flagul `Company.afmObligation`). ✅
@@ -282,6 +282,6 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 | OUG 31/2011 art. 1 alin. (1^2) — la metal de la PF: CNP, act de identitate, domiciliu | `NaturalPerson` + `@ValidCnp`, verificat la cântărire **şi** la finalizare; redactat în jurnal | ✅ *(15.09.2026)* |
 | Legea 82/1991 art. 25 — păstrarea 10 ani de la încheierea exerciţiului | `NaturalPersonRetentionScheduler` — persoana fără operaţiune de 10 ani întregi se **anonimizează** (operaţiunile vechi o numesc) | ✅ *(15.09.2026)* |
 | Codul fiscal art. 114–115 (10% la metale PF), OUG 196/2005 art. 9 (2% AFM) — reţinute la sursă | `DepotRetentions` (cotele cu trimiterea la articol), calculate la finalizare şi păstrate cu baza lor (`V51`); raportul lunar/anual `GET /weighing-operations/retentions` | ✅ *(16.09.2026)* |
-| OUG 31/2011 art. 1 alin. (1^2)–(1^3) — borderoul de achiziţie; Legea 70/2015 art. 4 — plafonul de numerar 10.000 lei/zi | `BorderouGenerator` + `WeighingDocumentService.cashCheck`; obligatoriu la metal, la cerere la restul intrărilor PF | ✅ *(16.09.2026)* |
+| OUG 31/2011 art. 1 alin. (1^2)–(1^3) — borderoul de achiziţie; Legea 70/2015 art. 4 — plafonul de numerar 10.000 lei/zi | `BorderouGenerator` + `WeighingDocumentService.cashCheck`; obligatoriu la metal, la cerere la restul intrărilor PF | ✅ *(16.09.2026)*; 🔁 26.09: de făcut **implicit la orice intrare PF plătită** (Legea 82/1991 art. 6, OMFP 2634/2015 14-4-13), fără CNP la nemetale — `todo-colector.md` D1.17 |
 | HG 1061/2008 art. 20 — un formular pe transport | Anexa 3 şi avizul pe operaţiune, cu toate liniile (`V52`, seria comună cu mişcările); Anexa 2 rămâne pe mişcare | ✅ *(16.09.2026)* |
 | OUG 92/2021 art. 48 alin. (1) lit. a) — originea | coloana „Originea” în evidenţa cronologică (`Art48RegisterBuilder.origin`) | ✅ *(16.09.2026)* |
