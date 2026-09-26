@@ -1,0 +1,108 @@
+# M1f — corectura predării: predarea deschisă → „Corectează” → formularul cu rubricile ei → cantitatea schimbată →
+# înapoi pe predare, cu cifra nouă. Apoi, cu „Vizualizare”, aceeași predare fără „Corectează”.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1f-corectura.yaml
+# Înainte: o predare de probă din septembrie 2026, 777 kg, cu note și volum (rubrici pe care telefonul nu le arată)
+# — făcută prin API, vezi todo-mobil §20. După flux, în bază: 778 kg, iar notele și volumul au rămas.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- scrollUntilVisible:
+    element: ".*777 kg"
+    centerElement: true
+- tapOn: ".*777 kg"
+- extendedWaitUntil:
+    visible: Pe fișă
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: movement-edit
+    centerElement: true
+- takeScreenshot: 01-predarea
+- tapOn:
+    id: movement-edit
+
+# Formularul vine cu rubricile predării: cantitatea, documentul, starea.
+- extendedWaitUntil:
+    visible: Corectează predarea
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: qty
+    centerElement: true
+- assertVisible: "777"
+- takeScreenshot: 02-formular
+- tapOn:
+    id: qty
+- eraseText: 10
+- inputText: "778"
+# Tastatura numerică de pe iOS n-are „Gata”; formularul o închide la derulare.
+- scroll
+- scrollUntilVisible:
+    element: "M1F-PROBA"
+    timeout: 60000
+- scrollUntilVisible:
+    element:
+      id: handover-save
+    timeout: 60000
+- takeScreenshot: 03-inainte-de-salvare
+- tapOn:
+    id: handover-save
+
+# Înapoi pe predare, reîncărcată — ecranul își păstrează derularea, deci cantitatea e sus.
+- extendedWaitUntil:
+    visible: "Anexa 3"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: movement-quantity
+    direction: UP
+- assertVisible: "778 kg"
+- takeScreenshot: 04-dupa-corectura
+# Nota e scrisă pe web și telefonul n-o arată în formular: `PUT` înlocuiește tot, deci fără `editBody` s-ar fi golit.
+- scrollUntilVisible:
+    element: "Notă scrisă pe web — M1F"
+    centerElement: true
+
+# --- „Vizualizare”: aceeași predare, fără „Corectează” ---
+- runFlow: pornire.yaml
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 20000
+- tapOn:
+    id: login-email
+- inputText: viewer@demo.ro
+- tapOn:
+    id: login-password
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: login-submit
+- tapOn:
+    text: Not Now
+    optional: true
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- scrollUntilVisible:
+    element: ".*778 kg"
+    centerElement: true
+- tapOn: ".*778 kg"
+- extendedWaitUntil:
+    visible: Pe fișă
+    timeout: 15000
+- scrollUntilVisible:
+    element: Transportul
+    centerElement: true
+- assertNotVisible:
+    id: movement-edit
+- takeScreenshot: 05-vizualizare

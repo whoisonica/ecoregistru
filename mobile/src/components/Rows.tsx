@@ -13,9 +13,17 @@ export function Group({ children, style }: { children: React.ReactNode; style?: 
 }
 
 /** Ce se arată când o listă e goală sau n-a putut încărca — niciodată un zero inventat. */
-export function Note({ children, tone = "quiet" }: { children: string; tone?: "quiet" | "alert" }) {
+export function Note({
+  children,
+  tone = "quiet",
+  testID,
+}: {
+  children: string;
+  tone?: "quiet" | "alert";
+  testID?: string;
+}) {
   return (
-    <View style={styles.note}>
+    <View style={styles.note} testID={testID}>
       <Text style={[styles.noteText, tone === "alert" && { color: colors.redText }]}>{children}</Text>
     </View>
   );

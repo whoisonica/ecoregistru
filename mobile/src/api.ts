@@ -354,6 +354,11 @@ export function createMovement(auth: Auth, body: unknown) {
   return request<WasteMovement>("/api/v1/movements", { method: "POST", auth, body });
 }
 
+/** Corectura (M1f): înlocuiește predarea întreagă — cererea se face cu `editBody` din `movementEdit.ts`. */
+export function updateMovement(auth: Auth, id: string, body: unknown) {
+  return request<WasteMovement>(`/api/v1/movements/${id}`, { method: "PUT", auth, body });
+}
+
 /**
  * @param clientUploadId aceeași la fiecare reîncercare a aceleiași poze (V67): serverul întoarce atunci
  *     atașamentul deja urcat. Un server de dinainte de V67 ignoră câmpul — deci nimic nu se strică.

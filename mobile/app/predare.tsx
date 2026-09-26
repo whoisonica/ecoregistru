@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import type {
+  Deadline,
   PackagingCategory,
   PackagingMaterial,
   Partner,
@@ -12,6 +13,8 @@ import type {
   Unit,
   WasteCode,
   WasteDestination,
+  WasteMovement,
+  WasteMovementInput,
   WasteOperationCode,
 } from "@web/types";
 import {
@@ -21,11 +24,12 @@ import {
   suggestedPackagingMaterial,
 } from "@/components/movements/movementRules";
 import { isValidCnp } from "@/lib/cnp";
+import { declarationOf, declaredText } from "@/lib/deadlines";
 import * as Crypto from "expo-crypto";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { extractTextFromImage, isSupported } from "expo-text-extractor";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
 import * as api from "../src/api";
 import { parseAviz, cuiDigits, type AvizReading } from "../src/aviz/parse";
@@ -34,6 +38,7 @@ import { Field, Input, MultiPills, Pills, PrimaryButton } from "../src/component
 import { Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
 import { formatDate, formatKg } from "../src/format";
 import { useHandoverData } from "../src/handover";
+import { editBody } from "../src/movementEdit";
 import { drain, enqueue } from "../src/outbox";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
@@ -64,9 +69,13 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  *
  * <p>Ce vine din poză e o propunere cu rândul ei de pe aviz; „Salvează” nu pleacă până nu e confirmată
  * fiecare. Schimbarea unei valori o confirmă și ea: omul a pus-o, nu camera.
+ *
+ * <p>M1f — cu `?edit=<id>` același formular corectează o predare: rubricile vin din `GET /movements/{id}`,
+ * iar salvarea e `PUT`, direct, numai cu semnal (nu prin coadă). Cererea pornește de la predarea de pe
+ * server (`editBody`), fiindcă `PUT` înlocuiește tot și telefonul n-are toate rubricile webului.
  */
 export default function PredareScreen() {
-  const { photo } = useLocalSearchParams<{ photo?: string }>();
+  const { photo, edit } = useLocalSearchParams<{ photo?: string; edit?: string }>();
   const { auth, session } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -74,6 +83,15 @@ export default function PredareScreen() {
 
   // Cheia de idempotență a predării, dată o dată, la deschiderea formularului (todo-mobil §10).
   const id = useRef(Crypto.randomUUID()).current;
+
+  // M1f: predarea de corectat, aceeași cheie ca ecranul ei — după salvare se reîncarcă amândouă.
+  const editing = useQuery({
+    queryKey: ["movements", "one", session?.tenantId, edit],
+    queryFn: () => api.movement(auth!, edit!),
+    enabled: !!auth && !!edit,
+    retry: 0,
+  });
+  const original = editing.data;
 
   const activeWorkPoints = useMemo(() => (workPoints.data ?? []).filter((w) => w.active), [workPoints.data]);
   const [workPointId, setWorkPointId] = useState("");
@@ -111,6 +129,43 @@ export default function PredareScreen() {
   const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>([]);
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+
+  // ── M1f: rubricile predării de corectat, puse o singură dată ─────────────────
+  const prefilled = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!original || prefilled.current) return;
+    prefilled.current = true;
+    const mv = original;
+    setWorkPointId(mv.workPointId);
+    setDate(formatDate(mv.date));
+    setWasteCode({ id: mv.wasteCodeId, code: mv.wasteCode, name: mv.wasteCodeName, hazardous: mv.hazardous, metalSuggested: false });
+    setQuantity(mv.quantity == null ? "" : String(mv.quantity).replace(".", ","));
+    setUnit(mv.unit);
+    setWeighed(mv.weighedAtUnloading);
+    setFate(mv.operation === "RECOVERED" || mv.operation === "DISPOSED" ? mv.operation : "");
+    setOperationCode(mv.operationCode ?? "");
+    setPartnerId(mv.partnerId ?? "");
+    setPackagingOnMarket(mv.packagingOnMarket ?? false);
+    setPackagingMaterial(mv.packagingMaterial ?? "");
+    setPackagingCategory(mv.packagingCategory ?? "");
+    setPhysicalState(mv.physicalState ?? "");
+    setStorageType(mv.storageType ?? "");
+    setTransportMeans(mv.transportMeans ?? "");
+    setWasteDestination(mv.wasteDestination ?? "");
+    setDocumentReference(mv.documentReference ?? "");
+    setVehicle(mv.vehicleRegistration ?? "");
+    setPartnerWorkPointId(mv.partnerWorkPointId ?? "");
+    setLoadDate(mv.loadDate ? formatDate(mv.loadDate) : "");
+    setUnloadDate(mv.unloadDate ? formatDate(mv.unloadDate) : "");
+    setAnexa3Unit(mv.anexa3Unit ?? "");
+    setTransportPartnerId(mv.transportPartnerId ?? "");
+    setDriverName(mv.driverName ?? "");
+    setDriverIdentification(mv.driverIdentification ?? "");
+    setDriverCnp(mv.driverCnp ?? "");
+    setTransportDestinations(mv.transportDestinations ?? []);
+  }, [original]);
 
   // ── citirea avizului ───────────────────────────────────────────────────────
   const [lines, setLines] = useState<string[] | null>(null);
@@ -350,12 +405,7 @@ export default function PredareScreen() {
   const save = async () => {
     setShowErrors(true);
     if (!valid || unconfirmed > 0 || !session || !wasteCode || !isoDate) return;
-    await enqueue({
-      id,
-      owner: session.email,
-      tenantId: session.tenantId,
-      photoUri: photo ?? null,
-      payload: {
+    const onScreen = {
         workPointId,
         date: isoDate,
         wasteCodeId: wasteCode.id,
@@ -380,7 +430,20 @@ export default function PredareScreen() {
               driverCnp: driverCnp.trim() || null,
               transportDestinations,
             }
-          : {}),
+          : original
+            ? // La corectură, fără destinatar rubricile Anexei 3 se golesc: altfel ar rămâne cele ale celui scos.
+              {
+                partnerWorkPointId: null,
+                loadDate: null,
+                unloadDate: null,
+                anexa3Unit: null,
+                transportPartnerId: null,
+                driverName: null,
+                driverIdentification: null,
+                driverCnp: null,
+                transportDestinations: [],
+              }
+            : {}),
         physicalState,
         storageType,
         transportMeans,
@@ -388,7 +451,14 @@ export default function PredareScreen() {
         packagingOnMarket: isPackaging ? packagingOnMarket : null,
         packagingMaterial: isPackaging ? packagingMaterial || null : null,
         packagingCategory: isPackaging && packagingOnMarket ? packagingCategory || null : null,
-      },
+    };
+    if (original) return saveEdit(original, onScreen, isoDate);
+    await enqueue({
+      id,
+      owner: session.email,
+      tenantId: session.tenantId,
+      photoUri: photo ?? null,
+      payload: onScreen,
       summary: {
         wasteCode: wasteCode.code,
         quantity: weighed ? t.awaitingWeighing : `${formatKg(amount)} ${e.unit[unit]}`,
@@ -405,6 +475,37 @@ export default function PredareScreen() {
         .catch(() => {});
     }
     router.back();
+  };
+
+  /**
+   * M1f — corectura pleacă direct, cu semnal. Întâi întrebarea webului când anul (cel nou sau cel vechi)
+   * e deja declarat; dacă termenele nu se pot aduce, salvarea merge mai departe, ca pe web.
+   */
+  // `onScreen` e aceeași cerere ca la adăugare; validarea de mai sus garantează că nu mai e niciun „""”.
+  const saveEdit = async (mv: WasteMovement, onScreen: object, newDate: string) => {
+    if (!auth || submitting) return;
+    setSubmitting(true);
+    setSaveError(null);
+    try {
+      for (const year of new Set([Number(newDate.slice(0, 4)), Number(mv.date.slice(0, 4))])) {
+        const declaration = await api
+          .deadlines(auth, year + 1)
+          .then((list) => declarationOf(list, year))
+          .catch(() => undefined);
+        if (declaration && !(await confirmDeclared(year, declaration))) return;
+      }
+      await api.updateMovement(auth, mv.id, editBody(mv, onScreen as Partial<WasteMovementInput>));
+      await queryClient.invalidateQueries({ queryKey: ["movements"] });
+      router.back();
+    } catch (error) {
+      setSaveError(
+        error instanceof api.ApiError && error.serverMessage
+          ? error.serverMessage
+          : error instanceof TypeError ? m.movementEditOffline : t.saveError,
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const err = (k: keyof typeof errors) => (showErrors ? errors[k] : undefined);
@@ -424,7 +525,13 @@ export default function PredareScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: m.handoverNew, headerBackTitle: m.tabAdd }} />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: edit ? m.movementEditTitle : m.handoverNew,
+          headerBackTitle: edit ? (original?.wasteCode ?? "") : m.tabAdd,
+        }}
+      />
       <ScrollView
         style={styles.fill}
         contentContainerStyle={styles.scroll}
@@ -443,6 +550,9 @@ export default function PredareScreen() {
           </View>
         ) : null}
         {photo && readNothing ? <Note tone="alert">{m.readNothing}</Note> : null}
+        {edit && !original ? (
+          <Note tone={editing.isError ? "alert" : undefined}>{editing.isError ? m.movementError : m.movementEditLoading}</Note>
+        ) : null}
 
         <SectionHead>{t.sectionWaste}</SectionHead>
         <Group>
@@ -889,7 +999,17 @@ export default function PredareScreen() {
 
         {photo ? <Text style={styles.hint}>{m.photoAttached}</Text> : null}
         {unconfirmed > 0 ? <Note tone="alert">{m.confirmPending(unconfirmed)}</Note> : null}
-        <PrimaryButton label={m.save} onPress={save} disabled={reading} testID="handover-save" />
+        {saveError ? (
+          <Note tone="alert" testID="edit-error">
+            {saveError}
+          </Note>
+        ) : null}
+        <PrimaryButton
+          label={m.save}
+          onPress={save}
+          disabled={reading || submitting || (!!edit && !original)}
+          testID="handover-save"
+        />
       </ScrollView>
     </>
   );
@@ -1054,6 +1174,21 @@ function codes<T extends string>(labels: Record<T, string>) {
 
 function Sep() {
   return <View style={rowStyles.sep} />;
+}
+
+/** Întrebarea webului („Anul … e deja declarat” / „Salvează oricum”), ca fereastră nativă. */
+function confirmDeclared(year: number, declaration: Deadline): Promise<boolean> {
+  return new Promise((resolve) =>
+    Alert.alert(
+      declaredText(t.declaredTitle, year, declaration),
+      declaredText(t.declaredSave, year, declaration),
+      [
+        { text: strings.common.cancel, style: "cancel", onPress: () => resolve(false) },
+        { text: t.declaredConfirm, onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    ),
+  );
 }
 
 function todayIso() {

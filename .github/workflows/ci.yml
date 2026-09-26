@@ -123,6 +123,10 @@ jobs:
         working-directory: mobile
         run: npm run test:aviz
 
+      - name: npm run test:edit
+        working-directory: mobile
+        run: npm run test:edit
+
   e2e:
     name: e2e — Chrome peste backend + frontend pe o bază nouă
     runs-on: ubuntu-latest

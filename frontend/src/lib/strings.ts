@@ -326,6 +326,11 @@ export const strings = {
     carrierOwn: "Transportăm noi",
     driverOther: "Altcineva",
     unloadBeforeLoad: "Data descărcării nu poate fi înaintea datei încărcării.",
+    // Corectura predării pe telefon (M1f, 26.09.2026). Merge doar cu semnal: nu intră în coada offline.
+    movementEdit: "Corectează",
+    movementEditTitle: "Corectează predarea",
+    movementEditOffline: "Corectura se salvează pe server. Fără semnal nu o pot trimite — ce ai scris rămâne aici.",
+    movementEditLoading: "Aduc predarea…",
   },
 
   login: {

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { canPrintAnexa3, canPrintAviz, movementPdfName } from "@/lib/movementPrint";
 import { strings } from "@web/strings";
 import type { WasteMovement } from "@web/types";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -14,6 +14,7 @@ import { PrimaryButton } from "../../src/components/Form";
 import { Icon } from "../../src/components/Icon";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
 import { formatDate, formatKg } from "../../src/format";
+import { canEditOnPhone } from "../../src/movementEdit";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
 
@@ -30,7 +31,8 @@ const e = strings.enums;
  * cache și se dă foii de partajare — vizualizatorul iOS, „Deschide cu” pe Android, de acolo tipărire,
  * mail, WhatsApp. Documentele sunt cele de pe server, neschimbate (G06, validarea Andreei).
  *
- * <p>Doar de citit: o predare se corectează pe web, unde sunt toate rubricile și regulile lor.
+ * <p>„Corectează” (M1f) deschide formularul de predare cu rubricile ei — numai pe predările proprii de pe
+ * Anexa 1, fără cântar (`canEditOnPhone`). Restul se corectează pe web, unde sunt toate rubricile.
  */
 export default function MiscareScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -65,6 +67,7 @@ export default function MiscareScreen() {
 }
 
 function Details({ mv, writer }: { mv: WasteMovement; writer: boolean }) {
+  const router = useRouter();
   const operation = mv.operationCode ? e.wasteOperationCode[mv.operationCode] : null;
   const anexa3 = canPrintAnexa3(mv, writer);
   const aviz = canPrintAviz(mv, writer);
@@ -147,6 +150,17 @@ function Details({ mv, writer }: { mv: WasteMovement; writer: boolean }) {
       {mv.attachments.length > 0 ? <Attachments mv={mv} /> : null}
 
       {anexa3 || aviz ? <Documents mv={mv} anexa3={anexa3} aviz={aviz} /> : null}
+
+      {canEditOnPhone(mv, writer) ? (
+        <View style={styles.edit}>
+          <PrimaryButton
+            tone="quiet"
+            label={m.movementEdit}
+            onPress={() => router.push({ pathname: "/predare", params: { edit: mv.id } })}
+            testID="movement-edit"
+          />
+        </View>
+      ) : null}
     </>
   );
 }
@@ -292,6 +306,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 16, gap: 8, paddingBottom: 40 },
   head: { flexDirection: "row", alignItems: "center", gap: 12 },
   body: { flex: 1 },
+  edit: { marginTop: 8 },
   line: { paddingHorizontal: 16, paddingVertical: 10, gap: 2 },
   label: { fontFamily: fonts.sans, fontSize: 13, color: colors.ink2 },
   value: { fontFamily: fonts.sansMedium, fontSize: 15.5, color: colors.ink },
