@@ -81,7 +81,10 @@ function Toaster({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: numbe
   return (
     // Pe telefon se lipesc de marginea de jos pe toată lățimea: colțul din dreapta al unui ecran
     // de 360px lăsa mesajul să atârne pe jumătate afară.
-    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col gap-2 sm:inset-x-auto sm:right-4 sm:w-80">
+    // Pe ecran lat, jos în STÂNGA (BUG-058): în dreapta, o eroare — care stă până o închizi — acoperea
+    // „Salvează” din dialogul lat (1440×900), adică exact butonul de apăsat după ce repari câmpul. Sus
+    // acoperea antetul dialogului. În stânga stă peste panou, care sub un dialog deschis oricum nu se apasă.
+    <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col gap-2 sm:inset-x-auto sm:left-4 sm:w-80">
       {toasts.map((toast) => {
         const Icon = variantIcon[toast.variant];
         const isError = toast.variant === "error";
