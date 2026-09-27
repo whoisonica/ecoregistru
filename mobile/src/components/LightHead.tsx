@@ -35,7 +35,7 @@ export function LightHead({ title, subtitle, right, back, children }: {
       <View style={styles.topRow}>
         {back ? (
           <Pressable onPress={back.onPress} style={styles.back} hitSlop={8} accessibilityRole="button" testID="head-back">
-            <Icon name="back" size={20} color={colors.greenText} strokeWidth={2.2} />
+            <Icon name="back" size={20} color={colors.green} strokeWidth={2.2} />
             <Text style={styles.backText}>{back.label}</Text>
           </Pressable>
         ) : (
@@ -79,9 +79,9 @@ const styles = StyleSheet.create({
   head: { paddingHorizontal: 16, paddingBottom: 6, gap: 14 },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 34 },
   firm: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
-  firmText: { flexShrink: 1, fontFamily: fonts.mono, fontSize: 11, letterSpacing: 0.9, color: colors.ink2 },
+  firmText: { flexShrink: 1, fontFamily: fonts.mono, fontSize: 11, letterSpacing: 0.7, color: colors.ink2 },
   back: { flexDirection: "row", alignItems: "center", gap: 2 },
-  backText: { fontFamily: fonts.sansMedium, fontSize: 16, color: colors.greenText },
+  backText: { fontFamily: fonts.sansMedium, fontSize: 16, color: colors.green },
   avatar: {
     width: 34,
     height: 34,
@@ -93,6 +93,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: { fontFamily: fonts.monoMedium, fontSize: 12, color: colors.ink2 },
-  title: { fontFamily: fonts.sansSemiBold, fontSize: 32, lineHeight: 34, letterSpacing: -0.8, color: colors.ink },
+  title: { fontFamily: fonts.sansSemiBold, fontSize: 30, lineHeight: 33, letterSpacing: -0.75, color: colors.ink },
   subtitle: { fontFamily: fonts.sans, fontSize: 15, color: colors.ink2, marginTop: 4 },
 });

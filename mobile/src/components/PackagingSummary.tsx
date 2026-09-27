@@ -76,7 +76,7 @@ export function PackagingSummary({ tabRow }: { tabRow: ReactNode }) {
       <View style={styles.body}>
         {tabRow}
         <BigNumber
-          label={m.lcdLabelPackaging(year)}
+          label={m.yearPackaging(year)}
           value={handedOver != null ? formatKg(handedOver) : null}
           pending={handovers.isPending && enabled}
           sub={

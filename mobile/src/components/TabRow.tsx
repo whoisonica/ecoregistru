@@ -65,10 +65,10 @@ export function TabRow({ tabs, selected, onSelect }: {
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 0 },
-  track: { flexDirection: "row", backgroundColor: "#E2E6E3", borderRadius: 12, padding: 3, gap: 3 },
-  tab: { alignItems: "center", justifyContent: "center", paddingVertical: 9, paddingHorizontal: 14, borderRadius: 9 },
+  track: { flexDirection: "row", backgroundColor: colors.track, borderRadius: 12, padding: 3, gap: 4 },
+  tab: { alignItems: "center", justifyContent: "center", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 9 },
   tabFit: { flex: 1, paddingHorizontal: 6 },
-  tabOn: { backgroundColor: colors.card },
-  text: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.ink2 },
+  tabOn: { backgroundColor: colors.card, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  text: { fontFamily: fonts.sansMedium, fontSize: 13.5, color: colors.ink2 },
   textOn: { color: colors.ink },
 });

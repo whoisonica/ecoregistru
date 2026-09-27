@@ -372,6 +372,10 @@ export const strings = {
     queueRejectedSub: "Serverul n-a primit-o. Deschide „Adaugă” ca s-o corectezi.",
     monthHanded: (month: string) => `Predat în ${month}`,
     monthRegistered: (month: string) => `Înregistrat în ${month}`,
+    // Etichetele cifrei mari pe telefon, cu litere mici (paleta A, 27.09.2026); cele MAJUSCULE de sus rămân ale afișajului web.
+    monthReceived: (month: string) => `Primit în ${month}`,
+    yearGenerated: (year: number) => `Generat în ${year}`,
+    yearPackaging: (year: number) => `Ambalaje predate în ${year}`,
     seeMonth: "Vezi luna",
     monthCount: (n: number) => (n === 0 ? "nicio predare" : n === 1 ? "1 predare" : `${n} predări`),
     monthLast: (date: string) => `ultima pe ${date}`,

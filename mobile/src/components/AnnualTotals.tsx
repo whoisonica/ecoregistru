@@ -67,7 +67,7 @@ export function AnnualTotals({ tabRow }: { tabRow: ReactNode }) {
       <View style={styles.body}>
         {tabRow}
         <BigNumber
-          label={m.lcdLabelYear(year)}
+          label={m.yearGenerated(year)}
           value={generated != null ? formatKg(generated) : null}
           pending={rows.isPending && !!session?.tenantId}
           sub={foot}
@@ -136,5 +136,5 @@ const styles = StyleSheet.create({
   top: { flexDirection: "row", alignItems: "center", gap: 12 },
   rowBody: { flex: 1 },
   figures: { flexDirection: "row", gap: 20, marginTop: 8, marginLeft: 22 },
-  figLabel: { fontSize: 11, color: colors.ink3, letterSpacing: 0.4, textTransform: "uppercase" },
+  figLabel: { fontSize: 12, color: colors.ink3 },
 });

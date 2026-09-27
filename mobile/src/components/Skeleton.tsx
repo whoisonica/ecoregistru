@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 
+import { colors } from "../theme";
+
 /**
  * Scheletul unei cifre sau al unui rând cât timp se încarcă: gri, pulsează. Ecranul își ține forma în
  * loc să „sară” când vin datele — și nu arată niciodată un „0” în locul cifrei care n-a venit.
@@ -37,7 +39,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
     <View style={styles.rows}>
       {Array.from({ length: rows }, (_, i) => (
         <View key={i} style={[styles.row, i > 0 && styles.sep]}>
-          <Skeleton width={40} height={40} radius={11} />
+          <Skeleton width={36} height={36} radius={10} />
           <View style={styles.text}>
             <Skeleton width="70%" height={14} />
             <Skeleton width="45%" height={11} />
@@ -50,9 +52,9 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
 }
 
 const styles = StyleSheet.create({
-  bone: { backgroundColor: "#DDE2DE" },
+  bone: { backgroundColor: colors.quiet },
   rows: { paddingVertical: 2 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, minHeight: 62 },
-  sep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(17,21,19,0.09)" },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, minHeight: 60 },
+  sep: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
   text: { flex: 1, gap: 7 },
 });

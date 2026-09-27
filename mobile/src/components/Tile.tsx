@@ -5,7 +5,10 @@ import { Icon, type IconName } from "./Icon";
 
 export type TileTone = "ok" | "warn" | "bad" | "quiet" | "bin";
 
-/** Pătratul de 40 din capul unui rând: iconița pe fondul tonului, sau pubela pe culoarea codului. */
+/**
+ * Pătratul de 36 din capul unui rând: iconița pe fondul deschis al tonului, sau — la `bin` — pătrățelul
+ * pubelei pe fondul accentului deschis (nu un pătrat plin de culoare: paleta A, 27.09.2026).
+ */
 export function Tile({ icon, tone, color, text }: {
   icon?: IconName;
   tone: TileTone;
@@ -14,11 +17,17 @@ export function Tile({ icon, tone, color, text }: {
   /** În locul iconiței: un „?”, o cifră. */
   text?: string;
 }) {
-  const bg = tone === "bin" ? color ?? colors.ink3 : TONES[tone].bg;
-  const fg = tone === "bin" ? "#fff" : TONES[tone].fg;
+  if (tone === "bin") {
+    return (
+      <View style={[styles.tile, { backgroundColor: colors.greenSoft }]}>
+        <View style={[styles.bin, { backgroundColor: color ?? colors.ink3 }]} />
+      </View>
+    );
+  }
+  const { bg, fg } = TONES[tone];
   return (
     <View style={[styles.tile, { backgroundColor: bg }]}>
-      {text != null ? <Text style={[styles.text, { color: fg }]}>{text}</Text> : icon ? <Icon name={icon} size={21} color={fg} strokeWidth={1.9} /> : null}
+      {text != null ? <Text style={[styles.text, { color: fg }]}>{text}</Text> : icon ? <Icon name={icon} size={19} color={fg} strokeWidth={1.9} /> : null}
     </View>
   );
 }
@@ -27,10 +36,11 @@ const TONES = {
   ok: { bg: colors.greenSoft, fg: colors.greenText },
   warn: { bg: colors.amberSoft, fg: colors.amberText },
   bad: { bg: colors.redSoft, fg: colors.redText },
-  quiet: { bg: "#EDEFEE", fg: colors.ink2 },
+  quiet: { bg: colors.quiet, fg: colors.ink2 },
 } as const;
 
 const styles = StyleSheet.create({
-  tile: { width: 40, height: 40, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  text: { fontFamily: fonts.monoMedium, fontSize: 17 },
+  tile: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  bin: { width: 14, height: 14, borderRadius: 4 },
+  text: { fontFamily: fonts.monoMedium, fontSize: 16 },
 });

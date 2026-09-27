@@ -1,6 +1,5 @@
 import { strings } from "@web/strings";
 import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
 import { type MovementScreen } from "@/lib/movementScreens";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
@@ -91,11 +90,11 @@ function TabBar({ state, navigation }: BarProps) {
 
   // Colectorul lucrează pe intrări, deci „+” îi e albastru, ca pe ecranul de intrare din prototip.
   const collector = company.data?.type === "COLLECTOR";
-  const plusColors: [string, string] = collector ? [colors.blueHi, colors.blue] : [colors.greenHi, colors.green];
+  const plusColor = collector ? colors.blue : colors.green;
 
   const item = (tab: Tab) => {
     const active = current === tab.name;
-    const tint = active ? (collector ? colors.blue : colors.greenText) : colors.ink3;
+    const tint = active ? (collector ? colors.blue : colors.green) : colors.ink3;
     return (
       <Pressable
         key={tab.name}
@@ -122,9 +121,9 @@ function TabBar({ state, navigation }: BarProps) {
           onPress={() => go("adauga")}
           accessibilityRole="button"
         >
-          <LinearGradient colors={plusColors} style={[styles.plus, collector && styles.plusBlue]}>
-            <Icon name="plus" size={24} color="#fff" strokeWidth={2.6} />
-          </LinearGradient>
+          <View style={[styles.plus, { backgroundColor: plusColor }]}>
+            <Icon name="plus" size={22} color={colors.onAccent} strokeWidth={2.4} />
+          </View>
           <Text style={[styles.label, { color: colors.ink2 }]}>{strings.mobile.tabAdd}</Text>
         </Pressable>
       ) : (
@@ -136,7 +135,7 @@ function TabBar({ state, navigation }: BarProps) {
 
   // Pe Android blurul nativ e scump și inegal; fundalul aproape opac arată la fel pe ecranele de azi.
   return Platform.OS === "ios" ? (
-    <BlurView intensity={60} tint="light" style={styles.bar}>
+    <BlurView intensity={40} tint="light" style={styles.bar}>
       {content}
     </BlurView>
   ) : (
@@ -153,23 +152,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.separator,
-    backgroundColor: "rgba(250,251,250,0.72)",
+    backgroundColor: "rgba(255,255,255,0.86)",
   },
-  barAndroid: { backgroundColor: "rgba(250,251,250,0.97)" },
+  barAndroid: { backgroundColor: "rgba(255,255,255,0.97)" },
   row: { flexDirection: "row", paddingTop: 8, paddingHorizontal: 8 },
   item: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 3 },
   label: { fontFamily: fonts.sansMedium, fontSize: 10.5 },
-  plus: {
-    width: 54,
-    height: 44,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.green,
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  plusBlue: { shadowColor: colors.blue },
+  // Plat, fără umbră colorată (paleta A, 27.09.2026).
+  plus: { width: 50, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
 });

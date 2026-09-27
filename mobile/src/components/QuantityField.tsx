@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   readRow: { flex: 1, flexDirection: "row", alignItems: "baseline", gap: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.separator, borderRadius: 12, paddingHorizontal: 12, minHeight: 60 },
   digits: { flex: 1, fontFamily: fonts.monoMedium, fontSize: 32, color: colors.ink, letterSpacing: -0.5, paddingVertical: 8, textAlign: "right", fontVariant: ["tabular-nums"] },
   unit: { fontFamily: fonts.mono, fontSize: 16, color: colors.ink2, paddingBottom: 12 },
-  seg: { backgroundColor: "#E1E5E2", borderRadius: 11, padding: 3, gap: 3 },
+  seg: { backgroundColor: colors.track, borderRadius: 11, padding: 3, gap: 3 },
   segItem: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 9, alignItems: "center", minWidth: 48 },
   segOn: { backgroundColor: colors.card },
   segText: { fontFamily: fonts.sansMedium, fontSize: 13.5, color: colors.ink2 },

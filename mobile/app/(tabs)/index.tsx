@@ -16,11 +16,11 @@ import { Icon } from "../../src/components/Icon";
 import { Key } from "../../src/components/Key";
 import { LightHead } from "../../src/components/LightHead";
 import { OfflineBand } from "../../src/components/OfflineBand";
-import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
+import { Chip, Group, Note, rowStyles } from "../../src/components/Rows";
 import { Skeleton } from "../../src/components/Skeleton";
+import { StateCard, verdictOf } from "../../src/components/StateCard";
 import { Tile } from "../../src/components/Tile";
-import { controlChecks, type Check, type CheckTone } from "../../src/control";
-import { shareDossier } from "../../src/dossier";
+import { controlChecks } from "../../src/control";
 import { formatDate, formatKg, formatQuantity } from "../../src/format";
 import { haptic } from "../../src/haptics";
 import { useOutbox } from "../../src/outbox";
@@ -31,16 +31,16 @@ import { binColors, colors, fonts, radius } from "../../src/theme";
 const m = strings.mobile;
 
 /**
- * Acasă = afișul „Semaforul” (proprietarul, 27.09.2026, pe machete): verdictul ca un cuvânt mare pe
- * fond colorat, banda cu patru LED-uri → Control, tastele ecranului, cifra lunii ca tipografie mare cu
- * bara pe coduri și trei propoziții (ultima predare, următorul termen, anul). **Nimic țintuit sus**:
- * capul e pe hârtie și se derulează cu pagina.
+ * Acasă, în patru blocuri (proprietarul, 27.09.2026 seara: „Acasă parcă e prea plin”): starea firmei
+ * (`StateCard`, cu cele patru verificări ca puncte → Control), tasta „Pozează avizul”, luna (cifra,
+ * compoziția pe coduri, o propoziție → Generare) și două rânduri (ultima predare, următorul termen).
+ * „Trimite dosarul” stă pe Control, unde e dosarul; anul stă pe Generare › Totalul anului. Rândul cozii
+ * apare numai când e ceva de trimis sau refuzat. **Nimic țintuit sus**: capul e pe hârtie și se
+ * derulează cu pagina.
  *
  * <p>Verdictul e aceeași socoteală ca Panoul web și ca „A venit controlul” (`src/control.ts`, prin
  * `lib/readiness.ts`): telefonul nu poate spune „în regulă” despre ceva ce webul numește „de rezolvat”.
  * Cât timp o listă n-a venit, cuvântul e „Nu știu încă”, nu „În regulă”.
- *
- * <p>Contul (email, firma, dispozitive, ieșire) a plecat în Profil (avatarul din colț).
  */
 export default function HomeScreen() {
   const { session, auth, signOut } = useSession();
@@ -90,7 +90,7 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [deadlinesQ.refetch, evidencesQ.refetch, partnersQ.refetch, monthQ.refetch, recent.refetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── verdictul ──
+  // ── starea ──
   const checks = controlChecks(
     year,
     { data: deadlinesQ.data, failed: deadlinesQ.isError },
@@ -104,11 +104,7 @@ export default function HomeScreen() {
     ? byCode(evidencesQ.data.filter((r) => r.month === month)).filter((c) => c.generated > 0)
     : null;
   const monthTotalFromCodes = monthCodes?.reduce((s, c) => s + c.generated, 0) ?? 0;
-
-  // ── anul ──
-  const yearCodes = evidencesQ.data ? byCode(evidencesQ.data) : null;
-  const yearKg = yearCodes?.reduce((s, c) => s + c.generated, 0);
-  const yearBlocked = yearCodes?.filter((c) => c.unclassified > 0).length ?? 0;
+  const yearEmpty = evidencesQ.data ? byCode(evidencesQ.data).length === 0 : false;
 
   const r = readiness(deadlinesQ.data, undefined, undefined);
   const nextDeadline = r.overdue[0] ?? r.nextDeadline;
@@ -119,7 +115,7 @@ export default function HomeScreen() {
   const monthName = strings.months[month - 1];
   const updated = agoText(monthQ.dataUpdatedAt);
 
-  // ── tastele ──
+  // ── tasta ──
   const [cameraDenied, setCameraDenied] = useState(false);
   const snap = async () => {
     const photo = await pickAvizPhoto("camera");
@@ -127,20 +123,6 @@ export default function HomeScreen() {
     if (!photo) return;
     setCameraDenied(false);
     router.push({ pathname: "/predare", params: { photo } });
-  };
-  const [dossierBusy, setDossierBusy] = useState(false);
-  const [dossierError, setDossierError] = useState<string | null>(null);
-  const sendDossier = async () => {
-    if (!auth || dossierBusy) return;
-    setDossierBusy(true);
-    setDossierError(null);
-    try {
-      setDossierError(await shareDossier(auth, year, 1));
-    } catch (e) {
-      if (e instanceof UnauthorizedError) signOut();
-    } finally {
-      setDossierBusy(false);
-    }
   };
 
   return (
@@ -163,14 +145,10 @@ export default function HomeScreen() {
           </Group>
         ) : (
           <>
-            <Poster label={m.posterLabel(monthName)} verdict={verdict} checks={checks} onPress={() => router.navigate("/control")} />
+            <StateCard verdict={verdict} checks={checks} onPress={() => router.navigate("/control")} />
 
-            <View style={styles.keys}>
-              <Key icon="cam" label={m.snapAviz} hint={m.snapAvizHint} onPress={snap} testID="key-snap" />
-              <Key icon="shield" tone="dark" label={dossierBusy ? m.sendDossierBusy : m.sendDossierKey} hint={m.sendDossierKeyHint(year)} onPress={sendDossier} disabled={dossierBusy} testID="key-dossier" />
-            </View>
+            <Key icon="cam" label={m.snapAviz} onPress={snap} testID="key-snap" />
             {cameraDenied ? <Note tone="alert">{m.cameraDenied}</Note> : null}
-            {dossierError ? <Text style={styles.error}>{dossierError}</Text> : null}
 
             {pending + rejected > 0 ? (
               <Group>
@@ -185,23 +163,29 @@ export default function HomeScreen() {
               </Group>
             ) : null}
 
-            {/* Cifra lunii: tipografie mare, nu afișaj. „?” când n-a venit, niciodată „0”. */}
-            <View style={styles.bignum}>
-              <View style={styles.bignumHead}>
-                <Text style={styles.bignumLabel}>{(onlyGenerator ? m.monthHanded : m.monthRegistered)(monthName)}</Text>
-                <Pressable onPress={() => router.navigate("/miscari")} hitSlop={8} testID="see-month">
-                  <Text style={styles.linkText}>{m.seeMonth}</Text>
-                </Pressable>
+            {/* Luna: cifra ca tipografie mare, nu afișaj. „?” când n-a venit, niciodată „0”. */}
+            <Pressable
+              testID="see-month"
+              onPress={() => {
+                haptic.tap();
+                router.navigate("/miscari");
+              }}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.month, pressed && { backgroundColor: colors.pressed }]}
+            >
+              <View style={styles.monthHead}>
+                <Text style={styles.monthLabel}>{(onlyGenerator ? m.monthHanded : m.monthRegistered)(monthName)}</Text>
+                <Text style={styles.linkText}>{m.seeMonth}</Text>
               </View>
               {kg == null && monthQ.isPending && enabled ? (
-                <Skeleton width={160} height={40} radius={8} />
+                <Skeleton width={150} height={34} radius={8} />
               ) : (
-                <Text style={styles.bignumValue} testID="month-kg">
+                <Text style={styles.monthValue} testID="month-kg">
                   {kg == null ? "?" : formatKg(kg)}
-                  <Text style={styles.bignumUnit}> kg</Text>
+                  <Text style={styles.monthUnit}> kg</Text>
                 </Text>
               )}
-              <Text style={styles.bignumSub}>
+              <Text style={styles.monthSub} numberOfLines={2}>
                 {monthQ.isError
                   ? m.lcdError
                   : rows == null
@@ -217,72 +201,63 @@ export default function HomeScreen() {
                       <View key={c.wasteCode} style={[styles.stackPart, { flex: c.generated, backgroundColor: binColorOf(c.wasteCode, c.hazardous) }]} />
                     ))}
                   </View>
-                  <View style={styles.legend}>
-                    {monthCodes.map((c) => (
-                      <View key={c.wasteCode} style={styles.legendItem}>
-                        <View style={[styles.legendDot, { backgroundColor: binColorOf(c.wasteCode, c.hazardous) }]} />
-                        <Text style={styles.legendText}>
-                          {c.wasteCode} <Text style={styles.legendKg}>{formatKg(c.generated)}</Text>
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
+                  {monthCodes.length > 1 ? (
+                    <View style={styles.legend}>
+                      {monthCodes.map((c) => (
+                        <View key={c.wasteCode} style={styles.legendItem}>
+                          <View style={[styles.legendDot, { backgroundColor: binColorOf(c.wasteCode, c.hazardous) }]} />
+                          <Text style={styles.legendText}>
+                            {c.wasteCode} <Text style={styles.legendKg}>{formatKg(c.generated)}</Text>
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
                 </>
-              ) : rows === 0 && yearKg === 0 ? (
+              ) : rows === 0 && yearEmpty ? (
                 <Text style={styles.hint}>{m.firstAviz}</Text>
               ) : null}
-            </View>
+            </Pressable>
 
-            {/* Trei propoziții: nimic nu arată ca Termene. */}
-            <View style={styles.lines}>
+            {/* Două rânduri: ultima predare, următorul termen. Anul stă pe Generare › Totalul anului. */}
+            <Group>
               <Line
                 label={m.lastHandover}
                 testID="line-last"
+                tile={last ? <Tile tone="bin" color={binColorOf(last.wasteCode, last.hazardous)} /> : <Tile tone="quiet" icon="list" />}
                 onPress={last ? () => router.push({ pathname: "/miscare/[id]", params: { id: last.id } }) : undefined}
               >
                 {recent.isPending && enabled ? (
                   <Skeleton width="80%" height={15} />
                 ) : last ? (
-                  <Text style={styles.lineText} numberOfLines={2}>
-                    <Text style={styles.lineStrong}>{last.wasteCodeName}</Text>
-                    {last.partnerName ? ` → ${last.partnerName}` : ""}
-                    {last.quantity == null ? `, ${strings.mobile.awaitingWeighing}` : `, ${formatQuantity(last.quantity, last.unit)} ${strings.enums.unit[last.unit]}`}
-                  </Text>
+                  <>
+                    <Text style={rowStyles.title} numberOfLines={1}>
+                      {last.wasteCodeName}
+                      {last.partnerName ? ` → ${last.partnerName}` : ""}
+                    </Text>
+                    <Text style={rowStyles.sub} numberOfLines={1}>
+                      {formatDate(last.date)} · {last.quantity == null ? m.awaitingWeighing : `${formatQuantity(last.quantity, last.unit)} ${strings.enums.unit[last.unit]}`}
+                    </Text>
+                  </>
                 ) : (
-                  <Text style={styles.lineText}>{recent.isError ? m.movementsError : m.yearEmpty}</Text>
+                  <Text style={rowStyles.title} numberOfLines={2}>{recent.isError ? m.movementsError : m.yearEmpty}</Text>
                 )}
               </Line>
-              <Line label={m.nextDeadline} testID="line-deadline" onPress={() => router.navigate("/termene")}>
+              <Line label={m.nextDeadline} testID="line-deadline" tile={<Tile tone="quiet" icon="clock" />} onPress={() => router.navigate("/termene")} sep>
                 {deadlinesQ.isPending && enabled ? (
                   <Skeleton width="60%" height={15} />
                 ) : nextDeadline ? (
-                  <Text style={styles.lineText} numberOfLines={2}>
-                    <Text style={styles.lineStrong}>{strings.enums.reportType[nextDeadline.reportType]}</Text>
-                    {daysLabel(nextDeadline) ? `, ${daysLabel(nextDeadline)}` : ""}
-                  </Text>
+                  <>
+                    <Text style={rowStyles.title} numberOfLines={1}>{strings.enums.reportType[nextDeadline.reportType]}</Text>
+                    <Text style={rowStyles.sub} numberOfLines={1}>
+                      {[nextDeadline.dueDate ? formatDate(nextDeadline.dueDate) : null, daysLabel(nextDeadline)].filter(Boolean).join(" · ")}
+                    </Text>
+                  </>
                 ) : (
-                  <Text style={styles.lineText}>{deadlinesQ.isError ? m.deadlinesError : m.noOpenDeadline}</Text>
+                  <Text style={rowStyles.title} numberOfLines={2}>{deadlinesQ.isError ? m.deadlinesError : m.noOpenDeadline}</Text>
                 )}
               </Line>
-              <Line label={m.yearLine(year)} testID="line-year" onPress={() => router.navigate({ pathname: "/miscari", params: { tab: "total" } })}>
-                {evidencesQ.isPending && enabled ? (
-                  <Skeleton width="70%" height={15} />
-                ) : yearCodes ? (
-                  <Text style={styles.lineText} numberOfLines={2}>
-                    {yearCodes.length === 0 ? (
-                      m.yearEmpty
-                    ) : (
-                      <>
-                        <Text style={styles.lineStrong}>{m.yearSummary(formatKg(yearKg ?? 0), yearCodes.length)}</Text>
-                        {`, ${yearBlocked > 0 ? m.yearBlocked(yearBlocked) : m.yearReady}`}
-                      </>
-                    )}
-                  </Text>
-                ) : (
-                  <Text style={styles.lineText}>{evidencesQ.isError ? m.lcdError : "?"}</Text>
-                )}
-              </Line>
-            </View>
+            </Group>
           </>
         )}
       </View>
@@ -290,68 +265,24 @@ export default function HomeScreen() {
   );
 }
 
-type Verdict = { tone: CheckTone | "loading"; word: string; why: string };
-
-/** Cuvântul de pe afiș, din rândurile Controlului: cel mai grav rând dă tonul; un rând nevenit ține „Nu știu încă”. */
-function verdictOf(checks: (Check | null)[]): Verdict {
-  const loaded = checks.filter((c): c is Check => c !== null);
-  if (loaded.length < checks.length) return { tone: "loading", word: m.verdictUnknown, why: " " };
-  const worst = (["bad", "warn", "unknown"] as CheckTone[]).map((t) => loaded.find((c) => c.tone === t)).find(Boolean);
-  if (!worst) return { tone: "ok", word: m.verdictOk, why: m.verdictOkWhy };
-  if (worst.tone === "unknown") return { tone: "unknown", word: m.verdictUnknown, why: m.verdictUnknownWhy };
-  return { tone: worst.tone, word: worst.tone === "bad" ? m.verdictBad : m.verdictWarn, why: `${worst.title}: ${worst.detail}` };
-}
-
-const LED_LABEL: Record<Check["key"], string> = {
-  deadlines: m.ledDeadlines,
-  missingCode: m.ledCode,
-  weighing: m.ledWeighing,
-  partners: m.ledPartners,
-};
-const LED_KEYS: Check["key"][] = ["deadlines", "missingCode", "weighing", "partners"];
-
-function Poster({ label, verdict, checks, onPress }: { label: string; verdict: Verdict; checks: (Check | null)[]; onPress: () => void }) {
-  const tone = verdict.tone;
-  const bg = tone === "bad" ? colors.redSoft : tone === "warn" ? colors.amberSoft : tone === "ok" ? colors.greenSoft : "#E6E9E6";
-  const fg = tone === "bad" ? colors.redText : tone === "warn" ? colors.amberText : tone === "ok" ? colors.greenText : colors.ink2;
+function Line({ label, tile, children, onPress, testID, sep }: {
+  label: string;
+  tile: React.ReactNode;
+  children: React.ReactNode;
+  onPress?: () => void;
+  testID: string;
+  sep?: boolean;
+}) {
   return (
     <Pressable
-      testID="poster"
-      onPress={() => {
-        haptic.tap();
-        onPress();
-      }}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.poster, { backgroundColor: bg }, pressed && { opacity: 0.9 }]}
+      testID={testID}
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [rowStyles.row, sep && rowStyles.sep, styles.row, pressed && rowStyles.pressed]}
     >
-      <Text style={[styles.posterLabel, { color: fg }]}>{label.toUpperCase()}</Text>
-      {tone === "loading" ? <Skeleton width={200} height={36} radius={8} /> : <Text style={[styles.posterWord, { color: fg }]} testID="verdict">{verdict.word}</Text>}
-      <Text style={styles.posterWhy} numberOfLines={3}>{verdict.why}</Text>
-      <View style={styles.strip}>
-        {LED_KEYS.map((key, i) => {
-          const c = checks[i];
-          const led = !c ? "#C9D0CB" : c.tone === "bad" ? colors.red : c.tone === "warn" ? "#F59E0B" : c.tone === "ok" ? colors.green : "#C9D0CB";
-          return (
-            <View key={key} style={styles.led} testID={`led-${key}`}>
-              <View style={[styles.ledBar, { backgroundColor: led }, c?.tone === "bad" && styles.ledBad]} />
-              <Text style={styles.ledText}>{LED_LABEL[key]}</Text>
-            </View>
-          );
-        })}
-      </View>
-      <View style={styles.posterGo}>
-        <Text style={[styles.posterGoText, { color: fg }]}>{m.posterGo}</Text>
-        <Icon name="arrow" size={16} color={fg} strokeWidth={2.4} />
-      </View>
-    </Pressable>
-  );
-}
-
-function Line({ label, children, onPress, testID }: { label: string; children: React.ReactNode; onPress?: () => void; testID: string }) {
-  return (
-    <Pressable testID={testID} onPress={onPress} disabled={!onPress} style={({ pressed }) => [styles.line, pressed && { opacity: 0.7 }]}>
-      <View style={styles.lineBody}>
-        <Text style={styles.lineLabel}>{label.toUpperCase()}</Text>
+      {tile}
+      <View style={styles.rowBody}>
+        <Text style={styles.lineLabel}>{label}</Text>
         {children}
       </View>
       {onPress ? <Icon name="right" size={18} color={colors.ink3} /> : null}
@@ -367,46 +298,32 @@ function binColorOf(code: string, hazardous: boolean) {
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  body: { paddingHorizontal: 16, paddingTop: 12, gap: 14 },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 12 },
   link: { flexDirection: "row", alignItems: "center", gap: 12 },
-  linkText: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.greenText },
-  error: { fontFamily: fonts.sans, fontSize: 14, color: colors.redText, paddingHorizontal: 4 },
+  linkText: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.green },
   hint: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   rowBody: { flex: 1 },
+  lineLabel: { fontFamily: fonts.sans, fontSize: 12, color: colors.ink3, marginBottom: 2 },
 
-  poster: { borderRadius: 22, paddingHorizontal: 18, paddingTop: 20, paddingBottom: 16, gap: 14 },
-  posterLabel: { fontFamily: fonts.mono, fontSize: 10.5, letterSpacing: 1.4, opacity: 0.8 },
-  posterWord: { fontFamily: fonts.sansSemiBold, fontSize: 40, lineHeight: 42, letterSpacing: -1.2 },
-  posterWhy: { fontFamily: fonts.sans, fontSize: 15, color: colors.ink, maxWidth: 320 },
-  strip: { flexDirection: "row", gap: 8 },
-  led: { flex: 1, alignItems: "center", gap: 6 },
-  ledBar: { width: "100%", height: 14, borderRadius: 5 },
-  ledBad: { shadowColor: colors.red, shadowOpacity: 0.6, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
-  ledText: { fontFamily: fonts.sans, fontSize: 11, color: colors.ink2, textAlign: "center" },
-  posterGo: { flexDirection: "row", alignItems: "center", gap: 6 },
-  posterGoText: { fontFamily: fonts.sansSemiBold, fontSize: 14 },
-
-  keys: { flexDirection: "row", gap: 10 },
-
-  bignum: { paddingHorizontal: 4, gap: 10 },
-  bignumHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
-  bignumLabel: { fontFamily: fonts.sansSemiBold, fontSize: 13, letterSpacing: 0.3, color: colors.ink2, textTransform: "uppercase" },
-  bignumValue: { fontFamily: fonts.monoMedium, fontSize: 44, lineHeight: 48, letterSpacing: -1.3, color: colors.ink, fontVariant: ["tabular-nums"] },
-  bignumUnit: { fontFamily: fonts.mono, fontSize: 18, color: colors.ink2, letterSpacing: 0 },
-  bignumSub: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2 },
-  stack: { flexDirection: "row", height: 12, borderRadius: 6, overflow: "hidden", gap: 2 },
+  month: {
+    backgroundColor: colors.card,
+    borderRadius: radius.group,
+    borderWidth: 1,
+    borderColor: colors.separator,
+    padding: 16,
+    gap: 10,
+  },
+  monthHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 },
+  monthLabel: { flexShrink: 1, fontFamily: fonts.sans, fontSize: 13, color: colors.ink2 },
+  monthValue: { fontFamily: fonts.monoMedium, fontSize: 34, lineHeight: 38, letterSpacing: -1, color: colors.ink, fontVariant: ["tabular-nums"] },
+  monthUnit: { fontFamily: fonts.mono, fontSize: 15, color: colors.ink2, letterSpacing: 0 },
+  monthSub: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.ink2 },
+  stack: { flexDirection: "row", height: 8, borderRadius: 4, overflow: "hidden", gap: 2 },
   stackPart: { height: "100%" },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 6, columnGap: 14 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
-  legendDot: { width: 10, height: 10, borderRadius: 3 },
+  legendDot: { width: 9, height: 9, borderRadius: 3 },
   legendText: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.ink2 },
   legendKg: { fontFamily: fonts.monoMedium, color: colors.ink },
-
-  lines: { marginTop: 4 },
-  line: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
-  lineBody: { flex: 1, gap: 2 },
-  lineLabel: { fontFamily: fonts.sans, fontSize: 12, letterSpacing: 0.5, color: colors.ink3 },
-  lineText: { fontFamily: fonts.sans, fontSize: 15, color: colors.ink },
-  lineStrong: { fontFamily: fonts.sansMedium },
 });

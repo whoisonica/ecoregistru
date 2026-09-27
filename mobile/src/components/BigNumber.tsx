@@ -31,7 +31,7 @@ export function BigNumber({ label, value, pending, unit = "kg", sub, subTone = "
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
-        <Text style={styles.label} numberOfLines={1}>{label.toUpperCase()}</Text>
+        <Text style={styles.label} numberOfLines={1}>{label}</Text>
         {right}
       </View>
       {pending && value == null ? (
@@ -50,9 +50,9 @@ export function BigNumber({ label, value, pending, unit = "kg", sub, subTone = "
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 4, gap: 8, paddingBottom: 4 },
   head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10, minHeight: 34 },
-  label: { flexShrink: 1, fontFamily: fonts.sansSemiBold, fontSize: 13, letterSpacing: 0.3, color: colors.ink2 },
-  value: { fontFamily: fonts.monoMedium, fontSize: 44, lineHeight: 48, letterSpacing: -1.3, color: colors.ink, fontVariant: ["tabular-nums"] },
-  unit: { fontFamily: fonts.mono, fontSize: 18, color: colors.ink2, letterSpacing: 0 },
+  label: { flexShrink: 1, fontFamily: fonts.sans, fontSize: 13, color: colors.ink2 },
+  value: { fontFamily: fonts.monoMedium, fontSize: 36, lineHeight: 40, letterSpacing: -1, color: colors.ink, fontVariant: ["tabular-nums"] },
+  unit: { fontFamily: fonts.mono, fontSize: 15, color: colors.ink2, letterSpacing: 0 },
   sub: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2 },
   subAlert: { color: colors.amberText },
 });

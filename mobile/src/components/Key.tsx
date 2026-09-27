@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { haptic } from "../haptics";
@@ -6,19 +5,21 @@ import { colors, fonts, radius } from "../theme";
 import { Icon, type IconName } from "./Icon";
 
 /**
- * Tasta mare a ecranului (54–64 px): numai pentru acțiunea lui — „Pozează avizul”, „Trimite dosarul”.
- * Verde pentru ce adaugă, grafit pentru ce trimite. Restul ecranului sunt rânduri, nu taste.
+ * Tasta mare a ecranului (56 px): numai pentru acțiunea lui — „Pozează avizul”. Plată, pe accent, fără
+ * gradient și fără a doua culoare mare pe ecran (paleta A, 27.09.2026). `quiet` e varianta albă cu
+ * contur, pentru a doua acțiune a unui ecran (Control: „Trimite dosarul” stă pe accent acolo).
  */
 export function Key({ icon, label, hint, tone = "green", onPress, disabled, testID }: {
   icon: IconName;
   label: string;
   hint?: string;
-  tone?: "green" | "dark";
+  tone?: "green" | "quiet";
   onPress: () => void;
   disabled?: boolean;
   testID?: string;
 }) {
-  const gradient: [string, string] = tone === "green" ? [colors.greenHi, colors.green] : ["#333C37", "#232925"];
+  const quiet = tone === "quiet";
+  const fg = quiet ? colors.ink : colors.onAccent;
   return (
     <Pressable
       testID={testID}
@@ -29,32 +30,32 @@ export function Key({ icon, label, hint, tone = "green", onPress, disabled, test
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
-      style={({ pressed }) => [styles.wrap, disabled && { opacity: 0.45 }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.key, quiet && styles.quiet, disabled && { opacity: 0.45 }, pressed && styles.pressed]}
     >
-      <LinearGradient colors={gradient} style={[styles.key, tone === "dark" && styles.dark]}>
-        <Icon name={icon} size={26} color="#fff" strokeWidth={2} />
-        <View style={styles.text}>
-          <Text style={styles.label} numberOfLines={1}>{label}</Text>
-          {hint ? <Text style={styles.hint} numberOfLines={1}>{hint}</Text> : null}
-        </View>
-      </LinearGradient>
+      <Icon name={icon} size={22} color={fg} strokeWidth={2} />
+      <View style={styles.text}>
+        <Text style={[styles.label, { color: fg }]} numberOfLines={1}>{label}</Text>
+        {hint ? <Text style={[styles.hint, quiet && { color: colors.ink2 }]} numberOfLines={1}>{hint}</Text> : null}
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1 },
-  pressed: { transform: [{ scale: 0.97 }], opacity: 0.95 },
   key: {
-    minHeight: 92,
-    borderRadius: radius.hero,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    justifyContent: "flex-end",
-    gap: 8,
+    minHeight: 56,
+    borderRadius: radius.button,
+    backgroundColor: colors.green,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
   },
-  dark: { borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(124,242,169,0.35)" },
-  text: { gap: 2 },
-  label: { fontFamily: fonts.sansSemiBold, fontSize: 15.5, color: "#fff" },
+  quiet: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.separator },
+  pressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
+  text: { alignItems: "center", gap: 1 },
+  label: { fontFamily: fonts.sansSemiBold, fontSize: 16.5 },
   hint: { fontFamily: fonts.sans, fontSize: 12, color: "rgba(255,255,255,0.8)" },
 });

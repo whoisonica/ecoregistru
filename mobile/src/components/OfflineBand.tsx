@@ -19,7 +19,7 @@ export function OfflineBand() {
   const pending = outbox.filter((i) => i.state === "PENDING").length;
   return (
     <View style={styles.band} testID="offline-band">
-      <Icon name="nosig" size={16} color="#FFC24D" strokeWidth={2} />
+      <Icon name="nosig" size={16} color={colors.amberText} strokeWidth={2} />
       <Text style={styles.text}>{strings.mobile.offlineBand}</Text>
       {pending > 0 ? <Text style={styles.count}>{strings.mobile.offlinePending(pending).toUpperCase()}</Text> : null}
     </View>
@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 9,
-    backgroundColor: "#2B2F2C",
+    backgroundColor: colors.amberSoft,
   },
-  text: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 13, color: "#FFC24D" },
-  count: { fontFamily: fonts.monoMedium, fontSize: 12, color: "#FFC24D", letterSpacing: 0.4 },
+  text: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 13, color: colors.amberText },
+  count: { fontFamily: fonts.monoMedium, fontSize: 12, color: colors.amberText, letterSpacing: 0.4 },
 });

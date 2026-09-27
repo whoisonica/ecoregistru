@@ -7,11 +7,12 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { ApiError, downloadAuditFile, evidences, partners, upcomingDeadlines, UnauthorizedError } from "../../src/api";
 import { agoText } from "../../src/agoText";
 import { Pills, PrimaryButton } from "../../src/components/Form";
-import { Icon } from "../../src/components/Icon";
 import { LightHead } from "../../src/components/LightHead";
 import { OfflineBand } from "../../src/components/OfflineBand";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
-import { Skeleton } from "../../src/components/Skeleton";
+import { StateCard, verdictOf } from "../../src/components/StateCard";
+import { SkeletonRows } from "../../src/components/Skeleton";
+import { Tile } from "../../src/components/Tile";
 import { controlChecks, type Check, type CheckTone } from "../../src/control";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
@@ -58,21 +59,13 @@ export default function ControlScreen() {
     { data: evidencesQ.data, failed: evidencesQ.isError },
     { data: partnersQ.data, failed: partnersQ.isError },
   );
-  const loaded = checks.filter((c): c is Check => c !== null);
-  const ready = loaded.length === checks.length;
-  const anyUnknown = loaded.some((c) => c.tone === "unknown");
-  // Primul lucru de văzut, în ordinea gravității — același rol ca banda „▲” de sub afișajul web.
+  // Același cuvânt ca pe Acasă (`verdictOf`): cel mai grav rând dă tonul; un rând nevenit sau necunoscut
+  // ține „Nu știu încă” — „3 din 4” ar fi numărat rândul care n-a venit ca fiind în neregulă.
+  const verdict = verdictOf(checks);
   const worst = (["bad", "warn", "unknown"] as CheckTone[])
-    .map((tone) => loaded.find((c) => c.tone === tone))
+    .map((tone) => checks.find((c): c is Check => c !== null && c.tone === tone))
     .find(Boolean);
-
-  // Verdictul, cu un cuvânt (același ca afișul de pe Acasă): cel mai grav rând dă tonul; un rând nevenit
-  // sau necunoscut ține „Nu știu încă” — „3 din 4” ar fi numărat rândul care n-a venit ca fiind în neregulă.
-  const verdictTone: CheckTone | "loading" = !ready ? "loading" : anyUnknown ? "unknown" : (worst?.tone ?? "ok");
-  const verdictWord =
-    verdictTone === "bad" ? m.verdictBad : verdictTone === "warn" ? m.verdictWarn : verdictTone === "ok" ? m.verdictOk : m.verdictUnknown;
-  const verdictWhy =
-    verdictTone === "loading" ? " " : verdictTone === "unknown" ? m.controlUnknown : worst ? worst.detail : m.controlAllOk;
+  const why = verdict.tone === "loading" ? " " : verdict.tone === "unknown" ? m.controlUnknown : worst ? worst.detail : m.controlAllOk;
   const updatedAt = Math.min(...queries.map((q) => q.dataUpdatedAt || Infinity));
   const updated = Number.isFinite(updatedAt) ? agoText(updatedAt) : null;
 
@@ -94,24 +87,16 @@ export default function ControlScreen() {
       <View style={styles.body}>
         {tenant ? (
           <>
-            <View style={styles.verdict} testID="control-verdict">
-              <View style={[styles.verdictLed, { backgroundColor: LED[verdictTone] }]} />
-              <View style={styles.verdictText}>
-                {verdictTone === "loading" ? (
-                  <Skeleton width={160} height={26} radius={6} />
-                ) : (
-                  <Text style={[styles.verdictWord, { color: INK[verdictTone] }]} testID="lcd-value">{verdictWord}</Text>
-                )}
-                <Text style={styles.verdictWhy} numberOfLines={2}>{verdictWhy}</Text>
-              </View>
-            </View>
+            <StateCard verdict={{ ...verdict, why }} testID="control-verdict" wordTestID="lcd-value" />
             <SectionHead>{m.controlChecks}</SectionHead>
             <Group>
               {checks.map((c, i) =>
                 c ? (
                   <CheckRow key={c.key} check={c} first={i === 0} />
                 ) : (
-                  <View key={i} style={[rowStyles.row, i > 0 && rowStyles.sep]} />
+                  <View key={i} style={i > 0 && rowStyles.sep}>
+                    <SkeletonRows rows={1} />
+                  </View>
                 ),
               )}
             </Group>
@@ -127,21 +112,6 @@ export default function ControlScreen() {
   );
 }
 
-const LED: Record<CheckTone | "loading", string> = {
-  ok: colors.green,
-  warn: "#F59E0B",
-  bad: colors.red,
-  unknown: "#C9D0CB",
-  loading: "#C9D0CB",
-};
-const INK: Record<CheckTone | "loading", string> = {
-  ok: colors.greenText,
-  warn: colors.amberText,
-  bad: colors.redText,
-  unknown: colors.ink2,
-  loading: colors.ink2,
-};
-
 const CHIP = {
   ok: { tone: "ok", label: m.controlOk },
   warn: { tone: "warn", label: m.controlWarn },
@@ -151,17 +121,13 @@ const CHIP = {
 
 function CheckRow({ check, first }: { check: Check; first: boolean }) {
   const chip = CHIP[check.tone];
-  const tile = check.tone === "ok" ? styles.tileOk : check.tone === "unknown" ? styles.tileQuiet : check.tone === "bad" ? styles.tileBad : styles.tileWarn;
-  const ink = check.tone === "ok" ? colors.greenText : check.tone === "unknown" ? colors.ink2 : check.tone === "bad" ? colors.redText : colors.amberText;
   return (
     <View testID={`check-${check.key}`} style={[rowStyles.row, !first && rowStyles.sep, styles.row]}>
-      <View style={[styles.tile, tile]}>
-        {check.tone === "unknown" ? (
-          <Text style={[styles.tileText, { color: ink }]}>?</Text>
-        ) : (
-          <Icon name={check.tone === "ok" ? "check" : "alert"} size={18} color={ink} strokeWidth={2.2} />
-        )}
-      </View>
+      {check.tone === "unknown" ? (
+        <Tile tone="quiet" text="?" />
+      ) : (
+        <Tile tone={check.tone} icon={check.tone === "ok" ? "check" : "alert"} />
+      )}
       <View style={styles.rowBody}>
         <Text style={rowStyles.title} numberOfLines={2}>{check.title}</Text>
         <Text style={rowStyles.sub} testID={`check-${check.key}-detail`}>{check.detail}</Text>
@@ -218,28 +184,9 @@ function Dossier({ year }: { year: number }) {
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  body: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
-  verdict: {
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginBottom: 8,
-  },
-  verdictLed: { width: 22, height: 22, borderRadius: 6 },
-  verdictText: { flex: 1, gap: 2 },
-  verdictWord: { fontFamily: fonts.sansSemiBold, fontSize: 24, letterSpacing: -0.5 },
-  verdictWhy: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.ink2 },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 10 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   rowBody: { flex: 1 },
-  tile: { width: 34, height: 34, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  tileOk: { backgroundColor: colors.greenSoft },
-  tileWarn: { backgroundColor: colors.amberSoft },
-  tileBad: { backgroundColor: colors.redSoft },
-  tileQuiet: { backgroundColor: "#EDEFEE" },
-  tileText: { fontFamily: fonts.monoMedium, fontSize: 17 },
   dossier: { marginTop: 16, gap: 10 },
   hint: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2, paddingHorizontal: 4 },
   error: { fontFamily: fonts.sans, fontSize: 14, color: colors.redText, paddingHorizontal: 4 },

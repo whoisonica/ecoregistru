@@ -176,9 +176,9 @@ export function MovementList({ title, screen, tabRow }: {
  * Anexa 1 a și plecat. Pe „Generare" nu e o direcție, deci „înregistrat" e cuvântul corect acolo.
  */
 function lcdLabelFor(direction?: "IN" | "OUT") {
-  if (direction === "OUT") return strings.mobile.lcdLabelOut;
-  if (direction === "IN") return strings.mobile.lcdLabelIn;
-  return strings.mobile.lcdLabel;
+  if (direction === "OUT") return strings.mobile.monthHanded;
+  if (direction === "IN") return strings.mobile.monthReceived;
+  return strings.mobile.monthRegistered;
 }
 
 /** Propoziția de sub titlu: ce e ecranul, pe înțelesul cuiva care nu e specialist. */

@@ -104,9 +104,9 @@ export default function GataScreen() {
     }
   };
 
-  const bg = tone === "ok" ? "#E9F3EC" : tone === "bad" ? "#F8ECEA" : "#F6F0E2";
+  const bg = tone === "ok" ? colors.greenSoft : tone === "bad" ? colors.redSoft : colors.amberSoft;
   const icon: IconName = tone === "ok" ? "check" : tone === "bad" ? "alert" : "clock";
-  const circle = tone === "ok" ? colors.green : tone === "bad" ? colors.red : "#F59E0B";
+  const circle = tone === "ok" ? colors.green : tone === "bad" ? colors.red : colors.amber;
 
   return (
     <>
@@ -114,7 +114,7 @@ export default function GataScreen() {
       <ScrollView style={[styles.fill, { backgroundColor: bg }]} contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 56, paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.done} testID={`gata-${status}`}>
           <View style={[styles.circle, { backgroundColor: circle }]}>
-            <Icon name={icon} size={40} color="#fff" strokeWidth={3} />
+            <Icon name={icon} size={40} color={colors.onAccent} strokeWidth={3} />
           </View>
           <Text style={styles.title} testID="gata-title">{title}</Text>
           <Text style={styles.sub}>{sub}</Text>
@@ -232,12 +232,12 @@ const styles = StyleSheet.create({
   sub: { fontFamily: fonts.sans, fontSize: 15, color: colors.ink2, textAlign: "center", maxWidth: 300 },
   ticketWrap: { marginBottom: 6 },
   ticket: { backgroundColor: colors.card, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 12, borderTopLeftRadius: 4, borderTopRightRadius: 4, gap: 6 },
-  ticketHead: { fontFamily: fonts.monoMedium, fontSize: 12, letterSpacing: 1, color: "#262A28", textAlign: "center", paddingBottom: 4 },
+  ticketHead: { fontFamily: fonts.monoMedium, fontSize: 12, letterSpacing: 1, color: colors.ink, textAlign: "center", paddingBottom: 4 },
   row: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  k: { fontFamily: fonts.mono, fontSize: 13, color: "#7A817D" },
-  v: { flex: 1, fontFamily: fonts.mono, fontSize: 13, color: "#262A28", textAlign: "right" },
+  k: { fontFamily: fonts.mono, fontSize: 13, color: colors.ink2 },
+  v: { flex: 1, fontFamily: fonts.mono, fontSize: 13, color: colors.ink, textAlign: "right" },
   strong: { fontFamily: fonts.monoMedium, fontSize: 15, color: colors.ink },
-  dash: { borderTopWidth: 1, borderTopColor: "#C9CEC9", borderStyle: "dashed", marginVertical: 4 },
+  dash: { borderTopWidth: 1, borderTopColor: colors.ink3, borderStyle: "dashed", marginVertical: 4 },
   zigzag: { flexDirection: "row", overflow: "hidden", height: 8, justifyContent: "space-between", paddingHorizontal: 2 },
   tooth: { width: 10, height: 10, backgroundColor: colors.card, transform: [{ rotate: "45deg" }], marginTop: -6 },
   next: { flexDirection: "row", alignItems: "center", gap: 12 },
