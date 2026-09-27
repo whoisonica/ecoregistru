@@ -1,7 +1,8 @@
 // Proba 51: soldul preluat și inventarul depozitului (F3, D3.5) — tabul „Inventar” de pe „Cântar”.
 //
-// Ce apără: pe un depozit nou, adminul preia din dialog 500 kg la data de ieri (sursa „Fișele de magazie”) și
-// confirmă nota → „Confirmată”, stocul e 500; deschide un inventar (decizie, comisie cu președinte), salvează
+// Ce apără: pe un depozit nou, adminul preia din dialog 500 kg cu data implicită, azi (sursa „Fișele de magazie”), și
+// confirmă nota → „Confirmată”, stocul e 500; deschide tot azi un inventar (decizie, comisie cu președinte) — soldul
+// preluat e în scriptic, nu plus (recenzia D3.5, C1) —, salvează
 // declarația, trece faptic 480 kg cântărit cu explicația „uscare” și lipsa neimputabilă, încheie PV-ul și îl aprobă →
 // „Aprobat”, stocul e 480, lista 14-3-12 vine ca PDF; operatorul vede tabul fără „Inventar nou” și primește 403 la
 // POST; 1440 fără lățire, dialogul și la 375.
@@ -19,7 +20,6 @@ const check = (n, ok, d = "") => {
 const DEPOT = `Proba 51 ${Date.now() % 100000}`;
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const today = iso(new Date());
-const yesterday = iso(new Date(Date.now() - 86400000));
 const api = (page, method, url, body) =>
   page.evaluate(
     async ({ method, url, body }) => {
@@ -65,7 +65,6 @@ await openTab(page);
 check("fără notă: „Nepreluat”", /Nepreluat/.test(await page.textContent('section[aria-label="Sold preluat"]')));
 await page.click('button:has-text("Preia soldurile")');
 await page.waitForTimeout(600);
-await page.fill("#so-cutoff", yesterday);
 await page.fill("#so-keeper", "Ion Gestionar");
 await page.fill("#so-accountant", "Ana Contabil");
 await top(page).locator("select").first().selectOption(article.id);
