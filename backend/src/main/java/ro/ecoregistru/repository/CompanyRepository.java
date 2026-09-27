@@ -23,6 +23,14 @@ public interface CompanyRepository extends JpaRepository<Company, UUID> {
 
     List<Company> findAllByActiveTrue();
 
+    /** F6a — firmele active cu măcar un modul SIATD bifat, pentru mementoul de dimineață. */
+    @Query("""
+            select c from Company c where c.active = true
+              and (c.siatdMunicipalFrom is not null or c.siatdPackagingFrom is not null or c.siatdWeeeFrom is not null
+                   or c.siatdBatteryFrom is not null or c.siatdTyreFrom is not null)
+            """)
+    List<Company> findAllWithSiatdModule();
+
     /** P2.13 — may this consultancy's consultants select this tenant? Asked on every request. */
     boolean existsByIdAndConsultancy_Id(UUID id, UUID consultancyId);
 

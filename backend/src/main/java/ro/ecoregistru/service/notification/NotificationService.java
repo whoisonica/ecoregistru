@@ -65,6 +65,15 @@ public interface NotificationService {
     void sendDriverAttestationWarning(Driver driver, List<String> recipientEmails, long daysUntil);
 
     /**
+     * F6a — mementoul SIATD de dimineață: recepțiile unei firme al căror memento sau termen de confirmare e azi, într-un
+     * singur mail.
+     *
+     * @throws RuntimeException if delivery fails — the scheduler logs it and moves on to the next company.
+     */
+    void sendSiatdReminder(ro.ecoregistru.entity.Company company,
+                           List<ro.ecoregistru.controller.response.SiatdReceptionRow> rows, List<String> recipientEmails);
+
+    /**
      * Sends an issued subscription invoice to whoever pays it, with FGO's PDF link (§9.4 of
      * plata-abonamente.md: the application sends it, not FGO).
      *

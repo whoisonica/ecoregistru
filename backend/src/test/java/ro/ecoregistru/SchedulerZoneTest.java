@@ -10,6 +10,7 @@ import ro.ecoregistru.service.DriverAttestationAlertScheduler;
 import ro.ecoregistru.service.DriverDataRetentionScheduler;
 import ro.ecoregistru.service.NaturalPersonRetentionScheduler;
 import ro.ecoregistru.service.PartnerAuthorizationAlertScheduler;
+import ro.ecoregistru.service.SiatdAlertScheduler;
 import ro.ecoregistru.service.VehicleExpiryAlertScheduler;
 
 import java.lang.reflect.Method;
@@ -28,7 +29,7 @@ class SchedulerZoneTest {
             BillingScheduler.class, ConsultantDigestScheduler.class, DeadlineAlertScheduler.class,
             DeadlineCalendarScheduler.class, DriverAttestationAlertScheduler.class, DriverDataRetentionScheduler.class,
             NaturalPersonRetentionScheduler.class, PartnerAuthorizationAlertScheduler.class,
-            VehicleExpiryAlertScheduler.class);
+            SiatdAlertScheduler.class, VehicleExpiryAlertScheduler.class);
 
     @Test
     void everyScheduledJobRunsOnRomanianTime() {

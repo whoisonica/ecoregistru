@@ -142,6 +142,39 @@ public class EmailNotificationService implements NotificationService {
         }
     }
 
+    /** F6a — un singur mail pe firmă, cu tabelul recepțiilor și linkul spre Cântar → SIATD. */
+    @Override
+    public void sendSiatdReminder(ro.ecoregistru.entity.Company company,
+                                  List<ro.ecoregistru.controller.response.SiatdReceptionRow> rows,
+                                  List<String> recipientEmails) {
+        String subject = "SIATD: " + rows.size() + (rows.size() == 1 ? " recepție" : " recepții") + " de confirmat";
+        LocalDate today = DeadlineService.today();
+        List<java.util.Map<String, String>> lines = rows.stream().map(r -> java.util.Map.of(
+                "number", String.valueOf(r.number()),
+                "date", r.date().format(DATE),
+                "partner", r.partnerName() == null ? "—" : r.partnerName(),
+                "modules", r.modules().stream().map(EmailNotificationService::siatdModule)
+                        .collect(java.util.stream.Collectors.joining(", ")),
+                "due", r.due().equals(today) ? "azi" : r.due().format(DATE))).toList();
+        for (String to : recipientEmails) {
+            Context ctx = new Context(Locale.of("ro"));
+            ctx.setVariable("company", company.getName());
+            ctx.setVariable("rows", lines);
+            ctx.setVariable("siatdUrl", frontendBaseUrl + "/cantar?tab=siatd");
+            emailService.send(to, subject, "mail/siatd_reminder", ctx);
+        }
+    }
+
+    private static String siatdModule(ro.ecoregistru.enums.SiatdModule module) {
+        return switch (module) {
+            case MUNICIPAL -> "deșeuri municipale";
+            case PACKAGING -> "ambalaje";
+            case WEEE -> "DEEE";
+            case BATTERY -> "baterii portabile";
+            case TYRE -> "anvelope";
+        };
+    }
+
     /**
      * §9.4 of plata-abonamente.md — the invoice goes out from our address, not from FGO's: one sender
      * for everything about paying. The subject carries the number, which is what the client writes
