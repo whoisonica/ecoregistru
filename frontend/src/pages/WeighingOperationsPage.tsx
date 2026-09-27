@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, FilePlus, FileSpreadsheet, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
@@ -33,6 +33,8 @@ import { ReceivedFormsTab } from "@/components/depot/ReceivedFormsTab";
 import { InventoryTab } from "@/components/depot/InventoryTab";
 import { StockTab } from "@/components/depot/StockTab";
 import { DepotReportsTab } from "@/components/depot/DepotReportsTab";
+import { SiatdTab } from "@/components/depot/SiatdTab";
+import { SiatdStrip, SiatdStripContent } from "@/components/depot/SiatdStrip";
 import { PageTabs } from "@/components/ui/page-tabs";
 import { useUrlState } from "@/hooks/useUrlState";
 import { CANTAR_TABS } from "@/lib/screenTabs";
@@ -64,6 +66,9 @@ export function WeighingOperationsPage() {
   // D4.7 — „Operațiuni” (taburile de mai jos) sau „Rapoarte”; în adresă, ca panoul să le arate sub „Cântar”.
   const [screenTab, setScreenTab] = useUrlState("tab");
   const reports = screenTab === "rapoarte";
+  const siatdTab = screenTab === "siatd";
+  // Rapoartele și SIATD sunt ecrane întregi: fără taburile operațiunilor și fără acțiunea „N”.
+  const other = reports || siatdTab;
 
   // D2.6 — al patrulea tab nu e un tip de operațiune: registrul formularelor primite.
   const [tab, setTab] = useState<WeighingOperationType | "FORMS" | "STOCK" | "INVENTORY">("IN");
@@ -121,7 +126,7 @@ export function WeighingOperationsPage() {
   });
 
   useHotkey("n", () => {
-    if (writes && !stockTab && !reports) setCreating(true);
+    if (writes && !stockTab && !other) setCreating(true);
   });
 
   const inbound = type === "IN";
@@ -144,7 +149,7 @@ export function WeighingOperationsPage() {
         title={t.title}
         description={t.subtitle}
         actions={
-          writes && !stockTab && !reports && (
+          writes && !stockTab && !other && (
             <Button hotkey="N" onClick={() => setCreating(true)}>
               {forms ? (
                 <FilePlus className="mr-2 h-4 w-4" />
@@ -163,7 +168,12 @@ export function WeighingOperationsPage() {
         }
       />
 
-      <PageTabs tabs={CANTAR_TABS} selected={reports ? "rapoarte" : ""} onSelect={setScreenTab} label={t.title} />
+      <PageTabs
+        tabs={CANTAR_TABS}
+        selected={reports ? "rapoarte" : siatdTab ? "siatd" : ""}
+        onSelect={setScreenTab}
+        label={t.title}
+      />
 
       {reports && (
         <div className="mt-4">
@@ -171,7 +181,18 @@ export function WeighingOperationsPage() {
         </div>
       )}
 
-      {!reports && (
+      {siatdTab && (
+        <div className="mt-4">
+          <SiatdTab
+            onOpenOperation={(id) => {
+              params.set("op", id);
+              setParams(params, { replace: true });
+            }}
+          />
+        </div>
+      )}
+
+      {!other && (
       <>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div role="tablist" className="flex gap-1 border-b border-line">
@@ -218,7 +239,14 @@ export function WeighingOperationsPage() {
       {inventoryTab && <InventoryTab canManage={canManage(user?.role)} />}
 
       {/* Balotarea n-are bani: banda reținerilor nu spune nimic acolo. */}
-      {!forms && !stockTab && !balings && retentions.data && <RetentionsStrip report={retentions.data} />}
+      {/* F6a — SIATD pe același rând cu reținerile; fără ele (operatorul, balotarea), singur. */}
+      {!forms && !stockTab && !balings && retentions.data ? (
+        <RetentionsStrip report={retentions.data}>
+          <SiatdStripContent onOpen={() => setScreenTab("siatd")} />
+        </RetentionsStrip>
+      ) : (
+        !forms && !stockTab && <SiatdStrip onOpen={() => setScreenTab("siatd")} />
+      )}
 
       {!forms && !stockTab && isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
@@ -391,8 +419,11 @@ function StatusBadge({ operation }: { operation: WeighingOperation }) {
  */
 function RetentionsStrip({
   report,
+  children,
 }: {
   report: NonNullable<ReturnType<typeof useDepotRetentions>["data"]>;
+  /** F6a — banda SIATD, pe același rând. */
+  children?: ReactNode;
 }) {
   const r = t.retentions;
   const nothing = report.afmContribution === 0 && report.incomeTax === 0;
@@ -426,6 +457,7 @@ function RetentionsStrip({
             </div>
           </dl>
         )}
+        {children}
       </div>
     </section>
   );

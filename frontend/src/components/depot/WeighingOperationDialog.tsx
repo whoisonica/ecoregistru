@@ -48,6 +48,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { todayIso } from "@/lib/utils";
+import { SiatdOperationLine } from "./SiatdOperationLine";
 
 const t = strings.weighing;
 const codeLabels = strings.enums.wasteOperationCode;
@@ -507,6 +508,8 @@ export function WeighingOperationDialog({
             <span className="text-state-bad-text">
               {t.cancelledBecause} {operation.cancelReason}
             </span>
+          ) : operation?.siatd ? (
+            <SiatdOperationLine operationId={operation.id} siatd={operation.siatd} approver={approver} />
           ) : undefined
         }
         footer={

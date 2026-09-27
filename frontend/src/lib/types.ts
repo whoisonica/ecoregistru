@@ -978,6 +978,45 @@ export interface WeighingOperation {
   baling: WeighingBaling | null;
   /** D3.2 — doar pe răspunsul finalizării unei ieșiri / plecării unui transfer: soldurile rămase negative. */
   stockWarnings?: StockRow[];
+  /** F6a — termenul SIATD al unei recepții pe un modul bifat; null când n-are. */
+  siatd?: WeighingSiatd | null;
+}
+
+export type SiatdState = "PENDING" | "CONFIRMED" | "MISSED";
+
+export interface WeighingSiatd {
+  modules: SiatdModule[];
+  due: string;
+  state: SiatdState;
+  confirmedAt: string | null;
+  code: string | null;
+}
+
+/** F6a — un rând din Cântar → SIATD. La o persoană fizică doar numele, fără CNP. */
+export interface SiatdReceptionRow {
+  operationId: string;
+  number: number;
+  date: string;
+  workPointId: string;
+  workPointName: string;
+  partnerName: string | null;
+  naturalPerson: boolean;
+  modules: SiatdModule[];
+  netKg: number;
+  due: string;
+  reminder: string;
+  confirmedAt: string | null;
+  confirmedByName: string | null;
+  code: string | null;
+}
+
+/** F6a — banda de pe Operațiuni; `pending` le cuprinde și pe cele care expiră azi sau mâine. */
+export interface SiatdSummary {
+  anyModule: boolean;
+  pending: number;
+  dueToday: number;
+  dueTomorrow: number;
+  missed: number;
 }
 
 export interface WeighingOperationInput {
