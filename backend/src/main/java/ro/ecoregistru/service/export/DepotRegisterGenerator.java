@@ -151,6 +151,8 @@ public class DepotRegisterGenerator {
             case IN -> "Intrare";
             case TRANSFER -> m.getOperation() == ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN
                     ? "Transfer primit" : "Transfer trimis";
+            case PROCESSING -> m.getOperation() == ro.ecoregistru.enums.WasteOperation.PROCESSING_OUTPUT
+                    ? "Balotare: rezultat" : "Balotare: intrat la presă";
             default -> "Ieșire";
         };
     }

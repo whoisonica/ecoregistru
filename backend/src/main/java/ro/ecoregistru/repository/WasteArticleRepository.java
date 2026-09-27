@@ -20,4 +20,7 @@ public interface WasteArticleRepository extends JpaRepository<WasteArticle, UUID
     boolean existsByCompany_IdAndNameIgnoreCase(UUID companyId, String name);
 
     boolean existsByCompany_IdAndNameIgnoreCaseAndIdNot(UUID companyId, String name, UUID id);
+
+    /** F5 — sortimentul e sursa unui sortiment balotat. */
+    boolean existsBySourceArticle_Id(UUID sourceArticleId);
 }

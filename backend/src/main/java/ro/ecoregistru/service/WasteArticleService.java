@@ -21,6 +21,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_BALE_INCOMPLETE;
+import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_BALE_SOURCE_BALED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_BALE_SOURCE_CODE;
+import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_BALE_WEIGHT_POSITIVE;
 import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_CODE_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_NAME_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.WASTE_ARTICLE_NAME_TAKEN;
@@ -66,6 +70,7 @@ public class WasteArticleService {
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
+        applyBale(article, request, tenantId);
         articleRepository.save(article);
         return toResponse(article);
     }
@@ -78,10 +83,15 @@ public class WasteArticleService {
             throw new BusinessException(WASTE_ARTICLE_NAME_TAKEN);
         }
         WasteCode code = requireCode(request);
+        // F5 — baloții făcuți din el au codul lui; schimbat aici, ar rămâne pe alt cod decât vrac-ul din care se fac.
+        if (!code.getId().equals(article.getWasteCode().getId()) && articleRepository.existsBySourceArticle_Id(id)) {
+            throw new BusinessException(WASTE_ARTICLE_BALE_SOURCE_CODE);
+        }
         article.setName(name);
         article.setWasteCode(code);
         article.setMetal(metal(request, code));
         article.setForbiddenFromIndividuals(request.forbiddenFromIndividuals());
+        applyBale(article, request, article.getCompany().getId());
         return toResponse(article);
     }
 
@@ -93,6 +103,36 @@ public class WasteArticleService {
     @Transactional
     public void reactivate(UUID id) {
         requireOwn(id).setActive(true);
+    }
+
+    /**
+     * F5 — sortimentul balotat: din ce se face și cât cântărește un balot, amândouă sau niciuna. Sursa e un sortiment vrac
+     * al firmei, cu același cod (balotarea unui singur flux păstrează codul, ANPM 2022), și nu e ea însăși balotată —
+     * altfel un balot ar putea consuma alt balot sau pe el însuși.
+     */
+    private void applyBale(WasteArticle article, WasteArticleRequest request, UUID tenantId) {
+        if (request.sourceArticleId() == null && request.baleWeightKg() == null) {
+            article.setSourceArticle(null);
+            article.setBaleWeightKg(null);
+            return;
+        }
+        if (request.sourceArticleId() == null || request.baleWeightKg() == null) {
+            throw new BusinessException(WASTE_ARTICLE_BALE_INCOMPLETE);
+        }
+        if (request.baleWeightKg().signum() <= 0) {
+            throw new BusinessException(WASTE_ARTICLE_BALE_WEIGHT_POSITIVE);
+        }
+        WasteArticle source = articleRepository.findByIdAndCompany_Id(request.sourceArticleId(), tenantId)
+                .orElseThrow(() -> new NotFoundException(WASTE_ARTICLE_NOT_FOUND));
+        boolean feedsOthers = article.getId() != null && articleRepository.existsBySourceArticle_Id(article.getId());
+        if (source.isBaled() || source.getId().equals(article.getId()) || feedsOthers) {
+            throw new BusinessException(WASTE_ARTICLE_BALE_SOURCE_BALED);
+        }
+        if (!source.getWasteCode().getId().equals(article.getWasteCode().getId())) {
+            throw new BusinessException(WASTE_ARTICLE_BALE_SOURCE_CODE);
+        }
+        article.setSourceArticle(source);
+        article.setBaleWeightKg(request.baleWeightKg());
     }
 
     private WasteArticle requireOwn(UUID id) {
@@ -121,7 +161,9 @@ public class WasteArticleService {
 
     private static WasteArticleResponse toResponse(WasteArticle a) {
         WasteCode code = a.getWasteCode();
+        WasteArticle source = a.getSourceArticle();
         return new WasteArticleResponse(a.getId(), a.getName(), code.getId(), code.getCode(), code.getName(),
-                code.isHazardous(), a.isMetal(), a.isForbiddenFromIndividuals(), a.isActive());
+                code.isHazardous(), a.isMetal(), a.isForbiddenFromIndividuals(), a.isActive(),
+                source == null ? null : source.getId(), source == null ? null : source.getName(), a.getBaleWeightKg());
     }
 }

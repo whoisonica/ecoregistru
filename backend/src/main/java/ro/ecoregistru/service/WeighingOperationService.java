@@ -1142,14 +1142,30 @@ public class WeighingOperationService {
                 payment(o, lines),
                 lines.stream().map(m -> toLine(m, pricesVisible)).toList(),
                 transfer(o, lines, all.stream().filter(m -> m.getOperation() == WasteOperation.TRANSFERRED_IN).toList()),
+                baling(o, lines),
                 stockWarnings);
+    }
+
+    /** F5 — capul unei balotări: ce a intrat la presă (linia vrac) și ce a ieșit (linia balotată). */
+    private static WeighingOperationResponse.Baling baling(WeighingOperation o, List<WasteMovement> lines) {
+        if (o.getType() != WeighingOperationType.PROCESSING) {
+            return null;
+        }
+        WasteMovement input = lines.stream().filter(m -> m.getOperation() == WasteOperation.PROCESSING_INPUT)
+                .findFirst().orElseThrow();
+        WasteMovement output = lines.stream().filter(m -> m.getOperation() == WasteOperation.PROCESSING_OUTPUT)
+                .findFirst().orElseThrow();
+        var codes = o.getCompany().getAuthorizedOperationCodes();
+        return new WeighingOperationResponse.Baling(output.getArticle().getId(), output.getArticle().getName(),
+                input.getArticle().getId(), input.getArticle().getName(), o.getBaleCount(), o.getBaleWeightKg(),
+                output.getQuantity(), codes != null && !codes.isEmpty() && !codes.contains(WasteOperationCode.R12));
     }
 
     /**
      * D3.2 — după ce liniile unei ieșiri (sau ale plecării unui transfer) au ieșit din depozit: perechile sortiment × cod
      * ale operațiunii care au rămas cu sold negativ la data ei. Avertisment, nu refuz.
      */
-    private WeighingOperationResponse withStockWarnings(WeighingOperation operation, List<WasteMovement> lines) {
+    WeighingOperationResponse withStockWarnings(WeighingOperation operation, List<WasteMovement> lines) {
         java.util.Set<String> keys = lines.stream()
                 .map(l -> StockService.key(l.getArticle() == null ? null : l.getArticle().getId(), l.getWasteCode().getId()))
                 .collect(Collectors.toSet());

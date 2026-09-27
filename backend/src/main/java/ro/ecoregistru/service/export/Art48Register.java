@@ -77,10 +77,18 @@ public record Art48Register(
                             /** D3.5 — plusuri constatate la inventar (pe depozit și pe firmă). */
                             BigDecimal inventoryPlusKg,
                             /** D3.5 — lipsuri constatate la inventar. */
-                            BigDecimal inventoryMinusKg) {
+                            BigDecimal inventoryMinusKg,
+                            /** F5 — intrat la presă (R12): „cantitatea tratată” de la lit. c). */
+                            BigDecimal treatedKg,
+                            /** F5 — rezultat din tratare pe același cod (balotul); lit. a) „cantitatea rezultată”. */
+                            BigDecimal treatedResultKg) {
 
         public boolean hasTransfers() {
             return transferredInKg.signum() != 0 || transferredOutKg.signum() != 0;
+        }
+
+        public boolean hasTreatment() {
+            return treatedKg.signum() != 0 || treatedResultKg.signum() != 0;
         }
 
         public boolean hasInventory() {

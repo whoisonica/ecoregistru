@@ -78,11 +78,20 @@ public class Art48RegisterGenerator {
      * la inventar”. Stocul final le cuprinde, dar nu le ascunde (surse-oficiale §18.7).
      */
     static String[] cap1Columns(boolean transfers, boolean inventory) {
+        return cap1Columns(transfers, inventory, false);
+    }
+
+    /**
+     * F5 — cu balotare în an, două coloane în plus după ieșiri: ce a intrat la presă (R12, lit. c) „cantitatea tratată”)
+     * și ce a rezultat (lit. a) „cantitatea rezultată”). Pe același cod se anulează; stocul final le cuprinde.
+     */
+    static String[] cap1Columns(boolean transfers, boolean inventory, boolean treatment) {
         List<String> c = new ArrayList<>(List.of("Cod deșeu", "Denumire", "Stoc la începutul anului (t)",
                 "Cantitate colectată (t)"));
         if (transfers) c.add("Primită prin transfer intern (t)");
         c.addAll(List.of("Valorificată din colectat (t)", "Eliminată din colectat (t)", "Ieșită fără cod R/D (t)"));
         if (transfers) c.add("Trimisă prin transfer intern (t)");
+        if (treatment) c.addAll(List.of("Intrată la tratare R12 (t)", "Rezultată din tratare (t)"));
         if (inventory) c.addAll(List.of("Plus la inventar (t)", "Minus la inventar (t)"));
         c.addAll(List.of("Stoc la sfârșitul anului (t)", "Coduri R", "Coduri D"));
         return c.toArray(String[]::new);
@@ -93,10 +102,16 @@ public class Art48RegisterGenerator {
     }
 
     static List<BigDecimal> cap1Quantities(Art48Register.CodeTotal c, boolean transfers, boolean inventory) {
+        return cap1Quantities(c, transfers, inventory, false);
+    }
+
+    static List<BigDecimal> cap1Quantities(Art48Register.CodeTotal c, boolean transfers, boolean inventory,
+                                           boolean treatment) {
         List<BigDecimal> q = new ArrayList<>(List.of(c.openingKg(), c.collectedKg()));
         if (transfers) q.add(c.transferredInKg());
         q.addAll(List.of(c.recoveredKg(), c.disposedKg(), c.unclassifiedKg()));
         if (transfers) q.add(c.transferredOutKg());
+        if (treatment) q.addAll(List.of(c.treatedKg(), c.treatedResultKg()));
         if (inventory) q.addAll(List.of(c.inventoryPlusKg(), c.inventoryMinusKg()));
         q.add(c.closingKg());
         return q;
@@ -104,6 +119,10 @@ public class Art48RegisterGenerator {
 
     static boolean hasTransfers(Art48Register r) {
         return r.collection().stream().anyMatch(Art48Register.CodeTotal::hasTransfers);
+    }
+
+    static boolean hasTreatment(Art48Register r) {
+        return r.collection().stream().anyMatch(Art48Register.CodeTotal::hasTreatment);
     }
 
     static boolean hasInventory(Art48Register r) {
@@ -160,14 +179,15 @@ public class Art48RegisterGenerator {
 
             boolean transfers = hasTransfers(r);
             boolean inventory = hasInventory(r);
-            Sheet cap1 = sheet(wb, s, "Cap. 1 Colectare", r, cap1Columns(transfers, inventory));
+            boolean treatment = hasTreatment(r);
+            Sheet cap1 = sheet(wb, s, "Cap. 1 Colectare", r, cap1Columns(transfers, inventory, treatment));
             row = XLSX_HEADER_ROW + 1;
             for (Art48Register.CodeTotal c : r.collection()) {
                 Row x = cap1.createRow(row++);
                 text(x, 0, c.wasteCode());
                 text(x, 1, c.wasteName());
                 int col = 2;
-                for (BigDecimal kg : cap1Quantities(c, transfers, inventory)) {
+                for (BigDecimal kg : cap1Quantities(c, transfers, inventory, treatment)) {
                     number(x, col++, tons(kg), s.tons);
                 }
                 text(x, col++, String.join(", ", c.recoveryCodes()));
@@ -305,18 +325,19 @@ public class Art48RegisterGenerator {
             } else {
                 boolean transfers = hasTransfers(r);
                 boolean inventory = hasInventory(r);
-                String[] columns = cap1Columns(transfers, inventory);
+                boolean treatment = hasTreatment(r);
+                String[] columns = cap1Columns(transfers, inventory, treatment);
                 float[] widths = new float[columns.length];
                 java.util.Arrays.fill(widths, 8);
                 widths[0] = 6;
                 widths[1] = 18;
                 widths[columns.length - 2] = 6;
                 widths[columns.length - 1] = 6;
-                PdfPTable t = table(columns, head, transfers || inventory ? widths
+                PdfPTable t = table(columns, head, transfers || inventory || treatment ? widths
                         : new float[]{7, 22, 9, 9, 9, 9, 9, 9, 8, 8});
                 for (Art48Register.CodeTotal c : r.collection()) {
                     cells(t, body, c.wasteCode(), c.wasteName());
-                    numbers(t, body, cap1Quantities(c, transfers, inventory).stream().map(kg -> tonsText(kg)).toArray(String[]::new));
+                    numbers(t, body, cap1Quantities(c, transfers, inventory, treatment).stream().map(kg -> tonsText(kg)).toArray(String[]::new));
                     cells(t, body, String.join(", ", c.recoveryCodes()), String.join(", ", c.disposalCodes()));
                 }
                 doc.add(t);
@@ -403,6 +424,10 @@ public class Art48RegisterGenerator {
             notes.add("Plusul și minusul la inventar sunt diferențele constatate la inventariere (proces-verbal aprobat), "
                     + "nu preluări sau predări. Chestionarul SIM n-are rubrică pentru ele: verificarea „stoc inițial + "
                     + "colectat = valorificat + eliminat + stoc final” iese cu diferența lor.");
+        }
+        if (hasTreatment(r)) {
+            notes.add("Balotarea cu presa e tratare (R12): deșeul rămâne pe amplasament, cu același cod, deci nu e "
+                    + "preluare sau predare. Se raportează și în chestionarul TRAT, cap. 8 (ANPM, 2022).");
         }
         if (r.unweighed() > 0) {
             notes.add(r.unweighed() == 1

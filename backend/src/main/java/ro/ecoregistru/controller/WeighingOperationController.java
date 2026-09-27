@@ -34,6 +34,7 @@ public class WeighingOperationController {
 
     WeighingOperationService service;
     ro.ecoregistru.service.WeighingDocumentService documentService;
+    ro.ecoregistru.service.BalingService balings;
 
     /** Lista ecranului: o direcție și o lună (sau un an); fără ele, tot ce are firma. */
     @GetMapping
@@ -123,6 +124,13 @@ public class WeighingOperationController {
     @PreAuthorize(CAN_WRITE)
     public WeighingOperationResponse create(@Valid @RequestBody WeighingOperationRequest request) {
         return service.create(request);
+    }
+
+    /** F5 — fișa de balotare: câți baloți; se salvează finalizată. O scrie și operatorul, ca o intrare. */
+    @PostMapping("/balings")
+    @PreAuthorize(CAN_WRITE)
+    public WeighingOperationResponse createBaling(@Valid @RequestBody ro.ecoregistru.controller.request.BalingRequest request) {
+        return balings.create(request);
     }
 
     /** Capul unei operațiuni în lucru. Tipul nu se schimbă; restul, da. */

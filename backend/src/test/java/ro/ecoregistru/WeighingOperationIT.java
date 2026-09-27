@@ -166,14 +166,14 @@ class WeighingOperationIT {
     }
 
     @Test
-    void inventoryAdjustmentAndProcessingAreNotAvailableYet() {
-        // D2.5 a deschis transferul (TransferIT); ajustarea (F3) și procesarea (F5) rămân închise.
+    void adjustmentAndProcessingDoNotGoThroughTheWeighingForm() {
+        // D2.5 a deschis transferul (TransferIT). Ajustarea se face la inventar (F3), balotarea are fișa ei (F5, BalingIT).
         assertThatThrownBy(() -> service.create(request(WeighingOperationType.ADJUSTMENT, null, null)))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Deocamdată se înregistrează");
+                .hasMessageContaining("balotarea are fișa ei");
         assertThatThrownBy(() -> service.create(request(WeighingOperationType.PROCESSING, null, null)))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Deocamdată se înregistrează");
+                .hasMessageContaining("balotarea are fișa ei");
     }
 
     @Test

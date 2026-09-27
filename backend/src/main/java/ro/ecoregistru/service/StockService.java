@@ -164,7 +164,7 @@ public class StockService {
     /**
      * D3.4 — starea fiecărei limite: stocul „la un moment dat” (t/kg) se compară cu soldul de acum, pe cod sau pe tot
      * depozitul; ieșirile „pe an” cu ieșirile din anul datei (predări, ieșiri fără cod și transferuri trimise: ce a
-     * plecat de pe amplasament). Restul (m³, tratat, pe lună) se arată fără comparație.
+     * plecat de pe amplasament); tratatul „pe an” cu ce a intrat la presă (F5). Restul (m³, pe lună) se arată fără comparație.
      */
     private List<StockResponse.Limit> limitStates(List<ro.ecoregistru.entity.AuthorizedLimit> limits,
                                                   List<StockResponse.Row> rows, UUID tenantId, UUID workPointId,
@@ -173,6 +173,7 @@ public class StockService {
             return List.of();
         }
         Map<UUID, BigDecimal> exits = null;
+        Map<UUID, BigDecimal> treated = null;
         List<StockResponse.Limit> out = new ArrayList<>();
         for (var l : limits) {
             UUID code = l.getWasteCode() == null ? null : l.getWasteCode().getId();
@@ -183,6 +184,12 @@ public class StockService {
                 used = rows.stream().filter(r -> code == null || code.equals(r.wasteCodeId()))
                         .map(StockResponse.Row::stockKg).filter(kg -> kg.signum() > 0)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
+            } else if (limitKg != null && "TREATED".equals(l.getKind()) && "YEAR".equals(l.getPeriod())) {
+                if (treated == null) {
+                    treated = treatedOfYear(tenantId, workPointId, at);
+                }
+                used = code == null ? treated.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                        : treated.getOrDefault(code, BigDecimal.ZERO);
             } else if (limitKg != null && "OUTPUT".equals(l.getKind()) && "YEAR".equals(l.getPeriod())) {
                 if (exits == null) {
                     exits = exitsOfYear(tenantId, workPointId, at);
@@ -196,6 +203,15 @@ public class StockService {
                     used != null && used.compareTo(limitKg) > 0));
         }
         return out;
+    }
+
+    /** F5 — ce a intrat la presă în anul datei, până la ea (lit. c) „cantitatea tratată”). */
+    private Map<UUID, BigDecimal> treatedOfYear(UUID tenantId, UUID workPointId, LocalDate at) {
+        Map<UUID, BigDecimal> treated = new java.util.HashMap<>();
+        for (var row : movementRepository.treatedBetween(tenantId, workPointId, at.withDayOfYear(1), at)) {
+            treated.put(row.getWasteCodeId(), row.getKg());
+        }
+        return treated;
     }
 
     private Map<UUID, BigDecimal> exitsOfYear(UUID tenantId, UUID workPointId, LocalDate at) {

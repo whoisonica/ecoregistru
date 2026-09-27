@@ -62,11 +62,25 @@ public record WeighingOperationResponse(
         List<Line> lines,
         /** D2.5 — doar la transfer. */
         Transfer transfer,
+        /** F5 — doar la balotare. */
+        Baling baling,
         /**
          * D3.2 — doar pe răspunsul la finalizarea unei ieșiri sau la plecarea unui transfer: soldurile depozitului care au
          * ieșit negative. Nu blochează nimic; ecranul le arată ca avertisment. Gol în rest.
          */
         List<StockResponse.Row> stockWarnings) {
+
+    /**
+     * F5 — ce a scris operatorul (câți baloți), greutatea unui balot din ziua balotării și kilogramele care au trecut din
+     * sortimentul vrac în cel balotat.
+     *
+     * @param r12NotAuthorized firma are coduri R/D în profil și R12 nu e printre ele: se salvează, dar autorizația nu
+     *                         acoperă presarea (avertisment, nu refuz — todo-colector D5.2)
+     */
+    public record Baling(UUID articleId, String articleName, UUID sourceArticleId, String sourceArticleName,
+                         int baleCount, java.math.BigDecimal baleWeightKg, java.math.BigDecimal kg,
+                         boolean r12NotAuthorized) {
+    }
 
     /**
      * D2.5 — destinația, plecarea și recepția unui transfer. Cântăririle de la B, diferența (primit − plecat) și

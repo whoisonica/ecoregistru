@@ -12,5 +12,10 @@ public record WasteArticleResponse(
         boolean hazardous,
         boolean metal,
         boolean forbiddenFromIndividuals,
-        boolean active) {
+        boolean active,
+        /** F5 — din ce sortiment vrac se face (null = sortiment obișnuit). */
+        UUID sourceArticleId,
+        String sourceArticleName,
+        /** F5 — greutatea unui balot. */
+        java.math.BigDecimal baleWeightKg) {
 }

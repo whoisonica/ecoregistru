@@ -190,6 +190,14 @@ public class WeighingOperation {
     @Column(name = "reception_note_number")
     Integer receptionNoteNumber;
 
+    /** F5 — la balotare: câți baloți a scris operatorul. Null pe orice alt tip (V77). */
+    @Column(name = "bale_count")
+    Integer baleCount;
+
+    /** F5 — greutatea unui balot în ziua balotării, luată de pe sortiment și păstrată. */
+    @Column(name = "bale_weight_kg", precision = 10, scale = 3)
+    BigDecimal baleWeightKg;
+
     /** D1.13 — seria și numărul Anexei 3, alocate la prima tipărire și păstrate (V52). */
     @Column(name = "anexa3_series", length = 20)
     String anexa3Series;

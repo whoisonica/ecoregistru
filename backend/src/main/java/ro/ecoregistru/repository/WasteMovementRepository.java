@@ -106,7 +106,8 @@ public interface WasteMovementRepository
             + "where m.company.id = :companyId and m.deleted = false and m.date between :from and :to "
             + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))"
             + NOT_STOCK_ONLY
-            + "and m.operation not in (ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT, ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN) "
+            + "and m.operation not in (ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT, ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN, "
+            + "ro.ecoregistru.enums.WasteOperation.PROCESSING_INPUT, ro.ecoregistru.enums.WasteOperation.PROCESSING_OUTPUT) "
             + "and m.wasteCode.mirrorOf is not null and m.attachments is empty")
     long countUnprovenMirrorClassifications(@Param("companyId") UUID companyId,
                                             @Param("from") LocalDate from, @Param("to") LocalDate to);
@@ -187,6 +188,7 @@ public interface WasteMovementRepository
               and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
               and m.operation not in (ro.ecoregistru.enums.WasteOperation.TRANSFERRED_OUT, ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN)
               and m.operation not in (ro.ecoregistru.enums.WasteOperation.OPENING_BALANCE, ro.ecoregistru.enums.WasteOperation.INVENTORY_SURPLUS, ro.ecoregistru.enums.WasteOperation.INVENTORY_SHORTAGE)
+              and m.operation not in (ro.ecoregistru.enums.WasteOperation.PROCESSING_INPUT, ro.ecoregistru.enums.WasteOperation.PROCESSING_OUTPUT)
             """)
     MovementTotals summarise(@Param("companyId") UUID companyId,
                              @Param("from") LocalDate from,
@@ -220,7 +222,8 @@ public interface WasteMovementRepository
                    coalesce(sum((case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
                                                            ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN,
                                                            ro.ecoregistru.enums.WasteOperation.OPENING_BALANCE,
-                                                           ro.ecoregistru.enums.WasteOperation.INVENTORY_SURPLUS)
+                                                           ro.ecoregistru.enums.WasteOperation.INVENTORY_SURPLUS,
+                                                           ro.ecoregistru.enums.WasteOperation.PROCESSING_OUTPUT)
                                       then 1 else -1 end)
                                 * (case when m.unit = ro.ecoregistru.enums.Unit.TONS
                                         then m.quantity * 1000 else m.quantity end)), 0) as kg
@@ -313,7 +316,8 @@ public interface WasteMovementRepository
 
     /**
      * Soldul fiecărui depozit la sfârșitul zilei {@code upTo}: preluările și transferurile primite adaugă, predările,
-     * ieșirile fără cod și transferurile trimise scad. Aceleași linii care contează în registre (D1.3, D2.5).
+     * ieșirile fără cod și transferurile trimise scad; balotarea (F5) scade vrac-ul și adaugă balotul. Aceleași linii care
+     * contează în registre (D1.3, D2.5).
      */
     @Query("""
             select m.workPoint.id as workPointId, a.id as articleId, a.name as articleName,
@@ -321,7 +325,8 @@ public interface WasteMovementRepository
                    coalesce(sum((case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
                                                            ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN,
                                                            ro.ecoregistru.enums.WasteOperation.OPENING_BALANCE,
-                                                           ro.ecoregistru.enums.WasteOperation.INVENTORY_SURPLUS)
+                                                           ro.ecoregistru.enums.WasteOperation.INVENTORY_SURPLUS,
+                                                           ro.ecoregistru.enums.WasteOperation.PROCESSING_OUTPUT)
                                       then 1 else -1 end)
                                 * (case when m.unit = ro.ecoregistru.enums.Unit.TONS
                                         then m.quantity * 1000 else m.quantity end)), 0) as kg
@@ -384,7 +389,9 @@ public interface WasteMovementRepository
 
     /**
      * Intrările (+) și ieșirile (−) unui depozit până la o dată, în ordinea zilelor și, în aceeași zi, intrările întâi:
-     * o marfă nu pleacă înainte să vină. Aceleași linii ca {@link #stockAt}.
+     * o marfă nu pleacă înainte să vină. Aceleași linii ca {@link #stockAt}, fără balotare (F5): pe cod cele două
+     * jumătăți se anulează, iar deșeul balotat stă pe amplasament de când a intrat vrac — balotul nu întinerește
+     * stocul pentru plafonul de un an, și nici nu e o ieșire pentru limita anuală.
      */
     @Query("""
             select c.id as wasteCodeId, m.date as date, m.operation as operation,
@@ -398,6 +405,7 @@ public interface WasteMovementRepository
             where m.company.id = :companyId and m.deleted = false and m.workPoint.id = :workPointId
               and m.register = ro.ecoregistru.enums.WasteRegister.ART_48
               and m.operation <> ro.ecoregistru.enums.WasteOperation.GENERATED
+              and m.operation not in (ro.ecoregistru.enums.WasteOperation.PROCESSING_INPUT, ro.ecoregistru.enums.WasteOperation.PROCESSING_OUTPUT)
               and m.quantity is not null and m.date <= :upTo
               and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
             order by m.date,
@@ -408,6 +416,27 @@ public interface WasteMovementRepository
             """)
     List<StockMove> stockMoves(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
                                @Param("upTo") LocalDate upTo);
+
+    /** F5 — cât s-a tratat pe un depozit într-un interval (ce a intrat la presă), pe cod: pentru limita „tratat” (D3.4). */
+    @Query("""
+            select c.id as wasteCodeId, coalesce(sum(case when m.unit = ro.ecoregistru.enums.Unit.TONS
+                                                          then m.quantity * 1000 else m.quantity end), 0) as kg
+            from WasteMovement m join m.weighingOperation o join m.wasteCode c
+            where m.company.id = :companyId and m.deleted = false and m.workPoint.id = :workPointId
+              and m.operation = ro.ecoregistru.enums.WasteOperation.PROCESSING_INPUT
+              and o.status = ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED
+              and m.date between :from and :to
+            group by c.id
+            """)
+    List<CodeKg> treatedBetween(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
+                                @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /** Un cod și o cantitate; aliasurile select-ului. */
+    interface CodeKg {
+        UUID getWasteCodeId();
+
+        java.math.BigDecimal getKg();
+    }
 
     /**
      * D3.5 — liniile care mișcă doar stocul, într-un interval: pentru coloanele „Sold preluat” și „Plus/Minus la

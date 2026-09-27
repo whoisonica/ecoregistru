@@ -67,7 +67,17 @@ public enum WasteOperation {
     INVENTORY_SURPLUS,
 
     /** D3.5 — a shortage found by an approved inventory, dated at its reference date. See {@link #isStockOnly()}. */
-    INVENTORY_SHORTAGE;
+    INVENTORY_SHORTAGE,
+
+    /**
+     * F5 — what went into the press: the loose article a baling consumed, under R12 (OUG 92/2021 anexa 3; surse-oficiale
+     * §18.6). Neither a handover nor an exit: the waste stays on the site, changed. Written only by a PROCESSING weighing
+     * operation, never from the movement form.
+     */
+    PROCESSING_INPUT,
+
+    /** F5 — what came out of the press: the baled article. Same code as its input (ANPM 2022). See {@link #PROCESSING_INPUT}. */
+    PROCESSING_OUTPUT;
 
     /**
      * D3.5 — the lines that move stock without being an entry or an exit. Every reader of movements leaves them out
@@ -79,6 +89,11 @@ public enum WasteOperation {
     /** The two legs of an internal transfer (D2.5): per depot they move stock, per company they cancel out. */
     public boolean isTransfer() {
         return this == TRANSFERRED_OUT || this == TRANSFERRED_IN;
+    }
+
+    /** F5 — the two legs of a baling: per code they move nothing but record a treatment (R12). */
+    public boolean isProcessing() {
+        return this == PROCESSING_INPUT || this == PROCESSING_OUTPUT;
     }
 
     /** D3.5 — see {@link #STOCK_ONLY}. */
@@ -93,6 +108,6 @@ public enum WasteOperation {
 
     /** Whether an operator may choose this when recording a movement. */
     public boolean isSelectable() {
-        return this != UNCLASSIFIED_OUT && this != GENERATED && !isTransfer() && !isStockOnly();
+        return this != UNCLASSIFIED_OUT && this != GENERATED && !isTransfer() && !isStockOnly() && !isProcessing();
     }
 }

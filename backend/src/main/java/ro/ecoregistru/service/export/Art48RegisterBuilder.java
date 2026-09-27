@@ -154,6 +154,8 @@ public class Art48RegisterBuilder {
                 case UNCLASSIFIED_OUT -> t.unclassified = t.unclassified.add(kg);
                 case TRANSFERRED_IN -> t.transferredIn = t.transferredIn.add(kg);
                 case TRANSFERRED_OUT -> t.transferredOut = t.transferredOut.add(kg);
+                case PROCESSING_INPUT -> t.treated = t.treated.add(kg);
+                case PROCESSING_OUTPUT -> t.treatedResult = t.treatedResult.add(kg);
                 default -> { }
             }
         }
@@ -179,11 +181,12 @@ public class Art48RegisterBuilder {
             }
             BigDecimal closing = t.opening.add(t.collected).add(t.transferredIn)
                     .subtract(t.recovered).subtract(t.disposed).subtract(t.unclassified).subtract(t.transferredOut)
-                    .add(t.inventoryPlus).subtract(t.inventoryMinus);
+                    .add(t.inventoryPlus).subtract(t.inventoryMinus)
+                    .subtract(t.treated).add(t.treatedResult);
             rows.add(new Art48Register.CodeTotal(code, t.name, t.opening, t.collected, t.recovered,
                     t.disposed, t.unclassified, closing,
                     List.copyOf(t.recoveryCodes), List.copyOf(t.disposalCodes), t.transferredIn, t.transferredOut,
-                    t.inventoryPlus, t.inventoryMinus));
+                    t.inventoryPlus, t.inventoryMinus, t.treated, t.treatedResult));
         });
         return rows;
     }
@@ -215,7 +218,7 @@ public class Art48RegisterBuilder {
 
     private static boolean countsInStock(WasteOperation operation) {
         return operation == WasteOperation.COLLECTED || operation.isExit()
-                || operation == WasteOperation.UNCLASSIFIED_OUT || operation.isTransfer();
+                || operation == WasteOperation.UNCLASSIFIED_OUT || operation.isTransfer() || operation.isProcessing();
     }
 
     static String operationLabel(WasteOperation operation) {
@@ -230,6 +233,8 @@ public class Art48RegisterBuilder {
             case OPENING_BALANCE -> "Sold preluat";
             case INVENTORY_SURPLUS -> "Plus la inventar";
             case INVENTORY_SHORTAGE -> "Minus la inventar";
+            case PROCESSING_INPUT -> "Balotare: intrat la presă";
+            case PROCESSING_OUTPUT -> "Balotare: rezultat";
         };
     }
 
@@ -254,6 +259,8 @@ public class Art48RegisterBuilder {
         BigDecimal transferredOut = BigDecimal.ZERO;
         BigDecimal inventoryPlus = BigDecimal.ZERO;
         BigDecimal inventoryMinus = BigDecimal.ZERO;
+        BigDecimal treated = BigDecimal.ZERO;
+        BigDecimal treatedResult = BigDecimal.ZERO;
         final TreeSet<String> recoveryCodes = new TreeSet<>(Comparator.comparingInt(Art48RegisterBuilder::codeNumber));
         final TreeSet<String> disposalCodes = new TreeSet<>(Comparator.comparingInt(Art48RegisterBuilder::codeNumber));
         boolean moved;

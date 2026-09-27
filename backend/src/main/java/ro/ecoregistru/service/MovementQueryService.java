@@ -406,6 +406,8 @@ public class MovementQueryService {
                     weighing.get("status").in(WeighingOperationStatus.FINALIZED, WeighingOperationStatus.IN_TRANSIT)));
             // D3.5 — nota de preluare și diferențele de inventar mișcă stocul, dar nu sunt intrări sau ieșiri.
             predicates.add(cb.not(root.get("operation").in(WasteOperation.STOCK_ONLY)));
+            // F5 — balotarea nu trece pe poartă: are tabul ei pe cântar și rândurile ei în registrul art. 48.
+            predicates.add(cb.not(root.get("operation").in(WasteOperation.PROCESSING_INPUT, WasteOperation.PROCESSING_OUTPUT)));
             // D2.5 — pe firmă, transferul intern se anulează cu el însuși: nu e nici intrare, nici ieșire. Pe un
             // depozit ales se vede, ca intrare (primit) sau ieșire (trimis).
             if (workPointId == null) {
