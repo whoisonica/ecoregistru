@@ -572,33 +572,44 @@ public class WeighingOperationService {
      */
     @Transactional(readOnly = true)
     public byte[] renderRegister(int year, Integer month) {
-        UUID tenantId = TenantContext.require();
-        Company company = companyRepository.findById(tenantId)
-                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         java.time.YearMonth period = month == null ? null : java.time.YearMonth.of(year, month);
         java.time.LocalDate from = period == null ? java.time.LocalDate.of(year, 1, 1) : period.atDay(1);
         java.time.LocalDate to = period == null ? java.time.LocalDate.of(year, 12, 31) : period.atEndOfMonth();
+        return renderRegister(from, to, null, period == null ? "Anul " + year
+                : "Luna " + String.format("%02d.%d", month, year));
+    }
+
+    /**
+     * D4.7 — același registru pe un interval și, dacă e ales, pe un depozit: operațiunile care pleacă din el sau vin în el,
+     * cu liniile lui (un transfer spre alt depozit își arată aici doar plecarea sau doar sosirea).
+     */
+    @Transactional(readOnly = true)
+    public byte[] renderRegister(java.time.LocalDate from, java.time.LocalDate to, UUID workPointId, String label) {
+        UUID tenantId = TenantContext.require();
+        Company company = companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         java.util.Set<UUID> allowed = depotAccess.allowed();
+        java.util.Set<UUID> only = workPointId == null ? null : java.util.Set.of(workPointId);
         List<WeighingOperation> operations = new ArrayList<>(operationRepository.findForScreen(tenantId, null, from, to)
-                .stream().filter(o -> visible(o, allowed)).toList());
+                .stream().filter(o -> visible(o, allowed) && visible(o, only)).toList());
         operations.sort(java.util.Comparator.comparing(WeighingOperation::getDate)
                 .thenComparing(WeighingOperation::getType)
                 .thenComparingInt(WeighingOperation::getNumber));
         Map<UUID, List<WasteMovement>> lines = operations.isEmpty() ? Map.of()
                 : movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
                                 operations.stream().map(WeighingOperation::getId).toList())
-                        .stream().collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
+                        .stream()
+                        .filter(m -> only == null || only.contains(m.getWorkPoint().getId()))
+                        .collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
         Map<UUID, String> userNames = new HashMap<>();
         userRepository.findAllById(operations.stream().map(WeighingOperation::getCancelledBy)
                         .filter(java.util.Objects::nonNull).distinct().toList())
                 .forEach(u -> userNames.put(u.getId(), fullName(u)));
-        String label = period == null ? "Anul " + year
-                : "Luna " + String.format("%02d.%d", month, year);
         String name = company.getCui() == null ? company.getName() : company.getName() + " · CUI " + company.getCui();
         return registerGenerator.xlsx(name, label, operations, lines, userNames, pricesVisible(company));
     }
 
-    private static String fullName(ro.ecoregistru.entity.AppUser user) {
+    static String fullName(ro.ecoregistru.entity.AppUser user) {
         String name = java.util.stream.Stream.of(user.getFirstName(), user.getLastName())
                 .filter(v -> v != null && !v.isBlank()).collect(Collectors.joining(" "));
         return name.isEmpty() ? user.getEmail() : name;

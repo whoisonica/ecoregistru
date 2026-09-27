@@ -128,6 +128,17 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     @Query("select max(o.receptionNoteNumber) from WeighingOperation o where o.company.id = :companyId")
     Integer findMaxReceptionNoteNumber(@Param("companyId") UUID companyId);
 
+    /** D4.7 — numerele date vreodată, pe fiecare serie a firmei: golurile din registrul documentelor emise. */
+    @Query("select o.anexa3Number from WeighingOperation o where o.company.id = :companyId and o.anexa3Number is not null")
+    List<Integer> findAllAnexa3Numbers(@Param("companyId") UUID companyId);
+
+    @Query("select o.borderouNumber from WeighingOperation o where o.company.id = :companyId and o.borderouNumber is not null")
+    List<Integer> findAllBorderouNumbers(@Param("companyId") UUID companyId);
+
+    @Query("select o.receptionNoteNumber from WeighingOperation o "
+            + "where o.company.id = :companyId and o.receptionNoteNumber is not null")
+    List<Integer> findAllReceptionNoteNumbers(@Param("companyId") UUID companyId);
+
     /** D1.11 — plățile în numerar către aceeași persoană în aceeași zi, cu operațiunea care se verifică. */
     @Query("""
             select o from WeighingOperation o

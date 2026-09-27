@@ -140,13 +140,13 @@ public class DepotRegisterGenerator {
     }
 
     /** Aceleași cuvinte ca pe ecran (`strings.scaleState`). */
-    static final Map<String, String> SCALE_STATES = Map.of(
+    public static final Map<String, String> SCALE_STATES = Map.of(
             "VALID", "Verificat", "NO_VERIFICATION", "Fără verificare", "EXPIRED", "Verificare expirată",
             "REJECTED", "Respins la verificare", "REPAIRED", "Reparat, de reverificat",
             "INCIDENT", "Incident, de reverificat", "NOT_DECLARED", "Nedeclarat la BRML",
             "SEALED", "Sigilat", "OUT_OF_USE", "Scos din uz");
 
-    static String type(WeighingOperation o, WasteMovement m) {
+    public static String type(WeighingOperation o, WasteMovement m) {
         return switch (o.getType()) {
             case IN -> "Intrare";
             case TRANSFER -> m.getOperation() == ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN
@@ -171,7 +171,7 @@ public class DepotRegisterGenerator {
         return o.getPartner() == null ? null : "Client / generator";
     }
 
-    static String status(WeighingOperationStatus status) {
+    public static String status(WeighingOperationStatus status) {
         return switch (status) {
             case IN_PROGRESS -> "În lucru";
             case IN_TRANSIT -> "În tranzit";

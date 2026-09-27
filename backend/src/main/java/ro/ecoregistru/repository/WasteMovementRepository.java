@@ -451,6 +451,41 @@ public interface WasteMovementRepository
     List<WasteMovement> findStockOnlyBetween(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
                                              @Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    /**
+     * D4.7 — fișa de stoc: liniile unui interval cu <b>exact filtrele lui {@link #stockAt}</b>, ca soldul inițial plus ele
+     * să dea soldul de la capăt. {@code workPointId} null = toate depozitele (serviciul taie ce nu vede utilizatorul).
+     */
+    @Query("""
+            select m from WasteMovement m
+              left join fetch m.weighingOperation o
+              left join fetch m.article a
+              join fetch m.wasteCode c
+              join fetch m.workPoint
+              left join fetch m.partner
+            where m.company.id = :companyId and m.deleted = false
+              and m.register = ro.ecoregistru.enums.WasteRegister.ART_48
+              and m.operation <> ro.ecoregistru.enums.WasteOperation.GENERATED
+              and m.quantity is not null and m.date between :from and :to
+              and (:workPointId is null or m.workPoint.id = :workPointId)
+              and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))
+            order by m.date
+            """)
+    List<WasteMovement> stockLinesBetween(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
+                                          @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /** D4.7 — Anexele 3 scoase din mișcările de mână (nu de la cântar), într-un interval, și cele șterse. */
+    @Query("""
+            select m from WasteMovement m join fetch m.workPoint left join fetch m.partner
+            where m.company.id = :companyId and m.anexa3Number is not null and m.weighingOperation is null
+              and m.date between :from and :to
+            """)
+    List<WasteMovement> findAnexa3IssuedBetween(@Param("companyId") UUID companyId, @Param("from") LocalDate from,
+                                                @Param("to") LocalDate to);
+
+    /** D4.7 — toate numerele de Anexa 3 date vreodată din mișcări, pentru golurile din serie. */
+    @Query("select m.anexa3Number from WasteMovement m where m.company.id = :companyId and m.anexa3Number is not null")
+    List<Integer> findAllAnexa3Numbers(@Param("companyId") UUID companyId);
+
     /** D3.5 — data primei mișcări care contează a unui depozit (fără liniile de stoc); null dacă n-are niciuna. */
     @Query("select min(m.date) from WasteMovement m left join m.weighingOperation o "
             + "where m.company.id = :companyId and m.workPoint.id = :workPointId and m.deleted = false "

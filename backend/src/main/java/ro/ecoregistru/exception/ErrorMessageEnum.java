@@ -102,6 +102,12 @@ public enum ErrorMessageEnum {
     // --- WorkPoint ---
     WORK_POINT_NOT_FOUND("work.point.not.found", "Punctul de lucru nu a fost găsit."),
 
+    // --- Rapoartele fixe ale depozitului (D4.7) ---
+    DEPOT_REPORT_PERIOD_INVALID("depot.report.period.invalid",
+            "Alege o perioadă de cel mult un an, cu „de la” înainte de „până la”."),
+    DEPOT_REPORT_FORMAT_UNAVAILABLE("depot.report.format.unavailable", "Raportul ăsta se scoate doar în Excel."),
+    DEPOT_REPORT_PARTNER_REQUIRED("depot.report.partner.required", "Alege partenerul a cărui fișă o scoți."),
+
     // --- Modulul de depozit (V46) ---
     WEIGHING_OPERATION_NOT_FOUND("weighing.operation.not.found", "Operațiunea nu a fost găsită."),
     WEIGHING_OPERATION_TYPE_REQUIRED("weighing.operation.type.required", "Alege tipul operațiunii: intrare sau ieșire."),
