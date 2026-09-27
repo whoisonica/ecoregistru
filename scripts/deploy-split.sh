@@ -17,19 +17,27 @@
 #   5. cu `--push`, `git push <remote> HEAD:main` (Heroku pornește build-ul singur, prin webhook);
 #      fără, scrie comanda. Worktree-ul și ramura temporară se șterg oricum la ieșire.
 #
+# Înainte de toate, cu `--push`: GARDA DE CI. `main` a stat roșu între 20.09 și 27.09.2026 și în
+# timpul ăsta au plecat pe producție zece deployuri, fără ca cineva să vadă. Scriptul caută rularea
+# CI a lui `ref` pe GitHub (coborând peste commiturile numai cu md-uri, pe care CI-ul nu le mai
+# rulează) și refuză dacă nu e verde. `--fara-ci "<motiv>"` trece peste, pentru o urgență, cu motivul
+# scris pe ecran.
+#
 # Nu atinge `origin`: `main` și `deploy/heroku-split` se împing înainte, ca până acum.
 set -euo pipefail
 
-usage() { echo "folosire: $0 backend|frontend|both [--ref <commit>] [--push]" >&2; exit 2; }
+usage() { echo "folosire: $0 backend|frontend|both [--ref <commit>] [--push] [--fara-ci \"<motiv>\"]" >&2; exit 2; }
 
 [[ $# -ge 1 ]] || usage
 target=$1; shift
 ref=main
 push=0
+skip_ci=""
 while [[ $# -gt 0 ]]; do
   case $1 in
     --ref) ref=${2:?}; shift 2 ;;
     --push) push=1; shift ;;
+    --fara-ci) skip_ci=${2:?motivul e obligatoriu}; shift 2 ;;
     *) usage ;;
   esac
 done
@@ -37,6 +45,55 @@ case $target in backend|frontend|both) ;; *) usage ;; esac
 
 repo=$(git rev-parse --show-toplevel)
 cd "$repo"
+
+# Aceleași tipare ca `paths-ignore` din `.github/workflows/ci.yml`: un commit numai cu ele n-are rulare.
+docs_only() {
+  local f
+  while IFS= read -r f; do
+    [[ -z $f ]] && continue
+    case $f in *.md|docs/*|LICENSE) ;; *) return 1 ;; esac
+  done < <(git diff-tree --no-commit-id --name-only -r "$1")
+  return 0
+}
+
+# 0 = verde. Coboară pe first-parent până la primul commit care are rulare CI; un commit de cod
+# fără rulare (neîmpins, sau anulat) oprește căutarea — nu se sare peste cod neverificat.
+ci_green() {
+  local c runs n=0
+  command -v gh >/dev/null || { echo "✗ GARDA CI: lipsește gh." >&2; return 1; }
+  for c in $(git rev-list --first-parent "$ref"); do
+    runs=$(gh run list --workflow ci.yml --commit "$c" --limit 20 --json status,conclusion,url \
+      --jq '[.[] | select(.conclusion != "cancelled")]') || { echo "✗ GARDA CI: gh n-a răspuns." >&2; return 1; }
+    if [[ $(jq length <<<"$runs") -gt 0 ]]; then
+      if jq -e 'any(.[]; .conclusion == "success")' <<<"$runs" >/dev/null; then
+        echo "✓ CI verde pe $(git rev-parse --short "$c")"
+        return 0
+      fi
+      if jq -e 'any(.[]; .status != "completed")' <<<"$runs" >/dev/null; then
+        echo "✗ GARDA CI: rularea pe $(git rev-parse --short "$c") n-a terminat — $(jq -r '.[0].url' <<<"$runs")" >&2
+      else
+        echo "✗ GARDA CI: roșu pe $(git rev-parse --short "$c") — $(jq -r '.[0].url' <<<"$runs")" >&2
+      fi
+      return 1
+    fi
+    if ! docs_only "$c"; then
+      echo "✗ GARDA CI: $(git rev-parse --short "$c") are cod și nicio rulare terminată (neîmpins în origin? anulat?)." >&2
+      return 1
+    fi
+    n=$((n + 1))
+    [[ $n -ge 50 ]] && { echo "✗ GARDA CI: 50 de commituri numai cu md-uri, fără rulare." >&2; return 1; }
+  done
+  return 1
+}
+
+if [[ $push -eq 1 ]]; then
+  if [[ -n $skip_ci ]]; then
+    echo "⚠ GARDA CI sărită: $skip_ci"
+  elif ! ci_green; then
+    echo "  Deployul nu pleacă. Pentru o urgență: --fara-ci \"<motiv>\"." >&2
+    exit 1
+  fi
+fi
 stamp=$(date +%Y%m%d-%H%M%S)-$$
 tmpdirs=()
 tmpbranches=()

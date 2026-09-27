@@ -11,10 +11,16 @@
 # dev, Vite, apoi Chrome-ul runnerului.
 name: CI
 
+# 27.09.2026: din ultimele 40 de rulări pe `main`, 17 au fost anulate. Fiecare `docs(status)` pornea
+# rularea întreagă și o anula pe cea a commitului de cod de dinainte, iar `deploy/heroku-split` rula
+# a doua oară același SHA. Un commit numai cu md-uri nu mai pornește nimic: codul lui e cel de dedesubt,
+# pe care `scripts/deploy-split.sh` îl caută singur.
 on:
   push:
-    branches: ["**"]
+    branches: ["**", "!deploy/heroku-split"]
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE"]
   pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "LICENSE"]
   workflow_dispatch:
 
 # Un push nou peste altul încă în lucru îl anulează pe cel vechi: interesează verdictul pe ultimul
@@ -138,7 +144,8 @@ jobs:
   e2e:
     name: e2e — Chrome peste backend + frontend pe o bază nouă
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
+    # Fără `needs` din 27.09.2026: jobul își pornește singur backendul și Vite-ul, deci nu are ce
+    # aștepta de la celelalte. Legat de `backend`, pornea după 16 minute și ducea rularea la 30.
     timeout-minutes: 30
     services:
       postgres:
