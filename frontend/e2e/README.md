@@ -1,3 +1,16 @@
+📊 **27.09.2026 — proba 55 (`55-rapoarte-depozit.mjs`), rapoartele fixe ale depozitului (D4.7)**: „Rapoarte” din panou, sub „Cântar”,
+duce la `/cantar?tab=rapoarte`; adminul vede cele unsprezece rapoarte și le descarcă pe toate (xlsx, iar fișa de stoc, 2% AFM, impozitul
+și borderourile PF și în PDF), cu numele `<slug>-<de la>_<până la>`; fișa partenerului e oprită până se alege partenerul; peste un an apare
+mesajul și descărcarea se oprește; operatorul vede doar cele șapte fără bani și fără CNP; 1440×900 fără derulare, 375 fără lățire. Nu intră
+în `run.mjs`: `node e2e/55-…`. Proba **19** cere acum nouă taburi („Operațiuni · Rapoarte” deasupra celor șapte).
+⚠️ **Chrome oprește a unsprezecea descărcare automată de pe aceeași încărcare de pagină** (a căzut mereu a 11-a, oricare ar fi fost
+raportul, și cu ordinea inversată): proba reîncarcă pagina la fiecare șapte descărcări.
+⚠️ **Derularea se măsoară pe `main#continut`**, nu pe `document.documentElement`: pagina derulează în `main` (`Layout.tsx`), deci
+`documentElement.scrollHeight − innerHeight` dă mereu 0. Probele 53 și 54 măsoară încă așa (trec pe motivul greșit); tabul „Operațiuni”
+al Cântarului derula de fapt 63 px înainte de D4.7 și 127 px după (de decis cu proprietarul).
+**Negative:** fără `tabs: CANTAR_TABS` în panou cade la clicul pe „Rapoarte” (TimeoutError); cu toate cardurile la toți, operatorul vede 11
+→ 2 căderi. ⚠️ Lasă în urmă o intrare finalizată „Proba 55” pe primul depozit activ și sortimentul „Carton P55 <număr>” (dezactivat).
+
 🗜️ **27.09.2026 — proba 54 (`54-balotare.mjs`), balotarea (F5)**: în Setări → Sortimente, „Carton balotat P54” se face din „Carton vrac
 P54” cu 380 kg/balot, iar rândul spune „din … · 380 kg/balot”; pe `/cantar`, tabul „Balotare” are „Balotare nouă” (și tasta N); fișa arată
 „12 × 380 kg = 4.560 kg din … în …” înainte de salvare și nota TRAT; salvată, rândul e „Finalizată”, „12 baloți”, 4.560 kg, iar stocul

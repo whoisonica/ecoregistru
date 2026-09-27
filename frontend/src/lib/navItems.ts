@@ -20,7 +20,7 @@ import type { Role } from "@/auth/AuthContext";
 import type { CompanyType } from "@/lib/types";
 import { canImport, canManage, isMultiCompany } from "@/lib/roles";
 import { SCREEN_PATH, registersFor, screensFor, type MovementScreen } from "@/lib/movementScreens";
-import { DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, type ScreenTab } from "@/lib/screenTabs";
+import { CANTAR_TABS, DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, type ScreenTab } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 
 export interface NavEntry {
@@ -116,6 +116,7 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
         label: strings.nav.weighing,
         icon: Scale,
         keywords: strings.nav.kwWeighing,
+        tabs: CANTAR_TABS,
       });
     }
   }

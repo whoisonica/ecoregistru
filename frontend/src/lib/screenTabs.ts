@@ -30,3 +30,9 @@ export const PARTNER_TABS: ScreenTab[] = [
   { id: "", label: strings.naturalPersons.tabFirms },
   { id: "persoane-fizice", label: strings.naturalPersons.tab },
 ];
+
+/** D4.7 — Cântarul: operațiunile (cu taburile lor, în pagină) și rapoartele fixe ale depozitului. */
+export const CANTAR_TABS: ScreenTab[] = [
+  { id: "", label: strings.depotReports.tabOperations },
+  { id: "rapoarte", label: strings.depotReports.tab },
+];

@@ -32,6 +32,10 @@ import { WeighingOperationDialog } from "@/components/depot/WeighingOperationDia
 import { ReceivedFormsTab } from "@/components/depot/ReceivedFormsTab";
 import { InventoryTab } from "@/components/depot/InventoryTab";
 import { StockTab } from "@/components/depot/StockTab";
+import { DepotReportsTab } from "@/components/depot/DepotReportsTab";
+import { PageTabs } from "@/components/ui/page-tabs";
+import { useUrlState } from "@/hooks/useUrlState";
+import { CANTAR_TABS } from "@/lib/screenTabs";
 import { BalingDialog } from "@/components/depot/BalingDialog";
 
 const t = strings.weighing;
@@ -57,6 +61,9 @@ export function WeighingOperationsPage() {
   const { user } = useAuth();
   const { data: company } = useCurrentCompany();
   const writes = canWrite(user?.role);
+  // D4.7 — „Operațiuni” (taburile de mai jos) sau „Rapoarte”; în adresă, ca panoul să le arate sub „Cântar”.
+  const [screenTab, setScreenTab] = useUrlState("tab");
+  const reports = screenTab === "rapoarte";
 
   // D2.6 — al patrulea tab nu e un tip de operațiune: registrul formularelor primite.
   const [tab, setTab] = useState<WeighingOperationType | "FORMS" | "STOCK" | "INVENTORY">("IN");
@@ -114,7 +121,7 @@ export function WeighingOperationsPage() {
   });
 
   useHotkey("n", () => {
-    if (writes && !stockTab) setCreating(true);
+    if (writes && !stockTab && !reports) setCreating(true);
   });
 
   const inbound = type === "IN";
@@ -137,7 +144,7 @@ export function WeighingOperationsPage() {
         title={t.title}
         description={t.subtitle}
         actions={
-          writes && !stockTab && (
+          writes && !stockTab && !reports && (
             <Button hotkey="N" onClick={() => setCreating(true)}>
               {forms ? (
                 <FilePlus className="mr-2 h-4 w-4" />
@@ -156,6 +163,16 @@ export function WeighingOperationsPage() {
         }
       />
 
+      <PageTabs tabs={CANTAR_TABS} selected={reports ? "rapoarte" : ""} onSelect={setScreenTab} label={t.title} />
+
+      {reports && (
+        <div className="mt-4">
+          <DepotReportsTab />
+        </div>
+      )}
+
+      {!reports && (
+      <>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div role="tablist" className="flex gap-1 border-b border-line">
           {([
@@ -246,6 +263,8 @@ export function WeighingOperationsPage() {
           </Table>
           <TablePagination view={view} />
         </>
+      )}
+      </>
       )}
 
       {balings && (creating || openId) && (
@@ -378,8 +397,9 @@ function RetentionsStrip({
   const r = t.retentions;
   const nothing = report.afmContribution === 0 && report.incomeTax === 0;
   return (
-    <section className="mb-4 border border-line bg-surface-sunken px-4 py-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+    // 28.09.2026: pe un singur rând (eticheta lângă sumă), ca tabul să încapă la 1440×900 cu zece rânduri.
+    <section className="mb-3 border border-line bg-surface-sunken px-4 py-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h2 className="text-xs font-medium uppercase tracking-wide text-content-muted">
           {r.title}
           <Tooltip content={r.hint}>
@@ -389,7 +409,7 @@ function RetentionsStrip({
         {nothing ? (
           <p className="text-sm text-content-muted">{r.empty}</p>
         ) : (
-          <dl className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
+          <dl className="flex flex-wrap items-baseline gap-x-8 gap-y-1">
             <Amount
               label={`${r.afm} · ${percent(report.afmRate)}`}
               value={report.afmContribution}
@@ -400,7 +420,7 @@ function RetentionsStrip({
               value={report.incomeTax}
               base={report.incomeTaxBase}
             />
-            <div>
+            <div className="flex items-baseline gap-2">
               <dt className="text-xs text-content-muted">{r.due}</dt>
               <dd className="font-mono tabular-nums text-content">{formatDate(report.dueDate)}</dd>
             </div>
@@ -413,7 +433,7 @@ function RetentionsStrip({
 
 function Amount({ label, value, base }: { label: string; value: number; base: number }) {
   return (
-    <div>
+    <div className="flex items-baseline gap-2">
       <dt className="text-xs text-content-muted">{label}</dt>
       <dd className="font-mono tabular-nums text-content-strong">
         {formatLei(value)}

@@ -1761,7 +1761,8 @@ export const strings = {
   weighing: {
     title: "Cântar",
     subtitle:
-      "Ce a intrat și ce a ieșit din depozit, cu cântarul pe fiecare sortiment. Cât e „în lucru”, o operațiune nu contează nicăieri; o finalizezi când bonul e gata, și abia atunci intră în stoc și în registre.",
+      // 28.09.2026: un rând (ecranul trebuie să încapă la 1440×900); „în lucru” se explică pe starea din listă.
+      "Ce intră și ce iese din depozit; în stoc și în registre contează doar ce e finalizat.",
     tabIn: "Intrări",
     tabOut: "Ieșiri",
     // D2.5 — transferul între depozitele firmei.
@@ -2033,11 +2034,12 @@ export const strings = {
     cancelledBecause: "Anulată:",
     open: "Deschide",
     retentions: {
-      title: "Reținut la sursă în luna asta",
-      afm: "Fondul pentru mediu",
-      tax: "Impozit pe venit",
+      // 28.09.2026: scurte, ca banda să stea pe un rând (Fondul pentru mediu și impozitul pe venit, în explicație).
+      title: "Reținut în luna asta",
+      afm: "Fond mediu",
+      tax: "Impozit",
       base: "din",
-      due: "De declarat și plătit până pe",
+      due: "Scadența",
       empty: "Nimic de reținut încă în luna asta.",
       hint:
         "Cifrele sunt cele reținute la finalizare, pe cote fixe prin lege: 2% la Fondul pentru mediu din orice intrare cu preț (OUG 196/2005) și 10% impozit pe metalul cumpărat de la persoane fizice (Codul fiscal art. 115). Aplicația le calculează; declarațiile le depune contabilul.",
@@ -4159,6 +4161,89 @@ export const strings = {
   },
 
   /** D3.5 — tabul „Inventar” de pe „Cântar”: nota de preluare a soldurilor și inventarul depozitului. */
+  /** D4.7 — Cântar → Rapoarte: cele unsprezece rapoarte fixe ale depozitului. */
+  depotReports: {
+    tabOperations: "Operațiuni",
+    tab: "Rapoarte",
+    from: "De la",
+    to: "Până la",
+    shortcuts: "Perioada",
+    lastMonth: "Luna trecută",
+    thisMonth: "Luna asta",
+    quarter: "Trimestrul",
+    year: "Anul",
+    depot: "Depozit",
+    allDepots: "Toate depozitele",
+    article: "Sortiment",
+    allArticles: "Toate sortimentele",
+    partner: "Partener",
+    choosePartner: "Alege partenerul",
+    downloadError: "Raportul nu s-a putut descărca.",
+    periodTooLong: "Alege cel mult un an, cu „De la” înainte de „Până la”.",
+    groupRegisters: "Registre",
+    groupStock: "Stoc",
+    groupMoney: "Bani",
+    groupPartners: "Parteneri",
+    wholeCompany: "Pe toată firma",
+    reports: {
+      registru: {
+        title: "Registrul de intrări-ieșiri",
+        hint: "O linie pe sortiment, toate stările",
+        basis: "Documentul de lucru al depozitului, în forma exportului de la cântar. Prețul apare doar pentru cine îl vede.",
+      },
+      "jurnal-cantar": {
+        title: "Jurnalul de cântar",
+        hint: "Brut, tara, neto, final, impurități",
+        basis: "Fiecare cântărire, cu cântarul și starea lui la verificare (OG 20/1992). Impuritățile = neto − final.",
+      },
+      documente: {
+        title: "Documentele emise",
+        hint: "Anexa 3, borderouri, NIR, goluri",
+        basis: "Numerele date în perioadă și cele care lipsesc din serie, pe toată firma. La control se cere seria fără goluri.",
+      },
+      anulate: {
+        title: "Operațiuni anulate",
+        hint: "Motivul, cine și când",
+        basis: "O operațiune anulată nu se șterge: rămâne cu motivul, autorul și documentele date pe ea.",
+      },
+      "fisa-stoc": {
+        title: "Fișa de stoc pe sortiment",
+        hint: "Sold inițial, mișcări, sold final",
+        basis: "Soldul final e stocul de pe tabul Stoc la „Până la”. Fără valori.",
+      },
+      transferuri: {
+        title: "Transferuri în tranzit",
+        hint: "Pe drum și diferențe la recepție",
+        basis: "Transferurile plecate în perioadă și cele încă pe drum, cu diferența primit − trimis și toleranța.",
+      },
+      afm: {
+        title: "2% Fondul pentru mediu",
+        hint: "Lună cu lună, scadența pe 25",
+        basis: "OUG 196/2005 art. 9 alin. (1) lit. a): 2% din valoarea deșeurilor cumpărate, reținut la sursă.",
+      },
+      impozit: {
+        title: "Impozit reținut D100 / D205",
+        hint: "Pe luni și beneficiarii anului",
+        basis: "Codul fiscal art. 114–115: 10% la metalele cumpărate de la persoane fizice. D205 cuprinde tot anul datei „Până la”.",
+      },
+      numerar: {
+        title: "Plăți în numerar către PF",
+        hint: "Pe zi și persoană, plafonul",
+        basis: "Legea 70/2015 art. 4: cel mult 10.000 lei pe zi în numerar către aceeași persoană.",
+      },
+      "persoane-fizice": {
+        title: "Borderouri și persoane fizice",
+        hint: "Documentele și totalul pe persoană",
+        basis: "Borderoul 14-4-13 pentru liniile plătite, NIR-ul 14-3-1A pentru cele gratuite. Are CNP-uri întregi.",
+      },
+      partener: {
+        title: "Fișa partenerului",
+        hint: "Tot ce a adus sau a luat o firmă",
+        basis: "Linie cu linie, cu impuritățile și totalul pe sortiment; bun pentru reconcilierea cu furnizorul.",
+      },
+    },
+  },
+
   inventory: {
     tab: "Inventar",
     depot: "Depozit",
