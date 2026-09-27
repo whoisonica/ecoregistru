@@ -202,7 +202,8 @@ public class StockService {
         Map<UUID, BigDecimal> exits = new java.util.HashMap<>();
         LocalDate from = at.withDayOfYear(1);
         for (var move : movementRepository.stockMoves(tenantId, workPointId, at)) {
-            if (move.getKg().signum() < 0 && !move.getDate().isBefore(from)) {
+            // D3.5 — o lipsă la inventar scade stocul, dar nu e o ieșire din instalație (art. 34 alin. (2) lit. d)).
+            if (move.getKg().signum() < 0 && !move.getDate().isBefore(from) && !move.getOperation().isStockOnly()) {
                 exits.merge(move.getWasteCodeId(), move.getKg().negate(), BigDecimal::add);
             }
         }

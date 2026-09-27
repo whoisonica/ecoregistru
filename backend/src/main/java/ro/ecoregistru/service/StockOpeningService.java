@@ -50,6 +50,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 public class StockOpeningService {
 
     StockOpeningRepository openingRepository;
+    ro.ecoregistru.repository.InventoryRepository inventoryRepository;
     CompanyRepository companyRepository;
     WorkPointRepository workPointRepository;
     WasteArticleRepository articleRepository;
@@ -107,6 +108,12 @@ public class StockOpeningService {
         }
         if (openingRepository.existsByWorkPoint_IdAndStatus(opening.getWorkPoint().getId(), StockOpeningStatus.CONFIRMED)) {
             throw new BusinessException(STOCK_OPENING_ALREADY_CONFIRMED);
+        }
+        // C1 — un inventar (deschis, încheiat sau aprobat) a stabilit deja stocul depozitului.
+        if (inventoryRepository.existsByWorkPoint_IdAndStatusIn(opening.getWorkPoint().getId(), java.util.EnumSet.of(
+                ro.ecoregistru.enums.InventoryStatus.OPEN, ro.ecoregistru.enums.InventoryStatus.CLOSED,
+                ro.ecoregistru.enums.InventoryStatus.APPROVED))) {
+            throw new BusinessException(STOCK_OPENING_AFTER_INVENTORY);
         }
         LocalDate first = movementRepository.firstCountedDate(tenantId, opening.getWorkPoint().getId());
         if (first != null && opening.getCutOffDate().isAfter(first)) {

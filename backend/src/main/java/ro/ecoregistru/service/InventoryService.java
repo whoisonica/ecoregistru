@@ -23,6 +23,7 @@ import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.CountMethod;
 import ro.ecoregistru.enums.InventoryKind;
 import ro.ecoregistru.enums.InventoryStatus;
+import ro.ecoregistru.enums.StockOpeningStatus;
 import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
@@ -80,6 +81,7 @@ public class InventoryService {
     static final int PV_WORKING_DAYS = 7;
 
     InventoryRepository inventoryRepository;
+    ro.ecoregistru.repository.StockOpeningRepository openingRepository;
     CompanyRepository companyRepository;
     WorkPointRepository workPointRepository;
     WasteArticleRepository articleRepository;
@@ -116,6 +118,16 @@ public class InventoryService {
                 EnumSet.of(InventoryStatus.OPEN, InventoryStatus.CLOSED))) {
             throw new BusinessException(INVENTORY_ALREADY_ACTIVE);
         }
+        UUID depotId = inventory.getWorkPoint().getId();
+        LocalDate approved = inventoryRepository.latestApprovedStart(depotId);
+        if (approved != null && inventory.getStartsOn().isBefore(approved)) {
+            throw new BusinessException(INVENTORY_BEFORE_APPROVED);
+        }
+        openingRepository.findFirstByWorkPoint_IdAndStatus(depotId, StockOpeningStatus.CONFIRMED)
+                .filter(o -> inventory.getStartsOn().isBefore(o.getCutOffDate()))
+                .ifPresent(o -> {
+                    throw new BusinessException(INVENTORY_BEFORE_OPENING);
+                });
         operationRepository.lockNumbering(tenantId + ":inventar");
         inventory.setNumber(inventoryRepository.maxNumber(tenantId) + 1);
         int no = 1;
@@ -399,18 +411,30 @@ public class InventoryService {
     private record Book(WasteArticle article, WasteCode code, BigDecimal kg) {
     }
 
-    /** Scripticul la începutul zilei de început: tot ce contează până în ziua dinainte (pct. 1, 8 lit. d), 9). */
+    /**
+     * Scripticul la începutul zilei de început (pct. 1, 8 lit. d), 9): tot ce contează până în ziua dinainte, plus
+     * liniile de stoc datate chiar în ziua de început — soldul preluat și ajustările unui inventar aprobat din aceeași zi
+     * sunt stocul dimineții, nu mișcări ale zilei (altfel s-ar număra de două ori).
+     */
     private Map<String, Book> book(Inventory inventory) {
         Map<String, Book> book = new java.util.LinkedHashMap<>();
         for (var s : movementRepository.stockAt(inventory.getCompanyId(), inventory.getWorkPoint().getId(),
                 inventory.getStartsOn().minusDays(1))) {
-            if (s.getKg().signum() == 0) {
-                continue;
-            }
             WasteArticle article = s.getArticleId() == null ? null : articleRepository.getReferenceById(s.getArticleId());
             WasteCode code = wasteCodeRepository.getReferenceById(s.getWasteCodeId());
             book.put(key(s.getArticleId(), s.getWasteCodeId()), new Book(article, code, s.getKg()));
         }
+        for (WasteMovement m : movementRepository.findStockOnlyBetween(inventory.getCompanyId(),
+                inventory.getWorkPoint().getId(), inventory.getStartsOn(), inventory.getStartsOn())) {
+            if (inventory.getId() != null && m.getInventory() != null && inventory.getId().equals(m.getInventory().getId())) {
+                continue; // ajustările lui însuși, după aprobare
+            }
+            BigDecimal kg = m.getUnit() == Unit.TONS ? m.getQuantity().multiply(BigDecimal.valueOf(1000)) : m.getQuantity();
+            BigDecimal signed = m.getOperation() == WasteOperation.INVENTORY_SHORTAGE ? kg.negate() : kg;
+            book.merge(key(m.getArticle(), m.getWasteCode()), new Book(m.getArticle(), m.getWasteCode(), signed),
+                    (a, b) -> new Book(a.article(), a.code(), a.kg().add(b.kg())));
+        }
+        book.values().removeIf(b -> b.kg().signum() == 0);
         return book;
     }
 

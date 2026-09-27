@@ -19,6 +19,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     boolean existsByWorkPoint_IdAndStatusIn(UUID workPointId, Collection<InventoryStatus> statuses);
 
+    /** I1 — data de referință a celui mai recent inventar aprobat al depozitului. */
+    @Query("select max(i.startsOn) from Inventory i where i.workPoint.id = :workPointId "
+            + "and i.status = ro.ecoregistru.enums.InventoryStatus.APPROVED")
+    java.time.LocalDate latestApprovedStart(@Param("workPointId") UUID workPointId);
+
     @Query("select coalesce(max(i.number), 0) from Inventory i where i.companyId = :companyId")
     int maxNumber(@Param("companyId") UUID companyId);
 }

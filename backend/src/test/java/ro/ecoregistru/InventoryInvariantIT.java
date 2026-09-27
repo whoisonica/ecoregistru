@@ -82,6 +82,7 @@ class InventoryInvariantIT {
     @Autowired WasteArticleRepository articleRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired JdbcTemplate jdbc;
+    @Autowired ro.ecoregistru.service.StockSettingsService stockSettings;
 
     LocalDate today;
     Company company;
@@ -125,6 +126,8 @@ class InventoryInvariantIT {
     void registersUntouchedByStockOnlyLines() {
         operations.finalizeOperation(weighed(WeighingOperationType.IN, "1000", null));
         operations.finalizeOperation(weighed(WeighingOperationType.OUT, "400", WasteOperationCode.R3));
+        stockSettings.addLimit(new ro.ecoregistru.controller.request.AuthorizedLimitRequest(depot.getId(), "OUTPUT",
+                null, new BigDecimal("100"), "T", "YEAR", null, false, null));
         List<String> before = snapshot();
 
         writeStockOnlyLines();
@@ -184,6 +187,9 @@ class InventoryInvariantIT {
             s.add("art48 recovery " + wp + " " + register.recovery() + " " + register.disposal());
         }
         s.add("summary " + movementQuery.summary(year, today.getMonthValue()));
+        // Limita de ieșiri pe an (D3.4): o lipsă la inventar nu e o ieșire din instalație (art. 34 alin. (2) lit. d)).
+        s.add("output limit " + stock.stock(depot.getId(), today).limits().stream()
+                .filter(l -> "OUTPUT".equals(l.kind())).map(StockResponse.Limit::usedKg).toList());
         s.add("packaging movements " + packaging.movements(year).size());
         s.add("packaging handovers " + packaging.handovers(year));
         s.add("packaging unclassified " + packaging.unclassified(year));

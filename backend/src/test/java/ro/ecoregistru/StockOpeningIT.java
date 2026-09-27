@@ -73,6 +73,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class StockOpeningIT {
 
     @Autowired StockOpeningService openings;
+    @Autowired ro.ecoregistru.service.InventoryService inventories;
     @Autowired StockService stock;
     @Autowired WeighingOperationService operations;
     @Autowired CompanyUserService users;
@@ -223,6 +224,18 @@ class StockOpeningIT {
         mockMvc.perform(post("/api/v1/stock-openings").header("Authorization", "Bearer " + jwtService.generateToken(admin))
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk());
+    }
+
+    /** C1 — după un inventar, stocul depozitului e stabilit: o notă de preluare l-ar număra a doua oară. */
+    @Test
+    void openingAfterInventoryRefused() {
+        inventories.open(new ro.ecoregistru.controller.request.InventoryHeaderRequest(depotA.getId(), "1", today,
+                ro.ecoregistru.enums.InventoryKind.ANNUAL, false, null, null, today, today,
+                List.of(new ro.ecoregistru.controller.request.InventoryHeaderRequest.Member("P", null, true)),
+                "Ion Gestionar", null, null));
+        StockOpeningResponse draft = openings.create(request(depotA, today.minusDays(3), "500", null));
+
+        assertBusiness(() -> openings.confirm(draft.id()), ErrorMessageEnum.STOCK_OPENING_AFTER_INVENTORY);
     }
 
     // --- helpers ---

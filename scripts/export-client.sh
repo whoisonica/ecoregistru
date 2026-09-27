@@ -43,6 +43,9 @@ app_users|select id, email, role, first_name, last_name, enabled, created_at, de
 partner_work_points|select w.* from partner_work_points w join partners p on p.id = w.partner_id where p.company_id = '$cid'
 attachments|select a.* from attachments a join waste_movements m on m.id = a.movement_id where m.company_id = '$cid'
 waste_movement_transport_destinations|select d.* from waste_movement_transport_destinations d join waste_movements m on m.id = d.waste_movement_id where m.company_id = '$cid'
+stock_opening_lines|select l.* from stock_opening_lines l join stock_openings o on o.id = l.opening_id where o.company_id = '$cid'
+inventory_lines|select l.* from inventory_lines l join inventories i on i.id = l.inventory_id where i.company_id = '$cid'
+inventory_commission|select c.* from inventory_commission c join inventories i on i.id = c.inventory_id where i.company_id = '$cid'
 waste_codes|select * from waste_codes"
 SKIP="app_users subscriptions"
 

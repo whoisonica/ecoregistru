@@ -374,6 +374,9 @@ public interface WasteMovementRepository
     interface StockMove {
         UUID getWasteCodeId();
 
+        /** D3.5 — ca limita de ieșiri pe an să lase afară liniile care mișcă doar stocul. */
+        ro.ecoregistru.enums.WasteOperation getOperation();
+
         LocalDate getDate();
 
         java.math.BigDecimal getKg();
@@ -384,7 +387,7 @@ public interface WasteMovementRepository
      * o marfă nu pleacă înainte să vină. Aceleași linii ca {@link #stockAt}.
      */
     @Query("""
-            select c.id as wasteCodeId, m.date as date,
+            select c.id as wasteCodeId, m.date as date, m.operation as operation,
                    (case when m.operation in (ro.ecoregistru.enums.WasteOperation.COLLECTED,
                                               ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN,
                                               ro.ecoregistru.enums.WasteOperation.OPENING_BALANCE,

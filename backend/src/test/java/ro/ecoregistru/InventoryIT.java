@@ -82,6 +82,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class InventoryIT {
 
     @Autowired InventoryService inventories;
+    @Autowired ro.ecoregistru.service.StockOpeningService openings;
     @Autowired StockService stock;
     @Autowired WeighingOperationService operations;
     @Autowired CompanyUserService users;
@@ -354,6 +355,59 @@ class InventoryIT {
 
         assertThat(inventories.operationsDuring(inv.id())).singleElement()
                 .satisfies(o -> assertThat(o.date()).isEqualTo(start));
+    }
+
+    /** C1 — nota de preluare cu tăierea în ziua de început e stocul dimineții: intră în scriptic, nu devine plus. */
+    @Test
+    void openingOnStartDayIsInTheBook() {
+        openings.confirm(openings.create(openingRequest(depotB, start, "500")).id());
+
+        InventoryResponse inv = inventories.open(header(depotB, InventoryKind.ANNUAL, null, members(1)));
+
+        assertThat(inv.lines()).singleElement().satisfies(l -> assertThat(l.bookKg()).isEqualByComparingTo("500"));
+    }
+
+    /** C1 — inventarul de corectură din aceeași zi pornește de la faptic-ul celui aprobat, nu îl mai adună o dată. */
+    @Test
+    void correctionInventoryOnSameDaySeesTheFirstOne() {
+        InventoryResponse first = counted("980", "uscare", ShortageNature.NON_IMPUTABLE);
+        inventories.close(first.id());
+        inventories.approve(first.id());
+
+        InventoryResponse second = inventories.open(header(depotA, InventoryKind.OTHER, null, members(1)));
+
+        assertThat(second.lines()).singleElement().satisfies(l -> assertThat(l.bookKg()).isEqualByComparingTo("980"));
+    }
+
+    /** I1 — un inventar datat înaintea unuia aprobat i-ar schimba retroactiv scripticul. */
+    @Test
+    void inventoryBeforeApprovedRefused() {
+        InventoryResponse first = counted("1000", null, null);
+        inventories.close(first.id());
+        inventories.approve(first.id());
+        InventoryHeaderRequest h = header(depotA, InventoryKind.OTHER, null, members(1));
+
+        assertBusiness(() -> inventories.open(new InventoryHeaderRequest(h.workPointId(), h.decisionNumber(),
+                h.decisionDate(), h.kind(), false, h.mode(), h.method(), start.minusDays(1), start, h.commission(),
+                h.keeperName(), null, null)), ErrorMessageEnum.INVENTORY_BEFORE_APPROVED);
+    }
+
+    /** I1 — un inventar datat înaintea tăierii notei de preluare n-ar vedea soldul preluat. */
+    @Test
+    void inventoryBeforeOpeningRefused() {
+        openings.confirm(openings.create(openingRequest(depotB, start, "500")).id());
+        InventoryHeaderRequest h = header(depotB, InventoryKind.ANNUAL, null, members(1));
+
+        assertBusiness(() -> inventories.open(new InventoryHeaderRequest(h.workPointId(), h.decisionNumber(),
+                h.decisionDate(), h.kind(), false, h.mode(), h.method(), start.minusDays(1), start, h.commission(),
+                h.keeperName(), null, null)), ErrorMessageEnum.INVENTORY_BEFORE_OPENING);
+    }
+
+    private ro.ecoregistru.controller.request.StockOpeningRequest openingRequest(WorkPoint depot, LocalDate cutOff, String kg) {
+        return new ro.ecoregistru.controller.request.StockOpeningRequest(depot.getId(), cutOff,
+                ro.ecoregistru.enums.StockOpeningSource.STOCK_CARDS, "Ion Gestionar", "Ana Contabil", null,
+                List.of(new ro.ecoregistru.controller.request.StockOpeningRequest.Line(cardboard.getId(), null,
+                        new BigDecimal(kg))));
     }
 
     // --- helpers ---

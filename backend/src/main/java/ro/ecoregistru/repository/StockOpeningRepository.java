@@ -18,6 +18,8 @@ public interface StockOpeningRepository extends JpaRepository<StockOpening, UUID
 
     boolean existsByWorkPoint_IdAndStatus(UUID workPointId, StockOpeningStatus status);
 
+    Optional<StockOpening> findFirstByWorkPoint_IdAndStatus(UUID workPointId, StockOpeningStatus status);
+
     @Query("select coalesce(max(o.number), 0) from StockOpening o where o.companyId = :companyId")
     int maxNumber(@Param("companyId") UUID companyId);
 }
