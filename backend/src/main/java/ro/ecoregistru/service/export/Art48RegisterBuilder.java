@@ -48,7 +48,8 @@ public class Art48RegisterBuilder {
      *                        chiar suma asta.
      */
     public Art48Register build(Company company, WorkPoint workPoint, int year,
-                               List<WasteMovement> movementsOfYear, List<Art48Opening> opening) {
+                               List<WasteMovement> movementsOfYear, List<Art48Opening> opening,
+                               List<WasteMovement> stockOnlyOfYear) {
         List<WasteMovement> inYear = WasteRegister.ART_48.select(movementsOfYear).stream()
                 .filter(m -> workPoint == null || (m.getWorkPoint() != null
                         && workPoint.getId().equals(m.getWorkPoint().getId())))
@@ -65,10 +66,12 @@ public class Art48RegisterBuilder {
                 workPoint == null ? null : workPoint.getName(),
                 year,
                 inYear.stream().map(this::entry).toList(),
-                collection(inYear, opening),
+                collection(inYear, opening, stockOnlyOfYear),
                 handovers(inYear, WasteOperation.RECOVERED),
                 handovers(inYear, WasteOperation.DISPOSED),
-                (int) inYear.stream().filter(m -> m.getQuantity() == null).count());
+                (int) inYear.stream().filter(m -> m.getQuantity() == null).count(),
+                stockOnlyOfYear.stream().filter(m -> m.getOperation() == WasteOperation.OPENING_BALANCE)
+                        .map(WasteMovement::getDate).min(Comparator.naturalOrder()).orElse(null));
     }
 
     private Art48Register.Entry entry(WasteMovement m) {
@@ -122,7 +125,8 @@ public class Art48RegisterBuilder {
      * Cap. 1, tabel 1: per code, what was in stock on 1 January, what came in, what left and how.
      * A code shows when it moved during the year or still had stock from before it.
      */
-    private List<Art48Register.CodeTotal> collection(List<WasteMovement> inYear, List<Art48Opening> opening) {
+    private List<Art48Register.CodeTotal> collection(List<WasteMovement> inYear, List<Art48Opening> opening,
+                                                     List<WasteMovement> stockOnly) {
         Map<String, Totals> byCode = new TreeMap<>();
         // Anii dinainte, ca sold: un rând pe cod, socotit de bază. Codul tipărit se compune la fel
         // ca în `printedCode`, ca rândurile anului să cadă peste soldul lor, nu lângă el.
@@ -154,16 +158,32 @@ public class Art48RegisterBuilder {
             }
         }
 
+        // D3.5 — soldul preluat în an intră în stocul de la începutul anului (stocul exista înainte de evidența din
+        // aplicație); diferențele de inventar au coloanele lor. Niciuna nu e intrare sau ieșire.
+        for (WasteMovement m : stockOnly) {
+            Totals t = byCode.computeIfAbsent(printedCode(m), k -> new Totals(m.getWasteCode().getName()));
+            BigDecimal kg = kg(m);
+            t.moved = true;
+            switch (m.getOperation()) {
+                case OPENING_BALANCE -> t.opening = t.opening.add(kg);
+                case INVENTORY_SURPLUS -> t.inventoryPlus = t.inventoryPlus.add(kg);
+                case INVENTORY_SHORTAGE -> t.inventoryMinus = t.inventoryMinus.add(kg);
+                default -> { }
+            }
+        }
+
         List<Art48Register.CodeTotal> rows = new ArrayList<>();
         byCode.forEach((code, t) -> {
             if (!t.moved && t.opening.signum() == 0) {
                 return;
             }
             BigDecimal closing = t.opening.add(t.collected).add(t.transferredIn)
-                    .subtract(t.recovered).subtract(t.disposed).subtract(t.unclassified).subtract(t.transferredOut);
+                    .subtract(t.recovered).subtract(t.disposed).subtract(t.unclassified).subtract(t.transferredOut)
+                    .add(t.inventoryPlus).subtract(t.inventoryMinus);
             rows.add(new Art48Register.CodeTotal(code, t.name, t.opening, t.collected, t.recovered,
                     t.disposed, t.unclassified, closing,
-                    List.copyOf(t.recoveryCodes), List.copyOf(t.disposalCodes), t.transferredIn, t.transferredOut));
+                    List.copyOf(t.recoveryCodes), List.copyOf(t.disposalCodes), t.transferredIn, t.transferredOut,
+                    t.inventoryPlus, t.inventoryMinus));
         });
         return rows;
     }
@@ -232,6 +252,8 @@ public class Art48RegisterBuilder {
         BigDecimal unclassified = BigDecimal.ZERO;
         BigDecimal transferredIn = BigDecimal.ZERO;
         BigDecimal transferredOut = BigDecimal.ZERO;
+        BigDecimal inventoryPlus = BigDecimal.ZERO;
+        BigDecimal inventoryMinus = BigDecimal.ZERO;
         final TreeSet<String> recoveryCodes = new TreeSet<>(Comparator.comparingInt(Art48RegisterBuilder::codeNumber));
         final TreeSet<String> disposalCodes = new TreeSet<>(Comparator.comparingInt(Art48RegisterBuilder::codeNumber));
         boolean moved;

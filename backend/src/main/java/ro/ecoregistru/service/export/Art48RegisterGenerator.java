@@ -70,25 +70,44 @@ public class Art48RegisterGenerator {
      * de dinainte.
      */
     static String[] cap1Columns(boolean transfers) {
-        if (!transfers) {
-            return CAP1_COLUMNS;
-        }
-        return new String[]{"Cod deșeu", "Denumire", "Stoc la începutul anului (t)", "Cantitate colectată (t)",
-                "Primită prin transfer intern (t)", "Valorificată din colectat (t)", "Eliminată din colectat (t)",
-                "Ieșită fără cod R/D (t)", "Trimisă prin transfer intern (t)", "Stoc la sfârșitul anului (t)",
-                "Coduri R", "Coduri D"};
+        return cap1Columns(transfers, false);
+    }
+
+    /**
+     * D3.5 — cu diferențe de inventar în an, două coloane în plus înainte de stocul final: „Plus la inventar” și „Minus
+     * la inventar”. Stocul final le cuprinde, dar nu le ascunde (surse-oficiale §18.7).
+     */
+    static String[] cap1Columns(boolean transfers, boolean inventory) {
+        List<String> c = new ArrayList<>(List.of("Cod deșeu", "Denumire", "Stoc la începutul anului (t)",
+                "Cantitate colectată (t)"));
+        if (transfers) c.add("Primită prin transfer intern (t)");
+        c.addAll(List.of("Valorificată din colectat (t)", "Eliminată din colectat (t)", "Ieșită fără cod R/D (t)"));
+        if (transfers) c.add("Trimisă prin transfer intern (t)");
+        if (inventory) c.addAll(List.of("Plus la inventar (t)", "Minus la inventar (t)"));
+        c.addAll(List.of("Stoc la sfârșitul anului (t)", "Coduri R", "Coduri D"));
+        return c.toArray(String[]::new);
     }
 
     static List<BigDecimal> cap1Quantities(Art48Register.CodeTotal c, boolean transfers) {
-        return transfers
-                ? List.of(c.openingKg(), c.collectedKg(), c.transferredInKg(), c.recoveredKg(), c.disposedKg(),
-                        c.unclassifiedKg(), c.transferredOutKg(), c.closingKg())
-                : List.of(c.openingKg(), c.collectedKg(), c.recoveredKg(), c.disposedKg(), c.unclassifiedKg(),
-                        c.closingKg());
+        return cap1Quantities(c, transfers, false);
+    }
+
+    static List<BigDecimal> cap1Quantities(Art48Register.CodeTotal c, boolean transfers, boolean inventory) {
+        List<BigDecimal> q = new ArrayList<>(List.of(c.openingKg(), c.collectedKg()));
+        if (transfers) q.add(c.transferredInKg());
+        q.addAll(List.of(c.recoveredKg(), c.disposedKg(), c.unclassifiedKg()));
+        if (transfers) q.add(c.transferredOutKg());
+        if (inventory) q.addAll(List.of(c.inventoryPlusKg(), c.inventoryMinusKg()));
+        q.add(c.closingKg());
+        return q;
     }
 
     static boolean hasTransfers(Art48Register r) {
         return r.collection().stream().anyMatch(Art48Register.CodeTotal::hasTransfers);
+    }
+
+    static boolean hasInventory(Art48Register r) {
+        return r.collection().stream().anyMatch(Art48Register.CodeTotal::hasInventory);
     }
 
     static final String[] CAP2A_COLUMNS = {
@@ -140,14 +159,15 @@ public class Art48RegisterGenerator {
             }
 
             boolean transfers = hasTransfers(r);
-            Sheet cap1 = sheet(wb, s, "Cap. 1 Colectare", r, cap1Columns(transfers));
+            boolean inventory = hasInventory(r);
+            Sheet cap1 = sheet(wb, s, "Cap. 1 Colectare", r, cap1Columns(transfers, inventory));
             row = XLSX_HEADER_ROW + 1;
             for (Art48Register.CodeTotal c : r.collection()) {
                 Row x = cap1.createRow(row++);
                 text(x, 0, c.wasteCode());
                 text(x, 1, c.wasteName());
                 int col = 2;
-                for (BigDecimal kg : cap1Quantities(c, transfers)) {
+                for (BigDecimal kg : cap1Quantities(c, transfers, inventory)) {
                     number(x, col++, tons(kg), s.tons);
                 }
                 text(x, col++, String.join(", ", c.recoveryCodes()));
@@ -284,12 +304,19 @@ public class Art48RegisterGenerator {
                 doc.add(new Paragraph(cp1250("Nicio cantitate de raportat."), small));
             } else {
                 boolean transfers = hasTransfers(r);
-                PdfPTable t = table(cap1Columns(transfers), head, transfers
-                        ? new float[]{6, 18, 8, 8, 8, 8, 8, 8, 8, 8, 6, 6}
+                boolean inventory = hasInventory(r);
+                String[] columns = cap1Columns(transfers, inventory);
+                float[] widths = new float[columns.length];
+                java.util.Arrays.fill(widths, 8);
+                widths[0] = 6;
+                widths[1] = 18;
+                widths[columns.length - 2] = 6;
+                widths[columns.length - 1] = 6;
+                PdfPTable t = table(columns, head, transfers || inventory ? widths
                         : new float[]{7, 22, 9, 9, 9, 9, 9, 9, 8, 8});
                 for (Art48Register.CodeTotal c : r.collection()) {
                     cells(t, body, c.wasteCode(), c.wasteName());
-                    numbers(t, body, cap1Quantities(c, transfers).stream().map(kg -> tonsText(kg)).toArray(String[]::new));
+                    numbers(t, body, cap1Quantities(c, transfers, inventory).stream().map(kg -> tonsText(kg)).toArray(String[]::new));
                     cells(t, body, String.join(", ", c.recoveryCodes()), String.join(", ", c.disposalCodes()));
                 }
                 doc.add(t);
@@ -368,6 +395,15 @@ public class Art48RegisterGenerator {
 
     static List<String> notes(Art48Register r) {
         List<String> notes = new ArrayList<>(List.of(SIM_NOTE, STOCK_NOTE));
+        if (r.evidenceStartsOn() != null) {
+            notes.add("Evidența în aplicație începe la " + r.evidenceStartsOn().format(DATE)
+                    + " (sold preluat); lunile dinainte nu sunt în registru.");
+        }
+        if (hasInventory(r)) {
+            notes.add("Plusul și minusul la inventar sunt diferențele constatate la inventariere (proces-verbal aprobat), "
+                    + "nu preluări sau predări. Chestionarul SIM n-are rubrică pentru ele: verificarea „stoc inițial + "
+                    + "colectat = valorificat + eliminat + stoc final” iese cu diferența lor.");
+        }
         if (r.unweighed() > 0) {
             notes.add(r.unweighed() == 1
                     ? "O mișcare fără cantitate (cântarul nu a venit) apare în evidența cronologică, dar nu în totaluri."

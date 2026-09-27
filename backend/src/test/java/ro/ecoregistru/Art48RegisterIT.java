@@ -94,6 +94,8 @@ class Art48RegisterIT {
     @Autowired WasteMovementRepository movementRepository;
     @Autowired WeighingOperationRepository weighingOperationRepository;
     @Autowired NaturalPersonRepository naturalPersonRepository;
+    @Autowired ro.ecoregistru.repository.StockOpeningRepository stockOpeningRepository;
+    @Autowired ro.ecoregistru.repository.InventoryRepository inventoryRepository;
 
     private String token;
     private UUID adminId;
@@ -248,6 +250,70 @@ class Art48RegisterIT {
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /**
+     * D3.5 — soldul preluat intră în coloana „Stoc la începutul anului”, iar diferențele de inventar au coloanele lor:
+     * stocul final le cuprinde, dar nu se ascund în el (surse-oficiale §18.7). Pe firmă nu se anulează ca transferul.
+     */
+    @Test
+    void openingBalanceGoesToOpeningColumnAndInventoryColumnsCloseTheBalance() throws Exception {
+        fixture();
+        stockOnly("2026-01-10", "15 01 01", "200", WasteOperation.OPENING_BALANCE);
+        stockOnly("2026-07-01", "15 01 01", "30", WasteOperation.INVENTORY_SURPLUS);
+        stockOnly("2026-07-01", "15 01 01", "20", WasteOperation.INVENTORY_SHORTAGE);
+        try (Workbook wb = xlsx()) {
+            Sheet cap1 = wb.getSheet("Cap. 1 Colectare");
+            assertThat(cap1.getRow(FIRST_DATA_ROW - 1).getCell(7).getStringCellValue()).isEqualTo("Plus la inventar (t)");
+            assertThat(cap1.getRow(FIRST_DATA_ROW - 1).getCell(8).getStringCellValue()).isEqualTo("Minus la inventar (t)");
+            assertThat(dataRows(cap1, 12)).containsExactly(
+                    // 0.6 din anii dinainte + 0.2 preluat; + 0.7 - 0.5 + 0.03 - 0.02 = 1.01
+                    List.of("15 01 01", name("15 01 01"), 0.8, 0.7, 0.5, 0.0, 0.0, 0.03, 0.02, 1.01, "R3", ""),
+                    List.of("15 01 02", name("15 01 02"), 0.0, 2.0, 0.0, 0.5, 0.0, 0.0, 0.0, 1.5, "", "D1"));
+        }
+    }
+
+    @Test
+    void theRegisterSaysWhereTheEvidenceInTheAppStarts() throws Exception {
+        fixture();
+        stockOnly("2026-01-10", "15 01 01", "200", WasteOperation.OPENING_BALANCE);
+        try (Workbook wb = xlsx()) {
+            StringBuilder text = new StringBuilder();
+            for (Row row : wb.getSheetAt(0)) {
+                for (Cell cell : row) {
+                    if (cell.getCellType() == CellType.STRING) text.append(cell.getStringCellValue()).append('\n');
+                }
+            }
+            assertThat(text).contains("Evidența în aplicație începe la 10.01.2026 (sold preluat)");
+        }
+    }
+
+    private void stockOnly(String date, String code, String kg, WasteOperation operation) {
+        WorkPoint depot = workPointRepository.findById(workPointId).orElseThrow();
+        ro.ecoregistru.entity.StockOpening opening = null;
+        ro.ecoregistru.entity.Inventory inventory = null;
+        if (operation == WasteOperation.OPENING_BALANCE) {
+            opening = stockOpeningRepository.saveAndFlush(ro.ecoregistru.entity.StockOpening.builder()
+                    .companyId(company.getId()).workPoint(depot).cutOffDate(LocalDate.parse(date))
+                    .source(ro.ecoregistru.enums.StockOpeningSource.STOCK_CARDS)
+                    .status(ro.ecoregistru.enums.StockOpeningStatus.DRAFT).build());
+        } else {
+            inventory = inventoryRepository.findAll().stream()
+                    .filter(i -> i.getCompanyId().equals(company.getId())).findFirst()
+                    .orElseGet(() -> inventoryRepository.saveAndFlush(ro.ecoregistru.entity.Inventory.builder()
+                            .companyId(company.getId()).workPoint(depot).number(1)
+                            .kind(ro.ecoregistru.enums.InventoryKind.ANNUAL)
+                            .startsOn(LocalDate.parse(date)).endsOn(LocalDate.parse(date)).keeperName("Gestionar")
+                            .status(ro.ecoregistru.enums.InventoryStatus.APPROVED)
+                            .closedOn(LocalDate.parse(date)).approvedOn(LocalDate.parse(date)).build()));
+        }
+        movementRepository.saveAndFlush(WasteMovement.builder()
+                .company(company).workPoint(depot).date(LocalDate.parse(date))
+                .wasteCode(wasteCodeRepository.findByCode(code).orElseThrow())
+                .quantity(new BigDecimal(kg)).unit(Unit.KG)
+                .operation(operation).register(WasteRegister.ART_48)
+                .stockOpening(opening).inventory(inventory).deleted(false)
+                .createdBy(adminId).build());
+    }
 
     private Workbook xlsx() throws Exception {
         byte[] body = mockMvc.perform(get(URL).param("year", "2026")

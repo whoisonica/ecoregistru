@@ -60,7 +60,8 @@ public class Art48RegisterService {
         LocalDate start = LocalDate.of(year, 1, 1);
         return builder.build(company, workPoint, year,
                 movementRepository.findCountedBetween(tenantId, start, LocalDate.of(year, 12, 31)),
-                movementRepository.art48OpeningBefore(tenantId, workPointId, start));
+                movementRepository.art48OpeningBefore(tenantId, workPointId, start),
+                movementRepository.findStockOnlyBetween(tenantId, workPointId, start, LocalDate.of(year, 12, 31)));
     }
 
     @Transactional(readOnly = true)

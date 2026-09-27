@@ -32,7 +32,12 @@ public record Art48Register(
         /** Cap. 2, tabel B: one line per recipient, code and D code. */
         List<Handover> disposal,
         /** Movements of the year still waiting for their weight: listed, not summed. */
-        int unweighed) {
+        int unweighed,
+        /**
+         * D3.5 — the earliest cut-off date of an opening balance in the year: the evidence in the app starts there and
+         * the months before it are not in the register. Null when no stock was taken over this year.
+         */
+        java.time.LocalDate evidenceStartsOn) {
 
     /** One movement, in date order. {@code kg} is null while the weight has not come back. */
     public record Entry(LocalDate date,
@@ -68,10 +73,18 @@ public record Art48Register(
                             /** D2.5 — doar pe depozit: primit de la alt depozit al firmei (pe firmă se anulează, deci zero). */
                             BigDecimal transferredInKg,
                             /** D2.5 — doar pe depozit: trimis la alt depozit al firmei. */
-                            BigDecimal transferredOutKg) {
+                            BigDecimal transferredOutKg,
+                            /** D3.5 — plusuri constatate la inventar (pe depozit și pe firmă). */
+                            BigDecimal inventoryPlusKg,
+                            /** D3.5 — lipsuri constatate la inventar. */
+                            BigDecimal inventoryMinusKg) {
 
         public boolean hasTransfers() {
             return transferredInKg.signum() != 0 || transferredOutKg.signum() != 0;
+        }
+
+        public boolean hasInventory() {
+            return inventoryPlusKg.signum() != 0 || inventoryMinusKg.signum() != 0;
         }
     }
 
