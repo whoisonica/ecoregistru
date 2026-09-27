@@ -55,7 +55,7 @@ appId: ro.wastehouse.app
 - extendedWaitUntil:
     visible: Ce și cât
     timeout: 10000
-- assertVisible: "20 01 01"
+- assertVisible: "20 01 01.*"
 - assertVisible: "77"
 - takeScreenshot: 02-ciorna-reluata
 - tapOn:

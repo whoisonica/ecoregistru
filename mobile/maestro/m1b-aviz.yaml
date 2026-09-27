@@ -50,7 +50,15 @@ appId: ro.wastehouse.app
 - takeScreenshot: 02-citit
 - assertVisible: '.*Seria DRS Nr. 000417.*'
 
-# „Continuă” nu pleacă până nu sunt confirmate cele de pe pasul ăsta: rămâne și spune câte mai sunt.
+# Punctul de lucru întâi (firma demo are trei); apoi „Continuă” nu pleacă până nu sunt confirmate cele citite
+# de pe pasul ăsta: rămâne și spune câte mai sunt.
+- scrollUntilVisible:
+    element: Punct de lucru Cluj
+    direction: UP
+- tapOn: Punct de lucru Cluj
+- scrollUntilVisible:
+    element:
+      id: step-next
 - tapOn:
     id: step-next
 - assertVisible: "3 rubrici citite din poză, de confirmat"
@@ -74,10 +82,6 @@ appId: ro.wastehouse.app
     centerElement: true
 - tapOn:
     id: f-qty-confirm
-- scrollUntilVisible:
-    element: Punct de lucru Cluj
-    direction: UP
-- tapOn: Punct de lucru Cluj
 - tapOn:
     id: step-next
 
