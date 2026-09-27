@@ -244,6 +244,7 @@ public class WeighingOperationService {
         Scale scale = usableScale(request.scaleId(), workPoint, tenantId);
 
         // BUG-031, same as WasteMovementService.update: a later year hides the move from the old one.
+        List<Object> printed = printedHead(operation);
         if (operation.getDate().getYear() < request.date().getYear()) {
             evidenceRepository.markYearsStale(tenantId, operation.getDate().getYear(), request.date().getYear(), java.time.Instant.EPOCH);
         }
@@ -263,6 +264,9 @@ public class WeighingOperationService {
         operation.setReceiptNumber(target != null ? null : blankToNull(request.receiptNumber()));
         operation.setOwnHousehold(person == null ? null : request.ownHousehold());
         operation.setNotes(blankToNull(request.notes()));
+        if (operation.getAnexa3Number() != null && !printed.equals(printedHead(operation))) {
+            throw new BusinessException(WEIGHING_ANEXA3_ISSUED);
+        }
 
         List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
         for (WasteMovement line : lines) {
@@ -278,6 +282,27 @@ public class WeighingOperationService {
         requireMetalIdentity(operation, lines);
         operationRepository.saveAndFlush(operation);
         return toResponse(operation, lines, pricesVisible(operation.getCompany()));
+    }
+
+    /**
+     * Ce tipărește Anexa 3 din capul operațiunii (D1.13). Formularul pleacă cu camionul înainte de finalizare, deci
+     * după ce are număr, o retipărire trebuie să fie același document: câmpurile astea nu se mai schimbă. Prețul,
+     * plata și chitanța nu sunt pe formular.
+     */
+    private static List<Object> printedHead(WeighingOperation o) {
+        return java.util.Arrays.asList(o.getWorkPoint().getId(), o.getDate(),
+                o.getPartner() == null ? null : o.getPartner().getId(),
+                o.getTargetWorkPoint() == null ? null : o.getTargetWorkPoint().getId(),
+                o.getDriver() == null ? null : o.getDriver().getId(), o.getDriverName(),
+                o.getVehicleRegistration(), o.getOrderNumber(), o.getNotes());
+    }
+
+    /** Liniile, așa cum ies pe Anexa 3 și pe aviz: codul și cantitatea, în ordine. */
+    private static List<String> printedLines(List<WasteMovement> lines) {
+        return lines.stream()
+                .map(l -> l.getWasteCode().getId() + ":" + (l.getQuantity() == null ? "" : l.getQuantity().stripTrailingZeros().toPlainString())
+                        + l.getUnit())
+                .toList();
     }
 
     /**
@@ -314,6 +339,9 @@ public class WeighingOperationService {
             lines.add(line(operation, sent, unitPrice, i + 1, tenantId, userId));
         }
 
+        if (operation.getAnexa3Number() != null && !printedLines(previous).equals(printedLines(lines))) {
+            throw new BusinessException(WEIGHING_ANEXA3_ISSUED);
+        }
         requireMetalIdentity(operation, lines);
         operation.setGrossKg(request.grossKg());
         operation.setTareKg(request.tareKg());

@@ -281,6 +281,40 @@ class TransferIT {
     }
 
     /**
+     * Anexa 3 pleacă cu camionul înainte de finalizare (D1.13), deci din clipa în care are număr, ce e tipărit pe ea nu
+     * se mai schimbă: sortimentele, cantitățile, depozitul, data, destinatarul, șoferul, mașina, observațiile. Prețul nu e
+     * pe formular, deci biroul îl trece și după. O greșeală se repară anulând, iar numărul rămâne pe operațiunea anulată.
+     */
+    @Test
+    void onceTheAnexa3IsPrintedWhatIsOnItNoLongerChanges() {
+        Partner recycler = partnerRepository.save(Partner.builder()
+                .company(company).name("Reciclator " + suffix() + " SA").cui("RO" + suffix()).type(PartnerType.RECOVERER)
+                .client(true).active(true).createdAt(Instant.now()).build());
+        UUID id = operations.create(exitHead(recycler, "CJ 01 ABC", null)).id();
+        operations.replaceLines(id, exitLines("900", null));
+        operations.replaceLines(id, exitLines("1000", null)); // control pozitiv: înainte de tipărire se schimbă liber
+        operations.update(id, exitHead(recycler, "CJ 02 ABC", null));
+        operations.update(id, exitHead(recycler, "CJ 01 ABC", null));
+        documents.renderAnexa3(id);
+        Integer number = anexa3Number(id);
+
+        operations.replaceLines(id, exitLines("1000", "0.45"));
+        operations.update(id, exitHead(recycler, "CJ 01 ABC", null));
+        assertBusiness(() -> operations.replaceLines(id, exitLines("950", "0.45")), ErrorMessageEnum.WEIGHING_ANEXA3_ISSUED);
+        assertBusiness(() -> operations.update(id, exitHead(recycler, "CJ 99 XYZ", null)), ErrorMessageEnum.WEIGHING_ANEXA3_ISSUED);
+        assertBusiness(() -> operations.update(id, exitHead(recycler, "CJ 01 ABC", "altă marfă")), ErrorMessageEnum.WEIGHING_ANEXA3_ISSUED);
+        WeighingOperationResponse kept = operations.get(id);
+        assertThat(kept.lines()).singleElement().satisfies(l -> {
+            assertThat(l.finalKg()).isEqualByComparingTo("1000");
+            assertThat(l.unitPrice()).isEqualByComparingTo("0.45");
+        });
+        assertThat(kept.vehicleRegistration()).isEqualTo("CJ 01 ABC");
+
+        operations.cancel(id, "cantitate greșită pe formular");
+        assertThat(anexa3Number(id)).isEqualTo(number);
+    }
+
+    /**
      * Defectul 2 — recepționat, transferul e în stocul lui B și în registrul formularelor primite: nu se mai anulează.
      * Plecat și încă nerecepționat se anulează, iar marfa se întoarce în A.
      */
@@ -343,6 +377,8 @@ class TransferIT {
         assertThat(anexa3).contains(company.getEnvironmentalAuthNumber());
         assertThat(anexa3.split("900", -1)).as("liniile lui B nu intră în tabelul expeditorului, doar la Observații")
                 .hasSize(2);
+        String avizAfter = Golden.flat(Golden.pdfText(documents.renderAviz(dispatched.id())));
+        assertThat(avizAfter).as("nota lui B e pe Anexa 3, nu în seria avizului").doesNotContain(Golden.flat("Recepționat"));
     }
 
     @Test
@@ -411,6 +447,16 @@ class TransferIT {
     private WeighingOperationRequest head(WorkPoint from, WorkPoint to) {
         return new WeighingOperationRequest(WeighingOperationType.TRANSFER, from.getId(), today, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, to == null ? null : to.getId());
+    }
+
+    private WeighingOperationRequest exitHead(Partner to, String vehicle, String notes) {
+        return new WeighingOperationRequest(WeighingOperationType.OUT, depotA.getId(), today, to.getId(), null, null,
+                null, null, "Vasile Șofer", vehicle, "AVZ-1", null, null, null, notes, null);
+    }
+
+    private WeighingLinesRequest exitLines(String kg, String price) {
+        return new WeighingLinesRequest(null, null, List.of(new WeighingLinesRequest.Line(cardboard.getId(), null, null,
+                new BigDecimal(kg), null, price == null ? null : new BigDecimal(price), WasteOperationCode.R3, null)));
     }
 
     private TransferReceiptRequest receipt(WeighingOperationResponse dispatched, UUID scaleId, String kg, String nir,

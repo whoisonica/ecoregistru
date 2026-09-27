@@ -37,7 +37,9 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
  * <p><b>Doar la ieșire către un partener.</b> La o intrare, formularul îl completează expeditorul
  * (art. 20 alin. (2)), adică cel care a adus deșeul; la o persoană fizică nu există deloc (AX,
  * {@code surse-oficiale.md} §18.4). O operațiune anulată nu mai scoate documente; una în lucru, da,
- * fiindcă formularul pleacă odată cu camionul, adesea înainte ca biroul să finalizeze bonul.
+ * fiindcă formularul pleacă odată cu camionul, adesea înainte ca biroul să finalizeze bonul. De aceea, după ce Anexa 3
+ * are număr, ce e tipărit pe ea nu se mai schimbă în operațiune (`WeighingOperationService.printedHead`), ca o
+ * retipărire să fie același document.
  *
  * <p><b>Ce nu ține operațiunea se tipărește gol</b>, ca pe carnet: transportatorul (fără unul ales,
  * transportăm noi, ca la mișcare), data descărcării, bifele „Destinat:”, volumul. Numărul avizului e
@@ -84,7 +86,7 @@ public class WeighingDocumentService {
             operation.setAnexa3Series(company.getAnexa3Series());
             operationRepository.saveAndFlush(operation);
         }
-        return anexa3Generator.render(head(operation, company), lines, company);
+        return anexa3Generator.render(head(operation, company, true), lines, company);
     }
 
     /** Avizul însoțește marfa, periculoasă sau nu, deci ia toate liniile. Nu alocă nimic. */
@@ -97,7 +99,7 @@ public class WeighingDocumentService {
         if (lines.isEmpty()) {
             throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
         }
-        return avizGenerator.render(head(operation, company), lines, company);
+        return avizGenerator.render(head(operation, company, false), lines, company);
     }
 
     /**
@@ -265,8 +267,11 @@ public class WeighingDocumentService {
     /**
      * Capul transportului, ca mișcare nesalvată: generatoarele citesc de pe ea expeditorul, destinatarul,
      * șoferul, mașina, data și numărul. Nu se persistă și nu intră în nicio listă.
+     *
+     * @param anexa3 referința documentului e, pe Anexa 3, rubrica „Observaţii” (unde B își notează recepția), iar pe
+     *               aviz „Serie / număr aviz”, adică doar „Nr. comandă / aviz” de pe operațiune
      */
-    private WasteMovement head(WeighingOperation o, Company company) {
+    private WasteMovement head(WeighingOperation o, Company company, boolean anexa3) {
         Driver driver = o.getDriver();
         boolean transfer = o.getType() == WeighingOperationType.TRANSFER;
         WorkPoint target = o.getTargetWorkPoint();
@@ -289,7 +294,7 @@ public class WeighingDocumentService {
                 .notes(o.getNotes())
                 // „Nr. comandă / aviz” din formular: numărul avizului și, pe Anexa 3, rubrica „Observaţii”,
                 // exact ce face referința documentului pe o mișcare.
-                .documentReference(transfer ? transferObservations(o, movementRepository
+                .documentReference(transfer && anexa3 ? transferObservations(o, movementRepository
                         .findAllByWeighingOperation_IdOrderByLineNoAsc(o.getId()).stream()
                         .filter(l -> l.getOperation() == ro.ecoregistru.enums.WasteOperation.TRANSFERRED_IN).toList())
                         : o.getOrderNumber())

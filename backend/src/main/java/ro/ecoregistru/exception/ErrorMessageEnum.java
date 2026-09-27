@@ -173,6 +173,8 @@ public enum ErrorMessageEnum {
     WEIGHING_BORDEROU_NO_PAID_LINES("weighing.borderou.no.paid.lines", "Operațiunea n-are linii plătite: pentru preluarea gratuită se tipărește NIR-ul."),
     WEIGHING_NIR_NOT_AVAILABLE("weighing.nir.not.available", "NIR-ul se tipărește după finalizare, pentru liniile preluate gratuit."),
     WEIGHING_BORDEROU_REQUIRES_FINALIZED("weighing.borderou.requires.finalized", "Borderoul se tipărește după finalizare: abia atunci sunt calculate reținerile de pe el."),
+    WEIGHING_ANEXA3_ISSUED("weighing.anexa3.issued",
+            "Anexa 3 e tipărită și a plecat cu camionul: ce scrie pe ea nu se mai schimbă (sortimentele, cantitățile, data, destinatarul, șoferul, mașina, observațiile). Prețul se trece în continuare. Pentru o greșeală, anulează operațiunea și fă alta."),
     WEIGHING_ANEXA3_ONLY_HAZARDOUS("weighing.anexa3.only.hazardous", "Toate liniile sunt deșeuri periculoase. Anexa 3 e pentru deșeuri nepericuloase; pentru cele periculoase se folosește formularul din anexa 2 la HG 1061/2008."),
     PRICE_VISIBILITY_REQUIRED("price.visibility.required", "Alege cine vede prețurile."),
     WEIGHING_LINE_OPERATION_CODE_REQUIRED("weighing.line.operation.code.required", "La ieșire, alege pe fiecare linie operația: valorificare (R) sau eliminare (D)."),
