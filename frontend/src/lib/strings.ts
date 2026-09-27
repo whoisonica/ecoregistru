@@ -1300,6 +1300,8 @@ export const strings = {
       scalesHint: "Verificarea metrologică și declararea la BRML.",
       prices: "Prețuri",
       pricesHint: "Cine vede prețurile din depozit.",
+      siatd: "SIATD",
+      siatdHint: "Modulele în care e înrolată firma și de când.",
       articles: "Sortimente",
       articlesHint: "Denumirile de pe bonul de cântar, legate de codurile de deșeu.",
       // Punctele de lucru sunt „active”; generatorii, utilizatorii și șoferii, „activi”.
@@ -1338,6 +1340,30 @@ export const strings = {
       youDontSee: "Tu nu vezi prețurile.",
       onlyAdmin: "Setarea o schimbă administratorul firmei.",
       saved: "Am salvat cine vede prețurile.",
+      saveError: "Salvarea a eșuat. Încearcă din nou.",
+    },
+    // F6a. Termenul de confirmare e al celui care preia marfa (Ord. 701/2024 art. 18); curge de la recepție sau, dacă
+    // recepția a fost înainte, de la înrolare — de aceea data e obligatorie la fiecare modul bifat.
+    siatd: {
+      title: "SIATD",
+      subtitle:
+        "Bifează modulele în care e înrolată firma. Fiecare recepție pe un modul bifat primește termenul ei de confirmare în SIATD.",
+      modules: {
+        MUNICIPAL: "Deșeuri municipale · 3 zile",
+        PACKAGING: "Ambalaje · 5 zile",
+        TYRE: "Anvelope · 5 zile",
+        WEEE: "DEEE · 15 zile",
+        BATTERY: "Baterii portabile · 15 zile",
+      },
+      enrolledFrom: "Înrolat din",
+      enrolledFromHint: "Termenul unei recepții de dinainte curge de la data asta.",
+      dateRequired: "Scrie data înrolării.",
+      municipalDuty:
+        "Colectorii care preiau deșeuri municipale din gospodării folosesc SIATD din 01.01.2024 (OUG 196/2005 art. 10 alin. (12)); neutilizarea: 80.000–100.000 lei.",
+      none: "Niciun modul bifat.",
+      onlyAdmin: "Modulele le bifează administratorul firmei.",
+      save: "Salvează",
+      saved: "Am salvat modulele SIATD.",
       saveError: "Salvarea a eșuat. Încearcă din nou.",
     },
     company: {

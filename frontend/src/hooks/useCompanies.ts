@@ -9,6 +9,7 @@ import type {
   OnboardClientInput,
   OnboardClientResult,
   PriceVisibility,
+  SiatdModule,
 } from "@/lib/types";
 
 /**
@@ -107,6 +108,23 @@ export function useUpdatePriceVisibility() {
       (await api.put<Company>("/api/v1/companies/current/price-visibility", { priceVisibility })).data,
     onSuccess: (company) => {
       qc.setQueryData(currentCompanyKey, company);
+      qc.invalidateQueries({ queryKey: ["weighing-operations"] });
+    },
+  });
+}
+
+/**
+ * F6a — modulele SIATD bifate, cu data înrolării. Doar adminul firmei. Termenele recepțiilor se calculează din ele,
+ * deci tabul SIATD și banda se recitesc.
+ */
+export function useUpdateSiatdSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (enrolledFrom: Partial<Record<SiatdModule, string>>) =>
+      (await api.put<Company>("/api/v1/companies/current/siatd", { enrolledFrom })).data,
+    onSuccess: (company) => {
+      qc.setQueryData(currentCompanyKey, company);
+      qc.invalidateQueries({ queryKey: ["siatd"] });
       qc.invalidateQueries({ queryKey: ["weighing-operations"] });
     },
   });

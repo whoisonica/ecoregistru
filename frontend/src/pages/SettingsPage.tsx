@@ -6,6 +6,7 @@ import {
   Building2,
   ChevronRight,
   Eye,
+  Radio,
   FileUp,
   History,
   Layers,
@@ -54,6 +55,7 @@ import { WasteArticlesSection } from "@/components/WasteArticlesSection";
 import { VehiclesSection } from "@/components/VehiclesSection";
 import { ScalesSection } from "@/components/ScalesSection";
 import { PriceVisibilitySection } from "@/components/PriceVisibilitySection";
+import { SiatdSettingsSection } from "@/components/SiatdSettingsSection";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { registersFor } from "@/lib/movementScreens";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
@@ -79,6 +81,7 @@ type SectionId =
   | "flota"
   | "cantare"
   | "preturi"
+  | "siatd"
   | "sortimente";
 
 interface HubCard {
@@ -317,7 +320,7 @@ export function SettingsPage() {
     "generatori-interni",
     "soferi",
     ...(canManage ? (["utilizatori", "jurnal-audit"] as const) : []),
-    ...(hasDepot ? (["flota", "cantare", "preturi", "sortimente"] as const) : []),
+    ...(hasDepot ? (["flota", "cantare", "preturi", "siatd", "sortimente"] as const) : []),
   ]);
 
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
@@ -333,7 +336,7 @@ export function SettingsPage() {
     return <SettingsHub canManage={canManage} canImportExcel={canManage && canImport(user?.role)} hasDepot={hasDepot} workPoints={workPoints} />;
   }
   // Până se încarcă firma nu se știe dacă are depozit: o secțiune de depozit nu trimite înapoi până atunci.
-  if (!allowed.has(section as SectionId) && (company || !["flota", "cantare", "preturi", "sortimente"].includes(section))) {
+  if (!allowed.has(section as SectionId) && (company || !["flota", "cantare", "preturi", "siatd", "sortimente"].includes(section))) {
     return <Navigate to="/setari" replace />;
   }
 
@@ -348,6 +351,7 @@ export function SettingsPage() {
     flota: h.vehicles,
     cantare: h.scales,
     preturi: h.prices,
+    siatd: h.siatd,
     sortimente: h.articles,
   };
 
@@ -384,6 +388,7 @@ export function SettingsPage() {
           <ScalesSection workPoints={workPoints ?? []} canManage={canManage} />
         )}
         {section === "preturi" && hasDepot && <PriceVisibilitySection />}
+        {section === "siatd" && hasDepot && <SiatdSettingsSection />}
         {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}
         {section === "sortimente" && hasDepot && <WasteArticlesSection canManage={roleCanWrite(user?.role)} />}
       </div>
@@ -545,6 +550,7 @@ function SettingsHub({
             cards: [
               { id: "cantare" as const, icon: ScaleIcon, title: h.scales, description: h.scalesHint },
               { id: "preturi" as const, icon: Eye, title: h.prices, description: h.pricesHint },
+              { id: "siatd" as const, icon: Radio, title: h.siatd, description: h.siatdHint },
               { id: "sortimente" as const, icon: Tags, title: h.articles, description: h.articlesHint },
             ],
           },

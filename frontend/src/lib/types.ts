@@ -144,7 +144,12 @@ export interface Company {
   priceVisibility?: PriceVisibility;
   /** Dacă cel logat vede prețurile. Regula stă pe server (`PriceVisibility`), nu se reface aici. */
   pricesVisible?: boolean;
+  /** F6a — modulele SIATD bifate, cu data înrolării (yyyy-MM-dd); gol = niciunul. O schimbă doar adminul firmei. */
+  siatdEnrolledFrom?: Partial<Record<SiatdModule, string>>;
 }
+
+/** F6a — modulele SIATD (Ordinul 701/2024), cu termenul de confirmare: 3, 5 sau 15 zile. */
+export type SiatdModule = "MUNICIPAL" | "PACKAGING" | "WEEE" | "BATTERY" | "TYRE";
 
 export type PriceVisibility = "COMPANY" | "NO_CONSULTANT" | "ADMIN_ONLY";
 
