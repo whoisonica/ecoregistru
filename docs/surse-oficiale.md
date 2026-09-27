@@ -2243,6 +2243,14 @@ ora 24:00; zilele nelucrătoare = weekend + sărbătorile legale (Codul muncii a
 5 zile: sâmbătă 10.10 → **luni 12.10**. Prudență: ÎCCJ (RIL 8/2024) a înlăturat art. 2.553 alin. (1) la preavizul din Codul
 muncii, deci mementoul aplicației vine cu o zi înainte (recepție + N). La AFM rămâne doar cum numără platforma.
 
+**Sărbătorile legale, citite pe 28.09.2026** în forma consolidată a Codului muncii
+([Legea 53/2003, 41627](https://legislatie.just.ro/Public/DetaliiDocument/41627)), **art. 139 alin. (1)**: 1 și 2 ianuarie;
+6 ianuarie (Boboteaza) și 7 ianuarie (Sf. Ioan), adăugate de Legea 52/2023; 24 ianuarie; Vinerea Mare (Legea 64/2018);
+prima și a doua zi de Paști; 1 mai; 1 iunie (Legea 220/2016); prima și a doua zi de Rusalii; 15 august (Adormirea
+Maicii Domnului); 30 noiembrie; 1 decembrie; prima și a doua zi de Crăciun. Ultima liniuță (câte două zile pentru trei
+sărbători ale altor culte, doar pentru credincioșii lor) nu mută termenul general și nu intră în calendar. Paștele și
+Rusaliile (Paște + 49/50) sunt cele ortodoxe. Asta e lista din `SiatdCalendar` (F6a).
+
 **Dovezile pe tranzacție, art. 18 alin. (2)** — pentru persoanele de la art. 2 lit. b), c), e), f), h), i), k), l):
 > a) datele de identificare și coordonatele de contact ale contractanților; b) cantitățile și tipul de deșeuri
 > tranzacționate; c) operatorii economici autorizați pentru implementarea răspunderii extinse a producătorului [...];
