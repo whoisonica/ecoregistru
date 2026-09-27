@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/toast";
 import { apiBlobErrorMessage } from "@/lib/api";
 import { WeighingOperationDialog } from "@/components/depot/WeighingOperationDialog";
 import { ReceivedFormsTab } from "@/components/depot/ReceivedFormsTab";
+import { InventoryTab } from "@/components/depot/InventoryTab";
 import { StockTab } from "@/components/depot/StockTab";
 
 const t = strings.weighing;
@@ -57,10 +58,12 @@ export function WeighingOperationsPage() {
   const writes = canWrite(user?.role);
 
   // D2.6 — al patrulea tab nu e un tip de operațiune: registrul formularelor primite.
-  const [tab, setTab] = useState<WeighingOperationType | "FORMS" | "STOCK">("IN");
+  const [tab, setTab] = useState<WeighingOperationType | "FORMS" | "STOCK" | "INVENTORY">("IN");
   const forms = tab === "FORMS";
   // F3 — stocul n-are acțiune principală: se citește.
-  const stockTab = tab === "STOCK";
+  // D3.5 — inventarul și soldul preluat au acțiunile lor, în tab.
+  const stockTab = tab === "STOCK" || tab === "INVENTORY";
+  const inventoryTab = tab === "INVENTORY";
   const type: WeighingOperationType = forms || stockTab ? "IN" : tab;
   const [month, setMonth] = useState(currentMonth());
   const [openId, setOpenId] = useState<string | null>(null);
@@ -155,6 +158,7 @@ export function WeighingOperationsPage() {
             { id: "TRANSFER", label: t.tabTransfer },
             { id: "FORMS", label: t.tabForms },
             { id: "STOCK", label: t.tabStock },
+            { id: "INVENTORY", label: strings.inventory.tab },
           ] as const).map((item) => (
             <button
               key={item.id}
@@ -186,7 +190,8 @@ export function WeighingOperationsPage() {
       </div>
 
       {forms && <ReceivedFormsTab canWrite={writes} creating={creating} onCreatingChange={setCreating} />}
-      {stockTab && <StockTab canManage={canManage(user?.role)} />}
+      {stockTab && !inventoryTab && <StockTab canManage={canManage(user?.role)} />}
+      {inventoryTab && <InventoryTab canManage={canManage(user?.role)} />}
 
       {!forms && !stockTab && retentions.data && <RetentionsStrip report={retentions.data} />}
 

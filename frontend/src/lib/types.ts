@@ -1858,3 +1858,156 @@ export interface ConsultancyOverviewRow {
   unprovenMirrorMovements: number;
   partnersExpiring: number;
 }
+
+// --- D3.5 — nota de preluare a soldurilor și inventarul depozitului ---
+
+export type StockOpeningSource = "STOCK_CARDS" | "ACCOUNTING" | "PHYSICAL_COUNT";
+export type StockOpeningStatus = "DRAFT" | "CONFIRMED";
+
+export interface StockOpeningLine {
+  id?: string;
+  articleId: string | null;
+  articleName?: string | null;
+  wasteCodeId: string;
+  wasteCode?: string;
+  wasteName?: string;
+  hazardous?: boolean;
+  kg: number;
+}
+
+export interface StockOpening {
+  id: string;
+  workPointId: string;
+  workPointName: string;
+  number: number | null;
+  cutOffDate: string;
+  source: StockOpeningSource;
+  keeperName: string | null;
+  accountantName: string | null;
+  notes: string | null;
+  status: StockOpeningStatus;
+  confirmedOn: string | null;
+  /** Prima mișcare a depozitului: data de tăiere nu poate fi după ea. */
+  firstMovementOn: string | null;
+  lines: StockOpeningLine[];
+}
+
+export interface StockOpeningInput {
+  workPointId: string;
+  cutOffDate: string;
+  source: StockOpeningSource;
+  keeperName: string;
+  accountantName: string;
+  notes: string;
+  lines: { articleId: string | null; wasteCodeId: string | null; kg: number }[];
+}
+
+export type InventoryKind =
+  | "START_OF_ACTIVITY"
+  | "ANNUAL"
+  | "MERGER_OR_LIQUIDATION"
+  | "CONTROL"
+  | "SUSPECTED_DIFFERENCES"
+  | "HANDOVER"
+  | "REORGANIZATION"
+  | "FORCE_MAJEURE"
+  | "OTHER";
+export type InventoryStatus = "OPEN" | "CLOSED" | "APPROVED" | "CANCELLED";
+export type CountMethod = "WEIGHED" | "COUNTED" | "MEASURED" | "TECHNICAL";
+export type ShortageNature = "NON_IMPUTABLE" | "IMPUTABLE";
+export type InventoryWarning = "KEEPER_IN_COMMISSION" | "THIRD_PARTY_GOODS" | "PV_DEADLINE" | "BOOK_CHANGED";
+
+export interface InventoryMember {
+  name: string;
+  role: string | null;
+  president: boolean;
+}
+
+export interface DeclarationAnswer {
+  yes: boolean;
+  detail: string | null;
+}
+
+export interface InventoryLine {
+  id: string | null;
+  articleId: string | null;
+  articleName: string | null;
+  wasteCodeId: string;
+  wasteCode: string;
+  wasteName: string;
+  hazardous: boolean;
+  bookKg: number;
+  countedKg: number | null;
+  differenceKg: number | null;
+  countMethod: CountMethod | null;
+  technicalData: string | null;
+  explanation: string | null;
+  shortageNature: ShortageNature | null;
+  responsiblePerson: string | null;
+  slowMoving: boolean;
+  addedManually: boolean;
+}
+
+export interface Inventory {
+  id: string;
+  workPointId: string;
+  workPointName: string;
+  number: number;
+  decisionNumber: string | null;
+  decisionDate: string | null;
+  kind: InventoryKind;
+  countsAsAnnual: boolean;
+  mode: string | null;
+  method: string | null;
+  startsOn: string;
+  endsOn: string;
+  commission: InventoryMember[];
+  keeperName: string;
+  receivingKeeperName: string | null;
+  keeperRepresentative: string | null;
+  declaration: DeclarationAnswer[] | null;
+  declarationDate: string | null;
+  lastEntryDoc: string | null;
+  lastExitDoc: string | null;
+  pvDate: string | null;
+  pvCauses: string | null;
+  pvMeasures: string | null;
+  pvSlowStock: string | null;
+  pvStorageFindings: string | null;
+  pvOther: string | null;
+  keeperObjections: string | null;
+  commissionConclusions: string | null;
+  status: InventoryStatus;
+  closedOn: string | null;
+  approvedOn: string | null;
+  cancelReason: string | null;
+  lines: InventoryLine[];
+  surplusKg: number;
+  shortageKg: number;
+  warnings: InventoryWarning[];
+  changedLineIds: string[];
+}
+
+export interface InventoryHeaderInput {
+  workPointId: string;
+  decisionNumber: string;
+  decisionDate: string | null;
+  kind: InventoryKind;
+  countsAsAnnual: boolean;
+  mode: string;
+  method: string;
+  startsOn: string;
+  endsOn: string;
+  commission: InventoryMember[];
+  keeperName: string;
+  receivingKeeperName: string | null;
+  keeperRepresentative: string | null;
+}
+
+export interface InventoryDuringOperation {
+  id: string;
+  type: string;
+  number: number;
+  date: string;
+  counterparty: string | null;
+}
