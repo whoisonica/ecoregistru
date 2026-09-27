@@ -1,3 +1,12 @@
+🧹 **27.09.2026 — proba 53 (`53-depozit-defecte.mjs`), trei din cele șase defecte mici ale depozitului**: cu 11 transferuri noi,
+tabul „Transferuri” are 10 rânduri și „Înainte”, fără derulare la 1440×900; dialogul de cântar neatins se închide la Escape, cu o
+observație scrisă întreabă „Închizi fără să salvezi?”; după dezactivarea depozitului de destinație, transferul își arată destinația
+cu „(dezactivat)”, nu „Alege depozitul”; inventarul întreabă la Escape cu decizia scrisă și, cu declarația nesalvată, la schimbarea
+pasului („Treci la alt pas fără să salvezi?”); după „Salvează” nu mai întreabă. Nu intră în `run.mjs` (ca 44–52): `node e2e/53-…`.
+**Negative:** pe fișierele dinainte cad „10 rânduri” (25) și garda la cântar; fără garda de inventar cade „întreabă la Escape”; fără
+opțiunea „(dezactivat)” destinația e „Alege depozitul”. ⚠️ Lasă în urmă depozitele „Proba 53 A/B <număr>” (dezactivate), 11
+transferuri anulate și un inventar anulat.
+
 🧾 **27.09.2026 — proba 52 (`52-borderou-nir.mjs`), borderoul și NIR-ul intrării de la o persoană fizică (F1, D1.17a)**: pe un
 depozit nou, o intrare PF cu o linie de carton la 0,5 lei/kg și una la 0 lei. În lucru, sub linii scrie „0 = gratuit, se face NIR”;
 finalizată, dialogul are „Borderou nr. …” și „NIR nr. …”, fiecare cu PDF-ul lui într-un tab; 1440 și 375 fără lățire. **Negativă:**
