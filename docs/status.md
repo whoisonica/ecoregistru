@@ -17,6 +17,8 @@ rulează local și are testele verzi.
 > **27.09.2026 — în `main` (monorepo `2888e7d`), fără release Heroku: aplicația mobilă nu mai scoate omul din cont la o reîmprospătare căzută și golește cache-ul la ieșire.** Webul nu se schimbă; telefoanele primesc codul la un build nou.
 >
 > **Reîmprospătarea.** Fără semnal sau cu serverul ocupat (5xx, 429), `/auth/refresh` nu mai golește sesiunea: eroarea urcă la ecran („Nu am putut încărca luna”) și la coadă (reîncercare). Numai refuzul serverului (400 `device.session.invalid`) scoate din cont (`mobile/src/refresh.ts`, `npm run test:refresh`, și în CI). **Cache-ul.** La ieșire, `queryClient.clear()`: `["devices"]` și `["companies"]` nu poartă omul în cheie, iar al doilea om de pe același telefon vedea telefoanele primului. Probat pe iOS cu un proxy care dă 503 numai pe `/auth/refresh`, cu negativă și control pozitiv; `cache-deconectare.yaml` pica pe codul vechi. Tot verde și pe Android 16 (27.09, după-amiaza), cu control pozitiv. iPhone-ul proprietarului reinstalat cu ea (27.09 12:36; profilul expiră 03.10).
+>
+> **27.09.2026 — configurația de magazin a telefonului (`f272268`, fără release Heroku):** fără cererea de Face ID în engleză (biometria nu e folosită), Release-ul Android fără `SYSTEM_ALERT_WINDOW`/`USE_BIOMETRIC`/`USE_FINGERPRINT`, iar `PrivacyInfo` declară datele trimise (e-mail, cont, poze, mișcări, tokenul telefonului; erorile nelegate). `npm run test:store`, și în CI.
 
 > **26.09.2026, seara — în `main` (monorepo `bc83873`, `2538cbc`), fără release Heroku: M1f — corectura predării de pe telefon; fluxurile M1b verzi din nou.** Webul nu se schimbă (doar texte `strings.mobile`, tăiate din bundle-ul web), deci nimic de deployat; telefoanele primesc codul la un build nou.
 >
