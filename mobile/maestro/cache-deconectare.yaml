@@ -1,0 +1,54 @@
+# Doi oameni pe același telefon: ce a încărcat primul nu se vede la al doilea. Până pe 27.09.2026
+# cache-ul de interogări trăia peste „Deconectare”, iar `["devices"]` și `["companies"]` nu poartă
+# omul în cheie — în 30 s (`staleTime`) viewerul vedea telefoanele adminului fără nicio cerere nouă.
+#
+# Înainte, un telefon al adminului cu nume de recunoscut, pus prin API (firmă și parolă demo):
+#   curl -X POST localhost:<port>/api/v1/auth/login -H 'Content-Type: application/json' \
+#     -d '{"email":"admin@demo.ro","password":"…","deviceName":"Telefon-Admin-Proba","devicePlatform":"ANDROID"}'
+# maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8083 maestro/cache-deconectare.yaml
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+- tapOn:
+    id: devices
+- extendedWaitUntil:
+    visible: Telefon-Admin-Proba
+    timeout: 15000
+- takeScreenshot: 01-admin-dispozitive
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: Acasă
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- tapOn:
+    id: logout
+- extendedWaitUntil:
+    visible:
+      id: login-email
+    timeout: 15000
+- tapOn:
+    id: login-email
+- inputText: viewer@demo.ro
+- tapOn:
+    id: login-password
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: login-submit
+- tapOn:
+    text: Not Now
+    optional: true
+- tapOn:
+    id: devices
+- extendedWaitUntil:
+    visible:
+      id: device-row
+    timeout: 15000
+- assertNotVisible: Telefon-Admin-Proba
+- takeScreenshot: 02-viewer-dispozitive

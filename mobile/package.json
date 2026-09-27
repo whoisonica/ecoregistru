@@ -44,7 +44,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test:aviz": "node --test src/aviz/parse.test.ts",
-    "test:edit": "node --test src/movementEdit.test.ts"
+    "test:edit": "node --test src/movementEdit.test.ts",
+    "test:refresh": "node --test src/refresh.test.ts"
   },
   "private": true
 }

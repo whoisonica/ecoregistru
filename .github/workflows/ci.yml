@@ -127,6 +127,10 @@ jobs:
         working-directory: mobile
         run: npm run test:edit
 
+      - name: npm run test:refresh
+        working-directory: mobile
+        run: npm run test:refresh
+
   e2e:
     name: e2e — Chrome peste backend + frontend pe o bază nouă
     runs-on: ubuntu-latest

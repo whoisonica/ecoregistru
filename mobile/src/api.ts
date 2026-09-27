@@ -62,6 +62,7 @@ export interface Auth {
  * ca variabilă de modul fiindcă orice cerere poate fi cea care dă peste 401, nu doar una anume.
  *
  * <p>Întoarce tokenul nou, sau null când sesiunea lungă e și ea moartă (revocată, expirată, cont oprit).
+ * Fără semnal sau cu serverul căzut aruncă eroarea, iar ea ajunge la cererea care a dat peste 401.
  */
 type Refresher = () => Promise<string | null>;
 let refresher: Refresher | null = null;

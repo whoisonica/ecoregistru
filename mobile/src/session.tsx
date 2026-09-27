@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import * as Device from "expo-device";
 import * as SecureStore from "expo-secure-store";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -5,6 +6,7 @@ import { Platform } from "react-native";
 
 import * as api from "./api";
 import type { AuthResponse } from "./auth";
+import { sessionIsDead } from "./refresh";
 
 // Tokenul stă în Keychain / Keystore, niciodată în AsyncStorage (todo-mobil §5).
 const SESSION_KEY = "wh_session";
@@ -43,12 +45,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Citit de reîmprospătare, care trăiește în afara randării și n-are cum să vadă starea de React.
   const latest = useRef<Stored | null>(null);
-  const save = useCallback(async (next: Stored | null) => {
-    latest.current = next;
-    setStored(next);
-    if (next) await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(next));
-    else await SecureStore.deleteItemAsync(SESSION_KEY);
-  }, []);
+  const queryClient = useQueryClient();
+  const save = useCallback(
+    async (next: Stored | null) => {
+      latest.current = next;
+      setStored(next);
+      if (next) return SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(next));
+      // Ce a încărcat omul care iese nu rămâne pentru următorul de pe același telefon: `["devices"]` și
+      // `["companies"]` nu-l poartă în cheie (ca pe web, „Cache la deconectare”, 17.09.2026).
+      queryClient.clear();
+      await SecureStore.deleteItemAsync(SESSION_KEY);
+    },
+    [queryClient]
+  );
 
   useEffect(() => {
     SecureStore.getItemAsync(SESSION_KEY)
@@ -77,7 +86,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const fresh = await api.refreshSession(current.auth.refreshToken);
         await save({ ...current, auth: fresh });
         return fresh.token;
-      } catch {
+      } catch (error) {
+        // Fără semnal sau cu serverul căzut, eroarea urcă la cerere, iar ecranul spune „fără
+        // legătură” în loc să scoată omul din cont (`refresh.ts`).
+        if (!sessionIsDead(error)) throw error;
         await save(null);
         return null;
       }

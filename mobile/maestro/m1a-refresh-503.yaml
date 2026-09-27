@@ -1,0 +1,23 @@
+# G1: tokenul de acces e mort, iar reîmprospătarea dă peste un server ocupat (503) — omul rămâne în
+# cont și vede „Nu am putut încărca luna”, nu ecranul de login. Până pe 27.09.2026 orice eroare a
+# reîmprospătării (fără semnal, 503) îl scotea din cont (`src/refresh.ts`).
+#
+# Serverul ocupat îl face un proxy de probă în fața backendului local, care întoarce 503 numai pe
+# /api/v1/auth/refresh (un backend oprit nu ajunge să dea 401, deci nu atinge reîmprospătarea).
+# Ordinea, pe aceeași aplicație, după m0-login-acasa pe proxy:
+#
+#   psql ... -c "UPDATE app_users SET token_version = token_version + 1 WHERE email='admin@demo.ro'"
+#   proxy: refresh → 503
+#   maestro test maestro/m1a-refresh-503.yaml
+#   proxy: refresh normal
+#   maestro test maestro/m1a-reimprospatare.yaml   ← aceeași sesiune își ia token nou
+appId: ro.wastehouse.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: Nu am putut încărca luna
+    timeout: 30000
+- assertNotVisible:
+    id: login-email
+- assertVisible: Contul
+- takeScreenshot: 07-refresh-503
