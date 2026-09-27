@@ -92,6 +92,13 @@ public class WeighingOperationController {
         return pdf(documentService.renderBorderou(id), "borderou-" + id + ".pdf");
     }
 
+    /** D1.17a — NIR-ul liniilor preluate gratuit de la o persoană fizică; fără prețuri, deci pentru oricine scrie. */
+    @GetMapping("/{id}/nir")
+    @PreAuthorize(CAN_WRITE)
+    public org.springframework.http.ResponseEntity<byte[]> nir(@PathVariable UUID id) {
+        return pdf(documentService.renderNir(id), "nir-" + id + ".pdf");
+    }
+
     /** D1.11 — plățile în numerar de azi către persoana operațiunii, față de plafonul de 10.000 lei. */
     @GetMapping("/{id}/cash-check")
     @PreAuthorize(CAN_WRITE)

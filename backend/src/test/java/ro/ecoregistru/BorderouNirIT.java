@@ -228,6 +228,65 @@ class BorderouNirIT {
         http(operator, id, "borderou").andExpect(status().isForbidden());
     }
 
+    // --- NIR-ul ---
+
+    @Test
+    void theNirCarriesTheModelRubrics() throws Exception {
+        UUID id = finalized(fromPerson(), line(pet, "40", "0")).id();
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, id, "nir"))))
+                .contains("NOTĂDERECEPŢIEŞICONSTATAREDEDIFERENŢE")
+                .contains("Nr.1").contains("15.09.2026")
+                .contains(company.getCui()).contains("DepozitBaciu")
+                .contains("IonPopescu").contains("fărădocument—preluaregratuitădelapersoanăfizică")
+                .contains("PET").contains("150102").contains("kg").contains("40")
+                .contains("Valoareajustăsestabileştedecontabil(OMFP1802/2014pct.75alin.(1)lit.d)).")
+                .contains("Comisiaderecepţie").contains("Primitîngestiune")
+                .contains("GeneratcuWasteHouse");
+    }
+
+    @Test
+    void theNirOfAMixedIntakeListsOnlyTheFreeLine() throws Exception {
+        UUID id = finalized(fromPerson(), line(cardboard, "100", "5.25"), line(pet, "40", "0")).id();
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, id, "nir"))))
+                .contains("PET").doesNotContain("Carton").doesNotContain("5,25").doesNotContain("525,00");
+    }
+
+    @Test
+    void theNirShowsTheCnpOnlyForMetal() throws Exception {
+        UUID metal = finalized(fromPerson(), line(copper, "10", "0")).id();
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, metal, "nir")))).contains("1900101123457");
+        UUID paper = finalized(fromPerson(), line(pet, "40", "0")).id();
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, paper, "nir")))).doesNotContain("1900101123457");
+    }
+
+    @Test
+    void aPaidOnlyIntakeHasNoNir() throws Exception {
+        refused(finalized(fromPerson(), line(cardboard, "100", "0.5")).id(), "nir", "weighing.nir.not.available");
+        refused(finalized(head(partner.getId(), null, null), line(pet, "40", "0")).id(), "nir",
+                "weighing.borderou.requires.person");
+        UUID draft = draft(fromPerson(), line(pet, "40", "0"));
+        service.cancel(draft, "Greșit");
+        refused(draft, "nir", "weighing.nir.not.available");
+        refused(draft, "borderou", "weighing.borderou.requires.finalized");
+    }
+
+    @Test
+    void aCancelledNirKeepsItsNumberAndCarriesTheBand() throws Exception {
+        UUID id = finalized(fromPerson(), line(pet, "40", "0")).id();
+        service.cancel(id, "Dublură");
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, id, "nir")))).contains("Nr.1").contains("ANULAT—Dublură");
+    }
+
+    /** NIR-ul n-are prețuri: îl tipărește și operatorul la „Doar administratorul”. */
+    @Test
+    void theOperatorAtAdminOnlyPrintsTheNir() throws Exception {
+        UUID id = finalized(fromPerson(), line(pet, "40", "0")).id();
+        company.setPriceVisibility(PriceVisibility.ADMIN_ONLY);
+        companyRepository.save(company);
+        pdf(operator, id, "nir");
+        http(viewer, id, "nir").andExpect(status().isForbidden());
+    }
+
     // --- helpers ---
 
     private byte[] pdf(AppUser user, UUID id, String what) throws Exception {

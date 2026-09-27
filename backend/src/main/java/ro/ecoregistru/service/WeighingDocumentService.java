@@ -60,6 +60,7 @@ public class WeighingDocumentService {
     Anexa3FormGenerator anexa3Generator;
     AvizGenerator avizGenerator;
     BorderouGenerator borderouGenerator;
+    ro.ecoregistru.service.export.NirGenerator nirGenerator;
     DepotAccess depotAccess;
 
     /** Alocă numărul la prima tipărire și îl păstrează: retipărirea e același document. */
@@ -126,6 +127,25 @@ public class WeighingDocumentService {
         }
         return borderouGenerator.render(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id)
                 .stream().filter(BorderouGenerator::paid).toList(), company);
+    }
+
+    /**
+     * D1.17a — NIR-ul 14-3-1A al liniilor preluate gratuit de la o persoană fizică, cu numărul dat la finalizare. N-are
+     * prețuri (valoarea justă o pune contabilul), deci nu cere să le vezi: îl tipărește oricine scrie.
+     */
+    @Transactional(readOnly = true)
+    public byte[] renderNir(UUID id) {
+        UUID tenantId = TenantContext.require();
+        WeighingOperation operation = requireOperation(id, tenantId);
+        Company company = requireCompany(tenantId);
+        if (operation.getType() != WeighingOperationType.IN || operation.getNaturalPerson() == null) {
+            throw new BusinessException(WEIGHING_BORDEROU_REQUIRES_PERSON);
+        }
+        if (operation.getReceptionNoteNumber() == null) {
+            throw new BusinessException(WEIGHING_NIR_NOT_AVAILABLE);
+        }
+        return nirGenerator.render(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id)
+                .stream().filter(BorderouGenerator::free).toList(), company);
     }
 
     /** Plafonul zilnic de plăți în numerar către o persoană fizică (Legea 70/2015 art. 4 alin. (1)). */
