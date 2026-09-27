@@ -86,6 +86,7 @@ export function OwnDriversSection({
 
   const { rows: visibleDrivers, control: activeFilter } = useActiveFilter(drivers);
   const view = useTableView(visibleDrivers, {
+    pageSize: 10,
     searchText: (d) =>
       [d.name, d.identification, d.vehicleRegistration, d.homeWorkPointName, d.attestationNumber]
         .filter(Boolean)

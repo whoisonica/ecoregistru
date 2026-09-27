@@ -68,6 +68,7 @@ export function ReceivedFormsTab({
 
   const rows = useMemo(() => data ?? [], [data]);
   const view = useTableView(rows, {
+    pageSize: 10,
     searchText: (r) => [r.formNumber, r.formSeries, r.senderName, r.wasteDescription].filter(Boolean).join(" "),
   });
 

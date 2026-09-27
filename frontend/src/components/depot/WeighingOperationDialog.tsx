@@ -121,6 +121,9 @@ export function WeighingOperationDialog({
   const { data: company } = useCurrentCompany();
   const { notify } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  // Ce a scris omul de la deschidere: închiderea întreabă înainte să-l piardă (ca la mișcare).
+  const [dirty, setDirty] = useState(false);
+  const markDirty = () => setDirty(true);
 
   const createMut = useCreateWeighingOperation();
   const updateMut = useUpdateWeighingOperation();
@@ -328,6 +331,7 @@ export function WeighingOperationDialog({
 
   /** Tara unei linii e brutul liniei dinainte: cântărirea e succesivă, nu se scrie de două ori. */
   function addLine() {
+    markDirty();
     setLines((current) => {
       const previous = current[current.length - 1];
       const next = emptyLine();
@@ -389,6 +393,8 @@ export function WeighingOperationDialog({
         },
       });
     }
+    // Serverul are tot: dacă dialogul rămâne deschis (motivul la cântar expirat), închiderea nu mai are ce pierde.
+    setDirty(false);
     return saved;
   }
 
@@ -465,6 +471,21 @@ export function WeighingOperationDialog({
     }
   }
 
+  /** Escape, clic pe fundal, „×” sau „Închide”: pe un formular neatins nu întreabă nimic. */
+  function requestClose() {
+    if (!dirty || !editable) {
+      onClose();
+      return;
+    }
+    confirm({
+      title: strings.common.discardTitle,
+      message: strings.common.discardMessage,
+      confirmLabel: strings.common.discardConfirm,
+      tone: "danger",
+      onConfirm: onClose,
+    });
+  }
+
   const title = operation
     ? `${transfer ? t.tabTransfer : inbound ? t.tabIn : t.tabOut} · ${operation.number}`
     : transfer
@@ -477,7 +498,7 @@ export function WeighingOperationDialog({
     <>
       <Dialog
         open={open}
-        onClose={onClose}
+        onClose={requestClose}
         title={title}
         size="2xl"
         busy={busy}
@@ -490,7 +511,7 @@ export function WeighingOperationDialog({
         }
         footer={
           <>
-            <Button variant="outline" onClick={onClose} disabled={busy}>
+            <Button variant="outline" onClick={requestClose} disabled={busy}>
               {strings.common.close}
             </Button>
             {borderouReady && (
@@ -562,7 +583,8 @@ export function WeighingOperationDialog({
           </>
         }
       >
-        <div className="space-y-6">
+        {/* Câmpurile native anunță schimbarea prin onChange, care urcă până aici; tastele și butoanele o spun singure. */}
+        <div className="space-y-6" onChange={editable ? markDirty : undefined}>
           <FormSection title={t.sectionWho}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
@@ -599,7 +621,10 @@ export function WeighingOperationDialog({
                   { value: "PERSON", label: t.fromPerson },
                 ]}
                 selected={[fromPerson ? "PERSON" : "FIRM"]}
-                onToggle={(value) => setFromPerson(value === "PERSON")}
+                onToggle={(value) => {
+                  markDirty();
+                  setFromPerson(value === "PERSON");
+                }}
                 disabled={!editable}
               />
             )}
@@ -621,6 +646,15 @@ export function WeighingOperationDialog({
                         {w.name}
                       </option>
                     ))}
+                  {/* Lista are doar depozitele active; unul dezactivat după transfer rămâne destinația lui. */}
+                  {operation?.transfer &&
+                    targetWorkPointId === operation.transfer.targetWorkPointId &&
+                    transferTargets.data &&
+                    !transferTargets.data.some((w) => w.id === targetWorkPointId) && (
+                      <option value={targetWorkPointId}>
+                        {operation.transfer.targetWorkPointName} {strings.movements.workPointInactiveSuffix}
+                      </option>
+                    )}
                 </Select>
                 <p className="mt-1 text-xs text-content-muted">{t.transferHint}</p>
               </div>
@@ -754,7 +788,10 @@ export function WeighingOperationDialog({
                       aria-labelledby="wo-scale-label"
                       options={depotScales.map((s) => ({ value: s.id, label: s.name }))}
                       selected={scaleId ? [scaleId] : []}
-                      onToggle={(value) => setScaleChoice(value === scaleId ? "" : value)}
+                      onToggle={(value) => {
+                        markDirty();
+                        setScaleChoice(value === scaleId ? "" : value);
+                      }}
                     />
                     {chosenScale && <ScaleStateBadge state={chosenScale.state} validUntil={chosenScale.validUntil} />}
                   </div>
@@ -826,7 +863,10 @@ export function WeighingOperationDialog({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setLines((c) => c.filter((l) => l.key !== line.key))}
+                          onClick={() => {
+                            markDirty();
+                            setLines((c) => c.filter((l) => l.key !== line.key));
+                          }}
                         >
                           <Trash2 className="mr-1 h-3.5 w-3.5" />
                           {t.lineRemove}
@@ -988,11 +1028,10 @@ export function WeighingOperationDialog({
                     { value: "NUMERAR", label: t.paymentNumerar },
                   ]}
                   selected={payment ? [payment] : []}
-                  onToggle={(value) =>
-                    setPayment((current) =>
-                      current === value ? "" : (value as DepotPaymentMethod)
-                    )
-                  }
+                  onToggle={(value) => {
+                    markDirty();
+                    setPayment((current) => (current === value ? "" : (value as DepotPaymentMethod)));
+                  }}
                   disabled={!editable}
                 />
               </div>
@@ -1024,7 +1063,10 @@ export function WeighingOperationDialog({
               <Switch
                 id="wo-household"
                 checked={ownHousehold}
-                onChange={setOwnHousehold}
+                onChange={(value) => {
+                  markDirty();
+                  setOwnHousehold(value);
+                }}
                 disabled={!editable}
                 label={
                   <>

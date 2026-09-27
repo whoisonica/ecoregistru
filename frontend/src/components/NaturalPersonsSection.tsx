@@ -75,6 +75,7 @@ export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
 
   const { rows: visiblePersons, control: activeFilter } = useActiveFilter(persons ?? []);
   const view = useTableView(visiblePersons, {
+    pageSize: 10,
     searchText: (p) => [p.name, p.cnpLastDigits].filter(Boolean).join(" "),
     comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
   });

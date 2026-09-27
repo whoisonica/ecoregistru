@@ -92,6 +92,7 @@ export function VehiclesSection({ workPoints, canManage }: { workPoints: WorkPoi
 
   const { rows, control: activeFilter } = useActiveFilter(vehicles ?? []);
   const view = useTableView(rows, {
+    pageSize: 10,
     searchText: (v) => [v.registration, v.kind, v.homeWorkPointName, v.partnerName].filter(Boolean).join(" "),
     comparators: { registration: (a, b) => a.registration.localeCompare(b.registration, "ro") },
   });

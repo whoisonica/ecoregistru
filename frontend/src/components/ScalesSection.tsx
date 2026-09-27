@@ -80,6 +80,7 @@ export function ScalesSection({ workPoints, canManage }: { workPoints: WorkPoint
   const historyScale = (scales ?? []).find((s) => s.id === historyOf) ?? null;
 
   const view = useTableView(scales ?? [], {
+    pageSize: 10,
     searchText: (s) => [s.name, s.serialNumber, s.kind, s.workPointName].filter(Boolean).join(" "),
     comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
   });

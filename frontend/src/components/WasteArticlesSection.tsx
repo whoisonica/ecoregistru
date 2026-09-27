@@ -60,6 +60,7 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
 
   const { rows: visibleArticles, control: activeFilter } = useActiveFilter(articles ?? []);
   const view = useTableView(visibleArticles, {
+    pageSize: 10,
     searchText: (a) => [a.name, a.wasteCode, a.wasteCodeName].join(" "),
     comparators: { name: (a, b) => a.name.localeCompare(b.name, "ro") },
   });

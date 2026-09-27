@@ -4128,6 +4128,10 @@ export const strings = {
     pickDepot: "Alege depozitul.",
     loading: "Se încarcă inventarul…",
     loadError: "Inventarele nu s-au putut încărca.",
+    // Garda de la schimbarea pasului: pasul nesalvat se pierde ca la închidere, dar fapta e alta.
+    leaveStepTitle: "Treci la alt pas fără să salvezi?",
+    leaveStepMessage: "Ce ai schimbat pe pasul acesta se pierde. Apasă întâi „Salvează”, dacă vrei să rămână.",
+    leaveStepConfirm: "Treci mai departe, fără să salvez",
     openingTitle: "Sold preluat",
     openingHint:
       "Stocul care era în depozit înainte să lucrezi în aplicație, din fișele de magazie sau din contabilitate. Nu e inventar: nu apare ca plus. Se confirmă o singură dată; o corectură se face printr-un inventar.",

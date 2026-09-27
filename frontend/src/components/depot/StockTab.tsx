@@ -42,6 +42,7 @@ export function StockTab({ canManage }: { canManage: boolean }) {
     [data, onlyNegative]
   );
   const view = useTableView(rows, {
+    pageSize: 10,
     searchText: (r) => [r.wasteCode, r.wasteName, r.articleName].filter(Boolean).join(" "),
   });
 

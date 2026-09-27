@@ -99,6 +99,7 @@ export function WeighingOperationsPage() {
 
   const operations = useMemo(() => data ?? [], [data]);
   const view = useTableView(operations, {
+    pageSize: 10,
     searchText: (o) =>
       [String(o.number), o.partnerName, o.naturalPersonName, o.workPointName, o.transfer?.targetWorkPointName]
         .filter(Boolean)

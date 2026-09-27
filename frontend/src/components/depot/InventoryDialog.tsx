@@ -87,15 +87,43 @@ export function InventoryDialog({
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState("");
   const editable = canManage && (!inv || inv.status === "OPEN");
+  // Ce a scris omul în pasul deschis și n-a salvat: închiderea sau alt pas întreabă înainte să-l piardă (ca la mișcare).
+  const [dirty, setDirty] = useState(false);
+  const markDirty = () => setDirty(true);
 
   async function run(name: string, body?: unknown, message?: string) {
-    if (!id) return;
+    if (!id) return false;
     try {
       await action.mutateAsync({ id, action: name, body });
       if (message) notify(message, "success");
+      return true;
     } catch (err) {
       notify(apiErrorMessage(err, t.loadError), "error");
+      return false;
     }
+  }
+
+  /** Salvarea unui pas: abia după ce serverul a primit-o, pasul nu mai are nimic de pierdut. */
+  async function saveStep(name: string, body: unknown) {
+    if (await run(name, body, t.saved)) setDirty(false);
+  }
+
+  /** Escape, clic pe fundal, „×” sau alt pas: pe un pas neatins nu întreabă nimic. */
+  function leaveStep(then: () => void, toStep = false) {
+    if (!dirty || !editable) {
+      then();
+      return;
+    }
+    confirm({
+      title: toStep ? t.leaveStepTitle : strings.common.discardTitle,
+      message: toStep ? t.leaveStepMessage : strings.common.discardMessage,
+      confirmLabel: toStep ? t.leaveStepConfirm : strings.common.discardConfirm,
+      tone: "danger",
+      onConfirm: () => {
+        setDirty(false);
+        then();
+      },
+    });
   }
 
   async function pdf(document: keyof typeof t.documents) {
@@ -145,7 +173,7 @@ export function InventoryDialog({
   );
 
   return (
-    <Dialog open size="2xl" onClose={onClose} title={title} description={depotName} busy={action.isPending} footer={footer}>
+    <Dialog open size="2xl" onClose={() => leaveStep(onClose)} title={title} description={depotName} busy={action.isPending} footer={footer}>
       {inv && (
         <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Badge variant={STATUS_VARIANT[inv.status]}>{t.status[inv.status]}</Badge>
@@ -185,7 +213,7 @@ export function InventoryDialog({
             role="tab"
             aria-selected={step === s}
             disabled={!inv && s !== "decision"}
-            onClick={() => setStep(s)}
+            onClick={() => s !== step && leaveStep(() => setStep(s), true)}
             className={
               "-mb-px border-b-2 px-3 py-2 text-sm font-medium disabled:opacity-40 " +
               (step === s ? "border-brand-600 text-content-strong" : "border-transparent text-content-muted hover:text-content")
@@ -198,32 +226,39 @@ export function InventoryDialog({
 
       {/* Un inventar existent se arată abia după ce vine: pașii își iau starea inițială din el o singură dată. */}
       {id && !inv && <p className="text-sm text-content-muted">{t.loading}</p>}
-      {step === "decision" && (!id || inv) && (
-        <DecisionStep
-          key={inv?.id ?? "new"}
-          workPointId={workPointId}
-          inv={inv ?? null}
-          editable={editable}
-          onOpened={(opened) => {
-            setId(opened.id);
-            setStep("declaration");
-          }}
-          onSave={(body) => run("header", body, t.saved)}
-        />
-      )}
-      {step === "declaration" && inv && (
-        <DeclarationStep key={inv.id} inv={inv} editable={editable} onSave={(body) => run("declaration", body, t.saved)} />
-      )}
-      {step === "count" && inv && (
-        // Liniile vin de la server după fiecare salvare sau recalculare: tabelul local pornește din nou din ele.
-        <CountStep
-          key={inv.lines.map((l) => `${l.id}:${l.bookKg}:${l.countedKg}`).join("|") + inv.status}
-          inv={inv}
-          editable={editable}
-          onSave={(body) => run("lines", body, t.saved)}
-        />
-      )}
-      {step === "pv" && inv && <PvStep key={inv.id} inv={inv} editable={editable} onSave={(body) => run("pv", body, t.saved)} />}
+      {/* Câmpurile native (și PillGroup, și Switch) anunță schimbarea prin onChange, care urcă până aici. */}
+      <div onChange={editable ? markDirty : undefined}>
+        {step === "decision" && (!id || inv) && (
+          <DecisionStep
+            key={inv?.id ?? "new"}
+            workPointId={workPointId}
+            inv={inv ?? null}
+            editable={editable}
+            onDirty={markDirty}
+            onOpened={(opened) => {
+              setDirty(false);
+              setId(opened.id);
+              setStep("declaration");
+            }}
+            onSave={(body) => saveStep("header", body)}
+          />
+        )}
+        {step === "declaration" && inv && (
+          <DeclarationStep key={inv.id} inv={inv} editable={editable} onSave={(body) => saveStep("declaration", body)} />
+        )}
+        {step === "count" && inv && (
+          // Liniile vin de la server după fiecare salvare sau recalculare: tabelul local pornește din nou din ele.
+          <CountStep
+            key={inv.lines.map((l) => `${l.id}:${l.bookKg}:${l.countedKg}`).join("|") + inv.status}
+            inv={inv}
+            editable={editable}
+            onSave={(body) => saveStep("lines", body)}
+          />
+        )}
+        {step === "pv" && inv && (
+          <PvStep key={inv.id} inv={inv} editable={editable} onSave={(body) => saveStep("pv", body)} />
+        )}
+      </div>
 
       {cancelling && (
         <Dialog
@@ -259,12 +294,15 @@ function DecisionStep({
   workPointId,
   inv,
   editable,
+  onDirty,
   onOpened,
   onSave,
 }: {
   workPointId: string;
   inv: Inventory | null;
   editable: boolean;
+  /** Butoanele comisiei nu emit onChange: spun singure că formularul s-a schimbat. */
+  onDirty: () => void;
   onOpened: (inv: Inventory) => void;
   onSave: (body: unknown) => void;
 }) {
@@ -415,7 +453,10 @@ function DecisionStep({
                 variant="outline"
                 size="sm"
                 aria-label={t.removeLine}
-                onClick={() => setMembers(members.filter((_, j) => j !== i))}
+                onClick={() => {
+                  onDirty();
+                  setMembers(members.filter((_, j) => j !== i));
+                }}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

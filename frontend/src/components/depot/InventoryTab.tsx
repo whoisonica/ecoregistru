@@ -7,6 +7,7 @@ import {
   useInventories,
   useStockOpenings,
 } from "@/hooks/useInventory";
+import { useTableView } from "@/hooks/useTableView";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { openPdfInTab } from "@/lib/openFileInTab";
@@ -19,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { TableFallbackRow } from "@/components/ui/table-fallback";
+import { TablePagination } from "@/components/ui/table-toolbar";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { InventoryDialog, STATUS_VARIANT } from "@/components/depot/InventoryDialog";
@@ -41,6 +43,8 @@ export function InventoryTab({ canManage }: { canManage: boolean }) {
   const depotName = depots.find((w) => w.id === depot)?.name ?? "";
   const openings = useStockOpenings(depot);
   const inventories = useInventories(depot);
+  const inventoryRows = useMemo(() => inventories.data ?? [], [inventories.data]);
+  const view = useTableView(inventoryRows, { pageSize: 10 });
   const confirmOpening = useConfirmStockOpening();
   const deleteOpening = useDeleteStockOpening();
   const [confirm, confirmElement] = useConfirm();
@@ -170,7 +174,7 @@ export function InventoryTab({ canManage }: { canManage: boolean }) {
               </TR>
             </THead>
             <TBody>
-              {(inventories.isLoading || (inventories.data ?? []).length === 0) && (
+              {(inventories.isLoading || view.visible.length === 0) && (
                 <TableFallbackRow
                   columns={5}
                   loading={inventories.isLoading}
@@ -179,7 +183,7 @@ export function InventoryTab({ canManage }: { canManage: boolean }) {
                   description={t.emptyHint}
                 />
               )}
-              {(inventories.data ?? []).map((i) => (
+              {view.visible.map((i) => (
                 <TR key={i.id} className="cursor-pointer hover:bg-surface-muted" onClick={() => setOpenInventory(i.id)}>
                   <TD className="font-mono tabular-nums">{i.number}</TD>
                   <TD>{t.kind[i.kind]}</TD>
@@ -201,6 +205,7 @@ export function InventoryTab({ canManage }: { canManage: boolean }) {
               ))}
             </TBody>
           </Table>
+          <TablePagination view={view} />
         </>
       )}
 
