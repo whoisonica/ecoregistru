@@ -14,6 +14,10 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
+> **27.09.2026 — în `main` (monorepo `2888e7d`), fără release Heroku: aplicația mobilă nu mai scoate omul din cont la o reîmprospătare căzută și golește cache-ul la ieșire.** Webul nu se schimbă; telefoanele primesc codul la un build nou.
+>
+> **Reîmprospătarea.** Fără semnal sau cu serverul ocupat (5xx, 429), `/auth/refresh` nu mai golește sesiunea: eroarea urcă la ecran („Nu am putut încărca luna”) și la coadă (reîncercare). Numai refuzul serverului (400 `device.session.invalid`) scoate din cont (`mobile/src/refresh.ts`, `npm run test:refresh`, și în CI). **Cache-ul.** La ieșire, `queryClient.clear()`: `["devices"]` și `["companies"]` nu poartă omul în cheie, iar al doilea om de pe același telefon vedea telefoanele primului. Probat pe iOS cu un proxy care dă 503 numai pe `/auth/refresh`, cu negativă și control pozitiv; `cache-deconectare.yaml` pica pe codul vechi. Android nerulat.
+
 > **26.09.2026, seara — în `main` (monorepo `bc83873`, `2538cbc`), fără release Heroku: M1f — corectura predării de pe telefon; fluxurile M1b verzi din nou.** Webul nu se schimbă (doar texte `strings.mobile`, tăiate din bundle-ul web), deci nimic de deployat; telefoanele primesc codul la un build nou.
 >
 > **Corectura** (`2538cbc`). Pe predarea deschisă, „Corectează” (numai predările proprii de pe Anexa 1, fără rândurile din cântar, numai cine scrie) duce la formularul de predare completat din `GET /movements/{id}`; salvarea e `PUT`, direct, numai cu semnal — nu intră în coada offline. `PUT` înlocuiește predarea întreagă, iar telefonul n-are toate rubricile webului, deci cererea pornește de la predarea de pe server și pune peste ea doar ce e pe ecran (`mobile/src/movementEdit.ts`): notele, volumul, tratarea, Anexa 2 rămân. Anul deja declarat: aceeași întrebare ca pe web.
