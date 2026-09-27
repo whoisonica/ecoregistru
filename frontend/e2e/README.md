@@ -1,3 +1,15 @@
+📡 **28.09.2026 — proba 56 (`56-siatd-termene.mjs`), termenele SIATD pe recepții (F6a)**: în Setări → SIATD adminul bifează Ambalaje și
+Municipale cu „Înrolat din” 01.01.2024; recepțiile de azi pe 15 01 01 apar în Cântar → SIATD → „De confirmat” cu termenul scris cu ziua
+(„luni 05.10”), cea de acum 10 zile pe 20 01 01 în „Ratate”, cea pe 17 04 05 nicăieri; banda de pe Operațiuni spune aceleași cifre ca
+`/depot-siatd/summary` și duce la tab; numărul deschide dialogul cu „SIATD: ratată — …”; „Confirmă” cu codul „P56-1” o mută în
+„Confirmate” cu codul; două bifate → „Confirmă selectate (2)”, fără rubrica de cod; operatorul vede lista fără bife și fără butoane;
+1440×900 fără derulare (pe `main#continut`) în fiecare subtab, 375 fără lățire pe tab și pe Setări. Nu intră în `run.mjs`: `node e2e/56-…`.
+Proba **19** cere acum zece taburi („Operațiuni · Rapoarte · SIATD” deasupra celor șapte).
+⚠️ Banda SIATD stă pe rândul reținerilor; la 1440, cu toate sumele scrise, trece pe al doilea rând (vezi `shots/56-operatiuni-banda.png`).
+**Negative:** cu `approver = true` în `SiatdTab` cade exact „operatorul n-are bife și nici «Confirmă»”; cele nouă reguli de backend au
+probele lor în `Siatd*Test`/`Siatd*IT` (`docs/status.md`). ⚠️ Lasă în urmă cinci intrări finalizate „Proba 56” pe primul depozit activ
+(patru confirmate în SIATD) și sortimentele „Carton/Hârtie/Fier P56 <număr>” (dezactivate); modulele SIATD se debifează la final.
+
 📊 **27.09.2026 — proba 55 (`55-rapoarte-depozit.mjs`), rapoartele fixe ale depozitului (D4.7)**: „Rapoarte” din panou, sub „Cântar”,
 duce la `/cantar?tab=rapoarte`; adminul vede cele unsprezece rapoarte și le descarcă pe toate (xlsx, iar fișa de stoc, 2% AFM, impozitul
 și borderourile PF și în PDF), cu numele `<slug>-<de la>_<până la>`; fișa partenerului e oprită până se alege partenerul; peste un an apare

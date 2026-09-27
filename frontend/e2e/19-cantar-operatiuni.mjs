@@ -61,9 +61,9 @@ const screen = await page.evaluate(() => {
 check("titlul e „Cântar”", screen.title === "Cântar", screen.title);
 // D2.5 și D2.6 au adăugat „Transferuri” și „Formulare primite” și F3 „Stoc” (26.09.2026).
 // F5 a adăugat „Balotare” după „Transferuri” (27.09.2026). D4.7 a pus deasupra „Operațiuni · Rapoarte” (taburile ecranului,
-// citite și de panou).
+// citite și de panou), iar F6a „SIATD” după „Rapoarte” (28.09.2026).
 check("direcțiile, transferurile, balotarea, registrul formularelor, stocul și inventarul sunt taburi",
-  screen.tabs.join("|") === "Operațiuni|Rapoarte|Intrări|Ieșiri|Transferuri|Balotare|Formulare primite|Stoc|Inventar",
+  screen.tabs.join("|") === "Operațiuni|Rapoarte|SIATD|Intrări|Ieșiri|Transferuri|Balotare|Formulare primite|Stoc|Inventar",
   screen.tabs.join(" · "));
 check("coloanele listei", ["Nr.", "Data", "De la", "Sortimente", "Cantitate (kg)", "Valoare", "Stare"].every((c) => screen.cols.some((x) => x === c)), screen.cols.join(" | "));
 check("tabelul încape în 1440px", screen.overflow <= 0, `${screen.overflow}px peste`);

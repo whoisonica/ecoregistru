@@ -7,7 +7,6 @@ import { useSiatdReceptions, useUnconfirmSiatd } from "@/hooks/useSiatd";
 import { useTableView } from "@/hooks/useTableView";
 import { apiErrorMessage } from "@/lib/api";
 import { formatDate, todayIso } from "@/lib/dates";
-import { formatKg } from "@/lib/units";
 import { canManage } from "@/lib/roles";
 import { formatDue } from "@/lib/siatdDue";
 import { strings } from "@/lib/strings";
@@ -22,6 +21,8 @@ import { useToast } from "@/components/ui/toast";
 import { SiatdConfirmDialog } from "./SiatdConfirmDialog";
 
 const t = strings.siatd;
+// Ca lista operațiunilor: până la trei zecimale, fără zerouri de umplutură („250”, nu „250,000”).
+const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 3 });
 const STATES: SiatdState[] = ["PENDING", "CONFIRMED", "MISSED"];
 
 /**
@@ -235,7 +236,7 @@ function Row({
       <TD>{row.workPointName}</TD>
       <TD>{row.partnerName ?? "—"}</TD>
       <TD className="whitespace-nowrap">{row.modules.map((m) => t.modules[m]).join(", ")}</TD>
-      <TD className="whitespace-nowrap text-right font-mono tabular-nums">{formatKg(row.netKg)}</TD>
+      <TD className="whitespace-nowrap text-right font-mono tabular-nums">{kgFormat.format(row.netKg)}</TD>
       <TD className="whitespace-nowrap">
         {state === "CONFIRMED" ? (
           <span>
