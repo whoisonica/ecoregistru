@@ -133,6 +133,7 @@ public enum ErrorMessageEnum {
     WEIGHING_LINE_FINAL_ABOVE_NET("weighing.line.final.above.net", "Cantitatea finală nu poate fi mai mare decât neto."),
     WEIGHING_LINE_PRICE_NEGATIVE("weighing.line.price.negative", "Prețul nu poate fi negativ."),
     WEIGHING_LINE_EDITED_THROUGH_OPERATION("weighing.line.edited.through.operation", "Rândul face parte dintr-o operațiune de cântar. Se modifică sau se anulează din operațiune."),
+    STOCK_ADJUSTMENT_THROUGH_DOCUMENT("stock.adjustment.through.document", "Rândul e scris de o notă de preluare sau de un inventar aprobat. Nu se modifică și nu se șterge; o corectură se face printr-un inventar nou."),
     WEIGHING_LINE_DOCUMENT_THROUGH_OPERATION("weighing.line.document.through.operation", "Rândul face parte dintr-o operațiune de cântar. Anexa 3 și avizul se tipăresc din operațiune, pe tot transportul."),
     WEIGHING_DOCUMENT_REQUIRES_HANDOVER("weighing.document.requires.handover", "Anexa 3 și avizul se tipăresc pentru o ieșire către un partener. La o intrare, formularul îl face cel care a trimis deșeul."),
     WEIGHING_DOCUMENT_CANCELLED("weighing.document.cancelled", "Operațiunea e anulată: nu se mai tipăresc documente pentru ea."),

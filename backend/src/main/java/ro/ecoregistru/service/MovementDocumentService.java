@@ -200,5 +200,8 @@ public class MovementDocumentService {
         if (movement.getWeighingOperation() != null) {
             throw new BusinessException(WEIGHING_LINE_DOCUMENT_THROUGH_OPERATION);
         }
+        if (movement.getOperation().isStockOnly()) {
+            throw new BusinessException(ro.ecoregistru.exception.ErrorMessageEnum.STOCK_ADJUSTMENT_THROUGH_DOCUMENT);
+        }
     }
 }

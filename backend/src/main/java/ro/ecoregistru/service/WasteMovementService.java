@@ -15,6 +15,7 @@ import ro.ecoregistru.enums.Unit;
 import ro.ecoregistru.enums.WasteOperation;
 import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.exception.BusinessException;
+import ro.ecoregistru.exception.ErrorMessageEnum;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.mapper.WasteMovementMapper;
 import ro.ecoregistru.repository.*;
@@ -276,6 +277,10 @@ public class WasteMovementService {
         WasteMovement movement = requireMovement(id, tenantId);
         if (movement.getWeighingOperation() != null) {
             throw new BusinessException(WEIGHING_LINE_EDITED_THROUGH_OPERATION);
+        }
+        // D3.5 — o linie scrisă de nota de preluare sau de un inventar aprobat se corectează printr-un inventar nou.
+        if (movement.getOperation().isStockOnly()) {
+            throw new BusinessException(ErrorMessageEnum.STOCK_ADJUSTMENT_THROUGH_DOCUMENT);
         }
         return movement;
     }

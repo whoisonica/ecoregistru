@@ -404,6 +404,8 @@ public class MovementQueryService {
             Join<WasteMovement, WeighingOperation> weighing = root.join("weighingOperation", JoinType.LEFT);
             predicates.add(cb.or(cb.isNull(weighing.get("id")),
                     weighing.get("status").in(WeighingOperationStatus.FINALIZED, WeighingOperationStatus.IN_TRANSIT)));
+            // D3.5 — nota de preluare și diferențele de inventar mișcă stocul, dar nu sunt intrări sau ieșiri.
+            predicates.add(cb.not(root.get("operation").in(WasteOperation.STOCK_ONLY)));
             // D2.5 — pe firmă, transferul intern se anulează cu el însuși: nu e nici intrare, nici ieșire. Pe un
             // depozit ales se vede, ca intrare (primit) sau ieșire (trimis).
             if (workPointId == null) {
