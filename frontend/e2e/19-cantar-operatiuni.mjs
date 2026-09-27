@@ -60,8 +60,8 @@ const screen = await page.evaluate(() => {
 });
 check("titlul e „Cântar”", screen.title === "Cântar", screen.title);
 // D2.5 și D2.6 au adăugat „Transferuri” și „Formulare primite” și F3 „Stoc” (26.09.2026).
-check("direcțiile, transferurile și registrul formularelor sunt taburi",
-  screen.tabs.join("|") === "Intrări|Ieșiri|Transferuri|Formulare primite|Stoc", screen.tabs.join(" · "));
+check("direcțiile, transferurile, registrul formularelor, stocul și inventarul sunt taburi",
+  screen.tabs.join("|") === "Intrări|Ieșiri|Transferuri|Formulare primite|Stoc|Inventar", screen.tabs.join(" · "));
 check("coloanele listei", ["Nr.", "Data", "De la", "Sortimente", "Cantitate (kg)", "Valoare", "Stare"].every((c) => screen.cols.some((x) => x === c)), screen.cols.join(" | "));
 check("tabelul încape în 1440px", screen.overflow <= 0, `${screen.overflow}px peste`);
 check("pagina nu se lățește la 1440px", screen.bodyOverflow <= 0, `${screen.bodyOverflow}px`);
