@@ -1,17 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import type { PackagingTable1Row } from "@web/types";
-import { useEffect, useState, type ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { packagingHandovers, packagingTable1, UnauthorizedError } from "../api";
 import { formatKg } from "../format";
 import { useSession } from "../session";
-import { colors, radius } from "../theme";
-import { GraphiteHeader } from "./GraphiteHeader";
-import { Lcd } from "./Lcd";
+import { colors } from "../theme";
+import { BigNumber } from "./BigNumber";
+import { LightHead } from "./LightHead";
 import { YearArrows } from "./MonthArrows";
+import { OfflineBand } from "./OfflineBand";
 import { Group, Note, rowStyles, SectionHead } from "./Rows";
+import { SkeletonRows } from "./Skeleton";
 
 const t = strings.packaging;
 const m = strings.mobile;
@@ -56,15 +58,28 @@ export function PackagingSummary({ tabRow }: { tabRow: ReactNode }) {
   const handedOver = handovers.data?.reduce((sum, h) => sum + (h.quantity ?? 0), 0);
   const marketRows = market.data?.filter(hasFigures) ?? null;
 
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([market.refetch(), handovers.refetch()]).catch(() => {});
+    setRefreshing(false);
+  }, [market.refetch, handovers.refetch]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
-      <GraphiteHeader title={strings.movements.tabPackaging} meta={(session?.tenantName ?? strings.appName).toUpperCase()}>
-        <Lcd
-          label={m.lcdLabelPackaging(year)}
-          state={m.lcdState}
-          value={handedOver != null ? formatKg(handedOver) : handovers.isPending && enabled ? "" : null}
-          unit="kg"
-          foot={
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.scroll}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.ink2} />}
+    >
+      <LightHead title={strings.movements.tabPackaging} subtitle={m.packagingSub} />
+      <OfflineBand />
+      <View style={styles.body}>
+        {tabRow}
+        <BigNumber
+          label={m.yearPackaging(year)}
+          value={handedOver != null ? formatKg(handedOver) : null}
+          pending={handovers.isPending && enabled}
+          sub={
             !session?.tenantId
               ? m.noCompanyYet
               : handovers.isError
@@ -73,20 +88,18 @@ export function PackagingSummary({ tabRow }: { tabRow: ReactNode }) {
                   ? m.packagingHandoverRows(handovers.data.length)
                   : undefined
           }
-          footTone={!session?.tenantId || handovers.isError ? "alert" : "ok"}
-          footRight={<YearArrows year={year} onChange={setYear} />}
+          subTone={!session?.tenantId || handovers.isError ? "alert" : "ok"}
+          updatedAt={handovers.dataUpdatedAt}
+          right={<YearArrows year={year} onChange={setYear} />}
+          testID="packaging-kg"
         />
-      </GraphiteHeader>
-
-      <View style={styles.sheet}>
-        {tabRow}
 
         <SectionHead>{t.keyHandedOver}</SectionHead>
         <Group>
           {handovers.isError ? (
             <Note tone="alert">{t.loadError}</Note>
           ) : !handovers.data ? (
-            <Note>{" "}</Note>
+            enabled ? <SkeletonRows rows={2} /> : <Note>{" "}</Note>
           ) : handovers.data.length === 0 ? (
             <Note>{t.noHandovers}</Note>
           ) : (
@@ -96,7 +109,7 @@ export function PackagingSummary({ tabRow }: { tabRow: ReactNode }) {
                 testID="packaging-handover"
                 style={[rowStyles.row, i > 0 && rowStyles.sep, styles.line]}
               >
-                <View style={styles.body}>
+                <View style={styles.rowBody}>
                   <Text style={rowStyles.title}>{e.packagingMaterial[h.material]}</Text>
                   <Text style={rowStyles.sub} numberOfLines={2}>
                     {h.operatorName}
@@ -114,7 +127,7 @@ export function PackagingSummary({ tabRow }: { tabRow: ReactNode }) {
           {market.isError ? (
             <Note tone="alert">{t.loadError}</Note>
           ) : !marketRows ? (
-            <Note>{" "}</Note>
+            enabled ? <SkeletonRows rows={2} /> : <Note>{" "}</Note>
           ) : marketRows.length === 0 ? (
             <Note>{t.table1Empty.replace("{year}", String(year))}</Note>
           ) : (
@@ -123,7 +136,7 @@ export function PackagingSummary({ tabRow }: { tabRow: ReactNode }) {
                 <Text style={rowStyles.title}>{e.packagingMaterial[row.material]}</Text>
                 {MARKET_COLUMNS.map(([key, label]) => (
                   <View key={key} style={styles.line}>
-                    <Text style={[rowStyles.sub, styles.body]}>{label}</Text>
+                    <Text style={[rowStyles.sub, styles.rowBody]}>{label}</Text>
                     <Text style={rowStyles.mono}>{row[key] != null ? `${formatKg(row[key]!)} kg` : "—"}</Text>
                   </View>
                 ))}
@@ -144,16 +157,8 @@ function hasFigures(row: PackagingTable1Row) {
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  sheet: {
-    backgroundColor: colors.ground,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    marginTop: -20,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 8,
-  },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
   line: { flexDirection: "row", alignItems: "center", gap: 12 },
-  body: { flex: 1 },
+  rowBody: { flex: 1 },
   foot: { fontSize: 12.5, color: colors.ink3, paddingHorizontal: 4 },
 });

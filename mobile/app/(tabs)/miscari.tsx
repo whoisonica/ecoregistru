@@ -1,7 +1,8 @@
 import { strings } from "@web/strings";
 import type { MovementScreen } from "@/lib/movementScreens";
 import { GENERATION_TABS } from "@/lib/screenTabs";
-import { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 
 import { SCREEN_LABEL, useMovementScreens } from "../../src/company";
 import { AnnualTotals } from "../../src/components/AnnualTotals";
@@ -24,6 +25,11 @@ export default function MiscariScreen() {
   const screens = useMovementScreens();
   const tabs = tabsFor(screens);
   const [picked, setPicked] = useState<string | null>(null);
+  // Acasă trimite pe „Totalul anului” cu `?tab=total` (rândul „Anul …”); altfel rămâne tabul ales de om.
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
+  useEffect(() => {
+    if (tab) setPicked(tab);
+  }, [tab]);
   const current = picked && tabs.some((tab) => tab.id === picked) ? picked : tabs[0]?.id;
 
   const row = tabs.length > 1 ? <TabRow tabs={tabs} selected={current ?? ""} onSelect={setPicked} /> : null;

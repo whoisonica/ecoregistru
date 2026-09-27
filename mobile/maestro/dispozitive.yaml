@@ -9,10 +9,17 @@ appId: ro.wastehouse.app
 - runFlow: pornire.yaml
 - runFlow: login.yaml
 
+# Din 27.09.2026 „Dispozitive conectate” e în Profil (avatarul din colțul lui Acasă).
+- extendedWaitUntil:
+    visible:
+      id: firm-line
+    timeout: 20000
+- tapOn:
+    id: firm-line
 - extendedWaitUntil:
     visible:
       id: devices
-    timeout: 20000
+    timeout: 10000
 - tapOn:
     id: devices
 - extendedWaitUntil:

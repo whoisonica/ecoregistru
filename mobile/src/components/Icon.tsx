@@ -17,6 +17,20 @@ const PATHS = {
   phone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>',
   check: '<path d="M5 12.5 9.5 17 19 7.5"/>',
   alert: '<path d="M12 4.5 20.5 19H3.5z"/><path d="M12 10v4"/><path d="M12 16.6v.1"/>',
+  // Refresh-ul (27.09.2026): desenele din `wastehouse-mobil-refresh.html`, același contur 24×24.
+  cam: '<path d="M4 8.5h3l1.8-2.5h6.4L17 8.5h3v10.5H4z"/><circle cx="12" cy="13.5" r="3.6"/>',
+  again: '<path d="M4.5 12a7.5 7.5 0 0 1 13-5.1L20 4.5v6h-6l2.4-2.4A4.8 4.8 0 1 0 17 14"/>',
+  back: '<path d="M15 5 8 12l7 7"/>',
+  send: '<path d="M20.5 3.5 3.5 10.5l7 3 3 7z"/><path d="m10.5 13.5 4-4"/>',
+  bin: '<path d="M6 7.5h12l-1 12.5H7z"/><path d="M4.5 7.5h15M10 4.5h4"/>',
+  doc: '<path d="M6.5 3.5h7l4 4v13h-11z"/><path d="M13.5 3.5v4h4M9 12h6M9 15.5h6"/>',
+  nosig: '<path d="M4 20 20 4"/><path d="M8.5 15.5a5 5 0 0 1 3.5-1.4M5.5 12.2a9.5 9.5 0 0 1 6.5-2.6M12 18.5h.01"/>',
+  cal: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
+  user: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.6v.1"/>',
+  logout: '<path d="M10 4.5H5.5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1H10M15 8l4 4-4 4M19 12H9"/>',
 } as const;
 
 export type IconName = keyof typeof PATHS;

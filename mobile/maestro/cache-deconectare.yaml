@@ -10,6 +10,13 @@ appId: ro.wastehouse.app
 ---
 - runFlow: pornire.yaml
 - runFlow: login.yaml
+# Din 27.09.2026 contul e în Profil (avatarul din colțul lui Acasă).
+- extendedWaitUntil:
+    visible:
+      id: firm-line
+    timeout: 20000
+- tapOn:
+    id: firm-line
 - tapOn:
     id: devices
 - extendedWaitUntil:
@@ -44,6 +51,12 @@ appId: ro.wastehouse.app
 - tapOn:
     text: Not Now
     optional: true
+- extendedWaitUntil:
+    visible:
+      id: firm-line
+    timeout: 20000
+- tapOn:
+    id: firm-line
 - tapOn:
     id: devices
 - extendedWaitUntil:

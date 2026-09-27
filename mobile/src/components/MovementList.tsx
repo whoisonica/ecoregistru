@@ -1,20 +1,22 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { directionOf, registerOf, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@web/strings";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { movements, movementTotals, UnauthorizedError } from "../api";
 import { formatDate, formatKg, formatQuantity } from "../format";
 import { useSession } from "../session";
-import { colors, radius } from "../theme";
+import { colors } from "../theme";
+import { BigNumber } from "./BigNumber";
 import { Bin } from "./Bin";
-import { GraphiteHeader } from "./GraphiteHeader";
 import { PrimaryButton } from "./Form";
-import { Chip, Group, Note, rowStyles, SectionHead } from "./Rows";
-import { Lcd } from "./Lcd";
+import { LightHead } from "./LightHead";
 import { MonthArrows } from "./MonthArrows";
+import { OfflineBand } from "./OfflineBand";
+import { Chip, Group, Note, rowStyles, SectionHead } from "./Rows";
+import { SkeletonRows } from "./Skeleton";
 
 /**
  * Mișcările unei luni, pe o direcție — ecranul „Generare” al generatorului și „Intrări”/„Ieșiri”
@@ -63,6 +65,13 @@ export function MovementList({ title, screen, tabRow }: {
     if (list.error instanceof UnauthorizedError || totals.error instanceof UnauthorizedError) signOut();
   }, [list.error, totals.error, signOut]);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([list.refetch(), totals.refetch()]).catch(() => {});
+    setRefreshing(false);
+  }, [list.refetch, totals.refetch]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const monthName = strings.months[cursor.month - 1];
   const label = cursor.year === now.getFullYear() ? monthName : `${monthName} ${cursor.year}`;
 
@@ -86,27 +95,31 @@ export function MovementList({ title, screen, tabRow }: {
   }
 
   return (
-    <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
-      <GraphiteHeader title={title} meta={(session?.tenantName ?? strings.appName).toUpperCase()}>
-        <Lcd
-          label={lcdLabelFor(params.direction)(label)}
-          state={strings.mobile.lcdState}
-          value={totals.data ? formatKg(totals.data.quantityKg) : totals.isPending && enabled ? "" : null}
-          unit="kg"
-          foot={foot}
-          footTone={footTone}
-          footRight={<MonthArrows cursor={cursor} onChange={setCursor} />}
-        />
-      </GraphiteHeader>
-
-      <View style={styles.sheet}>
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.scroll}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.ink2} />}
+    >
+      <LightHead title={title} subtitle={subtitleFor(params.direction)} />
+      <OfflineBand />
+      <View style={styles.body}>
         {tabRow}
+        <BigNumber
+          label={lcdLabelFor(params.direction)(label)}
+          value={totals.data ? formatKg(totals.data.quantityKg) : null}
+          pending={totals.isPending && enabled}
+          sub={foot}
+          subTone={footTone === "alert" ? "alert" : "ok"}
+          updatedAt={totals.dataUpdatedAt}
+          right={<MonthArrows cursor={cursor} onChange={setCursor} />}
+          testID="month-kg"
+        />
         <SectionHead>{strings.mobile.monthMovements}</SectionHead>
         <Group>
           {list.isError ? (
             <Note tone="alert">{strings.mobile.movementsError}</Note>
           ) : !rows ? (
-            <Note>{" "}</Note>
+            enabled ? <SkeletonRows /> : <Note>{" "}</Note>
           ) : rows.length === 0 ? (
             <Note>{strings.mobile.movementsEmpty}</Note>
           ) : (
@@ -163,23 +176,22 @@ export function MovementList({ title, screen, tabRow }: {
  * Anexa 1 a și plecat. Pe „Generare" nu e o direcție, deci „înregistrat" e cuvântul corect acolo.
  */
 function lcdLabelFor(direction?: "IN" | "OUT") {
-  if (direction === "OUT") return strings.mobile.lcdLabelOut;
-  if (direction === "IN") return strings.mobile.lcdLabelIn;
-  return strings.mobile.lcdLabel;
+  if (direction === "OUT") return strings.mobile.monthHanded;
+  if (direction === "IN") return strings.mobile.monthReceived;
+  return strings.mobile.monthRegistered;
+}
+
+/** Propoziția de sub titlu: ce e ecranul, pe înțelesul cuiva care nu e specialist. */
+function subtitleFor(direction?: "IN" | "OUT") {
+  if (direction === "OUT") return strings.mobile.outSub;
+  if (direction === "IN") return strings.mobile.inSub;
+  return strings.mobile.generationSub;
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  sheet: {
-    backgroundColor: colors.ground,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    marginTop: -20,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 8,
-  },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   rowBody: { flex: 1 },
   rowEnd: { alignItems: "flex-end" },

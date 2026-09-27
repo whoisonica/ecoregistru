@@ -11,10 +11,12 @@ appId: ro.wastehouse.app
 ---
 - launchApp
 - extendedWaitUntil:
-    visible: .*ÎNREGISTRAT.*
+    visible:
+      id: month-kg
     timeout: 30000
 # Dacă reîmprospătarea n-ar fi mers, 401-ul ar fi scos omul din cont și aici ar fi ecranul de login.
 - assertNotVisible:
     id: login-email
-- assertVisible: Contul
+- assertVisible:
+    id: poster
 - takeScreenshot: 06-dupa-reimprospatare

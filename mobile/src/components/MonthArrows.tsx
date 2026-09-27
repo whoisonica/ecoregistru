@@ -1,16 +1,22 @@
 import { strings } from "@web/strings";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { haptic } from "../haptics";
+
 import { colors } from "../theme";
 import { Icon } from "./Icon";
 
 type Cursor = { year: number; month: number };
 
-/** Săgețile de lună de pe rândul de jos al afișajului. Luna următoare e stinsă: viitorul n-are cifre. */
+/**
+ * Săgețile de lună. Luna următoare e stinsă: viitorul n-are cifre. Din 27.09.2026 stau pe hârtie
+ * (lângă cifra mare), nu pe afișajul întunecat, deci culorile sunt ale paginii.
+ */
 export function MonthArrows({ cursor, onChange }: { cursor: Cursor; onChange: (c: Cursor) => void }) {
   const now = new Date();
   const isCurrent = cursor.year === now.getFullYear() && cursor.month === now.getMonth() + 1;
   const shift = (delta: number) => {
+    haptic.tap();
     const d = new Date(cursor.year, cursor.month - 1 + delta, 1);
     onChange({ year: d.getFullYear(), month: d.getMonth() + 1 });
   };
@@ -51,7 +57,7 @@ function Arrow({ name, label, onPress, disabled }: {
       hitSlop={8}
       style={[styles.arrow, disabled && { opacity: 0.25 }]}
     >
-      <Icon name={name} size={20} color={colors.lcdUnit} strokeWidth={2.2} />
+      <Icon name={name} size={20} color={colors.ink} strokeWidth={2.2} />
     </Pressable>
   );
 }
@@ -64,6 +70,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(124,242,169,0.06)",
+    backgroundColor: colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.separator,
   },
 });

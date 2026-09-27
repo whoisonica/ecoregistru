@@ -19,5 +19,6 @@ appId: ro.wastehouse.app
     timeout: 30000
 - assertNotVisible:
     id: login-email
-- assertVisible: Contul
+- assertVisible:
+    id: poster
 - takeScreenshot: 07-refresh-503

@@ -1,18 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import * as Sharing from "expo-sharing";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ApiError, downloadAuditFile, evidences, partners, upcomingDeadlines, UnauthorizedError } from "../../src/api";
+import { agoText } from "../../src/agoText";
 import { Pills, PrimaryButton } from "../../src/components/Form";
-import { GraphiteHeader } from "../../src/components/GraphiteHeader";
-import { Icon } from "../../src/components/Icon";
-import { Lcd } from "../../src/components/Lcd";
+import { LightHead } from "../../src/components/LightHead";
+import { OfflineBand } from "../../src/components/OfflineBand";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
+import { StateCard, verdictOf } from "../../src/components/StateCard";
+import { SkeletonRows } from "../../src/components/Skeleton";
+import { Tile } from "../../src/components/Tile";
 import { controlChecks, type Check, type CheckTone } from "../../src/control";
 import { useSession } from "../../src/session";
-import { colors, fonts, radius } from "../../src/theme";
+import { colors, fonts } from "../../src/theme";
 
 const m = strings.mobile;
 
@@ -56,55 +59,44 @@ export default function ControlScreen() {
     { data: evidencesQ.data, failed: evidencesQ.isError },
     { data: partnersQ.data, failed: partnersQ.isError },
   );
-  const loaded = checks.filter((c): c is Check => c !== null);
-  const ready = loaded.length === checks.length;
-  const anyUnknown = loaded.some((c) => c.tone === "unknown");
-  // Primul lucru de văzut, în ordinea gravității — același rol ca banda „▲” de sub afișajul web.
+  // Același cuvânt ca pe Acasă (`verdictOf`): cel mai grav rând dă tonul; un rând nevenit sau necunoscut
+  // ține „Nu știu încă” — „3 din 4” ar fi numărat rândul care n-a venit ca fiind în neregulă.
+  const verdict = verdictOf(checks);
   const worst = (["bad", "warn", "unknown"] as CheckTone[])
-    .map((tone) => loaded.find((c) => c.tone === tone))
+    .map((tone) => checks.find((c): c is Check => c !== null && c.tone === tone))
     .find(Boolean);
+  const why = verdict.tone === "loading" ? " " : verdict.tone === "unknown" ? m.controlUnknown : worst ? worst.detail : m.controlAllOk;
+  const updatedAt = Math.min(...queries.map((q) => q.dataUpdatedAt || Infinity));
+  const updated = Number.isFinite(updatedAt) ? agoText(updatedAt) : null;
 
-  let value: string | null = "";
-  let foot: string | undefined;
-  let footTone: "ok" | "alert" = "alert";
-  if (!tenant) {
-    value = null;
-    foot = m.noCompanyYet;
-  } else if (ready) {
-    // Un singur rând necunoscut face cifra „?”: „3 din 4” ar număra rândul care n-a venit ca fiind în neregulă.
-    value = anyUnknown ? null : String(loaded.filter((c) => c.tone === "ok").length);
-    if (worst?.tone === "unknown") foot = m.controlUnknown;
-    else if (worst) foot = `▲ ${worst.detail}`;
-    else {
-      foot = m.controlAllOk;
-      footTone = "ok";
-    }
-  }
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all(queries.map((q) => q.refetch())).catch(() => {});
+    setRefreshing(false);
+  }, [deadlinesQ.refetch, evidencesQ.refetch, partnersQ.refetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
-      <GraphiteHeader title={m.controlTitle} meta={(session?.tenantName ?? strings.appName).toUpperCase()}>
-        <Lcd
-          label={m.controlLcdLabel}
-          state={m.controlLcdState}
-          value={value}
-          ghost="8"
-          unit={ready && tenant ? m.controlOf(checks.length) : undefined}
-          foot={foot}
-          footTone={footTone}
-        />
-      </GraphiteHeader>
-
-      <View style={styles.sheet}>
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.scroll}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.ink2} />}
+    >
+      <LightHead title={m.controlTitle} subtitle={[m.controlSub, updated].filter(Boolean).join(" · ")} />
+      <OfflineBand />
+      <View style={styles.body}>
         {tenant ? (
           <>
+            <StateCard verdict={{ ...verdict, why }} testID="control-verdict" wordTestID="lcd-value" />
             <SectionHead>{m.controlChecks}</SectionHead>
             <Group>
               {checks.map((c, i) =>
                 c ? (
                   <CheckRow key={c.key} check={c} first={i === 0} />
                 ) : (
-                  <View key={i} style={[rowStyles.row, i > 0 && rowStyles.sep]} />
+                  <View key={i} style={i > 0 && rowStyles.sep}>
+                    <SkeletonRows rows={1} />
+                  </View>
                 ),
               )}
             </Group>
@@ -129,18 +121,14 @@ const CHIP = {
 
 function CheckRow({ check, first }: { check: Check; first: boolean }) {
   const chip = CHIP[check.tone];
-  const tile = check.tone === "ok" ? styles.tileOk : check.tone === "unknown" ? styles.tileQuiet : check.tone === "bad" ? styles.tileBad : styles.tileWarn;
-  const ink = check.tone === "ok" ? colors.greenText : check.tone === "unknown" ? colors.ink2 : check.tone === "bad" ? colors.redText : colors.amberText;
   return (
     <View testID={`check-${check.key}`} style={[rowStyles.row, !first && rowStyles.sep, styles.row]}>
-      <View style={[styles.tile, tile]}>
-        {check.tone === "unknown" ? (
-          <Text style={[styles.tileText, { color: ink }]}>?</Text>
-        ) : (
-          <Icon name={check.tone === "ok" ? "check" : "alert"} size={18} color={ink} strokeWidth={2.2} />
-        )}
-      </View>
-      <View style={styles.body}>
+      {check.tone === "unknown" ? (
+        <Tile tone="quiet" text="?" />
+      ) : (
+        <Tile tone={check.tone} icon={check.tone === "ok" ? "check" : "alert"} />
+      )}
+      <View style={styles.rowBody}>
         <Text style={rowStyles.title} numberOfLines={2}>{check.title}</Text>
         <Text style={rowStyles.sub} testID={`check-${check.key}-detail`}>{check.detail}</Text>
       </View>
@@ -196,23 +184,9 @@ function Dossier({ year }: { year: number }) {
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  sheet: {
-    backgroundColor: colors.ground,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    marginTop: -20,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 8,
-  },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 10 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  body: { flex: 1 },
-  tile: { width: 34, height: 34, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  tileOk: { backgroundColor: colors.greenSoft },
-  tileWarn: { backgroundColor: colors.amberSoft },
-  tileBad: { backgroundColor: colors.redSoft },
-  tileQuiet: { backgroundColor: "#EDEFEE" },
-  tileText: { fontFamily: fonts.monoMedium, fontSize: 17 },
+  rowBody: { flex: 1 },
   dossier: { marginTop: 16, gap: 10 },
   hint: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2, paddingHorizontal: 4 },
   error: { fontFamily: fonts.sans, fontSize: 14, color: colors.redText, paddingHorizontal: 4 },

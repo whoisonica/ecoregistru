@@ -1,18 +1,18 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
-import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useCompany } from "../../src/company";
 import { PrimaryButton } from "../../src/components/Form";
-import { GraphiteHeader } from "../../src/components/GraphiteHeader";
+import { LightHead } from "../../src/components/LightHead";
+import { OfflineBand } from "../../src/components/OfflineBand";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
 import { formatDate } from "../../src/format";
 import { useHandoverData } from "../../src/handover";
 import { drain, remove, retryNow, useOutbox, type OutboxItem } from "../../src/outbox";
+import { pickAvizPhoto } from "../../src/photo";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
 
@@ -37,23 +37,17 @@ export default function AddScreen() {
 
   const open = async (source: "camera" | "gallery" | "none") => {
     if (source === "none") return router.push("/predare");
-    let result: ImagePicker.ImagePickerResult;
-    if (source === "camera") {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) return setCameraDenied(true);
-      result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 1 });
-    } else {
-      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 1 });
-    }
-    if (result.canceled || !result.assets[0]) return;
+    const photo = await pickAvizPhoto(source);
+    if (photo === "denied") return setCameraDenied(true);
+    if (!photo) return;
     setCameraDenied(false);
-    const photo = await shrink(result.assets[0]);
     router.push({ pathname: "/predare", params: { photo } });
   };
 
   return (
     <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
-      <GraphiteHeader title={m.tabAdd} meta={(session?.tenantName ?? strings.appName).toUpperCase()} />
+      <LightHead title={m.tabAdd} subtitle={m.addSub} />
+      <OfflineBand />
       <View style={styles.body}>
         {collectorOnly ? (
           <Group>
@@ -143,23 +137,10 @@ function Outbox({ items }: { items: OutboxItem[] }) {
   );
 }
 
-/**
- * Poza se micșorează pe telefon înainte de orice (todo-mobil §6): latura lungă la 2000 px, JPEG 0,7
- * — în jur de un megaoctet, destul ca textul să se citească și departe de plafonul de 10 MB.
- */
-async function shrink(asset: ImagePicker.ImagePickerAsset): Promise<string> {
-  const wide = asset.width >= asset.height;
-  const context = ImageManipulator.manipulate(asset.uri);
-  if (Math.max(asset.width, asset.height) > 2000) context.resize(wide ? { width: 2000 } : { height: 2000 });
-  const image = await context.renderAsync();
-  const saved = await image.saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
-  return saved.uri;
-}
-
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  body: { padding: 16, gap: 10 },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 10 },
   hint: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2, paddingHorizontal: 4 },
   link: { alignItems: "center", paddingVertical: 10 },
   linkText: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.greenText },

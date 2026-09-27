@@ -129,6 +129,16 @@ appId: ro.wastehouse.app
       id: handover-save
 - tapOn:
     id: handover-save
+# Bonul (din 27.09.2026), apoi „Gata” înapoi pe „Adaugă”.
+- extendedWaitUntil:
+    visible:
+      id: "gata-(sent|photoFailed)"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: gata-done
+- tapOn:
+    id: gata-done
 - extendedWaitUntil:
     visible:
       id: pick-aviz

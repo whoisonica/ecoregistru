@@ -1,12 +1,12 @@
 import { strings } from "@web/strings";
 import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { Slot, usePathname, useRouter, type Href } from "expo-router";
+import { Tabs } from "expo-router";
 import { type MovementScreen } from "@/lib/movementScreens";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { canWrite } from "../../src/auth";
+import { haptic } from "../../src/haptics";
 import { SCREEN_LABEL, useCompany, useMovementScreens } from "../../src/company";
 import { Icon, type IconName } from "../../src/components/Icon";
 import { useSession } from "../../src/session";
@@ -14,7 +14,13 @@ import { useNotificationRoutes, usePushRegistration } from "../../src/push";
 import { useOutboxSync } from "../../src/sync";
 import { colors, fonts } from "../../src/theme";
 
-type Tab = { href: Href; path: string; label: string; icon: IconName };
+type Tab = { name: string; label: string; icon: IconName };
+
+/** Ce dă `Tabs` barei ei: care ecran e deschis și cum se sare la altul. Doar cât folosim. */
+interface BarProps {
+  state: { index: number; routes: { key: string; name: string }[] };
+  navigation: { navigate: (name: string) => void };
+}
 
 /**
  * Bara de jos, cinci locuri, ca în prototipul aprobat: Acasă · Mișcări · „+” · Termene · Control.
@@ -27,11 +33,15 @@ type Tab = { href: Href; path: string; label: string; icon: IconName };
  *
  * <p>Cât timp tipul firmei nu se știe (consultant fără firmă aleasă, cerere în drum), locul poartă
  * eticheta neutră „Mișcări”: o filă ghicită ar duce omul pe ecranul altei firme.
+ *
+ * <p>Din 27.09.2026 bara e `Tabs` din Expo Router, nu `Slot` + `router.replace`: fiecare ecran își
+ * ține starea (luna aleasă, tabul „Ambalaje”, poziția în listă) când omul trece pe altul și se
+ * întoarce. Bara desenată rămâne a noastră, cu „+” ridicat, prin `tabBar`.
  */
-const HOME: Tab = { href: "/", path: "/", label: strings.mobile.tabHome, icon: "home" };
+const HOME: Tab = { name: "index", label: strings.mobile.tabHome, icon: "home" };
 const RIGHT: Tab[] = [
-  { href: "/termene", path: "/termene", label: strings.nav.deadlines, icon: "clock" },
-  { href: "/control", path: "/control", label: strings.mobile.tabControl, icon: "shield" },
+  { name: "termene", label: strings.nav.deadlines, icon: "clock" },
+  { name: "control", label: strings.mobile.tabControl, icon: "shield" },
 ];
 const MOVEMENT_ICON: Record<MovementScreen, IconName> = { GENERATED: "list", IN: "in", OUT: "out" };
 
@@ -42,20 +52,29 @@ export default function TabsLayout() {
   usePushRegistration();
   useNotificationRoutes();
   return (
-    <View style={styles.fill}>
-      <Slot />
-      <TabBar />
-    </View>
+    <Tabs
+      screenOptions={{ headerShown: false, sceneStyle: styles.fill, lazy: true }}
+      tabBar={(props) => <TabBar {...(props as unknown as BarProps)} />}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="miscari" />
+      <Tabs.Screen name="adauga" />
+      <Tabs.Screen name="termene" />
+      <Tabs.Screen name="control" />
+    </Tabs>
   );
 }
 
-function TabBar() {
+function TabBar({ state, navigation }: BarProps) {
   const { session } = useSession();
   const company = useCompany();
   const screens = useMovementScreens();
-  const pathname = usePathname();
-  const router = useRouter();
+  const current = state.routes[state.index]?.name;
   const insets = useSafeAreaInsets();
+  const go = (name: string) => {
+    if (name !== current) haptic.tap();
+    navigation.navigate(name);
+  };
 
   // Eticheta numește ecranul numai când firma are unul singur. Cu mai multe ar fi mințit: bara ar
   // fi scris „Generare" în timp ce omul stă pe „Intrări", fiindcă acolo se schimbă, nu aici.
@@ -63,8 +82,7 @@ function TabBar() {
   const left: Tab[] = [
     HOME,
     {
-      href: "/miscari",
-      path: "/miscari",
+      name: "miscari",
       label: only ? SCREEN_LABEL[only] : strings.nav.movements,
       icon: only ? MOVEMENT_ICON[only] : "list",
     },
@@ -72,17 +90,17 @@ function TabBar() {
 
   // Colectorul lucrează pe intrări, deci „+” îi e albastru, ca pe ecranul de intrare din prototip.
   const collector = company.data?.type === "COLLECTOR";
-  const plusColors: [string, string] = collector ? [colors.blueHi, colors.blue] : [colors.greenHi, colors.green];
+  const plusColor = collector ? colors.blue : colors.green;
 
   const item = (tab: Tab) => {
-    const active = pathname === tab.path;
-    const tint = active ? (collector ? colors.blue : colors.greenText) : colors.ink3;
+    const active = current === tab.name;
+    const tint = active ? (collector ? colors.blue : colors.green) : colors.ink3;
     return (
       <Pressable
-        key={tab.path}
-        testID={`tab-${tab.path.replace("/", "") || "acasa"}`}
+        key={tab.name}
+        testID={`tab-${tab.name === "index" ? "acasa" : tab.name}`}
         style={styles.item}
-        onPress={() => router.replace(tab.href)}
+        onPress={() => go(tab.name)}
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
       >
@@ -100,12 +118,12 @@ function TabBar() {
         <Pressable
           testID="tab-adauga"
           style={styles.item}
-          onPress={() => router.replace("/adauga")}
+          onPress={() => go("adauga")}
           accessibilityRole="button"
         >
-          <LinearGradient colors={plusColors} style={[styles.plus, collector && styles.plusBlue]}>
-            <Icon name="plus" size={24} color="#fff" strokeWidth={2.6} />
-          </LinearGradient>
+          <View style={[styles.plus, { backgroundColor: plusColor }]}>
+            <Icon name="plus" size={22} color={colors.onAccent} strokeWidth={2.4} />
+          </View>
           <Text style={[styles.label, { color: colors.ink2 }]}>{strings.mobile.tabAdd}</Text>
         </Pressable>
       ) : (
@@ -117,7 +135,7 @@ function TabBar() {
 
   // Pe Android blurul nativ e scump și inegal; fundalul aproape opac arată la fel pe ecranele de azi.
   return Platform.OS === "ios" ? (
-    <BlurView intensity={60} tint="light" style={styles.bar}>
+    <BlurView intensity={40} tint="light" style={styles.bar}>
       {content}
     </BlurView>
   ) : (
@@ -134,23 +152,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.separator,
-    backgroundColor: "rgba(250,251,250,0.72)",
+    backgroundColor: "rgba(255,255,255,0.86)",
   },
-  barAndroid: { backgroundColor: "rgba(250,251,250,0.97)" },
+  barAndroid: { backgroundColor: "rgba(255,255,255,0.97)" },
   row: { flexDirection: "row", paddingTop: 8, paddingHorizontal: 8 },
   item: { flex: 1, alignItems: "center", justifyContent: "flex-end", gap: 3 },
   label: { fontFamily: fonts.sansMedium, fontSize: 10.5 },
-  plus: {
-    width: 54,
-    height: 44,
-    borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.green,
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  plusBlue: { shadowColor: colors.blue },
+  // Plat, fără umbră colorată (paleta A, 27.09.2026).
+  plus: { width: 50, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
 });

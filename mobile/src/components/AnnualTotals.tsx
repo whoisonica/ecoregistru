@@ -2,18 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { byCode } from "@/lib/annualTotals";
 import { countOf } from "@/lib/count";
 import { strings } from "@web/strings";
-import { useEffect, useState, type ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { evidences, UnauthorizedError } from "../api";
 import { formatKg } from "../format";
 import { useSession } from "../session";
-import { colors, radius } from "../theme";
+import { colors } from "../theme";
+import { BigNumber } from "./BigNumber";
 import { Bin } from "./Bin";
-import { GraphiteHeader } from "./GraphiteHeader";
-import { Lcd } from "./Lcd";
+import { LightHead } from "./LightHead";
 import { YearArrows } from "./MonthArrows";
+import { OfflineBand } from "./OfflineBand";
 import { Chip, Group, Note, rowStyles, SectionHead } from "./Rows";
+import { SkeletonRows } from "./Skeleton";
 
 const t = strings.evidences;
 const m = strings.mobile;
@@ -38,6 +40,12 @@ export function AnnualTotals({ tabRow }: { tabRow: ReactNode }) {
   useEffect(() => {
     if (rows.error instanceof UnauthorizedError) signOut();
   }, [rows.error, signOut]);
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await rows.refetch().catch(() => {});
+    setRefreshing(false);
+  }, [rows.refetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const codes = rows.data ? byCode(rows.data) : null;
   const generated = codes?.reduce((sum, c) => sum + c.generated, 0);
@@ -49,27 +57,31 @@ export function AnnualTotals({ tabRow }: { tabRow: ReactNode }) {
   else if (codes) foot = blocked > 0 ? m.annualBlocked(blocked) : m.annualCodes(codes.length);
 
   return (
-    <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
-      <GraphiteHeader title={strings.movements.tabAnnual} meta={(session?.tenantName ?? strings.appName).toUpperCase()}>
-        <Lcd
-          label={m.lcdLabelYear(year)}
-          state={m.lcdState}
-          value={generated != null ? formatKg(generated) : rows.isPending && session?.tenantId ? "" : null}
-          unit="kg"
-          foot={foot}
-          footTone={blocked > 0 || rows.isError || !session?.tenantId ? "alert" : "ok"}
-          footRight={<YearArrows year={year} onChange={setYear} />}
-        />
-      </GraphiteHeader>
-
-      <View style={styles.sheet}>
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.scroll}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.ink2} />}
+    >
+      <LightHead title={strings.movements.tabAnnual} subtitle={m.annualSub} />
+      <OfflineBand />
+      <View style={styles.body}>
         {tabRow}
+        <BigNumber
+          label={m.yearGenerated(year)}
+          value={generated != null ? formatKg(generated) : null}
+          pending={rows.isPending && !!session?.tenantId}
+          sub={foot}
+          subTone={blocked > 0 || rows.isError || !session?.tenantId ? "alert" : "ok"}
+          updatedAt={rows.dataUpdatedAt}
+          right={<YearArrows year={year} onChange={setYear} />}
+          testID="year-kg"
+        />
         <SectionHead>{m.annualByCode}</SectionHead>
         <Group>
           {rows.isError ? (
             <Note tone="alert">{t.loadError}</Note>
           ) : !codes ? (
-            <Note>{" "}</Note>
+            session?.tenantId ? <SkeletonRows /> : <Note>{" "}</Note>
           ) : codes.length === 0 ? (
             <Note>{t.empty.replace("{year}", String(year))}</Note>
           ) : (
@@ -77,7 +89,7 @@ export function AnnualTotals({ tabRow }: { tabRow: ReactNode }) {
               <View key={c.wasteCode} testID="annual-row" style={[rowStyles.row, i > 0 && rowStyles.sep]}>
                 <View style={styles.top}>
                   <Bin code={c.wasteCode} hazardous={c.hazardous} />
-                  <View style={styles.body}>
+                  <View style={styles.rowBody}>
                     <Text style={rowStyles.mono}>
                       {c.wasteCode}
                       {c.hazardous ? "*" : ""}
@@ -120,17 +132,9 @@ function Figure({ label, value }: { label: string; value: number }) {
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  sheet: {
-    backgroundColor: colors.ground,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    marginTop: -20,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 8,
-  },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
   top: { flexDirection: "row", alignItems: "center", gap: 12 },
-  body: { flex: 1 },
+  rowBody: { flex: 1 },
   figures: { flexDirection: "row", gap: 20, marginTop: 8, marginLeft: 22 },
-  figLabel: { fontSize: 11, color: colors.ink3, letterSpacing: 0.4, textTransform: "uppercase" },
+  figLabel: { fontSize: 12, color: colors.ink3 },
 });

@@ -33,7 +33,9 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, View } 
 import * as api from "../src/api";
 import { parseAviz, cuiDigits, type AvizReading } from "../src/aviz/parse";
 import { canWrite } from "../src/auth";
+import { DateField } from "../src/components/DateField";
 import { Field, Input, MultiPills, Pills, PrimaryButton } from "../src/components/Form";
+import { QuantityField } from "../src/components/QuantityField";
 import { Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
 import { formatDate, formatQuantity } from "../src/format";
 import { useHandoverData } from "../src/handover";
@@ -45,6 +47,8 @@ import {
   weightRecorded,
   yearInRange,
 } from "../src/handoverForm";
+import { haptic } from "../src/haptics";
+import { lastSaved, rememberSaved } from "../src/lastSaved";
 import { editBody } from "../src/movementEdit";
 import { confirmDeclared } from "../src/declared";
 import { reportError } from "../src/monitoring";
@@ -87,7 +91,7 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  * telefon, iar salvarea rescrie rândul, care pleacă din nou cu aceeași cheie (`resubmit`).
  */
 export default function PredareScreen() {
-  const { photo, edit, outbox } = useLocalSearchParams<{ photo?: string; edit?: string; outbox?: string }>();
+  const { photo, edit, outbox, again } = useLocalSearchParams<{ photo?: string; edit?: string; outbox?: string; again?: string }>();
   const { auth, session } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -122,6 +126,14 @@ export default function PredareScreen() {
         : undefined,
     [queued, company.isLoading, company.data],
   );
+  // „Încă o predare, la fel” (de pe bon, 27.09.2026): destinatarul, codul și rubricile de pe fișă din
+  // ultima predare salvată; data, cantitatea, documentul și mașina sunt ale drumului de azi.
+  const againMovement = useMemo(() => {
+    const prev = again ? lastSaved() : null;
+    return prev && !company.isLoading
+      ? queuedToMovement(prev.payload, { wasteCode: prev.wasteCode }, company.data?.authorizedWasteCodes ?? [])
+      : undefined;
+  }, [again, company.isLoading, company.data]);
 
   const activeWorkPoints = useMemo(() => (workPoints.data ?? []).filter((w) => w.active), [workPoints.data]);
   const [workPointId, setWorkPointId] = useState("");
@@ -165,7 +177,7 @@ export default function PredareScreen() {
   const prefilled = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const source = original ?? queuedMovement;
+  const source = original ?? queuedMovement ?? againMovement;
   useEffect(() => {
     if (!source || prefilled.current) return;
     prefilled.current = true;
@@ -197,7 +209,16 @@ export default function PredareScreen() {
     setDriverIdentification(mv.driverIdentification ?? "");
     setDriverCnp(mv.driverCnp ?? "");
     setTransportDestinations(mv.transportDestinations ?? []);
-  }, [source]);
+    if (again) {
+      setDate(formatDate(todayIso()));
+      setQuantity("");
+      setWeighed(false);
+      setDocumentReference("");
+      setVehicle("");
+      setLoadDate("");
+      setUnloadDate("");
+    }
+  }, [source, again]);
 
   // ── citirea avizului ───────────────────────────────────────────────────────
   const [lines, setLines] = useState<string[] | null>(null);
@@ -520,7 +541,24 @@ export default function PredareScreen() {
       setSaveError(t.saveError);
       return;
     }
-    // Cu semnal pleacă pe loc; fără, rămâne în „De trimis”.
+    const rowId = queued ? queued.id : id;
+    rememberSaved({
+      outboxId: rowId,
+      payload: onScreen,
+      wasteCode: wasteCode.code,
+      wasteCodeName: wasteCode.name,
+      quantity: summary.quantity,
+      date: isoDate,
+      partnerName: partner?.name ?? null,
+      operationCode: operationCode || null,
+      documentReference: documentReference.trim() || null,
+      vehicle: vehicle.trim() || null,
+      driverName: partner ? driverName.trim() || null : null,
+      workPointName: activeWorkPoints.find((w) => w.id === workPointId)?.name ?? null,
+      hasPhoto: !!(photo ?? queued?.photoUri),
+    });
+    haptic.press();
+    // Cu semnal pleacă pe loc; fără, rămâne în „De trimis”. Bonul (`/gata`) urmărește rândul din coadă.
     if (auth) {
       drain(auth, session.email)
         .then((sent) => {
@@ -528,7 +566,7 @@ export default function PredareScreen() {
         })
         .catch(() => {});
     }
-    router.back();
+    router.replace({ pathname: "/gata", params: { outbox: rowId } });
   };
 
   /**
@@ -630,14 +668,15 @@ export default function PredareScreen() {
             error={err("date")}
             testID="f-date"
           >
-            <Input
-              value={date}
-              onChangeText={(v) => {
-                setDate(v);
+            <DateField
+              value={isoDate}
+              onChange={(iso) => {
+                setDate(formatDate(iso));
                 confirm("date");
               }}
-              keyboardType="numbers-and-punctuation"
-              placeholder="zz.ll.aaaa"
+              min={new Date(2000, 0, 1)}
+              max={new Date(new Date().getFullYear() + 10, 11, 31)}
+              testID="date"
             />
           </Field>
           <Sep />
@@ -691,27 +730,20 @@ export default function PredareScreen() {
             error={err("quantity")}
             testID="f-qty"
           >
-            <View style={styles.qtyRow}>
-              <Input
-                style={styles.qtyInput}
-                value={quantityOpen ? quantity : ""}
-                editable={quantityOpen}
-                onChangeText={(v) => {
-                  setQuantity(v);
-                  confirm("quantity");
-                }}
-                keyboardType="decimal-pad"
-                testID="qty"
-              />
-              <Pills
-                options={(["KG", "TONS"] as Unit[]).map((u) => ({ value: u, label: e.unit[u] }))}
-                value={unit}
-                onChange={(u) => {
-                  setUnit(u);
-                  confirm("quantity");
-                }}
-              />
-            </View>
+            <QuantityField
+              value={quantityOpen ? quantity : ""}
+              editable={quantityOpen}
+              onChange={(v) => {
+                setQuantity(v);
+                confirm("quantity");
+              }}
+              unit={unit}
+              onUnit={(u) => {
+                setUnit(u);
+                confirm("quantity");
+              }}
+              testID="qty"
+            />
           </Field>
           <Sep />
           <View style={styles.switchRow}>
@@ -1267,8 +1299,6 @@ const styles = StyleSheet.create({
   hint: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.ink2 },
   warn: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.redText },
   subLabel: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.ink2, marginTop: 4 },
-  qtyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  qtyInput: { flex: 1, fontFamily: fonts.monoMedium },
   switchRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
   switchText: { flex: 1 },
   chosen: { flexDirection: "row", alignItems: "center", gap: 12 },

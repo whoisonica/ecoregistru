@@ -1,4 +1,5 @@
-# M0: login cu contul demo pe backendul local și Acasă cu cifra lunii.
+# M0: login cu contul demo pe backendul local și Acasă cu cifra lunii. Din 27.09.2026 Acasă e afișul
+# „Semaforul” (verdictul + cifra lunii curente, fără săgeți); lunile trecute se răsfoiesc pe „Generare”.
 # Parola nu stă aici (README-ul backendului, DEMO_PASSWORD):  maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m0-login-acasa.yaml
 # Pe Android întâi `adb reverse tcp:8081 tcp:8081`, ca emulatorul să vadă Metro la localhost.
 appId: ro.wastehouse.app
@@ -7,13 +8,30 @@ appId: ro.wastehouse.app
 - runFlow: login.yaml
 - takeScreenshot: 01-login
 - extendedWaitUntil:
-    visible: .*ÎNREGISTRAT.*
+    visible:
+      id: month-kg
     timeout: 20000
-- takeScreenshot: 02-acasa-luna-curenta
-- tapOn: Luna anterioară
-- tapOn: Luna anterioară
+# Verdictul vine după cele trei liste (termene, evidență, parteneri); până atunci scheletul.
 - extendedWaitUntil:
-    visible: 6 mișcări în lună
+    visible:
+      id: verdict
+    timeout: 20000
+- assertVisible:
+    id: poster
+- assertVisible:
+    id: key-snap
+- takeScreenshot: 02-acasa-afis
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- tapOn: Luna anterioară
+- tapOn: Luna anterioară
+# Pe „Generare” rândul de sub cifră spune ce lipsește din lună (o cântărire), nu câte rânduri are.
+- extendedWaitUntil:
+    visible: "502 kg"
     timeout: 10000
-- assertVisible: "502"
-- takeScreenshot: 03-acasa-iulie
+- assertVisible:
+    id: movement-row
+- takeScreenshot: 03-generare-iulie

@@ -23,7 +23,7 @@ appId: ro.wastehouse.app
 - tapOn:
     id: st-total
 - extendedWaitUntil:
-    visible: ".* · GENERAT"
+    visible: "Generat în .*"
     timeout: 15000
 - extendedWaitUntil:
     visible: "Pe cod de deșeu"
@@ -34,7 +34,7 @@ appId: ro.wastehouse.app
 - tapOn:
     id: st-ambalaje
 - extendedWaitUntil:
-    visible: ".* · AMBALAJE PREDATE"
+    visible: "Ambalaje predate în .*"
     timeout: 15000
 - assertVisible: Predat
 - takeScreenshot: 03-ambalaje
@@ -47,7 +47,7 @@ appId: ro.wastehouse.app
 - tapOn:
     id: st-OUT
 - extendedWaitUntil:
-    visible: ".* · PREDAT"
+    visible: "Predat în .*"
     timeout: 15000
 - takeScreenshot: 04-iesiri
 

@@ -2,17 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { DEADLINE_TABS } from "@/lib/screenTabs";
 import { strings } from "@web/strings";
 import type { Deadline } from "@web/types";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { daysLabel } from "@/lib/deadlines";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { deadlines, pastDeadlines, upcomingDeadlines, UnauthorizedError } from "../../src/api";
-import { GraphiteHeader } from "../../src/components/GraphiteHeader";
+import { LightHead } from "../../src/components/LightHead";
 import { YearArrows } from "../../src/components/MonthArrows";
+import { OfflineBand } from "../../src/components/OfflineBand";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
+import { SkeletonRows } from "../../src/components/Skeleton";
 import { TabRow } from "../../src/components/TabRow";
 import { formatDate } from "../../src/format";
 import { useSession } from "../../src/session";
-import { colors, radius } from "../../src/theme";
+import { colors } from "../../src/theme";
 
 const t = strings.deadlines;
 
@@ -68,6 +71,19 @@ export default function TermeneScreen() {
         : [...active.data]
             .filter((d) => d.status !== "DONE")
             .sort((a, b) => RANK[a.status] - RANK[b.status] || (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+  // Propoziția de sub titlu: câte sunt de făcut și în câte zile e primul, din lista „De făcut”.
+  const todo = (upcoming.data ?? [])
+    .filter((d) => d.status !== "DONE")
+    .sort((a, b) => RANK[a.status] - RANK[b.status] || (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+  const subtitle = upcoming.data ? strings.mobile.deadlinesSub(todo.length, todo[0] ? daysLabel(todo[0]) : null) : null;
+
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await active.refetch().catch(() => {});
+    setRefreshing(false);
+  }, [active.refetch]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const empty =
     tab === "bifate"
       ? t.doneEmpty.replace("{year}", String(year))
@@ -76,12 +92,14 @@ export default function TermeneScreen() {
         : t.todoEmpty;
 
   return (
-    <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
-      <GraphiteHeader
-        title={strings.nav.deadlines}
-        meta={(session?.tenantName ?? strings.appName).toUpperCase()}
-      />
-      <View style={styles.sheet}>
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.scroll}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.ink2} />}
+    >
+      <LightHead title={strings.nav.deadlines} subtitle={subtitle} />
+      <OfflineBand />
+      <View style={styles.body}>
         <TabRow tabs={DEADLINE_TABS} selected={tab} onSelect={setTab} />
         {tab === "bifate" ? (
           <View style={styles.yearRow}>
@@ -99,13 +117,13 @@ export default function TermeneScreen() {
           ) : active.isError ? (
             <Note tone="alert">{strings.mobile.deadlinesError}</Note>
           ) : !rows ? (
-            <Note>{" "}</Note>
+            <SkeletonRows />
           ) : rows.length === 0 ? (
             <Note>{empty}</Note>
           ) : (
             rows.map((d, i) => (
               <View key={d.id} testID="deadline-row" style={[rowStyles.row, i > 0 && rowStyles.sep, styles.row]}>
-                <View style={styles.body}>
+                <View style={styles.rowBody}>
                   <Text style={rowStyles.title} numberOfLines={2}>{strings.enums.reportType[d.reportType]}</Text>
                   <Text style={rowStyles.sub}>
                     {d.completedAt
@@ -132,18 +150,10 @@ const TONE = { OVERDUE: "bad", UPCOMING: "warn", DONE: "ok" } as const;
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { paddingBottom: 120 },
-  sheet: {
-    backgroundColor: colors.ground,
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    marginTop: -20,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 8,
-  },
+  body: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
   yearRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  arrows: { backgroundColor: colors.lcd, borderRadius: 12, padding: 3 },
+  arrows: {},
   hint: { fontSize: 13, color: colors.ink2, paddingHorizontal: 4 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  body: { flex: 1 },
+  rowBody: { flex: 1 },
 });

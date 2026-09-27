@@ -1,6 +1,14 @@
 /**
- * Tokenii aspectului pe telefon, luați din prototipul aprobat v2 (`docs/machete/wastehouse-mobil-prototip.html`,
- * `:root`) și din `todo-mobil.md` §6. Colțurile mari sunt abaterea aprobată față de webul „Cântar”.
+ * Tokenii aspectului pe telefon. Din 27.09.2026 seara — paleta **A „Hârtie și smarald”** din macheta
+ * `docs/machete/wastehouse-mobil-dichisit.html` (proprietarul: „să pară mult mai lucrată și dichisită;
+ * Acasă e prea plin și nu-mi plac combourile de culori”): hârtie caldă, carduri albe cu contur subțire,
+ * **un singur accent** — verdele semnului (`mark` din login și landing, #047857) — iar roșul, galbenul
+ * și verdele de stare numai ca punct, pastilă sau contur, niciodată ca fond de bloc. Fără gradient pe
+ * taste, fără bloc grafit în afara loginului.
+ *
+ * <p>Numele cheilor au rămas cele de dinainte (`green`, `ground`, `separator`…), ca ecranele să nu se
+ * atingă toate deodată; valorile sunt ale paletei noi. Cheile `graphite*` și `lcd*` mai trăiesc doar pe
+ * login și pe caseta pozei din formular.
  */
 export const colors = {
   graphiteTop: "#262E29",
@@ -9,31 +17,40 @@ export const colors = {
   onDark2: "#9AA59F",
   onDark3: "#6B7670",
 
-  lcd: "#080C0A",
+  /** Caseta pozei din formular (fond întunecat sub fotografie) și textul „se citește”. */
+  lcd: "#101412",
   lcdDigit: "#7CF2A9",
-  lcdUnit: "#4FB57C",
-  lcdGhost: "rgba(124,242,169,0.075)",
-  lcdAlert: "#FFB020",
 
-  green: "#009A44",
-  greenHi: "#10B457",
-  greenText: "#007A36",
-  greenSoft: "#E3F4EA",
+  /** Accentul: tastele, „+” din bară, linkurile, LED-ul „ok”. `greenHi` = același verde: fără gradient. */
+  green: "#047857",
+  greenHi: "#047857",
+  greenText: "#065F46",
+  greenSoft: "#E3F1EA",
+  /** Colectorul: „+” albastru, ca pe ecranul de intrare din prototip. Tot plat. */
   blue: "#1C6FD1",
-  blueHi: "#2F83E8",
+  blueHi: "#1C6FD1",
   blueSoft: "#E4EFFB",
-  amberText: "#8A4B00",
-  amberSoft: "#FFF3DC",
-  red: "#D92D20",
-  redText: "#B42318",
-  redSoft: "#FDE8E6",
+  amber: "#D08A1C",
+  amberText: "#B8690A",
+  amberSoft: "#FBF1E0",
+  red: "#C2322A",
+  redText: "#C2322A",
+  redSoft: "#FBE8E6",
+  /** Un rând care n-a venit / nu se știe. */
+  unknown: "#B4B9B2",
 
-  ground: "#EEF1EE",
+  ground: "#F4F4EF",
   card: "#FFFFFF",
-  ink: "#111513",
-  ink2: "#5E6862",
-  ink3: "#939C97",
-  separator: "rgba(17,21,19,0.09)",
+  /** Fondul unei dale sau pastile „liniștite” și al rândului apăsat. */
+  quiet: "#ECEDE8",
+  pressed: "#F5F5F1",
+  /** Șina segmentelor (taburile ecranului, KG/tone): hârtia puțin scufundată. */
+  track: "rgba(23,26,23,0.06)",
+  ink: "#171A17",
+  ink2: "#5F655E",
+  ink3: "#9AA098",
+  separator: "rgba(23,26,23,0.09)",
+  onAccent: "#FFFFFF",
 } as const;
 
 /**
@@ -60,9 +77,9 @@ export const fonts = {
 } as const;
 
 export const radius = {
-  group: 16,
+  group: 18,
   lcd: 14,
-  button: 15,
-  hero: 18,
+  button: 16,
+  hero: 16,
   sheet: 24,
 } as const;
