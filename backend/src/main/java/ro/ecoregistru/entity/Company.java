@@ -152,6 +152,57 @@ public class Company {
     @Builder.Default
     ro.ecoregistru.enums.PriceVisibility priceVisibility = ro.ecoregistru.enums.PriceVisibility.COMPANY;
 
+    /**
+     * F6a — modulele SIATD bifate, fiecare cu data înrolării (V78); {@code null} = nebifat. Se schimbă doar de adminul
+     * firmei, prin {@code PUT /api/v1/companies/current/siatd}, ca {@link #priceVisibility}.
+     */
+    @Column(name = "siatd_municipal_from")
+    LocalDate siatdMunicipalFrom;
+
+    @Column(name = "siatd_packaging_from")
+    LocalDate siatdPackagingFrom;
+
+    @Column(name = "siatd_weee_from")
+    LocalDate siatdWeeeFrom;
+
+    @Column(name = "siatd_battery_from")
+    LocalDate siatdBatteryFrom;
+
+    @Column(name = "siatd_tyre_from")
+    LocalDate siatdTyreFrom;
+
+    /** Doar modulele bifate, cu data înrolării. */
+    public java.util.Map<ro.ecoregistru.enums.SiatdModule, LocalDate> siatdEnrolment() {
+        var map = new java.util.EnumMap<ro.ecoregistru.enums.SiatdModule, LocalDate>(ro.ecoregistru.enums.SiatdModule.class);
+        for (var module : ro.ecoregistru.enums.SiatdModule.values()) {
+            LocalDate from = siatdFrom(module);
+            if (from != null) {
+                map.put(module, from);
+            }
+        }
+        return map;
+    }
+
+    public LocalDate siatdFrom(ro.ecoregistru.enums.SiatdModule module) {
+        return switch (module) {
+            case MUNICIPAL -> siatdMunicipalFrom;
+            case PACKAGING -> siatdPackagingFrom;
+            case WEEE -> siatdWeeeFrom;
+            case BATTERY -> siatdBatteryFrom;
+            case TYRE -> siatdTyreFrom;
+        };
+    }
+
+    public void setSiatdEnrolment(ro.ecoregistru.enums.SiatdModule module, LocalDate from) {
+        switch (module) {
+            case MUNICIPAL -> siatdMunicipalFrom = from;
+            case PACKAGING -> siatdPackagingFrom = from;
+            case WEEE -> siatdWeeeFrom = from;
+            case BATTERY -> siatdBatteryFrom = from;
+            case TYRE -> siatdTyreFrom = from;
+        }
+    }
+
     // --- The account profile: what this client answered on the intake form ---
     //
     // Both sets narrow what the screens offer, and both are allowed to be empty: an empty set

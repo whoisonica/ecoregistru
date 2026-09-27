@@ -75,5 +75,8 @@ public record CompanyResponse(
          * {@code pricesVisible}, nu reface regula din {@code PriceVisibility}.
          */
         PriceVisibility priceVisibility,
-        boolean pricesVisible
+        boolean pricesVisible,
+
+        /** F6a — modulele SIATD bifate, cu data înrolării; gol = niciunul. */
+        java.util.Map<ro.ecoregistru.enums.SiatdModule, java.time.LocalDate> siatdEnrolledFrom
 ) {}

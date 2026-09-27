@@ -14,6 +14,7 @@ import ro.ecoregistru.controller.response.OnboardClientResponse;
 import ro.ecoregistru.service.ClientOnboardingService;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.request.PriceVisibilityRequest;
+import ro.ecoregistru.controller.request.SiatdSettingsRequest;
 import ro.ecoregistru.controller.response.ClientOverviewResponse;
 import ro.ecoregistru.controller.response.CompanyResponse;
 import ro.ecoregistru.controller.response.CompanyUserResponse;
@@ -76,6 +77,16 @@ public class CompanyController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public CompanyResponse updatePriceVisibility(@RequestBody PriceVisibilityRequest request) {
         return companyService.updatePriceVisibility(request.priceVisibility());
+    }
+
+    /**
+     * F6a — modulele SIATD bifate, cu data înrolării. Doar adminul firmei, ca vizibilitatea prețurilor; serviciul
+     * verifică același lucru.
+     */
+    @PutMapping("/current/siatd")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public CompanyResponse updateSiatd(@RequestBody SiatdSettingsRequest request) {
+        return companyService.updateSiatd(request.enrolledFrom());
     }
 
     @PostMapping

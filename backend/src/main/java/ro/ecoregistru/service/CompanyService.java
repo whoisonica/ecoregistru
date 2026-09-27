@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.enums.PriceVisibility;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PRICE_VISIBILITY_REQUIRED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.SIATD_SETTINGS_REQUIRED;
 import ro.ecoregistru.controller.request.CompanyRequest;
 import ro.ecoregistru.controller.request.InviteUserRequest;
 import ro.ecoregistru.controller.response.ClientOverviewResponse;
@@ -353,7 +354,7 @@ public class CompanyService {
                 c.getConstructionPermitHolder(),
                 consultancy == null ? null : consultancy.getId(),
                 consultancy == null ? null : consultancy.getName(),
-                c.getPriceVisibility(), pricesVisible(c));
+                c.getPriceVisibility(), pricesVisible(c), c.siatdEnrolment());
     }
 
     /**
@@ -373,6 +374,27 @@ public class CompanyService {
         Company company = companyRepository.findById(TenantContext.require())
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         company.setPriceVisibility(visibility);
+        return toResponse(company);
+    }
+
+    /**
+     * F6a — modulele SIATD ale firmei din sesiune, fiecare cu data înrolării. Cererea le poartă pe toate: ce lipsește
+     * se debifează. Doar adminul firmei, ca {@link #updatePriceVisibility}: data înrolării o știe doar firma, iar de ea
+     * atârnă termenele pe care le vede toată lumea.
+     */
+    @Transactional
+    public CompanyResponse updateSiatd(java.util.Map<ro.ecoregistru.enums.SiatdModule, java.time.LocalDate> enrolledFrom) {
+        if (SecurityUtils.currentUser().getRole() != Role.ADMIN) {
+            throw new AccessDeniedException("Doar administratorul firmei bifează modulele SIATD.");
+        }
+        if (enrolledFrom == null) {
+            throw new BusinessException(SIATD_SETTINGS_REQUIRED);
+        }
+        Company company = companyRepository.findById(TenantContext.require())
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        for (var module : ro.ecoregistru.enums.SiatdModule.values()) {
+            company.setSiatdEnrolment(module, enrolledFrom.get(module));
+        }
         return toResponse(company);
     }
 

@@ -228,6 +228,16 @@ public class WeighingOperation {
     @Column(name = "cancel_reason", length = 1000)
     String cancelReason;
 
+    /** F6a — confirmarea recepției în SIATD (V78): cine și când, plus codul unic al tranzacției, opțional. */
+    @Column(name = "siatd_confirmed_at")
+    Instant siatdConfirmedAt;
+
+    @Column(name = "siatd_confirmed_by")
+    UUID siatdConfirmedBy;
+
+    @Column(name = "siatd_code", length = 60)
+    String siatdCode;
+
     @Column(length = 1000)
     String notes;
 

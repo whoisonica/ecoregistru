@@ -183,6 +183,7 @@ public enum ErrorMessageEnum {
             "Anexa 3 e tipărită și a plecat cu camionul: ce scrie pe ea nu se mai schimbă (sortimentele, cantitățile, data, destinatarul, șoferul, mașina, observațiile). Prețul se trece în continuare. Pentru o greșeală, anulează operațiunea și fă alta."),
     WEIGHING_ANEXA3_ONLY_HAZARDOUS("weighing.anexa3.only.hazardous", "Toate liniile sunt deșeuri periculoase. Anexa 3 e pentru deșeuri nepericuloase; pentru cele periculoase se folosește formularul din anexa 2 la HG 1061/2008."),
     PRICE_VISIBILITY_REQUIRED("price.visibility.required", "Alege cine vede prețurile."),
+    SIATD_SETTINGS_REQUIRED("siatd.settings.required", "Trimite modulele SIATD bifate, fiecare cu data înrolării."),
     WEIGHING_LINE_OPERATION_CODE_REQUIRED("weighing.line.operation.code.required", "La ieșire, alege pe fiecare linie operația: valorificare (R) sau eliminare (D)."),
     WEIGHING_LINE_ARTICLE_FORBIDDEN_FROM_INDIVIDUALS("weighing.line.article.forbidden.from.individuals", "Sortimentul ăsta nu se cumpără de la persoane fizice (OUG 31/2011 art. 1 alin. (1)). Alege alt sortiment sau un partener."),
     WASTE_ARTICLE_NAME_REQUIRED("waste.article.name.required", "Scrie denumirea sortimentului."),
