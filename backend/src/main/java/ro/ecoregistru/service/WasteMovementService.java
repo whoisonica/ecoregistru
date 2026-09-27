@@ -48,6 +48,7 @@ public class WasteMovementService {
     InternalGeneratorRepository internalGeneratorRepository;
     MonthlyEvidenceRepository evidenceRepository;
     WasteMovementMapper mapper;
+    StockPeriodLock stockLock;
 
     @Transactional
     public WasteMovementResponse create(WasteMovementRequest request) {
@@ -76,6 +77,7 @@ public class WasteMovementService {
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner, wasteCode);
+        requirePeriodOpen(register, request.operation(), workPoint, request.date());
 
         WasteMovement movement = WasteMovement.builder()
                 .company(company)
@@ -138,6 +140,7 @@ public class WasteMovementService {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WasteMovement movement = requireEditableMovement(id, tenantId);
+        requirePeriodOpen(movement);
 
         Company company = requireCompany(tenantId);
         WorkPoint workPoint = requireWorkPoint(request.workPointId(), tenantId);
@@ -152,6 +155,7 @@ public class WasteMovementService {
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner, wasteCode);
+        requirePeriodOpen(register, request.operation(), workPoint, request.date());
 
         // BUG-031: moved into a later year, the movement drops out of the old year's staleness
         // check, so the old year (and any in between) would keep counting it from the cache.
@@ -223,6 +227,7 @@ public class WasteMovementService {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WasteMovement movement = requireEditableMovement(id, tenantId);
+        requirePeriodOpen(movement);
 
         if (movement.getQuantity() != null) {
             throw new BusinessException(NOT_AWAITING_WEIGHING);
@@ -249,6 +254,7 @@ public class WasteMovementService {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         WasteMovement movement = requireEditableMovement(id, tenantId);
+        requirePeriodOpen(movement);
         movement.setDeleted(true);
         movement.setDeletedAt(Instant.now());
         movement.setDeletedBy(SecurityUtils.currentUser().getId());
@@ -283,6 +289,18 @@ public class WasteMovementService {
             throw new BusinessException(ErrorMessageEnum.STOCK_ADJUSTMENT_THROUGH_DOCUMENT);
         }
         return movement;
+    }
+
+    /** D3.5 — o mișcare de depozit datată înaintea unui inventar aprobat sau a notei de preluare nu se mai atinge. */
+    private void requirePeriodOpen(WasteRegister register, WasteOperation operation, WorkPoint workPoint,
+                                   java.time.LocalDate date) {
+        if (date != null && StockPeriodLock.countsInStock(register, operation)) {
+            stockLock.require(workPoint.getId(), date);
+        }
+    }
+
+    private void requirePeriodOpen(WasteMovement movement) {
+        requirePeriodOpen(movement.getRegister(), movement.getOperation(), movement.getWorkPoint(), movement.getDate());
     }
 
     private WorkPoint requireWorkPoint(UUID id, UUID tenantId) {

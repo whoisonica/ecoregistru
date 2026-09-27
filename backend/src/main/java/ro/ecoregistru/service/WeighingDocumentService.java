@@ -74,6 +74,10 @@ public class WeighingDocumentService {
             throw new BusinessException(WEIGHING_ANEXA3_ONLY_HAZARDOUS);
         }
         if (operation.getAnexa3Number() == null) {
+            // D2.5 — numărul îl ia depozitul de plecare; B poate retipări formularul lui A, dar nu i-l alocă.
+            if (!depotAccess.allows(operation.getWorkPoint().getId())) {
+                throw new BusinessException(TRANSFER_EDITED_AT_SOURCE);
+            }
             operation.setAnexa3Number(anexa3Numbering.next(tenantId));
             operation.setAnexa3Series(company.getAnexa3Series());
             operationRepository.saveAndFlush(operation);

@@ -142,8 +142,20 @@ await shot(phone, "47-transfer-telefon");
 
 // ---------------------------------------------------------------- CURĂȚENIE
 const list = (await api(page, "GET", "/api/v1/weighing-operations?type=TRANSFER")).json ?? [];
-for (const op of list.filter((o) => o.transfer?.targetWorkPointId === target.id)) {
+// Un transfer recepționat nu se mai anulează (evaluarea din 27.09): rămâne, cu depozitul lui dezactivat.
+for (const op of list.filter((o) => o.transfer?.targetWorkPointId === target.id && o.status !== "FINALIZED")) {
   await api(page, "POST", `/api/v1/weighing-operations/${op.id}/cancel`, { reason: "Proba 47" });
+}
+const receivedTransfer = list.find((o) => o.transfer?.targetWorkPointId === target.id && o.status === "FINALIZED");
+if (receivedTransfer) {
+  const r = await api(page, "POST", `/api/v1/weighing-operations/${receivedTransfer.id}/cancel`, { reason: "Proba 47" });
+  check("transferul recepționat nu se anulează", r.status === 400, `HTTP ${r.status}`);
+  // Refuzul e așteptat: și rândul de rețea, și cel de consolă (care n-are adresa, ca la recepția de mai sus).
+  const before = page.problems.length;
+  page.problems = page.problems.filter((p) => !p.includes(`${receivedTransfer.id}/cancel`));
+  const dropped = before - page.problems.length;
+  const consoleLine = page.problems.findIndex((p) => p.includes("400 (Bad Request)"));
+  if (dropped > 0 && consoleLine >= 0) page.problems.splice(consoleLine, 1);
 }
 await api(page, "DELETE", `/api/v1/work-points/${target.id}`);
 

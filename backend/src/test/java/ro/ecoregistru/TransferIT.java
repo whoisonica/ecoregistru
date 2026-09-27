@@ -82,6 +82,7 @@ class TransferIT {
     @Autowired WasteMovementRepository movementRepository;
     @Autowired ro.ecoregistru.service.WeighingDocumentService documents;
     @Autowired ro.ecoregistru.service.Art48RegisterService art48;
+    @Autowired ro.ecoregistru.repository.WeighingOperationRepository operationRepository;
 
     LocalDate today;
     Company company;
@@ -244,6 +245,64 @@ class TransferIT {
                 .isInstanceOf(AccessDeniedException.class);
     }
 
+    /**
+     * Defectul 1 din evaluarea din 27.09 — operatorul din B vede transferul care vine încă din lucru, dar nu-i rescrie
+     * capul sau liniile și nu-i consumă numărul de Anexa 3: le scrie A. După ce A a tipărit, B poate retipări.
+     */
+    @Test
+    void theDestinationSeesATransferInProgressButOnlyTheSourceWritesIt() {
+        UUID id = transfer(null, "500");
+        AppUser atB = user(Role.OPERATOR);
+        users.changeWorkPoints(atB.getId(), new UserWorkPointsRequest(false, List.of(depotB.getId())));
+        AppUser atA = user(Role.OPERATOR);
+        users.changeWorkPoints(atA.getId(), new UserWorkPointsRequest(false, List.of(depotA.getId())));
+        WeighingLinesRequest other = new WeighingLinesRequest(null, null, List.of(
+                new WeighingLinesRequest.Line(cardboard.getId(), null, null, new BigDecimal("1"), null, null, null, null)));
+
+        actAs(atB);
+        assertThat(operations.get(id).id()).isEqualTo(id);
+        assertBusiness(() -> operations.replaceLines(id, other), ErrorMessageEnum.TRANSFER_EDITED_AT_SOURCE);
+        assertBusiness(() -> operations.update(id, head(depotA, depotB)), ErrorMessageEnum.TRANSFER_EDITED_AT_SOURCE);
+        assertBusiness(() -> documents.renderAnexa3(id), ErrorMessageEnum.TRANSFER_EDITED_AT_SOURCE);
+        actAs(admin);
+        assertThat(operations.get(id).lines()).singleElement()
+                .satisfies(l -> assertThat(l.finalKg()).isEqualByComparingTo("500"));
+        assertThat(anexa3Number(id)).isNull();
+
+        // Control pozitiv: operatorul din A le scrie; apoi B retipărește formularul lui A, cu același număr.
+        actAs(atA);
+        operations.replaceLines(id, other);
+        assertThat(documents.renderAnexa3(id)).isNotEmpty();
+        Integer number = anexa3Number(id);
+        assertThat(number).isNotNull();
+        actAs(atB);
+        assertThat(documents.renderAnexa3(id)).isNotEmpty();
+        assertThat(anexa3Number(id)).isEqualTo(number);
+    }
+
+    /**
+     * Defectul 2 — recepționat, transferul e în stocul lui B și în registrul formularelor primite: nu se mai anulează.
+     * Plecat și încă nerecepționat se anulează, iar marfa se întoarce în A.
+     */
+    @Test
+    void aReceivedTransferIsNotCancelledButOneInTransitIs() {
+        UUID scaleA = legalScale(depotA);
+        UUID scaleB = legalScale(depotB);
+        UUID received = transfer(scaleA, "300");
+        operations.receive(received, receipt(operations.finalizeOperation(received), scaleB, "300", null, null));
+
+        assertBusiness(() -> operations.cancel(received, "greșeală"), ErrorMessageEnum.TRANSFER_RECEIVED_NOT_CANCELLABLE);
+        assertThat(lines(depotB, MovementDirection.IN)).hasSize(1);
+
+        UUID travelling = transfer(scaleA, "200");
+        operations.finalizeOperation(travelling);
+        assertThat(operations.cancel(travelling, "camionul n-a plecat").status())
+                .isEqualTo(WeighingOperationStatus.CANCELLED);
+        assertThat(lines(depotA, MovementDirection.OUT)).extracting(WasteMovementResponse::quantity)
+                .usingComparatorForType(BigDecimal::compareTo, BigDecimal.class)
+                .containsExactly(new BigDecimal("300"));
+    }
+
     @Test
     void perDepotTheOpeningMovesStockAndOnTheCompanyATransferCancelsOut() {
         UUID scaleA = legalScale(depotA);
@@ -358,6 +417,10 @@ class TransferIT {
                                            String reason) {
         return new TransferReceiptRequest(today, scaleId, null, null, List.of(new TransferReceiptRequest.Line(
                 dispatched.lines().get(0).id(), null, null, new BigDecimal(kg), null)), nir, reason, null);
+    }
+
+    private Integer anexa3Number(UUID id) {
+        return operationRepository.findById(id).orElseThrow().getAnexa3Number();
     }
 
     private UUID legalScale(WorkPoint depot) {

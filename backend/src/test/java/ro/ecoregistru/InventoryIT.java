@@ -95,6 +95,8 @@ class InventoryIT {
     @Autowired WasteArticleRepository articleRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired WasteMovementRepository movementRepository;
+    @Autowired ro.ecoregistru.service.WasteMovementService movementService;
+    @Autowired com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     LocalDate today;
     LocalDate start;
@@ -403,6 +405,76 @@ class InventoryIT {
                 h.keeperName(), null, null)), ErrorMessageEnum.INVENTORY_BEFORE_OPENING);
     }
 
+    /**
+     * Defectul 5 din evaluarea din 27.09 — după aprobare, stocul de la data de referință e semnat de comisie: nimic
+     * datat înainte nu se mai creează, mută, finalizează, anulează sau șterge, nici pe cântar, nici scris de mână. Din
+     * ziua de referință încolo se lucrează normal (pct. 9).
+     */
+    @Test
+    void nothingDatedBeforeAnApprovedInventoryMoves() {
+        UUID done = weighedIn(depotA, start.minusDays(1), "5", true);
+        UUID draft = weighedIn(depotA, start.minusDays(1), "7", false);
+        UUID manual = movementService.create(manualIn(depotA, start.minusDays(1), "3")).id();
+        InventoryResponse inv = declared();
+        // Faptic = scriptic pe fiecare rând (sortimentul de la cântar și codul fără sortiment al liniei de mână).
+        inventories.saveLines(inv.id(), new InventoryLinesRequest(inv.lines().stream().map(l -> new InventoryLinesRequest.Line(
+                l.id(), l.articleId(), l.wasteCodeId(), l.bookKg(), CountMethod.WEIGHED, null, null, null, null, false))
+                .toList()));
+        inventories.close(inv.id());
+        inventories.approve(inv.id());
+
+        assertBusiness(() -> operations.finalizeOperation(draft), ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> operations.cancel(done, "greșeală"), ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> operations.create(inHead(depotA, start.minusDays(1))), ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> operations.update(draft, inHead(depotA, start.minusDays(1))), ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> movementService.create(manualIn(depotA, start.minusDays(1), "1")),
+                ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> movementService.delete(manual), ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> movementService.update(manual, manualIn(depotA, start, "3")),
+                ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        // O mișcare de azi nu se mută înapoi peste inventar.
+        UUID fresh = movementService.create(manualIn(depotA, start, "2")).id();
+        assertBusiness(() -> movementService.update(fresh, manualIn(depotA, start.minusDays(1), "2")),
+                ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertThat(kg(stock.stock(depotA.getId(), start.minusDays(1)), cardboard.getWasteCode()))
+                .isEqualByComparingTo("1008");
+
+        // Control pozitiv: ciorna mutată în ziua de referință se finalizează, iar celălalt depozit n-are nimic închis.
+        operations.update(draft, inHead(depotA, start));
+        assertThat(operations.finalizeOperation(draft).status())
+                .isEqualTo(ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED);
+        UUID other = weighedIn(depotB, start.minusDays(30), "4", true);
+        assertThat(operations.cancel(other, "greșeală").status())
+                .isEqualTo(ro.ecoregistru.enums.WeighingOperationStatus.CANCELLED);
+    }
+
+    /** Defectul 5, fața notei de preluare: înaintea tăierii nu există stoc în aplicație. */
+    @Test
+    void nothingDatedBeforeTheOpeningCutOffMoves() {
+        openings.confirm(openings.create(openingRequest(depotB, start, "500")).id());
+
+        assertBusiness(() -> operations.create(inHead(depotB, start.minusDays(1))), ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertBusiness(() -> movementService.create(manualIn(depotB, start.minusDays(1), "1")),
+                ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertThat(weighedIn(depotB, start, "4", true)).isNotNull();
+
+        // Recepția unui transfer se datează în B: înaintea tăierii lui B, marfa n-are unde intra.
+        UUID transfer = operations.create(new WeighingOperationRequest(WeighingOperationType.TRANSFER, depotA.getId(),
+                start.minusDays(1), null, null, null, null, null, null, null, null, null, null, null, null, null,
+                depotB.getId())).id();
+        operations.replaceLines(transfer, new WeighingLinesRequest(null, null, List.of(new WeighingLinesRequest.Line(
+                cardboard.getId(), null, null, new BigDecimal("10"), null, null, null, null))));
+        var dispatched = operations.finalizeOperation(transfer);
+        java.util.function.Function<LocalDate, ro.ecoregistru.controller.request.TransferReceiptRequest> receipt =
+                on -> new ro.ecoregistru.controller.request.TransferReceiptRequest(on, null, null, null, List.of(
+                        new ro.ecoregistru.controller.request.TransferReceiptRequest.Line(dispatched.lines().get(0).id(),
+                                null, null, new BigDecimal("10"), null)), null, null, null);
+        assertBusiness(() -> operations.receive(transfer, receipt.apply(start.minusDays(1))),
+                ErrorMessageEnum.STOCK_PERIOD_CLOSED);
+        assertThat(operations.receive(transfer, receipt.apply(start)).status())
+                .isEqualTo(ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED);
+    }
+
     private ro.ecoregistru.controller.request.StockOpeningRequest openingRequest(WorkPoint depot, LocalDate cutOff, String kg) {
         return new ro.ecoregistru.controller.request.StockOpeningRequest(depot.getId(), cutOff,
                 ro.ecoregistru.enums.StockOpeningSource.STOCK_CARDS, "Ion Gestionar", "Ana Contabil", null,
@@ -452,6 +524,30 @@ class InventoryIT {
         operations.replaceLines(id, new WeighingLinesRequest(null, null, List.of(new WeighingLinesRequest.Line(
                 cardboard.getId(), null, null, new BigDecimal(kg), null, null, null, null))));
         operations.finalizeOperation(id);
+    }
+
+    private WeighingOperationRequest inHead(WorkPoint depot, LocalDate date) {
+        return new WeighingOperationRequest(WeighingOperationType.IN, depot.getId(), date,
+                partner.getId(), null, null, null, null, null, null, null, null, null, null, null, null, null);
+    }
+
+    private UUID weighedIn(WorkPoint depot, LocalDate date, String kg, boolean finalize) {
+        UUID id = operations.create(inHead(depot, date)).id();
+        operations.replaceLines(id, new WeighingLinesRequest(null, null, List.of(new WeighingLinesRequest.Line(
+                cardboard.getId(), null, null, new BigDecimal(kg), null, null, null, null))));
+        if (finalize) {
+            operations.finalizeOperation(id);
+        }
+        return id;
+    }
+
+    /** O preluare scrisă de mână în „Intrări”, pe registrul art. 48. */
+    private ro.ecoregistru.controller.request.WasteMovementRequest manualIn(WorkPoint depot, LocalDate date, String kg) {
+        return objectMapper.convertValue(java.util.Map.of(
+                "workPointId", depot.getId(), "date", date.toString(),
+                "wasteCodeId", cardboard.getWasteCode().getId(), "quantity", new BigDecimal(kg), "unit", "KG",
+                "operation", "COLLECTED", "register", "ART_48", "partnerId", partner.getId()),
+                ro.ecoregistru.controller.request.WasteMovementRequest.class);
     }
 
     private BigDecimal kg(StockResponse response, WasteCode code) {

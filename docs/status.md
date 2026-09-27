@@ -14,7 +14,27 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
-> **27.09.2026 — D3.5 inventarul depozitului și nota de preluare a soldurilor** (local, `feat/depozit-d23`, `cbbd7c0` … `8fad2fb`;
+> **27.09.2026, seara — ✅ local (ramura `feat/depozit-d23`, fără migrare, liberă tot **V75**): cele șase defecte de depozit din evaluarea
+> de la 15:00, reparate.** Suita **1204/149** verde; probă negativă pe **15 reguli**, fiecare pică exact testul ei.
+>
+> 1. **Transferul se scrie doar din depozitul de plecare** (`WeighingOperationService.requireOwnOperation`): operatorul din B vede transferul în lucru,
+>    dar capul, liniile, plecarea și anularea îi dau 400 `transfer.edited.at.source`; numărul de Anexa 3 îl alocă doar A (`WeighingDocumentService`),
+>    B retipărește ce a tipărit A. Pe ecran formularul e doar de citit pentru B.
+> 2. **Un transfer recepționat nu se mai anulează** (`transfer.received.not.cancellable`): e în stocul lui B și în registrul formularelor primite.
+>    Plecat și nerecepționat se anulează în continuare. Butonul „Anulează” lipsește pe un transfer recepționat.
+> 3. **Cântarele, verificările și dovezile le scrie doar cine aprobă** (admin, consultant, platforma) — `ScaleController` + `ScaleService.requireManager`.
+>    Un operator care își trecea singur un „Admis” ocolea confirmarea cu motiv la finalizare. Setări → Cântare îi arată operatorului lista fără butoane.
+> 4. **Registrul art. 48 al unui depozit anume** trece prin `DepotAccess` (404 pe depozitul altuia); cel pe firmă rămâne al firmei (granița D2.4).
+> 5. **`StockPeriodLock`:** pe un depozit cu inventar aprobat sau cu notă de preluare confirmată, nimic datat înaintea datei lor nu se mai creează,
+>    mută, finalizează, anulează, recepționează sau șterge — nici pe cântar, nici în „Intrări/Ieșiri” scrise de mână (art. 48, fără generare).
+>    400 `stock.period.closed`. Din ziua de referință încolo se lucrează normal (pct. 9).
+> 6. **Formularul de cântar trimite prețul cum e în formular** (`WeighingOperationDialog`): înainte, o salvare apăsată cât firma nu se încărcase
+>    trimitea `unitPrice: null` și serverul ștergea prețurile adminului. Cine nu vede prețurile nu le poate schimba (serverul le păstrează).
+>
+> Teste noi: `TransferIT` +2, `InventoryIT` +2, `DepotAccessIT` +1 (și testul cântarelor rescris: operatorul nu scrie nici în depozitul lui).
+> e2e 47: curățenia nu mai anulează transferul recepționat, ci verifică refuzul.
+
+> **27.09.2026, 14:19 — ✅ PE PRODUCȚIE (`ecoregistru-api` **v137**, `4d37338`, V74 aplicată la 14:13; `ecoregistru-app` **v139**, `fcf0c9f`; monorepo `main` = `deploy/heroku-split` = `63fb3ac`). D3.5 inventarul depozitului și nota de preluare a soldurilor** (`2ce260e` … `63fb3ac`; suita **1199/149** după recenzia finală; liberă **V75**;
 > spec `ecoregistru-docs/docs/specs/2026-09-27-d35-inventar-design.md`, temeiul în `ecoregistru-docs/reports/Inventarul depozitului în lege.md`).
 >
 > **V74** `stock_openings` + `inventories` (+ comisie, linii), `waste_movements.stock_opening_id / inventory_id` cu CHECK. Trei operațiuni noi,
@@ -33,6 +53,9 @@ rulează local și are testele verzi.
 > `InventoryInvariantIT` 4, `InventorySchemaIT` 9, `Art48RegisterIT` 8; negativă pe 27 de reguli, fiecare pică exact testul ei.
 > Frontend: tsc, eslint (0 noi), 68/68. e2e **51** verde pe `eco_e2e_inventar` (jar 8091 + Vite 5191); a prins decizia goală la redeschidere.
 > PDF-urile privite randate (Quick Look): pe lista landscape ștampila folosea lățimea nerotită — reparat (`8fad2fb`).
+> **Recenzia finală** (recenzent separat) a prins dubla numărare notă + inventar în aceeași zi, inventarul datat înaintea unuia aprobat, lipsa
+> numărată ca ieșire pe an și exportul DPA fără liniile noi — toate reparate cu testul întâi (`eecac80`); 10 observații mici rămase în ledger.
+> Odată cu frontendul a plecat și partea web din M1f (`2538cbc`, doar texte), care era în `main`.
 > **Găsit în cercetare, nereparat (decizia proprietarului):** păstrarea documentelor contabile e 5 ani de la 1 iulie (Legea 36/2023), iar
 > `NaturalPersonRetentionScheduler` anonimizează la 10 ani.
 
@@ -42,7 +65,7 @@ rulează local și are testele verzi.
 >
 > **27.09.2026 — configurația de magazin a telefonului (`f272268`, fără release Heroku):** fără cererea de Face ID în engleză (biometria nu e folosită), Release-ul Android fără `SYSTEM_ALERT_WINDOW`/`USE_BIOMETRIC`/`USE_FINGERPRINT`, iar `PrivacyInfo` declară datele trimise (e-mail, cont, poze, mișcări, tokenul telefonului; erorile nelegate). `npm run test:store`, și în CI.
 >
-> ⚠️ **CI pe `main`: e2e roșu din 26.09.2026 ~14:00 UTC** (fiecare rulare terminată de atunci: M1e, M1f, depozitul F2+F3, md-urile de mobil); `backend`, `frontend`, `mobile` verzi. Necercetat încă.
+> **27.09.2026 — CI: `main` roșu din 20.09 (ultima rulare verde `f09f52f`), reparat.** Proba **26** aștepta „33 kg”, dar bonul scrie din 20.09 „33,000 kg” (G06, trei zecimale dinadins) → regex-ul probei. Probele **6, 9, 10** cădeau după calendar din 26.09: `DevDataSeeder` punea AFM-uri nebifate până ieri, iar `MissedDeadlinePolicy` arată ca depășit orice ratat după 17.09 → istoria seederului se oprește acum la `shownFrom()`. Suita e2e **43/43** pe bază nouă, local. **CI:** un commit numai cu md-uri nu mai pornește rularea (`paths-ignore`), `deploy/heroku-split` nu mai rulează a doua oară același SHA, e2e-ul nu mai așteaptă backendul (~30 → ~16 min). **`scripts/deploy-split.sh --push` refuză dacă CI-ul lui `--ref` nu e verde** (coboară peste commiturile numai cu md-uri; `--fara-ci "<motiv>"` pentru urgențe) — zece deployuri plecaseră peste roșu între 20 și 27.09.
 
 > **26.09.2026, seara — în `main` (monorepo `bc83873`, `2538cbc`), fără release Heroku: M1f — corectura predării de pe telefon; fluxurile M1b verzi din nou.** Webul nu se schimbă (doar texte `strings.mobile`, tăiate din bundle-ul web), deci nimic de deployat; telefoanele primesc codul la un build nou.
 >

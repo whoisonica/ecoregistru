@@ -381,7 +381,7 @@ export function SettingsPage() {
         )}
         {/* D2.3 — cântarele; aceleași drepturi ca flota. */}
         {section === "cantare" && hasDepot && (
-          <ScalesSection workPoints={workPoints ?? []} canManage={roleCanWrite(user?.role)} />
+          <ScalesSection workPoints={workPoints ?? []} canManage={canManage} />
         )}
         {section === "preturi" && hasDepot && <PriceVisibilitySection />}
         {/* Sortimentele le personalizează oricine scrie, și operatorul (proprietarul, 15.09.2026). */}

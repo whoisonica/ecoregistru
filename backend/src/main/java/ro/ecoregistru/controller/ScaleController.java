@@ -22,7 +22,8 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ScaleController {
 
-    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
+    /** D2.3 — cântarul decide legalitatea cântăririlor: îl scriu cei care aprobă, nu operatorul de la cântar. */
+    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
 
     ScaleService service;
 

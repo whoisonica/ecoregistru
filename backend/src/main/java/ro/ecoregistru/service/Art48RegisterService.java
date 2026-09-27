@@ -41,6 +41,7 @@ public class Art48RegisterService {
     WasteMovementRepository movementRepository;
     Art48RegisterBuilder builder;
     Art48RegisterGenerator generator;
+    DepotAccess depotAccess;
 
     @Transactional(readOnly = true)
     public Art48Register build(int year, UUID workPointId) {
@@ -53,6 +54,8 @@ public class Art48RegisterService {
         }
         WorkPoint workPoint = workPointId == null ? null : workPointRepository.findById(workPointId)
                 .filter(wp -> wp.getCompany().getId().equals(tenantId))
+                // D2.4 — registrul unui depozit anume doar pentru cine lucrează pe el; pe firmă rămâne al firmei.
+                .filter(wp -> depotAccess.allows(wp.getId()))
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
         // Anul cerut, rând cu rând — plus soldul de la 1 ianuarie, care vine din anii dinainte ca
         // **sumă** (`art48OpeningBefore`). Până pe 20.09.2026 se citeau aici toate mișcările firmei,
