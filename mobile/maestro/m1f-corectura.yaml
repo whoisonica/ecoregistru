@@ -28,10 +28,11 @@ appId: ro.wastehouse.app
 - tapOn:
     id: movement-edit
 
-# Formularul vine cu rubricile predării: cantitatea, documentul, starea.
+# Formularul (pe trei pași din 27.09.2026, F4) vine cu rubricile predării: cantitatea pe 1, documentul pe 3.
 - extendedWaitUntil:
-    visible: Corectează predarea
+    visible: Ce și cât
     timeout: 15000
+- assertVisible: "CORECTURA · 1 DIN 3"
 - scrollUntilVisible:
     element:
       id: qty
@@ -44,12 +45,18 @@ appId: ro.wastehouse.app
 - inputText: "778"
 # Tastatura numerică de pe iOS n-are „Gata”; formularul o închide la derulare.
 - scroll
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Pe fișă și transport
+    timeout: 5000
 - scrollUntilVisible:
     element: "M1F-PROBA"
-    timeout: 60000
-- scrollUntilVisible:
-    element:
-      id: handover-save
     timeout: 60000
 - takeScreenshot: 03-inainte-de-salvare
 - tapOn:

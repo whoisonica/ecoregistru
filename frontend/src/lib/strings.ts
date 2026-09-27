@@ -482,7 +482,7 @@ export const strings = {
     stepDocument: "Documentul",
     codeSearchOpen: "Caută în nomenclator",
     codeSearchClose: "Codurile firmei",
-    driverSummaryNone: "Fără șofer scris",
+    stepDriver: "Șoferul",
     // Ciorna: un formular închis pe la mijloc se reia de pe „Adaugă”.
     draftTitle: "Predare neterminată",
     draftSince: (time: string) => `de la ${time}`,

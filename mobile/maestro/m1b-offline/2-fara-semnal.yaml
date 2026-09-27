@@ -1,5 +1,6 @@
 # M1b, proba fără semnal — pasul 2 din 3 (vezi 1-login.yaml): formularul fără poză, din listele de pe
 # telefon, salvat fără legătură la server. Predarea trebuie să rămână în „De trimis”.
+# Din 27.09.2026 (F4) formularul e pe trei pași; rubricile de pe fișă stau pliate pe pasul 3.
 appId: ro.wastehouse.app
 ---
 - tapOn:
@@ -17,10 +18,45 @@ appId: ro.wastehouse.app
 - inputText: "77"
 # Tastatura numerică de pe iOS n-are „Gata”; formularul o închide la derulare.
 - scroll
-# BUG-023: starea, depozitarea, mijlocul de transport și destinația nu rămân goale.
+- tapOn:
+    id: step-next
+
+# Pasul 2: destinatarul, soarta și codul.
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
+- tapOn:
+    id: partner-search
+- inputText: Depozitare
+# „Enter” închide tastatura unui câmp de text pe un rând; `hideKeyboard` nu merge sigur pe iOS.
+- pressKey: Enter
+- tapOn:
+    id: partner-option
+- scrollUntilVisible:
+    element:
+      id: fate-DISPOSED
+- tapOn:
+    id: fate-DISPOSED
+- tapOn:
+    id: op-D5
+- scrollUntilVisible:
+    element:
+      id: step-next
+- tapOn:
+    id: step-next
+
+# Pasul 3 — BUG-023: starea, depozitarea, mijlocul de transport și destinația nu rămân goale.
+- extendedWaitUntil:
+    visible: Pe fișă și transport
+    timeout: 5000
+- tapOn:
+    id: handover-save
+- assertVisible: "Alege destinația deșeului."
+- takeScreenshot: 02a-rubrici-cerute
 - scrollUntilVisible:
     element:
       id: state-SOLID
+    direction: UP
     centerElement: true
 - tapOn:
     id: state-SOLID
@@ -36,31 +72,13 @@ appId: ro.wastehouse.app
     centerElement: true
 - tapOn:
     id: means-AN
-- scrollUntilVisible:
-    element:
-      id: fate-DISPOSED
-- tapOn:
-    id: fate-DISPOSED
-- tapOn:
-    id: op-D5
 # Destinațiile oferite depind de operațiune: la eliminare, DO e printre ele.
 - scrollUntilVisible:
     element:
       id: dest-DO
-    direction: UP
     centerElement: true
 - tapOn:
     id: dest-DO
-- scrollUntilVisible:
-    element:
-      id: partner-search
-- tapOn:
-    id: partner-search
-- inputText: Depozitare
-# „Enter” închide tastatura unui câmp de text pe un rând; `hideKeyboard` nu merge sigur pe iOS.
-- pressKey: Enter
-- tapOn:
-    id: partner-option
 - scrollUntilVisible:
     element:
       id: f-doc
@@ -72,6 +90,7 @@ appId: ro.wastehouse.app
 - scrollUntilVisible:
     element:
       id: handover-save
+- assertVisible: "Fără semnal: rămâne în telefon și pleacă singură"
 - tapOn:
     id: handover-save
 # Bonul galben (din 27.09.2026): rămâne în telefon; „Gata” duce înapoi pe „Adaugă”, la „De trimis”.

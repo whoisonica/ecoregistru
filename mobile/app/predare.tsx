@@ -1162,7 +1162,7 @@ export default function PredareScreen() {
                           </Field>
                         </>
                       ) : null}
-                      {fold("driver", t.driverName, driverName.trim() || driverIdentification.trim() ? "x" : "",
+                      {fold("driver", m.stepDriver, driverName.trim() || driverIdentification.trim() ? "x" : "",
                         [driverName.trim(), driverIdentification.trim()].filter(Boolean).join(" · ") || null,
                         <>
                           {availableDrivers.length > 0 ? (

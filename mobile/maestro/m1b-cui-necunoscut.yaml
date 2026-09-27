@@ -38,6 +38,43 @@ appId: ro.wastehouse.app
           text: "Photo taken on.*"
           index: 1
 
+# Din 27.09.2026 (F4) destinatarul e pe pasul 2: întâi se confirmă ce a citit camera pe pasul 1 (ce e).
+- extendedWaitUntil:
+    visible: Ce și cât
+    timeout: 30000
+- extendedWaitUntil:
+    notVisible:
+      id: aviz-reading
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: f-date-confirm
+    direction: UP
+    centerElement: true
+    optional: true
+- tapOn:
+    id: f-date-confirm
+    optional: true
+- tapOn:
+    id: f-code-confirm
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: f-qty-confirm
+    centerElement: true
+    optional: true
+- tapOn:
+    id: f-qty-confirm
+    optional: true
+- scrollUntilVisible:
+    element: Punct de lucru Cluj
+    direction: UP
+- tapOn: Punct de lucru Cluj
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
 - scrollUntilVisible:
     element:
       id: unknown-cui
