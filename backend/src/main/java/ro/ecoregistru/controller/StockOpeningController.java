@@ -3,6 +3,9 @@ package ro.ecoregistru.controller;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -29,6 +32,7 @@ import java.util.UUID;
 public class StockOpeningController {
 
     StockOpeningService service;
+    ro.ecoregistru.service.InventoryDocumentService documents;
 
     @GetMapping
     public List<StockOpeningResponse> list(@RequestParam(required = false) UUID workPointId) {
@@ -63,5 +67,14 @@ public class StockOpeningController {
     @PreAuthorize(StockController.CAN_MANAGE)
     public StockOpeningResponse confirm(@PathVariable UUID id) {
         return service.confirm(id);
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> pdf(@PathVariable UUID id) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename("nota-preluare-solduri.pdf").build().toString())
+                .body(documents.openingNote(id));
     }
 }

@@ -111,6 +111,12 @@ tasks.named('jacocoTestReport') {
 	}
 }
 
+// D3.5 — documentele tipărite din aplicație poartă numele și versiunea programului (OMFP 2634/2015 anexa 1 pct. 58
+// lit. k)); versiunea e data build-ului, din `META-INF/build-info.properties`.
+springBoot {
+	buildInfo()
+}
+
 // Single deployable: bootJar is the runnable artifact served on Heroku.
 bootJar {
 	archiveClassifier.set('boot')

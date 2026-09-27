@@ -3,6 +3,10 @@ package ro.ecoregistru.controller;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +34,7 @@ import java.util.UUID;
 public class InventoryController {
 
     InventoryService service;
+    ro.ecoregistru.service.InventoryDocumentService documents;
 
     public record CancelRequest(String reason) {
     }
@@ -107,5 +112,14 @@ public class InventoryController {
     @PreAuthorize(StockController.CAN_MANAGE)
     public InventoryResponse cancel(@PathVariable UUID id, @RequestBody CancelRequest request) {
         return service.cancel(id, request.reason());
+    }
+
+    @GetMapping("/{id}/pdf/{document}")
+    public ResponseEntity<byte[]> pdf(@PathVariable UUID id, @PathVariable String document) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename("inventar-" + document + ".pdf").build().toString())
+                .body(documents.inventory(id, document));
     }
 }

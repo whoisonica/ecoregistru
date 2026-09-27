@@ -137,6 +137,18 @@ public class StockOpeningService {
         return toResponse(openingRepository.save(opening));
     }
 
+    /** Pentru nota tipărită: nota, după aceleași reguli de acces, cu rândurile încărcate. */
+    @Transactional(readOnly = true)
+    public StockOpening requireForDocuments(UUID id) {
+        StockOpening opening = require(id);
+        opening.getLines().forEach(l -> {
+            l.getWasteCode().getCode();
+            if (l.getArticle() != null) l.getArticle().getName();
+        });
+        opening.getWorkPoint().getName();
+        return opening;
+    }
+
     // --- helpers ---
 
     private void apply(StockOpening opening, StockOpeningRequest request, UUID tenantId) {
