@@ -77,6 +77,8 @@ function Routes() {
           name="bifeaza"
           options={{ presentation: "formSheet", sheetAllowedDetents: [0.6, 1.0], sheetGrabberVisible: true, sheetCornerRadius: 24 }}
         />
+        {/* F10: modul inspector pe tot ecranul, fără bara de jos. */}
+        <Stack.Screen name="inspector" options={{ presentation: "fullScreenModal" }} />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" />

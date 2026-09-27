@@ -513,6 +513,17 @@ export const strings = {
     // --- Valul B, F5 (28.09.2026): bifarea termenului de pe telefon (D9) ---
     deadlineComplete: "Bifează",
     deadlineCompleteOffline: "Fără semnal nu pot bifa. Nota rămâne aici; încearcă din nou când ai internet.",
+    // --- Valul B, F10 (28.09.2026): „ce înseamnă” pe fiecare verificare + modul inspector ---
+    checkMeaning: {
+      deadlines: "Declarațiile și raportările cu termen legal ale firmei.",
+      missingCode: "Fără cod R/D, cantitatea nu intră în nicio coloană a evidenței.",
+      weighing: "Ieșiri fără cifră până vine bonul de cântar de la destinatar.",
+      partners: "Deșeul se predă legal doar unui operator cu autorizație de mediu în termen.",
+    } as Record<"deadlines" | "missingCode" | "weighing" | "partners", string>,
+    inspectorOpen: "Modul inspector",
+    inspectorKicker: "WasteHouse · control",
+    inspectorClose: "Închide",
+    inspectorCui: (cui: string) => `CUI ${cui}`,
   },
 
   login: {
