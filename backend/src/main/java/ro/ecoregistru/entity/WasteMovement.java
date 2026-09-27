@@ -388,6 +388,16 @@ public class WasteMovement {
     @JoinColumn(name = "weighing_operation_id")
     WeighingOperation weighingOperation;
 
+    /** D3.5 — nota de preluare care a scris linia ({@code OPENING_BALANCE}); null în rest (CHECK în V74). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stock_opening_id")
+    StockOpening stockOpening;
+
+    /** D3.5 — inventarul aprobat care a scris linia ({@code INVENTORY_SURPLUS/SHORTAGE}); null în rest (CHECK în V74). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inventory_id")
+    Inventory inventory;
+
     /** Poziția liniei în operațiune, de la 1; cântărirea e succesivă, deci ordinea contează. */
     @Column(name = "line_no")
     Integer lineNo;

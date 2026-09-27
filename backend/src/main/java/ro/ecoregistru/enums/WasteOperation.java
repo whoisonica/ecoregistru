@@ -54,11 +54,36 @@ public enum WasteOperation {
     TRANSFERRED_OUT,
 
     /** D2.5 — the same transfer received at depot B, with B's own weight. See {@link #TRANSFERRED_OUT}. */
-    TRANSFERRED_IN;
+    TRANSFERRED_IN,
+
+    /**
+     * D3.5 — stock that existed before the company started keeping its evidence in the app, taken over from its stock
+     * cards or accounts at a cut-off date (a {@code StockOpening}). Neither an entry nor an inventory surplus: it goes
+     * to the opening column of the art. 48 register. See {@link #isStockOnly()}.
+     */
+    OPENING_BALANCE,
+
+    /** D3.5 — a surplus found by an approved inventory, dated at its reference date. See {@link #isStockOnly()}. */
+    INVENTORY_SURPLUS,
+
+    /** D3.5 — a shortage found by an approved inventory, dated at its reference date. See {@link #isStockOnly()}. */
+    INVENTORY_SHORTAGE;
+
+    /**
+     * D3.5 — the lines that move stock without being an entry or an exit. Every reader of movements leaves them out
+     * (lists, registers, packaging, Acasă); only the stock queries and the art. 48 yearly totals read them, on purpose.
+     */
+    public static final java.util.Set<WasteOperation> STOCK_ONLY =
+            java.util.EnumSet.of(OPENING_BALANCE, INVENTORY_SURPLUS, INVENTORY_SHORTAGE);
 
     /** The two legs of an internal transfer (D2.5): per depot they move stock, per company they cancel out. */
     public boolean isTransfer() {
         return this == TRANSFERRED_OUT || this == TRANSFERRED_IN;
+    }
+
+    /** D3.5 — see {@link #STOCK_ONLY}. */
+    public boolean isStockOnly() {
+        return STOCK_ONLY.contains(this);
     }
 
     /** Whether this operation takes waste off the site, and therefore needs an R/D code. */
@@ -68,6 +93,6 @@ public enum WasteOperation {
 
     /** Whether an operator may choose this when recording a movement. */
     public boolean isSelectable() {
-        return this != UNCLASSIFIED_OUT && this != GENERATED && !isTransfer();
+        return this != UNCLASSIFIED_OUT && this != GENERATED && !isTransfer() && !isStockOnly();
     }
 }

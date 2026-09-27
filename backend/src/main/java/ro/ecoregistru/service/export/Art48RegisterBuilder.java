@@ -207,6 +207,9 @@ public class Art48RegisterBuilder {
             case GENERATED -> "Generare";
             case TRANSFERRED_OUT -> "Transfer trimis la alt depozit";
             case TRANSFERRED_IN -> "Transfer primit de la alt depozit";
+            case OPENING_BALANCE -> "Sold preluat";
+            case INVENTORY_SURPLUS -> "Plus la inventar";
+            case INVENTORY_SHORTAGE -> "Minus la inventar";
         };
     }
 
