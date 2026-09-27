@@ -16,6 +16,7 @@ import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.service.DeadlineService;
+import ro.ecoregistru.service.MissedDeadlinePolicy;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -64,6 +65,7 @@ public class DevDataSeeder implements CommandLineRunner {
     ReportingDeadlineRepository reportingDeadlineRepository;
     PasswordEncoder passwordEncoder;
     DeadlineService deadlineService;
+    MissedDeadlinePolicy missedPolicy;
 
     /**
      * Parola conturilor demo, din mediu. Goală = se generează una la fiecare pornire şi se scrie
@@ -184,9 +186,14 @@ public class DevDataSeeder implements CommandLineRunner {
      *
      * <p>Până pe 16.09.2026 le puneau doar rulările anterioare ale suitei e2e, deci pe o bază nouă
      * probele 10 și 11 cădeau „pe date”, iar suita nu putea rula în CI.
+     *
+     * <p>Istoria se oprește la {@link MissedDeadlinePolicy#shownFrom()}: e generarea veche, pe care
+     * ecranele o ascund. Până pe 27.09.2026 mergea până ieri, deci din 26.09 AFM-ul din 25.09 ieșea
+     * „ratat” după regula nouă, și probele 6, 9 și 10 cădeau după calendar, nu după cod.
      */
     private void seedDeadlines(Company company) {
         LocalDate today = DeadlineService.today();
+        LocalDate historyEnd = today.isBefore(missedPolicy.shownFrom()) ? today : missedPolicy.shownFrom();
         for (int year = today.getYear() - 1; year <= today.getYear(); year++) {
             List<ReportingDeadline> history = new ArrayList<>();
             history.add(pastDeadline(company, ReportType.SIM_ANNUAL, LocalDate.of(year, 3, 15)));
@@ -195,7 +202,7 @@ public class DevDataSeeder implements CommandLineRunner {
                 history.add(pastDeadline(company, ReportType.AFM_MONTHLY, LocalDate.of(year, month, 25)));
             }
             reportingDeadlineRepository.saveAll(history.stream()
-                    .filter(d -> d.getDueDate().isBefore(today))
+                    .filter(d -> d.getDueDate().isBefore(historyEnd))
                     .toList());
         }
         deadlineService.ensureUpcoming(company.getId(), today);
