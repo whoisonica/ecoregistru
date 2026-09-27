@@ -150,4 +150,14 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     @Query(value = "select 1 from (select pg_advisory_xact_lock(hashtextextended(:key, 0))) l",
             nativeQuery = true)
     Integer lockNumbering(@Param("key") String key);
+
+    /** D3.5 — ultimele operațiuni ale unui depozit dinaintea unei date: declarația gestionarului (pct. 8 lit. a)). */
+    List<WeighingOperation> findTop1ByCompany_IdAndWorkPoint_IdAndTypeInAndStatusInAndDateBeforeOrderByDateDescNumberDesc(
+            UUID companyId, UUID workPointId, java.util.Collection<ro.ecoregistru.enums.WeighingOperationType> types,
+            java.util.Collection<ro.ecoregistru.enums.WeighingOperationStatus> statuses, java.time.LocalDate before);
+
+    /** D3.5 — operațiunile unui depozit datate în perioada inventarului (pct. 9). */
+    List<WeighingOperation> findAllByCompany_IdAndWorkPoint_IdAndStatusInAndDateBetweenOrderByDateAscNumberAsc(
+            UUID companyId, UUID workPointId, java.util.Collection<ro.ecoregistru.enums.WeighingOperationStatus> statuses,
+            java.time.LocalDate from, java.time.LocalDate to);
 }
