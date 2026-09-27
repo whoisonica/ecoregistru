@@ -418,4 +418,12 @@ public interface WasteMovementRepository
             + "order by m.date")
     List<WasteMovement> findStockOnlyBetween(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId,
                                              @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /** D3.5 — data primei mișcări care contează a unui depozit (fără liniile de stoc); null dacă n-are niciuna. */
+    @Query("select min(m.date) from WasteMovement m left join m.weighingOperation o "
+            + "where m.company.id = :companyId and m.workPoint.id = :workPointId and m.deleted = false "
+            + "and m.register = ro.ecoregistru.enums.WasteRegister.ART_48 "
+            + "and (o is null or o.status in (ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED, ro.ecoregistru.enums.WeighingOperationStatus.IN_TRANSIT))"
+            + NOT_STOCK_ONLY)
+    LocalDate firstCountedDate(@Param("companyId") UUID companyId, @Param("workPointId") UUID workPointId);
 }
