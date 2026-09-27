@@ -2489,7 +2489,7 @@ cantitatea în **kg**; preţul unitar şi valoarea; contul de virament / documen
 >
 > **Termenul de păstrare nu e în ordonanță.** Ca document financiar-contabil intră sub regimul
 > general al Legii contabilității — ~~**de verificat separat**, nu se presupune~~ **verificat pe
-> 15.09.2026: 10 ani**, vezi §15.
+> 15.09.2026: 10 ani**~~ — **corectat 27.09.2026: 5 ani de la 1 iulie a anului următor** (Legea 36/2023), vezi §15.
 
 ### 9.1 Recitit integral pe 15.09.2026 (forma consolidată din 05.06.2022)
 
@@ -2708,15 +2708,25 @@ internaționale, pe OUG 41/2022, dacă apare un client exportator. Corectează `
 
 ## 15. Legea 82/1991 — păstrarea documentelor și inventarul
 
-Sursă: [legislatie.just.ro/Public/DetaliiDocumentAfis/58588](https://legislatie.just.ro/Public/DetaliiDocumentAfis/58588),
-consolidare 04.02.2025, accesat 15.09.2026.
+⚠️ **Corectat pe 27.09.2026** (cercetarea D3.5, `ecoregistru-docs/reports/Inventarul depozitului în lege.md`, nota
+`pastrare_documente.md`). Textul de mai jos citat până acum venea de la `DetaliiDocumentAfis/58588`, care servește
+**republicarea din 2005**, nu forma în vigoare. Forma consolidată e la
+[DetaliiDocument/58588](https://legislatie.just.ro/Public/DetaliiDocument/58588) (consolidare 04.02.2025; ultimul act
+modificator OG 10/2025).
 
-**Art. 25 alin. (1):**
+**Art. 25** (un singur alineat, modificat prin Legea nr. 36/2023, MO nr. 36 din 12.01.2023, în vigoare din 15.01.2023):
 
-> Registrul-jurnal, Registrul-inventar şi Cartea mare, precum şi **documentele justificative** care stau
-> la baza înregistrărilor în contabilitatea financiară se păstrează în arhiva persoanelor prevăzute la
-> art. 1, timp de **10 ani**, cu începere de la data încheierii exerciţiului financiar în cursul căruia
-> au fost întocmite, cu excepţia statelor de salarii, care se păstrează timp de 50 de ani.
+> Registrele de contabilitate obligatorii și documentele justificative care stau la baza înregistrărilor în contabilitatea
+> financiară se păstrează în arhiva persoanelor prevăzute la art. 1 timp de **5 ani calculați de la data de 1 iulie a anului
+> următor celui încheierii exercițiului financiar** în care au fost întocmite, inclusiv pentru statele de salarii.
+
+Art. 23 alin. (1): același termen pentru datele pe suport tehnic. OMFP 2634/2015 anexa 1 pct. 37^1 (introdus prin OMF
+1447/2023) repetă art. 25; pct. 38–39 (10 și 50 de ani) sunt abrogate. Mai mult de 5 ani: doar situațiile financiare anuale
+(10 ani, art. 35 alin. (3)). Codul de procedură fiscală art. 109 alin. (3) trimite la aceleași reguli; prescripția de 5 ani
+(art. 110) se poate întrerupe sau suspenda (art. 111), deci ștergerea după termen e o decizie, nu un automat.
+
+*(Citatul vechi, „timp de 10 ani, cu începere de la data încheierii exercițiului financiar [...] cu excepția statelor de
+salarii, care se păstrează timp de 50 de ani”, e al republicării din 2005 și **nu mai e în vigoare**.)*
 
 ~~**Art. 7** (citit prin surse secundare)~~ — **citit pe sursă primară pe 26.09.2026** (consolidare 04.02.2025, [Portal 58588](https://legislatie.just.ro/Public/DetaliiDocument/58588)):
 
@@ -2731,14 +2741,18 @@ consolidare 04.02.2025, accesat 15.09.2026.
 Art. 41 pct. 2 lit. d) + art. 42 alin. (1) lit. d): nerespectarea normelor de inventariere — **3.000–20.000 lei** (amenda
 e a firmei clientului).
 
-**Consecințe:** borderoul PF și CNP-ul de pe el se păstrează 10 ani, nu 3 cum rămân datele șoferului.
+**Consecințe (corectate 27.09.2026):** borderoul PF, NIR-ul, listele de inventariere și PV-ul se păstrează **5 ani de la
+1 iulie a anului următor** exercițiului, nu 10. ⚠️ **Codul anonimizează persoanele fizice la 10 ani**
+(`NaturalPersonRetentionScheduler.RETENTION_YEARS`), adică peste termenul legal — de decis de proprietar (vezi raportul).
 Stocul depozitului trebuie inventariat cel puțin anual.
 
 ### 15.1 Normele de inventariere — OMFP 2861/2009, în vigoare (citit 26.09.2026)
 
 [Ordinul, 112430](https://legislatie.just.ro/Public/DetaliiDocument/112430) · [Normele, 112431](https://legislatie.just.ro/Public/DetaliiDocument/112431).
-Portalul nu arată abrogare și nu s-a găsit un act care să-l înlocuiască (lista de modificări n-a putut fi consultată —
-mică incertitudine). Ordinul, art. 1 alin. (5): firma emite **proceduri proprii** de inventariere, aprobate de administrator.
+Portalul nu arată abrogare; 🔁 **27.09.2026:** „Acțiuni suferite” se deschide acum și spune *„Nu exista actiuni suferite de
+acest act”*, atât la ordin, cât și la Norme — incertitudinea e închisă.
+
+Ordinul, art. 1 alin. (5): firma emite **proceduri proprii** de inventariere, aprobate de administrator.
 
 Pașii, cu punctul din Norme:
 1. **Decizia de numire** cu cinci elemente: comisia, modul, metoda, gestiunea, datele de început și sfârșit (pct. 6 alin. (1)).
@@ -2783,6 +2797,25 @@ motiv de ajustare la deșeuri.**
   (vânzarea la reciclare e livrare, nu distrugere). La contabil rămâne doar dacă predarea **gratuită** la un reciclator
   (cod R) contează ca „unitate specializată”.
 - ⚠️ În notele primei runde art. 25 alin. (4) lit. c) era citat cu 7 puncte; textul în vigoare are 4. Concluzia rămâne.
+
+🔁 **27.09.2026 — D3.5 recitit pe text, cu designul în față** (`research_notes/Inventarul depozitului în lege/procedura_inventar.md`
+§11, tabel pe 24 de puncte). Corecturi la cele de mai sus:
+- **Pct. 9 nu cere oprirea operațiunilor**: suspendarea e doar *„indicat, dacă este posibil”*; altfel „zona tampon”, iar comisia
+  scrie pe documente *„primit/eliberat în timpul inventarierii”*. Aplicația nu blochează; recalculează scripticul la închidere și
+  la aprobare și listează operațiunile din perioadă în PV.
+- **Pct. 8 lit. a)** are șapte întrebări, plus ultimele documente, data și semnăturile gestionarului **și** ale comisiei; ultima
+  frază: *„Semnarea declaraţiei de către gestionar se face în faţa comisiei de inventariere”*.
+- **Pct. 6 alin. (1)**: „modul de efectuare” e separat de „metoda”; comisia are președinte. Gestionarul în comisie e interzis
+  (alin. (5)), dar la firma fără salariați inventariază administratorul (alin. (7)) → avertisment, nu refuz.
+- **Pct. 33**: semnături pe **fiecare filă**; pe ultima, mențiunea gestionarului, obiecțiile și concluziile comisiei; la
+  predare-primire semnează și gestionarul primitor.
+- **Pct. 40 nu interzice compensarea**: o permite, condiționat, la stabilirea imputării. Aplicația nu compensează — alegere, nu
+  interdicție.
+- **Stocul inițial nu e inventar**: schimbarea programului nu e prilej de inventariere (art. 7 alin. (1), pct. 2–3), iar
+  scripticul e al evidenței firmei (pct. 35 alin. (1)). OMFP 2634 anexa 1 pct. 58 lit. e), n) și pct. 61 cer soldul anterior
+  și reconcilierea la schimbarea sistemului → **nota de preluare a soldurilor**, linii `OPENING_BALANCE`, nu plusuri.
+- **Pct. 58 lit. k)**: documentele tipărite din program poartă numele și versiunea programului.
+- OMFP 2634/2015 mai are un act modificator nepomenit până acum: **OMF 4058/2024** (avizul cash-and-carry; nu atinge inventarul).
 
 ### 15.2 Valoarea stocului — OMFP 1802/2014 (consolidare 19.11.2025, [294347](https://legislatie.just.ro/Public/DetaliiDocument/294347))
 

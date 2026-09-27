@@ -14,6 +14,28 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
+> **27.09.2026 — D3.5 inventarul depozitului și nota de preluare a soldurilor** (local, `feat/depozit-d23`, `cbbd7c0` … `8fad2fb`;
+> spec `ecoregistru-docs/docs/specs/2026-09-27-d35-inventar-design.md`, temeiul în `ecoregistru-docs/reports/Inventarul depozitului în lege.md`).
+>
+> **V74** `stock_openings` + `inventories` (+ comisie, linii), `waste_movements.stock_opening_id / inventory_id` cu CHECK. Trei operațiuni noi,
+> `OPENING_BALANCE`, `INVENTORY_SURPLUS`, `INVENTORY_SHORTAGE`: **excluse implicit** din orice cititor de registre (`NOT_STOCK_ONLY` în JPQL,
+> filtrul din `MovementQueryService`), **incluse** în stoc, FIFO, soldul art. 48 și Cap. 1 („Sold preluat” în coloana de început, „Plus/Minus
+> la inventar” coloane proprii, nota „Evidența în aplicație începe la …”). `/movements` refuză editarea lor (400, ca liniile de cântar).
+> **Nota de preluare** (`/api/v1/stock-openings`): stocul de dinaintea aplicației, din fișele de magazie / contabilitate, la o dată de tăiere
+> ≤ prima mișcare; confirmată o singură dată pe depozit. **Nu e inventar** (Legea 82 art. 7, Normele 2861 pct. 2–3, 35; OMFP 2634 anexa 1
+> pct. 58, 61). **Inventarul** (`/api/v1/inventories`): decizia (președinte, mod ≠ metodă), declarația gestionarului cu cele 7 întrebări,
+> scripticul la începutul zilei de început, faptic cu metodă, explicație la fiecare diferență, natura lipsei, PV, închidere → aprobare (scrie
+> ajustările datate la început) → definitiv; redeschidere și recalcularea scripticului când o operațiune retroactivă îl schimbă; operațiunile
+> nu se blochează (pct. 9). PDF-uri: decizie, declarație, listă 14-3-12, PV, nota de preluare — semnături pe fiecare pagină, „Generat cu
+> WasteHouse, versiunea <data build-ului>” (`springBoot { buildInfo() }`). Ecran: tabul „Inventar” pe „Cântar”.
+>
+> **Probe.** Suita **1194/149 verde** (`cleanTest test`), `InventoryIT` 21, `StockOpeningIT` 9, `InventoryDocumentsIT` 8,
+> `InventoryInvariantIT` 4, `InventorySchemaIT` 9, `Art48RegisterIT` 8; negativă pe 27 de reguli, fiecare pică exact testul ei.
+> Frontend: tsc, eslint (0 noi), 68/68. e2e **51** verde pe `eco_e2e_inventar` (jar 8091 + Vite 5191); a prins decizia goală la redeschidere.
+> PDF-urile privite randate (Quick Look): pe lista landscape ștampila folosea lățimea nerotită — reparat (`8fad2fb`).
+> **Găsit în cercetare, nereparat (decizia proprietarului):** păstrarea documentelor contabile e 5 ani de la 1 iulie (Legea 36/2023), iar
+> `NaturalPersonRetentionScheduler` anonimizează la 10 ani.
+
 > **27.09.2026 — în `main` (monorepo `2888e7d`), fără release Heroku: aplicația mobilă nu mai scoate omul din cont la o reîmprospătare căzută și golește cache-ul la ieșire.** Webul nu se schimbă; telefoanele primesc codul la un build nou.
 >
 > **Reîmprospătarea.** Fără semnal sau cu serverul ocupat (5xx, 429), `/auth/refresh` nu mai golește sesiunea: eroarea urcă la ecran („Nu am putut încărca luna”) și la coadă (reîncercare). Numai refuzul serverului (400 `device.session.invalid`) scoate din cont (`mobile/src/refresh.ts`, `npm run test:refresh`, și în CI). **Cache-ul.** La ieșire, `queryClient.clear()`: `["devices"]` și `["companies"]` nu poartă omul în cheie, iar al doilea om de pe același telefon vedea telefoanele primului. Probat pe iOS cu un proxy care dă 503 numai pe `/auth/refresh`, cu negativă și control pozitiv; `cache-deconectare.yaml` pica pe codul vechi. Tot verde și pe Android 16 (27.09, după-amiaza), cu control pozitiv. iPhone-ul proprietarului reinstalat cu ea (27.09 12:36; profilul expiră 03.10).

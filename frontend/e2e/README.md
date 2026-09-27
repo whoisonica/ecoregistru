@@ -1,3 +1,10 @@
+🧾 **27.09.2026 — proba 51 (`51-inventar.mjs`), soldul preluat și inventarul (F3, D3.5)**: tabul „Inventar” din „Cântar”. Pe un depozit
+nou, adminul preia din dialog 500 kg la data de ieri și confirmă nota → „Confirmată”, stocul 500; deschide un inventar (decizie, comisie),
+salvează declarația, trece 480 kg cântărit cu explicația „uscare” și lipsa neimputabilă, încheie PV-ul și îl aprobă → „Aprobat”, stocul 480,
+lista 14-3-12 vine ca PDF; la 375, inventarul redeschis își arată decizia; operatorul n-are „Inventar nou” și primește 403. Pe o bază fără
+sortimente își face „Carton Proba 51”. **Negativă:** verificarea „decizia la redeschidere” a căzut pe codul dinainte de `8fad2fb` (formularul
+se monta înainte să vină inventarul). ⚠️ Lasă în urmă depozitul „Proba 51 <număr>” (dezactivat) cu nota, inventarul și liniile de stoc.
+
 🎚️ **26.09.2026 — proba 50 (`50-praguri-limite.mjs`), pragurile și limitele (F3, D3.3–D3.4)**: pe un depozit nou cu 1.000 kg,
 adminul pune din „Praguri și limite” maximul de 500 kg → „Peste maxim”; limita „Stocat pe amplasament, 0,5 t la un moment dat”
 → banda spune „1 / 0.5 t … Depășit”; o limită în m³ e „fără comparație”; „Vechime” arată „0 zile”; operatorul n-are butonul;
