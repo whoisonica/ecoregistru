@@ -131,17 +131,63 @@ class DeviceSessionIT {
     // Rotirea
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Fiecare folosire dă un token nou <b>și</b> îl stinge pe cel folosit. */
+    /** Fiecare folosire dă un token nou; cel vechi moare de îndată ce telefonul îl folosește pe cel nou. */
     @Test
-    void aRefreshTokenWorksExactlyOnce() throws Exception {
+    void anOldTokenDiesOnceTheNewOneIsUsed() throws Exception {
         String first = loginAsPhone().get("refreshToken").asText();
 
         String second = refresh(first).get("refreshToken").asText();
         assertThat(second).isNotEqualTo(first);
 
-        // Al doilea deschide; primul, refolosit, nu mai deschide nimic.
-        refreshRefused(first);
+        // Al doilea deschide; după asta primul, refolosit, nu mai deschide nimic.
         refresh(second);
+        refreshRefused(first);
+    }
+
+    /**
+     * Răspunsul reîmprospătării s-a pierdut pe drum (semnal slab la rampă): telefonul a rămas cu tokenul
+     * vechi, iar serverul l-a rotit deja. Omul nu trebuie scos din cont pentru asta — tokenul vechi mai
+     * deschide o dată, cât timp cel nou n-a fost folosit niciodată.
+     */
+    @Test
+    void aRefreshWhoseAnswerWasLostCanBeRetried() throws Exception {
+        String first = loginAsPhone().get("refreshToken").asText();
+        String lost = refresh(first).get("refreshToken").asText();
+
+        String retried = refresh(first).get("refreshToken").asText();
+        assertThat(retried).isNotEqualTo(first).isNotEqualTo(lost);
+        // Lanțul merge mai departe de pe tokenul primit la reîncercare.
+        refresh(retried);
+    }
+
+    /** Toleranța nu învie o sesiune stinsă: după ieșirea din cont nici tokenul vechi nu mai deschide. */
+    @Test
+    void theLostAnswerToleranceEndsWithTheSession() throws Exception {
+        String first = loginAsPhone().get("refreshToken").asText();
+        String second = refresh(first).get("refreshToken").asText();
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"refreshToken":"%s"}""".formatted(second)))
+                .andExpect(status().is2xxSuccessful());
+
+        refreshRefused(first);
+    }
+
+    /** Ieșirea din cont de pe un telefon rămas cu tokenul vechi stinge și ea sesiunea. */
+    @Test
+    void loggingOutWithTheOldTokenAlsoEndsTheSession() throws Exception {
+        String first = loginAsPhone().get("refreshToken").asText();
+        refresh(first); // răspunsul s-a pierdut
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"refreshToken":"%s"}""".formatted(first)))
+                .andExpect(status().is2xxSuccessful());
+
+        refreshRefused(first);
     }
 
     /** Sesiunea e a omului: tokenul nou aduce rolul și firma lui, nu doar un șir. */
@@ -325,6 +371,64 @@ class DeviceSessionIT {
                 .andExpect(status().isNoContent());
 
         refreshRefused(phone.get("refreshToken").asText());
+    }
+
+    /**
+     * Un telefon scos din „Dispozitive conectate” (pierdut, furat) pierde și tokenul de acces pe care îl
+     * are în mână, nu doar dreptul la următorul. Înainte mai deschidea API-ul până la opt ore.
+     */
+    @Test
+    void aRemovedPhoneLosesItsAccessTokenToo() throws Exception {
+        JsonNode lost = loginAsPhone();
+        JsonNode other = loginAsPhone();
+        String access = lost.get("token").asText();
+        mockMvc.perform(get("/api/v1/companies/current").header("Authorization", "Bearer " + access))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/auth/devices/" + lost.get("deviceSessionId").asText())
+                        .header("Authorization", "Bearer " + other.get("token").asText()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/companies/current").header("Authorization", "Bearer " + access))
+                .andExpect(status().isUnauthorized());
+        // Celălalt telefon lucrează mai departe.
+        mockMvc.perform(get("/api/v1/companies/current").header("Authorization", "Bearer " + other.get("token").asText()))
+                .andExpect(status().isOk());
+    }
+
+    /** La fel după reîmprospătare: tokenul de acces nou e legat de același telefon. */
+    @Test
+    void aRefreshedAccessTokenBelongsToTheSamePhone() throws Exception {
+        JsonNode phone = loginAsPhone();
+        String access = refresh(phone.get("refreshToken").asText()).get("token").asText();
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"refreshToken":"%s"}""".formatted(phone.get("refreshToken").asText())))
+                .andExpect(status().is2xxSuccessful());
+
+        mockMvc.perform(get("/api/v1/companies/current").header("Authorization", "Bearer " + access))
+                .andExpect(status().isUnauthorized());
+    }
+
+    /** Proba cealaltă: webul n-are sesiune de telefon, deci tokenul lui nu depinde de niciuna. */
+    @Test
+    void theWebTokenDependsOnNoPhone() throws Exception {
+        MvcResult res = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"%s","password":"%s"}""".formatted(user.getEmail(), PASSWORD)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String web = objectMapper.readTree(res.getResponse().getContentAsString()).get("token").asText();
+        JsonNode phone = loginAsPhone();
+        mockMvc.perform(delete("/api/v1/auth/devices/" + phone.get("deviceSessionId").asText())
+                        .header("Authorization", "Bearer " + web))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/companies/current").header("Authorization", "Bearer " + web))
+                .andExpect(status().isOk());
     }
 
     /** Și nu de pe contul altuia: id-ul altui om e refuzat, nu executat în tăcere. */

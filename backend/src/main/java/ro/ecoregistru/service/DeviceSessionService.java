@@ -32,10 +32,12 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.*;
  * <p><b>Ce nu face.</b> Nu atinge tokenul de acces: acela rămâne opt ore, semnat, necitit din bază
  * (vezi {@code JwtService}). Aici se hotărăște doar dacă un telefon mai are dreptul la încă opt ore.
  *
- * <p><b>Rotirea.</b> Fiecare reîmprospătare înlocuiește tokenul. Cel vechi nu mai deschide nimic —
- * deci un token furat ține cel mult până la următoarea pornire a aplicației adevărate. Ce
- * <em>nu</em> facem, deliberat: să stingem tot lanțul la o refolosire. O rețea care cade între
- * răspuns și scriere lasă telefonul cinstit cu tokenul vechi, iar pedeapsa ar cădea pe el, nu pe hoț.
+ * <p><b>Rotirea.</b> Fiecare reîmprospătare înlocuiește tokenul. Cel vechi mai deschide numai cât
+ * timp cel nou n-a fost folosit niciodată (V75): o rețea care cade între răspuns și scriere lasă
+ * telefonul cinstit cu tokenul vechi, iar fără toleranța asta el era scos din cont. De la prima
+ * folosire a celui nou, vechiul nu mai deschide nimic — deci un token furat ține cel mult până la
+ * următoarea reîmprospătare a aplicației adevărate. Ce <em>nu</em> facem, deliberat: să stingem tot
+ * lanțul la o refolosire; pedeapsa ar cădea pe telefonul cinstit, nu pe hoț.
  */
 @Slf4j
 @Service
@@ -104,7 +106,10 @@ public class DeviceSessionService {
     // Prins de `aRefusedRefreshAlsoBurnsTheRow`, nu de citit.
     @Transactional(noRollbackFor = BusinessException.class)
     public IssuedToken rotate(String presentedToken) {
-        DeviceSession session = deviceSessionRepository.findByTokenHash(hash(presentedToken))
+        String presented = hash(presentedToken);
+        // Sau tokenul de dinainte: răspunsul ultimei reîmprospătări nu a ajuns la telefon (V75).
+        DeviceSession session = deviceSessionRepository.findByTokenHash(presented)
+                .or(() -> deviceSessionRepository.findByPreviousTokenHash(presented))
                 .orElseThrow(() -> new BusinessException(DEVICE_SESSION_INVALID));
 
         if (!session.isLive()) {
@@ -125,6 +130,9 @@ public class DeviceSessionService {
 
         String token = newToken();
         Instant now = Instant.now();
+        // Tokenul prezentat devine „de dinainte”: folosirea celui curent îl stinge pe cel vechi, iar la
+        // o reîncercare cel prezentat e deja cel de dinainte și rămâne.
+        session.setPreviousTokenHash(presented);
         session.setTokenHash(hash(token));
         session.setLastUsedAt(now);
         session.setExpiresAt(now.plus(IDLE_VALIDITY));
@@ -135,7 +143,10 @@ public class DeviceSessionService {
     /** Ieșirea din cont de pe telefonul ăsta. Un token necunoscut e tot o ieșire reușită: n-a rămas nimic. */
     @Transactional
     public void revokeByToken(String presentedToken) {
-        deviceSessionRepository.findByTokenHash(hash(presentedToken)).ifPresent(this::revoke);
+        String presented = hash(presentedToken);
+        deviceSessionRepository.findByTokenHash(presented)
+                .or(() -> deviceSessionRepository.findByPreviousTokenHash(presented))
+                .ifPresent(this::revoke);
     }
 
     /** „Scoate telefonul ăsta” din Setări. Numai de pe contul propriu — cine întreabă verifică. */

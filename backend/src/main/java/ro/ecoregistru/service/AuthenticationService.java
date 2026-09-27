@@ -106,7 +106,7 @@ public class AuthenticationService {
             DevicePlatform platform =
                     request.devicePlatform() == null ? DevicePlatform.ANDROID : request.devicePlatform();
             var issued = deviceSessionService.issue(user, request.deviceName(), platform);
-            return buildAuthResponse(user).toBuilder()
+            return buildAuthResponse(user, issued.session().getId()).toBuilder()
                     .refreshToken(issued.token())
                     .deviceSessionId(issued.session().getId())
                     .build();
@@ -126,7 +126,7 @@ public class AuthenticationService {
     // anulat stingerea rândului pe care refuzul tocmai a scris-o.
     public AuthenticationResponse refresh(String refreshToken) {
         var issued = deviceSessionService.rotate(refreshToken);
-        return buildAuthResponse(issued.session().getUser()).toBuilder()
+        return buildAuthResponse(issued.session().getUser(), issued.session().getId()).toBuilder()
                 .refreshToken(issued.token())
                 .deviceSessionId(issued.session().getId())
                 .build();
@@ -349,8 +349,16 @@ public class AuthenticationService {
     }
 
     private AuthenticationResponse buildAuthResponse(AppUser user) {
+        return buildAuthResponse(user, null);
+    }
+
+    /** Cu {@code deviceSessionId}, tokenul de acces e legat de telefon ({@link JwtService#DEVICE_SESSION_CLAIM}). */
+    private AuthenticationResponse buildAuthResponse(AppUser user, UUID deviceSessionId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
+        if (deviceSessionId != null) {
+            claims.put(JwtService.DEVICE_SESSION_CLAIM, deviceSessionId.toString());
+        }
         if (user.getCompany() != null) {
             claims.put("tenantId", user.getCompany().getId().toString());
         }

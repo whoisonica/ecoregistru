@@ -92,15 +92,34 @@ class DevicePushTokenIT {
         assertThat(row(mine).getPushToken()).isNull();
     }
 
-    /** După ieșirea din cont, tokenul de acces mai trăiește câteva ore — dar sesiunea nu mai primește nimic. */
+    /**
+     * După ieșirea din cont sesiunea nu mai primește nimic. Din 27.09.2026 tokenul de acces al telefonului
+     * moare odată cu ea ({@code JwtAuthenticationFilter#phoneStillSignedIn}), deci cererea nici nu mai
+     * ajunge la regula sesiunii: 401, iar rândul rămâne fără token.
+     */
     @Test
     void aRevokedSessionIsRefused() throws Exception {
         Phone phone = login(magazioner);
         mockMvc.perform(post("/api/v1/auth/logout").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"%s\"}".formatted(phone.refreshToken())))
                 .andExpect(status().isOk());
-        putToken(phone, phone.sessionId(), TOKEN).andExpect(status().isBadRequest());
+        putToken(phone, phone.sessionId(), TOKEN).andExpect(status().isUnauthorized());
         assertThat(row(phone).getPushToken()).isNull();
+    }
+
+    /**
+     * Regula sesiunii, atinsă de pe alt telefon al aceluiași om (al cărui token e încă viu): o sesiune
+     * ieșită din cont nu primește token, oricine ar cere.
+     */
+    @Test
+    void aRevokedSessionIsRefusedFromAnotherPhoneToo() throws Exception {
+        Phone gone = login(magazioner);
+        Phone other = login(magazioner);
+        mockMvc.perform(post("/api/v1/auth/logout").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(gone.refreshToken())))
+                .andExpect(status().isOk());
+        putToken(other, gone.sessionId(), TOKEN).andExpect(status().isBadRequest());
+        assertThat(row(gone).getPushToken()).isNull();
     }
 
     @Test

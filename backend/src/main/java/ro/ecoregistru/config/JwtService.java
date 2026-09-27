@@ -13,6 +13,8 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -36,6 +38,13 @@ public class JwtService {
 
     /** The session counter the token was issued with. See {@code AppUser#tokenVersion}. */
     public static final String TOKEN_VERSION_CLAIM = "tv";
+
+    /**
+     * G1 — telefonul căruia i s-a dat tokenul de acces ({@code DeviceSession#id}). Numai pe tokenurile
+     * telefoanelor; cu el, un telefon scos din „Dispozitive conectate” pierde pe loc și accesul, nu doar
+     * dreptul la următoarea reîmprospătare ({@code JwtAuthenticationFilter}).
+     */
+    public static final String DEVICE_SESSION_CLAIM = "sid";
 
     @Value("${app.jwt.secret}")
     private String secretKey;
@@ -98,6 +107,12 @@ public class JwtService {
     private int tokenVersionOf(String jwt) {
         Integer version = extractClaim(jwt, c -> c.get(TOKEN_VERSION_CLAIM, Integer.class));
         return version == null ? 0 : version;
+    }
+
+    /** Sesiunea de telefon pe care o poartă tokenul; goală pe tokenurile webului. */
+    public Optional<UUID> deviceSessionIdOf(String jwt) {
+        String sid = extractClaim(jwt, c -> c.get(DEVICE_SESSION_CLAIM, String.class));
+        return sid == null ? Optional.empty() : Optional.of(UUID.fromString(sid));
     }
 
     private boolean isTokenExpired(String jwt) {

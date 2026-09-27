@@ -37,6 +37,13 @@ public class DeviceSession {
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     String tokenHash;
 
+    /**
+     * Hash-ul tokenului de dinainte de ultima rotire (V75): mai deschide cât timp cel nou n-a fost
+     * folosit — răspunsul reîmprospătării se poate pierde pe drum. Null la o sesiune abia deschisă.
+     */
+    @Column(name = "previous_token_hash", length = 64)
+    String previousTokenHash;
+
     @Column(name = "device_name", nullable = false, length = 80)
     String deviceName;
 

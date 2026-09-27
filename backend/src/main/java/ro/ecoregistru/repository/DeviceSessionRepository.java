@@ -17,6 +17,9 @@ public interface DeviceSessionRepository extends JpaRepository<DeviceSession, UU
 
     Optional<DeviceSession> findByTokenHash(String tokenHash);
 
+    /** Sesiunea al cărei token de dinainte e acesta — reîncercarea după un răspuns pierdut (V75). */
+    Optional<DeviceSession> findByPreviousTokenHash(String previousTokenHash);
+
     /** Lista din Setări: numai sesiunile vii, cea folosită ultima dată sus. */
     List<DeviceSession> findByUserAndRevokedAtIsNullOrderByLastUsedAtDesc(AppUser user);
 

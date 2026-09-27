@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import ro.ecoregistru.entity.DeviceSession;
+import ro.ecoregistru.repository.DeviceSessionRepository;
 
 import java.io.IOException;
 
@@ -37,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     final JwtService jwtService;
     final UserDetailsService userDetailsService;
+    final DeviceSessionRepository deviceSessionRepository;
 
     @Override
     protected void doFilterInternal(
@@ -56,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                if (jwtService.isTokenValid(jwt, userDetails) && phoneStillSignedIn(jwt)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -77,5 +80,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("Rejected JWT: {}", e.getMessage());
         }
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * G1 — un token dat unui telefon ține numai cât telefonul e încă în „Dispozitive conectate”: scos de
+     * acolo (pierdut, furat), ieșit din cont sau stins la schimbarea parolei, își pierde și accesul pe loc,
+     * nu după opt ore. O căutare după cheie; tokenurile webului n-au telefon și trec neatinse.
+     */
+    private boolean phoneStillSignedIn(String jwt) {
+        return jwtService.deviceSessionIdOf(jwt)
+                .map(id -> deviceSessionRepository.findById(id).filter(DeviceSession::isLive).isPresent())
+                .orElse(true);
     }
 }
