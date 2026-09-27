@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite";
 import { useEffect, useState } from "react";
 
 import * as api from "./api";
+import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
 import { retryNote, stuckOnServer } from "./outboxRules";
 
@@ -125,12 +126,20 @@ export async function list(owner: string): Promise<OutboxItem[]> {
 
 /** Rândurile contului, ținute la zi pe ecran. */
 export function useOutbox(owner: string | undefined) {
-  const [items, setItems] = useState<OutboxItem[]>([]);
+  return useOutboxState(owner).items;
+}
+
+/**
+ * Aceleași rânduri, cu semnul că prima citire s-a făcut: bonul de după „Salvează” nu poate spune „în
+ * registru” doar fiindcă lista încă n-a venit de pe disc.
+ */
+export function useOutboxState(owner: string | undefined) {
+  const [state, setState] = useState<{ items: OutboxItem[]; loaded: boolean }>({ items: [], loaded: false });
   useEffect(() => {
-    if (!owner) return setItems([]);
+    if (!owner) return setState({ items: [], loaded: true });
     const load = () =>
       list(owner)
-        .then(setItems)
+        .then((items) => setState({ items, loaded: true }))
         .catch(() => {});
     load();
     listeners.add(load);
@@ -138,7 +147,7 @@ export function useOutbox(owner: string | undefined) {
       listeners.delete(load);
     };
   }, [owner]);
-  return items;
+  return state;
 }
 
 // ── scrierea ─────────────────────────────────────────────────────────────────
@@ -269,6 +278,7 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
     try {
       if (!movementId) {
         movementId = (await api.createMovement(itemAuth, item.payload)).id;
+        noteSent(item.id, movementId);
         await d.runAsync(
           "UPDATE outbox SET movement_id = ?, attempts = 0, error = NULL WHERE id = ?",
           movementId,

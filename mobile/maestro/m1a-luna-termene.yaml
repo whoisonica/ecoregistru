@@ -6,16 +6,23 @@ appId: ro.wastehouse.app
 - runFlow: pornire.yaml
 - runFlow: login.yaml
 
-# --- Acasă: cifra lunii și rândurile contului ---
+# --- Acasă: afișul cu cifra lunii; contul e în Profil (avatarul din colț), din 27.09.2026 ---
 - extendedWaitUntil:
-    visible: .*ÎNREGISTRAT.*
+    visible:
+      id: month-kg
     timeout: 20000
 - takeScreenshot: 01-acasa
-- assertVisible:
-    id: devices
+# Linia firmei, nu avatarul: pe clientul de dezvoltare rotița meniului stă peste avatar.
+- tapOn:
+    id: firm-line
+- extendedWaitUntil:
+    visible:
+      id: devices
+    timeout: 15000
 # Firma demo n-are consultant, deci comutatorul de firmă nu trebuie să apară (isMultiCompany).
 - assertNotVisible:
     id: pick-company
+- takeScreenshot: 01b-profil
 
 # --- Dispozitive conectate: telefonul ăsta, cu numele lui ---
 - tapOn:
@@ -26,17 +33,20 @@ appId: ro.wastehouse.app
     timeout: 15000
 - assertVisible: telefonul ăsta
 - takeScreenshot: 02-dispozitive
-# Întoarcerea. Pe iOS butonul din antet scrie „Acasă" (`headerBackTitle`); pe Android e o săgeată
-# fără text, iar butonul de sistem face treaba. `back` pe iOS e un swipe și nu prinde de fiecare dată.
+# Întoarcerea: din Dispozitive în Profil (butonul din antet scrie „Acasă”, `headerBackTitle`), apoi din
+# Profil pe Acasă (săgeata lui, `head-back`). Pe Android butonul de sistem face amândouă.
 - runFlow:
     when:
       platform: iOS
     commands:
       - tapOn: Acasă
+      - tapOn:
+          id: head-back
 - runFlow:
     when:
       platform: Android
     commands:
+      - back
       - back
 
 # --- Mișcările lunii. Firma demo e „generator și colector", deci are comutatorul cu trei ecrane. ---

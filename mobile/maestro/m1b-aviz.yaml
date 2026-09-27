@@ -145,9 +145,21 @@ appId: ro.wastehouse.app
 - tapOn:
     id: handover-save
 
-# --- Înapoi pe „Adaugă”. Cu serverul pornit, predarea pleacă pe loc. ---
+# --- Bonul (din 27.09.2026): predarea a ajuns în registru, apoi „Gata” duce înapoi pe „Adaugă”. ---
+# Pe backendul local fără Cloudinary poza cade și se reîncearcă: bonul spune și asta (`gata-photoFailed`).
+- extendedWaitUntil:
+    visible:
+      id: "gata-(sent|photoFailed)"
+    timeout: 20000
+- assertVisible: Predarea e în registru
+- takeScreenshot: 06-bon
+- scrollUntilVisible:
+    element:
+      id: gata-done
+- tapOn:
+    id: gata-done
 - extendedWaitUntil:
     visible:
       id: pick-aviz
     timeout: 15000
-- takeScreenshot: 06-dupa-salvare
+- takeScreenshot: 07-dupa-salvare

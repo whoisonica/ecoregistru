@@ -74,6 +74,18 @@ appId: ro.wastehouse.app
       id: handover-save
 - tapOn:
     id: handover-save
+# Bonul galben (din 27.09.2026): rămâne în telefon; „Gata” duce înapoi pe „Adaugă”, la „De trimis”.
+- extendedWaitUntil:
+    visible:
+      id: gata-queued
+    timeout: 20000
+- assertVisible: Păstrată în telefon
+- takeScreenshot: 02b-bon-in-telefon
+- scrollUntilVisible:
+    element:
+      id: gata-done
+- tapOn:
+    id: gata-done
 - extendedWaitUntil:
     visible:
       id: outbox-row
