@@ -111,4 +111,9 @@ appId: ro.wastehouse.app
 - assertNotVisible:
     id: movement-aviz
 - assertNotVisible: Documente
+# F7: vizualizarea nu repetă predarea și nu pune poze.
+- assertNotVisible:
+    id: movement-repeat
+- assertNotVisible:
+    id: photo-gallery
 - takeScreenshot: 05-vizualizare

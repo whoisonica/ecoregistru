@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import type { WasteMovement } from "@web/types";
 
-import { canEditOnPhone, editBody } from "./movementEdit.ts";
+import { canAddPhotoOnPhone, canEditOnPhone, canRepeatOnPhone, editBody } from "./movementEdit.ts";
 
 const mv = {
   id: "m1",
@@ -91,4 +91,19 @@ test("cantitatea de după cântărire se adaugă pe telefon, ca pe web: fără c
   assert.equal(canRecordWeightOnPhone(awaiting, false), false);
   assert.equal(canRecordWeightOnPhone({ ...awaiting, quantity: 830 }, true), false);
   assert.equal(canRecordWeightOnPhone({ ...awaiting, weighingOperationId: "op1" }, true), false);
+});
+
+test("„Repetă predarea”: predările de deșeu propriu, și cele fără cod R/D; nu cântarul, nu viewer-ul", () => {
+  assert.equal(canRepeatOnPhone(mv, true), true);
+  assert.equal(canRepeatOnPhone({ ...mv, operation: "UNCLASSIFIED_OUT" } as WasteMovement, true), true);
+  assert.equal(canRepeatOnPhone(mv, false), false, "viewer");
+  assert.equal(canRepeatOnPhone({ ...mv, weighingOperationId: "op1" } as WasteMovement, true), false, "linie de cântar");
+  assert.equal(canRepeatOnPhone({ ...mv, register: "ART_48" } as WasteMovement, true), false, "alt registru");
+  assert.equal(canRepeatOnPhone({ ...mv, operation: "GENERATED" } as WasteMovement, true), false, "generarea nu e predare");
+});
+
+test("„Adaugă poză”: cine scrie, pe orice mișcare în afara cântarului", () => {
+  assert.equal(canAddPhotoOnPhone(mv, true), true);
+  assert.equal(canAddPhotoOnPhone(mv, false), false);
+  assert.equal(canAddPhotoOnPhone({ ...mv, weighingOperationId: "op1" } as WasteMovement, true), false);
 });

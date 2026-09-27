@@ -1,0 +1,124 @@
+# F7 (valul B): „Repetă predarea” de pe predarea deschisă și „Din galerie” (poza după salvare).
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/f7-repeta-poza.yaml
+# Pe baza demo: „Metale” din iulie (20 01 40, 160 kg, R4, Reciclare Metale SRL). Fluxul face o predare nouă de 55 kg azi.
+# O poză în galerie înainte (oricare, vezi fixtures/README.md). Local, fără CLOUDINARY_URL, poza cade: se probează „Încearcă din nou”.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible:
+      id: register
+    timeout: 15000
+- tapOn:
+    id: month-2
+- scrollUntilVisible:
+    element: ".*Reciclare Metale.*"
+    centerElement: true
+- tapOn: ".*Reciclare Metale.*"
+- scrollUntilVisible:
+    element:
+      id: movement-repeat
+    centerElement: true
+- takeScreenshot: f7-01-predarea
+- tapOn:
+    id: movement-repeat
+
+# Formularul pleacă de la ea, ca predare nouă de azi: codul ales, cantitatea goală.
+- extendedWaitUntil:
+    visible: Ce și cât
+    timeout: 15000
+- assertVisible: "PREDARE NOUĂ · 1 DIN 3"
+- assertVisible: "20 01 40.*"
+- scrollUntilVisible:
+    element:
+      id: qty
+    centerElement: true
+- takeScreenshot: f7-02-pasul-1
+- tapOn:
+    id: qty
+- inputText: "55"
+- scroll
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
+- assertVisible: ".*Reciclare Metale.*"
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Pe fișă și transport
+    timeout: 5000
+- takeScreenshot: f7-03-pasul-3
+- tapOn:
+    id: handover-save
+- extendedWaitUntil:
+    visible:
+      id: "gata-(sent|photoFailed)"
+    timeout: 20000
+- takeScreenshot: f7-04-bonul
+- tapOn:
+    id: gata-done
+
+# „Gata” întoarce pe predarea de unde a plecat; de acolo înapoi în registru.
+- extendedWaitUntil:
+    visible:
+      id: movement-repeat
+    timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Mișcări"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+# Predarea nouă e în luna curentă; o deschidem și îi punem o poză din galerie. Registrul își ține derularea.
+- scrollUntilVisible:
+    element:
+      id: month-0
+    direction: UP
+- tapOn:
+    id: month-0
+- scrollUntilVisible:
+    element: ".*Reciclare Metale.*55 kg.*"
+    centerElement: true
+- tapOn: ".*Reciclare Metale.*55 kg.*"
+- scrollUntilVisible:
+    element:
+      id: photo-gallery
+    centerElement: true
+- tapOn:
+    id: photo-gallery
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: Photos
+          timeout: 15000
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "17%,24%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: ".*[Pp]hoto.*"
+          timeout: 15000
+      - tapOn:
+          text: "Photo taken on.*"
+          index: 0
+# Local poza nu urcă: rămâne, cu „Încearcă din nou”.
+- extendedWaitUntil:
+    visible:
+      id: photo-retry
+    timeout: 20000
+- takeScreenshot: f7-05-poza-cazuta

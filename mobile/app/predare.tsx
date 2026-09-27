@@ -116,11 +116,13 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  * telefon, iar salvarea rescrie rândul, care pleacă din nou cu aceeași cheie (`resubmit`).
  */
 export default function PredareScreen() {
-  const { photo: photoParam, edit, outbox, again, draft: draftParam } = useLocalSearchParams<{
+  const { photo: photoParam, edit, outbox, again, repeat, draft: draftParam } = useLocalSearchParams<{
     photo?: string;
     edit?: string;
     outbox?: string;
     again?: string;
+    /** F7: „Repetă predarea” de pe predarea deschisă — id-ul ei; se salvează ca predare nouă. */
+    repeat?: string;
     draft?: string;
   }>();
   const { auth, session } = useSession();
@@ -138,13 +140,16 @@ export default function PredareScreen() {
   const [photo, setPhoto] = useState<string | null>(photoParam ?? null);
 
   // M1f: predarea de corectat, aceeași cheie ca ecranul ei — după salvare se reîncarcă amândouă.
+  // F7: tot de aici vine și predarea de repetat; ea nu e `original`, deci salvarea face una nouă.
+  const fromServer = edit ?? repeat;
   const editing = useQuery({
-    queryKey: ["movements", "one", session?.tenantId, edit],
-    queryFn: () => api.movement(auth!, edit!),
-    enabled: !!auth && !!edit,
+    queryKey: ["movements", "one", session?.tenantId, fromServer],
+    queryFn: () => api.movement(auth!, fromServer!),
+    enabled: !!auth && !!fromServer,
     retry: 0,
   });
-  const original = editing.data;
+  const original = edit ? editing.data : undefined;
+  const repeated = repeat ? editing.data : undefined;
 
   // Predarea refuzată din coadă, redeschisă; numele codului de deșeu vine din profilul firmei.
   const queuedRow = useQuery({
@@ -215,7 +220,7 @@ export default function PredareScreen() {
   const prefilled = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const source = original ?? queuedMovement ?? againMovement;
+  const source = original ?? queuedMovement ?? againMovement ?? repeated;
   useEffect(() => {
     if (!source || prefilled.current) return;
     prefilled.current = true;
@@ -247,7 +252,7 @@ export default function PredareScreen() {
     setDriverIdentification(mv.driverIdentification ?? "");
     setDriverCnp(mv.driverCnp ?? "");
     setTransportDestinations(mv.transportDestinations ?? []);
-    if (again) {
+    if (again || repeat) {
       setDate(todayIso());
       setQuantity("");
       setWeighed(false);
@@ -256,7 +261,7 @@ export default function PredareScreen() {
       setLoadDate("");
       setUnloadDate("");
     }
-  }, [source, again]);
+  }, [source, again, repeat]);
 
   // ── citirea avizului ───────────────────────────────────────────────────────
   const [lines, setLines] = useState<string[] | null>(null);
@@ -851,7 +856,7 @@ export default function PredareScreen() {
           <StepHead step={step} total={3} kicker={kicker} title={title} back={{ label: step === 1 ? m.stepCancel : m.stepBack, onPress: back }} />
           <OfflineBand />
           <View style={styles.body}>
-            {edit && !original ? (
+            {fromServer && !editing.data ? (
               <Note tone={editing.isError ? "alert" : undefined}>{editing.isError ? m.movementError : m.movementEditLoading}</Note>
             ) : null}
 
@@ -1245,7 +1250,7 @@ export default function PredareScreen() {
           note={footNote}
           warn={footWarn}
           onPress={step === 3 ? save : next}
-          disabled={reading || submitting || (!!edit && !original) || (!!outbox && !queued) || !restored}
+          disabled={reading || submitting || (!!fromServer && !editing.data) || (!!outbox && !queued) || !restored}
           testID={step === 3 ? "handover-save" : "step-next"}
         />
       </KeyboardAvoidingView>

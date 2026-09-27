@@ -501,6 +501,15 @@ export const strings = {
     registerHint: "▲ = fără cod R/D · pătrățelul verde = cu poză",
     withPhoto: "cu poză",
     otherCodes: "altele",
+    // --- Valul B, F7 (28.09.2026): „Repetă predarea” și „Adaugă poză” pe predarea deschisă ---
+    movementRepeat: "Repetă predarea",
+    photoCamera: "Pozează",
+    photoGallery: "Din galerie",
+    photoAddHint: "Bonul de cântar sau avizul, după predare",
+    photoUploading: "Urc poza…",
+    photoFailed: "Poza n-a urcat. Rămâne aici: încearcă din nou.",
+    photoRetry: "Încearcă din nou",
+    photoCameraDenied: "Fără acces la cameră. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
   },
 
   login: {

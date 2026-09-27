@@ -4,6 +4,7 @@ import { canPrintAnexa3, canPrintAviz, movementPdfName } from "@/lib/movementPri
 import { strings } from "@web/strings";
 import type { Unit, WasteMovement } from "@web/types";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import * as Crypto from "expo-crypto";
 import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -16,6 +17,7 @@ import {
   movement,
   recordWeight,
   UnauthorizedError,
+  uploadAttachment,
 } from "../../src/api";
 import { canWrite } from "../../src/auth";
 import { Bin } from "../../src/components/Bin";
@@ -25,7 +27,8 @@ import { parseQuantity } from "../../src/handoverForm";
 import { Icon } from "../../src/components/Icon";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
 import { formatDate, formatQuantity } from "../../src/format";
-import { canEditOnPhone, canRecordWeightOnPhone } from "../../src/movementEdit";
+import { canAddPhotoOnPhone, canEditOnPhone, canRecordWeightOnPhone, canRepeatOnPhone } from "../../src/movementEdit";
+import { pickAvizPhoto } from "../../src/photo";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
 
@@ -44,6 +47,9 @@ const e = strings.enums;
  *
  * <p>„Corectează” (M1f) deschide formularul de predare cu rubricile ei — numai pe predările proprii de pe
  * Anexa 1, fără cântar (`canEditOnPhone`). Restul se corectează pe web, unde sunt toate rubricile.
+ *
+ * <p>F7 (valul B): „Repetă predarea” deschide formularul cu ea, ca predare nouă de azi
+ * (`/predare?repeat=<id>`), iar „Pozează” / „Din galerie” adaugă bonul de cântar sau avizul după salvare.
  */
 export default function MiscareScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -168,10 +174,21 @@ function Details({ mv, writer }: { mv: WasteMovement; writer: boolean }) {
         </>
       ) : null}
 
-      {mv.attachments.length > 0 ? <Attachments mv={mv} /> : null}
+      {mv.attachments.length > 0 || canAddPhotoOnPhone(mv, writer) ? (
+        <Attachments mv={mv} canAdd={canAddPhotoOnPhone(mv, writer)} />
+      ) : null}
 
       {anexa3 || aviz ? <Documents mv={mv} anexa3={anexa3} aviz={aviz} /> : null}
 
+      {canRepeatOnPhone(mv, writer) ? (
+        <View style={styles.edit}>
+          <PrimaryButton
+            label={m.movementRepeat}
+            onPress={() => router.push({ pathname: "/predare", params: { repeat: mv.id } })}
+            testID="movement-repeat"
+          />
+        </View>
+      ) : null}
       {canEditOnPhone(mv, writer) ? (
         <View style={styles.edit}>
           <PrimaryButton
@@ -355,7 +372,7 @@ function Documents({ mv, anexa3, aviz }: { mv: WasteMovement; anexa3: boolean; a
   );
 }
 
-function Attachments({ mv }: { mv: WasteMovement }) {
+function Attachments({ mv, canAdd }: { mv: WasteMovement; canAdd: boolean }) {
   const { auth } = useSession();
   const { busy, error, run } = useShare();
 
@@ -386,8 +403,66 @@ function Attachments({ mv }: { mv: WasteMovement }) {
           </Pressable>
         ))}
         {error ? <Note tone="alert">{error}</Note> : null}
+        {canAdd ? <AddPhoto mv={mv} first={mv.attachments.length === 0} /> : null}
       </Group>
     </>
+  );
+}
+
+/**
+ * „Pozează” / „Din galerie” (F7): o poză nouă pe predare, cu semnal. Poza care n-a urcat rămâne aici cu
+ * aceeași cheie (`clientUploadId`, V67) — „Încearcă din nou” n-o poate dubla nici dacă prima încercare a
+ * ajuns, dar răspunsul s-a pierdut pe drum.
+ */
+function AddPhoto({ mv, first }: { mv: WasteMovement; first: boolean }) {
+  const { auth } = useSession();
+  const queryClient = useQueryClient();
+  const [pending, setPending] = useState<{ uri: string; key: string } | null>(null);
+  const [state, setState] = useState<"idle" | "uploading" | "failed" | "denied">("idle");
+
+  const send = async (item: { uri: string; key: string }) => {
+    if (!auth) return;
+    setState("uploading");
+    try {
+      await uploadAttachment(auth, mv.id, item.uri, item.key);
+      setPending(null);
+      setState("idle");
+      await queryClient.invalidateQueries({ queryKey: ["movements"] });
+    } catch {
+      setState("failed");
+    }
+  };
+
+  const pick = async (source: "camera" | "gallery") => {
+    const uri = await pickAvizPhoto(source);
+    if (uri === "denied") return setState("denied");
+    if (!uri) return;
+    const item = { uri, key: Crypto.randomUUID() };
+    setPending(item);
+    await send(item);
+  };
+
+  const busy = state === "uploading";
+  return (
+    <View style={[rowStyles.row, !first && rowStyles.sep, styles.photoBox]}>
+      <Text style={styles.label}>{m.photoAddHint}</Text>
+      {pending && state === "failed" ? (
+        <>
+          <Note tone="alert" testID="photo-failed">{m.photoFailed}</Note>
+          <PrimaryButton label={m.photoRetry} onPress={() => send(pending)} testID="photo-retry" />
+        </>
+      ) : (
+        <View style={styles.photoActions}>
+          <View style={styles.body}>
+            <PrimaryButton tone="quiet" label={busy ? m.photoUploading : m.photoCamera} onPress={() => pick("camera")} disabled={busy} testID="photo-camera" />
+          </View>
+          <View style={styles.body}>
+            <PrimaryButton tone="quiet" label={m.photoGallery} onPress={() => pick("gallery")} disabled={busy} testID="photo-gallery" />
+          </View>
+        </View>
+      )}
+      {state === "denied" ? <Note tone="alert">{m.photoCameraDenied}</Note> : null}
+    </View>
   );
 }
 
@@ -399,6 +474,8 @@ const styles = StyleSheet.create({
   head: { flexDirection: "row", alignItems: "center", gap: 12 },
   body: { flex: 1 },
   edit: { marginTop: 8 },
+  photoBox: { flexDirection: "column", alignItems: "stretch", gap: 8 },
+  photoActions: { flexDirection: "row", gap: 8 },
   line: { paddingHorizontal: 16, paddingVertical: 10, gap: 2 },
   label: { fontFamily: fonts.sans, fontSize: 13, color: colors.ink2 },
   value: { fontFamily: fonts.sansMedium, fontSize: 15.5, color: colors.ink },
