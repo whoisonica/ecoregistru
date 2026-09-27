@@ -192,13 +192,16 @@ export async function downloadDepotRegister(year: number, month: number): Promis
   saveBlob(data, `registru-intrari-iesiri-${year}-${String(month).padStart(2, "0")}.xlsx`);
 }
 
+/** D1.17a — borderoul (liniile plătite) și NIR-ul (liniile la 0 lei) ale unei intrări de la o persoană fizică. */
+export type WeighingDocument = "anexa3" | "aviz" | "borderou" | "nir";
+
 /**
  * D1.13 — Anexa 3 sau avizul pe tot transportul unei ieșiri, într-un tab. Prima Anexa 3 alocă numărul
  * formularului, deci o cere doar cine scrie; retipărirea dă același număr.
  */
 export async function openWeighingDocument(
   operation: WeighingOperation,
-  document: "anexa3" | "aviz" | "borderou"
+  document: WeighingDocument
 ): Promise<void> {
   await openPdfInTab(
     async () =>

@@ -923,6 +923,9 @@ export interface WeighingOperation {
   afmRate: number;
   incomeTaxRate: number;
   cancelReason: string | null;
+  /** D1.17a — numerele date la finalizarea unei intrări PF: borderoul (linii plătite), NIR-ul (linii la 0 lei). */
+  borderouNumber: number | null;
+  receptionNoteNumber: number | null;
   /** D2.3 — cântarul folosit și starea lui la data cântăririi (fixată la finalizare). */
   scaleId: string | null;
   scaleName: string | null;

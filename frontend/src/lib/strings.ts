@@ -1980,7 +1980,9 @@ export const strings = {
     cancelOperation: "Anulează operațiunea",
     printAnexa3: "Anexa 3",
     printAviz: "Aviz",
-    printBorderou: "Borderou",
+    printBorderouNumber: (n: number) => `Borderou nr. ${n}`,
+    printNirNumber: (n: number) => `NIR nr. ${n}`,
+    priceFreeHint: "0 = gratuit, se face NIR",
     cashAboveLimit:
       "În ziua operațiunii, acestei persoane i s-au plătit în numerar peste 10.000 lei. Legea 70/2015 art. 4 nu permite mai mult pe zi către aceeași persoană: diferența se plătește prin virament.",
     cashPaidToday: "Numerar în ziua respectivă:",

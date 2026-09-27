@@ -1,3 +1,9 @@
+🧾 **27.09.2026 — proba 52 (`52-borderou-nir.mjs`), borderoul și NIR-ul intrării de la o persoană fizică (F1, D1.17a)**: pe un
+depozit nou, o intrare PF cu o linie de carton la 0,5 lei/kg și una la 0 lei. În lucru, sub linii scrie „0 = gratuit, se face NIR”;
+finalizată, dialogul are „Borderou nr. …” și „NIR nr. …”, fiecare cu PDF-ul lui într-un tab; 1440 și 375 fără lățire. **Negativă:**
+pe codul dinainte de felie cad textul și cele două butoane. ⚠️ Lasă în urmă depozitul „Proba 52 <număr>” (dezactivat), persoana
+„Proba 52 <număr>” (dezactivată) și intrarea, anulată.
+
 🧾 **27.09.2026 — proba 51 (`51-inventar.mjs`), soldul preluat și inventarul (F3, D3.5)**: tabul „Inventar” din „Cântar”. Pe un depozit
 nou, adminul preia din dialog 500 kg la data de ieri și confirmă nota → „Confirmată”, stocul 500; deschide un inventar (decizie, comisie),
 salvează declarația, trece 480 kg cântărit cu explicația „uscare” și lipsa neimputabilă, încheie PV-ul și îl aprobă → „Aprobat”, stocul 480,

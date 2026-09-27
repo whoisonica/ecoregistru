@@ -16,6 +16,7 @@ import {
   useFinalizeWeighingOperation,
   useSaveWeighingLines,
   openWeighingDocument,
+  type WeighingDocument,
   useCashCheck,
   useUpdateWeighingOperation,
   useTransferTargets,
@@ -150,17 +151,14 @@ export function WeighingOperationDialog({
   // D1.13 — documentele de transport: doar la o ieșire salvată și neanulată. Intrarea n-are formular
   // de la noi (îl face expeditorul, iar persoana fizică n-are deloc — AX).
   const printable = Boolean(operation && !inbound && operation.status !== "CANCELLED");
-  const [printing, setPrinting] = useState<"anexa3" | "aviz" | "borderou" | null>(null);
-  // D1.11 — borderoul: o intrare finalizată de la o persoană fizică. Poartă prețuri și, la metal, CNP-ul,
-  // deci îl tipărește cine scrie și vede prețurile (serverul verifică la fel).
-  const borderouReady = Boolean(
-    operation &&
-      operation.type === "IN" &&
-      operation.naturalPersonId &&
-      operation.status === "FINALIZED" &&
-      canWrite(user?.role) &&
-      company?.pricesVisible
-  );
+  const [printing, setPrinting] = useState<WeighingDocument | null>(null);
+  // D1.17a — numerele le dă finalizarea unei intrări PF, iar ecranul se ia după ele, nu după stare: o operațiune
+  // anulată după finalizare își păstrează documentele. Borderoul poartă prețuri și, la metal, CNP-ul, deci îl tipărește
+  // cine scrie și vede prețurile; NIR-ul n-are prețuri (serverul verifică la fel).
+  const borderouNumber = operation?.borderouNumber ?? null;
+  const nirNumber = operation?.receptionNoteNumber ?? null;
+  const borderouReady = borderouNumber != null && canWrite(user?.role) && Boolean(company?.pricesVisible);
+  const nirReady = nirNumber != null && canWrite(user?.role);
 
   // Plafonul de numerar se verifică pe ce e salvat: suma zilei vine din toate operațiunile persoanei.
   const cashCheck = useCashCheck(
@@ -168,7 +166,7 @@ export function WeighingOperationDialog({
     Boolean(operation?.naturalPersonId && operation.paymentMethod === "NUMERAR" && canWrite(user?.role))
   );
 
-  async function printDocument(document: "anexa3" | "aviz" | "borderou") {
+  async function printDocument(document: WeighingDocument) {
     if (!operation) return;
     setPrinting(document);
     try {
@@ -501,7 +499,14 @@ export function WeighingOperationDialog({
                 onClick={() => printDocument("borderou")}
                 disabled={busy || printing !== null}
               >
-                {printing === "borderou" ? strings.movements.avizDownloading : t.printBorderou}
+                {printing === "borderou"
+                  ? strings.movements.avizDownloading
+                  : t.printBorderouNumber(borderouNumber ?? 0)}
+              </Button>
+            )}
+            {nirReady && (
+              <Button variant="outline" onClick={() => printDocument("nir")} disabled={busy || printing !== null}>
+                {printing === "nir" ? strings.movements.avizDownloading : t.printNirNumber(nirNumber ?? 0)}
               </Button>
             )}
             {printable && (
@@ -948,6 +953,11 @@ export function WeighingOperationDialog({
                 </Button>
               )}
               <p className="text-xs text-content-muted">{t.lineTareHint}</p>
+              {/* D1.17a — la o persoană fizică prețul hotărăște documentul: borderou sau NIR. O dată, nu pe fiecare
+                  linie: în coloana „Lei/kg” textul s-ar rupe pe două rânduri. */}
+              {fromPerson && inbound && editable && pricesVisible && (
+                <p className="text-xs text-content-muted">{t.priceFreeHint}</p>
+              )}
             </div>
           </FormSection>
 
