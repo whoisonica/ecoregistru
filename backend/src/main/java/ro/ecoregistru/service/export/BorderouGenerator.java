@@ -68,6 +68,16 @@ public class BorderouGenerator {
         this.small = new Font(regular, 7.5f);
     }
 
+    /** D1.17a — o linie cumpărată: intră pe borderou. {@code signum}, nu {@code equals}: „0.00” are altă scală. */
+    public static boolean paid(WasteMovement line) {
+        return line.getUnitPrice() != null && line.getUnitPrice().signum() > 0;
+    }
+
+    /** D1.17a — o linie preluată gratuit (0 lei): intră pe NIR, nu pe borderou (§15.3). */
+    public static boolean free(WasteMovement line) {
+        return line.getUnitPrice() != null && line.getUnitPrice().signum() == 0;
+    }
+
     public byte[] render(WeighingOperation op, List<WasteMovement> lines, Company operator) {
         boolean metal = lines.stream().anyMatch(l -> l.getArticle() != null && l.getArticle().isMetal());
         NaturalPerson person = op.getNaturalPerson();

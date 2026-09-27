@@ -48,6 +48,9 @@ public record WeighingOperationResponse(
         BigDecimal afmRate,
         BigDecimal incomeTaxRate,
         String cancelReason,
+        /** D1.17a — numerele date la finalizarea unei intrări PF: borderoul (linii plătite) și NIR-ul (linii gratuite). */
+        Integer borderouNumber,
+        Integer receptionNoteNumber,
         /** D2.3 — cântarul, starea lui la data cântăririi (fixată la finalizare) și motivul confirmării. */
         UUID scaleId,
         String scaleName,

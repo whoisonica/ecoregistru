@@ -361,6 +361,7 @@ public class WeighingOperationService {
         // A doua oară aici: fișa persoanei se poate edita între cântărire și finalizare.
         requireMetalIdentity(operation, lines);
         requireOwnHouseholdDeclaration(operation, lines);
+        allocatePersonDocuments(operation, lines, tenantId);
         recordScaleConfirmation(operation, scaleReason);
         // D1.9 și D1.10 — reținerile se calculează acum și rămân așa: o cotă schimbată mâine nu
         // rescrie declarația de luna trecută.
@@ -445,6 +446,31 @@ public class WeighingOperationService {
         }
         if (lines.stream().anyMatch(l -> l.getArticle() != null && l.getArticle().isMetal())) {
             throw new BusinessException(WEIGHING_OPERATION_OWN_HOUSEHOLD_REQUIRED);
+        }
+    }
+
+    /**
+     * D1.17a — o intrare de la o persoană fizică primește documentul justificativ „în momentul efectuării” (Legea
+     * 82/1991 art. 6 alin. (1)): borderoul 14-4-13 pentru liniile plătite, NIR-ul 14-3-1A pentru cele preluate gratuit
+     * ({@code surse-oficiale.md} §15.3, §18.3). O linie fără preț n-ar ști în ce document intră, deci oprește
+     * finalizarea; o fac doar cei care aprobă, iar ei văd prețurile.
+     */
+    private void allocatePersonDocuments(WeighingOperation operation, List<WasteMovement> lines, UUID tenantId) {
+        if (operation.getType() != WeighingOperationType.IN || operation.getNaturalPerson() == null) {
+            return;
+        }
+        if (lines.stream().anyMatch(l -> l.getUnitPrice() == null)) {
+            throw new BusinessException(WEIGHING_PF_PRICE_REQUIRED);
+        }
+        if (operation.getBorderouNumber() == null && lines.stream().anyMatch(ro.ecoregistru.service.export.BorderouGenerator::paid)) {
+            operationRepository.lockNumbering(tenantId + ":borderou");
+            Integer max = operationRepository.findMaxBorderouNumber(tenantId);
+            operation.setBorderouNumber(max == null ? 1 : max + 1);
+        }
+        if (operation.getReceptionNoteNumber() == null && lines.stream().anyMatch(ro.ecoregistru.service.export.BorderouGenerator::free)) {
+            operationRepository.lockNumbering(tenantId + ":nir");
+            Integer max = operationRepository.findMaxReceptionNoteNumber(tenantId);
+            operation.setReceptionNoteNumber(max == null ? 1 : max + 1);
         }
     }
 
@@ -1079,6 +1105,7 @@ public class WeighingOperationService {
                 pricesVisible ? o.getIncomeTaxBase() : null, pricesVisible ? o.getIncomeTax() : null,
                 DepotRetentions.AFM_RATE, DepotRetentions.INCOME_TAX_RATE,
                 o.getCancelReason(),
+                o.getBorderouNumber(), o.getReceptionNoteNumber(),
                 o.getScale() == null ? null : o.getScale().getId(),
                 o.getScale() == null ? null : o.getScale().getName(),
                 scaleState, o.getScaleOverrideReason(),
