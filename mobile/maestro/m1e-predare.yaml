@@ -117,3 +117,22 @@ appId: ro.wastehouse.app
 - assertNotVisible:
     id: photo-gallery
 - takeScreenshot: 05-vizualizare
+# F5: vizualizarea nu bifează termene.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Mișcări"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- tapOn:
+    id: tab-termene
+- extendedWaitUntil:
+    visible:
+      id: deadline-row
+    timeout: 15000
+- assertNotVisible:
+    id: deadline-complete

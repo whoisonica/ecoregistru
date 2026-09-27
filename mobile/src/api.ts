@@ -234,6 +234,11 @@ export async function upcomingDeadlines(auth: Auth) {
   return lists.flat();
 }
 
+/** F5: bifarea de pe telefon, cu nota (numărul de înregistrare) — același drum ca `useCompleteDeadline`. */
+export function completeDeadline(auth: Auth, id: string, note?: string) {
+  return request<Deadline>(`/api/v1/deadlines/${id}/complete`, { method: "POST", auth, body: { note } });
+}
+
 /** Tabul „Trecute” (ca pe web): anul în curs până ieri, bifate sau nu. */
 export function pastDeadlines(auth: Auth) {
   return request<Deadline[]>("/api/v1/deadlines/past", { auth });

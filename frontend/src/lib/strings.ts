@@ -510,6 +510,9 @@ export const strings = {
     photoFailed: "Poza n-a urcat. Rămâne aici: încearcă din nou.",
     photoRetry: "Încearcă din nou",
     photoCameraDenied: "Fără acces la cameră. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
+    // --- Valul B, F5 (28.09.2026): bifarea termenului de pe telefon (D9) ---
+    deadlineComplete: "Bifează",
+    deadlineCompleteOffline: "Fără semnal nu pot bifa. Nota rămâne aici; încearcă din nou când ai internet.",
   },
 
   login: {
