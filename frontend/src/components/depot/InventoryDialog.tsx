@@ -196,8 +196,11 @@ export function InventoryDialog({
         ))}
       </div>
 
-      {step === "decision" && (
+      {/* Un inventar existent se arată abia după ce vine: pașii își iau starea inițială din el o singură dată. */}
+      {id && !inv && <p className="text-sm text-content-muted">{t.loading}</p>}
+      {step === "decision" && (!id || inv) && (
         <DecisionStep
+          key={inv?.id ?? "new"}
           workPointId={workPointId}
           inv={inv ?? null}
           editable={editable}
@@ -209,7 +212,7 @@ export function InventoryDialog({
         />
       )}
       {step === "declaration" && inv && (
-        <DeclarationStep inv={inv} editable={editable} onSave={(body) => run("declaration", body, t.saved)} />
+        <DeclarationStep key={inv.id} inv={inv} editable={editable} onSave={(body) => run("declaration", body, t.saved)} />
       )}
       {step === "count" && inv && (
         // Liniile vin de la server după fiecare salvare sau recalculare: tabelul local pornește din nou din ele.
@@ -220,7 +223,7 @@ export function InventoryDialog({
           onSave={(body) => run("lines", body, t.saved)}
         />
       )}
-      {step === "pv" && inv && <PvStep inv={inv} editable={editable} onSave={(body) => run("pv", body, t.saved)} />}
+      {step === "pv" && inv && <PvStep key={inv.id} inv={inv} editable={editable} onSave={(body) => run("pv", body, t.saved)} />}
 
       {cancelling && (
         <Dialog

@@ -4008,6 +4008,7 @@ export const strings = {
     tab: "Inventar",
     depot: "Depozit",
     pickDepot: "Alege depozitul.",
+    loading: "Se încarcă inventarul…",
     loadError: "Inventarele nu s-au putut încărca.",
     openingTitle: "Sold preluat",
     openingHint:

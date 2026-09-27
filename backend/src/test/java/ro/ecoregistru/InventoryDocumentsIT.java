@@ -133,6 +133,7 @@ class InventoryDocumentsIT {
         for (int p = 0; p < pages.size(); p++) {
             assertThat(flat(pages.get(p))).as("pagina " + (p + 1))
                     .contains(flat("Comisia de inventariere"), flat("Gestionar"), flat("Ion Gestionar"),
+                            flat("Ana Preşedinte"), flat("Dan Membru"), flat("Contabilitate"),
                             flat("Pagina " + (p + 1) + " din " + pages.size()));
         }
     }

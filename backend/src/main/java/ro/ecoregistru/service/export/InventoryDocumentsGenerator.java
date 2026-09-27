@@ -320,7 +320,7 @@ public class InventoryDocumentsGenerator {
             if (o.getConfirmedOn() != null) {
                 para(doc, "Confirmată la " + date(o.getConfirmedOn()) + ".");
             }
-        }, List.of("Gestionar: " + dash(o.getKeeperName()), "Contabil: " + dash(o.getAccountantName())));
+        }, List.of("Gestionar:\n" + dash(o.getKeeperName()), "Contabil:\n" + dash(o.getAccountantName())));
     }
 
     // --- helpers ---
@@ -353,10 +353,10 @@ public class InventoryDocumentsGenerator {
             commission.append("\n").append(m.getName()).append(m.isPresident() ? " (preşedinte)" : "");
         }
         s.add(commission.toString());
-        s.add("Gestionar: " + inv.getKeeperName()
-                + (inv.getKeeperRepresentative() == null ? "" : "\nReprezentant: " + inv.getKeeperRepresentative()));
+        s.add("Gestionar:\n" + inv.getKeeperName()
+                + (inv.getKeeperRepresentative() == null ? "" : "\n" + inv.getKeeperRepresentative() + " (reprezentant)"));
         if (inv.getReceivingKeeperName() != null) {
-            s.add("Gestionar primitor: " + inv.getReceivingKeeperName());
+            s.add("Gestionar primitor:\n" + inv.getReceivingKeeperName());
         }
         if (withKeeperOnEveryPage) {
             s.add("Contabilitate");

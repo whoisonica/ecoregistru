@@ -23,7 +23,7 @@ import java.util.List;
 public final class DepotPdf {
 
     /** Loc pentru semnături + subsol. */
-    public static final float BOTTOM_MARGIN = 78f;
+    public static final float BOTTOM_MARGIN = 104f;
 
     private DepotPdf() {
     }
@@ -45,9 +45,24 @@ public final class DepotPdf {
     }
 
     /**
-     * Pune pe fiecare pagină rândul de semnături (fiecare rol cu numele lui și o linie), „Pagina X din Y” și
-     * „Generat cu WasteHouse, versiunea …”.
+     * Pune pe fiecare pagină rândul de semnături, „Pagina X din Y” și „Generat cu WasteHouse, versiunea …”. Fiecare
+     * element din {@code signatures} e o coloană: primul rând e rolul, fiecare rând de după e o persoană cu linia ei de
+     * semnătură. Pagina rotită (lista, A4 landscape) se măsoară cu rotația ei: {@code PdfStamper} rotește conținutul
+     * adăugat, deci coordonatele sunt ale paginii așa cum se vede.
      */
+    /** „Rol\nNume\nNume” → rolul, apoi fiecare nume cu linia lui; un rol fără nume primește o linie goală. */
+    static String signatureBlock(String column) {
+        String[] parts = column.split("\n");
+        StringBuilder b = new StringBuilder(parts[0]);
+        if (parts.length == 1) {
+            b.append("\n____________________");
+        }
+        for (int i = 1; i < parts.length; i++) {
+            b.append("\n").append(parts[i]).append("  ________________");
+        }
+        return b.toString();
+    }
+
     public static byte[] stamp(byte[] pdf, List<String> signatures, String version) {
         Font small = new Font(font(false), 7f);
         Font sign = new Font(font(false), 7.5f);
@@ -58,15 +73,16 @@ public final class DepotPdf {
                 int pages = reader.getNumberOfPages();
                 for (int p = 1; p <= pages; p++) {
                     PdfContentByte over = stamper.getOverContent(p);
-                    var size = reader.getPageSize(p);
+                    var size = reader.getPageSizeWithRotation(p);
                     float left = 28f;
                     float width = size.getWidth() - 56f;
                     if (!signatures.isEmpty()) {
                         float cell = width / signatures.size();
                         for (int i = 0; i < signatures.size(); i++) {
                             ColumnText ct = new ColumnText(over);
-                            ct.setSimpleColumn(left + i * cell, 26f, left + (i + 1) * cell - 8f, 70f);
-                            ct.addText(new Phrase(cp1250(signatures.get(i) + "\nSemnătura: ____________________"), sign));
+                            ct.setSimpleColumn(left + i * cell, 24f, left + (i + 1) * cell - 8f, BOTTOM_MARGIN - 6f);
+                            ct.setLeading(10.5f);
+                            ct.addText(new Phrase(cp1250(signatureBlock(signatures.get(i))), sign));
                             ct.go();
                         }
                     }
