@@ -139,7 +139,10 @@ export function WeighingOperationDialog({
   const transferTargets = useTransferTargets(transfer);
   const [targetWorkPointId, setTargetWorkPointId] = useState(operation?.transfer?.targetWorkPointId ?? "");
   const [receiving, setReceiving] = useState(false);
-  const editable = !operation || operation.status === "IN_PROGRESS";
+  // D2.5 — un transfer în lucru se vede și din depozitul de destinație, dar îl completează cel de plecare
+  // (serverul refuză la fel). Lista de depozite e deja restrânsă la ale omului (D2.4).
+  const atSource = !operation || !workPoints.data || workPoints.data.some((wp) => wp.id === operation.workPointId);
+  const editable = (!operation || operation.status === "IN_PROGRESS") && atSource;
   // Serverul spune dacă omul ăsta vede prețurile (D1.8); regula nu se reface aici. Cât firma nu s-a
   // încărcat, rubrica lipsește — mai bine o rubrică apărută târziu decât una care se ia înapoi.
   const pricesVisible = Boolean(company?.pricesVisible);
@@ -379,7 +382,9 @@ export function WeighingOperationDialog({
             // care nu se potrivește cu cântărirea.
             netKg: num(l.gross) != null && num(l.tare) != null ? null : num(l.net),
             finalKg: num(l.final),
-            unitPrice: pricesVisible && !transfer ? num(l.price) : null,
+            // Prețul pleacă mereu cum e în formular: cine nu-l vede nu-l poate schimba (serverul îl păstrează pe cel
+            // salvat), iar cine îl vede nu-l pierde dacă firma n-a apucat să se încarce când a apăsat „Salvează”.
+            unitPrice: transfer ? null : num(l.price),
             operationCode: inbound || transfer ? null : (l.code || null) as WasteOperationCode | null,
             notes: null,
           })),
@@ -538,7 +543,8 @@ export function WeighingOperationDialog({
                 {t.receive}
               </Button>
             )}
-            {operation && operation.status !== "CANCELLED" && approver && (
+            {/* D2.5 — recepționat, transferul e în stocul destinației: nu se mai anulează (serverul refuză la fel). */}
+            {operation && operation.status !== "CANCELLED" && approver && !(transfer && operation.status === "FINALIZED") && (
               <Button
                 variant="ghost"
                 className="text-state-bad-text"

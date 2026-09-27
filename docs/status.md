@@ -14,6 +14,26 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
+> **27.09.2026, seara — ✅ local (ramura `feat/depozit-d23`, fără migrare, liberă tot **V75**): cele șase defecte de depozit din evaluarea
+> de la 15:00, reparate.** Suita **1204/149** verde; probă negativă pe **15 reguli**, fiecare pică exact testul ei.
+>
+> 1. **Transferul se scrie doar din depozitul de plecare** (`WeighingOperationService.requireOwnOperation`): operatorul din B vede transferul în lucru,
+>    dar capul, liniile, plecarea și anularea îi dau 400 `transfer.edited.at.source`; numărul de Anexa 3 îl alocă doar A (`WeighingDocumentService`),
+>    B retipărește ce a tipărit A. Pe ecran formularul e doar de citit pentru B.
+> 2. **Un transfer recepționat nu se mai anulează** (`transfer.received.not.cancellable`): e în stocul lui B și în registrul formularelor primite.
+>    Plecat și nerecepționat se anulează în continuare. Butonul „Anulează” lipsește pe un transfer recepționat.
+> 3. **Cântarele, verificările și dovezile le scrie doar cine aprobă** (admin, consultant, platforma) — `ScaleController` + `ScaleService.requireManager`.
+>    Un operator care își trecea singur un „Admis” ocolea confirmarea cu motiv la finalizare. Setări → Cântare îi arată operatorului lista fără butoane.
+> 4. **Registrul art. 48 al unui depozit anume** trece prin `DepotAccess` (404 pe depozitul altuia); cel pe firmă rămâne al firmei (granița D2.4).
+> 5. **`StockPeriodLock`:** pe un depozit cu inventar aprobat sau cu notă de preluare confirmată, nimic datat înaintea datei lor nu se mai creează,
+>    mută, finalizează, anulează, recepționează sau șterge — nici pe cântar, nici în „Intrări/Ieșiri” scrise de mână (art. 48, fără generare).
+>    400 `stock.period.closed`. Din ziua de referință încolo se lucrează normal (pct. 9).
+> 6. **Formularul de cântar trimite prețul cum e în formular** (`WeighingOperationDialog`): înainte, o salvare apăsată cât firma nu se încărcase
+>    trimitea `unitPrice: null` și serverul ștergea prețurile adminului. Cine nu vede prețurile nu le poate schimba (serverul le păstrează).
+>
+> Teste noi: `TransferIT` +2, `InventoryIT` +2, `DepotAccessIT` +1 (și testul cântarelor rescris: operatorul nu scrie nici în depozitul lui).
+> e2e 47: curățenia nu mai anulează transferul recepționat, ci verifică refuzul.
+
 > **27.09.2026, 14:19 — ✅ PE PRODUCȚIE (`ecoregistru-api` **v137**, `4d37338`, V74 aplicată la 14:13; `ecoregistru-app` **v139**, `fcf0c9f`; monorepo `main` = `deploy/heroku-split` = `63fb3ac`). D3.5 inventarul depozitului și nota de preluare a soldurilor** (`2ce260e` … `63fb3ac`; suita **1199/149** după recenzia finală; liberă **V75**;
 > spec `ecoregistru-docs/docs/specs/2026-09-27-d35-inventar-design.md`, temeiul în `ecoregistru-docs/reports/Inventarul depozitului în lege.md`).
 >

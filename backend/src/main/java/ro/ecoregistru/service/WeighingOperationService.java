@@ -92,6 +92,7 @@ public class WeighingOperationService {
     DepotAccess depotAccess;
     ReceivedFormService receivedForms;
     StockService stockService;
+    StockPeriodLock stockLock;
 
     /** Operațiunea firmei, dacă e pe un depozit al utilizatorului (D2.4); altfel 404, ca una inexistentă. */
     WeighingOperation requireOperation(UUID id, UUID tenantId) {
@@ -99,6 +100,18 @@ public class WeighingOperationService {
                 .orElseThrow(() -> new NotFoundException(WEIGHING_OPERATION_NOT_FOUND));
         if (!visible(operation, depotAccess.allowed())) {
             throw new NotFoundException(WEIGHING_OPERATION_NOT_FOUND);
+        }
+        return operation;
+    }
+
+    /**
+     * D2.5 — un transfer se vede și din depozitul de destinație, dar se scrie (capul, liniile, Anexa 3, plecarea,
+     * anularea) doar din cel de plecare: B nu rescrie ce cântărește A și nu-i consumă numerele. B doar recepționează.
+     */
+    WeighingOperation requireOwnOperation(UUID id, UUID tenantId) {
+        WeighingOperation operation = requireOperation(id, tenantId);
+        if (!depotAccess.allows(operation.getWorkPoint().getId())) {
+            throw new BusinessException(TRANSFER_EDITED_AT_SOURCE);
         }
         return operation;
     }
@@ -131,6 +144,7 @@ public class WeighingOperationService {
 
         WorkPoint workPoint = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
+        stockLock.require(workPoint.getId(), request.date());
         WorkPoint target = transferTarget(type, request, workPoint, tenantId);
         Partner partner = request.partnerId() == null ? null
                 : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
@@ -193,7 +207,7 @@ public class WeighingOperationService {
     public WeighingOperationResponse update(UUID id, WeighingOperationRequest request) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
-        WeighingOperation operation = requireOperation(id, tenantId);
+        WeighingOperation operation = requireOwnOperation(id, tenantId);
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
@@ -212,6 +226,7 @@ public class WeighingOperationService {
 
         WorkPoint workPoint = depotAccess.require(workPointRepository.findByIdAndCompany_Id(request.workPointId(), tenantId)
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND)));
+        stockLock.require(workPoint.getId(), request.date());
         WorkPoint target = transferTarget(operation.getType(), request, workPoint, tenantId);
         Partner partner = request.partnerId() == null ? null
                 : partnerRepository.findByIdAndCompany_Id(request.partnerId(), tenantId)
@@ -273,7 +288,7 @@ public class WeighingOperationService {
     public WeighingOperationResponse replaceLines(UUID id, WeighingLinesRequest request) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
-        WeighingOperation operation = requireOperation(id, tenantId);
+        WeighingOperation operation = requireOwnOperation(id, tenantId);
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
@@ -330,10 +345,12 @@ public class WeighingOperationService {
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
         requireApprover(user);
-        WeighingOperation operation = requireOperation(id, tenantId);
+        WeighingOperation operation = requireOwnOperation(id, tenantId);
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
+        // Ciorna a putut fi pornită înainte ca un inventar să fie aprobat peste ziua ei.
+        stockLock.require(operation.getWorkPoint().getId(), operation.getDate());
         List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
         if (lines.isEmpty()) {
             throw new BusinessException(WEIGHING_OPERATION_NO_LINES);
@@ -373,9 +390,18 @@ public class WeighingOperationService {
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
         requireApprover(user);
-        WeighingOperation operation = requireOperation(id, tenantId);
+        WeighingOperation operation = requireOwnOperation(id, tenantId);
         if (operation.getStatus() == WeighingOperationStatus.CANCELLED) {
             throw new BusinessException(WEIGHING_OPERATION_ALREADY_CANCELLED);
+        }
+        // D2.5 — recepționat, transferul e în stocul lui B și în registrul formularelor primite; anularea l-ar scoate
+        // retroactiv din amândouă. Plecat și nerecepționat încă, se poate anula (marfa se întoarce în A).
+        if (operation.getType() == WeighingOperationType.TRANSFER
+                && operation.getStatus() == WeighingOperationStatus.FINALIZED) {
+            throw new BusinessException(TRANSFER_RECEIVED_NOT_CANCELLABLE);
+        }
+        if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
+            stockLock.require(operation.getWorkPoint().getId(), operation.getDate());
         }
         String motive = blankToNull(reason);
         if (motive == null) {
@@ -843,6 +869,7 @@ public class WeighingOperationService {
         if (request.receivedOn().isBefore(operation.getDate())) {
             throw new BusinessException(TRANSFER_RECEIVED_BEFORE_DEPARTURE);
         }
+        stockLock.require(target.getId(), request.receivedOn());
         requireNonNegative(request.grossKg());
         requireNonNegative(request.tareKg());
         if (request.grossKg() != null && request.tareKg() != null

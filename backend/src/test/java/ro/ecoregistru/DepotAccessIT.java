@@ -88,6 +88,7 @@ class DepotAccessIT {
     @Autowired ro.ecoregistru.service.MovementDocumentService movementDocuments;
     @Autowired ro.ecoregistru.service.MovementAttachmentService attachments;
     @Autowired CompanyUserService users;
+    @Autowired ro.ecoregistru.service.Art48RegisterService art48;
     @Autowired CompanyRepository companyRepository;
     @Autowired AppUserRepository appUserRepository;
     @Autowired WorkPointRepository workPointRepository;
@@ -210,16 +211,32 @@ class DepotAccessIT {
     }
 
     @Test
-    void scalesOfAnotherDepotAreNeitherListedNorWritable() {
+    void scalesOfAnotherDepotAreNotListedAndTheOperatorWritesNoScale() {
         ScaleResponse baciuScale = scales.create(scale(baciu));
         ScaleResponse turdaScale = scales.create(scale(turda));
         restrictOperatorToBaciu();
 
         actAs(operator);
         assertThat(scales.list()).extracting(ScaleResponse::id).containsExactly(baciuScale.id());
-        assertNotFound(() -> scales.addEvent(turdaScale.id(), verification()), ErrorMessageEnum.SCALE_NOT_FOUND);
-        assertNotFound(() -> scales.create(scale(turda)), ErrorMessageEnum.WORK_POINT_NOT_FOUND);
-        assertNotFound(() -> scales.update(baciuScale.id(), scale(turda)), ErrorMessageEnum.WORK_POINT_NOT_FOUND);
+        // D2.3 — cântarul decide legalitatea cântăririi: operatorul nu-l scrie nici în depozitul lui (27.09.2026).
+        assertThatThrownBy(() -> scales.addEvent(baciuScale.id(), verification()))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        assertThatThrownBy(() -> scales.addEvent(turdaScale.id(), verification()))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        assertThatThrownBy(() -> scales.create(scale(baciu)))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        assertThatThrownBy(() -> scales.update(baciuScale.id(), scale(baciu)))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+        assertThat(scales.list()).singleElement().extracting(ScaleResponse::events).asList().isEmpty();
+    }
+
+    /** Defectul 4 din evaluarea din 27.09 — registrul art. 48 al unui depozit anume urmează accesul pe depozit. */
+    @Test
+    void theArt48RegisterOfAnotherDepotIsNotFound() {
+        restrictOperatorToBaciu();
+        actAs(operator);
+        assertThat(art48.build(today.getYear(), baciu.getId())).isNotNull();
+        assertNotFound(() -> art48.build(today.getYear(), turda.getId()), ErrorMessageEnum.WORK_POINT_NOT_FOUND);
     }
 
     @Test

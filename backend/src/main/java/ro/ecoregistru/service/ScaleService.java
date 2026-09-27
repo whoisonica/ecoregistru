@@ -73,6 +73,7 @@ public class ScaleService {
 
     @Transactional
     public ScaleResponse create(ScaleRequest request) {
+        requireManager();
         UUID tenantId = TenantContext.require();
         Scale scale = Scale.builder()
                 .company(companyRepository.getReferenceById(tenantId))
@@ -85,6 +86,7 @@ public class ScaleService {
 
     @Transactional
     public ScaleResponse update(UUID id, ScaleRequest request) {
+        requireManager();
         UUID tenantId = TenantContext.require();
         Scale scale = require(id, tenantId);
         apply(scale, request, tenantId);
@@ -94,6 +96,7 @@ public class ScaleService {
     /** Doar un cântar fără cântăriri; unul folosit se trece „Scos din uz”, ca operațiunile să-l numească. */
     @Transactional
     public void delete(UUID id) {
+        requireManager();
         Scale scale = require(id, TenantContext.require());
         if (operationRepository.existsByScale_Id(id)) {
             throw new BusinessException(SCALE_HAS_WEIGHINGS);
@@ -104,6 +107,7 @@ public class ScaleService {
 
     @Transactional
     public ScaleResponse addEvent(UUID scaleId, ScaleEventRequest request) {
+        requireManager();
         Scale scale = require(scaleId, TenantContext.require());
         ScaleEvent event = ScaleEvent.builder()
                 .scale(scale)
@@ -117,6 +121,7 @@ public class ScaleService {
 
     @Transactional
     public ScaleResponse updateEvent(UUID scaleId, UUID eventId, ScaleEventRequest request) {
+        requireManager();
         Scale scale = require(scaleId, TenantContext.require());
         apply(requireEvent(eventId, scaleId), request);
         return response(scale);
@@ -124,6 +129,7 @@ public class ScaleService {
 
     @Transactional
     public ScaleResponse deleteEvent(UUID scaleId, UUID eventId) {
+        requireManager();
         Scale scale = require(scaleId, TenantContext.require());
         documentRepository.findByScale_IdAndScaleEventId(scaleId, eventId).ifPresent(this::dropFile);
         eventRepository.delete(requireEvent(eventId, scaleId));
@@ -237,6 +243,7 @@ public class ScaleService {
      */
     @Transactional
     public ScaleResponse attach(UUID scaleId, UUID eventId, org.springframework.web.multipart.MultipartFile file) {
+        requireManager();
         Scale scale = require(scaleId, TenantContext.require());
         if (eventId != null && requireEvent(eventId, scaleId).getKind() != ScaleEventKind.VERIFICATION) {
             throw new BusinessException(SCALE_BULLETIN_ONLY_VERIFICATION);
@@ -272,6 +279,7 @@ public class ScaleService {
 
     @Transactional
     public ScaleResponse detach(UUID scaleId, UUID documentId) {
+        requireManager();
         Scale scale = require(scaleId, TenantContext.require());
         dropFile(documentRepository.findByIdAndScale_Id(documentId, scaleId)
                 .orElseThrow(() -> new NotFoundException(ATTACHMENT_NOT_FOUND)));
@@ -318,6 +326,21 @@ public class ScaleService {
     }
 
     /** D2.4 — cântarul altui depozit decât ale utilizatorului e „negăsit”, ca al altei firme. */
+    /**
+     * Cântarul, verificările lui și dovezile decid dacă o cântărire e legală (D2.3): un operator care își trece singur
+     * o verificare „Admis” ar ocoli confirmarea cu motiv la finalizare. Le scriu cei care aprobă operațiunile.
+     */
+    private static void requireManager() {
+        if (!MANAGERS.contains(SecurityUtils.currentUser().getRole())) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Doar administratorul sau consultantul modifică cântarele și verificările lor.");
+        }
+    }
+
+    private static final java.util.Set<ro.ecoregistru.enums.Role> MANAGERS = java.util.EnumSet.of(
+            ro.ecoregistru.enums.Role.PLATFORM_ADMIN, ro.ecoregistru.enums.Role.ADMIN,
+            ro.ecoregistru.enums.Role.CONSULTANT);
+
     private Scale require(UUID id, UUID tenantId) {
         return scaleRepository.findByIdAndCompany_Id(id, tenantId)
                 .filter(s -> depotAccess.allows(s.getWorkPoint().getId()))
