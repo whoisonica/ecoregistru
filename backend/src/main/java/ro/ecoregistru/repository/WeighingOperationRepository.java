@@ -41,6 +41,40 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
                                           @Param("from") LocalDate from,
                                           @Param("to") LocalDate to);
 
+    /**
+     * F6a — recepțiile neconfirmate în SIATD care au măcar o linie pe un cod din SIATD (ambalaje, anvelope, DEEE,
+     * baterii, capitolul 20). Filtrul exact pe modul și pe înrolare rămâne în Java ({@code SiatdDeadlines}).
+     */
+    @Query("""
+            select o from WeighingOperation o
+              left join fetch o.partner
+              left join fetch o.naturalPerson
+              join fetch o.workPoint
+            where o.company.id = :companyId
+              and o.type = ro.ecoregistru.enums.WeighingOperationType.IN
+              and o.status in (ro.ecoregistru.enums.WeighingOperationStatus.IN_PROGRESS,
+                               ro.ecoregistru.enums.WeighingOperationStatus.FINALIZED)
+              and o.siatdConfirmedAt is null
+              and exists (select 1 from WasteMovement m where m.weighingOperation = o
+                          and (m.wasteCode.code like '15 01%' or m.wasteCode.code like '16 01 03%'
+                               or m.wasteCode.code like '16 02%' or m.wasteCode.code like '16 06%'
+                               or m.wasteCode.code like '20 %'))
+            order by o.date, o.number
+            """)
+    List<WeighingOperation> findSiatdCandidates(@Param("companyId") UUID companyId);
+
+    /** F6a — recepțiile confirmate în SIATD de la {@code since} încoace, cele mai noi primele. */
+    @Query("""
+            select o from WeighingOperation o
+              left join fetch o.partner
+              left join fetch o.naturalPerson
+              join fetch o.workPoint
+            where o.company.id = :companyId
+              and o.siatdConfirmedAt >= :since
+            order by o.siatdConfirmedAt desc, o.number desc
+            """)
+    List<WeighingOperation> findSiatdConfirmedSince(@Param("companyId") UUID companyId,
+                                                    @Param("since") java.time.Instant since);
 
     /** Persoanele fizice ale firmei care apar pe cel puțin o operațiune, într-o singură interogare pentru listă. */
     @Query("select distinct o.naturalPerson.id from WeighingOperation o "

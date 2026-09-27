@@ -68,7 +68,15 @@ public record WeighingOperationResponse(
          * D3.2 — doar pe răspunsul la finalizarea unei ieșiri sau la plecarea unui transfer: soldurile depozitului care au
          * ieșit negative. Nu blochează nimic; ecranul le arată ca avertisment. Gol în rest.
          */
-        List<StockResponse.Row> stockWarnings) {
+        List<StockResponse.Row> stockWarnings,
+        /** F6a — termenul SIATD al unei recepții pe un modul bifat; null când n-are. */
+        SiatdView siatd) {
+
+    /** F6a — rândul SIATD din dialog: până când se confirmă, în ce stare e, și confirmarea dacă există. */
+    public record SiatdView(java.util.Set<ro.ecoregistru.enums.SiatdModule> modules, LocalDate due,
+                            ro.ecoregistru.service.SiatdDeadlines.SiatdDeadline.State state,
+                            java.time.Instant confirmedAt, String code) {
+    }
 
     /**
      * F5 — ce a scris operatorul (câți baloți), greutatea unui balot din ziua balotării și kilogramele care au trecut din

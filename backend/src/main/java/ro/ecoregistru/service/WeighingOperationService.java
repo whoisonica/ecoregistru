@@ -1154,7 +1154,20 @@ public class WeighingOperationService {
                 lines.stream().map(m -> toLine(m, pricesVisible)).toList(),
                 transfer(o, lines, all.stream().filter(m -> m.getOperation() == WasteOperation.TRANSFERRED_IN).toList()),
                 baling(o, lines),
-                stockWarnings);
+                stockWarnings,
+                siatd(o, lines));
+    }
+
+    /** F6a — termenul SIATD, calculat la citire; null când operațiunea n-are. */
+    private static WeighingOperationResponse.SiatdView siatd(WeighingOperation o, List<WasteMovement> lines) {
+        SiatdDeadlines.SiatdDeadline deadline = SiatdDeadlines.of(o.getType(), o.getStatus(), o.getDate(),
+                lines.stream().map(m -> m.getWasteCode().getCode()).toList(), o.getCompany().siatdEnrolment());
+        if (deadline == null) {
+            return null;
+        }
+        return new WeighingOperationResponse.SiatdView(deadline.modules(), deadline.due(),
+                deadline.state(DeadlineService.today(), o.getSiatdConfirmedAt() != null),
+                o.getSiatdConfirmedAt(), o.getSiatdCode());
     }
 
     /** F5 — capul unei balotări: ce a intrat la presă (linia vrac) și ce a ieșit (linia balotată). */
