@@ -15,3 +15,13 @@ Randarea, din folderul acesta:
 
 Pus în galerie: `xcrun simctl addmedia booted aviz-<nume>.png` (iOS), `adb push aviz-<nume>.png /sdcard/Pictures/`
 și scanarea media (Android).
+Pe iOS, o poză cu aceiași octeți deja pusă în galerie nu devine „cea mai nouă” la o nouă adăugare (27.09.2026: fluxul a luat
+avizul partenerului în locul celui necunoscut). Între rulări se pune o copie cu octeții schimbați, de pildă cu un sufix după `IEND`:
+
+    f=/tmp/aviz-<nume>-$(date +%s).png; cp aviz-<nume>.png "$f" && printf run >> "$f" && xcrun simctl addmedia booted "$f"
+
+Pe Android, `adb push` păstrează data fișierului din repo, iar galeria ordonează după ea: se atinge poza pe emulator înainte
+de scanare, cu un nume nou la fiecare rulare:
+
+    n=aviz-<nume>-$(date +%s).png; adb push aviz-<nume>.png /sdcard/Pictures/$n && adb shell touch /sdcard/Pictures/$n \
+      && adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Pictures/$n

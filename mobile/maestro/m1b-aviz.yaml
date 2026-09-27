@@ -29,6 +29,8 @@ appId: ro.wastehouse.app
       - extendedWaitUntil:
           visible: Photos
           timeout: 15000
+      # Grila se încarcă după titlu; un tap prea devreme cade pe gol (27.09.2026, cu multe poze în galerie).
+      - waitForAnimationToEnd
       - tapOn:
           point: "17%,24%"
 - runFlow:
@@ -74,8 +76,15 @@ appId: ro.wastehouse.app
     centerElement: true
 - tapOn:
     id: f-date-confirm
+# Confirmarea scoate rândul „Din poză” de sub dată, deci cardul codului urcă: se așteaptă și se centrează din nou.
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: f-code-confirm
+    centerElement: true
 - tapOn:
     id: f-code-confirm
+- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       id: f-qty-confirm
@@ -119,12 +128,12 @@ appId: ro.wastehouse.app
 - tapOn:
     id: same-as-last
 
-# --- Pasul 3: rubricile de pe fișă vin pliate, cu rezumatul pe rând. ---
+# --- Pasul 3: rubricile de pe fișă vin pliate, cu rezumatul pe rând (rândul e un singur nod: eticheta + rezumatul). ---
 - extendedWaitUntil:
     visible: Pe fișă și transport
     timeout: 5000
-- assertVisible: "Solid"
-- assertVisible: "AN — Auto nespecial"
+- assertVisible: ".*Solid.*"
+- assertVisible: ".*AN — Auto nespecial.*"
 - assertVisible: "Completate din ultima predare. Apasă pe un rând ca să schimbi."
 - takeScreenshot: 05-la-fel
 # Soarta e valorificare, deci destinațiile oferite sunt numai din tabăra ei: Vr, P, Ve, A.
@@ -138,7 +147,7 @@ appId: ro.wastehouse.app
     id: fold-wasteDestination
 # 15 01 02 își spune singur materialul, deci nu se cere.
 - scrollUntilVisible:
-    element: "Alte plastice \\(propus din cod\\)"
+    element: ".*Alte plastice \\(propus din cod\\).*"
 # Documentul și mașina vin din poză: se confirmă și ele.
 - scrollUntilVisible:
     element:

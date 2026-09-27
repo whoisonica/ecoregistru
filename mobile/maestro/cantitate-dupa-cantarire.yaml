@@ -2,7 +2,7 @@
 #   (1) „Adaugă cantitatea” pe o predare „De cântărit”, tastată cu punct („1.25” tone — înainte punctul se ștergea și ieșeau 125 tone);
 #   (2) „Corectează” pe aceeași predare păstrează greutatea (înainte `PUT` pleca cu `quantity: null`).
 #   maestro test -e PASSWORD=<ceva> --test-output-dir <folder> maestro/cantitate-dupa-cantarire.yaml
-# Înainte: o predare de probă pe 02.09.2026, cântărită la descărcare, fără cantitate, făcută prin API
+# Înainte: o predare de probă pe 02.09.2026, cântărită la descărcare, fără cantitate, făcută prin API (una nouă la fiecare rulare)
 # (todo-mobil §23). După flux, în bază: 1,25 tone, `weighed_at_unloading` tot adevărat.
 appId: ro.wastehouse.app
 ---
@@ -14,10 +14,12 @@ appId: ro.wastehouse.app
 - extendedWaitUntil:
     visible: Mișcările lunii
     timeout: 15000
+# Rândul e un singur nod (cod · dată · partener · pastila): se ține cel încă „cântărire la destinatar”, nu primul din 02.09,
+# ca o rulare de dinainte (predarea cântărită deja) să nu fie luată drept probă.
 - scrollUntilVisible:
-    element: ".*02\\.09\\.2026.*"
+    element: ".*02\\.09\\.2026.*cântărire la destinatar.*"
     centerElement: true
-- tapOn: ".*02\\.09\\.2026.*"
+- tapOn: ".*02\\.09\\.2026.*cântărire la destinatar.*"
 - extendedWaitUntil:
     visible: Pe fișă
     timeout: 15000

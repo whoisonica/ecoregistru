@@ -24,7 +24,9 @@ appId: ro.wastehouse.app
       - extendedWaitUntil:
           visible: Photos
           timeout: 15000
-      # Galeria pune poza cea mai nouă prima, în stânga sus.
+      # Galeria pune poza cea mai nouă prima, în stânga sus. Grila se încarcă după titlu; un tap prea devreme
+      # cade pe gol (27.09.2026, cu multe poze în galerie).
+      - waitForAnimationToEnd
       - tapOn:
           point: "17%,24%"
 - runFlow:
@@ -34,9 +36,11 @@ appId: ro.wastehouse.app
       - extendedWaitUntil:
           visible: ".*[Pp]hoto.*"
           timeout: 15000
+      # Cea mai nouă poză e prima, ca pe iOS și ca în `m1b-aviz` (înainte `index: 1` lua avizul partenerului).
+      # `adb push` păstrează data fișierului din repo: `adb shell touch` pe poză înainte de scanare.
       - tapOn:
           text: "Photo taken on.*"
-          index: 1
+          index: 0
 
 # Din 27.09.2026 (F4) destinatarul e pe pasul 2: întâi se confirmă ce a citit camera pe pasul 1 (ce e).
 - extendedWaitUntil:
@@ -55,9 +59,17 @@ appId: ro.wastehouse.app
 - tapOn:
     id: f-date-confirm
     optional: true
+# Confirmarea scoate rândul „Din poză” de sub dată, deci cardul codului urcă: se așteaptă și se centrează din nou.
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: f-code-confirm
+    centerElement: true
+    optional: true
 - tapOn:
     id: f-code-confirm
     optional: true
+- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       id: f-qty-confirm

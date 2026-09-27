@@ -9,6 +9,11 @@ appId: ro.wastehouse.app
     visible: Punct de lucru Cluj
     timeout: 15000
 - tapOn: Punct de lucru Cluj
+# Pe Android ecranul e mai scund: rândul codului poate sta sub margine, deci se aduce în mijloc întâi.
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "20 01 01.*"
+    centerElement: true
 - tapOn: "20 01 01.*"
 - scrollUntilVisible:
     element:
@@ -37,6 +42,11 @@ appId: ro.wastehouse.app
       id: fate-DISPOSED
 - tapOn:
     id: fate-DISPOSED
+# Codurile apar sub soartă; pe Android pot sta sub butonul lipit jos, deci se aduc în mijloc.
+- scrollUntilVisible:
+    element:
+      id: op-D5
+    centerElement: true
 - tapOn:
     id: op-D5
 - scrollUntilVisible:
@@ -90,7 +100,14 @@ appId: ro.wastehouse.app
 - scrollUntilVisible:
     element:
       id: handover-save
-- assertVisible: "Fără semnal: rămâne în telefon și pleacă singură"
+# Nota de sub buton urmează rețeaua telefonului (`onlineManager`), nu serverul. Pe Android, în modul avion, spune
+# „Fără semnal”; pe simulatorul iOS rețeaua rămâne, doar backendul e oprit, deci nota e cea obișnuită și
+# predarea ajunge tot în „De trimis”, după ce cererea cade.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible: "Fără semnal: rămâne în telefon și pleacă singură"
 - tapOn:
     id: handover-save
 # Bonul galben (din 27.09.2026): rămâne în telefon; „Gata” duce înapoi pe „Adaugă”, la „De trimis”.

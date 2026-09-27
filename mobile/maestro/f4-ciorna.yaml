@@ -20,6 +20,11 @@ appId: ro.wastehouse.app
     visible: Punct de lucru Cluj
     timeout: 15000
 - tapOn: Punct de lucru Cluj
+# Pe Android ecranul e mai scund: rândul codului poate sta sub margine, deci se aduce în mijloc întâi.
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "20 01 01.*"
+    centerElement: true
 - tapOn: "20 01 01.*"
 - scrollUntilVisible:
     element:
