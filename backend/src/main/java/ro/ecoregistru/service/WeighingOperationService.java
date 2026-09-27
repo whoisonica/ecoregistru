@@ -453,14 +453,16 @@ public class WeighingOperationService {
      * D1.17a — o intrare de la o persoană fizică primește documentul justificativ „în momentul efectuării” (Legea
      * 82/1991 art. 6 alin. (1)): borderoul 14-4-13 pentru liniile plătite, NIR-ul 14-3-1A pentru cele preluate gratuit
      * ({@code surse-oficiale.md} §15.3, §18.3). O linie fără preț n-ar ști în ce document intră, deci oprește
-     * finalizarea; o fac doar cei care aprobă, iar ei văd prețurile.
+     * finalizarea. Cine aprobă fără să vadă prețurile (consultantul sau platforma, după setarea firmei) află cine le trece.
      */
     private void allocatePersonDocuments(WeighingOperation operation, List<WasteMovement> lines, UUID tenantId) {
         if (operation.getType() != WeighingOperationType.IN || operation.getNaturalPerson() == null) {
             return;
         }
         if (lines.stream().anyMatch(l -> l.getUnitPrice() == null)) {
-            throw new BusinessException(WEIGHING_PF_PRICE_REQUIRED);
+            // Consultantul sau platforma pot aproba fără să vadă prețurile (D1.8): nu li se cere ce nu pot face.
+            throw new BusinessException(pricesVisible(operation.getCompany())
+                    ? WEIGHING_PF_PRICE_REQUIRED : WEIGHING_PF_PRICE_BY_ADMIN);
         }
         if (operation.getBorderouNumber() == null && lines.stream().anyMatch(ro.ecoregistru.service.export.BorderouGenerator::paid)) {
             operationRepository.lockNumbering(tenantId + ":borderou");

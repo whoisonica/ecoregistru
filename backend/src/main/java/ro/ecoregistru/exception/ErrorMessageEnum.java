@@ -169,6 +169,7 @@ public enum ErrorMessageEnum {
     WEIGHING_DOCUMENT_CANCELLED("weighing.document.cancelled", "Operațiunea e anulată: nu se mai tipăresc documente pentru ea."),
     WEIGHING_BORDEROU_REQUIRES_PERSON("weighing.borderou.requires.person", "Borderoul și NIR-ul se fac pentru o intrare de la o persoană fizică."),
     WEIGHING_PF_PRICE_REQUIRED("weighing.pf.price.required", "Trece prețul pe fiecare linie; 0 înseamnă preluare gratuită (se face NIR, nu borderou)."),
+    WEIGHING_PF_PRICE_BY_ADMIN("weighing.pf.price.by.admin", "O linie n-are preț, iar prețurile le trec cei din firmă (setarea „Cine vede prețurile”); 0 înseamnă preluare gratuită, se face NIR. Cere-le să completeze."),
     WEIGHING_BORDEROU_NO_PAID_LINES("weighing.borderou.no.paid.lines", "Operațiunea n-are linii plătite: pentru preluarea gratuită se tipărește NIR-ul."),
     WEIGHING_NIR_NOT_AVAILABLE("weighing.nir.not.available", "NIR-ul se tipărește după finalizare, pentru liniile preluate gratuit."),
     WEIGHING_BORDEROU_REQUIRES_FINALIZED("weighing.borderou.requires.finalized", "Borderoul se tipărește după finalizare: abia atunci sunt calculate reținerile de pe el."),

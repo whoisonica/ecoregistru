@@ -156,6 +156,21 @@ class BorderouNirIT {
         assertThat(op.getReceptionNoteNumber()).isNull();
     }
 
+    /**
+     * Recenzia finală: la „fără consultant” consultantul finalizează, dar nu vede prețurile și nu le poate trece. Refuzul
+     * rămâne (fără preț nu se știe documentul), dar îi spune cine le trece, nu să le treacă el.
+     */
+    @Test
+    void anApproverWhoCannotSeePricesIsToldTheAdminEntersThem() {
+        company.setPriceVisibility(PriceVisibility.NO_CONSULTANT);
+        companyRepository.save(company);
+        UUID id = draft(fromPerson(), line(pet, "40", null));
+        actAs(AppUser.builder().id(UUID.randomUUID()).email("consultant@demo.ro").role(Role.CONSULTANT).enabled(true).build());
+        assertThatThrownBy(() -> service.finalizeOperation(id))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorMessageEnum.WEIGHING_PF_PRICE_BY_ADMIN);
+    }
+
     @Test
     void anIntakeFromAPartnerGetsNoNumber() {
         WeighingOperationResponse r = finalized(head(partner.getId(), null, null), line(pet, "40", "0"));
