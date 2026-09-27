@@ -83,8 +83,8 @@ public class WeighingOperationController {
     }
 
     /**
-     * D1.11 — borderoul de achiziție al unei intrări de la o persoană fizică. Doar cine scrie: prima
-     * tipărire alocă numărul, iar la metal documentul poartă CNP-ul întreg.
+     * D1.11 — borderoul de achiziție al unei intrări de la o persoană fizică, cu numărul dat la finalizare. Doar cine
+     * scrie: la metal documentul poartă CNP-ul întreg.
      */
     @GetMapping("/{id}/borderou")
     @PreAuthorize(CAN_WRITE)

@@ -18,6 +18,7 @@ import ro.ecoregistru.entity.NaturalPerson;
 import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.entity.WeighingOperation;
 import ro.ecoregistru.enums.PaymentMethod;
+import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.service.DepotRetentions;
 
 import java.io.ByteArrayOutputStream;
@@ -40,10 +41,13 @@ import java.util.Locale;
  *   <li><b>cotele în vigoare</b>, cu sumele calculate la finalizare, nu „16% și 3%” din 2011 (C2, §18.2):
  *       fraza nu e în conținutul obligatoriu, iar cifrele vechi ar declara o reținere care nu s-a făcut;
  *       impozitul apare numai când există linii de metal;</li>
- *   <li><b>fără CNP și act când nu e metal</b> (C3, §18.3): la hârtie sau plastic borderoul e la cerere, iar
- *       nicio lege nu cere acolo datele de identitate (Legea 190/2018 art. 4). Declarația de gospodărie
- *       proprie e tot a metalului (art. 1 alin. (1^1)).</li>
+ *   <li><b>fără CNP și act când nu e metal</b> (C3, §18.3): nicio lege nu cere la hârtie sau plastic datele de
+ *       identitate (Legea 190/2018 art. 4). Declarația de gospodărie proprie e tot a metalului (art. 1
+ *       alin. (1^1)).</li>
  * </ul>
+ *
+ * <p>D1.17a: primește numai liniile plătite ({@link #paid}); cele preluate gratuit au NIR-ul lor ({@code NirGenerator}),
+ * deci „metal” (titlul, CNP-ul, declarația) se judecă pe liniile de aici.
  *
  * <p>Ce aplicația nu ține se tipărește gol, de completat de mână: data emiterii autorizației de mediu și
  * emitentul actului de identitate.
@@ -106,6 +110,12 @@ public class BorderouGenerator {
             number.setAlignment(Element.ALIGN_CENTER);
             number.setSpacingAfter(12f);
             doc.add(number);
+            if (op.getStatus() == WeighingOperationStatus.CANCELLED) {
+                Paragraph band = new Paragraph(cp1250("ANULAT — " + op.getCancelReason()), title);
+                band.setAlignment(Element.ALIGN_CENTER);
+                band.setSpacingAfter(10f);
+                doc.add(band);
+            }
 
             // Deținătorul.
             para(doc, "Subsemnatul/Subsemnata " + person.getName()

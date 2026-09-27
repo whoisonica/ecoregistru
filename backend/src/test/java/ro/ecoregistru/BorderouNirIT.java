@@ -25,6 +25,7 @@ import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.PackagingOrigin;
 import ro.ecoregistru.enums.PartnerType;
+import ro.ecoregistru.enums.PriceVisibility;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.enums.WeighingOperationStatus;
 import ro.ecoregistru.exception.BusinessException;
@@ -49,6 +50,10 @@ import java.util.UUID;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ro.ecoregistru.enums.WeighingOperationType.IN;
 
 /**
@@ -176,7 +181,77 @@ class BorderouNirIT {
         assertThat(r.receptionNoteNumber()).isEqualTo(1);
     }
 
+    // --- borderoul ---
+
+    @Test
+    void theBorderouOfAMixedIntakeListsOnlyThePaidLine() throws Exception {
+        UUID id = finalized(fromPerson(), line(cardboard, "100", "5"), line(pet, "40", "0")).id();
+        String text = Golden.flat(Golden.pdfText(pdf(admin, id, "borderou")));
+        assertThat(text).contains("Nr.1dindata").contains("Carton—").doesNotContain("PET");
+    }
+
+    @Test
+    void aFreeOnlyIntakeHasNoBorderou() throws Exception {
+        UUID id = finalized(fromPerson(), line(pet, "40", "0")).id();
+        refused(id, "borderou", "weighing.borderou.no.paid.lines");
+    }
+
+    /** Finalizată înainte de felie, cu prețuri goale: migrarea n-a avut ce numerota. */
+    @Test
+    void aPreSliceFinalizedIntakeWithoutNumberExplainsItself() throws Exception {
+        UUID id = finalized(fromPerson(), line(cardboard, "100", "5")).id();
+        var op = operationRepository.findById(id).orElseThrow();
+        op.setBorderouNumber(null);
+        operationRepository.saveAndFlush(op);
+        refused(id, "borderou", "weighing.borderou.no.paid.lines");
+    }
+
+    @Test
+    void aCancelledBorderouIsStillPrintedWithTheBand() throws Exception {
+        UUID id = finalized(fromPerson(), line(cardboard, "100", "5")).id();
+        service.cancel(id, "Dublură");
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, id, "borderou")))).contains("Nr.1dindata").contains("ANULAT—Dublură");
+    }
+
+    @Test
+    void metalOnlyOnTheFreeLineKeepsTheBorderouPlain() throws Exception {
+        UUID id = finalized(fromPerson(), line(copper, "10", "0"), line(cardboard, "100", "0.5")).id();
+        assertThat(Golden.flat(Golden.pdfText(pdf(admin, id, "borderou"))))
+                .contains("BORDEROUDEACHIZIŢIEDEDEŞEURI").doesNotContain("METALICE").doesNotContain("1900101123457");
+    }
+
+    @Test
+    void theOperatorAtAdminOnlyGetsNoBorderou() throws Exception {
+        UUID id = finalized(fromPerson(), line(cardboard, "100", "5")).id();
+        company.setPriceVisibility(PriceVisibility.ADMIN_ONLY);
+        companyRepository.save(company);
+        http(operator, id, "borderou").andExpect(status().isForbidden());
+    }
+
     // --- helpers ---
+
+    private byte[] pdf(AppUser user, UUID id, String what) throws Exception {
+        return http(user, id, what).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+    }
+
+    private void refused(UUID id, String what, String code) throws Exception {
+        http(admin, id, what).andExpect(status().isBadRequest()).andExpect(jsonPath("$['error-code']", is(code)));
+    }
+
+    /** Pe HTTP decide tokenul: contextul pus de {@link #actAs} (fără roluri) nu trebuie să ajungă în cerere. */
+    private org.springframework.test.web.servlet.ResultActions http(AppUser user, UUID id, String what) throws Exception {
+        SecurityContextHolder.clearContext();
+        TenantContext.clear();
+        try {
+            return mockMvc.perform(get(url(id, what)).header("Authorization", bearer(user)));
+        } finally {
+            actAs(admin);
+        }
+    }
+
+    private static String url(UUID id, String what) {
+        return "/api/v1/weighing-operations/" + id + "/" + what;
+    }
 
     private WeighingOperationResponse finalized(WeighingOperationRequest head, Line... lines) {
         return service.finalizeOperation(draft(head, lines));

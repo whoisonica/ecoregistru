@@ -87,6 +87,7 @@ class BorderouIT {
     WasteArticle copper;
     WasteArticle cardboard;
     int nextNumber = 1;
+    int nextBorderou = 1;
 
     @BeforeEach
     void setUp() {
@@ -165,16 +166,6 @@ class BorderouIT {
     }
 
     @Test
-    void theNumberIsGivenOnceAndInOrder() throws Exception {
-        WeighingOperation first = finalizedCopper(DAY);
-        WeighingOperation second = finalizedCopper(DAY);
-        assertThat(Golden.flat(Golden.pdfText(borderou(admin, second)))).contains("Nr.1dindata");
-        assertThat(Golden.flat(Golden.pdfText(borderou(operator, first)))).contains("Nr.2dindata");
-        assertThat(Golden.flat(Golden.pdfText(borderou(admin, second)))).contains("Nr.1dindata");
-        assertThat(operationRepository.findById(first.getId()).orElseThrow().getBorderouNumber()).isEqualTo(2);
-    }
-
-    @Test
     void onlyAFinalizedIntakeFromAPersonHasABorderou() throws Exception {
         WeighingOperation inProgress = fromPerson(WeighingOperationStatus.IN_PROGRESS, PaymentMethod.NUMERAR, DAY);
         line(inProgress, copper, "10", "30");
@@ -190,7 +181,6 @@ class BorderouIT {
 
         // Controlul pozitiv: aceeași persoană, finalizată, trece.
         borderou(admin, finalizedCopper(DAY));
-        assertThat(operationRepository.findById(inProgress.getId()).orElseThrow().getBorderouNumber()).isNull();
     }
 
     /** Prețuri și CNP întreg: doar cine scrie și vede prețurile. */
@@ -201,7 +191,6 @@ class BorderouIT {
         company.setPriceVisibility(PriceVisibility.ADMIN_ONLY);
         companyRepository.save(company);
         mockMvc.perform(get(url(op, "borderou")).header("Authorization", bearer(operator))).andExpect(status().isForbidden());
-        assertThat(operationRepository.findById(op.getId()).orElseThrow().getBorderouNumber()).isNull();
         borderou(admin, op);
     }
 
@@ -314,8 +303,12 @@ class BorderouIT {
                 .deleted(false).createdBy(admin.getId()).build());
     }
 
-    /** Ce face finalizarea: reținerile calculate o dată și păstrate pe operațiune. */
+    /**
+     * Ce face finalizarea: reținerile calculate o dată și păstrate pe operațiune, și numărul borderoului (D1.17a; ordinea
+     * numerelor o probează {@code BorderouNirIT}, prin finalizarea adevărată).
+     */
     private void retain(WeighingOperation op) {
+        op.setBorderouNumber(nextBorderou++);
         List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(op.getId());
         DepotRetentions.Amounts a = DepotRetentions.of(op, lines);
         op.setAfmBase(a.afmBase());

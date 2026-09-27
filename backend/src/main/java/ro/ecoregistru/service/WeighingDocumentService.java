@@ -20,6 +20,7 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WeighingOperationRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.export.BorderouGenerator;
 import ro.ecoregistru.service.export.Anexa3FormGenerator;
 import ro.ecoregistru.service.export.AvizGenerator;
 
@@ -58,7 +59,7 @@ public class WeighingDocumentService {
     Anexa3Numbering anexa3Numbering;
     Anexa3FormGenerator anexa3Generator;
     AvizGenerator avizGenerator;
-    ro.ecoregistru.service.export.BorderouGenerator borderouGenerator;
+    BorderouGenerator borderouGenerator;
     DepotAccess depotAccess;
 
     /** Alocă numărul la prima tipărire și îl păstrează: retipărirea e același document. */
@@ -99,14 +100,15 @@ public class WeighingDocumentService {
     }
 
     /**
-     * D1.11 — borderoul de achiziție al unei intrări de la o persoană fizică, după finalizare (reținerile
-     * de pe el se calculează atunci). Numărul se dă la prima tipărire și se păstrează: regim intern de
-     * numerotare (OUG 31/2011 art. 1 alin. (1^3)). Obligatoriu la metal, la cerere la rest (C3).
+     * D1.11, D1.17a — borderoul de achiziție al unei intrări de la o persoană fizică: documentul oricărei cumpărări de
+     * la PF (OMFP 2634/2015, 14-4-13), cu numărul dat la finalizare (regim intern de numerotare, OUG 31/2011 art. 1
+     * alin. (1^3)) și numai cu liniile plătite; cele preluate gratuit merg pe NIR. O operațiune anulată după finalizare
+     * își tipărește borderoul în continuare, cu banda „ANULAT” (Legea 82/1991: nu se șterge).
      *
      * <p>Poartă prețuri și, la metal, CNP-ul întreg: îl tipărește doar cine scrie (controllerul) <b>și</b>
      * vede prețurile (D1.8).
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public byte[] renderBorderou(UUID id) {
         UUID tenantId = TenantContext.require();
         WeighingOperation operation = requireOperation(id, tenantId);
@@ -115,17 +117,15 @@ public class WeighingDocumentService {
         if (operation.getType() != WeighingOperationType.IN || operation.getNaturalPerson() == null) {
             throw new BusinessException(WEIGHING_BORDEROU_REQUIRES_PERSON);
         }
-        if (operation.getStatus() != WeighingOperationStatus.FINALIZED) {
+        // Anulată din lucru: n-a fost finalizată niciodată, deci n-are nici reținerile, nici numărul.
+        if (operation.getFinalizedAt() == null) {
             throw new BusinessException(WEIGHING_BORDEROU_REQUIRES_FINALIZED);
         }
         if (operation.getBorderouNumber() == null) {
-            operationRepository.lockNumbering(tenantId + ":borderou");
-            Integer max = operationRepository.findMaxBorderouNumber(tenantId);
-            operation.setBorderouNumber(max == null ? 1 : max + 1);
-            operationRepository.saveAndFlush(operation);
+            throw new BusinessException(WEIGHING_BORDEROU_NO_PAID_LINES);
         }
-        return borderouGenerator.render(operation,
-                movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id), company);
+        return borderouGenerator.render(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id)
+                .stream().filter(BorderouGenerator::paid).toList(), company);
     }
 
     /** Plafonul zilnic de plăți în numerar către o persoană fizică (Legea 70/2015 art. 4 alin. (1)). */
