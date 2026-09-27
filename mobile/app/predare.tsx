@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import type {
-  Deadline,
   PackagingCategory,
   PackagingMaterial,
   Partner,
@@ -24,22 +23,32 @@ import {
   suggestedPackagingMaterial,
 } from "@/components/movements/movementRules";
 import { isValidCnp } from "@/lib/cnp";
-import { declarationOf, declaredText } from "@/lib/deadlines";
+import { declarationOf } from "@/lib/deadlines";
 import * as Crypto from "expo-crypto";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { extractTextFromImage, isSupported } from "expo-text-extractor";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 
 import * as api from "../src/api";
 import { parseAviz, cuiDigits, type AvizReading } from "../src/aviz/parse";
 import { canWrite } from "../src/auth";
 import { Field, Input, MultiPills, Pills, PrimaryButton } from "../src/components/Form";
 import { Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
-import { formatDate, formatKg } from "../src/format";
+import { formatDate, formatQuantity } from "../src/format";
 import { useHandoverData } from "../src/handover";
+import {
+  codeInProfile,
+  initialPackagingOnMarket,
+  parseQuantity,
+  queuedToMovement,
+  weightRecorded,
+  yearInRange,
+} from "../src/handoverForm";
 import { editBody } from "../src/movementEdit";
-import { drain, enqueue } from "../src/outbox";
+import { confirmDeclared } from "../src/declared";
+import { reportError } from "../src/monitoring";
+import { drain, enqueue, get as getQueued, resubmit } from "../src/outbox";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
 
@@ -73,9 +82,12 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  * <p>M1f — cu `?edit=<id>` același formular corectează o predare: rubricile vin din `GET /movements/{id}`,
  * iar salvarea e `PUT`, direct, numai cu semnal (nu prin coadă). Cererea pornește de la predarea de pe
  * server (`editBody`), fiindcă `PUT` înlocuiește tot și telefonul n-are toate rubricile webului.
+ *
+ * <p>Cu `?outbox=<id>` corectează o predare refuzată din coadă: rubricile vin din cererea salvată pe
+ * telefon, iar salvarea rescrie rândul, care pleacă din nou cu aceeași cheie (`resubmit`).
  */
 export default function PredareScreen() {
-  const { photo, edit } = useLocalSearchParams<{ photo?: string; edit?: string }>();
+  const { photo, edit, outbox } = useLocalSearchParams<{ photo?: string; edit?: string; outbox?: string }>();
   const { auth, session } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -93,6 +105,24 @@ export default function PredareScreen() {
   });
   const original = editing.data;
 
+  // Predarea refuzată din coadă, redeschisă; numele codului de deșeu vine din profilul firmei.
+  const queuedRow = useQuery({
+    queryKey: ["outbox-row", outbox],
+    queryFn: () => getQueued(outbox!, session!.email),
+    enabled: !!outbox && !!session,
+    // Rândul se citește proaspăt la fiecare deschidere: între timp poate fi fost corectat și refuzat iar.
+    staleTime: 0,
+    gcTime: 0,
+  });
+  const queued = queuedRow.data ?? null;
+  const queuedMovement = useMemo(
+    () =>
+      queued && !company.isLoading
+        ? queuedToMovement(queued.payload, queued.summary, company.data?.authorizedWasteCodes ?? [])
+        : undefined,
+    [queued, company.isLoading, company.data],
+  );
+
   const activeWorkPoints = useMemo(() => (workPoints.data ?? []).filter((w) => w.active), [workPoints.data]);
   const [workPointId, setWorkPointId] = useState("");
   useEffect(() => {
@@ -107,7 +137,8 @@ export default function PredareScreen() {
   const [fate, setFate] = useState<Fate | "">("");
   const [operationCode, setOperationCode] = useState<WasteOperationCode | "">("");
   const [partnerId, setPartnerId] = useState("");
-  const [packagingOnMarket, setPackagingOnMarket] = useState(false);
+  // `null` = predare veche fără răspuns, socotită „da” de server (`initialPackagingOnMarket`).
+  const [packagingOnMarket, setPackagingOnMarket] = useState<boolean | null>(false);
   const [packagingMaterial, setPackagingMaterial] = useState<PackagingMaterial | "">("");
   const [packagingCategory, setPackagingCategory] = useState<PackagingCategory | "">("");
   const [physicalState, setPhysicalState] = useState<PhysicalState | "">("");
@@ -134,10 +165,11 @@ export default function PredareScreen() {
   const prefilled = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const source = original ?? queuedMovement;
   useEffect(() => {
-    if (!original || prefilled.current) return;
+    if (!source || prefilled.current) return;
     prefilled.current = true;
-    const mv = original;
+    const mv = source;
     setWorkPointId(mv.workPointId);
     setDate(formatDate(mv.date));
     setWasteCode({ id: mv.wasteCodeId, code: mv.wasteCode, name: mv.wasteCodeName, hazardous: mv.hazardous, metalSuggested: false });
@@ -147,7 +179,7 @@ export default function PredareScreen() {
     setFate(mv.operation === "RECOVERED" || mv.operation === "DISPOSED" ? mv.operation : "");
     setOperationCode(mv.operationCode ?? "");
     setPartnerId(mv.partnerId ?? "");
-    setPackagingOnMarket(mv.packagingOnMarket ?? false);
+    setPackagingOnMarket(initialPackagingOnMarket(mv));
     setPackagingMaterial(mv.packagingMaterial ?? "");
     setPackagingCategory(mv.packagingCategory ?? "");
     setPhysicalState(mv.physicalState ?? "");
@@ -165,7 +197,7 @@ export default function PredareScreen() {
     setDriverIdentification(mv.driverIdentification ?? "");
     setDriverCnp(mv.driverCnp ?? "");
     setTransportDestinations(mv.transportDestinations ?? []);
-  }, [original]);
+  }, [source]);
 
   // ── citirea avizului ───────────────────────────────────────────────────────
   const [lines, setLines] = useState<string[] | null>(null);
@@ -363,19 +395,30 @@ export default function PredareScreen() {
   // Rubricile Anexei 3 se văd (și pleacă) numai cu destinatar ales; fără el nu le cerem și nu le trimitem.
   const isoLoad = partner && loadDate.trim() ? parseDate(loadDate) : null;
   const isoUnload = partner && unloadDate.trim() ? parseDate(unloadDate) : null;
-  const amount = Number(quantity.replace(/\./g, "").replace(",", "."));
+  // Cântărită la descărcare: câmpul e închis până vine greutatea; după aceea se corectează ca oricare.
+  const quantityOpen = !weighed || weightRecorded(weighed, original);
+  const amount = parseQuantity(quantity);
+  const onMarket = packagingOnMarket !== false;
   const errors = {
     workPoint: !workPointId ? strings.common.requiredField : undefined,
-    date: !isoDate ? m.dateFormat : undefined,
+    date: !isoDate ? m.dateFormat : !yearInRange(isoDate) ? m.dateOutOfRange : undefined,
     wasteCode: !wasteCode ? t.wasteCodePlaceholder : undefined,
-    quantity: !weighed && !(amount > 0) ? strings.common.requiredField : undefined,
+    quantity: !quantityOpen
+      ? undefined
+      : !quantity.trim()
+        ? strings.common.requiredField
+        : amount == null
+          ? m.quantityFormat
+          : undefined,
     fate: !fate ? strings.common.requiredField : undefined,
     operationCode:
       fate === "RECOVERED" && !operationCode.startsWith("R")
         ? t.recoveryCodeRequired
         : fate === "DISPOSED" && !operationCode.startsWith("D")
           ? t.disposalCodeRequired
-          : undefined,
+          : !codeInProfile(operationCode, profileOps)
+            ? m.codeNotInProfile
+            : undefined,
     partner:
       weighed && !partnerId
         ? t.weighingNeedsPartner
@@ -389,7 +432,7 @@ export default function PredareScreen() {
     packagingMaterial:
       isPackaging && !packagingMaterial && !suggestedMaterial ? t.packagingMaterialRequired : undefined,
     packagingCategory:
-      isPackaging && packagingOnMarket && !packagingCategory ? t.packagingCategoryRequired : undefined,
+      isPackaging && onMarket && !packagingCategory ? t.packagingCategoryRequired : undefined,
     loadDate: partner && loadDate.trim() && !isoLoad ? m.dateFormat : undefined,
     driverCnp: partner && driverCnp.trim() && !isValidCnp(driverCnp.trim()) ? strings.naturalPersons.cnpInvalid : undefined,
     unloadDate:
@@ -409,7 +452,7 @@ export default function PredareScreen() {
         workPointId,
         date: isoDate,
         wasteCodeId: wasteCode.id,
-        quantity: weighed ? null : amount,
+        quantity: quantityOpen ? amount : null,
         weighedAtUnloading: weighed,
         unit,
         operation: fate,
@@ -450,22 +493,33 @@ export default function PredareScreen() {
         wasteDestination,
         packagingOnMarket: isPackaging ? packagingOnMarket : null,
         packagingMaterial: isPackaging ? packagingMaterial || null : null,
-        packagingCategory: isPackaging && packagingOnMarket ? packagingCategory || null : null,
+        packagingCategory: isPackaging && onMarket ? packagingCategory || null : null,
     };
     if (original) return saveEdit(original, onScreen, isoDate);
-    await enqueue({
-      id,
-      owner: session.email,
-      tenantId: session.tenantId,
-      photoUri: photo ?? null,
-      payload: onScreen,
-      summary: {
-        wasteCode: wasteCode.code,
-        quantity: weighed ? t.awaitingWeighing : `${formatKg(amount)} ${e.unit[unit]}`,
-        partnerName: partner?.name ?? null,
-        date: isoDate,
-      },
-    });
+    const summary = {
+      wasteCode: wasteCode.code,
+      quantity: quantityOpen && amount != null ? `${formatQuantity(amount, unit)} ${e.unit[unit]}` : t.awaitingWeighing,
+      partnerName: partner?.name ?? null,
+      date: isoDate,
+    };
+    setSaveError(null);
+    try {
+      if (queued) await resubmit(queued.id, onScreen, summary);
+      else
+        await enqueue({
+          id,
+          owner: session.email,
+          tenantId: session.tenantId,
+          photoUri: photo ?? null,
+          payload: onScreen,
+          summary,
+        });
+    } catch (error) {
+      // Poza n-a putut fi copiată sau baza telefonului e plină: omul trebuie să afle, nu să apese degeaba.
+      reportError(error, { where: "predare", step: "enqueue" });
+      setSaveError(t.saveError);
+      return;
+    }
     // Cu semnal pleacă pe loc; fără, rămâne în „De trimis”.
     if (auth) {
       drain(auth, session.email)
@@ -528,7 +582,7 @@ export default function PredareScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: edit ? m.movementEditTitle : m.handoverNew,
+          title: edit || outbox ? m.movementEditTitle : m.handoverNew,
           headerBackTitle: edit ? (original?.wasteCode ?? "") : m.tabAdd,
         }}
       />
@@ -640,8 +694,8 @@ export default function PredareScreen() {
             <View style={styles.qtyRow}>
               <Input
                 style={styles.qtyInput}
-                value={weighed ? "" : quantity}
-                editable={!weighed}
+                value={quantityOpen ? quantity : ""}
+                editable={quantityOpen}
                 onChangeText={(v) => {
                   setQuantity(v);
                   confirm("quantity");
@@ -826,7 +880,7 @@ export default function PredareScreen() {
                 <Text style={rowStyles.title}>{t.packagingOnMarket}</Text>
                 <Text style={rowStyles.sub}>{m.packagingOnWeb}</Text>
               </View>
-              <Switch value={packagingOnMarket} onValueChange={setPackagingOnMarket} />
+              <Switch value={onMarket} onValueChange={setPackagingOnMarket} />
             </View>
             <Sep />
             <Field label={t.packagingMaterial} error={err("packagingMaterial")}>
@@ -840,7 +894,7 @@ export default function PredareScreen() {
                 <Text style={styles.hint}>{`${e.packagingMaterial[suggestedMaterial]} ${t.packagingFromCode}`}</Text>
               ) : null}
             </Field>
-            {packagingOnMarket ? (
+            {onMarket ? (
               <>
                 <Sep />
                 <Field label={t.packagingCategory} error={err("packagingCategory")}>
@@ -999,6 +1053,11 @@ export default function PredareScreen() {
 
         {photo ? <Text style={styles.hint}>{m.photoAttached}</Text> : null}
         {unconfirmed > 0 ? <Note tone="alert">{m.confirmPending(unconfirmed)}</Note> : null}
+        {showErrors && !valid ? (
+          <Note tone="alert" testID="form-errors">
+            {m.fixErrors(Object.values(errors).filter(Boolean).length)}
+          </Note>
+        ) : null}
         {saveError ? (
           <Note tone="alert" testID="edit-error">
             {saveError}
@@ -1007,7 +1066,7 @@ export default function PredareScreen() {
         <PrimaryButton
           label={m.save}
           onPress={save}
-          disabled={reading || submitting || (!!edit && !original)}
+          disabled={reading || submitting || (!!edit && !original) || (!!outbox && !queued)}
           testID="handover-save"
         />
       </ScrollView>
@@ -1177,20 +1236,6 @@ function Sep() {
 }
 
 /** Întrebarea webului („Anul … e deja declarat” / „Salvează oricum”), ca fereastră nativă. */
-function confirmDeclared(year: number, declaration: Deadline): Promise<boolean> {
-  return new Promise((resolve) =>
-    Alert.alert(
-      declaredText(t.declaredTitle, year, declaration),
-      declaredText(t.declaredSave, year, declaration),
-      [
-        { text: strings.common.cancel, style: "cancel", onPress: () => resolve(false) },
-        { text: t.declaredConfirm, onPress: () => resolve(true) },
-      ],
-      { cancelable: true, onDismiss: () => resolve(false) },
-    ),
-  );
-}
-
 function todayIso() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

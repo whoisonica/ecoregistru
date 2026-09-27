@@ -1,20 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { declarationOf } from "@/lib/deadlines";
 import { canPrintAnexa3, canPrintAviz, movementPdfName } from "@/lib/movementPrint";
 import { strings } from "@web/strings";
-import type { WasteMovement } from "@web/types";
+import type { Unit, WasteMovement } from "@web/types";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { ApiError, downloadAttachment, downloadMovementPdf, movement, UnauthorizedError } from "../../src/api";
+import {
+  ApiError,
+  deadlines,
+  downloadAttachment,
+  downloadMovementPdf,
+  movement,
+  recordWeight,
+  UnauthorizedError,
+} from "../../src/api";
 import { canWrite } from "../../src/auth";
 import { Bin } from "../../src/components/Bin";
-import { PrimaryButton } from "../../src/components/Form";
+import { Field, Input, Pills, PrimaryButton } from "../../src/components/Form";
+import { confirmDeclared } from "../../src/declared";
+import { parseQuantity } from "../../src/handoverForm";
 import { Icon } from "../../src/components/Icon";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
-import { formatDate, formatKg } from "../../src/format";
-import { canEditOnPhone } from "../../src/movementEdit";
+import { formatDate, formatQuantity } from "../../src/format";
+import { canEditOnPhone, canRecordWeightOnPhone } from "../../src/movementEdit";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
 
@@ -53,7 +64,14 @@ export default function MiscareScreen() {
       <Stack.Screen
         options={{ headerShown: true, title: mv?.wasteCode ?? "", headerBackTitle: strings.nav.movements }}
       />
-      <ScrollView style={styles.fill} contentContainerStyle={styles.scroll}>
+      {/* „Adaugă cantitatea” are câmp de text: fără `handled`, prima atingere pe „tone” doar închidea tastatura;
+          tastatura numerică de pe iOS n-are „Gata”, deci se închide la derulare, ca în formularul de predare. */}
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {query.isError ? (
           <Group>
             <Note tone="alert">{m.movementError}</Note>
@@ -88,7 +106,7 @@ function Details({ mv, writer }: { mv: WasteMovement; writer: boolean }) {
             <Chip label={m.awaitingWeighing} tone="warn" />
           ) : (
             <Text style={rowStyles.mono} testID="movement-quantity">
-              {formatKg(mv.quantity)} {e.unit[mv.unit]}
+              {formatQuantity(mv.quantity, mv.unit)} {e.unit[mv.unit]}
             </Text>
           )}
         </View>
@@ -101,6 +119,9 @@ function Details({ mv, writer }: { mv: WasteMovement; writer: boolean }) {
           ]}
         />
       </Group>
+
+      {/* Lângă cifra care lipsește: aici o caută omul care a primit tichetul de la cântar. */}
+      {canRecordWeightOnPhone(mv, writer) ? <RecordWeight mv={mv} /> : null}
 
       <LinesGroup
         head={m.movementSheet}
@@ -161,6 +182,75 @@ function Details({ mv, writer }: { mv: WasteMovement; writer: boolean }) {
           />
         </View>
       ) : null}
+    </>
+  );
+}
+
+/**
+ * „Adaugă cantitatea”: cifra de pe tichetul colectorului, după cântărirea la descărcare. Până acum se
+ * putea pune numai pe web. Aceleași reguli ca acolo (`RecordWeightDialog`): numai cu semnal, întrebarea
+ * anului declarat, propoziția serverului la refuz.
+ */
+function RecordWeight({ mv }: { mv: WasteMovement }) {
+  const { auth } = useSession();
+  const queryClient = useQueryClient();
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState<Unit>(mv.unit);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const amount = parseQuantity(quantity);
+
+  const save = async () => {
+    if (!auth || busy) return;
+    if (amount == null) return setError(m.quantityFormat);
+    setBusy(true);
+    setError(null);
+    try {
+      const year = Number(mv.date.slice(0, 4));
+      const declaration = await deadlines(auth, year + 1)
+        .then((list) => declarationOf(list, year))
+        .catch(() => undefined);
+      if (declaration && !(await confirmDeclared(year, declaration))) return;
+      await recordWeight(auth, mv.id, amount, unit);
+      await queryClient.invalidateQueries({ queryKey: ["movements"] });
+    } catch (e) {
+      setError(
+        e instanceof ApiError && e.serverMessage
+          ? e.serverMessage
+          : e instanceof TypeError ? m.movementEditOffline : t.recordWeightError,
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <SectionHead>{t.recordWeightTitle}</SectionHead>
+      <Group>
+        <Field label={t.quantity} testID="weight-field">
+          <View style={styles.weightRow}>
+            <Input
+              style={styles.weightInput}
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="decimal-pad"
+              testID="weight-qty"
+            />
+            <Pills
+              options={(["KG", "TONS"] as Unit[]).map((u) => ({ value: u, label: e.unit[u] }))}
+              value={unit}
+              onChange={setUnit}
+            />
+          </View>
+        </Field>
+        {error ? (
+          <Note tone="alert" testID="weight-error">
+            {error}
+          </Note>
+        ) : null}
+      </Group>
+      <PrimaryButton label={t.recordWeight} onPress={save} disabled={busy || !quantity.trim()} testID="weight-save" />
     </>
   );
 }
@@ -302,6 +392,8 @@ function Attachments({ mv }: { mv: WasteMovement }) {
 }
 
 const styles = StyleSheet.create({
+  weightRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  weightInput: { flex: 1 },
   fill: { flex: 1, backgroundColor: colors.ground },
   scroll: { padding: 16, gap: 8, paddingBottom: 40 },
   head: { flexDirection: "row", alignItems: "center", gap: 12 },

@@ -60,7 +60,9 @@ export function usePushRegistration() {
       const granted = current.granted || (current.canAskAgain && (await Notifications.requestPermissionsAsync()).granted);
       if (!granted || cancelled) return;
       const { data: pushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
-      const sentKey = `${deviceSessionId}:${pushToken}`;
+      // Cu ziua în cheie: tokenul se retrimite o dată pe zi. Serverul îl șterge singur când Expo spune că
+      // telefonul nu mai e înregistrat (`PushNotifier`), iar telefonul, cu cheia veche, nu l-ar mai fi trimis.
+      const sentKey = `${deviceSessionId}:${pushToken}:${new Date().toISOString().slice(0, 10)}`;
       if ((await SecureStore.getItemAsync(SENT_KEY)) === sentKey || cancelled) return;
       await api.registerPushToken({ token, tenantId: null }, deviceSessionId, pushToken);
       await SecureStore.setItemAsync(SENT_KEY, sentKey);

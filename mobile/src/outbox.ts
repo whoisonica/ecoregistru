@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import * as api from "./api";
 import { reportError } from "./monitoring";
+import { retryNote, stuckOnServer } from "./outboxRules";
 
 /**
  * M1b — coada predărilor care n-au plecat încă. Rampa n-are semnal; predarea se salvează pe telefon
@@ -190,6 +191,29 @@ export async function enqueue(item: {
   changed();
 }
 
+/** Un rând al contului, pentru „Corectează” pe o predare refuzată. */
+export async function get(id: string, owner: string): Promise<OutboxItem | null> {
+  const row = await (await db()).getFirstAsync<Row>("SELECT * FROM outbox WHERE id = ? AND owner = ?", id, owner);
+  return row ? fromRow(row) : null;
+}
+
+/**
+ * Predarea refuzată, corectată de om: aceeași cheie (deci tot o singură predare pe server), cererea nouă,
+ * iar rândul redevine „de trimis” de la zero. Poza rămâne cea de pe rând.
+ */
+export async function resubmit(id: string, payload: Record<string, unknown>, summary: OutboxSummary) {
+  await (
+    await db()
+  ).runAsync(
+    `UPDATE outbox SET payload = ?, summary = ?, state = 'PENDING', attempts = 0, next_at = 0, error = NULL
+     WHERE id = ? AND movement_id IS NULL`,
+    JSON.stringify({ ...payload, clientGeneratedId: id }),
+    JSON.stringify(summary),
+    id,
+  );
+  changed();
+}
+
 /** Scoaterea unui rând refuzat, la cererea omului. */
 export async function remove(id: string) {
   const d = await db();
@@ -276,10 +300,15 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         reportError(error, { where: "outbox", step: movementId ? "photo" : "movement" });
       }
       const attempts = item.attempts + 1;
+      if (stuckOnServer(error, attempts)) {
+        reportError(error, { where: "outbox", step: movementId ? "photo" : "movement", attempts });
+      }
+      // Propoziția serverului pe rând (5xx, 429); fără semnal rândul rămâne fără cuvânt.
       await d.runAsync(
-        "UPDATE outbox SET attempts = ?, next_at = ? WHERE id = ?",
+        "UPDATE outbox SET attempts = ?, next_at = ?, error = ? WHERE id = ?",
         attempts,
         Date.now() + backoffMs(attempts),
+        retryNote(error),
         item.id,
       );
       changed();
@@ -296,6 +325,15 @@ export async function retryNow(owner: string) {
 }
 
 // ── cache-ul listelor ────────────────────────────────────────────────────────
+
+/**
+ * La ieșirea din cont: listele ținute pentru lucrul fără semnal (parteneri, șoferi, profilul fiecărei firme
+ * deschise de un consultant) nu rămân pe telefon pentru următorul. Coada rămâne: rândurile sunt ale
+ * contului care le-a salvat și pleacă numai în numele lui, iar o predare netrimisă nu se pierde la o ieșire.
+ */
+export async function clearCache() {
+  await (await db()).runAsync("DELETE FROM cache");
+}
 
 /**
  * Listele de care are nevoie formularul fără semnal: punctele de lucru, partenerii, profilul firmei,

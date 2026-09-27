@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { directionOf, registerOf, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@web/strings";
 import { useEffect, useState, type ReactNode } from "react";
@@ -6,11 +6,12 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { movements, movementTotals, UnauthorizedError } from "../api";
-import { formatDate, formatKg } from "../format";
+import { formatDate, formatKg, formatQuantity } from "../format";
 import { useSession } from "../session";
 import { colors, radius } from "../theme";
 import { Bin } from "./Bin";
 import { GraphiteHeader } from "./GraphiteHeader";
+import { PrimaryButton } from "./Form";
 import { Chip, Group, Note, rowStyles, SectionHead } from "./Rows";
 import { Lcd } from "./Lcd";
 import { MonthArrows } from "./MonthArrows";
@@ -42,11 +43,16 @@ export function MovementList({ title, screen, tabRow }: {
   const enabled = !!auth && !!session?.tenantId && !!screen;
   const key = [session?.tenantId, cursor.year, cursor.month, screen ?? "?"];
 
-  const list = useQuery({
+  // Câte 50; înainte lista se oprea la primele 50 fără să spună că mai sunt.
+  const list = useInfiniteQuery({
     queryKey: ["movements", "list", ...key],
-    queryFn: () => movements(auth!, params),
+    queryFn: ({ pageParam }) => movements(auth!, params, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (last) => (last.page + 1 < last.totalPages ? last.page + 1 : undefined),
     enabled,
   });
+  const rows = list.data?.pages.flatMap((p) => p.content);
+  const totalRows = list.data?.pages[0]?.totalElements ?? 0;
   const totals = useQuery({
     queryKey: ["movements", "totals", ...key],
     queryFn: () => movementTotals(auth!, params),
@@ -99,12 +105,12 @@ export function MovementList({ title, screen, tabRow }: {
         <Group>
           {list.isError ? (
             <Note tone="alert">{strings.mobile.movementsError}</Note>
-          ) : !list.data ? (
+          ) : !rows ? (
             <Note>{" "}</Note>
-          ) : list.data.content.length === 0 ? (
+          ) : rows.length === 0 ? (
             <Note>{strings.mobile.movementsEmpty}</Note>
           ) : (
-            list.data.content.map((m, i) => (
+            rows.map((m, i) => (
               // M1e: rândul deschide predarea, cu tot ce e în ea și cu Anexa 3 / avizul.
               <Pressable
                 key={m.id}
@@ -127,7 +133,7 @@ export function MovementList({ title, screen, tabRow }: {
                     <Chip label={strings.mobile.awaitingWeighing} tone="warn" />
                   ) : (
                     <Text style={rowStyles.mono}>
-                      {formatKg(m.quantity)} {strings.enums.unit[m.unit]}
+                      {formatQuantity(m.quantity, m.unit)} {strings.enums.unit[m.unit]}
                     </Text>
                   )}
                 </View>
@@ -135,6 +141,15 @@ export function MovementList({ title, screen, tabRow }: {
             ))
           )}
         </Group>
+        {list.hasNextPage && rows ? (
+          <PrimaryButton
+            tone="quiet"
+            label={strings.mobile.movementsMore(rows.length, totalRows)}
+            onPress={() => list.fetchNextPage()}
+            disabled={list.isFetchingNextPage}
+            testID="movements-more"
+          />
+        ) : null}
       </View>
     </ScrollView>
   );

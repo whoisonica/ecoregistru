@@ -10,3 +10,27 @@ export function sessionIsDead(error: unknown): boolean {
   const status = (error as { status?: unknown } | null)?.status;
   return typeof status === "number" && status >= 400 && status < 500 && status !== 429;
 }
+
+/**
+ * Ce se scrie după o reîmprospătare, care poate dura (semnal slab): sesiunea de <b>acum</b>, cu tokenurile
+ * noi — nu cea de la pornirea cererii. Altfel o firmă aleasă între timp se întorcea la cea veche, iar un om
+ * ieșit din cont era băgat înapoi. Null când sesiunea s-a schimbat între timp (ieșire sau alt cont):
+ * tokenurile noi nu mai sunt ale nimănui și se sting.
+ */
+export function afterRefresh<S extends { auth: { refreshToken: string | null } }, A>(
+  before: S,
+  now: S | null,
+  fresh: A,
+): (Omit<S, "auth"> & { auth: A }) | null {
+  if (!now || now.auth.refreshToken !== before.auth.refreshToken) return null;
+  return { ...now, auth: fresh };
+}
+
+/**
+ * Ieșirea din cont trimisă fără răspuns (`error` null = a mers): se ține minte și se trimite din nou la
+ * următoarea pornire, altfel sesiunea rămânea vie pe server 60 de zile, cu notificările firmei pe telefon.
+ * Aceeași graniță ca la reîmprospătare: se renunță numai când serverul a răspuns cu un refuz.
+ */
+export function keepPendingLogout(error: unknown): boolean {
+  return error != null && !sessionIsDead(error);
+}

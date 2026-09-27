@@ -82,3 +82,13 @@ test("se corectează pe telefon numai predările proprii de pe Anexa 1, fără c
   assert.equal(canEditOnPhone({ ...mv, register: "ART_48" }, true), false);
   assert.equal(canEditOnPhone({ ...mv, operation: "GENERATED" } as WasteMovement, true), false);
 });
+
+import { canRecordWeightOnPhone } from "./movementEdit.ts";
+
+test("cantitatea de după cântărire se adaugă pe telefon, ca pe web: fără cifră, fără cântar, de cine scrie", () => {
+  const awaiting = { ...mv, weighedAtUnloading: true, quantity: null };
+  assert.equal(canRecordWeightOnPhone(awaiting, true), true);
+  assert.equal(canRecordWeightOnPhone(awaiting, false), false);
+  assert.equal(canRecordWeightOnPhone({ ...awaiting, quantity: 830 }, true), false);
+  assert.equal(canRecordWeightOnPhone({ ...awaiting, weighingOperationId: "op1" }, true), false);
+});

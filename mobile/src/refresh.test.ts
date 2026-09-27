@@ -29,3 +29,38 @@ test("o eroare fără stare nu e un refuz", () => {
   assert.equal(sessionIsDead(new Error("orice")), false);
   assert.equal(sessionIsDead(null), false);
 });
+
+// ── ce se scrie după o reîmprospătare care a durat ──────────────────────────
+
+import { afterRefresh, keepPendingLogout } from "./refresh.ts";
+
+const auth = (refreshToken: string | null, token = "acces") =>
+  ({ token, refreshToken, role: "CONSULTANT", tenantId: "t0", tenantName: "Prima", consultancyName: null, email: "a@b.ro", deviceSessionId: "d" }) as const;
+
+test("firma aleasă în timpul reîmprospătării rămâne cea aleasă", () => {
+  const before = { auth: auth("r1"), tenantId: "t1", tenantName: "Unu" };
+  const now = { ...before, tenantId: "t2", tenantName: "Doi" };
+  const next = afterRefresh(before, now, auth("r2", "nou"));
+  assert.equal(next?.tenantId, "t2");
+  assert.equal(next?.auth.token, "nou");
+  assert.equal(next?.auth.refreshToken, "r2");
+});
+
+test("omul ieșit din cont în timpul reîmprospătării rămâne afară", () => {
+  const before = { auth: auth("r1"), tenantId: "t1", tenantName: "Unu" };
+  assert.equal(afterRefresh(before, null, auth("r2")), null);
+});
+
+test("alt cont intrat între timp nu e înlocuit cu sesiunea celui vechi", () => {
+  const before = { auth: auth("r1"), tenantId: "t1", tenantName: "Unu" };
+  const other = { auth: auth("altul"), tenantId: "t9", tenantName: "Nouă" };
+  assert.equal(afterRefresh(before, other, auth("r2")), null);
+});
+
+test("ieșirea fără semnal sau cu serverul căzut se reîncearcă; un refuz nu", () => {
+  assert.equal(keepPendingLogout(new TypeError("Network request failed")), true);
+  assert.equal(keepPendingLogout(apiError(503)), true);
+  assert.equal(keepPendingLogout(apiError(429)), true);
+  assert.equal(keepPendingLogout(apiError(400)), false);
+  assert.equal(keepPendingLogout(null), false);
+});

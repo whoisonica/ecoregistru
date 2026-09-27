@@ -15,9 +15,11 @@ import type {
   WorkPoint,
 } from "@web/types";
 
-import { File, Paths } from "expo-file-system";
+import { Directory, File, Paths } from "expo-file-system";
 
 import type { AuthResponse, DeviceSessionRow } from "./auth";
+import { apiBaseUrl } from "./baseUrl";
+import { fetchWithTimeout } from "./timeout";
 
 /**
  * **Serverul adevărat, cel de pe Heroku.** Aplicația se leagă la producție din prima, fără nimic de
@@ -32,7 +34,7 @@ import type { AuthResponse, DeviceSessionRow } from "./auth";
  */
 const PRODUCTION_URL = "https://ecoregistru-api-5ba7c1d5e3e3.herokuapp.com";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? PRODUCTION_URL;
+const BASE_URL = apiBaseUrl(process.env.EXPO_PUBLIC_API_URL, __DEV__, PRODUCTION_URL);
 
 /** 401 pe o cerere cu token, după ce reîmprospătarea a fost încercată și n-a mers: omul iese din cont. */
 export class UnauthorizedError extends Error {}
@@ -91,14 +93,16 @@ interface Options extends Omit<RequestInit, "body"> {
   body?: unknown;
   /** Adevărat numai pe a doua încercare, ca să nu intrăm în buclă. */
   retried?: boolean;
+  /** Cât se așteaptă răspunsul (`timeout.ts`); implicit 30 s, o poză 90 s. */
+  timeoutMs?: number;
 }
 
 /** Cererea cu tot ce ține de sesiune (token, firmă, reîmprospătare, plicul de eroare), fără să citească corpul. */
 async function send(path: string, options: Options = {}): Promise<Response> {
-  const { auth, body, headers, retried, ...rest } = options;
+  const { auth, body, headers, retried, timeoutMs, ...rest } = options;
   // O poză pleacă `multipart/form-data`, iar granița o pune `fetch` singur — deci fără antet scris.
   const multipart = body instanceof FormData;
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetchWithTimeout(`${BASE_URL}${path}`, {
     ...rest,
     body: body === undefined ? undefined : multipart ? body : JSON.stringify(body),
     headers: {
@@ -109,7 +113,7 @@ async function send(path: string, options: Options = {}): Promise<Response> {
       ...(auth?.tenantId ? { "X-Tenant-Id": auth.tenantId } : {}),
       ...(headers as Record<string, string>),
     },
-  });
+  }, timeoutMs ?? (multipart ? 90_000 : 30_000));
 
   if (res.status === 401 && auth && !retried) {
     const token = await refreshOnce();
@@ -204,9 +208,9 @@ export function movementTotals(auth: Auth, params: MovementFilters) {
   return request<MovementTotals>(`/api/v1/movements/totals?${query({ ...params })}`, { auth });
 }
 
-/** Pe telefon lista lunii e scurtă și se citește cu degetul; o pagină de 50 ajunge. */
-export function movements(auth: Auth, params: MovementFilters) {
-  return request<PageSlice<WasteMovement>>(`/api/v1/movements?${query({ ...params, size: 50 })}`, { auth });
+/** O pagină de 50 din lista lunii; „Mai arată” aduce următoarea (`MovementList`). */
+export function movements(auth: Auth, params: MovementFilters, page = 0) {
+  return request<PageSlice<WasteMovement>>(`/api/v1/movements?${query({ ...params, page, size: 50 })}`, { auth });
 }
 
 /** `year` e obligatoriu — §3 din todo-mobil spunea altceva, serverul răspunde 400 fără el. */
@@ -258,13 +262,26 @@ export function evidences(auth: Auth, year: number) {
  */
 export async function downloadAuditFile(auth: Auth, year: number, years: number): Promise<string> {
   const name = years === 1 ? `dosar-control-${year}.zip` : `dosar-control-${year - years + 1}-${year}.zip`;
-  return saveToCache(await send(`/api/v1/audit-file?year=${year}&years=${years}`, { auth }), name);
+  return saveToCache(await send(`/api/v1/audit-file?year=${year}&years=${years}`, { auth, timeoutMs: 120_000 }), name);
+}
+
+/** Dosarul documentelor descărcate (dosarul de control, anexele, pozele): golit la ieșirea din cont. */
+function documentsDir() {
+  const dir = new Directory(Paths.cache, "documente");
+  if (!dir.exists) dir.create();
+  return dir;
+}
+
+/** Ce a descărcat omul care iese nu rămâne pe telefon pentru următorul. */
+export function clearDocuments() {
+  const dir = new Directory(Paths.cache, "documente");
+  if (dir.exists) dir.delete();
 }
 
 /** Corpul unui răspuns, scris în cache sub `name` (înlocuiește o copie mai veche); întoarce adresa fișierului. */
 async function saveToCache(res: Response, name: string): Promise<string> {
   const bytes = new Uint8Array(await res.arrayBuffer());
-  const file = new File(Paths.cache, name);
+  const file = new File(documentsDir(), name);
   if (file.exists) file.delete();
   file.create();
   file.write(bytes);
@@ -358,6 +375,11 @@ export function createMovement(auth: Auth, body: unknown) {
 /** Corectura (M1f): înlocuiește predarea întreagă — cererea se face cu `editBody` din `movementEdit.ts`. */
 export function updateMovement(auth: Auth, id: string, body: unknown) {
   return request<WasteMovement>(`/api/v1/movements/${id}`, { method: "PUT", auth, body });
+}
+
+/** „Adaugă cantitatea” după cântărirea la descărcare — același drum ca pe web (`RecordWeightDialog`). */
+export function recordWeight(auth: Auth, id: string, quantity: number, unit: string) {
+  return request<WasteMovement>(`/api/v1/movements/${id}/weight`, { method: "POST", auth, body: { quantity, unit } });
 }
 
 /**

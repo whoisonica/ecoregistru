@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ApiError } from "../src/api";
+import { loginErrorText } from "../src/errors";
 import { Logo } from "../src/components/Icon";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
@@ -34,8 +34,7 @@ export default function LoginScreen() {
     try {
       await signIn(email, password);
     } catch (e) {
-      // Un răspuns de la server = date greșite sau blocat; fără răspuns = n-am ajuns la server.
-      setError(e instanceof ApiError ? strings.login.genericError : strings.mobile.serverUnreachable);
+      setError(loginErrorText(e, { generic: strings.login.genericError, unreachable: strings.mobile.serverUnreachable }));
       setBusy(false);
     }
   }

@@ -46,7 +46,11 @@
     "test:aviz": "node --test src/aviz/parse.test.ts",
     "test:edit": "node --test src/movementEdit.test.ts",
     "test:refresh": "node --test src/refresh.test.ts",
-    "test:store": "node --test src/storeConfig.test.ts"
+    "test:store": "node --test src/storeConfig.test.ts",
+    "test:form": "node --test src/handoverForm.test.ts",
+    "test:timeout": "node --test src/timeout.test.ts",
+    "test:outbox": "node --test src/outboxRules.test.ts",
+    "test": "node --test 'src/**/*.test.ts'"
   },
   "private": true
 }

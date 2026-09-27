@@ -83,6 +83,7 @@ export default function AddScreen() {
  */
 function Outbox({ items }: { items: OutboxItem[] }) {
   const { session, auth } = useSession();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const hasPending = items.some((i) => i.state === "PENDING");
   const sendNow = async () => {
@@ -109,11 +110,19 @@ function Outbox({ items }: { items: OutboxItem[] }) {
                   {item.movementId ? `${m.outboxPhotoFailed} ` : ""}
                   {item.error}
                 </Text>
+              ) : item.error ? (
+                <Text style={rowStyles.sub}>{m.outboxServerError(item.error)}</Text>
               ) : null}
             </View>
             {item.state === "REJECTED" ? (
               <View style={styles.outSide}>
                 <Chip label={m.outboxRejected} tone="bad" />
+                {/* Numai cât predarea nu e pe server: una cu poza căzută se corectează din ecranul ei. */}
+                {!item.movementId ? (
+                  <Pressable onPress={() => router.push(`/predare?outbox=${item.id}`)} testID="outbox-fix">
+                    <Text style={styles.linkText}>{m.outboxFix}</Text>
+                  </Pressable>
+                ) : null}
                 <Pressable onPress={() => remove(item.id)} testID="outbox-remove">
                   <Text style={styles.linkText}>{m.outboxRemove}</Text>
                 </Pressable>

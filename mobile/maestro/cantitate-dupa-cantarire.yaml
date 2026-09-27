@@ -1,0 +1,83 @@
+# Evaluarea din 27.09.2026 — greutatea de după cântărire, pe telefon:
+#   (1) „Adaugă cantitatea” pe o predare „De cântărit”, tastată cu punct („1.25” tone — înainte punctul se ștergea și ieșeau 125 tone);
+#   (2) „Corectează” pe aceeași predare păstrează greutatea (înainte `PUT` pleca cu `quantity: null`).
+#   maestro test -e PASSWORD=<ceva> --test-output-dir <folder> maestro/cantitate-dupa-cantarire.yaml
+# Înainte: o predare de probă pe 02.09.2026, cântărită la descărcare, fără cantitate, făcută prin API
+# (todo-mobil §23). După flux, în bază: 1,25 tone, `weighed_at_unloading` tot adevărat.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible: Mișcările lunii
+    timeout: 15000
+- scrollUntilVisible:
+    element: ".*02\\.09\\.2026.*"
+    centerElement: true
+- tapOn: ".*02\\.09\\.2026.*"
+- extendedWaitUntil:
+    visible: Pe fișă
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: weight-qty
+    centerElement: true
+- tapOn:
+    id: weight-qty
+- inputText: "1.25"
+- tapOn: "tone"
+- takeScreenshot: 01-cantitatea-tastata
+# Tastatura numerică de pe iOS n-are „Gata” și acoperă butonul; ecranul o închide la derulare.
+- scroll
+- scrollUntilVisible:
+    element:
+      id: weight-save
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: weight-save
+
+# Predarea reîncărcată: cifra e sus, cu tonele întregi, iar secțiunea a dispărut.
+- scrollUntilVisible:
+    element:
+      id: movement-quantity
+    direction: UP
+- assertVisible: "1,25 tone"
+- assertNotVisible: Cantitatea cântărită la descărcare
+- takeScreenshot: 02-dupa-adaugare
+
+# Corectura: câmpul cantității e deschis, cu greutatea venită, și pleacă înapoi la salvare.
+- scrollUntilVisible:
+    element:
+      id: movement-edit
+    centerElement: true
+- tapOn:
+    id: movement-edit
+- extendedWaitUntil:
+    visible: Corectează predarea
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: qty
+    centerElement: true
+- assertVisible: "1,25"
+- takeScreenshot: 03-formular
+- scrollUntilVisible:
+    element:
+      id: handover-save
+    timeout: 60000
+- tapOn:
+    id: handover-save
+# Înapoi pe predare (numai după un `PUT` reușit); ecranul își păstrează derularea, deci cifra e sus.
+- extendedWaitUntil:
+    visible: "Anexa 3"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: movement-quantity
+    direction: UP
+- assertVisible: "1,25 tone"
+- takeScreenshot: 04-dupa-corectura

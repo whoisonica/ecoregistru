@@ -1,15 +1,68 @@
 import { useQueryClient } from "@tanstack/react-query";
 import * as Device from "expo-device";
+import { File, Paths } from "expo-file-system";
 import * as SecureStore from "expo-secure-store";
+import * as SQLite from "expo-sqlite";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
 
 import * as api from "./api";
 import type { AuthResponse } from "./auth";
-import { sessionIsDead } from "./refresh";
+import { clearCache } from "./outbox";
+import { afterRefresh, keepPendingLogout, sessionIsDead } from "./refresh";
 
 // Tokenul stă în Keychain / Keystore, niciodată în AsyncStorage (todo-mobil §5).
 const SESSION_KEY = "wh_session";
+/** Ieșirile din cont care n-au ajuns la server (fără semnal): se trimit din nou la pornire. */
+const PENDING_LOGOUT_KEY = "wh_logout_pending";
+
+async function pendingLogouts(): Promise<string[]> {
+  try {
+    return JSON.parse((await SecureStore.getItemAsync(PENDING_LOGOUT_KEY)) ?? "[]") as string[];
+  } catch {
+    return [];
+  }
+}
+
+/** Stinge sesiunea pe server; fără răspuns, o ține minte pentru data viitoare (`keepPendingLogout`). */
+async function logoutOnServer(refreshToken: string) {
+  const error = await api.logout(refreshToken).then(() => null, (e: unknown) => e ?? new Error("logout"));
+  if (!keepPendingLogout(error)) return;
+  const pending = await pendingLogouts();
+  if (!pending.includes(refreshToken)) pending.push(refreshToken);
+  await SecureStore.setItemAsync(PENDING_LOGOUT_KEY, JSON.stringify(pending.slice(-10)));
+}
+
+/** Ieșirile rămase de data trecută. Fiecare rămâne în listă numai dacă iar n-a primit răspuns. */
+async function flushPendingLogouts() {
+  const pending = await pendingLogouts();
+  if (!pending.length) return;
+  const left: string[] = [];
+  for (const token of pending) {
+    const error = await api.logout(token).then(() => null, (e: unknown) => e ?? new Error("logout"));
+    if (keepPendingLogout(error)) left.push(token);
+  }
+  if (left.length) await SecureStore.setItemAsync(PENDING_LOGOUT_KEY, JSON.stringify(left));
+  else await SecureStore.deleteItemAsync(PENDING_LOGOUT_KEY);
+}
+
+/**
+ * Pe iPhone, Keychain-ul supraviețuiește dezinstalării: fără asta, o aplicație reinstalată (sau telefonul
+ * dat altcuiva după ștergerea aplicației) pornea direct în contul vechi. Semnul e un fișier în folderul
+ * aplicației, care pleacă odată cu ea; lipsa lui la pornire înseamnă o instalare nouă.
+ */
+async function forgetSessionFromPreviousInstall() {
+  const marker = new File(Paths.document, "instalare");
+  if (marker.exists) return;
+  // Aplicațiile instalate înaintea semnului au deja baza cozii: acolo e o actualizare, nu o reinstalare,
+  // iar omul rămâne în cont.
+  const updated = new File(SQLite.defaultDatabaseDirectory, "wastehouse.db").exists;
+  if (!updated) {
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+    await SecureStore.deleteItemAsync(PENDING_LOGOUT_KEY);
+  }
+  marker.create();
+}
 
 /**
  * Firma pe care lucrează sesiunea. Separată de {@link AuthResponse} fiindcă pe ea o schimbă
@@ -55,19 +108,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // `["companies"]` nu-l poartă în cheie (ca pe web, „Cache la deconectare”, 17.09.2026).
       queryClient.clear();
       await SecureStore.deleteItemAsync(SESSION_KEY);
+      // La fel listele ținute pentru lucrul fără semnal și documentele descărcate.
+      await clearCache().catch(() => {});
+      try {
+        api.clearDocuments();
+      } catch {
+        // un fișier ținut deschis de foaia de partajare; pleacă la următoarea ieșire
+      }
     },
     [queryClient]
   );
 
   useEffect(() => {
-    SecureStore.getItemAsync(SESSION_KEY)
+    forgetSessionFromPreviousInstall()
+      .catch(() => {})
+      .then(() => SecureStore.getItemAsync(SESSION_KEY))
       .then((raw) => {
         const parsed = raw ? (JSON.parse(raw) as Stored) : null;
         latest.current = parsed;
         setStored(parsed);
       })
       .catch(() => setStored(null))
-      .finally(() => setReady(true));
+      .finally(() => {
+        setReady(true);
+        flushPendingLogouts().catch(() => {});
+      });
   }, []);
 
   /**
@@ -80,17 +145,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
    */
   useEffect(() => {
     api.setRefresher(async () => {
-      const current = latest.current;
-      if (!current?.auth.refreshToken) return null;
+      const before = latest.current;
+      if (!before?.auth.refreshToken) return null;
       try {
-        const fresh = await api.refreshSession(current.auth.refreshToken);
-        await save({ ...current, auth: fresh });
+        const fresh = await api.refreshSession(before.auth.refreshToken);
+        // Sesiunea de acum, nu cea de la pornirea cererii: firma aleasă între timp rămâne, iar un om
+        // ieșit între timp rămâne afară — tokenul nou, al nimănui, se stinge pe server (`afterRefresh`).
+        const next = afterRefresh(before, latest.current, fresh);
+        if (!next) {
+          if (fresh.refreshToken) await logoutOnServer(fresh.refreshToken);
+          return null;
+        }
+        await save(next);
         return fresh.token;
       } catch (error) {
         // Fără semnal sau cu serverul căzut, eroarea urcă la cerere, iar ecranul spune „fără
         // legătură” în loc să scoată omul din cont (`refresh.ts`).
         if (!sessionIsDead(error)) throw error;
-        await save(null);
+        // Scoate din cont numai sesiunea refuzată, nu una intrată între timp.
+        if (latest.current?.auth.refreshToken === before.auth.refreshToken) await save(null);
         return null;
       }
     });
@@ -114,7 +187,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const token = latest.current?.auth.refreshToken;
     // Mai întâi Keychain-ul: dacă serverul nu răspunde, omul tot trebuie să poată ieși de pe telefon.
     await save(null);
-    if (token) await api.logout(token).catch(() => {});
+    if (token) await logoutOnServer(token);
   }, [save]);
 
   const switchTenant = useCallback(

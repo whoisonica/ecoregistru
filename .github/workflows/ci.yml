@@ -119,21 +119,10 @@ jobs:
         working-directory: mobile
         run: npx tsc --noEmit
 
-      - name: npm run test:aviz
+      # Toate `src/**/*.test.ts` (parserul avizului, corectura, sesiunea, coada, formularul, magazinul).
+      - name: npm test
         working-directory: mobile
-        run: npm run test:aviz
-
-      - name: npm run test:edit
-        working-directory: mobile
-        run: npm run test:edit
-
-      - name: npm run test:refresh
-        working-directory: mobile
-        run: npm run test:refresh
-
-      - name: npm run test:store
-        working-directory: mobile
-        run: npm run test:store
+        run: npm test
 
   e2e:
     name: e2e — Chrome peste backend + frontend pe o bază nouă

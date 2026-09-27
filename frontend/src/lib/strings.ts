@@ -207,6 +207,7 @@ export const strings = {
     lcdLabelIn: (month: string) => `${month.toUpperCase()} · PRIMIT`,
     monthMovements: "Mișcările lunii",
     movementsEmpty: "Nicio mișcare în luna asta.",
+    movementsMore: (shown: number, total: number) => `Mai arată (${shown} din ${total})`,
     movementsError: "Nu am putut încărca mișcările.",
     awaitingWeighing: "cântărire la destinatar",
     missingOperationCode: "fără cod R/D",
@@ -265,6 +266,10 @@ export const strings = {
     wasteCodeNoProfile: "Scrie codul sau denumirea ca să cauți în nomenclator.",
     listUnavailable: "Lista nu e pe telefon încă. Deschide ecranul o dată cu semnal.",
     dateFormat: "Scrie data ca zz.ll.aaaa.",
+    quantityFormat: "Scrie cantitatea ca 2,5 — cel mult trei zecimale.",
+    dateOutOfRange: "Anul trebuie să fie de la 2000 încoace și cel mult zece ani de acum.",
+    codeNotInProfile: "Codul nu mai e printre cele declarate de firmă. Alege altul.",
+    fixErrors: (n: number) => (n === 1 ? "O rubrică e de completat, e marcată mai sus." : `${n} rubrici sunt de completat, marcate mai sus.`),
     save: "Salvează predarea",
     // Coada: ce n-a ajuns încă pe server.
     outboxTitle: "De trimis",
@@ -272,7 +277,9 @@ export const strings = {
     outboxPending: "de trimis",
     outboxRejected: "refuzată",
     outboxPhotoFailed: "Predarea e în registru; poza n-a urcat.",
+    outboxServerError: (reason: string) => `Serverul n-a primit-o încă (${reason}). Mai încercăm singuri.`,
     outboxRemove: "Scoate",
+    outboxFix: "Corectează",
     outboxSendNow: "Trimite acum",
 
     // --- M1c: „A venit controlul” ---

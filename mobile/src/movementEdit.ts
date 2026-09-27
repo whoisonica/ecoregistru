@@ -68,3 +68,11 @@ export function canEditOnPhone(mv: WasteMovement, writer: boolean) {
     (mv.operation === "RECOVERED" || mv.operation === "DISPOSED")
   );
 }
+
+/**
+ * „Adaugă cantitatea” (ca `RecordWeightDialog` pe web): o predare fără cifră, care nu vine din cântar,
+ * pentru cine scrie. Serverul (`POST /movements/{id}/weight`) refuză oricum una care are deja cantitate.
+ */
+export function canRecordWeightOnPhone(mv: WasteMovement, writer: boolean) {
+  return writer && !mv.weighingOperationId && mv.quantity == null;
+}
