@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, FilePlus, FileSpreadsheet, Scale } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, FilePlus, FileSpreadsheet, Scale } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import {
@@ -32,6 +32,7 @@ import { WeighingOperationDialog } from "@/components/depot/WeighingOperationDia
 import { ReceivedFormsTab } from "@/components/depot/ReceivedFormsTab";
 import { InventoryTab } from "@/components/depot/InventoryTab";
 import { StockTab } from "@/components/depot/StockTab";
+import { BalingDialog } from "@/components/depot/BalingDialog";
 
 const t = strings.weighing;
 
@@ -65,6 +66,8 @@ export function WeighingOperationsPage() {
   const stockTab = tab === "STOCK" || tab === "INVENTORY";
   const inventoryTab = tab === "INVENTORY";
   const type: WeighingOperationType = forms || stockTab ? "IN" : tab;
+  // F5 — balotarea: aceeași listă pe lună, fișa ei (doar câți baloți).
+  const balings = tab === "PROCESSING";
   const [month, setMonth] = useState(currentMonth());
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -138,6 +141,8 @@ export function WeighingOperationsPage() {
             <Button hotkey="N" onClick={() => setCreating(true)}>
               {forms ? (
                 <FilePlus className="mr-2 h-4 w-4" />
+              ) : balings ? (
+                <Boxes className="mr-2 h-4 w-4" />
               ) : transfers ? (
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
               ) : inbound ? (
@@ -145,7 +150,7 @@ export function WeighingOperationsPage() {
               ) : (
                 <ArrowUpFromLine className="mr-2 h-4 w-4" />
               )}
-              {forms ? t.formsNew : transfers ? t.newTransfer : inbound ? t.newIn : t.newOut}
+              {forms ? t.formsNew : balings ? t.newBaling : transfers ? t.newTransfer : inbound ? t.newIn : t.newOut}
             </Button>
           )
         }
@@ -157,6 +162,7 @@ export function WeighingOperationsPage() {
             { id: "IN", label: t.tabIn },
             { id: "OUT", label: t.tabOut },
             { id: "TRANSFER", label: t.tabTransfer },
+            { id: "PROCESSING", label: t.tabBaling },
             { id: "FORMS", label: t.tabForms },
             { id: "STOCK", label: t.tabStock },
             { id: "INVENTORY", label: strings.inventory.tab },
@@ -194,7 +200,8 @@ export function WeighingOperationsPage() {
       {stockTab && !inventoryTab && <StockTab canManage={canManage(user?.role)} />}
       {inventoryTab && <InventoryTab canManage={canManage(user?.role)} />}
 
-      {!forms && !stockTab && retentions.data && <RetentionsStrip report={retentions.data} />}
+      {/* Balotarea n-are bani: banda reținerilor nu spune nimic acolo. */}
+      {!forms && !stockTab && !balings && retentions.data && <RetentionsStrip report={retentions.data} />}
 
       {!forms && !stockTab && isError && <p className="text-sm text-red-600">{t.loadError}</p>}
 
@@ -210,10 +217,10 @@ export function WeighingOperationsPage() {
                 <SortableTH sortKey="date" sort={view.sort} onSort={view.toggleSort}>
                   {t.date}
                 </SortableTH>
-                <TH>{transfers ? t.route : inbound ? t.counterpartyIn : t.counterpartyOut}</TH>
-                <TH>{t.articles}</TH>
+                <TH>{balings ? t.workPoint : transfers ? t.route : inbound ? t.counterpartyIn : t.counterpartyOut}</TH>
+                <TH>{balings ? t.baling.fromTo : t.articles}</TH>
                 <TH className="text-right">{transfers ? t.sentReceived : t.quantity}</TH>
-                <TH className="text-right">{transfers ? t.difference : t.value}</TH>
+                <TH className="text-right">{balings ? t.baling.count : transfers ? t.difference : t.value}</TH>
                 <TH>{t.status}</TH>
                 <TH sticky="right" className="text-right">
                   {strings.common.actions}
@@ -226,8 +233,10 @@ export function WeighingOperationsPage() {
                   columns={8}
                   loading={isLoading}
                   icon={Scale}
-                  title={view.emptiedBySearch ? strings.common.noResults : t.empty}
-                  description={view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint}
+                  title={view.emptiedBySearch ? strings.common.noResults : balings ? t.baling.empty : t.empty}
+                  description={
+                    view.emptiedBySearch ? strings.common.noResultsHint : balings ? t.baling.emptyHint : t.emptyHint
+                  }
                 />
               )}
               {view.visible.map((o) => (
@@ -239,7 +248,18 @@ export function WeighingOperationsPage() {
         </>
       )}
 
-      {((creating && !forms) || openId || linked.data) && (
+      {balings && (creating || openId) && (
+        <BalingDialog
+          operation={creating ? null : operations.find((o) => o.id === openId) ?? null}
+          canApprove={canManage(user?.role)}
+          onClose={() => {
+            setCreating(false);
+            setOpenId(null);
+          }}
+        />
+      )}
+
+      {!balings && ((creating && !forms) || openId || (linked.data && linked.data.type !== "PROCESSING")) && (
         <WeighingOperationDialog
           open
           type={type}
@@ -265,9 +285,14 @@ function OperationRow({ operation, onOpen }: { operation: WeighingOperation; onO
   const value = operation.lines.reduce((sum, l) => sum + (l.totalValue ?? 0), 0);
   const priced = operation.lines.some((l) => l.totalValue != null);
   const transfer = operation.transfer;
-  const counterparty = transfer
-    ? `${operation.workPointName} → ${transfer.targetWorkPointName}`
-    : operation.partnerName ?? operation.naturalPersonName;
+  const baling = operation.baling;
+  const counterparty = baling
+    ? operation.workPointName
+    : transfer
+      ? `${operation.workPointName} → ${transfer.targetWorkPointName}`
+      : operation.partnerName ?? operation.naturalPersonName;
+  // F5 — două linii (vrac consumat, balot rezultat), aceleași kilograme: se arată o dată.
+  const shownKg = baling ? baling.kg : kg;
 
   return (
     <TR>
@@ -278,24 +303,34 @@ function OperationRow({ operation, onOpen }: { operation: WeighingOperation; onO
       </TD>
       <TD>
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {operation.lines.slice(0, 3).map((l) => (
+          {baling && (
+            <span className="inline-flex items-center">
+              <BinSwatch code={operation.lines[0]?.wasteCode ?? ""} />
+              <span>
+                {baling.sourceArticleName} → {baling.articleName}
+              </span>
+            </span>
+          )}
+          {!baling && operation.lines.slice(0, 3).map((l) => (
             <span key={l.id} className="inline-flex items-center">
               <BinSwatch code={l.wasteCode} />
               <span>{l.articleName ?? l.wasteCode}</span>
             </span>
           ))}
-          {operation.lines.length > 3 && (
+          {!baling && operation.lines.length > 3 && (
             <span className="text-content-muted">+{operation.lines.length - 3}</span>
           )}
           {operation.lines.length === 0 && <span className="text-content-subtle">—</span>}
         </span>
       </TD>
       <TD className="text-right font-mono tabular-nums">
-        {formatKg(kg)}
+        {formatKg(shownKg)}
         {transfer?.receivedKg != null && <> / {formatKg(transfer.receivedKg)}</>}
       </TD>
       <TD className="text-right font-mono tabular-nums">
-        {transfer ? (
+        {baling ? (
+          t.baling.bales(baling.baleCount)
+        ) : transfer ? (
           transfer.differenceKg != null ? (
             `${transfer.differenceKg > 0 ? "+" : ""}${formatKg(transfer.differenceKg)} kg`
           ) : (

@@ -1,3 +1,11 @@
+🗜️ **27.09.2026 — proba 54 (`54-balotare.mjs`), balotarea (F5)**: în Setări → Sortimente, „Carton balotat P54” se face din „Carton vrac
+P54” cu 380 kg/balot, iar rândul spune „din … · 380 kg/balot”; pe `/cantar`, tabul „Balotare” are „Balotare nouă” (și tasta N); fișa arată
+„12 × 380 kg = 4.560 kg din … în …” înainte de salvare și nota TRAT; salvată, rândul e „Finalizată”, „12 baloți”, 4.560 kg, iar stocul
+depozitului are 440 kg vrac și 4.560 kg balotat; operatorul salvează și el, dar n-are „Anulează operațiunea”; adminul anulează cu motiv și
+stocul revine; 1440×900 fără derulare, 375 fără lățire. Nu intră în `run.mjs`: `node e2e/54-…`. Proba **19** cere acum șapte taburi.
+**Negativă:** fără tabul „Balotare” cade la primul clic pe tab. ⚠️ Lasă în urmă depozitul „Proba 54 <număr>” (dezactivat), sortimentele
+„Carton vrac/balotat P54 <număr>” (dezactivate), o intrare finalizată și două balotări (una anulată).
+
 🧹 **27.09.2026 — proba 53 (`53-depozit-defecte.mjs`), trei din cele șase defecte mici ale depozitului**: cu 11 transferuri noi,
 tabul „Transferuri” are 10 rânduri și „Înainte”, fără derulare la 1440×900; dialogul de cântar neatins se închide la Escape, cu o
 observație scrisă întreabă „Închizi fără să salvezi?”; după dezactivarea depozitului de destinație, transferul își arată destinația

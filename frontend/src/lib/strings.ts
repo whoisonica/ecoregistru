@@ -1414,6 +1414,16 @@ export const strings = {
         "Pentru ce interzice OUG 31/2011 art. 1 alin. (1): șine și piese de cale ferată, capace de cămin, cabluri de semnalizare și telecomunicații, componente de rețele de utilități. Aplicația refuză sortimentul la o intrare de la persoană fizică.",
       badgeMetal: "Metal",
       badgeForbidden: "Interzis PF",
+      // F5 — balotarea: sortimentul balotat știe din ce se face și cât cântărește un balot.
+      baleSource: "Se face din (balotare)",
+      baleSourceNone: "Nu se balotează",
+      baleSourceHint:
+        "Pentru un sortiment balotat („Carton balotat”), alege sortimentul vrac din care se face, cu același cod. La balotare, operatorul scrie doar câți baloți a făcut.",
+      baleWeight: "Greutatea unui balot (kg)",
+      baleWeightHint: "Greutatea medie. Diferența față de cea reală iese la cântărirea la vânzare și la inventar.",
+      baleIncomplete: "Pentru balotare trebuie și sortimentul vrac, și greutatea unui balot.",
+      badgeBaled: "Balotat",
+      baledFrom: (source: string, kg: string) => `din ${source} · ${kg} kg/balot`,
       empty: "Niciun sortiment încă.",
       emptyHint: "La cântar alegi sortimentul, nu codul. Adaugă-le pe cele cu care lucrezi.",
       searchPlaceholder: "Caută după denumire sau cod...",
@@ -1786,6 +1796,33 @@ export const strings = {
     differenceHint:
       "Peste toleranța celor două cântare, diferența se închide cu NIR și decizia comisiei, în ambele sensuri.",
     receiptSection: "Recepția",
+    // F5 — balotarea: operatorul scrie câți baloți; greutatea standard a sortimentului dă kilogramele.
+    tabBaling: "Balotare",
+    newBaling: "Balotare nouă",
+    baling: {
+      title: "Fișă de balotare",
+      viewTitle: (n: number) => `Balotarea nr. ${n}`,
+      article: "Ce ai balotat",
+      count: "Câți baloți",
+      computed: (count: number, weight: string, kg: string, source: string, target: string) =>
+        `${count} × ${weight} kg = ${kg} kg din ${source} în ${target}`,
+      notes: "Observații",
+      treatmentNote: "Balotarea cu presa e tratare (R12): se raportează și în chestionarul TRAT, cap. 8.",
+      r12Missing:
+        "Profilul firmei nu are codul R12 printre operațiunile autorizate. Balotarea se salvează, dar presarea trebuie să fie în autorizație.",
+      noArticles:
+        "Niciun sortiment balotat încă. În Setări → Sortimente, la „Carton balotat” alegi „Se face din” și greutatea unui balot.",
+      noArticlesLink: "Deschide Sortimente",
+      countRequired: "Scrie câți baloți ai făcut.",
+      articleRequired: "Alege ce ai balotat.",
+      save: "Salvează balotarea",
+      saved: "Balotarea a intrat în stoc.",
+      fromTo: "Din → în",
+      bales: (n: number) => (n === 1 ? "1 balot" : `${n} baloți`),
+      perBale: (kg: string) => `${kg} kg/balot`,
+      empty: "Nicio balotare în luna asta.",
+      emptyHint: "Balotarea mută cartonul vrac în „Carton balotat”, cu același cod de deșeu.",
+    },
     // D2.6 — registrul formularelor de transport primite.
     tabForms: "Formulare primite",
     formsNew: "Trece formular",

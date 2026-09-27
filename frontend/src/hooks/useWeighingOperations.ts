@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import { saveBlob } from "@/lib/download";
 import { openPdfInTab } from "@/lib/openFileInTab";
 import type {
+  BalingInput,
   DepotRetentionReport,
   WeighingLinesInput,
   WeighingOperation,
@@ -145,6 +146,20 @@ export function useTransferTargets(enabled = true) {
   });
 }
 
+/** F5 — fișa de balotare: se salvează finalizată, deci mută stocul pe loc. */
+export function useCreateBaling() {
+  const invalidate = useInvalidate();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: BalingInput) =>
+      (await api.post<WeighingOperation>("/api/v1/weighing-operations/balings", input)).data,
+    onSuccess: () => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["stock"] });
+    },
+  });
+}
+
 export function useCancelWeighingOperation() {
   const invalidate = useInvalidate();
   const qc = useQueryClient();
@@ -153,6 +168,7 @@ export function useCancelWeighingOperation() {
       (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/cancel`, { reason })).data,
     onSuccess: () => {
       invalidate();
+      qc.invalidateQueries({ queryKey: ["stock"] });
       qc.invalidateQueries({ queryKey: ["movements"] });
       qc.invalidateQueries({ queryKey: ["evidences"] });
     },

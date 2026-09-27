@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
+import { Select } from "@/components/ui/select";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { SortableTH } from "@/components/ui/table";
 import { TablePagination, TableToolbar } from "@/components/ui/table-toolbar";
@@ -53,6 +54,10 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
   const [metal, setMetal] = useState(false);
   const [metalTouched, setMetalTouched] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  // F5 — sortimentul balotat: din ce vrac se face și cât cântărește un balot.
+  const [sourceId, setSourceId] = useState("");
+  const [baleWeight, setBaleWeight] = useState("");
+  const [baleError, setBaleError] = useState(false);
   const [nameError, setNameError] = useState(false);
   const [codeError, setCodeError] = useState(false);
   const [codeQuery, setCodeQuery] = useState("");
@@ -66,6 +71,10 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
   });
 
   const isSubmitting = createMut.isPending || updateMut.isPending;
+  // F5 — din ce se poate face un balot: un sortiment vrac activ, cu același cod, care nu e el însuși balotat.
+  const baleSources = (articles ?? []).filter(
+    (a) => a.active && !a.sourceArticleId && a.id !== editing?.id && (!code || a.wasteCodeId === code.id)
+  );
   const codeItems: ComboboxItem[] = (codeSearch.data ?? []).map((w) => ({
     id: w.id,
     label: `${w.code} — ${w.name}`,
@@ -78,6 +87,9 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
     setMetal(false);
     setMetalTouched(false);
     setForbidden(false);
+    setSourceId("");
+    setBaleWeight("");
+    setBaleError(false);
     setNameError(false);
     setCodeError(false);
     setDialogOpen(true);
@@ -91,6 +103,9 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
     // Un sortiment salvat are deja alegerea omului; schimbarea codului nu i-o mai rescrie.
     setMetalTouched(true);
     setForbidden(a.forbiddenFromIndividuals);
+    setSourceId(a.sourceArticleId ?? "");
+    setBaleWeight(a.baleWeightKg != null ? String(a.baleWeightKg).replace(".", ",") : "");
+    setBaleError(false);
     setNameError(false);
     setCodeError(false);
     setDialogOpen(true);
@@ -108,12 +123,17 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
     const missingName = !name.trim();
     setNameError(missingName);
     setCodeError(!code);
-    if (missingName || !code) return;
+    const weightKg = baleWeight.trim() ? Number(baleWeight.replace(",", ".")) : null;
+    const baleBroken = Boolean(sourceId) !== (weightKg != null) || (weightKg != null && !(weightKg > 0));
+    setBaleError(baleBroken);
+    if (missingName || !code || baleBroken) return;
     const input = {
       name: name.trim(),
       wasteCodeId: code.id,
       metal,
       forbiddenFromIndividuals: forbidden,
+      sourceArticleId: sourceId || null,
+      baleWeightKg: weightKg,
     };
     try {
       if (editing) {
@@ -204,7 +224,13 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
                       {a.name}
                       {a.metal && <Badge variant="muted">{t.badgeMetal}</Badge>}
                       {a.forbiddenFromIndividuals && <Badge variant="danger">{t.badgeForbidden}</Badge>}
+                      {a.sourceArticleId && <Badge variant="muted">{t.badgeBaled}</Badge>}
                     </div>
+                    {a.sourceArticleName && a.baleWeightKg != null && (
+                      <span className="block text-xs font-normal text-content-muted">
+                        {t.baledFrom(a.sourceArticleName, a.baleWeightKg.toLocaleString("ro-RO"))}
+                      </span>
+                    )}
                   </TD>
                   <TD>
                     <span className="font-mono">{a.wasteCode}{a.hazardous ? "*" : ""}</span>
@@ -329,6 +355,44 @@ export function WasteArticlesSection({ canManage }: { canManage: boolean }) {
               <span className="block text-xs text-content-muted">{t.forbiddenHint}</span>
             </span>
           </label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_12rem]">
+            <div>
+              <Label htmlFor="wa-bale-source">{t.baleSource}</Label>
+              <Select
+                id="wa-bale-source"
+                value={sourceId}
+                onChange={(e) => {
+                  setSourceId(e.target.value);
+                  setBaleError(false);
+                }}
+              >
+                <option value="">{t.baleSourceNone}</option>
+                {baleSources.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} · {a.wasteCode}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="wa-bale-weight">{t.baleWeight}</Label>
+              <Input
+                id="wa-bale-weight"
+                inputMode="decimal"
+                className="font-mono"
+                value={baleWeight}
+                onChange={(e) => {
+                  setBaleWeight(e.target.value.replace(/[^0-9.,]/g, ""));
+                  setBaleError(false);
+                }}
+                aria-invalid={baleError}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-content-muted">
+            {sourceId ? t.baleWeightHint : t.baleSourceHint}
+          </p>
+          {baleError && <p className="-mt-2 text-xs text-red-600">{t.baleIncomplete}</p>}
         </form>
       </Dialog>
 

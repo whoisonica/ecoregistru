@@ -666,6 +666,11 @@ export interface WasteArticle {
   /** Serverul refuză sortimentul la o intrare de la persoană fizică (OUG 31/2011 art. 1 alin. (1)). */
   forbiddenFromIndividuals: boolean;
   active: boolean;
+  /** F5 — sortimentul vrac din care se face acesta prin balotare; null = sortiment obișnuit. */
+  sourceArticleId: string | null;
+  sourceArticleName: string | null;
+  /** F5 — cât cântărește un balot, de regulă. */
+  baleWeightKg: number | null;
 }
 
 export interface WasteArticleInput {
@@ -673,6 +678,8 @@ export interface WasteArticleInput {
   wasteCodeId: string;
   metal: boolean;
   forbiddenFromIndividuals: boolean;
+  sourceArticleId: string | null;
+  baleWeightKg: number | null;
 }
 
 /**
@@ -709,8 +716,29 @@ export interface NaturalPersonInput {
 
 // --- Depozit: operațiunile de cântar (D1.4–D1.10, ecranul D1.15) ---
 
-/** Intrări, ieșiri și (D2.5) transferuri între depozitele firmei; inventarul vine cu F3. */
-export type WeighingOperationType = "IN" | "OUT" | "TRANSFER";
+/** Intrări, ieșiri, (D2.5) transferuri între depozitele firmei și (F5) balotarea. */
+export type WeighingOperationType = "IN" | "OUT" | "TRANSFER" | "PROCESSING";
+
+/** F5 — o balotare: câți baloți, greutatea unui balot din ziua ei, ce a trecut din vrac în balotat. */
+export interface WeighingBaling {
+  articleId: string;
+  articleName: string;
+  sourceArticleId: string;
+  sourceArticleName: string;
+  baleCount: number;
+  baleWeightKg: number;
+  kg: number;
+  /** Firma are coduri R/D în profil, dar nu R12: autorizația nu acoperă presarea. */
+  r12NotAuthorized: boolean;
+}
+
+export interface BalingInput {
+  workPointId: string;
+  date: string;
+  articleId: string;
+  baleCount: number;
+  notes: string | null;
+}
 
 /**
  * În lucru → Finalizată (nemodificabilă) sau Anulată cu motiv. La transfer, între ele: „În tranzit” — a plecat din
@@ -941,6 +969,8 @@ export interface WeighingOperation {
   lines: WeighingLine[];
   /** D2.5 — doar la transfer. */
   transfer: WeighingTransfer | null;
+  /** F5 — doar la balotare. */
+  baling: WeighingBaling | null;
   /** D3.2 — doar pe răspunsul finalizării unei ieșiri / plecării unui transfer: soldurile rămase negative. */
   stockWarnings?: StockRow[];
 }
