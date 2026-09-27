@@ -24,10 +24,12 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
-- tapOn: Luna anterioară
-- tapOn: Luna anterioară
+# Lunile de răsfoit (F6): index 0 = luna curentă, 2 = acum două luni.
+- tapOn:
+    id: month-2
 # Pe „Generare” rândul de sub cifră spune ce lipsește din lună (o cântărire), nu câte rânduri are.
 - extendedWaitUntil:
     visible: "502 kg"

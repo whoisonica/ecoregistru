@@ -11,7 +11,8 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
 - assertVisible:
     id: st-GENERATED

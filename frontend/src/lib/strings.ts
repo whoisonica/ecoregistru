@@ -205,7 +205,6 @@ export const strings = {
     // la colector luna are și intrări, deci rămâne „înregistrat”.
     lcdLabelOut: (month: string) => `${month.toUpperCase()} · PREDAT`,
     lcdLabelIn: (month: string) => `${month.toUpperCase()} · PRIMIT`,
-    monthMovements: "Mișcările lunii",
     movementsEmpty: "Nicio mișcare în luna asta.",
     movementsMore: (shown: number, total: number) => `Mai arată (${shown} din ${total})`,
     movementsError: "Nu am putut încărca mișcările.",
@@ -489,6 +488,19 @@ export const strings = {
     draftNoCode: "fără cod de deșeu încă",
     draftResume: "Continuă",
     draftDiscard: "Începe alta",
+    // --- Valul B, F6 (27.09.2026): „Generare” ca registru al lunii (macheta v6, §24) ---
+    monthEmptyHint: "Nicio mișcare luna asta",
+    filterAll: "Toate",
+    filterNoCode: "Fără cod R/D",
+    filterIncomplete: "De completat",
+    searchOpen: "Caută în lună",
+    searchPlaceholder: "Cod, partener, nr. aviz, dată",
+    searchNone: "Nimic găsit în luna asta.",
+    filterNone: "Niciun rând cu filtrul ăsta în luna asta.",
+    registerTotal: (month: string, n: number) => `${month} · ${n === 1 ? "1 mișcare" : `${n} mișcări`}`,
+    registerHint: "▲ = fără cod R/D · pătrățelul verde = cu poză",
+    withPhoto: "cu poză",
+    otherCodes: "altele",
   },
 
   login: {

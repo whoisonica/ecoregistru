@@ -12,7 +12,8 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
 # Rândul e un singur nod (cod · dată · partener · pastila): se ține cel încă „cântărire la destinatar”, nu primul din 02.09,
 # ca o rulare de dinainte (predarea cântărită deja) să nu fie luată drept probă.

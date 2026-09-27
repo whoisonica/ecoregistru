@@ -10,7 +10,8 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
 # Predările generatorului stau pe „Generare” (Anexa 1), primul tab; „Ieșiri” e registrul colectorului.
 - extendedWaitUntil:
@@ -88,7 +89,8 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
 # Predările generatorului stau pe „Generare” (Anexa 1), primul tab; „Ieșiri” e registrul colectorului.
 - extendedWaitUntil:

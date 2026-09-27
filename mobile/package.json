@@ -54,6 +54,7 @@
     "test:outbox": "node --test src/outboxRules.test.ts",
     "test:steps": "node --test src/handoverSteps.test.ts",
     "test:draft": "node --test src/handoverDraft.test.ts",
+    "test:register": "node --test src/register.test.ts",
     "test": "node --test 'src/**/*.test.ts'"
   },
   "private": true

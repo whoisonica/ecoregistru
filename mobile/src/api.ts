@@ -201,6 +201,11 @@ export interface MovementFilters {
   month: number;
   register?: WasteRegister;
   direction?: "IN" | "OUT";
+  /** Cipurile registrului (F6): aceleași filtre ca pe web, aplicate de server peste toată luna. */
+  missingOperationCode?: true;
+  incomplete?: true;
+  /** Căutarea din lună — pe server, nu în pagina adusă (`MovementQueryService.withSearch`). */
+  search?: string;
 }
 
 /** Cifrele peste toate rândurile filtrului, nu peste pagina adusă — ca pe web. */
@@ -407,7 +412,7 @@ export interface PageSlice<T> {
   totalPages: number;
 }
 
-function query(params: Record<string, string | number | undefined>) {
+function query(params: Record<string, string | number | boolean | undefined>) {
   return Object.entries(params)
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
