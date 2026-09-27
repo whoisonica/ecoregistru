@@ -14,12 +14,13 @@ import { haptic } from "../src/haptics";
 import { lastSaved, onSent, sentMovementId } from "../src/lastSaved";
 import { useOnline } from "../src/online";
 import { useOutboxState } from "../src/outbox";
+import { ticketStatus, type TicketStatus } from "../src/outboxRules";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
 
 const m = strings.mobile;
 
-type Status = "sending" | "queued" | "sent" | "photoFailed" | "rejected";
+type Status = TicketStatus;
 
 /**
  * Ecranul de după „Salvează predarea” (F1, din prototipul aprobat pe 15.09, construit pe 27.09.2026):
@@ -45,22 +46,7 @@ export default function GataScreen() {
   const [movementId, setMovementId] = useState(() => (id ? sentMovementId(id) : null));
   useEffect(() => onSent(() => setMovementId(id ? sentMovementId(id) : null)), [id]);
 
-  // Până la prima citire a cozii, rândul e socotit încă pe drum: nici bifă, nici vibrație pe nimic.
-  const status: Status = !loaded
-    ? online
-      ? "sending"
-      : "queued"
-    : !row
-      ? "sent"
-      : row.state === "REJECTED"
-      ? row.movementId
-        ? "photoFailed"
-        : "rejected"
-      : row.movementId && (row.attempts > 0 || row.error)
-        ? "photoFailed" // predarea e pe server, poza a căzut cel puțin o dată; se reîncearcă singură
-        : online
-          ? "sending"
-          : "queued";
+  const status = ticketStatus({ loaded, online, row });
 
   // Vibrația o singură dată, când intră în registru; refuzul are a lui.
   const felt = useRef<Status | null>(null);
