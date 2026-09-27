@@ -14,7 +14,7 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
-> **27.09.2026 — D3.5 inventarul depozitului și nota de preluare a soldurilor** (local, `feat/depozit-d23`, `cbbd7c0` … `8fad2fb`;
+> **27.09.2026, 14:19 — ✅ PE PRODUCȚIE (`ecoregistru-api` **v137**, `4d37338`, V74 aplicată la 14:13; `ecoregistru-app` **v139**, `fcf0c9f`; monorepo `main` = `deploy/heroku-split` = `63fb3ac`). D3.5 inventarul depozitului și nota de preluare a soldurilor** (`2ce260e` … `63fb3ac`; suita **1199/149** după recenzia finală; liberă **V75**;
 > spec `ecoregistru-docs/docs/specs/2026-09-27-d35-inventar-design.md`, temeiul în `ecoregistru-docs/reports/Inventarul depozitului în lege.md`).
 >
 > **V74** `stock_openings` + `inventories` (+ comisie, linii), `waste_movements.stock_opening_id / inventory_id` cu CHECK. Trei operațiuni noi,
@@ -33,6 +33,9 @@ rulează local și are testele verzi.
 > `InventoryInvariantIT` 4, `InventorySchemaIT` 9, `Art48RegisterIT` 8; negativă pe 27 de reguli, fiecare pică exact testul ei.
 > Frontend: tsc, eslint (0 noi), 68/68. e2e **51** verde pe `eco_e2e_inventar` (jar 8091 + Vite 5191); a prins decizia goală la redeschidere.
 > PDF-urile privite randate (Quick Look): pe lista landscape ștampila folosea lățimea nerotită — reparat (`8fad2fb`).
+> **Recenzia finală** (recenzent separat) a prins dubla numărare notă + inventar în aceeași zi, inventarul datat înaintea unuia aprobat, lipsa
+> numărată ca ieșire pe an și exportul DPA fără liniile noi — toate reparate cu testul întâi (`eecac80`); 10 observații mici rămase în ledger.
+> Odată cu frontendul a plecat și partea web din M1f (`2538cbc`, doar texte), care era în `main`.
 > **Găsit în cercetare, nereparat (decizia proprietarului):** păstrarea documentelor contabile e 5 ani de la 1 iulie (Legea 36/2023), iar
 > `NaturalPersonRetentionScheduler` anonimizează la 10 ani.
 
