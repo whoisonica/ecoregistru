@@ -124,6 +124,10 @@ public interface WeighingOperationRepository extends JpaRepository<WeighingOpera
     @Query("select max(o.borderouNumber) from WeighingOperation o where o.company.id = :companyId")
     Integer findMaxBorderouNumber(@Param("companyId") UUID companyId);
 
+    /** D1.17a — cel mai mare număr de NIR al firmei (OMFP 2634/2015 pct. 24: seria fără goluri). */
+    @Query("select max(o.receptionNoteNumber) from WeighingOperation o where o.company.id = :companyId")
+    Integer findMaxReceptionNoteNumber(@Param("companyId") UUID companyId);
+
     /** D1.11 — plățile în numerar către aceeași persoană în aceeași zi, cu operațiunea care se verifică. */
     @Query("""
             select o from WeighingOperation o

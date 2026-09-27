@@ -182,9 +182,13 @@ public class WeighingOperation {
     @Column(name = "income_tax", precision = 16, scale = 2)
     BigDecimal incomeTax;
 
-    /** Numărul borderoului PF, dat la prima tipărire și păstrat. */
+    /** Numărul borderoului PF, dat la finalizare când există o linie plătită (D1.17a) și păstrat și la anulare. */
     @Column(name = "borderou_number")
     Integer borderouNumber;
+
+    /** NIR 14-3-1A, dat la finalizare pentru liniile preluate gratuit de la o persoană fizică (D1.17a). */
+    @Column(name = "reception_note_number")
+    Integer receptionNoteNumber;
 
     /** D1.13 — seria și numărul Anexei 3, alocate la prima tipărire și păstrate (V52). */
     @Column(name = "anexa3_series", length = 20)
