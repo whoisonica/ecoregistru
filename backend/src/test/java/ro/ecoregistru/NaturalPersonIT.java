@@ -259,7 +259,8 @@ class NaturalPersonIT {
 
     private static WeighingLinesRequest lines(WasteArticle... articles) {
         return new WeighingLinesRequest(null, null, java.util.Arrays.stream(articles)
-                .map(a -> new Line(a.getId(), null, null, new BigDecimal("25"), null, null, null, null))
+                // D1.17a: o intrare PF se finalizează doar cu preț pe fiecare linie.
+                .map(a -> new Line(a.getId(), null, null, new BigDecimal("25"), null, new BigDecimal("1"), null, null))
                 .toList());
     }
 

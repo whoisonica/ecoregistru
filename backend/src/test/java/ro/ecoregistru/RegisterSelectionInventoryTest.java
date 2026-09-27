@@ -33,9 +33,11 @@ class RegisterSelectionInventoryTest {
      * adică un singur registru prin construcție (V46: liniile sunt în {@code ART_48}). Nu adună
      * și nu raportează nimic; o listă a lor e un transport, nu o evidență. Excepție numită, nu tipul
      * parametrului schimbat ca să scape de tipar: un generator nou tot aici trebuie trecut, cu motivul lui.
+     * D1.17a (27.09.2026): NIR-ul preluării gratuite de la o persoană fizică e tot documentul unei singure intrări,
+     * ca borderoul, doar cu liniile ei la 0 lei.
      */
     private static final Set<String> TRANSPORT_DOCUMENTS = Set.of("Anexa3FormGenerator.java", "AvizGenerator.java",
-            "BorderouGenerator.java");
+            "BorderouGenerator.java", "NirGenerator.java");
     private static final Pattern SELECTS_A_REGISTER =
             Pattern.compile("WasteRegister\\.(ANEXA_1|ART_48)\\.select\\(");
 
