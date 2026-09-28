@@ -17,8 +17,10 @@ import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.PartnerWorkPoint;
 import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.exception.NotFoundException;
+import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
+import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.security.TenantContext;
 
 import java.time.Instant;
@@ -33,6 +35,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_AUTHORIZATION_RE
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_ROLE_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_TYPE_REQUIRED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.PARTNER_WORK_POINT_IN_USE;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +47,7 @@ public class PartnerService {
 
     PartnerRepository partnerRepository;
     CompanyRepository companyRepository;
+    WasteMovementRepository movementRepository;
 
     @Transactional(readOnly = true)
     public List<PartnerResponse> list() {
@@ -217,6 +221,13 @@ public class PartnerService {
             wp.setName(blankToNull(wanted.name()));
             wp.setAddress(wanted.address().trim());
             kept.add(wp);
+        }
+        // A point a movement names cannot go: V23's FK stops the delete, and it used to surface as
+        // an unexpected 500 that left the partner unsavable (todo-reparatii-2809 A1).
+        java.util.Set<UUID> removed = new java.util.HashSet<>(existing.keySet());
+        kept.forEach(wp -> removed.remove(wp.getId()));
+        if (!removed.isEmpty() && movementRepository.existsByPartnerWorkPoint_IdIn(removed)) {
+            throw new UnprocessableEntityException(PARTNER_WORK_POINT_IN_USE);
         }
         // orphanRemoval deletes what is no longer in the list; clearing in place keeps the
         // collection Hibernate is tracking rather than swapping it for a new one.

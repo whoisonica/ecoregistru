@@ -271,6 +271,7 @@ public enum ErrorMessageEnum {
     DRIVER_NAME_REQUIRED("driver.name.required", "Scrie numele șoferului."),
     DRIVER_BELONGS_TO_PARTNER("driver.belongs.to.partner", "Șoferul ăsta e al unui transportator: editează-l în fișa partenerului."),
     DRIVER_DELETE_REQUIRES_DEACTIVATION("driver.delete.requires.deactivation", "Dezactivează întâi șoferul. Ștergerea fișei e definitivă, deci se face doar pentru un șofer scos deja din listă."),
+    PARTNER_WORK_POINT_IN_USE("partner.work.point.in.use", "Un punct de lucru pe care l-ai scos apare deja pe predări, iar Anexa 3 a lor îl tipărește. Lasă-l în listă."),
     PARTNER_TYPE_REQUIRED("partner.type.required", "Alege ce face partenerul cu deșeul, sau bifează „Transportator” dacă e o firmă care doar transportă."),
     PARTNER_AUTHORIZATION_REQUIRED("partner.authorization.required", "Completează numărul autorizației de mediu: colectorul sau valorificatorul căruia îi predai deșeul trebuie să fie autorizat."),
     PARTNER_ROLE_REQUIRED("partner.role.required", "Alege rolul partenerului: client (îi predai deșeu și îi facturezi tu), furnizor (îți prestează serviciul și îți facturează el) sau ambele."),

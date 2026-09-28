@@ -20,6 +20,9 @@ public interface WasteMovementRepository
 
     List<WasteMovement> findAllByCompany_IdAndDeletedFalse(UUID companyId);
 
+    /** Și rândurile șterse: FK-ul din V23 le numără, iar Anexa 3 a lor se mai poate cere. */
+    boolean existsByPartnerWorkPoint_IdIn(java.util.Collection<UUID> partnerWorkPointIds);
+
     /**
      * Liniile unei operațiuni de depozit, în ordinea cântăririi, cu codul și sortimentul aduse odată:
      * răspunsul le scrie pe amândouă, iar fără fetch fiecare linie ar costa încă două interogări
