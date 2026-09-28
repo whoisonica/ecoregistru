@@ -161,8 +161,27 @@ deploy_part() {
   wt=$(mktemp -d "${TMPDIR:-/tmp}/deploy-$part-XXXXXX")
   tmpdirs+=("$wt")
   git worktree add -q --detach "$wt" "$remote/main"
-  # shellcheck disable=SC2086
-  git -C "$wt" cherry-pick $pending >/dev/null
+  if [[ -n $(git rev-list --merges "$base..$split") ]]; then
+    # Cu merge-uri în așteptare (două ramuri împinse în `main` prin merge — 28.09.2026) cherry-pick-ul se oprește la
+    # primul merge, iar commiturile celor două laturi, luate la rând, s-ar ciocni. Se pleacă atunci cu UN commit care are
+    # exact conținutul split-ului, păstrând fișierele de divergență stabilă ale producției; garda de mai jos îl verifică.
+    echo "  (are merge-uri: un singur commit cu conținutul lui $split)"
+    git -C "$wt" read-tree -u --reset "$split"
+    local f
+    while IFS= read -r f; do
+      if git cat-file -e "$remote/main:$f" 2>/dev/null; then
+        git -C "$wt" checkout -q "$remote/main" -- "$f"
+      else
+        git -C "$wt" rm -q --cached --ignore-unmatch -- "$f" >/dev/null
+        rm -f "$wt/$f"
+      fi
+    done < <(allowed_for "$part")
+    git -C "$wt" commit -q -m "deploy: $part din $(git rev-parse --short "$ref") ($(wc -l <<<"$pending" | tr -d ' ') commituri, cu merge-uri)" \
+      -m "$(git log --reverse --no-merges --format='%h %s' "$base..$split")"
+  else
+    # shellcheck disable=SC2086
+    git -C "$wt" cherry-pick $pending >/dev/null
+  fi
 
   if ! (cd "$wt" && same_content "$part" HEAD "$split"); then
     echo "✗ GARDA după cherry-pick: rezultatul diferă de $split în afara divergenței stabile." >&2
