@@ -13,6 +13,18 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **28.09.2026, noaptea — în `main` (monorepo `a9ca693` … `bb7b112`), fără release Heroku: aplicația mobilă, valul B aproape închis — F4, F6, F7, F5, F10, F9.**
+> Webul nu se schimbă vizibil (doar texte `strings.mobile.*`, tăiate din bundle-ul web; un singur text scos, `monthMovements`, nefolosit pe web); backendul neatins.
+> **F4** predarea pe trei pași + ciorna (`a9ca693`, ff din `feat/mobil-val-b`). **F6** „Generare” ca registru al lunii (`892194e`): lunile de răsfoit cu
+> kg, compoziția pe coduri, cipurile și căutarea pe server, lista pe zile. **F7** (`145dff0`): „Repetă predarea” (predare nouă, originalul neatins) și
+> „Adaugă poză” pe predarea deschisă (cheia V67 ținută până urcă). **F5** (`c1983f3`, decizia D9): „Bifează” pe Termene, cu numărul de înregistrare,
+> în foaia nativă de jos. **F10** (`5cb18cc`): „ce înseamnă” sub fiecare verificare a controlului + modul inspector pe tot ecranul. **F9** (`bb7b112`):
+> „În calendar” = formularul de eveniment al sistemului, fără nicio permisiune nouă (`test:store` o păzește); `expo-calendar` = modul nativ nou →
+> telefoanele îl primesc abia la un build nou.
+> **Probe:** `tsc` curat (mobil + web), `npm test` mobil **87/87**, lint web 0 erori, `vite build` verde; fiecare regulă nouă de excludere probată
+> negativ; Maestro `f6-registru`, `f7-repeta-poza`, `f5-bifeaza`, `f10-inspector` verzi pe iPhone 17 și Pixel_WH, `f9-calendar` verde pe Android.
+> CI verde pe `5cb18cc` (backend, frontend, mobile, e2e). Detaliile: `ecoregistru-docs/docs/todo-mobil.md` §29.
+
 
 > **28.09.2026 — ✅ F6a, termenele SIATD pe recepții (ramura `feat/depozit-d23`, migrarea **`V78`**, liberă **`V79`**).**
 > Spec `ecoregistru-docs/docs/specs/2026-09-28-f6-siatd-design.md`, plan `…-f6a-siatd-termen-plan.md`.

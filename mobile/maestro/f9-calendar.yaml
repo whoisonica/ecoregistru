@@ -1,0 +1,46 @@
+# F9 (valul B): „În calendar” pe Termene → formularul de eveniment al telefonului, precompletat → „✓ În calendar”.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/f9-calendar.yaml
+# Cere clientul de dezvoltare cu expo-calendar (build din 28.09.2026). Nicio permisiune de calendar: formularul e al sistemului.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-termene
+- extendedWaitUntil:
+    visible:
+      id: deadline-calendar
+    timeout: 15000
+- tapOn:
+    id: deadline-calendar
+    index: 0
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      # Formularul e al sistemului (alt proces pe iOS 26): Maestro nu vede mereu în el — se așteaptă animația.
+      - waitForAnimationToEnd:
+          timeout: 5000
+      - assertNotVisible:
+          id: deadline-calendar
+      - takeScreenshot: f9-01-formular
+      # Pe clientul de dezvoltare rotița lui stă peste „Add” (dreapta sus): fluxul renunță cu „X” și verifică
+      # că aplicația nu scrie „✓” pe un eveniment nesalvat. Salvarea se probează de mână pe telefon.
+      - tapOn:
+          point: "9%,11%"
+      - extendedWaitUntil:
+          visible:
+            id: deadline-calendar
+          timeout: 10000
+      - assertNotVisible: "✓ În calendar"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      # Google Calendar deschide ecranul de eveniment nou (la prima pornire, cu ecranele lui de bun venit).
+      - extendedWaitUntil:
+          visible: ".*(Save|Salvează|Got it|Next|Skip).*"
+          timeout: 20000
+      - takeScreenshot: f9-01-formular
+- takeScreenshot: f9-02-dupa
