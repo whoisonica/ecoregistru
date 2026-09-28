@@ -2197,7 +2197,7 @@ export const strings = {
     confirmDelete: "Persoana n-a vândut nimic, deci fișa se poate șterge. Nu se mai poate recupera.",
     hasOperationsLabel: "De ce nu se poate șterge",
     hasOperationsHint:
-      "Apare pe operațiuni: fișa nu se șterge, fiindcă borderoul se păstrează 10 ani. Datele pleacă singure la termen.",
+      "Apare pe operațiuni: fișa nu se șterge, fiindcă borderoul se păstrează 5 ani de la 1 iulie a anului următor. Datele pleacă singure la termen.",
     created: "Persoană adăugată.",
     updated: "Persoană actualizată.",
     deactivated: "Persoană dezactivată.",

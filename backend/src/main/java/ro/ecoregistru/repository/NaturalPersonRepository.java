@@ -27,7 +27,7 @@ public interface NaturalPersonRepository extends JpaRepository<NaturalPerson, UU
 
     /**
      * Anonimizează persoanele fără nicio operațiune de la {@code cutoff} încoace (Legea 82/1991 art. 25:
-     * borderoul se păstrează 10 ani de la încheierea exercițiului). Rândul rămâne, fiindcă operațiunile
+     * borderoul se păstrează 5 ani de la 1 iulie a anului următor exercițiului). Rândul rămâne, fiindcă operațiunile
      * vechi îl numesc prin cheie străină; pleacă numele, CNP-ul, actul și domiciliul. O persoană creată
      * după {@code createdBefore} și nefolosită încă nu se atinge.
      *

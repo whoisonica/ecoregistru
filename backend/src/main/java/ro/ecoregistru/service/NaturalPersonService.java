@@ -32,7 +32,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.NATURAL_PERSON_NOT_FOUND
  * Fișele persoanelor fizice de la care depozitul cumpără (D1.7b).
  *
  * <p>Lista iese cu CNP-ul mascat; fișa întreagă o primește doar formularul. Persoana care apare pe o
- * operațiune nu se șterge definitiv, fiindcă borderoul se păstrează 10 ani (Legea 82/1991 art. 25):
+ * operațiune nu se șterge definitiv, fiindcă borderoul se păstrează 5 ani de la 1 iulie a anului următor (Legea 82/1991 art. 25):
  * rămâne dezactivată, iar datele pleacă la termen, prin {@link NaturalPersonRetentionScheduler}.
  */
 @Service

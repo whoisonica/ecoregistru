@@ -119,7 +119,7 @@ public enum ErrorMessageEnum {
     NATURAL_PERSON_NAME_REQUIRED("natural.person.name.required", "Scrie numele persoanei."),
     NATURAL_PERSON_CNP_TAKEN("natural.person.cnp.taken", "Există deja o persoană cu CNP-ul ăsta. Caut-o în listă după ultimele cifre."),
     NATURAL_PERSON_DELETE_REQUIRES_DEACTIVATION("natural.person.delete.requires.deactivation", "Dezactivează întâi persoana. Ștergerea fișei e definitivă, deci se face doar pentru o persoană scoasă deja din listă."),
-    NATURAL_PERSON_HAS_OPERATIONS("natural.person.has.operations", "Persoana apare pe operațiuni, iar borderoul se păstrează 10 ani (Legea 82/1991 art. 25). Fișa rămâne dezactivată și se șterge singură la termen."),
+    NATURAL_PERSON_HAS_OPERATIONS("natural.person.has.operations", "Persoana apare pe operațiuni, iar borderoul se păstrează 5 ani de la 1 iulie a anului următor (Legea 82/1991 art. 25). Fișa rămâne dezactivată și se șterge singură la termen."),
     NATURAL_PERSON_METAL_IDENTITY_REQUIRED("natural.person.metal.identity.required", "La metal, borderoul cere de la persoana fizică CNP-ul valid, seria și numărul actului de identitate și domiciliul (OUG 31/2011 art. 1 alin. (1^2)). Completează-le în fișa persoanei."),
     WEIGHING_OPERATION_TYPE_NOT_EDITABLE("weighing.operation.type.not.editable", "Tipul nu se schimbă după creare: intrările și ieșirile au numerotare separată. Anulează operațiunea și fă alta."),
     WEIGHING_OPERATION_OWN_HOUSEHOLD_REQUIRED("weighing.operation.own.household.required", "La metal de la o persoană fizică, borderoul cere declarația că deșeurile provin din gospodăria proprie (OUG 31/2011 art. 1 alin. (1^1)). Bifeaz-o sau scoate liniile de metal."),

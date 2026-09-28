@@ -50,7 +50,7 @@ import static ro.ecoregistru.enums.WeighingOperationType.IN;
 /**
  * D1.7b — tabul „Persoane fizice”: CNP-ul mascat în listă, fișa întreagă doar pentru cine scrie, CNP
  * valid și unic pe firmă, izolarea între firme și ștergerea definitivă doar fără operațiuni
- * (Legea 82/1991 art. 25: borderoul se păstrează 10 ani).
+ * (Legea 82/1991 art. 25: borderoul se păstrează 5 ani de la 1 iulie a anului următor).
  */
 @SpringBootTest
 @ActiveProfiles("dev")

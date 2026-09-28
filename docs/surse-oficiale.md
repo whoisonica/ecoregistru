@@ -2818,8 +2818,8 @@ Art. 41 pct. 2 lit. d) + art. 42 alin. (1) lit. d): nerespectarea normelor de in
 e a firmei clientului).
 
 **Consecințe (corectate 27.09.2026):** borderoul PF, NIR-ul, listele de inventariere și PV-ul se păstrează **5 ani de la
-1 iulie a anului următor** exercițiului, nu 10. ⚠️ **Codul anonimizează persoanele fizice la 10 ani**
-(`NaturalPersonRetentionScheduler.RETENTION_YEARS`), adică peste termenul legal — de decis de proprietar (vezi raportul).
+1 iulie a anului următor** exercițiului, nu 10. **28.09.2026, decizia proprietarului:** persoanele fizice se anonimizează
+la termenul legal (`NaturalPersonRetentionScheduler`: o operațiune din 2026 → 1 iulie 2032).
 Stocul depozitului trebuie inventariat cel puțin anual.
 
 ### 15.1 Normele de inventariere — OMFP 2861/2009, în vigoare (citit 26.09.2026)
