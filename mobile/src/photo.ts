@@ -1,14 +1,26 @@
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
+import { reportError } from "./monitoring";
+
 /**
  * Poza avizului, de la cameră sau din galerie, micșorată pe telefon înainte de orice (todo-mobil §6):
  * latura lungă la 2000 px, JPEG 0,7 — în jur de un megaoctet, destul ca textul să se citească și
  * departe de plafonul de 10 MB. Folosită de „Adaugă” și de tasta „Pozează avizul” de pe Acasă.
  *
- * <p>`"denied"` = omul n-a dat acces la cameră; `null` = a renunțat.
+ * <p>`"denied"` = omul n-a dat acces la cameră; `"failed"` = camera, galeria sau micșorarea au căzut (B7: înainte
+ * eroarea urca până la apăsare și nu spunea nimic); `null` = a renunțat.
  */
-export async function pickAvizPhoto(source: "camera" | "gallery"): Promise<string | "denied" | null> {
+export async function pickAvizPhoto(source: "camera" | "gallery"): Promise<string | "denied" | "failed" | null> {
+  try {
+    return await pick(source);
+  } catch (error) {
+    reportError(error, { where: "photo", source });
+    return "failed";
+  }
+}
+
+async function pick(source: "camera" | "gallery"): Promise<string | "denied" | null> {
   let result: ImagePicker.ImagePickerResult;
   if (source === "camera") {
     const permission = await ImagePicker.requestCameraPermissionsAsync();

@@ -239,6 +239,7 @@ export const strings = {
     // Colectorul pur n-are „Generare”: intrările lui trec prin cântar, care vine la M2.
     collectorLater: "Intrările la cântar vin într-o versiune următoare a aplicației.",
     cameraDenied: "Fără acces la cameră nu pot poza avizul. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
+    photoPickFailed: "Poza n-a putut fi luată. Încearcă din nou.",
     reading: "Citesc avizul…",
     readNothing: "N-am putut citi nimic din poză. Completează de mână — poza rămâne atașată predării.",
     photoRemove: "Scoate poza",
@@ -520,6 +521,7 @@ export const strings = {
     photoAddHint: "Bonul de cântar sau avizul, după predare",
     photoUploading: "Urc poza…",
     photoFailed: "Poza n-a urcat. Rămâne aici: încearcă din nou.",
+    photoRefused: (reason: string) => `Serverul n-a primit poza: ${reason}`,
     photoRetry: "Încearcă din nou",
     photoCameraDenied: "Fără acces la cameră. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
     // --- Valul B, F5 (28.09.2026): bifarea termenului de pe telefon (D9) ---

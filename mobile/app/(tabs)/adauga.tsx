@@ -32,7 +32,7 @@ export default function AddScreen() {
   const company = useCompany();
   useHandoverData();
   const outbox = useOutbox(session?.email);
-  const [cameraDenied, setCameraDenied] = useState(false);
+  const [cameraDenied, setCameraDenied] = useState<"denied" | "failed" | false>(false);
   // F4: un formular închis pe la mijloc se reia de aici („Continui predarea de la 14:20?”).
   const { draft, discard } = useDraft(session?.email, session?.tenantId ?? undefined);
 
@@ -42,7 +42,7 @@ export default function AddScreen() {
   const open = async (source: "camera" | "gallery" | "none") => {
     if (source === "none") return router.push("/predare");
     const photo = await pickAvizPhoto(source);
-    if (photo === "denied") return setCameraDenied(true);
+    if (photo === "denied" || photo === "failed") return setCameraDenied(photo);
     if (!photo) return;
     setCameraDenied(false);
     router.push({ pathname: "/predare", params: { photo } });
@@ -82,7 +82,7 @@ export default function AddScreen() {
             ) : null}
             <Text style={styles.hint}>{m.addHint}</Text>
             <PrimaryButton label={m.snapAviz} onPress={() => open("camera")} testID="snap-aviz" />
-            {cameraDenied ? <Note tone="alert">{m.cameraDenied}</Note> : null}
+            {cameraDenied ? <Note tone="alert">{cameraDenied === "failed" ? m.photoPickFailed : m.cameraDenied}</Note> : null}
             <PrimaryButton tone="quiet" label={m.pickFromGallery} onPress={() => open("gallery")} testID="pick-aviz" />
             <Pressable onPress={() => open("none")} testID="without-photo" style={styles.link}>
               <Text style={styles.linkText}>{m.withoutPhoto}</Text>
