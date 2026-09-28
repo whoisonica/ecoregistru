@@ -72,7 +72,7 @@ import { editBody } from "../src/movementEdit";
 import { confirmDeclared } from "../src/declared";
 import { reportError } from "../src/monitoring";
 import { useOnline } from "../src/online";
-import { db, drain, enqueue, get as getQueued, resubmit } from "../src/outbox";
+import { db, drain, enqueue, get as getQueued, localPhoto, resubmit } from "../src/outbox";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
 import { dropDraft, writeDraft } from "../src/useDraft";
@@ -344,7 +344,7 @@ export default function PredareScreen() {
           const f = saved.fields as Record<string, unknown>;
           const s = <T,>(k: string, fallback: T) => (k in f ? (f[k] as T) : fallback);
           setStep(saved.step);
-          setPhoto(saved.photo);
+          setPhoto(localPhoto(saved.photo));
           setWorkPointId(s("workPointId", ""));
           setDate(s("date", todayIso()));
           setWasteCode(s<WasteCode | null>("wasteCode", null));

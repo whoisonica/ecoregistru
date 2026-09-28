@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import * as api from "./api";
 import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
+import { rebasePhoto } from "./photoPath";
 import { PhotoMissingError, rejectsRow, retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
 
 /**
@@ -103,13 +104,18 @@ interface Row {
   created_at: number;
 }
 
+/** Adresa unei poze ținute pe disc, mutată sub containerul de acum al aplicației (`photoPath.ts`, B2). */
+export function localPhoto(uri: string | null) {
+  return rebasePhoto(uri, Paths.document.uri);
+}
+
 function fromRow(r: Row): OutboxItem {
   return {
     id: r.id,
     owner: r.owner,
     tenantId: r.tenant_id,
     payload: JSON.parse(r.payload),
-    photoUri: r.photo_uri,
+    photoUri: localPhoto(r.photo_uri),
     movementId: r.movement_id,
     state: r.state,
     attempts: r.attempts,
@@ -229,7 +235,7 @@ export async function remove(id: string) {
   const d = await db();
   const row = await d.getFirstAsync<Row>("SELECT * FROM outbox WHERE id = ?", id);
   await d.runAsync("DELETE FROM outbox WHERE id = ?", id);
-  dropPhoto(row?.photo_uri ?? null);
+  dropPhoto(localPhoto(row?.photo_uri ?? null));
   changed();
 }
 
