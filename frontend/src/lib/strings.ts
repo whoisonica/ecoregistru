@@ -2681,7 +2681,6 @@ export const strings = {
       "Profilul nu spune dacă firma pune ambalaje pe piață. Îl completează consultantul.",
     anexa3Yes: ".xls și PDF pe fiecare punct de lucru cu deșeuri de ambalaje: {points}.",
     anexa3YesYear: "{year}: {points}",
-    anexa3ExitsOnly: "Firma e generator: anexa are numai predările și nu are termen de depunere.",
     anexa3Deadline: "Termen: 25 februarie.",
     anexa3None: "Niciun punct de lucru n-a avut deșeuri de ambalaje (coduri 15 01) în {year}.",
     anexa3NonePeriod: "Niciun punct de lucru n-a avut deșeuri de ambalaje (coduri 15 01) în perioada aleasă.",
@@ -4125,9 +4124,6 @@ export const strings = {
     // n-are rubrică de destinatar; se citește doar pe ecran, de un om care va căuta „ANMAP".
     anexa3AddresseeAnmap: "ANMAP",
     anexa3AddresseeLocal: "agenția județeană pentru protecția mediului din raza punctului de lucru",
-    anexa3ExitsTitle: "Anexa 3. Deșeuri de ambalaje predate — ieșiri",
-    anexa3ExitsHint: "Ce ai predat, pe material și pe firma care a preluat.",
-    anexa3ExitsTableTitle: "Ieșiri — ce ai predat și cui",
     anexa3Table1Title: "Tabelul 1 — colectori și comercianți",
     anexa3Table2Title: "Tabelul 2 — reciclatori și valorificatori",
     anexa3IntakeTitle: "Cantitatea preluată",

@@ -160,7 +160,7 @@ function Anexa3Row({ c, action }: { c: AuditFileContents; action?: ReactNode }) 
             </p>
           ))
         ))}
-      {withPoints.length > 0 && <p>{c.anexa3ExitsOnly ? t.anexa3ExitsOnly : t.anexa3Deadline}</p>}
+      {withPoints.length > 0 && <p>{t.anexa3Deadline}</p>}
       {missing.map((y) => (
         <p key={`m${y.year}`}>{t.anexa3RoleMissing.replace("{year}", String(y.year))}</p>
       ))}
@@ -450,17 +450,20 @@ export function AuditFilePage() {
                   />
                 }
               />
-              <Anexa3Row
-                c={contents.data}
-                action={
-                  <FormatMenu
-                    disabled={doc !== null}
-                    onPick={(format) =>
-                      void runDoc("anexa3", () => downloadPackagingAnexa3(year, undefined, format), t.downloadError)
-                    }
-                  />
-                }
-              />
+              {/* Anexa 3 Ambalaje e a colectorului (Andreea, 29.09.2026): la generator rândul nu există. */}
+              {contents.data.anexa3Applies && (
+                <Anexa3Row
+                  c={contents.data}
+                  action={
+                    <FormatMenu
+                      disabled={doc !== null}
+                      onPick={(format) =>
+                        void runDoc("anexa3", () => downloadPackagingAnexa3(year, undefined, format), t.downloadError)
+                      }
+                    />
+                  }
+                />
+              )}
               <PartnersRow c={contents.data} />
               <ContentRow
                 state={size && size.attachments === 0 ? "out" : "in"}

@@ -140,10 +140,10 @@ const switched = await switchCompany(ctx2, /Proba Automata/i);
 check("comutat pe generatorul de probă", Boolean(switched), switched ?? "");
 await ctx2.goto(BASE + `/generare?tab=ambalaje&luna=${AN}`, { waitUntil: "networkidle" });
 await ctx2.waitForTimeout(1200);
-// Din 18.09.2026 seara, la generator Anexa 3 e un buton de document, nu un tabel: ieșirile ei sunt
-// aceleași predări ca pe tasta „Predat", iar tasta „Preluat de la alții" e numai a celui care colectează.
+// Din 29.09.2026 (Andreea): Anexa 3 Ambalaje e a colectorului — generatorul n-are nici butonul, nici
+// tasta „Preluat de la alții". (Între 18.09 și 29.09 avea butonul, cu ieșirile.)
 const a3 = await ctx2.getByRole("button", { name: "Anexa 3 Ambalaje" }).count();
-check("generatorul are documentul Anexa 3", a3 === 1);
+check("generatorul n-are documentul Anexa 3 Ambalaje", a3 === 0);
 const taste23 = await ctx2.evaluate(() =>
   [...document.querySelectorAll('input[name="tabel-ambalaje"]')].map((i) => i.closest("label").innerText.trim())
 );

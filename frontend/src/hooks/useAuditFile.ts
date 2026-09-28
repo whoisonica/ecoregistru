@@ -52,7 +52,8 @@ export interface AuditFileYearContents {
 export interface AuditFileContents {
   years: AuditFileYearContents[];
   packagingDeclaration: "INCLUDED" | "TRADER_ONLY" | "NOT_ANSWERED";
-  anexa3ExitsOnly: boolean;
+  /** Firma ține registrul de colector, deci depune Anexa 3 Ambalaje; la generator rândul nu apare (29.09.2026). */
+  anexa3Applies: boolean;
   partners: number;
   partnersExpired: number;
   partnersExpiringSoon: number;

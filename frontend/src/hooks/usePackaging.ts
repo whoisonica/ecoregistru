@@ -106,8 +106,13 @@ export async function downloadPackagingDeclaration(year: number, format: "xls" |
  * ce e același lucru pentru un cont cu un singur punct de lucru și o privire de ansamblu utilă
  * pentru unul cu mai multe.
  */
-export function usePackagingAnexa3(year: number, workPointId?: string) {
+/**
+ * `enabled`: la un generator serverul refuză raportul (Andreea, 29.09.2026: e al colectorului), deci
+ * ecranul nu-l mai cere — o cerere refuzată ar stinge tot tabul cu o eroare de încărcare.
+ */
+export function usePackagingAnexa3(year: number, workPointId?: string, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: [...packagingRoot, "anexa3", year, workPointId ?? null] as const,
     queryFn: async () =>
       (

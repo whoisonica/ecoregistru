@@ -168,15 +168,16 @@ export function PackagingReport({
   movementsPath: string;
 }) {
   const canWrite = useCanWrite();
-  // Anexa 3 se descarcă la toți: la colector cu preluări și ieșiri, la generator numai cu ieșirile
-  // (proprietarul, 16.09.2026). Tabelul ei pe ecran rămâne doar unde spune ceva ce „Predat" nu
-  // spune — la firma care și colectează. Cât timp firma nu s-a încărcat, tasta nu apare.
+  // Anexa 3 Ambalaje e a colectorului (Andreea, 29.09.2026; între 16.09 și 29.09 generatorul o avea
+  // numai cu ieșirile): butonul ei și tasta „Preluat de la alții" apar doar la firma care și
+  // colectează. Cât timp firma nu s-a încărcat, nu apare nimic din ele.
   const { data: company } = useCurrentCompany();
   const collects = company != null && company.type !== "GENERATOR";
   const { data: workPoints } = useWorkPoints();
   const activeWorkPoints = useMemo(() => (workPoints ?? []).filter((w) => w.active), [workPoints]);
   // Fără punct de lucru: doar ca să aflăm dacă profilul a spus care tabel se aplică (`printable`).
-  const anexa3Q = usePackagingAnexa3(year);
+  // Numai la firma care colectează: generatorului serverul i-o refuză.
+  const anexa3Q = usePackagingAnexa3(year, undefined, collects);
   const anexa3 = anexa3Q.data;
   const [tableParam, setTable] = useUrlState("tabel");
   const table: TableKey =
@@ -430,7 +431,8 @@ export function PackagingReport({
             </MenuItem>
           </Menu>
           {/* Profilul n-a spus care tabel se aplică → nimic de tipărit; de ce, scrie pe tasta
-              „Preluat de la alții". La generator `printable` e mereu adevărat. */}
+              „Preluat de la alții". */}
+          {collects && (
           <Menu label={t.docAnexa3} align="left" disabled={downloading || !(anexa3?.printable ?? false)}>
             {activeWorkPoints.length === 0 && <MenuLabel>{t.anexa3NoWorkPoint}</MenuLabel>}
             {activeWorkPoints.map((wp) => (
@@ -451,6 +453,7 @@ export function PackagingReport({
               </Fragment>
             ))}
           </Menu>
+          )}
         </div>
         <span id="pk-table-picker" className="sr-only">
           {t.tablePicker}
