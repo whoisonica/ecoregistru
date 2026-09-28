@@ -197,6 +197,36 @@ class MovementWriteGuardsIT {
         assertThat(movementRepository.findById(UUID.fromString(id)).orElseThrow().getQuantity()).isNull();
     }
 
+    /**
+     * A2 (todo-reparatii-2809), BUG-050 pe drumul „de cântărit”: cu bifa „Se cântărește la
+     * descărcare” pusă, validarea ieșea înainte de limita de 1.000.000 t, iar formularul redeschide
+     * cantitatea după cântărire. 100.000.000 t nu încap în {@code implied_generated} și tot anul
+     * firmei dădea 500. Refuzat și la creare, și la editare; mișcarea rămâne necântărită.
+     */
+    @Test
+    void anAbsurdWeightIsRefusedOnTheWeighedAtUnloadingPathToo() throws Exception {
+        String absurd = """
+                {"workPointId": "%s", "date": "2026-07-05", "wasteCodeId": "%s", "quantity": 100000000,
+                 "unit": "TONS", "physicalState": "SOLID", "weighedAtUnloading": true,
+                 "operation": "RECOVERED", "register": "ANEXA_1", "storageType": "CT", "transportMeans": "AN",
+                 "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
+                """.formatted(a.workPoint(), paper, a.partner());
+        long before = count(a);
+
+        postMovement(a, absurd).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("movement.quantity.too.large"));
+        assertThat(count(a)).isEqualTo(before);
+
+        String id = unweighedHandover(a);
+        mockMvc.perform(put("/api/v1/movements/" + id)
+                        .header("Authorization", "Bearer " + a.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(absurd))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("movement.quantity.too.large"));
+        assertThat(movementRepository.findById(UUID.fromString(id)).orElseThrow().getQuantity()).isNull();
+    }
+
     // ---------- G26: texte libere prea lungi ----------
 
     /**
