@@ -44,6 +44,7 @@ public class EvidenceController {
     ro.ecoregistru.service.export.AnnualDeclarationGenerator annualDeclarationGenerator;
     CompanyRepository companyRepository;
     ro.ecoregistru.service.Art48RegisterService art48RegisterService;
+    ro.ecoregistru.service.Anexa3RegisterService anexa3RegisterService;
 
     @GetMapping
     public List<MonthlyEvidenceResponse> list(
@@ -119,6 +120,25 @@ public class EvidenceController {
                 .build();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(exportFormat.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
+    /**
+     * Registrul formularelor Anexa 3 (Andreea, 29.09.2026): centralizatorul formularelor de transport emise
+     * în an, în ordinea numerelor alocate. PDF de tipărit pentru control; nu se depune nicăieri. Citire, deci
+     * orice rol al firmei.
+     */
+    @GetMapping("/registru-anexa3")
+    public ResponseEntity<byte[]> anexa3Register(
+            @RequestParam int year,
+            @RequestParam(required = false) UUID workPointId) {
+        byte[] body = anexa3RegisterService.render(year, workPointId);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("registru-anexa3-" + year + ".pdf")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(body);
     }
