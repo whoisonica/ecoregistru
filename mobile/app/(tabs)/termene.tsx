@@ -4,9 +4,12 @@ import { strings } from "@web/strings";
 import type { Deadline } from "@web/types";
 import { daysLabel } from "@/lib/deadlines";
 import { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { deadlines, pastDeadlines, upcomingDeadlines, UnauthorizedError } from "../../src/api";
+import { canWrite } from "../../src/auth";
+import { canCompleteOnPhone } from "../../src/deadlineRules";
 import { LightHead } from "../../src/components/LightHead";
 import { YearArrows } from "../../src/components/MonthArrows";
 import { OfflineBand } from "../../src/components/OfflineBand";
@@ -15,7 +18,7 @@ import { SkeletonRows } from "../../src/components/Skeleton";
 import { TabRow } from "../../src/components/TabRow";
 import { formatDate } from "../../src/format";
 import { useSession } from "../../src/session";
-import { colors } from "../../src/theme";
+import { colors, fonts } from "../../src/theme";
 
 const t = strings.deadlines;
 
@@ -24,11 +27,14 @@ const t = strings.deadlines;
  * al fiecărui fel, restanțele întâi) · **Bifate** (pe an) · **Trecute** (anul în curs până ieri, bifate
  * sau nu). Aceleași cereri ca `hooks/useDeadlines.ts`.
  *
- * <p>Bifarea unui termen (`POST /{id}/complete`) nu e aici: pe teren nu se închide o declarație, se află
- * că e deschisă. Rămâne pe web până cere cineva altceva.
+ * <p>F5 (valul B, decizia D9 din 28.09.2026): „Bifează” pe rând deschide foaia de jos (`app/bifeaza.tsx`),
+ * cu numărul de înregistrare ca notă — confirmarea de la APM vine des pe telefon, pe drum. Aceeași regulă
+ * ca pe web (`canCompleteOnPhone`). „Redeschide” rămâne pe web.
  */
 export default function TermeneScreen() {
   const { session, auth, signOut } = useSession();
+  const router = useRouter();
+  const writer = canWrite(session?.role);
   const [tab, setTab] = useState("");
   const enabled = !!auth && !!session?.tenantId;
   const currentYear = new Date().getFullYear();
@@ -133,7 +139,20 @@ export default function TermeneScreen() {
                         : ""}
                   </Text>
                 </View>
-                <Chip label={strings.enums.deadlineStatus[d.status]} tone={TONE[d.status]} />
+                <View style={styles.rowEnd}>
+                  <Chip label={strings.enums.deadlineStatus[d.status]} tone={TONE[d.status]} />
+                  {canCompleteOnPhone(d, writer) ? (
+                    <Pressable
+                      testID="deadline-complete"
+                      onPress={() => router.push({ pathname: "/bifeaza", params: { id: d.id, type: d.reportType, due: d.dueDate } })}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.complete, pressed && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.completeText}>{strings.mobile.deadlineComplete}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
             ))
           )}
@@ -156,4 +175,13 @@ const styles = StyleSheet.create({
   hint: { fontSize: 13, color: colors.ink2, paddingHorizontal: 4 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
   rowBody: { flex: 1 },
+  rowEnd: { alignItems: "flex-end", gap: 8 },
+  complete: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.green,
+  },
+  completeText: { fontFamily: fonts.sansMedium, fontSize: 13.5, color: colors.greenText },
 });

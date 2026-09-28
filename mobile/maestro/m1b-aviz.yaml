@@ -4,6 +4,8 @@
 # 1.250 kg, seria DRS nr. 000417) și pus în galerie CHIAR ÎNAINTE de rulare (fluxul alege cea mai nouă poză): `xcrun simctl addmedia booted …` pe iOS,
 # `adb push … /sdcard/Pictures/` + scanarea media pe Android. Simulatorul n-are cameră, deci poza vine din galerie;
 # restul drumului e același.
+# Din 27.09.2026 (F4) formularul e pe trei pași: „Continuă” (`step-next`) nu trece peste o rubrică citită din poză
+# neconfirmată sau peste o eroare de pe pasul curent; „Salvează predarea” (`handover-save`) e pe pasul 3.
 appId: ro.wastehouse.app
 ---
 - runFlow: pornire.yaml
@@ -27,6 +29,8 @@ appId: ro.wastehouse.app
       - extendedWaitUntil:
           visible: Photos
           timeout: 15000
+      # Grila se încarcă după titlu; un tap prea devreme cade pe gol (27.09.2026, cu multe poze în galerie).
+      - waitForAnimationToEnd
       - tapOn:
           point: "17%,24%"
 - runFlow:
@@ -40,7 +44,7 @@ appId: ro.wastehouse.app
           text: "Photo taken on.*"
           index: 0
 
-# --- Citirea: fiecare câmp citit are rândul lui de pe aviz și butonul „Corect”. ---
+# --- Pasul 1: fiecare câmp citit are rândul lui de pe aviz și butonul „Corect”. ---
 - extendedWaitUntil:
     visible:
       id: f-date-confirm
@@ -48,100 +52,118 @@ appId: ro.wastehouse.app
 - takeScreenshot: 02-citit
 - assertVisible: '.*Seria DRS Nr. 000417.*'
 
-# Formularul e lung (din 26.09 și cu rubricile Anexei 3): derularea până la „Salvează” trece de cele 20 s implicite.
-# „Salvează” nu pleacă până nu sunt confirmate toate: ecranul rămâne și spune câte mai sunt.
-- scrollUntilVisible:
-    element:
-      id: handover-save
-    timeout: 60000
-- tapOn:
-    id: handover-save
-# Erorile rubricilor goale apar deasupra și împing nota sub marginea ecranului.
-- scrollUntilVisible:
-    element: "Confirmă cele .* câmpuri citite din poză."
-- takeScreenshot: 03-neconfirmat
-
-# --- Confirmarea, de sus în jos, în ordinea formularului. ---
-- scrollUntilVisible:
-    element:
-      id: f-date-confirm
-    direction: UP
-    timeout: 60000
-    # Fără centrare, „Corect” ajunge sus, sub rotița plutitoare a clientului de dezvoltare (dreapta sus), și
-    # apăsarea deschide meniul lui în loc să confirme data. O aplicație de magazin n-are rotița.
-    centerElement: true
-- tapOn:
-    id: f-date-confirm
-- tapOn:
-    id: f-code-confirm
-- scrollUntilVisible:
-    element:
-      id: f-qty-confirm
-- tapOn:
-    id: f-qty-confirm
+# Punctul de lucru întâi (firma demo are trei); apoi „Continuă” nu pleacă până nu sunt confirmate cele citite
+# de pe pasul ăsta: rămâne și spune câte mai sunt.
 - scrollUntilVisible:
     element: Punct de lucru Cluj
     direction: UP
 - tapOn: Punct de lucru Cluj
+- scrollUntilVisible:
+    element:
+      id: step-next
+- tapOn:
+    id: step-next
+- assertVisible: "3 rubrici citite din poză, de confirmat"
+- assertVisible: Ce și cât
+- takeScreenshot: 03-neconfirmat
 
+# Confirmarea, de sus în jos. Fără centrare, „Corect” ajunge sus, sub rotița plutitoare a clientului de dezvoltare
+# (dreapta sus), și apăsarea deschide meniul lui în loc să confirme data. O aplicație de magazin n-are rotița.
+- scrollUntilVisible:
+    element:
+      id: f-date-confirm
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: f-date-confirm
+# Confirmarea scoate rândul „Din poză” de sub dată, deci cardul codului urcă: se așteaptă și se centrează din nou.
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: f-code-confirm
+    centerElement: true
+- tapOn:
+    id: f-code-confirm
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: f-qty-confirm
+    centerElement: true
+- tapOn:
+    id: f-qty-confirm
+- tapOn:
+    id: step-next
+
+# --- Pasul 2: destinatarul citit din poză, soarta și codul R/D. ---
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
 - scrollUntilVisible:
     element:
       id: f-partner-confirm
-- tapOn:
-    id: f-partner-confirm
-- scrollUntilVisible:
-    element:
-      id: f-doc-confirm
-- tapOn:
-    id: f-doc-confirm
-# Butonul mașinii poate cădea sub marginea ecranului după confirmarea documentului.
-- scrollUntilVisible:
-    element:
-      id: f-vehicle-confirm
     centerElement: true
 - tapOn:
-    id: f-vehicle-confirm
+    id: f-partner-confirm
 - assertNotVisible: "Confirmă .* citit.* din poză."
-
-# --- BUG-023 (serverul, din 16/19.09): starea, depozitarea, transportul, destinația și codul R/D nu
-# rămân goale. Telefonul refuză înainte de coadă — altfel predarea ar fi ieșit „refuzată” abia la
-# trimitere.
+# G3: fără soartă și cod R/D nu se trece mai departe.
 - scrollUntilVisible:
     element:
-      id: handover-save
-    timeout: 60000
+      id: step-next
 - tapOn:
-    id: handover-save
+    id: step-next
+- assertVisible: Cui și cum
 - scrollUntilVisible:
-    element: "Alege în ce îl ții: apare pe fișă."
+    element: "Câmp obligatoriu."
     direction: UP
-- assertVisible: "Alege destinația deșeului."
-- takeScreenshot: 04-rubrici-cerute
+- takeScreenshot: 04-cod-cerut
 
-# G3 + „La fel ca data trecută”: ultima predare de 15 01 02 către Eco Valorificare (seed-ul: R3, solid,
-# RP, AN, Vr), aplicată numai la apăsare — cu tot ce pune și webul, nu doar codul.
+# „La fel ca data trecută” e primul card: ultima predare de 15 01 02 către Eco Valorificare (seed-ul: R3, solid,
+# RP, AN, Vr), aplicată numai la apăsare — cu tot ce pune și webul — și sare la pasul 3.
 - scrollUntilVisible:
     element:
       id: same-as-last
-- assertVisible: "La fel ca data trecută: R3.*"
+    direction: UP
+    centerElement: true
+- assertVisible: "R3 către Eco Valorificare SA"
 - tapOn:
     id: same-as-last
-- scrollUntilVisible:
-    element: "RP — Recipient de plastic"
-    direction: UP
-- assertVisible: "AN — Auto nespecial"
-- assertVisible: "Vr — Valorificare prin agenți economici autorizați"
+
+# --- Pasul 3: rubricile de pe fișă vin pliate, cu rezumatul pe rând (rândul e un singur nod: eticheta + rezumatul). ---
+- extendedWaitUntil:
+    visible: Pe fișă și transport
+    timeout: 5000
+- assertVisible: ".*Solid.*"
+- assertVisible: ".*AN — Auto nespecial.*"
+- assertVisible: "Completate din ultima predare. Apasă pe un rând ca să schimbi."
+- takeScreenshot: 05-la-fel
 # Soarta e valorificare, deci destinațiile oferite sunt numai din tabăra ei: Vr, P, Ve, A.
+- tapOn:
+    id: fold-wasteDestination
+- assertVisible:
+    id: dest-Vr
 - assertNotVisible:
     id: dest-DO
-- takeScreenshot: 05-la-fel
+- tapOn:
+    id: fold-wasteDestination
 # 15 01 02 își spune singur materialul, deci nu se cere.
 - scrollUntilVisible:
-    element: "Alte plastice \\(propus din cod\\)"
+    element: ".*Alte plastice \\(propus din cod\\).*"
+# Documentul și mașina vin din poză: se confirmă și ele.
 - scrollUntilVisible:
     element:
-      id: handover-save
-    timeout: 60000
+      id: f-doc-confirm
+    centerElement: true
+- tapOn:
+    id: f-doc-confirm
+- scrollUntilVisible:
+    element:
+      id: f-vehicle-confirm
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: f-vehicle-confirm
+- assertVisible: "Intră în registru acum, cu poza"
+- takeScreenshot: 06-inainte-de-salvare
 - tapOn:
     id: handover-save
 
@@ -152,7 +174,7 @@ appId: ro.wastehouse.app
       id: "gata-(sent|photoFailed)"
     timeout: 20000
 - assertVisible: Predarea e în registru
-- takeScreenshot: 06-bon
+- takeScreenshot: 07-bon
 - scrollUntilVisible:
     element:
       id: gata-done
@@ -162,4 +184,7 @@ appId: ro.wastehouse.app
     visible:
       id: pick-aviz
     timeout: 15000
-- takeScreenshot: 07-dupa-salvare
+# Predarea a plecat: nicio ciornă de reluat.
+- assertNotVisible:
+    id: draft-card
+- takeScreenshot: 08-dupa-salvare

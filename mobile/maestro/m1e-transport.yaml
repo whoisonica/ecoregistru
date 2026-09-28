@@ -2,6 +2,7 @@
 # detalii pt anexa 3 transport”). Predare fără poză cu data încărcării, delegatul, actul, CNP-ul, mașina și
 # „Destinat:”; apoi predarea deschisă le arată, iar Anexa 3 pleacă în foaia de partajare.
 #   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/m1e-transport.yaml
+# Din 27.09.2026 (F4) formularul e pe trei pași și datele se aleg din calendar (`alege-data.yaml`), în luna curentă.
 # CNP-urile sunt de probă: întâi unul cu cifra de control greșită (refuzat pe telefon, nu din coadă), apoi unul corect.
 appId: ro.wastehouse.app
 ---
@@ -15,7 +16,13 @@ appId: ro.wastehouse.app
 - extendedWaitUntil:
     visible: Punct de lucru Cluj
     timeout: 15000
+
+# --- Pasul 1: ce și cât ---
 - tapOn: Punct de lucru Cluj
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "15 01 02.*"
+    centerElement: true
 - tapOn: "15 01 02.*"
 - scrollUntilVisible:
     element:
@@ -24,11 +31,16 @@ appId: ro.wastehouse.app
     id: qty
 - inputText: "321"
 - scroll
-
-# Destinatarul, apoi „La fel ca data trecută” pune fișa (R3, solid, RP, AN, Vr).
 - scrollUntilVisible:
     element:
-      id: partner-search
+      id: step-next
+- tapOn:
+    id: step-next
+
+# --- Pasul 2: destinatarul, apoi „La fel ca data trecută” pune fișa (R3, solid, RP, AN, Vr) și sare la pasul 3 ---
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
 - tapOn:
     id: partner-search
 - inputText: Eco Valorificare
@@ -39,30 +51,35 @@ appId: ro.wastehouse.app
     element:
       id: same-as-last
     direction: UP
+    centerElement: true
 - tapOn:
     id: same-as-last
+- extendedWaitUntil:
+    visible: Pe fișă și transport
+    timeout: 5000
 
-# --- Anexa 3: secțiunea apare numai cu destinatar ---
+# --- Pasul 3: Anexa 3 (apare numai cu destinatar). Datele goale stau deschise; alegerea le pliază. ---
 - scrollUntilVisible:
     element: "Anexa 3.*"
-- scrollUntilVisible:
-    element:
-      id: f-load
-    centerElement: true
-- tapOn:
-    id: f-load
-- inputText: "25.09.2026"
-- pressKey: Enter
+- runFlow:
+    file: alege-data.yaml
+    env:
+      ID: load
+      ZI: "25"
 # Descărcarea înaintea încărcării se refuză pe telefon, înainte de coadă.
-- tapOn:
-    id: f-unload
-- inputText: "24.09.2026"
-- pressKey: Enter
+- runFlow:
+    file: alege-data.yaml
+    env:
+      ID: unload
+      ZI: "24"
+# „La fel ca data trecută” a adus delegatul de data trecută, deci rândul șoferului e pliat: se deschide și se golește
+# fiecare rubrică înainte.
 - scrollUntilVisible:
     element:
-      id: carrier-OWN
+      id: fold-driver
     centerElement: true
-# „La fel ca data trecută” aduce și delegatul de data trecută: fiecare rubrică se golește înainte.
+- tapOn:
+    id: fold-driver
 - scrollUntilVisible:
     element:
       id: f-driver
@@ -119,11 +136,14 @@ appId: ro.wastehouse.app
     direction: UP
     centerElement: true
 - takeScreenshot: 03-descarcare-refuzata
+# Rândul descărcării e pliat (are o dată): se deschide și se alege alta.
 - tapOn:
-    id: f-unload
-- eraseText: 12
-- inputText: "26.09.2026"
-- pressKey: Enter
+    id: fold-unloadDate
+- runFlow:
+    file: alege-data.yaml
+    env:
+      ID: unload
+      ZI: "26"
 - scrollUntilVisible:
     element:
       id: handover-save
@@ -161,8 +181,8 @@ appId: ro.wastehouse.app
     element: "Popescu Ion"
     centerElement: true
 - assertVisible: "CJ 77 WHM"
-- assertVisible: "25.09.2026"
-- assertVisible: "26.09.2026"
+- assertVisible: "25\\.[0-9][0-9]\\.20[0-9][0-9]"
+- assertVisible: "26\\.[0-9][0-9]\\.20[0-9][0-9]"
 - takeScreenshot: 04-predarea-cu-transport
 - scrollUntilVisible:
     element:

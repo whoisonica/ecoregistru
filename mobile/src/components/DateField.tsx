@@ -49,7 +49,7 @@ export function DateField({ value, onChange, testID, min, max }: {
       >
         <Icon name="cal" size={20} color={colors.ink2} />
         <Text style={[styles.text, !value && { color: colors.ink3 }]} testID={testID ? `${testID}-text` : undefined}>
-          {value ? label(value) : m.pickDate}
+          {value ? dateLabel(value) : m.pickDate}
         </Text>
         <Icon name={open ? "left" : "right"} size={18} color={colors.ink3} />
       </Pressable>
@@ -76,7 +76,7 @@ export function DateField({ value, onChange, testID, min, max }: {
 }
 
 /** „Azi, 27 septembrie 2026” sau „14 septembrie 2026”. */
-function label(iso: string) {
+export function dateLabel(iso: string) {
   const d = fromIso(iso);
   const text = `${d.getDate()} ${strings.months[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
   return iso === toIso(new Date()) ? m.dateToday(text) : text;

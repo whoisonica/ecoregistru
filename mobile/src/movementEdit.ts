@@ -70,6 +70,29 @@ export function canEditOnPhone(mv: WasteMovement, writer: boolean) {
 }
 
 /**
+ * „Repetă predarea” (F7, valul B): aceeași predare de deșeu propriu, azi — formularul pleacă de la ea
+ * (`/predare?repeat=<id>`), fără data, cantitatea, documentul, mașina și poza ei. Și o ieșire veche fără
+ * cod R/D se poate repeta: formularul cere codul, ca la orice predare nouă. Liniile din cântarul
+ * depozitului nu sunt predări de pe telefon.
+ */
+export function canRepeatOnPhone(mv: WasteMovement, writer: boolean) {
+  return (
+    writer &&
+    !mv.weighingOperationId &&
+    mv.register === "ANEXA_1" &&
+    (mv.operation === "RECOVERED" || mv.operation === "DISPOSED" || mv.operation === "UNCLASSIFIED_OUT")
+  );
+}
+
+/**
+ * „Adaugă poză” (F7): bonul de cântar sau avizul pozat după salvare, pe orice mișcare pe care o poate
+ * schimba cine scrie. Liniile din cântar au dosarul lor, pe operațiune.
+ */
+export function canAddPhotoOnPhone(mv: WasteMovement, writer: boolean) {
+  return writer && !mv.weighingOperationId;
+}
+
+/**
  * „Adaugă cantitatea” (ca `RecordWeightDialog` pe web): o predare fără cifră, care nu vine din cântar,
  * pentru cine scrie. Serverul (`POST /movements/{id}/weight`) refuză oricum una care are deja cantitate.
  */

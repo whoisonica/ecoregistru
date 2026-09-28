@@ -1,0 +1,63 @@
+# F6 (valul B): „Generare” ca registru al lunii — lunile de răsfoit, compoziția, cipurile, căutarea, totalul lunii.
+# Pe baza demo, iulie (acum două luni) are 502 kg în 6 mișcări, dintre care 2 „de completat” și un „Metale”.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-miscari
+- extendedWaitUntil:
+    visible:
+      id: register
+    timeout: 15000
+- tapOn:
+    id: month-2
+- extendedWaitUntil:
+    visible: "502 kg"
+    timeout: 10000
+- assertVisible:
+    id: composition
+- takeScreenshot: f6-01-iulie
+
+# Cipul filtrează pe server: 2 rânduri, fără bara compoziției (e a lunii întregi, nu a filtrului).
+- tapOn:
+    id: filter-incomplete
+- extendedWaitUntil:
+    visible:
+      id: movement-row
+    timeout: 10000
+- assertNotVisible:
+    id: composition
+- assertNotVisible:
+    id: register-total
+- takeScreenshot: f6-02-de-completat
+- tapOn:
+    id: filter-all
+
+# Totalul lunii jos, sub ultima zi.
+- scrollUntilVisible:
+    element:
+      id: register-total
+    centerElement: true
+- assertVisible: "Iulie · 6 mișcări"
+- takeScreenshot: f6-03-total
+
+# Căutarea (pe server, peste toată luna).
+- scrollUntilVisible:
+    element:
+      id: register-search
+    direction: UP
+# Pe clientul de dezvoltare rotița lui stă peste lupă: o tragem în jos (fără rotiță = doar reîmprospătează pagina).
+- swipe:
+    start: "90%, 12%"
+    end: "90%, 70%"
+    duration: 2000
+- tapOn:
+    id: register-search
+- inputText: Metale
+- extendedWaitUntil:
+    visible: ".*20 01 40.*"
+    timeout: 10000
+- assertNotVisible: ".*13 02 08.*"
+- takeScreenshot: f6-04-cautare

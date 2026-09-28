@@ -17,7 +17,8 @@ export function Field({
   children,
   testID,
 }: {
-  label: string;
+  /** Fără etichetă când capul secțiunii o spune deja (pasul 1 al predării). */
+  label?: string;
   /** Rândul de pe aviz, dacă valoarea din câmp e citită din poză și încă neconfirmată. */
   read?: string;
   onConfirm?: () => void;
@@ -27,7 +28,7 @@ export function Field({
 }) {
   return (
     <View style={[styles.field, read != null && styles.fieldRead]} testID={testID}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       {children}
       {read != null ? (
         <View style={styles.readRow}>

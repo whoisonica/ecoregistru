@@ -1,0 +1,47 @@
+# F10 (valul B): pe Control fiecare verificare spune ce înseamnă; „Modul inspector” = ecran întreg, alb, litere mari.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/f10-inspector.yaml
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-control
+- extendedWaitUntil:
+    visible:
+      id: check-deadlines
+    timeout: 15000
+- assertVisible: "Declarațiile și raportările cu termen legal ale firmei."
+- assertVisible: "Fără cod R/D, cantitatea nu intră în nicio coloană a evidenței."
+- takeScreenshot: f10-01-control
+- scrollUntilVisible:
+    element:
+      id: inspector-open
+    centerElement: true
+- tapOn:
+    id: inspector-open
+- extendedWaitUntil:
+    visible:
+      id: inspector
+    timeout: 10000
+- assertVisible: "CUI .*"
+- assertVisible:
+    id: inspector-verdict
+- assertVisible:
+    id: inspector-time
+# Bara de jos nu e pe ecranul inspectorului.
+- assertNotVisible:
+    id: tab-control
+- takeScreenshot: f10-02-inspector
+# Pe clientul de dezvoltare rotița lui stă peste „Închide”: o tragem în jos.
+- swipe:
+    start: "90%, 12%"
+    end: "90%, 70%"
+    duration: 2000
+- tapOn:
+    id: inspector-close
+# Înapoi pe Control, derulat unde era.
+- extendedWaitUntil:
+    visible:
+      id: inspector-open
+    timeout: 10000

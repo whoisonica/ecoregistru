@@ -72,6 +72,13 @@ function Routes() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(tabs)" />
+        {/* F5: „Bifează” de pe Termene — foaia nativă de jos (iOS și Android), nu un modal desenat de mână. */}
+        <Stack.Screen
+          name="bifeaza"
+          options={{ presentation: "formSheet", sheetAllowedDetents: [0.6, 1.0], sheetGrabberVisible: true, sheetCornerRadius: 24 }}
+        />
+        {/* F10: modul inspector pe tot ecranul, fără bara de jos. */}
+        <Stack.Screen name="inspector" options={{ presentation: "fullScreenModal" }} />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" />

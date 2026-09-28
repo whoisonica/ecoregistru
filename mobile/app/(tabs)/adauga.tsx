@@ -15,6 +15,8 @@ import { drain, remove, retryNow, useOutbox, type OutboxItem } from "../../src/o
 import { pickAvizPhoto } from "../../src/photo";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
+import { useDraft } from "../../src/useDraft";
+import { Tile } from "../../src/components/Tile";
 
 const m = strings.mobile;
 
@@ -31,6 +33,8 @@ export default function AddScreen() {
   useHandoverData();
   const outbox = useOutbox(session?.email);
   const [cameraDenied, setCameraDenied] = useState(false);
+  // F4: un formular închis pe la mijloc se reia de aici („Continui predarea de la 14:20?”).
+  const { draft, discard } = useDraft(session?.email, session?.tenantId ?? undefined);
 
   // Colectorul pur n-are ecranul „Generare”: intrările lui trec prin cântar (M2).
   const collectorOnly = company.data?.type === "COLLECTOR";
@@ -55,6 +59,27 @@ export default function AddScreen() {
           </Group>
         ) : (
           <>
+            {draft ? (
+              <Group>
+                <View style={[rowStyles.row, styles.draftRow]} testID="draft-card">
+                  <Tile icon="doc" tone="warn" />
+                  <View style={styles.outText}>
+                    <Text style={rowStyles.title}>{`${m.draftTitle} · ${m.draftSince(timeOf(draft.savedAt))}`}</Text>
+                    <Text style={rowStyles.sub} numberOfLines={1}>
+                      {[draft.summary.wasteCode ?? m.draftNoCode, draft.summary.quantity].filter(Boolean).join(" · ")}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[rowStyles.sep, styles.draftActions]}>
+                  <Pressable onPress={() => discard()} testID="draft-discard" style={styles.draftAction}>
+                    <Text style={styles.linkText}>{m.draftDiscard}</Text>
+                  </Pressable>
+                  <Pressable onPress={() => router.push("/predare?draft=1")} testID="draft-resume" style={[styles.draftAction, styles.draftResume]}>
+                    <Text style={styles.draftResumeText}>{m.draftResume}</Text>
+                  </Pressable>
+                </View>
+              </Group>
+            ) : null}
             <Text style={styles.hint}>{m.addHint}</Text>
             <PrimaryButton label={m.snapAviz} onPress={() => open("camera")} testID="snap-aviz" />
             {cameraDenied ? <Note tone="alert">{m.cameraDenied}</Note> : null}
@@ -137,8 +162,19 @@ function Outbox({ items }: { items: OutboxItem[] }) {
   );
 }
 
+/** „14:20” din momentul ciornei. */
+function timeOf(ms: number) {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
+  draftRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  draftActions: { flexDirection: "row" },
+  draftAction: { flex: 1, alignItems: "center", paddingVertical: 12 },
+  draftResume: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.separator },
+  draftResumeText: { fontFamily: fonts.sansSemiBold, fontSize: 15, color: colors.greenText },
   scroll: { paddingBottom: 120 },
   body: { paddingHorizontal: 16, paddingTop: 12, gap: 10 },
   hint: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2, paddingHorizontal: 4 },

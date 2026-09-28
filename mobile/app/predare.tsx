@@ -28,17 +28,35 @@ import * as Crypto from "expo-crypto";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { extractTextFromImage, isSupported } from "expo-text-extractor";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 
 import * as api from "../src/api";
 import { parseAviz, cuiDigits, type AvizReading } from "../src/aviz/parse";
 import { canWrite } from "../src/auth";
-import { DateField } from "../src/components/DateField";
+import { Bin } from "../src/components/Bin";
+import { DateField, dateLabel } from "../src/components/DateField";
+import { Fold } from "../src/components/Fold";
 import { Field, Input, MultiPills, Pills, PrimaryButton } from "../src/components/Form";
+import { Icon } from "../src/components/Icon";
+import { OfflineBand } from "../src/components/OfflineBand";
 import { QuantityField } from "../src/components/QuantityField";
-import { Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
+import { Chip, Group, Note, rowStyles, SectionHead } from "../src/components/Rows";
+import { StepFoot } from "../src/components/StepFoot";
+import { StepHead } from "../src/components/StepHead";
 import { formatDate, formatQuantity } from "../src/format";
 import { useHandoverData } from "../src/handover";
+import type { HandoverDraft } from "../src/handoverDraft";
 import {
   codeInProfile,
   initialPackagingOnMarket,
@@ -47,14 +65,18 @@ import {
   weightRecorded,
   yearInRange,
 } from "../src/handoverForm";
+import { STEP_FIELDS, stepBlocked, stepNote, stepOf, type FieldKey, type Step } from "../src/handoverSteps";
 import { haptic } from "../src/haptics";
 import { lastSaved, rememberSaved } from "../src/lastSaved";
 import { editBody } from "../src/movementEdit";
 import { confirmDeclared } from "../src/declared";
 import { reportError } from "../src/monitoring";
-import { drain, enqueue, get as getQueued, resubmit } from "../src/outbox";
+import { useOnline } from "../src/online";
+import { db, drain, enqueue, get as getQueued, resubmit } from "../src/outbox";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
+import { dropDraft, writeDraft } from "../src/useDraft";
+import { loadDraft } from "../src/handoverDraft";
 
 const t = strings.movements;
 const m = strings.mobile;
@@ -71,17 +93,20 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  * Exact ce salvează „Generare” pe web (`MovementsPage.buildInput`): `operation` e soarta aleasă,
  * `register` e `ANEXA_1`, codul R/D e obligatoriu (G3).
  *
- * <p>Rubricile stau în ordinea formularului web: punct de lucru, dată, cod · cantitate · starea ·
- * depozitarea · transportul și destinația · soarta și codul R/D · destinatarul · ambalajul ·
- * documentul și mașina.
+ * <p>F4 (valul B, 27.09.2026): același formular ca date, pe **trei pași** cu progres sus și buton lipit
+ * jos — „Ce și cât” (poza, data, codul, cantitatea), „Cui și cum” („La fel ca data trecută” ca prim card,
+ * destinatarul, soarta și codul R/D, cine transportă), „Pe fișă și transport” (rubricile rar schimbate,
+ * pliate cu rezumatul pe rând; Anexa 3; documentul). Starea trăiește în componenta asta peste pași, ce
+ * se desenează alege `step` (`src/handoverSteps.ts`). Un formular închis pe la mijloc rămâne **ciornă**
+ * (`src/handoverDraft.ts`) și se reia de pe „Adaugă” cu `?draft=1`.
  *
  * <p>Din 19.09.2026 serverul refuză o predare pe Anexa 1 fără ce tipăresc fișa și anexele de
  * ambalaje (`validateOwnWasteHandover`, BUG-023): starea, depozitarea, mijlocul de transport,
  * destinația, materialul și felul ambalajului, partenerul autorizat. Le cere și telefonul, înainte
  * ca predarea să intre în coadă — altfel ar fi ieșit „refuzată” abia la trimitere.
  *
- * <p>Ce vine din poză e o propunere cu rândul ei de pe aviz; „Salvează” nu pleacă până nu e confirmată
- * fiecare. Schimbarea unei valori o confirmă și ea: omul a pus-o, nu camera.
+ * <p>Ce vine din poză e o propunere cu rândul ei de pe aviz; „Continuă” și „Salvează” nu pleacă până nu
+ * e confirmată fiecare de pe pasul lor. Schimbarea unei valori o confirmă și ea: omul a pus-o, nu camera.
  *
  * <p>M1f — cu `?edit=<id>` același formular corectează o predare: rubricile vin din `GET /movements/{id}`,
  * iar salvarea e `PUT`, direct, numai cu semnal (nu prin coadă). Cererea pornește de la predarea de pe
@@ -91,23 +116,40 @@ const ALL_CODES = Object.keys(e.wasteOperationCode) as WasteOperationCode[];
  * telefon, iar salvarea rescrie rândul, care pleacă din nou cu aceeași cheie (`resubmit`).
  */
 export default function PredareScreen() {
-  const { photo, edit, outbox, again } = useLocalSearchParams<{ photo?: string; edit?: string; outbox?: string; again?: string }>();
+  const { photo: photoParam, edit, outbox, again, repeat, draft: draftParam } = useLocalSearchParams<{
+    photo?: string;
+    edit?: string;
+    outbox?: string;
+    again?: string;
+    /** F7: „Repetă predarea” de pe predarea deschisă — id-ul ei; se salvează ca predare nouă. */
+    repeat?: string;
+    draft?: string;
+  }>();
   const { auth, session } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const online = useOnline();
   const { company, workPoints, partners, recent, drivers } = useHandoverData();
+  const scrollRef = useRef<ScrollView>(null);
 
   // Cheia de idempotență a predării, dată o dată, la deschiderea formularului (todo-mobil §10).
   const id = useRef(Crypto.randomUUID()).current;
 
+  const [step, setStep] = useState<Step>(1);
+  // Poza: din parametru (camera / galeria) sau din ciorna reluată.
+  const [photo, setPhoto] = useState<string | null>(photoParam ?? null);
+
   // M1f: predarea de corectat, aceeași cheie ca ecranul ei — după salvare se reîncarcă amândouă.
+  // F7: tot de aici vine și predarea de repetat; ea nu e `original`, deci salvarea face una nouă.
+  const fromServer = edit ?? repeat;
   const editing = useQuery({
-    queryKey: ["movements", "one", session?.tenantId, edit],
-    queryFn: () => api.movement(auth!, edit!),
-    enabled: !!auth && !!edit,
+    queryKey: ["movements", "one", session?.tenantId, fromServer],
+    queryFn: () => api.movement(auth!, fromServer!),
+    enabled: !!auth && !!fromServer,
     retry: 0,
   });
-  const original = editing.data;
+  const original = edit ? editing.data : undefined;
+  const repeated = repeat ? editing.data : undefined;
 
   // Predarea refuzată din coadă, redeschisă; numele codului de deșeu vine din profilul firmei.
   const queuedRow = useQuery({
@@ -141,7 +183,7 @@ export default function PredareScreen() {
     if (!workPointId && activeWorkPoints.length === 1) setWorkPointId(activeWorkPoints[0].id);
   }, [activeWorkPoints, workPointId]);
 
-  const [date, setDate] = useState(formatDate(todayIso()));
+  const [date, setDate] = useState(todayIso());
   const [wasteCode, setWasteCode] = useState<WasteCode | null>(null);
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState<Unit>("KG");
@@ -159,7 +201,7 @@ export default function PredareScreen() {
   const [wasteDestination, setWasteDestination] = useState<WasteDestination | "">("");
   const [documentReference, setDocumentReference] = useState("");
   const [vehicle, setVehicle] = useState("");
-  // ── Anexa 3: transportul (ca `TransportFields` pe web) ──
+  // ── Anexa 3: transportul (ca `TransportFields` pe web); datele sunt `yyyy-MM-dd` sau "" ──
   const [partnerWorkPointId, setPartnerWorkPointId] = useState("");
   const [loadDate, setLoadDate] = useState("");
   const [unloadDate, setUnloadDate] = useState("");
@@ -172,18 +214,19 @@ export default function PredareScreen() {
   const [transportDestinations, setTransportDestinations] = useState<TransportDestination[]>([]);
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [appliedLast, setAppliedLast] = useState(false);
 
   // ── M1f: rubricile predării de corectat, puse o singură dată ─────────────────
   const prefilled = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const source = original ?? queuedMovement ?? againMovement;
+  const source = original ?? queuedMovement ?? againMovement ?? repeated;
   useEffect(() => {
     if (!source || prefilled.current) return;
     prefilled.current = true;
     const mv = source;
     setWorkPointId(mv.workPointId);
-    setDate(formatDate(mv.date));
+    setDate(mv.date);
     setWasteCode({ id: mv.wasteCodeId, code: mv.wasteCode, name: mv.wasteCodeName, hazardous: mv.hazardous, metalSuggested: false });
     setQuantity(mv.quantity == null ? "" : String(mv.quantity).replace(".", ","));
     setUnit(mv.unit);
@@ -201,16 +244,16 @@ export default function PredareScreen() {
     setDocumentReference(mv.documentReference ?? "");
     setVehicle(mv.vehicleRegistration ?? "");
     setPartnerWorkPointId(mv.partnerWorkPointId ?? "");
-    setLoadDate(mv.loadDate ? formatDate(mv.loadDate) : "");
-    setUnloadDate(mv.unloadDate ? formatDate(mv.unloadDate) : "");
+    setLoadDate(mv.loadDate ?? "");
+    setUnloadDate(mv.unloadDate ?? "");
     setAnexa3Unit(mv.anexa3Unit ?? "");
     setTransportPartnerId(mv.transportPartnerId ?? "");
     setDriverName(mv.driverName ?? "");
     setDriverIdentification(mv.driverIdentification ?? "");
     setDriverCnp(mv.driverCnp ?? "");
     setTransportDestinations(mv.transportDestinations ?? []);
-    if (again) {
-      setDate(formatDate(todayIso()));
+    if (again || repeat) {
+      setDate(todayIso());
       setQuantity("");
       setWeighed(false);
       setDocumentReference("");
@@ -218,18 +261,18 @@ export default function PredareScreen() {
       setLoadDate("");
       setUnloadDate("");
     }
-  }, [source, again]);
+  }, [source, again, repeat]);
 
   // ── citirea avizului ───────────────────────────────────────────────────────
   const [lines, setLines] = useState<string[] | null>(null);
   const [ocrFailed, setOcrFailed] = useState(false);
   useEffect(() => {
-    if (!photo) return;
+    if (!photoParam) return;
     if (!isSupported) return setOcrFailed(true);
-    extractTextFromImage(photo)
+    extractTextFromImage(photoParam)
       .then(setLines)
       .catch(() => setOcrFailed(true));
-  }, [photo]);
+  }, [photoParam]);
 
   const [unknownCui, setUnknownCui] = useState<string | null>(null);
   const [pending, setPending] = useState<Partial<Record<ReadField, string>>>({});
@@ -251,7 +294,7 @@ export default function PredareScreen() {
     });
     const next: Partial<Record<ReadField, string>> = {};
     if (reading.date) {
-      setDate(formatDate(reading.date.value));
+      setDate(reading.date.value);
       next.date = reading.date.source;
     }
     const code = reading.wasteCode && profileCodes.find((c) => c.code === reading.wasteCode!.value);
@@ -281,9 +324,98 @@ export default function PredareScreen() {
     setPending(next);
   }, [lines, listsSettled, company.data, partners.data]);
 
-  const reading = !!photo && !ocrFailed && (!lines || !applied.current);
+  const reading = !!photoParam && !ocrFailed && (!lines || !applied.current);
   const readNothing =
-    ocrFailed || (lines != null && applied.current && Object.keys(pending).length === 0 && !unknownCui);
+    !!photoParam && (ocrFailed || (lines != null && applied.current && Object.keys(pending).length === 0 && !unknownCui));
+
+  // ── ciorna (F4) ────────────────────────────────────────────────────────────
+  // Numai pe o predare nouă: corectura și rândul refuzat au deja unde stau.
+  const draftable = !edit && !outbox && !!session?.tenantId;
+  const owner = session?.email;
+  const tenantId = session?.tenantId;
+  const restoring = useRef(!!draftParam);
+  const [restored, setRestored] = useState(!draftParam);
+  useEffect(() => {
+    if (!draftParam || !owner || !tenantId) return;
+    db()
+      .then((d) => loadDraft(d, owner, tenantId))
+      .then((saved) => {
+        if (saved) {
+          const f = saved.fields as Record<string, unknown>;
+          const s = <T,>(k: string, fallback: T) => (k in f ? (f[k] as T) : fallback);
+          setStep(saved.step);
+          setPhoto(saved.photo);
+          setWorkPointId(s("workPointId", ""));
+          setDate(s("date", todayIso()));
+          setWasteCode(s<WasteCode | null>("wasteCode", null));
+          setQuantity(s("quantity", ""));
+          setUnit(s<Unit>("unit", "KG"));
+          setWeighed(s("weighed", false));
+          setFate(s<Fate | "">("fate", ""));
+          setOperationCode(s<WasteOperationCode | "">("operationCode", ""));
+          setPartnerId(s("partnerId", ""));
+          setPackagingOnMarket(s<boolean | null>("packagingOnMarket", false));
+          setPackagingMaterial(s<PackagingMaterial | "">("packagingMaterial", ""));
+          setPackagingCategory(s<PackagingCategory | "">("packagingCategory", ""));
+          setPhysicalState(s<PhysicalState | "">("physicalState", ""));
+          setStorageType(s<StorageType | "">("storageType", ""));
+          setTransportMeans(s<TransportMeans | "">("transportMeans", ""));
+          setWasteDestination(s<WasteDestination | "">("wasteDestination", ""));
+          setDocumentReference(s("documentReference", ""));
+          setVehicle(s("vehicle", ""));
+          setPartnerWorkPointId(s("partnerWorkPointId", ""));
+          setLoadDate(s("loadDate", ""));
+          setUnloadDate(s("unloadDate", ""));
+          setAnexa3Unit(s<Unit | "">("anexa3Unit", ""));
+          setTransportPartnerId(s("transportPartnerId", ""));
+          setDriverId(s("driverId", ""));
+          setDriverName(s("driverName", ""));
+          setDriverIdentification(s("driverIdentification", ""));
+          setDriverCnp(s("driverCnp", ""));
+          setTransportDestinations(s<TransportDestination[]>("transportDestinations", []));
+          setUnknownCui(s<string | null>("unknownCui", null));
+          setAppliedLast(s("appliedLast", false));
+          setPending(Object.fromEntries(saved.pending.map((k) => [k, f[`pending:${k}`] ?? ""])) as Partial<Record<ReadField, string>>);
+          // Poza a fost citită când s-a făcut ciorna; nu se mai citește o dată.
+          applied.current = true;
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        restoring.current = false;
+        setRestored(true);
+      });
+  }, [draftParam, owner, tenantId]);
+
+  const fields = {
+    workPointId, date, wasteCode, quantity, unit, weighed, fate, operationCode, partnerId, packagingOnMarket,
+    packagingMaterial, packagingCategory, physicalState, storageType, transportMeans, wasteDestination,
+    documentReference, vehicle, partnerWorkPointId, loadDate, unloadDate, anexa3Unit, transportPartnerId, driverId,
+    driverName, driverIdentification, driverCnp, transportDestinations, unknownCui, appliedLast,
+    ...Object.fromEntries(Object.entries(pending).map(([k, v]) => [`pending:${k}`, v])),
+  };
+  // Ceva atins de om: o ciornă goală n-ar spune nimic pe „Adaugă”.
+  const dirty = !!(photo || wasteCode || quantity.trim() || partnerId || fate || documentReference.trim() || vehicle.trim());
+  const fieldsJson = JSON.stringify(fields);
+  useEffect(() => {
+    if (!draftable || !restored || restoring.current || !owner || !tenantId || !dirty) return;
+    const handle = setTimeout(() => {
+      const draft: HandoverDraft = {
+        savedAt: Date.now(),
+        step,
+        photo,
+        fields: JSON.parse(fieldsJson),
+        pending: Object.keys(pending),
+        summary: {
+          wasteCode: wasteCode?.code ?? null,
+          quantity: quantity.trim() ? `${quantity.trim()} ${unit === "KG" ? "kg" : "t"}` : "",
+        },
+      };
+      writeDraft(owner, tenantId, draft).catch(() => {});
+    }, 400);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fieldsJson, step, photo, draftable, restored, owner, tenantId, dirty]);
 
   // ── G3: codul R/D ──────────────────────────────────────────────────────────
   const profileOps = company.data?.authorizedOperationCodes ?? [];
@@ -293,14 +425,14 @@ export default function PredareScreen() {
   const codeOptions = profileOps.length === 0 ? familyCodes : familyCodes.filter((c) => profileOps.includes(c));
 
   /**
-   * „La fel ca data trecută”: codul ultimei predări a aceluiași deșeu către același partener. Numai o
-   * propunere — nu se pune singur, se aplică la apăsare, ca pe web.
+   * „La fel ca data trecută”: ultima predare a aceluiași deșeu — către același partener, dacă e ales;
+   * altfel către oricare. Numai o propunere — nu se pune singură, se aplică la apăsare, ca pe web.
    */
   const last = useMemo(() => {
-    if (!partnerId || !wasteCode) return null;
+    if (!wasteCode) return null;
     return (
       (recent.data?.content ?? []).find(
-        (mv) => mv.partnerId === partnerId && mv.wasteCodeId === wasteCode.id && mv.operationCode,
+        (mv) => mv.wasteCodeId === wasteCode.id && mv.operationCode && (!partnerId || mv.partnerId === partnerId),
       ) ?? null
     );
   }, [recent.data, partnerId, wasteCode]);
@@ -308,6 +440,10 @@ export default function PredareScreen() {
   /** „La fel ca data trecută” pune ce ar pune și pe web (`applyLast`), fără cantitate, dată și document. */
   const applyLast = () => {
     if (!last?.operationCode) return;
+    if (!partnerId && last.partnerId) {
+      setPartnerId(last.partnerId);
+      confirm("partner");
+    }
     setFate(last.operationCode.startsWith("R") ? "RECOVERED" : "DISPOSED");
     setOperationCode(last.operationCode);
     setPhysicalState(last.physicalState ?? "");
@@ -325,9 +461,12 @@ export default function PredareScreen() {
     setDriverName(last.driverName ?? "");
     setDriverIdentification(last.driverIdentification ?? "");
     setDriverCnp(last.driverCnp ?? "");
-    if (last.vehicleRegistration) setVehicle(last.vehicleRegistration);
+    if (last.vehicleRegistration && !vehicle.trim()) setVehicle(last.vehicleRegistration);
     setTransportDestinations(last.transportDestinations ?? []);
     setDestinationsPrefilled(false);
+    setAppliedLast(true);
+    haptic.press();
+    goTo(3);
   };
 
   // Destinația din tabăra soartei alese (nota 5); schimbarea soartei golește una din tabăra cealaltă.
@@ -343,11 +482,11 @@ export default function PredareScreen() {
    * Alegerea destinatarului, ca pe web: punctul lui de lucru se golește (era al celuilalt), iar
    * „Destinat:” se propune din felul partenerului numai peste o rubrică neatinsă.
    */
-  const pickPartner = (id: string) => {
-    setPartnerId(id);
+  const pickPartner = (pid: string) => {
+    setPartnerId(pid);
     setPartnerWorkPointId("");
     if (transportDestinations.length === 0 && fate) {
-      const chosen = (partners.data ?? []).find((p) => p.id === id);
+      const chosen = (partners.data ?? []).find((p) => p.id === pid);
       const suggested = suggestedDestinations(chosen?.type, fate);
       if (suggested.length > 0) {
         setTransportDestinations(suggested);
@@ -377,9 +516,9 @@ export default function PredareScreen() {
       ),
     [drivers.data, transportPartnerId],
   );
-  const pickDriver = (id: string) => {
-    setDriverId(id);
-    const d = availableDrivers.find((x) => x.id === id);
+  const pickDriver = (did: string) => {
+    setDriverId(did);
+    const d = availableDrivers.find((x) => x.id === did);
     if (!d) return;
     // Alegerea precompletează cele trei rubrici (rămân editabile) și mașina, dacă e goală.
     setDriverName(d.name);
@@ -400,27 +539,29 @@ export default function PredareScreen() {
   // ── codul de deșeu ─────────────────────────────────────────────────────────
   const profileCodes = company.data?.authorizedWasteCodes ?? [];
   const [codeQuery, setCodeQuery] = useState("");
+  const [codeSearchOpen, setCodeSearchOpen] = useState(false);
   const codeSearch = useQuery({
     queryKey: ["waste-codes", codeQuery.trim()],
     queryFn: () => api.wasteCodes(auth!, codeQuery.trim()),
     enabled: !!auth && codeQuery.trim().length >= 2,
     retry: 0,
   });
-  const shownCodes = codeQuery.trim().length >= 2 ? (codeSearch.data ?? []).slice(0, 8) : profileCodes;
+  const searching = codeSearchOpen || profileCodes.length === 0;
+  const shownCodes = searching && codeQuery.trim().length >= 2 ? (codeSearch.data ?? []).slice(0, 8) : searching ? [] : profileCodes;
   const isPackaging = wasteCode?.code.startsWith("15 01") ?? false;
   // Codul care își spune singur materialul nu-l mai cere (ca pe web și ca `PackagingMaterial.resolve`).
   const suggestedMaterial = wasteCode ? suggestedPackagingMaterial(wasteCode.code) : null;
 
   // ── validarea ──────────────────────────────────────────────────────────────
-  const isoDate = parseDate(date);
+  const isoDate = date || null;
   // Rubricile Anexei 3 se văd (și pleacă) numai cu destinatar ales; fără el nu le cerem și nu le trimitem.
-  const isoLoad = partner && loadDate.trim() ? parseDate(loadDate) : null;
-  const isoUnload = partner && unloadDate.trim() ? parseDate(unloadDate) : null;
+  const isoLoad = partner && loadDate ? loadDate : null;
+  const isoUnload = partner && unloadDate ? unloadDate : null;
   // Cântărită la descărcare: câmpul e închis până vine greutatea; după aceea se corectează ca oricare.
   const quantityOpen = !weighed || weightRecorded(weighed, original);
   const amount = parseQuantity(quantity);
   const onMarket = packagingOnMarket !== false;
-  const errors = {
+  const errors: Partial<Record<FieldKey, string | undefined>> = {
     workPoint: !workPointId ? strings.common.requiredField : undefined,
     date: !isoDate ? m.dateFormat : !yearInRange(isoDate) ? m.dateOutOfRange : undefined,
     wasteCode: !wasteCode ? t.wasteCodePlaceholder : undefined,
@@ -454,20 +595,48 @@ export default function PredareScreen() {
       isPackaging && !packagingMaterial && !suggestedMaterial ? t.packagingMaterialRequired : undefined,
     packagingCategory:
       isPackaging && onMarket && !packagingCategory ? t.packagingCategoryRequired : undefined,
-    loadDate: partner && loadDate.trim() && !isoLoad ? m.dateFormat : undefined,
     driverCnp: partner && driverCnp.trim() && !isValidCnp(driverCnp.trim()) ? strings.naturalPersons.cnpInvalid : undefined,
-    unloadDate:
-      partner && unloadDate.trim() && !isoUnload
-        ? m.dateFormat
-        : isoUnload && isoUnload < (isoLoad ?? isoDate ?? "")
-          ? m.unloadBeforeLoad
-          : undefined,
+    unloadDate: isoUnload && isoUnload < (isoLoad ?? isoDate ?? "") ? m.unloadBeforeLoad : undefined,
   };
   const unconfirmed = Object.keys(pending).length;
   const valid = Object.values(errors).every((v) => !v);
 
+  // ── pașii ──────────────────────────────────────────────────────────────────
+  const goTo = (next: Step) => {
+    setShowErrors(false);
+    setStep(next);
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
+  };
+  const next = () => {
+    if (stepBlocked(step, errors, pending)) {
+      setShowErrors(true);
+      haptic.warning();
+      return;
+    }
+    haptic.tap();
+    goTo((step + 1) as Step);
+  };
+  const back = () => {
+    if (step === 1) return router.back();
+    haptic.tap();
+    goTo((step - 1) as Step);
+  };
+  /** Primul pas cu ceva de completat sau de confirmat, dacă e vreunul. */
+  const firstBrokenStep = (): Step | null => {
+    for (const s of [1, 2, 3] as Step[]) if (stepBlocked(s, errors, pending)) return s;
+    return null;
+  };
+
   const save = async () => {
     setShowErrors(true);
+    const broken = firstBrokenStep();
+    if (broken && broken !== step) {
+      // Ceva de pe un pas trecut s-a stricat între timp (un cod scos din profil, o listă venită mai târziu).
+      setSaveError(m.noteFixStep(broken));
+      goTo(broken);
+      setShowErrors(true);
+      return;
+    }
     if (!valid || unconfirmed > 0 || !session || !wasteCode || !isoDate) return;
     const onScreen = {
         workPointId,
@@ -541,6 +710,8 @@ export default function PredareScreen() {
       setSaveError(t.saveError);
       return;
     }
+    // Predarea e în coadă: ciorna nu mai are ce păstra.
+    if (draftable && owner && tenantId) dropDraft(owner, tenantId).catch(() => {});
     const rowId = queued ? queued.id : id;
     rememberSaved({
       outboxId: rowId,
@@ -600,7 +771,40 @@ export default function PredareScreen() {
     }
   };
 
-  const err = (k: keyof typeof errors) => (showErrors ? errors[k] : undefined);
+  const err = (k: FieldKey) => (showErrors ? errors[k] : undefined);
+
+  // ── rândurile pliate de pe pasul 3 ─────────────────────────────────────────
+  // Un rând fără valoare stă deschis; unul cu valoare, pliat. Omul poate răsturna oricare.
+  const [foldState, setFoldState] = useState<Record<string, boolean>>({});
+  const foldOpen = (key: string, hasValue: boolean) => foldState[key] ?? !hasValue;
+  const toggleFold = (key: string, hasValue: boolean) => setFoldState((s) => ({ ...s, [key]: !foldOpen(key, hasValue) }));
+  const closeFold = (key: string) => setFoldState((s) => ({ ...s, [key]: false }));
+  const fold = <T extends string>(
+    key: FieldKey | "loadDate" | "unloadDate" | "driver",
+    label: string,
+    value: T | "",
+    summary: string | null,
+    body: React.ReactNode,
+    first?: boolean,
+  ) => (
+    <Fold
+      key={key}
+      testID={`fold-${key}`}
+      label={label}
+      summary={value ? summary : null}
+      error={key in errors ? err(key as FieldKey) : undefined}
+      open={foldOpen(key, !!value)}
+      onToggle={() => toggleFold(key, !!value)}
+      first={first}
+    >
+      {body}
+    </Fold>
+  );
+  /** Pastilele unui rând pliat: alegerea îl pliază la loc. */
+  const pick = <T extends string>(key: string, set: (v: T) => void) => (v: T) => {
+    set(v);
+    closeFold(key);
+  };
 
   const vehicleField = (
     <Field label={t.vehicleRegistration} read={pending.vehicle} onConfirm={() => confirm("vehicle")} testID="f-vehicle">
@@ -615,493 +819,441 @@ export default function PredareScreen() {
     </Field>
   );
 
+  const editingMode = !!edit || !!outbox;
+  const kicker = editingMode ? m.stepEditKicker(step, 3) : m.stepKicker(step, 3);
+  const title = step === 1 ? m.step1Title : step === 2 ? m.step2Title : m.step3Title;
+  const singleWorkPoint = activeWorkPoints.length === 1 ? activeWorkPoints[0].name : null;
+  const note = stepNote(step, { pending, singleWorkPoint, online, hasPhoto: !!photo });
+  const noteText =
+    note.kind === "pending"
+      ? m.notePending(note.n)
+      : note.kind === "singleWorkPoint"
+        ? m.noteSingleWorkPoint(note.name)
+        : note.kind === "nextSheet"
+          ? m.noteNextSheet
+          : note.kind === "offline"
+            ? m.noteOffline
+            : note.kind === "onlinePhoto"
+              ? m.noteOnlinePhoto
+              : note.kind === "onlineNoPhoto"
+                ? m.noteOnlineNoPhoto
+                : null;
+  const stepErrorCount = showErrors ? STEP_FIELDS[step].filter((k) => errors[k]).length : 0;
+  const footNote = stepErrorCount > 0 ? m.fixErrors(stepErrorCount) : saveError ?? noteText;
+  const footWarn = stepErrorCount > 0 || !!saveError || note.kind === "pending";
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: edit || outbox ? m.movementEditTitle : m.handoverNew,
-          headerBackTitle: edit ? (original?.wasteCode ?? "") : m.tabAdd,
-        }}
-      />
-      <ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        {photo ? (
-          <View style={styles.photoBox}>
-            <Image source={{ uri: photo }} style={styles.photo} resizeMode="cover" />
-            {reading ? (
-              <View style={styles.readingOverlay} testID="aviz-reading">
-                <ActivityIndicator color={colors.lcdDigit} />
-                <Text style={styles.readingText}>{m.reading}</Text>
-              </View>
+      <Stack.Screen options={{ headerShown: false }} />
+      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.fill}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <StepHead step={step} total={3} kicker={kicker} title={title} back={{ label: step === 1 ? m.stepCancel : m.stepBack, onPress: back }} />
+          <OfflineBand />
+          <View style={styles.body}>
+            {fromServer && !editing.data ? (
+              <Note tone={editing.isError ? "alert" : undefined}>{editing.isError ? m.movementError : m.movementEditLoading}</Note>
             ) : null}
-          </View>
-        ) : null}
-        {photo && readNothing ? <Note tone="alert">{m.readNothing}</Note> : null}
-        {edit && !original ? (
-          <Note tone={editing.isError ? "alert" : undefined}>{editing.isError ? m.movementError : m.movementEditLoading}</Note>
-        ) : null}
 
-        <SectionHead>{t.sectionWaste}</SectionHead>
-        <Group>
-          <Field label={t.filterWorkPoint} error={err("workPoint")}>
-            {workPoints.isError && !workPoints.data ? (
-              <Text style={styles.hint}>{m.listUnavailable}</Text>
-            ) : (
-              <Pills
-                testID="wp"
-                options={activeWorkPoints.map((w) => ({ value: w.id, label: w.name }))}
-                value={workPointId}
-                onChange={setWorkPointId}
-              />
-            )}
-          </Field>
-          <Sep />
-          <Field
-            label={t.date}
-            read={pending.date}
-            onConfirm={() => confirm("date")}
-            error={err("date")}
-            testID="f-date"
-          >
-            <DateField
-              value={isoDate}
-              onChange={(iso) => {
-                setDate(formatDate(iso));
-                confirm("date");
-              }}
-              min={new Date(2000, 0, 1)}
-              max={new Date(new Date().getFullYear() + 10, 11, 31)}
-              testID="date"
-            />
-          </Field>
-          <Sep />
-          <Field
-            label={t.wasteCode}
-            read={pending.wasteCode}
-            onConfirm={() => confirm("wasteCode")}
-            error={err("wasteCode")}
-            testID="f-code"
-          >
-            {wasteCode ? (
-              <ChosenRow
-                title={wasteCode.code}
-                sub={wasteCode.name}
-                onChange={() => {
-                  setWasteCode(null);
-                  confirm("wasteCode");
-                }}
-              />
-            ) : (
+            {/* ── Pasul 1: ce și cât ─────────────────────────────────────────── */}
+            {step === 1 ? (
               <>
-                <Input
-                  value={codeQuery}
-                  onChangeText={setCodeQuery}
-                  placeholder={t.wasteCodeSearch}
-                  testID="code-search"
-                />
-                {shownCodes.length === 0 && codeQuery.trim().length < 2 ? (
-                  <Text style={styles.hint}>{m.wasteCodeNoProfile}</Text>
+                {photo ? (
+                  <View style={styles.photoBox}>
+                    <Image source={{ uri: photo }} style={styles.photo} resizeMode="cover" />
+                    {reading ? (
+                      <View style={styles.readingOverlay} testID="aviz-reading">
+                        <ActivityIndicator color={colors.lcdDigit} />
+                        <Text style={styles.readingText}>{m.reading}</Text>
+                      </View>
+                    ) : null}
+                  </View>
                 ) : null}
-                {shownCodes.map((c) => (
-                  <OptionRow
-                    key={c.id}
-                    title={c.code}
-                    sub={c.name}
-                    testID="code-option"
-                    onPress={() => setWasteCode(c)}
-                  />
-                ))}
-              </>
-            )}
-          </Field>
-        </Group>
+                {readNothing ? <Note tone="alert">{m.readNothing}</Note> : null}
 
-        <SectionHead>{t.sectionQuantity}</SectionHead>
-        <Group>
-          <Field
-            label={t.quantity}
-            read={pending.quantity}
-            onConfirm={() => confirm("quantity")}
-            error={err("quantity")}
-            testID="f-qty"
-          >
-            <QuantityField
-              value={quantityOpen ? quantity : ""}
-              editable={quantityOpen}
-              onChange={(v) => {
-                setQuantity(v);
-                confirm("quantity");
-              }}
-              unit={unit}
-              onUnit={(u) => {
-                setUnit(u);
-                confirm("quantity");
-              }}
-              testID="qty"
-            />
-          </Field>
-          <Sep />
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <Text style={rowStyles.title}>{t.weighedAtUnloading}</Text>
-            </View>
-            <Switch value={weighed} onValueChange={setWeighed} />
-          </View>
-        </Group>
-
-        <SectionHead>{t.askState}</SectionHead>
-        <Group>
-          <Field label={t.physicalState} error={err("physicalState")}>
-            <Pills testID="state" options={nomenclator(e.physicalState)} value={physicalState} onChange={setPhysicalState} />
-          </Field>
-        </Group>
-
-        <SectionHead>{t.askHandling}</SectionHead>
-        <Group>
-          <Field label={t.askStorage} error={err("storageType")}>
-            <Pills testID="storage" options={codes(e.storageType)} value={storageType} onChange={setStorageType} />
-            {storageType ? <Text style={styles.hint}>{e.storageType[storageType]}</Text> : null}
-          </Field>
-        </Group>
-
-        <SectionHead>{t.askTransport}</SectionHead>
-        <Group>
-          <Field label={t.askTransportMeans} error={err("transportMeans")}>
-            <Pills
-              testID="means"
-              options={codes(e.transportMeans)}
-              value={transportMeans}
-              onChange={setTransportMeans}
-            />
-            {transportMeans ? <Text style={styles.hint}>{e.transportMeans[transportMeans]}</Text> : null}
-          </Field>
-          <Sep />
-          <Field label={t.askDestination} error={err("wasteDestination")}>
-            <Pills
-              testID="dest"
-              options={offeredDestinations.map((d) => ({ value: d, label: d }))}
-              value={wasteDestination}
-              onChange={setWasteDestination}
-            />
-            {wasteDestination ? <Text style={styles.hint}>{e.wasteDestination[wasteDestination]}</Text> : null}
-          </Field>
-        </Group>
-
-        <SectionHead>{t.fateTitle}</SectionHead>
-        <Group>
-          <Field label={t.operation} error={err("fate")}>
-            <Pills
-              testID="fate"
-              options={[
-                { value: "RECOVERED" as Fate, label: t.fateRecovery },
-                { value: "DISPOSED" as Fate, label: t.fateDisposal },
-              ]}
-              value={fate}
-              onChange={(f) => {
-                setFate(f);
-                if (operationCode && !operationCode.startsWith(f === "RECOVERED" ? "R" : "D")) setOperationCode("");
-              }}
-            />
-          </Field>
-          <Sep />
-          <Field label={t.operationCode} error={err("operationCode")}>
-            {last?.operationCode ? (
-              <PrimaryButton
-                tone="quiet"
-                testID="same-as-last"
-                label={m.sameAsLast(last.operationCode, formatDate(last.date))}
-                onPress={applyLast}
-              />
-            ) : null}
-            {fate ? (
-              <Pills
-                testID="op"
-                options={codeOptions.map((c) => ({ value: c, label: c }))}
-                value={operationCode}
-                onChange={setOperationCode}
-              />
-            ) : null}
-            {operationCode ? <Text style={styles.hint}>{e.wasteOperationCode[operationCode]}</Text> : null}
-          </Field>
-        </Group>
-
-        <SectionHead>{t.sectionRecipient}</SectionHead>
-        <Group>
-          <Field
-            label={t.partner}
-            read={pending.partner}
-            onConfirm={() => confirm("partner")}
-            error={err("partner")}
-            testID="f-partner"
-          >
-            {partner ? (
-              <ChosenRow
-                title={partner.name}
-                sub={partner.cui ?? ""}
-                onChange={() => {
-                  pickPartner("");
-                  confirm("partner");
-                }}
-              />
-            ) : (
-              <>
-                {unknownCui ? (
-                  <UnknownPartner
-                    cui={unknownCui}
-                    canAdd={canWrite(session?.role)}
-                    onAdded={(p) => {
-                      setUnknownCui(null);
-                      pickPartner(p.id);
-                    }}
-                  />
+                {activeWorkPoints.length !== 1 || (workPoints.isError && !workPoints.data) ? (
+                  <Group>
+                    <Field label={t.filterWorkPoint} error={err("workPoint")}>
+                      {workPoints.isError && !workPoints.data ? (
+                        <Text style={styles.hint}>{m.listUnavailable}</Text>
+                      ) : (
+                        <Pills
+                          testID="wp"
+                          options={activeWorkPoints.map((w) => ({ value: w.id, label: w.name }))}
+                          value={workPointId}
+                          onChange={setWorkPointId}
+                        />
+                      )}
+                    </Field>
+                  </Group>
                 ) : null}
-                {partners.isError && !partners.data ? (
-                  <Text style={styles.hint}>{m.listUnavailable}</Text>
-                ) : (
-                  <>
-                    <Input
-                      value={partnerQuery}
-                      onChangeText={setPartnerQuery}
-                      placeholder={m.partnerSearch}
-                      testID="partner-search"
+
+                <Group>
+                  <Field label={t.date} read={pending.date} onConfirm={() => confirm("date")} error={err("date")} testID="f-date">
+                    <DateField
+                      value={isoDate}
+                      onChange={(iso) => {
+                        setDate(iso);
+                        confirm("date");
+                      }}
+                      min={new Date(2000, 0, 1)}
+                      max={new Date(new Date().getFullYear() + 10, 11, 31)}
+                      testID="date"
                     />
-                    {partnerMatches.length === 0 ? <Text style={styles.hint}>{m.partnerNone}</Text> : null}
-                    {partnerMatches.map((p) => (
-                      <OptionRow
-                        key={p.id}
-                        title={p.name}
-                        sub={p.cui ?? ""}
-                        testID="partner-option"
-                        onPress={() => pickPartner(p.id)}
+                  </Field>
+                </Group>
+
+                <View style={styles.secHead}>
+                  <SectionHead>{t.wasteCode}</SectionHead>
+                  {profileCodes.length > 0 && !wasteCode ? (
+                    <Pressable onPress={() => setCodeSearchOpen((o) => !o)} testID="code-search-toggle" hitSlop={8}>
+                      <Text style={styles.linkText}>{codeSearchOpen ? m.codeSearchClose : m.codeSearchOpen}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+                <Group>
+                  <Field read={pending.wasteCode} onConfirm={() => confirm("wasteCode")} error={err("wasteCode")} testID="f-code">
+                    {wasteCode ? (
+                      <CodeRow code={wasteCode} chosen onPress={() => { setWasteCode(null); confirm("wasteCode"); }} testID="code-chosen" />
+                    ) : (
+                      <>
+                        {searching ? (
+                          <Input value={codeQuery} onChangeText={setCodeQuery} placeholder={t.wasteCodeSearch} testID="code-search" autoFocus={codeSearchOpen} />
+                        ) : null}
+                        {searching && codeQuery.trim().length < 2 ? <Text style={styles.hint}>{m.wasteCodeNoProfile}</Text> : null}
+                        {shownCodes.map((c) => (
+                          <CodeRow key={c.id} code={c} onPress={() => { setWasteCode(c); confirm("wasteCode"); }} testID="code-option" />
+                        ))}
+                      </>
+                    )}
+                  </Field>
+                </Group>
+
+                <SectionHead>{t.sectionQuantity}</SectionHead>
+                <Group>
+                  <Field read={pending.quantity} onConfirm={() => confirm("quantity")} error={err("quantity")} testID="f-qty">
+                    <QuantityField
+                      value={quantityOpen ? quantity : ""}
+                      editable={quantityOpen}
+                      onChange={(v) => {
+                        setQuantity(v);
+                        confirm("quantity");
+                      }}
+                      unit={unit}
+                      onUnit={(u) => {
+                        setUnit(u);
+                        confirm("quantity");
+                      }}
+                      testID="qty"
+                    />
+                  </Field>
+                  <Sep />
+                  <View style={styles.switchRow}>
+                    <View style={styles.switchText}>
+                      <Text style={rowStyles.title}>{t.weighedAtUnloading}</Text>
+                    </View>
+                    <Switch value={weighed} onValueChange={setWeighed} testID="weighed" />
+                  </View>
+                </Group>
+              </>
+            ) : null}
+
+            {/* ── Pasul 2: cui și cum ─────────────────────────────────────────── */}
+            {step === 2 ? (
+              <>
+                {last?.operationCode ? (
+                  <View style={styles.lastCard} testID="same-as-last-card">
+                    <View style={styles.lastHead}>
+                      <Text style={styles.lastKicker}>{m.sameAsLastTitle.toUpperCase()}</Text>
+                      <Text style={styles.lastKicker}>{formatDate(last.date)}</Text>
+                    </View>
+                    <Text style={styles.lastTitle}>{m.sameAsLastTo(last.operationCode, last.partnerName ?? "")}</Text>
+                    <Text style={styles.lastSub} numberOfLines={2}>
+                      {[
+                        last.wasteCodeName,
+                        last.quantity != null ? `${formatQuantity(last.quantity, last.unit)} ${e.unit[last.unit]}` : null,
+                        last.transportPartnerName,
+                        last.driverName,
+                        last.vehicleRegistration,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                    <Text style={styles.lastFills}>{m.sameAsLastFills}</Text>
+                    <PrimaryButton
+                      testID="same-as-last"
+                      tone={appliedLast ? "quiet" : "green"}
+                      label={appliedLast ? m.sameAsLastApplied : m.sameAsLastApply}
+                      onPress={applyLast}
+                    />
+                  </View>
+                ) : null}
+
+                <SectionHead>{t.sectionRecipient}</SectionHead>
+                <Group>
+                  <Field read={pending.partner} onConfirm={() => confirm("partner")} error={err("partner")} testID="f-partner">
+                    {partner ? (
+                      <ChosenRow
+                        title={partner.name}
+                        sub={[partner.cui, partner.authorizationNumber ? `${strings.partners.authorizationNumber} ${partner.authorizationNumber}` : null].filter(Boolean).join(" · ")}
+                        onChange={() => {
+                          pickPartner("");
+                          confirm("partner");
+                        }}
                       />
-                    ))}
-                  </>
-                )}
-              </>
-            )}
-          </Field>
-          {/* Punctul de lucru al destinatarului — numai când are mai multe; cu unul, Anexa 3 îl scrie pe acela. */}
-          {partner && partner.workPoints.length > 1 ? (
-            <>
-              <Sep />
-              <Field label={t.partnerWorkPoint}>
-                <Pills
-                  testID="partner-wp"
-                  options={partner.workPoints.map((wp) => ({
-                    value: wp.id,
-                    label: wp.name ? `${wp.name}, ${wp.address}` : wp.address,
-                  }))}
-                  value={partnerWorkPointId}
-                  onChange={setPartnerWorkPointId}
-                />
-                <Text style={styles.hint}>{t.partnerWorkPointHint}</Text>
-              </Field>
-            </>
-          ) : null}
-        </Group>
+                    ) : (
+                      <>
+                        {unknownCui ? (
+                          <UnknownPartner
+                            cui={unknownCui}
+                            canAdd={canWrite(session?.role)}
+                            onAdded={(p) => {
+                              setUnknownCui(null);
+                              pickPartner(p.id);
+                            }}
+                          />
+                        ) : null}
+                        {partners.isError && !partners.data ? (
+                          <Text style={styles.hint}>{m.listUnavailable}</Text>
+                        ) : (
+                          <>
+                            <Input value={partnerQuery} onChangeText={setPartnerQuery} placeholder={m.partnerSearch} testID="partner-search" />
+                            {partnerMatches.length === 0 ? <Text style={styles.hint}>{m.partnerNone}</Text> : null}
+                            {partnerMatches.map((p) => (
+                              <OptionRow key={p.id} title={p.name} sub={p.cui ?? ""} testID="partner-option" onPress={() => pickPartner(p.id)} />
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </Field>
+                  {/* Punctul de lucru al destinatarului — numai când are mai multe; cu unul, Anexa 3 îl scrie pe acela. */}
+                  {partner && partner.workPoints.length > 1 ? (
+                    <>
+                      <Sep />
+                      <Field label={t.partnerWorkPoint}>
+                        <Pills
+                          testID="partner-wp"
+                          options={partner.workPoints.map((wp) => ({ value: wp.id, label: wp.name ? `${wp.name}, ${wp.address}` : wp.address }))}
+                          value={partnerWorkPointId}
+                          onChange={setPartnerWorkPointId}
+                        />
+                        <Text style={styles.hint}>{t.partnerWorkPointHint}</Text>
+                      </Field>
+                    </>
+                  ) : null}
+                </Group>
 
-        {isPackaging ? (
-          <Group>
-            <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <Text style={rowStyles.title}>{t.packagingOnMarket}</Text>
-                <Text style={rowStyles.sub}>{m.packagingOnWeb}</Text>
-              </View>
-              <Switch value={onMarket} onValueChange={setPackagingOnMarket} />
-            </View>
-            <Sep />
-            <Field label={t.packagingMaterial} error={err("packagingMaterial")}>
-              <Pills
-                testID="material"
-                options={PACKAGING_MATERIALS.map((v) => ({ value: v, label: e.packagingMaterial[v] }))}
-                value={packagingMaterial || suggestedMaterial}
-                onChange={setPackagingMaterial}
-              />
-              {!packagingMaterial && suggestedMaterial ? (
-                <Text style={styles.hint}>{`${e.packagingMaterial[suggestedMaterial]} ${t.packagingFromCode}`}</Text>
-              ) : null}
-            </Field>
-            {onMarket ? (
-              <>
-                <Sep />
-                <Field label={t.packagingCategory} error={err("packagingCategory")}>
-                  <Pills
-                    testID="category"
-                    options={nomenclator(e.packagingCategory)}
-                    value={packagingCategory}
-                    onChange={setPackagingCategory}
-                  />
-                </Field>
+                <SectionHead>{m.stepFateTitle}</SectionHead>
+                <Group>
+                  <Field label={t.operation} error={err("fate")}>
+                    <Pills
+                      testID="fate"
+                      options={[
+                        { value: "RECOVERED" as Fate, label: t.fateRecovery },
+                        { value: "DISPOSED" as Fate, label: t.fateDisposal },
+                      ]}
+                      value={fate}
+                      onChange={(f) => {
+                        setFate(f);
+                        if (operationCode && !operationCode.startsWith(f === "RECOVERED" ? "R" : "D")) setOperationCode("");
+                      }}
+                    />
+                  </Field>
+                  <Sep />
+                  <Field label={t.operationCode} error={err("operationCode")}>
+                    {fate ? (
+                      <Pills testID="op" options={codeOptions.map((c) => ({ value: c, label: c }))} value={operationCode} onChange={setOperationCode} />
+                    ) : (
+                      <Text style={styles.hint}>{t.fateTitle}</Text>
+                    )}
+                    {operationCode ? <Text style={styles.hint}>{e.wasteOperationCode[operationCode]}</Text> : null}
+                  </Field>
+                </Group>
+
+                {partner ? (
+                  <>
+                    <SectionHead>{t.sectionTransport}</SectionHead>
+                    <Group>
+                      <Field label={m.whoTransports}>
+                        <Pills
+                          testID="carrier"
+                          options={[{ value: "OWN", label: m.carrierOwn }, ...carrierOptions.map((p) => ({ value: p.id, label: p.name }))]}
+                          value={transportPartnerId || "OWN"}
+                          onChange={(v) => {
+                            // Șoferii sunt ai transportatorului: schimbi firma, alegerea nu mai e a ei. Textul rămâne.
+                            setTransportPartnerId(v === "OWN" ? "" : v);
+                            setDriverId("");
+                          }}
+                        />
+                      </Field>
+                    </Group>
+                  </>
+                ) : null}
               </>
             ) : null}
-          </Group>
-        ) : null}
 
-        {/* Anexa 3 (la periculoase, doar transportul): aceleași rubrici și aceeași ordine ca pe web
-            (`TransportFields`), numai când există destinatar — fără el nu pleacă nimic nicăieri. */}
-        {partner ? (
-          <>
-            <SectionHead>{wasteCode?.hazardous ? t.sectionTransport : t.anexa3Section}</SectionHead>
-            <Group>
-              <Field label={t.loadDate} error={err("loadDate")} testID="f-load">
-                <Input
-                  value={loadDate}
-                  onChangeText={setLoadDate}
-                  keyboardType="numbers-and-punctuation"
-                  placeholder="zz.ll.aaaa"
-                />
-                <Text style={styles.hint}>{t.loadDateHint}</Text>
-              </Field>
-              <Sep />
-              <Field label={t.unloadDate} error={err("unloadDate")} testID="f-unload">
-                <Input
-                  value={unloadDate}
-                  onChangeText={setUnloadDate}
-                  keyboardType="numbers-and-punctuation"
-                  placeholder="zz.ll.aaaa"
-                />
-              </Field>
-              {!wasteCode?.hazardous ? (
-                <>
-                  <Sep />
-                  <Field label={t.anexa3Unit}>
-                    <Pills
-                      testID="a3unit"
-                      options={[
-                        { value: "COMPANY", label: t.anexa3UnitCompany },
-                        { value: "KG", label: e.unit.KG },
-                        { value: "TONS", label: e.unit.TONS },
-                      ]}
-                      value={anexa3Unit || "COMPANY"}
-                      onChange={(v) => setAnexa3Unit(v === "COMPANY" ? "" : (v as Unit))}
+            {/* ── Pasul 3: pe fișă și transport ──────────────────────────────── */}
+            {step === 3 ? (
+              <>
+                <SectionHead>{m.stepSheet}</SectionHead>
+                <Group>
+                  {fold("physicalState", t.physicalState, physicalState, physicalState ? e.physicalState[physicalState] : null,
+                    <Pills testID="state" options={nomenclator(e.physicalState)} value={physicalState} onChange={pick<PhysicalState>("physicalState", setPhysicalState)} />, true)}
+                  {fold("storageType", t.askStorage, storageType, storageType ? e.storageType[storageType] : null,
+                    <Pills testID="storage" options={codes(e.storageType)} value={storageType} onChange={pick<StorageType>("storageType", setStorageType)} />)}
+                  {fold("transportMeans", t.askTransportMeans, transportMeans, transportMeans ? e.transportMeans[transportMeans] : null,
+                    <Pills testID="means" options={codes(e.transportMeans)} value={transportMeans} onChange={pick<TransportMeans>("transportMeans", setTransportMeans)} />)}
+                  {fold("wasteDestination", t.askDestination, wasteDestination, wasteDestination ? e.wasteDestination[wasteDestination] : null,
+                    fate ? (
+                      <Pills testID="dest" options={offeredDestinations.map((d) => ({ value: d, label: d }))} value={wasteDestination} onChange={pick<WasteDestination>("wasteDestination", setWasteDestination)} />
+                    ) : (
+                      <Text style={styles.hint}>{t.fateTitle}</Text>
+                    ))}
+                </Group>
+                <Text style={styles.hint}>{appliedLast ? m.foldHintApplied : m.foldHint}</Text>
+
+                {isPackaging ? (
+                  <>
+                    <SectionHead>{m.stepPackaging}</SectionHead>
+                    <Group>
+                      <View style={styles.switchRow}>
+                        <View style={styles.switchText}>
+                          <Text style={rowStyles.title}>{t.packagingOnMarket}</Text>
+                          <Text style={rowStyles.sub}>{m.packagingOnWeb}</Text>
+                        </View>
+                        <Switch value={onMarket} onValueChange={setPackagingOnMarket} testID="on-market" />
+                      </View>
+                      {fold("packagingMaterial", t.packagingMaterial, packagingMaterial || suggestedMaterial || "",
+                        packagingMaterial ? e.packagingMaterial[packagingMaterial] : suggestedMaterial ? `${e.packagingMaterial[suggestedMaterial]} ${t.packagingFromCode}` : null,
+                        <Pills testID="material" options={PACKAGING_MATERIALS.map((v) => ({ value: v, label: e.packagingMaterial[v] }))} value={packagingMaterial || suggestedMaterial} onChange={pick<PackagingMaterial>("packagingMaterial", setPackagingMaterial)} />)}
+                      {onMarket
+                        ? fold("packagingCategory", t.packagingCategory, packagingCategory, packagingCategory ? e.packagingCategory[packagingCategory] : null,
+                            <Pills testID="category" options={nomenclator(e.packagingCategory)} value={packagingCategory} onChange={pick<PackagingCategory>("packagingCategory", setPackagingCategory)} />)
+                        : null}
+                    </Group>
+                  </>
+                ) : null}
+
+                {/* Anexa 3 (la periculoase, doar transportul): aceleași rubrici și aceeași ordine ca pe web
+                    (`TransportFields`), numai când există destinatar — fără el nu pleacă nimic nicăieri. */}
+                {partner ? (
+                  <>
+                    <SectionHead>{wasteCode?.hazardous ? t.sectionTransport : t.anexa3Section}</SectionHead>
+                    <Group>
+                      {fold("loadDate", t.loadDate, loadDate, loadDate ? dateLabel(loadDate) : null,
+                        <DateRow value={loadDate} onChange={(v) => { setLoadDate(v); if (v) closeFold("loadDate"); }} hint={t.loadDateHint} testID="load" />, true)}
+                      {fold("unloadDate", t.unloadDate, unloadDate, unloadDate ? dateLabel(unloadDate) : null,
+                        <DateRow value={unloadDate} onChange={(v) => { setUnloadDate(v); if (v) closeFold("unloadDate"); }} testID="unload" />)}
+                      {!wasteCode?.hazardous ? (
+                        <>
+                          <Sep />
+                          <Field label={t.anexa3Unit}>
+                            <Pills
+                              testID="a3unit"
+                              options={[
+                                { value: "COMPANY", label: t.anexa3UnitCompany },
+                                { value: "KG", label: e.unit.KG },
+                                { value: "TONS", label: e.unit.TONS },
+                              ]}
+                              value={anexa3Unit || "COMPANY"}
+                              onChange={(v) => setAnexa3Unit(v === "COMPANY" ? "" : (v as Unit))}
+                            />
+                          </Field>
+                        </>
+                      ) : null}
+                      {fold("driver", m.stepDriver, driverName.trim() || driverIdentification.trim() ? "x" : "",
+                        [driverName.trim(), driverIdentification.trim()].filter(Boolean).join(" · ") || null,
+                        <>
+                          {availableDrivers.length > 0 ? (
+                            <>
+                              <Text style={styles.subLabel}>{t.driverPick}</Text>
+                              <Pills
+                                testID="driver"
+                                options={[...availableDrivers.map((d) => ({ value: d.id, label: d.name })), { value: "OTHER", label: m.driverOther }]}
+                                value={driverId || "OTHER"}
+                                onChange={(v) => (v === "OTHER" ? setDriverId("") : pickDriver(v))}
+                              />
+                            </>
+                          ) : null}
+                          <Text style={styles.subLabel}>{t.driverName}</Text>
+                          <Input value={driverName} onChangeText={setDriverName} autoCapitalize="words" testID="f-driver" />
+                          <Text style={styles.subLabel}>{t.driverIdentification}</Text>
+                          <Input value={driverIdentification} onChangeText={setDriverIdentification} placeholder={t.driverIdentificationPlaceholder} autoCapitalize="characters" testID="f-driver-id" />
+                          <Text style={styles.subLabel}>{strings.common.cnp}</Text>
+                          <Input value={driverCnp} onChangeText={setDriverCnp} keyboardType="number-pad" maxLength={13} testID="f-driver-cnp" />
+                          {err("driverCnp") ? <Text style={styles.warn}>{err("driverCnp")}</Text> : null}
+                        </>)}
+                      <Sep />
+                      {vehicleField}
+                      <Sep />
+                      <Field label={t.askTransportDestinations}>
+                        <MultiPills
+                          testID="tdest"
+                          options={(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => ({ value: d, label: e.transportDestination[d] }))}
+                          value={transportDestinations}
+                          onChange={(v) => {
+                            setTransportDestinations(v);
+                            setDestinationsPrefilled(false);
+                          }}
+                        />
+                        <Text style={styles.hint}>{destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}</Text>
+                      </Field>
+                    </Group>
+                  </>
+                ) : null}
+
+                <SectionHead>{m.stepDocument}</SectionHead>
+                <Group>
+                  <Field label={t.documentReference} read={pending.documentReference} onConfirm={() => confirm("documentReference")} testID="f-doc">
+                    <Input
+                      value={documentReference}
+                      onChangeText={(v) => {
+                        setDocumentReference(v);
+                        confirm("documentReference");
+                      }}
+                      placeholder={t.documentReferencePlaceholder}
+                      autoCapitalize="characters"
                     />
                   </Field>
-                </>
-              ) : null}
-              <Sep />
-              <Field label={t.transportPartner}>
-                <Pills
-                  testID="carrier"
-                  options={[
-                    { value: "OWN", label: m.carrierOwn },
-                    ...carrierOptions.map((p) => ({ value: p.id, label: p.name })),
-                  ]}
-                  value={transportPartnerId || "OWN"}
-                  onChange={(v) => {
-                    // Șoferii sunt ai transportatorului: schimbi firma, alegerea nu mai e a ei. Textul rămâne.
-                    setTransportPartnerId(v === "OWN" ? "" : v);
-                    setDriverId("");
-                  }}
-                />
-              </Field>
-              {availableDrivers.length > 0 ? (
-                <>
-                  <Sep />
-                  <Field label={t.driverPick}>
-                    <Pills
-                      testID="driver"
-                      options={[
-                        ...availableDrivers.map((d) => ({ value: d.id, label: d.name })),
-                        { value: "OTHER", label: m.driverOther },
-                      ]}
-                      value={driverId || "OTHER"}
-                      onChange={(v) => (v === "OTHER" ? setDriverId("") : pickDriver(v))}
-                    />
-                  </Field>
-                </>
-              ) : null}
-              <Sep />
-              <Field label={t.driverName} testID="f-driver">
-                <Input value={driverName} onChangeText={setDriverName} autoCapitalize="words" />
-              </Field>
-              <Sep />
-              <Field label={t.driverIdentification} testID="f-driver-id">
-                <Input
-                  value={driverIdentification}
-                  onChangeText={setDriverIdentification}
-                  placeholder={t.driverIdentificationPlaceholder}
-                  autoCapitalize="characters"
-                />
-              </Field>
-              <Sep />
-              <Field label={strings.common.cnp} error={err("driverCnp")} testID="f-driver-cnp">
-                <Input value={driverCnp} onChangeText={setDriverCnp} keyboardType="number-pad" maxLength={13} />
-              </Field>
-              <Sep />
-              {vehicleField}
-              <Sep />
-              <Field label={t.askTransportDestinations}>
-                <MultiPills
-                  testID="tdest"
-                  options={(Object.keys(e.transportDestination) as TransportDestination[]).map((d) => ({
-                    value: d,
-                    label: e.transportDestination[d],
-                  }))}
-                  value={transportDestinations}
-                  onChange={(v) => {
-                    setTransportDestinations(v);
-                    setDestinationsPrefilled(false);
-                  }}
-                />
-                <Text style={styles.hint}>
-                  {destinationsPrefilled ? t.destinationsPrefilled : t.transportDestinationsHint}
-                </Text>
-              </Field>
-            </Group>
-          </>
-        ) : null}
-
-        <SectionHead>{t.askDocument}</SectionHead>
-        <Group>
-          <Field
-            label={t.documentReference}
-            read={pending.documentReference}
-            onConfirm={() => confirm("documentReference")}
-            testID="f-doc"
-          >
-            <Input
-              value={documentReference}
-              onChangeText={(v) => {
-                setDocumentReference(v);
-                confirm("documentReference");
-              }}
-              placeholder={t.documentReferencePlaceholder}
-              autoCapitalize="characters"
-            />
-          </Field>
-          {/* Fără destinatar mașina stă aici: avizul citit din poză o poate aduce oricum. */}
-          {!partner ? (
-            <>
-              <Sep />
-              {vehicleField}
-            </>
-          ) : null}
-        </Group>
-
-        {photo ? <Text style={styles.hint}>{m.photoAttached}</Text> : null}
-        {unconfirmed > 0 ? <Note tone="alert">{m.confirmPending(unconfirmed)}</Note> : null}
-        {showErrors && !valid ? (
-          <Note tone="alert" testID="form-errors">
-            {m.fixErrors(Object.values(errors).filter(Boolean).length)}
-          </Note>
-        ) : null}
-        {saveError ? (
-          <Note tone="alert" testID="edit-error">
-            {saveError}
-          </Note>
-        ) : null}
-        <PrimaryButton
-          label={m.save}
-          onPress={save}
-          disabled={reading || submitting || (!!edit && !original) || (!!outbox && !queued)}
-          testID="handover-save"
+                  {/* Fără destinatar mașina stă aici: avizul citit din poză o poate aduce oricum. */}
+                  {!partner ? (
+                    <>
+                      <Sep />
+                      {vehicleField}
+                    </>
+                  ) : null}
+                  {photo ? (
+                    <>
+                      <Sep />
+                      <View style={styles.switchRow}>
+                        <View style={styles.switchText}>
+                          <Text style={rowStyles.title}>{m.photoProof}</Text>
+                          <Text style={rowStyles.sub}>{m.photoProofSub}</Text>
+                        </View>
+                        <Chip label={m.photoProofChip} tone="ok" />
+                      </View>
+                    </>
+                  ) : null}
+                </Group>
+              </>
+            ) : null}
+          </View>
+        </ScrollView>
+        <StepFoot
+          label={step === 3 ? m.save : m.stepNext}
+          note={footNote}
+          warn={footWarn}
+          onPress={step === 3 ? save : next}
+          disabled={reading || submitting || (!!fromServer && !editing.data) || (!!outbox && !queued) || !restored}
+          testID={step === 3 ? "handover-save" : "step-next"}
         />
-      </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -1179,10 +1331,7 @@ function UnknownPartner({ cui, canAdd, onAdded }: { cui: string; canAdd: boolean
               <Text style={styles.subLabel}>{m.partnerWhatDoes}</Text>
               <Pills
                 testID="ptype"
-                options={(["COLLECTOR", "RECOVERER"] as PartnerType[]).map((v) => ({
-                  value: v,
-                  label: e.partnerType[v],
-                }))}
+                options={(["COLLECTOR", "RECOVERER"] as PartnerType[]).map((v) => ({ value: v, label: e.partnerType[v] }))}
                 value={type}
                 onChange={setType}
               />
@@ -1204,15 +1353,56 @@ function UnknownPartner({ cui, canAdd, onAdded }: { cui: string; canAdd: boolean
                 testID="pauth"
               />
               {addError ? <Text style={styles.warn}>{addError}</Text> : null}
-              <PrimaryButton
-                label={m.addPartner}
-                onPress={add}
-                disabled={!type || !authorizationNumber.trim() || adding}
-                testID="add-partner"
-              />
+              <PrimaryButton label={m.addPartner} onPress={add} disabled={!type || !authorizationNumber.trim() || adding} testID="add-partner" />
             </>
           ) : null}
         </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** Codul de deșeu ca rând de card: pubela, codul mono, denumirea; bifa pe cel ales. */
+function CodeRow({ code, chosen, onPress, testID }: { code: WasteCode; chosen?: boolean; onPress: () => void; testID: string }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!chosen }}
+      style={({ pressed }) => [styles.codeRow, pressed && { opacity: 0.7 }]}
+    >
+      <View style={styles.codeBin}>
+        <Bin code={code.code} hazardous={code.hazardous} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={rowStyles.mono}>{code.code}</Text>
+        <Text style={rowStyles.sub} numberOfLines={2}>
+          {code.name}
+        </Text>
+      </View>
+      {chosen ? (
+        <View style={styles.codeChosen}>
+          <Icon name="check" size={16} color={colors.onAccent} strokeWidth={2.6} />
+          <Text style={styles.codeChange}>{m.change}</Text>
+        </View>
+      ) : (
+        <Icon name="right" size={18} color={colors.ink3} />
+      )}
+    </Pressable>
+  );
+}
+
+/** O dată a Anexei 3 (opțională): selectorul telefonului și „Șterge” când e pusă. */
+function DateRow({ value, onChange, hint, testID }: { value: string; onChange: (iso: string) => void; hint?: string; testID: string }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <DateField value={value || null} onChange={onChange} testID={testID} min={new Date(2000, 0, 1)} max={new Date(new Date().getFullYear() + 10, 11, 31)} />
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+      {value ? (
+        <Pressable onPress={() => onChange("")} testID={`${testID}-clear`} hitSlop={8} style={{ alignSelf: "flex-end" }}>
+          <Text style={styles.linkText}>{m.clearDate}</Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -1222,7 +1412,7 @@ function ChosenRow({ title, sub, onChange }: { title: string; sub: string; onCha
   return (
     <View style={styles.chosen}>
       <View style={{ flex: 1 }}>
-        <Text style={rowStyles.mono}>{title}</Text>
+        <Text style={rowStyles.title}>{title}</Text>
         {sub ? (
           <Text style={rowStyles.sub} numberOfLines={2}>
             {sub}
@@ -1234,17 +1424,7 @@ function ChosenRow({ title, sub, onChange }: { title: string; sub: string; onCha
   );
 }
 
-function OptionRow({
-  title,
-  sub,
-  onPress,
-  testID,
-}: {
-  title: string;
-  sub: string;
-  onPress: () => void;
-  testID?: string;
-}) {
+function OptionRow({ title, sub, onPress, testID }: { title: string; sub: string; onPress: () => void; testID?: string }) {
   return (
     <Text onPress={onPress} testID={testID} style={styles.option} suppressHighlighting={false}>
       <Text style={rowStyles.mono}>{title}</Text>
@@ -1258,7 +1438,7 @@ function nomenclator<T extends string>(labels: Record<T, string>) {
   return (Object.keys(labels) as T[]).map((v) => ({ value: v, label: labels[v] }));
 }
 
-/** Pastilele unui nomenclator cu etichete lungi: numai codul; denumirea stă sub ele, după alegere. */
+/** Pastilele unui nomenclator cu etichete lungi: numai codul; denumirea stă în rezumatul rândului, după alegere. */
 function codes<T extends string>(labels: Record<T, string>) {
   return (Object.keys(labels) as T[]).map((v) => ({ value: v, label: v }));
 }
@@ -1267,25 +1447,17 @@ function Sep() {
   return <View style={rowStyles.sep} />;
 }
 
-/** Întrebarea webului („Anul … e deja declarat” / „Salvează oricum”), ca fereastră nativă. */
 function todayIso() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** `zz.ll.aaaa` → `yyyy-MM-dd`, sau null dacă nu e o zi adevărată. */
-function parseDate(text: string): string | null {
-  const match = text.trim().match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-  if (!match) return null;
-  const [day, month, year] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  const d = new Date(Date.UTC(year, month - 1, day));
-  if (d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) return null;
-  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.ground },
-  scroll: { padding: 16, gap: 8, paddingBottom: 60 },
+  // Loc jos pentru butonul lipit și nota lui.
+  scroll: { paddingBottom: 170 },
+  body: { paddingHorizontal: 16, paddingTop: 8, gap: 8 },
+  secHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 4 },
   photoBox: { borderRadius: radius.group, overflow: "hidden", height: 180, backgroundColor: colors.lcd },
   photo: { width: "100%", height: "100%" },
   readingOverlay: {
@@ -1296,13 +1468,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   readingText: { fontFamily: fonts.monoMedium, fontSize: 14, color: colors.lcdDigit, letterSpacing: 0.6 },
-  hint: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.ink2 },
+  hint: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.ink2, paddingHorizontal: 4 },
   warn: { fontFamily: fonts.sans, fontSize: 13.5, color: colors.redText },
   subLabel: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.ink2, marginTop: 4 },
+  linkText: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.greenText },
   switchRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
   switchText: { flex: 1 },
   chosen: { flexDirection: "row", alignItems: "center", gap: 12 },
   option: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator },
   unknown: { backgroundColor: colors.ground, borderRadius: 12, padding: 12, gap: 8 },
   unknownText: { fontFamily: fonts.sansMedium, fontSize: 14.5, color: colors.ink },
+  codeRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
+  codeBin: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.greenSoft, alignItems: "center", justifyContent: "center" },
+  codeChosen: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.green, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  codeChange: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.onAccent },
+  // Primul card al pasului 2: propunerea din ultima predare, pe hârtie, cu contur (fără bloc grafit — paleta A).
+  lastCard: { backgroundColor: colors.card, borderRadius: radius.group, borderWidth: 1, borderColor: colors.green, padding: 16, gap: 8 },
+  lastHead: { flexDirection: "row", justifyContent: "space-between" },
+  lastKicker: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 1, color: colors.greenText },
+  lastTitle: { fontFamily: fonts.sansSemiBold, fontSize: 18, color: colors.ink },
+  lastSub: { fontFamily: fonts.sans, fontSize: 14, color: colors.ink2 },
+  lastFills: { fontFamily: fonts.sans, fontSize: 13, color: colors.ink3 },
 });

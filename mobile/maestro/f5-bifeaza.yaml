@@ -1,0 +1,40 @@
+# F5 (valul B, D9): „Bifează” pe Termene → foaia de jos cu numărul de înregistrare → termenul trece la „Bifate”.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/f5-bifeaza.yaml
+# Bifează primul termen „De făcut” (restanțele întâi). După flux se redeschide: POST /api/v1/deadlines/{id}/reopen.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-termene
+- extendedWaitUntil:
+    visible:
+      id: deadline-complete
+    timeout: 15000
+- takeScreenshot: f5-01-termene
+- tapOn:
+    id: deadline-complete
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: complete-sheet
+    timeout: 10000
+- tapOn:
+    id: complete-note
+- inputText: "Depus pe 28.09, nr. inregistrare 4711"
+- takeScreenshot: f5-02-foaia
+- tapOn:
+    id: complete-save
+- extendedWaitUntil:
+    notVisible:
+      id: complete-sheet
+    timeout: 15000
+- tapOn:
+    id: st-bifate
+- extendedWaitUntil:
+    visible:
+      id: deadline-row
+    timeout: 15000
+- assertVisible: ".*[Bb]ifat.*"
+- takeScreenshot: f5-03-bifate

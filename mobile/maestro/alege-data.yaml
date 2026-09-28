@@ -1,0 +1,24 @@
+# Alege o zi din luna curentă în selectorul de dată al telefonului (`DateField`, din 27.09.2026 datele nu se mai tastează).
+#   - runFlow:
+#       file: alege-data.yaml
+#       env:
+#         ID: load     # testID-ul câmpului (`load`, `unload`, `f-date`…)
+#         ZI: "25"
+# iOS: calendarul se deschide sub rând, ziua are eticheta „Thursday, 25 September”; alegerea pliază rândul la loc.
+# Android: dialogul sistemului, ziua are eticheta „25 September 2026”, apoi „OK”.
+appId: ro.wastehouse.app
+---
+- scrollUntilVisible:
+    element:
+      id: ${ID}
+    centerElement: true
+- tapOn:
+    id: ${ID}
+- waitForAnimationToEnd
+- tapOn: "([A-Za-z]+, )?${ZI} [A-Za-z]+( [0-9][0-9][0-9][0-9])?"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: OK
+- waitForAnimationToEnd

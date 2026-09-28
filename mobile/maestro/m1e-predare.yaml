@@ -10,7 +10,8 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
 # Predările generatorului stau pe „Generare” (Anexa 1), primul tab; „Ieșiri” e registrul colectorului.
 - extendedWaitUntil:
@@ -88,7 +89,8 @@ appId: ro.wastehouse.app
 - tapOn:
     id: tab-miscari
 - extendedWaitUntil:
-    visible: Mișcările lunii
+    visible:
+      id: register
     timeout: 15000
 # Predările generatorului stau pe „Generare” (Anexa 1), primul tab; „Ieșiri” e registrul colectorului.
 - extendedWaitUntil:
@@ -109,4 +111,28 @@ appId: ro.wastehouse.app
 - assertNotVisible:
     id: movement-aviz
 - assertNotVisible: Documente
+# F7: vizualizarea nu repetă predarea și nu pune poze.
+- assertNotVisible:
+    id: movement-repeat
+- assertNotVisible:
+    id: photo-gallery
 - takeScreenshot: 05-vizualizare
+# F5: vizualizarea nu bifează termene.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Mișcări"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- tapOn:
+    id: tab-termene
+- extendedWaitUntil:
+    visible:
+      id: deadline-row
+    timeout: 15000
+- assertNotVisible:
+    id: deadline-complete

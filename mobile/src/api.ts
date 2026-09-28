@@ -201,6 +201,11 @@ export interface MovementFilters {
   month: number;
   register?: WasteRegister;
   direction?: "IN" | "OUT";
+  /** Cipurile registrului (F6): aceleași filtre ca pe web, aplicate de server peste toată luna. */
+  missingOperationCode?: true;
+  incomplete?: true;
+  /** Căutarea din lună — pe server, nu în pagina adusă (`MovementQueryService.withSearch`). */
+  search?: string;
 }
 
 /** Cifrele peste toate rândurile filtrului, nu peste pagina adusă — ca pe web. */
@@ -227,6 +232,11 @@ export async function upcomingDeadlines(auth: Auth) {
   const year = new Date().getFullYear();
   const lists = await Promise.all([year - 1, year, year + 1].map((y) => deadlines(auth, y)));
   return lists.flat();
+}
+
+/** F5: bifarea de pe telefon, cu nota (numărul de înregistrare) — același drum ca `useCompleteDeadline`. */
+export function completeDeadline(auth: Auth, id: string, note?: string) {
+  return request<Deadline>(`/api/v1/deadlines/${id}/complete`, { method: "POST", auth, body: { note } });
 }
 
 /** Tabul „Trecute” (ca pe web): anul în curs până ieri, bifate sau nu. */
@@ -407,7 +417,7 @@ export interface PageSlice<T> {
   totalPages: number;
 }
 
-function query(params: Record<string, string | number | undefined>) {
+function query(params: Record<string, string | number | boolean | undefined>) {
   return Object.entries(params)
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)

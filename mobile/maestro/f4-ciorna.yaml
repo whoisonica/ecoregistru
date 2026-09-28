@@ -1,0 +1,78 @@
+# F4 — ciorna (27.09.2026): un formular închis pe la mijloc se reia de pe „Adaugă”; „Începe alta” o aruncă.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/f4-ciorna.yaml
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 20000
+# Cont proaspăt (pornirea șterge datele): nicio ciornă.
+- assertNotVisible:
+    id: draft-card
+- tapOn:
+    id: without-photo
+- extendedWaitUntil:
+    visible: Punct de lucru Cluj
+    timeout: 15000
+- tapOn: Punct de lucru Cluj
+# Pe Android ecranul e mai scund: rândul codului poate sta sub margine, deci se aduce în mijloc întâi.
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element: "20 01 01.*"
+    centerElement: true
+- tapOn: "20 01 01.*"
+- scrollUntilVisible:
+    element:
+      id: qty
+- tapOn:
+    id: qty
+- inputText: "77"
+- scroll
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
+# A sunat cineva: omul iese din formular de pe pasul 2.
+- tapOn:
+    id: step-back
+- extendedWaitUntil:
+    visible: Ce și cât
+    timeout: 5000
+- tapOn:
+    id: step-back
+- extendedWaitUntil:
+    visible:
+      id: draft-card
+    timeout: 10000
+- assertVisible: "Predare neterminată · de la .*"
+- assertVisible: "20 01 01 · 77 kg"
+- takeScreenshot: 01-ciorna-pe-adauga
+
+# „Continuă”: formularul revine cu codul și cantitatea.
+- tapOn:
+    id: draft-resume
+- extendedWaitUntil:
+    visible: Ce și cât
+    timeout: 10000
+- assertVisible: "20 01 01.*"
+- assertVisible: "77"
+- takeScreenshot: 02-ciorna-reluata
+- tapOn:
+    id: step-back
+- extendedWaitUntil:
+    visible:
+      id: draft-card
+    timeout: 10000
+
+# „Începe alta”: ciorna dispare.
+- tapOn:
+    id: draft-discard
+- assertNotVisible:
+    id: draft-card
+- takeScreenshot: 03-fara-ciorna
