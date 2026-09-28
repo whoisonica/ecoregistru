@@ -15,7 +15,10 @@ import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
+import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.CloudinaryStorageService;
+import ro.ecoregistru.service.MovementAttachmentService;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static ro.ecoregistru.service.MovementAttachmentService.MAX_ATTACHMENT_BYTES;
 
@@ -35,6 +38,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -74,6 +78,9 @@ class AttachmentAccessIT {
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired WasteMovementRepository movementRepository;
     @Autowired AttachmentRepository attachmentRepository;
+
+    @Autowired MovementAttachmentService attachmentService;
+    @Autowired TransactionTemplate transactionTemplate;
 
     @MockitoBean CloudinaryStorageService storageService;
 
@@ -382,5 +389,41 @@ class AttachmentAccessIT {
                 .filter(a -> a.getMovement().getId().equals(movementId))
                 .filter(a -> !a.getId().equals(attachmentA))
                 .count();
+    }
+
+    // ---------- A5 (todo-reparatii-2809) ----------
+
+    /**
+     * Fișierul pleacă din Cloudinary abia după ce rândul a plecat din bază. Invers, o tranzacție care cădea
+     * după ștergerea de la furnizor lăsa rândul pe ecran cu un fișier care nu mai exista nicăieri.
+     */
+    @Test
+    void theFileLeavesStorageOnlyOnceTheRowIsGoneForGood() {
+        UUID company = movementRepository.findById(movementA).orElseThrow().getCompany().getId();
+        TenantContext.set(company);
+        try {
+            transactionTemplate.executeWithoutResult(tx -> {
+                attachmentService.deleteAttachment(movementA, attachmentA);
+                tx.setRollbackOnly();
+            });
+            verify(storageService, never()).delete(anyString(), any(), any());
+            assertThat(attachmentRepository.findById(attachmentA)).isPresent();
+
+            attachmentService.deleteAttachment(movementA, attachmentA);
+            verify(storageService, times(1)).delete(eq("ecoregistru/movements/aviz"), any(), any());
+            assertThat(attachmentRepository.findById(attachmentA)).isEmpty();
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    /** Cloudinary care nu răspunde nu e un defect al nostru: 503 cu codul lui, nu „eroare neașteptată”. */
+    @Test
+    void aStorageThatDoesNotAnswerIsA503WithItsOwnCode() throws Exception {
+        when(storageService.fetch(anyString())).thenThrow(new java.io.IOException("connect timed out"));
+
+        mockMvc.perform(get(contentUrl()).header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$['error-code']").value("attachment.fetch.failed"));
     }
 }
