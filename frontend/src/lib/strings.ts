@@ -241,6 +241,8 @@ export const strings = {
     cameraDenied: "Fără acces la cameră nu pot poza avizul. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
     reading: "Citesc avizul…",
     readNothing: "N-am putut citi nimic din poză. Completează de mână — poza rămâne atașată predării.",
+    photoRemove: "Scoate poza",
+    photoGone: "Poza nu mai e pe telefon și am scos-o din predare. Dacă ai avizul, pozează-l din nou.",
     readFrom: (line: string) => `Din poză: „${line}”`,
     confirmRead: "Corect",
     confirmPending: (n: number) =>

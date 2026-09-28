@@ -109,6 +109,15 @@ export function localPhoto(uri: string | null) {
   return rebasePhoto(uri, Paths.document.uri);
 }
 
+/** Mai e poza pe disc? O adresă stricată e socotită lipsă. */
+export function photoExists(uri: string) {
+  try {
+    return new File(uri).exists;
+  } catch {
+    return false;
+  }
+}
+
 function fromRow(r: Row): OutboxItem {
   return {
     id: r.id,
@@ -166,9 +175,12 @@ export function useOutboxState(owner: string | undefined) {
 function keepPhoto(id: string, uri: string): string {
   const dir = new Directory(Paths.document, "outbox");
   if (!dir.exists) dir.create();
+  const source = new File(uri);
+  // Poza unei ciorne vechi poate să fi plecat din cache: formularul o scoate și spune de ce (B3).
+  if (!source.exists) throw new PhotoMissingError();
   const target = new File(dir, `${id}.jpg`);
   if (target.exists) target.delete();
-  new File(uri).copy(target);
+  source.copy(target);
   return target.uri;
 }
 
@@ -297,7 +309,7 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
       }
       // Cheia rândului e și cheia pozei (V67): o reîncercare după un răspuns pierdut nu mai dublează poza.
       if (item.photoUri) {
-        if (!new File(item.photoUri).exists) throw new PhotoMissingError();
+        if (!photoExists(item.photoUri)) throw new PhotoMissingError();
         await api.uploadAttachment(itemAuth, movementId, item.photoUri, item.id);
       }
       await d.runAsync("DELETE FROM outbox WHERE id = ?", item.id);

@@ -72,7 +72,8 @@ import { editBody } from "../src/movementEdit";
 import { confirmDeclared } from "../src/declared";
 import { reportError } from "../src/monitoring";
 import { useOnline } from "../src/online";
-import { db, drain, enqueue, get as getQueued, localPhoto, resubmit } from "../src/outbox";
+import { db, drain, enqueue, get as getQueued, localPhoto, photoExists, resubmit } from "../src/outbox";
+import { PhotoMissingError } from "../src/outboxRules";
 import { useSession } from "../src/session";
 import { colors, fonts, radius } from "../src/theme";
 import { dropDraft, writeDraft } from "../src/useDraft";
@@ -220,6 +221,8 @@ export default function PredareScreen() {
   const prefilled = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // B3: poza ciornei nu mai e pe telefon (cache golit de sistem); formularul merge mai departe fără ea.
+  const [photoGone, setPhotoGone] = useState(false);
   const source = original ?? queuedMovement ?? againMovement ?? repeated;
   useEffect(() => {
     if (!source || prefilled.current) return;
@@ -344,7 +347,10 @@ export default function PredareScreen() {
           const f = saved.fields as Record<string, unknown>;
           const s = <T,>(k: string, fallback: T) => (k in f ? (f[k] as T) : fallback);
           setStep(saved.step);
-          setPhoto(localPhoto(saved.photo));
+          const savedPhoto = localPhoto(saved.photo);
+          const kept = savedPhoto && photoExists(savedPhoto) ? savedPhoto : null;
+          setPhoto(kept);
+          setPhotoGone(!!savedPhoto && !kept);
           setWorkPointId(s("workPointId", ""));
           setDate(s("date", todayIso()));
           setWasteCode(s<WasteCode | null>("wasteCode", null));
@@ -705,6 +711,13 @@ export default function PredareScreen() {
           summary,
         });
     } catch (error) {
+      if (error instanceof PhotoMissingError) {
+        // Poza a plecat de pe disc între timp: fără ea predarea se poate salva, deci n-o mai cerem.
+        setPhoto(null);
+        setPhotoGone(true);
+        setSaveError(m.photoGone);
+        return;
+      }
       // Poza n-a putut fi copiată sau baza telefonului e plină: omul trebuie să afle, nu să apese degeaba.
       reportError(error, { where: "predare", step: "enqueue" });
       setSaveError(t.saveError);
@@ -877,6 +890,12 @@ export default function PredareScreen() {
                     ) : null}
                   </View>
                 ) : null}
+                {photo && !reading ? (
+                  <Pressable onPress={() => setPhoto(null)} testID="photo-remove" style={styles.photoRemove}>
+                    <Text style={styles.photoRemoveText}>{m.photoRemove}</Text>
+                  </Pressable>
+                ) : null}
+                {photoGone ? <Note tone="alert">{m.photoGone}</Note> : null}
                 {readNothing ? <Note tone="alert">{m.readNothing}</Note> : null}
 
                 {activeWorkPoints.length !== 1 || (workPoints.isError && !workPoints.data) ? (
@@ -1464,6 +1483,8 @@ const styles = StyleSheet.create({
   secHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 4 },
   photoBox: { borderRadius: radius.group, overflow: "hidden", height: 180, backgroundColor: colors.lcd },
   photo: { width: "100%", height: "100%" },
+  photoRemove: { alignSelf: "flex-end", paddingHorizontal: 4, paddingVertical: 2 },
+  photoRemoveText: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.greenText },
   readingOverlay: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(8,12,10,0.6)",
