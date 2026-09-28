@@ -38,6 +38,8 @@ import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.export.Anexa1FormGenerator;
 import ro.ecoregistru.service.export.AnnualDeclarationGenerator;
 import ro.ecoregistru.service.export.ExportFormat;
+import ro.ecoregistru.service.export.Anexa3Register;
+import ro.ecoregistru.service.export.Anexa3RegisterGenerator;
 import ro.ecoregistru.service.export.PackagingAnexa3;
 import ro.ecoregistru.service.export.ReportBranding;
 import ro.ecoregistru.util.Diacritics;
@@ -129,6 +131,8 @@ public class AuditFileService {
     EvidenceCalculator evidenceCalculator;
     Anexa1FormGenerator anexa1FormGenerator;
     AnnualDeclarationGenerator annualDeclarationGenerator;
+    Anexa3RegisterService anexa3RegisterService;
+    Anexa3RegisterGenerator anexa3RegisterGenerator;
     PartnerRepository partnerRepository;
     WasteMovementRepository movementRepository;
     CompanyRepository companyRepository;
@@ -201,7 +205,7 @@ public class AuditFileService {
         evidenceCalculator.regenerateYearBeforeStreaming(year);
         for (int y = firstYear; y <= year; y++) {
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
-            filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(company, y, workPoints)));
+            filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(company, y, workPoints), anexa3Register(y)));
         }
 
         List<String> written = new java.util.ArrayList<>();
@@ -311,10 +315,12 @@ public class AuditFileService {
         List<YearContents> perYear = new java.util.ArrayList<>();
         for (int y = year - years + 1; y <= year; y++) {
             Anexa3Plan plan = anexa3Plan(company, y, workPoints);
+            Anexa3Register register = anexa3Register(y);
             perYear.add(new YearContents(y,
                     movementRepository.countCountedBetween(tenantId, LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31)),
                     plan.files().stream().map(Anexa3File::workPointName).toList(),
-                    plan.roleMissing()));
+                    plan.roleMissing(),
+                    register == null ? 0 : register.rows().size()));
         }
 
         Set<MarketRole> roles = company.getMarketRoles();
@@ -340,9 +346,13 @@ public class AuditFileService {
                                     boolean anexa3Applies, long partners, long partnersExpired,
                                     long partnersExpiringSoon) {}
 
-    /** {@code anexa3WorkPoints}: punctele de lucru care primesc o Anexă 3 Ambalaje în anul acesta. */
+    /**
+     * {@code anexa3WorkPoints}: punctele de lucru care primesc o Anexă 3 Ambalaje în anul acesta.
+     * {@code anexa3Forms}: câte formulare Anexa 3 de transport s-au emis în an — registrul lor intră în dosar când e cel puțin unul
+     * (proprietarul, 29.09.2026).
+     */
     public record YearContents(int year, long movements, List<String> anexa3WorkPoints,
-                               boolean anexa3RoleMissing) {}
+                               boolean anexa3RoleMissing, long anexa3Forms) {}
 
     /** De ce intră sau nu Anexa 1 Ambalaje: după rolul de piață din profilul firmei. */
     public enum PackagingDeclaration { INCLUDED, TRADER_ONLY, NOT_ANSWERED }
@@ -393,6 +403,12 @@ public class AuditFileService {
             writeEntry(zip, written, prefix + file.baseName() + ".pdf",
                     packagingService.renderAnexa3(file.document(), ExportFormat.PDF));
         }
+        // Registrul Anexa 3 (transport) (decizia 88; în dosar la cererea proprietarului, 29.09.2026): numai când anul
+        // are formulare emise — un registru gol n-are ce spune la control.
+        if (files.anexa3Register() != null) {
+            writeEntry(zip, written, prefix + files.anexa3RegisterName(),
+                    anexa3RegisterGenerator.pdf(files.anexa3Register()));
+        }
         writeAttachments(zip, written, files.prefix() + ATTACHMENTS_DIR, movements, attachmentRepository.findAllOfLiveMovementsBetween(
                 tenantId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31)));
     }
@@ -404,14 +420,27 @@ public class AuditFileService {
      * null când firma n-o depune.
      */
     private record YearFiles(String prefix, String sheet, String centralized, String packaging,
-                             List<Anexa3File> anexa3, boolean anexa3RoleMissing, int anexa3Unplaced) {}
+                             List<Anexa3File> anexa3, boolean anexa3RoleMissing, int anexa3Unplaced,
+                             /** null când anul n-are formulare Anexa 3 emise. */
+                             Anexa3Register anexa3Register) {
+        String anexa3RegisterName() {
+            return "registru-anexa3-" + anexa3Register.year() + ".pdf";
+        }
+    }
 
-    private static YearFiles yearFiles(int year, boolean single, boolean packaging, Anexa3Plan plan) {
+    private static YearFiles yearFiles(int year, boolean single, boolean packaging, Anexa3Plan plan,
+                                       Anexa3Register anexa3Register) {
         return new YearFiles(single ? "" : year + "/",
                 "evidenta-gestiunii-deseurilor-" + year + ".pdf",
                 "evidenta-centralizata-" + year + ".pdf",
                 packaging ? "anexa1-ambalaje-" + year : null,
-                plan.files(), plan.roleMissing(), plan.unplaced());
+                plan.files(), plan.roleMissing(), plan.unplaced(), anexa3Register);
+    }
+
+    /** Registrul formularelor Anexa 3 ale anului, sau null când nu s-a emis niciunul. */
+    private Anexa3Register anexa3Register(int year) {
+        Anexa3Register register = anexa3RegisterService.build(year, null);
+        return register.rows().isEmpty() ? null : register;
     }
 
     // --- attachments ---
@@ -810,6 +839,15 @@ public class AuditFileService {
                         "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
                         "„" + file.workPointName() + "”: .xls pentru depunere, PDF pe hârtie.",
                         "Termen: 25 februarie " + (year + 1) + "."));
+            }
+            if (files.anexa3Register() != null) {
+                int n = files.anexa3Register().rows().size();
+                sb.append(entry(prefix + files.anexa3RegisterName(),
+                        "Registrul Anexa 3 (transport), HG 1061/2008 — " + n
+                                + (n == 1 ? " formular" : " formulare") + " de transport",
+                        "emis" + (n == 1 ? "" : "e") + " în " + year + ", în ordinea numerelor: seria și numărul, data,",
+                        "cantitatea, deșeul, cui s-a predat și codul R/D. Se ține la sediu",
+                        "pentru control; fără termen de depunere."));
             }
             if (files.anexa3RoleMissing()) {
                 sb.append(entry(prefix + "anexa3-ambalaje-" + year,

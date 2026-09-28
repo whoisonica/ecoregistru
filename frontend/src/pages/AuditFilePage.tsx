@@ -9,6 +9,7 @@ import {
 } from "@/hooks/useAuditFile";
 import {
   downloadAnexa1Form,
+  downloadAnexa3Register,
   downloadAnnualDeclaration,
   downloadEvidenceExport,
   useEvidences,
@@ -33,7 +34,7 @@ const t = strings.auditFile;
 const ev = strings.evidences;
 
 /** Documentele care se iau separat din dosar. Arhiva întreagă are butonul ei, deasupra. */
-type DocKey = "sheet" | "centralized" | "packaging" | "anexa3" | "xlsx" | "pdf";
+type DocKey = "sheet" | "centralized" | "packaging" | "anexa3" | "anexa3Register" | "xlsx" | "pdf";
 
 /** „1,4 MB”. Sub 1 MB, în KB: un dosar fără poze nu e „0,0 MB”. */
 function formatSize(bytes: number): string {
@@ -166,6 +167,28 @@ function Anexa3Row({ c, action }: { c: AuditFileContents; action?: ReactNode }) 
       ))}
       {withPoints.length === 0 && missing.length === 0 && (
         <p>{single ? t.anexa3None.replace("{year}", String(c.years[0].year)) : t.anexa3NonePeriod}</p>
+      )}
+    </ContentRow>
+  );
+}
+
+/** Registrul Anexa 3 (transport): intră în dosar din anul cu cel puțin un formular tipărit (proprietarul, 29.09.2026). */
+function Anexa3RegisterRow({ c, action }: { c: AuditFileContents; action?: ReactNode }) {
+  const withForms = c.years.filter((y) => y.anexa3Forms > 0);
+  const single = c.years.length === 1;
+  const forms = (n: number) => countOf(n, t.formOne, t.formMany);
+  return (
+    <ContentRow state={withForms.length > 0 ? "in" : "out"} title={t.docAnexa3Register} action={withForms.length > 0 ? action : undefined}>
+      {withForms.length > 0 &&
+        (single ? (
+          <p>{t.anexa3RegisterYes.replace("{count}", forms(withForms[0].anexa3Forms)).replace("{year}", String(withForms[0].year))}</p>
+        ) : (
+          withForms.map((y) => (
+            <p key={y.year}>{t.anexa3RegisterYesYear.replace("{year}", String(y.year)).replace("{count}", forms(y.anexa3Forms))}</p>
+          ))
+        ))}
+      {withForms.length === 0 && (
+        <p>{single ? t.anexa3RegisterNone.replace("{year}", String(c.years[0].year)) : t.anexa3RegisterNonePeriod}</p>
       )}
     </ContentRow>
   );
@@ -464,6 +487,17 @@ export function AuditFilePage() {
                   }
                 />
               )}
+              <Anexa3RegisterRow
+                c={contents.data}
+                action={
+                  <DocButton
+                    label={t.docAnexa3Register}
+                    loading={doc === "anexa3Register"}
+                    disabled={doc !== null}
+                    onClick={() => void runDoc("anexa3Register", () => downloadAnexa3Register(year, undefined), t.downloadError)}
+                  />
+                }
+              />
               <PartnersRow c={contents.data} />
               <ContentRow
                 state={size && size.attachments === 0 ? "out" : "in"}

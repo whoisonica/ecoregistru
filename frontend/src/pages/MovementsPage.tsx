@@ -407,7 +407,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
    * început vine din anii dinainte. Punctul de lucru ales se păstrează.
    */
   /**
-   * Registrul formularelor Anexa 3 (Andreea, 29.09.2026), pe anul și punctul din filtru: pe „Generare”
+   * Registrul Anexa 3 (transport) (Andreea, 29.09.2026), pe anul și punctul din filtru: pe „Generare”
    * și pe „Ieșiri” — oriunde se tipăresc formulare de transport; „Intrări” n-are ce centraliza.
    */
   const [anexa3RegisterBusy, setAnexa3RegisterBusy] = useState(false);

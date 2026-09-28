@@ -125,7 +125,7 @@ public class EvidenceController {
     }
 
     /**
-     * Registrul formularelor Anexa 3 (Andreea, 29.09.2026): centralizatorul formularelor de transport emise
+     * Registrul Anexa 3 (transport) (Andreea, 29.09.2026): centralizatorul formularelor de transport emise
      * în an, în ordinea numerelor alocate. PDF de tipărit pentru control; nu se depune nicăieri. Citire, deci
      * orice rol al firmei.
      */

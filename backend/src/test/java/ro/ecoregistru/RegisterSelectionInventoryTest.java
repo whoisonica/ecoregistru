@@ -35,9 +35,13 @@ class RegisterSelectionInventoryTest {
      * parametrului schimbat ca să scape de tipar: un generator nou tot aici trebuie trecut, cu motivul lui.
      * D1.17a (27.09.2026): NIR-ul preluării gratuite de la o persoană fizică e tot documentul unei singure intrări,
      * ca borderoul, doar cu liniile ei la 0 lei.
+     * Decizia 88 (29.09.2026): {@code Anexa3RegisterBuilder} e centralizatorul formularelor Anexa 3 emise — cheia lui e
+     * {@code anexa3Number}, alocat numai la tipărire, iar formularul se tipărește și din {@code ANEXA_1} (generatorul), și
+     * din {@code ART_48} (colectorul care predă mai departe). Deci acoperă dinadins ambele registre: nu e o evidență, e
+     * lista formularelor.
      */
     private static final Set<String> TRANSPORT_DOCUMENTS = Set.of("Anexa3FormGenerator.java", "AvizGenerator.java",
-            "BorderouGenerator.java", "NirGenerator.java");
+            "BorderouGenerator.java", "NirGenerator.java", "Anexa3RegisterBuilder.java");
     private static final Pattern SELECTS_A_REGISTER =
             Pattern.compile("WasteRegister\\.(ANEXA_1|ART_48)\\.select\\(");
 

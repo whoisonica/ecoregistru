@@ -46,6 +46,8 @@ export interface AuditFileYearContents {
   movements: number;
   anexa3WorkPoints: string[];
   anexa3RoleMissing: boolean;
+  /** Câte formulare Anexa 3 de transport s-au emis în an; registrul lor intră în dosar de la primul (29.09.2026). */
+  anexa3Forms: number;
 }
 
 /** Mirrors backend `AuditFileService.AuditFileContents`: ce intră în dosar, citit după regulile arhivei. */

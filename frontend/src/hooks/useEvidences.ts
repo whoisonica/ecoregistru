@@ -89,7 +89,7 @@ export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promi
  * `.xlsx` ca să copiezi în portal, PDF pentru control. Pe anul întreg: evidența e anuală.
  */
 /**
- * Registrul formularelor Anexa 3 (Andreea, 29.09.2026): centralizatorul formularelor de transport emise
+ * Registrul Anexa 3 (transport) (Andreea, 29.09.2026): centralizatorul formularelor de transport emise
  * în an, în ordinea numerelor alocate — seria și numărul, data, cantitatea, deșeul, cui s-a predat și
  * codul R/D. PDF pentru control; nu se depune nicăieri.
  */

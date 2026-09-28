@@ -375,6 +375,76 @@ class AuditFileIT {
                 .andExpect(jsonPath("$.anexa3Applies").value(false));
     }
 
+    /**
+     * Registrul Anexa 3 (transport) în dosar (proprietarul, 29.09.2026, după ce a văzut documentul: „pune-o și pe aia
+     * în dosarul de control”). Intră numai când anul are formulare emise; cuprinsul îl numește cu numărul lor, iar
+     * ecranul „Ce intră în arhivă” spune câte sunt. Fără formulare tipărite: nici fişier, nici rând, {@code anexa3Forms} 0.
+     */
+    @Test
+    void theDossierCarriesTheAnexa3RegisterWhenFormsWereIssued() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company gen = companyRepository.save(Company.builder()
+                .name("Registru Dosar SRL").cui("ROR" + suffix).type(CompanyType.GENERATOR).anexa3Series("RDS")
+                .active(true).afmObligation(false).createdAt(Instant.now()).build());
+        AppUser user = appUserRepository.save(AppUser.builder()
+                .email("dosar-reg+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(gen).enabled(true).createdAt(Instant.now()).build());
+        String token = jwtService.generateToken(user);
+        WorkPoint wp = workPointRepository.save(WorkPoint.builder()
+                .company(gen).name("Hala Registru").active(true).createdAt(Instant.now()).build());
+        Partner recycler = partnerRepository.save(Partner.builder()
+                .company(gen).name("Reciclator Registru SA").cui("RO8" + suffix.substring(0, 5))
+                .authorizationNumber("AM 8/2025").type(PartnerType.RECOVERER).client(true).active(true)
+                .createdAt(Instant.now()).build());
+        WasteMovement printed = movementRepository.save(WasteMovement.builder()
+                .company(gen).workPoint(wp).date(LocalDate.of(2026, 5, 6))
+                .wasteCode(wasteCodeRepository.findByCode("20 01 01").orElseThrow())
+                .quantity(new BigDecimal("120.000")).unit(Unit.KG).operation(WasteOperation.RECOVERED)
+                .operationCode(WasteOperationCode.R3).register(WasteRegister.ANEXA_1).partner(recycler)
+                .deleted(false).createdBy(user.getId()).build());
+        // A doua predare rămâne netipărită: nu e formular emis, nu intră în registru.
+        movementRepository.save(WasteMovement.builder()
+                .company(gen).workPoint(wp).date(LocalDate.of(2026, 5, 7))
+                .wasteCode(wasteCodeRepository.findByCode("20 01 01").orElseThrow())
+                .quantity(new BigDecimal("30.000")).unit(Unit.KG).operation(WasteOperation.RECOVERED)
+                .operationCode(WasteOperationCode.R3).register(WasteRegister.ANEXA_1).partner(recycler)
+                .deleted(false).createdBy(user.getId()).build());
+
+        // Înainte de tipărire: niciun formular emis, deci nici registru în dosar.
+        mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.years[0].anexa3Forms").value(0));
+        assertThat(zipEntryNames(dossier(token))).noneMatch(n -> n.contains("registru-anexa3"));
+
+        // Tipărirea alocă numărul: de-acum e un formular emis.
+        mockMvc.perform(get("/api/v1/movements/" + printed.getId() + "/anexa3")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        byte[] zip = dossier(token);
+        List<String> entries = zipEntryNames(zip);
+        assertThat(entries).contains("rapoarte/registru-anexa3-2026.pdf");
+        String pdf = Golden.flat(Golden.pdfText(readEntryBytes(zip, "rapoarte/registru-anexa3-2026.pdf")));
+        assertThat(pdf).contains(Golden.flat("Registrul Anexa 3 (transport)")).contains(Golden.flat("RDS 1"))
+                .contains(Golden.flat("Reciclator Registru SA")).doesNotContain("30");
+        String readme = new String(readEntryBytes(zip, "00-cuprins.txt"), StandardCharsets.UTF_8);
+        assertThat(readme).contains("rapoarte/registru-anexa3-2026.pdf").contains("Registrul Anexa 3 (transport)")
+                .contains("1 formular");
+        mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.years[0].anexa3Forms").value(1));
+    }
+
+    private byte[] dossier(String token) throws Exception {
+        return mockMvc.perform(get("/api/v1/audit-file")
+                        .param("year", "2026")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+    }
+
     // --- G-2: the four obligations the dossier used to pass over in silence ---
 
     /**

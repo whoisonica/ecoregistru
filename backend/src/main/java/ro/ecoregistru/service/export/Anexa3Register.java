@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Registrul formularelor Anexa 3 — centralizatorul formularelor de încărcare-descărcare deșeuri
+ * „Registrul Anexa 3 (transport)” — numele ales de proprietar pe 29.09.2026 — centralizatorul formularelor de încărcare-descărcare deșeuri
  * nepericuloase (anexa 3 la HG 1061/2008) emise de firmă într-un an.
  *
  * <p>Cerut de specialistă pe 29.09.2026, cu rubricile în cuvintele ei: „număr, data, seria nr doc,

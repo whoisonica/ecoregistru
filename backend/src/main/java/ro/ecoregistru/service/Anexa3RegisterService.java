@@ -23,7 +23,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
 
 /**
- * Registrul formularelor Anexa 3 ale unei firme, pe an (Andreea, 29.09.2026). Read-only, so any member
+ * Registrul Anexa 3 (transport) al unei firme, pe an (Andreea, 29.09.2026). Read-only, so any member
  * of the tenant may print it: nothing is allocated here — the numbers were allocated when each form
  * was first printed. See {@link Anexa3Register}.
  */

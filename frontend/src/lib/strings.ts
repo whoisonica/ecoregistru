@@ -872,12 +872,12 @@ export const strings = {
     art48Pdf: "Descarcă PDF (pentru control)",
     art48Hint: "Anul {year}: tabelul cronologic și totalurile pentru chestionarul SIM „Colectare/Tratare”, în tone.",
     art48Error: "Evidența cronologică nu s-a putut genera.",
-    // Registrul formularelor Anexa 3 (Andreea, 29.09.2026): centralizatorul formularelor de transport emise în an.
-    anexa3RegisterMenu: "Registrul Anexa 3",
+    // Registrul Anexa 3 (transport) (Andreea, 29.09.2026; numele ales de proprietar): centralizatorul formularelor de transport emise în an.
+    anexa3RegisterMenu: "Registrul Anexa 3 (transport)",
     anexa3RegisterPdf: "Descarcă PDF (pentru control)",
     anexa3RegisterHint:
       "Anul {year}: toate formularele de transport tipărite, în ordinea numerelor — seria și numărul, data, cantitatea, deșeul, cui s-a predat și codul R/D.",
-    anexa3RegisterError: "Registrul Anexa 3 nu s-a putut genera.",
+    anexa3RegisterError: "Registrul Anexa 3 (transport) nu s-a putut genera.",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
     // Colectorul pur nu vede „Generare" (proprietarul, 14.09.2026), dar legea îi cere Anexa 1 pentru
@@ -2670,6 +2670,14 @@ export const strings = {
     docCentralized: "Evidența gestiunii deșeurilor centralizată",
     docPackaging: "Anexa 1 Ambalaje (Ordinul 794/2012)",
     docAnexa3: "Anexa 3 Ambalaje (Ordinul 794/2012)",
+    docAnexa3Register: "Registrul Anexa 3 (transport)",
+    /** {count} = „5 formulare”. */
+    anexa3RegisterYes: "{count} de transport emise în {year}, în ordinea numerelor. Se ține la sediu, fără termen.",
+    anexa3RegisterYesYear: "{year}: {count}",
+    anexa3RegisterNone: "Nicio Anexa 3 tipărită în {year}: registrul intră de la primul formular.",
+    anexa3RegisterNonePeriod: "Nicio Anexa 3 tipărită în perioada aleasă: registrul intră de la primul formular.",
+    formOne: "formular",
+    formMany: "formulare",
     docPartners: "Autorizațiile partenerilor",
     docAttachments: "Atașamente",
     /** {count} = „12 mișcări”. */

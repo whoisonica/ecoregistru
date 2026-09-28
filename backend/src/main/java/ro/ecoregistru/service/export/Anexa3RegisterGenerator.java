@@ -30,9 +30,9 @@ import java.util.Locale;
 @Component
 public class Anexa3RegisterGenerator {
 
-    static final String TITLE = "Registrul formularelor de transport — Anexa 3 la HG 1061/2008";
-    static final String BASIS = "Centralizator al formularelor de încărcare-descărcare deșeuri nepericuloase emise "
-            + "(HG 1061/2008 art. 20), în ordinea numerelor alocate. Actul nu prevede un model pentru expeditor; "
+    static final String TITLE = "Registrul Anexa 3 (transport)";
+    static final String BASIS = "Centralizator al formularelor de transport emise — anexa 3 la HG 1061/2008 (formularul de "
+            + "încărcare-descărcare deșeuri nepericuloase, art. 20) —, în ordinea numerelor alocate. Actul nu prevede un model pentru expeditor; "
             + "forma urmează practica de control.";
     static final String EMPTY = "Niciun formular emis în ";
 

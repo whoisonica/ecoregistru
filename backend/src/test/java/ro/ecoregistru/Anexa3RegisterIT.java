@@ -36,7 +36,7 @@ import static ro.ecoregistru.Golden.flat;
 import static ro.ecoregistru.Golden.pdfText;
 
 /**
- * Registrul formularelor Anexa 3 — centralizatorul formularelor de transport emise (Andreea, 29.09.2026:
+ * Registrul Anexa 3 (transport) — centralizatorul formularelor de transport emise (Andreea, 29.09.2026:
  * „număr, data, seria nr doc, cantitate, cod deșeu, denumire deșeu, către cine s-a predat și codul de
  * valorificare — un document care centralizează anexele 3 transport”).
  *
@@ -127,7 +127,7 @@ class Anexa3RegisterIT {
         assertThat(row.operationCode()).isEqualTo("R13");
 
         String text = flat(pdfText(service.render(YEAR, null)));
-        assertThat(text).contains(flat("Registrul formularelor de transport"))
+        assertThat(text).contains(flat("Registrul Anexa 3 (transport)"))
                 .contains(flat("RTS " + firstNumber)).contains(flat("RTS " + secondNumber))
                 .contains(flat("05.07." + YEAR)).contains(flat("20 01 01")).contains(flat(partnerName))
                 .contains("R13")
