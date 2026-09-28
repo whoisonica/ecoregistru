@@ -26,9 +26,9 @@ function check(name, ok, detail = "") {
 await page.goto(BASE + "/setari", { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 const carduri = await page.$$eval("main a[href^='/setari/']", (as) => as.map((a) => a.getAttribute("href")));
-// Zece carduri pe firma demo (BOTH, admin): trei la Firma, două la Echipa, Șoferi + Flota + Cântare (D2.3, 26.09.2026),
-// Prețuri + Sortimente.
-check("pagina de start are un card pe secțiune", carduri.length === 10, carduri.join(" "));
+// Carduri pe firma demo (BOTH, admin): trei la Firma, două la Echipa, Șoferi + Flota + Cântare (D2.3, 26.09.2026),
+// Prețuri + Sortimente; + SIATD (F6a, 28.09.2026), deci unsprezece.
+check("pagina de start are un card pe secțiune", carduri.length === 11, carduri.join(" "));
 await page.click("a[href='/setari/datele-firmei']");
 await page.waitForURL((u) => u.pathname === "/setari/datele-firmei", { timeout: 10000 }).catch(() => {});
 await page.waitForTimeout(800);
