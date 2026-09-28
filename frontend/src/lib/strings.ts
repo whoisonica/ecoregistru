@@ -524,6 +524,10 @@ export const strings = {
     inspectorKicker: "WasteHouse · control",
     inspectorClose: "Închide",
     inspectorCui: (cui: string) => `CUI ${cui}`,
+    // --- Valul B, F9 (28.09.2026): „În calendar” pe Termene ---
+    deadlineCalendar: "În calendar",
+    deadlineInCalendar: "✓ În calendar",
+    deadlineCalendarError: "Calendarul telefonului nu s-a deschis. Pe web, la Termene, e și fișierul pentru calendar.",
   },
 
   login: {

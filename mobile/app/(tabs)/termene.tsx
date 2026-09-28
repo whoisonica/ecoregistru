@@ -9,7 +9,9 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 
 import { deadlines, pastDeadlines, upcomingDeadlines, UnauthorizedError } from "../../src/api";
 import { canWrite } from "../../src/auth";
+import { addDeadlineToCalendar } from "../../src/calendar";
 import { canCompleteOnPhone } from "../../src/deadlineRules";
+import { haptic } from "../../src/haptics";
 import { LightHead } from "../../src/components/LightHead";
 import { YearArrows } from "../../src/components/MonthArrows";
 import { OfflineBand } from "../../src/components/OfflineBand";
@@ -30,12 +32,28 @@ const t = strings.deadlines;
  * <p>F5 (valul B, decizia D9 din 28.09.2026): „Bifează” pe rând deschide foaia de jos (`app/bifeaza.tsx`),
  * cu numărul de înregistrare ca notă — confirmarea de la APM vine des pe telefon, pe drum. Aceeași regulă
  * ca pe web (`canCompleteOnPhone`). „Redeschide” rămâne pe web.
+ *
+ * <p>F9: „În calendar” pe fiecare termen de făcut deschide formularul de eveniment al telefonului, cu
+ * memento cu trei zile înainte (`src/calendar.ts`) — pentru oricine, și pentru vizualizare.
  */
 export default function TermeneScreen() {
   const { session, auth, signOut } = useSession();
   const router = useRouter();
   const writer = canWrite(session?.role);
   const [tab, setTab] = useState("");
+  const [inCalendar, setInCalendar] = useState<Set<string>>(new Set());
+  const [calendarError, setCalendarError] = useState(false);
+  const toCalendar = async (d: Deadline) => {
+    setCalendarError(false);
+    try {
+      if (await addDeadlineToCalendar(d, strings.enums.reportType[d.reportType])) {
+        haptic.success();
+        setInCalendar((s) => new Set(s).add(d.id));
+      }
+    } catch {
+      setCalendarError(true);
+    }
+  };
   const enabled = !!auth && !!session?.tenantId;
   const currentYear = new Date().getFullYear();
 
@@ -141,6 +159,19 @@ export default function TermeneScreen() {
                 </View>
                 <View style={styles.rowEnd}>
                   <Chip label={strings.enums.deadlineStatus[d.status]} tone={TONE[d.status]} />
+                  {tab === "" && d.id ? (
+                    <Pressable
+                      testID="deadline-calendar"
+                      onPress={() => toCalendar(d)}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.calendar, pressed && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.calendarText}>
+                        {inCalendar.has(d.id) ? strings.mobile.deadlineInCalendar : strings.mobile.deadlineCalendar}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                   {canCompleteOnPhone(d, writer) ? (
                     <Pressable
                       testID="deadline-complete"
@@ -157,6 +188,7 @@ export default function TermeneScreen() {
             ))
           )}
         </Group>
+        {calendarError ? <Note tone="alert">{strings.mobile.deadlineCalendarError}</Note> : null}
       </View>
     </ScrollView>
   );
@@ -184,4 +216,6 @@ const styles = StyleSheet.create({
     borderColor: colors.green,
   },
   completeText: { fontFamily: fonts.sansMedium, fontSize: 13.5, color: colors.greenText },
+  calendar: { paddingVertical: 2 },
+  calendarText: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.ink2, textDecorationLine: "underline" },
 });

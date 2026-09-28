@@ -8,3 +8,22 @@ import type { Deadline } from "@/lib/types";
 export function canCompleteOnPhone(d: Pick<Deadline, "id" | "status" | "computed">, writer: boolean): boolean {
   return writer && !!d.id && !d.computed && d.status !== "DONE";
 }
+
+/**
+ * „În calendar” (F9, valul B): evenimentul pentru formularul de calendar al sistemului — o zi întreagă, în
+ * ziua termenului, cu memento cu trei zile înainte (ca fișierul `.ics` de pe web, `deadlinesIcs`).
+ * Data se ia în ora telefonului: „25 februarie” e 25 februarie oriunde stă omul.
+ */
+export function deadlineEvent(d: Pick<Deadline, "dueDate">, label: string) {
+  const [y, m, day] = d.dueDate.split("-").map(Number);
+  const start = new Date(y, m - 1, day);
+  return {
+    title: label,
+    startDate: start,
+    endDate: start,
+    allDay: true,
+    notes: "WasteHouse",
+    // Evenimentul e de o zi întreagă (de la miezul nopții): memento la 9 dimineața, cu trei zile înainte.
+    alarms: [{ relativeOffset: -3 * 24 * 60 + 9 * 60 }],
+  };
+}

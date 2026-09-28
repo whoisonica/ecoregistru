@@ -33,11 +33,15 @@ test("fiecare cerere de permisiune pe iPhone e scrisă de noi, în română", ()
   }
 });
 
-test("Release pe Android fără fereastra peste alte aplicații și fără biometrie", () => {
+test("nicio cerere de calendar: „În calendar” deschide formularul sistemului, care nu cere acces (F9)", () => {
+  for (const key of Object.keys(infoPlist)) assert.equal(/^NS(Calendars|Reminders)/.test(key), false, key);
+});
+
+test("Release pe Android fără fereastra peste alte aplicații, fără biometrie și fără calendar", () => {
   const removed = (manifest["uses-permission"] ?? [])
     .filter((p: { $: Record<string, string> }) => p.$["tools:node"] === "remove")
     .map((p: { $: Record<string, string> }) => p.$["android:name"]);
-  for (const name of ["SYSTEM_ALERT_WINDOW", "USE_BIOMETRIC", "USE_FINGERPRINT"]) {
+  for (const name of ["SYSTEM_ALERT_WINDOW", "USE_BIOMETRIC", "USE_FINGERPRINT", "READ_CALENDAR", "WRITE_CALENDAR"]) {
     assert.ok(removed.includes(`android.permission.${name}`), name);
   }
 });
