@@ -88,6 +88,19 @@ export async function downloadAnnualDeclaration(filters: EvidenceFilters): Promi
  * tabelul cronologic plus totalurile anului în forma chestionarului SIM „Colectare/Tratare”.
  * `.xlsx` ca să copiezi în portal, PDF pentru control. Pe anul întreg: evidența e anuală.
  */
+/**
+ * Registrul formularelor Anexa 3 (Andreea, 29.09.2026): centralizatorul formularelor de transport emise
+ * în an, în ordinea numerelor alocate — seria și numărul, data, cantitatea, deșeul, cui s-a predat și
+ * codul R/D. PDF pentru control; nu se depune nicăieri.
+ */
+export async function downloadAnexa3Register(year: number, workPointId: string | undefined): Promise<void> {
+  const params: Record<string, string | number> = { year };
+  if (workPointId) params.workPointId = workPointId;
+  const fetchFile = async () =>
+    (await api.get("/api/v1/evidences/registru-anexa3", { params, responseType: "blob" })).data as Blob;
+  await openPdfInTab(fetchFile, `registru-anexa3-${year}.pdf`);
+}
+
 export async function downloadArt48Register(
   year: number,
   workPointId: string | undefined,

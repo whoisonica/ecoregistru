@@ -872,6 +872,12 @@ export const strings = {
     art48Pdf: "Descarcă PDF (pentru control)",
     art48Hint: "Anul {year}: tabelul cronologic și totalurile pentru chestionarul SIM „Colectare/Tratare”, în tone.",
     art48Error: "Evidența cronologică nu s-a putut genera.",
+    // Registrul formularelor Anexa 3 (Andreea, 29.09.2026): centralizatorul formularelor de transport emise în an.
+    anexa3RegisterMenu: "Registrul Anexa 3",
+    anexa3RegisterPdf: "Descarcă PDF (pentru control)",
+    anexa3RegisterHint:
+      "Anul {year}: toate formularele de transport tipărite, în ordinea numerelor — seria și numărul, data, cantitatea, deșeul, cui s-a predat și codul R/D.",
+    anexa3RegisterError: "Registrul Anexa 3 nu s-a putut genera.",
     addTitle: "Adaugă mișcare",
     editTitle: "Editează mișcarea",
     // Colectorul pur nu vede „Generare" (proprietarul, 14.09.2026), dar legea îi cere Anexa 1 pentru
