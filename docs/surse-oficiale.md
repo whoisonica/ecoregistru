@@ -42,6 +42,10 @@
 > §6.1), limita de 10 MB (§6.1), evidența pe punct de lucru, „regimul special”, registrul și diferența de cântar (§4),
 > perisabilitatea, stocul degradat și preluarea gratuită (§15.1, §15.3), practica metodei de cost (§15.2), Ordinul 1271/2018
 > (§18.3), codul după sortare, R12 și pierderile 99 99 99 (§18.6–18.7), autorizațiile reale și **`anpm.ro` dispărut** (§18.6).
+>
+> 🔁 **28.09.2026 — §6.1 completat cu sărbătorile legale** (Codul muncii art. 139 alin. (1), forma consolidată), lista din
+> `SiatdCalendar` (F6a). Ce folosesc balotarea (R12, §18.6), rapoartele fixe (D100/D205 §18.1, plafonul §13, 2% §10.1) și NIR-ul
+> (§15.3) era deja aici.
 
 ---
 

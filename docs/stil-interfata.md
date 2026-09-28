@@ -68,8 +68,10 @@ unsprezece, iar până la primul rând de meniu stăteau cinci blocuri.*
    **Cabinet** (F, C, B) la consultant și platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
    „Ambalaje" e intrare proprie numai la firma care n-are „Generare" (colectorul pur).
 4. **Taburile, sub intrarea deschisă** — Generare (Mișcări · Totalul anului · Ambalaje), Termene (De făcut · Bifate ·
-   Trecute), Parteneri (Firme · Persoane fizice, numai cu depozit). **O singură listă, `lib/screenTabs.ts`, citită și de
-   pagină, și de panou.** Tabul din meniu schimbă doar `?tab=`, ca `setTab` din pagină: luna, punctul și filtrele
+   Trecute), Parteneri (Firme · Persoane fizice, numai cu depozit), Cântar (Operațiuni · Rapoarte · SIATD, `CANTAR_TABS`,
+   28.09.2026). **O singură listă, `lib/screenTabs.ts`, citită și de pagină, și de panou.** Taburile de sub „Operațiuni”
+   (Intrări · Ieșiri · Transferuri · Balotare · Formulare primite · Stoc · Inventar) sunt ale paginii, nu ale panoului, și nu
+   stau în adresă. Tabul din meniu schimbă doar `?tab=`, ca `setTab` din pagină: luna, punctul și filtrele
    rămân. Cât taburile sunt desfăcute, indicatorul coboară pe primul: cifrele lui sunt despre lista implicită.
 5. Jos: Abonament (doar cine administrează) și contul, cu meniul Termeni · Confidențialitate · Scurtături · Deconectare.
 
@@ -223,7 +225,7 @@ după ultimul tab, stă în mijlocul antetului. Liste derulante cu etichetă dea
 La fel pe toate trei taburile „Generare": luna și punctul de lucru pe „Mișcări", anul și punctul pe „Totalul anului", doar anul pe
 „Ambalaje" (punctul de lucru se alege din meniul butonului Anexa 3).
 Intrări și Ieșiri n-au taburi, deci își păstrează banda.
-**Tabelul totalului arată zece coduri pe pagină**, nu douăzeci și cinci ca restul: stă sub un antet înalt, iar rândul de
+**Tabelul totalului arată zece coduri pe pagină**, nu douăzeci și cinci, cât e valoarea implicită (lista celor cu zece, mai jos): stă sub un antet înalt, iar rândul de
 total — cifra pentru care se deschide tabul — ajungea sub marginea ecranului. ⚠️ Rândul de total rămâne al **anului**,
 nu al paginii.
 **Documentele stau sus, deasupra tabelului, niciodată sub el** (proprietarul: „butoanele de evidențele gestiunii sus, nu
@@ -270,6 +272,15 @@ nu meargă pagina în jos, să tot dai scroll"*). Ținta e **1440 × 900 fără 
 - **editarea se face în același tabel** („Scrie cifre proprii" face câmpuri din celule), nu într-o a doua grilă dedesubt;
 - tabelul arată **doar rândurile cu cifre**; restul se numesc pe un rând gri sub el. Capul de tabel pe două niveluri
   („Primare: total · reutilizabile"), nu nume din formular rupte pe trei rânduri.
+
+**Zece rânduri pe pagină** au, pe lângă „Totalul anului” și „Ambalaje”, lista „Mișcări” din Generare (20.09.2026) și, din
+27.09.2026, toate tabelele depozitului — operațiunile de pe Cântar, Formulare primite, Stoc, Inventar (și SIATD, 28.09) —,
+Setările lor (Sortimente, Cântare, Flota, Șoferii noștri) și tabul „Persoane fizice” din Parteneri (`0c7cfa4`):
+`useTableView(…, { pageSize: 10 })`. Valoarea implicită a
+`useTableView` rămâne 25. Derularea se măsoară pe `main#continut` (pagina derulează în `main`, `Layout.tsx`); pe
+`document.documentElement` diferența iese mereu 0, deci o probă care măsoară doar acolo trece pe motivul greșit (53 și 54, vezi
+`frontend/e2e/README.md`). ⚠️ Tabul „Operațiuni” al Cântarului încă derulează la 1440×900 (54 px la D4.7, `ac6d7c7`), de decis cu
+proprietarul.
 
 ⚠️ **Tabelul Anexei 3 nu mai e pe tab la generator** (proprietarul: *„nu își are locul acolo, e ascunsă așa cumva"*):
 erau aceleași predări ca în „Predat", iar documentul ei stătea la fundul paginii. A rămas butonul. Numai la firma care

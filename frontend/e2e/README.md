@@ -28,7 +28,8 @@ mesajul și descărcarea se oprește; operatorul vede doar cele șapte fără ba
 raportul, și cu ordinea inversată): proba reîncarcă pagina la fiecare șapte descărcări.
 ⚠️ **Derularea se măsoară pe `main#continut`**, nu pe `document.documentElement`: pagina derulează în `main` (`Layout.tsx`), deci
 `documentElement.scrollHeight − innerHeight` dă mereu 0. Probele 53 și 54 măsoară încă așa (trec pe motivul greșit); tabul „Operațiuni”
-al Cântarului derula de fapt 63 px înainte de D4.7 și 127 px după (de decis cu proprietarul).
+al Cântarului derula de fapt 63 px înainte de D4.7, 127 px cu „Operațiuni · Rapoarte” adăugat și **54 px** după ce descrierea și banda
+reținerilor au trecut pe câte un rând, în același commit (`ac6d7c7`; de decis cu proprietarul). *(28.09.2026: aici scria doar „127 px după”.)*
 **Negative:** fără `tabs: CANTAR_TABS` în panou cade la clicul pe „Rapoarte” (TimeoutError); cu toate cardurile la toți, operatorul vede 11
 → 2 căderi. ⚠️ Lasă în urmă o intrare finalizată „Proba 55” pe primul depozit activ și sortimentul „Carton P55 <număr>” (dezactivat).
 
@@ -511,9 +512,10 @@ ramură nu atinge `node_modules`.
 
 ## Ce acoperă
 
-> **Tabelul de mai jos descrie probele 1–19.** Probele **20–43** au intrarea lor datată în capul acestui fişier (20 și 21 doar
-> pomenite, la Setările pe carduri), iar lista întreagă, cu un rând pe probă, e cea din `run.mjs` — **43 de probe la 22.09.2026**;
-> o probă care nu e în `run.mjs` nu rulează nici local, nici în CI.
+> **Tabelul de mai jos are un rând pe fiecare probă din `e2e/`: 56 la 28.09.2026.** Probele 1–19 sunt descrise pe larg; la
+> **20–43** rândul e descrierea din `run.mjs`, iar la **44–56** (depozitul) un rezumat al intrării datate din capul fișierului.
+> `npm run e2e` (și CI-ul) rulează **numai cele 43 din `run.mjs`**; probele **44–56 nu sunt în `run.mjs`**, deci nu rulează în CI —
+> se pornesc cu mâna, `node e2e/<fișier>`, de obicei pe o stivă proprie (jar + Vite pe alt port, bază nouă, `E2E_BASE` + `E2E_DB`).
 
 | Suita | Ce probează |
 |---|---|
@@ -535,8 +537,45 @@ ramură nu atinge `node_modules`.
 | ~~`16-buletine.mjs`~~ | 🗑️ **Ştearsă pe 14.09.2026, seara, odată cu buletinele** (specialista: un generator nu le completează). Istoric: ✅ **Scrisă şi rulată pe 14.09.2026, verde — 22 de verificări, 2 nerulate şi scrise ca atare.** Buletinele de analiză din Setări (G-7): formularul gol marchează **toate patru** rubricile, fiecare legată de mesajul ei, şi nu pleacă la server; **controlul** — laboratorul completat îşi pierde marcajul, celelalte trei nu. Rubrica de dată are `max` = azi. Prin API: data în viitor, fişierul lipsă şi laboratorul gol sunt refuzate **fiecare cu codul lui**, iar controlul pozitiv (aceeaşi cerere, data de azi) nu mai e refuzat pentru dată; nimic scris. Cititorul vede lista, nu vede butonul, şi ia **403** pe lângă ecran. **Proba negativă:** verificarea laboratorului scoasă din `AnalysisBulletinsSection` → cad exact cele două verificări despre ea. ⬜ **Nerulate:** „Anterior" pe al doilea buletin şi stingerea badge-ului „Cod-oglindă" — cer Cloudinary. Local, controlul pozitiv ia **500** la urcare (clientul Cloudinary gol), nu un mesaj: pe producţie cheia există. Nu scrie nimic în bază. |
 | `16-import.mjs` | Importul din Excel (P2.15), pe ecran: „Importă” rămâne blocat până când **acelaşi** fişier a trecut o verificare fără erori, alegerea altui fişier îl blochează la loc, un fişier stricat îşi spune mesajul pe ecran, iar şablonul chiar se descarcă. Intră ca **platformă**, pe firma demo; administratorul firmei nu vede butonul din Setări, iar `/import` îl duce acasă (din 16.09.2026 importul îl facem noi). Regulile de import sunt ale `ExcelImportIT`. Nu salvează nimic: verifică doar şablonul gol. |
 | `18-panou-cantar.mjs` | ✅ **Scrisă și rulată pe 15.09.2026, verde.** **Din 18.09.2026 cere panoul nou:** fără afișajul lunii, fără tastele mari, fără rândul „Caută oriunde” (căutarea e iconiță) și fără niciun link `?nou=1` în panou („+”-urile de pe rânduri au fost încercate și scoase), rânduri fără iconiță cât panoul e lat (iconițe numai pe șină), taburile sub intrarea deschisă — aceleași ca în pagină, iar tabul din meniu schimbă doar `?tab=`. Rândurile meniului se aleg cu `nav a[data-nav="row"]`, fiindcă în `nav` stau și taburile (`tab`). *Înainte:* Panoul „Cântar”: firma ca etichetă (nume, CUI, tip), afișajul lunii cu kg și verdict, cele trei taste de adăugare pe firma demo (`BOTH`), cifrele 1–9, 0 pe meniu în ordine, Generare / Intrări / Ieșiri ca intrări proprii, Import și Abonament **absente** din meniu, panoul de 262px; indicatorii nu scriu niciodată „0” și nici „?” cu serverul sus; tastele 3 și 4 deschid Intrări și Ieșiri, cu totalurile și coloanele fiecăruia (Cod R/D și Către pe Ieșiri, fără Secția); I și E deschid formularele potrivite de pe Acasă; `[` strânge panoul la 64px și scrie în `localStorage`; culoarea pubelei pe fiecare cod cunoscut din listă, roșu pe periculoase, **nimic** pe un cod necunoscut; `/intrari-iesiri` duce la `/intrari`; pe telefon bara de jos cu cele cinci intrări, nimic lateral, sertarul din „Mai mult”. Nu scrie nimic în bază. |
-| `19-cantar-operatiuni.mjs` | ✅ **Scrisă și rulată pe 16.09.2026, verde.** Ecranul „Cântar” (D1.15): intrarea de meniu apare doar la firmele cu registrul art. 48 și stă imediat după Ieșiri; meniul firmei cu depozit are nouă intrări, deci Setările poartă o cifră (9), nu litera de rezervă **S** (din 18.09.2026); ecranul are taburile Intrări / Ieșiri, coloanele listei și banda reținerilor; tabelul încape în 1440px și pagina nu se lățește nici la 375px; formularul are cele patru secțiuni, calculează **neto = brut − tara** (câmpul se blochează) și arată cât se reține din plată, cu cotele venite de la server (2% AFM din 20.000 lei → 400 lei, rămân 19.600). Din 16.09.2026 (D1.14) descarcă și **„Registrul lunii”**: numele fișierului poartă luna din filtru și vine un xlsx, nu o eroare (coloanele le apără `DepotRegisterIT`). Nu scrie nimic în bază: tastează în formular și îl închide cu Escape. |
+| `19-cantar-operatiuni.mjs` | ✅ **Scrisă și rulată pe 16.09.2026, verde.** Ecranul „Cântar” (D1.15): intrarea de meniu apare doar la firmele cu registrul art. 48 și stă imediat după Ieșiri; meniul firmei cu depozit are nouă intrări, deci Setările poartă o cifră (9), nu litera de rezervă **S** (din 18.09.2026); ecranul are taburile — din 28.09.2026 zece, în ordinea „Operațiuni · Rapoarte · SIATD · Intrări · Ieșiri · Transferuri · Balotare · Formulare primite · Stoc · Inventar” —, coloanele listei și banda reținerilor; tabelul încape în 1440px și pagina nu se lățește nici la 375px; formularul are cele patru secțiuni, calculează **neto = brut − tara** (câmpul se blochează) și arată cât se reține din plată, cu cotele venite de la server (2% AFM din 20.000 lei → 400 lei, rămân 19.600). Din 16.09.2026 (D1.14) descarcă și **„Registrul lunii”**: numele fișierului poartă luna din filtru și vine un xlsx, nu o eroare (coloanele le apără `DepotRegisterIT`). Nu scrie nimic în bază: tastează în formular și îl închide cu Escape. |
 | `17-persoane-fizice.mjs` | Tabul „Persoane fizice” de lângă Parteneri (D1.7b): se deschide din clic şi din URL, un CNP cu cifra de control greşită îşi marchează rubrica fără să salveze, lista arată doar ultimele 4 cifre şi caută după ele, editarea primeşte CNP-ul întreg, iar vizualizatorul vede lista fără „Adaugă persoană”. Regulile sunt ale `NaturalPersonRegistryIT`. Persoana creată se dezactivează şi se şterge la final. Merge şi pe o bază proaspăt seedată (cere doar firma demo, care are art. 48). |
+| `20-flota.mjs` | Flota din Setări: numărul normalizat, ITP-ul și licența care expiră, vehiculul recunoscut la cântar |
+| `21-soferi.mjs` | Șoferii din Setări: depozitul implicit, atestatul expirat, șoferul ales din listă la cântar |
+| `22-lansare-marunte.mjs` | Istoric pe rândul de mișcare, cât cântărește dosarul, parola cu «Arată» și putere, limitele la șoferi |
+| `23-cereri-1609.mjs` | Generare fără «Operațiune», scopul V/E, destinația și autorizația destinatarului, ANAF la CUI, Anexa 3 la generator |
+| `24-primii-pasi.mjs` | «Primii pași» pe Acasă: nu la firma care are tot, pașii bifați din date, «Ascunde» care ține, 375px |
+| `25-parola-poster.mjs` | «Parolă uitată» și «Alege-ți parola» în PublicShell: fără cod, parole diferite, cod greșit, 375px |
+| `26-dupa-salvare.mjs` | Ce urmează după o mișcare nouă: bonul, Anexa 3 și avizul, «Încă una la fel» fără cifre, editarea cu mesajul scurt |
+| `27-an-declarat.mjs` | Anul deja declarat: salvarea, ștergerea și cântarul întreabă; cu termenul redeschis, salvarea trece direct |
+| `28-fisa-de-cantarit.mjs` | Totalul anului: nota „de cântărit” înainte de clic, dialogul numește fișa și „Descarcă oricum” descarcă |
+| `29-facturare.mjs` | Facturare: tasta B, ultima rulare cu firma și motivul, filtrele, „Verifică plata” fără chei, „Oprește”, 375px |
+| `30-clienti-tabel.mjs` | Clienți: cifrele de sus, filtrele, cele cu probleme primele, ⋯ pe rând, invitația numărată, tasta N, 375px |
+| `31-client-nou.mjs` | Client nou în pași: cererea pusă în pași, CUI și adresa verificate, prima factură, totul sau nimic, 375px |
+| `32-parteneri-locuri-soferi.mjs` | Partenerul pe patru pași, punctele lui de lucru și șoferii pe rândul din tabel, 375px |
+| `33-pagina-firmei.mjs` | Pagina firmei: taburile, fișa cu lipsurile, utilizatorii și istoricul firmei fără comutator, abonamentul, Intră în cont, 375px |
+| `34-dosar-continut.mjs` | Dosarul de control: ce intră în arhivă și de ce, pe firmă și an, 375px |
+| `35-termene-trecute.mjs` | Termene pe taburi: De făcut · Bifate · Trecute (anul în curs, până ieri), 375px |
+| `36-abonament-client.mjs` | Abonamentul la client: de plată, transferul de copiat, verifică plata, datele de facturare, 375px |
+| `37-deconectare-cache.mjs` | Deconectarea golește cache-ul: consultantul nu vede firmele platformei |
+| `38-ambalaje-in-generare.mjs` | „Ambalaje” ca tab în Generare: un singur ecran fără derulare, două documente, tastele tabelului și filtrarea pe Mișcări |
+| `39-acasa.mjs` | Acasă: anul pe luni, deșeurile anului, termenele și calendarul |
+| `40-invitatia-valabilitate.mjs` | Dialogul de invitație spune cât ține linkul (7 zile) |
+| `41-cnp-in-liste.mjs` | CNP-ul șoferului nu pleacă întreg în liste la „Vizualizare” |
+| `42-bifate-anul.mjs` | Termenul tocmai bifat se vede pe „Bifate” |
+| `43-fundaturi.mjs` | Eroarea de încărcare are „Încearcă din nou”, iar fişa de partener întreabă înainte să se închidă |
+| `44-cantare.mjs` | *(nu e în `run.mjs`)* Setări → Cântare: stările verificării (expirată, verificat, reparat), tasta cântarului la cântar, motivul cerut la finalizare, „Rămâne de plătit” fără „Lei/kg” pentru operatorul care nu vede prețurile, vizualizatorul fără butoane, cântarul cu cântăriri trecut „Scos din uz”, nu șters |
+| `45-acces-depozit.mjs` | *(nu e în `run.mjs`)* Accesul pe depozit: coloana „Depozite” din Setări → Utilizatori, operatorul restrâns la un depozit primește 404 pe celălalt și nu-l vede în liste |
+| `46-fisiere-cantar.mjs` | *(nu e în `run.mjs`)* Fișierele cântarului: dovada BRML și buletinul pe rândul verificării, deschise în tab, scoase; Cloudinary interceptat cu `page.route` |
+| `47-transfer.mjs` | *(nu e în `run.mjs`)* Transferul între depozite: „Transfer nou” fără partener și preț, „Pleacă” → „În tranzit”, avizul, „Recepționează” cu diferența și NIR-ul; un transfer recepționat nu se mai anulează |
+| `48-formulare-primite.mjs` | *(nu e în `run.mjs`)* Registrul formularelor primite: tasta N pe `/cantar`, rândul numerotat, „Corectează” ca rând nou, PDF-ul |
+| `49-stoc.mjs` | *(nu e în `run.mjs`)* Tabul „Stoc”: angajat și disponibil ca `/api/v1/stock`, ieșirea peste stoc „Negativ” cu filtrul „Doar de corectat” |
+| `50-praguri-limite.mjs` | *(nu e în `run.mjs`)* Pragurile și limitele: „Peste maxim”, limita din autorizație „Depășit”, limita în m³ „fără comparație”, vechimea |
+| `51-inventar.mjs` | *(nu e în `run.mjs`)* Tabul „Inventar”: nota de preluare confirmată, inventarul cu decizie, declarație, faptic cu explicație, PV și aprobare; stocul după fiecare |
+| `52-borderou-nir.mjs` | *(nu e în `run.mjs`)* Intrarea PF cu o linie plătită și una la 0 lei: „0 = gratuit, se face NIR” sub linii, apoi „Borderou nr. …” și „NIR nr. …”, fiecare cu PDF-ul lui |
+| `53-depozit-defecte.mjs` | *(nu e în `run.mjs`)* Zece rânduri și „Înainte” pe Transferuri, garda la închiderea dialogului de cântar și a inventarului, destinația dezactivată a transferului |
+| `54-balotare.mjs` | *(nu e în `run.mjs`)* Tabul „Balotare”: sortimentul balotat din Setări, „12 × 380 kg = 4.560 kg” înainte de salvare, stocul mutat din vrac în balotat, anularea cu motiv doar la cine aprobă |
+| `55-rapoarte-depozit.mjs` | *(nu e în `run.mjs`)* Cântar → Rapoarte: cele unsprezece rapoarte descărcate (xlsx, și PDF unde există), perioada de cel mult un an, operatorul vede doar cele șapte fără bani și fără CNP |
+| `56-siatd-termene.mjs` | *(nu e în `run.mjs`)* Setări → SIATD și Cântar → SIATD: termenul scris cu ziua, „Ratate”, confirmarea cu cod și „Confirmă selectate”, banda de pe Operațiuni, operatorul fără butoane |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 
