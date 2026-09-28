@@ -1,3 +1,4 @@
+import { strings } from "@web/strings";
 import { Directory, File, Paths } from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { useEffect, useState } from "react";
@@ -5,7 +6,7 @@ import { useEffect, useState } from "react";
 import * as api from "./api";
 import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
-import { retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
+import { PhotoMissingError, rejectsRow, retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
 
 /**
  * M1b — coada predărilor care n-au plecat încă. Rampa n-are semnal; predarea se salvează pe telefon
@@ -239,14 +240,16 @@ export function backoffMs(attempts: number) {
   return Math.min(5_000 * 2 ** Math.max(attempts - 1, 0), 10 * 60_000);
 }
 
-/** Refuzul serverului se păstrează; restul (rețea, 5xx, 429) e de reîncercat. */
-function isRejection(error: unknown): error is api.ApiError {
-  return error instanceof api.ApiError && error.status >= 400 && error.status < 500 && error.status !== 429;
-}
-
 /** `fetch` din React Native cade cu `TypeError: Network request failed` când nu e semnal. */
 function isNetworkFailure(error: unknown) {
   return error instanceof TypeError && /network request failed/i.test(error.message);
+}
+
+/** Propoziția de pe un rând refuzat: a serverului, sau „poza nu mai e pe telefon”. */
+function rejectionNote(error: unknown) {
+  if (error instanceof PhotoMissingError) return strings.mobile.outboxPhotoMissing;
+  const e = error as api.ApiError;
+  return e.serverMessage ?? `HTTP ${e.status}`;
 }
 
 let draining: Promise<number> | null = null;
@@ -287,17 +290,20 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         sent++;
       }
       // Cheia rândului e și cheia pozei (V67): o reîncercare după un răspuns pierdut nu mai dublează poza.
-      if (item.photoUri) await api.uploadAttachment(itemAuth, movementId, item.photoUri, item.id);
+      if (item.photoUri) {
+        if (!new File(item.photoUri).exists) throw new PhotoMissingError();
+        await api.uploadAttachment(itemAuth, movementId, item.photoUri, item.id);
+      }
       await d.runAsync("DELETE FROM outbox WHERE id = ?", item.id);
       dropPhoto(item.photoUri);
       changed();
     } catch (error) {
       if (error instanceof api.UnauthorizedError) break; // omul iese din cont; rândul așteaptă
-      if (isRejection(error)) {
+      if (rejectsRow(error)) {
         // `movement_id` e scris deja dacă a căzut numai poza: ecranul spune atunci că predarea e pe server.
         await d.runAsync(
           "UPDATE outbox SET state = 'REJECTED', error = ?, movement_id = ? WHERE id = ?",
-          error.serverMessage ?? `HTTP ${error.status}`,
+          rejectionNote(error),
           movementId,
           item.id,
         );
@@ -322,7 +328,7 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         item.id,
       );
       changed();
-      // Serverul a răspuns, dar rândul ăsta cade (5xx): celelalte pleacă. Fără rețea n-are rost acum.
+      // Rândul ăsta cade (5xx, o eroare a telefonului): celelalte pleacă. Fără rețea n-are rost acum.
       if (skipsToNext(error)) continue;
       break;
     }

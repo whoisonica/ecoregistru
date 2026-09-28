@@ -276,6 +276,7 @@ export const strings = {
     outboxPending: "de trimis",
     outboxRejected: "refuzată",
     outboxPhotoFailed: "Predarea e în registru; poza n-a urcat.",
+    outboxPhotoMissing: "Poza nu mai e pe telefon.",
     outboxServerError: (reason: string) => `Serverul n-a primit-o încă (${reason}). Mai încercăm singuri.`,
     outboxRemove: "Scoate",
     outboxFix: "Corectează",

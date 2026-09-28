@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { retryNote, skipsToNext, STUCK_AFTER, stuckOnServer, ticketStatus } from "./outboxRules.ts";
+import { PhotoMissingError, rejectsRow, retryNote, skipsToNext, STUCK_AFTER, stuckOnServer, ticketStatus } from "./outboxRules.ts";
 
 const apiError = (status: number, serverMessage: string | null = null) =>
   Object.assign(new Error(`HTTP ${status}`), { status, serverMessage });
@@ -62,4 +62,24 @@ test("o cădere 5xx trece la rândul următor; rețeaua, timpul expirat și 429 
   assert.equal(skipsToNext(apiError(429)), false, "prea multe cereri: așteaptă toată coada");
   assert.equal(skipsToNext(new TypeError("Network request failed")), false, "fără semnal");
   assert.equal(skipsToNext(Object.assign(new Error("timeout"), { name: "TimeoutError" })), false, "timp expirat");
+});
+
+// B1 (28.09.2026): o eroare a telefonului — poza ștearsă de pe disc, o citire căzută — n-are status și nu e de rețea.
+test("o eroare a telefonului pe un rând nu ține pe loc coada: trece la următorul", () => {
+  assert.equal(skipsToNext(new Error("File does not exist")), true, "poza nu mai e pe disc");
+  assert.equal(skipsToNext(new RangeError("orice altceva al nostru")), true);
+  // rămân opritoare: fără semnal, timp expirat, 429
+  assert.equal(skipsToNext(new TypeError("Network request failed (no answer in 30 s)")), false);
+  assert.equal(skipsToNext(Object.assign(new Error("aborted"), { name: "AbortError" })), false);
+});
+
+test("poza care nu mai e pe telefon e un refuz: nicio reîncercare n-o aduce înapoi", () => {
+  assert.equal(rejectsRow(new PhotoMissingError()), true);
+  assert.equal(skipsToNext(new PhotoMissingError()), true);
+  assert.equal(rejectsRow(apiError(400)), true);
+  assert.equal(rejectsRow(apiError(422)), true);
+  assert.equal(rejectsRow(apiError(429)), false, "prea multe cereri se reîncearcă");
+  assert.equal(rejectsRow(apiError(500)), false);
+  assert.equal(rejectsRow(new TypeError("Network request failed")), false);
+  assert.equal(rejectsRow(new Error("File does not exist")), false, "altă eroare a telefonului se reîncearcă, fără să oprească restul");
 });
