@@ -38,6 +38,7 @@ import ro.ecoregistru.repository.WasteCodeRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.service.DeadlineService;
 import ro.ecoregistru.service.MovementQueryService;
 import ro.ecoregistru.service.WasteMovementService;
 import ro.ecoregistru.service.WeighingOperationService;
@@ -221,7 +222,8 @@ class WeighingOperationStatusIT {
     /** Aceeași regulă pe HTTP: operatorul primește 403, adminul trece. */
     @Test
     void theEndpointRefusesTheOperatorAndAcceptsTheAdmin() throws Exception {
-        UUID id = weighedOperation("300");
+        // Ziua de azi: o zi fixă ar intra peste o lună într-o lună încheiată și ar cere confirmarea (D2).
+        UUID id = weighedOperation(DeadlineService.today(), "300");
         // Autentificarea pusă de `actAs` ar rămâne pe thread și filtrul JWT n-ar mai citi tokenul:
         // toate cererile ar pleca fără autorități, iar 403-ul operatorului n-ar dovedi nimic.
         SecurityContextHolder.clearContext();
@@ -239,6 +241,57 @@ class WeighingOperationStatusIT {
                         .header("Authorization", "Bearer " + jwtService.generateToken(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("FINALIZED"));
+    }
+
+    /**
+     * D2 — decizia proprietarului, 28.09.2026: o operațiune dintr-o lună încheiată se finalizează și se anulează
+     * doar după ce omul confirmă, fiindcă schimbă totalurile unei luni poate deja declarate. Luna curentă nu întreabă.
+     */
+    @Test
+    void aClosedMonthIsChangedOnlyAfterTheApproverConfirms() throws Exception {
+        UUID old = weighedOperation(DeadlineService.today().minusMonths(1), "300");
+        UUID fresh = weighedOperation(DeadlineService.today(), "200");
+        SecurityContextHolder.clearContext();
+        TenantContext.clear();
+        String bearer = "Bearer " + jwtService.generateToken(admin);
+
+        mockMvc.perform(post("/api/v1/weighing-operations/" + old + "/finalize").header("Authorization", bearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("weighing.operation.past.period.unconfirmed"));
+        mockMvc.perform(post("/api/v1/weighing-operations/" + old + "/finalize").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"confirmPastPeriod\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FINALIZED"));
+
+        mockMvc.perform(post("/api/v1/weighing-operations/" + old + "/cancel").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"greșeală\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("weighing.operation.past.period.unconfirmed"));
+        mockMvc.perform(post("/api/v1/weighing-operations/" + old + "/cancel").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"greșeală\",\"confirmPastPeriod\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        mockMvc.perform(post("/api/v1/weighing-operations/" + fresh + "/finalize").header("Authorization", bearer))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/weighing-operations/" + fresh + "/cancel").header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"greșeală\"}"))
+                .andExpect(status().isOk());
+    }
+
+    /** O ciornă dintr-o lună încheiată n-a intrat în nicio lună: se anulează fără întrebare. */
+    @Test
+    void aDraftFromAClosedMonthIsCancelledWithoutTheQuestion() throws Exception {
+        UUID draft = weighedOperation(DeadlineService.today().minusMonths(1), "300");
+        SecurityContextHolder.clearContext();
+        TenantContext.clear();
+
+        mockMvc.perform(post("/api/v1/weighing-operations/" + draft + "/cancel")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"greșeală\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
 
     /**
@@ -291,7 +344,11 @@ class WeighingOperationStatusIT {
     }
 
     private UUID weighedOperation(String kg) {
-        UUID id = service.create(head()).id();
+        return weighedOperation(DAY, kg);
+    }
+
+    private UUID weighedOperation(LocalDate date, String kg) {
+        UUID id = service.create(head(date)).id();
         service.replaceLines(id, new WeighingLinesRequest(null, null, List.of(
                 new Line(cardboard.getId(), null, null, new BigDecimal(kg), null, null, null, null))));
         return id;
@@ -303,7 +360,11 @@ class WeighingOperationStatusIT {
     }
 
     private WeighingOperationRequest head() {
-        return new WeighingOperationRequest(IN, depot.getId(), DAY, partner.getId(),
+        return head(DAY);
+    }
+
+    private WeighingOperationRequest head(LocalDate date) {
+        return new WeighingOperationRequest(IN, depot.getId(), date, partner.getId(),
                 null, null, null, null, null, null, null, null, null, null, null, null);
     }
 

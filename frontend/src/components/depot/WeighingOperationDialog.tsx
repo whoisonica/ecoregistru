@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { closedMonthLabel } from "@/lib/closedMonthLabel";
 import { todayIso } from "@/lib/utils";
 import { SiatdOperationLine } from "./SiatdOperationLine";
 
@@ -250,6 +251,7 @@ export function WeighingOperationDialog({
   const chosenScale = depotScales.find((s) => s.id === scaleId) ?? null;
   const [scaleReasonFor, setScaleReasonFor] = useState<WeighingOperation | null>(null);
   const [scaleReason, setScaleReason] = useState("");
+  const [pastPeriodConfirmed, setPastPeriodConfirmed] = useState(false);
   const [orderNumber, setOrderNumber] = useState(operation?.orderNumber ?? "");
   const [notes, setNotes] = useState(operation?.notes ?? "");
   const [truckGross, setTruckGross] = useState(operation?.grossKg?.toString() ?? "");
@@ -423,16 +425,19 @@ export function WeighingOperationDialog({
       onConfirm: async () => {
         try {
           const saved = await save();
-          // D2.3 — un cântar care nu era legal la cântărire cere motiv; serverul îl refuză fără.
-          if (saved.scaleState && saved.scaleState !== "VALID") {
-            setScaleReason("");
-            setScaleReasonFor(saved);
+          // D2 — o lună încheiată se schimbă doar după a doua confirmare, care numește luna.
+          const month = closedMonthLabel(saved.date);
+          if (month) {
+            confirm({
+              title: t.pastPeriodTitle,
+              message: t.pastPeriodBody(month),
+              confirmLabel: t.pastPeriodConfirm(month),
+              tone: "danger",
+              onConfirm: () => void finalizeSaved(saved, true),
+            });
             return;
           }
-          const done = await finalizeMut.mutateAsync({ id: saved.id });
-          notify(transfer ? t.dispatched : t.finalized, "success");
-          warnNegativeStock(done);
-          onClose();
+          await finalizeSaved(saved, false);
         } catch (err) {
           notify(apiErrorMessage(err, t.saveError), "error");
         }
@@ -440,10 +445,32 @@ export function WeighingOperationDialog({
     });
   }
 
+  async function finalizeSaved(saved: WeighingOperation, confirmPastPeriod: boolean) {
+    try {
+      // D2.3 — un cântar care nu era legal la cântărire cere motiv; serverul îl refuză fără.
+      if (saved.scaleState && saved.scaleState !== "VALID") {
+        setScaleReason("");
+        setPastPeriodConfirmed(confirmPastPeriod);
+        setScaleReasonFor(saved);
+        return;
+      }
+      const done = await finalizeMut.mutateAsync({ id: saved.id, confirmPastPeriod });
+      notify(transfer ? t.dispatched : t.finalized, "success");
+      warnNegativeStock(done);
+      onClose();
+    } catch (err) {
+      notify(apiErrorMessage(err, t.saveError), "error");
+    }
+  }
+
   async function finalizeWithReason() {
     if (!scaleReasonFor || !scaleReason.trim()) return;
     try {
-      const done = await finalizeMut.mutateAsync({ id: scaleReasonFor.id, scaleReason: scaleReason.trim() });
+      const done = await finalizeMut.mutateAsync({
+        id: scaleReasonFor.id,
+        scaleReason: scaleReason.trim(),
+        confirmPastPeriod: pastPeriodConfirmed,
+      });
       setScaleReasonFor(null);
       notify(transfer ? t.dispatched : t.finalized, "success");
       warnNegativeStock(done);
@@ -461,10 +488,28 @@ export function WeighingOperationDialog({
     if (items.length > 0) notify(t.stockWarning.replace("{items}", items.join(", ")), "info");
   }
 
-  async function handleCancel() {
+  function handleCancel() {
     if (!operation || !cancelReason.trim()) return;
+    // D2 — o ciornă n-a intrat în nicio lună; una finalizată dintr-o lună încheiată cere a doua confirmare.
+    const month = operation.status === "IN_PROGRESS" ? null : closedMonthLabel(operation.date);
+    if (!month) {
+      void cancelOperation(false);
+      return;
+    }
+    setCancelling(false);
+    confirm({
+      title: t.pastPeriodTitle,
+      message: t.pastPeriodBody(month),
+      confirmLabel: t.pastPeriodConfirm(month),
+      tone: "danger",
+      onConfirm: () => void cancelOperation(true),
+    });
+  }
+
+  async function cancelOperation(confirmPastPeriod: boolean) {
+    if (!operation) return;
     try {
-      await cancelMut.mutateAsync({ id: operation.id, reason: cancelReason.trim() });
+      await cancelMut.mutateAsync({ id: operation.id, reason: cancelReason.trim(), confirmPastPeriod });
       notify(t.cancelled, "success");
       onClose();
     } catch (err) {

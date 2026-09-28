@@ -16,6 +16,8 @@ import { PillGroup } from "@/components/ui/pill-group";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { closedMonthLabel } from "@/lib/closedMonthLabel";
 
 const t = strings.weighing;
 const b = t.baling;
@@ -55,6 +57,7 @@ export function BalingDialog({
   const [showErrors, setShowErrors] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [confirm, confirmDialog] = useConfirm();
 
   // Un singur depozit sau un singur sortiment balotat: alegerea e făcută.
   const depotId = workPointId || (depots.length === 1 ? depots[0].id : "");
@@ -86,10 +89,28 @@ export function BalingDialog({
     }
   }
 
-  async function cancel() {
+  function cancel() {
     if (!operation || !cancelReason.trim()) return;
+    // D2 — balotarea e finalizată de la creare: dintr-o lună încheiată cere a doua confirmare.
+    const month = closedMonthLabel(operation.date);
+    if (!month) {
+      void cancelBaling(false);
+      return;
+    }
+    setCancelling(false);
+    confirm({
+      title: t.pastPeriodTitle,
+      message: t.pastPeriodBody(month),
+      confirmLabel: t.pastPeriodConfirm(month),
+      tone: "danger",
+      onConfirm: () => void cancelBaling(true),
+    });
+  }
+
+  async function cancelBaling(confirmPastPeriod: boolean) {
+    if (!operation) return;
     try {
-      await cancelMut.mutateAsync({ id: operation.id, reason: cancelReason.trim() });
+      await cancelMut.mutateAsync({ id: operation.id, reason: cancelReason.trim(), confirmPastPeriod });
       notify(t.cancelled, "success");
       onClose();
     } catch (err) {
@@ -180,6 +201,7 @@ export function BalingDialog({
             placeholder={t.cancelReasonPlaceholder}
           />
         </Dialog>
+        {confirmDialog}
       </>
     );
   }

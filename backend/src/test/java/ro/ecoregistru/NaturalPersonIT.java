@@ -52,7 +52,7 @@ import static ro.ecoregistru.enums.WeighingOperationType.IN;
 
 /**
  * D1.7 — persoanele fizice: identitatea completă se cere doar la metal (OUG 31/2011 art. 1 alin. (1^2)),
- * iar datele pleacă după 10 ani întregi fără nicio operațiune (Legea 82/1991 art. 25).
+ * iar datele pleacă la 5 ani de la 1 iulie a anului următor fără nicio operațiune (Legea 82/1991 art. 25).
  */
 @SpringBootTest
 @ActiveProfiles("dev")
@@ -163,12 +163,12 @@ class NaturalPersonIT {
     }
 
     /**
-     * Granița e 1 ianuarie, pe ani întregi: pe 1 iunie 2037, o operațiune din 31.12.2026 are zece ani
-     * încheiați în urmă (2027–2036) și persoana se anonimizează; una din 01.01.2027 nu, încă. O persoană
-     * creată de curând și nefolosită nu se atinge.
+     * Legea 82/1991 art. 25 (Legea 36/2023): 5 ani de la 1 iulie a anului următor exercițiului. O operațiune
+     * din 31.12.2026 ține datele până pe 30.06.2032 și pleacă pe 1 iulie 2032; una din 01.01.2027 rămâne.
+     * O persoană creată de curând și nefolosită nu se atinge.
      */
     @Test
-    void personalDataLeavesAfterTenFullYearsWithoutAnOperation() {
+    void personalDataLeavesFiveYearsFromTheFirstOfJulyAfterTheFinancialYear() {
         NaturalPerson old = backdated(person("Vechi", CNP, "CJ 1", "Adresa 1"));
         NaturalPerson kept = backdated(person("Recent", "2900101123459", "CJ 2", "Adresa 2"));
         operation(old, LocalDate.of(2026, 12, 31));
@@ -178,7 +178,10 @@ class NaturalPersonIT {
         fresh.setCreatedAt(Instant.parse("2030-01-01T00:00:00Z"));
         personRepository.saveAndFlush(fresh);
 
-        assertThat(retention.purge(LocalDate.of(2037, 6, 1))).isPositive();
+        assertThat(retention.purge(LocalDate.of(2032, 6, 30))).isZero();
+        assertThat(personRepository.findById(old.getId()).orElseThrow().getCnp()).isEqualTo(CNP);
+
+        assertThat(retention.purge(LocalDate.of(2032, 7, 1))).isPositive();
 
         NaturalPerson oldAfter = personRepository.findById(old.getId()).orElseThrow();
         assertThat(oldAfter.getName()).isEqualTo(NaturalPersonRepository.ERASED_NAME);

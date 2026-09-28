@@ -43,3 +43,17 @@ export function todayIso(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+
+/**
+ * D2 (28.09.2026) — luna unei zile, dacă e încheiată față de azi; `null` pentru luna curentă sau una viitoare.
+ * O operațiune dintr-o lună încheiată schimbă totaluri poate deja declarate (reținerile, stocul, registrele),
+ * deci se finalizează sau se anulează doar după o confirmare. Serverul cere aceeași confirmare.
+ */
+export function closedMonth(
+  iso: string | null | undefined,
+  today: string = todayIso()
+): { year: number; month: number } | null {
+  if (!iso) return null;
+  const key = iso.slice(0, 7);
+  return key < today.slice(0, 7) ? { year: Number(key.slice(0, 4)), month: Number(key.slice(5, 7)) } : null;
+}

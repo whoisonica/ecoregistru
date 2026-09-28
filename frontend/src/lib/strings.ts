@@ -2155,6 +2155,11 @@ export const strings = {
     confirmCancelBody:
       "Nu se șterge nimic: rămâne în listă, cu motivul, cine și când. Liniile ies din stoc și din registre.",
     cancelledBecause: "Anulată:",
+    // D2 (28.09.2026): o lună încheiată se schimbă doar după confirmare; `month` e „august 2026”.
+    pastPeriodTitle: "Schimbi o lună încheiată?",
+    pastPeriodBody: (month: string) =>
+      `Operațiunea e din ${month}. Se schimbă totalurile lunii: reținerile, stocul și registrele. Dacă ai depus deja declarațiile pe ${month}, trebuie rectificate.`,
+    pastPeriodConfirm: (month: string) => `Da, schimb ${month}`,
     open: "Deschide",
     retentions: {
       // 28.09.2026: scurte, ca banda să stea pe un rând (Fondul pentru mediu și impozitul pe venit, în explicație).
@@ -2202,7 +2207,7 @@ export const strings = {
     confirmDelete: "Persoana n-a vândut nimic, deci fișa se poate șterge. Nu se mai poate recupera.",
     hasOperationsLabel: "De ce nu se poate șterge",
     hasOperationsHint:
-      "Apare pe operațiuni: fișa nu se șterge, fiindcă borderoul se păstrează 10 ani. Datele pleacă singure la termen.",
+      "Apare pe operațiuni: fișa nu se șterge, fiindcă borderoul se păstrează 5 ani de la 1 iulie a anului următor. Datele pleacă singure la termen.",
     created: "Persoană adăugată.",
     updated: "Persoană actualizată.",
     deactivated: "Persoană dezactivată.",

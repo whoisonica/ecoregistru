@@ -709,7 +709,7 @@ export interface NaturalPersonSummary {
   /** CNP valid, act și domiciliu: tot ce cere borderoul la metal (OUG 31/2011 art. 1 alin. (1^2)). */
   metalReady: boolean;
   active: boolean;
-  /** Apare pe o operațiune, deci fișa nu se mai șterge definitiv (borderoul se păstrează 10 ani). */
+  /** Apare pe o operațiune, deci fișa nu se mai șterge definitiv (borderoul se păstrează 5 ani de la 1 iulie a anului următor). */
   hasOperations: boolean;
 }
 

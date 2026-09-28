@@ -109,9 +109,14 @@ export function useFinalizeWeighingOperation() {
   const qc = useQueryClient();
   return useMutation({
     // `scaleReason` doar când cântarul nu era legal la cântărire (D2.3); serverul îl cere atunci.
-    mutationFn: async ({ id, scaleReason }: { id: string; scaleReason?: string }) =>
-      (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/finalize`, scaleReason ? { scaleReason } : undefined))
-        .data,
+    // `confirmPastPeriod` când operațiunea e dintr-o lună încheiată și omul a confirmat (D2, 28.09).
+    mutationFn: async ({ id, scaleReason, confirmPastPeriod }: { id: string; scaleReason?: string; confirmPastPeriod?: boolean }) =>
+      (
+        await api.post<WeighingOperation>(
+          `/api/v1/weighing-operations/${id}/finalize`,
+          scaleReason || confirmPastPeriod ? { scaleReason, confirmPastPeriod } : undefined
+        )
+      ).data,
     onSuccess: () => {
       invalidate();
       // Din clipa asta liniile contează în stoc, în registre și în totalurile de pe Intrări/Ieșiri.
@@ -164,8 +169,8 @@ export function useCancelWeighingOperation() {
   const invalidate = useInvalidate();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) =>
-      (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/cancel`, { reason })).data,
+    mutationFn: async ({ id, reason, confirmPastPeriod }: { id: string; reason: string; confirmPastPeriod?: boolean }) =>
+      (await api.post<WeighingOperation>(`/api/v1/weighing-operations/${id}/cancel`, { reason, confirmPastPeriod })).data,
     onSuccess: () => {
       invalidate();
       qc.invalidateQueries({ queryKey: ["stock"] });

@@ -42,7 +42,7 @@ function isValidCnp(cnp: string): boolean {
 /**
  * Tabul „Persoane fizice” de lângă Parteneri (D1.7b). Lista vine cu CNP-ul mascat (ultimele 4 cifre),
  * iar formularul cere fișa întreagă abia la deschidere. Fișa unei persoane care apare pe operațiuni nu
- * se șterge, doar se dezactivează: borderoul se păstrează 10 ani (Legea 82/1991 art. 25).
+ * se șterge, doar se dezactivează: borderoul se păstrează 5 ani de la 1 iulie a anului următor (Legea 82/1991 art. 25).
  */
 export function NaturalPersonsSection({ canManage }: { canManage: boolean }) {
   const { data: persons, isLoading, isError } = useNaturalPersons();

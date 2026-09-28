@@ -78,7 +78,8 @@ const reception = async (date, art) => {
     grossKg: null, tareKg: null,
     lines: [{ articleId: art.id, grossKg: null, tareKg: null, netKg: 250, finalKg: null, unitPrice: 0.4, operationCode: null, notes: null }],
   });
-  const done = await api(page, "POST", `/api/v1/weighing-operations/${op.id}/finalize`, {});
+  // Acum zece zile poate fi luna trecută: confirmarea D2 (28.09) e dată aici, nu e subiectul probei.
+  const done = await api(page, "POST", `/api/v1/weighing-operations/${op.id}/finalize`, { confirmPastPeriod: true });
   return { id: op.id, number: op.number, ok: done.status === 200 };
 };
 const a = await reception(today, cardboard);
