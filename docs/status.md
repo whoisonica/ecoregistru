@@ -15,6 +15,17 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **28.09.2026, ~17:30 — `main` la zi (cerut de proprietar), fără release Heroku: producția rămâne api **v138** / app **v140** (`V78`).**
+> Mergeuite prin `integrare/2809`: `fix/depozit-decizii` (`94173db` D2 — luna încheiată cere a doua confirmare; `8fd9e5c` PF anonimizate la
+> 5 ani de la 1 iulie), `feat/operator-cantar` (intrarea de mai jos) și `fix/generator-a` (A1–A7 din `ecoregistru-docs/docs/todo-reparatii-2809.md`:
+> punctul de lucru folosit nu se mai șterge cu 500, limita de 1.000.000 t și la „Se cântărește la descărcare”, mail la platformă pentru fiecare
+> cerere de cont, avizul și retipărirea Anexei 3 în doar-citire, atașamentele șterse din Cloudinary după commit + 503, 50 de invitații/oră,
+> proba de diacritice a evidenței), peste `17af915` (**`V80`**, lista deșeurilor pe ediții, Decizia (UE) 2025/934 de la 9.11.2026) și
+> reparațiile B ale mobilului (`d61b4b6`). Plus curățenia md-urilor din 28.09 (intrările 17–22.09 mutate în `istoric/status-17-22.09.2026.md`).
+> Singurul conflict: `WeighingOperationStatusIT` (proba D2 și a operatorului de cântar în același loc) — păstrate amândouă, proba HTTP pe
+> ziua de azi. Probe pe rezultat: backend **1328 / 162 de clase, 0 căzute, 4 sărite**; web `tsc` curat, lint 0 erori, `npm test` 86/86, `vite build` verde; mobil `tsc` + 96/96.
+> ⚠️ `V80` e în `origin/main`: **`V79` nu se mai folosește, F6b ia `V81`**. La următorul `deploy-split.sh` pleacă toate cele de mai sus.
+
 > **28.09.2026, seara — ✅ operatorul de cântar (ramura `feat/operator-cantar`, nemergeuită, nedeployată; fără migrare, liberă tot `V81`).**
 > Spec `ecoregistru-docs/docs/specs/2026-09-28-operator-cantar-design.md`, deciziile proprietarului din aceeași zi.
 >
