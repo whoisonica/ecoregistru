@@ -281,6 +281,10 @@ export const strings = {
     outboxPhotoMissing: "Poza nu mai e pe telefon.",
     outboxServerError: (reason: string) => `Serverul n-a primit-o încă (${reason}). Mai încercăm singuri.`,
     outboxRemove: "Scoate",
+    outboxRemoveTitle: "Scoți predarea din telefon?",
+    outboxRemoveKeepsMovement: "Predarea rămâne în registru; numai poza nu mai urcă.",
+    outboxRemoveLoses: "Predarea n-a ajuns în registru și se pierde.",
+    outboxRemoveCancel: "Renunță",
     outboxFix: "Corectează",
     outboxSendNow: "Trimite acum",
 

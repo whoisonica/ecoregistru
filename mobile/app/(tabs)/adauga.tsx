@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useCompany } from "../../src/company";
 import { PrimaryButton } from "../../src/components/Form";
@@ -111,6 +111,12 @@ function Outbox({ items }: { items: OutboxItem[] }) {
     const sent = await drain(auth, session.email).catch(() => 0);
     if (sent) queryClient.invalidateQueries({ queryKey: ["movements"] });
   };
+  // B4: scoaterea nu se mai face dintr-o atingere; o predare care n-a ajuns pe server s-ar pierde.
+  const confirmRemove = (item: OutboxItem) =>
+    Alert.alert(m.outboxRemoveTitle, item.movementId ? m.outboxRemoveKeepsMovement : m.outboxRemoveLoses, [
+      { text: m.outboxRemoveCancel, style: "cancel" },
+      { text: m.outboxRemove, style: "destructive", onPress: () => remove(item.id) },
+    ]);
   return (
     <>
       <SectionHead>{`${m.outboxTitle} · ${items.length}`}</SectionHead>
@@ -142,7 +148,7 @@ function Outbox({ items }: { items: OutboxItem[] }) {
                     <Text style={styles.linkText}>{m.outboxFix}</Text>
                   </Pressable>
                 ) : null}
-                <Pressable onPress={() => remove(item.id)} testID="outbox-remove">
+                <Pressable onPress={() => confirmRemove(item)} testID="outbox-remove">
                   <Text style={styles.linkText}>{m.outboxRemove}</Text>
                 </Pressable>
               </View>
