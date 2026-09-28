@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
  * la data cântăririi (D2.3).
  *
  * @param scaleReason de ce se finalizează totuși; rămâne pe operațiune și în jurnal
+ * @param confirmPastPeriod omul a confirmat că schimbă o lună încheiată (D2 din 28.09); lipsă = nu
  */
-public record WeighingFinalizeRequest(@Size(max = 1000) String scaleReason) {
+public record WeighingFinalizeRequest(@Size(max = 1000) String scaleReason, Boolean confirmPastPeriod) {
 }

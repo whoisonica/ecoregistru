@@ -361,14 +361,21 @@ public class WeighingOperationService {
         return finalizeOperation(id, null);
     }
 
+    /** Fără întrebarea despre luna încheiată: o pune doar ecranul, prin controller (D2 din 28.09). */
+    @Transactional
+    public WeighingOperationResponse finalizeOperation(UUID id, String scaleReason) {
+        return finalizeOperation(id, scaleReason, true);
+    }
+
     /**
      * @param scaleReason D2.3 — de ce se finalizează cu un cântar care nu era legal la data cântăririi
      *                    (expirat, respins, reparat, nedeclarat la BRML). Decizia proprietarului, 26.09.2026:
      *                    nu se blochează, dar cine aprobă confirmă cu motiv, iar motivul rămâne pe operațiune
      *                    și în jurnal. Cu un cântar legal (sau fără cântar) motivul se ignoră.
+     * @param pastPeriodConfirmed răspunsul la întrebarea despre luna încheiată (D2 din 28.09)
      */
     @Transactional
-    public WeighingOperationResponse finalizeOperation(UUID id, String scaleReason) {
+    public WeighingOperationResponse finalizeOperation(UUID id, String scaleReason, boolean pastPeriodConfirmed) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
@@ -377,6 +384,7 @@ public class WeighingOperationService {
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             throw new BusinessException(WEIGHING_OPERATION_NOT_EDITABLE);
         }
+        requirePastPeriodConfirmed(operation, pastPeriodConfirmed);
         // Ciorna a putut fi pornită înainte ca un inventar să fie aprobat peste ziua ei.
         stockLock.require(operation.getWorkPoint().getId(), operation.getDate());
         List<WasteMovement> lines = movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id);
@@ -415,6 +423,12 @@ public class WeighingOperationService {
      */
     @Transactional
     public WeighingOperationResponse cancel(UUID id, String reason) {
+        return cancel(id, reason, true);
+    }
+
+    /** @param pastPeriodConfirmed răspunsul la întrebarea despre luna încheiată (D2 din 28.09) */
+    @Transactional
+    public WeighingOperationResponse cancel(UUID id, String reason, boolean pastPeriodConfirmed) {
         UUID tenantId = TenantContext.require();
         evidenceRepository.lockForRebuild(tenantId); // BUG-048: nu scrie în mijlocul unei refaceri
         var user = SecurityUtils.currentUser();
@@ -431,6 +445,7 @@ public class WeighingOperationService {
         }
         if (operation.getStatus() != WeighingOperationStatus.IN_PROGRESS) {
             stockLock.require(operation.getWorkPoint().getId(), operation.getDate());
+            requirePastPeriodConfirmed(operation, pastPeriodConfirmed);
         }
         String motive = blankToNull(reason);
         if (motive == null) {
@@ -443,6 +458,19 @@ public class WeighingOperationService {
         operationRepository.saveAndFlush(operation);
         return toResponse(operation, movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id),
                 pricesVisible(operation.getCompany()));
+    }
+
+    /**
+     * D2 — decizia proprietarului, 28.09.2026: o operațiune dintr-o lună încheiată se poate încă finaliza sau
+     * anula, dar schimbă totalurile unei luni care poate fi deja declarată (reținerile AFM și impozitul din
+     * {@code sumRetentions}, stocul, registrele). Nu se blochează: cine aprobă confirmă. O ciornă anulată n-a
+     * intrat în nicio lună, deci nu întreabă. Lacătul de inventar ({@link StockPeriodLock}) rămâne peste asta.
+     */
+    private static void requirePastPeriodConfirmed(WeighingOperation operation, boolean confirmed) {
+        if (!confirmed && java.time.YearMonth.from(operation.getDate())
+                .isBefore(java.time.YearMonth.from(DeadlineService.today()))) {
+            throw new BusinessException(WEIGHING_OPERATION_PAST_PERIOD_UNCONFIRMED);
+        }
     }
 
     /**

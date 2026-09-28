@@ -152,13 +152,14 @@ public class WeighingOperationController {
     @PreAuthorize(CAN_APPROVE)
     public WeighingOperationResponse finalizeOperation(@PathVariable UUID id,
                                                        @Valid @RequestBody(required = false) WeighingFinalizeRequest request) {
-        return service.finalizeOperation(id, request == null ? null : request.scaleReason());
+        return service.finalizeOperation(id, request == null ? null : request.scaleReason(),
+                request != null && Boolean.TRUE.equals(request.confirmPastPeriod()));
     }
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize(CAN_APPROVE)
     public WeighingOperationResponse cancel(@PathVariable UUID id, @Valid @RequestBody WeighingCancelRequest request) {
-        return service.cancel(id, request.reason());
+        return service.cancel(id, request.reason(), Boolean.TRUE.equals(request.confirmPastPeriod()));
     }
 
     /** D2.5 — recepția unui transfer la depozitul de destinație; o face cine aprobă, ca finalizarea. */

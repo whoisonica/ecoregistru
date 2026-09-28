@@ -127,6 +127,7 @@ public enum ErrorMessageEnum {
     WEIGHING_OPERATION_NO_LINES("weighing.operation.no.lines", "O operațiune fără linii nu se poate finaliza."),
     WEIGHING_OPERATION_CANCEL_REASON_REQUIRED("weighing.operation.cancel.reason.required", "Scrie motivul anulării."),
     WEIGHING_OPERATION_ALREADY_CANCELLED("weighing.operation.already.cancelled", "Operațiunea e deja anulată."),
+    WEIGHING_OPERATION_PAST_PERIOD_UNCONFIRMED("weighing.operation.past.period.unconfirmed", "Operațiunea e dintr-o lună încheiată: se schimbă totalurile acelei luni (reținerile, stocul, registrele). Confirmă că vrei asta; dacă ai depus deja declarațiile pe luna aceea, trebuie rectificate."),
     WEIGHING_OPERATION_TARE_ABOVE_GROSS("weighing.operation.tare.above.gross", "Tara mașinii trebuie să fie mai mică decât brutul."),
     WEIGHING_LINES_REQUIRED("weighing.lines.required", "Adaugă cel puțin o linie."),
     WEIGHING_LINE_ARTICLE_REQUIRED("weighing.line.article.required", "Alege sortimentul pe fiecare linie."),
