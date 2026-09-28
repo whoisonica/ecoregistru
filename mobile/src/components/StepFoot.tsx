@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, fonts } from "../theme";
@@ -10,13 +10,15 @@ import { PrimaryButton } from "./Form";
  * rubrici din poză mai sunt de confirmat (galben) sau ce se întâmplă la apăsare. Hârtia de sub el se
  * stinge spre transparent în sus, ca lista să se vadă trecând pe dedesubt.
  */
-export function StepFoot({ label, note, warn, onPress, disabled, testID }: {
+export function StepFoot({ label, note, warn, onPress, disabled, testID, secondary }: {
   label: string;
   note?: string | null;
   warn?: boolean;
   onPress: () => void;
   disabled?: boolean;
   testID: string;
+  /** O a doua cale, ca link sub buton — „Vezi restul pașilor” când „Salvează” vine înainte de pasul 3. */
+  secondary?: { label: string; onPress: () => void; testID: string };
 }) {
   const insets = useSafeAreaInsets();
   return (
@@ -27,6 +29,11 @@ export function StepFoot({ label, note, warn, onPress, disabled, testID }: {
       pointerEvents="box-none"
     >
       <PrimaryButton label={label} onPress={onPress} disabled={disabled} testID={testID} />
+      {secondary ? (
+        <Pressable onPress={secondary.onPress} hitSlop={8} testID={secondary.testID} accessibilityRole="button">
+          <Text style={styles.secondary}>{secondary.label}</Text>
+        </Pressable>
+      ) : null}
       {note ? (
         <Text style={[styles.note, warn && styles.warn]} testID="step-note" numberOfLines={2}>
           {note}
@@ -43,4 +50,5 @@ const styles = StyleSheet.create({
   note: { fontFamily: fonts.sans, fontSize: 13, color: colors.ink2, textAlign: "center" },
   warn: { color: colors.amberText, fontFamily: fonts.sansMedium },
   noteGap: { height: 16 },
+  secondary: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.green, textAlign: "center", paddingVertical: 2 },
 });

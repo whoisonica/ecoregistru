@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { stepBlocked, stepNote, stepOf } from "./handoverSteps.ts";
+import { canSaveEarly, stepBlocked, stepNote, stepOf } from "./handoverSteps.ts";
 
 test("fiecare rubrică stă pe pasul ei: ce și cât · cui și cum · pe fișă și transport", () => {
   assert.equal(stepOf("workPoint"), 1);
@@ -39,4 +39,14 @@ test("nota de sub buton: întâi rubricile de confirmat de pe pasul ăsta, apoi 
   assert.deepEqual(stepNote(3, { pending: {}, singleWorkPoint: null, online: false, hasPhoto: true }), { kind: "offline" });
   assert.deepEqual(stepNote(3, { pending: {}, singleWorkPoint: null, online: true, hasPhoto: true }), { kind: "onlinePhoto" });
   assert.deepEqual(stepNote(3, { pending: {}, singleWorkPoint: null, online: true, hasPhoto: false }), { kind: "onlineNoPhoto" });
+});
+
+test("„Salvează” de pe pasul 1 numai pe o predare repetată și numai când toți pașii sunt completi", () => {
+  assert.equal(canSaveEarly(1, true, {}, {}), true);
+  assert.equal(canSaveEarly(2, true, {}, {}), true);
+  assert.equal(canSaveEarly(3, true, {}, {}), false, "pe pasul 3 butonul e oricum „Salvează”");
+  assert.equal(canSaveEarly(1, false, {}, {}), false, "predarea nouă trece prin toți pașii");
+  assert.equal(canSaveEarly(1, true, { quantity: "Câmp obligatoriu." }, {}), false, "cantitatea necompletată (Repetă o golește)");
+  assert.equal(canSaveEarly(1, true, { physicalState: "Câmp obligatoriu." }, {}), false, "o lipsă de pe pasul 3 trimite prin pași");
+  assert.equal(canSaveEarly(1, true, {}, { partner: "RO123" }), false, "o rubrică citită din poză, neconfirmată");
 });

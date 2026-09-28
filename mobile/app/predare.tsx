@@ -65,7 +65,7 @@ import {
   weightRecorded,
   yearInRange,
 } from "../src/handoverForm";
-import { STEP_FIELDS, stepBlocked, stepNote, stepOf, type FieldKey, type Step } from "../src/handoverSteps";
+import { canSaveEarly, STEP_FIELDS, stepBlocked, stepNote, stepOf, type FieldKey, type Step } from "../src/handoverSteps";
 import { haptic } from "../src/haptics";
 import { lastSaved, rememberSaved } from "../src/lastSaved";
 import { editBody } from "../src/movementEdit";
@@ -841,6 +841,9 @@ export default function PredareScreen() {
   const stepErrorCount = showErrors ? STEP_FIELDS[step].filter((k) => errors[k]).length : 0;
   const footNote = stepErrorCount > 0 ? m.fixErrors(stepErrorCount) : saveError ?? noteText;
   const footWarn = stepErrorCount > 0 || !!saveError || note.kind === "pending";
+  // Pe o predare repetată, completă pe toți pașii, „Salvează” vine de pe pasul 1: restul e cel de data trecută.
+  const early = canSaveEarly(step, !!(again || repeat), errors, pending);
+  const earlyNote = operationCode && partner ? m.earlyKeeps(operationCode, partner.name) : m.earlyKeepsRest;
 
   return (
     <>
@@ -1246,12 +1249,13 @@ export default function PredareScreen() {
           </View>
         </ScrollView>
         <StepFoot
-          label={step === 3 ? m.save : m.stepNext}
-          note={footNote}
+          label={step === 3 || early ? m.save : m.stepNext}
+          note={early && !saveError ? earlyNote : footNote}
           warn={footWarn}
-          onPress={step === 3 ? save : next}
+          onPress={step === 3 || early ? save : next}
           disabled={reading || submitting || (!!fromServer && !editing.data) || (!!outbox && !queued) || !restored}
-          testID={step === 3 ? "handover-save" : "step-next"}
+          testID={step === 3 || early ? "handover-save" : "step-next"}
+          secondary={early ? { label: m.earlyRestSteps, onPress: next, testID: "step-next" } : undefined}
         />
       </KeyboardAvoidingView>
     </>

@@ -488,6 +488,10 @@ export const strings = {
     draftNoCode: "fără cod de deșeu încă",
     draftResume: "Continuă",
     draftDiscard: "Începe alta",
+    // „Salvează” de pe pasul 1 pe o predare repetată (28.09.2026).
+    earlyKeeps: (code: string, partner: string) => `Restul ca data trecută: ${code} către ${partner}`,
+    earlyKeepsRest: "Restul ca data trecută",
+    earlyRestSteps: "Vezi restul pașilor",
     // --- Valul B, F6 (27.09.2026): „Generare” ca registru al lunii (macheta v6, §24) ---
     monthEmptyHint: "Nicio mișcare luna asta",
     filterAll: "Toate",

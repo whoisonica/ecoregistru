@@ -38,22 +38,24 @@ appId: ro.wastehouse.app
       id: qty
     centerElement: true
 - takeScreenshot: f7-02-pasul-1
+# Cu cantitatea goală butonul e „Continuă”: „Salvează” de pe pasul 1 vine numai cu toți pașii completi (negativa).
+- assertNotVisible:
+    id: handover-save
 - tapOn:
     id: qty
 - inputText: "55"
 - scroll
-- tapOn:
-    id: step-next
+# Predare repetată, completă: „Salvează predarea” direct de pe pasul 1 (28.09.2026), restul ca data trecută,
+# iar „Vezi restul pașilor” rămâne pentru cine vrea să schimbe ceva.
 - extendedWaitUntil:
-    visible: Cui și cum
+    visible:
+      id: handover-save
     timeout: 5000
-- assertVisible: ".*Reciclare Metale.*"
-- tapOn:
+- assertVisible: "Restul ca data trecută: R4 către Reciclare Metale.*"
+- assertVisible:
     id: step-next
-- extendedWaitUntil:
-    visible: Pe fișă și transport
-    timeout: 5000
-- takeScreenshot: f7-03-pasul-3
+- assertVisible: "PREDARE NOUĂ · 1 DIN 3"
+- takeScreenshot: f7-03-salveaza-de-pe-1
 - tapOn:
     id: handover-save
 - extendedWaitUntil:

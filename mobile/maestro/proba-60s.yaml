@@ -1,0 +1,161 @@
+# Proba valului B (propunere §6): „aviz → registru sub 60 s; a doua predare sub 15 s”, cronometrat pe Android.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8081 --test-output-dir <folder> maestro/proba-60s.yaml
+# Numai apăsările unui om, fără negativele din `m1b-aviz` (Continuă apăsat devreme, rubricile deschise de probă).
+# Ceasul pornește la tabul „Adaugă” (aplicația deschisă, omul în cont) și se oprește pe bonul „Predarea e în registru”.
+# Avizul inventat `fixtures/aviz-partener.png` pus în galerie chiar înainte (fixtures/README.md). Face două predări
+# azi către Eco Valorificare SA (1.250 kg și 800 kg): se șterg prin API după rulare.
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-adauga
+    timeout: 20000
+
+# ── Prima predare: avizul pozat → registru ──
+- evalScript: ${output.t0 = Date.now()}
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 20000
+- tapOn:
+    id: pick-aviz
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: ".*[Pp]hoto.*"
+          timeout: 15000
+      - tapOn:
+          text: "Photo taken on.*"
+          index: 0
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: Photos
+          timeout: 15000
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "17%,24%"
+- extendedWaitUntil:
+    visible:
+      id: f-date-confirm
+    timeout: 30000
+- evalScript: ${output.tRead = Date.now()}
+# Firma demo are trei puncte de lucru; la una cu un singur punct rândul ăsta nu există.
+- scrollUntilVisible:
+    element: Punct de lucru Cluj
+    direction: UP
+- tapOn: Punct de lucru Cluj
+- scrollUntilVisible:
+    element:
+      id: f-date-confirm
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: f-date-confirm
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: f-code-confirm
+    centerElement: true
+- tapOn:
+    id: f-code-confirm
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: f-qty-confirm
+    centerElement: true
+- tapOn:
+    id: f-qty-confirm
+- scrollUntilVisible:
+    element:
+      id: step-next
+- tapOn:
+    id: step-next
+- extendedWaitUntil:
+    visible: Cui și cum
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: f-partner-confirm
+    centerElement: true
+- tapOn:
+    id: f-partner-confirm
+- scrollUntilVisible:
+    element:
+      id: same-as-last
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: same-as-last
+- extendedWaitUntil:
+    visible: Pe fișă și transport
+    timeout: 5000
+- scrollUntilVisible:
+    element:
+      id: f-doc-confirm
+    centerElement: true
+- tapOn:
+    id: f-doc-confirm
+- scrollUntilVisible:
+    element:
+      id: f-vehicle-confirm
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: f-vehicle-confirm
+- scrollUntilVisible:
+    element:
+      id: handover-save
+- tapOn:
+    id: handover-save
+- extendedWaitUntil:
+    visible:
+      id: "gata-(sent|photoFailed)"
+    timeout: 20000
+- assertVisible: Predarea e în registru
+- evalScript: ${output.t1 = Date.now()}
+- takeScreenshot: proba-01-bon
+
+# ── A doua predare: „Încă o predare, la fel” de pe bon, doar cantitatea de azi ──
+- scrollUntilVisible:
+    element:
+      id: next-again
+    centerElement: true
+- evalScript: ${output.t2 = Date.now()}
+- tapOn:
+    id: next-again
+- extendedWaitUntil:
+    visible: Ce și cât
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: qty
+    centerElement: true
+- tapOn:
+    id: qty
+- inputText: "800"
+# `hideKeyboard` nu merge pe tastatura numerică din iOS; derularea o închide pe ambele (ca în f7).
+- scroll
+# Predare repetată, completă: „Salvează predarea” direct de pe pasul 1 (28.09.2026).
+- extendedWaitUntil:
+    visible:
+      id: handover-save
+    timeout: 5000
+- tapOn:
+    id: handover-save
+- extendedWaitUntil:
+    visible:
+      id: "gata-(sent|photoFailed)"
+    timeout: 20000
+- assertVisible: Predarea e în registru
+- evalScript: ${output.t3 = Date.now()}
+- takeScreenshot: proba-02-bon
+- evalScript: ${console.log('PROBA60 citire_aviz_ms=' + (output.tRead - output.t0) + ' prima_ms=' + (output.t1 - output.t0) + ' a_doua_ms=' + (output.t3 - output.t2))}

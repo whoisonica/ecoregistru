@@ -80,3 +80,14 @@ export function stepNote(
   if (!ctx.online) return { kind: "offline" };
   return ctx.hasPhoto ? { kind: "onlinePhoto" } : { kind: "onlineNoPhoto" };
 }
+
+/**
+ * „Salvează” înainte de pasul 3 (28.09.2026, proprietarul: „da, fă Salvează direct pe pasul 1”): numai pe o
+ * predare repetată („Repetă predarea” / „Încă o predare, la fel”), unde pașii 2–3 vin completi de la cea veche,
+ * și numai cât niciun pas n-are ceva de completat sau de confirmat. Drumul „Repetă” scade de la 6 acțiuni la 4.
+ * Pe o predare nouă sau pe o corectură omul trece prin toți pașii, ca până acum.
+ */
+export function canSaveEarly(step: Step, repeated: boolean, errors: Errors, pending: Pending): boolean {
+  if (!repeated || step === 3) return false;
+  return !([1, 2, 3] as Step[]).some((s) => stepBlocked(s, errors, pending));
+}
