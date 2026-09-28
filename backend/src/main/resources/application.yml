@@ -78,6 +78,9 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_BASE_URL:http://localhost:5173}}
   mail:
     from: ${MAIL_FROM:contact@wastehouse.ro}
+    # Unde află platforma de o cerere de cont nouă (A3). Implicit cutia de trimitere; niciodată o
+    # adresă personală în repo — monorepo-ul e public.
+    platform-inbox: ${MAIL_PLATFORM_INBOX:${MAIL_FROM:contact@wastehouse.ro}}
   jwt:
     # Base64-encoded HMAC secret. MUST be set in every environment.
     secret: ${JWT_SECRET:}

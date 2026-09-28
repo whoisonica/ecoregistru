@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ro">
+<head>
+    <meta charset="UTF-8"/>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.5;">
+<div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 20px 0;"><tr>
+        <td style="vertical-align: middle; padding-right: 10px;"><img src="https://app.wastehouse.ro/brand/wastehouse-mark.png" width="32" height="32" alt="" style="display: block; border: 0;"/></td>
+        <td style="vertical-align: middle; font-size: 20px; font-weight: bold; color: #111827; letter-spacing: -0.3px;">WasteHouse</td>
+    </tr></table>
+    <h2 style="color: #111827;">Cerere de cont nouă</h2>
+    <p th:text="${'A cerut cont ' + companyName + ' (CUI ' + cui + ').'}">A cerut cont Firma SRL (CUI RO123).</p>
+    <p>
+        Persoana de contact: <strong th:text="${contactName ?: '—'}">Ion Popescu</strong>,
+        <span th:text="${contactEmail}">ion@firma.ro</span><span th:if="${contactPhone}" th:text="${', ' + contactPhone}">, 0740 000 000</span>.
+    </p>
+    <p>Formularul i-a promis un răspuns în 1–2 zile lucrătoare.</p>
+    <p>
+        <a th:href="${requestUrl}" href="#"
+           style="display: inline-block; background: #047857; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none;">Deschide cererea</a>
+    </p>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;"/>
+    <p style="font-size: 12px; color: #9ca3af;">WasteHouse — evidența și raportarea gestiunii deșeurilor.</p>
+</div>
+</body>
+</html>

@@ -3,6 +3,7 @@ package ro.ecoregistru.service;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.AccountRequestSubmission;
@@ -20,6 +21,7 @@ import ro.ecoregistru.repository.AccountRequestRepository;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.WorkPointRepository;
 import ro.ecoregistru.security.SecurityUtils;
+import ro.ecoregistru.service.notification.NotificationService;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -41,6 +43,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.ACCOUNT_REQUEST_NOT_FOUN
  * with its screens already narrowed to what it said it does. Inviting the user stays a separate
  * act: creating an account and giving someone access are two decisions, not one.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -51,6 +54,7 @@ public class AccountRequestService {
     WorkPointRepository workPointRepository;
     CompanyService companyService;
     WorkPointService workPointService;
+    NotificationService notificationService;
 
     /**
      * Public. Returns nothing about what it wrote, so it cannot be used to probe for companies.
@@ -93,6 +97,12 @@ public class AccountRequestService {
                 .createdAt(Instant.now())
                 .build();
         accountRequestRepository.save(request);
+        // A3: the form promises an answer in 1–2 working days; without this nobody knew one came in.
+        try {
+            notificationService.sendAccountRequestReceived(request);
+        } catch (RuntimeException e) {
+            log.warn("Mailul despre cererea de cont nouă n-a plecat: {}", e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
