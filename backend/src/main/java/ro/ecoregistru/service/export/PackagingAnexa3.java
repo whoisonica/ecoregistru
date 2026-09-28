@@ -39,8 +39,6 @@ import java.util.UUID;
  *
  * @param role         which table prints; null means the profile question is unanswered and the
  *                     document refuses rather than asserting a legal quality on the client's behalf
- * @param exitsOnly    the account is a generator: no takeovers, only what it handed over, printed
- *                     on tabelul 1's right half whatever the profile says (proprietarul, 16.09.2026)
  * @param intake       what came in, one row per material and provenance — the left half of both
  *                     tables, which is identical in the two
  * @param handovers    the right half of <b>tabelul 1</b>: what was sold or sent on, per operator
@@ -49,7 +47,6 @@ import java.util.UUID;
  */
 public record PackagingAnexa3(
         PackagingOperatorRole role,
-        boolean exitsOnly,
         String companyName,
         String county,
         String address,
@@ -235,20 +232,18 @@ public record PackagingAnexa3(
      */
     @JsonProperty("printable")
     public boolean printable() {
-        return role != null || exitsOnly;
+        return role != null;
     }
 
-    /** The title after "ANEXA Nr. 3 — ": the table's own heading, or what a generator reports. */
+    /** The title after "ANEXA Nr. 3 — ": the table's own heading. */
     public String heading() {
-        return exitsOnly
-                ? "Deşeuri de ambalaje predate operatorilor economici"
-                : role.tableHeading();
+        return role.tableHeading();
     }
 
     /** Whether the answered role puts this company on tabelul 2 rather than tabelul 1. */
     @JsonProperty("usesTable2")
     public boolean usesTable2() {
-        return !exitsOnly && role != null
+        return role != null
                 && role.getTable() == PackagingOperatorRole.Anexa3Table.TABEL_2;
     }
 }

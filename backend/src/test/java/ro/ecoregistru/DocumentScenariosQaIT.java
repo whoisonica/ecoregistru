@@ -36,6 +36,7 @@ import java.util.zip.ZipInputStream;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -245,30 +246,28 @@ class DocumentScenariosQaIT {
         // …dar un rând vechi, de dinainte, nu se pierde în tăcere.
         legacyHandoverWithoutMaterial(mixed, "2026-05-10", "500", "R3");
 
+        // Andreea, 29.09.2026: Anexa 3 Ambalaje e a colectorului — la un generator raportul e refuzat,
+        // deci rândul vechi fără material nu are unde să apară şi nici nu trebuie să cadă cu 500.
         TenantContext.set(tenantId);
-        PackagingAnexa3 doc = packagingService.anexa3(2026, pointA);
-        BigDecimal reported = doc.handovers().stream().map(PackagingAnexa3.HandoverRow::quantity)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        boolean named = doc.unclassified().stream().anyMatch(u -> u.wasteCode().startsWith("15 01 06"));
-        assertThat(reported.compareTo(new BigDecimal("700")) == 0 || named)
-                .as("Anexa 3: raportat %s kg, 15 01 06 numit printre neclasificate: %s", reported, named)
-                .isTrue();
+        assertThatThrownBy(() -> packagingService.anexa3(2026, pointA))
+                .isInstanceOf(ro.ecoregistru.exception.BusinessException.class)
+                .hasMessageContaining("colector");
     }
 
     /**
-     * Varianta care se vede la control: singurul ambalaj al anului e 15 01 04 (metal, materialul neales).
-     * Fișa Anexa 1 are 300 kg pe 15 01 04, dar dosarul n-are nicio Anexa 3 și nimic nu spune de ce.
+     * Varianta care se vede la control: singurul ambalaj al anului e 15 01 04, predat de un generator.
+     * Fişa Anexa 1 are 300 kg pe 15 01 04; dosarul n-are Anexa 3 Ambalaje — nu e a generatorului (Andreea,
+     * 29.09.2026) — şi cuprinsul nu-i cere nimic despre ea.
      */
     @Test
-    void theDossierDoesNotDropAnexa3ForAnUnclassifiedMetalExit() throws Exception {
+    void theDossierOfAGeneratorHasNoAnexa3Packaging() throws Exception {
         legacyHandoverWithoutMaterial(code("15 01 04"), "2026-04-10", "300", "R4");
         Map<String, byte[]> zip = dossier(2026, 1);
 
         assertThat(Golden.pdfText(zip.get("rapoarte/evidenta-gestiunii-deseurilor-2026.pdf"))).contains("15 01 04");
-        boolean anexa3 = zip.keySet().stream().anyMatch(n -> n.contains("anexa3-ambalaje"));
+        assertThat(zip.keySet()).noneMatch(n -> n.contains("anexa3-ambalaje"));
         String contents = new String(zip.get("00-cuprins.txt"), java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(anexa3).as("Anexa 3 în dosar pentru 300 kg de ambalaje predate; intrări: %s", zip.keySet()).isTrue();
-        assertThat(contents).contains("o ieșire de ambalaj fără material nu apare pe Anexa 3");
+        assertThat(contents).doesNotContain("Anexa 3");
     }
 
     // ---------- import din Excel, apoi retras ----------

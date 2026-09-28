@@ -63,13 +63,9 @@ public class PackagingAnexa3Builder {
                                  int year,
                                  List<WasteMovement> movements) {
 
-        // Un generator n-are preluări: raportul lui e numai jumătatea de ieşiri, citită din deşeul
-        // propriu (proprietarul, 16.09.2026). Până atunci secţiunea îi era ascunsă cu totul.
-        boolean exitsOnly = !company.getType().keepsArt48Register();
-        List<WasteMovement> inRegister = exitsOnly
-                ? WasteRegister.ANEXA_1.select(movements)
-                : WasteRegister.ART_48.select(movements);
-        List<WasteMovement> scoped = inRegister.stream()
+        // Numai registrul art. 48: raportul e al colectorului (Andreea, 29.09.2026), iar
+        // `PackagingService.anexa3` refuză contul de generator înainte să ajungă aici.
+        List<WasteMovement> scoped = WasteRegister.ART_48.select(movements).stream()
                 .filter(m -> PackagingMaterial.isPackagingCode(m.getWasteCode().getCode()))
                 .filter(m -> workPoint == null || sameWorkPoint(m, workPoint))
                 .sorted(Comparator.comparing(WasteMovement::getDate))
@@ -96,7 +92,6 @@ public class PackagingAnexa3Builder {
 
         return new PackagingAnexa3(
                 company.getPackagingOperatorRole(),
-                exitsOnly,
                 company.getName(),
                 // Same rubric as on anexa 1, and the same reason it stays empty: we keep one free
                 // address, and printing it twice would look like two answers to two questions.

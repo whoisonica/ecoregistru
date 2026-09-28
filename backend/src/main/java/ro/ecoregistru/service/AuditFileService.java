@@ -201,7 +201,7 @@ public class AuditFileService {
         evidenceCalculator.regenerateYearBeforeStreaming(year);
         for (int y = firstYear; y <= year; y++) {
             evidenceByYear.put(y, evidenceCalculator.list(y, null, null));
-            filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(y, workPoints)));
+            filesByYear.put(y, yearFiles(y, single, packaging, anexa3Plan(company, y, workPoints)));
         }
 
         List<String> written = new java.util.ArrayList<>();
@@ -310,7 +310,7 @@ public class AuditFileService {
 
         List<YearContents> perYear = new java.util.ArrayList<>();
         for (int y = year - years + 1; y <= year; y++) {
-            Anexa3Plan plan = anexa3Plan(y, workPoints);
+            Anexa3Plan plan = anexa3Plan(company, y, workPoints);
             perYear.add(new YearContents(y,
                     movementRepository.countCountedBetween(tenantId, LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31)),
                     plan.files().stream().map(Anexa3File::workPointName).toList(),
@@ -327,16 +327,17 @@ public class AuditFileService {
         long expired = partners.stream().filter(p -> status(p, today) == AuthStatus.EXPIRED).count();
         long soon = partners.stream().filter(p -> status(p, today) == AuthStatus.SOON).count();
 
-        return new AuditFileContents(perYear, declaration, !company.getType().keepsArt48Register(),
+        return new AuditFileContents(perYear, declaration, company.getType().keepsArt48Register(),
                 partners.size(), expired, soon);
     }
 
     /**
-     * {@code anexa3ExitsOnly}: firma nu ține registrul de colector, deci Anexa 3 Ambalaje are numai
-     * ieșirile și nu are termen de depunere (Ordinul 794/2012 art. 4 alin. (1)).
+     * {@code anexa3Applies}: firma ține registrul de colector, deci depune Anexa 3 Ambalaje (Ordinul
+     * 794/2012 art. 4 alin. (1)); la un generator e {@code false} şi ecranul nu-i arată rândul (Andreea,
+     * 29.09.2026).
      */
     public record AuditFileContents(List<YearContents> years, PackagingDeclaration packagingDeclaration,
-                                    boolean anexa3ExitsOnly, long partners, long partnersExpired,
+                                    boolean anexa3Applies, long partners, long partnersExpired,
                                     long partnersExpiringSoon) {}
 
     /** {@code anexa3WorkPoints}: punctele de lucru care primesc o Anexă 3 Ambalaje în anul acesta. */
@@ -383,9 +384,9 @@ public class AuditFileService {
             writeEntry(zip, written, prefix + files.packaging() + ".pdf",
                     packagingService.render(declaration, ExportFormat.PDF));
         }
-        // Anexa 3 Ambalaje (proprietarul, 16.09.2026): una per punct de lucru, fiindcă aşa se depune
-        // (Ordinul 794/2012 art. 4 alin. (4)), şi numai unde anul are ambalaje — o foaie oficială
-        // goală n-are ce căuta la control.
+        // Anexa 3 Ambalaje, numai la colector (Andreea, 29.09.2026): una per punct de lucru, fiindcă aşa
+        // se depune (Ordinul 794/2012 art. 4 alin. (4)), şi numai unde anul are ambalaje — o foaie
+        // oficială goală n-are ce căuta la control. La generator planul e gol.
         for (Anexa3File file : files.anexa3()) {
             writeEntry(zip, written, prefix + file.baseName() + ".xls",
                     packagingService.renderAnexa3(file.document(), ExportFormat.XLS));
@@ -803,20 +804,12 @@ public class AuditFileService {
             }
             // Termenul de 25 februarie e al celor din art. 4 alin. (1) — colectori, comercianţi,
             // reciclatori, valorificatori. Un generator nu e numit acolo (docs/surse-oficiale.md
-            // §2.11): la el foaia e tipărită la cerere, cu ieşirile, şi cuprinsul nu-i pune un
-            // termen pe care nu-l are (proprietarul, 17.09.2026 — scanarea de conformitate, pct. 4).
-            boolean owesAnexa3 = company.getType().keepsArt48Register();
+            // §2.11) şi nici nu primeşte foaia (Andreea, 29.09.2026): la el lista e goală.
             for (Anexa3File file : files.anexa3()) {
-                sb.append(owesAnexa3
-                        ? entry(prefix + file.baseName() + ".xls / .pdf",
-                                "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
-                                "„" + file.workPointName() + "”: .xls pentru depunere, PDF pe hârtie.",
-                                "Termen: 25 februarie " + (year + 1) + ".")
-                        : entry(prefix + file.baseName() + ".xls / .pdf",
-                                "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
-                                "„" + file.workPointName() + "”, numai cu ieşirile: tipărită la cerere.",
-                                "Nu e o obligaţie de depunere a generatorului (art. 4 alin. (1) numeşte",
-                                "colectorii, comercianţii, reciclatorii şi valorificatorii); fără termen."));
+                sb.append(entry(prefix + file.baseName() + ".xls / .pdf",
+                        "Anexa 3 Ambalaje (Ordinul 794/2012) — punctul de lucru",
+                        "„" + file.workPointName() + "”: .xls pentru depunere, PDF pe hârtie.",
+                        "Termen: 25 februarie " + (year + 1) + "."));
             }
             if (files.anexa3RoleMissing()) {
                 sb.append(entry(prefix + "anexa3-ambalaje-" + year,
@@ -1118,8 +1111,13 @@ public class AuditFileService {
      * predări sau tratări pe coduri 15 01 xx). Un punct fără ambalaje nu primește foaie, iar unul cu
      * ambalaje dar fără rolul din profil e numit în README, nu tipărit ghicind tabelul.
      */
-    private Anexa3Plan anexa3Plan(int year, List<WorkPoint> workPoints) {
+    private Anexa3Plan anexa3Plan(Company company, int year, List<WorkPoint> workPoints) {
         List<Anexa3File> files = new java.util.ArrayList<>();
+        // Andreea, 29.09.2026: raportul e al colectorului; `PackagingService.anexa3` ar refuza oricum,
+        // iar dosarul unui generator nu are ce numi.
+        if (!company.getType().keepsArt48Register()) {
+            return new Anexa3Plan(files, false, 0);
+        }
         Set<String> used = new java.util.HashSet<>();
         boolean roleMissing = false;
         int unplaced = 0;

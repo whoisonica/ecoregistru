@@ -40,6 +40,7 @@ import java.util.UUID;
 
 import ro.ecoregistru.exception.BusinessException;
 
+import static ro.ecoregistru.exception.ErrorMessageEnum.ANEXA3_PACKAGING_COLLECTORS_ONLY;
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.PACKAGING_OPERATOR_ROLE_REQUIRED;
 import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
@@ -240,8 +241,12 @@ public class PackagingService {
         UUID tenantId = TenantContext.require();
         Company company = companyRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
-        // Specialista, 14.09.2026: generatorii au doar ieşiri — deci la ei raportul are numai
-        // jumătatea de ieşiri (proprietarul, 16.09.2026), nu un refuz. Vezi PackagingAnexa3Builder.
+        // Andreea, 29.09.2026: „Anexa 3 amb e doar pentru colector, la raportarea de deşeuri pentru
+        // colectori”. Refuzul vine înaintea punctului de lucru fiindcă nu depinde de el, şi descărcarea
+        // trece tot pe aici. (14.09 refuz → 16.09 numai ieşirile, decizia 82 → 29.09 refuz, decizia 85.)
+        if (!company.getType().keepsArt48Register()) {
+            throw new BusinessException(ANEXA3_PACKAGING_COLLECTORS_ONLY);
+        }
         WorkPoint workPoint = workPointId == null ? null : workPointRepository.findById(workPointId)
                 .filter(wp -> wp.getCompany().getId().equals(tenantId))
                 .orElseThrow(() -> new NotFoundException(WORK_POINT_NOT_FOUND));
@@ -252,9 +257,8 @@ public class PackagingService {
      * Renders it. {@code .xls} is what the authority receives and the PDF is the paper copy beside
      * it — art. 6 asks for both, in those words.
      *
-     * <p>Refuses when the company profile does not say which table applies. The generators would
-     * throw anyway; catching it here turns it into the message that names what to go and answer,
-     * instead of a 500 from inside a spreadsheet library.
+     * <p>Refuses when the company profile does not say which table applies — the message names what
+     * to go and answer, instead of a 500 from inside a spreadsheet library.
      */
     @Transactional(readOnly = true)
     public byte[] renderAnexa3(int year, UUID workPointId, ExportFormat format) {

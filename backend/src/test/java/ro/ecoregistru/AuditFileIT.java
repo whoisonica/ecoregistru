@@ -326,12 +326,14 @@ class AuditFileIT {
     }
 
     /**
-     * Anexa 3 Ambalaje în dosar (proprietarul, 16.09.2026): .xls şi PDF pe fiecare punct de lucru cu
-     * ambalaje în an, şi nimic pe punctul fără ambalaje. Un generator are numai ieşirile.
+     * Anexa 3 Ambalaje e a colectorului (Andreea, 29.09.2026: „doar pentru colector, la raportarea de
+     * deşeuri pentru colectori”). Un generator cu ambalaje predate în an nu primeşte foaia în dosar,
+     * cuprinsul n-o numeşte, iar ecranul „Ce intră în arhivă” spune că nu i se aplică. Între 16.09 şi
+     * 29.09 (decizia 82) generatorul primea jumătatea de ieşiri; colectorul e probat mai jos, în
+     * {@code theContentsTellWhatTheArchiveHolds}.
      */
     @Test
-    void theDossierCarriesAnexa3PackagingPerWorkPointThatMovedPackaging() throws Exception {
-        org.mockito.Mockito.clearInvocations(packagingService);
+    void aGeneratorGetsNoAnexa3PackagingInTheDossier() throws Exception {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         Company gen = companyRepository.save(Company.builder()
                 .name("Ambalaje Dosar SRL").cui("ROA" + suffix).type(CompanyType.GENERATOR)
@@ -341,8 +343,6 @@ class AuditFileIT {
                 .role(Role.ADMIN).company(gen).enabled(true).createdAt(Instant.now()).build());
         WorkPoint withPackaging = workPointRepository.save(WorkPoint.builder()
                 .company(gen).name("Hala Florești").active(true).createdAt(Instant.now()).build());
-        workPointRepository.save(WorkPoint.builder()
-                .company(gen).name("Birou Cluj").active(true).createdAt(Instant.now()).build());
         Partner recycler = partnerRepository.save(Partner.builder()
                 .company(gen).name("Reciclator Dosar SA").cui("RO9" + suffix.substring(0, 5))
                 .authorizationNumber("AM 3/2025").type(PartnerType.RECOVERER).client(true).active(true)
@@ -361,34 +361,18 @@ class AuditFileIT {
                 .andReturn().getResponse().getContentAsByteArray();
 
         List<String> entries = zipEntryNames(zip);
-        assertThat(entries).contains("rapoarte/anexa3-ambalaje-2026-hala-floresti.xls", "rapoarte/anexa3-ambalaje-2026-hala-floresti.pdf");
-        assertThat(entries).noneMatch(n -> n.contains("birou-cluj"));
-        assertThat(new String(readEntryBytes(zip, "rapoarte/anexa3-ambalaje-2026-hala-floresti.pdf"), 0, 5)).isEqualTo("%PDF-");
+        assertThat(entries).noneMatch(n -> n.contains("anexa3-ambalaje"));
+        // Restul dosarului e neatins: fişa şi evidenţa centralizată sunt tot acolo.
+        assertThat(entries).contains("rapoarte/evidenta-gestiunii-deseurilor-2026.pdf", "rapoarte/evidenta-centralizata-2026.pdf");
         String readme = new String(readEntryBytes(zip, "00-cuprins.txt"), StandardCharsets.UTF_8);
-        assertThat(readme).contains("rapoarte/anexa3-ambalaje-2026-hala-floresti.xls / .pdf").contains("Hala Florești");
-        // 17.09.2026, scanarea de conformitate, pct. 4: art. 4 alin. (1) din Ordinul 794/2012 nu numeşte
-        // generatorul, deci README-ul nu-i pune termenul de 25 februarie pe o foaie tipărită la cerere.
-        // Anexa 1 Ambalaje nu intră aici (profilul n-are rol de piaţă), deci „25 februarie" ar putea
-        // veni numai de la Anexa 3.
-        // <b>O dată pe punct de lucru, nu de trei ori</b> (20.09.2026). Planul chema `anexa3` ca să
-        // afle dacă punctul are ce tipări, iar pe urmă fiecare dintre cele două formate o chema din
-        // nou — trei calcule pe punct şi pe an, fiecare citind mişcările anului întreg, toate în
-        // aceeaşi tranzacţie. Se cere numărul de calcule, nu timpul: ce s-a reparat e numărătoarea.
-        // Firma are două puncte, deci două calcule; înainte erau patru (două + două randări).
-        // Control negativ făcut: cu randarea întoarsă pe `(an, punct, format)`, cade cu 4.
-        org.mockito.Mockito.verify(packagingService, org.mockito.Mockito.times(2))
-                .anexa3(org.mockito.ArgumentMatchers.eq(2026), org.mockito.ArgumentMatchers.any());
-        assertThat(readme).contains("tipărită la cerere").contains("fără termen")
-                .doesNotContain("Termen: 25 februarie");
+        assertThat(readme).doesNotContain("Anexa 3 Ambalaje");
 
-        // Ecranul spune același lucru ca arhiva: Anexa 3 pe Hala Florești, nimic pe Birou Cluj, numai ieșirile.
         mockMvc.perform(get("/api/v1/audit-file/contents").param("year", "2026")
                         .header("Authorization", "Bearer " + jwtService.generateToken(user)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.years[0].anexa3WorkPoints[0]").value("Hala Florești"))
-                .andExpect(jsonPath("$.years[0].anexa3WorkPoints.length()").value(1))
+                .andExpect(jsonPath("$.years[0].anexa3WorkPoints.length()").value(0))
                 .andExpect(jsonPath("$.years[0].anexa3RoleMissing").value(false))
-                .andExpect(jsonPath("$.anexa3ExitsOnly").value(true));
+                .andExpect(jsonPath("$.anexa3Applies").value(false));
     }
 
     // --- G-2: the four obligations the dossier used to pass over in silence ---

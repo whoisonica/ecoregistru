@@ -319,6 +319,7 @@ public enum ErrorMessageEnum {
     // refuzul le spune pe ecran ce ar afla altfel la control.
     ANEXA2_MEDICAL_WASTE("anexa2.medical", "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 din HG 1061/2008 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul, deci nu-l generăm în locul lui."),
     // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori".
+    ANEXA3_PACKAGING_COLLECTORS_ONLY("anexa3.packaging.collectors.only", "Anexa 3 Ambalaje (Ordinul 794/2012) e raportarea colectorilor de deșeuri de ambalaje. Contul e de generator, deci nu are ce raporta aici; predările de ambalaje sunt pe fișa de evidență și pe formularele Anexa 3 de transport."),
     ANEXA2_COLLECTORS_ONLY("anexa2.collectors.only", "Anexa 2 (formularul de transport pentru deșeuri periculoase) o întocmește colectorul care preia deșeul. Contul e de generator, deci formularul nu se tipărește de aici."),
     // Aceeași seară: „generatorii au doar ieșiri" — deci n-au ambalaje preluate de la terți de raportat.
     // 15.09.2026, AD închisă: evidența art. 48 a mărfii preluate e a celor care preiau; generatorul o ține pe fișa Anexa 1.
