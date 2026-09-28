@@ -14,6 +14,28 @@ rulează local și are testele verzi.
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
 
+> **28.09.2026 — ✅ F6a, termenele SIATD pe recepții (ramura `feat/depozit-d23`, migrarea **`V78`**, liberă **`V79`**).**
+> Spec `ecoregistru-docs/docs/specs/2026-09-28-f6-siatd-design.md`, plan `…-f6a-siatd-termen-plan.md`.
+>
+> - **Setări → SIATD** (doar adminul): cinci module (municipale 3 zile, ambalaje 5, anvelope 5, DEEE 15, baterii portabile 15), fiecare cu
+>   „Înrolat din”; la un depozit cu persoane fizice, deasupra modulului municipal, obligația din OUG 196/2005 art. 10 alin. (12) și amenda.
+> - **Termenul nu se stochează:** `SiatdDeadlines` îl calculează la citire din data recepției (sau a înrolării, dacă e mai târziu), codurile
+>   liniilor (`SiatdFlow`, fără `16 06 01*`) și modulele bifate; recepție pe mai multe module → termenul cel mai scurt. `SiatdCalendar`
+>   numără ca în Codul civil (art. 2.553–2.554), cu sărbătorile din Codul muncii art. 139, citite pe 28.09.2026 (`surse-oficiale.md` §6.1),
+>   și Paștele ortodox (Meeus). Mementoul = o zi mai devreme.
+> - **Cântar → SIATD**: De confirmat · Confirmate (30 de zile) · Ratate, zece pe pagină; confirmarea (aprobatorii) cu codul SIATD pe una,
+>   sau „Confirmă selectate” fără cod; anularea confirmării. Banda pe rândul reținerilor (singură la operator și pe Balotare), rândul din
+>   dialogul recepției, mailul de 07:05 către administratori și consultanții cabinetului, fiecare firmă în tranzacția ei.
+> - **Probe:** `SiatdCalendarTest` 7, `SiatdFlowTest` 6, `SiatdDeadlinesTest` 9, `SiatdSettingsIT` 4, `SiatdServiceIT` 14,
+>   `SiatdAlertSchedulerIT` 6; e2e **56** + 19 (zece taburi) + 55 pe stiva 8098/5198, baza `eco_e2e_f6a`. **Negativa pe 10 reguli, toate
+>   prinse:** `+1` din termen și sărbătorile mobile (`SiatdCalendarTest`), excluderea `16 06 01*` (`SiatdFlowTest`), max(recepție, înrolare)
+>   și filtrul pe modulele bifate (`SiatdDeadlinesTest`), aprobatorul, `DepotAccess` pe listă și „cod doar la una” (`SiatdServiceIT`),
+>   `try/catch` pe firmă (`SiatdAlertSchedulerIT`), butoanele ascunse operatorului (e2e 56).
+> - **Recenzia finală** (recenzent nou): 0 critice; reparate cu test RED→GREEN — consultanții primeau nimic (au cabinet, nu firmă), o citire
+>   căzută otrăvea tranzacția comună a schedulerului, interogarea încărca și modulele nebifate, kg numărau și liniile fără modul, dialogul nu
+>   se deschidea din SIATD când tabul rămas era Balotare. **Rămâne la proprietar:** bifarea unui modul cu „Înrolat din” în trecut face tot
+>   istoricul „Ratate” (alin. (10) literal).
+
 > **27.09.2026, seara — ✅ local (ramura `feat/depozit-d23`, fără migrare, liberă tot **V75**): cele șase defecte de depozit din evaluarea
 > de la 15:00, reparate.** Suita **1204/149** verde; probă negativă pe **15 reguli**, fiecare pică exact testul ei.
 >
