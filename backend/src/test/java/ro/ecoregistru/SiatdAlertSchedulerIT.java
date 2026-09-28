@@ -10,12 +10,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import ro.ecoregistru.controller.request.WeighingLinesRequest;
 import ro.ecoregistru.controller.request.WeighingLinesRequest.Line;
 import ro.ecoregistru.controller.request.WeighingOperationRequest;
 import ro.ecoregistru.controller.response.SiatdReceptionRow;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.entity.Consultancy;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.WasteArticle;
 import ro.ecoregistru.entity.WorkPoint;
@@ -25,6 +27,7 @@ import ro.ecoregistru.enums.PartnerType;
 import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.CompanyRepository;
+import ro.ecoregistru.repository.ConsultancyRepository;
 import ro.ecoregistru.repository.PartnerRepository;
 import ro.ecoregistru.repository.WasteArticleRepository;
 import ro.ecoregistru.repository.WasteCodeRepository;
@@ -41,6 +44,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -67,12 +71,13 @@ class SiatdAlertSchedulerIT {
 
     @Autowired SiatdAlertScheduler scheduler;
     @Autowired WeighingOperationService operations;
-    @Autowired CompanyRepository companyRepository;
+    @MockitoSpyBean CompanyRepository companyRepository;
     @Autowired AppUserRepository appUserRepository;
     @Autowired WorkPointRepository workPointRepository;
     @Autowired PartnerRepository partnerRepository;
     @Autowired WasteArticleRepository articleRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
+    @Autowired ConsultancyRepository consultancyRepository;
 
     @MockitoBean NotificationService notificationService;
 
@@ -124,6 +129,29 @@ class SiatdAlertSchedulerIT {
                 argThat(to -> to.contains(f.admin.getEmail()) && !to.contains(f.operator.getEmail())));
     }
 
+    /**
+     * Consultantul n-are firmă (V40: {@code company_id} gol), ci cabinet: la un client fără administrator activ, fără el
+     * mailul n-ar pleca la nimeni. Recenzia finală F6a, 28.09.2026.
+     */
+    @Test
+    void consultantsOfTheCabinetReceive() {
+        Fixture f = company(true);
+        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
+                .name("Cabinet SIATD").cui("RO" + TestCui.random()).createdAt(Instant.now()).build());
+        f.company.setConsultancy(cabinet);
+        companyRepository.save(f.company);
+        AppUser consultant = appUserRepository.save(AppUser.builder()
+                .email("consultant+" + UUID.randomUUID().toString().substring(0, 8) + "@demo.ro").password("x")
+                .role(Role.CONSULTANT).consultancy(cabinet).enabled(true).createdAt(Instant.now()).build());
+        f.admin.setEnabled(false);
+        appUserRepository.save(f.admin);
+        f.reception(RECEPTION);
+
+        scheduler.dispatch(REMINDER);
+        verify(notificationService).sendSiatdReminder(argThat(c -> c.getId().equals(f.company.getId())), anyList(),
+                argThat(to -> to.contains(consultant.getEmail()) && !to.contains(f.admin.getEmail())));
+    }
+
     @Test
     void oneCompanyFailingDoesNotStopTheOther() {
         Fixture failing = company(true);
@@ -134,6 +162,24 @@ class SiatdAlertSchedulerIT {
                 .sendSiatdReminder(argThat(c -> c != null && c.getId().equals(failing.company.getId())), any(), any());
 
         scheduler.dispatch(REMINDER);
+        verify(notificationService).sendSiatdReminder(argThat(c -> c.getId().equals(fine.company.getId())), anyList(),
+                anyList());
+    }
+
+    /**
+     * O firmă a cărei citire cade (o interogare expirată, o dată stricată) nu strică tranzacția celorlalte: fără tranzacție
+     * comună în scheduler, fiecare firmă se citește în a ei. Recenzia finală F6a, 28.09.2026.
+     */
+    @Test
+    void aFailingReadDoesNotPoisonTheOthers() {
+        Fixture broken = company(true);
+        Fixture fine = company(true);
+        broken.reception(RECEPTION);
+        fine.reception(RECEPTION);
+        doThrow(new IllegalStateException("citire căzută")).when(companyRepository)
+                .findById(broken.company.getId());
+
+        assertThatCode(() -> scheduler.dispatch(REMINDER)).doesNotThrowAnyException();
         verify(notificationService).sendSiatdReminder(argThat(c -> c.getId().equals(fine.company.getId())), anyList(),
                 anyList());
     }

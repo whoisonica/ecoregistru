@@ -306,7 +306,8 @@ export function WeighingOperationsPage() {
         />
       )}
 
-      {!balings && ((creating && !forms) || openId || (linked.data && linked.data.type !== "PROCESSING")) && (
+      {/* Din tabul SIATD se deschide o recepție oricare ar fi tabul operațiunilor rămas dedesubt (și „Balotare”). */}
+      {(!balings || siatdTab) && ((creating && !forms) || openId || (linked.data && linked.data.type !== "PROCESSING")) && (
         <WeighingOperationDialog
           open
           type={type}

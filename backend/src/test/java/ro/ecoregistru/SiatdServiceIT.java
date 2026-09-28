@@ -296,6 +296,35 @@ class SiatdServiceIT {
         assertThat(siatd.pendingFor(company.getId(), today)).hasSize(2);
     }
 
+    /** Kg de pe rând sunt ale liniilor pe modulele bifate: fierul de pe aceeași recepție nu intră în SIATD (recenzia F6a). */
+    @Test
+    void kgCountOnlyTheSiatdLines() {
+        UUID id = operations.create(new WeighingOperationRequest(IN, depotA.getId(), today, partner.getId(), null,
+                null, null, null, null, null, null, null, null, null, null, null, null)).id();
+        operations.replaceLines(id, new WeighingLinesRequest(null, null, List.of(
+                new Line(cardboard.getId(), null, null, new BigDecimal("200"), null, new BigDecimal("0.5"), null, null),
+                new Line(scrap.getId(), null, null, new BigDecimal("3000"), null, new BigDecimal("0.5"), null, null))));
+        operations.finalizeOperation(id);
+
+        SiatdReceptionRow row = siatd.receptions(State.PENDING).stream()
+                .filter(r -> r.operationId().equals(id)).findFirst().orElseThrow();
+        assertThat(row.netKg()).isEqualByComparingTo("200");
+    }
+
+    /**
+     * Interogarea aduce doar codurile modulelor bifate: o firmă doar pe ambalaje nu-și încarcă la fiecare deschidere toate
+     * recepțiile de hârtie din capitolul 20 (recenzia F6a — memoria dyno-ului, ca la BUG-017).
+     */
+    @Test
+    void theQueryLoadsOnlyCheckedModules() {
+        UUID packaging = reception(depotA, today, cardboard);
+        UUID municipal = reception(depotA, today, paper);
+        List<UUID> loaded = operationRepository.findSiatdCandidates(company.getId(),
+                        false, true, false, false, false).stream()
+                .map(ro.ecoregistru.entity.WeighingOperation::getId).toList();
+        assertThat(loaded).contains(packaging).doesNotContain(municipal);
+    }
+
     // --- ajutoare ---
 
     /** O zi de recepție al cărei termen de 5 zile cade exact în {@code due}, sau null dacă nu există (weekend). */

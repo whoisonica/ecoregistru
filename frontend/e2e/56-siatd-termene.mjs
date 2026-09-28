@@ -102,6 +102,23 @@ await page.locator('[data-testid="siatd-strip"]').click();
 await page.waitForTimeout(600);
 check("banda duce la ?tab=siatd", page.url().includes("tab=siatd"), page.url());
 
+// --- din „Balotare”: banda stă singură acolo, iar numărul din tab tot deschide dialogul (recenzia finală F6a) ---
+await page.goto(BASE + "/cantar", { waitUntil: "networkidle" });
+await page.waitForTimeout(500);
+await page.click('[role="tab"]:has-text("Balotare")');
+await page.waitForTimeout(500);
+await page.locator('[data-testid="siatd-strip"]').click();
+await page.waitForTimeout(600);
+await page.click('[role="tab"]:has-text("Ratate")');
+await page.waitForTimeout(500);
+await rowOf(page, late.number).locator(`button:text-is("${late.number}")`).click();
+await page.waitForTimeout(700);
+check("de pe Balotare, numărul deschide dialogul", (await page.locator('[data-testid="siatd-line"]').count()) === 1);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(400);
+await page.goto(BASE + "/cantar?tab=siatd", { waitUntil: "networkidle" });
+await page.waitForTimeout(500);
+
 // --- tabul: De confirmat / Ratate ---
 check("recepțiile de azi sunt în „De confirmat”",
   (await rowOf(page, a.number).count()) === 1 && (await rowOf(page, b.number).count()) === 1);

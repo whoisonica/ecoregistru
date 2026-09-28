@@ -6,7 +6,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.response.SiatdReceptionRow;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
@@ -16,9 +15,7 @@ import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.service.notification.NotificationService;
 
 import java.time.LocalDate;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * F6a — mementoul SIATD de dimineață: pe fiecare firmă cu un modul bifat, recepțiile neconfirmate al căror memento
@@ -31,22 +28,23 @@ import java.util.Set;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SiatdAlertScheduler {
 
-    private static final Set<Role> RECIPIENTS = EnumSet.of(Role.ADMIN, Role.CONSULTANT);
-
     CompanyRepository companyRepository;
     AppUserRepository appUserRepository;
     SiatdService siatdService;
     NotificationService notificationService;
 
-    /** Tranzacțional pe metoda programată: un apel intern ar ocoli proxy-ul (garda {@code ScheduledTransactionBoundaryTest}). */
-    @Transactional(readOnly = true)
+    /**
+     * <b>Fără tranzacție comună, dinadins:</b> fiecare firmă se citește în tranzacția lui {@code SiatdService.pendingFor}.
+     * Una comună ar fi marcată rollback-only de prima firmă care cade, iar o eroare SQL ar opri toate firmele de după ea
+     * (recenzia finală F6a, 28.09.2026). Clasa n-are nicio metodă {@code @Transactional}, deci garda
+     * {@code ScheduledTransactionBoundaryTest} nu se aplică.
+     */
     @Scheduled(cron = "${app.alerts.siatd-cron:0 5 7 * * *}", zone = "Europe/Bucharest")
     public void runDaily() {
         dispatch(DeadlineService.today());
     }
 
     /** @return câte firme au primit mailul */
-    @Transactional(readOnly = true)
     public int dispatch(LocalDate today) {
         int sent = 0;
         for (Company company : companyRepository.findAllWithSiatdModule()) {
@@ -57,10 +55,7 @@ public class SiatdAlertScheduler {
                 if (rows.isEmpty()) {
                     continue;
                 }
-                List<String> to = appUserRepository.findAllByCompany_IdAndEnabledTrue(company.getId()).stream()
-                        .filter(u -> RECIPIENTS.contains(u.getRole()))
-                        .map(AppUser::getEmail)
-                        .toList();
+                List<String> to = recipients(company);
                 if (to.isEmpty()) {
                     continue;
                 }
@@ -74,5 +69,18 @@ public class SiatdAlertScheduler {
             log.info("SIATD reminders: sent to {} company(ies).", sent);
         }
         return sent;
+    }
+
+    /**
+     * Cine poate confirma: administratorii activi ai firmei și consultanții activi ai cabinetului ei. Consultantul n-are
+     * firmă (V40), ci cabinet, deci nu iese din utilizatorii firmei.
+     */
+    private List<String> recipients(Company company) {
+        List<AppUser> users = new java.util.ArrayList<>(appUserRepository.findAllByCompany_IdAndEnabledTrue(company.getId())
+                .stream().filter(u -> u.getRole() == Role.ADMIN).toList());
+        if (company.getConsultancy() != null) {
+            users.addAll(appUserRepository.findAllByConsultancy_IdAndEnabledTrue(company.getConsultancy().getId()));
+        }
+        return users.stream().map(AppUser::getEmail).distinct().toList();
     }
 }

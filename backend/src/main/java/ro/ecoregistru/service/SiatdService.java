@@ -83,7 +83,7 @@ public class SiatdService {
                     o -> o.getWorkPoint().getId());
             return rows(confirmed, company);
         }
-        return rows(depotAccess.filter(operationRepository.findSiatdCandidates(tenantId), o -> o.getWorkPoint().getId()),
+        return rows(depotAccess.filter(candidates(company), o -> o.getWorkPoint().getId()),
                 company).stream()
                 .filter(r -> stateOf(r, today) == state)
                 .sorted(java.util.Comparator.comparing(SiatdReceptionRow::due).thenComparing(SiatdReceptionRow::number))
@@ -102,7 +102,7 @@ public class SiatdService {
         int dueToday = 0;
         int dueTomorrow = 0;
         int missed = 0;
-        for (SiatdReceptionRow r : rows(depotAccess.filter(operationRepository.findSiatdCandidates(tenantId),
+        for (SiatdReceptionRow r : rows(depotAccess.filter(candidates(company),
                 o -> o.getWorkPoint().getId()), company)) {
             if (stateOf(r, today) == State.MISSED) {
                 missed++;
@@ -122,7 +122,7 @@ public class SiatdService {
     @Transactional(readOnly = true)
     public List<SiatdReceptionRow> pendingFor(UUID companyId, LocalDate today) {
         Company company = company(companyId);
-        return rows(operationRepository.findSiatdCandidates(companyId), company).stream()
+        return rows(candidates(company), company).stream()
                 .filter(r -> stateOf(r, today) == State.PENDING)
                 .toList();
     }
@@ -190,7 +190,12 @@ public class SiatdService {
             if (d == null) {
                 continue;
             }
-            BigDecimal kg = own.stream().map(WasteMovement::getQuantity).filter(Objects::nonNull)
+            // Doar liniile pe modulele bifate: fierul de pe aceeași recepție nu intră în tranzacția SIATD.
+            Map<SiatdModule, LocalDate> enrolment = company.siatdEnrolment();
+            BigDecimal kg = own.stream()
+                    .filter(m -> ro.ecoregistru.util.SiatdFlow.of(m.getWasteCode().getCode())
+                            .filter(enrolment::containsKey).isPresent())
+                    .map(WasteMovement::getQuantity).filter(Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             boolean person = o.getNaturalPerson() != null;
             String partner = person ? o.getNaturalPerson().getName()
@@ -222,6 +227,17 @@ public class SiatdService {
         return movementRepository.findAllByWeighingOperation_IdInOrderByLineNoAsc(
                         operations.stream().map(WeighingOperation::getId).toList()).stream()
                 .collect(Collectors.groupingBy(m -> m.getWeighingOperation().getId()));
+    }
+
+    private List<WeighingOperation> candidates(Company company) {
+        Map<SiatdModule, LocalDate> enrolment = company.siatdEnrolment();
+        if (enrolment.isEmpty()) {
+            return List.of();
+        }
+        return operationRepository.findSiatdCandidates(company.getId(),
+                enrolment.containsKey(SiatdModule.MUNICIPAL), enrolment.containsKey(SiatdModule.PACKAGING),
+                enrolment.containsKey(SiatdModule.WEEE), enrolment.containsKey(SiatdModule.BATTERY),
+                enrolment.containsKey(SiatdModule.TYRE));
     }
 
     private Company company(UUID companyId) {
