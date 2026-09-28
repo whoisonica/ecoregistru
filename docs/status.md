@@ -31,6 +31,8 @@ rulează local și are testele verzi.
 > - **Probe:** backend **1316 / 161 de clase, 0 căzute, 4 sărite**; fiecare regulă nouă scoasă din cod a căzut exact pe testele ei
 >   (două serii, 9 + 10 căderi, plus garda de citire din `ScaleService` și `WRITERS`). Web: `tsc` curat, lint 0 erori, `npm test` 81/81;
 >   e2e **44, 45, 54** verzi pe o bază nouă (`cantar@demo.ro`), trecute pe operatorul de cântar.
+>   Suita `run.mjs` **43/43** pe aceeași stivă (29, 30, 33, 36, 37 cer `E2E_DB` = baza stivei; 2 și 38 au căzut o dată, verzi la reluare).
+>   Negativa pe web: cu `OPERATOR` în `canWeigh`, proba 44 cade exact pe cele patru verificări ale operatorului de birou.
 
 > **28.09.2026, noaptea — în `main` (monorepo `a9ca693` … `bb7b112`), fără release Heroku: aplicația mobilă, valul B aproape închis — F4, F6, F7, F5, F10, F9.**
 > Webul nu se schimbă vizibil (doar texte `strings.mobile.*`, tăiate din bundle-ul web; un singur text scos, `monthMovements`, nefolosit pe web); backendul neatins.
