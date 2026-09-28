@@ -130,8 +130,11 @@ class Anexa3RegisterIT {
         assertThat(text).contains(flat("Registrul Anexa 3 (transport)"))
                 .contains(flat("RTS " + firstNumber)).contains(flat("RTS " + secondNumber))
                 .contains(flat("05.07." + YEAR)).contains(flat("20 01 01")).contains(flat(partnerName))
-                .contains("R13")
-                .doesNotContain("333");
+                .contains("R13");
+        // Predarea netipărită (333 kg) lipsește din rânduri; nu se caută „333” în textul PDF-ului, fiindcă
+        // CUI-urile de probă sunt aleatoare și îl pot conține (vezi AuditFileIT, 29.09.2026).
+        assertThat(register.rows()).extracting(Anexa3Register.Row::kg)
+                .noneMatch(kg -> kg != null && kg.compareTo(new java.math.BigDecimal("333")) == 0);
         assertThat(text.indexOf(flat("RTS " + firstNumber))).isLessThan(text.indexOf(flat("RTS " + secondNumber)));
     }
 

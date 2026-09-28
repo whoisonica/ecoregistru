@@ -427,7 +427,10 @@ class AuditFileIT {
         assertThat(entries).contains("rapoarte/registru-anexa3-2026.pdf");
         String pdf = Golden.flat(Golden.pdfText(readEntryBytes(zip, "rapoarte/registru-anexa3-2026.pdf")));
         assertThat(pdf).contains(Golden.flat("Registrul Anexa 3 (transport)")).contains(Golden.flat("RDS 1"))
-                .contains(Golden.flat("Reciclator Registru SA")).doesNotContain("30");
+                .contains(Golden.flat("Reciclator Registru SA"))
+                // Predarea netipărită se recunoaște după dată, nu după „30” (cantitatea ei): CUI-urile
+                // de probă sunt aleatoare și conțin uneori „30” (căzut așa pe 29.09.2026).
+                .doesNotContain(Golden.flat("07.05.2026"));
         String readme = new String(readEntryBytes(zip, "00-cuprins.txt"), StandardCharsets.UTF_8);
         assertThat(readme).contains("rapoarte/registru-anexa3-2026.pdf").contains("Registrul Anexa 3 (transport)")
                 .contains("1 formular");
