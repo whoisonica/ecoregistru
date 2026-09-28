@@ -1,3 +1,11 @@
+⚖️ **28.09.2026 — probele 44 și 45 pe operatorul de cântar (`cantar@demo.ro`, pus de `DevDataSeeder`)**: din decizia proprietarului
+cântăresc și țin cântarele doar operatorul de cântar și cine aprobă. **44**: la „Doar administratorul” totalul de plată îl vede operatorul
+de cântar (fără Lei/kg); „Operator”-ul de birou deschide aceeași intrare fără „Rămâne de plătit”, fără „Salvează” și fără „Intrare nouă”;
+operatorul de cântar, pe telefon, vede cântarul și are „Adaugă cântar”; vizualizatorul și operatorul de birou n-au cardul „Cântare”,
+`/setari/cantare` îi duce înapoi la `/setari`, iar `GET /scales` le dă 403. **45**: restrânsul pe un depozit e acum operatorul de cântar;
+operatorul de birou primește 403 la o intrare nouă, chiar în depozitul lui. ⚠️ Pe o bază seedată înainte de 28.09 contul `cantar@demo.ro`
+nu există: adminul îl invită și îi pune parola, altfel 44 și 45 cad la login.
+
 📡 **28.09.2026 — proba 56 (`56-siatd-termene.mjs`), termenele SIATD pe recepții (F6a)**: în Setări → SIATD adminul bifează Ambalaje și
 Municipale cu „Înrolat din” 01.01.2024; recepțiile de azi pe 15 01 01 apar în Cântar → SIATD → „De confirmat” cu termenul scris cu ziua
 („luni 05.10”), cea de acum 10 zile pe 20 01 01 în „Ratate”, cea pe 17 04 05 nicăieri; banda de pe Operațiuni spune aceleași cifre ca

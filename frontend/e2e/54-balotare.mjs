@@ -1,9 +1,10 @@
-// Proba 54: balotarea (F5, 27.09.2026) — operatorul scrie doar câți baloți a făcut.
+// Proba 54: balotarea (F5, 27.09.2026) — operatorul de cântar scrie doar câți baloți a făcut.
 //
 // Ce apără: în Setări → Sortimente, „Carton balotat P54” se face din „Carton vrac P54” cu 380 kg/balot și rândul spune
 // „din … · 380 kg/balot”; pe /cantar tabul „Balotare” are „Balotare nouă” (tasta N); fișa arată „12 × 380 kg = 4.560 kg din
 // … în …” înainte de salvare și nota TRAT; după salvare rândul e „Finalizată”, „12 baloți”, 4.560 kg, iar stocul depozitului are
-// 440 kg vrac și 4.560 kg balotat; operatorul salvează și el o balotare, dar n-are „Anulează operațiunea”; adminul anulează cu
+// 440 kg vrac și 4.560 kg balotat; operatorul de cântar salvează și el o balotare, dar n-are „Anulează operațiunea”, iar
+// „Operator”-ul de birou primește 403 (28.09.2026); adminul anulează cu
 // motiv și stocul revine; 1440×900 fără derulare și 375 fără lățire.
 //
 // ⚠️ Lasă în urmă depozitul „Proba 54 <număr>” (dezactivat), sortimentele „Carton vrac/balotat P54 <număr>” (dezactivate),
@@ -111,19 +112,26 @@ const height = await page.evaluate(() => document.documentElement.scrollHeight -
 check("tabul nu derulează la 1440×900", height <= 0, `${height}px`);
 await shot(page, "54-balotare-lista");
 
-// Operatorul salvează și el, dar nu anulează.
+// Operatorul de cântar salvează și el, dar nu anulează; cel de birou nu balotează deloc (28.09.2026).
+const baledId = (await api(page, "GET", "/api/v1/waste-articles")).json.find((a) => a.name === BALED).id;
+const office = await newPage(browser, { width: 1440, height: 900 });
+await login(office, "operator");
+const byOffice = await api(office, "POST", "/api/v1/weighing-operations/balings",
+  { workPointId: depot.id, date: today, articleId: baledId, baleCount: 1, notes: null });
+check("operatorul de birou primește 403 la balotare", byOffice.status === 403, `${byOffice.status}`);
+office.problems = office.problems.filter((p) => !p.includes("403"));
 const operator = await newPage(browser, { width: 1440, height: 900 });
-await login(operator, "operator");
+await login(operator, "cantar");
 const byOperator = await api(operator, "POST", "/api/v1/weighing-operations/balings",
-  { workPointId: depot.id, date: today, articleId: (await api(page, "GET", "/api/v1/waste-articles")).json.find((a) => a.name === BALED).id, baleCount: 1, notes: null });
-check("operatorul salvează o balotare", byOperator.status === 200 && byOperator.json.status === "FINALIZED", `${byOperator.status}`);
+  { workPointId: depot.id, date: today, articleId: baledId, baleCount: 1, notes: null });
+check("operatorul de cântar salvează o balotare", byOperator.status === 200 && byOperator.json.status === "FINALIZED", `${byOperator.status}`);
 await operator.goto(BASE + "/cantar", { waitUntil: "networkidle" });
 await operator.waitForTimeout(600);
 await operator.click('[role="tab"]:has-text("Balotare")');
 await operator.waitForTimeout(700);
 await operator.click(`tbody tr:has-text("${DEPOT}") >> nth=0 >> button:has-text("Deschide")`);
 await operator.waitForTimeout(600);
-check("operatorul n-are „Anulează operațiunea”", (await top(operator).locator('button:has-text("Anulează operațiunea")').count()) === 0);
+check("operatorul de cântar n-are „Anulează operațiunea”", (await top(operator).locator('button:has-text("Anulează operațiunea")').count()) === 0);
 
 // Adminul anulează cu motiv: stocul revine.
 await page.reload({ waitUntil: "networkidle" });
@@ -152,7 +160,7 @@ await shot(phone, "54-balotare-telefon");
 const all = (await api(page, "GET", "/api/v1/waste-articles")).json ?? [];
 for (const a of all.filter((x) => x.name === BALED || x.name === LOOSE)) await api(page, "DELETE", `/api/v1/waste-articles/${a.id}`);
 await api(page, "DELETE", `/api/v1/work-points/${depot.id}`);
-for (const p of [page, operator, phone]) {
+for (const p of [page, office, operator, phone]) {
   if (p.problems.length > 0) {
     console.log("  FAIL consola/rețeaua");
     for (const problem of [...new Set(p.problems)]) console.log(`         ${problem}`);

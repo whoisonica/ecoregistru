@@ -39,7 +39,8 @@ const api = (page, method, url, body) =>
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("eco_token") },
         body: body ? JSON.stringify(body) : undefined,
       });
-      return { status: res.status, json: res.status === 204 ? null : await res.json() };
+      const text = (res.headers.get("content-type") ?? "").includes("json") ? await res.text() : "";
+      return { status: res.status, json: text ? JSON.parse(text) : null };
     },
     { method, url, body }
   );
