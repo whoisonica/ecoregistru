@@ -49,3 +49,14 @@ export function ticketStatus({ loaded, online, row }: { loaded: boolean; online:
   if (row.movementId && (row.attempts > 0 || row.error)) return "photoFailed";
   return online && row.attempts === 0 ? "sending" : "queued";
 }
+
+/**
+ * După o cădere care se reîncearcă, coada trece la rândul următor numai dacă serverul **a răspuns** cu 5xx:
+ * rândul ăsta e bolnav (de pildă poza unei predări deja salvate, cu stocarea pozelor căzută), nu legătura.
+ * Înainte orice cădere oprea tot, deci o poză care nu urca ținea pe loc predările de după ea (28.09.2026).
+ * Fără rețea, la timp expirat sau la 429 („prea multe cereri”) n-are rost să le încercăm și pe celelalte acum.
+ */
+export function skipsToNext(error: unknown): boolean {
+  const server = serverError(error);
+  return !!server && server.status >= 500;
+}

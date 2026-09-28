@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { retryNote, STUCK_AFTER, stuckOnServer, ticketStatus } from "./outboxRules.ts";
+import { retryNote, skipsToNext, STUCK_AFTER, stuckOnServer, ticketStatus } from "./outboxRules.ts";
 
 const apiError = (status: number, serverMessage: string | null = null) =>
   Object.assign(new Error(`HTTP ${status}`), { status, serverMessage });
@@ -54,4 +54,12 @@ test("bonul: predarea e pe server și a căzut poza; refuzul are starea lui", ()
   assert.equal(ticketStatus({ loaded: true, online: true, row: { ...pending, movementId: "m", attempts: 1 } }), "photoFailed");
   assert.equal(ticketStatus({ loaded: true, online: false, row: { ...pending, state: "REJECTED", error: "x" } }), "rejected");
   assert.equal(ticketStatus({ loaded: true, online: true, row: { ...pending, state: "REJECTED", movementId: "m" } }), "photoFailed");
+});
+
+test("o cădere 5xx trece la rândul următor; rețeaua, timpul expirat și 429 opresc coada", () => {
+  assert.equal(skipsToNext(apiError(500)), true, "poza unei predări salvate cade pe server: următoarea pleacă");
+  assert.equal(skipsToNext(apiError(503)), true);
+  assert.equal(skipsToNext(apiError(429)), false, "prea multe cereri: așteaptă toată coada");
+  assert.equal(skipsToNext(new TypeError("Network request failed")), false, "fără semnal");
+  assert.equal(skipsToNext(Object.assign(new Error("timeout"), { name: "TimeoutError" })), false, "timp expirat");
 });

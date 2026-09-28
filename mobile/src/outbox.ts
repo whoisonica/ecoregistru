@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import * as api from "./api";
 import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
-import { retryNote, stuckOnServer } from "./outboxRules";
+import { retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
 
 /**
  * M1b — coada predărilor care n-au plecat încă. Rampa n-are semnal; predarea se salvează pe telefon
@@ -322,7 +322,8 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         item.id,
       );
       changed();
-      // Fără rețea n-are rost să le încercăm și pe celelalte acum.
+      // Serverul a răspuns, dar rândul ăsta cade (5xx): celelalte pleacă. Fără rețea n-are rost acum.
+      if (skipsToNext(error)) continue;
       break;
     }
   }
