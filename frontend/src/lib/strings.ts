@@ -287,6 +287,7 @@ export const strings = {
     outboxRemoveCancel: "Renunță",
     outboxFix: "Corectează",
     outboxSendNow: "Trimite acum",
+    outboxSending: "Se trimite…",
 
     // --- M1c: „A venit controlul” ---
     // Rândurile sunt exact ce socotește Panoul web (`lib/readiness.ts`), nu lista din prototip: ce nu

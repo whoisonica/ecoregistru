@@ -8,7 +8,7 @@ import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
 import { clearListsKeepingDrafts } from "./handoverDraft";
 import { rebasePhoto } from "./photoPath";
-import { PhotoMissingError, rejectsRow, retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
+import { coalesce, PhotoMissingError, rejectsRow, retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
 
 /**
  * M1b — coada predărilor care n-au plecat încă. Rampa n-are semnal; predarea se salvează pe telefon
@@ -271,18 +271,19 @@ function rejectionNote(error: unknown) {
   return e.serverMessage ?? `HTTP ${e.status}`;
 }
 
-let draining: Promise<number> | null = null;
+let latest: { auth: api.Auth; owner: string } | null = null;
+const drainOnce = coalesce(() => run(latest!.auth, latest!.owner));
 
 /**
  * Trimite ce se poate. Întoarce câte predări au ajuns pe server, ca ecranele să-și reîmprospăteze
  * cifrele. O singură trimitere în aer: rețeaua revenită, aplicația adusă în față și butonul pot
  * cere toate în aceeași clipă, iar două trimiteri paralele ar fi urcat aceeași poză de două ori.
+ * O cerere venită cât una e în aer primește o trecere nouă, după ea (B6): „Trimite acum” scoate rândurile
+ * din pauză, iar trecerea veche își citise lista dinainte.
  */
 export function drain(auth: api.Auth, owner: string): Promise<number> {
-  draining ??= run(auth, owner).finally(() => {
-    draining = null;
-  });
-  return draining;
+  latest = { auth, owner };
+  return drainOnce();
 }
 
 async function run(auth: api.Auth, owner: string): Promise<number> {

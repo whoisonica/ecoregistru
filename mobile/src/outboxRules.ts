@@ -90,3 +90,29 @@ export function skipsToNext(error: unknown): boolean {
   const server = serverError(error);
   return server ? server.status >= 500 : true;
 }
+
+/**
+ * O singură trecere în aer; o cerere venită între timp nu primește trecerea veche (care și-a citit deja rândurile),
+ * ci una în plus, pornită după ea. Oricâte cereri vin cât una e în aer se strâng într-o singură trecere în plus.
+ */
+export function coalesce<T>(run: () => Promise<T>): () => Promise<T> {
+  let current: Promise<T> | null = null;
+  let next: Promise<T> | null = null;
+  const start = (): Promise<T> => {
+    const p = run().finally(() => {
+      if (current === p) current = null;
+    });
+    current = p;
+    return p;
+  };
+  return () => {
+    if (!current) return start();
+    next ??= current
+      .catch(() => undefined)
+      .then(() => {
+        next = null;
+        return start();
+      });
+    return next;
+  };
+}

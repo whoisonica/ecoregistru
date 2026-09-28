@@ -105,11 +105,18 @@ function Outbox({ items }: { items: OutboxItem[] }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const hasPending = items.some((i) => i.state === "PENDING");
+  // B6: butonul arată că lucrează; o trimitere deja în aer poate ține până la 30 s pe semnal slab.
+  const [sending, setSending] = useState(false);
   const sendNow = async () => {
     if (!auth || !session) return;
-    await retryNow(session.email);
-    const sent = await drain(auth, session.email).catch(() => 0);
-    if (sent) queryClient.invalidateQueries({ queryKey: ["movements"] });
+    setSending(true);
+    try {
+      await retryNow(session.email);
+      const sent = await drain(auth, session.email).catch(() => 0);
+      if (sent) queryClient.invalidateQueries({ queryKey: ["movements"] });
+    } finally {
+      setSending(false);
+    }
   };
   // B4: scoaterea nu se mai face dintr-o atingere; o predare care n-a ajuns pe server s-ar pierde.
   const confirmRemove = (item: OutboxItem) =>
@@ -161,7 +168,7 @@ function Outbox({ items }: { items: OutboxItem[] }) {
       {hasPending ? (
         <>
           <Text style={styles.hint}>{m.outboxHint}</Text>
-          <PrimaryButton tone="quiet" label={m.outboxSendNow} onPress={sendNow} testID="outbox-send" />
+          <PrimaryButton tone="quiet" label={sending ? m.outboxSending : m.outboxSendNow} onPress={sendNow} disabled={sending} testID="outbox-send" />
         </>
       ) : null}
     </>
