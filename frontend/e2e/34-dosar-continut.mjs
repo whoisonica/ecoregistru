@@ -73,8 +73,12 @@ for (const [width, height] of [[1440, 900], [375, 800]]) {
   const att = find(list, "Atașamente");
 
   if (width === 1440) {
-    check("șase rânduri, fără rezumatul neoficial", list.length === 6 && !list.some((r) => /tabel de lucru/.test(r.text)),
+    // 29.09.2026: al șaptelea rând e „Registrul Anexa 3 (transport)” — intră din anul cu cel puțin un formular tipărit.
+    check("șapte rânduri, fără rezumatul neoficial", list.length === 7 && !list.some((r) => /tabel de lucru/.test(r.text)),
       String(list.length));
+    const registru = find(list, "Registrul Anexa 3 (transport)");
+    check("registrul Anexa 3 (transport) are rândul lui și spune câte formulare sunt sau că lipsesc",
+      registru !== undefined && /formular|Nicio Anexa 3/.test(registru.text), registru?.text);
     check("fișa intră, cu mișcările anului și termenul de 15 martie 2027",
       sheet?.state === "Intră" && /\d+ (de )?mișcăr/.test(sheet.text) && /15 martie 2027/.test(sheet.text), sheet?.text);
     check("centralizata intră", central?.state === "Intră", central?.text);
