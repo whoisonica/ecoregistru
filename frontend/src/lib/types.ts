@@ -654,6 +654,17 @@ export interface WasteCode {
   hazardous: boolean;
   /** Propunerea pentru bifa „metal” a unui sortiment nou (OUG 31/2011); omul o poate schimba. */
   metalSuggested: boolean;
+  /**
+   * Prima și ultima zi în care codul e în lista deșeurilor (ISO); null = fără capăt. Lista are ediții:
+   * Decizia (UE) 2025/934 schimbă codurile de baterii pe 9.11.2026 (V80).
+   */
+  validFrom?: string | null;
+  validTo?: string | null;
+}
+
+/** Codul se poate alege pe o mișcare din ziua `dateIso`? Datele ISO se compară ca text. */
+export function wasteCodeValidOn(w: Pick<WasteCode, "validFrom" | "validTo">, dateIso: string): boolean {
+  return (!w.validFrom || w.validFrom <= dateIso) && (!w.validTo || w.validTo >= dateIso);
 }
 
 // --- Depozit: sortimente (D1.6) ---

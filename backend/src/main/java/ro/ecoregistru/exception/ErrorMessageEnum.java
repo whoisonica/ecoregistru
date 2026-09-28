@@ -283,6 +283,9 @@ public enum ErrorMessageEnum {
 
     // --- WasteCode ---
     WASTE_CODE_NOT_FOUND("waste.code.not.found", "Codul de deșeu nu a fost găsit."),
+    // V80 — lista deșeurilor are ediții: Decizia (UE) 2025/934 schimbă codurile de baterii pe 9.11.2026.
+    WASTE_CODE_NOT_YET_VALID("waste.code.not.yet.valid", "Codul ales intră în lista deșeurilor abia după data mișcării (codurile noi de baterii se folosesc de la 9 noiembrie 2026). Alege codul valabil la data mișcării."),
+    WASTE_CODE_RETIRED("waste.code.retired", "Codul ales nu mai e în lista deșeurilor la data mișcării (codurile de baterii s-au schimbat pe 9 noiembrie 2026). Alege codul nou din aceeași familie."),
 
     // --- WasteMovement ---
     MOVEMENT_NOT_FOUND("movement.not.found", "Înregistrarea de deșeu nu a fost găsită."),

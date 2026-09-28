@@ -49,8 +49,11 @@ class ApplicationBootIT {
 
     @Test
     void contextLoadsAndSeedApplied() {
-        // Flyway V4 reloaded the full European List of Waste over V2's 10 placeholders.
-        assertThat(wasteCodeRepository.count()).isEqualTo(842);
+        // Flyway V4 reloaded the full European List of Waste over V2's 10 placeholders; V80 added the
+        // 42 battery codes of Decision (EU) 2025/934, valid from 9.11.2026, and deleted nothing.
+        var codes = wasteCodeRepository.findAll();
+        assertThat(codes.stream().filter(c -> c.getValidFrom() == null).count()).isEqualTo(842);
+        assertThat(codes).hasSize(884);
         // 13 02 08 is both a V2 placeholder (so V4's ON CONFLICT DO UPDATE had to overwrite
         // the hand-written name) and a code whose official name contains a comma (so the
         // line has to be split on its first and last comma, not blindly on every comma).

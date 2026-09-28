@@ -26,6 +26,11 @@
 > Verificarea legislativă integrală pe surse primare (Portal Legislativ, EUR-Lex, sgglegis.gov.ro)
 > e din 2026-08-22. Cercetarea anterioară, din 2026-07-11, era făcută pe surse secundare — o parte
 > din afirmațiile ei au fost corectate mai jos.
+>
+> ✅ **28.09.2026 — verificat act cu act că nimic nu s-a schimbat de la ultima citire** (formele consolidate de pe Portalul
+> Legislativ, actele UE în CELLAR, proiectele MMAP și anunțurile ANMAP). Toate sunt la zi, cu **o singură excepție**: lista
+> deșeurilor are o ediție nouă pentru baterii, **de la 9 noiembrie 2026** (Decizia (UE) 2025/934) — §1.B aici,
+> `surse-oficiale.md` §3.5; în cod din `V80`. Ce e pe radar fără obligație: `surse-oficiale.md` §3.6.
 
 ---
 
@@ -48,6 +53,11 @@
 - **Încă în vigoare**, corelată direct cu OUG 92/2021.
 - Obligă TOȚI generatorii/gestionarii de deșeuri să țină **evidența gestiunii deșeurilor** după modelul din **Anexa 1**, **pentru fiecare tip de deșeu**, cu înregistrare **lunară**.
 - **Anexa 2** = lista deșeurilor (coduri de 6 cifre, cele cu `*` = periculoase). ⚠️ **CORECTAT 22.08.2026:** Anexa 2 e versiunea 2002/2007, **pre-2014** — îi lipsesc coduri introduse prin Decizia 2014/955/UE. Nomenclatorul `waste_codes` se încarcă din **Decizia 2014/955/UE (842 coduri)**, nu din Anexa 2. Motivul, reconcilierea celor două liste și amprenta de validare: `surse-oficiale.md` §3.
+- 🆕 **De la 9.11.2026 lista are o a doua ediție — Decizia delegată (UE) 2025/934** (găsită 28.09.2026): 42 de coduri noi
+  de baterii (16 06 07–15 după chimie, 16 06 22–35 din fabricare, 20 01 42–44 la municipale, capitolul nou 19 14), patru
+  scoase (**16 06 05, 19 02 11\*, 20 01 33\*, 20 01 34**) și **16 06 04 (baterii alcaline) devine periculos**. ✅ În cod
+  din `V80`: fiecare cod are intervalul lui de valabilitate, iar o mișcare folosește codul valabil la data ei. 🟠 Rămâne
+  la specialistă cum primește SIM-ul anul 2026, cu schimbarea în noiembrie. `surse-oficiale.md` §3.5.
 - **Art. 2 alin. (1) — restrictiv, nu permisiv** ✅: operatorii autorizați pentru colectare/transport/depozitare temporară/valorificare/eliminare țin Anexa 1 **numai pentru deșeurile generate în activitatea proprie**. Marfa preluată de la terți NU intră în Anexa 1; art. 2(2) o trimite la o raportare separată. **Două fluxuri, două evidențe** — vezi §3, rândul `WasteMovement`.
 - Evidența se ține **per punct de lucru**. Termenul de păstrare **nu** e în HG 856 (art. 3(3) privește autoritățile, nu firma) — e la **OUG 92/2021 art. 48 alin. (5): cel puțin 3 ani, cu excepția transportatorilor — 12 luni** ✅.
 
@@ -79,6 +89,9 @@
 - ✅ **Plafonul de numerar către o PF este 10.000 lei/zi** (Legea 70/2015 art. 4); taxare inversă la deșeuri (Codul fiscal art. 331); cântar verificat metrologic (OG 20/1992); inventar anual (Legea 82/1991 art. 7). `surse-oficiale.md` §13, §15, §17.
 - **SGR (Sistemul Garanție-Returnare)** — relevant doar dacă clientul pune pe piață băuturi ambalate. 🟡
 - **Legea 249/2015** (ambalaje) — dacă avem clienți cu obligații de ambalaje.
+- 🆕 *(28.09.2026)* Reg. (UE) 2026/1703 (exportul de municipale mixte), Reg. (UE) 2026/1738 (vehiculele scoase din uz),
+  Directiva (UE) 2025/1892 (textile, transpunere până la 17.06.2027), proiectul de completare a HG 1074/2021 (SGR) —
+  niciunul nu cere nimic azi de la un generator. `surse-oficiale.md` §3.6.
 
 ---
 
@@ -159,7 +172,7 @@ Codurile **R1–R13** și **D1–D15** sunt cele din **OUG 92/2021, anexa nr. 3 
 | 13 | Unde se depune Anexa 1 Ambalaje | **agenţia judeţeană/regională de mediu**, din raza sediului social, pe **25 februarie**. Notificarea de la art. 3 e altceva: la **AFM**, pe **25 ianuarie** | Ordin 794/2012 art. 1, 3, 6 |
 | 9 | SIATD — cine intră | 15 categorii de operatori EPR; **generatorii mici nu**. 🔁 26.09: **și orice colector de deșeuri municipale** din gospodării (OUG 196/2005 art. 10 alin. (12), peste lista ordinului) | Ordin 701/2024 art. 2; OUG 196/2005 art. 10 alin. (12) — `surse-oficiale.md` §6.1 |
 | — | Referința R/D de pus în export | **OUG 92/2021 anexa 3 și anexa 7** | `surse-oficiale.md` §2.2–2.3 |
-| — | Care listă de coduri | **Decizia 2014/955/UE**, 842 coduri | `surse-oficiale.md` §3 |
+| — | Care listă de coduri | **Decizia 2014/955/UE**, 842 coduri; **de la 9.11.2026 și Decizia (UE) 2025/934** — 880 de coduri, 435 periculoase *(găsită 28.09.2026)* | `surse-oficiale.md` §3, §3.5 |
 | — | Termenul SIM | 15 martie, **termen legal** | OUG 92/2021 art. 48(1) |
 | — | Cuantumul amenzii pentru evidență | **40.000–60.000 lei** persoane juridice, 5.000–15.000 persoane fizice *(închis 10.09.2026)* | OUG 92/2021 art. 62(1) lit. a) · `surse-oficiale.md` §2.4 |
 | — | Al doilea termen anual | **30 aprilie** — construcții/desființări și **uleiuri uzate**, la APM *(găsit 10.09.2026, construit 11.09.2026)* | OUG 92/2021 art. 49(9) · `surse-oficiale.md` §2.5 |
@@ -273,6 +286,7 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 | Cantitate necunoscută la predare (cântărire la destinatar) | `weighedAtUnloading`, cantitate nullable, linie provizorie | ✅ |
 | **Buletinele de analiză** — caracterizarea deşeului periculos, art. 8 alin. (4) şi art. 48 alin. (2) | ~~`AnalysisBulletin` + `AnalysisBulletinService` (`V38`), legate de cod; dosarul le împacheta şi constata per cod ce lipseşte~~ — scoase din aplicaţie; tabela `analysis_bulletins` (`V38`) rămâne în bază, neatinsă | 🗑️ *(construit 11.09.2026, scos 14.09.2026 la cererea specialistei)* |
 | Încadrarea ca nepericulos la un **cod-oglindă**, art. 8 alin. (2) | `waste_codes.mirror_of` (`V37`) + badge „Cod-oglindă"; se stinge cu un **ataşament pe mişcare** (din 14.09.2026 nu mai şi cu buletin pe cod, odată cu scoaterea buletinelor) | ✅ *(11.09.2026)* |
+| Lista deșeurilor pe ediții — Decizia (UE) 2025/934, aplicabilă de la 9.11.2026 | `waste_codes.valid_from`/`valid_to` și schimbarea „în așteptare” (`V80`), `WasteCodeListScheduler` (00:05 și la pornire), selectorul pe data mișcării, refuzul pe server (`waste.code.not.yet.valid`, `waste.code.retired`); proba `WasteListEditionIT` | ✅ *(28.09.2026)* |
 | Registrul art. 48 OUG 92/2021 | `Art48RegisterBuilder` + `Art48RegisterGenerator` peste mișcările `ART_48` (xlsx + PDF, din meniul „Evidența cronologică” de pe ecranele „Intrări” și „Ieșiri”); `Reception` / `Delivery` rămân schemă | ✅ export 15.09.2026 · 🔜 recepțiile, Etapa 8 |
 | Evidenţa gestiunii deşeurilor centralizată — fosta „declaraţia anuală” (foaia „raportare deseuri generate”) | `AnnualDeclarationBuilder` + `AnnualDeclarationGenerator` — un rând per cod, o pagină per punct de lucru; redenumită la cererea specialistei | ✅ *(redenumită 15.09.2026)* |
 | Avizul de însoţire a mărfii (nu e formular din legislaţia deşeurilor; după modelul primit de la specialistă) | `AvizGenerator` — expeditor, destinatar, transport, poziţia, semnături; numărul e referinţa documentului; şoferul cu CNP (`V42`, `@ValidCnp`) | ✅ *(15.09.2026)* |

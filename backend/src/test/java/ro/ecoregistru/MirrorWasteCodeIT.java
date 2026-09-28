@@ -134,11 +134,19 @@ class MirrorWasteCodeIT {
      * Amprenta întregii derivări. Cifra e aici ca o reîncărcare a nomenclatorului sau o regulă
      * rescrisă mai îngust să cadă în build, nu la un client: 161 de oglinzi din 842 de coduri,
      * numărate pe 11.09.2026.
+     *
+     * <p>Din V80 lista are două ediții. Codurile Deciziei (UE) 2025/934 (cu {@code validFrom}) aduc 12
+     * oglinzi noi; din 9.11.2026, când {@code 16 06 04} devine periculos, lista 2014 mai are 160.
      */
     @Test
     void theNomenclatorHasExactlyTheMirrorsItHadWhenTheRuleWasWritten() {
-        assertThat(wasteCodeRepository.findAll().stream().filter(c -> c.getMirrorOf() != null).count())
-                .isEqualTo(161);
+        var codes = wasteCodeRepository.findAll();
+        boolean alkalineHazardous = codes.stream()
+                .filter(c -> c.getCode().equals("16 06 04")).findFirst().orElseThrow().isHazardous();
+        assertThat(codes.stream().filter(c -> c.getValidFrom() == null && c.getMirrorOf() != null).count())
+                .isEqualTo(alkalineHazardous ? 160 : 161);
+        assertThat(codes.stream().filter(c -> c.getValidFrom() != null && c.getMirrorOf() != null).count())
+                .isEqualTo(12);
     }
 
     // ---------- avertismentul ----------

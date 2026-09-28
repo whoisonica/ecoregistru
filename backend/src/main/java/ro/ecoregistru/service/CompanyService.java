@@ -342,8 +342,7 @@ public class CompanyService {
                 new LinkedHashSet<>(c.getAfmContributions()),
                 c.getAuthorizedWasteCodes().stream()
                         .sorted(Comparator.comparing(WasteCode::getCode))
-                        .map(w -> new WasteCodeResponse(w.getId(), w.getCode(), w.getName(), w.isHazardous(),
-                                ro.ecoregistru.util.MetalWasteCodes.suggests(w.getCode())))
+                        .map(WasteCodeResponse::of)
                         .toList(),
                 c.getTransportMeans(), c.getTransportLicenseNumber(), c.getTransportLicenseExpiry(),
                 c.getTradeRegisterNumber(), c.getAnexa3Series(),

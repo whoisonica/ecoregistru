@@ -21,6 +21,14 @@
 > termenul lui de valabilitate.** Regula nouă: la fiecare recitire se ia forma consolidată, nu
 > forma de bază, şi se notează versiunea, nu doar ziua în care am deschis pagina.
 >
+> ✅ **Verificat integral pe 28.09.2026: toate formele consolidate citate aici sunt și cele mai noi.** Pentru fiecare act cu
+> link pe Portalul Legislativ s-a citit „istoricul consolidărilor” și s-a comparat cu forma folosită: OUG 92/2021
+> (11.07.2026), HG 856/2002 (nemodificată din 2007), HG 1061/2008 (23.01.2026), OUG 196/2005 (07.03.2025), Legea 70/2015
+> (01.01.2026), OMFP 1802/2014 (19.11.2025), Codul fiscal (08.08.2026), Ordinele 794/2012 și 701/2024 (nemodificate). Actele
+> UE, prin CELLAR (fișa RDF: `https` + `Accept: application/rdf+xml`; fișa `notice=branch` pe `http` întoarce acum 400).
+> Proiectele MMAP și anunțurile ANMAP din august–septembrie 2026 n-au nimic pe evidență, raportare sau SIATD. **Singura
+> schimbare găsită: lista deșeurilor pentru baterii, de la 9.11.2026 — §3.5.** Pe radar, fără obligație azi: §3.6.
+>
 > 🔁 **Recitit pe 26.09.2026 pentru punctele deschise ale modulului de depozit** (`ecoregistru-docs/docs/todo-colector.md`).
 > Corectate: **§4** (art. 1 alin. (3), art. 20 alin. (5), art. 25 alin. (2) lit. a)), **§6** (6 fotografii, GPS-ul nu e pe
 > tranzacție, termenele curg de la recepție, amenzile, cine intră în SIATD), **§7** (calendarul TRACE-DM, încă proiect),
@@ -1259,6 +1267,9 @@ să scrie dacă amprenta nu se reproduce exact. Rezultatul e
 structură), încărcat de migrarea `V4__reseed_waste_codes`. Cele cinci validări de mai sus rulează și
 ca test Java — `WasteCodeSeedTest` — nu doar în script.
 
+⚠️ **Din 9.11.2026 lista are o a doua ediție** (Decizia (UE) 2025/934, §3.5). CSV-ul și amprenta de mai sus rămân ale
+listei 2014, fiindcă `V4` e istorie; diferența o aduce `V80`.
+
 ### 3.2 De ce lista 2014 și nu Anexa 2 din HG 856/2002
 
 Anexa 2 la HG 856/2002 e versiunea 2002/2007, netranspusă după Decizia 2014/955/UE. Argumentul
@@ -1328,6 +1339,63 @@ periculos n-are ce dovedi.
 **Unde e în cod:** `V37__mirror_waste_codes.sql` (coloana `waste_codes.mirror_of`),
 `WasteMovementMapper.mirrorClassificationUnproven`, proba `MirrorWasteCodeIT` (11 teste, dintre care
 unul pinuieşte cifra 161 şi unul marginile de formulare).
+
+🔁 **28.09.2026:** lista din 9.11.2026 (§3.5) are **12 oglinzi noi** după aceeași regulă (10 08 22/24/26, 16 06 12, 16 06 15,
+16 06 23/25/27/29/31/33, 20 01 44), iar lista 2014 pierde una: `16 06 04` devine periculos, deci nu mai e jumătatea
+nepericuloasă a perechii cu `16 06 03*`. `16 06 35` citează numai coduri nepericuloase, deci nu e oglindă. Proba
+pinuiește acum cifrele pe ediții: 161 (160 din 9.11.2026) + 12.
+
+### 3.5 A doua ediție a listei: Decizia delegată (UE) 2025/934, **de la 9 noiembrie 2026** (găsită 28.09.2026)
+
+Sursă: CELLAR, CELEX `32025D0934`, textul în română (`Accept: application/xhtml+xml`, `Accept-Language: ro`),
+accesat **28.09.2026**. JO L din 20.05.2025. Fișa RDF a Deciziei 2000/532/CE o numește ca singurul act care o modifică
+după 2014.
+
+> **Articolul 1** Anexa la Decizia 2000/532/CE se modifică în conformitate cu anexa la prezenta decizie.
+> **Articolul 2** Prezenta decizie intră în vigoare în a douăzecea zi de la data publicării în Jurnalul Oficial al
+> Uniunii Europene. **Se aplică de la 9 noiembrie 2026.**
+
+Anexa ei, punct cu punct:
+
+| Punct | Ce face | Coduri |
+|---|---|---|
+| 1 | nume nou | `09 01 11*` — trimite acum la 16 06 01–04, 16 06 07–11 sau 16 06 14 |
+| 2 | coduri noi, zguri din reciclarea bateriilor | `10 08 21*`–`10 08 26` (6) |
+| 3 | **capitolul 16 06 rescris** | nume noi la `16 06 01*`–`16 06 03*` și `16 06 06*`; **`16 06 04` devine periculos**; **`16 06 05` dispare**; noi `16 06 07*`–`16 06 15` (9) și `16 06 22*`–`16 06 35` (14) |
+| 4 | eliminat | `19 02 11*` |
+| 5 | coduri noi | `19 02 12*`, `19 02 13*` |
+| 6 | **subcapitol nou 19 14** — fracțiuni intermediare, inclusiv „black mass” | `19 14 01*`–`19 14 07*`, `19 14 08` |
+| 7 | eliminate | `20 01 33*`, `20 01 34` |
+| 8 | coduri noi | `20 01 42*`, `20 01 43*`, `20 01 44` |
+
+**Amprenta ediției noi:** 842 + 42 − 4 = **880** de coduri, dintre care **435** periculoase (408 + 28 noi + `16 06 04`
+− `19 02 11*` − `20 01 33*`). Textul fiecărui cod nou stă, verbatim, în `V80`.
+
+**De ce contează la generator:** bateriile și acumulatorii apar la aproape oricine (`16 06 01*` la parcul auto, `20 01 33*`
+sau `20 01 34` la bateriile de birou). Din 9.11.2026 `20 01 33*`/`20 01 34` nu mai există, iar bateriile alcaline sunt
+deșeu periculos — cu tot ce atrage asta (colectare, transport, pubela din aplicație). 🟠 **Neștiut din text, întrebare la
+specialistă:** acceptă portalul SIM codurile noi la raportarea pe 2026, și un cod schimbat în noiembrie se raportează
+pe una sau pe două fișe? (`ecoregistru-docs/docs/intrebari-specialist.md`, 28.09.2026).
+
+**În cod (28.09.2026, `V80`, `WasteCodeListScheduler`):** nimic nu se șterge. Codurile noi au `valid_from = 2026-11-09`,
+cele scoase `valid_to = 2026-11-08`; selectorul din formular cere lista valabilă la **data mișcării**, iar serverul
+refuză un cod din afara intervalului (`waste.code.not.yet.valid`, `waste.code.retired`). Cele șase coduri care rămân
+și se schimbă au modificarea „în așteptare”, scrisă în `name`/`hazardous` de planificator în noaptea de 9.11 (și la
+orice pornire de după), urmată de recalcularea oglinzilor. Proba: `WasteListEditionIT`.
+
+⚠️ **Modulul de depozit are lista SIATD a bateriilor bătută în cod** (`SiatdFlow.BATTERIES`: 16 06 02–05, 20 01 33/34).
+Din 9.11.2026 lipsesc codurile noi — notat în `ecoregistru-docs/docs/todo-colector.md`, neatins aici.
+
+### 3.6 Pe radar, fără obligație azi (verificat 28.09.2026)
+
+| Act | Ce face | De ce nu cere nimic acum |
+|---|---|---|
+| Regulamentul (UE) 2026/1703 (8.07.2026) | modifică Reg. (UE) 2024/1157: interzice exportul de deșeuri municipale mixte spre valorificare | privește transferurile în afara UE; transportul intern din §2.7 rămâne neatins |
+| Regulamentul (UE) 2026/1738 (8.07.2026) | vehiculele scoase din uz; abrogă Directiva 2000/53/CE | atinge un depozit care primește VSU, nu generatorul |
+| Directiva (UE) 2025/1892 (10.09.2025) | modifică Directiva 2008/98/CE (textile, deșeuri alimentare) | se transpune până la **17.06.2027**; se va vedea întâi în OUG 92/2021 |
+| Proiect HG de completare a HG 1074/2021 (MMAP, 3.08.2026) | sistemul garanție-returnare | proiect; SGR privește doar pe cine pune băuturi pe piață |
+| TRACE-DM (§7) | trasabilitatea deșeurilor de la persoane fizice | **tot proiect** la 28.09.2026 |
+| Lista ANMAP de la art. 34¹ (§2.6) | operatorii autorizați, cu viza | **tot nepublicată**, deși procedura era scadentă pe 9.09.2026 |
 
 ---
 

@@ -74,6 +74,7 @@ public class WasteMovementService {
         validateAgainstProfile(request, company);
         validateQuantity(request);
         validateDates(request);
+        requireCodeValidOn(wasteCode, request.date());
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner, wasteCode);
@@ -152,6 +153,7 @@ public class WasteMovementService {
         validateAgainstProfile(request, company);
         validateQuantity(request);
         validateDates(request);
+        requireCodeValidOn(wasteCode, request.date());
         Partner carrier = resolveCarrier(request, tenantId);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner, wasteCode);
@@ -312,6 +314,20 @@ public class WasteMovementService {
     private WasteCode requireWasteCode(UUID id) {
         return wasteCodeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(WASTE_CODE_NOT_FOUND));
+    }
+
+    /**
+     * The List of Waste has editions (V80): a movement uses the code in force on its own date. A code
+     * that starts later or ended earlier is refused, so the Anexa 1 sheet of a month never mixes the
+     * list of 2014 with that of Decision (EU) 2025/934.
+     */
+    private void requireCodeValidOn(WasteCode wasteCode, LocalDate date) {
+        if (wasteCode.getValidFrom() != null && date.isBefore(wasteCode.getValidFrom())) {
+            throw new BusinessException(WASTE_CODE_NOT_YET_VALID);
+        }
+        if (wasteCode.getValidTo() != null && date.isAfter(wasteCode.getValidTo())) {
+            throw new BusinessException(WASTE_CODE_RETIRED);
+        }
     }
 
     /**

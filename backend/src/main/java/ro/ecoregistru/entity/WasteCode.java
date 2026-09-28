@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -55,4 +56,15 @@ public class WasteCode {
      */
     @Column(name = "search_text", insertable = false, updatable = false)
     String searchText;
+
+    /**
+     * First and last day the code exists in the List of Waste; null means open-ended. Set by
+     * {@code V80} for Decision (EU) 2025/934: the battery codes it adds start on 9.11.2026, the four it
+     * removes end on 8.11.2026. Rows are never deleted — old movements keep naming their code.
+     */
+    @Column(name = "valid_from")
+    LocalDate validFrom;
+
+    @Column(name = "valid_to")
+    LocalDate validTo;
 }

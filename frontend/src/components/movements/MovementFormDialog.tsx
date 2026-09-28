@@ -31,6 +31,7 @@ import type {
   WasteOperationCode,
   WasteRegister,
 } from "@/lib/types";
+import { wasteCodeValidOn } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate, todayIso, withCount } from "@/lib/utils";
@@ -434,7 +435,7 @@ export function MovementFormDialog({
    */
   const idempotencyKey = useRef(crypto.randomUUID());
 
-  const codeSearch = useWasteCodeSearch(codeQuery);
+  const codeSearch = useWasteCodeSearch(codeQuery, date || undefined);
 
   /**
    * „La fel ca data trecută” (varianta A, proprietarul, 15.09.2026): ultima mișcare cu același cod,
@@ -504,7 +505,10 @@ export function MovementFormDialog({
   // The waste codes on the account's authorization. With a profile answered, the picker opens on
   // those four or five instead of on the 842 of the European List, and typing still searches the
   // whole nomenclator — a code that turns up once a year must stay reachable.
-  const profileWasteCodes = company?.authorizedWasteCodes ?? [];
+  // Cele scoase din listă la data mișcării nu se propun (V80, bateriile din 9.11.2026): serverul le-ar refuza.
+  const profileWasteCodes = (company?.authorizedWasteCodes ?? []).filter(
+    (w) => !date || wasteCodeValidOn(w, date)
+  );
   const searchResults = codeSearch.data ?? [];
   const shownCodes =
     profileWasteCodes.length > 0 && !codeQuery.trim() ? profileWasteCodes : searchResults;
