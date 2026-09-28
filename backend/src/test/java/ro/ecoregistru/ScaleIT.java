@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
@@ -377,26 +378,72 @@ class ScaleIT {
                 anyList(), eq(25L));
     }
 
+    /**
+     * 28.09.2026 — cântarele le văd și le scriu operatorul de cântar și cine aprobă; „Operator”-ul de birou și
+     * vizualizarea nici nu le văd, nici pe HTTP, nici pe serviciu.
+     */
     @Test
-    void theViewerReadsTheScalesButOnlyWritersAddToThemOverHttp() throws Exception {
+    void theScaleOperatorKeepsTheScalesWhileTheOperatorAndTheViewerDoNotSeeThem() throws Exception {
         ScaleResponse s = service.create(scale("Pod", null, null));
+        AppUser scaleOperator = user(company, Role.SCALE_OPERATOR);
+        AppUser operator = user(company, Role.OPERATOR);
         AppUser viewer = user(company, Role.CLIENT_VIEWER);
         clearThread();
 
-        mockMvc.perform(get("/api/v1/scales").header("Authorization", bearer(viewer)))
+        mockMvc.perform(get("/api/v1/scales").header("Authorization", bearer(scaleOperator)))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/scales/" + s.id() + "/events").header("Authorization", bearer(viewer))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"kind\":\"INCIDENT\",\"date\":\"" + today + "\"}"))
-                .andExpect(status().isForbidden());
-        mockMvc.perform(post("/api/v1/scales/" + s.id() + "/events").header("Authorization", bearer(admin))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"kind\":\"INCIDENT\",\"date\":\"" + today + "\"}"))
-                .andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/scales").header("Authorization", bearer(viewer))
+        mockMvc.perform(post("/api/v1/scales").header("Authorization", bearer(scaleOperator))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"workPointId\":\"" + depot.getId() + "\",\"name\":\"Nou\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
+        // Riscul știut din decizie: își trece singur verificarea „Admis”.
+        mockMvc.perform(post("/api/v1/scales/" + s.id() + "/events").header("Authorization", bearer(scaleOperator))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kind\":\"VERIFICATION\",\"date\":\"" + today + "\",\"admitted\":true,\"bulletinNumber\":\"B-1\",\"laboratory\":\"Laborator\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/scales/" + s.id() + "/documents/" + UUID.randomUUID())
+                        .header("Authorization", bearer(scaleOperator)))
+                .andExpect(status().isNotFound());
+
+        for (AppUser outsider : List.of(operator, viewer)) {
+            mockMvc.perform(get("/api/v1/scales").header("Authorization", bearer(outsider)))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/v1/scales/" + s.id() + "/documents/" + UUID.randomUUID())
+                            .header("Authorization", bearer(outsider)))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/v1/scales/" + s.id() + "/events").header("Authorization", bearer(outsider))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"kind\":\"INCIDENT\",\"date\":\"" + today + "\"}"))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(post("/api/v1/scales").header("Authorization", bearer(outsider))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"workPointId\":\"" + depot.getId() + "\",\"name\":\"Altul\"}"))
+                    .andExpect(status().isForbidden());
+        }
+
+        // Aceeași regulă și fără HTTP.
+        actAs(company, operator);
+        assertThatThrownBy(() -> service.list()).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> service.content(s.id(), UUID.randomUUID())).isInstanceOf(AccessDeniedException.class);
+        actAs(company, scaleOperator);
+        assertThat(service.list()).extracting(ScaleResponse::name).contains("Pod", "Nou");
+    }
+
+    /** Alerta cântarului merge la cine îl ține: adminul și operatorul de cântar, nu la operator sau vizualizare. */
+    @Test
+    void theExpiryWarningGoesToTheAdminAndTheScaleOperatorOnly() {
+        AppUser scaleOperator = user(company, Role.SCALE_OPERATOR);
+        AppUser operator = user(company, Role.OPERATOR);
+        AppUser viewer = user(company, Role.CLIENT_VIEWER);
+        ScaleResponse soon = service.create(scale("Curând", today.minusYears(2), today.minusYears(2)));
+        service.addEvent(soon.id(), verification(today.minusMonths(6), true, today.plusDays(20)));
+        clearThread();
+
+        scheduler.dispatchWarnings(today);
+        verify(notificationService).sendScaleExpiryWarning(argThat(x -> x.getId().equals(soon.id())),
+                argThat(to -> to.containsAll(List.of(admin.getEmail(), scaleOperator.getEmail()))
+                        && !to.contains(operator.getEmail()) && !to.contains(viewer.getEmail())),
+                eq(20L));
     }
 
     // ---------------------------------------------------------------------------------------------

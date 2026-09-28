@@ -8,7 +8,7 @@ import ro.ecoregistru.enums.Role;
 
 /**
  * Invite a user onto a tenant company. Platform-admin only. The role must be a tenant
- * role (ADMIN/OPERATOR/CLIENT_VIEWER) — never PLATFORM_ADMIN (rejected as INVALID_INVITE_ROLE).
+ * role (ADMIN/OPERATOR/SCALE_OPERATOR/CLIENT_VIEWER) — never PLATFORM_ADMIN (rejected as INVALID_INVITE_ROLE).
  */
 public record InviteUserRequest(
         @NotBlank @Email @Size(max = 255) String email,

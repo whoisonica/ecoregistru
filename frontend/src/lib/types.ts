@@ -563,7 +563,7 @@ export interface InviteConsultantInput {
 }
 
 /** Tenant roles that can be invited (never PLATFORM_ADMIN, never CONSULTANT). */
-export type InviteRole = "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
+export type InviteRole = "ADMIN" | "OPERATOR" | "SCALE_OPERATOR" | "CLIENT_VIEWER";
 
 export interface InviteUserInput {
   email: string;

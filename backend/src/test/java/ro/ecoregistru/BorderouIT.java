@@ -81,6 +81,7 @@ class BorderouIT {
     Company company;
     AppUser admin;
     AppUser operator;
+    AppUser scaleOperator;
     AppUser viewer;
     WorkPoint depot;
     NaturalPerson person;
@@ -98,6 +99,7 @@ class BorderouIT {
                 .type(CompanyType.COLLECTOR).active(true).createdAt(Instant.now()).build());
         admin = user("admin", Role.ADMIN, suffix);
         operator = user("operator", Role.OPERATOR, suffix);
+        scaleOperator = user("cantar", Role.SCALE_OPERATOR, suffix);
         viewer = user("viewer", Role.CLIENT_VIEWER, suffix);
         depot = workPointRepository.save(WorkPoint.builder()
                 .company(company).name("Depozit Vest").active(true).createdAt(Instant.now()).build());
@@ -183,14 +185,16 @@ class BorderouIT {
         borderou(admin, finalizedCopper(DAY));
     }
 
-    /** Prețuri și CNP întreg: doar cine scrie și vede prețurile. */
+    /** Prețuri și CNP întreg: doar cine cântărește și vede prețurile; „Operator”-ul de birou deloc (28.09.2026). */
     @Test
     void theBorderouIsForWritersWhoSeePrices() throws Exception {
         WeighingOperation op = finalizedCopper(DAY);
         mockMvc.perform(get(url(op, "borderou")).header("Authorization", bearer(viewer))).andExpect(status().isForbidden());
+        mockMvc.perform(get(url(op, "borderou")).header("Authorization", bearer(operator))).andExpect(status().isForbidden());
+        borderou(scaleOperator, op);
         company.setPriceVisibility(PriceVisibility.ADMIN_ONLY);
         companyRepository.save(company);
-        mockMvc.perform(get(url(op, "borderou")).header("Authorization", bearer(operator))).andExpect(status().isForbidden());
+        mockMvc.perform(get(url(op, "borderou")).header("Authorization", bearer(scaleOperator))).andExpect(status().isForbidden());
         borderou(admin, op);
     }
 
@@ -218,7 +222,7 @@ class BorderouIT {
 
         company.setPriceVisibility(PriceVisibility.ADMIN_ONLY);
         companyRepository.save(company);
-        mockMvc.perform(get(url(afternoon, "cash-check")).header("Authorization", bearer(operator)))
+        mockMvc.perform(get(url(afternoon, "cash-check")).header("Authorization", bearer(scaleOperator)))
                 .andExpect(jsonPath("$.aboveLimit", is(true)))
                 .andExpect(jsonPath("$.paidToday", nullValue()));
     }

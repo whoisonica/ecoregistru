@@ -11,7 +11,7 @@ import {
 } from "@/hooks/useWeighingOperations";
 import { useTableView } from "@/hooks/useTableView";
 import { useHotkey } from "@/hooks/useHotkey";
-import { canManage, canWrite } from "@/lib/roles";
+import { canManage, canWeigh, canWrite } from "@/lib/roles";
 import { registersFor } from "@/lib/movementScreens";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
@@ -62,7 +62,9 @@ const formatLei = (lei: number) => `${leiFormat.format(lei)} lei`;
 export function WeighingOperationsPage() {
   const { user } = useAuth();
   const { data: company } = useCurrentCompany();
-  const writes = canWrite(user?.role);
+  // 28.09.2026 — pe tabul formularelor primite scrie cine scrie; operațiunile le face cine cântărește.
+  const writesForms = canWrite(user?.role);
+  const weighs = canWeigh(user?.role);
   // D4.7 — „Operațiuni” (taburile de mai jos) sau „Rapoarte”; în adresă, ca panoul să le arate sub „Cântar”.
   const [screenTab, setScreenTab] = useUrlState("tab");
   const reports = screenTab === "rapoarte";
@@ -126,7 +128,7 @@ export function WeighingOperationsPage() {
   });
 
   useHotkey("n", () => {
-    if (writes && !stockTab && !other) setCreating(true);
+    if ((forms ? writesForms : weighs) && !stockTab && !other) setCreating(true);
   });
 
   const inbound = type === "IN";
@@ -149,7 +151,7 @@ export function WeighingOperationsPage() {
         title={t.title}
         description={t.subtitle}
         actions={
-          writes && !stockTab && !other && (
+          (forms ? writesForms : weighs) && !stockTab && !other && (
             <Button hotkey="N" onClick={() => setCreating(true)}>
               {forms ? (
                 <FilePlus className="mr-2 h-4 w-4" />
@@ -234,7 +236,7 @@ export function WeighingOperationsPage() {
         )}
       </div>
 
-      {forms && <ReceivedFormsTab canWrite={writes} creating={creating} onCreatingChange={setCreating} />}
+      {forms && <ReceivedFormsTab canWrite={writesForms} creating={creating} onCreatingChange={setCreating} />}
       {stockTab && !inventoryTab && <StockTab canManage={canManage(user?.role)} />}
       {inventoryTab && <InventoryTab canManage={canManage(user?.role)} />}
 

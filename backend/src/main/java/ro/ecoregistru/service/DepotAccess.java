@@ -23,7 +23,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
  * D2.4 — pe ce depozite lucrează utilizatorul de acum. Un operator de cântar din Baciu nu vede Turda
  * (Legea 190/2018, minimizarea: operațiunile poartă persoane fizice).
  *
- * <p>Restrâns poate fi doar OPERATOR sau CLIENT_VIEWER cu {@code allWorkPoints = false}; adminul, consultantul
+ * <p>Restrâns poate fi doar OPERATOR, SCALE_OPERATOR sau CLIENT_VIEWER cu {@code allWorkPoints = false}; adminul, consultantul
  * și platforma văd mereu tot, iar implicit — și pentru conturile de dinainte — oricine vede tot (V69).
  *
  * <p>Ce e al altui depozit se poartă ca inexistent (404 cu codul obiectului), ca la izolarea între firme:
@@ -34,7 +34,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.WORK_POINT_NOT_FOUND;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DepotAccess {
 
-    static final Set<Role> RESTRICTABLE = EnumSet.of(Role.OPERATOR, Role.CLIENT_VIEWER);
+    static final Set<Role> RESTRICTABLE = EnumSet.of(Role.OPERATOR, Role.SCALE_OPERATOR, Role.CLIENT_VIEWER);
 
     AppUserRepository userRepository;
 

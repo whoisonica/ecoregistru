@@ -69,10 +69,15 @@ class EndpointGuardInventoryIT {
      * <p>D1.8 (15.09.2026) a adăugat pragul „numai adminul firmei”, pe un singur endpoint: cine vede
      * prețurile depozitului. Consultantul și platforma rămân dinadins afară, altfel și-ar deschide
      * singuri prețurile ascunse de el (decizia proprietarului).
+     *
+     * <p>28.09.2026 — operatorul de cântar: pragul cântarului (cântărirea și cântarele, fără „Operator”) și al
+     * persoanelor fizice (cine scrie plus el: omul se înscrie la cântar).
      */
     private static final Set<String> KNOWN_GUARDS = Set.of(
             "hasAuthority('PLATFORM_ADMIN')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')",
+            "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','SCALE_OPERATOR')",
+            "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR','SCALE_OPERATOR')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')",
             "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT')",
             "hasAuthority('CONSULTANT')",

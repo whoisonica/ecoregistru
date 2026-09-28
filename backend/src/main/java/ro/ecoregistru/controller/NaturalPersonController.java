@@ -26,7 +26,8 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class NaturalPersonController {
 
-    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
+    /** Și operatorul de cântar: omul de la cântar se înscrie pe loc (28.09.2026). */
+    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR','SCALE_OPERATOR')";
 
     NaturalPersonService service;
 

@@ -3323,6 +3323,7 @@ export const strings = {
       CONSULTANT: "Consultant",
       ADMIN: "Administrator",
       OPERATOR: "Operator",
+      SCALE_OPERATOR: "Operator de cântar",
       CLIENT_VIEWER: "Vizualizare",
     },
 
@@ -3559,6 +3560,7 @@ export const strings = {
     inviteRole: {
       ADMIN: "Administrator",
       OPERATOR: "Operator",
+      SCALE_OPERATOR: "Operator de cântar",
       CLIENT_VIEWER: "Vizualizare (read-only)",
     },
     reportType: {

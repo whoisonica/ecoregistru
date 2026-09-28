@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
-import { canWrite as roleCanWrite } from "@/lib/roles";
+import { canWeigh as roleCanWeigh, canWrite as roleCanWrite } from "@/lib/roles";
 import type { BillingAccess } from "@/lib/types";
 
 export const billingAccessKey = ["billing", "access"] as const;
@@ -30,4 +30,11 @@ export function useCanWrite(): boolean {
   const { user } = useAuth();
   const { data: access } = useBillingAccess();
   return roleCanWrite(user?.role) && !access?.readOnly;
+}
+
+/** Cântărește acum: pragul de cântar (`canWeigh`) și, peste el, doar-citirea abonamentului. */
+export function useCanWeigh(): boolean {
+  const { user } = useAuth();
+  const { data: access } = useBillingAccess();
+  return roleCanWeigh(user?.role) && !access?.readOnly;
 }

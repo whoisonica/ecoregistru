@@ -53,7 +53,9 @@ import java.util.UUID;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ro.ecoregistru.enums.WeighingOperationType.IN;
@@ -86,6 +88,7 @@ class WeighingOperationStatusIT {
     Company company;
     AppUser admin;
     AppUser operator;
+    AppUser scaleOperator;
     AppUser consultant;
     WorkPoint depot;
     Partner partner;
@@ -98,6 +101,7 @@ class WeighingOperationStatusIT {
                 .active(true).createdAt(Instant.now()).build());
         admin = user(Role.ADMIN);
         operator = user(Role.OPERATOR);
+        scaleOperator = user(Role.SCALE_OPERATOR);
         // Un consultant are cabinet, nu firmă (`app_users_consultant_scope`), deci nu se salvează aici:
         // serviciul citește doar rolul din principal, iar `finalized_by` n-are cheie străină.
         consultant = AppUser.builder().id(UUID.randomUUID()).email("consultant@demo.ro")
@@ -154,8 +158,8 @@ class WeighingOperationStatusIT {
     }
 
     @Test
-    void anOperatorWeighsButNeitherFinalizesNorCancels() {
-        actAs(operator);
+    void theScaleOperatorWeighsButNeitherFinalizesNorCancels() {
+        actAs(scaleOperator);
         UUID id = weighedOperation("300");
 
         assertThatThrownBy(() -> service.finalizeOperation(id)).isInstanceOf(AccessDeniedException.class);
@@ -218,9 +222,9 @@ class WeighingOperationStatusIT {
         assertThat(service.get(foreign).status()).isEqualTo(WeighingOperationStatus.IN_PROGRESS);
     }
 
-    /** Aceeași regulă pe HTTP: operatorul primește 403, adminul trece. */
+    /** Aceeași regulă pe HTTP: operatorul de cântar primește 403, adminul trece. */
     @Test
-    void theEndpointRefusesTheOperatorAndAcceptsTheAdmin() throws Exception {
+    void theEndpointRefusesTheScaleOperatorAndAcceptsTheAdmin() throws Exception {
         UUID id = weighedOperation("300");
         // Autentificarea pusă de `actAs` ar rămâne pe thread și filtrul JWT n-ar mai citi tokenul:
         // toate cererile ar pleca fără autorități, iar 403-ul operatorului n-ar dovedi nimic.
@@ -228,10 +232,10 @@ class WeighingOperationStatusIT {
         TenantContext.clear();
 
         mockMvc.perform(post("/api/v1/weighing-operations/" + id + "/finalize")
-                        .header("Authorization", "Bearer " + jwtService.generateToken(operator)))
+                        .header("Authorization", "Bearer " + jwtService.generateToken(scaleOperator)))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/v1/weighing-operations/" + id + "/cancel")
-                        .header("Authorization", "Bearer " + jwtService.generateToken(operator))
+                        .header("Authorization", "Bearer " + jwtService.generateToken(scaleOperator))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"x\"}"))
                 .andExpect(status().isForbidden());
 
@@ -239,6 +243,55 @@ class WeighingOperationStatusIT {
                         .header("Authorization", "Bearer " + jwtService.generateToken(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("FINALIZED"));
+    }
+
+    /**
+     * 28.09.2026 — la cântar lucrează operatorul de cântar: creează, completează, tipărește. „Operator”-ul de birou
+     * doar citește (403 pe tot ce scrie sau tipărește), ca vizualizarea.
+     */
+    @Test
+    void theScaleOperatorWeighsOverHttpAndTheOperatorOnlyReads() throws Exception {
+        UUID id = weighedOperation("300");
+        SecurityContextHolder.clearContext();
+        TenantContext.clear();
+        String head = "{\"type\":\"IN\",\"workPointId\":\"" + depot.getId() + "\",\"date\":\"" + DAY
+                + "\",\"partnerId\":\"" + partner.getId() + "\"}";
+        String lines = "{\"lines\":[{\"articleId\":\"" + cardboard.getId() + "\",\"netKg\":250}]}";
+
+        mockMvc.perform(post("/api/v1/weighing-operations").header("Authorization", bearer(scaleOperator))
+                        .contentType(MediaType.APPLICATION_JSON).content(head))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/weighing-operations/" + id).header("Authorization", bearer(scaleOperator))
+                        .contentType(MediaType.APPLICATION_JSON).content(head))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/weighing-operations/" + id + "/lines").header("Authorization", bearer(scaleOperator))
+                        .contentType(MediaType.APPLICATION_JSON).content(lines))
+                .andExpect(status().isOk());
+        for (String doc : List.of("anexa3", "borderou", "nir", "cash-check")) {
+            mockMvc.perform(get("/api/v1/weighing-operations/" + id + "/" + doc).header("Authorization", bearer(scaleOperator)))
+                    .andExpect(r -> assertThat(r.getResponse().getStatus()).as(doc).isNotEqualTo(403));
+        }
+
+        mockMvc.perform(get("/api/v1/weighing-operations/" + id).header("Authorization", bearer(operator)))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/weighing-operations").header("Authorization", bearer(operator))
+                        .contentType(MediaType.APPLICATION_JSON).content(head))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/weighing-operations/" + id).header("Authorization", bearer(operator))
+                        .contentType(MediaType.APPLICATION_JSON).content(head))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/v1/weighing-operations/" + id + "/lines").header("Authorization", bearer(operator))
+                        .contentType(MediaType.APPLICATION_JSON).content(lines))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/weighing-operations/balings").header("Authorization", bearer(operator))
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        for (String doc : List.of("anexa3", "borderou", "nir", "cash-check")) {
+            mockMvc.perform(get("/api/v1/weighing-operations/" + id + "/" + doc).header("Authorization", bearer(operator)))
+                    .andExpect(status().isForbidden());
+        }
+        mockMvc.perform(post("/api/v1/weighing-operations/" + id + "/finalize").header("Authorization", bearer(operator)))
+                .andExpect(status().isForbidden());
     }
 
     /**
@@ -311,6 +364,10 @@ class WeighingOperationStatusIT {
         return appUserRepository.save(AppUser.builder()
                 .email(role.name().toLowerCase() + "+" + suffix() + "@demo.ro").password("x")
                 .role(role).company(company).enabled(true).createdAt(Instant.now()).build());
+    }
+
+    private String bearer(AppUser user) {
+        return "Bearer " + jwtService.generateToken(user);
     }
 
     private void actAs(AppUser user) {

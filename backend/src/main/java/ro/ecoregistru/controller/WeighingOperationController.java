@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Operațiunile de depozit (V46). Oricine scrie creează și cântărește ce e în lucru; finalizarea și
- * anularea sunt ale celor care aprobă (decizia proprietarului, 15.09.2026: admin și consultant).
- * Serviciul verifică același lucru. Vezi {@link WeighingOperationService}.
+ * Operațiunile de depozit (V46). Cântărește operatorul de cântar (și cine aprobă); „Operator”-ul de birou doar
+ * citește (decizia proprietarului, 28.09.2026). Finalizarea și anularea sunt ale celor care aprobă (15.09.2026:
+ * admin și consultant). Serviciul verifică același lucru. Vezi {@link WeighingOperationService}.
  */
 @RestController
 @RequestMapping("/api/v1/weighing-operations")
@@ -29,7 +29,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class WeighingOperationController {
 
-    static final String CAN_WRITE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','OPERATOR')";
+    static final String CAN_WEIGH = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN','SCALE_OPERATOR')";
     static final String CAN_APPROVE = "hasAnyAuthority('PLATFORM_ADMIN','CONSULTANT','ADMIN')";
 
     WeighingOperationService service;
@@ -68,11 +68,11 @@ public class WeighingOperationController {
     }
 
     /**
-     * D1.13 — Anexa 3 pe tot transportul. Doar cine scrie, fiindcă prima tipărire alocă numărul
+     * D1.13 — Anexa 3 pe tot transportul. Doar cine cântărește, fiindcă prima tipărire alocă numărul
      * formularului; retipărirea dă același document.
      */
     @GetMapping("/{id}/anexa3")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public org.springframework.http.ResponseEntity<byte[]> anexa3(@PathVariable UUID id) {
         return pdf(documentService.renderAnexa3(id), "anexa3-operatiune-" + id + ".pdf");
     }
@@ -85,24 +85,24 @@ public class WeighingOperationController {
 
     /**
      * D1.11 — borderoul de achiziție al unei intrări de la o persoană fizică, cu numărul dat la finalizare. Doar cine
-     * scrie: la metal documentul poartă CNP-ul întreg.
+     * cântărește: la metal documentul poartă CNP-ul întreg.
      */
     @GetMapping("/{id}/borderou")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public org.springframework.http.ResponseEntity<byte[]> borderou(@PathVariable UUID id) {
         return pdf(documentService.renderBorderou(id), "borderou-" + id + ".pdf");
     }
 
-    /** D1.17a — NIR-ul liniilor preluate gratuit de la o persoană fizică; fără prețuri, deci pentru oricine scrie. */
+    /** D1.17a — NIR-ul liniilor preluate gratuit de la o persoană fizică; fără prețuri, deci pentru oricine cântărește. */
     @GetMapping("/{id}/nir")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public org.springframework.http.ResponseEntity<byte[]> nir(@PathVariable UUID id) {
         return pdf(documentService.renderNir(id), "nir-" + id + ".pdf");
     }
 
     /** D1.11 — plățile în numerar de azi către persoana operațiunii, față de plafonul de 10.000 lei. */
     @GetMapping("/{id}/cash-check")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public ro.ecoregistru.service.WeighingDocumentService.CashCheck cashCheck(@PathVariable UUID id) {
         return documentService.cashCheck(id);
     }
@@ -121,28 +121,28 @@ public class WeighingOperationController {
     }
 
     @PostMapping
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public WeighingOperationResponse create(@Valid @RequestBody WeighingOperationRequest request) {
         return service.create(request);
     }
 
-    /** F5 — fișa de balotare: câți baloți; se salvează finalizată. O scrie și operatorul, ca o intrare. */
+    /** F5 — fișa de balotare: câți baloți; se salvează finalizată. O scrie operatorul de cântar, ca o intrare. */
     @PostMapping("/balings")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public WeighingOperationResponse createBaling(@Valid @RequestBody ro.ecoregistru.controller.request.BalingRequest request) {
         return balings.create(request);
     }
 
     /** Capul unei operațiuni în lucru. Tipul nu se schimbă; restul, da. */
     @PutMapping("/{id}")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public WeighingOperationResponse update(@PathVariable UUID id, @Valid @RequestBody WeighingOperationRequest request) {
         return service.update(id, request);
     }
 
     /** Tot formularul odată: liniile trimise le înlocuiesc pe cele salvate. */
     @PutMapping("/{id}/lines")
-    @PreAuthorize(CAN_WRITE)
+    @PreAuthorize(CAN_WEIGH)
     public WeighingOperationResponse replaceLines(@PathVariable UUID id, @Valid @RequestBody WeighingLinesRequest request) {
         return service.replaceLines(id, request);
     }

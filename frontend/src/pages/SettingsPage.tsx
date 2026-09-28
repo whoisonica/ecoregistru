@@ -21,7 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
-import { canImport, canManage as roleCanManage, canWrite as roleCanWrite } from "@/lib/roles";
+import { canImport, canManage as roleCanManage, canManageScales, canWrite as roleCanWrite } from "@/lib/roles";
 import {
   useWorkPoints,
   useCreateWorkPoint,
@@ -320,7 +320,9 @@ export function SettingsPage() {
     "generatori-interni",
     "soferi",
     ...(canManage ? (["utilizatori", "jurnal-audit"] as const) : []),
-    ...(hasDepot ? (["flota", "cantare", "preturi", "siatd", "sortimente"] as const) : []),
+    ...(hasDepot ? (["flota", "preturi", "siatd", "sortimente"] as const) : []),
+    // 28.09.2026 — cântarele le văd doar cine le ține: operatorul de cântar și cine aprobă.
+    ...(hasDepot && canManageScales(user?.role) ? (["cantare"] as const) : []),
   ]);
 
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
@@ -333,7 +335,15 @@ export function SettingsPage() {
     const anchor = location.hash.slice(1);
     const legacy = new URLSearchParams(location.search).has("istoric") ? "jurnal-audit" : anchor;
     if (legacy) return <Navigate to={`/setari/${legacy}${location.search}`} replace />;
-    return <SettingsHub canManage={canManage} canImportExcel={canManage && canImport(user?.role)} hasDepot={hasDepot} workPoints={workPoints} />;
+    return (
+      <SettingsHub
+        canManage={canManage}
+        canImportExcel={canManage && canImport(user?.role)}
+        canScales={canManageScales(user?.role)}
+        hasDepot={hasDepot}
+        workPoints={workPoints}
+      />
+    );
   }
   // Până se încarcă firma nu se știe dacă are depozit: o secțiune de depozit nu trimite înapoi până atunci.
   if (!allowed.has(section as SectionId) && (company || !["flota", "cantare", "preturi", "siatd", "sortimente"].includes(section))) {
@@ -383,9 +393,9 @@ export function SettingsPage() {
         {section === "flota" && hasDepot && (
           <VehiclesSection workPoints={workPoints ?? []} canManage={roleCanWrite(user?.role)} />
         )}
-        {/* D2.3 — cântarele; aceleași drepturi ca flota. */}
-        {section === "cantare" && hasDepot && (
-          <ScalesSection workPoints={workPoints ?? []} canManage={canManage} />
+        {/* D2.3 — cântarele; le scriu operatorul de cântar și cine aprobă (28.09.2026), ceilalți nu ajung aici. */}
+        {section === "cantare" && hasDepot && canManageScales(user?.role) && (
+          <ScalesSection workPoints={workPoints ?? []} canManage />
         )}
         {section === "preturi" && hasDepot && <PriceVisibilitySection />}
         {section === "siatd" && hasDepot && <SiatdSettingsSection />}
@@ -463,11 +473,13 @@ export function SettingsPage() {
 function SettingsHub({
   canManage,
   canImportExcel,
+  canScales,
   hasDepot,
   workPoints,
 }: {
   canManage: boolean;
   canImportExcel: boolean;
+  canScales: boolean;
   hasDepot: boolean;
   workPoints: WorkPoint[] | undefined;
 }) {
@@ -548,7 +560,7 @@ function SettingsHub({
           {
             title: h.groupDepot,
             cards: [
-              { id: "cantare" as const, icon: ScaleIcon, title: h.scales, description: h.scalesHint },
+              ...(canScales ? [{ id: "cantare" as const, icon: ScaleIcon, title: h.scales, description: h.scalesHint }] : []),
               { id: "preturi" as const, icon: Eye, title: h.prices, description: h.pricesHint },
               { id: "siatd" as const, icon: Radio, title: h.siatd, description: h.siatdHint },
               { id: "sortimente" as const, icon: Tags, title: h.articles, description: h.articlesHint },

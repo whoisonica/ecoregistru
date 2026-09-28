@@ -228,7 +228,7 @@ public class CompanyUserService {
     }
 
     /**
-     * D2.4 — pe ce depozite lucrează un operator sau un cont de vizualizare. Adminul nu se restrânge (vede
+     * D2.4 — pe ce depozite lucrează un operator, un operator de cântar sau un cont de vizualizare. Adminul nu se restrânge (vede
      * mereu tot, {@code DepotAccess}), deci o cerere pentru el e o greșeală, nu o setare ignorată. Pe sine
      * nu se restrânge nimeni: rolul care poate ajunge aici oricum vede tot.
      */
@@ -236,7 +236,7 @@ public class CompanyUserService {
     public CompanyUserResponse changeWorkPoints(UUID id, UserWorkPointsRequest request) {
         UUID tenantId = TenantContext.require();
         AppUser user = require(id);
-        if (!request.allWorkPoints() && !(user.getRole() == Role.OPERATOR || user.getRole() == Role.CLIENT_VIEWER)) {
+        if (!request.allWorkPoints() && !DepotAccess.RESTRICTABLE.contains(user.getRole())) {
             throw new BusinessException(USER_WORK_POINTS_ROLE);
         }
         List<UUID> ids = request.allWorkPoints() || request.workPointIds() == null ? List.of()

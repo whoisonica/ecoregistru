@@ -3,8 +3,9 @@
 // Ce apără: un cântar pus în funcțiune acum doi ani, fără verificare, apare „Verificare expirată”; o verificare
 // ADMIS îl face „Verificat” cu data de pe buletin (un an dacă nu e scrisă); o reparație de azi îl face „Reparat, de
 // reverificat”; la cântar, cântarul depozitului se alege dintr-o tastă cu starea lui alături; finalizarea cu un
-// cântar nelegal cere motiv, iar motivul și starea de atunci se văd pe operațiunea finalizată; vizualizatorul
-// vede cântarele fără butoane; nimic nu se lățește la 1440 și 375.
+// cântar nelegal cere motiv, iar motivul și starea de atunci se văd pe operațiunea finalizată; din 28.09.2026
+// operatorul de cântar le ține (vede și scrie), iar „Operator”-ul de birou și vizualizatorul nu le văd deloc;
+// nimic nu se lățește la 1440 și 375.
 //
 // ⚠️ Lasă în urmă cântarul „Proba 44 <număr>” (trecut „Scos din uz”: cu el s-a cântărit, deci nu se șterge) și
 // două intrări anulate la final, cu motivul „Proba 44”.
@@ -167,8 +168,8 @@ check("pe operațiunea finalizată se citesc starea la cântărire și motivul",
 await shot(page, "44-cantar-finalizata");
 await page.keyboard.press("Escape");
 
-// ---------------------------------------------------------------- OPERATORUL LA „DOAR ADMINISTRATORUL”
-// Decizia din 26.09.2026: operatorul plătește omul la cântar, deci vede totalul de plată, nu prețul pe kg.
+// ---------------------------------------------------------------- OPERATORUL DE CÂNTAR LA „DOAR ADMINISTRATORUL”
+// Deciziile din 26.09 și 28.09.2026: operatorul de cântar plătește omul, deci vede totalul de plată, nu prețul pe kg.
 const before = (await api(page, "GET", "/api/v1/companies/current")).json.priceVisibility;
 const priced = (await api(page, "POST", "/api/v1/weighing-operations", {
   type: "IN", workPointId: depotId, date: iso(0), partnerId: partner.id, naturalPersonId: null,
@@ -181,33 +182,65 @@ await api(page, "PUT", `/api/v1/weighing-operations/${priced.id}/lines`, {
 });
 await api(page, "PUT", "/api/v1/companies/current/price-visibility", { priceVisibility: "ADMIN_ONLY" });
 const operator = await newPage(browser, { width: 1440, height: 900 });
-await login(operator, "operator");
+await login(operator, "cantar");
 await operator.goto(BASE + `/cantar?op=${priced.id}`, { waitUntil: "networkidle" });
 await operator.waitForTimeout(1200);
 const opView = await operator.evaluate(() => ({
   text: document.querySelector('div[role="dialog"]')?.textContent.replace(/\s+/g, " ") ?? "",
   priceInputs: [...document.querySelectorAll('div[role="dialog"] label')].filter((l) => /Lei\/kg/.test(l.textContent)).length,
 }));
-check("operatorul vede „Rămâne de plătit” cu suma de la server", /Rămâne de plătit\??\s*490,00/.test(opView.text), opView.text.match(/Total valoare.{0,80}/)?.[0]);
-check("operatorul nu vede prețul pe kg", opView.priceInputs === 0, `${opView.priceInputs} rubrici Lei/kg`);
+check("operatorul de cântar vede „Rămâne de plătit” cu suma de la server", /Rămâne de plătit\??\s*490,00/.test(opView.text), opView.text.match(/Total valoare.{0,80}/)?.[0]);
+check("operatorul de cântar nu vede prețul pe kg", opView.priceInputs === 0, `${opView.priceInputs} rubrici Lei/kg`);
 await shot(operator, "44-operator-plata");
+
+// „Operator”-ul de birou citește operațiunea, fără totalul de plată și fără „Salvează”.
+const office = await newPage(browser, { width: 1440, height: 900 });
+await login(office, "operator");
+await office.goto(BASE + `/cantar?op=${priced.id}`, { waitUntil: "networkidle" });
+await office.waitForTimeout(1200);
+const officeView = await office.evaluate(() => ({
+  text: document.querySelector('div[role="dialog"]')?.textContent.replace(/\s+/g, " ") ?? "",
+  save: [...document.querySelectorAll('div[role="dialog"] button')].some((b) => /^Salvează/.test(b.textContent.trim())),
+  newButton: [...document.querySelectorAll("button")].some((b) => /Intrare nouă/.test(b.textContent)),
+}));
+check("operatorul de birou vede operațiunea", /Proba 44 plata|Carton|1\.000/.test(officeView.text), officeView.text.slice(0, 120));
+check("operatorul de birou nu vede „Rămâne de plătit”", !/Rămâne de plătit/.test(officeView.text));
+check("operatorul de birou n-are „Salvează”", !officeView.save);
+check("operatorul de birou n-are „Intrare nouă”", !officeView.newButton);
+await shot(office, "44-operator-birou");
 await api(page, "PUT", "/api/v1/companies/current/price-visibility", { priceVisibility: before });
 await api(page, "POST", `/api/v1/weighing-operations/${priced.id}/cancel`, { reason: "Proba 44" });
 
-// ---------------------------------------------------------------- VIZUALIZATORUL ȘI TELEFONUL
-const viewer = await newPage(browser, { width: 375, height: 800 });
-await login(viewer, "viewer");
-await viewer.goto(BASE + "/setari/cantare", { waitUntil: "networkidle" });
-await viewer.waitForTimeout(900);
-const seen = await viewer.evaluate(({ section, name }) => ({
+// ---------------------------------------------------------------- CINE VEDE CÂNTARELE ȘI TELEFONUL
+// Operatorul de cântar, pe telefon: vede cântarul și are butoanele de scriere.
+const phone = await newPage(browser, { width: 375, height: 800 });
+await login(phone, "cantar");
+await phone.goto(BASE + "/setari/cantare", { waitUntil: "networkidle" });
+await phone.waitForTimeout(900);
+const seen = await phone.evaluate(({ section, name }) => ({
   row: document.querySelector(section)?.textContent.includes(name) ?? false,
-  write: [...document.querySelectorAll(`${section} button`)].some((b) => /Adaugă cântar|Istoric|Editează/.test(b.textContent)),
+  write: [...document.querySelectorAll(`${section} button`)].some((b) => /Adaugă cântar/.test(b.textContent)),
   overflow: document.body.scrollWidth - window.innerWidth,
 }), { section, name: NAME });
-check("vizualizatorul vede cântarele", seen.row);
-check("vizualizatorul n-are butoane de scriere", !seen.write);
+check("operatorul de cântar vede cântarele", seen.row);
+check("operatorul de cântar are „Adaugă cântar”", seen.write);
 check("Setările nu se lățesc la 375px", seen.overflow <= 0, `${seen.overflow}px`);
-await shot(viewer, "44-cantare-telefon");
+await shot(phone, "44-cantare-telefon");
+
+// Vizualizatorul și operatorul de birou: fără card, iar adresa directă duce înapoi la Setări.
+const viewer = await newPage(browser, { width: 1440, height: 900 });
+await login(viewer, "viewer");
+for (const [who, p] of [["vizualizatorul", viewer], ["operatorul de birou", office]]) {
+  await p.goto(BASE + "/setari", { waitUntil: "networkidle" });
+  await p.waitForTimeout(700);
+  check(`${who} n-are cardul „Cântare”`, !(await p.$('a[href="/setari/cantare"]')));
+  await p.goto(BASE + "/setari/cantare", { waitUntil: "networkidle" });
+  await p.waitForTimeout(700);
+  check(`${who} e dus înapoi la Setări`, new URL(p.url()).pathname === "/setari" && !(await p.$(section)), p.url());
+  const scales = await api(p, "GET", "/api/v1/scales");
+  check(`${who} primește 403 pe cântare`, scales.status === 403, `HTTP ${scales.status}`);
+  p.problems = p.problems.filter((x) => !x.includes("/api/v1/scales") && !x.includes("403"));
+}
 
 // ---------------------------------------------------------------- CURĂȚENIE
 await api(page, "POST", `/api/v1/weighing-operations/${opId}/cancel`, { reason: "Proba 44" });
@@ -220,7 +253,7 @@ check("se trece „Scos din uz”", retired.json?.status === "OUT_OF_USE");
 page.problems = page.problems.filter(
   (p) => !p.includes(`/api/v1/scales/${scaleId}`) && !p.includes("status of 400 (Bad Request)"));
 
-for (const p of [page, viewer, operator]) {
+for (const p of [page, viewer, operator, office, phone]) {
   if (p.problems.length > 0) {
     console.log("  FAIL consola/rețeaua");
     for (const problem of [...new Set(p.problems)]) console.log(`         ${problem}`);

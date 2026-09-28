@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Scale;
+import ro.ecoregistru.enums.Role;
 import ro.ecoregistru.enums.ScaleStatus;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.ScaleRepository;
@@ -66,10 +67,12 @@ public class ScaleExpiryAlertScheduler {
         }
     }
 
+    /** Doar cine lucrează cu cântarele: adminul și operatorul de cântar (28.09.2026); ceilalți nu le văd. */
     private boolean notify(Scale scale, long daysUntil) {
         List<String> recipients = appUserRepository
                 .findAllByCompany_IdAndEnabledTrue(scale.getCompany().getId())
-                .stream().map(AppUser::getEmail).toList();
+                .stream().filter(u -> u.getRole() == Role.ADMIN || u.getRole() == Role.SCALE_OPERATOR)
+                .map(AppUser::getEmail).toList();
         if (recipients.isEmpty()) {
             return false;
         }

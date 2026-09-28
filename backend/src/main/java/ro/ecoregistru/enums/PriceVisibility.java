@@ -14,7 +14,7 @@ package ro.ecoregistru.enums;
 public enum PriceVisibility {
     /** Toți utilizatorii firmei, consultantul și platforma. Implicitul din V46. */
     COMPANY,
-    /** Utilizatorii firmei (admin, operator, vizualizator), fără consultant și fără platformă. */
+    /** Utilizatorii firmei (admin, operatori, vizualizator), fără consultant și fără platformă. */
     NO_CONSULTANT,
     /** Doar adminul firmei. */
     ADMIN_ONLY;
@@ -22,7 +22,8 @@ public enum PriceVisibility {
     public boolean visibleTo(Role role) {
         return switch (this) {
             case COMPANY -> true;
-            case NO_CONSULTANT -> role == Role.ADMIN || role == Role.OPERATOR || role == Role.CLIENT_VIEWER;
+            case NO_CONSULTANT -> role == Role.ADMIN || role == Role.OPERATOR || role == Role.SCALE_OPERATOR
+                    || role == Role.CLIENT_VIEWER;
             case ADMIN_ONLY -> role == Role.ADMIN;
         };
     }

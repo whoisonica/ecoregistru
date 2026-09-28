@@ -109,6 +109,7 @@ class PriceVisibilityIT {
         users = Map.of(
                 Role.ADMIN, user(Role.ADMIN),
                 Role.OPERATOR, user(Role.OPERATOR),
+                Role.SCALE_OPERATOR, user(Role.SCALE_OPERATOR),
                 Role.CLIENT_VIEWER, user(Role.CLIENT_VIEWER),
                 Role.CONSULTANT, unsaved(Role.CONSULTANT),
                 Role.PLATFORM_ADMIN, unsaved(Role.PLATFORM_ADMIN));
@@ -129,13 +130,13 @@ class PriceVisibilityIT {
         SecurityContextHolder.clearContext();
     }
 
-    /** Matricea întreagă: 3 setări × 5 roluri, pe citirea unei operațiuni, pe listă și pe firma curentă. */
+    /** Matricea întreagă: 3 setări × 6 roluri, pe citirea unei operațiuni, pe listă și pe firma curentă. */
     @Test
     void theSettingDecidesWhoSeesThePrice() {
         UUID id = pricedOperation();
         Map<PriceVisibility, Set<Role>> seeing = Map.of(
                 COMPANY, EnumSet.allOf(Role.class),
-                NO_CONSULTANT, EnumSet.of(Role.ADMIN, Role.OPERATOR, Role.CLIENT_VIEWER),
+                NO_CONSULTANT, EnumSet.of(Role.ADMIN, Role.OPERATOR, Role.SCALE_OPERATOR, Role.CLIENT_VIEWER),
                 ADMIN_ONLY, EnumSet.of(Role.ADMIN));
 
         for (PriceVisibility visibility : PriceVisibility.values()) {
@@ -156,16 +157,16 @@ class PriceVisibilityIT {
     }
 
     /**
-     * Decizia proprietarului, 26.09.2026: la „Doar administratorul”, operatorul de la cântar plătește
-     * omul, deci vede totalul de plată și reținerile — dar nu prețul pe kg. Vizualizatorul și
-     * consultantul nu văd nici totalul. În lucru e o previzualizare; după finalizare, sumele fixate.
+     * Deciziile proprietarului, 26.09 și 28.09.2026: la „Doar administratorul”, operatorul de cântar plătește
+     * omul, deci vede totalul de plată și reținerile — dar nu prețul pe kg. „Operator”-ul de birou, vizualizatorul
+     * și consultantul nu văd nici totalul. În lucru e o previzualizare; după finalizare, sumele fixate.
      */
     @Test
-    void atAdminOnlyTheOperatorSeesTheTotalToPayButNotThePricePerKilo() {
+    void atAdminOnlyTheScaleOperatorSeesTheTotalToPayButNotThePricePerKilo() {
         UUID id = pricedOperation(); // 100 kg × 40,5 lei, de la o firmă: 4.050 − 2% AFM (81) = 3.969
         setVisibility(ADMIN_ONLY);
 
-        actAs(Role.OPERATOR);
+        actAs(Role.SCALE_OPERATOR);
         WeighingOperationResponse seen = service.get(id);
         assertThat(seen.lines().get(0).unitPrice()).isNull();
         assertThat(seen.lines().get(0).totalValue()).isNull();
@@ -176,7 +177,7 @@ class PriceVisibilityIT {
         assertThat(seen.payment().net()).isEqualByComparingTo("3969.00");
         assertThat(service.list().get(0).payment()).as("și în listă").isNotNull();
 
-        for (Role role : List.of(Role.CLIENT_VIEWER, Role.CONSULTANT, Role.PLATFORM_ADMIN)) {
+        for (Role role : List.of(Role.OPERATOR, Role.CLIENT_VIEWER, Role.CONSULTANT, Role.PLATFORM_ADMIN)) {
             actAs(role);
             assertThat(service.get(id).payment()).as(role + " la ADMIN_ONLY").isNull();
         }
@@ -184,7 +185,7 @@ class PriceVisibilityIT {
         assertThat(service.get(id).payment()).as("adminul").isNotNull();
         service.finalizeOperation(id);
 
-        actAs(Role.OPERATOR);
+        actAs(Role.SCALE_OPERATOR);
         assertThat(service.get(id).payment().net()).as("după finalizare").isEqualByComparingTo("3969.00");
         // Fixat, nu recalculat: o cotă schimbată mâine nu rescrie ce s-a plătit azi.
         operationRepository.findById(id).ifPresent(o -> {
@@ -201,7 +202,7 @@ class PriceVisibilityIT {
     }
 
     /**
-     * Operatorul nu vede prețul și trimite formularul fără el (sau cu altul): prețul salvat rămâne, pe
+     * Operatorul de cântar nu vede prețul și trimite formularul fără el (sau cu altul): prețul salvat rămâne, pe
      * sortiment și în ordine, iar valoarea urmează cantitatea nouă.
      */
     @Test
@@ -213,7 +214,7 @@ class PriceVisibilityIT {
                 new Line(copper.getId(), null, null, kg("50"), null, kg("38"), null, null)));
         setVisibility(ADMIN_ONLY);
 
-        actAs(Role.OPERATOR);
+        actAs(Role.SCALE_OPERATOR);
         WeighingOperationResponse seen = service.replaceLines(id, lines(
                 new Line(copper.getId(), null, null, kg("120"), null, kg("999"), null, null),
                 new Line(cardboard.getId(), null, null, kg("300"), null, null, null, null),
@@ -244,7 +245,7 @@ class PriceVisibilityIT {
         assertThat(movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id).get(0).getUnitPrice()).isNull();
 
         setVisibility(COMPANY);
-        actAs(Role.OPERATOR);
+        actAs(Role.SCALE_OPERATOR);
         service.replaceLines(id, lines(new Line(copper.getId(), null, null, kg("100"), null, kg("12"), null, null)));
         assertThat(movementRepository.findAllByWeighingOperation_IdOrderByLineNoAsc(id).get(0).getUnitPrice())
                 .isEqualByComparingTo("12");
@@ -253,7 +254,8 @@ class PriceVisibilityIT {
     /** Doar adminul firmei schimbă setarea; profilul editat de platformă n-o atinge. */
     @Test
     void onlyTheCompanyAdminChangesTheSetting() {
-        for (Role role : List.of(Role.CONSULTANT, Role.PLATFORM_ADMIN, Role.OPERATOR, Role.CLIENT_VIEWER)) {
+        for (Role role : List.of(Role.CONSULTANT, Role.PLATFORM_ADMIN, Role.OPERATOR, Role.SCALE_OPERATOR,
+                Role.CLIENT_VIEWER)) {
             actAs(role);
             assertThatThrownBy(() -> companyService.updatePriceVisibility(ADMIN_ONLY)).as(role.name())
                     .isInstanceOf(AccessDeniedException.class);
@@ -282,7 +284,7 @@ class PriceVisibilityIT {
         SecurityContextHolder.clearContext();
         TenantContext.clear();
 
-        for (Role role : List.of(Role.OPERATOR, Role.CLIENT_VIEWER)) {
+        for (Role role : List.of(Role.OPERATOR, Role.SCALE_OPERATOR, Role.CLIENT_VIEWER)) {
             mockMvc.perform(put("/api/v1/companies/current/price-visibility")
                             .header("Authorization", "Bearer " + jwtService.generateToken(users.get(role)))
                             .contentType(MediaType.APPLICATION_JSON).content("{\"priceVisibility\":\"COMPANY\"}"))

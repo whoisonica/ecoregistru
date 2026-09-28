@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useQueryClient } from "@tanstack/react-query";
 import { api, tokenStore, tenantStore, userStore, clearSession } from "@/lib/api";
 
-export type Role = "PLATFORM_ADMIN" | "CONSULTANT" | "ADMIN" | "OPERATOR" | "CLIENT_VIEWER";
+export type Role = "PLATFORM_ADMIN" | "CONSULTANT" | "ADMIN" | "OPERATOR" | "SCALE_OPERATOR" | "CLIENT_VIEWER";
 
 export interface AuthUser {
   email: string;

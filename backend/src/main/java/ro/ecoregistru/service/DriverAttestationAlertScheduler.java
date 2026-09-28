@@ -60,9 +60,11 @@ public class DriverAttestationAlertScheduler {
     }
 
     private boolean notify(Driver driver, long daysUntil) {
+        // Operatorul de cântar citește flota, n-o ține la zi (28.09.2026): nu primește mailul.
         List<String> recipients = appUserRepository
                 .findAllByCompany_IdAndEnabledTrue(driver.getCompany().getId())
-                .stream().map(AppUser::getEmail).toList();
+                .stream().filter(u -> u.getRole() != ro.ecoregistru.enums.Role.SCALE_OPERATOR)
+                .map(AppUser::getEmail).toList();
         if (recipients.isEmpty()) {
             return false;
         }

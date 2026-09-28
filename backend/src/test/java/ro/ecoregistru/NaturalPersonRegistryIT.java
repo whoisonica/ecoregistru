@@ -139,6 +139,22 @@ class NaturalPersonRegistryIT {
                 .andExpect(jsonPath("$.name").value("Maria Ionescu"));
     }
 
+    /** 28.09.2026 — operatorul de cântar înscrie omul la cântar și îi vede fișa cu CNP-ul întreg (borderoul îl tipărește). */
+    @Test
+    void theScaleOperatorAddsAPersonAndReadsTheFullRecordOverHttp() throws Exception {
+        UUID id = service.create(new NaturalPersonRequest("Ion Popescu", CNP, "CJ 123456", "Cluj, str. X 1")).id();
+        AppUser scaleOperator = user(company, Role.SCALE_OPERATOR);
+        clearThread();
+
+        mockMvc.perform(post("/api/v1/natural-persons").header("Authorization", bearer(scaleOperator))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Maria Ionescu\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Maria Ionescu"));
+        mockMvc.perform(get("/api/v1/natural-persons/" + id).header("Authorization", bearer(scaleOperator)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cnp").value(CNP));
+    }
+
     /** O cifră de control greșită e CNP-ul altcuiva; formularul trebuie să se oprească, nu să salveze. */
     @Test
     void anInvalidCnpIsRefusedOverHttp() throws Exception {
