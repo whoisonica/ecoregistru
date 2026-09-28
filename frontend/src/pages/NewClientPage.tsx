@@ -27,6 +27,7 @@ import { Select } from "@/components/ui/select";
 import { Stepper } from "@/components/ui/stepper";
 
 const t = strings.newClient;
+const ct = strings.clients;
 const PLANS = ["GENERATOR", "GENERATOR_PACKAGING", "FULL_SERVICE"] as const;
 const TYPES: CompanyType[] = ["GENERATOR", "COLLECTOR", "BOTH"];
 const TYPE_ICONS = { GENERATOR: Factory, COLLECTOR: Recycle, BOTH: Building2 } as const;
@@ -132,6 +133,13 @@ function NewClientForm({
   const [billingAddress, setBillingAddress] = useState("");
 
   // Pasul 4 — administratorul.
+  // Persoana desemnată (OUG 92/2021 art. 23 alin. (4)): o cerem aici, la configurare, fiindcă clientul
+  // n-o poate completa singur — datele firmei le editează doar platforma și cabinetul (proprietarul,
+  // 29.09.2026; până atunci stătea în „Primii pași” ai clientului, ca pas pe care nu-l putea bifa).
+  const [wasteManagerName, setWasteManagerName] = useState("");
+  const [wasteManagerRole, setWasteManagerRole] = useState("");
+  const [wasteManagerExternal, setWasteManagerExternal] = useState<"" | "yes" | "no">("");
+  const [wasteManagerTraining, setWasteManagerTraining] = useState("");
   const [adminNow, setAdminNow] = useState<"now" | "later">("now");
   const [adminEmail, setAdminEmail] = useState(request?.contactEmail ?? "");
   const [adminFirstName, setAdminFirstName] = useState("");
@@ -165,10 +173,11 @@ function NewClientForm({
     name: !name.trim() ? strings.common.requiredField : undefined,
     cui: !cui.trim() ? strings.common.requiredField : !isValidCui(cui) ? strings.common.cuiInvalid : undefined,
     adminEmail: adminNow === "now" && !EMAIL.test(adminEmail.trim()) ? t.emailInvalid : undefined,
+    wasteManagerName: !wasteManagerName.trim() ? strings.common.requiredField : undefined,
   };
   const stepInvalid = [
     !!(errors.name || errors.cui),
-    false,
+    !!errors.wasteManagerName,
     ...(withSubscription ? [subscriptionOn && !(checks.cui && checks.address && checks.email)] : []),
     !!errors.adminEmail,
   ];
@@ -218,6 +227,10 @@ function NewClientForm({
           contactEmail: request?.contactEmail ?? null,
           contactPhone: request?.contactPhone ?? null,
           contactRole: request?.contactRole ?? null,
+          wasteManagerName: wasteManagerName.trim(),
+          wasteManagerRole: wasteManagerRole.trim() || null,
+          wasteManagerExternal: wasteManagerExternal === "" ? null : wasteManagerExternal === "yes",
+          wasteManagerTraining: wasteManagerTraining.trim() || null,
           tradeRegisterNumber: tradeRegisterNumber.trim() || null,
           caenCode: caenCode.trim() || null,
           authorizedOperationCodes: profile.authorizedOperationCodes,
@@ -454,6 +467,60 @@ function NewClientForm({
                 />
               </div>
               <CompanyProfileFields value={profile} onChange={setProfile} companyType={type} />
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-content">{ct.groupWasteManager}</h3>
+                  <p className="text-xs text-content-muted">{t.wasteManagerHint}</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="nc-wm-name" required>
+                      {ct.wasteManagerName}
+                    </Label>
+                    <Input
+                      id="nc-wm-name"
+                      maxLength={160}
+                      value={wasteManagerName}
+                      onChange={(e) => setWasteManagerName(e.target.value)}
+                      placeholder={ct.wasteManagerNamePlaceholder}
+                      {...invalidProps("nc-wm-name-error", show(1) ? errors.wasteManagerName : undefined)}
+                    />
+                    {show(1) && <FieldError id="nc-wm-name-error" message={errors.wasteManagerName} />}
+                  </div>
+                  <div>
+                    <Label htmlFor="nc-wm-role">{ct.wasteManagerRole}</Label>
+                    <Input
+                      id="nc-wm-role"
+                      maxLength={120}
+                      value={wasteManagerRole}
+                      onChange={(e) => setWasteManagerRole(e.target.value)}
+                      placeholder={ct.wasteManagerRolePlaceholder}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="nc-wm-external">{ct.wasteManagerExternal}</Label>
+                    <Select
+                      id="nc-wm-external"
+                      value={wasteManagerExternal}
+                      onChange={(e) => setWasteManagerExternal(e.target.value as "" | "yes" | "no")}
+                    >
+                      <option value="">{ct.wasteManagerExternalUnset}</option>
+                      <option value="no">{ct.wasteManagerExternalNo}</option>
+                      <option value="yes">{ct.wasteManagerExternalYes}</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="nc-wm-training">{ct.wasteManagerTraining}</Label>
+                    <Input
+                      id="nc-wm-training"
+                      maxLength={255}
+                      value={wasteManagerTraining}
+                      onChange={(e) => setWasteManagerTraining(e.target.value)}
+                      placeholder={ct.wasteManagerTrainingPlaceholder}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

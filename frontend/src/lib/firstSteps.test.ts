@@ -19,7 +19,17 @@ test("un cont gol are toți pașii de făcut, iar la firmă spune ce rubrici lip
   const steps = firstSteps({ company: empty, workPoints: [], partners: [], evidences: [], movementCount: 0 })!;
   assert.deepEqual(steps.map((s) => s.id), ["company", "workPoint", "partner", "movement"]);
   assert.ok(steps.every((s) => !s.done));
-  assert.deepEqual(steps[0].missing, ["address", "caenCode", "wasteManagerName"]);
+  assert.deepEqual(steps[0].missing, ["address", "caenCode"]);
+});
+
+test("persoana desemnată nu ține pasul firmei deschis: o completăm noi la configurare", () => {
+  // Proprietarul, 29.09.2026: clientul n-o poate completa singur (datele firmei le editează doar
+  // platforma și cabinetul), deci un pas pe care nu-l poate bifa n-are ce căuta în lista lui.
+  const steps = firstSteps({
+    company: { ...full, wasteManagerName: null }, workPoints: [], partners: [], evidences: [], movementCount: 0,
+  })!;
+  assert.equal(steps[0].done, true);
+  assert.deepEqual(steps[0].missing, []);
 });
 
 test("o rubrică cu spații nu e completată", () => {

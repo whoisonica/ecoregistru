@@ -6,8 +6,10 @@ import type { Company } from "@/lib/types";
  * dovedesc; niciunul nu se bifează de mână, ca lista să nu poată spune „gata” peste un cont gol.
  *
  * <ol>
- *   <li><b>Datele firmei</b> — adresa, CAEN-ul și persoana desemnată (OUG 92/2021 art. 23) se tipăresc
- *       pe fișa de evidență și pe declarația anuală; goale, rubrica iese goală pe documentul depus.</li>
+ *   <li><b>Datele firmei</b> — adresa și CAEN-ul se tipăresc pe evidența centralizată; goale, rubrica
+ *       iese goală pe documentul depus. Persoana desemnată (OUG 92/2021 art. 23 alin. (4)) nu mai e
+ *       aici din 29.09.2026 (proprietarul): datele firmei le editează doar platforma și cabinetul, deci
+ *       clientul n-o putea bifa singur. O cere „Client nou”, iar ecranul Clienți o arată ca lipsă.</li>
  *   <li><b>Punctul de lucru</b> — o mișcare se înregistrează pe unul.</li>
  *   <li><b>Partenerul</b> — colectorul căruia i se predă, cu autorizația lui (art. 23 alin. (1)).</li>
  *   <li><b>Prima înregistrare</b> — evidența și anexele se construiesc din mișcări.</li>
@@ -15,12 +17,15 @@ import type { Company } from "@/lib/types";
  */
 export type FirstStepId = "company" | "workPoint" | "partner" | "movement";
 
-/** Rubricile firmei fără de care documentele ies cu goluri. */
+/** Rubricile firmei pe care ecranul Clienți le arată ca lipsă (golurile unui client). */
 export type CompanyField = "address" | "caenCode" | "wasteManagerName";
 
 export type FirstStep = { id: FirstStepId; done: boolean; missing: CompanyField[] };
 
 export const COMPANY_FIELDS: CompanyField[] = ["address", "caenCode", "wasteManagerName"];
+
+/** Ce cere pasul „Datele firmei”: numai rubricile tipărite; persoana desemnată o completăm noi (29.09.2026). */
+const FIRST_STEP_FIELDS: CompanyField[] = ["address", "caenCode"];
 
 /**
  * `null` cât timp vreo sursă n-a venit (sau a căzut): o listă socotită din liste goale ar spune
@@ -37,7 +42,7 @@ export function firstSteps(input: {
   if (!company || !workPoints || !partners || !evidences || movementCount === undefined) {
     return null;
   }
-  const missing = COMPANY_FIELDS.filter((f) => !(company[f] ?? "").trim());
+  const missing = FIRST_STEP_FIELDS.filter((f) => !(company[f] ?? "").trim());
   return [
     { id: "company", done: missing.length === 0, missing },
     { id: "workPoint", done: workPoints.length > 0, missing: [] },

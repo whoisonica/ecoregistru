@@ -39,10 +39,11 @@ export function suggestedPackagingMaterial(codeLabel: string): PackagingMaterial
  */
 export function operationsFor(screen: WasteRegister, direction: MovementDirection | undefined): WasteOperation[] {
   // Pe „Generare" rămâne o singură opţiune, fiindcă mişcarea porneşte mereu de la generare: ce se
-  // întâmplă cu deşeul după se alege mai jos, sub transport. Cererea specialistei, 25.08.2026:
-  // „aici, la operaţiune, trebuie să rămână Generator [...] şi după, mai jos, trebuie pus în tab cu
-  // Valorificare/Eliminare [...] după ce alegi la Transport spre Valorificare să apară următoarele
-  // taburi cu codurile". Pe art. 48 ieşirea e directă: marfa preluată n-a fost generată de firmă,
+  // întâmplă cu deşeul după se alege mai jos. Cererea specialistei, 25.08.2026: „aici, la
+  // operaţiune, trebuie să rămână Generator [...] şi după, mai jos, trebuie pus în tab cu
+  // Valorificare/Eliminare [...] să apară următoarele taburi cu codurile". De pe 29.09.2026 blocul
+  // stă înaintea transportului: „prima dată să te pună să alegi valorificare/eliminare, codurile și
+  // după unde merg deșeurile" (Andreea) — vezi `destinationsOpen`. Pe art. 48 ieşirea e directă: marfa preluată n-a fost generată de firmă,
   // deci nu se poate scrie ca generare urmată de predare. De pe 15.09.2026 ecranul spune și
   // direcția: „Intrări" oferă preluarea, „Ieșiri" valorificarea și eliminarea.
   if (screen === "ANEXA_1") return ["GENERATED"];
@@ -125,11 +126,30 @@ export function suggestedDestinations(
  * **eliminării**", `Vr` și `Ve` scriu „**Valorificare** …", `HP`/`HC` sunt halde, `DO` e depozitul
  * de gunoi. `A` („Altele") stă în amândouă: e rubrica pentru ce nu intră nicăieri.
  *
- * <p>Cât timp operațiunea nu e aleasă (o intrare, o generare fără soartă), se oferă toate opt: n-ai
- * după ce filtra, iar o listă scurtată fără motiv ascunde valori pe care nota tipărită le are.
+ * <p>Cât timp operațiunea nu e aleasă (o intrare, un rând vechi fără soartă), se oferă toate opt:
+ * n-ai după ce filtra, iar o listă scurtată fără motiv ascunde valori pe care nota tipărită le are.
+ * Pe „Generare” rândul nou nici nu le vede până nu alege (`destinationsOpen`).
  */
 export function destinationsFor(operation: WasteOperation | ""): WasteDestination[] {
   if (operation === "RECOVERED") return ["Vr", "P", "Ve", "A"];
   if (operation === "DISPOSED") return ["DO", "HP", "HC", "I", "A"];
   return ["DO", "HP", "HC", "I", "Vr", "P", "Ve", "A"];
+}
+
+/**
+ * Dacă formularul arată deja destinația (nota 5). Pe „Generare” întrebările vin în ordinea
+ * specialistei: „prima dată să te pună să alegi valorificare/eliminare, codurile și după unde merg
+ * deșeurile" (Andreea, 29.09.2026) — deci până la alegere nu se oferă nimic, fiindcă tabăra
+ * destinațiilor atârnă de ea. Un rând care are deja destinația (redeschis, duplicat, „La fel ca
+ * data trecută", ori unul vechi `UNCLASSIFIED_OUT`) o arată, ca nimic salvat să nu dispară de pe
+ * ecran. Celelalte ecrane rămân cum erau: acolo destinația se oferă mereu.
+ */
+export function destinationsOpen(
+  screen: WasteRegister,
+  choosesFate: boolean,
+  fate: WasteOperation | "",
+  destination: WasteDestination | ""
+): boolean {
+  if (screen !== "ANEXA_1" || !choosesFate) return true;
+  return fate !== "" || destination !== "";
 }

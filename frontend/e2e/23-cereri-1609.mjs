@@ -53,14 +53,18 @@ if ((await paper.count()) > 0) await paper.click();
 else await page.locator('[role="listbox"] [role="option"]').first().click();
 await page.waitForTimeout(300);
 
-const destinations = await page.$$eval('#mv-destination input[name="mv-destination"]', (os) => os.map((o) => o.value).filter(Boolean));
-// Toate cele opt valori ale notei 5 (HG 856/2002, anexa 1, cap. 2), în ordinea din act. Până pe
-// 20.09.2026 ecranul oferea patru — erau date ca exemplu și rămăseseră în cod ca filtru, așa că
-// `P`, `HP`, `HC` și `Ve` nu se puteau alege deși nota tipărită le are.
-check("destinația are toate cele opt valori ale notei 5",
-  destinations.join(",") === "DO,HP,HC,I,Vr,P,Ve,A", destinations.join(","));
+// Pe „Generare” întrebările vin în ordinea Andreei (29.09.2026): „prima dată să te pună să alegi
+// valorificare/eliminare, codurile și după unde merg deșeurile”. Deci, până la alegere, destinația
+// nu se oferă deloc — în locul pastilelor stă îndemnul. Până atunci se ofereau toate opt de la
+// început, cu mijlocul de transport înaintea lor.
+const beforeFate = await page.evaluate(() => ({
+  pastile: document.querySelectorAll('input[name="mv-destination"]').length,
+  indemn: document.querySelector('div[role="dialog"]').textContent.includes("Alege întâi valorificare sau eliminare."),
+}));
+check("fără valorificare/eliminare, destinația nu se oferă încă", beforeFate.pastile === 0 && beforeFate.indemn,
+  JSON.stringify(beforeFate));
 
-// Iar după ce se alege ce se întâmplă cu deșeul, rămâne tabăra lui (20.09.2026): „valorificare, R3
+// După ce se alege ce se întâmplă cu deșeul, rămâne tabăra lui (20.09.2026): „valorificare, R3
 // spre groapa orașului" era combinația care se salva fără niciun semn.
 const camp = async () =>
   (await page.$$eval('#mv-destination input[name="mv-destination"]', (os) => os.map((o) => o.value).filter(Boolean))).join(",");
@@ -70,9 +74,25 @@ const fate = async (value) => {
   await page.waitForTimeout(300);
 };
 await fate("RECOVERED");
-check("valorificarea oferă numai destinațiile ei", (await camp()) === "Vr,P,Ve,A", await camp());
+const recovery = await camp();
+check("valorificarea oferă numai destinațiile ei", recovery === "Vr,P,Ve,A", recovery);
 await fate("DISPOSED");
-check("eliminarea oferă numai destinațiile ei", (await camp()) === "DO,HP,HC,I,A", await camp());
+const disposal = await camp();
+check("eliminarea oferă numai destinațiile ei", disposal === "DO,HP,HC,I,A", disposal);
+// Niciuna din cele opt valori ale notei 5 (HG 856/2002, anexa 1, cap. 2) nu se pierde: până pe
+// 20.09.2026 ecranul oferea patru, așa că `P`, `HP`, `HC` și `Ve` nu se puteau alege deloc.
+const allEight = [...new Set([...recovery.split(","), ...disposal.split(",")])].sort().join(",");
+check("cele două tabere acoperă toate cele opt valori ale notei 5", allEight === "A,DO,HC,HP,I,P,Ve,Vr", allEight);
+
+// Ordinea pe ecran: valorificare/eliminare → codul R/D → unde ajunge → cine îl preia → cu ce pleacă.
+const order = await page.evaluate(() => {
+  const ids = ["mv-fate-label", "mv-code-rd", "mv-destination", "mv-partner", "mv-transport-means"];
+  const els = ids.map((id) => document.getElementById(id));
+  if (els.some((x) => !x)) return { lipsa: ids.filter((_, i) => !els[i]) };
+  const inOrder = els.every((x, i) => i === 0 || (els[i - 1].compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
+  return { inOrder };
+});
+check("pe Generare: soarta, codul, destinația, destinatarul, apoi transportul", order.inOrder === true, JSON.stringify(order));
 
 await page.fill("#mv-qty", "12");
 await page.locator('label:has(input[name="mv-fate"])').nth(1).click(); // spre eliminare

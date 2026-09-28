@@ -23,7 +23,17 @@ await page.waitForTimeout(700);
 await page.click('button:has-text("Deșeuri proprii")');
 await page.waitForTimeout(600);
 const sections = await page.$$eval('div[role="dialog"] section h3', (h) => h.map((x) => x.textContent.trim()));
-check("formularul are secțiuni titrate", sections.length === 8, sections.join(" · "));
+check("formularul are secțiuni titrate", sections.length === 9, sections.join(" · "));
+// Ordinea de pe „Generare” (Andreea, 29.09.2026): „prima dată să te pună să alegi
+// valorificare/eliminare, codurile și după unde merg deșeurile”. Până atunci era o singură secțiune,
+// „Cum pleacă și unde ajunge”, cu mijlocul de transport primul și soarta la urmă.
+const at = (title) => sections.indexOf(title);
+check("pe Generare: întâi ce se întâmplă cu deșeul, apoi cine îl preia, apoi transportul",
+  at("Ce se întâmplă cu deșeul") > at("Unde stă până pleacă") &&
+    at("Cine îl preia") === at("Ce se întâmplă cu deșeul") + 1 &&
+    at("Transportul") === at("Cine îl preia") + 1 &&
+    at("Cum pleacă și unde ajunge") === -1,
+  sections.join(" · "));
 
 const dlgWidth = await page.$eval('div[role="dialog"][aria-modal="true"]', (d) => Math.round(d.getBoundingClientRect().width));
 check("dialogul e mai lat de 512px", dlgWidth > 560, dlgWidth + "px");

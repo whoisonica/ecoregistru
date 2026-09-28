@@ -1267,7 +1267,6 @@ export interface PackagingAnexa3 {
   unclassified: PackagingAnexa3UnclassifiedRow[];
   preparedBy: string | null;
   preparedByRole: string | null;
-  /** Contul e generator: numai ieşirile, fără preluări (proprietarul, 16.09.2026). */
   /** false = profilul n-a spus care tabel se aplică, deci nu se tipăreşte nimic. */
   printable: boolean;
   usesTable2: boolean;

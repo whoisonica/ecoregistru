@@ -81,7 +81,8 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
  *   - "Evidenta gestiunii deseurilor centralizata" (the former annual declaration): the same year
  *     folded to one line per waste code, per work point,
  *   - Anexa 1 Ambalaje (.xls + .pdf), when the company puts packaging on the market,
- *   - Anexa 3 Ambalaje (.xls + .pdf), one pair per work point that moved packaging that year,
+ *   - Anexa 3 Ambalaje (.xls + .pdf), one pair per work point that moved packaging that year —
+ *     only for a company that collects (Andreea, 29.09.2026; a generator gets none),
  *   - atasamente/index.txt, outside rapoarte/, listing every movement attachment, and the attachment files
  *     themselves (downloaded best-effort from Cloudinary; a failed download stays referenced
  *     in the index so the dossier is still complete).

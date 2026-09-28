@@ -52,6 +52,8 @@ check("Generare are trei taburi", taburi.join(" · ") === "Mișcări · Totalul 
 const text = await page.evaluate(() => document.body.innerText);
 // Din 18.09.2026 seara: un singur tabel pe ecran, ales din taste; două butoane de document lipite,
 // fără text dedesubt; nimic de derulat la 1440 × 900 (proprietarul: „să nu meargă pagina în jos").
+// Anexa 3 Ambalaje e numai a colectorului (Andreea, 29.09.2026): firma demo a lui `admin` e `BOTH`, deci o are;
+// un generator pur n-o are deloc — asta o probează proba 23.
 const butoane = await page.evaluate(() =>
   [...document.querySelectorAll('main button[aria-haspopup="menu"]')].map((b) => b.innerText.trim())
 );

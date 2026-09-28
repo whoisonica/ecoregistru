@@ -92,8 +92,9 @@ export function PackagingFields({
         </p>
       )}
 
-      {/* Materialul îl citește și Anexa 3 Ambalaje, deci se cere mereu (BUG-049); tipul dă doar
-          coloana din tabelul 1, deci n-are sens dacă mişcarea nu ajunge în tabel. */}
+      {/* Materialul se cere mereu (BUG-049, decizia 19.09.2026): îl citește Anexa 1 Ambalaje, iar la
+          preluările colectorului și Anexa 3 Ambalaje (a generatorului nu mai e — Andreea, 29.09.2026).
+          Tipul dă doar coloana din tabelul 1, deci n-are sens dacă mişcarea nu ajunge în tabel. */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="mv-pk-material">{t.packagingMaterial}</Label>

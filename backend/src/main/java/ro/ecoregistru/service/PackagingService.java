@@ -243,7 +243,7 @@ public class PackagingService {
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         // Andreea, 29.09.2026: „Anexa 3 amb e doar pentru colector, la raportarea de deşeuri pentru
         // colectori”. Refuzul vine înaintea punctului de lucru fiindcă nu depinde de el, şi descărcarea
-        // trece tot pe aici. (14.09 refuz → 16.09 numai ieşirile, decizia 82 → 29.09 refuz, decizia 85.)
+        // trece tot pe aici. (14.09 refuz → 16.09 numai ieşirile, decizia 82 → 29.09 refuz, decizia 87.)
         if (!company.getType().keepsArt48Register()) {
             throw new BusinessException(ANEXA3_PACKAGING_COLLECTORS_ONLY);
         }

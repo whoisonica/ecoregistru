@@ -145,8 +145,9 @@ public enum ReportType {
      * annex, different people, a different signal — and a collector who also sells packaged goods owes
      * both.
      *
-     * <p>A generator is <b>not</b> in art. 4. The exits-only Anexa 3 a generator can print (the owner,
-     * 16.09.2026) is an offer, not an obligation, so it creates no deadline.
+     * <p>A generator is <b>not</b> in art. 4, and since 29.09.2026 it is refused the form altogether
+     * (Andreea: collectors only). Between 16.09 and 29.09 it could print an exits-only version — an
+     * offer, never an obligation, so it never created a deadline either.
      */
     PACKAGING_ANNEX3,
 

@@ -33,7 +33,8 @@ await page.waitForSelector('[data-testid="next-action"]', { timeout: 15000 });
 await page.waitForTimeout(1200);
 check("firma demo, care are tot, nu vede „Primii pași”", !(await page.$('[data-testid="first-steps"]')));
 
-// O firmă nouă, fără punct de lucru, fără CAEN și fără persoana desemnată.
+// O firmă nouă, fără punct de lucru, fără CAEN și fără persoana desemnată. Din 29.09.2026 persoana
+// desemnată nu mai ține pasul deschis: o completăm noi la „Client nou” (proprietarul).
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
 await page.evaluate(() => localStorage.clear());
 await login(page, "platform");
@@ -52,8 +53,8 @@ check("comutat pe firma nouă", Boolean(await switchCompany(page, new RegExp(RUN
 let s = await steps();
 const byId = Object.fromEntries(s.map((x) => [x.id, x]));
 check("patru pași, în ordine", s.map((x) => x.id).join(",") === "company,workPoint,partner,movement", s.map((x) => x.id).join(","));
-check("datele firmei: spune ce lipsește, nu și adresa completată",
-  byId.company && !byId.company.done && /codul CAEN/.test(byId.company.text) && /persoana desemnată/.test(byId.company.text) && !/adresa/.test(byId.company.text));
+check("datele firmei: spune ce lipsește, nu și adresa completată, nici persoana desemnată",
+  byId.company && !byId.company.done && /codul CAEN/.test(byId.company.text) && !/persoana desemnată/.test(byId.company.text) && !/adresa/.test(byId.company.text));
 check("consultantul/platforma e trimis la Clienți, nu rugat să ne scrie", byId.company && /Deschide Clienți/.test(byId.company.text));
 check("punct de lucru: de făcut", byId.workPoint && !byId.workPoint.done);
 check("partener și mișcare: de făcut", byId.partner && !byId.partner.done && byId.movement && !byId.movement.done);

@@ -66,6 +66,7 @@ import {
   D_CODES,
   suggestedDestinations,
   destinationsFor,
+  destinationsOpen,
   type FieldErrors,
   type ExitOperation,
 } from "@/components/movements/movementRules";
@@ -262,7 +263,8 @@ export function MovementFormDialog({
   const [unit, setUnit] = useState(initial?.unit ?? "KG");
   /**
    * Mişcarea are două jumătăţi de când operaţiunea s-a mutat sub transport: de unde vine deşeul
-   * (select-ul de sus) şi ce se întâmplă cu el ({@code fate}, blocul de după transport).
+   * (select-ul de sus) şi ce se întâmplă cu el ({@code fate}, blocul de după transport; pe
+   * „Generare”, din 29.09.2026, dinaintea lui — vezi `fateFirst`).
    *
    * <p>La redeschidere (sau la duplicare), o ieşire de pe Anexa 1 se citeşte înapoi ca
    * <b>generare + predare</b>: e
@@ -552,9 +554,9 @@ export function MovementFormDialog({
   // report the quantity next to "Operaţia de valorificare"/"de eliminare" and the operator doing
   // it — the partner, when it is not us.
   const requiresCode = isExit(effectiveOperation);
-  // Blocul de sub transport apare acolo unde mişcarea porneşte de la noi: generare, sau o linie
-  // veche fără cod, care exact aşa se completează. La o ieşire directă (marfă preluată) n-are ce
-  // alege — operaţiunea e deja aleasă sus.
+  // Blocul „ce se întâmplă cu deşeul” (`fateBox`) apare acolo unde mişcarea porneşte de la noi:
+  // generare, sau o linie veche fără cod, care exact aşa se completează. La o ieşire directă (marfă
+  // preluată) n-are ce alege — operaţiunea e deja aleasă sus.
   const showsFate = operation === "GENERATED" || operation === "UNCLASSIFIED_OUT";
 
   /**
@@ -900,6 +902,138 @@ export function MovementFormDialog({
     );
   }
 
+  /**
+   * Cele trei întrebări de după depozitare — cu ce pleacă, unde ajunge și ce se întâmplă cu deşeul —
+   * stau aici o singură dată și se aşază în două ordini. Pe „Generare” vin ca la specialistă:
+   * „la adaugă generare prima dată să te pună să alegi valorificare/eliminare, codurile și după
+   * unde merg deșeurile" (Andreea, 29.09.2026): soarta şi codul, destinaţia, destinatarul, iar
+   * mijlocul de transport la urmă. Pe celelalte ecrane ordinea rămâne cea veche (proprietarul,
+   * 29.09.2026: „Ieşiri” se face mai târziu). Validarea şi ce pleacă la server nu se schimbă.
+   */
+  const fateFirst = screen === "ANEXA_1";
+  const showDestinations = destinationsOpen(screen, showsFate, fate, wasteDestination);
+  const transportMeansField = (
+    <div id="mv-transport-means" tabIndex={-1} {...invalidProps("mv-transport-means-err", errors.transportMeans)}>
+      <span id="mv-transport-means-label" className="mb-1 block text-xs font-medium text-content-muted">
+        {t.askTransportMeans}
+        {reportFieldsRequired && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
+      </span>
+      <PillGroup
+        name="mv-transport-means"
+        aria-labelledby="mv-transport-means-label"
+        selected={[transportMeans]}
+        onToggle={(value) => setTransportMeans(value)}
+        options={[
+          ...(reportFieldsRequired ? [] : [{ value: "" as const, label: t.pillNone }]),
+          ...nomenclatorPills<TransportMeans>(e.transportMeans),
+        ]}
+      />
+      <FieldError id="mv-transport-means-err" message={errors.transportMeans} />
+    </div>
+  );
+  const destinationField = (
+    <div>
+      <span id="mv-destination-label" className="mb-1 block text-xs font-medium text-content-muted">
+        {t.askDestination}
+        {screenRegister === "ANEXA_1" && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
+      </span>
+      {/* Toate cele opt valori ale notei 5, în ordinea din act (20.09.2026). Pe o predare de
+          deșeu propriu rubrica e obligatorie, deci „Fără” nu se oferă acolo. */}
+      {showDestinations ? (
+        <div id="mv-destination" tabIndex={-1} {...invalidProps("mv-destination-err", errors.wasteDestination)}>
+          <PillGroup
+            name="mv-destination"
+            aria-labelledby="mv-destination-label"
+            selected={[wasteDestination]}
+            onToggle={(value) => setWasteDestination(value)}
+            options={[
+              ...(screenRegister === "ANEXA_1" ? [] : [{ value: "" as const, label: t.pillNone }]),
+              ...nomenclatorPills<WasteDestination>(
+                e.wasteDestination,
+                // Tabăra operațiunii alese; o valoare veche din afara ei rămâne pe ecran, ca
+                // rândul de dinainte de regulă să se poată deschide și salva.
+                (value) =>
+                  offeredDestinations.includes(value as WasteDestination) ||
+                  value === initial?.wasteDestination
+              ),
+            ]}
+          />
+        </div>
+      ) : (
+        <p className="text-xs text-content-muted">{t.destinationAfterFate}</p>
+      )}
+      <FieldError id="mv-destination-err" message={errors.wasteDestination} />
+    </div>
+  );
+  /*
+   * Pe celelalte ecrane ce se întâmplă cu deşeul stă sub transport: „după ce alegi la Transport
+   * spre Valorificare să apară următoarele taburi cu codurile de valorificare, sau cu codurile de
+   * eliminare, în funcţie de cum o să fie transportul" (specialista, 25.08.2026). Pe „Generare”
+   * a urcat înaintea transportului şi a destinaţiei (Andreea, 29.09.2026, vezi mai sus).
+   */
+  const fateBox = (showsFate || requiresCode) && (
+    <div className="space-y-3 rounded-lg border border-line-strong p-3.5">
+      <div>
+        <span id="mv-fate-label" className="text-sm font-semibold text-content-strong">
+          {showsFate ? t.askFate : t.fateTitle}
+        </span>
+        <p className="text-xs text-content-muted">{fateFirst ? t.fateHintGeneration : t.fateHint}</p>
+      </div>
+
+      {showsFate && (
+        <div>
+          {/* Ca la provenienţă: fiecare opţiune îşi spune efectul, fiindcă alegerea nu schimbă
+              un câmp, ci coloana din fişă în care intră cantitatea. */}
+          <div {...invalidProps("mv-fate-err", errors.fate)}>
+            <ChoiceCards
+              name="mv-fate"
+              aria-labelledby="mv-fate-label"
+              columns={2}
+              value={fate || null}
+              onChange={(value) => {
+                setFate(value);
+                setOperationCode(""); // familia de coduri se schimbă cu alegerea
+              }}
+              options={[
+                { value: "RECOVERED", label: t.fateRecovery, description: t.fateRecoveryEffect },
+                { value: "DISPOSED", label: t.fateDisposal, description: t.fateDisposalEffect },
+              ]}
+            />
+          </div>
+          <FieldError id="mv-fate-err" message={errors.fate} />
+        </div>
+      )}
+
+      {requiresCode && (
+        <div>
+          <Label htmlFor="mv-code-rd">
+            {t.operationCode}
+            <span className="text-red-600"> *</span>
+          </Label>
+          <Select
+            id="mv-code-rd"
+            value={operationCode}
+            onChange={(ev) => setOperationCode(ev.target.value as WasteOperationCode)}
+            {...invalidProps("mv-code-rd-err", errors.operationCode)}
+          >
+            <option value="">
+              {effectiveOperation === "DISPOSED" ? t.operationCodePlaceholderDisposal : t.operationCodePlaceholderRecovery}
+            </option>
+            {codeOptions.map((c) => (
+              <option key={c} value={c}>
+                {e.wasteOperationCode[c]}
+              </option>
+            ))}
+          </Select>
+          <FieldError id="mv-code-rd-err" message={errors.operationCode} />
+          <p className="mt-1 text-xs text-content-muted">
+            {effectiveOperation === "DISPOSED" ? t.operationCodeHintDisposal : t.operationCodeHintRecovery}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <Dialog
       open
@@ -1179,7 +1313,7 @@ export function MovementFormDialog({
         <FormSection title={operations.length > 1 ? t.askOperation : t.askState}>
           <div className="space-y-4">
             {/* Pe „Generare" operațiunea e una singură și nu se alege: rândul e mereu o predare, iar
-                unde pleacă deșeul se spune mai jos, sub transport. Un select cu o singură opțiune,
+                unde pleacă deșeul se spune mai jos, după depozitare. Un select cu o singură opțiune,
                 „Generare", se citea ca vechiul „rămâne în stoc" (proprietarul, 16.09.2026). */}
             {operations.length > 1 && (
             <div id="mv-op">
@@ -1297,118 +1431,18 @@ export function MovementFormDialog({
           </div>
         </FormSection>
 
-        <FormSection title={t.askTransport}>
-          <div id="mv-transport-means" tabIndex={-1} {...invalidProps("mv-transport-means-err", errors.transportMeans)}>
-            <span id="mv-transport-means-label" className="mb-1 block text-xs font-medium text-content-muted">
-              {t.askTransportMeans}
-              {reportFieldsRequired && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
-            </span>
-            <PillGroup
-              name="mv-transport-means"
-              aria-labelledby="mv-transport-means-label"
-              selected={[transportMeans]}
-              onToggle={(value) => setTransportMeans(value)}
-              options={[
-                ...(reportFieldsRequired ? [] : [{ value: "" as const, label: t.pillNone }]),
-                ...nomenclatorPills<TransportMeans>(e.transportMeans),
-              ]}
-            />
-            <FieldError id="mv-transport-means-err" message={errors.transportMeans} />
-          </div>
-          <div>
-            <span id="mv-destination-label" className="mb-1 block text-xs font-medium text-content-muted">
-              {t.askDestination}
-              {screenRegister === "ANEXA_1" && <span aria-hidden className="ml-0.5 text-state-bad">*</span>}
-            </span>
-            {/* Toate cele opt valori ale notei 5, în ordinea din act (20.09.2026). Pe o predare de
-                deșeu propriu rubrica e obligatorie, deci „Fără” nu se oferă acolo. */}
-            <div id="mv-destination" tabIndex={-1} {...invalidProps("mv-destination-err", errors.wasteDestination)}>
-              <PillGroup
-                name="mv-destination"
-                aria-labelledby="mv-destination-label"
-                selected={[wasteDestination]}
-                onToggle={(value) => setWasteDestination(value)}
-                options={[
-                  ...(screenRegister === "ANEXA_1" ? [] : [{ value: "" as const, label: t.pillNone }]),
-                  ...nomenclatorPills<WasteDestination>(
-                    e.wasteDestination,
-                    // Tabăra operațiunii alese; o valoare veche din afara ei rămâne pe ecran, ca
-                    // rândul de dinainte de regulă să se poată deschide și salva.
-                    (value) =>
-                      offeredDestinations.includes(value as WasteDestination) ||
-                      value === initial?.wasteDestination
-                  ),
-                ]}
-              />
-            </div>
-            <FieldError id="mv-destination-err" message={errors.wasteDestination} />
-          </div>
-
-          {/* Ce se întâmplă cu deşeul stă sub transport, fiindcă de transport atârnă: „după ce alegi
-              la Transport spre Valorificare să apară următoarele taburi cu codurile de valorificare,
-              sau cu codurile de eliminare, în funcţie de cum o să fie transportul" (specialista,
-              25.08.2026). Sus rămâne de unde vine deşeul; aici, unde ajunge. */}
-          {(showsFate || requiresCode) && (
-            <div className="space-y-3 rounded-lg border border-line-strong p-3.5">
-              <div>
-                <span id="mv-fate-label" className="text-sm font-semibold text-content-strong">
-                  {showsFate ? t.askFate : t.fateTitle}
-                </span>
-                <p className="text-xs text-content-muted">{t.fateHint}</p>
-              </div>
-
-              {showsFate && (
-                <div>
-                  {/* Ca la provenienţă: fiecare opţiune îşi spune efectul, fiindcă alegerea nu schimbă
-                      un câmp, ci coloana din fişă în care intră cantitatea. */}
-                  <div {...invalidProps("mv-fate-err", errors.fate)}>
-                    <ChoiceCards
-                      name="mv-fate"
-                      aria-labelledby="mv-fate-label"
-                      columns={2}
-                      value={fate || null}
-                      onChange={(value) => {
-                        setFate(value);
-                        setOperationCode(""); // familia de coduri se schimbă cu alegerea
-                      }}
-                      options={[
-                        { value: "RECOVERED", label: t.fateRecovery, description: t.fateRecoveryEffect },
-                        { value: "DISPOSED", label: t.fateDisposal, description: t.fateDisposalEffect },
-                      ]}
-                    />
-                  </div>
-                  <FieldError id="mv-fate-err" message={errors.fate} />
-                </div>
-              )}
-
-              {requiresCode && (
-                <div>
-                  <Label htmlFor="mv-code-rd">
-                    {t.operationCode}
-                    <span className="text-red-600"> *</span>
-                  </Label>
-                  <Select
-                    id="mv-code-rd"
-                    value={operationCode}
-                    onChange={(ev) => setOperationCode(ev.target.value as WasteOperationCode)}
-                    {...invalidProps("mv-code-rd-err", errors.operationCode)}
-                  >
-                    <option value="">
-                      {effectiveOperation === "DISPOSED" ? t.operationCodePlaceholderDisposal : t.operationCodePlaceholderRecovery}
-                    </option>
-                    {codeOptions.map((c) => (
-                      <option key={c} value={c}>
-                        {e.wasteOperationCode[c]}
-                      </option>
-                    ))}
-                  </Select>
-                  <FieldError id="mv-code-rd-err" message={errors.operationCode} />
-                  <p className="mt-1 text-xs text-content-muted">
-                    {effectiveOperation === "DISPOSED" ? t.operationCodeHintDisposal : t.operationCodeHintRecovery}
-                  </p>
-                </div>
-              )}
-            </div>
+        <FormSection title={fateFirst ? t.fateTitle : t.askTransport}>
+          {fateFirst ? (
+            <>
+              {fateBox}
+              {destinationField}
+            </>
+          ) : (
+            <>
+              {transportMeansField}
+              {destinationField}
+              {fateBox}
+            </>
           )}
         </FormSection>
 
@@ -1471,6 +1505,8 @@ export function MovementFormDialog({
             </div>
           )}
         </FormSection>
+
+        {fateFirst && <FormSection title={t.transportSection}>{transportMeansField}</FormSection>}
 
         {isPackagingCode && (
           <PackagingFields

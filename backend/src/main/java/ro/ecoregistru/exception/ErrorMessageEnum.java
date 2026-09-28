@@ -319,9 +319,11 @@ public enum ErrorMessageEnum {
     // refuzul le spune pe ecran ce ar afla altfel la control.
     ANEXA2_MEDICAL_WASTE("anexa2.medical", "Deșeurile periculoase din activitatea medicală au alt flux: art. 24 din HG 1061/2008 cere ca formularul să-l întocmească TRANSPORTATORUL, pe cantitatea cumulată a unui transport dintr-o zonă, cu o anexă a expeditorilor. Nu e documentul pe care îl tipărește generatorul, deci nu-l generăm în locul lui."),
     // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori".
-    ANEXA3_PACKAGING_COLLECTORS_ONLY("anexa3.packaging.collectors.only", "Anexa 3 Ambalaje (Ordinul 794/2012) e raportarea colectorilor de deșeuri de ambalaje. Contul e de generator, deci nu are ce raporta aici; predările de ambalaje sunt pe fișa de evidență și pe formularele Anexa 3 de transport."),
     ANEXA2_COLLECTORS_ONLY("anexa2.collectors.only", "Anexa 2 (formularul de transport pentru deșeuri periculoase) o întocmește colectorul care preia deșeul. Contul e de generator, deci formularul nu se tipărește de aici."),
     // Aceeași seară: „generatorii au doar ieșiri" — deci n-au ambalaje preluate de la terți de raportat.
+    // Pe 16.09 generatorul a primit totuși jumătatea de ieșiri (proprietarul, decizia 82); Andreea, 29.09.2026:
+    // „Anexa 3 amb e doar pentru colector” — refuzul revine (decizia 87).
+    ANEXA3_PACKAGING_COLLECTORS_ONLY("anexa3.packaging.collectors.only", "Anexa 3 Ambalaje (Ordinul 794/2012) e raportarea colectorilor de deșeuri de ambalaje. Contul e de generator, deci nu are ce raporta aici; predările de ambalaje sunt pe fișa de evidență și pe formularele Anexa 3 de transport."),
     // 15.09.2026, AD închisă: evidența art. 48 a mărfii preluate e a celor care preiau; generatorul o ține pe fișa Anexa 1.
     ART48_REGISTER_COLLECTORS_ONLY("art48.register.collectors.only", "Evidența cronologică a deșeurilor preluate de la terți o țin firmele care preiau deșeu. Contul e de generator: evidența lui e fișa Anexa 1, de pe ecranul „Generare”."),
     OPERATION_CODE_REQUIRED_RECOVERY("movement.operation.code.recovery", "Valorificarea deșeului necesită un cod de operație R (R1–R13)."),
@@ -338,7 +340,9 @@ public enum ErrorMessageEnum {
     PHYSICAL_STATE_REQUIRED("movement.physical.state.required", "Alege starea fizică a deșeului: apare pe fișa Anexa 1."),
     STORAGE_TYPE_REQUIRED("movement.storage.type.required", "Alege în ce ții deșeul până la predare: apare pe fișa Anexa 1."),
     TRANSPORT_MEANS_REQUIRED("movement.transport.means.required", "Alege mijlocul de transport: apare pe fișa Anexa 1."),
-    PACKAGING_MATERIAL_REQUIRED("movement.packaging.material.required", "Alege materialul ambalajului: codul nu-l spune, iar Anexa 3 Ambalaje îl cere."),
+    // Cerută numai pe predarea de deșeu propriu (registrul Anexa 1), pe care Anexa 3 Ambalaje n-o mai citește din
+    // 29.09.2026 (Andreea: e a colectorului, care o face din preluări); o citește Anexa 1 Ambalaje.
+    PACKAGING_MATERIAL_REQUIRED("movement.packaging.material.required", "Alege materialul ambalajului: codul nu-l spune, iar ambalajele se socotesc pe material."),
     PACKAGING_CATEGORY_REQUIRED("movement.packaging.category.required", "Alege tipul ambalajului (primar, secundar, terțiar): Anexa 1 Ambalaje îl cere."),
     HANDOVER_PARTNER_NEEDS_AUTHORIZATION("movement.partner.authorization.required", "Partenerul n-are trecut numărul autorizației de mediu. Cine preia deșeul trebuie să fie autorizat: completează-l în fișa lui, la Parteneri."),
     OPERATION_CODE_NOT_IN_PROFILE("movement.operation.code.not.in.profile", "Codul de operație nu e printre cele declarate de firmă. Completează profilul firmei dacă a apărut o operațiune nouă."),

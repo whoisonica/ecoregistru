@@ -83,6 +83,11 @@ await page.fill("#nc-city", "Sântandrei");
 await button("Continuă: ce face").click();
 await page.waitForTimeout(300);
 check("pasul 2: tipul din cerere e ales", await page.locator('input[name="nc-type"][value="GENERATOR"]').isChecked());
+// Persoana desemnată e obligatorie aici din 29.09.2026 (proprietarul): clientul n-o poate completa singur.
+await button("Continuă: abonamentul").click();
+await page.waitForTimeout(300);
+check("fără persoana desemnată rămâne pe „Ce face”, cu mesaj", (await page.locator("#nc-wm-name-error").count()) === 1);
+await page.fill("#nc-wm-name", "Popescu Andrei");
 await button("Continuă: abonamentul").click();
 await page.waitForTimeout(1200);
 
@@ -144,6 +149,7 @@ await page.goto(BASE + "/clienti/nou", { waitUntil: "networkidle" });
 await page.fill("#nc-cui", validCui());
 await page.fill("#nc-name", OTHER);
 await button("Continuă: ce face").click();
+await page.fill("#nc-wm-name", "Popescu Andrei");
 await button("Continuă: abonamentul").click();
 await button("Salvează fără abonament").click();
 await page.waitForTimeout(300);

@@ -786,8 +786,10 @@ export const strings = {
       done: "Gata",
       todo: "De făcut",
       company: "Verifică datele firmei",
-      companyHintDone: "Adresa, codul CAEN și persoana desemnată sunt completate. Ele se tipăresc pe fișa de evidență și pe declarația anuală.",
-      companyHintMissing: "Lipsesc: {fields}. Se tipăresc pe fișa de evidență și pe declarația anuală; necompletate, rubricile ies goale.",
+      // Adresa și CAEN-ul le tipărește doar evidența centralizată (`AnnualDeclarationGenerator`; fișa n-are
+      // rubricile). Persoana desemnată nu mai e în pas din 29.09.2026: o completăm noi, la „Client nou”.
+      companyHintDone: "Adresa și codul CAEN sunt completate. Se tipăresc pe evidența centralizată.",
+      companyHintMissing: "Lipsesc: {fields}. Se tipăresc pe evidența centralizată; necompletate, rubricile ies goale.",
       companyHintAskUs: "Scrie-ne la contact@wastehouse.ro și le completăm.",
       companyHintClients: "Le completezi din Clienți.",
       companyCta: "Vezi datele",
@@ -796,7 +798,8 @@ export const strings = {
       fieldCaen: "codul CAEN",
       fieldWasteManager: "persoana desemnată cu gestiunea deșeurilor",
       workPoint: "Adaugă punctul de lucru",
-      workPointHint: "Locul unde apar deșeurile. Fiecare mișcare se înregistrează pe un punct de lucru, iar adresa lui ajunge pe fișă.",
+      // Fișa tipărește doar numele punctului de lucru; adresa lui o scriu Anexa 3 de transport și avizul (29.09.2026).
+      workPointHint: "Locul unde apar deșeurile. Fiecare mișcare se înregistrează pe un punct de lucru, iar adresa lui ajunge pe Anexa 3 și pe aviz.",
       workPointCta: "Deschide Setări",
       partner: "Adaugă firma care îți preia deșeurile",
       partnerHint: "Colectorul sau operatorul căruia îi predai, cu numărul și data autorizației de mediu. Aplicația te anunță înainte să-i expire.",
@@ -955,6 +958,9 @@ export const strings = {
     askStorage: "În ce îl ții până la predare",
     askTreatment: "Îl tratezi înainte să plece?",
     askTransportMeans: "Cu ce pleacă",
+    // Pe „Generare” mijlocul de transport stă singur, după destinatar (Andreea, 29.09.2026); titlul
+    // secțiunii nu repetă eticheta, ca steluța de obligatoriu să rămână la vedere lângă ea.
+    transportSection: "Transportul",
     askDestination: "Unde ajunge până la urmă",
     askFate: "Unde pleacă deșeul",
     askTransportDestinations: "Pentru ce îl duce (caseta „Destinat:” de pe Anexa 3)",
@@ -1074,17 +1080,21 @@ export const strings = {
     physicalStateRequired: "Alege starea fizică: apare pe fișă.",
     storageTypeRequired: "Alege în ce îl ții: apare pe fișă.",
     transportMeansRequired: "Alege mijlocul de transport: apare pe fișă.",
-    packagingMaterialRequired: "Alege materialul: îl cere Anexa 3.",
+    // Din 29.09.2026 Anexa 3 Ambalaje nu mai citește predările generatorului (Andreea: e a colectorului).
+    packagingMaterialRequired: "Alege materialul: ambalajele se socotesc pe material.",
     packagingCategoryRequired: "Alege tipul: îl cere Anexa 1 Ambalaje.",
     partnerNeedsAuthorization:
       "Partenerul n-are trecut numărul autorizației de mediu. Cine preia deșeul trebuie să fie autorizat: completează-l în fișa lui, la Parteneri.",
     nomenclatorPlaceholder: "— fără —",
     operationGeneratorHint:
-      "Mișcarea pornește de la generare. Ce se întâmplă cu deșeul după — pleacă spre valorificare sau spre eliminare — se alege mai jos, după transport.",
-    // --- Ce se întâmplă cu deşeul: sub transport, nu în capul formularului ---
+      "Mișcarea pornește de la generare. Ce se întâmplă cu deșeul după — pleacă spre valorificare sau spre eliminare — se alege mai jos.",
+    // --- Ce se întâmplă cu deşeul: nu în capul formularului. Pe „Generare” stă înaintea
+    // destinatarului și a transportului (Andreea, 29.09.2026); pe celelalte ecrane, sub transport ---
     fateTitle: "Ce se întâmplă cu deșeul",
     fateHint:
       "Se alege după transport, fiindcă de el atârnă: transportul spre valorificare cere un cod R, cel spre eliminare un cod D.",
+    fateHintGeneration: "Valorificarea cere cod R, eliminarea cod D.",
+    destinationAfterFate: "Alege întâi valorificare sau eliminare.",
     fateRequired: "Alege unde pleacă deșeul: spre valorificare sau spre eliminare.",
     fateRecovery: "Transport spre valorificare",
     fateRecoveryEffect:
@@ -1472,7 +1482,8 @@ export const strings = {
     company: {
       title: "Datele firmei",
       subtitle:
-        "Ce tipăresc documentele oficiale în capul lor: identificarea, autorizația, persoana desemnată.",
+        // Persoana desemnată nu e în capul niciunui formular: o cere legea și o citește dosarul (29.09.2026).
+        "Ce tipăresc documentele oficiale în capul lor: identificarea și autorizația. Plus persoana desemnată, cerută de lege.",
       // Un titlu propriu: aici, sub autorizație, se citește și profilul (coduri R/D, coduri de
       // deșeu, transport), care în formularul de editare stă în blocul lui.
       groupAuthorization: "Autorizația de mediu și profilul",
@@ -3681,6 +3692,8 @@ export const strings = {
     city: "Localitate",
     // Pasul 2
     typeLabel: "Ce fel de firmă e",
+    // Proprietarul, 29.09.2026: o completăm noi la configurare, clientul n-o poate edita singur.
+    wasteManagerHint: "Cerută de OUG 92/2021, art. 23 alin. (4). Clientul n-o poate completa singur.",
     typeHint: {
       GENERATOR: "Produce deșeuri și le predă altora.",
       COLLECTOR: "Preia deșeuri de la alții.",
@@ -3690,7 +3703,8 @@ export const strings = {
     planLabel: "Pachetul",
     planDescription: {
       GENERATOR: "Evidența deșeurilor, Anexa 1, declarația anuală, termenele.",
-      GENERATOR_PACKAGING: "Tot din Generator, plus ambalajele: Anexa 1 Ambalaje și Anexa 3.",
+      // Fără Anexa 3 Ambalaje: e a colectorului, nu a generatorului (Andreea, 29.09.2026).
+      GENERATOR_PACKAGING: "Tot din Generator, plus ambalajele: Anexa 1 Ambalaje.",
       FULL_SERVICE: "Îl ținem noi la zi, lunar, cu dosarul de control pregătit.",
     },
     perMonth: "lei / lună",

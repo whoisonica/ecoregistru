@@ -562,8 +562,8 @@ class TenantIsolationMatrixIT {
                     .andExpect(content().string(not(containsString("Beta"))));
         }
 
-        // Anexa 3 Ambalaje e refuzată unui generator din 15.09.2026 (specialista: generatorii au doar
-        // ieşiri), iar refuzul ăla ar trece înaintea graniţei şi ar ascunde-o. Graniţa se probează deci
+        // Anexa 3 Ambalaje e refuzată unui generator (Andreea, 29.09.2026: e a colectorului; refuzată și
+        // între 14.09 și 16.09), iar refuzul ăla ar trece înaintea graniţei şi ar ascunde-o. Graniţa se probează deci
         // pe un A care chiar ajunge la document.
         Company alfa = a.company();
         CompanyType before = alfa.getType();

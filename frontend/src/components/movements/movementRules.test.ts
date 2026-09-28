@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   D_CODES,
   destinationsFor,
+  destinationsOpen,
   R_CODES,
   isExit,
   operationsFor,
@@ -58,4 +59,23 @@ test("destinațiile se oferă pe tabăra operațiunii, fără să dispară vreun
   // „Altele" e singura din amândouă: e rubrica pentru ce nu intră nicăieri.
   const inAmandoua = destinationsFor("RECOVERED").filter((d) => destinationsFor("DISPOSED").includes(d));
   assert.deepEqual(inAmandoua, ["A"]);
+});
+
+/**
+ * Ordinea de pe „Generare” (Andreea, 29.09.2026): întâi valorificare/eliminare, apoi codul, apoi
+ * unde ajunge deșeul. Până la alegere destinația nu se oferă — dar un rând care o are deja o arată,
+ * ca redeschiderea să nu ascundă ce s-a salvat (și rândul vechi `UNCLASSIFIED_OUT` la fel).
+ */
+test("pe Generare destinația se oferă după valorificare/eliminare, în rest ca înainte", () => {
+  // Generare, rând nou: nimic ales, nimic oferit; după alegere, oferit.
+  assert.equal(destinationsOpen("ANEXA_1", true, "", ""), false);
+  assert.equal(destinationsOpen("ANEXA_1", true, "RECOVERED", ""), true);
+  assert.equal(destinationsOpen("ANEXA_1", true, "DISPOSED", ""), true);
+  // Rândul deschis cu o destinație salvată (și cel vechi, fără soartă) o arată.
+  assert.equal(destinationsOpen("ANEXA_1", true, "", "DO"), true);
+  // Fără alegere de soartă pe ecran nu e după ce aștepta.
+  assert.equal(destinationsOpen("ANEXA_1", false, "", ""), true);
+  // Celelalte ecrane rămân neschimbate: destinația se oferă mereu.
+  assert.equal(destinationsOpen("ART_48", true, "", ""), true);
+  assert.equal(destinationsOpen("ART_48", false, "", ""), true);
 });
