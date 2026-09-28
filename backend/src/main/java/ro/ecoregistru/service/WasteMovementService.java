@@ -386,6 +386,10 @@ public class WasteMovementService {
             if (request.partnerId() == null) {
                 throw new BusinessException(WEIGHING_NEEDS_RECIPIENT);
             }
+            // The form reopens the quantity once the weight is back: same ceiling (A2, BUG-050).
+            if (request.quantity() != null) {
+                requireRealisticKg(request.quantity(), request.unit());
+            }
             return;
         }
         if (request.quantity() == null) {

@@ -238,6 +238,13 @@ public class AuthenticationService {
         if (appUserRepository.existsByEmail(email)) {
             throw new UnprocessableEntityException(ACCOUNT_ALREADY_EXISTS);
         }
+        // A6: before anything is created, so a refused invitation leaves no half-made account behind.
+        UUID account = company != null ? company.getId() : consultancy.getId();
+        long retryAfter = rateLimiter.tryConsume(RateLimiter.INVITE_PER_ACCOUNT, account.toString());
+        if (retryAfter > 0) {
+            log.warn("Rate limit invite hit for account {}", account);
+            throw new TooManyRequestsException(retryAfter);
+        }
 
         AppUser user = AppUser.builder()
                 .email(email)

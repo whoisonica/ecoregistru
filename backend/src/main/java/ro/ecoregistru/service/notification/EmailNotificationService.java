@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
+import ro.ecoregistru.entity.AccountRequest;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
@@ -47,6 +48,10 @@ public class EmailNotificationService implements NotificationService {
     @NonFinal
     @Value("${app.frontend-base-url}")
     String frontendBaseUrl;
+
+    @NonFinal
+    @Value("${app.mail.platform-inbox}")
+    String platformInbox;
 
     @Override
     public void sendDeadlineReminder(ReportingDeadline deadline, List<String> recipientEmails, long daysUntil) {
@@ -234,6 +239,19 @@ public class EmailNotificationService implements NotificationService {
         ctx.setVariable("changedBy", changedBy);
         ctx.setVariable("accountUrl", frontendBaseUrl + "/abonament");
         emailService.send(oldEmail, "Facturile WasteHouse vin de acum pe altă adresă", "mail/billing_email_changed", ctx);
+    }
+
+    @Override
+    public void sendAccountRequestReceived(AccountRequest request) {
+        Context ctx = new Context(Locale.of("ro"));
+        ctx.setVariable("companyName", request.getCompanyName());
+        ctx.setVariable("cui", request.getCui());
+        ctx.setVariable("contactName", request.getContactName());
+        ctx.setVariable("contactEmail", request.getContactEmail());
+        ctx.setVariable("contactPhone", request.getContactPhone());
+        ctx.setVariable("requestUrl", frontendBaseUrl + "/clienti/nou?cerere=" + request.getId());
+        emailService.send(platformInbox, "Cerere de cont nouă — " + request.getCompanyName(),
+                "mail/account_request", ctx);
     }
 
     /**

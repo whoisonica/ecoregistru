@@ -15,6 +15,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.service.EmailService;
 
@@ -66,6 +70,7 @@ class CompanyUsersIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired ObjectMapper objectMapper;
     @Autowired PasswordEncoder passwordEncoder;
+    @Autowired CompanyRepository companyRepository;
 
     /** Mocked so the invite mails go nowhere and can still be counted. */
     @MockitoBean EmailService emailService;
@@ -543,6 +548,43 @@ class CompanyUsersIT {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(body).get("id").asText();
+    }
+
+    // --- A6 (todo-reparatii-2809): the mails an account can send ---
+
+    /**
+     * Each invitation is a new address — duplicates are refused — so the per-email limit on resending never
+     * saw them, and {@code POST /users} mailed as fast as it was called. A flood from one session is what gets
+     * the sending account suspended, and with it every reset and deadline mail. Fifty an hour per account:
+     * a firm setting up its team sends a handful.
+     */
+    @Test
+    void anAccountCannotMailMoreThanFiftyInvitationsAnHour() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Company company = companyRepository.save(Company.builder()
+                .name("Invitatii SRL").cui("RO7" + suffix).type(CompanyType.GENERATOR)
+                .active(true).createdAt(Instant.now()).build());
+        AppUser admin = appUserRepository.save(AppUser.builder()
+                .email("invitatii+" + suffix + "@client.ro")
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build());
+        String token = jwtService.generateToken(admin);
+
+        for (int i = 0; i < 50; i++) {
+            mockMvc.perform(post("/api/v1/users")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(inviteBody(uniqueEmail("val"), "OPERATOR")))
+                    .andExpect(status().isOk());
+        }
+        String oneTooMany = uniqueEmail("val");
+        mockMvc.perform(post("/api/v1/users")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(inviteBody(oneTooMany, "OPERATOR")))
+                .andExpect(status().isTooManyRequests());
+
+        assertFalse(appUserRepository.findByEmail(oneTooMany).isPresent());
     }
 
     private String inviteBody(String email, String role) throws Exception {

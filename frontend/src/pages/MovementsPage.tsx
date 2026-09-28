@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { BinSwatch } from "@/components/ui/bin-swatch";
 import { Menu, MenuItem } from "@/components/ui/menu";
-import { useCanWrite } from "@/hooks/useBillingAccess";
+import { useCanWrite, usePrintAccess } from "@/hooks/useBillingAccess";
 import { useAuth } from "@/auth/AuthContext";
 import { formatQuantity } from "@/lib/units";
 import { canManage as roleCanManage } from "@/lib/roles";
@@ -155,6 +155,8 @@ function yearOptions(current: number): number[] {
 
 export function MovementsPage({ screen }: { screen: MovementScreen }) {
   const canWrite = useCanWrite();
+  // A4: tipăririle sunt GET-uri, pe care doar-citirea abonamentului nu le oprește — coloana rămâne pentru ele.
+  const print = usePrintAccess();
   // „Istoric” duce în jurnalul de audit, care e al administratorului (`CAN_READ` din `AuditLogController`).
   const canSeeHistory = roleCanManage(useAuth().user?.role);
   const register = registerOf(screen);
@@ -806,13 +808,13 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                     {t.colWorkPoint}
                   </SortableTH>
                   <TH className="text-center">{t.colAttachments}</TH>
-                  {canWrite && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
+                  {print.canWrite && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
                 </TR>
               </THead>
               <TBody>
                 {(isLoading || view.visible.length === 0) && (
                   <TableFallbackRow
-                    columns={7 + (screen !== "IN" ? 1 : 0) + (isGeneration ? 1 : 0) + (canWrite ? 1 : 0)}
+                    columns={7 + (screen !== "IN" ? 1 : 0) + (isGeneration ? 1 : 0) + (print.canWrite ? 1 : 0)}
                     loading={isLoading}
                     icon={Truck}
                     title={
@@ -1024,7 +1026,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                         "—"
                       )}
                     </TD>
-                    {canWrite && (
+                    {print.canWrite && (
                       <TD sticky="right" className="text-right">
                         {/* Una afară, restul în meniu. Patru butoane cu text pe fiecare rând
                             înseamnă vreo 380px de comenzi repetate, într-un tabel care are deja
@@ -1033,7 +1035,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                         <div className="flex items-center justify-end gap-1">
                           {/* O linie de cântar nu se editează de aici: se schimbă numai prin
                               operațiunea ei (BUG-018), deci rândul duce acolo. */}
-                          {m.weighingOperationId ? (
+                          {!canWrite ? null : m.weighingOperationId ? (
                             <LinkButton
                               to={`/cantar?op=${m.weighingOperationId}`}
                               variant="outline"
@@ -1065,8 +1067,10 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                               <Pencil className="h-4 w-4" aria-hidden />
                             </Button>
                           )}
+                          {/* Anexa 3 cere avizul, deci avizul le acoperă pe amândouă. */}
+                          {(canWrite || canSeeHistory || canPrintAviz(m, print.canWrite) || canPrintAnexa2(m, company?.type)) && (
                           <RowActions>
-                            {!m.weighingOperationId && (
+                            {canWrite && !m.weighingOperationId && (
                               <>
                                 <RowAction icon={Pencil} onClick={() => openEdit(m)}>
                                   {strings.common.edit}
@@ -1076,7 +1080,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                 </RowAction>
                               </>
                             )}
-                            {canPrintAnexa3(m, canWrite) && (
+                            {canPrintAnexa3(m, print.canWrite, print.readOnly) && (
                               <RowAction
                                 icon={FileText}
                                 disabled={downloadingId === m.id}
@@ -1085,7 +1089,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                 {downloadingId === m.id ? t.anexa3Downloading : t.anexa3Download}
                               </RowAction>
                             )}
-                            {canPrintAviz(m, canWrite) && (
+                            {canPrintAviz(m, print.canWrite) && (
                               <RowAction
                                 icon={FileText}
                                 disabled={downloadingAvizId === m.id}
@@ -1115,12 +1119,13 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
                                 {t.history}
                               </RowAction>
                             )}
-                            {!m.weighingOperationId && (
+                            {canWrite && !m.weighingOperationId && (
                               <RowAction icon={Trash2} tone="danger" onClick={() => handleDelete(m)}>
                                 {strings.common.delete}
                               </RowAction>
                             )}
                           </RowActions>
+                          )}
                         </div>
                       </TD>
                     )}

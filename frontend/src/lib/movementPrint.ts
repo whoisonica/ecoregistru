@@ -9,8 +9,9 @@ import type { WasteMovement } from "./types";
  * și numește un expeditor și un destinatar. Serverul refuză celelalte cazuri cu un mesaj; butonul pur
  * și simplu nu le oferă.
  */
-export function canPrintAnexa3(m: WasteMovement, canWrite: boolean): boolean {
-  return !m.hazardous && canPrintAviz(m, canWrite);
+export function canPrintAnexa3(m: WasteMovement, canWrite: boolean, readOnly = false): boolean {
+  // A4: în doar-citire se retipărește cu numărul deja alocat; prima tipărire alocă unul, deci e o scriere.
+  return !m.hazardous && canPrintAviz(m, canWrite) && (!readOnly || m.anexa3Number != null);
 }
 
 /**
@@ -21,6 +22,10 @@ export function canPrintAnexa3(m: WasteMovement, canWrite: boolean): boolean {
  * amândouă PDF-urile — Anexa 3 fiindcă alocă numărul formularului, avizul fiindcă tipărește CNP-ul
  * șoferului întreg, pe care listele îl maschează pentru „Vizualizare". Cât timp regula stătea numai
  * pe server, butonul se vedea și dădea 403 la clic. Fiind parametru, un ecran nou nu-l poate uita.
+ *
+ * <p>`canWrite` e pragul de **rol**, fără doar-citirea abonamentului (A4, 28.09.2026): în doar-citire
+ * `SubscriptionAccessFilter` lasă GET-urile („Poți vedea și descărca tot”), iar avizul doar tipărește ce e
+ * salvat. Doar-citirea o primește numai `canPrintAnexa3`.
  */
 export function canPrintAviz(m: WasteMovement, canWrite: boolean): boolean {
   return canWrite && m.partnerId != null && (m.operation === "RECOVERED" || m.operation === "DISPOSED");

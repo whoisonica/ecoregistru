@@ -6,7 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { BinSwatch } from "@/components/ui/bin-swatch";
-import { useCanWrite } from "@/hooks/useBillingAccess";
+import { usePrintAccess } from "@/hooks/useBillingAccess";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { canPrintAnexa3, canPrintAviz, useAnexa3Download, useAvizDownload } from "@/hooks/useAnexa3";
 import { canPrintAnexa2, useAnexa2Download } from "@/hooks/useAnexa2";
@@ -37,7 +37,7 @@ export function MovementSavedDialog({
   onClose: () => void;
 }) {
   const { data: company } = useCurrentCompany();
-  const canWrite = useCanWrite();
+  const print = usePrintAccess();
   const { download: downloadAnexa3, downloadingId: anexa3Busy } = useAnexa3Download();
   const { download: downloadAviz, downloadingId: avizBusy } = useAvizDownload();
   const { download: downloadAnexa2, downloadingId: anexa2Busy } = useAnexa2Download();
@@ -45,14 +45,14 @@ export function MovementSavedDialog({
   const title =
     screen === "ANEXA_1" ? t.savedTitleGenerated : direction === "IN" ? t.savedTitleIn : t.savedTitleOut;
   const documents = [
-    canPrintAnexa3(movement, canWrite) && {
+    canPrintAnexa3(movement, print.canWrite, print.readOnly) && {
       key: "anexa3",
       label: t.savedAnexa3,
       hint: t.anexa3Copies,
       busy: anexa3Busy === movement.id,
       run: () => downloadAnexa3(movement),
     },
-    canPrintAviz(movement, canWrite) && {
+    canPrintAviz(movement, print.canWrite) && {
       key: "aviz",
       label: t.savedAviz,
       hint: t.savedAvizHint,

@@ -27,9 +27,18 @@ export function useBillingAccess() {
  * (capcana din P2.13). De aceea paginile cheamă `useCanWrite()`, nu funcția.
  */
 export function useCanWrite(): boolean {
+  const { canWrite, readOnly } = usePrintAccess();
+  return canWrite && !readOnly;
+}
+
+/**
+ * A4 — cele două praguri despărțite, pentru tipăriri (`lib/movementPrint.ts`): documentele sunt GET-uri, pe
+ * care doar-citirea nu le oprește.
+ */
+export function usePrintAccess(): { canWrite: boolean; readOnly: boolean } {
   const { user } = useAuth();
   const { data: access } = useBillingAccess();
-  return roleCanWrite(user?.role) && !access?.readOnly;
+  return { canWrite: roleCanWrite(user?.role), readOnly: access?.readOnly === true };
 }
 
 /** Cântărește acum: pragul de cântar (`canWeigh`) și, peste el, doar-citirea abonamentului. */

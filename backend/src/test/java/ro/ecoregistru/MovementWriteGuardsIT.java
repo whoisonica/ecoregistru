@@ -44,6 +44,7 @@ import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -196,6 +197,36 @@ class MovementWriteGuardsIT {
         assertThat(movementRepository.findById(UUID.fromString(id)).orElseThrow().getQuantity()).isNull();
     }
 
+    /**
+     * A2 (todo-reparatii-2809), BUG-050 pe drumul „de cântărit”: cu bifa „Se cântărește la
+     * descărcare” pusă, validarea ieșea înainte de limita de 1.000.000 t, iar formularul redeschide
+     * cantitatea după cântărire. 100.000.000 t nu încap în {@code implied_generated} și tot anul
+     * firmei dădea 500. Refuzat și la creare, și la editare; mișcarea rămâne necântărită.
+     */
+    @Test
+    void anAbsurdWeightIsRefusedOnTheWeighedAtUnloadingPathToo() throws Exception {
+        String absurd = """
+                {"workPointId": "%s", "date": "2026-07-05", "wasteCodeId": "%s", "quantity": 100000000,
+                 "unit": "TONS", "physicalState": "SOLID", "weighedAtUnloading": true,
+                 "operation": "RECOVERED", "register": "ANEXA_1", "storageType": "CT", "transportMeans": "AN",
+                 "packagingCategory": "SECONDARY", "wasteDestination": "Vr", "operationCode": "R13", "partnerId": "%s"}
+                """.formatted(a.workPoint(), paper, a.partner());
+        long before = count(a);
+
+        postMovement(a, absurd).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("movement.quantity.too.large"));
+        assertThat(count(a)).isEqualTo(before);
+
+        String id = unweighedHandover(a);
+        mockMvc.perform(put("/api/v1/movements/" + id)
+                        .header("Authorization", "Bearer " + a.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(absurd))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("movement.quantity.too.large"));
+        assertThat(movementRepository.findById(UUID.fromString(id)).orElseThrow().getQuantity()).isNull();
+    }
+
     // ---------- G26: texte libere prea lungi ----------
 
     /**
@@ -283,7 +314,48 @@ class MovementWriteGuardsIT {
                 .andExpect(status().isOk());
     }
 
+    // ---------- A1 (todo-reparatii-2809): punctul de lucru al partenerului, folosit pe o predare ----------
+
+    /**
+     * Scos din formularul partenerului după ce a apărut pe o predare: FK-ul din V23 oprea ștergerea,
+     * iar clientul primea „eroare neașteptată” și nu-și mai putea salva partenerul deloc. Acum e un
+     * refuz clar, iar punctul rămâne, ca Anexa 3 a predării să-l tipărească în continuare.
+     */
+    @Test
+    void aWorkPointUsedOnAHandoverCannotBeRemovedFromThePartner() throws Exception {
+        postMovement(a, handoverJson(a, "5", ", \"partnerWorkPointId\": \"" + a.partnerWorkPoint() + "\""))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/partners/" + a.partner())
+                        .header("Authorization", "Bearer " + a.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(partnerJson(a, "[]")))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']").value("partner.work.point.in.use"));
+
+        assertThat(partnerWorkPointRepository.findById(a.partnerWorkPoint())).isPresent();
+    }
+
+    /** Un punct pe care nu l-a folosit nicio predare se scoate ca înainte. */
+    @Test
+    void anUnusedWorkPointIsStillRemoved() throws Exception {
+        mockMvc.perform(put("/api/v1/partners/" + a.partner())
+                        .header("Authorization", "Bearer " + a.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(partnerJson(a, "[]")))
+                .andExpect(status().isOk());
+
+        assertThat(partnerWorkPointRepository.findById(a.partnerWorkPoint())).isEmpty();
+    }
+
     // --- helpers ---
+
+    private static String partnerJson(Tenant t, String workPoints) {
+        return """
+                {"name": "Colector", "authorizationNumber": "AM 1/2025", "type": "COLLECTOR",
+                 "supplier": true, "carrier": true, "workPoints": %s}
+                """.formatted(workPoints);
+    }
 
     private static void assertRefused(ResultActions result) {
         int code = result.andReturn().getResponse().getStatus();

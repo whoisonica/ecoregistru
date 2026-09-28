@@ -52,6 +52,11 @@ public class RateLimiter {
     // far above a real prospect (who submits once) and far below a script filling the table.
     public static final Rule INTAKE_PER_IP = new Rule("intake/ip", 10, Duration.ofHours(1));
 
+    // A6 — invitations, keyed by the firm or consultancy they go out for. Every one is a new address, so
+    // RESET_PER_EMAIL never sees them, and each is a mail from our account. A firm setting up its team
+    // sends a handful; fifty an hour is a flood from one session, not an office.
+    public static final Rule INVITE_PER_ACCOUNT = new Rule("invite/account", 50, Duration.ofHours(1));
+
     /**
      * Above this many live keys the map is trimmed of idle buckets. Without a bound, an attacker
      * rotating IPs would be filling a map rather than being stopped by it. A bucket back at full
@@ -121,11 +126,12 @@ public class RateLimiter {
         buckets.entrySet().removeIf(e -> e.getValue().getAvailableTokens() >= capacityOf(e.getKey()));
     }
 
-    /** The rule name is the part of the key before the '|', and every rule is one of the five. */
+    /** The rule name is the part of the key before the '|', and every rule is one of the six. */
     private long capacityOf(String key) {
         String name = key.substring(0, Math.max(0, key.indexOf('|')));
         for (Rule rule : new Rule[] {
-                LOGIN_PER_IP, LOGIN_PER_EMAIL, RESET_PER_IP, RESET_PER_EMAIL, INTAKE_PER_IP}) {
+                LOGIN_PER_IP, LOGIN_PER_EMAIL, RESET_PER_IP, RESET_PER_EMAIL, INTAKE_PER_IP,
+                INVITE_PER_ACCOUNT}) {
             if (rule.name().equals(name)) {
                 return rule.capacity();
             }

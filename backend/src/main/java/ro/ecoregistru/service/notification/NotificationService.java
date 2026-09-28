@@ -1,5 +1,6 @@
 package ro.ecoregistru.service.notification;
 
+import ro.ecoregistru.entity.AccountRequest;
 import ro.ecoregistru.entity.Driver;
 import ro.ecoregistru.entity.Partner;
 import ro.ecoregistru.entity.ReportingDeadline;
@@ -99,6 +100,14 @@ public interface NotificationService {
      * @throws RuntimeException if delivery fails — the caller logs it; the change itself stays saved.
      */
     void sendBillingEmailChanged(String clientName, String oldEmail, String newEmail, String changedBy);
+
+    /**
+     * A3 — somebody filled in the public account form: the platform inbox hears it, because the form
+     * promises an answer in one or two working days and nothing else would say a request is waiting.
+     *
+     * @throws RuntimeException if delivery fails — the caller logs it; the request itself stays saved.
+     */
+    void sendAccountRequestReceived(AccountRequest request);
 
     /**
      * P2.13, felia 2 — rezumatul zilnic al unui cabinet: un mail pe consultant, cu toate termenele

@@ -6,6 +6,9 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import ro.ecoregistru.exception.ServiceUnavailableException;
 import org.springframework.web.multipart.MultipartFile;
 import ro.ecoregistru.controller.response.AttachmentResponse;
 import ro.ecoregistru.entity.*;
@@ -120,9 +123,19 @@ public class MovementAttachmentService {
         requireMovement(movementId, tenantId); // enforces tenant ownership
         Attachment attachment = attachmentRepository.findByIdAndMovement_Id(attachmentId, movementId)
                 .orElseThrow(() -> new NotFoundException(MOVEMENT_NOT_FOUND));
-        storageService.delete(attachment.getPublicId(), attachment.getResourceType(),
-                attachment.getDeliveryType());
         attachmentRepository.delete(attachment);
+        // A5: the file leaves Cloudinary only once the row is gone for good. The other way round, a
+        // transaction failing after the provider's delete left a row pointing at nothing. A failed
+        // delete (logged by the storage service) only leaves an orphan at the provider.
+        String publicId = attachment.getPublicId();
+        String resourceType = attachment.getResourceType();
+        String deliveryType = attachment.getDeliveryType();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                storageService.delete(publicId, resourceType, deliveryType);
+            }
+        });
     }
 
     /**
@@ -149,10 +162,11 @@ public class MovementAttachmentService {
                     attachment.getFileName());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException(ATTACHMENT_FETCH_FAILED.getMessage(), e);
+            throw new ServiceUnavailableException(ATTACHMENT_FETCH_FAILED);
         } catch (Exception e) {
+            // A5: the provider did not answer — a 503 with its own code, not a generic 500.
             log.warn("Attachment fetch failed for id={}", attachmentId, e);
-            throw new IllegalStateException(ATTACHMENT_FETCH_FAILED.getMessage(), e);
+            throw new ServiceUnavailableException(ATTACHMENT_FETCH_FAILED);
         }
     }
 
