@@ -52,3 +52,12 @@ export async function loadDraft(db: DraftDb, owner: string, tenantId: string): P
 export async function clearDraft(db: DraftDb, owner: string, tenantId: string) {
   await db.runAsync("DELETE FROM cache WHERE key = ?", draftKey(owner, tenantId));
 }
+
+/**
+ * La ieșirea din cont (`session.tsx`): listele ținute pentru lucrul fără semnal nu rămân pentru următorul om de
+ * pe telefon, dar ciorna rămâne. Cheia ei poartă contul, deci o reia numai cine a început-o (B5, 28.09.2026:
+ * înainte, o ieșire din cont — sau sesiunea moartă peste noapte — ștergea predarea începută la rampă).
+ */
+export async function clearListsKeepingDrafts(db: DraftDb) {
+  await db.runAsync("DELETE FROM cache WHERE key NOT LIKE 'draft:%'");
+}

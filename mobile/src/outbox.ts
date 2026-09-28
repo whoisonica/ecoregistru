@@ -1,3 +1,4 @@
+import { strings } from "@web/strings";
 import { Directory, File, Paths } from "expo-file-system";
 import * as SQLite from "expo-sqlite";
 import { useEffect, useState } from "react";
@@ -5,7 +6,9 @@ import { useEffect, useState } from "react";
 import * as api from "./api";
 import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
-import { retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
+import { clearListsKeepingDrafts } from "./handoverDraft";
+import { rebasePhoto } from "./photoPath";
+import { coalesce, PhotoMissingError, rejectsRow, retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
 
 /**
  * M1b — coada predărilor care n-au plecat încă. Rampa n-are semnal; predarea se salvează pe telefon
@@ -102,13 +105,27 @@ interface Row {
   created_at: number;
 }
 
+/** Adresa unei poze ținute pe disc, mutată sub containerul de acum al aplicației (`photoPath.ts`, B2). */
+export function localPhoto(uri: string | null) {
+  return rebasePhoto(uri, Paths.document.uri);
+}
+
+/** Mai e poza pe disc? O adresă stricată e socotită lipsă. */
+export function photoExists(uri: string) {
+  try {
+    return new File(uri).exists;
+  } catch {
+    return false;
+  }
+}
+
 function fromRow(r: Row): OutboxItem {
   return {
     id: r.id,
     owner: r.owner,
     tenantId: r.tenant_id,
     payload: JSON.parse(r.payload),
-    photoUri: r.photo_uri,
+    photoUri: localPhoto(r.photo_uri),
     movementId: r.movement_id,
     state: r.state,
     attempts: r.attempts,
@@ -159,9 +176,12 @@ export function useOutboxState(owner: string | undefined) {
 function keepPhoto(id: string, uri: string): string {
   const dir = new Directory(Paths.document, "outbox");
   if (!dir.exists) dir.create();
+  const source = new File(uri);
+  // Poza unei ciorne vechi poate să fi plecat din cache: formularul o scoate și spune de ce (B3).
+  if (!source.exists) throw new PhotoMissingError();
   const target = new File(dir, `${id}.jpg`);
   if (target.exists) target.delete();
-  new File(uri).copy(target);
+  source.copy(target);
   return target.uri;
 }
 
@@ -228,7 +248,7 @@ export async function remove(id: string) {
   const d = await db();
   const row = await d.getFirstAsync<Row>("SELECT * FROM outbox WHERE id = ?", id);
   await d.runAsync("DELETE FROM outbox WHERE id = ?", id);
-  dropPhoto(row?.photo_uri ?? null);
+  dropPhoto(localPhoto(row?.photo_uri ?? null));
   changed();
 }
 
@@ -239,28 +259,31 @@ export function backoffMs(attempts: number) {
   return Math.min(5_000 * 2 ** Math.max(attempts - 1, 0), 10 * 60_000);
 }
 
-/** Refuzul serverului se păstrează; restul (rețea, 5xx, 429) e de reîncercat. */
-function isRejection(error: unknown): error is api.ApiError {
-  return error instanceof api.ApiError && error.status >= 400 && error.status < 500 && error.status !== 429;
-}
-
 /** `fetch` din React Native cade cu `TypeError: Network request failed` când nu e semnal. */
 function isNetworkFailure(error: unknown) {
   return error instanceof TypeError && /network request failed/i.test(error.message);
 }
 
-let draining: Promise<number> | null = null;
+/** Propoziția de pe un rând refuzat: a serverului, sau „poza nu mai e pe telefon”. */
+function rejectionNote(error: unknown) {
+  if (error instanceof PhotoMissingError) return strings.mobile.outboxPhotoMissing;
+  const e = error as api.ApiError;
+  return e.serverMessage ?? `HTTP ${e.status}`;
+}
+
+let latest: { auth: api.Auth; owner: string } | null = null;
+const drainOnce = coalesce(() => run(latest!.auth, latest!.owner));
 
 /**
  * Trimite ce se poate. Întoarce câte predări au ajuns pe server, ca ecranele să-și reîmprospăteze
  * cifrele. O singură trimitere în aer: rețeaua revenită, aplicația adusă în față și butonul pot
  * cere toate în aceeași clipă, iar două trimiteri paralele ar fi urcat aceeași poză de două ori.
+ * O cerere venită cât una e în aer primește o trecere nouă, după ea (B6): „Trimite acum” scoate rândurile
+ * din pauză, iar trecerea veche își citise lista dinainte.
  */
 export function drain(auth: api.Auth, owner: string): Promise<number> {
-  draining ??= run(auth, owner).finally(() => {
-    draining = null;
-  });
-  return draining;
+  latest = { auth, owner };
+  return drainOnce();
 }
 
 async function run(auth: api.Auth, owner: string): Promise<number> {
@@ -287,17 +310,20 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         sent++;
       }
       // Cheia rândului e și cheia pozei (V67): o reîncercare după un răspuns pierdut nu mai dublează poza.
-      if (item.photoUri) await api.uploadAttachment(itemAuth, movementId, item.photoUri, item.id);
+      if (item.photoUri) {
+        if (!photoExists(item.photoUri)) throw new PhotoMissingError();
+        await api.uploadAttachment(itemAuth, movementId, item.photoUri, item.id);
+      }
       await d.runAsync("DELETE FROM outbox WHERE id = ?", item.id);
       dropPhoto(item.photoUri);
       changed();
     } catch (error) {
       if (error instanceof api.UnauthorizedError) break; // omul iese din cont; rândul așteaptă
-      if (isRejection(error)) {
+      if (rejectsRow(error)) {
         // `movement_id` e scris deja dacă a căzut numai poza: ecranul spune atunci că predarea e pe server.
         await d.runAsync(
           "UPDATE outbox SET state = 'REJECTED', error = ?, movement_id = ? WHERE id = ?",
-          error.serverMessage ?? `HTTP ${error.status}`,
+          rejectionNote(error),
           movementId,
           item.id,
         );
@@ -322,7 +348,7 @@ async function run(auth: api.Auth, owner: string): Promise<number> {
         item.id,
       );
       changed();
-      // Serverul a răspuns, dar rândul ăsta cade (5xx): celelalte pleacă. Fără rețea n-are rost acum.
+      // Rândul ăsta cade (5xx, o eroare a telefonului): celelalte pleacă. Fără rețea n-are rost acum.
       if (skipsToNext(error)) continue;
       break;
     }
@@ -343,7 +369,8 @@ export async function retryNow(owner: string) {
  * contului care le-a salvat și pleacă numai în numele lui, iar o predare netrimisă nu se pierde la o ieșire.
  */
 export async function clearCache() {
-  await (await db()).runAsync("DELETE FROM cache");
+  // Ciorna rămâne: e a contului care a început-o și o reia numai el (B5).
+  await clearListsKeepingDrafts(await db());
 }
 
 /**

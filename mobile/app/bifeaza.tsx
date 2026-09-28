@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { ApiError, completeDeadline } from "../src/api";
+import { ApiError, completeDeadline, UnauthorizedError } from "../src/api";
 import { Input, PrimaryButton } from "../src/components/Form";
 import { Note } from "../src/components/Rows";
 import { formatDate } from "../src/format";
@@ -23,7 +23,7 @@ const m = strings.mobile;
  */
 export default function BifeazaSheet() {
   const { id, type, due } = useLocalSearchParams<{ id: string; type: ReportType; due: string }>();
-  const { auth } = useSession();
+  const { auth, signOut } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [note, setNote] = useState("");
@@ -40,6 +40,7 @@ export default function BifeazaSheet() {
       await queryClient.invalidateQueries({ queryKey: ["deadlines"] });
       router.back();
     } catch (e) {
+      if (e instanceof UnauthorizedError) return signOut();
       setError(e instanceof ApiError && e.serverMessage ? e.serverMessage : e instanceof TypeError ? m.deadlineCompleteOffline : t.actionError);
     } finally {
       setBusy(false);

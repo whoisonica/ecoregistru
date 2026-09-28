@@ -1,0 +1,83 @@
+# B3 + B5 (28.09.2026), partea 1 din 2: o ciornă cu poză (avizul din galerie), „Scoate poza” sub poză, apoi ieșirea din cont
+# și intrarea la loc — ciorna rămâne (B5; înainte ieșirea din cont o ștergea).
+# Înainte: avizul pus în galerie ca la `m1b-aviz.yaml`. După: poza ciornei ștearsă din cache-ul aplicației
+# (`find "$(xcrun simctl get_app_container booted ro.wastehouse.app data)/Library/Caches" -name '*.jpg' -delete`),
+# apoi partea 2, `b3-ciorna-fara-poza.yaml`.
+#   maestro test -e PASSWORD=<ceva> -e METRO=http%3A%2F%2Flocalhost%3A8082 --test-output-dir <folder> maestro/b3-b5-ciorna-poza.yaml
+appId: ro.wastehouse.app
+---
+- runFlow: pornire.yaml
+- runFlow: login.yaml
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: pick-aviz
+    timeout: 20000
+- assertNotVisible:
+    id: draft-card
+- tapOn:
+    id: pick-aviz
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: Photos
+          timeout: 15000
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "17%,24%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: ".*[Pp]hoto.*"
+          timeout: 15000
+      - tapOn:
+          text: "Photo taken on.*"
+          index: 0
+- extendedWaitUntil:
+    visible:
+      id: f-date-confirm
+    timeout: 30000
+# B3: poza se poate scoate din formular.
+- assertVisible:
+    id: photo-remove
+- takeScreenshot: 01-poza-cu-scoate
+# Ciorna se scrie la 400 ms după ultima schimbare.
+- waitForAnimationToEnd:
+    timeout: 2000
+- scrollUntilVisible:
+    element:
+      id: step-back
+- tapOn:
+    id: step-back
+- extendedWaitUntil:
+    visible:
+      id: draft-card
+    timeout: 10000
+- takeScreenshot: 02-ciorna
+
+# B5: ieșirea din cont nu mai aruncă ciorna.
+- tapOn: Acasă
+- extendedWaitUntil:
+    visible:
+      id: firm-line
+    timeout: 10000
+- tapOn:
+    id: firm-line
+- scrollUntilVisible:
+    element:
+      id: logout
+- tapOn:
+    id: logout
+- runFlow: login.yaml
+- tapOn:
+    id: tab-adauga
+- extendedWaitUntil:
+    visible:
+      id: draft-card
+    timeout: 20000
+- takeScreenshot: 03-ciorna-dupa-reintrare

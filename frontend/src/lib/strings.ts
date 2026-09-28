@@ -239,8 +239,11 @@ export const strings = {
     // Colectorul pur n-are „Generare”: intrările lui trec prin cântar, care vine la M2.
     collectorLater: "Intrările la cântar vin într-o versiune următoare a aplicației.",
     cameraDenied: "Fără acces la cameră nu pot poza avizul. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
+    photoPickFailed: "Poza n-a putut fi luată. Încearcă din nou.",
     reading: "Citesc avizul…",
     readNothing: "N-am putut citi nimic din poză. Completează de mână — poza rămâne atașată predării.",
+    photoRemove: "Scoate poza",
+    photoGone: "Poza nu mai e pe telefon și am scos-o din predare. Dacă ai avizul, pozează-l din nou.",
     readFrom: (line: string) => `Din poză: „${line}”`,
     confirmRead: "Corect",
     confirmPending: (n: number) =>
@@ -276,10 +279,16 @@ export const strings = {
     outboxPending: "de trimis",
     outboxRejected: "refuzată",
     outboxPhotoFailed: "Predarea e în registru; poza n-a urcat.",
+    outboxPhotoMissing: "Poza nu mai e pe telefon.",
     outboxServerError: (reason: string) => `Serverul n-a primit-o încă (${reason}). Mai încercăm singuri.`,
     outboxRemove: "Scoate",
+    outboxRemoveTitle: "Scoți predarea din telefon?",
+    outboxRemoveKeepsMovement: "Predarea rămâne în registru; numai poza nu mai urcă.",
+    outboxRemoveLoses: "Predarea n-a ajuns în registru și se pierde.",
+    outboxRemoveCancel: "Renunță",
     outboxFix: "Corectează",
     outboxSendNow: "Trimite acum",
+    outboxSending: "Se trimite…",
 
     // --- M1c: „A venit controlul” ---
     // Rândurile sunt exact ce socotește Panoul web (`lib/readiness.ts`), nu lista din prototip: ce nu
@@ -512,6 +521,7 @@ export const strings = {
     photoAddHint: "Bonul de cântar sau avizul, după predare",
     photoUploading: "Urc poza…",
     photoFailed: "Poza n-a urcat. Rămâne aici: încearcă din nou.",
+    photoRefused: (reason: string) => `Serverul n-a primit poza: ${reason}`,
     photoRetry: "Încearcă din nou",
     photoCameraDenied: "Fără acces la cameră. Îl poți da din Setările telefonului, sau alegi poza din galerie.",
     // --- Valul B, F5 (28.09.2026): bifarea termenului de pe telefon (D9) ---

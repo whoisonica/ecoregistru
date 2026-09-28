@@ -45,7 +45,11 @@ export function MovementList({ title, screen, tabRow }: {
   tabRow?: ReactNode;
 }) {
   const { session, auth, signOut } = useSession();
-  const months = useMemo(() => monthsBack(new Date()), []);
+  // Lunile se refac când se schimbă luna: o aplicație lăsată deschisă peste 1 ale lunii arăta luna trecută ca „acum” (B7).
+  const today = new Date();
+  const thisMonth = `${today.getFullYear()}-${today.getMonth()}`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const months = useMemo(() => monthsBack(new Date()), [thisMonth]);
   const [picked, setPicked] = useState(0);
   const cursor = months[picked];
   const [filter, setFilter] = useState<Filter>("all");
@@ -252,7 +256,7 @@ export function MovementList({ title, screen, tabRow }: {
         ) : null}
 
         <View testID="register" style={styles.reg}>
-          {list.isError ? (
+          {list.isError && !rows ? (
             <Note tone="alert">{m.movementsError}</Note>
           ) : !rows ? (
             enabled ? <SkeletonRows /> : <Note>{" "}</Note>
@@ -279,6 +283,8 @@ export function MovementList({ title, screen, tabRow }: {
             </View>
           ) : null}
         </View>
+        {/* „Mai arată” căzut: rândurile aduse rămân, eroarea se spune sub ele (B7). */}
+        {list.isFetchNextPageError ? <Note tone="alert">{m.movementsError}</Note> : null}
         {list.hasNextPage && rows ? (
           <PrimaryButton
             tone="quiet"

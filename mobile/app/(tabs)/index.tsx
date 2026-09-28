@@ -116,10 +116,10 @@ export default function HomeScreen() {
   const updated = agoText(monthQ.dataUpdatedAt);
 
   // ── tasta ──
-  const [cameraDenied, setCameraDenied] = useState(false);
+  const [cameraDenied, setCameraDenied] = useState<"denied" | "failed" | false>(false);
   const snap = async () => {
     const photo = await pickAvizPhoto("camera");
-    if (photo === "denied") return setCameraDenied(true);
+    if (photo === "denied" || photo === "failed") return setCameraDenied(photo);
     if (!photo) return;
     setCameraDenied(false);
     router.push({ pathname: "/predare", params: { photo } });
@@ -148,7 +148,7 @@ export default function HomeScreen() {
             <StateCard verdict={verdict} checks={checks} onPress={() => router.navigate("/control")} />
 
             <Key icon="cam" label={m.snapAviz} onPress={snap} testID="key-snap" />
-            {cameraDenied ? <Note tone="alert">{m.cameraDenied}</Note> : null}
+            {cameraDenied ? <Note tone="alert">{cameraDenied === "failed" ? m.photoPickFailed : m.cameraDenied}</Note> : null}
 
             {pending + rejected > 0 ? (
               <Group>

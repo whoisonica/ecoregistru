@@ -51,12 +51,68 @@ export function ticketStatus({ loaded, online, row }: { loaded: boolean; online:
 }
 
 /**
- * După o cădere care se reîncearcă, coada trece la rândul următor numai dacă serverul **a răspuns** cu 5xx:
- * rândul ăsta e bolnav (de pildă poza unei predări deja salvate, cu stocarea pozelor căzută), nu legătura.
- * Înainte orice cădere oprea tot, deci o poză care nu urca ținea pe loc predările de după ea (28.09.2026).
+ * Poza unui rând nu mai e pe telefon (ștearsă, sistemul a golit folderul). Nicio reîncercare n-o aduce înapoi,
+ * deci rândul trece la „refuzat”, cu predarea — dacă a plecat deja — păstrată pe server.
+ */
+export class PhotoMissingError extends Error {
+  constructor() {
+    super("Photo file is missing");
+    this.name = "PhotoMissingError";
+  }
+}
+
+/** Fără semnal, timp expirat, cerere întreruptă: legătura, nu rândul. */
+function isConnectionFailure(error: unknown): boolean {
+  if (error instanceof TypeError && /network request failed/i.test(error.message)) return true;
+  const name = (error as { name?: unknown } | null)?.name;
+  return name === "TimeoutError" || name === "AbortError";
+}
+
+/**
+ * Rândul nu se mai reîncearcă: serverul l-a refuzat (4xx, fără 429) sau poza lui nu mai e pe telefon. Rămâne
+ * „refuzat”, cu propoziția lui, până îl scoate sau îl corectează omul.
+ */
+export function rejectsRow(error: unknown): boolean {
+  if (error instanceof PhotoMissingError) return true;
+  const server = serverError(error);
+  return !!server && server.status >= 400 && server.status < 500 && server.status !== 429;
+}
+
+/**
+ * După o cădere, coada trece la rândul următor când vina e a rândului, nu a legăturii: serverul **a răspuns**
+ * cu 5xx (de pildă poza unei predări deja salvate, cu stocarea pozelor căzută), sau a căzut ceva pe telefon
+ * (poză lipsă, o citire de fișier). Înainte orice cădere oprea tot, deci o poză care nu urca (28.09.2026) sau
+ * una ștearsă de pe disc (B1) ținea pe loc predările de după ea la nesfârșit.
  * Fără rețea, la timp expirat sau la 429 („prea multe cereri”) n-are rost să le încercăm și pe celelalte acum.
  */
 export function skipsToNext(error: unknown): boolean {
+  if (isConnectionFailure(error)) return false;
   const server = serverError(error);
-  return !!server && server.status >= 500;
+  return server ? server.status >= 500 : true;
+}
+
+/**
+ * O singură trecere în aer; o cerere venită între timp nu primește trecerea veche (care și-a citit deja rândurile),
+ * ci una în plus, pornită după ea. Oricâte cereri vin cât una e în aer se strâng într-o singură trecere în plus.
+ */
+export function coalesce<T>(run: () => Promise<T>): () => Promise<T> {
+  let current: Promise<T> | null = null;
+  let next: Promise<T> | null = null;
+  const start = (): Promise<T> => {
+    const p = run().finally(() => {
+      if (current === p) current = null;
+    });
+    current = p;
+    return p;
+  };
+  return () => {
+    if (!current) return start();
+    next ??= current
+      .catch(() => undefined)
+      .then(() => {
+        next = null;
+        return start();
+      });
+    return next;
+  };
 }

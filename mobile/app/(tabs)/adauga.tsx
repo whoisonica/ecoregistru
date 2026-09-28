@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { strings } from "@web/strings";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useCompany } from "../../src/company";
 import { PrimaryButton } from "../../src/components/Form";
@@ -32,7 +32,7 @@ export default function AddScreen() {
   const company = useCompany();
   useHandoverData();
   const outbox = useOutbox(session?.email);
-  const [cameraDenied, setCameraDenied] = useState(false);
+  const [cameraDenied, setCameraDenied] = useState<"denied" | "failed" | false>(false);
   // F4: un formular închis pe la mijloc se reia de aici („Continui predarea de la 14:20?”).
   const { draft, discard } = useDraft(session?.email, session?.tenantId ?? undefined);
 
@@ -42,7 +42,7 @@ export default function AddScreen() {
   const open = async (source: "camera" | "gallery" | "none") => {
     if (source === "none") return router.push("/predare");
     const photo = await pickAvizPhoto(source);
-    if (photo === "denied") return setCameraDenied(true);
+    if (photo === "denied" || photo === "failed") return setCameraDenied(photo);
     if (!photo) return;
     setCameraDenied(false);
     router.push({ pathname: "/predare", params: { photo } });
@@ -82,7 +82,7 @@ export default function AddScreen() {
             ) : null}
             <Text style={styles.hint}>{m.addHint}</Text>
             <PrimaryButton label={m.snapAviz} onPress={() => open("camera")} testID="snap-aviz" />
-            {cameraDenied ? <Note tone="alert">{m.cameraDenied}</Note> : null}
+            {cameraDenied ? <Note tone="alert">{cameraDenied === "failed" ? m.photoPickFailed : m.cameraDenied}</Note> : null}
             <PrimaryButton tone="quiet" label={m.pickFromGallery} onPress={() => open("gallery")} testID="pick-aviz" />
             <Pressable onPress={() => open("none")} testID="without-photo" style={styles.link}>
               <Text style={styles.linkText}>{m.withoutPhoto}</Text>
@@ -105,12 +105,25 @@ function Outbox({ items }: { items: OutboxItem[] }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const hasPending = items.some((i) => i.state === "PENDING");
+  // B6: butonul arată că lucrează; o trimitere deja în aer poate ține până la 30 s pe semnal slab.
+  const [sending, setSending] = useState(false);
   const sendNow = async () => {
     if (!auth || !session) return;
-    await retryNow(session.email);
-    const sent = await drain(auth, session.email).catch(() => 0);
-    if (sent) queryClient.invalidateQueries({ queryKey: ["movements"] });
+    setSending(true);
+    try {
+      await retryNow(session.email);
+      const sent = await drain(auth, session.email).catch(() => 0);
+      if (sent) queryClient.invalidateQueries({ queryKey: ["movements"] });
+    } finally {
+      setSending(false);
+    }
   };
+  // B4: scoaterea nu se mai face dintr-o atingere; o predare care n-a ajuns pe server s-ar pierde.
+  const confirmRemove = (item: OutboxItem) =>
+    Alert.alert(m.outboxRemoveTitle, item.movementId ? m.outboxRemoveKeepsMovement : m.outboxRemoveLoses, [
+      { text: m.outboxRemoveCancel, style: "cancel" },
+      { text: m.outboxRemove, style: "destructive", onPress: () => remove(item.id) },
+    ]);
   return (
     <>
       <SectionHead>{`${m.outboxTitle} · ${items.length}`}</SectionHead>
@@ -142,7 +155,7 @@ function Outbox({ items }: { items: OutboxItem[] }) {
                     <Text style={styles.linkText}>{m.outboxFix}</Text>
                   </Pressable>
                 ) : null}
-                <Pressable onPress={() => remove(item.id)} testID="outbox-remove">
+                <Pressable onPress={() => confirmRemove(item)} testID="outbox-remove">
                   <Text style={styles.linkText}>{m.outboxRemove}</Text>
                 </Pressable>
               </View>
@@ -155,7 +168,7 @@ function Outbox({ items }: { items: OutboxItem[] }) {
       {hasPending ? (
         <>
           <Text style={styles.hint}>{m.outboxHint}</Text>
-          <PrimaryButton tone="quiet" label={m.outboxSendNow} onPress={sendNow} testID="outbox-send" />
+          <PrimaryButton tone="quiet" label={sending ? m.outboxSending : m.outboxSendNow} onPress={sendNow} disabled={sending} testID="outbox-send" />
         </>
       ) : null}
     </>

@@ -26,8 +26,10 @@ import { confirmDeclared } from "../../src/declared";
 import { parseQuantity } from "../../src/handoverForm";
 import { Icon } from "../../src/components/Icon";
 import { Chip, Group, Note, rowStyles, SectionHead } from "../../src/components/Rows";
+import { SkeletonRows } from "../../src/components/Skeleton";
 import { formatDate, formatQuantity } from "../../src/format";
 import { canAddPhotoOnPhone, canEditOnPhone, canRecordWeightOnPhone, canRepeatOnPhone } from "../../src/movementEdit";
+import { rejectsRow } from "../../src/outboxRules";
 import { pickAvizPhoto } from "../../src/photo";
 import { useSession } from "../../src/session";
 import { colors, fonts } from "../../src/theme";
@@ -82,7 +84,11 @@ export default function MiscareScreen() {
           <Group>
             <Note tone="alert">{m.movementError}</Note>
           </Group>
-        ) : !mv ? null : (
+        ) : !mv ? (
+          <Group>
+            <SkeletonRows />
+          </Group>
+        ) : (
           <Details mv={mv} writer={canWrite(session?.role)} />
         )}
       </ScrollView>
@@ -415,20 +421,30 @@ function Attachments({ mv, canAdd }: { mv: WasteMovement; canAdd: boolean }) {
  * ajuns, dar răspunsul s-a pierdut pe drum.
  */
 function AddPhoto({ mv, first }: { mv: WasteMovement; first: boolean }) {
-  const { auth } = useSession();
+  const { auth, signOut } = useSession();
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<{ uri: string; key: string } | null>(null);
-  const [state, setState] = useState<"idle" | "uploading" | "failed" | "denied">("idle");
+  const [state, setState] = useState<"idle" | "uploading" | "failed" | "denied" | "pickFailed">("idle");
+  // Un refuz al serverului (poză prea mare, format necunoscut) nu se reîncearcă: aceeași poză ar fi refuzată iar.
+  const [refused, setRefused] = useState<string | null>(null);
 
   const send = async (item: { uri: string; key: string }) => {
     if (!auth) return;
     setState("uploading");
+    setRefused(null);
     try {
       await uploadAttachment(auth, mv.id, item.uri, item.key);
       setPending(null);
       setState("idle");
       await queryClient.invalidateQueries({ queryKey: ["movements"] });
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedError) return signOut();
+      if (rejectsRow(error)) {
+        setPending(null);
+        setState("idle");
+        setRefused(error instanceof ApiError ? (error.serverMessage ?? `HTTP ${error.status}`) : "");
+        return;
+      }
       setState("failed");
     }
   };
@@ -436,6 +452,7 @@ function AddPhoto({ mv, first }: { mv: WasteMovement; first: boolean }) {
   const pick = async (source: "camera" | "gallery") => {
     const uri = await pickAvizPhoto(source);
     if (uri === "denied") return setState("denied");
+    if (uri === "failed") return setState("pickFailed");
     if (!uri) return;
     const item = { uri, key: Crypto.randomUUID() };
     setPending(item);
@@ -462,6 +479,8 @@ function AddPhoto({ mv, first }: { mv: WasteMovement; first: boolean }) {
         </View>
       )}
       {state === "denied" ? <Note tone="alert">{m.photoCameraDenied}</Note> : null}
+      {state === "pickFailed" ? <Note tone="alert">{m.photoPickFailed}</Note> : null}
+      {refused != null ? <Note tone="alert" testID="photo-refused">{m.photoRefused(refused)}</Note> : null}
     </View>
   );
 }

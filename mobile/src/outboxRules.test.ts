@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { retryNote, skipsToNext, STUCK_AFTER, stuckOnServer, ticketStatus } from "./outboxRules.ts";
+import { coalesce, PhotoMissingError, rejectsRow, retryNote, skipsToNext, STUCK_AFTER, stuckOnServer, ticketStatus } from "./outboxRules.ts";
 
 const apiError = (status: number, serverMessage: string | null = null) =>
   Object.assign(new Error(`HTTP ${status}`), { status, serverMessage });
@@ -62,4 +62,52 @@ test("o cădere 5xx trece la rândul următor; rețeaua, timpul expirat și 429 
   assert.equal(skipsToNext(apiError(429)), false, "prea multe cereri: așteaptă toată coada");
   assert.equal(skipsToNext(new TypeError("Network request failed")), false, "fără semnal");
   assert.equal(skipsToNext(Object.assign(new Error("timeout"), { name: "TimeoutError" })), false, "timp expirat");
+});
+
+// B1 (28.09.2026): o eroare a telefonului — poza ștearsă de pe disc, o citire căzută — n-are status și nu e de rețea.
+test("o eroare a telefonului pe un rând nu ține pe loc coada: trece la următorul", () => {
+  assert.equal(skipsToNext(new Error("File does not exist")), true, "poza nu mai e pe disc");
+  assert.equal(skipsToNext(new RangeError("orice altceva al nostru")), true);
+  // rămân opritoare: fără semnal, timp expirat, 429
+  assert.equal(skipsToNext(new TypeError("Network request failed (no answer in 30 s)")), false);
+  assert.equal(skipsToNext(Object.assign(new Error("aborted"), { name: "AbortError" })), false);
+});
+
+test("poza care nu mai e pe telefon e un refuz: nicio reîncercare n-o aduce înapoi", () => {
+  assert.equal(rejectsRow(new PhotoMissingError()), true);
+  assert.equal(skipsToNext(new PhotoMissingError()), true);
+  assert.equal(rejectsRow(apiError(400)), true);
+  assert.equal(rejectsRow(apiError(422)), true);
+  assert.equal(rejectsRow(apiError(429)), false, "prea multe cereri se reîncearcă");
+  assert.equal(rejectsRow(apiError(500)), false);
+  assert.equal(rejectsRow(new TypeError("Network request failed")), false);
+  assert.equal(rejectsRow(new Error("File does not exist")), false, "altă eroare a telefonului se reîncearcă, fără să oprească restul");
+});
+
+// B6 (28.09.2026): „Trimite acum” apăsat cât o trimitere e în aer primea trimiterea veche — rândurile scoase din
+// pauză după ce ea își citise lista rămâneau pe loc până la următoarea ocazie.
+test("o cerere venită cât coada e în aer mai face o trecere după ea, nu una paralelă", async () => {
+  let running = 0;
+  let maxParallel = 0;
+  let runs = 0;
+  let release!: () => void;
+  const first = new Promise<void>((r) => (release = r));
+  const drain = coalesce(async () => {
+    runs++;
+    running++;
+    maxParallel = Math.max(maxParallel, running);
+    if (runs === 1) await first;
+    running--;
+    return runs;
+  });
+  const a = drain();
+  const b = drain();
+  const c = drain();
+  release();
+  assert.equal(await a, 1, "prima trecere întoarce ce a trimis ea");
+  assert.equal(await b, 2, "cererile din timpul ei primesc trecerea de după");
+  assert.equal(await c, 2, "două cereri în aer se strâng într-o singură trecere în plus");
+  assert.equal(runs, 2);
+  assert.equal(maxParallel, 1, "niciodată două trimiteri deodată");
+  assert.equal(await drain(), 3, "după liniște, o cerere nouă pornește o trecere nouă");
 });

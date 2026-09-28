@@ -79,6 +79,14 @@ function Routes() {
         />
         {/* F10: modul inspector pe tot ecranul, fără bara de jos. */}
         <Stack.Screen name="inspector" options={{ presentation: "fullScreenModal" }} />
+        {/* Ecranele deschise peste taburi stau și ele după cont: nescrise aici, rămâneau pe ecran după „Deconectare”
+            (Profil fără firmă, 28.09.2026) în loc să ducă la login. */}
+        <Stack.Screen name="profil" />
+        <Stack.Screen name="dispozitive" />
+        <Stack.Screen name="firme" />
+        <Stack.Screen name="predare" />
+        <Stack.Screen name="gata" />
+        <Stack.Screen name="miscare/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" />

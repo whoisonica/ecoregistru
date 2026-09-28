@@ -1,0 +1,27 @@
+# B3 (28.09.2026), partea 2 din 2: ciorna reluată după ce poza ei a plecat din cache — formularul spune de ce și merge
+# mai departe fără poză, în loc de „Salvarea a eșuat” la nesfârșit. Fără pornire: aplicația e pe „Adaugă”, cu ciorna.
+#   maestro test --test-output-dir <folder> maestro/b3-ciorna-fara-poza.yaml
+appId: ro.wastehouse.app
+---
+- tapOn:
+    id: draft-resume
+- extendedWaitUntil:
+    visible: Ce și cât
+    timeout: 10000
+- assertVisible: ".*Poza nu mai e pe telefon și am scos-o din predare.*"
+- assertNotVisible:
+    id: photo-remove
+- takeScreenshot: 01-ciorna-fara-poza
+- scrollUntilVisible:
+    element:
+      id: step-back
+- tapOn:
+    id: step-back
+- extendedWaitUntil:
+    visible:
+      id: draft-discard
+    timeout: 10000
+- tapOn:
+    id: draft-discard
+- assertNotVisible:
+    id: draft-card
