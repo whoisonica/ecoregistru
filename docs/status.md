@@ -15,6 +15,20 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **29.09.2026, 02:20 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v140** (`7cc7dbb`), `ecoregistru-app` **v142** (`2885e93`), din `main` `bf9413d` — concluziile specialistei despre generator.**
+> Fără migrare („Schema "public" is up to date”), liberă tot `V81`; `Started EcoRegistruApplication in 17.098 seconds`, `/actuator/health` 200; bundle-ul servit
+> (`index-DDt_sp8a.js`) conține „Registrul Anexa 3 (transport)”, `registru-anexa3` și „Alege întâi valorificare sau eliminare.”; `deploy-split.sh both --ref origin/main`
+> → „nimic de deployat” pe ambele. CI verde pe `bf9413d`. Deciziile 87–90 din `decizii-model.md`. **Anexa 3 Ambalaje numai la colector**: `PackagingService.anexa3` refuză contul fără registru art. 48
+> (`anexa3.packaging.collectors.only`), `PackagingAnexa3` fără `exitsOnly`, dosarul nu-i mai pune generatorului foaia (`AuditFileContents.anexa3Applies`),
+> pe web meniul și rândul din „Ce intră în arhivă” apar doar la firma care colectează. **„Registrul Anexa 3 (transport)”** (nou, numele ales de proprietar): `Anexa3Register` +
+> `Anexa3RegisterBuilder` + `Anexa3RegisterGenerator` (PDF A4 orizontal: nr. crt., data, seria și nr., cantitate kg, cod, denumire, predat către, CUI,
+> cod R/D) + `Anexa3RegisterService`, `GET /api/v1/evidences/registru-anexa3?year&workPointId`; meniul „Registrul Anexa 3 (transport)” pe „Generare” și „Ieșiri”, și în dosarul de control
+> (`rapoarte/registru-anexa3-{an}.pdf`, numai când anul are formulare emise; `YearContents.anexa3Forms`, rândul din „Ce intră în arhivă”).
+> Un rând = o predare cu număr alocat, în ordinea numerelor. Niciun alt document tipărit schimbat (cerința proprietarului).
+> **Formularul de pe „Generare”** întreabă întâi valorificare/eliminare → cod R/D → destinație → cine preia → transportul (decizia 89, numai afișarea;
+> „Ieșiri” păstrează ordinea veche). **Persoana desemnată** se completează la „Client nou” (numele obligatoriu), nu mai e în „Primii pași” (decizia 90).
+> Probe: backend **1334 / 163 de clase, 0 căzute, 4 sărite** (`cleanTest test` pe `bf9413d`, 29.09 02:35); web `tsc` curat, lint 0 erori (29 avertismente), `npm test` 88/88; `vite build`; e2e 23, 34, 38 verzi pe o stivă proprie (sesiunea din noapte), probele 4, 24 și 31 aduse la zi pentru deciziile 89–90 (CI verde pe `bf9413d`). Noi: `Anexa3RegisterIT` (5), `AuditFileIT.theDossierCarriesTheAnexa3RegisterWhenFormsWereIssued`; `RegisterSelectionInventoryTest` exceptează builderul nou cu motiv.
+
 > **28.09.2026, 18:36 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v139** (`b0f0836`), `ecoregistru-app` **v141** (`2c7fba1`), din `main` `c76866d`.**
 > Backup `b025` înainte. Pe dyno: „Successfully applied 1 migration to schema "public", now at version v80”, `Started EcoRegistruApplication
 > in 18.573 seconds`, `/actuator/health` 200; bundle-ul servit conține „Operator de cântar”, `confirmPastPeriod` și `SCALE_OPERATOR`. Deployul:
