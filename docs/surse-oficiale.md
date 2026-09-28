@@ -1233,8 +1233,9 @@ Aici chiar se poate deduce din mișcări. Un colector, reciclator, valorificator
 **15 01** în anul raportat datorează Anexa 3 până pe 25 februarie. `DeadlineService` crea atunci 25 februarie numai
 pentru Anexa 1 (`PACKAGING_ANNUAL`, din rolul de piață). ✅ Construit în aceeași zi: `PACKAGING_ANNEX3`, numai la firmele cu
 registrul art. 48 care au o preluare `15 01` în anul raportat (`DeadlineService.packagingWasteDeadline`).
-⚠️ **Generatorul nu e în art. 4.** Anexa 3 la generator, cu ieșirile (16.09.2026), e o decizie a proprietarului, nu o
-obligație din ordin. Din ea nu se deduce un termen.
+⚠️ **Generatorul nu e în art. 4.** Anexa 3 la generator, cu ieșirile (16.09.2026), a fost o decizie a proprietarului, nu o
+obligație din ordin, și din ea nu s-a dedus niciun termen. Din 29.09.2026 nu mai există: specialista a spus că Anexa 3
+Ambalaje e „doar pentru colector”, iar generatorul e refuzat (decizia 87).
 
 **5. Ce nu se poate deduce din generări, și de ce:** Anexa 1 Ambalaje (marfa ambalată *pusă pe piață*, art. 1, nu
 deșeul 15 01), notificarea AFM din 25 ianuarie (art. 3, îndeplinirea individuală a obiectivelor), 31 mai

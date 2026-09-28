@@ -16,7 +16,9 @@
   `Layout.tsx`.
 - Textele de ecran stau în `frontend/src/lib/strings.ts`, în română, pe înțelesul unui client care nu e specialist de
   mediu. Temeiul legal merge în explicație, nu în etichetă. Documentele tipărite își păstrează numele din acte.
-- Ordinea rubricilor din formularul de mișcare nu se schimbă. Nicio cifră nu se precompletează pe un formular oficial.
+- Ordinea rubricilor din formularul de mișcare nu se schimbă fără o cerere a specialistei sau a proprietarului. Excepția de pe
+  29.09.2026 (Andreea, decizia 89): pe „Generare” valorificare/eliminare → cod R/D → destinație → cine preia → transportul;
+  „Ieșiri” păstrează ordinea veche până se aliniază și ea (de făcut). Nicio cifră nu se precompletează pe un formular oficial.
   Un indicator care n-a putut încărca arată „?”, nu „0”.
 - O schimbare de ecran se probează în browser: `npm run e2e` (`frontend/e2e/README.md`), cu capturile privite la
   1440px și 375px; `node e2e/shots-cantar.mjs` face capturile tuturor ecranelor. Un tabel se măsoară (`scrollWidth`
