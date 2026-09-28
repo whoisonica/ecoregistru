@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { clearDraft, draftKey, loadDraft, saveDraft, type HandoverDraft } from "./handoverDraft.ts";
+import { clearDraft, clearListsKeepingDrafts, draftKey, loadDraft, saveDraft, type HandoverDraft } from "./handoverDraft.ts";
 
 function fakeDb() {
   const rows = new Map<string, string>();
@@ -48,4 +48,24 @@ test("o ciornă stricată pe disc nu strică ecranul: e ca și cum n-ar fi", asy
   assert.equal(await loadDraft(db, "a@b.ro", "t-1"), null);
   db.rows.set(draftKey("a@b.ro", "t-1"), JSON.stringify({ step: 9 }));
   assert.equal(await loadDraft(db, "a@b.ro", "t-1"), null);
+});
+
+// B5 (28.09.2026): la ieșirea din cont se golesc listele ținute fără semnal, dar ciorna rămâne, pe contul ei.
+test("ieșirea din cont golește listele, dar păstrează ciornele", async () => {
+  const { DatabaseSync } = await import("node:sqlite");
+  const raw = new DatabaseSync(":memory:");
+  raw.exec("CREATE TABLE cache (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL, saved_at INTEGER NOT NULL)");
+  const db = {
+    async runAsync(sql: string, ...args: unknown[]) {
+      raw.prepare(sql).run(...(args as never[]));
+    },
+    async getFirstAsync<T>(sql: string, ...args: unknown[]): Promise<T | null> {
+      return (raw.prepare(sql).get(...(args as never[])) as T | undefined) ?? null;
+    },
+  };
+  await saveDraft(db, "a@b.ro", "t-1", draft);
+  await db.runAsync("INSERT INTO cache (key, value, saved_at) VALUES (?, ?, ?)", "partners:t-1", "[]", 1);
+  await clearListsKeepingDrafts(db);
+  assert.deepEqual(await loadDraft(db, "a@b.ro", "t-1"), draft, "ciorna rămâne");
+  assert.equal(await db.getFirstAsync("SELECT value FROM cache WHERE key = ?", "partners:t-1"), null, "listele pleacă");
 });

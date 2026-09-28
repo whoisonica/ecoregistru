@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import * as api from "./api";
 import { noteSent } from "./lastSaved";
 import { reportError } from "./monitoring";
+import { clearListsKeepingDrafts } from "./handoverDraft";
 import { rebasePhoto } from "./photoPath";
 import { PhotoMissingError, rejectsRow, retryNote, skipsToNext, stuckOnServer } from "./outboxRules";
 
@@ -367,7 +368,8 @@ export async function retryNow(owner: string) {
  * contului care le-a salvat și pleacă numai în numele lui, iar o predare netrimisă nu se pierde la o ieșire.
  */
 export async function clearCache() {
-  await (await db()).runAsync("DELETE FROM cache");
+  // Ciorna rămâne: e a contului care a început-o și o reia numai el (B5).
+  await clearListsKeepingDrafts(await db());
 }
 
 /**
