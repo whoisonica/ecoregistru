@@ -20,7 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * BUG-043 — CNP-ul șoferului pleacă întreg doar la cine îl poate scrie pe un document (ADMIN, OPERATOR);
+ * BUG-043 — CNP-ul șoferului pleacă întreg doar la cine îl poate scrie pe un document (ADMIN, OPERATOR și, din
+ * 28.09.2026, operatorul de cântar, al cărui cont demo îl pune {@code DevDataSeeder});
  * „Vizualizare” îl primește mascat în {@code GET /drivers}. Controlul: adminul îl primește întreg,
  * altfel formularul de mișcare n-ar mai putea copia CNP-ul pe aviz.
  */
@@ -47,6 +48,7 @@ class DriverCnpMaskingIT {
         String asViewer = list("viewer@demo.ro");
         assertThat(asViewer).contains(name).doesNotContain(CNP).contains("190********57");
         assertThat(list("admin@demo.ro")).contains(CNP);
+        assertThat(list("cantar@demo.ro")).contains(CNP);
     }
 
     private String list(String email) throws Exception {

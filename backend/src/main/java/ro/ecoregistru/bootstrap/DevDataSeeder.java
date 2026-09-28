@@ -32,7 +32,7 @@ import java.util.UUID;
  * Seeds a demo tenant + sample data so the app is demonstrable immediately.
  * Dev profile only, and only if the DB has no users yet (idempotent).
  *
- * Demo roles: PLATFORM_ADMIN (no tenant; uses X-Tenant-Id to act on one), ADMIN and OPERATOR of
+ * Demo roles: PLATFORM_ADMIN (no tenant; uses X-Tenant-Id to act on one), ADMIN, OPERATOR and SCALE_OPERATOR of
  * "Demo Reciclare SRL", and a CLIENT_VIEWER of the same.
  *
  * <p>The password is <b>not</b> in this file. It comes from {@code DEMO_PASSWORD}; when that is
@@ -119,6 +119,7 @@ public class DevDataSeeder implements CommandLineRunner {
 
         appUserRepository.save(user("admin@demo.ro", Role.ADMIN, company, encoded, "Ana", "Admin"));
         AppUser operator = appUserRepository.save(user("operator@demo.ro", Role.OPERATOR, company, encoded, "Ovidiu", "Operator"));
+        appUserRepository.save(user("cantar@demo.ro", Role.SCALE_OPERATOR, company, encoded, "Cornel", "Cântar"));
         appUserRepository.save(user("viewer@demo.ro", Role.CLIENT_VIEWER, company, encoded, "Vlad", "Viewer"));
 
         // --- Work points (3) ---

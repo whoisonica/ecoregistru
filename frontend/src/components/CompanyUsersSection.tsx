@@ -14,6 +14,7 @@ import {
 } from "@/hooks/useUsers";
 import type { CompanyUser, InviteRole, InviteUserInput, WorkPoint } from "@/lib/types";
 import { UserDepotsDialog } from "@/components/UserDepotsDialog";
+import { inviteRoles } from "@/lib/roles";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,6 @@ import { LoadError } from "@/components/ui/load-error";
 
 const t = strings.settings.users;
 const roleLabels = strings.enums.inviteRole;
-const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
 
 /**
  * P1.12 — utilizatorii firmei.
@@ -295,7 +295,7 @@ export function CompanyUsersSection({
                           disabled={roleMut.isPending}
                           onChange={(e) => handleRoleChange(u, e.target.value as InviteRole)}
                         >
-                          {INVITE_ROLES.map((r) => (
+                          {inviteRoles(hasDepot || u.role === "SCALE_OPERATOR").map((r) => (
                             <option key={r} value={r}>
                               {roleLabels[r]}
                             </option>
@@ -306,7 +306,7 @@ export function CompanyUsersSection({
                     {showDepots && (
                       <TD>
                         {/* Adminul vede mereu tot (DepotAccess): o alegere pe rândul lui n-ar schimba nimic. */}
-                        {u.role === "OPERATOR" || u.role === "CLIENT_VIEWER" ? (
+                        {u.role === "OPERATOR" || u.role === "SCALE_OPERATOR" || u.role === "CLIENT_VIEWER" ? (
                           <Button variant="ghost" size="sm" aria-label={t.depotsChange} onClick={() => setDepotsOf(u)}>
                             <Warehouse className="mr-1 h-3.5 w-3.5" />
                             {depotsLabel(u)}
@@ -419,7 +419,7 @@ export function CompanyUsersSection({
               value={role}
               onChange={(e) => setRole(e.target.value as InviteRole)}
             >
-              {INVITE_ROLES.map((r) => (
+              {inviteRoles(hasDepot).map((r) => (
                 <option key={r} value={r}>
                   {roleLabels[r]}
                 </option>

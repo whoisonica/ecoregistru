@@ -110,7 +110,9 @@ public class PartnerAuthorizationAlertScheduler {
 
     /** Returns true only if the warning was delivered, so the caller may mark the partner. */
     private boolean notify(Partner partner, long daysUntil) {
-        List<AppUser> users = appUserRepository.findAllByCompany_IdAndEnabledTrue(partner.getCompany().getId());
+        // Operatorul de cântar nu lucrează cu partea de generator (28.09.2026): nu primește mailul.
+        List<AppUser> users = appUserRepository.findAllByCompany_IdAndEnabledTrue(partner.getCompany().getId())
+                .stream().filter(u -> u.getRole() != ro.ecoregistru.enums.Role.SCALE_OPERATOR).toList();
         List<String> recipients = users.stream().map(AppUser::getEmail).toList();
         if (recipients.isEmpty()) {
             return false; // no one to tell yet — leave unmarked so it retries when users exist

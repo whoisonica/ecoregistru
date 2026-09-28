@@ -22,7 +22,7 @@ import {
   useTransferTargets,
 } from "@/hooks/useWeighingOperations";
 import { ReceiveTransferDialog } from "@/components/depot/ReceiveTransferDialog";
-import { canManage, canWrite } from "@/lib/roles";
+import { canManage, canWeigh } from "@/lib/roles";
 import { apiBlobErrorMessage, apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import type {
@@ -148,7 +148,9 @@ export function WeighingOperationDialog({
   // D2.5 — un transfer în lucru se vede și din depozitul de destinație, dar îl completează cel de plecare
   // (serverul refuză la fel). Lista de depozite e deja restrânsă la ale omului (D2.4).
   const atSource = !operation || !workPoints.data || workPoints.data.some((wp) => wp.id === operation.workPointId);
-  const editable = (!operation || operation.status === "IN_PROGRESS") && atSource;
+  // 28.09.2026 — completează doar cine cântărește; „Operator”-ul de birou și vizualizarea citesc.
+  const weighs = canWeigh(user?.role);
+  const editable = (!operation || operation.status === "IN_PROGRESS") && atSource && weighs;
   // Serverul spune dacă omul ăsta vede prețurile (D1.8); regula nu se reface aici. Cât firma nu s-a
   // încărcat, rubrica lipsește — mai bine o rubrică apărută târziu decât una care se ia înapoi.
   const pricesVisible = Boolean(company?.pricesVisible);
@@ -159,16 +161,16 @@ export function WeighingOperationDialog({
   const [printing, setPrinting] = useState<WeighingDocument | null>(null);
   // D1.17a — numerele le dă finalizarea unei intrări PF, iar ecranul se ia după ele, nu după stare: o operațiune
   // anulată după finalizare își păstrează documentele. Borderoul poartă prețuri și, la metal, CNP-ul, deci îl tipărește
-  // cine scrie și vede prețurile; NIR-ul n-are prețuri (serverul verifică la fel).
+  // cine cântărește și vede prețurile; NIR-ul n-are prețuri (serverul verifică la fel).
   const borderouNumber = operation?.borderouNumber ?? null;
   const nirNumber = operation?.receptionNoteNumber ?? null;
-  const borderouReady = borderouNumber != null && canWrite(user?.role) && Boolean(company?.pricesVisible);
-  const nirReady = nirNumber != null && canWrite(user?.role);
+  const borderouReady = borderouNumber != null && weighs && Boolean(company?.pricesVisible);
+  const nirReady = nirNumber != null && weighs;
 
   // Plafonul de numerar se verifică pe ce e salvat: suma zilei vine din toate operațiunile persoanei.
   const cashCheck = useCashCheck(
     operation?.id ?? null,
-    Boolean(operation?.naturalPersonId && operation.paymentMethod === "NUMERAR" && canWrite(user?.role))
+    Boolean(operation?.naturalPersonId && operation.paymentMethod === "NUMERAR" && weighs)
   );
 
   async function printDocument(document: WeighingDocument) {
@@ -231,7 +233,8 @@ export function WeighingOperationDialog({
   // D2.3 — cântarul: doar cele în uz ale depozitului ales (plus cel deja salvat pe operațiune). Cât omul
   // n-a ales, la o operațiune nouă cu un singur cântar în depozit se ia el — e o alegere, nu o cifră pe
   // formular. O alegere dintr-un depozit părăsit cade singură.
-  const scales = useScales();
+  // Lista cântarelor o văd doar cine le ține (28.09.2026); ceilalți citesc cântarul din operațiune.
+  const scales = useScales(weighs);
   const [scaleChoice, setScaleChoice] = useState<string | null>(operation?.scaleId ?? null);
   const depotScales = useMemo(
     () =>
@@ -581,7 +584,7 @@ export function WeighingOperationDialog({
             {printable && (
               // Pe telefon, cele două documente stau pe un rând: subsolul are deja patru butoane.
               <div className="grid grid-cols-2 gap-2 sm:flex">
-                {canWrite(user?.role) && (
+                {weighs && (
                   <Button
                     variant="outline"
                     onClick={() => printDocument("anexa3")}

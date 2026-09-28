@@ -209,6 +209,19 @@ class DriverFleetIT {
         assertThat(driverRepository.findById(soon).orElseThrow().getAttestationWarningSentFor()).isEqualTo(TODAY.plusDays(25));
     }
 
+    /** 28.09.2026 — operatorul de cântar citește flota, n-o ține la zi: atestatul nu-i vine pe mail. */
+    @Test
+    void theScaleOperatorIsNotWarnedAboutAttestations() {
+        AppUser scaleOperator = user(company, Role.SCALE_OPERATOR);
+        UUID soon = service.create(attested("Aproape", TODAY.plusDays(10))).id();
+        clearThread();
+
+        scheduler.dispatchWarnings(TODAY);
+
+        verify(notificationService).sendDriverAttestationWarning(argThat(d -> d.getId().equals(soon)),
+                argThat(to -> to.contains(admin.getEmail()) && !to.contains(scaleOperator.getEmail())), eq(10L));
+    }
+
     // --- helpers ---
 
     private static DriverRequest request(String name) {

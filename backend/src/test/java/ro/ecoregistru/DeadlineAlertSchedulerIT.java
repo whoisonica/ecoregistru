@@ -201,4 +201,25 @@ class DeadlineAlertSchedulerIT {
         assertThat(reload(done.getId()).isWarnedMissed()).isFalse();
         assertThat(reload(beforeRule.getId()).isWarnedMissed()).isFalse();
     }
+
+    /** 28.09.2026 — operatorul de cântar nu lucrează cu termenele generatorului: nu primește mementoul. */
+    @Test
+    void theScaleOperatorIsNotRemindedOfDeadlines() {
+        Company c = companyWithUser();
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        AppUser scaleOperator = appUserRepository.save(AppUser.builder()
+                .email("cantar+" + suffix + "@demo.ro").password("x")
+                .role(Role.SCALE_OPERATOR).company(c).enabled(true).createdAt(Instant.now()).build());
+        AppUser operator = appUserRepository.save(AppUser.builder()
+                .email("operator+" + suffix + "@demo.ro").password("x")
+                .role(Role.OPERATOR).company(c).enabled(true).createdAt(Instant.now()).build());
+        LocalDate today = LocalDate.of(2026, 6, 1);
+        ReportingDeadline d = deadline(c, today.plusDays(5), DeadlineStatus.UPCOMING, false, false);
+
+        scheduler.dispatchReminders(today);
+
+        Mockito.verify(notificationService).sendDeadlineReminder(Mockito.argThat(x -> x.getId().equals(d.getId())),
+                Mockito.argThat(to -> to.contains(operator.getEmail()) && !to.contains(scaleOperator.getEmail())),
+                anyLong());
+    }
 }

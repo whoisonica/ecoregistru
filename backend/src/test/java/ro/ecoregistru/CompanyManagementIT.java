@@ -193,6 +193,21 @@ class CompanyManagementIT {
         verify(emailService, times(1)).sendInviteEmail(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyInt());
     }
 
+    /** 28.09.2026 — operatorul de cântar se alege la invitație ca celelalte roluri; nicio migrare nu-l oprește. */
+    @Test
+    void platformAdminInvitesAScaleOperator() throws Exception {
+        String id = createCompany();
+        String email = "cantar+" + UUID.randomUUID().toString().substring(0, 8) + "@client.ro";
+
+        mockMvc.perform(post("/api/v1/companies/" + id + "/users")
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(inviteBody(email, "SCALE_OPERATOR")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role", is("SCALE_OPERATOR")));
+        assertEquals(Role.SCALE_OPERATOR, appUserRepository.findByEmail(email).orElseThrow().getRole());
+    }
+
     @Test
     void inviteRejectsPlatformAdminRole() throws Exception {
         String id = createCompany();

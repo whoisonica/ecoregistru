@@ -13,6 +13,27 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **28.09.2026, seara — ✅ operatorul de cântar (ramura `feat/operator-cantar`, nemergeuită, nedeployată; fără migrare, liberă tot `V81`).**
+> Spec `ecoregistru-docs/docs/specs/2026-09-28-operator-cantar-design.md`, deciziile proprietarului din aceeași zi.
+>
+> - **Rol nou `SCALE_OPERATOR`** („Operator de cântar”), ales la invitație doar la o firmă cu depozit (`inviteRoles`). `app_users.role`
+>   e `VARCHAR(20)` fără CHECK, deci fără migrare; contul demo `cantar@demo.ro` în `DevDataSeeder`.
+> - **Cântărește** (creare, antet, linii, balotare, borderou, NIR, verificarea numerarului, Anexa 3): `CAN_WEIGH` = platformă, consultant,
+>   admin, operator de cântar. **„Operator”-ul nu mai cântărește** (403), iar pe web dialogul operațiunii i se deschide doar în citire.
+>   Finalizarea, anularea și recepția transferului rămân la cine aprobă.
+> - **Cântarele** (listă, fișă, evenimente, dovada BRML, documente): le văd și le scriu doar operatorul de cântar și cine aprobă, pe
+>   controller și în `ScaleService` (și la citire). Riscul știut: își poate trece singur un „Admis”; rămâne în jurnal. „Operator” și
+>   „Vizualizare” nu mai au cardul „Cântare”, iar `/setari/cantare` îi trimite înapoi.
+> - **Restul**: persoanele fizice (scrie, CNP întreg) și CNP-ul șoferului întreg; restrângerea pe depozite (`DepotAccess.RESTRICTABLE`);
+>   prețurile ca operatorul, iar la „Doar adminul” totalul de plată trece de la operator la el. Partea de generator o citește (`canWrite`
+>   fără el). Mailul de cântar merge la admin și la el; termenele, autorizațiile partenerilor și atestatele nu-i mai vin.
+>   Mobilul neatins: cu rolul nou îl vede în citire.
+> - **Probe:** backend **1316 / 161 de clase, 0 căzute, 4 sărite**; fiecare regulă nouă scoasă din cod a căzut exact pe testele ei
+>   (două serii, 9 + 10 căderi, plus garda de citire din `ScaleService` și `WRITERS`). Web: `tsc` curat, lint 0 erori, `npm test` 81/81;
+>   e2e **44, 45, 54** verzi pe o bază nouă (`cantar@demo.ro`), trecute pe operatorul de cântar.
+>   Suita `run.mjs` **43/43** pe aceeași stivă (29, 30, 33, 36, 37 cer `E2E_DB` = baza stivei; 2 și 38 au căzut o dată, verzi la reluare).
+>   Negativa pe web: cu `OPERATOR` în `canWeigh`, proba 44 cade exact pe cele patru verificări ale operatorului de birou.
+
 > **28.09.2026, noaptea — în `main` (monorepo `a9ca693` … `bb7b112`), fără release Heroku: aplicația mobilă, valul B aproape închis — F4, F6, F7, F5, F10, F9.**
 > Webul nu se schimbă vizibil (doar texte `strings.mobile.*`, tăiate din bundle-ul web; un singur text scos, `monthMovements`, nefolosit pe web); backendul neatins.
 > **F4** predarea pe trei pași + ciorna (`a9ca693`, ff din `feat/mobil-val-b`). **F6** „Generare” ca registru al lunii (`892194e`): lunile de răsfoit cu

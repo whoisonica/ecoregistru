@@ -90,7 +90,7 @@ class WeighingDocumentIT {
                 .name("Depozit Documente " + suffix + " SRL").cui("ROD" + suffix).anexa3Series("DEP")
                 .type(CompanyType.COLLECTOR).active(true).createdAt(Instant.now()).build());
         admin = user("admin", Role.ADMIN, suffix);
-        operator = user("operator", Role.OPERATOR, suffix);
+        operator = user("cantar", Role.SCALE_OPERATOR, suffix);
         viewer = user("viewer", Role.CLIENT_VIEWER, suffix);
         depot = workPointRepository.save(WorkPoint.builder()
                 .company(company).name("Depozit Est").active(true).createdAt(Instant.now()).build());

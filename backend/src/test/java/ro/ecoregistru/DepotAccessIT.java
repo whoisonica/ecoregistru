@@ -100,6 +100,7 @@ class DepotAccessIT {
     Company company;
     AppUser admin;
     AppUser operator;
+    AppUser scaleOperator;
     WorkPoint baciu;
     WorkPoint turda;
     Partner partner;
@@ -113,6 +114,7 @@ class DepotAccessIT {
                 .active(true).createdAt(Instant.now()).build());
         admin = user(Role.ADMIN);
         operator = user(Role.OPERATOR);
+        scaleOperator = user(Role.SCALE_OPERATOR);
         baciu = depot("Baciu");
         turda = depot("Turda");
         partner = partnerRepository.save(Partner.builder()
@@ -165,12 +167,12 @@ class DepotAccessIT {
     }
 
     @Test
-    void aRestrictedOperatorCannotReadOrWriteAnOperationOfAnotherDepot() {
+    void aRestrictedScaleOperatorCannotReadOrWriteAnOperationOfAnotherDepot() {
         UUID inBaciu = weighed(baciu);
         UUID inTurda = weighed(turda);
-        restrictOperatorToBaciu();
+        restrictToBaciu(scaleOperator);
 
-        actAs(operator);
+        actAs(scaleOperator);
         assertThat(operations.get(inBaciu).workPointId()).isEqualTo(baciu.getId());
         assertNotFound(() -> operations.get(inTurda), ErrorMessageEnum.WEIGHING_OPERATION_NOT_FOUND);
         assertNotFound(() -> operations.update(inTurda, head(turda)), ErrorMessageEnum.WEIGHING_OPERATION_NOT_FOUND);
@@ -211,23 +213,28 @@ class DepotAccessIT {
     }
 
     @Test
-    void scalesOfAnotherDepotAreNotListedAndTheOperatorWritesNoScale() {
+    void scalesOfAnotherDepotAreNotListedAndTheOperatorSeesNoScale() {
         ScaleResponse baciuScale = scales.create(scale(baciu));
         ScaleResponse turdaScale = scales.create(scale(turda));
+        restrictToBaciu(scaleOperator);
         restrictOperatorToBaciu();
 
-        actAs(operator);
+        // 28.09.2026 — operatorul de cântar își ține cântarul, dar numai în depozitul lui.
+        actAs(scaleOperator);
         assertThat(scales.list()).extracting(ScaleResponse::id).containsExactly(baciuScale.id());
-        // D2.3 — cântarul decide legalitatea cântăririi: operatorul nu-l scrie nici în depozitul lui (27.09.2026).
-        assertThatThrownBy(() -> scales.addEvent(baciuScale.id(), verification()))
+        assertThat(scales.addEvent(baciuScale.id(), verification()).events()).hasSize(1);
+        assertNotFound(() -> scales.addEvent(turdaScale.id(), verification()), ErrorMessageEnum.SCALE_NOT_FOUND);
+        assertNotFound(() -> scales.update(turdaScale.id(), scale(turda)), ErrorMessageEnum.SCALE_NOT_FOUND);
+        assertNotFound(() -> scales.create(scale(turda)), ErrorMessageEnum.WORK_POINT_NOT_FOUND);
+
+        // „Operator”-ul de birou nu vede cântarele deloc, nici pe ale depozitului lui.
+        actAs(operator);
+        assertThatThrownBy(() -> scales.list())
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
-        assertThatThrownBy(() -> scales.addEvent(turdaScale.id(), verification()))
+        assertThatThrownBy(() -> scales.addEvent(baciuScale.id(), verification()))
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
         assertThatThrownBy(() -> scales.create(scale(baciu)))
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
-        assertThatThrownBy(() -> scales.update(baciuScale.id(), scale(baciu)))
-                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
-        assertThat(scales.list()).singleElement().extracting(ScaleResponse::events).asList().isEmpty();
     }
 
     /** Defectul 4 din evaluarea din 27.09 — registrul art. 48 al unui depozit anume urmează accesul pe depozit. */
@@ -241,6 +248,10 @@ class DepotAccessIT {
 
     @Test
     void theAdminAlwaysSeesEverythingAndOnlyOperatorsAndViewersAreRestricted() {
+        // 28.09.2026 — operatorul de cântar se restrânge ca operatorul.
+        restrictToBaciu(scaleOperator);
+        assertThat(appUserRepository.findById(scaleOperator.getId()).orElseThrow().isAllWorkPoints()).isFalse();
+
         UUID inTurda = weighed(turda);
         AppUser secondAdmin = user(Role.ADMIN);
 
@@ -290,8 +301,12 @@ class DepotAccessIT {
     // ---------------------------------------------------------------------------------------------
 
     private void restrictOperatorToBaciu() {
+        restrictToBaciu(operator);
+    }
+
+    private void restrictToBaciu(AppUser who) {
         actAs(admin);
-        users.changeWorkPoints(operator.getId(), new UserWorkPointsRequest(false, List.of(baciu.getId())));
+        users.changeWorkPoints(who.getId(), new UserWorkPointsRequest(false, List.of(baciu.getId())));
         actAs(admin);
     }
 

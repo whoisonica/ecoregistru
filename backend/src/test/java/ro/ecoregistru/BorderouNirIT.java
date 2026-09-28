@@ -84,6 +84,7 @@ class BorderouNirIT {
     Company company;
     AppUser admin;
     AppUser operator;
+    AppUser scaleOperator;
     AppUser viewer;
     WorkPoint depot;
     Partner partner;
@@ -97,6 +98,7 @@ class BorderouNirIT {
         company = newCompany();
         admin = user(Role.ADMIN);
         operator = user(Role.OPERATOR);
+        scaleOperator = user(Role.SCALE_OPERATOR);
         viewer = user(Role.CLIENT_VIEWER);
         depot = workPointRepository.save(WorkPoint.builder()
                 .company(company).name("Depozit Baciu").active(true).createdAt(Instant.now()).build());
@@ -292,14 +294,15 @@ class BorderouNirIT {
         assertThat(Golden.flat(Golden.pdfText(pdf(admin, id, "nir")))).contains("Nr.1").contains("ANULAT—Dublură");
     }
 
-    /** NIR-ul n-are prețuri: îl tipărește și operatorul la „Doar administratorul”. */
+    /** NIR-ul n-are prețuri: îl tipărește și operatorul de cântar la „Doar administratorul”; cel de birou, nu. */
     @Test
-    void theOperatorAtAdminOnlyPrintsTheNir() throws Exception {
+    void theScaleOperatorAtAdminOnlyPrintsTheNir() throws Exception {
         UUID id = finalized(fromPerson(), line(pet, "40", "0")).id();
         company.setPriceVisibility(PriceVisibility.ADMIN_ONLY);
         companyRepository.save(company);
-        pdf(operator, id, "nir");
+        pdf(scaleOperator, id, "nir");
         http(viewer, id, "nir").andExpect(status().isForbidden());
+        http(operator, id, "nir").andExpect(status().isForbidden());
     }
 
     // --- helpers ---

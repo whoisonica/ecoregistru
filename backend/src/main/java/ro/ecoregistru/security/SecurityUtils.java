@@ -26,8 +26,8 @@ public final class SecurityUtils {
         throw new BusinessException(ACCESS_DENIED);
     }
 
-    /** The roles behind the controllers' {@code CAN_WRITE}. */
-    private static final Set<String> WRITERS = Set.of("PLATFORM_ADMIN", "CONSULTANT", "ADMIN", "OPERATOR");
+    /** The roles behind the controllers' {@code CAN_WRITE}, plus the scale operator: the borderou prints the CNP. */
+    private static final Set<String> WRITERS = Set.of("PLATFORM_ADMIN", "CONSULTANT", "ADMIN", "OPERATOR", "SCALE_OPERATOR");
 
     /**
      * BUG-043 — a CNP travels whole only to who can put it on a document (the forms copy it onto

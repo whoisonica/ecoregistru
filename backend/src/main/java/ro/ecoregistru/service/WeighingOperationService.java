@@ -748,12 +748,12 @@ public class WeighingOperationService {
     }
 
     /**
-     * Cine vede totalul de plată: cine vede prețurile și, la „Doar administratorul”, operatorul — el
-     * plătește omul la cântar (decizia proprietarului, 26.09.2026). Prețul pe kg rămâne ascuns.
+     * Cine vede totalul de plată: cine vede prețurile și, la „Doar administratorul”, operatorul de cântar — el
+     * plătește omul la cântar (deciziile proprietarului, 26.09 și 28.09.2026). Prețul pe kg rămâne ascuns.
      */
     private static boolean seesPayment(Company company) {
         return pricesVisible(company) || (company.getPriceVisibility() == ro.ecoregistru.enums.PriceVisibility.ADMIN_ONLY
-                && SecurityUtils.currentUser().getRole() == ro.ecoregistru.enums.Role.OPERATOR);
+                && SecurityUtils.currentUser().getRole() == ro.ecoregistru.enums.Role.SCALE_OPERATOR);
     }
 
     /** Doar la intrări: acolo depozitul plătește. În lucru se calculează, după finalizare se citește. */

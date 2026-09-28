@@ -49,6 +49,8 @@ if (!PASSWORD) {
 export const ACCOUNTS = {
   admin: { email: "admin@demo.ro", password: PASSWORD },
   operator: { email: "operator@demo.ro", password: PASSWORD },
+  // 28.09.2026 — operatorul de cântar (`DevDataSeeder`); pe o bază seedată înainte de rol, adminul îl invită.
+  cantar: { email: "cantar@demo.ro", password: PASSWORD },
   viewer: { email: "viewer@demo.ro", password: PASSWORD },
   platform: { email: "platform@ecoregistru.ro", password: PASSWORD },
 };

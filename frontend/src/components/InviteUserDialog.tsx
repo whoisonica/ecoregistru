@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { notifyInvited } from "@/lib/inviteNotice";
+import { registersFor } from "@/lib/movementScreens";
+import { inviteRoles } from "@/lib/roles";
 import { useInviteUser } from "@/hooks/useCompanies";
 import type { Company, InviteRole, InviteUserInput } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
@@ -13,7 +15,6 @@ import { useToast } from "@/components/ui/toast";
 
 const t = strings.clients;
 const roleLabels = strings.enums.inviteRole;
-const INVITE_ROLES: InviteRole[] = ["ADMIN", "OPERATOR", "CLIENT_VIEWER"];
 
 /**
  * Invită un om într-o firmă numită după id (`POST /companies/{id}/users`), fără să muți comutatorul. Din „⋯” pe rândul
@@ -85,7 +86,7 @@ export function InviteUserDialog({ company, onClose }: { company: Company; onClo
         <div>
           <Label htmlFor="i-role">{t.inviteRole}</Label>
           <Select id="i-role" value={role} onChange={(e) => setRole(e.target.value as InviteRole)}>
-            {INVITE_ROLES.map((r) => (
+            {inviteRoles(registersFor(company.type).includes("ART_48")).map((r) => (
               <option key={r} value={r}>
                 {roleLabels[r]}
               </option>

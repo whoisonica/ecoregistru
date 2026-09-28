@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Ban, MapPin, Pencil, Plus, RotateCcw, Truck, Users } from "lucide-react";
 import { AUTH_STEP, PLACES_STEP, countLabel } from "@/components/partners/partnerForm";
-import { useCanWrite } from "@/hooks/useBillingAccess";
+import { useCanWeigh, useCanWrite } from "@/hooks/useBillingAccess";
 import {
   usePartners,
   useDeactivatePartner,
@@ -138,6 +138,8 @@ function PartnerPlaces({
 
 export function PartnersPage() {
   const canManage = useCanWrite();
+  // Persoanele fizice le înscrie și operatorul de cântar: omul se trece pe loc, la cântar (28.09.2026).
+  const canWeigh = useCanWeigh();
 
   const { data: partners, isLoading, isError, refetch } = usePartners();
   const { data: company } = useCurrentCompany();
@@ -332,7 +334,7 @@ export function PartnersPage() {
       )}
 
       {personsTab ? (
-        <NaturalPersonsSection canManage={Boolean(canManage)} />
+        <NaturalPersonsSection canManage={Boolean(canManage || canWeigh)} />
       ) : (
       <>
       <section className={hasDepot ? "mt-4" : "mt-6"}>

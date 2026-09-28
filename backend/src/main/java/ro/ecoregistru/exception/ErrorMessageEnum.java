@@ -50,7 +50,7 @@ public enum ErrorMessageEnum {
     // P2.13 — what a consultant is told instead of COMPANY_CUI_ALREADY_EXISTS. The firm may be a
     // client of another consultancy; the message must not say whose, and moving it is ours to do.
     COMPANY_CUI_UNAVAILABLE("company.cui.unavailable", "Firma cu acest CUI nu poate fi adăugată din contul tău. Scrie-ne la contact@wastehouse.ro și o rezolvăm."),
-    INVALID_INVITE_ROLE("invite.role.invalid", "Rol invalid pentru invitație. Alege Administrator, Operator sau Vizualizare."),
+    INVALID_INVITE_ROLE("invite.role.invalid", "Rol invalid pentru invitație. Alege Administrator, Operator, Operator de cântar sau Vizualizare."),
 
     // --- Cabinete de consultanță (P2.13) ---
     CONSULTANCY_NOT_FOUND("consultancy.not.found", "Cabinetul nu a fost găsit."),

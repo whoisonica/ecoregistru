@@ -56,6 +56,7 @@ public class ScaleService {
 
     @Transactional(readOnly = true)
     public List<ScaleResponse> list() {
+        requireManager();
         List<Scale> scales = depotAccess.filter(scaleRepository.findAllForCompany(TenantContext.require()),
                 s -> s.getWorkPoint().getId());
         Map<UUID, List<ScaleEvent>> events = eventRepository
@@ -289,6 +290,7 @@ public class ScaleService {
     /** Conținutul, pentru cine vede cântarul (și depozitul lui, D2.4). */
     @Transactional(readOnly = true)
     public MovementAttachmentService.AttachmentContent content(UUID scaleId, UUID documentId) {
+        requireManager();
         require(scaleId, TenantContext.require());
         var document = documentRepository.findByIdAndScale_Id(documentId, scaleId)
                 .orElseThrow(() -> new NotFoundException(ATTACHMENT_NOT_FOUND));
@@ -327,19 +329,20 @@ public class ScaleService {
 
     /** D2.4 — cântarul altui depozit decât ale utilizatorului e „negăsit”, ca al altei firme. */
     /**
-     * Cântarul, verificările lui și dovezile decid dacă o cântărire e legală (D2.3): un operator care își trece singur
-     * o verificare „Admis” ar ocoli confirmarea cu motiv la finalizare. Le scriu cei care aprobă operațiunile.
+     * Cântarul, verificările lui și dovezile decid dacă o cântărire e legală (D2.3). Le scriu cei care aprobă și, din
+     * 28.09.2026, operatorul de cântar (decizia proprietarului, cu riscul știut: își poate trece singur un „Admis”).
+     * „Operator”-ul de birou și vizualizatorul nici nu le văd.
      */
     private static void requireManager() {
         if (!MANAGERS.contains(SecurityUtils.currentUser().getRole())) {
             throw new org.springframework.security.access.AccessDeniedException(
-                    "Doar administratorul sau consultantul modifică cântarele și verificările lor.");
+                    "Doar administratorul, consultantul sau operatorul de cântar lucrează cu cântarele.");
         }
     }
 
     private static final java.util.Set<ro.ecoregistru.enums.Role> MANAGERS = java.util.EnumSet.of(
             ro.ecoregistru.enums.Role.PLATFORM_ADMIN, ro.ecoregistru.enums.Role.ADMIN,
-            ro.ecoregistru.enums.Role.CONSULTANT);
+            ro.ecoregistru.enums.Role.CONSULTANT, ro.ecoregistru.enums.Role.SCALE_OPERATOR);
 
     private Scale require(UUID id, UUID tenantId) {
         return scaleRepository.findByIdAndCompany_Id(id, tenantId)

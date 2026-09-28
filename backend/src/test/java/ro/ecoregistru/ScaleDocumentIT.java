@@ -166,7 +166,7 @@ class ScaleDocumentIT {
         UUID proof = service.attach(scale.id(), null, pdf("brml.pdf")).brmlProof().id();
         assertThat(service.content(scale.id(), proof).bytes()).isEqualTo(PDF);
 
-        AppUser operator = user(Role.OPERATOR);
+        AppUser operator = user(Role.SCALE_OPERATOR);
         WorkPoint other = depot();
         users.changeWorkPoints(operator.getId(), new UserWorkPointsRequest(false, List.of(other.getId())));
         actAs(operator);
@@ -174,14 +174,22 @@ class ScaleDocumentIT {
                 .isInstanceOfSatisfying(NotFoundException.class,
                         e -> assertThat(e.getError()).isEqualTo(ErrorMessageEnum.SCALE_NOT_FOUND));
 
-        // HTTP: PDF-ul se arată în pagină; vizualizatorul citește, dar nu urcă.
+        // HTTP: PDF-ul se arată în pagină; operatorul de cântar îl citește și urcă (28.09.2026), vizualizatorul nici nu-l
+        // vede.
         TenantContext.clear();
         SecurityContextHolder.clearContext();
+        AppUser scaleOperator = user(Role.SCALE_OPERATOR);
         AppUser viewer = user(Role.CLIENT_VIEWER);
         mockMvc.perform(get("/api/v1/scales/" + scale.id() + "/documents/" + proof)
-                        .header("Authorization", "Bearer " + jwtService.generateToken(viewer)))
+                        .header("Authorization", "Bearer " + jwtService.generateToken(scaleOperator)))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "application/pdf"));
+        mockMvc.perform(multipart("/api/v1/scales/" + scale.id() + "/brml-proof").file(pdf("x.pdf"))
+                        .header("Authorization", "Bearer " + jwtService.generateToken(scaleOperator)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/scales/" + scale.id() + "/documents/" + proof)
+                        .header("Authorization", "Bearer " + jwtService.generateToken(viewer)))
+                .andExpect(status().isForbidden());
         mockMvc.perform(multipart("/api/v1/scales/" + scale.id() + "/brml-proof").file(pdf("x.pdf"))
                         .header("Authorization", "Bearer " + jwtService.generateToken(viewer)))
                 .andExpect(status().isForbidden());

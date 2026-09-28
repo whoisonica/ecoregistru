@@ -1,10 +1,11 @@
 // Proba 45: accesul pe depozit (D2.4) — Setări → Utilizatori, coloana „Depozite” și dialogul ei.
 //
-// Ce apără: la o firmă cu depozit și cu mai multe depozite, rândul operatorului arată „Toate” (implicit, decizia
+// Ce apără: la o firmă cu depozit și cu mai multe depozite, rândul operatorului de cântar arată „Toate” (implicit, decizia
 // proprietarului din 16.09.2026); adminul îl restrânge la un depozit din dialog, iar rândul arată numele lui; „Doar
 // cele alese” fără niciun depozit nu pleacă la server; operatorul restrâns nu mai vede operațiunea din celălalt
 // depozit (404 pe ea, lipsă din listă), nici depozitul în selectoare; rândul adminului n-are buton (vede mereu tot);
-// 375px fără lățire. La final operatorul primește înapoi „Toate depozitele”.
+// 375px fără lățire. La final operatorul primește înapoi „Toate depozitele”. Din 28.09.2026 restrânsul e operatorul
+// de cântar: „Operator”-ul de birou nu mai cântărește (403 pe o intrare nouă).
 //
 // ⚠️ Lasă în urmă depozitul „Proba 45 <număr>” (dezactivat) și o intrare anulată cu motivul „Proba 45”.
 import { launch, newPage, login, shot, BASE, ACCOUNTS } from "./lib.mjs";
@@ -21,7 +22,7 @@ const today = (() => {
 })();
 const DEPOT = `Proba 45 ${Date.now() % 100000}`;
 const section = "section#utilizatori";
-const operatorEmail = ACCOUNTS.operator.email;
+const operatorEmail = ACCOUNTS.cantar.email;
 
 const api = (page, method, url, body) =>
   page.evaluate(
@@ -91,7 +92,7 @@ check("tabelul nu se lățește la 1440px", width <= 0, `${width}px`);
 
 // ---------------------------------------------------------------- OPERATORUL RESTRÂNS
 const operator = await newPage(browser, { width: 1440, height: 900 });
-await login(operator, "operator");
+await login(operator, "cantar");
 const seenOp = await api(operator, "GET", `/api/v1/weighing-operations/${op.id}`);
 check("operatorul primește 404 pe intrarea din celălalt depozit", seenOp.status === 404, `HTTP ${seenOp.status}`);
 const list = (await api(operator, "GET", "/api/v1/weighing-operations")).json ?? [];
@@ -104,6 +105,13 @@ const moved = await api(operator, "POST", "/api/v1/weighing-operations", { type:
 check("nu poate porni o intrare în celălalt depozit", moved.status === 404, `HTTP ${moved.status}`);
 // Cele trei 404 de mai sus sunt chiar proba.
 operator.problems = operator.problems.filter((p) => !p.includes("404"));
+
+// „Operator”-ul de birou nu cântărește deloc, nici în depozitul lui (28.09.2026).
+const office = await newPage(browser, { width: 1440, height: 900 });
+await login(office, "operator");
+const refused = await api(office, "POST", "/api/v1/weighing-operations", { type: "IN", workPointId: home.id, date: today });
+check("operatorul de birou primește 403 la o intrare nouă", refused.status === 403, `HTTP ${refused.status}`);
+office.problems = office.problems.filter((p) => !p.includes("403"));
 
 // ---------------------------------------------------------------- TELEFONUL
 const phone = await newPage(browser, { width: 375, height: 800 });
@@ -120,7 +128,7 @@ check("operatorul primește înapoi toate depozitele", back.json?.allWorkPoints 
 await api(page, "POST", `/api/v1/weighing-operations/${op.id}/cancel`, { reason: "Proba 45" });
 await api(page, "DELETE", `/api/v1/work-points/${other.id}`);
 
-for (const p of [page, operator, phone]) {
+for (const p of [page, operator, office, phone]) {
   if (p.problems.length > 0) {
     console.log("  FAIL consola/rețeaua");
     for (const problem of [...new Set(p.problems)]) console.log(`         ${problem}`);

@@ -193,4 +193,21 @@ class PartnerAuthorizationAlertIT {
         // Delivery failed -> stays unmarked so the warning is retried tomorrow.
         assertThat(warnedFor(p.getId())).isNull();
     }
+
+    /** 28.09.2026 — operatorul de cântar nu ține partenerii la zi: nu primește avertismentul. */
+    @Test
+    void theScaleOperatorIsNotWarnedAboutPartners() {
+        Company c = companyWithUser();
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        AppUser scaleOperator = appUserRepository.save(AppUser.builder()
+                .email("cantar+" + suffix + "@demo.ro").password("x")
+                .role(Role.SCALE_OPERATOR).company(c).enabled(true).createdAt(Instant.now()).build());
+        Partner p = partner(c, TODAY.plusDays(30), null, true);
+
+        scheduler.dispatchWarnings(TODAY);
+
+        Mockito.verify(notificationService).sendPartnerAuthorizationWarning(
+                Mockito.argThat(x -> x.getId().equals(p.getId())),
+                Mockito.argThat(to -> !to.isEmpty() && !to.contains(scaleOperator.getEmail())), anyLong());
+    }
 }
