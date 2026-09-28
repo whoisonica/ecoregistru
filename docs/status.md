@@ -15,6 +15,12 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **28.09.2026, 18:36 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v139** (`b0f0836`), `ecoregistru-app` **v141** (`2c7fba1`), din `main` `c76866d`.**
+> Backup `b025` înainte. Pe dyno: „Successfully applied 1 migration to schema "public", now at version v80”, `Started EcoRegistruApplication
+> in 18.573 seconds`, `/actuator/health` 200; bundle-ul servit conține „Operator de cântar”, `confirmPastPeriod` și `SCALE_OPERATOR`. Deployul:
+> `scripts/deploy-split.sh both --ref c76866d --push` (CI verde, garda curată pe ambele, câte un commit cu merge-uri), rulat de proprietar.
+> Pleacă astfel tot ce e în intrarea de mai jos (A1–A7, `V80`, D2, PF la 5 ani, operatorul de cântar). Liberă **`V81`**.
+
 > **28.09.2026, ~17:30 — `main` la zi (cerut de proprietar), fără release Heroku: producția rămâne api **v138** / app **v140** (`V78`).**
 > Mergeuite prin `integrare/2809`: `fix/depozit-decizii` (`94173db` D2 — luna încheiată cere a doua confirmare; `8fd9e5c` PF anonimizate la
 > 5 ani de la 1 iulie), `feat/operator-cantar` (intrarea de mai jos) și `fix/generator-a` (A1–A7 din `ecoregistru-docs/docs/todo-reparatii-2809.md`:
