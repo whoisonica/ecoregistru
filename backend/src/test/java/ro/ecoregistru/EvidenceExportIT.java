@@ -122,7 +122,24 @@ class EvidenceExportIT {
      *
      * <p>Rămâne ca gardă, nu ca reparaţie: dacă cineva „aliniază" şi exportul ăsta la Cp1250, testul
      * cade şi spune de ce nu trebuie.
+     *
+     * <p>Metoda lipsea până pe 28.09.2026 (A7, todo-reparatii-2809): javadocul stătea deasupra lui
+     * {@code unknownFormatIsCleanBadRequest}. Textul se citește brut, nu prin {@code Golden.flat}, care
+     * ar împături tocmai virgula dedesubt pe sedilă.
      */
+    @Test
+    void romanianDiacriticsReachThePageWhole() throws Exception {
+        regenerate(adminToken, 2026);
+
+        byte[] pdf = mockMvc.perform(get("/api/v1/evidences/export")
+                        .param("year", "2026").param("format", "pdf")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        assertThat(Golden.pdfText(pdf)).contains("Evidența gestiunii deșeurilor");
+    }
+
     @Test
     void unknownFormatIsCleanBadRequest() throws Exception {
         mockMvc.perform(get("/api/v1/evidences/export")
