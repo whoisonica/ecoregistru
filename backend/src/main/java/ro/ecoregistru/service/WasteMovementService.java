@@ -17,6 +17,7 @@ import ro.ecoregistru.enums.WasteRegister;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.ErrorMessageEnum;
 import ro.ecoregistru.exception.NotFoundException;
+import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.mapper.WasteMovementMapper;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.security.SecurityUtils;
@@ -76,6 +77,7 @@ public class WasteMovementService {
         validateDates(request);
         requireCodeValidOn(wasteCode, request.date());
         Partner carrier = resolveCarrier(request, tenantId);
+        requireActive(workPoint, partner, carrier, null);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner, wasteCode);
         requirePeriodOpen(register, request.operation(), workPoint, request.date());
@@ -155,6 +157,7 @@ public class WasteMovementService {
         validateDates(request);
         requireCodeValidOn(wasteCode, request.date());
         Partner carrier = resolveCarrier(request, tenantId);
+        requireActive(workPoint, partner, carrier, movement);
         WasteRegister register = resolveRegister(request, company);
         validateOwnWasteHandover(request, register, partner, wasteCode);
         requirePeriodOpen(register, request.operation(), workPoint, request.date());
@@ -432,6 +435,42 @@ public class WasteMovementService {
             throw new BusinessException(PARTNER_WORK_POINT_MISMATCH);
         }
         return workPoint;
+    }
+
+    /**
+     * Un punct de lucru, un partener sau un transportator dezactivat nu se alege pe o mişcare nouă
+     * şi nu se pune pe una veche (29.09.2026). Formularul îi ascundea deja, dar serverul primea orice
+     * id al firmei, deci o cerere scrisă de mână sau un ecran rămas deschis de ieri îi punea pe
+     * Anexa 3 şi pe evidenţă.
+     *
+     * <p><b>De ce doar la alegere.</b> O mişcare veche care trimite deja la unul dezactivat între timp
+     * trebuie să rămână salvabilă — altfel corectura unei cantităţi de anul trecut ar cere reactivarea
+     * partenerului. E aceeaşi regulă ca în formular ({@code workPointOptions} din
+     * {@code MovementFormDialog}): ce avea mişcarea rămâne în listă, marcat inactiv.
+     *
+     * <p>Bifa „Transportator” nu se cere, dinadins: formularul îi grupează pe cei bifaţi primii, dar
+     * nu-i filtrează („un răspuns lipsă nu restrânge nimic”), deci orice partener activ poate căra.
+     */
+    private static void requireActive(WorkPoint workPoint, Partner partner, Partner carrier, WasteMovement current) {
+        if (!workPoint.isActive() && (current == null || !sameId(current.getWorkPoint(), workPoint.getId()))) {
+            throw new UnprocessableEntityException(MOVEMENT_WORK_POINT_INACTIVE);
+        }
+        if (partner != null && !partner.isActive()
+                && (current == null || !sameId(current.getPartner(), partner.getId()))) {
+            throw new UnprocessableEntityException(MOVEMENT_PARTNER_INACTIVE);
+        }
+        if (carrier != null && !carrier.isActive()
+                && (current == null || !sameId(current.getTransportPartner(), carrier.getId()))) {
+            throw new UnprocessableEntityException(MOVEMENT_CARRIER_INACTIVE);
+        }
+    }
+
+    private static boolean sameId(WorkPoint wp, UUID id) {
+        return wp != null && id.equals(wp.getId());
+    }
+
+    private static boolean sameId(Partner p, UUID id) {
+        return p != null && id.equals(p.getId());
     }
 
     /** The carrier named on the transport form; null means we haul it ourselves. */

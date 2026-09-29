@@ -296,6 +296,9 @@ public enum ErrorMessageEnum {
     QUANTITY_REQUIRED("movement.quantity.required", "Cantitatea e obligatorie. Dacă o cântărește destinatarul la descărcare, bifează „Se cântărește la descărcare” și lasă câmpul gol."),
     WEIGHING_NEEDS_RECIPIENT("movement.weighing.recipient", "Cântărirea la descărcare o face destinatarul: alege partenerul care preia deșeul."),
     PARTNER_WORK_POINT_MISMATCH("movement.partner.work.point.mismatch", "Punctul de lucru ales nu e al destinatarului. Alege unul dintre punctele lui de lucru."),
+    MOVEMENT_WORK_POINT_INACTIVE("movement.work.point.inactive", "Punctul de lucru ales e dezactivat. Reactivează-l sau alege altul."),
+    MOVEMENT_PARTNER_INACTIVE("movement.partner.inactive", "Partenerul ales e dezactivat. Reactivează-l la Parteneri sau alege altul."),
+    MOVEMENT_CARRIER_INACTIVE("movement.carrier.inactive", "Transportatorul ales e dezactivat. Reactivează-l la Parteneri sau alege altul."),
     NOT_AWAITING_WEIGHING("movement.weight.not.awaited", "Mișcarea are deja cantitatea înregistrată. Ca s-o schimbi, editeaz-o."),
 
     // --- Attachments ---
