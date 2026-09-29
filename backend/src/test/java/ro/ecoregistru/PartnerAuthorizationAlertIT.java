@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.Partner;
@@ -45,6 +48,8 @@ class PartnerAuthorizationAlertIT {
     @Autowired CompanyRepository companyRepository;
     @Autowired AppUserRepository appUserRepository;
     @Autowired PartnerRepository partnerRepository;
+
+    @Autowired PlatformTransactionManager transactionManager;
 
     @MockitoBean NotificationService notificationService;
 
@@ -209,5 +214,34 @@ class PartnerAuthorizationAlertIT {
         Mockito.verify(notificationService).sendPartnerAuthorizationWarning(
                 Mockito.argThat(x -> x.getId().equals(p.getId())),
                 Mockito.argThat(to -> !to.isEmpty() && !to.contains(scaleOperator.getEmail())), anyLong());
+    }
+
+    /**
+     * O autorizaţie reînnoită cât timp pleacă avertizarea rămâne reînnoită (29.09.2026).
+     *
+     * <p>Avertizarea ţine partenerul încărcat cât trimite mailul şi scrie la urmă doar data pentru
+     * care a avertizat. În clipa mailului (mock), o tranzacţie separată — omul din ecran — salvează
+     * noua dată de expirare. Cu UPDATE pe tot rândul, flush-ul avertizării punea data veche la loc.
+     */
+    @Test
+    void aRenewalSavedWhileTheWarningGoesOutSurvives() {
+        Company c = companyWithUser();
+        Partner p = partner(c, TODAY.plusDays(30), null, true);
+        LocalDate renewed = TODAY.plusYears(5);
+        TransactionTemplate user = new TransactionTemplate(transactionManager);
+        user.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        Mockito.doAnswer(inv -> {
+            user.executeWithoutResult(s ->
+                    partnerRepository.findById(p.getId()).orElseThrow().setAuthorizationExpiry(renewed));
+            return null;
+        }).when(notificationService).sendPartnerAuthorizationWarning(
+                Mockito.argThat(x -> x != null && x.getId().equals(p.getId())), any(), anyLong());
+
+        scheduler.dispatchWarnings(TODAY);
+
+        Partner after = partnerRepository.findById(p.getId()).orElseThrow();
+        assertThat(after.getAuthorizationWarningSentFor()).as("garda: avertizarea chiar a scris data")
+                .isEqualTo(TODAY.plusDays(30));
+        assertThat(after.getAuthorizationExpiry()).isEqualTo(renewed);
     }
 }
