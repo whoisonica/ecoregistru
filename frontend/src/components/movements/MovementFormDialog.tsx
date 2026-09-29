@@ -63,6 +63,7 @@ import { useAnexa2Threshold } from "@/hooks/useAnexa2";
 import { useAttachmentOpen } from "@/hooks/useAttachment";
 import {
   suggestedPackagingMaterial,
+  transportForm,
   operationsFor,
   isExit,
   ALL_CODES,
@@ -649,12 +650,14 @@ export function MovementFormDialog({
   // e alt flux — deci nu se oferă, se explică.
   const isMedicalCode = isHazardousCode && (codeMeta?.code ?? "").startsWith("18");
   const showTransportSection = isExit(effectiveOperation) && Boolean(partnerId);
-  const showAnexa3Section = showTransportSection && !isHazardousCode;
   // Specialista, 14.09.2026: „anexa 2 o păstrăm doar pentru colectori". La un generator blocul de
-  // transport rămâne — șoferul și mașina se țin oricum —, dar fără rubricile formularului.
+  // transport rămâne — șoferul și mașina se țin oricum, pentru aviz —, dar fără rubricile formularului.
   const collectorForms = company != null && company.type !== "GENERATOR";
-  const showAnexa2Section =
-    showTransportSection && isHazardousCode && !isMedicalCode && collectorForms;
+  const printedForm = showTransportSection
+    ? transportForm({ hazardous: isHazardousCode, medical: isMedicalCode, collectorForms })
+    : null;
+  const showAnexa3Section = printedForm === "ANEXA_3";
+  const showAnexa2Section = printedForm === "ANEXA_2";
 
   /**
    * Cifra din spatele bifei „< 1t/an" — cerută numai pentru o mișcare deja salvată, fiindcă pragul
@@ -1666,6 +1669,8 @@ export function MovementFormDialog({
                       : t.anexa2Copies6}
               </p>
             )}
+            {/* Datele și unitatea sunt ale formularului; fără el, avizul nu le tipărește. */}
+            {printedForm && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {/* Ordinea cerută pe 24.08: încărcarea întâi, descărcarea după — ca pe formular.
                   Încărcarea se alege de pe 15.09.2026 (specialista); goală, se tipărește data
@@ -1721,6 +1726,7 @@ export function MovementFormDialog({
               </div>
               )}
             </div>
+            )}
             <TransportFields
               transportPartnerId={transportPartnerId}
               setTransportPartnerId={setTransportPartnerId}
@@ -1741,6 +1747,7 @@ export function MovementFormDialog({
               setTransportDestinations={setTransportDestinations}
               destinationsPrefilled={destinationsPrefilled}
               setDestinationsPrefilled={setDestinationsPrefilled}
+              showDestinations={printedForm != null}
             />
             {showAnexa2Section && (
               <Anexa2Fields

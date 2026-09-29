@@ -1,3 +1,9 @@
+☢️ **30.09.2026 — proba 58 (`58-periculos-generator.mjs`), periculosul la generator (proprietarul: „te pune să completezi anexa 3
+transport desi nu trebuie”)**: pe o firmă nouă de generator, 13 02 05 predat unui colector: blocul de transport spune că Anexa 2 o
+întocmește colectorul, păstrează șoferul și mașina (avizul) și **nu** mai are „Unitatea tipărită”, datele de încărcare/descărcare și caseta
+„Destinat:”; pe 15 01 01, în același formular, rubricile Anexei 3 revin; salvată, predarea oferă avizul fără „împreună cu Anexa 3”.
+Intră în `run.mjs`. **Negativă:** cu cele trei componente din `origin/main` cad 5 verificări. ⚠️ Lasă în urmă o firmă „Proba 58 Periculos <număr>”.
+
 ⚖️ **29.09.2026 noaptea — Acasă în kilograme întregi (proprietarul: „nu cântărește nimeni cu 3 zecimale”)**: graficul „{an} pe luni”,
 totalul lui și „Deșeurile anului” scriu `formatKgSummary` („2.576 kg”), nu `formatKg` („2.576,000 kg”); cifrele de transcris (liste, fișe,
 documente) păstrează cele trei zecimale (G06). Proba **39** cere ca pe cele două carduri să nu apară nicio virgulă zecimală.

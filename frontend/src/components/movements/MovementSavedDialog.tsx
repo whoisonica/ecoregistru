@@ -55,7 +55,11 @@ export function MovementSavedDialog({
     canPrintAviz(movement, print.canWrite) && {
       key: "aviz",
       label: t.savedAviz,
-      hint: t.savedAvizHint,
+      hint: !movement.hazardous
+        ? t.savedAvizHint
+        : canPrintAnexa2(movement, company?.type)
+          ? t.savedAvizHintAnexa2
+          : t.savedAvizHintHazardous,
       busy: avizBusy === movement.id,
       run: () => downloadAviz(movement),
     },

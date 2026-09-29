@@ -12,6 +12,7 @@ import {
   operationsFor,
   suggestedDestinations,
   suggestedPackagingMaterial,
+  transportForm,
 } from "@/components/movements/movementRules";
 
 test("ecranul decide operațiunile oferite", () => {
@@ -115,4 +116,17 @@ test("o copie nu păstrează un partener dezactivat între timp", () => {
   assert.equal(keepIfActive("b", partners), "");
   assert.equal(keepIfActive("sters", partners), "");
   assert.equal(keepIfActive("", partners), "");
+});
+
+test("formularul de transport al predării: Anexa 3, Anexa 2 sau niciunul", () => {
+  const generator = { collectorForms: false };
+  const colector = { collectorForms: true };
+  assert.equal(transportForm({ hazardous: false, medical: false, ...generator }), "ANEXA_3");
+  assert.equal(transportForm({ hazardous: false, medical: false, ...colector }), "ANEXA_3");
+  // Periculos la generator: formularul îl aduce colectorul, generatorul tipărește doar avizul.
+  assert.equal(transportForm({ hazardous: true, medical: false, ...generator }), null);
+  assert.equal(transportForm({ hazardous: true, medical: false, ...colector }), "ANEXA_2");
+  // Cap. 18: formularul e al transportatorului (art. 24), la oricine.
+  assert.equal(transportForm({ hazardous: true, medical: true, ...colector }), null);
+  assert.equal(transportForm({ hazardous: true, medical: true, ...generator }), null);
 });

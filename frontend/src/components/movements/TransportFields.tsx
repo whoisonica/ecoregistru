@@ -38,6 +38,7 @@ export function TransportFields({
   setTransportDestinations,
   destinationsPrefilled,
   setDestinationsPrefilled,
+  showDestinations,
 }: {
   transportPartnerId: string;
   setTransportPartnerId: (value: string) => void;
@@ -63,6 +64,8 @@ export function TransportFields({
   /** Dacă destinațiile au fost puse de aplicație: la prima atingere a omului, nu se mai rescriu. */
   destinationsPrefilled: boolean;
   setDestinationsPrefilled: (value: boolean) => void;
+  /** Caseta „Destinat:” e a formularului; la o predare fără formular (periculos la generator) nu se cere. */
+  showDestinations: boolean;
 }) {
   return (
     <>
@@ -176,6 +179,7 @@ export function TransportFields({
                 />
               </div>
             </div>
+            {showDestinations && (
             <div>
               <span id="mv-destinat-label" className="block text-sm font-medium text-content-strong">
                 {t.askTransportDestinations}
@@ -201,6 +205,7 @@ export function TransportFields({
                 }))}
               />
             </div>
+            )}
     </>
   );
 }

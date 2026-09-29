@@ -988,6 +988,9 @@ export const strings = {
     savedAnexa3: "Tipărește Anexa 3 — formularul de transport",
     savedAviz: "Descarcă avizul de însoțire",
     savedAvizHint: "Merge cu marfa, împreună cu Anexa 3.",
+    // Periculos (30.09.2026): Anexa 3 nu se tipărește; Anexa 2 o face colectorul — la generator o aduce el.
+    savedAvizHintAnexa2: "Merge cu marfa, împreună cu Anexa 2.",
+    savedAvizHintHazardous: "Merge cu marfa. Formularul de transport îl aduce cel care preia deșeul.",
     savedAnexa2: "Tipărește Anexa 2 — transportul deșeurilor periculoase",
     savedAnexa2Hint: "Formularul de expediție pentru deșeurile periculoase.",
     savedWeighTitle: "Scrie cantitatea când vine bonul de cântar",

@@ -86,6 +86,25 @@ export const R_CODES = ALL_CODES.filter((c) => c.startsWith("R"));
 export const D_CODES = ALL_CODES.filter((c) => c.startsWith("D"));
 
 /**
+ * Ce formular de transport tipărește predarea, sau `null` când nu tipărește niciunul (30.09.2026).
+ *
+ * <p>Anexa 3 e a nepericuloaselor, Anexa 2 a periculoaselor — și pe aceasta o întocmește colectorul
+ * („anexa 2 o păstrăm doar pentru colectori", specialista, 14.09.2026): generatorul de periculoase o
+ * primește de la el și tipărește doar avizul. Cap. 18 n-are niciunul: formularul e al
+ * transportatorului (art. 24). Fără formular, blocul de transport păstrează doar ce scrie avizul —
+ * transportatorul, șoferul, mașina —, nu rubricile unei hârtii care nu se tipărește.
+ */
+export function transportForm(code: {
+  hazardous: boolean;
+  medical: boolean;
+  collectorForms: boolean;
+}): "ANEXA_3" | "ANEXA_2" | null {
+  if (!code.hazardous) return "ANEXA_3";
+  if (code.medical || !code.collectorForms) return null;
+  return "ANEXA_2";
+}
+
+/**
  * Ce se bifează la "Destinat:" pe Anexa 3, după ce este destinatarul.
  *
  * <p>Răspunsul specialistei din 24.08.2026 (A3.1), verbatim: „când pleacă la colector se pot bifa
