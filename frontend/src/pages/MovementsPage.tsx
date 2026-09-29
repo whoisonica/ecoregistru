@@ -395,12 +395,13 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   useEffect(() => {
     if (!newParam) return;
     setNewParam("");
-    if (!canWrite) return;
+    // Consumat și cu formularul deschis, dar fără să-l golească: vezi `openCreate`.
+    if (!canWrite || dialogOpen) return;
     setEditing(null);
     setDuplicating(null);
     setSameAs(null);
     setDialogOpen(true);
-  }, [newParam, setNewParam, canWrite]);
+  }, [newParam, setNewParam, canWrite, dialogOpen]);
 
   /**
    * Evidența art. 48 pe **anul** din filtru, nu pe lună: evidența se depune pe an, iar stocul de
@@ -435,6 +436,10 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   }
 
   function openCreate() {
+    // Cu formularul deja deschis nu se atinge nimic: `editing = null` sub o editare deschisă făcea din
+    // „Salvează” o mișcare nouă, dublura celei editate (29.09.2026). Tasta N tace oricum cu un dialog
+    // deschis (`hotkeyAllowed`); garda de aici e pentru orice alt drum.
+    if (dialogOpen) return;
     setEditing(null);
     setDuplicating(null);
     setSameAs(null);

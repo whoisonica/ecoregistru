@@ -45,8 +45,10 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  useHotkey("k", () => setOpen((o) => !o), { ctrl: true, whileTyping: true });
-  useHotkey("Escape", () => setOpen(false), { whileTyping: true, enabled: open });
+  // Ctrl+K o închide din ea însăși (e un strat modal), dar n-o deschide peste un formular deschis: o
+  // comandă aleasă din ea ar schimba ecranul și ar arunca formularul (29.09.2026, `hotkeyAllowed`).
+  useHotkey("k", () => setOpen((o) => !o), { ctrl: true, whileTyping: true, inDialog: open });
+  useHotkey("Escape", () => setOpen(false), { whileTyping: true, inDialog: true, enabled: open });
 
   useEffect(() => {
     if (open) {
