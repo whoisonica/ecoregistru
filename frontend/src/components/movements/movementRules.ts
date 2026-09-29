@@ -177,3 +177,11 @@ export function leavesAnexa3Gap(
   if (!next.partnerId || !isExit(next.operation)) return true;
   return next.date.slice(0, 4) !== original.date.slice(0, 4);
 }
+
+/**
+ * Id-ul copiat de pe o mișcare-sursă, sau gol dacă între timp partenerul a fost dezactivat (29.09.2026):
+ * select-ul nu-l arată, iar serverul l-ar refuza la salvare.
+ */
+export function keepIfActive(id: string, partners: ReadonlyArray<{ id: string; active: boolean }>): string {
+  return id === "" || partners.some((p) => p.id === id && p.active) ? id : "";
+}

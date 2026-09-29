@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   D_CODES,
+  keepIfActive,
   destinationsFor,
   destinationsOpen,
   R_CODES,
@@ -103,4 +104,15 @@ test("golul din Registrul Anexa 3: fără partener, fără ieșire sau în alt a
   // Fără formular emis nu e niciun număr de pierdut; o mișcare nouă nici atât.
   assert.equal(leavesAnexa3Gap({ anexa3Number: null, date: "2026-05-10" }, { ...same, partnerId: null }), false);
   assert.equal(leavesAnexa3Gap(null, { ...same, partnerId: null }), false);
+});
+
+test("o copie nu păstrează un partener dezactivat între timp", () => {
+  const partners = [
+    { id: "a", active: true },
+    { id: "b", active: false },
+  ];
+  assert.equal(keepIfActive("a", partners), "a");
+  assert.equal(keepIfActive("b", partners), "");
+  assert.equal(keepIfActive("sters", partners), "");
+  assert.equal(keepIfActive("", partners), "");
 });

@@ -72,6 +72,7 @@ import {
   destinationsFor,
   destinationsOpen,
   isAfterToday,
+  keepIfActive,
   leavesAnexa3Gap,
   type FieldErrors,
   type ExitOperation,
@@ -181,8 +182,10 @@ export function MovementFormDialog({
     // a fost dezactivat între timp. La una nouă, implicitul vine din filtrul ecranului, care poate
     // purta un `?punct=` rămas în adresă către un punct care nu mai e activ; atunci cade pe primul
     // din listă, ca să nu pornim cu un id pe care select-ul n-are cum să-l arate.
-    if (initial || workPoints.some((w) => w.id === preferred)) return preferred;
-    return workPoints[0]?.id ?? "";
+    // O copie („Duplică”, „La fel ca data trecută”) nu pornește pe un punct dezactivat între timp: serverul
+    // l-ar refuza (29.09.2026), iar select-ul nu l-ar arăta (vezi `workPointOptions`).
+    if (editing || workPoints.some((w) => w.id === preferred)) return preferred;
+    return (workPoints.some((w) => w.id === defaultWorkPointId) ? defaultWorkPointId : workPoints[0]?.id) ?? "";
   });
   /**
    * Formularul deschis prin `?nou=1` — butonul „+” de pe telefon, „Adaugă deșeuri” din panou de pe alt
@@ -203,11 +206,11 @@ export function MovementFormDialog({
    */
   const workPointOptions = useMemo(() => {
     const options = workPoints.map((w) => ({ id: w.id, name: w.name, inactive: false }));
-    if (initial?.workPointId && !options.some((w) => w.id === initial.workPointId)) {
-      options.push({ id: initial.workPointId, name: initial.workPointName, inactive: true });
+    if (editing?.workPointId && !options.some((w) => w.id === editing.workPointId)) {
+      options.push({ id: editing.workPointId, name: editing.workPointName, inactive: true });
     }
     return options;
-  }, [workPoints, initial?.workPointId, initial?.workPointName]);
+  }, [workPoints, editing?.workPointId, editing?.workPointName]);
   const [date, setDate] = useState(editing?.date ?? todayIso());
   const [wasteCode, setWasteCode] = useState<ComboboxItem | null>(
     initial ? wasteCodeItem(initial.wasteCodeId, initial.wasteCode, initial.wasteCodeName, initial.hazardous) : null
@@ -350,6 +353,23 @@ export function MovementFormDialog({
   // Null = "ca la firmă": alegerea de pe firmă (V19), iar în lipsa ei unitatea mișcării.
   const [anexa3Unit, setAnexa3Unit] = useState<Unit | "">(initial?.anexa3Unit ?? "");
   const [transportPartnerId, setTransportPartnerId] = useState(initial?.transportPartnerId ?? "");
+  /**
+   * O copie („Duplică”, „La fel ca data trecută”, „Încă una la fel”) poate aduce un partener sau un
+   * transportator dezactivat între timp. Select-ul arată doar activii, deci rubrica părea goală, iar
+   * serverul refuza salvarea cu „Partenerul ales e dezactivat” (29.09.2026). Se golesc, ca omul să aleagă
+   * din nou; la editare rămân, fiindcă mișcarea veche trebuie să se poată salva cum e.
+   */
+  const [copyChecked, setCopyChecked] = useState(false);
+  if (!editing && partners && !copyChecked) {
+    // Ajustare în timpul randării, o singură dată, la sosirea listei: după aceea alegerile omului sunt
+    // din activi.
+    setCopyChecked(true);
+    if (keepIfActive(partnerId, partners) !== partnerId) {
+      setPartnerId("");
+      setPartnerWorkPointId("");
+    }
+    if (keepIfActive(transportPartnerId, partners) !== transportPartnerId) setTransportPartnerId("");
+  }
   const [driverName, setDriverName] = useState(initial?.driverName ?? "");
   const [driverIdentification, setDriverIdentification] = useState(
     initial?.driverIdentification ?? ""
