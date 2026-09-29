@@ -2682,13 +2682,18 @@ export const strings = {
     docPackaging: "Anexa 1 Ambalaje (Ordinul 794/2012)",
     docAnexa3: "Anexa 3 Ambalaje (Ordinul 794/2012)",
     docAnexa3Register: "Registrul Anexa 3 (transport)",
-    /** {count} = „5 formulare”. */
-    anexa3RegisterYes: "{count} de transport emise în {year}, în ordinea numerelor. Se ține la sediu, fără termen.",
+    /**
+     * {count} = „5 formulare de transport emise” (`formIssuedOne` / `formIssuedMany`). Adjectivul stă în pereche,
+     * nu în șir (decizia 66): „1 formular de transport emise” (29.09.2026).
+     */
+    anexa3RegisterYes: "{count} în {year}, în ordinea numerelor. Se ține la sediu, fără termen.",
     anexa3RegisterYesYear: "{year}: {count}",
     anexa3RegisterNone: "Nicio Anexa 3 tipărită în {year}: registrul intră de la primul formular.",
     anexa3RegisterNonePeriod: "Nicio Anexa 3 tipărită în perioada aleasă: registrul intră de la primul formular.",
     formOne: "formular",
     formMany: "formulare",
+    formIssuedOne: "formular de transport emis",
+    formIssuedMany: "formulare de transport emise",
     docPartners: "Autorizațiile partenerilor",
     docAttachments: "Atașamente",
     /** {count} = „12 mișcări”. */

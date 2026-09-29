@@ -181,7 +181,7 @@ function Anexa3RegisterRow({ c, action }: { c: AuditFileContents; action?: React
     <ContentRow state={withForms.length > 0 ? "in" : "out"} title={t.docAnexa3Register} action={withForms.length > 0 ? action : undefined}>
       {withForms.length > 0 &&
         (single ? (
-          <p>{t.anexa3RegisterYes.replace("{count}", forms(withForms[0].anexa3Forms)).replace("{year}", String(withForms[0].year))}</p>
+          <p>{t.anexa3RegisterYes.replace("{count}", countOf(withForms[0].anexa3Forms, t.formIssuedOne, t.formIssuedMany)).replace("{year}", String(withForms[0].year))}</p>
         ) : (
           withForms.map((y) => (
             <p key={y.year}>{t.anexa3RegisterYesYear.replace("{year}", String(y.year)).replace("{count}", forms(y.anexa3Forms))}</p>
