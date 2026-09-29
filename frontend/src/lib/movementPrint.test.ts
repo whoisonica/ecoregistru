@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canPrintAnexa3, canPrintAviz } from "@/lib/movementPrint";
+import { anexa3NumberLabel, canPrintAnexa3, canPrintAviz } from "@/lib/movementPrint";
 import type { WasteMovement } from "@/lib/types";
 
 const handover = (extra: Partial<WasteMovement> = {}) =>
@@ -31,4 +31,11 @@ test("în doar-citire Anexa 3 se retipărește cu numărul ei, dar nu primește 
   assert.equal(canPrintAnexa3(handover(), true, true), false);
   assert.equal(canPrintAnexa3(handover(), true, false), true);
   assert.equal(canPrintAnexa3(handover({ anexa3Number: 7 }), false, false), false);
+});
+
+test("numărul Anexei 3 emise, cu seria când există", () => {
+  assert.equal(anexa3NumberLabel({ anexa3Series: "HMB", anexa3Number: 17 }), "HMB 17");
+  assert.equal(anexa3NumberLabel({ anexa3Series: " ", anexa3Number: 17 }), "17");
+  assert.equal(anexa3NumberLabel({ anexa3Series: null, anexa3Number: 3 }), "3");
+  assert.equal(anexa3NumberLabel({ anexa3Series: "HMB", anexa3Number: null }), null);
 });

@@ -1366,6 +1366,12 @@ export const strings = {
     // Corpul dialogului poartă identitatea rândului; aici rămâne doar urmarea.
     confirmDelete:
       "Cantitatea dispare din evidența lunară și din documentele care se tipăresc din ea. Ștergerea nu poate fi anulată.",
+    // Registrul Anexa 3 (transport) ține numerele în ordine; o predare cu formular emis, ștearsă sau
+    // scoasă din registru, lasă un număr lipsă (29.09.2026). Doar se spune, nu se oprește nimic.
+    anexa3GapDelete: "Formularul Anexa 3 nr. {number} a fost deja emis. Dacă ștergi predarea, numărul rămâne gol în registru.",
+    anexa3GapEdit: "Formularul Anexa 3 nr. {number} a fost deja emis. Salvată așa, predarea iese din registru și numărul rămâne gol.",
+    // Serverul primește și date viitoare (până la zece ani); un an tastat greșit se vede aici (29.09.2026).
+    dateInFuture: "Data e în viitor.",
     attachmentError: "Fișierul nu a putut fi încărcat.",
     // Mișcarea s-a salvat, atașamentele nu — două fapte diferite, care înainte se spuneau amândouă
     // ca „Salvarea a eșuat". Cine citea asta apăsa din nou și înregistra cantitatea a doua oară.
@@ -2342,6 +2348,8 @@ export const strings = {
       "Ai ajuns aici din sugestia de duplicat, de la „{name}”. Modificările se salvează pe fișa lui.",
     suggestionSwitchedBack: "Înapoi la adăugare",
     nameSuggestions: "Există deja la tine:",
+    // 29.09.2026: serverul primește un al doilea partener cu același CUI; formularul doar spune.
+    cuiDuplicate: "Există deja partenerul {name} cu acest CUI.",
     nameSuggestionsHint:
       "Ca să nu apară același partener de două ori, cu două grafii. Apasă unul ca să-l deschizi în loc să creezi altul.",
     role: "Rol comercial",
@@ -2682,13 +2690,18 @@ export const strings = {
     docPackaging: "Anexa 1 Ambalaje (Ordinul 794/2012)",
     docAnexa3: "Anexa 3 Ambalaje (Ordinul 794/2012)",
     docAnexa3Register: "Registrul Anexa 3 (transport)",
-    /** {count} = „5 formulare”. */
-    anexa3RegisterYes: "{count} de transport emise în {year}, în ordinea numerelor. Se ține la sediu, fără termen.",
+    /**
+     * {count} = „5 formulare de transport emise” (`formIssuedOne` / `formIssuedMany`). Adjectivul stă în pereche,
+     * nu în șir (decizia 66): „1 formular de transport emise” (29.09.2026).
+     */
+    anexa3RegisterYes: "{count} în {year}, în ordinea numerelor. Se ține la sediu, fără termen.",
     anexa3RegisterYesYear: "{year}: {count}",
     anexa3RegisterNone: "Nicio Anexa 3 tipărită în {year}: registrul intră de la primul formular.",
     anexa3RegisterNonePeriod: "Nicio Anexa 3 tipărită în perioada aleasă: registrul intră de la primul formular.",
     formOne: "formular",
     formMany: "formulare",
+    formIssuedOne: "formular de transport emis",
+    formIssuedMany: "formulare de transport emise",
     docPartners: "Autorizațiile partenerilor",
     docAttachments: "Atașamente",
     /** {count} = „12 mișcări”. */

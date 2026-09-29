@@ -51,6 +51,11 @@ export function NewClientPage() {
   const requestId = params.get("cerere");
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
   const requests = useAccountRequests(isPlatformAdmin && !!requestId);
+  /**
+   * „Adaugă alt client” de pe `/clienti/nou` rămânea pe aceeași adresă, deci pe aceeași cheie, iar
+   * cardul de final nu pleca (29.09.2026). Runda intră în cheie și crește la fiecare client nou cerut.
+   */
+  const [round, setRound] = useState(0);
 
   if (!isMultiCompany(user?.role)) {
     return <PageHeader title={t.title} description={strings.clients.onlyPlatformAdmin} />;
@@ -64,7 +69,8 @@ export function NewClientPage() {
   // adresa, nu cererea găsită: după salvare cererea nu mai e nouă, iar o cheie pe ea ar șterge rezumatul de final.
   return (
     <NewClientForm
-      key={requestId ?? "nou"}
+      key={`${requestId ?? "nou"}-${round}`}
+      onAnother={() => setRound((r) => r + 1)}
       request={request ?? null}
       requestMissing={!!requestId && !request}
       withSubscription={isPlatformAdmin}
@@ -73,10 +79,13 @@ export function NewClientPage() {
 }
 
 function NewClientForm({
+  onAnother,
   request,
   requestMissing,
   withSubscription,
 }: {
+  /** Formularul gol din nou — și când adresa nu se schimbă (vezi `round`). */
+  onAnother: () => void;
   request: AccountRequest | null;
   requestMissing: boolean;
   withSubscription: boolean;
@@ -295,7 +304,13 @@ function NewClientForm({
           </p>
           <div className="flex flex-wrap gap-2 pt-3">
             <Button onClick={() => navigate("/clienti")}>{t.doneToClients}</Button>
-            <Button variant="outline" onClick={() => navigate("/clienti/nou", { replace: true })}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                onAnother();
+                navigate("/clienti/nou", { replace: true });
+              }}
+            >
               {t.doneAnother}
             </Button>
           </div>

@@ -26,3 +26,17 @@ export function invalidProps(id: string, message?: string) {
     "data-invalid": message ? "true" : undefined,
   } as const;
 }
+
+/**
+ * Perechea galbenă a lui `FieldError`: ceva de văzut sub rubrică, care **nu** oprește salvarea — o dată
+ * în viitor, un CUI care există deja (29.09.2026). Același loc și aceeași mărime, altă culoare, ca să nu
+ * se citească drept greșeală.
+ */
+export function FieldWarning({ id, message }: { id: string; message?: string | null }) {
+  if (!message) return null;
+  return (
+    <p id={id} data-field-warning className="mt-1 text-xs font-medium text-state-warn-text">
+      {message}
+    </p>
+  );
+}

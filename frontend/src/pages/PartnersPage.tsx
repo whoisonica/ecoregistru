@@ -225,8 +225,13 @@ export function PartnersPage() {
     if (!focusPartner) return;
     const found = (partners ?? []).find((p) => p.id === focusPartner);
     if (found) {
-      // Linkul vine din „Autorizație expirată”, deci fișa se deschide direct pe autorizație.
-      dialogRef.current?.openEdit(found, AUTH_STEP); // deschide și dialogul
+      // Ca BUG-061 pe Mișcări (29.09.2026): cine doar citește — rolul sau abonamentul în doar-citire —
+      // nu primește formularul de editare, pe care serverul l-ar refuza la „Salvează”. Parametrul se
+      // consumă, iar partenerul rămâne de citit în listă.
+      if (canManage) {
+        // Linkul vine din „Autorizație expirată”, deci fișa se deschide direct pe autorizație.
+        dialogRef.current?.openEdit(found, AUTH_STEP); // deschide și dialogul
+      }
       setFocusPartner("");
       return;
     }
@@ -234,7 +239,7 @@ export function PartnersPage() {
       notify(t.partnerNotFound, "error");
       setFocusPartner("");
     }
-  }, [focusPartner, partners, isLoading, setFocusPartner, notify]);
+  }, [focusPartner, partners, isLoading, setFocusPartner, notify, canManage]);
   const [newParam, setNewParam] = useUrlState("nou");
   useEffect(() => {
     if (!newParam) return;

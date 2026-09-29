@@ -5,6 +5,7 @@ import { useMovementTotals } from "@/hooks/useMovements";
 import { isMultiCompany } from "@/lib/roles";
 import { directionOf, registerOf, screensFor, type MovementScreen } from "@/lib/movementScreens";
 import { strings } from "@/lib/strings";
+import { filingYearCount } from "@/lib/readiness";
 
 const t = strings.panel;
 
@@ -37,6 +38,17 @@ export function usePanelData() {
   const generated = useMovementTotals({ year, register: registerOf("GENERATED") }, hasCompany && screens.includes("GENERATED"));
   const inbound = useMovementTotals({ year, register: registerOf("IN"), direction: directionOf("IN") }, hasCompany && screens.includes("IN"));
   const outbound = useMovementTotals({ year, register: registerOf("OUT"), direction: directionOf("OUT") }, hasCompany && screens.includes("OUT"));
+  /**
+   * Între 1 ianuarie și 15 martie, și anul care se depune — același an ca pe Acasă (`dashboard.filedYear`,
+   * 29.09.2026): o predare din decembrie de cântărit sau fără cod R/D oprește depunerea, deci nu dispare
+   * din panou pe 1 ianuarie. În afara ferestrei cererile nu pleacă și datele lor nu se citesc.
+   */
+  const filed = dashboard.filedYear;
+  const filedYear = filed ?? year;
+  const inWindow = filed != null;
+  const generatedFiled = useMovementTotals({ year: filedYear, register: registerOf("GENERATED") }, hasCompany && inWindow && screens.includes("GENERATED"));
+  const inboundFiled = useMovementTotals({ year: filedYear, register: registerOf("IN"), direction: directionOf("IN") }, hasCompany && inWindow && screens.includes("IN"));
+  const outboundFiled = useMovementTotals({ year: filedYear, register: registerOf("OUT"), direction: directionOf("OUT") }, hasCompany && inWindow && screens.includes("OUT"));
 
   // Afișajul lunii: generatorul vede ce a generat, colectorul ce a intrat — cifra care contează
   // pentru fiecare, pe luna curentă.
@@ -54,13 +66,20 @@ export function usePanelData() {
     if (!hasCompany) return null;
     if (screen === "GENERATED" || screen === "IN") {
       const q = screen === "GENERATED" ? generated : inbound;
-      if (q.isError) return { tone: "unknown", text: t.indUnknown };
-      const n = q.data?.awaitingWeighing ?? 0;
+      const qFiled = screen === "GENERATED" ? generatedFiled : inboundFiled;
+      const n = filingYearCount(
+        { isError: q.isError, count: q.data?.awaitingWeighing },
+        inWindow ? { isError: qFiled.isError, count: qFiled.data?.awaitingWeighing } : null
+      );
+      if (n == null) return { tone: "unknown", text: t.indUnknown };
       return n > 0 ? { tone: "warn", text: t.indAwaitingWeighing.replace("{n}", String(n)) } : null;
     }
     if (screen === "OUT") {
-      if (outbound.isError) return { tone: "unknown", text: t.indUnknown };
-      const n = outbound.data?.missingOperationCode ?? 0;
+      const n = filingYearCount(
+        { isError: outbound.isError, count: outbound.data?.missingOperationCode },
+        inWindow ? { isError: outboundFiled.isError, count: outboundFiled.data?.missingOperationCode } : null
+      );
+      if (n == null) return { tone: "unknown", text: t.indUnknown };
       return n > 0 ? { tone: "bad", text: t.indMissingCode.replace("{n}", String(n)) } : null;
     }
     if (to === "/termene") {

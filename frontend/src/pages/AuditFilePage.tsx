@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Download } from "lucide-react";
 import {
   downloadAuditFile,
@@ -21,6 +21,7 @@ import { apiBlobErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { useUrlNumber } from "@/hooks/useUrlState";
 import { countOf } from "@/lib/utils";
+import { weighingCheck } from "@/lib/weighingCheck";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -181,7 +182,7 @@ function Anexa3RegisterRow({ c, action }: { c: AuditFileContents; action?: React
     <ContentRow state={withForms.length > 0 ? "in" : "out"} title={t.docAnexa3Register} action={withForms.length > 0 ? action : undefined}>
       {withForms.length > 0 &&
         (single ? (
-          <p>{t.anexa3RegisterYes.replace("{count}", forms(withForms[0].anexa3Forms)).replace("{year}", String(withForms[0].year))}</p>
+          <p>{t.anexa3RegisterYes.replace("{count}", countOf(withForms[0].anexa3Forms, t.formIssuedOne, t.formIssuedMany)).replace("{year}", String(withForms[0].year))}</p>
         ) : (
           withForms.map((y) => (
             <p key={y.year}>{t.anexa3RegisterYesYear.replace("{year}", String(y.year)).replace("{count}", forms(y.anexa3Forms))}</p>
@@ -272,13 +273,14 @@ export function AuditFilePage() {
   const y2 = useEvidences({ year: year - 2 }, years > 2);
   const y3 = useEvidences({ year: year - 3 }, years > 3);
   const y4 = useEvidences({ year: year - 4 }, years > 4);
-  const pendingWeighing = useMemo(
-    () =>
-      [y0.data, y1.data, y2.data, y3.data, y4.data]
-        .flatMap((rows) => rows ?? [])
-        .filter((r) => r.awaitingWeighing),
-    [y0.data, y1.data, y2.data, y3.data, y4.data]
-  );
+  /** `loading` / `unknown` / `ready` — vezi `weighingCheck` (29.09.2026). */
+  const check = weighingCheck([y0, y1, y2, y3, y4]);
+  const pendingWeighing = check.state === "ready" ? check.pending : [];
+  /**
+   * Cât un an încă vine, butoanele care citesc verificarea așteaptă (29.09.2026): o listă neîncărcată
+   * arăta ca una fără linii necântărite, iar dosarul pleca fără avertisment.
+   */
+  const weighingLoading = check.state === "loading";
   /**
    * Un an care n-a putut fi citit nu e un an fără linii necântărite.
    *
@@ -287,7 +289,7 @@ export function AuditFilePage() {
    * **fără** el — tăcut, pe documente care se duc la control. Aici nu se ghicește: dacă n-am putut
    * verifica, nu se descarcă. Cererea se reia singură la următoarea apăsare (`refetch`).
    */
-  const weighingUnknown = [y0, y1, y2, y3, y4].some((q) => q.isError);
+  const weighingUnknown = check.state === "unknown";
   const recheckWeighing = () => {
     for (const q of [y0, y1, y2, y3, y4]) {
       if (q.isError) void q.refetch();
@@ -324,6 +326,7 @@ export function AuditFilePage() {
   }
 
   function askOfficial(key: "sheet" | "centralized") {
+    if (weighingLoading) return;
     if (weighingUnknown) {
       notify(t.weighingCheckFailed, "error");
       recheckWeighing();
@@ -337,6 +340,7 @@ export function AuditFilePage() {
   }
 
   async function handleDownload() {
+    if (weighingLoading) return;
     if (weighingUnknown) {
       notify(t.weighingCheckFailed, "error");
       recheckWeighing();
@@ -423,6 +427,7 @@ export function AuditFilePage() {
           <Button
             onClick={handleDownload}
             loading={downloading}
+            disabled={weighingLoading}
             className="shrink-0 whitespace-nowrap"
           >
             {!downloading && <Download className="mr-2 h-4 w-4" />}
@@ -449,7 +454,7 @@ export function AuditFilePage() {
                 contents.data,
                 t.docSheet,
                 t.sheetYes,
-                <DocButton label={t.docSheet} loading={doc === "sheet"} disabled={doc !== null} onClick={() => askOfficial("sheet")} />
+                <DocButton label={t.docSheet} loading={doc === "sheet"} disabled={doc !== null || weighingLoading} onClick={() => askOfficial("sheet")} />
               )}
               {sheetRow(
                 contents.data,
@@ -458,7 +463,7 @@ export function AuditFilePage() {
                 <DocButton
                   label={t.docCentralized}
                   loading={doc === "centralized"}
-                  disabled={doc !== null}
+                  disabled={doc !== null || weighingLoading}
                   onClick={() => askOfficial("centralized")}
                 />
               )}

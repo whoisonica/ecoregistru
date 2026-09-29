@@ -57,6 +57,7 @@ import { ScalesSection } from "@/components/ScalesSection";
 import { PriceVisibilitySection } from "@/components/PriceVisibilitySection";
 import { SiatdSettingsSection } from "@/components/SiatdSettingsSection";
 import { useCurrentCompany } from "@/hooks/useCompanies";
+import { usePrintAccess } from "@/hooks/useBillingAccess";
 import { registersFor } from "@/lib/movementScreens";
 import { CompanyDetailsSection } from "@/components/CompanyDetailsSection";
 import { CompanyUsersSection } from "@/components/CompanyUsersSection";
@@ -101,6 +102,14 @@ function count(template: string, n: number) {
 export function SettingsPage() {
   const { user } = useAuth();
   const canManage = roleCanManage(user?.role);
+  /**
+   * Scrierea, nu doar rolul (29.09.2026): în doar-citirea abonamentului butoanele punctelor de lucru se
+   * vedeau, iar serverul răspundea 403 la salvare. Aceeași combinație ca `useCanWrite` pe celelalte
+   * ecrane, pe pragul de rol al Setărilor. `canManage` rămâne pentru ce se **citește** (utilizatori,
+   * jurnal), pe care doar-citirea nu le oprește.
+   */
+  const { readOnly } = usePrintAccess();
+  const canEdit = canManage && !readOnly;
   // Sortimentele sunt ale depozitului: le vede doar firma care are „Intrări și ieșiri” (art. 48).
   const { data: company } = useCurrentCompany();
   const hasDepot = Boolean(company) && registersFor(company?.type).includes("ART_48");
@@ -217,7 +226,7 @@ export function SettingsPage() {
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>
           <p className="mt-1 max-w-3xl text-sm text-content-muted">{t.subtitle}</p>
         </div>
-        {canManage && (
+        {canEdit && (
           <Button onClick={openCreate} hotkey="N">
             <Plus className="mr-2 h-4 w-4" />
             {t.add}
@@ -240,13 +249,13 @@ export function SettingsPage() {
                 </SortableTH>
                 <TH>{t.address}</TH>
                 <TH>{strings.common.status}</TH>
-                {canManage && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
+                {canEdit && <TH sticky="right" className="text-right">{strings.common.actions}</TH>}
               </TR>
             </THead>
             <TBody>
               {(isLoading || view.visible.length === 0) && (
                 <TableFallbackRow
-                  columns={canManage ? 4 : 3}
+                  columns={canEdit ? 4 : 3}
                   loading={isLoading}
                   icon={MapPin}
                   title={view.emptiedBySearch ? strings.common.noResults : t.empty}
@@ -254,7 +263,7 @@ export function SettingsPage() {
                     view.emptiedBySearch ? strings.common.noResultsHint : t.emptyHint
                   }
                   action={
-                    canManage && (
+                    canEdit && (
                       <Button onClick={openCreate}>
                         <Plus className="mr-2 h-4 w-4" />
                         {t.add}
@@ -274,7 +283,7 @@ export function SettingsPage() {
                       <Badge variant="muted">{t.inactive}</Badge>
                     )}
                   </TD>
-                  {canManage && (
+                  {canEdit && (
                     <TD sticky="right" className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="sm" onClick={() => openEdit(wp)}>
@@ -327,7 +336,7 @@ export function SettingsPage() {
 
   // `n` deschide formularul, unde contul are voie. Scurtătura tace pe un cont care
   // n-ar putea salva oricum: o comandă care nu face nimic e mai rea decât una lipsă.
-  useHotkey("n", openCreate, { enabled: Boolean(canManage) && section === "puncte-de-lucru" });
+  useHotkey("n", openCreate, { enabled: canEdit && section === "puncte-de-lucru" });
 
   // Legăturile vechi purtau secțiunea în ancoră (`/setari#soferi`, „Primii pași”) sau, pentru
   // „Istoric” de pe o mișcare, `?istoric=` cu `#jurnal-audit`. Duc tot acolo, pe pagina ei.
@@ -380,14 +389,14 @@ export function SettingsPage() {
         {section === "datele-firmei" && <CompanyDetailsSection />}
         {section === "puncte-de-lucru" && workPointsSection}
         {section === "generatori-interni" && (
-          <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canManage} />
+          <InternalGeneratorsSection workPoints={workPoints ?? []} canManage={canEdit} />
         )}
         {section === "utilizatori" && (
           <CompanyUsersSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />
         )}
         {section === "jurnal-audit" && <AuditLogSection canManage={canManage} />}
         {section === "soferi" && (
-          <OwnDriversSection canManage={canManage} workPoints={workPoints ?? []} hasDepot={hasDepot} />
+          <OwnDriversSection canManage={canEdit} workPoints={workPoints ?? []} hasDepot={hasDepot} />
         )}
         {/* D2.1 — flota; o scrie oricine scrie, ca sortimentele și ca serverul. */}
         {section === "flota" && hasDepot && (

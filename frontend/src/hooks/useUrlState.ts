@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
+import { withUrlParam } from "@/lib/urlParam";
 
 /**
  * O bucată de stare care trăiește în bara de adrese.
@@ -23,17 +24,14 @@ export function useUrlState(
 
   const set = useCallback(
     (next: string) => {
-      setParams(
-        (current) => {
-          // `URLSearchParams` se mută pe loc, iar React Router dă aceeași instanță la fiecare
-          // apel: fără copie, două schimbări în aceeași randare s-ar călca una pe alta.
-          const copy = new URLSearchParams(current);
-          if (!next || next === fallback) copy.delete(key);
-          else copy.set(key, next);
-          return copy;
-        },
-        { replace: true }
-      );
+      // Se pornește de la adresa din bara browserului, nu de la `current` (29.09.2026): React Router
+      // 6 dă funcției parametrii **randării**, nu pe cei scriși de apelul dinainte, deci „Șterge
+      // filtrele” — patru setteri în același clic — lăsa doar ultima ștergere și trei filtre la
+      // loc. Sub `BrowserRouter` (`App.tsx`), `navigate` scrie `history.replaceState` sincron, așa
+      // că `window.location.search` e deja adresa lăsată de setterul de dinainte.
+      setParams(() => new URLSearchParams(withUrlParam(window.location.search, key, next, fallback)), {
+        replace: true,
+      });
     },
     [key, fallback, setParams]
   );

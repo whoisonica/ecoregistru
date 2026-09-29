@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fold } from "@/lib/utils";
+import { clampPage } from "@/lib/pagination";
 
 /**
  * Taie textul unui rând în cuvinte, pe orice nu e literă sau cifră.
@@ -165,7 +166,8 @@ export function useTableView<T>(rows: T[], options: TableViewOptions<T> = {}): T
 
   // O căutare care lasă mai puține pagini nu trebuie să te lase pe una goală.
   useEffect(() => {
-    if (page > pageCount - 1) setPage(Math.max(0, pageCount - 1));
+    const clamped = clampPage(page, pageCount);
+    if (clamped !== page) setPage(clamped);
   }, [page, pageCount]);
 
   const visible = useMemo(() => {
@@ -339,6 +341,15 @@ export function useRemoteTableView<T>(options: {
 
   function bind(slice: PageSlice<T> | undefined): TableView<T> {
     const matchCount = slice?.totalElements ?? 0;
+    // Ca la varianta din memorie, o pagină care nu mai există se părăsește (29.09.2026). Lipsea: cu
+    // unsprezece mișcări, pe pagina a doua, ștergerea singurului ei rând lăsa tabelul pe o pagină goală
+    // — „Nicio mișcare în <lună>”, fără paginare, cu totalurile încă pe ecran. Starea se ajustează în
+    // randare (tiparul „adjusting state while rendering” din React): `bind` e chemat de componenta care
+    // ține hook-ul, iar garda face ca a doua trecere să nu mai schimbe nimic.
+    if (slice) {
+      const clamped = clampPage(page, slice.totalPages);
+      if (clamped !== page) setPage(clamped);
+    }
     if (slice && params.search === "") {
       unfilteredTotal.current = slice.totalElements;
     }

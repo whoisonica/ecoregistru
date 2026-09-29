@@ -7,7 +7,7 @@ import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
 import { daysLabel, documentFor } from "@/lib/deadlines";
-import { readiness } from "@/lib/readiness";
+import { filingYear, readiness, yearBlockers } from "@/lib/readiness";
 
 const t = strings.dashboard;
 
@@ -61,11 +61,29 @@ export function useDashboardData(enabled = true) {
    */
   const { data: evidences, isLoading: loadingEvidences, isError: failedEvidences } =
     useEvidences({ year }, enabled);
+  /**
+   * Între 1 ianuarie și 15 martie, și anul care se depune (29.09.2026, vezi `filingYear`): o predare din
+   * decembrie fără cod R/D oprește depunerea, deci trebuie să apară pe Acasă. În afara ferestrei, cererea
+   * nu pleacă, iar datele ei (din cache, pe aceeași cheie ca anul curent) nu se citesc.
+   */
+  const filed = filingYear(now);
+  const {
+    data: filedEvidencesData,
+    isLoading: loadingFiledEvidences,
+    isError: failedFiledEvidences,
+  } = useEvidences({ year: filed ?? year }, enabled && filed != null);
+  const filedEvidences = filed != null ? filedEvidencesData : undefined;
+  const filedLoading = filed != null && loadingFiledEvidences;
+  const filedFailed = filed != null && failedFiledEvidences;
 
   /** Socoteala stă în `lib/readiness.ts`, fiindcă o face și telefonul (ecranul „A venit controlul”). */
-  const { openDeadlines, overdue, nextDeadline, nearDeadline, expiringPartners, blockers } = useMemo(
+  const { openDeadlines, overdue, nextDeadline, nearDeadline, expiringPartners } = useMemo(
     () => readiness(deadlines, evidences, partners),
     [deadlines, evidences, partners]
+  );
+  const blockers = useMemo(
+    () => yearBlockers({ year, rows: evidences }, filed != null ? { year: filed, rows: filedEvidences } : null),
+    [year, evidences, filed, filedEvidences]
   );
   const overdueCount = overdue.length;
   const blockerCount = blockers.missingCode + blockers.awaitingWeighing;
@@ -84,7 +102,7 @@ export function useDashboardData(enabled = true) {
   const actions = useMemo<NextAction[]>(() => {
     // 0. Dacă vreuna dintre surse n-a răspuns, nu se alege nimic: fiecare ramură de mai jos
     //    citeşte o listă care ar fi **goală din alt motiv**. Se spune că nu se ştie.
-    if (failedDeadlines || failedEvidences || failedPartners || failedWorkPoints) {
+    if (failedDeadlines || failedEvidences || filedFailed || failedPartners || failedWorkPoints) {
       return [{
         tone: "unknown",
         title: t.nextUnknown,
@@ -120,7 +138,7 @@ export function useDashboardData(enabled = true) {
         tone: "danger",
         title: t.nextMissingCode.replace("{count}", countOf(blockers.missingCode, "linie", "linii")),
         hint: t.nextMissingCodeHint,
-        to: `/generare?luna=${year}&problema=cod-rd`,
+        to: `/generare?luna=${blockers.missingCodeYear}&problema=cod-rd`,
         cta: t.blockerFix,
       });
     }
@@ -186,6 +204,7 @@ export function useDashboardData(enabled = true) {
     expiringPartners,
     failedDeadlines,
     failedEvidences,
+    filedFailed,
     failedPartners,
     failedWorkPoints,
     workPoints,
@@ -200,11 +219,13 @@ export function useDashboardData(enabled = true) {
    * ar scrie „Ești la zi" o clipă, peste o autorizație care expiră.
    */
   const nextActionLoading =
-    loadingDeadlines || loadingEvidences || loadingPartners || loadingWorkPoints || loadingMovements;
+    loadingDeadlines || loadingEvidences || filedLoading || loadingPartners || loadingWorkPoints || loadingMovements;
 
   return {
     year,
     month,
+    /** Anul care se depune, între 1 ianuarie și 15 martie (`filingYear`); `null` în rest. Îl citește și panoul. */
+    filedYear: filed,
     monthLabel: strings.months[month - 1],
     summary,
     loadingMovements,

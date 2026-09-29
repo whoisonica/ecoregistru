@@ -624,7 +624,9 @@ export function PackagingReport({
             </THead>
             <TBody>
               {(handovers ?? []).length === 0 && (
-                <TableFallbackRow columns={5} loading={false} icon={Package} title={t.noHandovers} />
+                // Starea adevărată a cererii (29.09.2026): cu `false` bătut în cuie, tabelul scria
+                // „nicio predare” cât încă se încărca.
+                <TableFallbackRow columns={5} loading={handoversQ.isLoading} icon={Package} title={t.noHandovers} />
               )}
               {handoverView.visible.map((row, i) => (
                 <TR key={`${row.material}-${row.operatorCui}-${row.operation}-${i}`}>

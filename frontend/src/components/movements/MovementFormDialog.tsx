@@ -14,6 +14,7 @@ import {
   useDeleteAttachment,
 } from "@/hooks/useMovements";
 import type {
+  Attachment,
   PackagingCategory,
   PackagingMaterial,
   PackagingOrigin,
@@ -44,7 +45,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Combobox, type ComboboxItem } from "@/components/ui/combobox";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Dialog } from "@/components/ui/dialog";
-import { FieldError, invalidProps } from "@/components/ui/field-error";
+import { FieldError, FieldWarning, invalidProps } from "@/components/ui/field-error";
 import { FormSection } from "@/components/ui/form-section";
 import { PillGroup, type PillOption } from "@/components/ui/pill-group";
 import { ChoiceCards } from "@/components/ui/choice-cards";
@@ -54,6 +55,9 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { fetchDeclaration } from "@/hooks/useDeadlines";
 import { declaredText } from "@/lib/deadlines";
+import { flightGuard } from "@/lib/flightGuard";
+import { anexa3NumberLabel } from "@/lib/movementPrint";
+import { formatQuantityInput } from "@/lib/units";
 import { partnerRoleLabel } from "@/components/PartnerRoleBadge";
 import { useAnexa2Threshold } from "@/hooks/useAnexa2";
 import { useAttachmentOpen } from "@/hooks/useAttachment";
@@ -67,6 +71,8 @@ import {
   suggestedDestinations,
   destinationsFor,
   destinationsOpen,
+  isAfterToday,
+  leavesAnexa3Gap,
   type FieldErrors,
   type ExitOperation,
 } from "@/components/movements/movementRules";
@@ -394,6 +400,22 @@ export function MovementFormDialog({
   const [destinationsPrefilled, setDestinationsPrefilled] = useState(false);
   const [notes, setNotes] = useState(figures?.notes ?? "");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  /**
+   * Atașamentele deja urcate, ținute aici și nu citite din `editing` (29.09.2026): `editing` e
+   * instantaneul de la deschidere, deci un fișier șters rămânea în listă, iar al doilea clic pe coșul
+   * lui dădea eroare. Se scoate la ștergere și se adaugă la fiecare urcare reușită.
+   */
+  const [attachments, setAttachments] = useState<Attachment[]>(editing?.attachments ?? []);
+  /**
+   * Mișcarea nouă, după ce serverul a creat-o dar a căzut urcarea unui fișier (29.09.2026). Formularul
+   * rămâne deschis pentru reîncercare, iar reîncercarea trebuie să fie o **actualizare**: altfel pleca
+   * din nou crearea cu aceeași cheie de idempotență, serverul întorcea mișcarea originală și orice
+   * rubrică schimbată între timp se pierdea fără o vorbă. Cheia rămâne pentru reîncercarea creării
+   * înseși — o cerere căzută înainte de răspuns.
+   */
+  const [created, setCreated] = useState<WasteMovement | null>(null);
+  /** Pe ce mișcare scrie salvarea: cea editată sau cea tocmai creată. `null` = una nouă. */
+  const target = editing ?? created;
   const [errors, setErrors] = useState<FieldErrors>({});
   /**
    * Garda de la închiderea accidentală.
@@ -677,8 +699,23 @@ export function MovementFormDialog({
     showAnexa2Section,
   ]);
 
+  /**
+   * Salvarea începe la clic, nu la mutație (29.09.2026): `handleSubmit` aștepta întâi anul declarat
+   * (`fetchDeclaration`), iar în răstimpul ăsta butonul rămânea viu — un dublu-clic trimitea două
+   * salvări. Garda e o referință (`flightGuard`), fiindcă starea ajunge pe buton abia după randare.
+   */
+  const submitGuard = useRef(flightGuard());
+  const [submitting, setSubmitting] = useState(false);
   const isSaving =
-    createMut.isPending || updateMut.isPending || addAttachmentMut.isPending;
+    submitting || createMut.isPending || updateMut.isPending || addAttachmentMut.isPending;
+
+  /** Avertismente, nu erori: nu opresc salvarea (29.09.2026). */
+  const futureDate = isAfterToday(date, todayIso());
+  const anexa3Gap =
+    editing != null &&
+    leavesAnexa3Gap(editing, { date, partnerId: partnerId || null, operation: effectiveOperation })
+      ? t.anexa3GapEdit.replace("{number}", anexa3NumberLabel(editing) ?? "")
+      : null;
 
   /**
    * Ce e greșit, pe rubrici.
@@ -734,7 +771,7 @@ export function MovementFormDialog({
 
   function buildInput(): WasteMovementInput {
     return {
-      clientGeneratedId: editing ? undefined : idempotencyKey.current,
+      clientGeneratedId: target ? undefined : idempotencyKey.current,
       workPointId,
       date,
       wasteCodeId: wasteCode!.id,
@@ -785,6 +822,8 @@ export function MovementFormDialog({
 
   async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
+    // Primul lucru: o salvare deja pornită nu se dublează (vezi `submitGuard`).
+    if (submitGuard.current.isBusy("save")) return;
     const found = validate();
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -801,22 +840,36 @@ export function MovementFormDialog({
     setErrors({});
     const input = buildInput();
 
-    // Anul declarat: anul datei noi și, la editare, anul datei vechi — mutarea unei mișcări din 2026
-    // în 2027 schimbă și evidența pe 2026. Întrebăm o dată, cu primul an declarat găsit.
-    const years = [...new Set([input.date, editing?.date].filter(Boolean).map((d) => Number(d!.slice(0, 4))))];
-    for (const year of years) {
-      const declaration = await fetchDeclaration(queryClient, year);
-      if (declaration) {
-        confirmClose({
-          title: t.declaredTitle.replace("{year}", String(year)),
-          message: declaredText(t.declaredSave, year, declaration),
-          confirmLabel: t.declaredConfirm,
-          onConfirm: () => void save(input),
-        });
-        return;
+    await guarded(async () => {
+      // Anul declarat: anul datei noi și, la editare, anul datei vechi — mutarea unei mișcări din 2026
+      // în 2027 schimbă și evidența pe 2026. Întrebăm o dată, cu primul an declarat găsit.
+      const years = [...new Set([input.date, target?.date].filter(Boolean).map((d) => Number(d!.slice(0, 4))))];
+      for (const year of years) {
+        const declaration = await fetchDeclaration(queryClient, year);
+        if (declaration) {
+          confirmClose({
+            title: t.declaredTitle.replace("{year}", String(year)),
+            message: declaredText(t.declaredSave, year, declaration),
+            confirmLabel: t.declaredConfirm,
+            onConfirm: () => void guarded(() => save(input)),
+          });
+          return;
+        }
       }
-    }
-    await save(input);
+      await save(input);
+    });
+  }
+
+  /** O singură salvare odată; butonul se stinge cât ține (vezi `submitGuard`). */
+  async function guarded(fn: () => Promise<void>) {
+    await submitGuard.current.run("save", async () => {
+      setSubmitting(true);
+      try {
+        await fn();
+      } finally {
+        setSubmitting(false);
+      }
+    });
   }
 
   async function save(input: ReturnType<typeof buildInput>) {
@@ -826,8 +879,8 @@ export function MovementFormDialog({
     // înregistra a doua oară.
     let saved: WasteMovement;
     try {
-      saved = editing
-        ? await updateMut.mutateAsync({ id: editing.id, input })
+      saved = target
+        ? await updateMut.mutateAsync({ id: target.id, input })
         : await createMut.mutateAsync(input);
     } catch (err) {
       notify(apiErrorMessage(err, t.saveError), "error");
@@ -839,7 +892,8 @@ export function MovementFormDialog({
     for (const [index, file] of pendingFiles.entries()) {
       setUpload({ index: index + 1, total: pendingFiles.length, name: file.name });
       try {
-        await addAttachmentMut.mutateAsync({ movementId: saved.id, file });
+        const attachment = await addAttachmentMut.mutateAsync({ movementId: saved.id, file });
+        setAttachments((list) => [...list, attachment]);
       } catch (err) {
         failed.push(file);
         firstError ??= err;
@@ -850,9 +904,10 @@ export function MovementFormDialog({
 
     if (failed.length > 0) {
       // În coadă rămân doar cele căzute, deci a doua apăsare le urcă pe alea și nu le repetă pe
-      // cele urcate. Mișcarea trece din nou pe la server, dar cu aceeași cheie de idempotență,
-      // deci se recunoaște ca aceeași și nu se dublează.
+      // cele urcate. Mișcarea nouă devine `created`: a doua apăsare o actualizează cu ce s-a
+      // schimbat între timp, în loc să retrimită crearea (29.09.2026).
       setPendingFiles(failed);
+      if (!target) setCreated(saved);
       // Mesajul nostru primul: motivul serverului („Cloudinary nu e configurat") e util, dar ce
       // trebuie citit întâi e că mișcarea **e** salvată.
       const detail = apiErrorMessage(firstError, "");
@@ -892,11 +947,14 @@ export function MovementFormDialog({
   }
 
   function handleDeleteAttachment(attachmentId: string) {
-    if (!editing) return;
+    if (!target) return;
     deleteAttachmentMut.mutate(
-      { movementId: editing.id, attachmentId },
+      { movementId: target.id, attachmentId },
       {
-        onSuccess: () => notify(t.attachmentDeleted, "success"),
+        onSuccess: () => {
+          setAttachments((list) => list.filter((a) => a.id !== attachmentId));
+          notify(t.attachmentDeleted, "success");
+        },
         onError: (err) => notify(apiErrorMessage(err, t.attachmentError), "error"),
       }
     );
@@ -1077,6 +1135,11 @@ export function MovementFormDialog({
               </div>
             </div>
           )}
+          {!upload && anexa3Gap && (
+            <p role="status" className="mr-auto text-xs font-medium text-state-warn-text sm:max-w-sm">
+              {anexa3Gap}
+            </p>
+          )}
           <Button variant="outline" onClick={requestClose} disabled={isSaving}>
             {strings.common.cancel}
           </Button>
@@ -1112,7 +1175,7 @@ export function MovementFormDialog({
                 {!quantityOpen
                   ? t.receiptAwaiting
                   : quantity
-                    ? `${quantity} ${e.unit[unit]}`
+                    ? `${formatQuantityInput(quantity, unit) ?? quantity} ${e.unit[unit]}`
                     : t.receiptEmpty}
               </dd>
             </div>
@@ -1199,8 +1262,10 @@ export function MovementFormDialog({
                 value={date}
                 onChange={(ev) => setDate(ev.target.value)}
                 {...invalidProps("mv-date-err", errors.date)}
+                aria-describedby={errors.date ? "mv-date-err" : futureDate ? "mv-date-warn" : undefined}
               />
               <FieldError id="mv-date-err" message={errors.date} />
+              {!errors.date && <FieldWarning id="mv-date-warn" message={futureDate ? t.dateInFuture : null} />}
             </div>
           </div>
 
@@ -1696,16 +1761,16 @@ export function MovementFormDialog({
 
         <FormSection title={t.askAttachments} description={t.askAttachmentsHint}>
           <div>
-              {editing && editing.attachments.length > 0 && (
+              {target && attachments.length > 0 && (
               <ul className="mb-2 space-y-1">
-                {editing.attachments.map((a) => (
+                {attachments.map((a) => (
                   <li
                     key={a.id}
                     className="flex items-center justify-between gap-2 rounded border border-line px-2 py-1 text-sm"
                   >
                     <button
                       type="button"
-                      onClick={() => openAttachment(editing.id, a)}
+                      onClick={() => openAttachment(target.id, a)}
                       disabled={openingId === a.id}
                       className="flex min-w-0 items-center gap-2 text-left text-brand hover:underline disabled:opacity-60"
                     >
@@ -1715,7 +1780,8 @@ export function MovementFormDialog({
                     <button
                       type="button"
                       onClick={() => handleDeleteAttachment(a.id)}
-                      className="shrink-0 text-content-subtle hover:text-red-600"
+                      disabled={deleteAttachmentMut.isPending && deleteAttachmentMut.variables?.attachmentId === a.id}
+                      className="shrink-0 text-content-subtle hover:text-red-600 disabled:opacity-40"
                       aria-label={strings.common.delete}
                     >
                       <Trash2 className="h-4 w-4" />

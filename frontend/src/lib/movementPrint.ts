@@ -35,3 +35,13 @@ export function canPrintAviz(m: WasteMovement, canWrite: boolean): boolean {
 export function movementPdfName(document: "anexa3" | "aviz", m: WasteMovement): string {
   return `${document}-${m.wasteCode.replace(/\s/g, "")}-${m.date}.pdf`;
 }
+
+/**
+ * Numărul formularului Anexa 3 deja emis, cum stă în registru („HMB 17” sau „17”), ori `null` dacă
+ * prima tipărire n-a avut loc. Pentru avertismentul de la ștergere și editare (29.09.2026).
+ */
+export function anexa3NumberLabel(m: Pick<WasteMovement, "anexa3Series" | "anexa3Number">): string | null {
+  if (m.anexa3Number == null) return null;
+  const series = m.anexa3Series?.trim();
+  return series ? `${series} ${m.anexa3Number}` : String(m.anexa3Number);
+}

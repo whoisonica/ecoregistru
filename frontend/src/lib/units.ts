@@ -64,3 +64,13 @@ export function formatTonnesValue(tonnes: number): string {
 export function formatQuantity(value: number, unit: Unit): string {
   return unit === "TONS" ? formatTonnesValue(value) : formatKg(value);
 }
+
+/**
+ * Cantitatea tastată în formular, scrisă ca pe listă (29.09.2026). Bonul formularului arăta textul brut
+ * din `<input type="number">` — „35.125 kg”, cu punctul zecimal al lui JavaScript, adică exact
+ * ambiguitatea pe care G06 a scos-o din rest. `null` pe o valoare care nu e număr: bonul o arată cum e.
+ */
+export function formatQuantityInput(raw: string, unit: Unit): string | null {
+  const value = Number(raw);
+  return raw.trim() !== "" && Number.isFinite(value) ? formatQuantity(value, unit) : null;
+}
