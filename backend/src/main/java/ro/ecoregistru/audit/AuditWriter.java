@@ -62,7 +62,18 @@ public class AuditWriter {
      * singură, cu anul şi cu câte linii au ieşit.
      */
     public void record(String entityType, UUID entityId, AuditAction action, String label) {
-        AuditCapture.add(new PendingAudit(entityType, entityId, action, label, List.of()));
+        record(entityType, entityId, action, label, List.of());
+    }
+
+    /**
+     * La fel, cu rubricile schimbate — pentru un rând scris pe faţă şi nu prin interceptor, fiindcă
+     * pe acelaşi rând scrie şi o maşină. Bifa „Depus” a unui termen (29.09.2026): rândul de termen
+     * îl ating şi mementourile de dimineaţă (steagurile warned*) şi generarea următorului termen, iar
+     * în jurnal trebuie doar fapta omului, cu nota lui.
+     */
+    public void record(String entityType, UUID entityId, AuditAction action, String label,
+                       List<PendingAudit.FieldChange> changes) {
+        AuditCapture.add(new PendingAudit(entityType, entityId, action, label, changes));
         ensureRegistered();
     }
 

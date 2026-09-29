@@ -48,6 +48,7 @@ class DeadlineAlertSchedulerIT {
     @Autowired ReportingDeadlineRepository deadlineRepository;
 
     @Autowired PlatformTransactionManager transactionManager;
+    @Autowired ro.ecoregistru.repository.AuditLogRepository auditLogRepository;
 
     @MockitoBean NotificationService notificationService;
 
@@ -260,5 +261,31 @@ class DeadlineAlertSchedulerIT {
         assertThat(after.isWarned7Days()).as("garda: mementoul chiar a scris steagul").isTrue();
         assertThat(after.getStatus()).isEqualTo(DeadlineStatus.DONE);
         assertThat(after.getCompletionNote()).isEqualTo("depus pe SIM");
+    }
+
+    /**
+     * Steagurile mementoului nu ajung în „Istoric” (29.09.2026), nici când pe fir sunt un om şi o firmă — bifa
+     * „Depus” se scrie pe faţă, din DeadlineService, iar termenul nu e pe lista albă a interceptorului.
+     */
+    @Test
+    void theReminderFlagsLeaveNoJournalRow() {
+        Company c = companyWithUser();
+        LocalDate today = LocalDate.of(2026, 6, 1);
+        ReportingDeadline d = deadline(c, today.plusDays(5), DeadlineStatus.UPCOMING, false, false);
+        AppUser someone = appUserRepository.findAllByCompany_IdAndEnabledTrue(c.getId()).get(0);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        someone, null, java.util.List.of()));
+        // Şi cu firma aleasă: cazul cel mai rău, în care jurnalul ar avea şi om, şi firmă de scris.
+        ro.ecoregistru.security.TenantContext.set(c.getId());
+        try {
+            scheduler.dispatchReminders(today);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            ro.ecoregistru.security.TenantContext.clear();
+        }
+
+        assertThat(reload(d.getId()).isWarned7Days()).as("garda: mementoul chiar a scris steagul").isTrue();
+        assertThat(auditLogRepository.findAll()).noneMatch(r -> d.getId().equals(r.getEntityId()));
     }
 }
