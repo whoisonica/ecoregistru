@@ -231,7 +231,7 @@ public class AdviceController {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public Map<String, Object> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
         log.warn("Unsupported media type: {}", e.getContentType());
-        return envelope(BAD_REQUEST, "request.media.type.unsupported",
+        return envelope(UNSUPPORTED_MEDIA_TYPE, "request.media.type.unsupported",
                 "Cererea are un format pe care această adresă nu-l primește.");
     }
 

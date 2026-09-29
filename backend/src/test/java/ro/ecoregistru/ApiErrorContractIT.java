@@ -169,6 +169,7 @@ class ApiErrorContractIT {
                         .contentType(MediaType.TEXT_PLAIN)
                         .content("name=Hala"))
                 .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$['error-type']").value("unsupported-media-type"))
                 .andExpect(content().string(not(containsString("Exception"))));
     }
 

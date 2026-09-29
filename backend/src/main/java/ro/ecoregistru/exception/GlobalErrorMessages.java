@@ -9,6 +9,7 @@ public final class GlobalErrorMessages {
     public static final String NOT_FOUND = "not-found";
     public static final String UNPROCESSABLE_ENTITY = "unprocessable-entity";
     public static final String BAD_REQUEST = "bad-request";
+    public static final String UNSUPPORTED_MEDIA_TYPE = "unsupported-media-type";
     public static final String VALIDATION = "validation";
     public static final String BUSINESS_ERROR = "business-error";
     public static final String ACCESS_DENIED = "access-denied";
