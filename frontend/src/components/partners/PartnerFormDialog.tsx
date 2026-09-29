@@ -37,7 +37,8 @@ import { fold, todayIso } from "@/lib/utils";
 import { useCurrentCompany } from "@/hooks/useCompanies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FieldError, invalidProps } from "@/components/ui/field-error";
+import { FieldError, FieldWarning, invalidProps } from "@/components/ui/field-error";
+import { partnerWithSameCui } from "@/lib/cui";
 import { Label } from "@/components/ui/label";
 import { ChoiceCards } from "@/components/ui/choice-cards";
 import { PillGroup } from "@/components/ui/pill-group";
@@ -143,6 +144,9 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
       : (partners ?? [])
           .filter((p) => fold(p.name).includes(fold(name.trim())))
           .slice(0, 5);
+
+  /** Alt partener cu același CUI (29.09.2026): se spune sub rubrică, nu se oprește salvarea. */
+  const sameCui = partnerWithSameCui(cui, partners ?? [], editing?.id ?? null);
 
   /**
    * S-a completat şi altceva în afară de nume? Se citeşte din starea care există deja, fără să se
@@ -577,32 +581,36 @@ export const PartnerFormDialog = forwardRef<PartnerFormDialogHandle, { onSaved?:
             <div hidden={step !== 0} className="space-y-4">
               {/* CUI-ul întâi: ANAF completează denumirea, adresa și Registrul Comerțului, iar
                   sugestia de duplicat apare și după completare, fiindcă citește denumirea. */}
-              <CuiField
-                id="p-cui"
-                autoFocus={!editing}
-                label={t.cui}
-                value={cui}
-                onChange={setCui}
-                placeholder={t.cuiPlaceholder}
-                targets={[
-                  {
-                    label: t.anafFieldName,
-                    current: name,
-                    pick: (f) => f.name,
-                    set: (v) => {
-                      setName(v);
-                      setNameError(false);
+              {/* Avertismentul lipit de rubrică, nu la distanța dintre rubrici. */}
+              <div>
+                <CuiField
+                  id="p-cui"
+                  autoFocus={!editing}
+                  label={t.cui}
+                  value={cui}
+                  onChange={setCui}
+                  placeholder={t.cuiPlaceholder}
+                  targets={[
+                    {
+                      label: t.anafFieldName,
+                      current: name,
+                      pick: (f) => f.name,
+                      set: (v) => {
+                        setName(v);
+                        setNameError(false);
+                      },
                     },
-                  },
-                  { label: t.anafFieldAddress, current: address, pick: (f) => f.address, set: setAddress },
-                  {
-                    label: t.anafFieldRegistry,
-                    current: tradeRegisterNumber,
-                    pick: (f) => f.tradeRegisterNumber,
-                    set: setTradeRegisterNumber,
-                  },
-                ]}
-              />
+                    { label: t.anafFieldAddress, current: address, pick: (f) => f.address, set: setAddress },
+                    {
+                      label: t.anafFieldRegistry,
+                      current: tradeRegisterNumber,
+                      pick: (f) => f.tradeRegisterNumber,
+                      set: setTradeRegisterNumber,
+                    },
+                  ]}
+                />
+                <FieldWarning id="p-cui-duplicate" message={sameCui ? t.cuiDuplicate.replace("{name}", sameCui.name) : null} />
+              </div>
               <div>
                 <Label htmlFor="p-name">{t.name}</Label>
                 <Input

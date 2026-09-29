@@ -2348,6 +2348,8 @@ export const strings = {
       "Ai ajuns aici din sugestia de duplicat, de la „{name}”. Modificările se salvează pe fișa lui.",
     suggestionSwitchedBack: "Înapoi la adăugare",
     nameSuggestions: "Există deja la tine:",
+    // 29.09.2026: serverul primește un al doilea partener cu același CUI; formularul doar spune.
+    cuiDuplicate: "Există deja partenerul {name} cu acest CUI.",
     nameSuggestionsHint:
       "Ca să nu apară același partener de două ori, cu două grafii. Apasă unul ca să-l deschizi în loc să creezi altul.",
     role: "Rol comercial",
