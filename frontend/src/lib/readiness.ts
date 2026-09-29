@@ -82,6 +82,8 @@ export function yearBlockers(
     missingCode: now.missingCode + past.missingCode,
     awaitingWeighing: now.awaitingWeighing + past.awaitingWeighing,
     missingCodeYear: filed && past.missingCode > 0 ? filed.year : current.year,
+    /** Anul în care stau liniile de cântărit, pentru link; `null` = anul curent (29.09.2026). */
+    awaitingWeighingYear: filed && past.awaitingWeighing > 0 ? filed.year : null,
   };
 }
 

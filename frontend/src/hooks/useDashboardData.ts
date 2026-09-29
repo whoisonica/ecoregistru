@@ -168,7 +168,8 @@ export function useDashboardData(enabled = true) {
         tone: "warning",
         title: t.nextWeighing.replace("{count}", countOf(blockers.awaitingWeighing, "linie", "linii")),
         hint: t.nextWeighingHint,
-        to: "/miscari",
+        // Liniile din anul care se depune se văd pe anul lor, nu pe luna de azi (29.09.2026).
+        to: blockers.awaitingWeighingYear ? `/generare?luna=${blockers.awaitingWeighingYear}` : "/miscari",
         cta: t.nextWeighingCta,
       });
     }
