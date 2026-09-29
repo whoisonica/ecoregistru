@@ -61,13 +61,44 @@ public class EmailNotificationService implements NotificationService {
                 ? "Termen de raportare trecut și nebifat — " + reportLabel
                 : "Termen de raportare — " + reportLabel + " (" + when(daysUntil) + ")";
 
-        for (String to : recipientEmails) {
+        sendToEach(recipientEmails, subject, "mail/deadline_reminder", () -> {
             Context ctx = new Context(Locale.of("ro"));
             ctx.setVariable("reportLabel", reportLabel);
             ctx.setVariable("dueDate", dueDate);
             ctx.setVariable("daysUntil", daysUntil);
             ctx.setVariable("whenText", when(daysUntil));
-            emailService.send(to, subject, "mail/deadline_reminder", ctx);
+            return ctx;
+        });
+    }
+
+    /**
+     * Trimite câte un mail fiecărui destinatar și reușește dacă măcar unul a plecat.
+     *
+     * <p>De ce nu „toți sau nimic": cine cheamă scrie steagul de „trimis" (warned*,
+     * authorizationWarningSentFor) numai după o reușită. Prima căsuță refuzată oprea bucla și
+     * arunca, deci steagul rămânea jos și a doua zi primeau mailul din nou <b>toți</b> cei care îl
+     * primiseră deja — la fiecare dimineață, cât timp o singură adresă era greșită (29.09.2026).
+     * Adresa căzută e scrisă în log de {@link EmailService#send} (prin {@code LogSafe}); aici se
+     * numără doar. Când nu pleacă niciunul, se aruncă mai departe, ca mâine să se reîncerce.
+     */
+    private void sendToEach(List<String> recipientEmails, String subject, String template,
+                            java.util.function.Supplier<Context> context) {
+        RuntimeException last = null;
+        int failed = 0;
+        for (String to : recipientEmails) {
+            try {
+                emailService.send(to, subject, template, context.get());
+            } catch (RuntimeException e) {
+                last = e;
+                failed++;
+            }
+        }
+        if (last != null && failed == recipientEmails.size()) {
+            throw last;
+        }
+        if (failed > 0) {
+            log.warn("'{}' email: {} of {} recipient(s) failed; the others got it", template,
+                    failed, recipientEmails.size());
         }
     }
 
@@ -86,7 +117,7 @@ public class EmailNotificationService implements NotificationService {
         String subject = "Autorizația de mediu a partenerului " + partner.getName()
                 + " expiră (" + whenExpiry(daysUntil) + ")";
 
-        for (String to : recipientEmails) {
+        sendToEach(recipientEmails, subject, "mail/partner_authorization_expiring", () -> {
             Context ctx = new Context(Locale.of("ro"));
             ctx.setVariable("partnerName", partner.getName());
             ctx.setVariable("partnerCui", partner.getCui());
@@ -94,8 +125,8 @@ public class EmailNotificationService implements NotificationService {
             ctx.setVariable("expiryDate", expiryDate);
             ctx.setVariable("daysUntil", daysUntil);
             ctx.setVariable("whenText", whenExpiry(daysUntil));
-            emailService.send(to, subject, "mail/partner_authorization_expiring", ctx);
-        }
+            return ctx;
+        });
     }
 
     /** D2.1 — subiectul numește mașina, ca la partener: cititorul are de verificat un camion anume. */
@@ -272,14 +303,14 @@ public class EmailNotificationService implements NotificationService {
                 : deadlines.size() + (deadlines.size() >= 20 ? " de termene" : " termene");
         String subject = consultancyName + ": " + countText + " în următoarele 7 zile";
 
-        for (String to : recipientEmails) {
+        sendToEach(recipientEmails, subject, "mail/consultant_digest", () -> {
             Context ctx = new Context(Locale.of("ro"));
             ctx.setVariable("consultancyName", consultancyName);
             ctx.setVariable("countText", countText);
             ctx.setVariable("rows", rows);
             ctx.setVariable("panelUrl", frontendBaseUrl + "/consultant");
-            emailService.send(to, subject, "mail/consultant_digest", ctx);
-        }
+            return ctx;
+        });
     }
 
     /** "389 lei", "1.234,50 lei". */
