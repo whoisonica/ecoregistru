@@ -27,30 +27,30 @@ class BillingCalculatorTest {
     private static final int NEXT = 1;
 
     @Test
-    void aCabinetWithTwelveCompaniesPays539() {
-        Invoice invoice = BillingCalculator.invoice(cabinet(), 0, 12, 0, NEXT);
+    void aConsultancyWithTwelveCompaniesPays539() {
+        Invoice invoice = BillingCalculator.invoice(consultancy(), 0, 12, 0, NEXT);
         assertThat(invoice.total()).isEqualByComparingTo("539");
         assertThat(invoice.lines())
                 .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
                 .containsExactly(
-                        tuple("Abonament de cabinet", 1, 199),
+                        tuple("Abonament de consultant", 1, 199),
                         tuple("Firmă gestionată, 1–10", 10, 290),
                         tuple("Firmă gestionată, 11–30", 2, 50));
     }
 
     @Test
-    void aCabinetWithTwentyFiveCompaniesPays864() {
-        assertThat(BillingCalculator.invoice(cabinet(), 0, 25, 0, NEXT).total()).isEqualByComparingTo("864");
+    void aConsultancyWithTwentyFiveCompaniesPays864() {
+        assertThat(BillingCalculator.invoice(consultancy(), 0, 25, 0, NEXT).total()).isEqualByComparingTo("864");
     }
 
     /** 31 și peste: al treilea preț, pe restul. 199 + 290 + 500 + 5 × 19 + 3 × 15 ambalaje. */
     @Test
     void theThirdTierAndPackagingAreAddedPerCompany() {
-        Invoice invoice = BillingCalculator.invoice(cabinet(), 0, 35, 3, NEXT);
+        Invoice invoice = BillingCalculator.invoice(consultancy(), 0, 35, 3, NEXT);
         assertThat(invoice.lines())
                 .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
                 .containsExactly(
-                        tuple("Abonament de cabinet", 1, 199),
+                        tuple("Abonament de consultant", 1, 199),
                         tuple("Firmă gestionată, 1–10", 10, 290),
                         tuple("Firmă gestionată, 11–30", 20, 500),
                         tuple("Firmă gestionată, 31 și peste", 5, 95),
@@ -79,7 +79,7 @@ class BillingCalculatorTest {
                 .isEqualByComparingTo("389");
         assertThat(BillingCalculator.invoice(direct(SubscriptionPlan.GENERATOR_PACKAGING, false, START), 1, 0, 0, 0).total())
                 .isEqualByComparingTo("539");
-        assertThat(BillingCalculator.invoice(cabinet(), 0, 0, 0, 0).total())
+        assertThat(BillingCalculator.invoice(consultancy(), 0, 0, 0, 0).total())
                 .isEqualByComparingTo("689");
     }
 
@@ -186,13 +186,13 @@ class BillingCalculatorTest {
     }
 
     @Test
-    void aCommittedCabinetPaysTheStartOnlyWhenStoppingEarly() {
-        Subscription s = cabinet();
+    void aCommittedConsultancyPaysTheStartOnlyWhenStoppingEarly() {
+        Subscription s = consultancy();
         s.setTwelveMonthCommitment(true);
         assertThat(BillingCalculator.invoice(s, 0, 5, 0, 0).total()).isEqualByComparingTo("344");
         s.setEndsOn(BillingCalculator.periodStart(s, 2).minusDays(1));
         assertThat(BillingCalculator.invoice(s, 0, 5, 0, 1).lines()).extracting(Line::label)
-                .contains("Pornirea cabinetului (oprire înainte de 12 luni)");
+                .contains("Pornirea contului de consultant (oprire înainte de 12 luni)");
         assertThat(BillingCalculator.invoice(s, 0, 5, 0, 1).total()).isEqualByComparingTo("834");
     }
 
@@ -223,7 +223,7 @@ class BillingCalculatorTest {
         return s;
     }
 
-    private static Subscription cabinet() {
+    private static Subscription consultancy() {
         SubscriptionPlan plan = SubscriptionPlan.CONSULTANCY;
         return Subscription.builder().plan(plan)
                 .monthlyPrice(plan.monthlyPrice()).implementationFee(plan.implementationFee())

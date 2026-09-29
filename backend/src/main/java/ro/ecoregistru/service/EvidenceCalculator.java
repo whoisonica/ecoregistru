@@ -380,11 +380,11 @@ public class EvidenceCalculator {
     public record EvidenceBlockers(int linesWithoutOperationCode, int linesAwaitingWeighing) {}
 
     /**
-     * Ce blochează depunerea pe anul dat, pentru o firmă <b>numită de apelant</b> — panoul cabinetului,
+     * Ce blochează depunerea pe anul dat, pentru o firmă <b>numită de apelant</b> — panoul de consultant,
      * care nu are o firmă aleasă. Aceeași prospețime ca {@link #list}, deci aceleași cifre ca Panoul firmei.
      *
      * <p>⚠️ Nu citește {@code TenantContext}: apelantul răspunde de acces. Singurul apelant e
-     * {@code ConsultancyOverviewService}, care ia firmele din cabinetul sesiunii.
+     * {@code ConsultancyOverviewService}, care ia firmele din firma de consultanță a sesiunii.
      */
     @Transactional
     public EvidenceBlockers blockers(UUID companyId, int year) {

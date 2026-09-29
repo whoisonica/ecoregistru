@@ -194,7 +194,7 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "**6.3.** Administratorul firmei dumneavoastră (sau cabinetul de consultanță care ține evidența ei) " +
+            "**6.3.** Administratorul firmei dumneavoastră (sau firma de consultanță care ține evidența ei) " +
             "poate crea, dezactiva și schimba rolul utilizatorilor din firmă. Ce fac ei prin aplicație e " +
             "responsabilitatea firmei.",
         },
@@ -540,13 +540,13 @@ export const PRIVACY: LegalDoc = {
               "12 luni de la soluționare, dacă nu s-a încheiat un contract",
             ],
             [
-              "**Contul de utilizator**: e-mail, nume, prenume, rol, firma sau cabinetul din care faceți parte",
+              "**Contul de utilizator**: e-mail, nume, prenume, rol, firma (sau firma de consultanță) din care faceți parte",
               "Ca să existe accesul, autentificarea și comunicarea legată de serviciu",
               "Executarea contractului, art. 6(1)(b)",
               "Durata contractului + 90 de zile (sau durata arhivei cerute de client)",
             ],
             [
-              "**Comunicările de serviciu**: alertele de termene, rezumatul zilnic al cabinetului, facturile și mementourile de plată, anunțurile de mentenanță sau de modificare a termenilor",
+              "**Comunicările de serviciu**: alertele de termene, rezumatul zilnic al consultantului, facturile și mementourile de plată, anunțurile de mentenanță sau de modificare a termenilor",
               "Fac parte din serviciul contractat; nu sunt publicitate",
               "Executarea contractului, art. 6(1)(b)",
               "Nu le arhivăm separat de cont",

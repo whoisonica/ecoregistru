@@ -63,8 +63,8 @@ class EndpointGuardInventoryIT {
      * Pragurile aplicaţiei. Un şir scris greşit ar refuza tot sau ar lăsa tot.
      *
      * <p>P2.13 a adăugat {@code CONSULTANT} în cele două praguri de firmă — un consultant lucrează
-     * într-o firmă a cabinetului lui ca un administrator al ei — plus două praguri noi: al
-     * directorului de firme (platformă sau consultant) şi al echipei de cabinet (numai consultant).
+     * într-o firmă din portofoliul lui ca un administrator al ei — plus două praguri noi: al
+     * directorului de firme (platformă sau consultant) şi al echipei de consultanță (numai consultant).
      *
      * <p>D1.8 (15.09.2026) a adăugat pragul „numai adminul firmei”, pe un singur endpoint: cine vede
      * prețurile depozitului. Consultantul și platforma rămân dinadins afară, altfel și-ar deschide

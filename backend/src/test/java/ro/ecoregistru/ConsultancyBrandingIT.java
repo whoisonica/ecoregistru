@@ -44,15 +44,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * P2.14 — antetul cabinetului pe rapoartele neoficiale ale firmelor lui.
+ * P2.14 — antetul consultantului pe rapoartele neoficiale ale firmelor lui.
  *
- * <p><b>Scena.</b> Cabinetul „Antet Verde" are firma „Client Antet"; cabinetul „Vecin Albastru" are
- * firma „Client Vecin" și antetul lui; „Direct Antet" nu e în niciun cabinet. Numele nu se conțin unul
+ * <p><b>Scena.</b> Consultantul „Antet Verde" are firma „Client Antet"; consultantul „Vecin Albastru" are
+ * firma „Client Vecin" și antetul lui; „Direct Antet" nu e la niciun consultant. Numele nu se conțin unul
  * pe altul, ca o scurgere să se vadă în text.
  *
  * <p><b>Ce se probează pe pagina tipărită, nu pe DTO:</b> rezumatul (.pdf și .xlsx) și dosarul poartă
  * antetul; fișa oficială și evidența centralizată din același dosar nu îl poartă; firma directă și
- * firma altui cabinet nu primesc antetul ăstuia; un antet golit nu mai tipărește nimic.
+ * firma altui consultant nu primesc antetul ăstuia; un antet golit nu mai tipărește nimic.
  */
 @SpringBootTest
 @ActiveProfiles("dev")
@@ -60,7 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureEmbeddedDatabase(provider = ZONKY)
 class ConsultancyBrandingIT {
 
-    private static final String CABINET = "Cabinet Antet Verde";
+    private static final String CONSULTANCY = "Consultant Antet Verde";
     private static final String LINE = "Tel. 0722 111 222 · Oradea";
 
     @Autowired MockMvc mockMvc;
@@ -85,12 +85,12 @@ class ConsultancyBrandingIT {
 
     @BeforeEach
     void setUp() {
-        Consultancy cabinet = consultancy(CABINET);
-        Consultancy neighbour = consultancy("Cabinet Vecin Albastru");
-        anaToken = jwtService.generateToken(consultant("ana", cabinet));
+        Consultancy consultancy = consultancy(CONSULTANCY);
+        Consultancy neighbour = consultancy("Consultant Vecin Albastru");
+        anaToken = jwtService.generateToken(consultant("ana", consultancy));
         vladToken = jwtService.generateToken(consultant("vlad", neighbour));
 
-        client = company("Client Antet SRL", cabinet);
+        client = company("Client Antet SRL", consultancy);
         neighbourClient = company("Client Vecin SRL", neighbour);
         direct = company("Direct Antet SRL", null);
         clientAdminToken = jwtService.generateToken(admin(client));
@@ -112,7 +112,7 @@ class ConsultancyBrandingIT {
 
         mockMvc.perform(get("/api/v1/consultancy/branding").header("Authorization", "Bearer " + anaToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.consultancyName", is(CABINET)))
+                .andExpect(jsonPath("$.consultancyName", is(CONSULTANCY)))
                 .andExpect(jsonPath("$.headerLine", is(LINE)))
                 .andExpect(jsonPath("$.hasLogo", is(true)));
 
@@ -160,19 +160,19 @@ class ConsultancyBrandingIT {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    void theSummaryOfACabinetCompanyCarriesTheCabinetHeader() throws Exception {
+    void theSummaryOfAConsultancyCompanyCarriesTheConsultancyHeader() throws Exception {
         brand(anaToken, png(), LINE);
 
         byte[] pdf = export(anaToken, client, "pdf");
         assertThat(Golden.flat(Golden.pdfText(pdf)))
-                .contains(Golden.flat("Pregătit de " + CABINET))
+                .contains(Golden.flat("Pregătit de " + CONSULTANCY))
                 .contains(Golden.flat("Tel. 0722 111 222"));
         assertThat(new String(pdf, StandardCharsets.ISO_8859_1)).as("logoul e în PDF").contains("/Subtype/Image");
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(export(anaToken, client, "xlsx")))) {
             Sheet sheet = wb.getSheetAt(0);
             assertThat(sheet.getRow(0).getCell(0).getStringCellValue())
-                    .isEqualTo("Pregătit de " + CABINET + " · " + LINE);
+                    .isEqualTo("Pregătit de " + CONSULTANCY + " · " + LINE);
             assertThat(sheet.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Client Antet SRL");
             assertThat(((XSSFSheet) sheet).getDrawingPatriarch().getShapes()).as("logoul e în foaie").hasSize(1);
         }
@@ -184,11 +184,11 @@ class ConsultancyBrandingIT {
         brand(anaToken, null, LINE);
 
         assertThat(Golden.flat(Golden.pdfText(export(clientAdminToken, null, "pdf"))))
-                .contains(Golden.flat("Pregătit de " + CABINET));
+                .contains(Golden.flat("Pregătit de " + CONSULTANCY));
     }
 
     @Test
-    void aDirectClientAndAnotherCabinetsClientDoNotGetThisHeader() throws Exception {
+    void aDirectClientAndAnotherConsultancyClientDoNotGetThisHeader() throws Exception {
         brand(anaToken, png(), LINE);
         brand(vladToken, null, "Linia vecinului");
 
@@ -199,7 +199,7 @@ class ConsultancyBrandingIT {
         }
 
         String neighbourPdf = Golden.flat(Golden.pdfText(export(vladToken, neighbourClient, "pdf")));
-        assertThat(neighbourPdf).contains(Golden.flat("Pregătit de Cabinet Vecin Albastru"))
+        assertThat(neighbourPdf).contains(Golden.flat("Pregătit de Consultant Vecin Albastru"))
                 .doesNotContain("AntetVerde");
     }
 
@@ -227,9 +227,9 @@ class ConsultancyBrandingIT {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray());
 
         assertThat(new String(zip.get("00-cuprins.txt"), StandardCharsets.UTF_8))
-                .contains("DOSAR DE CONTROL — Client Antet SRL\nPregătit de " + CABINET + " · " + LINE);
+                .contains("DOSAR DE CONTROL — Client Antet SRL\nPregătit de " + CONSULTANCY + " · " + LINE);
         assertThat(Golden.flat(Golden.pdfText(zip.get("autorizatii-parteneri.pdf"))))
-                .contains(Golden.flat("Pregătit de " + CABINET));
+                .contains(Golden.flat("Pregătit de " + CONSULTANCY));
 
         for (String official : new String[]{
                 "rapoarte/evidenta-gestiunii-deseurilor-" + year + ".pdf", "rapoarte/evidenta-centralizata-" + year + ".pdf"}) {
@@ -303,7 +303,7 @@ class ConsultancyBrandingIT {
 
     private AppUser consultant(String name, Consultancy consultancy) {
         return appUserRepository.save(AppUser.builder()
-                .email(name + "+" + suffix() + "@cabinet.ro")
+                .email(name + "+" + suffix() + "@consultant.ro")
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.CONSULTANT).consultancy(consultancy).enabled(true).createdAt(Instant.now()).build());
     }

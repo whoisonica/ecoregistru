@@ -72,8 +72,8 @@ public class SiatdAlertScheduler {
     }
 
     /**
-     * Cine poate confirma: administratorii activi ai firmei și consultanții activi ai cabinetului ei. Consultantul n-are
-     * firmă (V40), ci cabinet, deci nu iese din utilizatorii firmei.
+     * Cine poate confirma: administratorii activi ai firmei și consultanții activi ai firmei de consultanță care o are în portofoliu. Consultantul n-are
+     * firmă (V40), ci firmă de consultanță, deci nu iese din utilizatorii firmei.
      */
     private List<String> recipients(Company company) {
         List<AppUser> users = new java.util.ArrayList<>(appUserRepository.findAllByCompany_IdAndEnabledTrue(company.getId())

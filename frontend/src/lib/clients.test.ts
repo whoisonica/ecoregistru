@@ -44,7 +44,7 @@ test("fără rândul de abonamente nu se deduce nimic: nici „fără abonament�
   assert.deepEqual(r.reasons, []);
 });
 
-test("firma de cabinet nu e „fără abonament”; firma inactivă nu cere atenție", () => {
+test("firma de la un consultant nu e „fără abonament”; firma inactivă nu cere atenție", () => {
   const none = { ...overview, subscriptionStatus: null, plan: null, monthlyPrice: null, lastInvoice: null };
   assert.equal(clientRow(company, none, TODAY).noSubscription, true);
   assert.equal(clientRow({ ...company, consultancyId: "k" }, none, TODAY).noSubscription, false);
@@ -63,5 +63,5 @@ test("filtrele și ordinea: cele cu probleme primele, apoi după nume", () => {
   assert.deepEqual([ok, bad].sort(byAttention).map((r) => r.company.name), ["Zeta", "Alfa"]);
   assert.equal(MATCHES.ATTENTION(bad), true);
   assert.equal(MATCHES.NO_USERS(ok), false);
-  assert.equal(MATCHES.CABINETS(clientRow({ ...company, consultancyId: "k" }, overview, TODAY)), true);
+  assert.equal(MATCHES.CONSULTANCIES(clientRow({ ...company, consultancyId: "k" }, overview, TODAY)), true);
 });

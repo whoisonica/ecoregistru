@@ -24,7 +24,7 @@ test("un cont gol are toți pașii de făcut, iar la firmă spune ce rubrici lip
 
 test("persoana desemnată nu ține pasul firmei deschis: o completăm noi la configurare", () => {
   // Proprietarul, 29.09.2026: clientul n-o poate completa singur (datele firmei le editează doar
-  // platforma și cabinetul), deci un pas pe care nu-l poate bifa n-are ce căuta în lista lui.
+  // platforma și consultantul), deci un pas pe care nu-l poate bifa n-are ce căuta în lista lui.
   const steps = firstSteps({
     company: { ...full, wasteManagerName: null }, workPoints: [], partners: [], evidences: [], movementCount: 0,
   })!;

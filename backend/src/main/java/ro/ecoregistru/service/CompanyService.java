@@ -101,7 +101,7 @@ public class CompanyService {
      * F-B — the Clients table beyond the company itself: subscription, latest invoice, users. Three queries for the
      * whole list, whatever its length (BUG-016 was a per-row query on a list like this one).
      *
-     * <p>A consultant gets the user counts only: their companies are paid by the cabinet, and the cabinet's money is
+     * <p>A consultant gets the user counts only: their companies are paid by the consultancy, and the consultancy's money is
      * the platform's business.
      */
     @Transactional(readOnly = true)

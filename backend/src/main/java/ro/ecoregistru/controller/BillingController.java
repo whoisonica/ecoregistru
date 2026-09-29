@@ -36,7 +36,7 @@ import java.util.UUID;
  * <p>F3 — the client chooses card or transfer and pays an issued invoice on Netopia's page. F4 — every
  * role reads whether the account is read-only, for the banner.
  *
- * <p>An account with nothing to pay answers 204: a company of a cabinet (the cabinet pays), or a
+ * <p>An account with nothing to pay answers 204: a company of a consultancy (the consultancy pays), or a
  * client not billed at all. {@code /api/v1/billing/**} stays open to a read-only account: paying is how
  * it opens again.
  */

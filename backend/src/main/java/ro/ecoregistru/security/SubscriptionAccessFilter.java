@@ -29,7 +29,7 @@ import java.util.UUID;
  * <ul>
  *   <li><b>Only writes.</b> Every document — the PDFs, the xlsx, the audit-file ZIP — is a GET, checked on
  *       15.09.2026 across every controller; a client who has not paid still takes their records.</li>
- *   <li><b>Who pays decides.</b> A consultant, and a company of a cabinet, are restricted by the cabinet's
+ *   <li><b>Who pays decides.</b> A consultant, and a company of a consultancy, are restricted by the consultancy's
  *       subscription; a direct company by its own. A company nobody pays for is not restricted.</li>
  *   <li><b>Never</b> the platform, the login and reset endpoints, paying itself ({@code /api/v1/billing/**})
  *       or the two regenerations, which only recompute documents from records already there.</li>

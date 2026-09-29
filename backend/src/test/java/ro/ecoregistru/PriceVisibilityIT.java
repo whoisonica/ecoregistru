@@ -104,7 +104,7 @@ class PriceVisibilityIT {
         company = companyRepository.save(Company.builder()
                 .name("Prețuri " + suffix() + " SRL").cui("RO" + TestCui.random())
                 .type(CompanyType.COLLECTOR).active(true).createdAt(Instant.now()).build());
-        // Consultantul are cabinet, nu firmă, iar platforma n-are niciuna: nu se salvează. Serviciile
+        // Consultantul are firmă de consultanță, nu firmă client, iar platforma n-are niciuna: nu se salvează. Serviciile
         // citesc doar rolul din principal.
         users = Map.of(
                 Role.ADMIN, user(Role.ADMIN),

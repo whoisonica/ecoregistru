@@ -12,7 +12,7 @@ import { colors } from "../src/theme";
 /**
  * Comutatorul de firmă al consultantului și al platformei — `X-Tenant-Id` pe fiecare cerere.
  *
- * <p>Lista vine de la `/companies`, pe care serverul o îngustează singur la firmele cabinetului
+ * <p>Lista vine de la `/companies`, pe care serverul o îngustează singur la firmele consultantului
  * (P2.13). Alegerea golește cache-ul de interogări: rândurile firmei părăsite n-au ce căuta sub
  * numele celei alese, iar cheile de interogare poartă tenantul tocmai ca asta să se vadă.
  */

@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * P2.13, felia 2 — un rând din panoul „Toate firmele mele": ce cere atenție la o firmă a cabinetului.
+ * P2.13, felia 2 — un rând din panoul „Toate firmele mele": ce cere atenție la o firmă din portofoliul consultantului.
  *
  * <p>Fiecare cifră e una pe care Panoul firmei o arată deja, socotită după aceeași regulă, ca un
  * consultant să nu vadă „2 blocaje" aici și „nimic" după ce comută pe firmă.

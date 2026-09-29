@@ -245,17 +245,17 @@ class PostFixSecurityQaIT {
         }
     }
 
-    /** Invitația de coleg în cabinet: câmpurile n-au {@code @Size} (coloanele sunt VARCHAR(128)/(255)). */
+    /** Invitația de coleg la consultant: câmpurile n-au {@code @Size} (coloanele sunt VARCHAR(128)/(255)). */
     @Test
     void aConsultantInvitingAColleagueWithALongNameIsNotAServerError() throws Exception {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet QA").cui("RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L))
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant QA").cui("RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L))
                 .createdAt(Instant.now()).build());
-        String consultant = jwtService.generateToken(consultant(cabinet));
+        String consultant = jwtService.generateToken(consultant(consultancy));
         int status = mockMvc.perform(post("/api/v1/consultancy/users").header("Authorization", "Bearer " + consultant)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "email", "coleg" + UUID.randomUUID().toString().substring(0, 6) + "@cabinet.ro",
+                                "email", "coleg" + UUID.randomUUID().toString().substring(0, 6) + "@consultant.ro",
                                 "firstName", "x".repeat(300), "lastName", "y"))))
                 .andReturn().getResponse().getStatus();
         assertThat(status).as("prenume de 300 de semne").isBetween(400, 499);
@@ -267,10 +267,10 @@ class PostFixSecurityQaIT {
      */
     @Test
     void onboardingAClientWithALongAdminNameIsNotAServerError() throws Exception {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet Onboard QA").cui("RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L))
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant Onboard QA").cui("RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L))
                 .createdAt(Instant.now()).build());
-        String consultant = jwtService.generateToken(consultant(cabinet));
+        String consultant = jwtService.generateToken(consultant(consultancy));
         String body = objectMapper.writeValueAsString(Map.of(
                 "company", Map.of("name", "Client Lung SRL", "cui", TestCui.random(), "type", "GENERATOR"),
                 "admin", Map.of("email", "admin" + UUID.randomUUID().toString().substring(0, 6) + "@client.ro",
@@ -314,7 +314,7 @@ class PostFixSecurityQaIT {
     // ───────────────────────── fișiere ─────────────────────────
 
     /**
-     * Logoul de cabinet: 500 KB comprimați, dar niciun prag pe pixeli. ImageIO decodează imaginea întreagă la
+     * Logoul de consultant: 500 KB comprimați, dar niciun prag pe pixeli. ImageIO decodează imaginea întreagă la
      * încărcare și la fiecare raport cu antet; un PNG uniform de 8000×8000 are ~70 KB și cere 64 MB de heap.
      */
     @Test
@@ -325,10 +325,10 @@ class PostFixSecurityQaIT {
                 + " B (decodat 400 MB), limita = " + ReportBrandingService.MAX_LOGO_BYTES);
         assertThat(big.length).as("20000×20000 încape sub limita de octeți").isLessThan(ReportBrandingService.MAX_LOGO_BYTES);
 
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet Logo QA").cui("RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L))
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant Logo QA").cui("RO" + ThreadLocalRandom.current().nextLong(10_000_000L, 9_999_999_999L))
                 .createdAt(Instant.now()).build());
-        String consultant = jwtService.generateToken(consultant(cabinet));
+        String consultant = jwtService.generateToken(consultant(consultancy));
         int status = mockMvc.perform(multipart("/api/v1/consultancy/branding/logo")
                         .file(new MockMultipartFile("file", "logo.png", "image/png", bomb))
                         .header("Authorization", "Bearer " + consultant))
@@ -537,7 +537,7 @@ class PostFixSecurityQaIT {
 
     private AppUser consultant(Consultancy consultancy) {
         return appUserRepository.save(AppUser.builder()
-                .email("consultant+" + UUID.randomUUID().toString().substring(0, 8) + "@cabinet.ro")
+                .email("consultant+" + UUID.randomUUID().toString().substring(0, 8) + "@consultant.ro")
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.CONSULTANT).consultancy(consultancy).enabled(true).createdAt(Instant.now()).build());
     }

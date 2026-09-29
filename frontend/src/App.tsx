@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/auth/AuthContext";
 import { ProtectedRoute, RequireTenant } from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -116,20 +116,22 @@ export default function App() {
               </AppShell>
             }
           />
-          {/* P2.13, felia 2 — panoul cabinetului, peste toate firmele; deci fără firmă aleasă. Adresa
+          {/* P2.13, felia 2 — panoul de consultant, peste toate firmele; deci fără firmă aleasă. Adresa
               e scrisă și în mailul de rezumat (`EmailNotificationService.sendConsultantDigest`). */}
           <Route
-            path="/cabinet"
+            path="/consultant"
             element={
               <AppShell needsTenant={false}>
                 <ConsultancyOverviewPage />
               </AppShell>
             }
           />
+          {/* 29.09.2026: „cabinet” a devenit „consultant”; adresa veche rămâne în mailurile de rezumat deja trimise. */}
+          <Route path="/cabinet" element={<Navigate to="/consultant" replace />} />
           <Route path="/setari" element={<AppShell><SettingsPage /></AppShell>} />
           <Route path="/setari/:section" element={<AppShell><SettingsPage /></AppShell>} />
           <Route path="/import" element={<AppShell><ImportPage /></AppShell>} />
-          {/* Fără firmă aleasă: abonamentul unui consultant e al cabinetului, nu al firmei din
+          {/* Fără firmă aleasă: abonamentul unui consultant e al firmei lui de consultanță, nu al firmei din
               comutator. Adresa e scrisă și în mailul cu factura (`EmailNotificationService`). */}
           <Route
             path="/abonament"

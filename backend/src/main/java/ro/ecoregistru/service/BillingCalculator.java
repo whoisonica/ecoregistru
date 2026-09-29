@@ -86,7 +86,7 @@ public final class BillingCalculator {
             recurring(lines, "Punct de lucru în plus", Math.max(activeWorkPoints - 1, 0), s.getExtraWorkPointPrice());
         }
 
-        String label = s.getPlan().forConsultancy() ? "Pornirea cabinetului" : "Implementare";
+        String label = s.getPlan().forConsultancy() ? "Pornirea contului de consultant" : "Implementare";
         boolean fee = s.getImplementationFee().signum() > 0;
         if (s.isFounder()) {
             if (period == 0) {

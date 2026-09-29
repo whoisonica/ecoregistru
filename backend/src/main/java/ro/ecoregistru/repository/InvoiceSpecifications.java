@@ -50,11 +50,11 @@ public final class InvoiceSpecifications {
             if (!q.isEmpty()) {
                 Join<SubscriptionInvoice, Subscription> s = root.join("subscription", JoinType.INNER);
                 Join<Subscription, Company> company = s.join("company", JoinType.LEFT);
-                Join<Subscription, Consultancy> cabinet = s.join("consultancy", JoinType.LEFT);
+                Join<Subscription, Consultancy> consultancy = s.join("consultancy", JoinType.LEFT);
                 String like = "%" + q.replace("%", "").replace("_", "") + "%";
                 List<Predicate> or = new ArrayList<>(List.of(
                         cb.like(cb.lower(company.get("name")), like),
-                        cb.like(cb.lower(cabinet.get("name")), like)));
+                        cb.like(cb.lower(consultancy.get("name")), like)));
                 // „WH 12”, „wh12” sau „12”: numărul facturii, fără serie.
                 String digits = q.replaceFirst("^wh\\s*", "");
                 if (digits.matches("\\d+")) {

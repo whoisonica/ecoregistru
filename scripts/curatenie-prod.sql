@@ -1,5 +1,5 @@
 -- Curățenia bazei de producție (17.09.2026): rămâne numai contul PLATFORM_ADMIN dat în `-v admin=…`,
--- catalogul de coduri de deșeuri și șablonul de audit. Tot restul (firme, cabinete, mișcări, abonamente,
+-- catalogul de coduri de deșeuri și șablonul de audit. Tot restul (firme, firme de consultanță, mișcări, abonamente,
 -- facturi, cereri de cont, jurnal) se șterge. Planul: ecoregistru-docs/docs/plan-curatenie-prod-demo.md.
 --
 --   heroku pg:backups:capture -a ecoregistru-api        # ÎNTÂI backupul
@@ -12,7 +12,7 @@
 --
 -- ⚠️ Fără CASCADE: `app_users.company_id → companies` ar face ca un `truncate companies cascade` să
 -- golească și `app_users`, adică și contul adminului. De aceea copiii se golesc explicit, apoi
--- utilizatorii, apoi firmele și cabinetele.
+-- utilizatorii, apoi firmele și firmele de consultanță.
 \set ON_ERROR_STOP on
 \if :{?admin}
 \else

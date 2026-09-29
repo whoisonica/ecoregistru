@@ -144,7 +144,7 @@ if (searchable) {
 await bareRow.locator('button[aria-haspopup], button[aria-label]').last().click();
 await page.waitForTimeout(300);
 const menu = await page.$$eval('[role="menuitem"]', (items) => items.map((i) => i.textContent.trim()));
-check("⋯ are Abonament, Cabinet și Invită", ["Abonament", "Cabinet", "Invită"].every((w) => menu.some((m) => m.startsWith(w))), menu.join(", "));
+check("⋯ are Abonament, Consultant și Invită", ["Abonament", "Consultant", "Invită"].every((w) => menu.some((m) => m.startsWith(w))), menu.join(", "));
 
 // ---------------------------------------------------------------- (7) invitația schimbă numărul
 await page.locator('[role="menuitem"]', { hasText: "Invită" }).click();
@@ -176,9 +176,9 @@ check("1440px: tabelul nu derulează lateral", box[0] <= box[1], box.join(" / ")
 
 // ---------------------------------------------------------------- F-B2: taburile
 const tab = (label) => page.locator('[role="tab"]', { hasText: label });
-check("trei taburi: Clienți, Cereri de cont, Cabinete", (await page.locator('[role="tab"]').count()) === 3);
-check("pe Clienți nu stau cererile și cabinetele dedesubt",
-  !(await page.$$eval("h2", (hs) => hs.some((h) => /Cereri de cont|Cabinete de consultanță/.test(h.textContent)))));
+check("trei taburi: Clienți, Cereri de cont, Consultanți", (await page.locator('[role="tab"]').count()) === 3);
+check("pe Clienți nu stau cererile și firmele de consultanță dedesubt",
+  !(await page.$$eval("h2", (hs) => hs.some((h) => /Cereri de cont|Firme de consultanță/.test(h.textContent)))));
 await tab("Cereri de cont").click();
 await page.waitForTimeout(600);
 check("tabul Cereri: adresa are tab=cereri", /tab=cereri/.test(page.url()), page.url());
@@ -187,9 +187,9 @@ check("tabul Cereri: lista cererilor, fără cifrele clienților",
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 check("după reîncărcare rămâne pe Cereri", (await tab("Cereri de cont").getAttribute("aria-selected")) === "true");
-await tab("Cabinete").click();
+await tab("Consultanți").click();
 await page.waitForTimeout(600);
-check("tabul Cabinete: lista cabinetelor", await page.$$eval("h2", (hs) => hs.some((h) => /Cabinete de consultanță/.test(h.textContent))));
+check("tabul Consultanți: lista firmelor de consultanță", await page.$$eval("h2", (hs) => hs.some((h) => /Firme de consultanță/.test(h.textContent))));
 await tab("Clienți").click();
 await page.waitForTimeout(600);
 check("înapoi pe Clienți: adresa fără tab", !/tab=/.test(page.url()) && Boolean(await page.$('[data-testid="client-figures"]')));

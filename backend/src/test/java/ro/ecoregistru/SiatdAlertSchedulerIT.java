@@ -130,19 +130,19 @@ class SiatdAlertSchedulerIT {
     }
 
     /**
-     * Consultantul n-are firmă (V40: {@code company_id} gol), ci cabinet: la un client fără administrator activ, fără el
+     * Consultantul n-are firmă (V40: {@code company_id} gol), ci firmă de consultanță: la un client fără administrator activ, fără el
      * mailul n-ar pleca la nimeni. Recenzia finală F6a, 28.09.2026.
      */
     @Test
-    void consultantsOfTheCabinetReceive() {
+    void consultantsOfTheConsultancyReceive() {
         Fixture f = company(true);
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet SIATD").cui("RO" + TestCui.random()).createdAt(Instant.now()).build());
-        f.company.setConsultancy(cabinet);
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant SIATD").cui("RO" + TestCui.random()).createdAt(Instant.now()).build());
+        f.company.setConsultancy(consultancy);
         companyRepository.save(f.company);
         AppUser consultant = appUserRepository.save(AppUser.builder()
                 .email("consultant+" + UUID.randomUUID().toString().substring(0, 8) + "@demo.ro").password("x")
-                .role(Role.CONSULTANT).consultancy(cabinet).enabled(true).createdAt(Instant.now()).build());
+                .role(Role.CONSULTANT).consultancy(consultancy).enabled(true).createdAt(Instant.now()).build());
         f.admin.setEnabled(false);
         appUserRepository.save(f.admin);
         f.reception(RECEPTION);

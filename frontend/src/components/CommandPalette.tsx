@@ -251,7 +251,7 @@ export function useNavigationCommands(nav: NavModel): Command[] {
     });
     return [
       ...nav.main.map((i) => toCommand(i, strings.common.goTo)),
-      ...nav.cabinet.map((i) => toCommand(i, strings.nav.groupCabinet)),
+      ...nav.consultant.map((i) => toCommand(i, strings.nav.groupConsultant)),
       ...nav.hidden.map((i) => toCommand(i, strings.common.goTo)),
     ];
   }, [nav, navigate]);

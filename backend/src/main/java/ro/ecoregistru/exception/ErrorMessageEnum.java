@@ -52,21 +52,21 @@ public enum ErrorMessageEnum {
     COMPANY_CUI_UNAVAILABLE("company.cui.unavailable", "Firma cu acest CUI nu poate fi adăugată din contul tău. Scrie-ne la contact@wastehouse.ro și o rezolvăm."),
     INVALID_INVITE_ROLE("invite.role.invalid", "Rol invalid pentru invitație. Alege Administrator, Operator, Operator de cântar sau Vizualizare."),
 
-    // --- Cabinete de consultanță (P2.13) ---
-    CONSULTANCY_NOT_FOUND("consultancy.not.found", "Cabinetul nu a fost găsit."),
-    CONSULTANCY_CUI_ALREADY_EXISTS("consultancy.cui.exists", "Există deja un cabinet cu acest CUI."),
+    // --- Firme de consultanță (P2.13) ---
+    CONSULTANCY_NOT_FOUND("consultancy.not.found", "Firma de consultanță nu a fost găsită."),
+    CONSULTANCY_CUI_ALREADY_EXISTS("consultancy.cui.exists", "Există deja o firmă de consultanță cu acest CUI."),
 
-    // --- Antetul cabinetului pe rapoarte (P2.14) ---
+    // --- Antetul consultantului pe rapoarte (P2.14) ---
     BRANDING_LOGO_INVALID("branding.logo.invalid", "Logoul trebuie să fie o imagine PNG sau JPG."),
     BRANDING_LOGO_TOO_LARGE("branding.logo.too.large", "Logoul e prea mare. Cel mult 500 KB."),
     BRANDING_LOGO_TOO_MANY_PIXELS("branding.logo.too.many.pixels", "Logoul e prea mare: cel mult 2000 × 2000 de pixeli."),
-    BRANDING_LOGO_NOT_FOUND("branding.logo.not.found", "Cabinetul nu are logo încărcat."),
+    BRANDING_LOGO_NOT_FOUND("branding.logo.not.found", "Firma de consultanță nu are logo încărcat."),
     BRANDING_HEADER_TOO_LONG("branding.header.too.long", "Rândul de antet are cel mult 200 de caractere."),
 
     // --- Abonamente (plata-abonamente.md, F1) ---
-    SUBSCRIPTION_COMPANY_IN_CONSULTANCY("subscription.company.in.consultancy", "Firma e în portofoliul unui cabinet, iar abonamentul îl plătește cabinetul. Scoate-o întâi din cabinet."),
-    SUBSCRIPTION_PLAN_MISMATCH("subscription.plan.mismatch", "Abonamentul de cabinet se pune numai pe un cabinet, iar celelalte pachete numai pe o firmă."),
-    COMPANY_HAS_OWN_SUBSCRIPTION("company.has.own.subscription", "Firma are abonament propriu. Șterge-l întâi, altfel ar plăti de două ori: o dată ea, o dată cabinetul."),
+    SUBSCRIPTION_COMPANY_IN_CONSULTANCY("subscription.company.in.consultancy", "Firma e în portofoliul unui consultant, iar abonamentul îl plătește consultantul. Scoate-o întâi de la consultant."),
+    SUBSCRIPTION_PLAN_MISMATCH("subscription.plan.mismatch", "Abonamentul de consultant se pune numai pe o firmă de consultanță, iar celelalte pachete numai pe o firmă."),
+    COMPANY_HAS_OWN_SUBSCRIPTION("company.has.own.subscription", "Firma are abonament propriu. Șterge-l întâi, altfel ar plăti de două ori: o dată ea, o dată consultantul."),
     // F2 — a subscription with invoices is the only link between them and FGO.
     SUBSCRIPTION_HAS_INVOICES("subscription.has.invoices", "Abonamentul are deja facturi și nu se mai poate șterge, altfel se pierde legătura cu ele în FGO."),
     // F3 — cardul.

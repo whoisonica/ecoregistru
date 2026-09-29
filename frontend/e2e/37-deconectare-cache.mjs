@@ -1,10 +1,10 @@
 // Proba 37: deconectarea golește cache-ul (17.09.2026).
 //
 // Ce se poate strica: platforma se deconectează, consultantul intră în același tab (fără reîncărcare), iar
-// selectorul de firme îi arată lista platformei, rămasă în React Query — cu firme din afara cabinetului lui,
+// selectorul de firme îi arată lista platformei, rămasă în React Query — cu firme din afara portofoliului lui,
 // pe care le putea și alege.
 // Consultantul se scrie cu `psql` (invitația cere mail): `E2E_DB`, parola hash-ului luată de la admin@demo.ro.
-// ⚠️ Lasă în urmă cabinetul „Proba 37 Cabinet <număr>”, firma „Proba 37 <număr>” și consultant37-<număr>@demo.ro.
+// ⚠️ Lasă în urmă firma de consultanță „Proba 37 Consult <număr>”, firma „Proba 37 <număr>” și consultant37-<număr>@demo.ro.
 import { execFileSync } from "node:child_process";
 import { launch, newPage, login, companies, validCui, ACCOUNTS, BASE } from "./lib.mjs";
 
@@ -38,15 +38,15 @@ async function api(method, path, body) {
 }
 
 await login(page, "platform");
-const cabinet = await api("POST", "/api/v1/consultancies", { name: `Proba 37 Cabinet ${RUN}`, cui: validCui() });
+const consultancy = await api("POST", "/api/v1/consultancies", { name: `Proba 37 Consult ${RUN}`, cui: validCui() });
 const firm = await api("POST", "/api/v1/companies", {
   name: FIRM, cui: validCui(), type: "GENERATOR", afmObligation: false, address: "Cluj-Napoca",
 });
-const moved = await api("PUT", `/api/v1/companies/${firm.id}/consultancy`, { consultancyId: cabinet.id });
-check("cabinetul și firma lui există", Boolean(cabinet.id && firm.id && !moved.error), JSON.stringify({ cabinet, firm, moved }));
+const moved = await api("PUT", `/api/v1/companies/${firm.id}/consultancy`, { consultancyId: consultancy.id });
+check("firma de consultanță și firma ei există", Boolean(consultancy.id && firm.id && !moved.error), JSON.stringify({ consultancy, firm, moved }));
 sql(
   `insert into app_users (id, email, password, role, consultancy_id, enabled, created_at, token_version)
-   select gen_random_uuid(), '${EMAIL}', password, 'CONSULTANT', '${cabinet.id}', true, now(), 0
+   select gen_random_uuid(), '${EMAIL}', password, 'CONSULTANT', '${consultancy.id}', true, now(), 0
    from app_users where email = '${ACCOUNTS.admin.email}'`
 );
 
@@ -66,7 +66,7 @@ await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 15000 
 await page.waitForLoadState("networkidle");
 
 const mine = await companies(page);
-check("consultantul vede numai firma cabinetului", mine.length === 1 && mine[0] === FIRM, mine.join(" · "));
+check("consultantul vede numai firma din portofoliu", mine.length === 1 && mine[0] === FIRM, mine.join(" · "));
 
 await browser.close();
 process.exit(fails ? 1 : 0);

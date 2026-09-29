@@ -17,7 +17,7 @@ const t = strings.panel;
  *
  * <p>Pentru un cont de firmă e o etichetă. Pentru consultant și platformă e un buton care deschide
  * selectorul: căutare, apoi firmele grupate în „Cer atenție" (cu motivul: termen depășit, linii
- * fără cod R/D, autorizație pe terminate) și „În regulă · N". Motivele vin din panoul cabinetului
+ * fără cod R/D, autorizație pe terminate) și „În regulă · N". Motivele vin din panoul de consultant
  * (`useConsultancyOverview`), deci numai consultantul le are; platforma vede lista simplă.
  *
  * <p>Înlocuiește `CompanyBlock` (un `<select>` nativ) din 15.09.2026.
@@ -41,7 +41,7 @@ export function CompanyLabel({
 
   /**
    * P2.13 — firma aleasă care nu mai e în listă se uită. Firma stă în browser între sesiuni;
-   * pentru un consultant lipsește exact când firma a fost mutată în alt cabinet.
+   * pentru un consultant lipsește exact când firma a fost mutată la alt consultant.
    */
   useEffect(() => {
     if (!multiCompany || !companies || !tenantId) return;

@@ -34,7 +34,7 @@ export interface NavEntry {
    * spună același lucru ajunge mereu să nu-l mai spună.
    */
   keywords?: string;
-  /** Tasta din panou: cifrele 1–9, 0 în ordinea afișată; litere la grupul Cabinet. */
+  /** Tasta din panou: cifrele 1–9, 0 în ordinea afișată; litere la grupul Consultant. */
   hotkey?: string;
   /** Ecranul de mișcări din spatele intrării, când e unul: după el se aleg indicatorii. */
   screen?: MovementScreen;
@@ -48,8 +48,8 @@ export interface NavEntry {
 export interface NavModel {
   /** Meniul principal, în ordinea afișată; fiecare cu tasta ei. */
   main: NavEntry[];
-  /** Grupul Cabinet: numai consultantul și platforma. */
-  cabinet: NavEntry[];
+  /** Grupul Consultant: numai consultantul și platforma. */
+  consultant: NavEntry[];
   /** Ecranele care există, dar nu stau în meniu: le găsește paleta și le duc linkurile din pagini. */
   hidden: NavEntry[];
 }
@@ -149,10 +149,10 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
     { to: "/setari", label: strings.nav.settings, icon: Settings, keywords: strings.nav.kwSettings }
   );
 
-  const cabinet: NavEntry[] = [];
+  const consultant: NavEntry[] = [];
   if (role === "CONSULTANT") {
-    cabinet.push({
-      to: "/cabinet",
+    consultant.push({
+      to: "/consultant",
       label: strings.nav.consultancyOverview,
       icon: Briefcase,
       keywords: strings.nav.kwConsultancyOverview,
@@ -160,7 +160,7 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
     });
   }
   if (isMultiCompany(role)) {
-    cabinet.push({
+    consultant.push({
       to: "/clienti",
       label: strings.nav.clients,
       icon: Building2,
@@ -170,7 +170,7 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
   // F-A, 17.09.2026: facturile tuturor clienților. B, fiindcă F e „Firmele mele” la consultant.
   if (role === "PLATFORM_ADMIN") {
-    cabinet.push({
+    consultant.push({
       to: "/facturare",
       label: strings.nav.invoicing,
       icon: ReceiptText,
@@ -199,7 +199,7 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
 
   return {
     main: main.map((entry, i) => ({ ...entry, hotkey: DIGITS[i] ?? OVERFLOW_KEY })),
-    cabinet,
+    consultant,
     hidden,
   };
 }

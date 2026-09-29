@@ -47,7 +47,7 @@ const typeLabels = strings.enums.companyType;
 export function ClientsPage() {
   const { user } = useAuth();
   const isPlatformAdmin = user?.role === "PLATFORM_ADMIN";
-  // P2.13 — consultantul ajunge și el aici: aceleași firme, restrânse de server la cabinetul lui.
+  // P2.13 — consultantul ajunge și el aici: aceleași firme, restrânse de server la firma lui de consultanță.
   const isConsultant = user?.role === "CONSULTANT";
   const multiCompany = isMultiCompany(user?.role);
 
@@ -86,7 +86,7 @@ export function ClientsPage() {
     ? [
         { id: "", label: t.tabClients, count: companies?.length },
         { id: "cereri", label: t.tabRequests, count: requests.data ? newRequests : undefined, alert: newRequests > 0 },
-        { id: "cabinete", label: t.tabCabinets, count: consultancies.data?.length },
+        { id: "consultanti", label: t.tabConsultancies, count: consultancies.data?.length },
       ]
     : [
         { id: "", label: t.tabClients, count: companies?.length },
@@ -154,7 +154,7 @@ export function ClientsPage() {
                   <>
                     {t.filters[f]}{" "}
                     <span className="font-mono text-xs opacity-70">
-                      {companies && (f === "ALL" || f === "CABINETS" || overview.data) ? counts[f] : t.unknown}
+                      {companies && (f === "ALL" || f === "CONSULTANCIES" || overview.data) ? counts[f] : t.unknown}
                     </span>
                   </>
                 ),
@@ -232,7 +232,7 @@ export function ClientsPage() {
                           {t.open}
                         </Button>
                         <Menu>
-                          {/* O firmă dintr-un cabinet n-are abonament propriu: o plătește cabinetul. */}
+                          {/* O firmă de la un consultant n-are abonament propriu: o plătește consultantul. */}
                           {isPlatformAdmin && !r.company.consultancyId && (
                             <MenuItem icon={Receipt} onClick={() => openCompany(r.company.id, "abonament")}>
                               {t.subscriptionAction}
@@ -260,9 +260,9 @@ export function ClientsPage() {
       </>
       )}
 
-      {/* Inboxul cererilor publice și cabinetele sunt ale platformei; echipa, a consultantului. */}
+      {/* Inboxul cererilor publice și firmele de consultanță sunt ale platformei; echipa, a consultantului. */}
       {isPlatformAdmin && tab === "cereri" && <AccountRequestsSection enabled onOpenCompany={openCompany} />}
-      {isPlatformAdmin && tab === "cabinete" && <ConsultanciesSection />}
+      {isPlatformAdmin && tab === "consultanti" && <ConsultanciesSection />}
       {isConsultant && tab === "echipa" && <ConsultancyTeamSection />}
       {isConsultant && tab === "antet" && <ConsultancyBrandingSection />}
       {inviting && <InviteUserDialog company={inviting} onClose={() => setInviting(null)} />}
@@ -374,7 +374,7 @@ function SubscriptionCell({ row }: { row: ClientRow }) {
   if (row.company.consultancyId) {
     return (
       <>
-        <Badge variant="muted">{t.paidByCabinet}</Badge>
+        <Badge variant="muted">{t.paidByConsultant}</Badge>
         <span className="block text-xs text-content-muted">{row.company.consultancyName}</span>
       </>
     );

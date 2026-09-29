@@ -18,7 +18,7 @@ import type {
 } from "@/lib/types";
 
 /**
- * F2 — abonamentul pe care îl plătește contul, pe `/abonament`: al cabinetului pentru un consultant,
+ * F2 — abonamentul pe care îl plătește contul, pe `/abonament`: al firmei de consultanță pentru un consultant,
  * al firmei pentru administratorul ei. 204 (nimic de plătit) devine `null`.
  */
 export function useBillingAccount() {
@@ -32,7 +32,7 @@ export function useBillingAccount() {
 }
 
 /**
- * Plata abonamentelor, F1 — abonamentul unei firme directe sau al unui cabinet. Numai platforma.
+ * Plata abonamentelor, F1 — abonamentul unei firme directe sau al unei firme de consultanță. Numai platforma.
  * Serverul răspunde 204 pentru un client fără abonament, adică nefacturat: aici devine `null`.
  */
 const subscriptionKey = (owner: SubscriptionOwner) => ["subscriptions", owner.kind, owner.id] as const;

@@ -48,10 +48,10 @@ export const strings = {
     deadlines: "Termene",
     auditFile: "Dosar de control",
     clients: "Clienți",
-    // P2.13, felia 2 — panoul cabinetului, numai la consultant.
+    // P2.13, felia 2 — panoul de consultant, numai la consultant.
     consultancyOverview: "Firmele mele",
     kwConsultancyOverview:
-      "cabinet toate firmele portofoliu termene depășite blocaje autorizații parteneri ce am de făcut consultant",
+      "firma de consultanță toate firmele portofoliu termene depășite blocaje autorizații parteneri ce am de făcut consultant",
     settings: "Setări",
     logout: "Deconectare",
     // Grupurile din bara laterală. Nouă intrări plate nu spun nimic despre ce ține de ce; patru
@@ -86,14 +86,14 @@ export const strings = {
     kwPartners: "clienți furnizori colector valorificator transportator șoferi autorizație CUI",
     kwSettings:
       "puncte de lucru secții generatori interni șoferii noștri datele firmei CAEN persoana desemnată",
-    kwClients: "firme companii tenant cereri de cont profil de piață cabinet consultanți echipa",
+    kwClients: "firme companii tenant cereri de cont profil de piață consultant firme de consultanță consultanți echipa",
     billing: "Abonament",
     kwBilling: "facturi factură plată plătește transfer pachet preț FGO scadență restanță",
     invoicing: "Facturare",
     kwInvoicing: "facturi toți clienții FGO rulare emitere căzute restante încasări verifică plata",
     importExcel: "Import din Excel",
     kwImport: "import excel xlsx șablon istoric încarcă parteneri mișcări implementare",
-    groupCabinet: "Cabinet",
+    groupConsultant: "Consultant",
   },
 
   /**
@@ -2761,9 +2761,9 @@ export const strings = {
     requestsSee: "Vezi cererile",
     tabClients: "Clienți",
     tabRequests: "Cereri de cont",
-    tabCabinets: "Cabinete",
+    tabConsultancies: "Consultanți",
     tabTeam: "Echipa",
-    tabBranding: "Antetul cabinetului",
+    tabBranding: "Antetul pe rapoarte",
     tabsLabel: "Secțiunile paginii Clienți",
     filterLabel: "Arată",
     filters: {
@@ -2773,14 +2773,14 @@ export const strings = {
       OVERDUE: "Restanți",
       FAILED: "Emitere căzută",
       NO_USERS: "Fără utilizatori",
-      CABINETS: "Cabinete",
+      CONSULTANCIES: "La consultanți",
     },
     colClient: "Client",
     colSubscription: "Abonament",
     colLastInvoice: "Ultima factură",
     colUsers: "Utilizatori",
     colProfile: "Fișa",
-    paidByCabinet: "Plătește cabinetul",
+    paidByConsultant: "Plătește consultantul",
     noSubscription: "Fără abonament",
     invoicePaid: "Plătită",
     invoiceDue: "Scadentă {date}",
@@ -2805,18 +2805,18 @@ export const strings = {
     onlyPlatformAdmin: "Această secțiune este disponibilă administratorului platformei și consultanților.",
     // P2.13 — ce vede consultantul. Fără „cererile de cont de mai jos": inboxul e al platformei.
     subtitleConsultant:
-      "Firmele cabinetului tău. Adaugi o firmă și îi inviți oamenii; o firmă adăugată de aici intră direct în cabinet și o poți alege din „Firma curentă”.",
+      "Firmele tale. Adaugi o firmă și îi inviți oamenii; o firmă adăugată de aici intră direct în portofoliul tău și o poți alege din „Firma curentă”.",
     emptyHintConsultant: "Adaugă prima firmă pe care o gestionezi.",
-    consultancy: "Cabinet",
+    consultancy: "Consultant",
     directClient: "Client direct",
-    assignConsultancy: "Cabinet",
-    assignTitle: "Cabinetul firmei {company}",
+    assignConsultancy: "Consultant",
+    assignTitle: "Consultantul firmei {company}",
     // Spune urmarea, nu doar acțiunea: cine câștigă acces și cine îl pierde, și de când.
     assignHint:
-      "Consultanții cabinetului ales văd firma și lucrează pe ea; cei ai cabinetului de dinainte nu o mai văd de la cererea următoare. „Client direct” o scoate din orice cabinet.",
+      "Consultanții firmei de consultanță alese văd firma și lucrează pe ea; cei de dinainte nu o mai văd de la cererea următoare. „Client direct” o scoate de la orice consultant.",
     assignNone: "— client direct —",
-    assigned: "Cabinetul firmei a fost schimbat.",
-    assignError: "Nu am putut schimba cabinetul.",
+    assigned: "Consultantul firmei a fost schimbat.",
+    assignError: "Nu am putut schimba consultantul.",
     // columns
     name: "Denumire",
     cui: "CUI",
@@ -2928,7 +2928,7 @@ export const strings = {
     tabHistory: "Istoric",
     enterAccount: "Intră în cont",
     notFound: "Firma nu e în lista ta",
-    notFoundHint: "Poate a fost mutată în alt cabinet sau adresa e greșită. Întoarce-te la Clienți și caut-o după nume.",
+    notFoundHint: "Poate a fost mutată la alt consultant sau adresa e greșită. Întoarce-te la Clienți și caut-o după nume.",
     noUsers: "Fără utilizatori",
     userOne: "utilizator",
     userMany: "utilizatori",
@@ -2937,13 +2937,13 @@ export const strings = {
     gapsHint: "Rubricile se tipăresc pe documente; goale, ies goale. Clic pe una și ajungi la ea.",
   },
 
-  /** P2.13 — cabinetele de consultanță, pe ecranul Clienți al platformei. */
+  /** P2.13 — firmele de consultanță, pe ecranul Clienți al platformei. */
   consultancies: {
-    title: "Cabinete de consultanță",
+    title: "Firme de consultanță",
     subtitle:
-      "Firmele de consultanță care țin evidența pentru clienții lor. Creezi cabinetul și îi inviți primul consultant; de acolo își administrează singuri echipa și firmele. O firmă existentă se mută într-un cabinet din rândul ei, mai sus.",
-    add: "Adaugă cabinet",
-    addTitle: "Adaugă cabinet",
+      "Firmele de consultanță care țin evidența pentru clienții lor. Creezi firma de consultanță și îi inviți primul consultant; de acolo își administrează singuri echipa și firmele. O firmă existentă se mută la un consultant din rândul ei, mai sus.",
+    add: "Adaugă firmă de consultanță",
+    addTitle: "Adaugă firmă de consultanță",
     name: "Denumire",
     namePlaceholder: "ex. EcoConsult SRL",
     cui: "CUI",
@@ -2951,10 +2951,10 @@ export const strings = {
     companies: "Firme",
     consultants: "Consultanți",
     searchPlaceholder: "Caută după nume sau CUI...",
-    empty: "Niciun cabinet încă.",
-    emptyHint: "Un cabinet se creează după ce contractul cu el e semnat.",
-    loadError: "Nu am putut încărca cabinetele.",
-    created: "Cabinet adăugat.",
+    empty: "Nicio firmă de consultanță încă.",
+    emptyHint: "O firmă de consultanță se creează după ce contractul cu ea e semnat.",
+    loadError: "Nu am putut încărca firmele de consultanță.",
+    created: "Firmă de consultanță adăugată.",
     saveError: "Salvarea a eșuat. Verifică datele și încearcă din nou.",
     invite: "Invită consultant",
     inviteTitle: "Invită un consultant în {consultancy}",
@@ -2966,7 +2966,7 @@ export const strings = {
   billing: {
     title: "Abonament",
     subtitle: "Ce ai de plată, pachetul, facturile și datele pe care le emitem.",
-    none: "Contul ăsta n-are un abonament de plătit. Dacă firma e gestionată de un cabinet de consultanță, abonamentul e al cabinetului.",
+    none: "Contul ăsta n-are un abonament de plătit. Dacă firma e gestionată de o firmă de consultanță, abonamentul e al consultantului.",
     loadError: "Nu am putut încărca abonamentul.",
     // F-E — afișajul de sus
     dueTitle: "De plată",
@@ -3163,7 +3163,7 @@ export const strings = {
     title: "Abonament — {name}",
     hint: "Prețul se copiază din grilă când creezi abonamentul și nu se mai schimbă singur, doar dacă muți clientul pe alt pachet. Factura se emite prin FGO în prima zi a fiecărei perioade, cu plata prin transfer în 10 zile.",
     billing: "Date de facturare",
-    billingHint: "Numele și CUI-ul vin din firmă sau din cabinet. Fără județ, localitate și adresă, factura nu pleacă la FGO.",
+    billingHint: "Numele și CUI-ul vin din firmă sau din firma de consultanță. Fără județ, localitate și adresă, factura nu pleacă la FGO.",
     billingEmail: "Email pentru facturi",
     billingEmailHint: "Gol: emailul de contact al firmei.",
     billingCounty: "Județ",
@@ -3188,7 +3188,7 @@ export const strings = {
       GENERATOR: "Generator",
       GENERATOR_PACKAGING: "Generator + Ambalaje",
       FULL_SERVICE: "Serviciu complet",
-      CONSULTANCY: "Abonament de cabinet",
+      CONSULTANCY: "Abonament de consultant",
     },
     planHint: "Colectorii intră pe Generator: modulul de depozit nu se facturează încă.",
     startedAt: "Data de start",
@@ -3209,7 +3209,7 @@ export const strings = {
     monthlyInvoice: "Apoi lunar ({period})",
     total: "Total",
     previewHint:
-      "Calculat pe punctele de lucru sau firmele active de azi. La facturare se numără la începutul fiecărei perioade, deci o firmă adăugată în cabinet se plătește din perioada următoare.",
+      "Calculat pe punctele de lucru sau firmele active de azi. La facturare se numără la începutul fiecărei perioade, deci o firmă adăugată la consultant se plătește din perioada următoare.",
     create: "Creează abonamentul",
     saved: "Abonament salvat.",
     saveError: "Abonamentul nu a putut fi salvat.",
@@ -3241,11 +3241,11 @@ export const strings = {
     stopSectionHint: "Se facturează încă o lună de preaviz, apoi contul trece pe doar-citire.",
   },
 
-  /** P2.13 — echipa cabinetului, pe ecranul Clienți al consultantului. */
+  /** P2.13 — echipa firmei de consultanță, pe ecranul Clienți al consultantului. */
   consultancyTeam: {
-    title: "Echipa cabinetului",
+    title: "Echipa firmei de consultanță",
     subtitle:
-      "Colegii care lucrează pe firmele cabinetului. Toți au aceleași drepturi: văd toate firmele cabinetului, adaugă firme și invită colegi.",
+      "Colegii care lucrează pe firmele voastre. Toți au aceleași drepturi: văd toate firmele, adaugă firme și invită colegi.",
     invite: "Invită coleg",
     inviteTitle: "Invită un coleg",
     empty: "Niciun coleg încă.",
@@ -3254,14 +3254,14 @@ export const strings = {
     invited: "Coleg invitat. Primește pe email linkul de setare a parolei.",
     // Ca la utilizatorii firmei, plus singurul lucru care diferă: pierde toate firmele deodată.
     confirmDeactivate:
-      "Sesiunile deschise se închid imediat și nu mai vede nicio firmă a cabinetului. Ce a înregistrat rămâne neatins, cu numele lui. Se poate reactiva oricând.",
+      "Sesiunile deschise se închid imediat și nu mai vede nicio firmă din portofoliu. Ce a înregistrat rămâne neatins, cu numele lui. Se poate reactiva oricând.",
   },
 
-  /** P2.14 — antetul cabinetului pe rapoartele neoficiale. Formularele oficiale nu îl primesc, și ecranul o spune. */
+  /** P2.14 — antetul consultantului pe rapoartele neoficiale. Formularele oficiale nu îl primesc, și ecranul o spune. */
   consultancyBranding: {
-    title: "Antetul cabinetului pe rapoarte",
+    title: "Antetul tău pe rapoarte",
     subtitle:
-      "Logoul și un rând de contact apar sus pe rezumatul evidenței (PDF și Excel), pe lista autorizațiilor partenerilor și în README-ul dosarului de control, la toate firmele cabinetului.",
+      "Logoul și un rând de contact apar sus pe rezumatul evidenței (PDF și Excel), pe lista autorizațiilor partenerilor și în README-ul dosarului de control, la toate firmele tale.",
     officialNote:
       "Formularele oficiale (fișa de evidență, evidența centralizată, anexele, avizul) rămân exact ca modelul din lege, fără antet.",
     logo: "Logo",
@@ -3274,30 +3274,30 @@ export const strings = {
     logoUploaded: "Logoul a fost salvat.",
     logoRemoved: "Logoul a fost șters.",
     headerLine: "Rândul de contact",
-    headerLinePlaceholder: "Ex.: Tel. 0722 000 000 · contact@cabinet.ro · Oradea",
-    headerLineHint: "Opțional, cel mult 200 de caractere. Gol = doar numele cabinetului.",
+    headerLinePlaceholder: "Ex.: Tel. 0722 000 000 · contact@consultant.ro · Oradea",
+    headerLineHint: "Opțional, cel mult 200 de caractere. Gol = doar numele firmei de consultanță.",
     save: "Salvează rândul",
     saved: "Rândul de antet a fost salvat.",
     preview: "Așa arată sus pe pagină",
     preparedBy: "Pregătit de {name}",
     emptyPreview: "Fără logo și fără rând de contact, rapoartele rămân fără antet.",
-    loadError: "Nu am putut încărca antetul cabinetului.",
+    loadError: "Nu am putut încărca antetul.",
     saveError: "Nu am putut salva antetul.",
   },
 
   /**
-   * P2.13, felia 2 — „Firmele mele": ce e de făcut pe fiecare firmă a cabinetului, pe un singur ecran.
+   * P2.13, felia 2 — „Firmele mele": ce e de făcut pe fiecare firmă a consultantului, pe un singur ecran.
    * Cuvintele celulelor sunt ale Panoului firmei, ca un consultant să recunoască același lucru după ce comută.
    */
   consultancyOverview: {
     title: "Firmele mele",
     subtitle:
-      "Ce cere atenție pe fiecare firmă a cabinetului: termene, ce blochează depunerea și autorizațiile partenerilor. Firmele cu termene depășite sunt primele.",
-    loadError: "Nu am putut încărca firmele cabinetului.",
+      "Ce cere atenție pe fiecare firmă a ta: termene, ce blochează depunerea și autorizațiile partenerilor. Firmele cu termene depășite sunt primele.",
+    loadError: "Nu am putut încărca firmele tale.",
     // Pentru orice alt rol decât consultantul. Textul de la Clienți promitea secțiunea și administratorului.
     consultantsOnly:
-      "Panoul e al consultanților: fiecare vede aici firmele cabinetului lui. Administratorul platformei le găsește în Clienți.",
-    empty: "Cabinetul nu are încă nicio firmă activă.",
+      "Panoul e al consultanților: fiecare vede aici firmele din portofoliul lui. Administratorul platformei le găsește în Clienți.",
+    empty: "Nu ai încă nicio firmă activă.",
     emptyHint: "Adaugă prima firmă din Clienți; apare aici imediat.",
     emptyAction: "Deschide Clienți",
     summaryAllClear: "Toate firmele sunt la zi.",
@@ -3671,7 +3671,7 @@ export const strings = {
   newClient: {
     title: "Client nou",
     subtitle: "Patru pași și clientul e gata: firma, ce face, abonamentul, cine intră în cont.",
-    subtitleConsultant: "Trei pași: firma, ce face, cine intră în cont. Abonamentul îl plătește cabinetul.",
+    subtitleConsultant: "Trei pași: firma, ce face, cine intră în cont. Firma intră în abonamentul tău, nu are unul propriu.",
     fromRequest: "Din cererea de cont a firmei {name}",
     fromRequestHint: "Răspunsurile din cerere sunt deja puse. Verifică și continuă.",
     requestMissing: "Cererea nu mai e deschisă: a fost deja aprobată sau respinsă.",

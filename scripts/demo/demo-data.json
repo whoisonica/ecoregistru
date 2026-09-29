@@ -95,9 +95,9 @@
       { "material": "LEMN", "salesPackaging": 0, "primaryTotal": 0, "primaryReusable": 0, "secondaryTotal": 2600, "secondaryReusable": 1800, "hazardousContent": 0 }
     ]
   },
-  "cabinet": {
-    "consultancy": { "name": "Cabinet Exemplu Mediu SRL", "cui": "RO418349529" },
-    "consultant": { "alias": "demo-cabinet", "firstName": "Mihaela", "lastName": "Stan" },
+  "consultant": {
+    "consultancy": { "name": "Exemplu Consult Mediu SRL", "cui": "RO418349529" },
+    "consultant": { "alias": "demo-consultant", "firstName": "Mihaela", "lastName": "Stan" },
     "companies": [
       {
         "company": {

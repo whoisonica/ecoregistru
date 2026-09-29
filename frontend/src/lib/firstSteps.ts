@@ -8,7 +8,7 @@ import type { Company } from "@/lib/types";
  * <ol>
  *   <li><b>Datele firmei</b> — adresa și CAEN-ul se tipăresc pe evidența centralizată; goale, rubrica
  *       iese goală pe documentul depus. Persoana desemnată (OUG 92/2021 art. 23 alin. (4)) nu mai e
- *       aici din 29.09.2026 (proprietarul): datele firmei le editează doar platforma și cabinetul, deci
+ *       aici din 29.09.2026 (proprietarul): datele firmei le editează doar platforma și consultantul, deci
  *       clientul n-o putea bifa singur. O cere „Client nou”, iar ecranul Clienți o arată ca lipsă.</li>
  *   <li><b>Punctul de lucru</b> — o mișcare se înregistrează pe unul.</li>
  *   <li><b>Partenerul</b> — colectorul căruia i se predă, cu autorizația lui (art. 23 alin. (1)).</li>

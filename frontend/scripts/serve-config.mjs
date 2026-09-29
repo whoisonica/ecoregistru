@@ -30,7 +30,7 @@ const csp = [
   "style-src 'self'",
   // Fonturile IBM Plex sunt în `public/fonts`, nu la Google.
   "font-src 'self'",
-  // `data:` = favicon-ul din `index.html`; `blob:` = logoul cabinetului, cerut cu tokenul.
+  // `data:` = favicon-ul din `index.html`; `blob:` = logoul consultantului, cerut cu tokenul.
   "img-src 'self' data: blob:",
   `connect-src ${connect}`,
   // PDF-urile și atașamentele se deschid în tab ca `blob:` (`lib/openFileInTab.ts`).

@@ -93,17 +93,17 @@ class PushAlertsIT {
 
     @Test
     void theConsultantDigestIsOneNotificationForTheConsultants() {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + suffix()).cui(digitsCui()).createdAt(Instant.now()).build());
-        Company company = company(cabinet);
-        AppUser consultant = user(null, cabinet, Role.CONSULTANT);
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant " + suffix()).cui(digitsCui()).createdAt(Instant.now()).build());
+        Company company = company(consultancy);
+        AppUser consultant = user(null, consultancy, Role.CONSULTANT);
         deadline(company, TODAY.plusDays(1));
         deadline(company, TODAY.plusDays(3));
 
         digestScheduler.dispatch(TODAY);
 
         verify(pushNotifier).send(argThat(containsOnly(consultant)),
-                argThat(m -> m.title().equals(cabinet.getName() + ": 2 termene în următoarele 7 zile")));
+                argThat(m -> m.title().equals(consultancy.getName() + ": 2 termene în următoarele 7 zile")));
     }
 
     // ── ajutoare ─────────────────────────────────────────────────────────────

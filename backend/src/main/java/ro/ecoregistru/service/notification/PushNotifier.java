@@ -145,7 +145,7 @@ public class PushNotifier {
                 "Verifică autorizația înainte de următoarea predare.", "control");
     }
 
-    /** Rezumatul cabinetului: câte termene, nu care — detaliile sunt în mail și pe web. */
+    /** Rezumatul consultantului: câte termene, nu care — detaliile sunt în mail și pe web. */
     public static Message consultantDigest(String consultancyName, int deadlines) {
         String count = deadlines == 1 ? "1 termen" : deadlines + (deadlines >= 20 ? " de termene" : " termene");
         return new Message(consultancyName + ": " + count + " în următoarele 7 zile",

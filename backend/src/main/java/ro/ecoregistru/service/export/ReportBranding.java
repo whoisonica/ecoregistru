@@ -26,7 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 /**
- * P2.14 — the consultancy's header on an <b>unofficial</b> report: its logo, „Pregătit de {cabinet}"
+ * P2.14 — the consultancy's header on an <b>unofficial</b> report: its logo, „Pregătit de {consultant}"
  * and its own header line. Null means a direct client, or a consultancy that set nothing, and then
  * nothing is printed — the page stays exactly what it was.
  *
@@ -57,7 +57,7 @@ public record ReportBranding(String consultancyName, String headerLine, byte[] l
 
     // --- PDF ---
 
-    /** The header band above the page's own title: logo left, the cabinet right, a thin rule under. */
+    /** The header band above the page's own title: logo left, the consultancy right, a thin rule under. */
     public static void addPdfHeader(Document doc, ReportBranding branding) throws DocumentException {
         if (branding == null) {
             return;
@@ -105,7 +105,7 @@ public record ReportBranding(String consultancyName, String headerLine, byte[] l
             image.scaleToFit(PDF_LOGO_WIDTH, PDF_LOGO_HEIGHT);
             return image;
         } catch (IOException | RuntimeException ex) {
-            log.warn("Logo de cabinet ilizibil pentru {}: {}", consultancyName, ex.getMessage());
+            log.warn("Logo de consultant ilizibil pentru {}: {}", consultancyName, ex.getMessage());
             return null;
         }
     }
@@ -137,7 +137,7 @@ public record ReportBranding(String consultancyName, String headerLine, byte[] l
                     picture.resize(Math.min(1d, XLSX_LOGO_HEIGHT_PX / decoded.getHeight()));
                 }
             } catch (IOException | RuntimeException ex) {
-                log.warn("Logo de cabinet ilizibil pentru {}: {}", branding.consultancyName(), ex.getMessage());
+                log.warn("Logo de consultant ilizibil pentru {}: {}", branding.consultancyName(), ex.getMessage());
             }
         }
         return 2;

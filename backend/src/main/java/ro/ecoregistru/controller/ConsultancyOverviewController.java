@@ -13,7 +13,7 @@ import ro.ecoregistru.service.ConsultancyOverviewService;
 import java.util.List;
 
 /**
- * P2.13, felia 2 — „Toate firmele mele". Fără firmă aleasă și fără id de cabinet în cale: cabinetul e
+ * P2.13, felia 2 — „Toate firmele mele". Fără firmă aleasă și fără id de consultant în cale: firma de consultanță e
  * al sesiunii, ca la {@link ConsultancyTeamController}.
  */
 @RestController

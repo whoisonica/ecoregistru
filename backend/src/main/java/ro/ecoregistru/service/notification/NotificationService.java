@@ -110,8 +110,8 @@ public interface NotificationService {
     void sendAccountRequestReceived(AccountRequest request);
 
     /**
-     * P2.13, felia 2 — rezumatul zilnic al unui cabinet: un mail pe consultant, cu toate termenele
-     * nefinalizate din zilele următoare ale firmelor cabinetului.
+     * P2.13, felia 2 — rezumatul zilnic al unei firme de consultanță: un mail pe consultant, cu toate termenele
+     * nefinalizate din zilele următoare ale firmelor din portofoliu.
      *
      * @param deadlines termenele, deja ordonate, fiecare cu firma încărcată
      * @param today     ziua față de care se scrie „scadent mâine"

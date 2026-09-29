@@ -44,11 +44,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * P2.13, felia 2 — panoul „Toate firmele mele" și ce s-a adăugat echipei cabinetului.
+ * P2.13, felia 2 — panoul „Toate firmele mele" și ce s-a adăugat echipei consultantului.
  *
- * <p><b>Scena.</b> Cabinetul Anei are patru firme: „Busy" (termene depășite, blocaje, parteneri care
+ * <p><b>Scena.</b> Firma de consultanță a Anei are patru firme: „Busy" (termene depășite, blocaje, parteneri care
  * expiră), „Calm" (nimic de făcut), „Silent" (termenele anului negenerate) și „Inactive" (dezactivată).
- * Un cabinet vecin are „Foreign". Numele nu se conțin unul pe altul, ca o scurgere să se vadă în corp.
+ * O firmă de consultanță vecină are „Foreign". Numele nu se conțin unul pe altul, ca o scurgere să se vadă în corp.
  *
  * <p>Cifrele din rândul lui Busy sunt construite câte una pe regulă, cu câte un vecin care <em>nu</em>
  * trebuie numărat lângă fiecare: un termen finalizat lângă cele depășite, o mișcare ștearsă lângă
@@ -80,7 +80,7 @@ class ConsultancyOverviewIT {
 
     private final LocalDate today = LocalDate.now();
 
-    private Consultancy cabinet;
+    private Consultancy consultancy;
     private Company busy;
     private AppUser ana;
     private String anaToken;
@@ -89,15 +89,15 @@ class ConsultancyOverviewIT {
 
     @BeforeEach
     void setUp() {
-        cabinet = consultancy("Cabinet Panou");
-        Consultancy neighbour = consultancy("Cabinet Vecin");
-        ana = consultant("ana", cabinet, true);
+        consultancy = consultancy("Consultant Panou");
+        Consultancy neighbour = consultancy("Consultant Vecin");
+        ana = consultant("ana", consultancy, true);
         anaToken = jwtService.generateToken(ana);
 
-        busy = company("Busy SRL", cabinet, true);
-        Company calm = company("Calm SRL", cabinet, true);
-        company("Silent SRL", cabinet, true);
-        Company inactive = company("Inactive SRL", cabinet, false);
+        busy = company("Busy SRL", consultancy, true);
+        Company calm = company("Calm SRL", consultancy, true);
+        company("Silent SRL", consultancy, true);
+        Company inactive = company("Inactive SRL", consultancy, false);
         Company foreign = company("Foreign SRL", neighbour, true);
 
         // Busy — un depășit (cel din anul trecut e de dinainte de regula din 16.09 și nu se numără), unul
@@ -148,7 +148,7 @@ class ConsultancyOverviewIT {
     // Panoul
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Firmele active ale cabinetului, cea cu termene depășite întâi, cea fără nimic de făcut la coadă. */
+    /** Firmele active din portofoliu, cea cu termene depășite întâi, cea fără nimic de făcut la coadă. */
     @Test
     void theOverviewIsTheActivePortfolioMostUrgentFirst() throws Exception {
         assertThat(names(overview())).containsExactly("Busy SRL", "Silent SRL", "Calm SRL");
@@ -184,7 +184,7 @@ class ConsultancyOverviewIT {
     /** După ultimul termen al anului, următorul e la anul: firma are termene, nu „negenerate”. */
     @Test
     void aCompanyWhoseNextDeadlineIsNextYearHasItsDeadlinesGenerated() throws Exception {
-        Company december = company("December SRL", cabinet, true);
+        Company december = company("December SRL", consultancy, true);
         deadline(december, LocalDate.of(today.getYear() + 1, 3, 15), DeadlineStatus.UPCOMING);
 
         JsonNode row = row("December SRL");
@@ -208,12 +208,12 @@ class ConsultancyOverviewIT {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Echipa cabinetului
+    // Echipa consultantului
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     void aPendingColleagueGetsTheInvitationAgain() throws Exception {
-        AppUser pending = consultant("pending", cabinet, false);
+        AppUser pending = consultant("pending", consultancy, false);
 
         mockMvc.perform(post("/api/v1/consultancy/users/" + pending.getId() + "/resend-invite")
                         .header("Authorization", "Bearer " + anaToken))
@@ -228,7 +228,7 @@ class ConsultancyOverviewIT {
      */
     @Test
     void theInvitationIsAnInvitationAndLastsAWeek() throws Exception {
-        AppUser pending = consultant("invitat", cabinet, false);
+        AppUser pending = consultant("invitat", consultancy, false);
 
         mockMvc.perform(post("/api/v1/consultancy/users/" + pending.getId() + "/resend-invite")
                         .header("Authorization", "Bearer " + anaToken))
@@ -245,18 +245,18 @@ class ConsultancyOverviewIT {
 
         Context ctx = new Context();
         ctx.setVariable("firstName", "Ana");
-        ctx.setVariable("organization", cabinet.getName());
+        ctx.setVariable("organization", consultancy.getName());
         ctx.setVariable("validDays", 7);
         ctx.setVariable("resetUrl", "https://app.wastehouse.ro/reseteaza-parola?code=x");
         String html = templateEngine.process("mail/invite", ctx);
-        assertThat(html).contains(cabinet.getName()).contains("7 zile").contains("reseteaza-parola?code=x")
+        assertThat(html).contains(consultancy.getName()).contains("7 zile").contains("reseteaza-parola?code=x")
                 .doesNotContain("resetare").doesNotContain("ignoră");
     }
 
     /** Un coleg cu parolă are „Parolă uitată"; o invitație nouă ar fi un link de resetare pentru contul altuia. */
     @Test
     void anActiveColleagueIsNotReinvited() throws Exception {
-        AppUser active = consultant("activ", cabinet, true);
+        AppUser active = consultant("activ", consultancy, true);
 
         mockMvc.perform(post("/api/v1/consultancy/users/" + active.getId() + "/resend-invite")
                         .header("Authorization", "Bearer " + anaToken))
@@ -267,9 +267,9 @@ class ConsultancyOverviewIT {
     }
 
     @Test
-    void cancellingAnInvitationFreesTheAddressButNotAcrossCabinets() throws Exception {
-        AppUser pending = consultant("gresit", cabinet, false);
-        AppUser neighbours = consultant("vecin", consultancy("Cabinet Trei"), false);
+    void cancellingAnInvitationFreesTheAddressButNotAcrossConsultancies() throws Exception {
+        AppUser pending = consultant("gresit", consultancy, false);
+        AppUser neighbours = consultant("vecin", consultancy("Consultant Trei"), false);
 
         mockMvc.perform(delete("/api/v1/consultancy/users/" + neighbours.getId() + "/invitation")
                         .header("Authorization", "Bearer " + anaToken))
@@ -279,7 +279,7 @@ class ConsultancyOverviewIT {
                 .andExpect(status().isNoContent());
 
         assertThat(appUserRepository.findById(pending.getId())).isEmpty();
-        assertThat(appUserRepository.findById(neighbours.getId())).as("invitația celuilalt cabinet").isPresent();
+        assertThat(appUserRepository.findById(neighbours.getId())).as("invitația celuilalt consultant").isPresent();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -289,18 +289,18 @@ class ConsultancyOverviewIT {
     @Test
     void theDigestMailNamesEachFirmAndDeadlineAndLinksToThePanel() {
         List<ReportingDeadline> due = deadlineRepository.findOpenForConsultancy(
-                cabinet.getId(), today, today.plusDays(7));
+                consultancy.getId(), today, today.plusDays(7));
 
-        notificationService.sendConsultantDigest(cabinet.getName(), due, List.of("ana@cabinet.ro"), today);
+        notificationService.sendConsultantDigest(consultancy.getName(), due, List.of("ana@consultant.ro"), today);
 
         ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Context> context = ArgumentCaptor.forClass(Context.class);
-        verify(emailService).send(eq("ana@cabinet.ro"), subject.capture(), eq("mail/consultant_digest"), context.capture());
+        verify(emailService).send(eq("ana@consultant.ro"), subject.capture(), eq("mail/consultant_digest"), context.capture());
         String html = templateEngine.process("mail/consultant_digest", context.getValue());
 
         assertThat(due).extracting(d -> d.getCompany().getName()).containsOnly("Busy SRL");
-        assertThat(subject.getValue()).isEqualTo("Cabinet Panou: 1 termen în următoarele 7 zile");
-        assertThat(html).contains("Busy SRL").contains("scadent în 5 zile").contains("/cabinet")
+        assertThat(subject.getValue()).isEqualTo("Consultant Panou: 1 termen în următoarele 7 zile");
+        assertThat(html).contains("Busy SRL").contains("scadent în 5 zile").contains("/consultant")
                 .doesNotContain("Calm SRL").doesNotContain("Foreign");
     }
 
@@ -338,7 +338,7 @@ class ConsultancyOverviewIT {
 
     private AppUser consultant(String name, Consultancy consultancy, boolean enabled) {
         return appUserRepository.save(AppUser.builder()
-                .email(name + "+" + suffix() + "@cabinet.ro")
+                .email(name + "+" + suffix() + "@consultant.ro")
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.CONSULTANT).consultancy(consultancy)
                 .enabled(enabled).createdAt(Instant.now()).build());

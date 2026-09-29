@@ -9,7 +9,7 @@ export interface AuthUser {
   role: Role;
   tenantId: string | null;
   tenantName: string | null;
-  /** P2.13 — cabinetul unui consultant; lipsește la sesiunile salvate înainte de el. */
+  /** P2.13 — firma de consultanță a unui consultant; lipsește la sesiunile salvate înainte de el. */
   consultancyName?: string | null;
 }
 

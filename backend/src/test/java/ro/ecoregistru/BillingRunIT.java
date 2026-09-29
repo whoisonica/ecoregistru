@@ -397,13 +397,13 @@ class BillingRunIT {
                 .andExpect(content().string(not(containsString("Lipsesc"))));
     }
 
-    /** Consultantul plătește abonamentul cabinetului; firma din cabinet n-are ce plăti; operatorul n-are acces. */
+    /** Consultantul plătește abonamentul firmei de consultanță; firma din portofoliu n-are ce plăti; operatorul n-are acces. */
     @Test
-    void theCabinetPaysForItsCompanies() throws Exception {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + suffix()).cui(cui()).createdAt(Instant.now()).build());
+    void theConsultancyPaysForItsCompanies() throws Exception {
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant " + suffix()).cui(cui()).createdAt(Instant.now()).build());
         subscriptionRepository.save(Subscription.builder()
-                .consultancy(cabinet)
+                .consultancy(consultancy)
                 .plan(SubscriptionPlan.CONSULTANCY)
                 .status(SubscriptionStatus.PENDING)
                 .monthlyPrice(SubscriptionPlan.CONSULTANCY.monthlyPrice())
@@ -416,13 +416,13 @@ class BillingRunIT {
                 .createdAt(Instant.now())
                 .build());
         Company managed = company();
-        managed.setConsultancy(cabinet);
+        managed.setConsultancy(consultancy);
         companyRepository.save(managed);
 
-        AppUser consultant = user(Role.CONSULTANT, null, cabinet);
+        AppUser consultant = user(Role.CONSULTANT, null, consultancy);
         mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(consultant)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.clientName", is(cabinet.getName())))
+                .andExpect(jsonPath("$.clientName", is(consultancy.getName())))
                 .andExpect(jsonPath("$.plan", is("CONSULTANCY")));
 
         mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(admin(managed))))

@@ -39,15 +39,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * P2.13, felia 1 — contul de consultant: un cabinet care vede firmele lui şi numai pe ele.
+ * P2.13, felia 1 — contul de consultant: o firmă de consultanță care vede firmele ei şi numai pe ele.
  *
  * <p><b>Ce e nou în graniţă.</b> Până acum antetul {@code X-Tenant-Id} era citit pentru un singur
  * rol, al nostru, care are voie peste tot. Consultantul e primul rol care trimite antetul <em>şi</em>
  * poate trimite unul greşit. Toată felia stă pe o singură întrebare din {@code TenantFilter} — „firma
- * asta e a cabinetului tău?" —, deci clasa asta o pune din fiecare parte pe care un consultant o are
+ * asta e în portofoliul tău?" —, deci clasa asta o pune din fiecare parte pe care un consultant o are
  * la îndemână: antetul, id-ul din cale, CUI-ul la creare, rolul la invitaţie, colegii.
  *
- * <p><b>Scena.</b> Două cabinete. Primul (consultanţii Ana şi Andrei) gestionează „Xenon" şi „Yoda";
+ * <p><b>Scena.</b> Două firme de consultanță. Prima (consultanţii Ana şi Andrei) gestionează „Xenon" şi „Yoda";
  * al doilea (Bogdan) gestionează „Zulu". Numele sunt alese să nu apară unul în altul, ca o scurgere să
  * se vadă în corpul răspunsului fără să ştim ce câmp a dus-o.
  */
@@ -84,8 +84,8 @@ class ConsultantAccessIT {
 
     @BeforeEach
     void setUp() {
-        first = consultancy("Cabinet Unu");
-        second = consultancy("Cabinet Doi");
+        first = consultancy("Consultant Unu");
+        second = consultancy("Consultant Doi");
         xenon = company("Xenon SRL", "Partener Xenon", first);
         yoda = company("Yoda SRL", "Partener Yoda", first);
         zulu = company("Zulu SRL", "Partener Zulu", second);
@@ -127,7 +127,7 @@ class ConsultantAccessIT {
     }
 
     /**
-     * <b>Cel mai important test din clasă.</b> Firma altui cabinet trebuie să primească exact
+     * <b>Cel mai important test din clasă.</b> Firma altui consultant trebuie să primească exact
      * răspunsul unui id care nu există nicăieri — altfel antetul devine un oracol: un consultant ar
      * putea încerca id-uri până află care sunt reale.
      */
@@ -182,7 +182,7 @@ class ConsultantAccessIT {
                 .andExpect(content().string(not(containsString("Zulu"))));
     }
 
-    /** O firmă creată de consultant intră în cabinetul lui — altfel n-ar putea s-o mai aleagă. */
+    /** O firmă creată de consultant intră în portofoliul lui — altfel n-ar putea s-o mai aleagă. */
     @Test
     void aCompanyCreatedByAConsultantJoinsTheirConsultancyAndIsSelectable() throws Exception {
         String body = mockMvc.perform(post("/api/v1/companies")
@@ -191,7 +191,7 @@ class ConsultantAccessIT {
                         .content(companyBody("Wolfram SRL", digitsCui())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.consultancyId", is(first.getId().toString())))
-                .andExpect(jsonPath("$.consultancyName", is("Cabinet Unu")))
+                .andExpect(jsonPath("$.consultancyName", is("Consultant Unu")))
                 .andReturn().getResponse().getContentAsString();
         UUID created = UUID.fromString(objectMapper.readTree(body).get("id").asText());
 
@@ -242,7 +242,7 @@ class ConsultantAccessIT {
                 .andExpect(jsonPath("$['error-code']", is("company.cui.exists")));
     }
 
-    /** Un cont de consultant e al unui cabinet; nicio uşă de firmă nu-l poate crea sau acorda. */
+    /** Un cont de consultant e al unei firme de consultanță; nicio uşă de firmă nu-l poate crea sau acorda. */
     @Test
     void theConsultantRoleCannotBeGrantedFromInsideACompany() throws Exception {
         mockMvc.perform(as(post("/api/v1/users"), anaToken, xenon.getId())
@@ -259,7 +259,7 @@ class ConsultantAccessIT {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Echipa cabinetului
+    // Echipa consultantului
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
@@ -290,7 +290,7 @@ class ConsultantAccessIT {
     }
 
     /**
-     * Omul care pleacă din cabinet: sesiunea lui cade la cererea următoare. Colegul altui cabinet nu
+     * Omul care pleacă din firma de consultanță: sesiunea lui cade la cererea următoare. Colegul altui consultant nu
      * se poate atinge, iar pe sine nu se dezactivează nimeni.
      */
     @Test
@@ -325,7 +325,7 @@ class ConsultantAccessIT {
     // Platforma
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Mutarea unei firme între cabinete e a noastră: schimbă cine îi citeşte evidenţa. */
+    /** Mutarea unei firme între consultanți e a noastră: schimbă cine îi citeşte evidenţa. */
     @Test
     void onlyThePlatformAdminMovesACompanyBetweenConsultancies() throws Exception {
         String toFirst = json(Map.of("consultancyId", first.getId().toString()));
@@ -341,7 +341,7 @@ class ConsultantAccessIT {
                         .header("Authorization", "Bearer " + platformToken)
                         .contentType(MediaType.APPLICATION_JSON).content(toFirst))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.consultancyName", is("Cabinet Unu")));
+                .andExpect(jsonPath("$.consultancyName", is("Consultant Unu")));
         mockMvc.perform(as(get("/api/v1/partners"), anaToken, zulu.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Partener Zulu")));
@@ -361,7 +361,7 @@ class ConsultantAccessIT {
         String body = mockMvc.perform(post("/api/v1/consultancies")
                         .header("Authorization", "Bearer " + platformToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("name", "Cabinet Trei", "cui", digitsCui()))))
+                        .content(json(Map.of("name", "Consultant Trei", "cui", digitsCui()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.companyCount", is(0)))
                 .andReturn().getResponse().getContentAsString();
@@ -383,19 +383,19 @@ class ConsultantAccessIT {
         }
     }
 
-    /** Scanarea din 17.09.2026: același cabinet cu și fără „RO” nu se creează de două ori. */
+    /** Scanarea din 17.09.2026: aceeași firmă de consultanță cu și fără „RO” nu se creează de două ori. */
     @Test
     void theSameConsultancyCuiWithOrWithoutRoIsADuplicate() throws Exception {
         String cui = digitsCui();
         mockMvc.perform(post("/api/v1/consultancies")
                         .header("Authorization", "Bearer " + platformToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("name", "Cabinet Patru", "cui", cui))))
+                        .content(json(Map.of("name", "Consultant Patru", "cui", cui))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/consultancies")
                         .header("Authorization", "Bearer " + platformToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("name", "Cabinet Patru bis", "cui", cui.substring(2)))))
+                        .content(json(Map.of("name", "Consultant Patru bis", "cui", cui.substring(2)))))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$['error-code']", is("consultancy.cui.exists")));
     }
@@ -415,7 +415,7 @@ class ConsultantAccessIT {
                 .company(xenon).consultancy(first).enabled(true).createdAt(Instant.now()).build()))
                 .isInstanceOf(DataIntegrityViolationException.class);
         assertThatThrownBy(() -> appUserRepository.saveAndFlush(AppUser.builder()
-                .email("admincabinet+" + suffix() + "@x.ro").password("x").role(Role.ADMIN)
+                .email("adminconsultant+" + suffix() + "@x.ro").password("x").role(Role.ADMIN)
                 .company(xenon).consultancy(first).enabled(true).createdAt(Instant.now()).build()))
                 .isInstanceOf(DataIntegrityViolationException.class);
         assertThatThrownBy(() -> appUserRepository.saveAndFlush(AppUser.builder()
@@ -431,9 +431,9 @@ class ConsultantAccessIT {
     /**
      * Jurnalul scria orice faptă pe <b>firma selectată</b>. Un consultant care stă pe Xenon şi creează
      * firma Wolfram lăsa „Creare · Wolfram SRL" în jurnalul lui Xenon — citit de adminul lui Xenon,
-     * care n-are ce şti despre alţi clienţi ai cabinetului. La fel un coleg invitat din cabinet.
+     * care n-are ce şti despre alţi clienţi ai consultantului. La fel un coleg invitat de consultant.
      *
-     * <p>O firmă se scrie în jurnalul ei; un cont de cabinet nu e al niciunei firme.
+     * <p>O firmă se scrie în jurnalul ei; un cont de consultant nu e al niciunei firme.
      */
     @Test
     void factsAboutACompanyOrAConsultantNeverLandInTheSelectedCompanysJournal() throws Exception {
@@ -486,7 +486,7 @@ class ConsultantAccessIT {
 
     private AppUser consultant(String name, Consultancy consultancy) {
         return appUserRepository.save(AppUser.builder()
-                .email(name + "+" + suffix() + "@cabinet.ro")
+                .email(name + "+" + suffix() + "@consultant.ro")
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.CONSULTANT).consultancy(consultancy)
                 .enabled(true).createdAt(Instant.now()).build());

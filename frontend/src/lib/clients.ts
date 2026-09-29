@@ -7,7 +7,7 @@ import type { ClientOverview, Company } from "@/lib/types";
  * `/companies/overview`. Pur, ca să se probeze fără ecran: tabelul, filtrele și cifrele de sus citesc toate de aici,
  * deci „Cer atenție 5” și cele cinci rânduri de sub filtru nu pot ajunge să difere.
  */
-export type ClientFilter = "ALL" | "ATTENTION" | "NO_SUBSCRIPTION" | "OVERDUE" | "FAILED" | "NO_USERS" | "CABINETS";
+export type ClientFilter = "ALL" | "ATTENTION" | "NO_SUBSCRIPTION" | "OVERDUE" | "FAILED" | "NO_USERS" | "CONSULTANCIES";
 
 export type AttentionReason = "FAILED" | "OVERDUE" | "NO_USERS";
 
@@ -38,7 +38,7 @@ export function clientRow(company: Company, overview: ClientOverview | undefined
   const overdue =
     pastDue || overview?.subscriptionStatus === "PAST_DUE" || overview?.subscriptionStatus === "READ_ONLY";
   const noUsers = overview !== undefined && overview.userCount === 0;
-  // O firmă de cabinet n-are abonament propriu dinadins: o plătește cabinetul.
+  // O firmă de la un consultant n-are abonament propriu dinadins: o plătește consultantul.
   const noSubscription = overview !== undefined && !company.consultancyId && overview.subscriptionStatus == null;
   const reasons: AttentionReason[] = company.active
     ? [...(failed ? ["FAILED" as const] : []), ...(overdue ? ["OVERDUE" as const] : []), ...(noUsers ? ["NO_USERS" as const] : [])]
@@ -64,10 +64,10 @@ export const CLIENT_FILTERS: ClientFilter[] = [
   "OVERDUE",
   "FAILED",
   "NO_USERS",
-  "CABINETS",
+  "CONSULTANCIES",
 ];
 
-/** Filtrele de bani nu au sens la consultant: firmele lui le plătește cabinetul. */
+/** Filtrele de bani nu au sens la consultant: firmele lui le plătește firma de consultanță. */
 export const CONSULTANT_FILTERS: ClientFilter[] = ["ALL", "ATTENTION", "NO_USERS"];
 
 export const MATCHES: Record<ClientFilter, (r: ClientRow) => boolean> = {
@@ -77,7 +77,7 @@ export const MATCHES: Record<ClientFilter, (r: ClientRow) => boolean> = {
   OVERDUE: (r) => r.overdue,
   FAILED: (r) => r.failed,
   NO_USERS: (r) => r.noUsers,
-  CABINETS: (r) => Boolean(r.company.consultancyId),
+  CONSULTANCIES: (r) => Boolean(r.company.consultancyId),
 };
 
 /** Cele care cer atenție primele, apoi după nume. */

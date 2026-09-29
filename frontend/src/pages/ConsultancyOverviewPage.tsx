@@ -36,7 +36,7 @@ function needsAttention(r: ConsultancyOverviewRow): boolean {
 }
 
 /**
- * P2.13, felia 2 — „Firmele mele": panoul cabinetului.
+ * P2.13, felia 2 — „Firmele mele": panoul de consultant.
  *
  * <p>Un consultant cu 20 de firme comuta firma de 20 de ori ca să afle cine e în întârziere. Aici vede
  * tot pe un ecran, cu aceleași cifre ca pe Panoul fiecărei firme, și ajunge dintr-un clic pe ecranul

@@ -254,30 +254,30 @@ class BillingSelfServiceIT {
                 .andExpect(status().isForbidden());
     }
 
-    /** Cabinetul n-are jurnal (e al unei firme); schimbarea se face, iar vestea tot pleacă pe adresa veche. */
+    /** Firma de consultanță n-are jurnal (e al unei firme); schimbarea se face, iar vestea tot pleacă pe adresa veche. */
     @Test
-    void theConsultantUpdatesTheCabinetsBillingData() throws Exception {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + suffix()).cui(TestCui.random()).createdAt(Instant.now()).build());
+    void theConsultantUpdatesTheConsultancyBillingData() throws Exception {
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant " + suffix()).cui(TestCui.random()).createdAt(Instant.now()).build());
         Subscription s = subscriptionRepository.save(Subscription.builder()
-                .consultancy(cabinet).plan(SubscriptionPlan.CONSULTANCY).status(SubscriptionStatus.PENDING)
+                .consultancy(consultancy).plan(SubscriptionPlan.CONSULTANCY).status(SubscriptionStatus.PENDING)
                 .monthlyPrice(SubscriptionPlan.CONSULTANCY.monthlyPrice())
                 .implementationFee(SubscriptionPlan.CONSULTANCY.implementationFee())
                 .companyPriceTier1(SubscriptionPlan.COMPANY_PRICE_TIER1)
                 .companyPriceTier2(SubscriptionPlan.COMPANY_PRICE_TIER2)
                 .companyPriceTier3(SubscriptionPlan.COMPANY_PRICE_TIER3)
                 .packagingCompanyPrice(SubscriptionPlan.PACKAGING_COMPANY_PRICE)
-                .startedAt(START).createdAt(Instant.now()).billingEmail("cabinet+" + suffix() + "@firma.ro").build());
+                .startedAt(START).createdAt(Instant.now()).billingEmail("consultant+" + suffix() + "@firma.ro").build());
 
         mockMvc.perform(put("/api/v1/billing/details")
-                        .header("Authorization", "Bearer " + token(user(Role.CONSULTANT, null, cabinet)))
+                        .header("Authorization", "Bearer " + token(user(Role.CONSULTANT, null, consultancy)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(details("birou@cabinet.ro", "Bihor", "Oradea", "Str. 3")))
+                        .content(details("birou@consultant.ro", "Bihor", "Oradea", "Str. 3")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.clientCui", is(cabinet.getCui())));
+                .andExpect(jsonPath("$.clientCui", is(consultancy.getCui())));
 
         assertThat(subscriptionRepository.findById(s.getId()).orElseThrow().getBillingEmail())
-                .isEqualTo("birou@cabinet.ro");
+                .isEqualTo("birou@consultant.ro");
         verify(emailService).send(eq(s.getBillingEmail()), any(), eq(CHANGED_MAIL), any());
     }
 

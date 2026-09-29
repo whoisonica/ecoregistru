@@ -95,11 +95,11 @@ class ClientOverviewIT {
         assertThat(last.get("number")).isEqualTo("WH 12");
     }
 
-    /** Consultantul vede doar firmele cabinetului lui și niciun ban, nici dacă o firmă ar avea abonament. */
+    /** Consultantul vede doar firmele din portofoliul lui și niciun ban, nici dacă o firmă ar avea abonament. */
     @Test
     void aConsultantSeesTheirCompaniesWithoutMoney() throws Exception {
         Consultancy mine = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + UUID.randomUUID()).cui(TestCui.random()).createdAt(Instant.now()).build());
+                .name("Consultant " + UUID.randomUUID()).cui(TestCui.random()).createdAt(Instant.now()).build());
         Company ours = company(mine);
         invoice(subscription(ours), LocalDate.of(2026, 9, 1), InvoiceStatus.ISSUED, "13", null);
         user(ours, null);

@@ -9,7 +9,7 @@ import type {
 } from "@/lib/types";
 
 /**
- * P2.13 — cabinetele, cum le vede platforma. Endpointul e 403 pentru oricine altcineva, deci lista
+ * P2.13 — firmele de consultanță, cum le vede platforma. Endpointul e 403 pentru oricine altcineva, deci lista
  * primește `enabled`, ca `useCompanies`.
  */
 export const consultanciesKey = ["consultancies"] as const;
@@ -42,7 +42,7 @@ export function useInviteConsultant() {
 }
 
 /**
- * Echipa cabinetului, cum o vede un consultant. Cabinetul nu se numește nicăieri — e al sesiunii —,
+ * Echipa firmei de consultanță, cum o vede un consultant. Firma de consultanță nu se numește nicăieri — e al sesiunii —,
  * la fel cum `useUsers` nu numește firma.
  */
 export const teamKey = ["consultancy", "team"] as const;

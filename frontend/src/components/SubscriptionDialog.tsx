@@ -71,7 +71,7 @@ export function checkedWhen(instant: string) {
  * Plata abonamentelor, F1 — pachetul unui client și ce se va factura. F2 — datele de facturare cerute de FGO și
  * facturile emise.
  *
- * <p>F-D: starea și acțiunile stau aici, iar pagina firmei (tabul „Abonament și facturi”) și dialogul cabinetului le
+ * <p>F-D: starea și acțiunile stau aici, iar pagina firmei (tabul „Abonament și facturi”) și dialogul consultantului le
  * așază fiecare în felul lui. Rubricile pornesc goale (`null`) și cad pe abonamentul încărcat, ca să nu fie nevoie de
  * un efect care să le umple după încărcare.
  */
@@ -333,7 +333,7 @@ function StatusLine({ subscription }: { subscription: Subscription | null | unde
 }
 
 /**
- * Dialogul abonamentului — după F-D rămâne doar pentru cabinete, care n-au pagina lor. O firmă își are abonamentul pe
+ * Dialogul abonamentului — după F-D rămâne doar pentru firmele de consultanță, care n-au pagina lor. O firmă își are abonamentul pe
  * `/clienti/:id?tab=abonament` (`SubscriptionPanel`).
  */
 export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwner; onClose: () => void }) {

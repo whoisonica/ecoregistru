@@ -51,7 +51,7 @@ export function CompanyPage() {
   const [tabParam, setTab] = useUrlState("tab");
   const [inviting, setInviting] = useState(false);
   const [assigning, setAssigning] = useState(false);
-  // O firmă dintr-un cabinet n-are abonament propriu: o plătește cabinetul.
+  // O firmă de la un consultant n-are abonament propriu: o plătește consultantul.
   const hasOwnSubscription = isPlatformAdmin && !company?.consultancyId;
 
   const users = row?.overview?.userCount;
@@ -67,7 +67,7 @@ export function CompanyPage() {
 
   useHotkey("n", () => setInviting(true), { enabled: Boolean(company) && !inviting && !assigning });
 
-  /** Ca pe panoul cabinetului: datele firmei de dinainte se aruncă, lista de firme rămâne. */
+  /** Ca pe panoul de consultant: datele firmei de dinainte se aruncă, lista de firme rămâne. */
   function enterAccount() {
     queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== companiesKey[0] });
     switchTenant(id);
@@ -136,7 +136,7 @@ export function CompanyPage() {
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" data-testid="company-status">
         {!company.active && <Badge variant="muted">{t.inactive}</Badge>}
         {company.consultancyId ? (
-          <Badge variant="muted">{`${t.paidByCabinet} · ${company.consultancyName ?? ""}`}</Badge>
+          <Badge variant="muted">{`${t.paidByConsultant} · ${company.consultancyName ?? ""}`}</Badge>
         ) : isPlatformAdmin && o ? (
           o.subscriptionStatus && o.plan ? (
             <Badge variant={STATUS_BADGE[o.subscriptionStatus]}>

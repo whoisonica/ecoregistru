@@ -32,7 +32,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     List<Subscription> findAllByStatusIn(Collection<SubscriptionStatus> statuses);
 
     /**
-     * F4 — the status of whoever pays for a company: its own subscription, or its cabinet's. Empty when
+     * F4 — the status of whoever pays for a company: its own subscription, or its consultancy's. Empty when
      * nobody does, which is a client not billed and not restricted.
      */
     @Query("select s.status from Subscription s left join s.company c left join s.consultancy k"

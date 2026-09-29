@@ -33,7 +33,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
  * blocaje la depunere, autorizații de parteneri.
  *
  * <p><b>Accesul nu trece prin {@code TenantContext}</b>, dinadins: cererea nu are o firmă aleasă, are
- * un cabinet. Firmele se iau din cabinetul sesiunii ({@link CompanyRepository#findAllByConsultancy_Id}),
+ * o firmă de consultanță. Firmele se iau din firma de consultanță a sesiunii ({@link CompanyRepository#findAllByConsultancy_Id}),
  * aceeași listă pe care {@code TenantFilter} o acceptă în antet, deci panoul nu poate numi o firmă pe
  * care consultantul n-ar putea-o și alege.
  *

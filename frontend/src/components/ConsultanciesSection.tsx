@@ -29,11 +29,11 @@ const t = strings.consultancies;
 const u = strings.settings.users;
 
 /**
- * P2.13 — cabinetele de consultanță, pe ecranul Clienți al platformei.
+ * P2.13 — firmele de consultanță, pe ecranul Clienți al platformei.
  *
- * <p>Ce face platforma aici e puțin, dinadins: creează cabinetul (după contract) și îi invită primul
- * consultant. De acolo cabinetul își adaugă singur firmele și colegii. Mutarea unei firme existente
- * într-un cabinet stă pe rândul firmei, mai sus — {@link AssignConsultancyDialog} —, fiindcă e o
+ * <p>Ce face platforma aici e puțin, dinadins: creează firma de consultanță (după contract) și îi invită primul
+ * consultant. De acolo consultantul își adaugă singur firmele și colegii. Mutarea unei firme existente
+ * la un consultant stă pe rândul firmei, mai sus — {@link AssignConsultancyDialog} —, fiindcă e o
  * decizie despre firmă.
  */
 export function ConsultanciesSection() {
@@ -113,7 +113,7 @@ export function ConsultanciesSection() {
   }
 
   return (
-    <section id="cabinete" className="mt-10 scroll-mt-20">
+    <section id="consultanti" className="mt-10 scroll-mt-20">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>
@@ -304,8 +304,8 @@ export function ConsultanciesSection() {
 }
 
 /**
- * P2.13 — în ce cabinet stă o firmă. Numai platforma: schimbă cine îi citește evidența, deci nu e
- * ceva ce un cabinet își face singur.
+ * P2.13 — la ce consultant stă o firmă. Numai platforma: schimbă cine îi citește evidența, deci nu e
+ * ceva ce un consultant își face singur.
  */
 export function AssignConsultancyDialog({ company, onClose }: { company: Company; onClose: () => void }) {
   const c = strings.clients;

@@ -21,7 +21,7 @@ const MAX_LOGO_BYTES = 500 * 1024;
 const MAX_HEADER_LINE = 200;
 
 /**
- * P2.14 — logoul și rândul de contact pe care le tipăresc rapoartele neoficiale ale firmelor cabinetului.
+ * P2.14 — logoul și rândul de contact pe care le tipăresc rapoartele neoficiale ale firmelor consultantului.
  *
  * <p>Previzualizarea desenează banda de sus a paginii cum o face `ReportBranding.addPdfHeader`: logo în
  * stânga, „Pregătit de …" și rândul în dreapta, o linie sub ele.

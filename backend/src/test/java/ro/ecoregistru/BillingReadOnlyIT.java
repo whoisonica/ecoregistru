@@ -143,13 +143,13 @@ class BillingReadOnlyIT {
         write(user(Role.ADMIN, late, null)).andExpect(notReadOnlyRefusal());
     }
 
-    /** Cabinetul plătește pentru firmele lui: restanța lui le oprește pe toate, și pe consultant. */
+    /** Firma de consultanță plătește pentru firmele din portofoliu: restanța ei le oprește pe toate, și pe consultant. */
     @Test
-    void theCabinetsSubscriptionRestrictsItsCompaniesAndItsConsultants() throws Exception {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + suffix()).cui(cui()).createdAt(Instant.now()).build());
+    void theConsultancySubscriptionRestrictsItsCompaniesAndItsConsultants() throws Exception {
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant " + suffix()).cui(cui()).createdAt(Instant.now()).build());
         subscriptionRepository.save(Subscription.builder()
-                .consultancy(cabinet).plan(SubscriptionPlan.CONSULTANCY).status(SubscriptionStatus.CANCELLED)
+                .consultancy(consultancy).plan(SubscriptionPlan.CONSULTANCY).status(SubscriptionStatus.CANCELLED)
                 .monthlyPrice(SubscriptionPlan.CONSULTANCY.monthlyPrice())
                 .implementationFee(SubscriptionPlan.CONSULTANCY.implementationFee())
                 .companyPriceTier1(SubscriptionPlan.COMPANY_PRICE_TIER1)
@@ -158,11 +158,11 @@ class BillingReadOnlyIT {
                 .packagingCompanyPrice(SubscriptionPlan.PACKAGING_COMPANY_PRICE)
                 .startedAt(START).createdAt(Instant.now()).build());
         Company managed = company();
-        managed.setConsultancy(cabinet);
+        managed.setConsultancy(consultancy);
         companyRepository.save(managed);
 
         write(user(Role.ADMIN, managed, null)).andExpect(readOnlyRefusal());
-        AppUser consultant = user(Role.CONSULTANT, null, cabinet);
+        AppUser consultant = user(Role.CONSULTANT, null, consultancy);
         mockMvc.perform(post("/api/v1/partners").header("Authorization", bearer(consultant))
                         .header("X-Tenant-Id", managed.getId().toString())
                         .contentType(MediaType.APPLICATION_JSON).content(PARTNER))

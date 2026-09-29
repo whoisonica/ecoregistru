@@ -17,7 +17,7 @@ public enum SubscriptionPlan {
     /** The specialist keeps the records in the client's account. Implementation included. */
     FULL_SERVICE("Serviciu complet", 249, 0),
     /** The only plan of a consultancy; its companies have no subscription of their own. */
-    CONSULTANCY("Abonament de cabinet", 199, 490);
+    CONSULTANCY("Abonament de consultant", 199, 490);
 
     public static final BigDecimal EXTRA_WORK_POINT_PRICE = BigDecimal.valueOf(29);
     public static final BigDecimal COMPANY_PRICE_TIER1 = BigDecimal.valueOf(29);

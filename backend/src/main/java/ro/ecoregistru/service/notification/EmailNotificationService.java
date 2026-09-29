@@ -255,7 +255,7 @@ public class EmailNotificationService implements NotificationService {
     }
 
     /**
-     * P2.13, felia 2 — rezumatul zilnic al cabinetului. Subiectul spune câte termene sunt, fiindcă asta
+     * P2.13, felia 2 — rezumatul zilnic al consultantului. Subiectul spune câte termene sunt, fiindcă asta
      * decide dacă mailul se deschide azi sau mâine; firmele sunt în corp.
      */
     @Override
@@ -277,7 +277,7 @@ public class EmailNotificationService implements NotificationService {
             ctx.setVariable("consultancyName", consultancyName);
             ctx.setVariable("countText", countText);
             ctx.setVariable("rows", rows);
-            ctx.setVariable("panelUrl", frontendBaseUrl + "/cabinet");
+            ctx.setVariable("panelUrl", frontendBaseUrl + "/consultant");
             emailService.send(to, subject, "mail/consultant_digest", ctx);
         }
     }

@@ -75,8 +75,8 @@ class IsolationInventoryTest {
             // n-are firmă fiindcă încă nu ştim a cui e.
             "findByEmail",
 
-            // ── Scopare pe cabinet, nu pe firmă ────────────────────────────────────────────────
-            // Un consultant aparţine unui cabinet, nu unei firme (P2.13). `Consultancy_Id` e axa
+            // ── Scopare pe firma de consultanță, nu pe firmă ────────────────────────────────────────────────
+            // Un consultant aparţine unei firme de consultanță, nu unei firme client (P2.13). `Consultancy_Id` e axa
             // lui de izolare, verificată la fel de strict — vezi `ConsultantAccessIT`.
             "findAllByConsultancy_IdAndEnabledTrue", "findAllByConsultancy_Id",
             "findByIdAndConsultancy_Id", "findOpenForConsultancy", "findByConsultancy_Id",

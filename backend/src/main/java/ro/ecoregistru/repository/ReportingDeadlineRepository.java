@@ -37,7 +37,7 @@ public interface ReportingDeadlineRepository extends JpaRepository<ReportingDead
     boolean existsByCompany_IdAndDueDateBetween(UUID companyId, LocalDate from, LocalDate to);
 
     /**
-     * P2.13, felia 2 — rezumatul zilnic al unui cabinet: termenele nefinalizate ale firmelor lui active,
+     * P2.13, felia 2 — rezumatul zilnic al unei firme de consultanță: termenele nefinalizate ale firmelor lui active,
      * cu firma adusă în aceeași interogare (mailul îi scrie numele).
      */
     @Query("select d from ReportingDeadline d join fetch d.company c "

@@ -31,8 +31,8 @@ import static org.mockito.Mockito.verify;
  * P2.13, felia 2 — rezumatul zilnic al consultanților (decizia proprietarului, 15.09.2026: un mail pe zi,
  * cumulat). Ziua e fixă și mailul e dublat, deci testul se uită la <em>ce</em> ar pleca și <em>cui</em>.
  *
- * <p>Baza e comună cu celelalte clase, iar alte teste lasă cabinete în urmă, deci fiecare verificare
- * se face pe numele cabinetului ei, nu pe numărul total de mailuri.
+ * <p>Baza e comună cu celelalte clase, iar alte teste lasă firme de consultanță în urmă, deci fiecare verificare
+ * se face pe numele firmei sale de consultanță, nu pe numărul total de mailuri.
  */
 @SpringBootTest
 @ActiveProfiles("dev")
@@ -51,16 +51,16 @@ class ConsultantDigestIT {
 
     @SuppressWarnings("unchecked")
     @Test
-    void oneMailPerCabinetWithTheOpenDeadlinesOfTheNextSevenDaysToItsActiveConsultants() {
-        Consultancy cabinet = consultancy();
-        Company a = company(cabinet, true);
-        Company b = company(cabinet, true);
-        Company inactive = company(cabinet, false);
+    void oneMailPerConsultancyWithTheOpenDeadlinesOfTheNextSevenDaysToItsActiveConsultants() {
+        Consultancy consultancy = consultancy();
+        Company a = company(consultancy, true);
+        Company b = company(consultancy, true);
+        Company inactive = company(consultancy, false);
         Company foreign = company(consultancy(), true);
 
-        AppUser ana = consultant(cabinet, true, null);
-        consultant(cabinet, false, null);              // invitație nefolosită
-        consultant(cabinet, false, Instant.now());     // dezactivat
+        AppUser ana = consultant(consultancy, true, null);
+        consultant(consultancy, false, null);              // invitație nefolosită
+        consultant(consultancy, false, Instant.now());     // dezactivat
 
         ReportingDeadline dueToday = deadline(a, TODAY, DeadlineStatus.UPCOMING);
         ReportingDeadline dueInSeven = deadline(b, TODAY.plusDays(7), DeadlineStatus.UPCOMING);
@@ -75,7 +75,7 @@ class ConsultantDigestIT {
         ArgumentCaptor<List<ReportingDeadline>> deadlines = ArgumentCaptor.forClass(List.class);
         ArgumentCaptor<List<String>> recipients = ArgumentCaptor.forClass(List.class);
         verify(notificationService).sendConsultantDigest(
-                eq(cabinet.getName()), deadlines.capture(), recipients.capture(), eq(TODAY));
+                eq(consultancy.getName()), deadlines.capture(), recipients.capture(), eq(TODAY));
 
         assertThat(deadlines.getValue()).extracting(ReportingDeadline::getId)
                 .containsExactly(dueToday.getId(), dueInSeven.getId());
@@ -99,7 +99,7 @@ class ConsultantDigestIT {
     }
 
     @Test
-    void aCabinetWhoseMailFailsDoesNotStopTheNextOne() {
+    void aConsultancyWhoseMailFailsDoesNotStopTheNextOne() {
         Consultancy failing = consultancy();
         deadline(company(failing, true), TODAY.plusDays(1), DeadlineStatus.UPCOMING);
         consultant(failing, true, null);
@@ -117,7 +117,7 @@ class ConsultantDigestIT {
 
     private Consultancy consultancy() {
         return consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + suffix()).cui(digitsCui()).createdAt(Instant.now()).build());
+                .name("Consultant " + suffix()).cui(digitsCui()).createdAt(Instant.now()).build());
     }
 
     private Company company(Consultancy consultancy, boolean active) {
@@ -128,7 +128,7 @@ class ConsultantDigestIT {
 
     private AppUser consultant(Consultancy consultancy, boolean enabled, Instant deactivatedAt) {
         return appUserRepository.save(AppUser.builder()
-                .email("digest+" + suffix() + "@cabinet.ro").password("x")
+                .email("digest+" + suffix() + "@consultant.ro").password("x")
                 .role(Role.CONSULTANT).consultancy(consultancy)
                 .enabled(enabled).deactivatedAt(deactivatedAt).createdAt(Instant.now()).build());
     }

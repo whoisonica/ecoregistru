@@ -38,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * F1 din plata-abonamente.md — platforma pune pachetul pe un client și vede ce se va factura.
  *
  * <p>Calculul e probat în {@link BillingCalculatorTest}. Aici e ce nu se vede dintr-o funcție pură:
- * că se numără ce trebuie din bază (punctele de lucru active, firmele active ale cabinetului, cele cu
+ * că se numără ce trebuie din bază (punctele de lucru active, firmele active ale consultantului, cele cu
  * ambalaje), că prețul rămâne cel de la creare, că nimeni din afara platformei nu ajunge aici și că o
  * firmă nu poate ajunge să plătească de două ori.
  */
@@ -150,7 +150,7 @@ class SubscriptionIT {
         assertThat(subscriptionRepository.existsByCompany_Id(managed.getId())).isFalse();
     }
 
-    /** Invers: o firmă care plătește singură nu intră într-un cabinet până nu i se șterge abonamentul. */
+    /** Invers: o firmă care plătește singură nu intră în portofoliul unui consultant până nu i se șterge abonamentul. */
     @Test
     void aCompanyThatPaysForItselfCannotBeMovedIntoAConsultancy() throws Exception {
         Company company = company(null);
@@ -173,7 +173,7 @@ class SubscriptionIT {
     }
 
     @Test
-    void theCabinetPlanBelongsOnlyToACabinet() throws Exception {
+    void theConsultancyPlanBelongsOnlyToAConsultancy() throws Exception {
         mockMvc.perform(put("/api/v1/subscriptions/company/" + company(null).getId()).with(platform())
                         .contentType(MediaType.APPLICATION_JSON).content(body("CONSULTANCY", false, "2026-10-01")))
                 .andExpect(jsonPath("$.error-code", is("subscription.plan.mismatch")));
@@ -191,7 +191,7 @@ class SubscriptionIT {
                 .email("admin+" + suffix() + "@firma.ro").password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.ADMIN).company(company).enabled(true).createdAt(Instant.now()).build()));
         String consultant = jwtService.generateToken(appUserRepository.save(AppUser.builder()
-                .email("cons+" + suffix() + "@cabinet.ro").password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .email("cons+" + suffix() + "@consultant.ro").password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .role(Role.CONSULTANT).consultancy(consultancy).enabled(true).createdAt(Instant.now()).build()));
 
         for (String token : new String[]{admin, consultant}) {
@@ -225,7 +225,7 @@ class SubscriptionIT {
 
     private Consultancy consultancy() {
         return consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + suffix()).cui(digitsCui()).createdAt(Instant.now()).build());
+                .name("Consultant " + suffix()).cui(digitsCui()).createdAt(Instant.now()).build());
     }
 
     private Company company(Consultancy consultancy) {

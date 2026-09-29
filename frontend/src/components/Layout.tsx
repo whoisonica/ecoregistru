@@ -117,12 +117,12 @@ export function Layout({ children }: { children: ReactNode }) {
 
   /**
    * Cifrele 1–9, 0 deschid intrările meniului în ordinea afișată; S Setările când meniul trece de
-   * zece intrări; F, C și B grupul Cabinet. Apeluri fixe de hook, cu tasta ca argument: numărul de
+   * zece intrări; F, C și B grupul Consultant. Apeluri fixe de hook, cu tasta ca argument: numărul de
    * hook-uri nu poate depinde de meniu.
    */
   const go = useCallback(
     (key: string) => {
-      const item = [...nav.main, ...nav.cabinet].find((i) => i.hotkey === key);
+      const item = [...nav.main, ...nav.consultant].find((i) => i.hotkey === key);
       if (item) navigate(item.to);
     },
     [nav, navigate]
@@ -139,9 +139,9 @@ export function Layout({ children }: { children: ReactNode }) {
   useHotkey("0", () => go("0"));
   // „S” e Setările, când Cântarul depozitului a împins meniul peste cele zece cifre (`navItems.ts`).
   useHotkey("s", () => go("S"), { enabled: nav.main.some((i) => i.hotkey === "S") });
-  useHotkey("f", () => go("F"), { enabled: nav.cabinet.some((i) => i.hotkey === "F") });
-  useHotkey("c", () => go("C"), { enabled: nav.cabinet.some((i) => i.hotkey === "C") });
-  useHotkey("b", () => go("B"), { enabled: nav.cabinet.some((i) => i.hotkey === "B") });
+  useHotkey("f", () => go("F"), { enabled: nav.consultant.some((i) => i.hotkey === "F") });
+  useHotkey("c", () => go("C"), { enabled: nav.consultant.some((i) => i.hotkey === "C") });
+  useHotkey("b", () => go("B"), { enabled: nav.consultant.some((i) => i.hotkey === "B") });
 
   // N / I / E: adaugă deșeuri, intrare, ieșire — pe ecranele care nu-și leagă singure tasta N.
   const canAdd = writable && Boolean(company);

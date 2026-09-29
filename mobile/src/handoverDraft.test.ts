@@ -29,8 +29,8 @@ const draft: HandoverDraft = {
 };
 
 test("cheia poartă contul și firma: consultantul nu reia ciorna altui client", () => {
-  assert.equal(draftKey("ana@cabinet.ro", "t-1"), "draft:ana@cabinet.ro:t-1");
-  assert.notEqual(draftKey("ana@cabinet.ro", "t-1"), draftKey("ana@cabinet.ro", "t-2"));
+  assert.equal(draftKey("ana@consultant.ro", "t-1"), "draft:ana@consultant.ro:t-1");
+  assert.notEqual(draftKey("ana@consultant.ro", "t-1"), draftKey("ana@consultant.ro", "t-2"));
 });
 
 test("ciorna se scrie, se citește la fel și se șterge", async () => {

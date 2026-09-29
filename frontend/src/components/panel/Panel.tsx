@@ -34,7 +34,7 @@ export interface PanelProps {
  * le-a văzut pe localhost și le-a scos în aceeași seară („arată urâțel"), deci e de fapt „E2".
  *
  * <p>De sus în jos: logo + căutarea ca iconiță + tasta `[`; firma, pe plăcuța ei; meniul — tastă,
- * nume, indicator; sub intrarea deschisă, taburile ecranului; grupul Cabinet; jos, abonamentul (doar cine administrează) și contul.
+ * nume, indicator; sub intrarea deschisă, taburile ecranului; grupul Consultant; jos, abonamentul (doar cine administrează) și contul.
  *
  * <p>**Ce a plecat, ca să nu se pună la loc:** afișajul lunii, tastele mari de adăugare, rândul
  * „Caută oriunde" (proprietarul: „nu îmi plac") și orice „+" pe rândurile meniului. Din panou nu se
@@ -121,16 +121,16 @@ export function Panel({
             />
           ))}
         </ul>
-        {nav.cabinet.length > 0 && (
+        {nav.consultant.length > 0 && (
           <>
             {!collapsed && (
               <div className="px-2 pb-0.5 pt-2.5 font-mono text-[0.625rem] uppercase tracking-[0.08em] text-panel-faint">
-                {strings.nav.groupCabinet}
+                {strings.nav.groupConsultant}
               </div>
             )}
             {collapsed && <div className="my-1.5 border-t border-panel-line" />}
             <ul className="flex flex-col gap-px">
-              {nav.cabinet.map((item) => (
+              {nav.consultant.map((item) => (
                 <NavRow key={item.to} item={item} indicator={null} collapsed={collapsed} />
               ))}
             </ul>

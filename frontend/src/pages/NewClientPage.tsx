@@ -43,7 +43,7 @@ function lei(n: number) {
  * și nimic nu arăta un client rămas pe jumătate. Acum totul pleacă într-o singură cerere și se salvează împreună.
  *
  * <p>Pornește gol din „Client nou” (N) sau cu răspunsurile unei cereri (`?cerere=`). Consultantul n-are pasul de
- * abonament: firmele lui le plătește cabinetul. Firma se editează după aceea tot din lista de clienți.
+ * abonament: firmele lui le plătește firma de consultanță. Firma se editează după aceea tot din lista de clienți.
  */
 export function NewClientPage() {
   const { user } = useAuth();
@@ -134,7 +134,7 @@ function NewClientForm({
 
   // Pasul 4 — administratorul.
   // Persoana desemnată (OUG 92/2021 art. 23 alin. (4)): o cerem aici, la configurare, fiindcă clientul
-  // n-o poate completa singur — datele firmei le editează doar platforma și cabinetul (proprietarul,
+  // n-o poate completa singur — datele firmei le editează doar platforma și consultantul (proprietarul,
   // 29.09.2026; până atunci stătea în „Primii pași” ai clientului, ca pas pe care nu-l putea bifa).
   const [wasteManagerName, setWasteManagerName] = useState("");
   const [wasteManagerRole, setWasteManagerRole] = useState("");

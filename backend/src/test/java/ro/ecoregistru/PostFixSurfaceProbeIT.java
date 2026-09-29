@@ -171,13 +171,13 @@ class PostFixSurfaceProbeIT {
     @Test
     void aConsultantInviteWithALongNameIsA500() throws Exception {
         Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet Proba").cui("RO" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 8))
+                .name("Consultant Proba").cui("RO" + UUID.randomUUID().toString().replaceAll("\\D", "").substring(0, 8))
                 .createdAt(Instant.now()).build());
         mockMvc.perform(post("/api/v1/consultancies/" + consultancy.getId() + "/users")
                         .header("Authorization", "Bearer " + platformToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"lung+" + UUID.randomUUID().toString().substring(0, 6)
-                                + "@cabinet.ro\",\"firstName\":\"" + "A".repeat(200) + "\"}"))
+                                + "@consultant.ro\",\"firstName\":\"" + "A".repeat(200) + "\"}"))
                 .andExpect(status().is4xxClientError());
     }
 

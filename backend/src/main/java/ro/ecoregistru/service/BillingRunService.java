@@ -512,12 +512,12 @@ public class BillingRunService {
                 : new Owner("consultancy", s.getConsultancy().getId());
     }
 
-    /** The direct company or the cabinet. Needs an open transaction: the owner is lazy. */
+    /** The direct company or the consultancy. Needs an open transaction: the owner is lazy. */
     static String clientName(Subscription s) {
         return s.getCompany() != null ? s.getCompany().getName() : s.getConsultancy().getName();
     }
 
-    /** Where invoices go: the billing email, else the company's contact email. A cabinet has no other. */
+    /** Where invoices go: the billing email, else the company's contact email. A consultancy has no other. */
     static String recipient(Subscription s) {
         if (!isBlank(s.getBillingEmail())) {
             return s.getBillingEmail();

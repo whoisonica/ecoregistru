@@ -103,7 +103,7 @@ class WeighingOperationStatusIT {
         admin = user(Role.ADMIN);
         operator = user(Role.OPERATOR);
         scaleOperator = user(Role.SCALE_OPERATOR);
-        // Un consultant are cabinet, nu firmă (`app_users_consultant_scope`), deci nu se salvează aici:
+        // Un consultant are firmă de consultanță, nu firmă client (`app_users_consultant_scope`), deci nu se salvează aici:
         // serviciul citește doar rolul din principal, iar `finalized_by` n-are cheie străină.
         consultant = AppUser.builder().id(UUID.randomUUID()).email("consultant@demo.ro")
                 .role(Role.CONSULTANT).enabled(true).build();

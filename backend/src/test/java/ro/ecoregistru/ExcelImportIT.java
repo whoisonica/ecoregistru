@@ -462,16 +462,16 @@ class ExcelImportIT {
     void onlyThePlatformImports() throws Exception {
         Company company = companyRepository.findById(companyId).orElseThrow();
         byte[] valid = file(List.<Object[]>of(partnerRow()), List.<Object[]>of(disposal()));
-        // Consultantul e chiar al cabinetului care are firma: vede firma, dar tot nu importă.
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + companyId).cui("RO" + companyId.toString().replaceAll("\\D", "").substring(0, 8))
+        // Consultantul e chiar al firmei de consultanță care are firma în portofoliu: vede firma, dar tot nu importă.
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant " + companyId).cui("RO" + companyId.toString().replaceAll("\\D", "").substring(0, 8))
                 .createdAt(Instant.now()).build());
-        company.setConsultancy(cabinet);
+        company.setConsultancy(consultancy);
         companyRepository.save(company);
         AppUser consultant = appUserRepository.save(AppUser.builder()
                 .email("consultant+" + UUID.randomUUID().toString().substring(0, 8) + "@import.ro")
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                .role(Role.CONSULTANT).consultancy(cabinet).enabled(true).createdAt(Instant.now()).build());
+                .role(Role.CONSULTANT).consultancy(consultancy).enabled(true).createdAt(Instant.now()).build());
         for (Role role : List.of(Role.ADMIN, Role.CONSULTANT, Role.OPERATOR)) {
             String token = jwtService.generateToken(role == Role.CONSULTANT ? consultant : user(company, role));
             mockMvc.perform(get("/api/v1/import/sablon").header("Authorization", "Bearer " + token)

@@ -64,7 +64,7 @@ function timeOf(iso: string) {
 
 /**
  * `/abonament` — ce are de făcut cine plătește contul: administratorul unei firme directe sau consultantul, pentru
- * cabinet.
+ * firma lui de consultanță.
  *
  * <p>F-E (todo-clienti-abonamente.md): sus, pe afișaj, singurul lucru mare — cât e de plată și până când, sau „Totul e
  * plătit”. Lângă el, transferul cu fiecare rând de copiat, și „Am plătit — verifică acum”, care întreabă FGO fără să
@@ -73,7 +73,7 @@ function timeOf(iso: string) {
  *
  * <p>F3 — cardul apare doar când cheile Netopia sunt pe server. Netopia întoarce omul aici cu `?plata=<id>`.
  *
- * <p>Nu cere o firmă aleasă: abonamentul unui consultant e al cabinetului, nu al firmei din comutator.
+ * <p>Nu cere o firmă aleasă: abonamentul unui consultant e al firmei lui de consultanță, nu al firmei din comutator.
  */
 export function BillingPage() {
   const { data: account, isLoading, isError } = useBillingAccount();

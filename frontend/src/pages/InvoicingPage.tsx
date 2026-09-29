@@ -150,7 +150,7 @@ export function InvoicingPage() {
   }
 
   const navigate = useNavigate();
-  // F-D: o firmă își are abonamentul pe pagina ei; dialogul a rămas doar pentru cabinete.
+  // F-D: o firmă își are abonamentul pe pagina ei; dialogul a rămas doar pentru firmele de consultanță.
   const open = (ref: BillingOwnerRef, name: string) =>
     ref.kind === "company" ? navigate(`/clienti/${ref.id}?tab=abonament`) : setOwner({ ...ref, name });
 

@@ -23,10 +23,10 @@ import java.util.List;
  * P2.13, felia 2 — rezumatul zilnic al termenelor, pentru consultanți.
  *
  * <p><b>Decizia proprietarului (15.09.2026): un singur mail pe zi, cumulat.</b> {@link DeadlineAlertScheduler}
- * scrie utilizatorilor firmei câte un mail pe termen; la un cabinet cu 20 de firme, același tipar ar fi
+ * scrie utilizatorilor firmei câte un mail pe termen; la un consultant cu 20 de firme, același tipar ar fi
  * însemnat zeci de mailuri pe săptămână. Aici fiecare consultant activ primește un mail care numește
  * toate termenele nefinalizate din următoarele {@value #WINDOW_DAYS} zile ale firmelor active din
- * cabinet, și nimic în zilele în care nu e nimic. Utilizatorii firmei își păstrează mailurile lor.
+ * portofoliu, și nimic în zilele în care nu e nimic. Utilizatorii firmei își păstrează mailurile lor.
  *
  * <p><b>Fără fanioane de „trimis"</b>, spre deosebire de alertele firmei: rezumatul nu e un eveniment,
  * e starea zilei. Un mail căzut azi nu se retrimite, fiindcă termenele lui sunt oricum în mailul de
@@ -54,7 +54,7 @@ public class ConsultantDigestScheduler {
         dispatch(DeadlineService.today());
     }
 
-    /** Separat de programare, ca testele să aleagă ziua. Întoarce câte cabinete au primit rezumatul. */
+    /** Separat de programare, ca testele să aleagă ziua. Întoarce câte firme de consultanță au primit rezumatul. */
     @Transactional(readOnly = true)
     public int dispatch(LocalDate today) {
         int sent = 0;
@@ -75,7 +75,7 @@ public class ConsultantDigestScheduler {
                 pushNotifier.send(consultants, PushNotifier.consultantDigest(consultancy.getName(), due.size()));
                 sent++;
             } catch (Exception e) {
-                // Un cabinet căzut nu îi oprește pe ceilalți.
+                // O firmă de consultanță căzută nu îi oprește pe ceilalți.
                 log.error("Failed to send the consultant digest for consultancy {}", consultancy.getId(), e);
             }
         }

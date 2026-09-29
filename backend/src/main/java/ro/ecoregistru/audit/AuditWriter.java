@@ -134,7 +134,7 @@ public class AuditWriter {
      * <ul>
      *   <li><b>O firmă</b> se scrie în jurnalul ei. Asta scrie şi faptele făcute fără firmă selectată,
      *       care înainte se pierdeau.</li>
-     *   <li><b>Un cont</b> se scrie în jurnalul firmei lui. Un cont de cabinet nu e al niciunei firme,
+     *   <li><b>Un cont</b> se scrie în jurnalul firmei lui. Un cont de consultant nu e al niciunei firme,
      *       deci nu se scrie nicăieri — jurnalul e al unei firme, cu {@code company_id NOT NULL}. Un
      *       cont care nu mai există (invitaţia anulată, singura ştergere reală) a fost şters dintr-un
      *       ecran de firmă, deci rămâne firma selectată.</li>

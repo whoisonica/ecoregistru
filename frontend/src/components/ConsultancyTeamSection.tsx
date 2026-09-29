@@ -32,9 +32,9 @@ const t = strings.consultancyTeam;
 const u = strings.settings.users;
 
 /**
- * P2.13 — colegii din cabinet, pe ecranul Clienți al consultantului.
+ * P2.13 — colegii din firma de consultanță, pe ecranul Clienți al consultantului.
  *
- * <p>Sora mai mică a lui `CompanyUsersSection`: fără rol de ales (într-un cabinet toți sunt
+ * <p>Sora mai mică a lui `CompanyUsersSection`: fără rol de ales (într-o firmă de consultanță toți sunt
  * consultanți, cu aceleași drepturi). Din felia 2 are și retrimiterea și anularea invitației, cu
  * aceleași cuvinte ca la firmă. Rândul propriu n-are niciun buton — serverul refuză oricum.
  */
@@ -154,7 +154,7 @@ export function ConsultancyTeamSection() {
   }
 
   return (
-    <section id="echipa-cabinetului" className="mt-10 scroll-mt-20">
+    <section id="echipa-consultantului" className="mt-10 scroll-mt-20">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-content">{t.title}</h2>

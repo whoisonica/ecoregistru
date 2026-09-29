@@ -175,16 +175,16 @@ public class SubscriptionService {
     }
 
     /**
-     * The subscription an account pays, for {@code /abonament}: a consultant sees the cabinet's, an
-     * admin their own company's, the platform the company it has chosen. A company of a cabinet has
-     * none of its own, since the cabinet pays for it.
+     * The subscription an account pays, for {@code /abonament}: a consultant sees the consultancy's, an
+     * admin their own company's, the platform the company it has chosen. A company of a consultancy has
+     * none of its own, since the consultancy pays for it.
      */
     @Transactional(readOnly = true)
     public Optional<BillingResponse> forAccount(AppUser user, UUID tenantId, LocalDate today) {
         return payerFor(user, tenantId).map(s -> toBillingResponse(s, today));
     }
 
-    /** The subscription the account pays itself; empty for a company of a cabinet. Needs a transaction. */
+    /** The subscription the account pays itself; empty for a company of a consultancy. Needs a transaction. */
     public Optional<Subscription> payerFor(AppUser user, UUID tenantId) {
         return switch (user.getRole()) {
             case CONSULTANT -> Optional.ofNullable(user.getConsultancy())
@@ -197,7 +197,7 @@ public class SubscriptionService {
 
     /**
      * F4 — for every role, on every screen: the status of whoever pays for the account (its own or its
-     * cabinet's subscription) and whether writes are refused now. The platform is never restricted.
+     * consultancy's subscription) and whether writes are refused now. The platform is never restricted.
      */
     @Transactional(readOnly = true)
     public BillingAccessResponse access(AppUser user, UUID tenantId, LocalDate today) {
@@ -241,7 +241,7 @@ public class SubscriptionService {
      * F-E — the client keeps its billing data up to date (contract art. 7.5). Invoices already issued keep
      * what they were issued with; the next one takes the new data.
      *
-     * <p>A company's change goes in its journal, with the fields before and after. A cabinet has no journal
+     * <p>A company's change goes in its journal, with the fields before and after. A consultancy has no journal
      * (it is a company's, {@code company_id NOT NULL}), so there only the mail says it. When the email
      * changes, the old address is told: the terms take a stop request from the billing address, so a
      * change nobody asked for must not go unnoticed. A mail that fails does not undo the change.
@@ -482,7 +482,7 @@ public class SubscriptionService {
 
     /**
      * F-C — what a subscription would invoice, not saved: a new client has at most the one work point of its request,
-     * which the price already covers. A company plan only; a cabinet is not made in the „Client nou” steps.
+     * which the price already covers. A company plan only; a consultancy is not made in the „Client nou” steps.
      */
     public SubscriptionPreviewResponse preview(SubscriptionRequest request) {
         if (request.plan().forConsultancy()) {

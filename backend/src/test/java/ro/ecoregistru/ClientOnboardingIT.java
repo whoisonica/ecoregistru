@@ -138,27 +138,27 @@ class ClientOnboardingIT {
         assertThat(subscriptionRepository.findByCompany_Id(id)).isEmpty();
     }
 
-    /** Consultantul își adaugă firme în cabinet, dar nu pune abonamente: le plătește cabinetul. */
+    /** Consultantul își adaugă firme în portofoliu, dar nu pune abonamente: le plătește firma de consultanță. */
     @Test
     void aConsultantMayNotSetASubscription() throws Exception {
-        Consultancy cabinet = consultancyRepository.save(Consultancy.builder()
-                .name("Cabinet " + UUID.randomUUID()).cui(TestCui.random()).createdAt(Instant.now()).build());
+        Consultancy consultancy = consultancyRepository.save(Consultancy.builder()
+                .name("Consultant " + UUID.randomUUID()).cui(TestCui.random()).createdAt(Instant.now()).build());
         String token = jwtService.generateToken(appUserRepository.save(AppUser.builder()
                 .email("cons+" + UUID.randomUUID() + "@demo.ro").password("x").role(Role.CONSULTANT)
-                .consultancy(cabinet).enabled(true).createdAt(Instant.now()).build()));
+                .consultancy(consultancy).enabled(true).createdAt(Instant.now()).build()));
         String cui = TestCui.random();
 
-        onboard(token, company("Cabinetul Plateste SRL", cui), null, subscription("GENERATOR", false), null)
+        onboard(token, company("Consultantul Plateste SRL", cui), null, subscription("GENERATOR", false), null)
                 .andExpect(status().isForbidden());
         assertThat(companyRepository.existsByCui(cui)).isFalse();
 
-        onboard(token, company("Cabinetul Plateste SRL", cui), null, null, null)
+        onboard(token, company("Consultantul Plateste SRL", cui), null, null, null)
                 .andExpect(status().isOk());
-        assertThat(companyRepository.findAllByConsultancy_Id(cabinet.getId()))
+        assertThat(companyRepository.findAllByConsultancy_Id(consultancy.getId()))
                 .anyMatch(c -> cui.equals(c.getCui()));
     }
 
-    /** Prima factură are implementarea, fondatorul n-o plătește; cabinetul nu se face din pașii ăștia. */
+    /** Prima factură are implementarea, fondatorul n-o plătește; firma de consultanță nu se face din pașii ăștia. */
     @Test
     void thePreviewPricesAPlanNotSavedYet() throws Exception {
         preview(subscription("GENERATOR_PACKAGING", false))

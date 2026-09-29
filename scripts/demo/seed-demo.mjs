@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Conturile demo WasteHouse (plan-curatenie-prod-demo.md, Faza 3): o firmă generator cu un an de date și un cabinet
-// de consultant cu trei firme. Totul trece prin API-ul aplicației, ca un om la tastatură: validările, termenele și
+// Conturile demo WasteHouse (plan-curatenie-prod-demo.md, Faza 3): o firmă generator cu un an de date și o firmă
+// de consultanță cu trei firme. Totul trece prin API-ul aplicației, ca un om la tastatură: validările, termenele și
 // jurnalul de audit ies ca la un client real, iar un endpoint schimbat face scriptul să cadă vizibil.
 //
 //   node scripts/demo/seed-demo.mjs --api http://localhost:8080
@@ -209,7 +209,7 @@ const session = await login.json();
 if (session.role !== "PLATFORM_ADMIN") throw new Error(`${EMAIL} e ${session.role}, nu PLATFORM_ADMIN`);
 token = session.token;
 
-const demoCuis = [DATA.generator.company.cui, DATA.cabinet.consultancy.cui, ...DATA.cabinet.companies.map((c) => c.company.cui)]
+const demoCuis = [DATA.generator.company.cui, DATA.consultant.consultancy.cui, ...DATA.consultant.companies.map((c) => c.company.cui)]
   .map((c) => c.replace(/^RO/, ""));
 const existing = [
   ...(await call("GET", "/api/v1/companies")),
@@ -229,15 +229,15 @@ for (const u of DATA.generator.users) {
   console.log(`  invitat ${alias(u.alias)} (${u.role})`);
 }
 
-const cab = await call("POST", "/api/v1/consultancies", { body: DATA.cabinet.consultancy });
-console.log(`\n■ ${cab.name}  (${cab.id})`);
-for (const spec of DATA.cabinet.companies) {
+const cons = await call("POST", "/api/v1/consultancies", { body: DATA.consultant.consultancy });
+console.log(`\n■ ${cons.name}  (${cons.id})`);
+for (const spec of DATA.consultant.companies) {
   const c = await createCompany(spec);
-  await call("PUT", `/api/v1/companies/${c.id}/consultancy`, { body: { consultancyId: cab.id } });
-  console.log(`  mutată în ${cab.name}`);
+  await call("PUT", `/api/v1/companies/${c.id}/consultancy`, { body: { consultancyId: cons.id } });
+  console.log(`  mutată în ${cons.name}`);
 }
-const k = DATA.cabinet.consultant;
-await call("POST", `/api/v1/consultancies/${cab.id}/users`, {
+const k = DATA.consultant.consultant;
+await call("POST", `/api/v1/consultancies/${cons.id}/users`, {
   body: { email: alias(k.alias), firstName: k.firstName, lastName: k.lastName },
 });
 console.log(`  invitat ${alias(k.alias)} (CONSULTANT)`);

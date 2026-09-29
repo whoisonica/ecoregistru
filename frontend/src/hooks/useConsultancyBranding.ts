@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import type { ConsultancyBranding } from "@/lib/types";
 
 /**
- * P2.14 — antetul cabinetului pe rapoartele neoficiale. Ca echipa, cabinetul nu se numește: e al sesiunii.
+ * P2.14 — antetul consultantului pe rapoartele neoficiale. Ca echipa, firma de consultanță nu se numește: e al sesiunii.
  */
 export const brandingKey = ["consultancy", "branding"] as const;
 

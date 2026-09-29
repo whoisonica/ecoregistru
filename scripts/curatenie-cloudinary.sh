@@ -9,7 +9,7 @@
 #
 # `--dry-run` numără fișierele din prefix pe fiecare resource_type/type și listează folderele de la
 # rădăcina contului, ca să se vadă că în cont nu stă altceva care ar trebui păstrat. Se șterge numai
-# prefixul, nimic din afara lui. Logourile cabinetelor sunt în bază (V48), nu aici.
+# prefixul, nimic din afara lui. Logourile firmelor de consultanță sunt în bază (V48), nu aici.
 set -euo pipefail
 
 : "${CLOUDINARY_URL:?lipsește CLOUDINARY_URL}"

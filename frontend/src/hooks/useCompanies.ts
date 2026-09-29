@@ -131,8 +131,8 @@ export function useUpdateSiatdSettings() {
 }
 
 /**
- * P2.13 — mută firma într-un cabinet, sau (`null`) o face client direct. Numai platforma. Schimbă
- * și numărul de firme al cabinetelor, deci se reîmprospătează și lista lor.
+ * P2.13 — mută firma la un consultant, sau (`null`) o face client direct. Numai platforma. Schimbă
+ * și numărul de firme al consultanților, deci se reîmprospătează și lista lor.
  */
 export function useAssignConsultancy() {
   const qc = useQueryClient();

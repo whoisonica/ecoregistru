@@ -137,9 +137,9 @@ vizualizator. ⚠️ Lasă în urmă șoferul „Proba 41 <număr>”.
 partener în patru pași întreabă înainte să șteargă.
 
 🔓 **17.09.2026 — proba 37 (`37-deconectare-cache.mjs`), deconectarea golește cache-ul**: platforma se deconectează, un consultant
-intră în același tab fără reîncărcare, iar selectorul de firme îi arată doar firmele cabinetului lui (înainte rămânea lista platformei,
+intră în același tab fără reîncărcare, iar selectorul de firme îi arată doar firmele din portofoliul lui (înainte rămânea lista platformei,
 din React Query, cu firme pe care le putea și alege). Consultantul se scrie cu `psql` (`E2E_DB`). **Negativă:** fără `queryClient.clear()`
-în `AuthContext` → consultantul vede toate firmele. Lasă în urmă „Proba 37 Cabinet <număr>”, „Proba 37 <număr>” și `consultant37-<număr>@demo.ro`.
+în `AuthContext` → consultantul vede toate firmele. Lasă în urmă „Proba 37 Consult <număr>”, „Proba 37 <număr>” și `consultant37-<număr>@demo.ro`.
 
 🧾 **17.09.2026 seara — scanarea codului (BUG-025, BUG-028):** „Am plătit — verifică acum” răspunde tot fără FGO pe o plată citită în
 ultimele 2 minute (proba 36 o cere), iar fără cheile FGO spune „lipsesc cheile” la fiecare clic; după o încercare la care FGO n-a
@@ -277,7 +277,7 @@ administratorul firmei primește 403 pe `/companies/onboard`. Probele 23 și 30 
 cheia formularului pe cererea găsită (nu pe adresă), rezumatul dispare după salvare → 3 căderi. Lasă în urmă „Proba 31 <număr>”.
 
 🗂️ **17.09.2026 — F-B2: probele 29 și 30 pe taburi și pe paginarea de pe server.** Proba 30 cere trei taburi (Clienți, Cereri
-de cont, Cabinete), fără cereri și cabinete sub tabelul clienților, `tab=cereri` în adresă și păstrat la reîncărcare; caută după
+de cont, Consultanți), fără cereri și firme de consultanță sub tabelul clienților, `tab=cereri` în adresă și păstrat la reîncărcare; caută după
 numărul rulării, nu după „Proba 30” (rulările vechi împingeau rândurile pe pagina a doua). Proba 29: Facturare pornește pe
 „De rezolvat” (căzute + restante, fără plătite), emisele/plătitele rulării stau sub „Detalii”, căutarea după „WH n” dă un rând,
 luna `2026-08` dă restanța și stă în adresă, 55 de plătite scrise cu `psql` fac „1–50 din 56” și pagina a doua cu 6. Proba 6
@@ -287,11 +287,11 @@ rândul de după invitație, nu la taburi). **30/30** pe `eco_e2e_clienti`.
 👥 **17.09.2026 — proba 30 (`30-clienti-tabel.mjs`), tabelul Clienți ca tablou de lucru (F-B)**: patru cifre sus (activi,
 încasat luna asta, de încasat, cer atenție), iar „Cer atenție” = numărul de pe filtru; Restanți / Emitere căzută / Fără abonament
 arată exact firmele lor, cu „Depășită 6 zile”, numărul facturii și motivul căderii; cele cu probleme stau primele; fișa goală
-„3 lipsuri”, cea plină „Completă”; „Deschide” arată firma, „⋯” are Abonament, Cabinet și Invită; după o invitație firma are 1
+„3 lipsuri”, cea plină „Completă”; „Deschide” arată firma, „⋯” are Abonament, Consultant și Invită; după o invitație firma are 1
 utilizator fără reîncărcare; tasta N; 1440px 1114/1114, 375px fără derulare laterală; administratorul firmei primește 403 pe
 `/companies/overview`. Facturile se scriu cu `psql` (`E2E_DB`), ca la proba 29. **Negative:** fără `sort(byAttention)` cade
 ordinea; fără invalidarea din `useInviteUser` cade numărul de utilizatori. Rândurile se citesc din **primul** tabel al paginii
-(`main table`): sub el stau cererile de cont și cabinetele. Lasă în urmă firmele „Proba 30 … <număr>”. Proba 23 caută acum
+(`main table`): sub el stau cererile de cont și firmele de consultanță. Lasă în urmă firmele „Proba 30 … <număr>”. Proba 23 caută acum
 „Client nou”. **30/30** pe `eco_e2e_clienti`.
 
 🧾 **17.09.2026 — proba 29 (`29-facturare.mjs`), ecranul „Facturare” (F-A)**: tasta B îl deschide pentru platformă; ultima
@@ -389,7 +389,7 @@ clientWidth 1134`, butonul liber. Proba 17 citește acum eticheta nouă, „Poat
 de alt utilizator, Flyway ia `permission denied for schema public`) au căzut întâi 9, 10 şi 11 **pe date**: trebuie
 o firmă `GENERATOR` al cărei nume conţine „Proba Automata" şi termenele generate pe anul trecut şi pe cel curent
 (atunci `POST /api/v1/deadlines/regenerate?year=`; din 16.09 le scrie `DevDataSeeder`), apoi au trecut. Au mai ieşit trei probe învechite (6: rândul gol al
-tabelului de cabinete; 7: şase secţiuni în Setări; 9: nota nouă despre şoferii dezactivaţi) şi **un defect real**,
+tabelului de firme de consultanță; 7: şase secţiuni în Setări; 9: nota nouă despre şoferii dezactivaţi) şi **un defect real**,
 căzut şi pe `origin/main`: titlul Evidenţelor strâns pe trei rânduri de butoanele documentelor oficiale (`PageHeader`).
 
 ~~⬜ **Nerulate pe feliile din 14.09.2026, seara–noaptea:**~~ contul de consultant (P2.13, felia 1),

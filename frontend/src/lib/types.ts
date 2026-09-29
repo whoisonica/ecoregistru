@@ -137,7 +137,7 @@ export interface Company {
   wasteManagerTraining?: string | null;
   /** Titulară de autorizaţie de construire/desfiinţare (art. 49 alin. (9)); null = nu s-a răspuns. */
   constructionPermitHolder?: boolean | null;
-  /** P2.13 — cabinetul care gestionează firma; amândouă null la un client direct. */
+  /** P2.13 — firma de consultanță care gestionează firma; amândouă null la un client direct. */
   consultancyId?: string | null;
   consultancyName?: string | null;
   /** D1.8 — cine vede prețurile depozitului; o schimbă doar adminul firmei. */
@@ -249,7 +249,7 @@ export interface AccountRequest extends Omit<AccountRequestInput, "website"> {
   createdAt: string;
 }
 
-// --- Cabinete de consultanță (P2.13) ---
+// --- Firme de consultanță (P2.13) ---
 
 /** Mirrors backend ConsultancyResponse. `companyCount` e și cifra pe care se facturează. */
 export interface Consultancy {
@@ -548,14 +548,14 @@ export interface CardPaymentResult {
   invoiceStatus: InvoiceStatus;
 }
 
-/** Cine plătește: o firmă directă sau un cabinet. Firmele unui cabinet n-au abonament propriu. */
+/** Cine plătește: o firmă directă sau o firmă de consultanță. Firmele unui consultant n-au abonament propriu. */
 export interface SubscriptionOwner {
   kind: "company" | "consultancy";
   id: string;
   name: string;
 }
 
-/** Fără rol: într-un cabinet toți sunt consultanți, cu aceleași drepturi. */
+/** Fără rol: într-o firmă de consultanță toți sunt consultanți, cu aceleași drepturi. */
 export interface InviteConsultantInput {
   email: string;
   firstName?: string | null;

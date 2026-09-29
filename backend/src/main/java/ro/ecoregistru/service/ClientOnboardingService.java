@@ -35,7 +35,7 @@ public class ClientOnboardingService {
     @Transactional
     public OnboardClientResponse onboard(OnboardClientRequest request) {
         boolean platform = SecurityUtils.currentUser().getRole() == Role.PLATFORM_ADMIN;
-        // A consultant adds companies to their cabinet, which pays for them; requests and prices are the platform's.
+        // A consultant adds companies to their consultancy, which pays for them; requests and prices are the platform's.
         if (!platform && (request.accountRequestId() != null || request.subscription() != null)) {
             throw new AccessDeniedException("Only the platform approves requests and sets subscriptions");
         }

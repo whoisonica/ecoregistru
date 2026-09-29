@@ -94,7 +94,7 @@ class DepotRetentionIT {
                 .active(true).createdAt(Instant.now()).build());
         admin = user(Role.ADMIN);
         viewer = user(Role.CLIENT_VIEWER);
-        // Un consultant are cabinet, nu firmă (`app_users_consultant_scope`), deci nu se salvează aici.
+        // Un consultant are firmă de consultanță, nu firmă client (`app_users_consultant_scope`), deci nu se salvează aici.
         consultant = AppUser.builder().id(UUID.randomUUID()).email("consultant@demo.ro")
                 .role(Role.CONSULTANT).enabled(true).build();
         depot = workPointRepository.save(WorkPoint.builder()
