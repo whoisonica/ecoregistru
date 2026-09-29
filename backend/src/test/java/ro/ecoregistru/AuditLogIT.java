@@ -64,6 +64,7 @@ class AuditLogIT {
     @Autowired WorkPointRepository workPointRepository;
     @Autowired WasteCodeRepository wasteCodeRepository;
     @Autowired PartnerRepository partnerRepository;
+    @Autowired ro.ecoregistru.repository.ReportingDeadlineRepository deadlineRepository;
 
     private String adminToken;
     private String operatorToken;
@@ -227,6 +228,75 @@ class AuditLogIT {
         assertThat(rows).hasSize(before + 1);
         assertThat(rows.get(0).get("action").asText()).isEqualTo("REGENERATE");
         assertThat(rows.get(0).get("label").asText()).contains("Anul 2031");
+    }
+
+    /**
+     * Recalcularea evidenţei nu e o modificare a firmei. Lanţul notează pe `Company` când a trecut
+     * şi până la ce an (V65), iar fără garda din `IGNORED_FIELDS` fiecare trecere scria în
+     * „Istoric" un „Modificare · <firma>" gol de sens (29.09.2026).
+     */
+    @Test
+    void recomputingTheEvidenceDoesNotWriteACompanyChange() throws Exception {
+        UUID companyId = appUserRepository.findByEmail("admin@demo.ro").orElseThrow().getCompany().getId();
+        int before = entriesFor(companyId).size();
+
+        for (String year : List.of("2031", "2032")) {
+            mockMvc.perform(post("/api/v1/evidences/regenerate")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .param("year", year))
+                    .andExpect(status().isOk());
+        }
+
+        assertThat(companyRepository.findById(companyId).orElseThrow().getEvidenceGeneratedThrough())
+                .as("garda: trecerea chiar a atins firma").isGreaterThanOrEqualTo(2032);
+        assertThat(entriesFor(companyId)).hasSize(before);
+    }
+
+    /**
+     * Bifa „Depus” și scoaterea ei ajung în „Istoric”, cu nota (29.09.2026): termenul depus e ce se
+     * arată la control. Câte un rând pe gest — bifa creează și termenul următor, care nu se scrie.
+     */
+    @Test
+    void tickingADeadlineDoneAndReopeningItAreOneRowEach() throws Exception {
+        Company company = appUserRepository.findByEmail("admin@demo.ro").orElseThrow().getCompany();
+        UUID id = deadlineRepository.save(ro.ecoregistru.entity.ReportingDeadline.builder()
+                .company(company).reportType(ro.ecoregistru.enums.ReportType.OTHER)
+                .dueDate(java.time.LocalDate.of(2031, 4, 2)).status(ro.ecoregistru.enums.DeadlineStatus.UPCOMING)
+                .createdAt(Instant.now()).build()).getId();
+
+        mockMvc.perform(post("/api/v1/deadlines/" + id + "/complete")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"note\": \"Nr. înreg. 1234\"}"))
+                .andExpect(status().isOk());
+
+        JsonNode done = onlyEntryFor(id);
+        assertThat(done.get("action").asText()).isEqualTo("UPDATE");
+        assertThat(done.get("actorEmail").asText()).isEqualTo("admin@demo.ro");
+        assertThat(onlyChangeOf(done, "status").get("to").asText()).isEqualTo("DONE");
+        assertThat(onlyChangeOf(done, "completionNote").get("to").asText()).isEqualTo("Nr. înreg. 1234");
+
+        mockMvc.perform(post("/api/v1/deadlines/" + id + "/reopen")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+        assertThat(entriesFor(id)).hasSize(2);
+        assertThat(onlyChangeOf(latestEntryFor(id), "status").get("to").asText()).isEqualTo("UPCOMING");
+    }
+
+    /** Cifrele de ambalaje scrise de mână peste cele din mișcări ajung pe declarație: un rând, cu valorile. */
+    @Test
+    void aPackagingOverrideIsWrittenInTheJournal() throws Exception {
+        int before = entriesOfType("PackagingMarketEntry").size();
+        mockMvc.perform(put("/api/v1/packaging/market")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"material\": \"STICLA\", \"year\": 2031, \"salesPackaging\": 12.5}"))
+                .andExpect(status().isOk());
+
+        List<JsonNode> rows = entriesOfType("PackagingMarketEntry");
+        assertThat(rows).hasSize(before + 1);
+        assertThat(rows.get(0).get("action").asText()).isEqualTo("CREATE");
+        assertThat(rows.get(0).get("label").asText()).contains("2031").contains("STICLA");
     }
 
     /**

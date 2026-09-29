@@ -108,9 +108,12 @@ public class ConsultancyOverviewService {
         boolean generated = deadlineRepository.existsByCompany_IdAndDueDateBetween(
                 company.getId(), LocalDate.of(year - 1, 1, 1), LocalDate.of(year + 1, 12, 31));
 
-        EvidenceCalculator.EvidenceBlockers blockers = evidenceCalculator.blockers(company.getId(), year);
+        // Ce opreşte depunerea se citeşte pe anul raportat, nu pe anul calendarului: între 1 ianuarie
+        // şi 15 martie se depune anul trecut (DeadlineService.evidenceYear, 29.09.2026).
+        int reported = DeadlineService.evidenceYear(today);
+        EvidenceCalculator.EvidenceBlockers blockers = evidenceCalculator.blockers(company.getId(), reported);
         long mirror = movementRepository.countUnprovenMirrorClassifications(
-                company.getId(), LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+                company.getId(), LocalDate.of(reported, 1, 1), LocalDate.of(reported, 12, 31));
 
         LocalDate cutoff = today.plusDays(PARTNER_WARNING_DAYS);
         int partners = (int) partnerRepository.findAllByCompany_Id(company.getId()).stream()

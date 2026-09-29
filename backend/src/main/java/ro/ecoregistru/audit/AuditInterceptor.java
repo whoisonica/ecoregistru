@@ -72,7 +72,10 @@ public class AuditInterceptor implements Interceptor {
             // e o persoană — CNP-ul și actul ei se redactează prin numele câmpurilor.
             WeighingOperation.class,
             WasteArticle.class,
-            NaturalPerson.class);
+            NaturalPerson.class,
+            // Cifrele de tabelul 1 scrise de mână peste cele din mişcări ajung pe declaraţia de
+            // ambalaje (29.09.2026). Le scrie numai omul, din „Ambalaje", deci nu e zgomot de maşină.
+            PackagingMarketEntry.class);
 
     /**
      * Câmpurile din care se compune eticheta, pe tip, în ordinea în care se citesc.
@@ -96,7 +99,8 @@ public class AuditInterceptor implements Interceptor {
             Map.entry(AppUser.class, List.of("email")),
             Map.entry(WeighingOperation.class, List.of("type", "number", "date")),
             Map.entry(WasteArticle.class, List.of("name")),
-            Map.entry(NaturalPerson.class, List.of("name")));
+            Map.entry(NaturalPerson.class, List.of("name")),
+            Map.entry(PackagingMarketEntry.class, List.of("year", "material")));
 
     /**
      * Ce nu se scrie niciodată ca modificare.
@@ -111,7 +115,12 @@ public class AuditInterceptor implements Interceptor {
                     // despre ce s-a schimbat — prins de probă, care cerea „exact un câmp".
                     "version",
                     // Spun a doua oară ce spun deja fapta şi autorul rândului de jurnal.
-                    "deletedAt", "deletedBy", "deactivatedAt");
+                    "deletedAt", "deletedBy", "deactivatedAt",
+                    // Urma reconstrucţiei de evidenţă (V65), pe `Company`: o scrie maşina la fiecare
+                    // recalculare, deci fiecare deschidere de ecran lăsa în „Istoric" un
+                    // „Modificare · <firma>" fără nicio faptă a cuiva în spate. Regenerarea cerută
+                    // de om se scrie oricum o dată, ca REGENERATE (29.09.2026).
+                    "evidenceGeneratedAt", "evidenceGeneratedThrough");
 
     /**
      * Ce se scrie ca faptă, dar fără valori. <b>BUG-002.</b>

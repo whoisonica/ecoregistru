@@ -108,6 +108,12 @@ class ReactivationIT {
         mockMvc.perform(post("/api/v1/work-points/" + workPointId + "/reactivate")
                         .header("Authorization", "Bearer " + viewerToken))
                 .andExpect(status().isForbidden());
+        // Punctul e al firmei demo, pe care o împart toate clasele din același context: lăsat
+        // dezactivat, orice probă care ia „primul punct de lucru” scria pe unul inactiv — refuzat
+        // din 29.09.2026 (SensitiveDataExposureIT a căzut așa). Se pune la loc, ca adminul.
+        mockMvc.perform(post("/api/v1/work-points/" + workPointId + "/reactivate")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().is2xxSuccessful());
     }
 
     /** Un id care nu e al firmei tale nu există, la fel ca peste tot. */

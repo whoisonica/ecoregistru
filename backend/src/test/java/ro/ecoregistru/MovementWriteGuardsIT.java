@@ -348,6 +348,72 @@ class MovementWriteGuardsIT {
         assertThat(partnerWorkPointRepository.findById(a.partnerWorkPoint())).isEmpty();
     }
 
+    // ---------- 29.09.2026: punct de lucru, partener, transportator dezactivat ----------
+
+    /**
+     * Pe o mișcare nouă, unul dezactivat se refuză cu 422 și numele lui: formularul îi ascundea,
+     * dar serverul primea orice id al firmei.
+     */
+    @Test
+    void anInactiveWorkPointPartnerOrCarrierIsRefusedOnANewMovement() throws Exception {
+        UUID oldHall = workPointRepository.save(WorkPoint.builder().company(companyRepository.getReferenceById(a.companyId()))
+                .name("Hala închisă").active(false).createdAt(Instant.now()).build()).getId();
+        UUID oldPartner = inactivePartner(a, "Colector plecat");
+        long before = count(a);
+
+        postMovement(a, handoverJson(a, "5", "").replace(a.workPoint().toString(), oldHall.toString()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']").value("movement.work.point.inactive"));
+        postMovement(a, handoverJson(a, "5", "").replace(a.partner().toString(), oldPartner.toString()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']").value("movement.partner.inactive"));
+        postMovement(a, handoverJson(a, "5", ", \"transportPartnerId\": \"" + oldPartner + "\""))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']").value("movement.carrier.inactive"));
+        assertThat(count(a)).isEqualTo(before);
+    }
+
+    /**
+     * O mișcare veche rămâne salvabilă după ce partenerul, transportatorul și punctul ei de lucru au
+     * fost dezactivate — corectura unei cantități nu cere reactivarea lor. Doar mutarea pe un altul
+     * dezactivat se refuză.
+     */
+    @Test
+    void anOldMovementStaysEditableWithWhatWasDeactivatedSince() throws Exception {
+        String carried = ", \"transportPartnerId\": \"" + a.partner() + "\"";
+        String id = JsonPath.read(postMovement(a, handoverJson(a, "5", carried)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(), "$.id");
+        Partner partner = partnerRepository.findById(a.partner()).orElseThrow();
+        partner.setActive(false);
+        partnerRepository.save(partner);
+        WorkPoint hall = workPointRepository.findById(a.workPoint()).orElseThrow();
+        hall.setActive(false);
+        workPointRepository.save(hall);
+
+        mockMvc.perform(put("/api/v1/movements/" + id)
+                        .header("Authorization", "Bearer " + a.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(handoverJson(a, "7", carried)))
+                .andExpect(status().isOk());
+
+        UUID other = inactivePartner(a, "Alt colector plecat");
+        mockMvc.perform(put("/api/v1/movements/" + id)
+                        .header("Authorization", "Bearer " + a.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(handoverJson(a, "7", carried).replace("\"partnerId\": \"" + a.partner(),
+                                "\"partnerId\": \"" + other)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']").value("movement.partner.inactive"));
+    }
+
+    private UUID inactivePartner(Tenant t, String name) {
+        return partnerRepository.save(Partner.builder()
+                .company(companyRepository.getReferenceById(t.companyId())).name(name)
+                .cui("RO8" + UUID.randomUUID().toString().substring(0, 6))
+                .authorizationNumber("AM 2/2025").type(PartnerType.COLLECTOR).supplier(true).carrier(true)
+                .active(false).createdAt(Instant.now()).build()).getId();
+    }
+
     // --- helpers ---
 
     private static String partnerJson(Tenant t, String workPoints) {

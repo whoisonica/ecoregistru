@@ -423,6 +423,96 @@ class ExcelImportIT {
                 .andExpect(status().isOk());
     }
 
+    /**
+     * O celulă cu formulă se citeşte cu valoarea ei, nu cu textul formulei (29.09.2026).
+     *
+     * <p>Fără valoarea salvată, „Nr. document" construit cu {@code ="Fișa "&"3"} ajungea în mişcare
+     * ca {@code "Fișa "&"3"}. Proba cere documentul exact, deci pică pe textul formulei.
+     */
+    @Test
+    void aFormulaCellIsReadAsTheValueExcelShowed() throws Exception {
+        byte[] xlsx;
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(
+                file(List.<Object[]>of(), List.<Object[]>of(disposal()))));
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Cell document = wb.getSheet("Mișcări").getRow(1).getCell(9);
+            document.setCellFormula("\"Fișa \"&\"3\"");
+            // Valoarea salvată în fişier, ca după o deschidere în Excel.
+            wb.getCreationHelper().createFormulaEvaluator().evaluateFormulaCell(document);
+            wb.write(out);
+            xlsx = out.toByteArray();
+        }
+
+        send("/api/v1/import", xlsx, platformToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved", is(true)));
+
+        assertThat(movementRepository.findAllByCompany_IdAndDeletedFalse(companyId))
+                .singleElement().satisfies(m -> assertThat(m.getDocumentReference()).isEqualTo("Fișa 3"));
+    }
+
+    /**
+     * O dată numerică pe care Excel n-o poate citi ca dată (negativă) e o greşeală pe rândul ei, nu
+     * un 500: POI întoarce {@code null} pentru ea, iar {@code .toLocalDate()} arunca (29.09.2026).
+     */
+    @Test
+    void aNegativeNumericDateIsARowError() throws Exception {
+        Object[] row = disposal();
+        row[0] = -5;
+        byte[] xlsx;
+        try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(
+                file(List.<Object[]>of(), List.<Object[]>of(row))));
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            // Formatată ca dată, ca în fişierul real: aşa ajunge pe drumul numeric al citirii.
+            Cell date = wb.getSheet("Mișcări").getRow(1).getCell(0);
+            CellStyle style = wb.createCellStyle();
+            style.setDataFormat(wb.getCreationHelper().createDataFormat().getFormat("dd.mm.yyyy"));
+            date.setCellStyle(style);
+            wb.write(out);
+            xlsx = out.toByteArray();
+        }
+
+        send("/api/v1/import/verificare", xlsx, platformToken)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errors[*].row", hasItem(2)))
+                .andExpect(jsonPath("$.errors[0].message", containsString("nu e o dată")));
+    }
+
+    /**
+     * Garda pe total, lângă cea pe intrare (29.09.2026). O arhivă cu multe intrări, fiecare sub
+     * pragul de 8 MB, se umfla nemărginit: nouă intrări de 7,5 MB fac 67,5 MB, peste plafonul de
+     * 64 MB, dar niciuna nu trece singură de garda veche.
+     */
+    @Test
+    void manyEntriesJustUnderTheLimitAreRefusedTogether() throws Exception {
+        byte[] bomb;
+        try (java.util.zip.ZipInputStream in =
+                     new java.util.zip.ZipInputStream(new ByteArrayInputStream(template.render()));
+             ByteArrayOutputStream out = new ByteArrayOutputStream();
+             java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(out)) {
+            java.util.zip.ZipEntry e;
+            while ((e = in.getNextEntry()) != null) {
+                zip.putNextEntry(new java.util.zip.ZipEntry(e.getName()));
+                zip.write(in.readAllBytes());
+                zip.closeEntry();
+            }
+            byte[] filler = new byte[(int) (7.5 * 1024 * 1024)];
+            Arrays.fill(filler, (byte) 'A');
+            for (int i = 0; i < 9; i++) {
+                zip.putNextEntry(new java.util.zip.ZipEntry("xl/umplutura" + i + ".bin"));
+                zip.write(filler);
+                zip.closeEntry();
+            }
+            zip.finish();
+            bomb = out.toByteArray();
+        }
+        assertThat(bomb.length).as("comprimat trece de plasa de 12 MB").isLessThan(1024 * 1024);
+
+        send("/api/v1/import/verificare", bomb, platformToken)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']", is("import.too.many.rows")));
+    }
+
     @Test
     void aViewerCannotImport() throws Exception {
         send("/api/v1/import", file(List.<Object[]>of(partnerRow()), List.<Object[]>of()), viewerToken)

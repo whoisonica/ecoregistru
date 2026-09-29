@@ -94,6 +94,14 @@ public class ExcelImportService {
      */
     static final long MAX_ENTRY_BYTES = 8L * 1024 * 1024;
 
+    /**
+     * Şi plafonul pe toată arhiva, fiindcă garda pe intrare se ocoleşte cu multe intrări mici: o
+     * sută de intrări de 7 MB trec fiecare, dar împreună se despachetează în 700 MB — timp de CPU
+     * pe cererea care ţine firul, chiar dacă POI nu le citeşte pe toate. Şablonul întreg stă sub
+     * 1 MB despachetat, deci 64 MB e cu mult peste orice fişier legitim şi tot mărginit (29.09.2026).
+     */
+    static final long MAX_TOTAL_BYTES = 64L * 1024 * 1024;
+
     private static final List<DateTimeFormatter> DATE_FORMATS = List.of(
             DateTimeFormatter.ofPattern("d.M.yyyy"), DateTimeFormatter.ofPattern("d/M/yyyy"),
             DateTimeFormatter.ISO_LOCAL_DATE);
@@ -416,20 +424,22 @@ public class ExcelImportService {
     }
 
     /**
-     * Opreşte un fişier care s-ar umfla peste {@link #MAX_ENTRY_BYTES} <b>înainte</b> ca POI să-l
-     * citească în model. Despachetează în flux, cu un tampon fix, şi se opreşte la prima intrare
-     * care trece pragul — deci memoria e mărginită orice ar fi în arhivă. Mărimea din antetul zip
+     * Opreşte un fişier care s-ar umfla peste {@link #MAX_ENTRY_BYTES} pe o intrare sau peste
+     * {@link #MAX_TOTAL_BYTES} cu totul <b>înainte</b> ca POI să-l citească în model. Despachetează
+     * în flux, cu un tampon fix, şi se opreşte la primul octet care trece un prag — deci memoria e mărginită orice ar fi în arhivă. Mărimea din antetul zip
      * nu e de încredere (fişierele scrise în flux o lasă -1), aşa că se numără octeţii reali.
      */
     private static void guardInflatedSize(byte[] bytes) {
         try (java.util.zip.ZipInputStream zip = new java.util.zip.ZipInputStream(new ByteArrayInputStream(bytes))) {
             byte[] buf = new byte[8192];
+            long total = 0;
             while (zip.getNextEntry() != null) {
                 long inflated = 0;
                 int n;
                 while ((n = zip.read(buf)) > 0) {
                     inflated += n;
-                    if (inflated > MAX_ENTRY_BYTES) {
+                    total += n;
+                    if (inflated > MAX_ENTRY_BYTES || total > MAX_TOTAL_BYTES) {
                         throw new BadRequestException(IMPORT_TOO_MANY_ROWS);
                     }
                 }
@@ -446,10 +456,25 @@ public class ExcelImportService {
         return null;
     }
 
+    /**
+     * Cititorul de celule, cu valoarea <b>calculată</b> a formulelor.
+     *
+     * <p>Fără evaluator, {@link DataFormatter} întoarce textul formulei: o coloană „Nr. document"
+     * construită în Excel cu {@code =A2&"/"&B2} ajungea în mişcare ca {@code A2&"/"&B2}. Nu evaluăm
+     * noi formula — POI nu ştie toate funcţiile Excel, iar un fişier cu legături externe n-ar avea
+     * de unde citi —, ci luăm rezultatul pe care Excel l-a salvat în fişier, adică exact ce vedea
+     * omul pe ecran (29.09.2026).
+     */
+    private static DataFormatter formatter() {
+        DataFormatter formatter = new DataFormatter(Locale.ROOT);
+        formatter.setUseCachedValuesForFormulaCells(true);
+        return formatter;
+    }
+
     private static void requireHeader(Sheet sheet, List<String> columns, int from) {
         if (sheet == null) return;
         Row header = sheet.getRow(0);
-        DataFormatter text = new DataFormatter(Locale.ROOT);
+        DataFormatter text = formatter();
         for (int i = 0; i < columns.size(); i++) {
             String found = header == null ? "" : text.formatCellValue(header.getCell(from + i));
             if (!fold(found).equals(fold(columns.get(i)))) {
@@ -462,7 +487,7 @@ public class ExcelImportService {
     private static boolean hasColumnsFrom(Sheet sheet, int from) {
         Row header = sheet.getRow(0);
         if (header == null) return false;
-        DataFormatter text = new DataFormatter(Locale.ROOT);
+        DataFormatter text = formatter();
         for (int i = from; i < Math.max(from, header.getLastCellNum()); i++) {
             if (!text.formatCellValue(header.getCell(i)).isBlank()) return true;
         }
@@ -515,7 +540,7 @@ public class ExcelImportService {
         private final List<String> columns;
         private final List<RowError> errors;
         /** Nu e thread-safe, deci unul pe rând, nu unul pe clasă. */
-        private final DataFormatter text = new DataFormatter(Locale.ROOT);
+        private final DataFormatter text = formatter();
         private boolean ok = true;
 
         Cells(Sheet sheet, int index, List<String> columns, List<RowError> errors) {
@@ -588,10 +613,17 @@ public class ExcelImportService {
             Cell cell = cell(i);
             if (raw(i) == null) return null;
             CellType type = cell.getCellType() == CellType.FORMULA ? cell.getCachedFormulaResultType() : cell.getCellType();
-            if (type == CellType.NUMERIC) {
-                return cell.getLocalDateTimeCellValue().toLocalDate();
-            }
             String value = raw(i);
+            if (type == CellType.NUMERIC) {
+                // Un număr pe care Excel nu-l poate citi ca dată (negativ, de pildă) iese null din
+                // POI; înainte, `.toLocalDate()` pe el dădea un 500 pentru tot fişierul (29.09.2026).
+                java.time.LocalDateTime numeric = cell.getLocalDateTimeCellValue();
+                if (numeric != null) {
+                    return numeric.toLocalDate();
+                }
+                error(i, "„" + value + "” nu e o dată. Scrie-o ca zz.ll.aaaa.");
+                return null;
+            }
             for (DateTimeFormatter f : DATE_FORMATS) {
                 try {
                     return LocalDate.parse(value, f);

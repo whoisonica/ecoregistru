@@ -296,6 +296,9 @@ public enum ErrorMessageEnum {
     QUANTITY_REQUIRED("movement.quantity.required", "Cantitatea e obligatorie. Dacă o cântărește destinatarul la descărcare, bifează „Se cântărește la descărcare” și lasă câmpul gol."),
     WEIGHING_NEEDS_RECIPIENT("movement.weighing.recipient", "Cântărirea la descărcare o face destinatarul: alege partenerul care preia deșeul."),
     PARTNER_WORK_POINT_MISMATCH("movement.partner.work.point.mismatch", "Punctul de lucru ales nu e al destinatarului. Alege unul dintre punctele lui de lucru."),
+    MOVEMENT_WORK_POINT_INACTIVE("movement.work.point.inactive", "Punctul de lucru ales e dezactivat. Reactivează-l sau alege altul."),
+    MOVEMENT_PARTNER_INACTIVE("movement.partner.inactive", "Partenerul ales e dezactivat. Reactivează-l la Parteneri sau alege altul."),
+    MOVEMENT_CARRIER_INACTIVE("movement.carrier.inactive", "Transportatorul ales e dezactivat. Reactivează-l la Parteneri sau alege altul."),
     NOT_AWAITING_WEIGHING("movement.weight.not.awaited", "Mișcarea are deja cantitatea înregistrată. Ca s-o schimbi, editeaz-o."),
 
     // --- Attachments ---
@@ -383,6 +386,7 @@ public enum ErrorMessageEnum {
             // „cel puțin 3 ani", adică un prag, nu un plafon. Mesajul spunea „cel mult 3 ani" și
             // prezenta pragul ca limită — de două ori greșit, fiindcă plaja crescuse la 5 pe 25.08.
             "Dosarul se poate genera pentru cel mult 5 ani. Alege un număr între 1 și 5. (Evidența se păstrează cel puțin 3 ani — OUG 92/2021, art. 48 alin. (5).)"),
+    AUDIT_FILE_BUSY("audit.file.busy", "Dosarul se pregătește deja într-o altă descărcare. Așteaptă să se termine, apoi încearcă din nou."),
     DEADLINE_NOT_FOUND("deadline.not.found", "Termenul nu a fost găsit."),
 
     // Ordinul 794/2012 art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2", iar care

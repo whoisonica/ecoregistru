@@ -20,6 +20,7 @@ import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.*;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.service.EmailService;
+import ro.ecoregistru.service.DeadlineService;
 import ro.ecoregistru.service.notification.NotificationService;
 
 import java.math.BigDecimal;
@@ -76,9 +77,18 @@ class ConsultancyOverviewIT {
     @Autowired TemplateEngine templateEngine;
     @Autowired VerificationRecordRepository verificationRecordRepository;
 
+    @Autowired ro.ecoregistru.service.ConsultancyOverviewService overviewService;
+
     @MockitoBean EmailService emailService;
 
     private final LocalDate today = LocalDate.now();
+    /**
+     * O zi din anul raportat de azi, pe care stau mișcările de probă ale lui Busy. Azi, după
+     * 15 martie; între 1 ianuarie și 15 martie, o zi de anul trecut — altfel proba ar pica în
+     * săptămânile depunerii, când panoul citește anul trecut (DeadlineService.evidenceYear).
+     */
+    private final LocalDate filed = DeadlineService.evidenceYear(today) == today.getYear()
+            ? today : LocalDate.of(today.getYear() - 1, 6, 1);
 
     private Consultancy consultancy;
     private Company busy;
@@ -117,12 +127,12 @@ class ConsultancyOverviewIT {
                 .filter(c -> c.getMirrorOf() != null).findFirst().orElseThrow();
 
         // O ieșire fără cod R/D și una care așteaptă cântarul destinatarului, pe aceeași linie de evidență.
-        movement(busy, wp, plain, today, new BigDecimal("100"), WasteOperation.UNCLASSIFIED_OUT, null, collector, false);
-        movement(busy, wp, plain, today, null, WasteOperation.RECOVERED, WasteOperationCode.R3, collector, false);
-        // Cod-oglindă fără document: una contează; cea ștearsă și cea de anul trecut nu.
-        movement(busy, wp, mirror, today, new BigDecimal("50"), WasteOperation.GENERATED, null, null, false);
-        movement(busy, wp, mirror, today, new BigDecimal("50"), WasteOperation.GENERATED, null, null, true);
-        movement(busy, wp, mirror, LocalDate.of(today.getYear() - 1, 6, 1), new BigDecimal("50"),
+        movement(busy, wp, plain, filed, new BigDecimal("100"), WasteOperation.UNCLASSIFIED_OUT, null, collector, false);
+        movement(busy, wp, plain, filed, null, WasteOperation.RECOVERED, WasteOperationCode.R3, collector, false);
+        // Cod-oglindă fără document: una contează; cea ștearsă și cea din anul dinaintea celui raportat nu.
+        movement(busy, wp, mirror, filed, new BigDecimal("50"), WasteOperation.GENERATED, null, null, false);
+        movement(busy, wp, mirror, filed, new BigDecimal("50"), WasteOperation.GENERATED, null, null, true);
+        movement(busy, wp, mirror, LocalDate.of(filed.getYear() - 1, 6, 1), new BigDecimal("50"),
                 WasteOperation.GENERATED, null, null, false);
 
         // Parteneri: autorizația peste 30 de zile și viza peste 10 contează; autorizația peste 90 și unul inactiv, nu.
@@ -166,6 +176,35 @@ class ConsultancyOverviewIT {
         assertThat(row.get("linesAwaitingWeighing").asInt()).isEqualTo(1);
         assertThat(row.get("unprovenMirrorMovements").asInt()).isEqualTo(1);
         assertThat(row.get("partnersExpiring").asInt()).isEqualTo(2);
+    }
+
+    /**
+     * Între 1 ianuarie și 15 martie se depune anul trecut, deci „ce oprește depunerea" se citește pe
+     * el (29.09.2026). Mișcările de probă ale lui Busy sunt pe anul raportat de azi; privit din
+     * 15 martie al anului următor, el e tot cel raportat și cifrele trebuie să fie aceleași. A doua
+     * zi, anul raportat devine cel nou, gol.
+     */
+    @Test
+    void untilTheFifteenthOfMarchTheChecksReadTheYearBeingFiled() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(ana, null, List.of()));
+        try {
+            var filing = busyRow(LocalDate.of(filed.getYear() + 1, 3, 15));
+            assertThat(filing.linesWithoutOperationCode()).isEqualTo(1);
+            assertThat(filing.linesAwaitingWeighing()).isEqualTo(1);
+            assertThat(filing.unprovenMirrorMovements()).isEqualTo(1);
+
+            var after = busyRow(LocalDate.of(filed.getYear() + 1, 3, 16));
+            assertThat(after.linesWithoutOperationCode()).isZero();
+            assertThat(after.unprovenMirrorMovements()).isZero();
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+
+    private ro.ecoregistru.controller.response.ConsultancyOverviewResponse busyRow(LocalDate day) {
+        return overviewService.overview(day).stream()
+                .filter(r -> r.name().equals("Busy SRL")).findFirst().orElseThrow();
     }
 
     /** „0 depășite" la o firmă fără termene generate nu e o veste bună, deci rândul spune de ce. */

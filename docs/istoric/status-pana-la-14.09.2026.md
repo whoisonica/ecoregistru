@@ -63,7 +63,7 @@ de forma „`status.md` G-3” din `legislatie.md` și `surse-oficiale.md` duc a
 > `app` **v52** (`55f3953`) pentru adresa din subsolul paginilor publice, rămasă pe Gmail. Fără migrare
 > (`V39`). Mailul pleacă de-acum de la `contact@wastehouse.ro` (`MAIL_*` pe cPanel, api v62–v63), cu
 > numele afișat „WasteHouse" — probat cu o resetare de parolă pe dyno. Bundle-ul servit: „EcoRegistru" de
-> zero ori, `whoecom@gmail.com` de zero ori.
+> zero ori, adresa personală a proprietarului de zero ori.
 >
 > **Unde eram — 14.09.2026, după-amiaza.** 🔬 **Auditul QA și-a completat matricea de izolare între
 > firme** — termenele (închidere, redeschidere), evidența (lista, fișa și declarația cerute cu punctul de

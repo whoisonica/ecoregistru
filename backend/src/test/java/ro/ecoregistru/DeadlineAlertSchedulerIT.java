@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import ro.ecoregistru.entity.AppUser;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.ReportingDeadline;
@@ -43,6 +46,9 @@ class DeadlineAlertSchedulerIT {
     @Autowired CompanyRepository companyRepository;
     @Autowired AppUserRepository appUserRepository;
     @Autowired ReportingDeadlineRepository deadlineRepository;
+
+    @Autowired PlatformTransactionManager transactionManager;
+    @Autowired ro.ecoregistru.repository.AuditLogRepository auditLogRepository;
 
     @MockitoBean NotificationService notificationService;
 
@@ -221,5 +227,65 @@ class DeadlineAlertSchedulerIT {
         Mockito.verify(notificationService).sendDeadlineReminder(Mockito.argThat(x -> x.getId().equals(d.getId())),
                 Mockito.argThat(to -> to.contains(operator.getEmail()) && !to.contains(scaleOperator.getEmail())),
                 anyLong());
+    }
+
+    /**
+     * Bifa „Depus” pusă cât timp mementoul trimite mailuri nu se pierde (29.09.2026).
+     *
+     * <p>Mementoul ţine termenul încărcat pe toată trecerea şi scrie steagul abia după mail. Mailul
+     * e simulat aici de mock: în clipa trimiterii, o tranzacţie separată — omul din ecran — marchează
+     * termenul depus şi face commit. Cu UPDATE pe tot rândul, flush-ul mementoului rescria apoi
+     * `status = UPCOMING` peste bifă, iar termenul reapărea ca neîndeplinit.
+     */
+    @Test
+    void aDeadlineTickedWhileTheMailGoesOutStaysDone() {
+        Company c = companyWithUser();
+        LocalDate today = LocalDate.of(2026, 6, 1);
+        ReportingDeadline d = deadline(c, today.plusDays(5), DeadlineStatus.UPCOMING, false, false);
+        TransactionTemplate user = new TransactionTemplate(transactionManager);
+        user.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        Mockito.doAnswer(inv -> {
+            user.executeWithoutResult(s -> {
+                ReportingDeadline mine = deadlineRepository.findById(d.getId()).orElseThrow();
+                mine.setStatus(DeadlineStatus.DONE);
+                mine.setCompletedAt(Instant.now());
+                mine.setCompletionNote("depus pe SIM");
+            });
+            return null;
+        }).when(notificationService).sendDeadlineReminder(
+                Mockito.argThat(x -> x != null && x.getId().equals(d.getId())), any(), anyLong());
+
+        scheduler.dispatchReminders(today);
+
+        ReportingDeadline after = reload(d.getId());
+        assertThat(after.isWarned7Days()).as("garda: mementoul chiar a scris steagul").isTrue();
+        assertThat(after.getStatus()).isEqualTo(DeadlineStatus.DONE);
+        assertThat(after.getCompletionNote()).isEqualTo("depus pe SIM");
+    }
+
+    /**
+     * Steagurile mementoului nu ajung în „Istoric” (29.09.2026), nici când pe fir sunt un om şi o firmă — bifa
+     * „Depus” se scrie pe faţă, din DeadlineService, iar termenul nu e pe lista albă a interceptorului.
+     */
+    @Test
+    void theReminderFlagsLeaveNoJournalRow() {
+        Company c = companyWithUser();
+        LocalDate today = LocalDate.of(2026, 6, 1);
+        ReportingDeadline d = deadline(c, today.plusDays(5), DeadlineStatus.UPCOMING, false, false);
+        AppUser someone = appUserRepository.findAllByCompany_IdAndEnabledTrue(c.getId()).get(0);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        someone, null, java.util.List.of()));
+        // Şi cu firma aleasă: cazul cel mai rău, în care jurnalul ar avea şi om, şi firmă de scris.
+        ro.ecoregistru.security.TenantContext.set(c.getId());
+        try {
+            scheduler.dispatchReminders(today);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            ro.ecoregistru.security.TenantContext.clear();
+        }
+
+        assertThat(reload(d.getId()).isWarned7Days()).as("garda: mementoul chiar a scris steagul").isTrue();
+        assertThat(auditLogRepository.findAll()).noneMatch(r -> d.getId().equals(r.getEntityId()));
     }
 }

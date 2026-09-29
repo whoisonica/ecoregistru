@@ -37,6 +37,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+// UPDATE doar pe coloanele schimbate, din același motiv ca la ReportingDeadline: avertizarea de
+// autorizație ține partenerii încărcați cât trimite mailurile și scrie la urmă doar
+// authorizationWarningSentFor; o reînnoire a autorizației salvată între timp era rescrisă cu data
+// veche de flush-ul ei (29.09.2026). Colecțiile nu sunt atinse: DynamicUpdate privește doar
+// coloanele rândului.
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "partners")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Partner {

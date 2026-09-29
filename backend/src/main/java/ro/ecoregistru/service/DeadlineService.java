@@ -97,6 +97,7 @@ public class DeadlineService {
     CompanyRepository companyRepository;
     WasteMovementRepository movementRepository;
     MissedDeadlinePolicy missedPolicy;
+    ro.ecoregistru.audit.AuditWriter auditWriter;
 
     @Transactional(readOnly = true)
     public List<DeadlineResponse> list(int year) {
@@ -177,7 +178,7 @@ public class DeadlineService {
     private List<Rule> rules(Company company) {
         List<Rule> rules = new java.util.ArrayList<>();
         // SIM annual: 15 March, covering the previous year.
-        rules.add(new Rule(ReportType.SIM_ANNUAL, List.of(MonthDay.of(Month.MARCH, 15)), due -> true));
+        rules.add(new Rule(ReportType.SIM_ANNUAL, List.of(EVIDENCE_DUE), due -> true));
         rules.addAll(afmDeadlines(company));
         packagingDeadline(company).ifPresent(rules::add);
         packagingWasteDeadline(company).ifPresent(rules::add);
@@ -188,6 +189,22 @@ public class DeadlineService {
 
     public static LocalDate today() {
         return LocalDate.now(ZONE);
+    }
+
+    /** Termenul evidenţei anuale (Anexa 1 la HG 856/2002): 15 martie, pentru anul precedent. */
+    public static final MonthDay EVIDENCE_DUE = MonthDay.of(Month.MARCH, 15);
+
+    /**
+     * Anul a cărui evidenţă e de pregătit azi — anul raportat, regula din decizia 59 („pe anul
+     * raportat"), aceeaşi cu {@code documentFor} din {@code lib/deadlines.ts} pe web.
+     *
+     * <p>Până la 15 martie inclusiv, ce se depune e anul trecut; abia după, anul în curs devine anul
+     * următoarei depuneri. Citit pe {@code today.getYear()}, verificările „gata de depus" se uitau
+     * între 1 ianuarie şi 15 martie la anul abia început, gol, deci arătau „nimic de reparat" exact
+     * în săptămânile depunerii (29.09.2026).
+     */
+    public static int evidenceYear(LocalDate today) {
+        return today.isAfter(EVIDENCE_DUE.atYear(today.getYear())) ? today.getYear() : today.getYear() - 1;
     }
 
     /**
@@ -332,9 +349,12 @@ public class DeadlineService {
     @Transactional
     public DeadlineResponse complete(UUID id, CompleteDeadlineRequest request) {
         ReportingDeadline deadline = require(id);
+        DeadlineStatus before = deadline.getStatus();
+        String noteBefore = deadline.getCompletionNote();
         deadline.setStatus(DeadlineStatus.DONE);
         deadline.setCompletedAt(Instant.now());
         deadline.setCompletionNote(request != null ? request.note() : null);
+        audit(deadline, before, noteBefore);
         // Bifat devreme: următorul de același fel apare acum, nu abia dimineața.
         ensureUpcoming(deadline.getCompany().getId(), today());
         return toResponse(deadline, today());
@@ -343,10 +363,37 @@ public class DeadlineService {
     @Transactional
     public DeadlineResponse reopen(UUID id) {
         ReportingDeadline deadline = require(id);
+        DeadlineStatus before = deadline.getStatus();
+        String noteBefore = deadline.getCompletionNote();
         deadline.setStatus(DeadlineStatus.UPCOMING);
         deadline.setCompletedAt(null);
         deadline.setCompletionNote(null);
+        audit(deadline, before, noteBefore);
         return toResponse(deadline, today());
+    }
+
+    /**
+     * Bifa „Depus” şi scoaterea ei, în „Istoric” (29.09.2026): termenul depus e ce arată consultantul
+     * la control, iar nota ei spune de obicei numărul de înregistrare al depunerii. Scrisă pe faţă,
+     * nu prin lista albă a interceptorului: pe acelaşi rând scriu şi mementourile de dimineaţă
+     * (warned*) şi generarea termenelor, iar jurnalul ar fi prins şi rândurile create de o apăsare
+     * pe „Depus” (următorul termen) — fapte fără om, sau fără sens pentru cine citeşte.
+     */
+    private void audit(ReportingDeadline deadline, DeadlineStatus before, String noteBefore) {
+        List<ro.ecoregistru.audit.PendingAudit.FieldChange> changes = new java.util.ArrayList<>();
+        if (before != deadline.getStatus()) {
+            changes.add(new ro.ecoregistru.audit.PendingAudit.FieldChange(
+                    "status", before == null ? null : before.name(), deadline.getStatus().name()));
+        }
+        if (!java.util.Objects.equals(noteBefore, deadline.getCompletionNote())) {
+            changes.add(new ro.ecoregistru.audit.PendingAudit.FieldChange(
+                    "completionNote", noteBefore, deadline.getCompletionNote()));
+        }
+        if (changes.isEmpty()) {
+            return;
+        }
+        auditWriter.record("ReportingDeadline", deadline.getId(), ro.ecoregistru.enums.AuditAction.UPDATE,
+                deadline.getReportType() + " · " + deadline.getDueDate(), changes);
     }
 
     /**

@@ -20,6 +20,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
+// UPDATE doar pe coloanele schimbate, fiindcă rândul are doi scriitori fără versiune: omul, care
+// bifează „Depus” (status, completedAt), și mementoul de dimineață, care ține rândul încărcat cât
+// trimite mailurile pe rând și abia apoi scrie steagul warned*. Cu UPDATE pe tot rândul, bifa
+// pusă între timp era rescrisă înapoi pe UPCOMING de flush-ul mementoului (29.09.2026).
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "reporting_deadlines",
         uniqueConstraints = @UniqueConstraint(
                 name = "uq_deadline_scope",
