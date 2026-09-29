@@ -1,3 +1,8 @@
+⚖️ **30.09.2026 — proba 59 (`59-cantitate-kg.mjs`), cantitatea fără „,000” la kilograme (proprietarul)**: pe „Adaugă deșeuri” 12,5 kg
+e oprit sub rubrică („În kilograme, fără zecimale.”), 12 kg trece, 0,25 t trece, 0,0005 t e oprit (sub un kilogram). La fel în „Adaugă
+cantitatea”. Un rând vechi cu zecimale în kg se salvează la editare cât cantitatea nu se atinge (probat de mână pe 1,456 kg: trece; schimbat
+pe 1,5: oprit). Serverul și documentele nu se schimbă. Intră în `run.mjs`. **Negativă:** cu formularul din `origin/main` cad 2 verificări.
+
 ☢️ **30.09.2026 — proba 58 (`58-periculos-generator.mjs`), periculosul la generator (proprietarul: „te pune să completezi anexa 3
 transport desi nu trebuie”)**: pe o firmă nouă de generator, 13 02 05 predat unui colector: blocul de transport spune că Anexa 2 o
 întocmește colectorul, păstrează șoferul și mașina (avizul) și **nu** mai are „Unitatea tipărită”, datele de încărcare/descărcare și caseta

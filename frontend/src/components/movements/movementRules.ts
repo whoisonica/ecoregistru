@@ -1,6 +1,6 @@
 /** Regulile pure ale formularului de mișcare, fără React: ce operațiuni, coduri și casete se oferă. */
 import { strings } from "@/lib/strings";
-import type { MovementDirection, PackagingMaterial, PartnerType, TransportDestination, WasteDestination, WasteOperation, WasteOperationCode, WasteRegister } from "@/lib/types";
+import type { MovementDirection, PackagingMaterial, PartnerType, TransportDestination, Unit, WasteDestination, WasteOperation, WasteOperationCode, WasteRegister } from "@/lib/types";
 
 const e = strings.enums;
 
@@ -203,4 +203,17 @@ export function leavesAnexa3Gap(
  */
 export function keepIfActive(id: string, partners: ReadonlyArray<{ id: string; active: boolean }>): string {
   return id === "" || partners.some((p) => p.id === id && p.active) ? id : "";
+}
+
+/**
+ * Ce e greșit la cantitatea tastată, sau `null` (30.09.2026, proprietarul: rubrica primea „,000” și la
+ * kilograme). Nimeni nu cântărește la gram, deci în kilograme numai numere întregi; în tone rămân trei
+ * zecimale, adică tot kilogramul (0,250 t). Valoarea vine din `<input type="number">`, cu punct.
+ */
+export function quantityProblem(raw: string, unit: Unit): "required" | "wholeKg" | "tooPrecise" | null {
+  const value = Number(raw);
+  if (raw.trim() === "" || !Number.isFinite(value) || value <= 0) return "required";
+  if (unit === "KG" && !Number.isInteger(value)) return "wholeKg";
+  if (unit === "TONS" && !Number.isInteger(Math.round(value * 1e6) / 1e3)) return "tooPrecise";
+  return null;
 }

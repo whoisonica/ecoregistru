@@ -57,6 +57,7 @@ const suites = [
   // 57, nu 44: 44–56 sunt ale depozitului și se pornesc cu mâna. Termenele proprii sunt ale generatorului.
   ["57-termene-proprii.mjs", "Termene proprii: adăugare, N, modificare, bifare cu repetare, ștergere, Acasă, 375px"],
   ["58-periculos-generator.mjs", "periculos la generator: fără rubricile Anexei 3, doar avizul"],
+  ["59-cantitate-kg.mjs", "cantitatea în kg fără zecimale, în tone cel mult trei"],
 ];
 
 const only = process.argv[2];

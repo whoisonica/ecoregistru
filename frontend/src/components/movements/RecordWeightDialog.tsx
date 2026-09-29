@@ -6,6 +6,7 @@ import type { Unit, WasteMovement } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate } from "@/lib/utils";
+import { quantityProblem } from "@/components/movements/movementRules";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,8 +42,12 @@ export function RecordWeightDialog({
   function submit(ev: FormEvent) {
     ev.preventDefault();
     const value = Number(quantity);
-    if (!Number.isFinite(value) || value <= 0) {
-      notify(t.recordWeightError, "error");
+    const problem = quantityProblem(quantity, unit);
+    if (problem) {
+      notify(
+        problem === "wholeKg" ? t.quantityWholeKg : problem === "tooPrecise" ? t.quantityTooPrecise : t.recordWeightError,
+        "error"
+      );
       return;
     }
     recordMut.mutate(
@@ -84,7 +89,7 @@ export function RecordWeightDialog({
             <Input
               id="wg-qty"
               type="number"
-              step="0.001"
+              step="any"
               min="0"
               autoFocus
               value={quantity}

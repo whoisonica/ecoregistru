@@ -64,6 +64,7 @@ import { useAttachmentOpen } from "@/hooks/useAttachment";
 import {
   suggestedPackagingMaterial,
   transportForm,
+  quantityProblem,
   operationsFor,
   isExit,
   ALL_CODES,
@@ -756,10 +757,12 @@ export function MovementFormDialog({
     // The recipient's weighbridge decides the figure, so the field is left empty on purpose —
     // exactly how the paper form reaches the depot.
     if (quantityOpen) {
-      const qty = Number(quantity);
-      if (!quantity || Number.isNaN(qty) || qty <= 0) {
-        errs.quantity = strings.common.requiredField;
-      }
+      // Un rând vechi cu zecimale în kg (import, înainte de 30.09.2026) rămâne salvabil cât cantitatea nu se atinge.
+      const unchanged = editing != null && Number(quantity) === editing.quantity && unit === editing.unit;
+      const problem = unchanged ? null : quantityProblem(quantity, unit);
+      if (problem === "required") errs.quantity = strings.common.requiredField;
+      else if (problem === "wholeKg") errs.quantity = t.quantityWholeKg;
+      else if (problem === "tooPrecise") errs.quantity = t.quantityTooPrecise;
     }
     if (weighedAtUnloading && !partnerId) {
       errs.partnerId = t.weighingNeedsPartner;
@@ -1343,7 +1346,8 @@ export function MovementFormDialog({
               <Input
                 id="mv-qty"
                 type="number"
-                step="0.001"
+                // „any”: altfel browserul oprește salvarea cu mesajul lui, înaintea celui de sub rubrică.
+                step="any"
                 min="0"
                 value={quantityOpen ? quantity : ""}
                 onChange={(ev) => setQuantity(ev.target.value)}

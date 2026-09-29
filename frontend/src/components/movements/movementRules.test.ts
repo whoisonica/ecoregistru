@@ -13,6 +13,7 @@ import {
   suggestedDestinations,
   suggestedPackagingMaterial,
   transportForm,
+  quantityProblem,
 } from "@/components/movements/movementRules";
 
 test("ecranul decide operațiunile oferite", () => {
@@ -129,4 +130,18 @@ test("formularul de transport al predării: Anexa 3, Anexa 2 sau niciunul", () =
   // Cap. 18: formularul e al transportatorului (art. 24), la oricine.
   assert.equal(transportForm({ hazardous: true, medical: true, ...colector }), null);
   assert.equal(transportForm({ hazardous: true, medical: true, ...generator }), null);
+});
+
+test("cantitatea: kilograme întregi, tone cu cel mult trei zecimale", () => {
+  assert.equal(quantityProblem("", "KG"), "required");
+  assert.equal(quantityProblem("0", "KG"), "required");
+  assert.equal(quantityProblem("-3", "KG"), "required");
+  assert.equal(quantityProblem("120", "KG"), null);
+  assert.equal(quantityProblem("120.000", "KG"), null);
+  assert.equal(quantityProblem("120.5", "KG"), "wholeKg");
+  assert.equal(quantityProblem("0.001", "KG"), "wholeKg");
+  assert.equal(quantityProblem("0.250", "TONS"), null);
+  assert.equal(quantityProblem("1.5", "TONS"), null);
+  // Sub un kilogram în tone nu se poate scrie mai fin decât în kilograme.
+  assert.equal(quantityProblem("0.0005", "TONS"), "tooPrecise");
 });
