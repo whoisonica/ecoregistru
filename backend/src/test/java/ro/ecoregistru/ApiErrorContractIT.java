@@ -15,15 +15,19 @@ import ro.ecoregistru.entity.WasteMovement;
 import ro.ecoregistru.repository.AppUserRepository;
 import ro.ecoregistru.repository.WasteMovementRepository;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -145,6 +149,35 @@ class ApiErrorContractIT {
         mockMvc.perform(get("/api/v1/partners/" + UUID.randomUUID())
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isMethodNotAllowed());
+    }
+
+    /**
+     * Aceeaşi familie, găsită pe 29.09.2026: o urcare de ataşament fără partea {@code file} şi un
+     * corp cu un {@code Content-Type} pe care calea nu-l primeşte. Aşteptat 400 şi 415; înainte, 500
+     * plus alertă Sentry pentru o cerere greşită.
+     */
+    @Test
+    void aMissingFilePartOrAWrongContentTypeIsAClientError() throws Exception {
+        mockMvc.perform(multipart("/api/v1/movements/" + UUID.randomUUID() + "/attachments")
+                        .param("clientUploadId", UUID.randomUUID().toString())
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$['error-code']").value("request.part.missing"));
+
+        mockMvc.perform(post("/api/v1/work-points")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("name=Hala"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(content().string(not(containsString("Exception"))));
+    }
+
+    /** Un corp multipart pe care containerul nu-l poate desface: MockMvc nu-l poate strica, deci direct. */
+    @Test
+    void anUnreadableMultipartBodyIsABadRequest() {
+        Map<String, Object> body = new ro.ecoregistru.exception.AdviceController()
+                .handleMultipart(new org.springframework.web.multipart.MultipartException("stricat"));
+        assertThat(body.get("error-code")).isEqualTo("request.multipart.invalid");
     }
 
     // ─────────────────────────────────────────────────────────────────────────

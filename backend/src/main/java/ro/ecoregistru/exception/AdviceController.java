@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import ro.ecoregistru.security.TooManyRequests;
 import ro.ecoregistru.security.TooManyRequestsException;
@@ -200,6 +203,37 @@ public class AdviceController {
         log.warn("Missing request parameter: {}", e.getParameterName());
         return envelope(BAD_REQUEST, "request.parameter.missing",
                 "Cererea nu conține toți parametrii necesari.");
+    }
+
+    /**
+     * Aceeaşi familie ca BUG-001, găsită la evaluarea din 29.09.2026: o urcare de ataşament fără
+     * partea {@code file}, un corp multipart pe care containerul nu-l poate desface şi un
+     * {@code Content-Type} pe care calea nu-l primeşte ieşeau toate 500 + Sentry. Sunt cereri
+     * greşite, nu defecte ale noastre. {@link MaxUploadSizeExceededException} e tot un
+     * {@code MultipartException}, dar are handlerul lui, mai precis, cu mesajul care spune limita.
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public Map<String, Object> handleMissingPart(MissingServletRequestPartException e) {
+        log.warn("Missing request part: {}", e.getRequestPartName());
+        return envelope(BAD_REQUEST, "request.part.missing",
+                "Cererea nu conține fișierul sau partea necesară.");
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MultipartException.class)
+    public Map<String, Object> handleMultipart(MultipartException e) {
+        log.warn("Unreadable multipart request: {}", e.getMessage());
+        return envelope(BAD_REQUEST, "request.multipart.invalid",
+                "Fișierul trimis nu a putut fi citit. Te rugăm să încerci din nou.");
+    }
+
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public Map<String, Object> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
+        log.warn("Unsupported media type: {}", e.getContentType());
+        return envelope(BAD_REQUEST, "request.media.type.unsupported",
+                "Cererea are un format pe care această adresă nu-l primește.");
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
