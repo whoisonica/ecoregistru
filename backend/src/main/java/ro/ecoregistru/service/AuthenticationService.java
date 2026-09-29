@@ -57,6 +57,9 @@ public class AuthenticationService {
     final RateLimiter rateLimiter;
     final DeviceSessionService deviceSessionService;
 
+    /** Hash-ul cu care se compară parola unei adrese fără cont; făcut o dată, cu encoderul real. */
+    volatile String unknownUserHash;
+
     private static final int CODE_TTL_MINUTES = 30;
     /** O invitație se deschide când ajunge omul la mail, nu în jumătate de oră. */
     static final int INVITE_TTL_DAYS = 7;
@@ -79,8 +82,14 @@ public class AuthenticationService {
             throw new TooManyRequestsException(retryAfter);
         }
 
-        AppUser user = appUserRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException(INVALID_CREDENTIALS));
+        AppUser user = appUserRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            // Aceeaşi muncă de bcrypt ca pentru o adresă cu cont: fără ea, răspunsul „greşit" venea
+            // în câteva milisecunde pentru o adresă necunoscută şi în ~100 ms pentru una cu cont,
+            // deci ceasul spunea cine are cont, ce BUG-065 ascunsese din mesaj (29.09.2026).
+            passwordEncoder.matches(request.password(), unknownUserHash());
+            throw new BusinessException(INVALID_CREDENTIALS);
+        }
 
         // BUG-065: întâi parola, apoi starea contului — altfel „cont dezactivat” / „neconfirmat” spunea
         // oricui că adresa are cont. Direct cu encoderul: `authenticationManager` verifică `enabled`
@@ -231,19 +240,36 @@ public class AuthenticationService {
         return invite(Role.CONSULTANT, null, consultancy, rawEmail, firstName, lastName);
     }
 
+    /**
+     * Un hash bcrypt cu acelaşi cost ca al conturilor, al unei parole pe care n-o ştie nimeni. Se
+     * face la prima autentificare cu o adresă necunoscută, nu la pornire, ca pornirea să nu plătească
+     * pentru el; două fire care îl fac deodată scriu două hash-uri la fel de bune.
+     */
+    private String unknownUserHash() {
+        String hash = unknownUserHash;
+        if (hash == null) {
+            hash = passwordEncoder.encode(UUID.randomUUID().toString());
+            unknownUserHash = hash;
+        }
+        return hash;
+    }
+
     /** Exactly one of {@code company} and {@code consultancy} is set — see V40. */
     private AppUser invite(Role role, Company company, Consultancy consultancy,
                            String rawEmail, String firstName, String lastName) {
         String email = rawEmail.toLowerCase();
-        if (appUserRepository.existsByEmail(email)) {
-            throw new UnprocessableEntityException(ACCOUNT_ALREADY_EXISTS);
-        }
         // A6: before anything is created, so a refused invitation leaves no half-made account behind.
+        // Şi înaintea întrebării „are adresa cont?" (29.09.2026): altfel răspunsul
+        // ACCOUNT_ALREADY_EXISTS era gratuit, iar invitaţia devenea o sondă nelimitată pentru
+        // conturile din toată platforma. Acum fiecare întrebare costă din aceeaşi cotă.
         UUID account = company != null ? company.getId() : consultancy.getId();
         long retryAfter = rateLimiter.tryConsume(RateLimiter.INVITE_PER_ACCOUNT, account.toString());
         if (retryAfter > 0) {
             log.warn("Rate limit invite hit for account {}", account);
             throw new TooManyRequestsException(retryAfter);
+        }
+        if (appUserRepository.existsByEmail(email)) {
+            throw new UnprocessableEntityException(ACCOUNT_ALREADY_EXISTS);
         }
 
         AppUser user = AppUser.builder()

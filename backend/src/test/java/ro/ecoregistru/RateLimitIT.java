@@ -12,10 +12,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import ro.ecoregistru.security.RateLimiter;
+
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -48,6 +51,8 @@ class RateLimitIT {
     private static final String DEMO_PASSWORD = "ProbaLimitare1";
 
     @Autowired MockMvc mockMvc;
+    @Autowired ro.ecoregistru.service.AuthenticationService authenticationService;
+    @Autowired ro.ecoregistru.repository.CompanyRepository companyRepository;
 
     /** A distinct caller per test. The filter reads the last X-Forwarded-For hop (Heroku appends). */
     private static String freshIp() {
@@ -115,6 +120,29 @@ class RateLimitIT {
             mockMvc.perform(login(freshIp(), "admin@demo.ro", DEMO_PASSWORD))
                     .andExpect(status().isOk());
         }
+    }
+
+    /**
+     * Invitaţia nu mai e o sondă gratuită de conturi (29.09.2026). Întrebarea „are adresa cont?"
+     * răspundea înaintea cotei, deci o firmă putea încerca oricâte adrese şi afla din 422 care au
+     * cont pe platformă. Acum fiecare încercare costă: după cele 50 pe oră, şi o adresă existentă
+     * primeşte 429, nu ACCOUNT_ALREADY_EXISTS.
+     */
+    @Test
+    void probingForExistingAccountsSpendsTheInviteQuota() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        var company = companyRepository.save(ro.ecoregistru.entity.Company.builder()
+                .name("Sonda " + suffix + " SRL").cui("ROS" + suffix)
+                .type(ro.ecoregistru.enums.CompanyType.GENERATOR).active(true)
+                .createdAt(java.time.Instant.now()).build());
+        for (int i = 0; i < RateLimiter.INVITE_PER_ACCOUNT.capacity(); i++) {
+            assertThatThrownBy(() -> authenticationService.inviteUser(company, "admin@demo.ro",
+                    ro.ecoregistru.enums.Role.OPERATOR, "A", "B"))
+                    .isInstanceOf(ro.ecoregistru.exception.UnprocessableEntityException.class);
+        }
+        assertThatThrownBy(() -> authenticationService.inviteUser(company, "admin@demo.ro",
+                ro.ecoregistru.enums.Role.OPERATOR, "A", "B"))
+                .isInstanceOf(ro.ecoregistru.security.TooManyRequestsException.class);
     }
 
     /** Ten reset mails an hour from one address, then the cannon is unplugged. */
