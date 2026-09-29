@@ -64,6 +64,7 @@ import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { fetchDeclaration } from "@/hooks/useDeadlines";
 import { declaredText } from "@/lib/deadlines";
+import { anexa3NumberLabel } from "@/lib/movementPrint";
 import {
   canPrintAnexa3,
   canPrintAviz,
@@ -470,6 +471,7 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
   async function handleDelete(m: WasteMovement) {
     const year = Number(m.date.slice(0, 4));
     const declaration = await fetchDeclaration(queryClient, year);
+    const issuedAnexa3 = anexa3NumberLabel(m);
     // Identitatea rândului în corpul dialogului: `window.confirm` nu putea decât un șir fix, deci
     // întreba „sigur ștergi această mișcare?" fără să spună vreodată *care*. Cu patru butoane pe
     // rând și rânduri care se aseamănă, asta e chiar informația care oprește greșeala.
@@ -484,6 +486,12 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
           {declaration && (
             <span className="mt-2 block font-medium text-content">
               {declaredText(t.declaredDelete, year, declaration)}
+            </span>
+          )}
+          {/* Formularul emis are un număr în Registrul Anexa 3; ștearsă, predarea lasă golul (29.09.2026). */}
+          {issuedAnexa3 && (
+            <span className="mt-2 block font-medium text-content">
+              {t.anexa3GapDelete.replace("{number}", issuedAnexa3)}
             </span>
           )}
         </>
