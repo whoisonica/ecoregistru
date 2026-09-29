@@ -15,6 +15,12 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **29.09.2026, 22:45 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v146** (`7a08295`), din `main` `ef93ccf`; api neatins (v143) — ACASĂ ÎN KILOGRAME ÎNTREGI.**
+> Proprietarul: „nu cântărește nimeni cu 3 zecimale”. Graficul „{an} pe luni”, totalul lui și „Deșeurile anului” scriu `formatKgSummary` („2.576 kg”),
+> nu `formatKg` („2.576,000 kg”); cifrele de transcris păstrează trei zecimale (G06). Web 121/121, probele 39 și 10 verzi local (39 cere cardurile fără
+> virgulă zecimală; negativa cade pe codul vechi); CI verde pe `ef93ccf` (toate patru joburile); bundle-ul servit (`index-BM7ap3Ay.js`) are trei
+> formatări rotunjite, față de două în v145.
+
 > **29.09.2026, 21:33 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v143** (`b5307c6`), `ecoregistru-app` **v145** (`b942040`), din `main` `948d860` — TERMENE PROPRII (decizia 91, Andreea), `V81`.**
 > Backup `b028` înainte; „Successfully applied 1 migration … now at version v81”, `Started EcoRegistruApplication in 18.634 seconds`, `/actuator/health` 200,
 > `POST /api/v1/deadlines` fără token → 401; bundle-ul servit (`index-B0s7qSda.js`) are „Adaugă termen”, „Termen propriu”, „Se repetă anual”. Suita 1370/0 (4 sărite),
