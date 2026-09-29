@@ -15,6 +15,19 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **29.09.2026, 21:33 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v143** (`b5307c6`), `ecoregistru-app` **v145** (`b942040`), din `main` `948d860` — TERMENE PROPRII (decizia 91, Andreea), `V81`.**
+> Backup `b028` înainte; „Successfully applied 1 migration … now at version v81”, `Started EcoRegistruApplication in 18.634 seconds`, `/actuator/health` 200,
+> `POST /api/v1/deadlines` fără token → 401; bundle-ul servit (`index-B0s7qSda.js`) are „Adaugă termen”, „Termen propriu”, „Se repetă anual”. Suita 1370/0 (4 sărite),
+> web 121/121, e2e 1–43 + 57 verzi local; CI verde pe `948d860` (toate patru joburile). `IsolationInventoryTest` a prins o interogare pe `series_id` fără firmă — acum
+> ambele interogări pe șir filtrează și după firmă.
+> Firma își adaugă singură termene cu dată (măsurători de zgomot, apă, emisii, reautorizări): `ReportType.CUSTOM` în `reporting_deadlines`, cu `title`,
+> `recurrence` (o dată / lunar / trimestrial / la 6 luni / anual), `details`, `series_id`; unicitatea (firmă, tip, scadență) devine index parțial fără `CUSTOM`.
+> `POST /deadlines`, `PUT` și `DELETE /deadlines/{id}` (doar cele proprii, altfel `deadline.not.custom`), data nu în trecut (`deadline.date.past`); la bifare,
+> un termen care se repetă își creează următoarea apariție (sare peste perioadele trecute, ultima zi a lunii rămâne ultima zi). Aceleași mailuri (textul zice
+> „Termen”, nu „Termen de raportare”), push, Acasă, `.ics`, rezumatul consultantului. Web: „Adaugă termen” + tasta N pe Termene, „⋯” → Editează / Șterge pe rând.
+> Nimic tipărit neatins. Probe: `CustomDeadlineIT` (13), `DeadlineRecurrenceTest`, `deadlines.test.ts`, e2e **57** (intră în `run.mjs`); negativă: fără garda
+> `isCustom()` cade `legalDeadlinesCannotBeEditedOrDeleted`. F6b (depozit) ia `V82`.
+
 > **29.09.2026, 13:06 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v141** (`260d009`), `ecoregistru-app` **v143** (`6ff6c00`), din `main` `df8dd15` — „cabinet” devine „consultant” peste tot.**
 > Vocabularul proprietarului: „consultant” la etichete (grupul din meniu, tabul „Consultanți”, „Plătește consultantul”, „Abonament de consultant”, „Pornirea contului de consultant”),
 > „firmă de consultanță” la entitate. Panoul pe `/consultant`; `/cabinet` rămâne `<Navigate>` pentru mailurile de rezumat deja trimise, iar mailul nou trimite la `/consultant`.
