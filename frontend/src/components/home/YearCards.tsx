@@ -5,7 +5,7 @@ import { BinSwatch } from "@/components/ui/bin-swatch";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { emptyMonths, monthlyKg, topCodes } from "@/lib/home";
-import { formatKg } from "@/lib/units";
+import { formatKgSummary } from "@/lib/units";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ export function YearMonthsCard({ d }: { d: DashboardData }) {
         title={t.yearTitle.replace("{year}", String(d.year))}
         action={
           <span className="font-mono text-sm text-content">
-            {d.loadingEvidences ? "" : d.failedEvidences ? "?" : `${formatKg(total)} kg`}
+            {d.loadingEvidences ? "" : d.failedEvidences ? "?" : `${formatKgSummary(total)} kg`}
           </span>
         }
         className="border-b-2 border-content pb-2.5"
@@ -62,7 +62,7 @@ export function YearMonthsCard({ d }: { d: DashboardData }) {
                       gap ? "font-semibold text-state-warn-text" : "text-content-muted"
                     )}
                   >
-                    {future ? "" : formatKg(Math.round(v))}
+                    {future ? "" : formatKgSummary(v)}
                   </span>
                   <div
                     data-month={month}
@@ -140,7 +140,7 @@ export function WasteCodesCard({ d }: { d: DashboardData }) {
                 <span className="hidden h-1.5 w-24 shrink-0 bg-surface-muted sm:block" aria-hidden>
                   <span className="block h-1.5 bg-content" style={{ width: `${Math.max((c.kg / max) * 100, 2)}%` }} />
                 </span>
-                <span className="w-20 shrink-0 text-right font-mono text-content">{formatKg(Math.round(c.kg))} kg</span>
+                <span className="w-20 shrink-0 text-right font-mono text-content">{formatKgSummary(c.kg)} kg</span>
               </li>
             ))}
           </ul>
@@ -148,7 +148,7 @@ export function WasteCodesCard({ d }: { d: DashboardData }) {
             <p className="border-t border-line pt-2.5 text-sm text-content-subtle">
               {t.codesMore
                 .replace("{n}", String(rest.length))
-                .replace("{kg}", formatKg(Math.round(restKg)))}
+                .replace("{kg}", formatKgSummary(restKg))}
             </p>
           )}
         </>

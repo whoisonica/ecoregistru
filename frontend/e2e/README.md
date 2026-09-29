@@ -1,3 +1,8 @@
+⚖️ **29.09.2026 noaptea — Acasă în kilograme întregi (proprietarul: „nu cântărește nimeni cu 3 zecimale”)**: graficul „{an} pe luni”,
+totalul lui și „Deșeurile anului” scriu `formatKgSummary` („2.576 kg”), nu `formatKg` („2.576,000 kg”); cifrele de transcris (liste, fișe,
+documente) păstrează cele trei zecimale (G06). Proba **39** cere ca pe cele două carduri să nu apară nicio virgulă zecimală.
+**Negativă:** cu `YearCards.tsx` din `origin/main` cade exact verificarea asta („2.576,000 kg”).
+
 🗓️ **29.09.2026 seara — proba 57 (`57-termene-proprii.mjs`), termenele proprii (V81, Andreea)**: pe Termene, „Adaugă termen” deschide
 „Termen propriu”; fără nume nu salvează („Scrie ce ai de făcut.”); sugestia „Măsurători de zgomot” completează numele; un termen anual cu
 detalii apare în „De făcut” cu „Se repetă anual · <detalii>”; tasta N deschide formularul (`/termene` e în `OWNS_N`); „⋯” → „Editează” schimbă

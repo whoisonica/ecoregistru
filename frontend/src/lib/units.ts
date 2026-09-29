@@ -36,6 +36,16 @@ export function formatKg(kilograms: number): string {
 }
 
 /**
+ * Kilograme rotunjite, pentru rezumate (Acasă) — „15 kg”, nu „15,000 kg”. Nimeni nu cântărește la
+ * gram (proprietarul, 29.09.2026). Lipsa virgulei spune că e un rezumat, nu o cifră de transcris.
+ */
+const kgSummaryFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
+
+export function formatKgSummary(kilograms: number): string {
+  return kgSummaryFormat.format(kilograms);
+}
+
+/**
  * O cifră care e **deja** în tone — pragul de 1 t/an al Anexei 2. Trei zecimale: a treia e chiar
  * kilogramul, ultima cifră care mai înseamnă ceva fizic.
  */

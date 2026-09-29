@@ -17,7 +17,7 @@ function check(name, ok, detail = "") {
     fails++;
   }
 }
-/** „18.699,000 kg" → 18699: punctul e la mii, virgula la zecimale (G06, 20.09.2026). */
+/** „18.699 kg" → 18699: punctul e la mii; Acasă rotunjește la kilogram (29.09.2026). */
 const kgNumber = (s) =>
   Number((s ?? "").replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
 
@@ -74,6 +74,9 @@ const an = await page.evaluate(() => {
 check("douăsprezece luni", an.bare === 12, String(an.bare));
 check("totalul anului e suma evidenței din API", Math.round(kgNumber(an.total)) === Math.round(total),
   `${an.total} față de ${Math.round(total)} kg`);
+check("Acasă scrie kilograme întregi, fără zecimale (29.09.2026)",
+  !/\d,\d/.test(await page.$eval('[data-testid="home-year"]', (e) => e.textContent) + await page.$eval('[data-testid="home-codes"]', (e) => e.textContent)),
+  an.total);
 check("lunile goale sunt exact cele socotite din API", JSON.stringify(an.goluri) === JSON.stringify(gaps),
   `${JSON.stringify(an.goluri)} față de ${JSON.stringify(gaps)}`);
 
