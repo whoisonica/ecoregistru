@@ -5,6 +5,7 @@ import { History } from "lucide-react";
 import { useAuditLog } from "@/hooks/useAuditLog";
 import type { AuditChange, AuditLogEntry, AuditLogFilters } from "@/lib/types";
 import { strings } from "@/lib/strings";
+import { auditRowLabel } from "@/lib/auditLabel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -167,7 +168,7 @@ export function AuditLogSection({ canManage, companyId }: { canManage: boolean; 
                     </span>
                     {row.label && (
                       <span className="block max-w-xs truncate text-xs text-content-subtle">
-                        {row.label}
+                        {auditRowLabel(row.entityType, row.label)}
                       </span>
                     )}
                   </TD>
