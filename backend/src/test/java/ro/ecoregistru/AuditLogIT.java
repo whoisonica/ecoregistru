@@ -230,6 +230,28 @@ class AuditLogIT {
     }
 
     /**
+     * Recalcularea evidenţei nu e o modificare a firmei. Lanţul notează pe `Company` când a trecut
+     * şi până la ce an (V65), iar fără garda din `IGNORED_FIELDS` fiecare trecere scria în
+     * „Istoric" un „Modificare · <firma>" gol de sens (29.09.2026).
+     */
+    @Test
+    void recomputingTheEvidenceDoesNotWriteACompanyChange() throws Exception {
+        UUID companyId = appUserRepository.findByEmail("admin@demo.ro").orElseThrow().getCompany().getId();
+        int before = entriesFor(companyId).size();
+
+        for (String year : List.of("2031", "2032")) {
+            mockMvc.perform(post("/api/v1/evidences/regenerate")
+                            .header("Authorization", "Bearer " + adminToken)
+                            .param("year", year))
+                    .andExpect(status().isOk());
+        }
+
+        assertThat(companyRepository.findById(companyId).orElseThrow().getEvidenceGeneratedThrough())
+                .as("garda: trecerea chiar a atins firma").isGreaterThanOrEqualTo(2032);
+        assertThat(entriesFor(companyId)).hasSize(before);
+    }
+
+    /**
      * BUG-015, găsit de proba de ecran 11: eticheta regenerării scria „96 linii". Anul 2026 al
      * firmei demo are zeci de linii, deci aici forma cu „de" chiar se cere — sub 20 ar fi trecut şi
      * greşit. Regula e scrisă a doua oară în test, dinadins, ca să nu greşească la fel cu codul.

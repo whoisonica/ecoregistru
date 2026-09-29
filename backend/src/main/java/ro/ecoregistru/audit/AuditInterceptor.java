@@ -111,7 +111,12 @@ public class AuditInterceptor implements Interceptor {
                     // despre ce s-a schimbat — prins de probă, care cerea „exact un câmp".
                     "version",
                     // Spun a doua oară ce spun deja fapta şi autorul rândului de jurnal.
-                    "deletedAt", "deletedBy", "deactivatedAt");
+                    "deletedAt", "deletedBy", "deactivatedAt",
+                    // Urma reconstrucţiei de evidenţă (V65), pe `Company`: o scrie maşina la fiecare
+                    // recalculare, deci fiecare deschidere de ecran lăsa în „Istoric" un
+                    // „Modificare · <firma>" fără nicio faptă a cuiva în spate. Regenerarea cerută
+                    // de om se scrie oricum o dată, ca REGENERATE (29.09.2026).
+                    "evidenceGeneratedAt", "evidenceGeneratedThrough");
 
     /**
      * Ce se scrie ca faptă, dar fără valori. <b>BUG-002.</b>
