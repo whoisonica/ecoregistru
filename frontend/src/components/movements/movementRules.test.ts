@@ -5,7 +5,9 @@ import {
   destinationsFor,
   destinationsOpen,
   R_CODES,
+  isAfterToday,
   isExit,
+  leavesAnexa3Gap,
   operationsFor,
   suggestedDestinations,
   suggestedPackagingMaterial,
@@ -78,4 +80,27 @@ test("pe Generare destinația se oferă după valorificare/eliminare, în rest c
   // Celelalte ecrane rămân neschimbate: destinația se oferă mereu.
   assert.equal(destinationsOpen("ART_48", true, "", ""), true);
   assert.equal(destinationsOpen("ART_48", false, "", ""), true);
+});
+
+/** 29.09.2026: avertismentul „Data e în viitor.” — nu blochează (probele scriu dinadins în 2033). */
+test("data de după azi se semnalează; azi și trecutul, nu", () => {
+  assert.equal(isAfterToday("2026-09-30", "2026-09-29"), true);
+  assert.equal(isAfterToday("2062-09-29", "2026-09-29"), true);
+  assert.equal(isAfterToday("2026-09-29", "2026-09-29"), false);
+  assert.equal(isAfterToday("2025-12-31", "2026-09-29"), false);
+  assert.equal(isAfterToday("", "2026-09-29"), false);
+});
+
+/** 29.09.2026: o predare cu formular Anexa 3 emis, scoasă din registru, lasă un număr gol. */
+test("golul din Registrul Anexa 3: fără partener, fără ieșire sau în alt an", () => {
+  const issued = { anexa3Number: 17, date: "2026-05-10" };
+  const same = { date: "2026-06-01", partnerId: "p1", operation: "RECOVERED" as const };
+  assert.equal(leavesAnexa3Gap(issued, same), false);
+  assert.equal(leavesAnexa3Gap(issued, { ...same, operation: "DISPOSED" }), false);
+  assert.equal(leavesAnexa3Gap(issued, { ...same, partnerId: null }), true);
+  assert.equal(leavesAnexa3Gap(issued, { ...same, operation: "GENERATED" }), true);
+  assert.equal(leavesAnexa3Gap(issued, { ...same, date: "2027-01-02" }), true);
+  // Fără formular emis nu e niciun număr de pierdut; o mișcare nouă nici atât.
+  assert.equal(leavesAnexa3Gap({ anexa3Number: null, date: "2026-05-10" }, { ...same, partnerId: null }), false);
+  assert.equal(leavesAnexa3Gap(null, { ...same, partnerId: null }), false);
 });

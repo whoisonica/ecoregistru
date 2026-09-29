@@ -153,3 +153,27 @@ export function destinationsOpen(
   if (screen !== "ANEXA_1" || !choosesFate) return true;
   return fate !== "" || destination !== "";
 }
+
+/**
+ * Data mișcării e după azi (29.09.2026). Doar un avertisment pe formular: serverul primește până la
+ * zece ani înainte, iar probele e2e scriu dinadins în 2033 — dar pe o mișcare obișnuită, un an greșit
+ * tastat („2062” în loc de „2026”) o ascundea de evidența anului. ISO, deci se compară ca șiruri.
+ */
+export function isAfterToday(date: string, today: string): boolean {
+  return date !== "" && date > today;
+}
+
+/**
+ * O editare care scoate din Registrul Anexa 3 (transport) o predare al cărei formular a fost deja emis
+ * (29.09.2026). Registrul ia rândurile cu număr alocat, pe o ieșire (valorificare/eliminare) către un
+ * partener, în anul datei (`Anexa3RegisterBuilder`) — deci fără partener, fără ieșire sau cu data mutată
+ * în alt an, numărul emis rămâne gol în registru. Nu se oprește nimic: se spune înainte de salvare.
+ */
+export function leavesAnexa3Gap(
+  original: { anexa3Number: number | null; date: string } | null,
+  next: { date: string; partnerId: string | null; operation: WasteOperation }
+): boolean {
+  if (!original || original.anexa3Number == null) return false;
+  if (!next.partnerId || !isExit(next.operation)) return true;
+  return next.date.slice(0, 4) !== original.date.slice(0, 4);
+}

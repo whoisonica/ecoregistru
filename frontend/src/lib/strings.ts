@@ -1366,6 +1366,12 @@ export const strings = {
     // Corpul dialogului poartă identitatea rândului; aici rămâne doar urmarea.
     confirmDelete:
       "Cantitatea dispare din evidența lunară și din documentele care se tipăresc din ea. Ștergerea nu poate fi anulată.",
+    // Registrul Anexa 3 (transport) ține numerele în ordine; o predare cu formular emis, ștearsă sau
+    // scoasă din registru, lasă un număr lipsă (29.09.2026). Doar se spune, nu se oprește nimic.
+    anexa3GapDelete: "Formularul Anexa 3 nr. {number} a fost deja emis. Dacă ștergi predarea, numărul rămâne gol în registru.",
+    anexa3GapEdit: "Formularul Anexa 3 nr. {number} a fost deja emis. Salvată așa, predarea iese din registru și numărul rămâne gol.",
+    // Serverul primește și date viitoare (până la zece ani); un an tastat greșit se vede aici (29.09.2026).
+    dateInFuture: "Data e în viitor.",
     attachmentError: "Fișierul nu a putut fi încărcat.",
     // Mișcarea s-a salvat, atașamentele nu — două fapte diferite, care înainte se spuneau amândouă
     // ca „Salvarea a eșuat". Cine citea asta apăsa din nou și înregistra cantitatea a doua oară.

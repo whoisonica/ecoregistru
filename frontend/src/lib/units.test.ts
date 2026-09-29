@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatKg, formatQuantity, formatTonnesValue } from "@/lib/units";
+import { formatKg, formatQuantity, formatQuantityInput, formatTonnesValue } from "@/lib/units";
 
 test("pragul în tone se arată cu trei zecimale, în formatul românesc", () => {
   assert.equal(formatTonnesValue(0.84), "0,840");
@@ -41,4 +41,13 @@ test("o cantitate de pe un rând se scrie în unitatea ei, cu trei zecimale", ()
   // Tonele rămân tone: rândul spune el în ce unitate e, nu se converteşte pe ascuns.
   assert.equal(formatQuantity(1.06, "TONS"), "1,060");
   assert.notEqual(formatQuantity(35.125, "KG"), String(35.125));
+});
+
+/** 29.09.2026: bonul formularului de mișcare scria „35.125 kg”, textul brut din câmp. */
+test("cantitatea tastată se scrie pe bon ca pe listă, fără ambiguitate", () => {
+  assert.equal(formatQuantityInput("35.125", "KG"), "35,125");
+  assert.equal(formatQuantityInput("1060", "KG"), "1.060,000");
+  assert.equal(formatQuantityInput("0.84", "TONS"), "0,840");
+  assert.equal(formatQuantityInput("", "KG"), null);
+  assert.equal(formatQuantityInput("abc", "KG"), null);
 });
