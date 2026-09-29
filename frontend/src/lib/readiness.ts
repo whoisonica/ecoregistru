@@ -38,12 +38,49 @@ export function readiness(
 
   const expiringPartners = (partners ?? []).filter((p) => p.active && p.expiringSoon);
 
-  /** Cele două feluri de „nu e gata", numărate pe linii de evidență. */
+  const blockers = blockersOf(evidences);
+
+  return { openDeadlines, overdue, nextDeadline, nearDeadline, expiringPartners, blockers };
+}
+
+/** Cele două feluri de „nu e gata", numărate pe linii de evidență. */
+export function blockersOf(evidences: MonthlyEvidence[] | undefined) {
   const rows = evidences ?? [];
-  const blockers = {
+  return {
     missingCode: rows.filter((r) => r.totalUnclassifiedOut > 0).length,
     awaitingWeighing: rows.filter((r) => r.awaitingWeighing).length,
   };
+}
 
-  return { openDeadlines, overdue, nextDeadline, nearDeadline, expiringPartners, blockers };
+/**
+ * Anul care încă se depune, dacă suntem în fereastra lui: între 1 ianuarie și 15 martie inclusiv, anul
+ * trecut (evidența anului trecut se depune până pe 15 martie — OUG 92/2021 art. 48 alin. (1), vezi
+ * `documentFor`). În afara ferestrei, `null`.
+ *
+ * <p>29.09.2026: Acasă număra liniile fără cod R/D și pe cele de cântărit numai pe anul curent. Pe
+ * 10 ianuarie, o predare din decembrie fără cod R/D — chiar ce oprește depunerea de pe 15 martie — nu
+ * apărea nicăieri, iar banda scria „Ești la zi”.
+ */
+export function filingYear(today = new Date()): number | null {
+  const month = today.getMonth();
+  const inWindow = month < 2 || (month === 2 && today.getDate() <= 15);
+  return inWindow ? today.getFullYear() - 1 : null;
+}
+
+/**
+ * Blocajele Acasă, pe anul curent **și**, în fereastra de depunere, pe anul care se depune: liniile se
+ * adună, iar „Repară” duce întâi la anul care se depune, dacă acolo e ceva de reparat — acela are termen.
+ * Cu `filed = null` (în afara ferestrei), doar anul curent, ca înainte.
+ */
+export function yearBlockers(
+  current: { year: number; rows: MonthlyEvidence[] | undefined },
+  filed: { year: number; rows: MonthlyEvidence[] | undefined } | null
+) {
+  const now = blockersOf(current.rows);
+  const past = blockersOf(filed?.rows);
+  return {
+    missingCode: now.missingCode + past.missingCode,
+    awaitingWeighing: now.awaitingWeighing + past.awaitingWeighing,
+    missingCodeYear: filed && past.missingCode > 0 ? filed.year : current.year,
+  };
 }
