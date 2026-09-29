@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, tokenStore, tenantStore, userStore, clearSession } from "@/lib/api";
+import { signOutRequest } from "@/lib/signOut";
 
 export type Role = "PLATFORM_ADMIN" | "CONSULTANT" | "ADMIN" | "OPERATOR" | "SCALE_OPERATOR" | "CLIENT_VIEWER";
 
@@ -98,9 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Ecranul nu așteaptă răspunsul și nu se oprește dacă el nu vine: dacă rețeaua e căzută, omul tot
    * trebuie să iasă din cont pe calculatorul din fața lui. Partea de server e cea care se poate
    * relua (la următorul login), cea locală nu.
+   *
+   * Tokenul se citește aici, înainte de `clearSession()`: interceptorul lui axios rulează abia după,
+   * pe un `localStorage` deja gol (29.09.2026, vezi `signOutRequest`).
    */
   function logout() {
-    api.post("/auth/sign-out").catch(() => {});
+    const signOut = signOutRequest(tokenStore.get());
+    if (signOut) {
+      api.post(signOut.url, null, { headers: signOut.headers }).catch(() => {});
+    }
     clearSession();
     queryClient.clear();
     setUser(null);
