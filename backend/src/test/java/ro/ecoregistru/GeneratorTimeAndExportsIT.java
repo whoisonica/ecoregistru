@@ -167,15 +167,20 @@ class GeneratorTimeAndExportsIT {
 
     // ---------- G20: entități dezactivate și șterse ----------
 
-    /** // DECIZIE: G20. Punct de lucru și partener dezactivați: o predare nouă pe ei se acceptă. */
+    /**
+     * // DECIZIE: G20, decisă B de proprietar pe 29.09.2026. Punct de lucru sau partener dezactivat:
+     * o predare nouă pe ei se refuză (422); o mișcare veche care îi are deja rămâne editabilă
+     * ({@code MovementWriteGuardsIT#anOldMovementStaysEditableWithWhatWasDeactivatedSince}).
+     * Formularul web îi ascundea deja; acum îi refuză și serverul.
+     */
     @Test
-    void characterizes_aNewMovementOnADeactivatedWorkPointAndPartnerIsAccepted() throws Exception {
+    void aNewMovementOnADeactivatedWorkPointOrPartnerIsRefused() throws Exception {
         workPoint.setActive(false);
         workPointRepository.save(workPoint);
         collector.setActive(false);
         partnerRepository.save(collector);
 
-        postMovement(handoverJson("2026-07-05", "5", "")).andExpect(status().isOk());
+        postMovement(handoverJson("2026-07-05", "5", "")).andExpect(status().isUnprocessableEntity());
     }
 
     /**

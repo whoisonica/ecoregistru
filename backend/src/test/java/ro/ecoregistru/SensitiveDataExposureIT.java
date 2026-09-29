@@ -85,7 +85,10 @@ class SensitiveDataExposureIT {
     void setUp() {
         AppUser admin = appUserRepository.findByEmail("admin@demo.ro").orElseThrow();
         adminToken = jwtService.generateToken(admin);
-        workPointId = workPointRepository.findAllByCompany_Id(admin.getCompany().getId()).get(0).getId();
+        // Un punct activ: firma demo e comună tuturor claselor din context, iar un punct dezactivat de
+        // altă probă nu mai primește mișcări noi (29.09.2026).
+        workPointId = workPointRepository.findAllByCompany_Id(admin.getCompany().getId()).stream()
+                .filter(ro.ecoregistru.entity.WorkPoint::isActive).findFirst().orElseThrow().getId();
         wasteCodeId = wasteCodeRepository.findAll().get(0).getId();
     }
 
