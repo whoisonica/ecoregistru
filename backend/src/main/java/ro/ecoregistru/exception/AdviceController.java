@@ -22,7 +22,6 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import ro.ecoregistru.security.TooManyRequests;
 import ro.ecoregistru.security.TooManyRequestsException;
 
 import java.time.DateTimeException;
@@ -315,7 +314,7 @@ public class AdviceController {
     public ResponseEntity<Map<String, Object>> handleTooManyRequests(TooManyRequestsException e) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(e.getRetryAfterSeconds()))
-                .body(envelope("too-many-requests", TooManyRequests.ERROR_CODE, e.getMessage()));
+                .body(envelope("too-many-requests", e.getErrorCode(), e.getMessage()));
     }
 
     /**

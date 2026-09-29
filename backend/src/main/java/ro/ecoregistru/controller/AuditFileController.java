@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ro.ecoregistru.exception.ErrorMessageEnum;
+import ro.ecoregistru.security.TenantContext;
+import ro.ecoregistru.security.TooManyRequestsException;
 import ro.ecoregistru.service.AuditFileService;
 
 import java.io.IOException;
@@ -27,6 +30,23 @@ import java.io.OutputStream;
 public class AuditFileController {
 
     AuditFileService auditFileService;
+
+    /**
+     * Câte dosare se împachetează deodată, pe toată aplicaţia, şi care firme au deja unul pe drum.
+     *
+     * <p><b>De ce.</b> Dosarul se scrie în flux, dintr-o singură tranzacţie, deci ţine o conexiune la
+     * bază cât curge arhiva — la {@code ?years=5} cu ataşamente, minute întregi. Pool-ul are zece;
+     * câteva descărcări paralele (un dublu-clic, un tab repornit, un consultant care deschide pe rând
+     * dosarele clienţilor) îl goleau pentru toate firmele (29.09.2026). O firmă primeşte un dosar
+     * odată, iar aplicaţia cel mult {@value #MAX_PARALLEL}: restul primesc 429 pe loc, fără să ocupe
+     * nimic. Limita stă aici, nu în serviciu, ca dosarul însuşi să rămână neatins.
+     */
+    static final int MAX_PARALLEL = 3;
+    /** Cât să aştepte clientul înainte să reîncerce: un dosar de un an iese de obicei sub asta. */
+    static final long RETRY_AFTER_SECONDS = 30;
+
+    java.util.Set<java.util.UUID> packing = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    java.util.concurrent.Semaphore slots = new java.util.concurrent.Semaphore(MAX_PARALLEL);
 
     /** Cât cântărește dosarul, ca ecranul s-o spună înainte de descărcare. */
     @GetMapping("/size")
@@ -53,6 +73,23 @@ public class AuditFileController {
     public void download(@RequestParam int year,
                          @RequestParam(defaultValue = "1") int years,
                          HttpServletResponse response) {
+        java.util.UUID tenant = TenantContext.require();
+        if (!packing.add(tenant)) {
+            throw new TooManyRequestsException(RETRY_AFTER_SECONDS, ErrorMessageEnum.AUDIT_FILE_BUSY);
+        }
+        if (!slots.tryAcquire()) {
+            packing.remove(tenant);
+            throw new TooManyRequestsException(RETRY_AFTER_SECONDS, ErrorMessageEnum.AUDIT_FILE_BUSY);
+        }
+        try {
+            write(year, years, response);
+        } finally {
+            slots.release();
+            packing.remove(tenant);
+        }
+    }
+
+    private void write(int year, int years, HttpServletResponse response) {
         String name = years == 1
                 ? "dosar-control-" + year + ".zip"
                 : "dosar-control-" + (year - years + 1) + "-" + year + ".zip";

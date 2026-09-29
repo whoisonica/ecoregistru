@@ -386,6 +386,7 @@ public enum ErrorMessageEnum {
             // „cel puțin 3 ani", adică un prag, nu un plafon. Mesajul spunea „cel mult 3 ani" și
             // prezenta pragul ca limită — de două ori greșit, fiindcă plaja crescuse la 5 pe 25.08.
             "Dosarul se poate genera pentru cel mult 5 ani. Alege un număr între 1 și 5. (Evidența se păstrează cel puțin 3 ani — OUG 92/2021, art. 48 alin. (5).)"),
+    AUDIT_FILE_BUSY("audit.file.busy", "Dosarul se pregătește deja într-o altă descărcare. Așteaptă să se termine, apoi încearcă din nou."),
     DEADLINE_NOT_FOUND("deadline.not.found", "Termenul nu a fost găsit."),
 
     // Ordinul 794/2012 art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2", iar care
