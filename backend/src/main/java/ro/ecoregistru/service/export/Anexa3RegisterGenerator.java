@@ -80,7 +80,7 @@ public class Anexa3RegisterGenerator {
                     cell(t, body, row.operationCode());
                 }
                 doc.add(t);
-                Paragraph total = new Paragraph(cp1250(r.rows().size() + " formulare emise."), small);
+                Paragraph total = new Paragraph(cp1250(totalLine(r.rows().size())), small);
                 total.setSpacingBefore(6f);
                 doc.add(total);
             }
@@ -92,6 +92,18 @@ public class Anexa3RegisterGenerator {
     }
 
     /** „RTS 17” — seria firmei şi numărul alocat; fără serie, numărul singur. */
+    /**
+     * „1 formular emis.”, „5 formulare emise.”, „20 de formulare emise.” (decizia 62; proprietarul,
+     * 29.09.2026). Scria „1 formulare emise.” — singurul rând al registrului schimbat de atunci.
+     */
+    static String totalLine(int n) {
+        if (n == 1) {
+            return "1 formular emis.";
+        }
+        int lastTwo = n % 100;
+        return n + (n >= 20 && (lastTwo == 0 || lastTwo >= 20) ? " de " : " ") + "formulare emise.";
+    }
+
     static String series(Anexa3Register.Row row) {
         return row.series() == null || row.series().isBlank()
                 ? String.valueOf(row.number())

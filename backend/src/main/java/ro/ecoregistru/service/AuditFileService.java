@@ -844,8 +844,8 @@ public class AuditFileService {
             if (files.anexa3Register() != null) {
                 int n = files.anexa3Register().rows().size();
                 sb.append(entry(prefix + files.anexa3RegisterName(),
-                        "Registrul Anexa 3 (transport), HG 1061/2008 — " + n
-                                + (n == 1 ? " formular" : " formulare") + " de transport",
+                        "Registrul Anexa 3 (transport), HG 1061/2008 — "
+                                + count(n, "formular", "formulare") + " de transport",
                         "emis" + (n == 1 ? "" : "e") + " în " + year + ", în ordinea numerelor: seria și numărul, data,",
                         "cantitatea, deșeul, cui s-a predat și codul R/D. Se ține la sediu",
                         "pentru control; fără termen de depunere."));
