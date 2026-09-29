@@ -3397,6 +3397,9 @@ export const strings = {
       MonthlyEvidence: "Evidența lunară",
       // F-E — datele de facturare schimbate de client pe /abonament.
       Subscription: "Datele de facturare",
+      // 29.09.2026 — bifa „Depus” a unui termen și cifrele de ambalaje scrise de mână intră în jurnal.
+      ReportingDeadline: "Termen de raportare",
+      PackagingMarketEntry: "Ambalaje puse pe piață",
     } as Record<string, string>,
 
     /**
@@ -3449,6 +3452,15 @@ export const strings = {
       laboratory: "Laborator",
       issueDate: "Data buletinului",
       fileName: "Fișier",
+      status: "Stare",
+      completionNote: "Nota la bifare",
+      material: "Material",
+      salesPackaging: "Ambalaje de desfacere",
+      primaryTotal: "Primare",
+      primaryReusable: "Primare reutilizabile",
+      secondaryTotal: "Secundare",
+      secondaryReusable: "Secundare reutilizabile",
+      hazardousContent: "Cu conținut periculos",
     } as Record<string, string>,
 
     wasteOperation: {

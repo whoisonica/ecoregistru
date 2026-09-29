@@ -41,8 +41,11 @@ function actionVariant(action: AuditLogEntry["action"]) {
 /** „Cantitate: 5,000 → 7,500". Golul se scrie ca gol, nu ca o săgeată care pornește de nicăieri. */
 function changeLine(change: AuditChange): string {
   const label = e.auditField[change.field] ?? change.field;
-  const from = change.from ?? t.emptyValue;
-  const to = change.to ?? t.emptyValue;
+  // Starea unui termen vine ca nume de enum („DONE”); pe ecran, cuvântul din listă (29.09.2026).
+  const value = (v: string | null) =>
+    v == null ? t.emptyValue : change.field === "status" ? (e.deadlineStatus[v as keyof typeof e.deadlineStatus] ?? v) : v;
+  const from = value(change.from);
+  const to = value(change.to);
   return `${label}: ${from} ${t.changeArrow} ${to}`;
 }
 
