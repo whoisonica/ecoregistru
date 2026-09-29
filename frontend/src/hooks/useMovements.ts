@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { evidencesRoot } from "@/hooks/useEvidences";
+import { MOVEMENT_DEPENDENT_KEYS } from "@/lib/movementQueries";
 import type { PageSlice, RemoteTableParams } from "@/hooks/useTableView";
 import type {
   Attachment,
@@ -149,10 +149,8 @@ export function useMovementTotals(filters: MovementFilters, enabled = true) {
  * amândouă, din același motiv.
  */
 function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
-  return Promise.all([
-    qc.invalidateQueries({ queryKey: movementsRoot }),
-    qc.invalidateQueries({ queryKey: evidencesRoot }),
-  ]);
+  // Lista, cu Ambalajele și dosarul de control (29.09.2026), stă în `lib/movementQueries.ts`.
+  return Promise.all(MOVEMENT_DEPENDENT_KEYS.map((queryKey) => qc.invalidateQueries({ queryKey })));
 }
 
 export function useCreateMovement() {
