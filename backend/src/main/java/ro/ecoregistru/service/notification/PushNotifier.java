@@ -134,7 +134,7 @@ public class PushNotifier {
     public static Message deadline(ReportingDeadline deadline, long daysUntil) {
         String when = daysUntil < 0 ? "trecut, nebifat" : daysUntil == 0 ? "scadent azi" : daysUntil == 1 ? "scadent mâine" : "scadent în " + daysUntil + " zile";
         return new Message(deadline.getCompany().getName() + ": termen " + when,
-                shortLabel(deadline.getReportType()), "termene");
+                deadline.isCustom() ? deadline.getTitle() : shortLabel(deadline.getReportType()), "termene");
     }
 
     /** Autorizația unui partener; ecranul „A venit controlul” o arată pe rândul ei. */
@@ -164,6 +164,7 @@ public class PushNotifier {
             case APM_ANNUAL_APRIL -> "Raportarea anuală la APM (30 aprilie)";
             case APM_ANNUAL_MAY -> "Programul de prevenire a deșeurilor";
             case OTHER -> "Raportare";
+            case CUSTOM -> "Termen propriu";
         };
     }
 

@@ -6,7 +6,7 @@ import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
-import { daysLabel, documentFor } from "@/lib/deadlines";
+import { daysLabel, deadlineLabel, documentFor } from "@/lib/deadlines";
 import { filingYear, readiness, yearBlockers } from "@/lib/readiness";
 
 const t = strings.dashboard;
@@ -118,9 +118,9 @@ export function useDashboardData(enabled = true) {
       list.push({
         tone: "danger",
         title: t.nextDeadline
-          .replace("{label}", strings.enums.reportType[d.reportType])
+          .replace("{label}", deadlineLabel(d))
           .replace("{days}", daysLabel(d) ?? ""),
-        hint: t.nextOverdueHint,
+        hint: d.reportType === "CUSTOM" ? t.nextCustomHint : t.nextOverdueHint,
         to: doc?.to ?? "/termene",
         cta: doc?.label ?? t.nextOverdueCta,
       });
@@ -147,9 +147,9 @@ export function useDashboardData(enabled = true) {
       list.push({
         tone: "warning",
         title: t.nextDeadline
-          .replace("{label}", strings.enums.reportType[nearDeadline.reportType])
+          .replace("{label}", deadlineLabel(nearDeadline))
           .replace("{days}", daysLabel(nearDeadline) ?? ""),
-        hint: t.nextDeadlineHint,
+        hint: nearDeadline.reportType === "CUSTOM" ? t.nextCustomHint : t.nextDeadlineHint,
         to: doc?.to ?? "/termene",
         cta: doc?.label ?? t.nextDeadlineCta,
       });

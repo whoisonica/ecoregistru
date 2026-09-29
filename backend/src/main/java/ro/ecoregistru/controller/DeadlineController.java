@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.CompleteDeadlineRequest;
+import ro.ecoregistru.controller.request.CustomDeadlineRequest;
 import ro.ecoregistru.controller.response.DeadlineGenerationResponse;
 import ro.ecoregistru.controller.response.DeadlineResponse;
 import ro.ecoregistru.security.TenantContext;
@@ -37,6 +39,27 @@ public class DeadlineController {
     @GetMapping("/past")
     public List<DeadlineResponse> past() {
         return deadlineService.listPast(TenantContext.require(), DeadlineService.today());
+    }
+
+    /** V81 — un termen propriu: măsurători, analize, reautorizări. */
+    @PostMapping
+    @PreAuthorize(CAN_WRITE)
+    public DeadlineResponse create(@RequestBody @Valid CustomDeadlineRequest request) {
+        return deadlineService.createCustom(request);
+    }
+
+    /** V81 — doar termenele proprii; cele din lege vin din profil și se bifează. */
+    @PutMapping("/{id}")
+    @PreAuthorize(CAN_WRITE)
+    public DeadlineResponse update(@PathVariable UUID id, @RequestBody @Valid CustomDeadlineRequest request) {
+        return deadlineService.updateCustom(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize(CAN_WRITE)
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        deadlineService.deleteCustom(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/regenerate")

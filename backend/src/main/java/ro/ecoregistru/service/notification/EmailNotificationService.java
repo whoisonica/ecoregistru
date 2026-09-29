@@ -55,15 +55,19 @@ public class EmailNotificationService implements NotificationService {
 
     @Override
     public void sendDeadlineReminder(ReportingDeadline deadline, List<String> recipientEmails, long daysUntil) {
-        String reportLabel = label(deadline.getReportType());
+        String reportLabel = label(deadline);
         String dueDate = deadline.getDueDate().format(DATE);
+        // Un termen propriu (o măsurătoare de zgomot) nu e o raportare: mailul îi spune doar „termen”.
+        String kind = deadline.isCustom() ? "Termen" : "Termen de raportare";
         String subject = daysUntil < 0
-                ? "Termen de raportare trecut și nebifat — " + reportLabel
-                : "Termen de raportare — " + reportLabel + " (" + when(daysUntil) + ")";
+                ? kind + " trecut și nebifat — " + reportLabel
+                : kind + " — " + reportLabel + " (" + when(daysUntil) + ")";
 
         sendToEach(recipientEmails, subject, "mail/deadline_reminder", () -> {
             Context ctx = new Context(Locale.of("ro"));
             ctx.setVariable("reportLabel", reportLabel);
+            ctx.setVariable("custom", deadline.isCustom());
+            ctx.setVariable("details", deadline.getDetails());
             ctx.setVariable("dueDate", dueDate);
             ctx.setVariable("daysUntil", daysUntil);
             ctx.setVariable("whenText", when(daysUntil));
@@ -295,7 +299,7 @@ public class EmailNotificationService implements NotificationService {
         List<Map<String, String>> rows = deadlines.stream()
                 .map(d -> Map.of(
                         "company", d.getCompany().getName(),
-                        "label", label(d.getReportType()),
+                        "label", label(d),
                         "dueDate", d.getDueDate().format(DATE),
                         "whenText", when(ChronoUnit.DAYS.between(today, d.getDueDate()))))
                 .toList();
@@ -358,6 +362,11 @@ public class EmailNotificationService implements NotificationService {
      * HG 856/2002 — uploaded into the system APM provides (OUG 92/2021 art. 48 alin. (1)).
      * "Raportarea SIM" named the channel and left the client guessing what to prepare.
      */
+    /** Termenul propriu se numește cum l-a numit firma; cele din lege, după fel. */
+    private String label(ReportingDeadline deadline) {
+        return deadline.isCustom() ? deadline.getTitle() : label(deadline.getReportType());
+    }
+
     private String label(ReportType type) {
         return switch (type) {
             case SIM_ANNUAL -> "Evidența gestiunii deșeurilor generate (anual, 15 martie)";
@@ -380,6 +389,7 @@ public class EmailNotificationService implements NotificationService {
             case APM_ANNUAL_MAY -> "Programul de prevenire și reducere a cantităților de deșeuri "
                     + "(anual, 31 mai) — la agenția județeană de mediu, cu progresul înregistrat";
             case OTHER -> "Raportare";
+            case CUSTOM -> "Termen propriu";
         };
     }
 }

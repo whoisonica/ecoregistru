@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  customNoteFor,
   daysLabel,
+  deadlineLabel,
+  deadlineShortLabel,
   daysUntil,
   declarationOf,
   declaredText,
@@ -86,4 +89,19 @@ test("avertismentul spune anul și ziua bifării, iar fără dată nu inventeaz�
     declaredText("Anul {year} e declarat{on}.", 2026, { ...d, completedAt: null }),
     "Anul 2026 e declarat.",
   );
+});
+
+test("un termen propriu se numește cum l-a numit firma, cele din lege după fel", () => {
+  const custom = { reportType: "CUSTOM", title: "Măsurători de zgomot" } as const;
+  assert.equal(deadlineLabel(custom), "Măsurători de zgomot");
+  assert.equal(deadlineShortLabel(custom), "Măsurători de zgomot");
+  assert.equal(deadlineLabel({ reportType: "SIM_ANNUAL", title: null }), "Evidența gestiunii deșeurilor generate (anual, 15 martie)");
+  assert.equal(deadlineShortLabel({ reportType: "SIM_ANNUAL", title: null }), "Evidența anuală");
+});
+
+test("sub un termen propriu: repetarea și detaliile; „o dată” nu se scrie", () => {
+  const base = { id: "x", reportType: "CUSTOM", dueDate: "2027-05-01", status: "UPCOMING", completedAt: null, completionNote: null, title: "Apă" } as Deadline;
+  assert.equal(customNoteFor({ ...base, recurrence: "ANNUAL", details: "Laborator X" }), "Se repetă anual · Laborator X");
+  assert.equal(customNoteFor({ ...base, recurrence: "ONCE", details: null }), null);
+  assert.equal(customNoteFor({ ...base, reportType: "SIM_ANNUAL", recurrence: null }), null);
 });

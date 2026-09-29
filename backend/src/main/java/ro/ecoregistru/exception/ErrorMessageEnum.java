@@ -388,6 +388,8 @@ public enum ErrorMessageEnum {
             "Dosarul se poate genera pentru cel mult 5 ani. Alege un număr între 1 și 5. (Evidența se păstrează cel puțin 3 ani — OUG 92/2021, art. 48 alin. (5).)"),
     AUDIT_FILE_BUSY("audit.file.busy", "Dosarul se pregătește deja într-o altă descărcare. Așteaptă să se termine, apoi încearcă din nou."),
     DEADLINE_NOT_FOUND("deadline.not.found", "Termenul nu a fost găsit."),
+    DEADLINE_NOT_CUSTOM("deadline.not.custom", "Termenele din lege nu se modifică și nu se șterg; se bifează după depunere."),
+    DEADLINE_DATE_PAST("deadline.date.past", "Data termenului nu poate fi în trecut."),
 
     // Ordinul 794/2012 art. 4 alin. (1) cere „tabelul 1 sau, după caz, tabelul 2", iar care
     // anume ține de calitatea firmei — pe care numai ea o știe. Un ecran se oferă pe un profil

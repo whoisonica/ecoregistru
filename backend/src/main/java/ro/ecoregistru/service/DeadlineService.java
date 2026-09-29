@@ -6,12 +6,15 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.CompleteDeadlineRequest;
+import ro.ecoregistru.controller.request.CustomDeadlineRequest;
 import ro.ecoregistru.controller.response.DeadlineGenerationResponse;
 import ro.ecoregistru.controller.response.DeadlineResponse;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.ReportingDeadline;
+import ro.ecoregistru.enums.DeadlineRecurrence;
 import ro.ecoregistru.enums.DeadlineStatus;
 import ro.ecoregistru.enums.ReportType;
+import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.CompanyRepository;
 import ro.ecoregistru.repository.ReportingDeadlineRepository;
@@ -35,6 +38,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 import static ro.ecoregistru.exception.ErrorMessageEnum.COMPANY_NOT_FOUND;
+import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_DATE_PAST;
+import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_CUSTOM;
 import static ro.ecoregistru.exception.ErrorMessageEnum.DEADLINE_NOT_FOUND;
 
 /**
@@ -142,7 +147,8 @@ public class DeadlineService {
                 if (due.isAfter(to) || savedKeys.contains(rule.type() + "|" + due) || !rule.owed().test(due)) {
                     continue;
                 }
-                rows.add(new DeadlineResponse(null, rule.type(), due, DeadlineStatus.OVERDUE, null, null, true));
+                rows.add(new DeadlineResponse(null, rule.type(), due, DeadlineStatus.OVERDUE, null, null, true,
+                        null, null, null));
             }
         }
         rows.sort(java.util.Comparator.comparing(DeadlineResponse::dueDate));
@@ -355,8 +361,12 @@ public class DeadlineService {
         deadline.setCompletedAt(Instant.now());
         deadline.setCompletionNote(request != null ? request.note() : null);
         audit(deadline, before, noteBefore);
-        // Bifat devreme: următorul de același fel apare acum, nu abia dimineața.
-        ensureUpcoming(deadline.getCompany().getId(), today());
+        if (deadline.isCustom()) {
+            scheduleNext(deadline, today());
+        } else {
+            // Bifat devreme: următorul de același fel apare acum, nu abia dimineața.
+            ensureUpcoming(deadline.getCompany().getId(), today());
+        }
         return toResponse(deadline, today());
     }
 
@@ -393,7 +403,7 @@ public class DeadlineService {
             return;
         }
         auditWriter.record("ReportingDeadline", deadline.getId(), ro.ecoregistru.enums.AuditAction.UPDATE,
-                deadline.getReportType() + " · " + deadline.getDueDate(), changes);
+                auditSummary(deadline), changes);
     }
 
     /**
@@ -453,6 +463,153 @@ public class DeadlineService {
         return 1;
     }
 
+    // ── Termene proprii (V81, Andreea 29.09.2026) ────────────────────────────────────────────────
+
+    /**
+     * Un termen pe care firma și-l pune singură: o măsurătoare de zgomot, o analiză de apă. Data nu
+     * poate fi în trecut — un termen adăugat ca deja ratat ar trimite a doua zi mailul de „nebifat”.
+     */
+    @Transactional
+    public DeadlineResponse createCustom(CustomDeadlineRequest request) {
+        UUID tenantId = TenantContext.require();
+        LocalDate today = today();
+        if (request.dueDate().isBefore(today)) {
+            throw new BadRequestException(DEADLINE_DATE_PAST);
+        }
+        Company company = companyRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
+        ReportingDeadline saved = deadlineRepository.save(ReportingDeadline.builder()
+                .company(company)
+                .reportType(ReportType.CUSTOM)
+                .dueDate(request.dueDate())
+                .status(DeadlineStatus.UPCOMING)
+                .title(request.title().strip())
+                .recurrence(request.recurrence())
+                .details(blankToNull(request.details()))
+                .seriesId(UUID.randomUUID())
+                .createdAt(Instant.now())
+                .build());
+        auditWriter.record("ReportingDeadline", saved.getId(), ro.ecoregistru.enums.AuditAction.CREATE,
+                auditSummary(saved), List.of());
+        return toResponse(saved, today);
+    }
+
+    /**
+     * Modifică apariția de acum a unui termen propriu. Una mutată pe o dată nouă pornește mementourile
+     * de la capăt: steagurile „trimis” erau ale datei vechi.
+     */
+    @Transactional
+    public DeadlineResponse updateCustom(UUID id, CustomDeadlineRequest request) {
+        ReportingDeadline deadline = requireCustom(id);
+        LocalDate today = today();
+        boolean moved = !deadline.getDueDate().equals(request.dueDate());
+        if (moved && request.dueDate().isBefore(today)) {
+            throw new BadRequestException(DEADLINE_DATE_PAST);
+        }
+        List<ro.ecoregistru.audit.PendingAudit.FieldChange> changes = new java.util.ArrayList<>();
+        change(changes, "title", deadline.getTitle(), request.title().strip());
+        change(changes, "dueDate", deadline.getDueDate(), request.dueDate());
+        change(changes, "recurrence", deadline.getRecurrence(), request.recurrence());
+        change(changes, "details", deadline.getDetails(), blankToNull(request.details()));
+        deadline.setTitle(request.title().strip());
+        deadline.setDueDate(request.dueDate());
+        deadline.setRecurrence(request.recurrence());
+        deadline.setDetails(blankToNull(request.details()));
+        if (moved) {
+            deadline.setWarned7Days(false);
+            deadline.setWarned1Day(false);
+            deadline.setWarnedMissed(false);
+        }
+        if (!changes.isEmpty()) {
+            auditWriter.record("ReportingDeadline", deadline.getId(), ro.ecoregistru.enums.AuditAction.UPDATE,
+                    auditSummary(deadline), changes);
+        }
+        return toResponse(deadline, today);
+    }
+
+    /**
+     * Șterge un termen propriu. Bifările de dinainte rămân (sunt istoria firmei); aparițiile deschise
+     * de după el, din același șir, pleacă odată cu el, ca termenul să nu reapară singur.
+     */
+    @Transactional
+    public void deleteCustom(UUID id) {
+        ReportingDeadline deadline = requireCustom(id);
+        List<ReportingDeadline> gone = new java.util.ArrayList<>(List.of(deadline));
+        deadlineRepository.findAllByCompany_IdAndSeriesIdAndStatusNotAndDueDateAfter(deadline.getCompany().getId(),
+                deadline.getSeriesId(), DeadlineStatus.DONE, deadline.getDueDate()).forEach(gone::add);
+        for (ReportingDeadline d : gone) {
+            auditWriter.record("ReportingDeadline", d.getId(), ro.ecoregistru.enums.AuditAction.DELETE,
+                    auditSummary(d), List.of());
+        }
+        deadlineRepository.deleteAll(gone);
+    }
+
+    /**
+     * După bifare, un termen propriu care se repetă își creează următoarea apariție. Bifat cu
+     * întârziere, sare peste perioadele deja trecute: următoarea e prima de azi înainte, nu una
+     * „depășită” din prima zi.
+     */
+    private void scheduleNext(ReportingDeadline done, LocalDate today) {
+        if (done.getRecurrence() == null || done.getRecurrence().months() == 0) {
+            return;
+        }
+        LocalDate due = done.getDueDate();
+        do {
+            due = nextOccurrence(due, done.getRecurrence());
+        } while (due.isBefore(today));
+        if (deadlineRepository.existsByCompany_IdAndSeriesIdAndDueDate(done.getCompany().getId(), done.getSeriesId(), due)) {
+            return;
+        }
+        ReportingDeadline next = deadlineRepository.save(ReportingDeadline.builder()
+                .company(done.getCompany())
+                .reportType(ReportType.CUSTOM)
+                .dueDate(due)
+                .status(DeadlineStatus.UPCOMING)
+                .title(done.getTitle())
+                .recurrence(done.getRecurrence())
+                .details(done.getDetails())
+                .seriesId(done.getSeriesId())
+                .createdAt(Instant.now())
+                .build());
+        auditWriter.record("ReportingDeadline", next.getId(), ro.ecoregistru.enums.AuditAction.CREATE,
+                auditSummary(next), List.of());
+    }
+
+    /**
+     * Data următoarei apariții. Un termen pus pe ultima zi a lunii rămâne pe ultima zi (31 ianuarie →
+     * 28 februarie → 31 martie), altfel ar aluneca spre 28 după primul februarie.
+     */
+    static LocalDate nextOccurrence(LocalDate due, DeadlineRecurrence recurrence) {
+        LocalDate next = due.plusMonths(recurrence.months());
+        boolean lastDay = due.getDayOfMonth() == due.lengthOfMonth();
+        return lastDay ? next.withDayOfMonth(next.lengthOfMonth()) : next;
+    }
+
+    private ReportingDeadline requireCustom(UUID id) {
+        ReportingDeadline deadline = require(id);
+        if (!deadline.isCustom()) {
+            throw new BadRequestException(DEADLINE_NOT_CUSTOM);
+        }
+        return deadline;
+    }
+
+    private static void change(List<ro.ecoregistru.audit.PendingAudit.FieldChange> changes, String field,
+                               Object before, Object after) {
+        if (!java.util.Objects.equals(before, after)) {
+            changes.add(new ro.ecoregistru.audit.PendingAudit.FieldChange(field,
+                    before == null ? null : before.toString(), after == null ? null : after.toString()));
+        }
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.strip();
+    }
+
+    /** „CUSTOM · …” nu spune nimic în jurnal; termenul propriu se numește după titlul lui. */
+    private static String auditSummary(ReportingDeadline d) {
+        return (d.isCustom() ? d.getTitle() : d.getReportType().name()) + " · " + d.getDueDate();
+    }
+
     private ReportingDeadline require(UUID id) {
         UUID tenantId = TenantContext.require();
         return deadlineRepository.findByIdAndCompany_Id(id, tenantId)
@@ -467,7 +624,10 @@ public class DeadlineService {
                 effectiveStatus(d, today),
                 d.getCompletedAt(),
                 d.getCompletionNote(),
-                false);
+                false,
+                d.getTitle(),
+                d.getRecurrence(),
+                d.getDetails());
     }
 
     /** DONE if completed; otherwise OVERDUE once the due date has passed; else UPCOMING. */

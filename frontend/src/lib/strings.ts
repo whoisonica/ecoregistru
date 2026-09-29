@@ -725,6 +725,7 @@ export const strings = {
     nextDeadline: "{label} — {days}",
     nextDeadlineHint: "Documentul se scoate din aplicație; bifezi termenul după depunere.",
     nextDeadlineCta: "Vezi termenul",
+    nextCustomHint: "După ce l-ai făcut, bifează-l pe Termene.",
     nextExpiring: "{count} cu autorizația aproape expirată",
     nextExpiringHint: "Predai legal doar unui operator autorizat: cere-le autorizația nouă.",
     nextExpiringCta: "Vezi partenerii",
@@ -777,6 +778,7 @@ export const strings = {
       APM_ANNUAL_APRIL: "Raportare la APM",
       APM_ANNUAL_MAY: "Programul de prevenire",
       OTHER: "Altă raportare",
+      CUSTOM: "Termen propriu",
     },
     // „Primii pași" (16.09.2026): drumul unui cont nou până la primul document. Pașii se bifează singuri.
     firstSteps: {
@@ -2548,7 +2550,7 @@ export const strings = {
 
   deadlines: {
     title: "Termene de raportare",
-    subtitle: "Următorul termen al fiecărei raportări pe care o datorează firma.",
+    subtitle: "Raportările pe care le datorează firma și termenele puse de tine.",
     generate: "Verifică termenele",
     generating: "Se verifică...",
     // „Termene generate: 1 noi" — substantivul și adjectivul intră amândouă în `countOf`, iar
@@ -2561,7 +2563,7 @@ export const strings = {
     // filters
     filterYear: "An",
     // columns
-    colReportType: "Raportare",
+    colReportType: "Denumire",
     colDueDate: "Termen",
     colStatus: "Status",
     colNote: "Notă",
@@ -2586,7 +2588,7 @@ export const strings = {
     pastOpen: "Nebifat",
     pastComputed: "Calculat",
     tabsLabel: "Termene",
-    searchPlaceholder: "Caută după tip de raportare sau notă...",
+    searchPlaceholder: "Caută după denumire sau notă...",
     emptyHint: "Termenele apar singure, câte unul pe fiecare raportare. Dacă lipsește unul, apasă „Verifică termenele”.",
     // Data singură cere o socoteală în cap — Panoul o făcea de mult, tabelul nu. „Azi" și „mâine"
     // se scriu în cuvinte: „în 0 zile" e adevărat și nu se citește ca nimic.
@@ -2633,6 +2635,40 @@ export const strings = {
       downloadError: "Documentul nu a putut fi descărcat.",
     },
     colDocument: "Documentul",
+    // Termene proprii (V81, Andreea 29.09.2026): ce nu vine din lege prin profil — măsurători de zgomot,
+    // analize de apă, emisii, reautorizări. Tasta N le deschide formularul.
+    custom: {
+      add: "Adaugă termen",
+      addTitle: "Termen propriu",
+      editTitle: "Modifică termenul",
+      intro: "Măsurători, analize, reautorizări: primești mail cu 7 zile și cu o zi înainte.",
+      titleLabel: "Ce ai de făcut",
+      titlePlaceholder: "ex. Măsurători de zgomot",
+      suggestionsLabel: "Des folosite",
+      suggestions: ["Măsurători de zgomot", "Analize ape uzate", "Măsurători emisii în aer"],
+      dueDateLabel: "Data",
+      recurrenceLabel: "Se repetă",
+      recurrenceHint: "Următorul apare când îl bifezi pe acesta.",
+      detailsLabel: "Detalii (opțional)",
+      detailsPlaceholder: "ex. laboratorul, numărul contractului",
+      titleRequired: "Scrie ce ai de făcut.",
+      dueDateRequired: "Alege data.",
+      dueDatePast: "Data nu poate fi în trecut.",
+      added: "Termen adăugat.",
+      updated: "Termen modificat.",
+      deleted: "Termen șters.",
+      deleteTitle: "Ștergi termenul?",
+      deleteMessage: "„{title}” din {date} dispare din listă. Bifările de dinainte rămân.",
+      completedNext: "Termen bifat. Următorul e deja în listă.",
+      saveError: "Termenul nu a putut fi salvat. Încearcă din nou.",
+      // Sub denumire, pe rând: cât de des revine. „O dată” nu se scrie — e cazul obișnuit.
+      repeats: {
+        MONTHLY: "Se repetă lunar",
+        QUARTERLY: "Se repetă trimestrial",
+        SEMIANNUAL: "Se repetă la 6 luni",
+        ANNUAL: "Se repetă anual",
+      },
+    },
   },
 
   auditFile: {
@@ -3653,6 +3689,14 @@ export const strings = {
       APM_ANNUAL_MAY:
         "Programul de prevenire și reducere a deșeurilor (anual, 31 mai) — la agenția județeană de mediu",
       OTHER: "Altă raportare",
+      CUSTOM: "Termen propriu",
+    },
+    deadlineRecurrence: {
+      ONCE: "O dată",
+      MONTHLY: "Lunar",
+      QUARTERLY: "Trimestrial",
+      SEMIANNUAL: "La 6 luni",
+      ANNUAL: "Anual",
     },
     deadlineStatus: {
       UPCOMING: "De făcut",

@@ -19,6 +19,13 @@ public interface ReportingDeadlineRepository extends JpaRepository<ReportingDead
 
     Optional<ReportingDeadline> findByIdAndCompany_Id(UUID id, UUID companyId);
 
+    /** V81 — termenele proprii care se repetă: există deja apariția de la data asta? */
+    boolean existsByCompany_IdAndSeriesIdAndDueDate(UUID companyId, UUID seriesId, LocalDate dueDate);
+
+    /** V81 — aparițiile deschise de după una ștearsă, din același șir. */
+    List<ReportingDeadline> findAllByCompany_IdAndSeriesIdAndStatusNotAndDueDateAfter(
+            UUID companyId, UUID seriesId, DeadlineStatus status, LocalDate after);
+
     Optional<ReportingDeadline> findByCompany_IdAndReportTypeAndDueDate(UUID companyId, ReportType reportType,
                                                                         LocalDate dueDate);
 

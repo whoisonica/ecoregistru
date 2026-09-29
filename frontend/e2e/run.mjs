@@ -54,6 +54,8 @@ const suites = [
   ["42-bifate-anul.mjs", "Termenul tocmai bifat se vede pe „Bifate”"],
   // 20.09.2026: fundăturile — ecranul căzut fără ieşire, formularul pierdut la Escape.
   ["43-fundaturi.mjs", "Eroarea de încărcare are „Încearcă din nou”, iar fişa de partener întreabă înainte să se închidă"],
+  // 57, nu 44: 44–56 sunt ale depozitului și se pornesc cu mâna. Termenele proprii sunt ale generatorului.
+  ["57-termene-proprii.mjs", "Termene proprii: adăugare, N, modificare, bifare cu repetare, ștergere, Acasă, 375px"],
 ];
 
 const only = process.argv[2];

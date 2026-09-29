@@ -151,5 +151,14 @@ public enum ReportType {
      */
     PACKAGING_ANNEX3,
 
-    OTHER
+    OTHER,
+
+    /**
+     * A deadline the company adds itself (V81, Andreea 29.09.2026): noise, water or emission
+     * measurements, a permit renewal — anything with a date that no profile answer produces. It
+     * carries its own title, an optional repetition and details; it is never generated, only added,
+     * edited, completed and deleted by the people of the company. It gets the same reminders as the
+     * legal ones, and nothing printed reads it.
+     */
+    CUSTOM
 }

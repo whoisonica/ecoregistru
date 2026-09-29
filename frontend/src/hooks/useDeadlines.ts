@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { declarationOf } from "@/lib/deadlines";
-import type { Deadline, DeadlineGenerationResponse } from "@/lib/types";
+import type { CustomDeadlineRequest, Deadline, DeadlineGenerationResponse } from "@/lib/types";
 
 /**
  * TanStack Query hooks for reporting deadlines (FAZA TERMENE). The list is scoped by year;
@@ -124,6 +124,29 @@ export function useReopenDeadline() {
   return useMutation({
     mutationFn: async (id: string) =>
       (await api.post<Deadline>(`/api/v1/deadlines/${id}/reopen`)).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: deadlinesRoot }),
+  });
+}
+
+/** V81 — termenele proprii: adăugare, modificare, ștergere. Toate reîncarcă familia de termene. */
+export function useSaveCustomDeadline() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body }: { id?: string; body: CustomDeadlineRequest }) =>
+      (id
+        ? await api.put<Deadline>(`/api/v1/deadlines/${id}`, body)
+        : await api.post<Deadline>("/api/v1/deadlines", body)
+      ).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: deadlinesRoot }),
+  });
+}
+
+export function useDeleteCustomDeadline() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/v1/deadlines/${id}`);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: deadlinesRoot }),
   });
 }

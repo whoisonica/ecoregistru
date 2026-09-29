@@ -3,6 +3,7 @@ package ro.ecoregistru.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import ro.ecoregistru.enums.DeadlineRecurrence;
 import ro.ecoregistru.enums.DeadlineStatus;
 import ro.ecoregistru.enums.ReportType;
 
@@ -25,10 +26,8 @@ import java.util.UUID;
 // trimite mailurile pe rând și abia apoi scrie steagul warned*. Cu UPDATE pe tot rândul, bifa
 // pusă între timp era rescrisă înapoi pe UPCOMING de flush-ul mementoului (29.09.2026).
 @org.hibernate.annotations.DynamicUpdate
-@Table(name = "reporting_deadlines",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uq_deadline_scope",
-                columnNames = {"company_id", "report_type", "due_date"}))
+// Unicitatea (firmă, tip, scadență) e un index parțial din V81: nu privește termenele proprii.
+@Table(name = "reporting_deadlines")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ReportingDeadline {
 
@@ -70,4 +69,25 @@ public class ReportingDeadline {
 
     @Column(nullable = false)
     Instant createdAt;
+
+    /** V81 — doar la {@link ReportType#CUSTOM}: numele dat de firmă („Măsurători de zgomot”). */
+    @Column(length = 120)
+    String title;
+
+    /** V81 — doar la {@link ReportType#CUSTOM}: cât de des revine. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 12)
+    DeadlineRecurrence recurrence;
+
+    /** V81 — doar la {@link ReportType#CUSTOM}: ce e de făcut, cu cine (laboratorul, contractul). */
+    @Column(length = 500)
+    String details;
+
+    /** V81 — doar la {@link ReportType#CUSTOM}: aparițiile aceluiași termen care se repetă. */
+    @Column(name = "series_id")
+    UUID seriesId;
+
+    public boolean isCustom() {
+        return reportType == ReportType.CUSTOM;
+    }
 }

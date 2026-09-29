@@ -38,7 +38,7 @@ function readCollapsed(): boolean {
  */
 // `/cantar` își leagă N singur (operațiune, transfer sau formular nou, după tab); până pe 26.09.2026 N de acolo
 // pornea și „Adaugă deșeuri” din panou, peste formularul ecranului (prins de proba 48).
-const OWNS_N = new Set<string>([...Object.values(SCREEN_PATH), "/parteneri", "/setari", "/cantar"]);
+const OWNS_N = new Set<string>([...Object.values(SCREEN_PATH), "/parteneri", "/setari", "/cantar", "/termene"]);
 
 /**
  * Cadrul aplicației: panoul din stânga (direcția „Cântar”), pagina, bara de jos pe telefon,

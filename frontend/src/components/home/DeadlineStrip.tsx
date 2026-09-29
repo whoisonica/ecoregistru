@@ -4,7 +4,7 @@ import type { DashboardData } from "@/hooks/useDashboardData";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { daysLabel, daysUntil } from "@/lib/deadlines";
+import { daysLabel, daysUntil, deadlineLabel, deadlineShortLabel } from "@/lib/deadlines";
 import { saveBlob } from "@/lib/download";
 import { deadlinesByMonth, deadlinesIcs } from "@/lib/home";
 import { NEAR_DEADLINE_DAYS } from "@/lib/readiness";
@@ -20,7 +20,7 @@ function summary(d: DashboardData): string {
     return withCount(t.statDeadlinesOverdue, d.overdueCount, "termen depășit", "termene depășite");
   if (d.nextDeadline)
     return t.statDeadlinesNext
-      .replace("{label}", strings.enums.reportType[d.nextDeadline.reportType])
+      .replace("{label}", deadlineLabel(d.nextDeadline))
       .replace("{days}", daysLabel(d.nextDeadline) ?? "");
   return t.statDeadlinesNone;
 }
@@ -41,7 +41,7 @@ export function DeadlineStrip({ d }: { d: DashboardData }) {
   const cols = deadlinesByMonth(d.openDeadlines, now);
 
   function downloadIcs() {
-    const ics = deadlinesIcs(d.openDeadlines, (dl) => strings.enums.reportType[dl.reportType]);
+    const ics = deadlinesIcs(d.openDeadlines, deadlineLabel);
     saveBlob(new Blob([ics], { type: "text/calendar;charset=utf-8" }), t.timelineIcsFile);
   }
 
@@ -108,7 +108,7 @@ export function DeadlineStrip({ d }: { d: DashboardData }) {
                               <span className="font-mono">
                                 {dl.status === "OVERDUE" ? formatDate(dl.dueDate).slice(0, 5) : dl.dueDate.slice(8, 10)}
                               </span>{" "}
-                              {t.reportShort[dl.reportType]}
+                              {deadlineShortLabel(dl)}
                             </span>
                           </li>
                         ))}

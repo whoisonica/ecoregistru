@@ -5,6 +5,9 @@ import {
   ChevronRight,
   RotateCcw,
   CalendarClock,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCanWrite } from "@/hooks/useBillingAccess";
@@ -15,13 +18,18 @@ import {
   useRegenerateDeadlines,
   useCompleteDeadline,
   useReopenDeadline,
+  useDeleteCustomDeadline,
 } from "@/hooks/useDeadlines";
+import { useHotkey } from "@/hooks/useHotkey";
+import { CustomDeadlineDialog } from "@/components/CustomDeadlineDialog";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { RowAction, RowActions } from "@/components/ui/table-toolbar";
 import type { Deadline, DeadlineStatus } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { DEADLINE_TABS } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 import { cn, formatDate, withCount } from "@/lib/utils";
-import { daysLabel, documentFor, noteFor } from "@/lib/deadlines";
+import { customNoteFor, daysLabel, deadlineLabel, documentFor, noteFor } from "@/lib/deadlines";
 import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
 import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
 import { Button } from "@/components/ui/button";
@@ -80,10 +88,35 @@ export function DeadlinesPage() {
   const regenerateMut = useRegenerateDeadlines();
   const completeMut = useCompleteDeadline();
   const reopenMut = useReopenDeadline();
+  const deleteMut = useDeleteCustomDeadline();
   const { notify } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
 
   const [completing, setCompleting] = useState<Deadline | null>(null);
   const [note, setNote] = useState("");
+  // Termenul propriu din formular: `null` = închis, `"new"` = unul nou, altfel cel modificat.
+  const [customForm, setCustomForm] = useState<Deadline | "new" | null>(null);
+
+  // N: termenul propriu nou (Layout lasă tasta paginii, `/termene` e în `OWNS_N`).
+  useHotkey("n", () => setCustomForm("new"), { enabled: canManage && customForm === null && completing === null });
+
+  function handleDelete(d: Deadline) {
+    confirm({
+      title: t.custom.deleteTitle,
+      message: t.custom.deleteMessage.replace("{title}", deadlineLabel(d)).replace("{date}", formatDate(d.dueDate)),
+      tone: "danger",
+      onConfirm: () =>
+        deleteMut.mutate(d.id, {
+          onSuccess: () => notify(t.custom.deleted, "success"),
+          onError: (err) => notify(apiErrorMessage(err, t.actionError), "error"),
+        }),
+    });
+  }
+
+  const rowActions = {
+    onEdit: (d: Deadline) => setCustomForm(d),
+    onDelete: handleDelete,
+  };
 
   const todo = useMemo(
     () => (upcoming.data ?? []).filter((d) => d.status !== "DONE"),
@@ -134,7 +167,8 @@ export function DeadlinesPage() {
       { id: completing.id, note: note.trim() || undefined },
       {
         onSuccess: () => {
-          notify(t.completed, "success");
+          const repeats = completing.reportType === "CUSTOM" && completing.recurrence && completing.recurrence !== "ONCE";
+          notify(repeats ? t.custom.completedNext : t.completed, "success");
           setYear(dueYear);
           setCompleting(null);
         },
@@ -157,15 +191,22 @@ export function DeadlinesPage() {
         description={t.subtitle}
         actions={
           canManage && (
-            <Button
-              onClick={handleRegenerate}
-              disabled={regenerateMut.isPending}
-            >
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
-              />
-              {regenerateMut.isPending ? t.generating : t.generate}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={handleRegenerate}
+                disabled={regenerateMut.isPending}
+              >
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${regenerateMut.isPending ? "animate-spin" : ""}`}
+                />
+                {regenerateMut.isPending ? t.generating : t.generate}
+              </Button>
+              <Button onClick={() => setCustomForm("new")} data-testid="custom-deadline-add">
+                <Plus className="mr-2 h-4 w-4" />
+                {t.custom.add}
+              </Button>
+            </>
           )
         }
       />
@@ -198,6 +239,7 @@ export function DeadlinesPage() {
           onComplete={openComplete}
           onReopen={handleReopen}
           reopenPending={reopenMut.isPending}
+          {...rowActions}
         />
       </section>
       )}
@@ -231,6 +273,7 @@ export function DeadlinesPage() {
           onComplete={openComplete}
           onReopen={handleReopen}
           reopenPending={reopenMut.isPending}
+          {...rowActions}
         />
       </section>
       )}
@@ -249,6 +292,7 @@ export function DeadlinesPage() {
           onComplete={openComplete}
           onReopen={handleReopen}
           reopenPending={reopenMut.isPending}
+          {...rowActions}
         />
       </section>
       )}
@@ -272,7 +316,7 @@ export function DeadlinesPage() {
           <div className="space-y-3">
             <div className="text-sm text-content-strong">
               <span className="font-medium text-content">
-                {strings.enums.reportType[completing.reportType]}
+                {deadlineLabel(completing)}
               </span>
               {" — "}
               {formatDate(completing.dueDate)}
@@ -290,6 +334,14 @@ export function DeadlinesPage() {
           </div>
         )}
       </Dialog>
+
+      {customForm !== null && (
+        <CustomDeadlineDialog
+          editing={customForm === "new" ? null : customForm}
+          onClose={() => setCustomForm(null)}
+        />
+      )}
+      {confirmDialog}
     </div>
   );
 }
@@ -307,6 +359,8 @@ function DeadlinesTable({
   onComplete,
   onReopen,
   reopenPending,
+  onEdit,
+  onDelete,
   past = false,
 }: {
   rows: Deadline[];
@@ -320,20 +374,19 @@ function DeadlinesTable({
   onComplete: (d: Deadline) => void;
   onReopen: (d: Deadline) => void;
   reopenPending: boolean;
+  onEdit: (d: Deadline) => void;
+  onDelete: (d: Deadline) => void;
   /** „Trecute”: fără zile rămase și fără „Depășit” roșu — e istorie, nu alarmă. */
   past?: boolean;
 }) {
   const view = useTableView(rows, {
     searchText: (d) =>
-      [strings.enums.reportType[d.reportType], d.completionNote]
+      [deadlineLabel(d), d.details, d.completionNote]
         .filter(Boolean)
         .join(" "),
     comparators: {
       reportType: (a, b) =>
-        strings.enums.reportType[a.reportType].localeCompare(
-          strings.enums.reportType[b.reportType],
-          "ro",
-        ),
+        deadlineLabel(a).localeCompare(deadlineLabel(b), "ro"),
       dueDate: (a, b) => a.dueDate.localeCompare(b.dueDate),
     },
     initialSort: { key: "dueDate", direction: "asc" },
@@ -363,6 +416,8 @@ function DeadlinesTable({
                 onComplete={onComplete}
                 onReopen={onReopen}
                 reopenPending={reopenPending}
+                onEdit={onEdit}
+                onDelete={onDelete}
                 past={past}
               />
             ))}
@@ -413,11 +468,11 @@ function DeadlinesTable({
             {view.visible.map((d) => {
               const doc = documentFor(d);
               const days = past ? null : daysLabel(d);
-              const note = noteFor(d);
+              const note = noteFor(d) ?? customNoteFor(d);
               return (
                 <TR key={rowKey(d)}>
                   <TD className="font-medium text-content">
-                    {strings.enums.reportType[d.reportType]}
+                    {deadlineLabel(d)}
                     {note && (
                       <p className="mt-1 max-w-md text-xs font-normal text-content-subtle">{note}</p>
                     )}
@@ -459,26 +514,29 @@ function DeadlinesTable({
                   </TD>
                   {canManage && (
                     <TD sticky="right" className="whitespace-nowrap text-right">
-                      {d.computed ? null : d.status === "DONE" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onReopen(d)}
-                          disabled={reopenPending}
-                        >
-                          <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                          {t.reopen}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onComplete(d)}
-                        >
-                          <Check className="mr-1 h-3.5 w-3.5" />
-                          {t.markDone}
-                        </Button>
-                      )}
+                      <div className="inline-flex items-center gap-1">
+                        {d.computed ? null : d.status === "DONE" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onReopen(d)}
+                            disabled={reopenPending}
+                          >
+                            <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                            {t.reopen}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onComplete(d)}
+                          >
+                            <Check className="mr-1 h-3.5 w-3.5" />
+                            {t.markDone}
+                          </Button>
+                        )}
+                        <CustomActions d={d} onEdit={onEdit} onDelete={onDelete} />
+                      </div>
                     </TD>
                   )}
                 </TR>
@@ -498,6 +556,8 @@ function DeadlineCard({
   onComplete,
   onReopen,
   reopenPending,
+  onEdit,
+  onDelete,
   past,
 }: {
   d: Deadline;
@@ -505,15 +565,17 @@ function DeadlineCard({
   onComplete: (d: Deadline) => void;
   onReopen: (d: Deadline) => void;
   reopenPending: boolean;
+  onEdit: (d: Deadline) => void;
+  onDelete: (d: Deadline) => void;
   past: boolean;
 }) {
   const doc = documentFor(d);
   const days = past ? null : daysLabel(d);
-  const note = noteFor(d);
+  const note = noteFor(d) ?? customNoteFor(d);
   return (
     <li className="space-y-2 py-3">
       <div className="font-medium text-content">
-        {strings.enums.reportType[d.reportType]}
+        {deadlineLabel(d)}
         {note && <p className="mt-1 text-xs font-normal text-content-subtle">{note}</p>}
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -542,9 +604,9 @@ function DeadlineCard({
           ) : (
             <span />
           )}
-          {canManage &&
-            !d.computed &&
-            (d.status === "DONE" ? (
+          {canManage && !d.computed && (
+            <div className="inline-flex items-center gap-1">
+            {d.status === "DONE" ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -559,10 +621,38 @@ function DeadlineCard({
                 <Check className="mr-1 h-3.5 w-3.5" />
                 {t.markDone}
               </Button>
-            ))}
+            )}
+            <CustomActions d={d} onEdit={onEdit} onDelete={onDelete} />
+            </div>
+          )}
         </div>
       )}
     </li>
+  );
+}
+
+/** Meniul „⋯” al unui termen propriu: cele din lege vin din profil, nu se modifică și nu se șterg. */
+function CustomActions({
+  d,
+  onEdit,
+  onDelete,
+}: {
+  d: Deadline;
+  onEdit: (d: Deadline) => void;
+  onDelete: (d: Deadline) => void;
+}) {
+  if (d.reportType !== "CUSTOM") return null;
+  return (
+    <RowActions>
+      {d.status !== "DONE" && (
+        <RowAction icon={Pencil} onClick={() => onEdit(d)}>
+          {strings.common.edit}
+        </RowAction>
+      )}
+      <RowAction icon={Trash2} tone="danger" onClick={() => onDelete(d)}>
+        {strings.common.delete}
+      </RowAction>
+    </RowActions>
   );
 }
 

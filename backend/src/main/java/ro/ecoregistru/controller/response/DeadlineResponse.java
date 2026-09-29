@@ -1,5 +1,6 @@
 package ro.ecoregistru.controller.response;
 
+import ro.ecoregistru.enums.DeadlineRecurrence;
 import ro.ecoregistru.enums.DeadlineStatus;
 import ro.ecoregistru.enums.ReportType;
 
@@ -19,5 +20,9 @@ public record DeadlineResponse(
         Instant completedAt,
         String completionNote,
         /** Doar pe „Trecute”: socotit din profilul firmei, nesalvat (fără id, nu se bifează). */
-        boolean computed
+        boolean computed,
+        /** V81 — doar la termenele proprii ({@code CUSTOM}); la cele din lege, null. */
+        String title,
+        DeadlineRecurrence recurrence,
+        String details
 ) {}

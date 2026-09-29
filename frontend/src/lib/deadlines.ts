@@ -38,6 +38,29 @@ export function daysLabel(d: Deadline): string | null {
 }
 
 /**
+ * Numele termenului, peste tot unde apare: cel propriu se numește cum l-a numit firma („Măsurători
+ * de zgomot”), cele din lege după fel.
+ */
+export function deadlineLabel(d: Pick<Deadline, "reportType" | "title">): string {
+  return d.reportType === "CUSTOM" && d.title ? d.title : strings.enums.reportType[d.reportType];
+}
+
+/** Numele scurt, pe coloana lunii de pe Acasă. */
+export function deadlineShortLabel(d: Pick<Deadline, "reportType" | "title">): string {
+  return d.reportType === "CUSTOM" && d.title ? d.title : strings.dashboard.reportShort[d.reportType];
+}
+
+/**
+ * Ce se scrie sub denumire: la un termen propriu, cât de des revine și detaliile; la cele din lege,
+ * nota de tip (`noteFor`).
+ */
+export function customNoteFor(d: Deadline): string | null {
+  if (d.reportType !== "CUSTOM") return null;
+  const repeats = d.recurrence && d.recurrence !== "ONCE" ? strings.deadlines.custom.repeats[d.recurrence] : null;
+  return [repeats, d.details].filter(Boolean).join(" · ") || null;
+}
+
+/**
  * Ecranul de pe care se scoate documentul care stinge termenul.
  *
  * <p>Amândouă raportările anuale acoperă **anul precedent** celui în care se depun — 15 martie

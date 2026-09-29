@@ -101,7 +101,7 @@ public class ConsultancyOverviewService {
         NextDeadline next = open.stream()
                 .filter(d -> !d.getDueDate().isBefore(today))
                 .findFirst()
-                .map(d -> new NextDeadline(d.getReportType(), d.getDueDate()))
+                .map(d -> new NextDeadline(d.getReportType(), d.getDueDate(), d.getTitle()))
                 .orElse(null);
         // Aceeași fereastră ca mai sus: după ultimul termen al anului, următorul e abia la anul, iar
         // firma tot are termenele generate.

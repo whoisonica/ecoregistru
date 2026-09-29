@@ -33,7 +33,8 @@ public record ConsultancyOverviewResponse(
         int unprovenMirrorMovements,
         int partnersExpiring) {
 
-    public record NextDeadline(ReportType reportType, LocalDate dueDate) {}
+    /** {@code title} doar la un termen propriu (V81). */
+    public record NextDeadline(ReportType reportType, LocalDate dueDate, String title) {}
 
     /** Nimic de făcut pe firma asta — termenele sunt generate și nu cad, nimic nu blochează. */
     public boolean clear() {

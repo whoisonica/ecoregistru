@@ -1,3 +1,12 @@
+🗓️ **29.09.2026 seara — proba 57 (`57-termene-proprii.mjs`), termenele proprii (V81, Andreea)**: pe Termene, „Adaugă termen” deschide
+„Termen propriu”; fără nume nu salvează („Scrie ce ai de făcut.”); sugestia „Măsurători de zgomot” completează numele; un termen anual cu
+detalii apare în „De făcut” cu „Se repetă anual · <detalii>”; tasta N deschide formularul (`/termene` e în `OWNS_N`); „⋯” → „Editează” schimbă
+numele; bifat, apare apariția de peste un an; „⋯” → „Șterge” întreabă cu numele și ia rândul; termenele din lege n-au „⋯”; Acasă arată
+termenul cu numele lui; vizualizatorul n-are butonul; 1440×900 fără derulare pe `main#continut`, 375 fără lățire (și cu formularul deschis).
+Intră în `run.mjs` (e al generatorului; 44–56 rămân ale depozitului, cu mâna). **Negativă (backend):** fără garda `isCustom()` din
+`DeadlineService.requireCustom` cade exact `CustomDeadlineIT.legalDeadlinesCannotBeEditedOrDeleted`. ⚠️ Lasă în urmă pe firma demo un termen
+bifat „Zgomot hală P57 <număr>” și unul deschis „Apă P57 <număr>”.
+
 📦 **29.09.2026 — Anexa 3 Ambalaje numai la colector (Andreea, decizia 87)**: proba **23** cere acum ca generatorul „Proba
 Automata SRL” să **n-aibă** butonul „Anexa 3 Ambalaje” (între 16.09 și 29.09 îl avea, cu ieșirile) și să aibă „Registrul Anexa 3
 (transport)” pe antetul „Generare”; proba **34** numără șapte rânduri în „Ce intră în arhivă” (al șaptelea, registrul). Proba **38**

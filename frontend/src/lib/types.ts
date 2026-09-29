@@ -1902,7 +1902,12 @@ export type ReportType =
   // deşeuri, plus progresul pe el. Al patrulea termen anual, găsit pe 11.09.2026; amenda e cea
   // mare, 40.000–60.000 lei, fiindcă art. 44 alin. (1) şi (3) sunt în lista de la art. 62(1)(a).
   | "APM_ANNUAL_MAY"
-  | "OTHER";
+  | "OTHER"
+  // V81 (Andreea, 29.09.2026): un termen pe care firma și-l pune singură — zgomot, apă, emisii.
+  | "CUSTOM";
+
+/** Cât de des revine un termen propriu; următoarea apariție se creează la bifare. */
+export type DeadlineRecurrence = "ONCE" | "MONTHLY" | "QUARTERLY" | "SEMIANNUAL" | "ANNUAL";
 
 export type DeadlineStatus = "UPCOMING" | "DONE" | "OVERDUE";
 
@@ -1919,6 +1924,18 @@ export interface Deadline {
    * deci rândul nu se bifează și nu se redeschide.
    */
   computed?: boolean;
+  /** Doar la `CUSTOM`: numele dat de firmă, repetarea și detaliile. */
+  title?: string | null;
+  recurrence?: DeadlineRecurrence | null;
+  details?: string | null;
+}
+
+/** Corpul cererii pentru un termen propriu, la adăugare și la modificare. */
+export interface CustomDeadlineRequest {
+  title: string;
+  dueDate: string;
+  recurrence: DeadlineRecurrence;
+  details?: string;
 }
 
 /** Mirrors backend DeadlineGenerationResponse. */
@@ -1936,7 +1953,7 @@ export interface ConsultancyOverviewRow {
   cui: string | null;
   type: CompanyType;
   overdueDeadlines: number;
-  nextDeadline: { reportType: ReportType; dueDate: string } | null;
+  nextDeadline: { reportType: ReportType; dueDate: string; title?: string | null } | null;
   /** Fals când anul curent n-are niciun termen: „0 depășite" nu înseamnă atunci nimic. */
   deadlinesGenerated: boolean;
   linesWithoutOperationCode: number;

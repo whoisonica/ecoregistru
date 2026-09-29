@@ -8,7 +8,7 @@ import { useTableView } from "@/hooks/useTableView";
 import type { ConsultancyOverviewRow } from "@/lib/types";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
-import { daysUntil } from "@/lib/deadlines";
+import { daysUntil, deadlineLabel } from "@/lib/deadlines";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
@@ -215,7 +215,7 @@ function DeadlineCell({ row, onOpen }: { row: ConsultancyOverviewRow; onOpen: ()
                   : strings.deadlines.daysLeft.replace("{count}", countOf(days ?? 0, "zi", "zile"))})
             </span>
             <span className="block text-xs text-content-subtle">
-              {strings.enums.reportType[next.reportType]}
+              {deadlineLabel(next)}
             </span>
           </>
         ) : (
