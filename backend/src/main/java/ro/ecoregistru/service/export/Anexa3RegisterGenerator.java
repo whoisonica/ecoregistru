@@ -91,7 +91,6 @@ public class Anexa3RegisterGenerator {
         }
     }
 
-    /** „RTS 17” — seria firmei şi numărul alocat; fără serie, numărul singur. */
     /**
      * „1 formular emis.”, „5 formulare emise.”, „20 de formulare emise.” (decizia 62; proprietarul,
      * 29.09.2026). Scria „1 formulare emise.” — singurul rând al registrului schimbat de atunci.
@@ -104,6 +103,7 @@ public class Anexa3RegisterGenerator {
         return n + (n >= 20 && (lastTwo == 0 || lastTwo >= 20) ? " de " : " ") + "formulare emise.";
     }
 
+    /** „RTS 17” — seria firmei şi numărul alocat; fără serie, numărul singur. */
     static String series(Anexa3Register.Row row) {
         return row.series() == null || row.series().isBlank()
                 ? String.valueOf(row.number())
