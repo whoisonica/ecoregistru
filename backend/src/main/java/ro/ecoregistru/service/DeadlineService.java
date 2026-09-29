@@ -177,7 +177,7 @@ public class DeadlineService {
     private List<Rule> rules(Company company) {
         List<Rule> rules = new java.util.ArrayList<>();
         // SIM annual: 15 March, covering the previous year.
-        rules.add(new Rule(ReportType.SIM_ANNUAL, List.of(MonthDay.of(Month.MARCH, 15)), due -> true));
+        rules.add(new Rule(ReportType.SIM_ANNUAL, List.of(EVIDENCE_DUE), due -> true));
         rules.addAll(afmDeadlines(company));
         packagingDeadline(company).ifPresent(rules::add);
         packagingWasteDeadline(company).ifPresent(rules::add);
@@ -188,6 +188,22 @@ public class DeadlineService {
 
     public static LocalDate today() {
         return LocalDate.now(ZONE);
+    }
+
+    /** Termenul evidenţei anuale (Anexa 1 la HG 856/2002): 15 martie, pentru anul precedent. */
+    public static final MonthDay EVIDENCE_DUE = MonthDay.of(Month.MARCH, 15);
+
+    /**
+     * Anul a cărui evidenţă e de pregătit azi — anul raportat, regula din decizia 59 („pe anul
+     * raportat"), aceeaşi cu {@code documentFor} din {@code lib/deadlines.ts} pe web.
+     *
+     * <p>Până la 15 martie inclusiv, ce se depune e anul trecut; abia după, anul în curs devine anul
+     * următoarei depuneri. Citit pe {@code today.getYear()}, verificările „gata de depus" se uitau
+     * între 1 ianuarie şi 15 martie la anul abia început, gol, deci arătau „nimic de reparat" exact
+     * în săptămânile depunerii (29.09.2026).
+     */
+    public static int evidenceYear(LocalDate today) {
+        return today.isAfter(EVIDENCE_DUE.atYear(today.getYear())) ? today.getYear() : today.getYear() - 1;
     }
 
     /**
