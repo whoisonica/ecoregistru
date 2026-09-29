@@ -224,6 +224,8 @@ export function useDashboardData(enabled = true) {
   return {
     year,
     month,
+    /** Anul care se depune, între 1 ianuarie și 15 martie (`filingYear`); `null` în rest. Îl citește și panoul. */
+    filedYear: filed,
     monthLabel: strings.months[month - 1],
     summary,
     loadingMovements,

@@ -84,3 +84,17 @@ export function yearBlockers(
     missingCodeYear: filed && past.missingCode > 0 ? filed.year : current.year,
   };
 }
+
+/**
+ * Un indicator din panou („3 de cântărit”, „2 fără cod R/D”) pe aceeași regulă ca blocajele de pe Acasă
+ * (29.09.2026): anul curent și, în fereastra din `filingYear`, anul care se depune — adunate. `filed =
+ * null` în afara ferestrei. `null` în rezultat = unul dintre ani n-a putut fi citit, deci „?”, nu o cifră
+ * mai mică decât adevărul (decizia 68).
+ */
+export function filingYearCount(
+  current: { isError: boolean; count: number | undefined },
+  filed: { isError: boolean; count: number | undefined } | null
+): number | null {
+  if (current.isError || filed?.isError) return null;
+  return (current.count ?? 0) + (filed?.count ?? 0);
+}
