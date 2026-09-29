@@ -15,6 +15,16 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **29.09.2026, 13:06 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v141** (`260d009`), `ecoregistru-app` **v143** (`6ff6c00`), din `main` `df8dd15` — „cabinet” devine „consultant” peste tot.**
+> Vocabularul proprietarului: „consultant” la etichete (grupul din meniu, tabul „Consultanți”, „Plătește consultantul”, „Abonament de consultant”, „Pornirea contului de consultant”),
+> „firmă de consultanță” la entitate. Panoul pe `/consultant`; `/cabinet` rămâne `<Navigate>` pentru mailurile de rezumat deja trimise, iar mailul nou trimite la `/consultant`.
+> Erori, mail, `legal.ts` (aliniat cu `juridic/politica-confidentialitate.md`), comentarii, teste, seed-ul demo și e2e 30/37 urmează același vocabular; migrațiile Flyway neatinse
+> („Successfully validated 77 migrations”), fără migrare nouă, liberă tot `V81`. Suita 1334/0, web 88/88, CI verde pe `df8dd15`; garda: câte un commit pe fiecare parte.
+> `Started EcoRegistruApplication in 14.062 seconds`, `/actuator/health` 200; bundle-ul servit (`index-CxKt9jyy.js`) are „Firme de consultanță”, „Plătește consultantul”,
+> „Abonament de consultant”, „Echipa firmei de consultanță” și `"/consultant"`; singurul „cabinet” rămas e ruta de redirecționare. Landingul (tab „Pentru consultanți”,
+> `video/consultant.mp4` + poster) urcat prin cPanel, verificat cu `curl` + `cmp`; `video/cabinet.mp4` rămâne pe server (linkul din mailul trimis prospectului).
+> Firma demo de pe producție păstrează numele vechi (decizia proprietarului).
+
 > **29.09.2026, 02:20 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v140** (`7cc7dbb`), `ecoregistru-app` **v142** (`2885e93`), din `main` `bf9413d` — concluziile specialistei despre generator.**
 > Fără migrare („Schema "public" is up to date”), liberă tot `V81`; `Started EcoRegistruApplication in 17.098 seconds`, `/actuator/health` 200; bundle-ul servit
 > (`index-DDt_sp8a.js`) conține „Registrul Anexa 3 (transport)”, `registru-anexa3` și „Alege întâi valorificare sau eliminare.”; `deploy-split.sh both --ref origin/main`
