@@ -65,7 +65,7 @@ unsprezece, iar până la primul rând de meniu stăteau cinci blocuri.*
    „1 fără cod R/D”, „2 depășite”, „2 expiră”). **Fără iconiță cât panoul e lat** — tasta și iconița erau două semne de
    citit până la cuvânt; iconița rămâne pe șina strânsă, unde ține locul numelui. Fiecare ecran de lucru e intrare
    proprie: Acasă · Generare · Intrări · Ieșiri · Cântar · Termene · Dosar de control · Parteneri · Setări; grupul
-   **Cabinet** (F, C, B) la consultant și platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
+   **Consultant** (F, C, B) la consultant și platformă. Import din Excel stă la Setări și în paletă; Abonament jos în panou.
    „Ambalaje" e intrare proprie numai la firma care n-are „Generare" (colectorul pur).
 4. **Taburile, sub intrarea deschisă** — Generare (Mișcări · Totalul anului · Ambalaje), Termene (De făcut · Bifate ·
    Trecute), Parteneri (Firme · Persoane fizice, numai cu depozit), Cântar (Operațiuni · Rapoarte · SIATD, `CANTAR_TABS`,
@@ -86,7 +86,7 @@ Mai mult** (`MobileBar`). „+” oferă doar ce e permis tipului de firmă.
 
 **Tastele:** cifrele deschid intrările meniului; **N = acțiunea principală a ecranului curent** (pe ecranele fără
 adăugare, N = adaugă deșeuri); I și E deschid formularele de intrare și ieșire de oriunde, **numai la firmele care preiau de la
-alții**; S = Setări când meniul trece de zece intrări; F / C / B în grupul Cabinet; `/` sare în căutarea listei; `[` strânge
+alții**; S = Setări când meniul trece de zece intrări; F / C / B în grupul Consultant; `/` sare în căutarea listei; `[` strânge
 panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de text (`useHotkey`).
 
 ---

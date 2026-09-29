@@ -109,13 +109,13 @@ rulează local și are testele verzi.
 >   și Paștele ortodox (Meeus). Mementoul = o zi mai devreme.
 > - **Cântar → SIATD**: De confirmat · Confirmate (30 de zile) · Ratate, zece pe pagină; confirmarea (aprobatorii) cu codul SIATD pe una,
 >   sau „Confirmă selectate” fără cod; anularea confirmării. Banda pe rândul reținerilor (singură la operator și pe Balotare), rândul din
->   dialogul recepției, mailul de 07:05 către administratori și consultanții cabinetului, fiecare firmă în tranzacția ei.
+>   dialogul recepției, mailul de 07:05 către administratori și consultanții firmei de consultanță, fiecare firmă în tranzacția ei.
 > - **Probe:** `SiatdCalendarTest` 7, `SiatdFlowTest` 6, `SiatdDeadlinesTest` 9, `SiatdSettingsIT` 4, `SiatdServiceIT` 14,
 >   `SiatdAlertSchedulerIT` 6; e2e **56** + 19 (zece taburi) + 55 pe stiva 8098/5198, baza `eco_e2e_f6a`. **Negativa pe 10 reguli, toate
 >   prinse:** `+1` din termen și sărbătorile mobile (`SiatdCalendarTest`), excluderea `16 06 01*` (`SiatdFlowTest`), max(recepție, înrolare)
 >   și filtrul pe modulele bifate (`SiatdDeadlinesTest`), aprobatorul, `DepotAccess` pe listă și „cod doar la una” (`SiatdServiceIT`),
 >   `try/catch` pe firmă (`SiatdAlertSchedulerIT`), butoanele ascunse operatorului (e2e 56).
-> - **Recenzia finală** (recenzent nou): 0 critice; reparate cu test RED→GREEN — consultanții primeau nimic (au cabinet, nu firmă), o citire
+> - **Recenzia finală** (recenzent nou): 0 critice; reparate cu test RED→GREEN — consultanții primeau nimic (țin de o firmă de consultanță, nu de o firmă client), o citire
 >   căzută otrăvea tranzacția comună a schedulerului, interogarea încărca și modulele nebifate, kg numărau și liniile fără modul, dialogul nu
 >   se deschidea din SIATD când tabul rămas era Balotare. **Rămâne la proprietar:** bifarea unui modul cu „Înrolat din” în trecut face tot
 >   istoricul „Ratate” (alin. (10) literal).
