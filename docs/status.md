@@ -15,6 +15,13 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **30.09.2026, 12:57 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v148** (`76a89b4`), din `main` `ff5a330`; api neatins (v143), fără migrare — TERMENII ȘI POLITICA v2.3.**
+> `frontend/src/lib/legal.ts` adus la setul juridic v2.3 din `ecoregistru-docs/docs/juridic/`, validat de jurist pe 30.09.2026: termenii (cap. 4 — registrul formularelor
+> de transport emise, ambalajele colectate numai la colector, termenele proprii; 8.3 — persoanele fizice de la care se cumpără deșeuri) și politica (persoanele fizice,
+> anonimizarea lor la 5 ani de la 1 iulie, revocarea sesiunilor la deconectare); `LEGAL_DATE` = „30 septembrie 2026”, tot 17 capitole (proba 12 neatinsă).
+> CI verde pe `ff5a330` (toate patru joburile); `deploy-split.sh frontend --ref origin/main --push`, rulat de proprietar, garda curată. Bundle-ul servit (`index-CluZ9hS3.js`)
+> conține toate cele 19 rânduri de text adăugate și „30 septembrie 2026”, nu mai conține „24 septembrie 2026”.
+
 > **30.09.2026, 02:50 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v147** (`eaa1a7f`), din `main` `771a07c`; api neatins (v143), fără migrare — PERICULOSUL LA GENERATOR FĂRĂ RUBRICILE ANEXEI 3, KILOGRAME ÎNTREGI ÎN FORMULAR.**
 > Cererea proprietarului din noaptea de 30.09; numai ecranul, niciun document tipărit atins. **`808bb0f`** — `transportForm()` (`movementRules.ts`) spune ce formular
 > tipărește predarea: `ANEXA_3` la nepericulos, `ANEXA_2` la contul cu formulare de colector, `null` la generatorul de periculoase și la cap. 18. Fără formular, blocul de
