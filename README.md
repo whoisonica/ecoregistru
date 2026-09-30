@@ -81,12 +81,14 @@ bookmark should open a table, not an error.
 **An audit journal that cannot be forgotten.** Who changed what, and when, over the writes that
 reach a filed document or concern a person. It is captured in Hibernate's flush interceptor rather
 than by a call written into each service — a rule kept by discipline is a rule that the sixth edit
-path will not know about — and bounded by an explicit allowlist of thirteen types, because an audit trail
+path will not know about — and bounded by an explicit allowlist of sixteen types, because an audit trail
 is a promise made in a data-processing agreement, not a debug log: what goes in has to be a choice
 rather than a remainder. Soft deletes and deactivations are written as **deeds**, not as a boolean
 flipping: nobody searches a journal for "deleted: false → true". Rows are written in the same
 transaction as the change they describe, so a refused write leaves no trace and a successful one
-cannot fail to leave one. Nothing in the application can edit or remove a row.
+cannot fail to leave one. Two deeds are written explicitly instead, because their rows also take machine writes: a
+regeneration of the evidence, and ticking a deadline "Depus" (the same row carries the reminder flags). Nothing in the
+application can edit or remove a row.
 
 **Deadlines and alerts.** Automatic generation of **five annual filing deadlines** and of the AFM
 contributions a company actually owes — each on the cadence OUG 196/2005 art. 11 gives it: monthly
@@ -102,14 +104,18 @@ none of them is told nothing, because an alert is a claim. A single boolean woul
 a year. Only the **next** occurrence of each kind is kept on the calendar; a missed one stays overdue until it is ticked and
 gets one notice the day after. **Termene** has three tabs — to do, ticked, past (the current year, including what the profile
 says was owed but was never saved, marked "Calculat"). A daily cross-tenant scheduler, on Romanian time, emails T-7 / T-1
-reminders with per-company deduplication.
+reminders with per-company deduplication. Next to the legal ones, a company adds its own dated obligations — noise
+measurements, water analyses, emissions, re-authorizations (`ReportType.CUSTOM`, `V81`): once or repeating monthly,
+quarterly, every six months or yearly, and ticking a repeating one creates the next. Only those can be edited or deleted;
+they get the same mails, calendar and dashboard as the legal ones.
 
 **Inspection file.** `GET /api/v1/audit-file?year=&years=` streams a ZIP covering one to five years
 — three is the retention period an inspection may ask for (OUG 92/2021 art. 48(5)), five the margin
 the specialist asked for — a contents file, the partner authorizations once, `rapoarte/` with the official
 reports (the record sheet, the centralised evidence and the packaging annexes that apply) and `atasamente/`
 with every movement attachment, a folder per year when there are several. The unofficial summary stays on the
-Generare screen, not in the dossier. Each attachment download has a deadline on the whole body, so a stalled file is
+Generare screen, not in the dossier. The archive streams from one transaction and holds a database connection while it flows, so a company gets one dossier at a
+time and the app at most three (`429 audit.file.busy`, with `Retry-After`). Each attachment download has a deadline on the whole body, so a stalled file is
 listed as not included rather than holding the archive open. It regenerates the monthly
 evidence before packing: the cache is derived from movements, and a client who never pressed
 "Regenerate" would otherwise be handed a bundle of empty official forms.
@@ -123,8 +129,8 @@ which is which is the point. A fifth, the analysis bulletins that characterise h
 built and then removed on 14.09.2026 on the environmental specialist's advice: a generator does not
 file them, and the rules are being rewritten.
 
-**Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `CLIENT_VIEWER` / `CONSULTANT`, enforced at
-endpoint level. A consultant belongs to a consultancy (`V40`) and may pick only the companies that
+**Roles.** `PLATFORM_ADMIN` / `ADMIN` / `OPERATOR` / `SCALE_OPERATOR` / `CLIENT_VIEWER` / `CONSULTANT`, enforced at
+endpoint level. `SCALE_OPERATOR` (28.09.2026) belongs to the depot: it weighs and keeps the scales, and only reads the rest. A consultant belongs to a consultancy (`V40`) and may pick only the companies that
 consultancy manages; any other `X-Tenant-Id` answers exactly like an id that does not exist.
 
 A `CLIENT_VIEWER` reads; it does not print the two transport papers. **Anexa 3** is gated because
@@ -159,7 +165,8 @@ The application is built around what a waste generator actually has to do, in th
   by rubric after the filled models. A load the recipient will weigh is recorded with **no
   quantity**: the cell prints empty, exactly as it reaches the depot on paper, and the monthly
   evidence line is reported provisional until the weight comes back. Neither zero nor an estimate
-  stands in for a measurement.
+  stands in for a measurement. Hazardous waste travels on Anexa 2, which the collector draws up, so on a
+  generator's account a hazardous handover prints only the aviz and the form does not ask the Anexa 3 rubrics.
 
 ## Regulatory note
 
@@ -211,7 +218,7 @@ plus what never changes: the movement form's field order, the printed documents,
 ### Interface tests
 
 `npm run e2e` in `frontend/` drives the **installed Chrome** through `playwright-core` — no browser
-download — against the local dev server and a backend on the `dev` profile. Forty-three probes (listed in `frontend/e2e/run.mjs`, run in CI on a fresh database), plus thirteen for the depot (44–56), run by hand with `node e2e/<file>` and not in CI: every screen opens clean, the action column stays reachable when a table scrolls, search
+download — against the local dev server and a backend on the `dev` profile. Forty-six probes (1–43 and 57–59, listed in `frontend/e2e/run.mjs`, run in CI on a fresh database), plus thirteen for the depot (44–56), run by hand with `node e2e/<file>` and not in CI: every screen opens clean, the action column stays reachable when a table scrolls, search
 and sort and the URL filters do what they claim, typing `deseuri` finds as much as `deșeuri`, the
 month filter is a real select that starts on the current month, the movement form marks the fields
 it rejects, Escape inside the waste-code picker closes the list and not the whole form, a started
@@ -351,16 +358,16 @@ browser sends no `deviceName`, so nothing about the web session changed.
 
 ### Demo accounts (dev profile)
 
-The seed creates four accounts — a `PLATFORM_ADMIN` with no tenant, and an `ADMIN`, an `OPERATOR`
+The seed creates five accounts — a `PLATFORM_ADMIN` with no tenant, and an `ADMIN`, an `OPERATOR`, a `SCALE_OPERATOR`
 and a `CLIENT_VIEWER` of "Demo Reciclare SRL". **The password is not in this repository.** Set
-`DEMO_PASSWORD` and it is used for all four; leave it unset and a random one is generated on every
+`DEMO_PASSWORD` and it is used for all five; leave it unset and a random one is generated on every
 boot and written to the log:
 
 ```
 DEMO_PASSWORD nu e setată — parola conturilor demo pe pornirea asta: 8Qb2…
 ```
 
-The accounts are `platform@ecoregistru.ro`, `admin@demo.ro`, `operator@demo.ro` and `viewer@demo.ro`; the seeder logs the password when it generates one.
+The accounts are `platform@ecoregistru.ro`, `admin@demo.ro`, `operator@demo.ro`, `cantar@demo.ro` and `viewer@demo.ro`; the seeder logs the password when it generates one.
 
 Why it is not written down: this repository is public, and on 09.09.2026 the same accounts turned
 out to exist in the **production** database as well — so a table here was handing any reader a
@@ -407,7 +414,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Request → company | **Clienți** → "Cereri de cont" → "Creează contul", or an approved request → "Vezi firma creată" | "Creează contul" opens **Client nou** (`/clienti/nou?cerere=`) with the answers filled in; an approved request opens the company it produced |
 | Declaration header | `/cerere-cont` → "Cod CAEN" and "Funcția" | Both optional, and the hint says so: leave them blank and the annual declaration prints the rubric empty rather than a guess. They travel onto the company on approval |
 | Type of generator | `/cerere-cont` → "Tipul de generator" | Producător / importator / comerciant. Tick only "Comerciant" and the form says what follows: no packaging declaration, but the Anexa 1 sheet stays |
-| New client | **Clienți** → "Client nou" (N) | Four steps — the company (CUI → ANAF), what it does, the subscription, the administrator — saved in one transaction: a CUI already taken or an email that already has an account undoes the company too. A CUI is the same company with or without "RO" |
+| New client | **Clienți** → "Client nou" (N) | Four steps — the company (CUI → ANAF), what it does, the subscription, the administrator — saved in one transaction. The designated waste manager is asked on the second step, the name required (since 29.09.2026; it used to wait in "Primii pași"): a CUI already taken or an email that already has an account undoes the company too. A CUI is the same company with or without "RO" |
 | Account profile | **Clienți** → "Deschide" → tab "Profil" (`/clienti/:id`) | R/D codes, the waste codes of the authorization, transport details for a collector |
 | Partner roles | **Parteneri** | Green = client, amber = supplier, grey = "rol nestabilit"; filter by role |
 | Internal generators | **Setări** → "Generatori interni" (`/setari/generatori-interni`) | The "Secţia" of Anexa 1 cap. 2 — birouri, producţie |
@@ -419,15 +426,17 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Packaging declaration | **Generare** → *Ambalaje* → the "Anexa 1 Ambalaje" button → ".xls" | Two sheets, `Tabelul nr. 1` and `Tabelul nr. 2`, at the same cell addresses as the model. Table 1 is summed from the movements; the material gives the row, the kind of packaging gives the column. The tab is the third one on **Generare** — Anexa 1 Ambalaje is summed from the company's own waste, which is exactly that screen's register; a company without **Generare** (a pure collector) keeps `/ambalaje` as a screen of its own |
 | Narrowed operations | **Mișcări** → add | No "Predare" in the list; the R/D codes are the five in the profile, not all 28 |
 | Weighed at unloading | **Mișcări** → add, tick the box | "Cantitate" is replaced by "Volum (mc)" — the only measure you have without a scale — and the movement saves with no weight at all |
-| Chapter 2 | **Mișcări** → add | Storage type and treatment method under "Unde stă până pleacă"; transport means and destination under "Cum pleacă și unde ajunge" — eight sections titled as questions, in the unchanged field order, not one list of thirty fields |
+| Chapter 2 | **Mișcări** → add | Storage type and treatment method under "Unde stă până pleacă"; transport means and destination under "Cum pleacă și unde ajunge" — eight sections titled as questions, not one list of thirty fields. The field order does not change, with one exception asked for by the specialist on 29.09.2026: on **Generare** the form asks recovery or disposal first, then the R/D code, the destination, who takes it and the transport; **Intrări** / **Ieșiri** keep the old order |
 | Anexa 3 | **Generare** → the row's ⋯ menu | One page, drawn rubric by rubric against the stamped model: one header line, no copy labels. It printed three identical copies until 15.09.2026, when the specialist asked for a single one ("anexa 3 transport să fie doar 1 bucată") — on paper the three copies of HG 1061/2008 art. 20 alin. (2) are a carbon booklet, so the client prints the page as many times as needed, and the screen says so. The "Destinat:" box carries an X only where the movement was ticked — nothing is derived from the R/D code |
+| Registrul Anexa 3 (transport) | **Generare** or **Ieșiri** → the "Registrul Anexa 3 (transport)" menu in the header, or **Dosar de control** | A landscape PDF (`GET /api/v1/evidences/registru-anexa3?year&workPointId`) listing every transport form printed that year, one row per numbered handover in number order: date, series and number, quantity in kg, code, name, recipient and its CUI, R/D code. In the dossier as `rapoarte/registru-anexa3-«year».pdf`, only for a year with forms issued |
+| Quantity | **Generare**, **Intrări** or **Ieșiri** → add, or "Adaugă cantitatea" on a handover awaiting the weighbridge | Kilograms take whole numbers only ("În kilograme, fără zecimale."), tonnes at most three decimals — one kilogram. An old row with decimals in kg (from an import) still saves as long as its quantity is not touched. Only the screen: the server, the import and the documents are unchanged |
 | Exit with no R/D code | **Generare** → *Mișcări* and *Totalul anului* | A red **"Fără cod R/D"** badge, not the amber one: the quantity left the site and reaches neither official column, so the sheet cannot be filed as it stands. Amber "De cântărit" is a legitimate wait; red is a gap |
 | Setting a password | `/reseteaza-parola?code=…` — from the invite mail | The page an invited client lands on. Choosing a password is what enables the account; the invite link is valid for 7 days, a password-reset link for 30 minutes; `/parola-uitata` issues a fresh one when either has expired |
 | Handover register | **Generare** → *Mișcări* | Date, code, quantity, V/R or D + code, partner — and "De cântărit" where the weight is pending. Until 18.09.2026 this list had a second home on an "Evidențe" screen, which aggregated the very same `ANEXA_1` movements |
 | The year's totals per waste code | **Generare** → *Totalul anului* | One row per waste code: generated, recovered, disposed, and whether it can be filed ("Gata" · "N de cântărit" · "N kg fără cod R/D"). The two official documents sit **above** the table, not under it — on 15 March you come here for the paper — and each button carries the document's own name rather than "Descarcă", because two identically anonymous buttons side by side are how the wrong sheet gets filed. "Recalculează acum" sits last and deliberately looks lighter: it is the one control here that *writes* (it rebuilds the evidence, and the later years with it, because stock carries over), not one that hands you a file. There is no stock column: a generator keeps no stock, so on Anexa 1 the figure is zero by construction (see the row below). Ten codes to a page, not the usual twenty-five — the table sits under a tall header, so a company with thirty codes pushed the total row, the very figure the tab exists for, off the screen; the total row stays the **year's**, not the page's. These are the figures typed into SIM on 15 March; the monthly breakdown stays on the printed sheet |
 | What the movement does | **Mișcări** → add | A receipt beside the form ("Bonul mișcării", on top on a narrow screen) names the official documents the quantity will reach — Anexa 1, the art. 48 register, the packaging declaration — and updates as you answer. It reads the same expressions `buildInput` does, so it cannot disagree with what gets saved |
 | Duplicate a movement | **Mișcări** → the row's ⋯ menu → "Duplică mișcarea" | Everything comes across except the date and the document number — the two rubrics that actually differ between two handovers |
-| Compliance status | **Acasă** | One band, not a card of blockers: "Ești la zi" when nothing blocks filing, otherwise the most expensive open thing — red for an exit with no R/D code (a gap), amber for a line awaiting the weighbridge (a legitimate wait) — with "+ încă N" opening the rest. Below it, for a company that generates: the year by month in kg (an empty month between the first one with data and today is amber), the five largest waste codes of the year, and the deadlines on twelve columns with "Adaugă în calendar" (`.ics`, built in the browser). The blocker card, the tiles and the two lists this screen used to carry went on 18.09.2026 |
+| Compliance status | **Acasă** | One band, not a card of blockers: "Ești la zi" when nothing blocks filing, otherwise the most expensive open thing — red for an exit with no R/D code (a gap), amber for a line awaiting the weighbridge (a legitimate wait) — with "+ încă N" opening the rest. Below it, for a company that generates: the year by month in whole kilograms (an empty month between the first one with data and today is amber), the five largest waste codes of the year, and the deadlines on twelve columns with "Adaugă în calendar" (`.ics`, built in the browser). The blocker card, the tiles and the two lists this screen used to carry went on 18.09.2026 |
 | From the blocker to the fix | **Acasă** → the red band "Completează codul R/D pe N linii" → "Vezi liniile" | **Generare** → *Mișcări*, the whole year, filtered to the movements with no R/D code, with the filter named and removable. The row is edited where it lives — the badge used to be a dead end on three screens |
 | Platform admin with no company picked | log in as `platform@ecoregistru.ro` | Every company-scoped screen says which company it needs and where to pick one, instead of rendering and firing four requests that answer `400`. **Clienți** is the exception, on purpose: it is the screen the companies are picked from |
 | Search any table | any table with ten rows or more | The search box appears from ten rows up; on the movement list and invoicing it asks the server, elsewhere it filters what is loaded. Every word must match somewhere, so "hamburger 15 01" finds the row |
@@ -443,6 +452,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Search without diacritics | **Mișcări** → add → waste code box → type `deseuri` | Results appear: the nomenclator is searched on a folded copy of code and name (V17) |
 | The 15 March deadline | **Termene** | Reads "Evidența gestiunii deșeurilor generate (anual, 15 martie)": the document, not the portal |
 | The 25 February deadline | **Termene**, on a company whose profile answers "producător" or "importator" | The packaging report of Ordinul 794/2012 art. 6, at the county agency. Tick only "Comerciant", or leave the question unanswered, and it does not appear — an alert asserts something, so it stays silent where a screen would still offer |
+| Your own deadlines | **Termene** → "Adaugă termen" (N) | What the law does not put on the calendar through the profile — noise measurements, water analyses, emissions, re-authorizations: a title, a date not in the past, how often it repeats and a free note. "⋯" on the row edits or deletes it; the legal deadlines refuse both (`deadline.not.custom`). Ticking a repeating one puts the next on the list |
 | Lapsed recipient authorization | **Mișcări** → hand waste to a partner whose authorization expired before that date | An amber **"Autorizație expirată"** badge next to the partner, naming the expiry date. Anexa 3 still prints: the handover happened, and the warning stays off the paper that reaches the inspector |
 | The year's totals for the filing | **Generare** → *Totalul anului* | The year's totals per waste code in **kg**, the unit the specialist confirmed the filing is typed in (the screen showed tonnes until 17.09.2026, and "1,060 t" read as a thousand tonnes). Nothing printed changes |
 | Designated waste manager | **Clienți** → "Deschide" → "Profil" | Name, capacity, employee vs. delegated third party, training certificate — OUG 92/2021 art. 23 alin. (4)–(5). Not the contact person, who is the declaration's signature block. Leave it blank and the control dossier's `00-cuprins.txt` says so out loud, because its absence is itself the finding |
@@ -471,7 +481,7 @@ R13, D5), so the narrowing is visible rather than theoretical.
 | Why a driver's ID papers are held | **Setări** → "Șoferii noștri", and a carrier's own form | A retention note where the field is typed: it is held for the "Date de identificare delegat" rubric of Anexa 3 and printed on it, and it asks for the ID series, not the CNP. Movements keep the snapshot of the day for as long as the record must be kept (OUG 92/2021 art. 48 alin. (5), at least three years); after three full calendar years a daily job clears the driver's name and ID from them |
 | Deleting one of our drivers | **Setări** → "Șoferii noștri" → deactivate, then "Șterge definitiv" | The record goes for good, but only once deactivated, so one wrong click cannot be final. Movements are not touched: they hold their own copy, because the Anexa 3 must print the same while the record is kept |
 | The partner's annual visa | **Parteneri** → edit → authorization | Issue date of the original authorization, the visa decision (number, date) and the visa period, typed from the decision; the screen proposes the issue anniversary. The handover badge, the 60-day alert, the Anexa 3 rubric and the dossier all read whichever comes first, the expiry or the end of the visa |
-| Two movement screens | the menu, on each company type | A **generator** sees **"Generare"** (`/generare`, Anexa 1), a **collector** **"Intrări"** and **"Ieșiri"** (`/intrari`, `/iesiri` — the art. 48 register, one screen per direction; `/intrari-iesiri` redirects), "Generator și colector" all three. A pure collector gets a note instead: its own waste goes on Anexa 1, so such a company is set to "both". On a generator there is no Anexa 2 button (`anexa2.collectors.only`); its Anexa 3 Ambalaje (on **Generare** → *Ambalaje*) carries only what it handed over |
+| Two movement screens | the menu, on each company type | A **generator** sees **"Generare"** (`/generare`, Anexa 1), a **collector** **"Intrări"** and **"Ieșiri"** (`/intrari`, `/iesiri` — the art. 48 register, one screen per direction; `/intrari-iesiri` redirects), "Generator și colector" all three. A pure collector gets a note instead: its own waste goes on Anexa 1, so such a company is set to "both". On a generator there is no Anexa 2 button (`anexa2.collectors.only`) and, since 29.09.2026, no Anexa 3 Ambalaje either (`anexa3.packaging.collectors.only`) |
 | The art. 48 chronological record | **Intrări** or **Ieșiri** → "Evidența cronologică" → ".xlsx" / "PDF" | The year in the month filter, one work point or all. First the chronological table of the `ART_48` movements (kg and t, partner, R/D, transport, document), then the year's totals shaped like the SIM "Colectare/Tratare" questionnaire, in tonnes: cap. 1 per code (opening stock from earlier years, collected, recovered, disposed, closing) and cap. 2 A/B per recipient. OUG 92/2021 art. 48 alin. (1) prescribes the content and "tabular", not a form, and the portal is typed by hand, so the xlsx is the copy aid (`docs/surse-oficiale.md` §2.1-bis). A generator gets `art48.register.collectors.only` |
 | A client's subscription | **Clienți** → "Deschide" → "Abonament și facturi" on a direct company, or "⋯ → Abonament" on a consultancy (platform admin) | Plan, start date and founder flag; the prices are copied from the grid when the subscription is created and change only with the plan. The dialog shows the first invoice and the monthly one: a period runs from the start day to the day before it next month, at full price. A company inside a consultancy has no subscription of its own (`subscription.company.in.consultancy`), and a company with one cannot join a consultancy (`company.has.own.subscription`). Invoices are issued from the app on the due day and mailed to the client; a client without a subscription is neither billed nor restricted |
 | Invoicing | **Facturare** (`/facturare`, B, platform admin) | The last run (06:30 or the button), row by row: who failed and why, what was issued and paid. Every invoice, paged on the server, with "De rezolvat" first; "Verifică plata" asks FGO about one invoice, "Oprește" drops one FGO refused. A billing county outside FGO's list is refused when saved, not at 06:30 |
@@ -490,7 +500,7 @@ cd backend
 ./gradlew.bat test
 ```
 
-1305 tests across 160 classes (counted in the sources on 28.09.2026; the FGO and Netopia live checks run only with a key), on an embedded PostgreSQL (zonky), through the real HTTP stack rather
+1370 tests (as Gradle counted them in CI on 30.09.2026, four skipped; the FGO and Netopia live checks run only with a key), on an embedded PostgreSQL (zonky), through the real HTTP stack rather
 than service calls. They cover tenant isolation, role authorization, session handling, evidence
 calculation, export correctness, movement validation, company management and the official documents
 the app prints — the HG 856/2002 record sheet, the annual declaration, the HG 1061/2008 transport

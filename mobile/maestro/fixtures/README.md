@@ -5,8 +5,8 @@ cifra de control corectă și să **nu existe la ANAF** — `28104567`, folosit 
 
 | Fișier | Pentru ce |
 |---|---|
-| `aviz-partener.png` | `m1b-aviz.yaml`: cumpărătorul e partenerul demo Eco Valorificare SA (`RO 99887766`, din `DevDataSeeder`), 15 01 02, 1.250 kg, seria DRS nr. 000417. Se pune în galerie chiar înainte de flux: fluxul alege cea mai nouă poză. |
-| `aviz-necunoscut.png` | `m1b-cui-necunoscut.yaml`, „Adaugă partenerul”: cumpărătorul Eco Deal SRL, `CUI: RO 99900010` (404 la ANAF), nu e în lista demo. |
+| `aviz-partener.png` | `m1b-aviz.yaml`: cumpărătorul e partenerul demo Eco Valorificare SA (`RO 99887766`, din `DevDataSeeder`), 15 01 02, 1.250 kg, seria DRS nr. 000417. Se pune în galerie chiar înainte de flux: fluxul alege cea mai nouă poză. Tot el pentru `proba-60s.yaml` (două predări cronometrate) și `b3-b5-ciorna-poza.yaml` (ciorna cu poză). |
+| `aviz-necunoscut.png` | `m1b-cui-necunoscut.yaml`, CUI-ul care nu e printre parteneri: „Caută la ANAF” → „ANAF nu găsește CUI-ul ăsta” (fluxul se oprește acolo; „Adaugă partenerul” apare doar pentru un CUI găsit la ANAF). Cumpărătorul Eco Deal SRL, `CUI: RO 99900010` (404 la ANAF), nu e în lista demo. Se pune ULTIMUL în galerie. |
 
 `f7-repeta-poza.yaml` ia oricare poză din galerie (o pune pe o predare deja salvată).
 

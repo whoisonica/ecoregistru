@@ -85,7 +85,8 @@ mișcări (butonul de pe Acasă a fost scos și el, tot pe 18.09.2026), iar N / 
 Mai mult** (`MobileBar`). „+” oferă doar ce e permis tipului de firmă.
 
 **Tastele:** cifrele deschid intrările meniului; **N = acțiunea principală a ecranului curent** (pe ecranele fără
-adăugare, N = adaugă deșeuri); I și E deschid formularele de intrare și ieșire de oriunde, **numai la firmele care preiau de la
+adăugare, N = adaugă deșeuri; pe Termene, din 29.09.2026, N = „Adaugă termen”, termenul propriu al firmei — ⚠️ butonul
+de acolo nu arată încă tasta, n-are `hotkey="N"`, deși N merge); I și E deschid formularele de intrare și ieșire de oriunde, **numai la firmele care preiau de la
 alții**; S = Setări când meniul trece de zece intrări; F / C / B în grupul Consultant; `/` sare în căutarea listei; `[` strânge
 panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de text (`useHotkey`).
 
@@ -114,7 +115,7 @@ panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de t
 | `Toast` | Mesaje scurte, pe grafit, ca de la aparat |
 | `LoadError` | Orice ecran sau bloc care n-a putut încărca: `role="alert"`, text în `state-bad`, „Încearcă din nou” (20.09.2026) |
 | `PageTabs` | Taburile unui ecran (din `lib/screenTabs.ts`), cu filtrele pe aceeași linie în slotul `right` |
-| `DocAction` | Butonul unui document, cu explicația în `Tooltip`, nu dedesubt |
+| `DocAction` | Butonul unui document, cu **explicația de un rând dedesubt** (rândul de documente de pe „Totalul anului”). Unde butoanele stau lipite, fără text dedesubt (tabul „Ambalaje”, antetul ecranelor de mișcări), explicația stă în meniul butonului (`MenuItem.hint`) |
 | `TableToolbar`, `TableSearch`, `TablePagination`, `RowActions` | Căutarea (de la 10 rânduri), paginarea și meniul de rând al unui tabel (`table-toolbar.tsx`) |
 | `MonthInput`, `Combobox`, `PasswordInput`, `FileDropzone` | Luna/anul, alegerea dintr-o listă lungă cu căutare, parola cu tăria ei, atașamentele (10 MB) |
 | `EmptyState`, `Skeleton`, `TableFallbackRow` | Lista goală spusă în cuvinte; locul ținut cât se încarcă |
@@ -180,15 +181,29 @@ de lucru ale partenerului și, numai la cine transportă, șoferii lui; din tabe
 „Autorizație expirată” deschide direct pasul 3. **Pașii sunt toți montați** (`hidden`), deci id-urile rubricilor și
 valorile nu se pierd între pași; regulile și `PartnerInput` sunt cele de dinainte.
 
-**„Adaugă deșeuri” rămâne pe o pagină** (se completează des; pașii ar fi doar clicuri în plus), cu **aceeași ordine a
-rubricilor** și același `validate`/`buildInput`: titlurile de secțiune întreabă („Ce deșeu și când”, „Cât a fost”, „Cum
-pleacă și unde ajunge”, „Cine îl preia”); sub șapte opțiuni, taste (`PillGroup`: unitatea, operațiunea, starea fizică,
+**„Adaugă deșeuri” rămâne pe o pagină** (se completează des; pașii ar fi doar clicuri în plus), cu același
+`validate`/`buildInput`: titlurile de secțiune întreabă („Ce deșeu și când”, „Cât a fost”, „Unde stă până pleacă”, apoi, pe
+Intrări și Ieșiri, „Cum pleacă și unde ajunge” și „Cine îl preia”). **Pe „Generare” ordinea e a specialistei din 29.09.2026**
+(decizia 89, `fateFirst` în `MovementFormDialog`): „Ce se întâmplă cu deșeul” (valorificare/eliminare → cod R/D → destinația,
+oferită abia după alegere, `destinationsOpen`) → „Cine îl preia” → „Transportul” („Cu ce pleacă”). Numai afișarea s-a mutat:
+validarea, ce pleacă la server și documentele sunt aceleași. Sub șapte opțiuni, taste (`PillGroup`: unitatea, operațiunea, starea fizică,
 mijlocul de transport, destinația, unitatea de pe Anexa 3, caseta „Destinat:”); „Unde pleacă deșeul” pe carduri; „Nu am
 cântar” ca comutator. Listele lungi rămân `Select` (depozitarea, tratarea, codul R/D, partenerii, șoferii). În dreapta,
 **bonul mișcării**: codul cu pubela, cantitatea, unde pleacă, către cine, documentul, apoi „Ce face mișcarea asta” — pe
 ecran îngust rămân doar efectele, deasupra. **„La fel ca data trecută”** (regula 4) apare pe o mișcare nouă după ce se
 alege codul, dacă există o mișcare cu același cod pe același ecran; la clic pune alegerile ei (ca „Duplică”), niciodată
 cantitatea, data, documentul sau numărul Anexei 2.
+
+**Blocul de transport arată rubricile formularului care se tipărește** (30.09.2026, `transportForm()` în
+`movementRules.ts`): Anexa 3 la nepericuloase, Anexa 2 la periculoase numai la firma care colectează. Un cod periculos pe
+un cont de generator n-are formular — Anexa 2 o întocmește colectorul — deci blocul se numește „Transport” și păstrează
+doar ce scrie avizul (transportatorul, șoferul, mașina), fără unitatea tipărită, datele de încărcare/descărcare și caseta
+„Destinat:”; după salvare, avizul nu mai spune „împreună cu Anexa 3”.
+
+**Cantitatea: în kilograme numai numere întregi, în tone cel mult trei zecimale** (30.09.2026, `quantityProblem()` în
+`movementRules.ts`, și în „Adaugă cantitatea”): nimeni nu cântărește la gram. Eroarea e de un rând („În kilograme, fără
+zecimale.”). Un rând vechi cu zecimale în kg se salvează la editare cât cantitatea nu se atinge. Numai ecranul: serverul,
+importul și documentele nu s-au schimbat.
 
 **După salvare** (regula 12, 17.09.2026, `MovementSavedDialog.tsx`): o mișcare **nouă** nu mai închide doar dialogul cu un mesaj.
 Apare „Predarea e în evidență” (Intrarea / Ieșirea), cu bonul citit din răspunsul serverului și, sub „Ce urmează”, exact
@@ -210,7 +225,12 @@ peste toate rândurile filtrului (`GET /api/v1/movements/totals`), nu peste pagi
 - Ieșiri: plecat · valorificat · eliminat · fără cod R/D
 
 Formularul e același (`MovementFormDialog`); ecranul îi dă registrul și direcția, deci pornește pe preluare la
-Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor nu se schimbă.**
+Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor o stabilește specialista și nu se schimbă din alt motiv** —
+singura mutare e a ei, pe „Generare” (29.09.2026, decizia 89, mai sus); „Ieșiri” păstrează ordinea veche.
+
+**„Registrul Anexa 3 (transport)”** (29.09.2026, decizia 88) e un buton cu meniu în antetul ecranelor „Generare” și
+„Ieșiri” (nu pe „Intrări”): PDF-ul formularelor de transport emise în anul și pe punctul din filtru, cu explicația în
+`MenuItem.hint`, nu sub buton.
 
 **Generare are trei taburi** (`GENERATION_TABS` din `lib/screenTabs.ts`; 18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
 sus, tabul implicit), **Totalul anului** și **Ambalaje** (mai jos). Totalul anului are un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
@@ -291,7 +311,7 @@ explicații sub butoanele de document.
 
 **Dosarul de control e locul hârtiilor.** Lista „Documentele anului" (`GET /api/v1/audit-file/contents`) are de acum
 un buton pe fiecare rând: fișa, centralizata, Anexa 1 și Anexa 3 Ambalaje (`.xls` / PDF; Anexa 3 numai la firma care
-colectează, din 29.09.2026), plus rezumatele neoficiale
+colectează, din 29.09.2026), „Registrul Anexa 3 (transport)” (PDF, numai în anii cu formulare emise), plus rezumatele neoficiale
 sub linie. Ce se naște numai înăuntrul arhivei — lista autorizațiilor, atașamentele — scrie „în arhivă"; ce nu se
 aplică anului scrie „—", niciodată „în arhivă".
 
@@ -317,6 +337,9 @@ aplică anului scrie „—", niciodată „în arhivă".
 - Textele stau în `frontend/src/lib/strings.ts`, în română, și numesc **ce face omul**: „Adaugă deșeuri”, „Intrare”, „Ieșire”, „Poate vinde metal”.
 - Temeiul legal (actul, articolul) se păstrează, dar în explicație, nu în etichetă.
 - Numeralul are trei forme (`1 linie · 2 linii · 20 de linii`) — trece prin `countOf` / `withCount`.
+- **Cifrele de transcris au virgulă și exact trei zecimale** (`formatQuantity` / `formatKg` din `lib/units.ts`, G06):
+  liste, bonul formularului, totalurile de tab. **Rezumatele sunt în kilograme întregi** (`formatKgSummary`, „2.576 kg”):
+  Acasă — anul pe luni și deșeurile anului — din 29.09.2026, și banda de totaluri. Lipsa virgulei spune că e un rezumat.
 - ⚠️ **Explicația de sub un lucru e de un rând** (proprietarul, 18.09.2026: *„textele de sub chestii care explică
   sunt foarte lungi, prost aranjate și par neîngrijite"*). Măsura e lățimea în care cade textul, nu numărul de
   semne: sub un buton dintr-un rând de patru (≈270px) înseamnă **sub 40 de semne**; sub un titlu de secțiune
@@ -331,7 +354,8 @@ aplică anului scrie „—", niciodată „în arhivă".
 
 ## Ce nu se schimbă, orice stil
 
-- Ordinea rubricilor din formularul de mișcare (stabilită cu specialista).
+- Ordinea rubricilor din formularul de mișcare (stabilită cu specialista; o mută numai ea sau proprietarul — pe „Generare”,
+  29.09.2026, decizia 89).
 - Documentele tipărite: numele din acte rămân pe hârtie. Limbajul de om e doar pe ecran.
 - Nicio cifră ghicită sau precompletată pe un formular oficial.
 - Roșu ≠ galben. Un indicator care n-a putut încărca arată „?”, nu „0”, și nu se ascunde.

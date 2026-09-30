@@ -1356,6 +1356,12 @@ Sursă: CELLAR, CELEX `32025D0934`, textul în română (`Accept: application/xh
 accesat **28.09.2026**. JO L din 20.05.2025. Fișa RDF a Deciziei 2000/532/CE o numește ca singurul act care o modifică
 după 2014.
 
+**Cum intră în dreptul român (verificat 28.09.2026 pe [Portal 245846](https://legislatie.just.ro/Public/DetaliiDocument/245846)):**
+fără act de transpunere. OUG 92/2021 **art. 7 alin. (1)**: *„Clasificarea și codificarea deșeurilor, inclusiv a deșeurilor
+periculoase, se realizează potrivit: a) Deciziei Comisiei 2000/532/CE […], cu modificările ulterioare; b) anexei nr. 4.”*
+Trimiterea e dinamică, deci ediția din 9.11.2026 se aplică prin ea, iar art. 8 alin. (1) obligă producătorii să codifice pe
+lista de la art. 7. Anexa 2 la HG 856/2002 rămâne cea din 2002, nerevizuită (§3.2).
+
 > **Articolul 1** Anexa la Decizia 2000/532/CE se modifică în conformitate cu anexa la prezenta decizie.
 > **Articolul 2** Prezenta decizie intră în vigoare în a douăzecea zi de la data publicării în Jurnalul Oficial al
 > Uniunii Europene. **Se aplică de la 9 noiembrie 2026.**
@@ -1426,7 +1432,9 @@ consolidare 23.01.2026. **În vigoare.** Accesat 22.08.2026.
 >   lit. a)). Deci **un transfer spre un depozit fără autorizație valabilă nu se creează** (blocare, nu avertisment);
 > - **art. 20 alin. (5)**: destinatarul înregistrează formularul primit *„într-un registru securizat, înseriat și
 >   numerotat”*. E o obligație a oricărei recepții cu Anexa 3, nu doar a transferului, iar aplicația **nu are** încă un
->   asemenea registru;
+>   asemenea registru; *(30.09.2026, verificat în cod: îl are din 26.09.2026 pe depozit — „Registrul formularelor de transport
+>   primite”, D2.6, `V72`, `ReceivedFormsRegisterGenerator`, tabul „Formulare primite” de pe Cântar, cu seria registrului și
+>   „Pagina X din Y”)*
 > - **art. 4 alin. (11)** (deja în tabelul din §4.1): la periculoase procedura se aplică și când expeditorul,
 >   transportatorul și destinatarul sunt același operator.
 >
@@ -1488,6 +1496,9 @@ dintre ele într-un mesaj de eroare, deci numărul trebuie să fie corect:
 > ⚠️ *(Notă 19.09.2026, verificat în cod: din 14.09.2026 Anexa 2 se tipăreşte **numai la colectori** —
 > `ANEXA2_COLLECTORS_ONLY`, la sfatul specialistei. La un generator, butonul Anexa 3 nu apare pe un cod periculos
 > (`canPrintAnexa3`), deci mesajul de mai sus, care trimite la „butonul Anexa 2”, se vede doar la un apel direct al API-ului.)*
+> *(Notă 30.09.2026, verificat în cod: nici formularul de mișcare nu mai cere, la un cod periculos pe un cont de generator,
+> rubricile Anexei 3 — unitatea tipărită, datele de încărcare/descărcare, caseta „Destinat:”; rămân transportatorul, șoferul
+> și mașina, pe care le tipărește avizul. `transportForm` în `frontend/src/components/movements/movementRules.ts`.)*
 >
 > 🟠 ~~**Dar nu punem nimic în loc.**~~ *(adevărat până pe 10.09.2026, păstrat fiindcă spune de ce
 > felia era cea mai valoroasă rămasă)* Un generator obişnuit *are* coduri periculoase — un service

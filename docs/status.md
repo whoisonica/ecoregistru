@@ -15,6 +15,18 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **30.09.2026, 02:50 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v147** (`eaa1a7f`), din `main` `771a07c`; api neatins (v143), fără migrare — PERICULOSUL LA GENERATOR FĂRĂ RUBRICILE ANEXEI 3, KILOGRAME ÎNTREGI ÎN FORMULAR.**
+> Cererea proprietarului din noaptea de 30.09; numai ecranul, niciun document tipărit atins. **`808bb0f`** — `transportForm()` (`movementRules.ts`) spune ce formular
+> tipărește predarea: `ANEXA_3` la nepericulos, `ANEXA_2` la contul cu formulare de colector, `null` la generatorul de periculoase și la cap. 18. Fără formular, blocul de
+> transport păstrează transportatorul, șoferul și mașina (pentru aviz), fără unitatea tipărită, datele de încărcare/descărcare și caseta „Destinat:”. Dialogul de după salvare
+> nu mai zice „împreună cu Anexa 3” la periculos: „împreună cu Anexa 2” la colector, „Formularul de transport îl aduce cel care preia deșeul.” la generator.
+> **`771a07c`** — `quantityProblem()` (același fișier): în kg numai numere întregi („În kilograme, fără zecimale.”), în tone cel mult trei zecimale; rubrica are `step="any"`,
+> ca mesajul să fie al nostru, nu al browserului. Un rând vechi cu zecimale în kg (import) rămâne salvabil cât cantitatea nu se atinge; aceeași regulă în `RecordWeightDialog`
+> („Adaugă cantitatea”). Serverul, importul și documentele neatinse.
+> Probe: `movementRules.test.ts` (ambele reguli), web `npm test` 123/123 pe `771a07c`; e2e **58** (periculosul la generator) și **59** (cantitatea în kg), amândouă în `run.mjs`
+> (CI-ul rulează acum 1–43 + 57–59). Pushul l-a făcut proprietarul. CI a picat o dată pe două teste instabile, fără legătură cu felia: `TransferIT` (backend neatins; sufixele
+> UUID aleatoare pot conține „900”, pe care proba îl numără în PDF) și proba 6 (așteaptă 1,2 s după trimiterea cererii); la reluare, toate patru joburile verzi pe `771a07c`.
+
 > **29.09.2026, 22:45 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v146** (`7a08295`), din `main` `ef93ccf`; api neatins (v143) — ACASĂ ÎN KILOGRAME ÎNTREGI.**
 > Proprietarul: „nu cântărește nimeni cu 3 zecimale”. Graficul „{an} pe luni”, totalul lui și „Deșeurile anului” scriu `formatKgSummary` („2.576 kg”),
 > nu `formatKg` („2.576,000 kg”); cifrele de transcris păstrează trei zecimale (G06). Web 121/121, probele 39 și 10 verzi local (39 cere cardurile fără
@@ -33,6 +45,25 @@ rulează local și are testele verzi.
 > „Termen”, nu „Termen de raportare”), push, Acasă, `.ics`, rezumatul consultantului. Web: „Adaugă termen” + tasta N pe Termene, „⋯” → Editează / Șterge pe rând.
 > Nimic tipărit neatins. Probe: `CustomDeadlineIT` (13), `DeadlineRecurrenceTest`, `deadlines.test.ts`, e2e **57** (intră în `run.mjs`); negativă: fără garda
 > `isCustom()` cade `legalDeadlinesCannotBeEditedOrDeleted`. F6b (depozit) ia `V82`.
+
+> **29.09.2026, 20:12 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v142** (`d0056ef`), `ecoregistru-app` **v144** (`57735ca`), din `main` `f38c013` — REPARAȚIILE DIN EVALUAREA GENERATORULUI.**
+> Intrarea lipsea din jurnal; scrisă pe 30.09.2026 din `git log 73acf04..f38c013` și `heroku releases`. 38 de commituri peste `73acf04`: ramurile `fix/eval-2909-api` și
+> `fix/eval-2909-web`, mergeuite în `fix/generator-eval-2909`. Fără migrare (niciun fișier nou în `db/migration` în interval), liberă tot `V81`. CI verde pe `f38c013`.
+> **Backend.** G20 decisă B: un punct de lucru, partener sau transportator dezactivat se refuză pe o mișcare nouă (422), o mișcare veche rămâne salvabilă (`MovementWriteGuardsIT`).
+> Dosarul de control: unul pe firmă odată și cel mult trei în aplicație (`429 audit.file.busy`, cu `Retry-After`), fiindcă arhiva ține o conexiune cât curge. Bifa „Depus” a unui
+> termen și cifrele de ambalaje scrise de mână intră în Istoric (`PackagingMarketEntry` în `AUDITED`); recalcularea evidenței nu mai scrie „Modificare · <firma>”. Mementourile de
+> dimineață nu mai rescriu bifa sau reînnoirea omului (`@DynamicUpdate` pe `ReportingDeadline` și `Partner`), iar o adresă refuzată nu mai retrimite mementoul tuturor a doua zi.
+> Importul ia valoarea formulelor, o dată numerică invalidă e eroare de rând, plafon de 64 MB pe toată arhiva. Partea `file` lipsă, multipart stricat și Content-Type greșit dau
+> 400/415 (tipul „unsupported-media-type”), nu 500 + Sentry. Invitația consumă cota înainte să spună că adresa are cont; loginul fără cont plătește bcrypt. Panoul consultantului
+> verifică, până la 15 martie, anul care se depune.
+> **Web.** „Deconectare” stinge sesiunea pe server; „Șterge filtrele” le șterge pe toate; tastele tac cât e deschis un dialog; Acasă și panoul văd anul care se depune (1 ian – 15 mar);
+> paginarea după ștergerea ultimului rând; formularul de mișcare — o singură salvare la dublu-clic, reîncercarea după un atașament căzut, avertismente pentru data din viitor și golul
+> din Registrul Anexa 3; Anexa 3 și avizul pleacă o dată pe mișcare; o scriere recitește Ambalajele și dosarul; dosarul așteaptă verificarea „de cântărit”; drepturile de doar-citire
+> la partener și în Setări; CUI-ul dublat la partener; o copie nu mai aduce un partener dezactivat; „Adaugă alt client” pornește gol; Istoricul numește în română termenul bifat
+> și cifrele de ambalaje; numeralul acordat în dosar.
+> **Documentele:** singurul rând tipărit schimbat, cu acordul proprietarului, e totalul Registrului Anexa 3 și rândul lui din `00-cuprins.txt` („1 formular emis.” / „20 de formulare
+> emise.”, `1069a6a`); în rest, 1090 de documente descărcate de pe codul de producție și de pe ramură, pe aceeași bază, au textul identic (notele private ale proiectului).
+> O adresă personală scoasă din `docs/istoric`.
 
 > **29.09.2026, 13:06 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v141** (`260d009`), `ecoregistru-app` **v143** (`6ff6c00`), din `main` `df8dd15` — „cabinet” devine „consultant” peste tot.**
 > Vocabularul proprietarului: „consultant” la etichete (grupul din meniu, tabul „Consultanți”, „Plătește consultantul”, „Abonament de consultant”, „Pornirea contului de consultant”),
