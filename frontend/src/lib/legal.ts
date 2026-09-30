@@ -19,6 +19,11 @@
  * <p>v2.1, 22.09.2026 (după validarea juristului): documentele după activitatea firmei, importul făcut de noi,
  * cardul de la activare, excepția de rambursare din DPA art. 6.3; în politică: Brevo, site-ul fără cookie-uri și fără terți,
  * stocarea locală așa cum e în cod, CNP-ul la ștergerea automată.
+ *
+ * <p>v2.3, 30.09.2026 (textul adus la cod): în termeni, cap. 4 (registrul formularelor de transport emise,
+ * raportarea ambalajelor colectate numai la cine preia deșeuri de la terți, termenele proprii) și 8.3 (persoanele
+ * fizice de la care se cumpără deșeuri); în politică: persoanele fizice din aplicație și anonimizarea lor la
+ * termenul documentelor contabile, revocarea sesiunilor și la deconectare. Tot 17 capitole.
  */
 
 /** Ce poate să conțină un capitol. Cât ne trebuie ca să scriem exact documentele astea, nimic mai mult. */
@@ -52,7 +57,7 @@ export interface LegalDoc {
  * ajunge în altă zi, se schimbă aici — într-un singur loc, pentru amândouă documentele — și în cele
  * două rânduri de dată din `juridic/`.
  */
-export const LEGAL_DATE = "24 septembrie 2026";
+export const LEGAL_DATE = "30 septembrie 2026";
 
 const COMPANY =
   "**ONSIA S.R.L.**, societate română cu sediul în sat Sântandrei, comuna Sântandrei, " +
@@ -120,16 +125,19 @@ export const TERMS: LegalDoc = {
             "WasteHouse vă ajută să **țineți evidența** gestiunii deșeurilor și **pregătește documentele** " +
             "cerute de legislația română, în forma cerută la data generării, potrivit activității firmei: fișa " +
             "de evidență a gestiunii deșeurilor, evidența centralizată anuală, formularul de transport al " +
-            "deșeurilor nepericuloase și avizul de însoțire a mărfii, declarațiile de ambalaje, dosarul de " +
-            "control și celelalte documente pe care aplicația le pune la dispoziție la un moment dat. Formularul " +
-            "de transport pentru deșeurile periculoase și evidența cronologică a deșeurilor preluate de la terți " +
-            "se generează numai pentru firmele care preiau deșeuri de la terți.",
+            "deșeurilor nepericuloase și avizul de însoțire a mărfii, registrul formularelor de transport emise, " +
+            "declarațiile de ambalaje, dosarul de control și celelalte documente pe care aplicația le pune la " +
+            "dispoziție la un moment dat. Formularul de transport pentru deșeurile periculoase, evidența " +
+            "cronologică a deșeurilor preluate de la terți și raportarea deșeurilor de ambalaje colectate se " +
+            "generează numai pentru firmele care preiau deșeuri de la terți.",
         },
         {
           kind: "p",
           text:
             "Aplicația ține și **calendarul termenelor legale**, cu alerte. Alertele sunt informative și nu " +
-            "înlocuiesc urmărirea termenelor de către dumneavoastră. Evidența pe care o țineți deja în fișiere " +
+            "înlocuiesc urmărirea termenelor de către dumneavoastră. Puteți adăuga și **termene proprii** (de " +
+            "exemplu o măsurătoare periodică); pe acestea le stabiliți dumneavoastră, iar aplicația doar vă " +
+            "amintește de ele. Evidența pe care o țineți deja în fișiere " +
             "Excel o aducem noi în aplicație, dacă ne-o trimiteți la contact@wastehouse.ro în formatul acceptat.",
         },
       ],
@@ -241,7 +249,8 @@ export const TERMS: LegalDoc = {
           text:
             "**8.3.** Prelucrarea datelor cu caracter personal e descrisă în **Politica de confidențialitate** " +
             "și, pentru clienți, în **contractul de împuternicire** semnat potrivit art. 28 GDPR. Datele " +
-            "personale ale terților pe care le introduceți (de exemplu conducătorii auto) le introduceți pe " +
+            "personale ale terților pe care le introduceți (de exemplu conducătorii auto sau persoanele fizice de " +
+            "la care cumpărați deșeuri) le introduceți pe " +
             "răspunderea firmei dumneavoastră, care trebuie să aibă temei pentru ele și să informeze persoanele " +
             "vizate.",
         },
@@ -510,14 +519,16 @@ export const PRIVACY: LegalDoc = {
           kind: "p",
           text:
             "Tot ce introduce un client în aplicație — evidența deșeurilor, conducătorii auto, persoanele de " +
-            "contact ale partenerilor, fișierele atașate — **îi aparține lui**. Noi doar le găzduim și le " +
+            "contact ale partenerilor, persoanele fizice de la care cumpără deșeuri, fișierele atașate — **îi " +
+            "aparține lui**. Noi doar le găzduim și le " +
             "prelucrăm la instrucțiunea lui, pe baza unui contract de împuternicire încheiat potrivit art. 28 GDPR.",
         },
         {
           kind: "p",
           text:
             "**Ce înseamnă asta practic pentru dumneavoastră.** Dacă datele dumneavoastră au ajuns în aplicație " +
-            "pentru că firma la care lucrați (sau pentru care conduceți un transport) ține evidența acolo, " +
+            "pentru că firma la care lucrați (sau pentru care conduceți un transport, ori căreia i-ați vândut " +
+            "deșeuri) ține evidența acolo, " +
             "direct sau printr-un consultant de mediu, **operatorul e acea firmă, nu noi**. Cererea " +
             "dumneavoastră — de acces, de ștergere, de rectificare — se adresează ei. Dacă ne ajunge nouă, o " +
             "transmitem ei fără întârziere și vă anunțăm; nu putem răspunde pe fond în locul ei, fiindcă nu noi " +
@@ -713,6 +724,14 @@ export const PRIVACY: LegalDoc = {
             "de trei ani calendaristici întregi se șterg automat, indiferent de starea contului.",
         },
         {
+          kind: "p",
+          text:
+            "Numele, CNP-ul, actul de identitate și domiciliul unei persoane fizice de la care un client a cumpărat " +
+            "sau a preluat deșeuri se anonimizează automat la 5 ani de la 1 iulie a anului următor celui în care a " +
+            "predat ultima oară deșeuri, termenul de păstrare a documentelor contabile (Legea nr. 82/1991, art. 25). " +
+            "CNP-ul și actul de identitate se cer numai la deșeurile metalice, unde legea le prevede.",
+        },
+        {
           kind: "note",
           text:
             "**Atenție, pentru clienți:** obligația legală de a păstra evidența gestiunii deșeurilor **cel puțin " +
@@ -765,7 +784,8 @@ export const PRIVACY: LegalDoc = {
           kind: "p",
           text:
             "Pe scurt, ce e implementat efectiv: conexiuni criptate (HTTPS), parole stocate doar ca amprentă " +
-            "criptografică, sesiuni de 8 ore cu revocare imediată la dezactivarea contului, izolare completă " +
+            "criptografică, sesiuni de 8 ore cu revocare imediată la dezactivarea contului și la deconectare, " +
+            "izolare completă " +
             "între datele firmelor, atașamente cu acces restricționat livrate prin adrese semnate cu durată " +
             "limitată, limitarea încercărilor de autentificare, copii de siguranță zilnice cu procedură de " +
             "restaurare verificată, un jurnal al modificărilor care nu reține actele de identitate și CNP-urile, " +
