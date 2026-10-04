@@ -58,6 +58,7 @@ const suites = [
   ["57-termene-proprii.mjs", "Termene proprii: adăugare, N, modificare, bifare cu repetare, ștergere, Acasă, 375px"],
   ["58-periculos-generator.mjs", "periculos la generator: fără rubricile Anexei 3, doar avizul"],
   ["59-cantitate-kg.mjs", "cantitatea în kg fără zecimale, în tone cel mult trei"],
+  ["60-energie.mjs", "Energie: fișa, Termene, dosarul, Acasă"],
 ];
 
 const only = process.argv[2];

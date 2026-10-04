@@ -14,6 +14,8 @@ const SCREENS = [
   ["/termene", "termene"],
   ["/parteneri", "parteneri"],
   ["/setari", "setari"],
+  [`/termene/energie?an=${AN - 1}`, "energie"],
+  ["/dosar-control?tab=energie", "dosar-energie"],
 ];
 
 for (const [width, tag] of [[1440, "1440"], [375, "375"]]) {

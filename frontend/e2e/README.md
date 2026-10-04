@@ -1,3 +1,14 @@
+⚡ **04.10.2026 — proba 60 (`60-energie.mjs`), declarația anuală de energie (Legea 121/2014, Anexa 1 sub 1000 tep)**: pe `/termene/energie?an=<AN-1>`
+se bifează „Energie electrică” și „Cărbune” (tabelul are 2 rânduri), curentul 12 × 10 dă „Total an” 120,000, cărbunele fără tep în ianuarie arată „?”
+(și linia de total la fel), cu tep pe toate lunile „?” dispare; pe Termene rândul „Declarația de consum de energie” al anului declarat spune
+„din 12 luni completate” și duce la `/termene/energie?an=<AN>`; „Anexa 1” descarcă `.xlsx`, „Declarația” `.docx`; peste 1000 tep „Anexa 1” e stinsă și
+avertismentul se vede; `/dosar-control?tab=energie` arată anul, iar tabul implicit are tot 7 rânduri; Acasă, după „+ încă N”, are „Energia pe …” ca ultimă
+acțiune (în ianuarie se sare, fiindcă luna trecută e decembrie, completă); 1440×900 fără derulare în `main#continut`, 375px fără derulare laterală.
+AN vine din ceas. Intră în `run.mjs`. Se curăță singură la rulare următoare (golește cifrele înainte să le scrie). ⚠️ Lasă în urmă: rubricile
+„Energie electrică” și „Cărbune” și cele 12 luni ale lor (curent 10, cărbune 1 cu tep 0,5), anul <AN-1>, pe firma demo.
+**Negativă:** cu ruta `/termene/energie` scoasă din `App.tsx` cade prima verificare („fișa se deschide cu titlul anului”), iar proba se oprește la
+următorul pas cu `TimeoutError` (cod 1) — rulat pe 04.10.2026.
+
 ⚖️ **30.09.2026 — proba 59 (`59-cantitate-kg.mjs`), cantitatea fără „,000” la kilograme (proprietarul)**: pe formularul „Adaugă deșeuri”
 (butonul „Deșeuri proprii” al firmei demo) 12,5 kg e oprit sub rubrică („În kilograme, fără zecimale.”), 12 kg trece, 0,25 t trece,
 0,0005 t e oprit (sub un kilogram). La fel în „Adaugă cantitatea” (`RecordWeightDialog`, aceeași regulă; nu e în probă). Un rând vechi cu zecimale în kg se salvează la editare cât cantitatea nu se atinge (probat de mână pe 1,456 kg: trece; schimbat
@@ -642,6 +653,7 @@ ramură nu atinge `node_modules`.
 | `57-termene-proprii.mjs` | Termene proprii: adăugare, N, modificare, bifare cu repetare, ștergere, Acasă, 375px (termenele din lege fără „⋯”, vizualizatorul fără „Adaugă termen”; lasă în urmă pe firma demo „Zgomot hală P57 <număr>” bifat și „Apă P57 <număr>” deschis) |
 | `58-periculos-generator.mjs` | Periculos la generator: fără rubricile Anexei 3, doar avizul (pe o firmă nouă de generator, 13 02 05 către un colector, față de 15 01 01 în același formular; lasă în urmă firma „Proba 58 Periculos <număr>”) |
 | `59-cantitate-kg.mjs` | Cantitatea în kg fără zecimale, în tone cel mult trei (12,5 kg oprit, 12 kg și 0,25 t trec, 0,0005 t oprit; nu salvează nimic) |
+| `60-energie.mjs` | Energie: fișa (rubrici, 12 luni, „?” la tep lipsă, peste 1000 tep), rândul de pe Termene, Anexa 1 `.xlsx` și Declarația `.docx`, tabul „Energie” din dosar, Acasă, 375px (lasă în urmă rubricile și lunile pe firma demo, anul AN-1) |
 
 Capturile intră în `shots/` (gitignored). Sunt utile când o probă cade: se vede ce vedea ea.
 
