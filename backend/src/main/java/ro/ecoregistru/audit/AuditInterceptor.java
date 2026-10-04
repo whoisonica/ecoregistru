@@ -75,7 +75,12 @@ public class AuditInterceptor implements Interceptor {
             NaturalPerson.class,
             // Cifrele de tabelul 1 scrise de mână peste cele din mişcări ajung pe declaraţia de
             // ambalaje (29.09.2026). Le scrie numai omul, din „Ambalaje", deci nu e zgomot de maşină.
-            PackagingMarketEntry.class);
+            PackagingMarketEntry.class,
+            // Declaraţia anuală de energie (V82): cifrele, răspunsurile şi măsurile le scrie numai omul.
+            EnergyCarrierUsed.class,
+            EnergyConsumption.class,
+            EnergyDeclaration.class,
+            EnergySavingMeasure.class);
 
     /**
      * Câmpurile din care se compune eticheta, pe tip, în ordinea în care se citesc.
@@ -100,7 +105,11 @@ public class AuditInterceptor implements Interceptor {
             Map.entry(WeighingOperation.class, List.of("type", "number", "date")),
             Map.entry(WasteArticle.class, List.of("name")),
             Map.entry(NaturalPerson.class, List.of("name")),
-            Map.entry(PackagingMarketEntry.class, List.of("year", "material")));
+            Map.entry(PackagingMarketEntry.class, List.of("year", "material")),
+            Map.entry(EnergyCarrierUsed.class, List.of("carrier")),
+            Map.entry(EnergyConsumption.class, List.of("year", "carrier", "month")),
+            Map.entry(EnergyDeclaration.class, List.of("year")),
+            Map.entry(EnergySavingMeasure.class, List.of("position")));
 
     /**
      * Ce nu se scrie niciodată ca modificare.

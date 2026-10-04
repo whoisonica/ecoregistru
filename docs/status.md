@@ -51,7 +51,7 @@ rulează local și are testele verzi.
 > un termen care se repetă își creează următoarea apariție (sare peste perioadele trecute, ultima zi a lunii rămâne ultima zi). Aceleași mailuri (textul zice
 > „Termen”, nu „Termen de raportare”), push, Acasă, `.ics`, rezumatul consultantului. Web: „Adaugă termen” + tasta N pe Termene, „⋯” → Editează / Șterge pe rând.
 > Nimic tipărit neatins. Probe: `CustomDeadlineIT` (13), `DeadlineRecurrenceTest`, `deadlines.test.ts`, e2e **57** (intră în `run.mjs`); negativă: fără garda
-> `isCustom()` cade `legalDeadlinesCannotBeEditedOrDeleted`. F6b (depozit) ia `V82`.
+> `isCustom()` cade `legalDeadlinesCannotBeEditedOrDeleted`. F6b (depozit) ia `V83` (`V82` = energia, 04.10.2026).
 
 > **29.09.2026, 20:12 — ✅ PE PRODUCȚIE: `ecoregistru-api` **v142** (`d0056ef`), `ecoregistru-app` **v144** (`57735ca`), din `main` `f38c013` — REPARAȚIILE DIN EVALUAREA GENERATORULUI.**
 > Intrarea lipsea din jurnal; scrisă pe 30.09.2026 din `git log 73acf04..f38c013` și `heroku releases`. 38 de commituri peste `73acf04`: ramurile `fix/eval-2909-api` și

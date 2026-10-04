@@ -171,6 +171,32 @@ public class Company {
     @Column(name = "siatd_tyre_from")
     LocalDate siatdTyreFrom;
 
+    /** Energy declaration (V82): header fields of the Anexa 1 / declaration forms. All optional, no defaults. */
+    @Column(length = 50)
+    String fax;
+
+    @Column(length = 255)
+    String website;
+
+    @Column(name = "activity_sector", length = 255)
+    String activitySector;
+
+    @Column(name = "energy_contact_name", length = 255)
+    String energyContactName;
+
+    @Column(name = "energy_contact_email", length = 255)
+    String energyContactEmail;
+
+    @Column(name = "energy_contact_phone", length = 50)
+    String energyContactPhone;
+
+    @Column(name = "energy_contact_mobile", length = 50)
+    String energyContactMobile;
+
+    /** The date the energy contact details were last confirmed by the company. */
+    @Column(name = "energy_contact_attested_on")
+    LocalDate energyContactAttestedOn;
+
     /** Doar modulele bifate, cu data înrolării. */
     public java.util.Map<ro.ecoregistru.enums.SiatdModule, LocalDate> siatdEnrolment() {
         var map = new java.util.EnumMap<ro.ecoregistru.enums.SiatdModule, LocalDate>(ro.ecoregistru.enums.SiatdModule.class);
