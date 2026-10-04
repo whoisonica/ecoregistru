@@ -40,3 +40,9 @@ export const CANTAR_TABS: ScreenTab[] = [
   { id: "rapoarte", label: strings.depotReports.tab },
   { id: "siatd", label: strings.siatd.tab },
 ];
+
+/** Dosarul de control: deșeurile (pagina de azi, implicit) și energia (Legea 121/2014). */
+export const AUDIT_FILE_TABS: ScreenTab[] = [
+  { id: "", label: strings.energy.tabWaste },
+  { id: "energie", label: strings.energy.tabEnergy },
+];

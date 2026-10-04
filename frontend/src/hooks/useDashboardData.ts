@@ -4,6 +4,8 @@ import { useMovementSummary } from "@/hooks/useMovements";
 import { useUpcomingDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
+import { useEnergySheet } from "@/hooks/useEnergy";
+import { energyAction, previousMonth } from "@/lib/energy";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
 import { daysLabel, deadlineLabel, documentFor } from "@/lib/deadlines";
@@ -56,6 +58,13 @@ export function useDashboardData(enabled = true) {
   const { data: workPoints, isLoading: loadingWorkPoints, isError: failedWorkPoints } =
     useWorkPoints(enabled);
   /**
+   * Fișa de energie a anului în care cade luna trecută (în ianuarie, anul trecut): de acolo vine
+   * memento-ul „energia pe <luna> nu e trecută”.
+   */
+  const { data: energySheet, isLoading: loadingEnergy, isError: failedEnergy } =
+    useEnergySheet(previousMonth(now).year, enabled);
+  const energy = useMemo(() => energyAction(energySheet, new Date()), [energySheet]);
+  /**
    * Evidența anului întreg, nu a lunii: ce blochează depunerea e o întrebare despre an, fiindcă
    * fișa și declarația acoperă anul.
    */
@@ -102,7 +111,7 @@ export function useDashboardData(enabled = true) {
   const actions = useMemo<NextAction[]>(() => {
     // 0. Dacă vreuna dintre surse n-a răspuns, nu se alege nimic: fiecare ramură de mai jos
     //    citeşte o listă care ar fi **goală din alt motiv**. Se spune că nu se ştie.
-    if (failedDeadlines || failedEvidences || filedFailed || failedPartners || failedWorkPoints) {
+    if (failedDeadlines || failedEvidences || filedFailed || failedPartners || failedWorkPoints || failedEnergy) {
       return [{
         tone: "unknown",
         title: t.nextUnknown,
@@ -173,6 +182,7 @@ export function useDashboardData(enabled = true) {
         cta: t.nextWeighingCta,
       });
     }
+    if (energy) list.push(energy);
     // „Nimic de făcut" are două înţelesuri: un cont pe care nu s-a scris încă nimic nu e la zi, e
     // neînceput. O mişcare se înregistrează **pe** un punct de lucru; evidenţa se calculează **din**
     // mişcări — amândouă sunt dependenţe din cod, nu preferinţe de flux.
@@ -208,6 +218,8 @@ export function useDashboardData(enabled = true) {
     filedFailed,
     failedPartners,
     failedWorkPoints,
+    failedEnergy,
+    energy,
     workPoints,
     evidences,
     partners,
@@ -220,7 +232,7 @@ export function useDashboardData(enabled = true) {
    * ar scrie „Ești la zi" o clipă, peste o autorizație care expiră.
    */
   const nextActionLoading =
-    loadingDeadlines || loadingEvidences || filedLoading || loadingPartners || loadingWorkPoints || loadingMovements;
+    loadingDeadlines || loadingEvidences || filedLoading || loadingPartners || loadingWorkPoints || loadingEnergy || loadingMovements;
 
   return {
     year,

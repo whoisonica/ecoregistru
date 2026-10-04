@@ -21,7 +21,7 @@ import type { Role } from "@/auth/AuthContext";
 import type { CompanyType } from "@/lib/types";
 import { canImport, canManage, isMultiCompany } from "@/lib/roles";
 import { SCREEN_PATH, registersFor, screensFor, type MovementScreen } from "@/lib/movementScreens";
-import { CANTAR_TABS, DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, type ScreenTab } from "@/lib/screenTabs";
+import { AUDIT_FILE_TABS, CANTAR_TABS, DEADLINE_TABS, GENERATION_TABS, PARTNER_TABS, type ScreenTab } from "@/lib/screenTabs";
 import { strings } from "@/lib/strings";
 
 export interface NavEntry {
@@ -138,7 +138,7 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
   main.push(
     { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock, keywords: strings.nav.kwDeadlines, tabs: DEADLINE_TABS },
-    { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile },
+    { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile, tabs: AUDIT_FILE_TABS },
     {
       to: "/parteneri",
       label: strings.nav.partners,

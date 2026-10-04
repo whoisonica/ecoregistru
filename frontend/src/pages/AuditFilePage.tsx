@@ -19,7 +19,10 @@ import { Menu, MenuItem } from "@/components/ui/menu";
 import { AwaitingWeighingDialog } from "@/components/AwaitingWeighingDialog";
 import { apiBlobErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { useUrlNumber } from "@/hooks/useUrlState";
+import { useUrlNumber, useUrlState } from "@/hooks/useUrlState";
+import { AUDIT_FILE_TABS } from "@/lib/screenTabs";
+import { AuditFileEnergyTab } from "@/components/energy/AuditFileEnergyTab";
+import { PageTabs } from "@/components/ui/page-tabs";
 import { countOf } from "@/lib/utils";
 import { weighingCheck } from "@/lib/weighingCheck";
 import { Badge } from "@/components/ui/badge";
@@ -256,6 +259,7 @@ function yearOptions(): number[] {
 export function AuditFilePage() {
   const [year, setYear] = useUrlNumber("an", new Date().getFullYear());
   const [years, setYears] = useUrlNumber("ani", 1);
+  const [tab, setTab] = useUrlState("tab");
   const [downloading, setDownloading] = useState(false);
   const { data: size } = useAuditFileSize(year, years);
   const contents = useAuditFileContents(year, years);
@@ -392,6 +396,12 @@ export function AuditFilePage() {
       )}
       <PageHeader title={t.title} description={t.subtitle} />
 
+      <PageTabs tabs={AUDIT_FILE_TABS} selected={tab} onSelect={setTab} label={strings.energy.dossierTabsLabel} />
+
+      {tab === "energie" && <AuditFileEnergyTab />}
+
+      {tab !== "energie" && (
+      <>
       <Card className="mt-6 p-6">
         <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <div>
@@ -540,6 +550,8 @@ export function AuditFilePage() {
       <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
         {t.note}
       </p>
+      </>
+      )}
     </div>
   );
 }

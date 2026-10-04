@@ -4940,6 +4940,13 @@ export const strings = {
     tooltipAttested: "Doar la managerul energetic atestat de ANRE.",
     contactSaved: "Datele s-au salvat.",
     contactError: "Datele nu s-au salvat.",
+    // Tabul „Energie” al dosarului de control (Task 11).
+    dossierTabsLabel: "Secțiunile dosarului",
+    dossierZip: "Dosar energie {year}.zip",
+    dossierError: "Dosarul de energie nu s-a putut descărca.",
+    dossierEmptyTitle: "Nicio dată de energie încă",
+    dossierEmptyDescription: "Dosarul apare după ce treceți consumul pe fișa de energie.",
+    dossierEmptyAction: "Deschide fișa de energie",
     carrier: {
       ELECTRICITY: "Energie electrică",
       HEAT: "Energie termică cumpărată",

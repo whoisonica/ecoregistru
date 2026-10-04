@@ -7,6 +7,7 @@ import {
   usePackagingAnexa3,
   usePackagingUnclassified,
 } from "@/hooks/usePackaging";
+import { useEnergySheet } from "@/hooks/useEnergy";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { evidenceReadiness, reportedYear } from "@/lib/deadlines";
 import { formatKg } from "@/lib/units";
@@ -36,9 +37,19 @@ export function DeadlineReadiness({ deadline }: { deadline: Deadline }) {
       return <PackagingDeclarationReadiness year={year} />;
     case "PACKAGING_ANNEX3":
       return <Anexa3Readiness year={year} />;
+    case "ENERGY_ANNUAL":
+      return <EnergyReadiness year={year} />;
     default:
       return null;
   }
+}
+
+function EnergyReadiness({ year }: { year: number }) {
+  const { data, isLoading, isError } = useEnergySheet(year);
+  if (isLoading) return <Line>{t.loading}</Line>;
+  if (isError || !data) return <Line tone="bad">{t.error}</Line>;
+  const n = data.monthsComplete;
+  return <Line tone={n < 12 ? "warn" : undefined}>{strings.energy.readiness.replace("{n}", String(n))}</Line>;
 }
 
 function EvidenceReadiness({ year }: { year: number }) {
