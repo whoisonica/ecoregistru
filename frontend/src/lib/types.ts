@@ -2190,7 +2190,10 @@ export interface EnergySheet {
   carriers: EnergyCarrier[];
   cells: EnergyCell[];
   totals: EnergyCarrierTotal[];
+  /** Suma rubricilor complete. */
   totalTep: number;
+  /** Toate lunile trecute ale rubricilor bifate: marginea de jos a anului; pe ea se citește pragul. */
+  knownTep: number;
   monthsComplete: number;
   overThreshold: boolean;
   declaration: EnergyDeclaration;
@@ -2203,5 +2206,7 @@ export interface EnergyYearSummary {
   monthsComplete: number;
   overThreshold: boolean;
   filedOn: string | null;
+  /** Ziua recipisei EfEnClima (ora României); dovada depunerii când termenul n-a fost bifat. */
+  receiptOn: string | null;
   hasReceipt: boolean;
 }

@@ -40,8 +40,8 @@ function CarrierPicker({
   );
 }
 
-/** Bifarea și salvarea, aceleași în cardul de la început și în dialog. */
-function useCarrierDraft(initial: EnergyCarrier[], onSaved?: () => void) {
+/** Bifarea și salvarea, aceleași în cardul de la început și în dialog. Se salvează pe anul fișei. */
+function useCarrierDraft(year: number, initial: EnergyCarrier[], onSaved?: () => void) {
   const [selected, setSelected] = useState<EnergyCarrier[]>(initial);
   const save = useSaveEnergyCarriers();
   const { notify } = useToast();
@@ -50,7 +50,7 @@ function useCarrierDraft(initial: EnergyCarrier[], onSaved?: () => void) {
   const submit = () =>
     save.mutate(
       // În ordinea Anexei, nu în ordinea bifării.
-      ENERGY_CARRIERS.map((c) => c.id).filter((id) => selected.includes(id)),
+      { year, carriers: ENERGY_CARRIERS.map((c) => c.id).filter((id) => selected.includes(id)) },
       {
         onSuccess: () => {
           notify(t.carriersSaved, "success");
@@ -63,8 +63,8 @@ function useCarrierDraft(initial: EnergyCarrier[], onSaved?: () => void) {
 }
 
 /** Prima dată, înainte de orice lună: „Ce energie folosește firma?”. */
-export function EnergyCarriersCard({ canWrite }: { canWrite: boolean }) {
-  const draft = useCarrierDraft([]);
+export function EnergyCarriersCard({ year, canWrite }: { year: number; canWrite: boolean }) {
+  const draft = useCarrierDraft(year, []);
   return (
     <Card className="mt-6">
       <CardHeader
@@ -91,19 +91,22 @@ export function EnergyCarriersCard({ canWrite }: { canWrite: boolean }) {
 }
 
 /**
- * „Schimbă rubricile”: aceleași taste, pornite de la ce e bifat acum. Se montează numai deschis: o bifă
- * lăsată nesalvată nu rămâne pentru data viitoare.
+ * „Schimbă rubricile”: aceleași taste, pornite de la ce e bifat acum, salvate numai pe anul fișei (anii
+ * dinainte își păstrează rubricile). Se montează numai deschis: o bifă lăsată nesalvată nu rămâne pentru
+ * data viitoare. Fără nicio bifă nu se salvează: un an fără rubrici le-ar lua înapoi pe ale anului dinainte.
  */
 export function EnergyCarriersDialog({
+  year,
   open,
   onClose,
   current,
 }: {
+  year: number;
   open: boolean;
   onClose: () => void;
   current: EnergyCarrier[];
 }) {
-  const draft = useCarrierDraft(current, onClose);
+  const draft = useCarrierDraft(year, current, onClose);
 
   return (
     <Dialog
@@ -118,7 +121,7 @@ export function EnergyCarriersDialog({
           <Button variant="outline" onClick={onClose} disabled={draft.saving}>
             {strings.common.cancel}
           </Button>
-          <Button onClick={draft.submit} loading={draft.saving}>
+          <Button onClick={draft.submit} loading={draft.saving} disabled={draft.selected.length === 0}>
             {strings.common.save}
           </Button>
         </>

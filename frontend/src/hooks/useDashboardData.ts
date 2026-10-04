@@ -5,7 +5,7 @@ import { useUpcomingDeadlines } from "@/hooks/useDeadlines";
 import { usePartners } from "@/hooks/usePartners";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useEnergySheet } from "@/hooks/useEnergy";
-import { energyAction, previousMonth } from "@/lib/energy";
+import { energyAction, previousMonth, withEnergyAction } from "@/lib/energy";
 import { strings } from "@/lib/strings";
 import { countOf } from "@/lib/utils";
 import { daysLabel, deadlineLabel, documentFor } from "@/lib/deadlines";
@@ -63,7 +63,6 @@ export function useDashboardData(enabled = true) {
    */
   const { data: energySheet, isLoading: loadingEnergy, isError: failedEnergy } =
     useEnergySheet(previousMonth(now).year, enabled);
-  const energy = useMemo(() => energyAction(energySheet, new Date()), [energySheet]);
   /**
    * Evidența anului întreg, nu a lunii: ce blochează depunerea e o întrebare despre an, fiindcă
    * fișa și declarația acoperă anul.
@@ -84,6 +83,11 @@ export function useDashboardData(enabled = true) {
   const filedEvidences = filed != null ? filedEvidencesData : undefined;
   const filedLoading = filed != null && loadingFiledEvidences;
   const filedFailed = filed != null && failedFiledEvidences;
+
+  // Din ziua hookului (`now`, prin anul și luna ei), nu dintr-un `new Date()` al doilea: `energyAction` citește
+  // doar luna trecută, deci memo-ul se reface la o lună nouă, nu la fiecare randare. Stă după ultimul hook de
+  // date: React Compiler nu păstrează un memo ale cărui dependențe trec apoi printr-un hook.
+  const energy = useMemo(() => energyAction(energySheet, new Date(year, month - 1, 1)), [energySheet, year, month]);
 
   /** Socoteala stă în `lib/readiness.ts`, fiindcă o face și telefonul (ecranul „A venit controlul”). */
   const { openDeadlines, overdue, nextDeadline, nearDeadline, expiringPartners } = useMemo(
@@ -182,32 +186,35 @@ export function useDashboardData(enabled = true) {
         cta: t.nextWeighingCta,
       });
     }
-    if (energy) list.push(energy);
     // „Nimic de făcut" are două înţelesuri: un cont pe care nu s-a scris încă nimic nu e la zi, e
     // neînceput. O mişcare se înregistrează **pe** un punct de lucru; evidenţa se calculează **din**
     // mişcări — amândouă sunt dependenţe din cod, nu preferinţe de flux.
-    if (list.length > 0) return list;
+    const start: NextAction[] = [];
     if ((workPoints ?? []).length === 0) {
-      return [{
+      start.push({
         tone: "start",
         title: t.nextStartWorkPoint,
         hint: t.nextStartWorkPointHint,
         to: "/setari/puncte-de-lucru",
         cta: t.nextStartWorkPointCta,
-      }];
-    }
-    // Trei liste goale deodată, nu una: o firmă care lucrează are parteneri chiar şi într-o lună
-    // fără mişcări.
-    if (movementCount === 0 && (evidences ?? []).length === 0 && (partners ?? []).length === 0) {
-      return [{
+      });
+    } else if (movementCount === 0 && (evidences ?? []).length === 0 && (partners ?? []).length === 0) {
+      // Trei liste goale deodată, nu una: o firmă care lucrează are parteneri chiar şi într-o lună
+      // fără mişcări.
+      start.push({
         tone: "start",
         title: t.nextStartMovement,
         hint: t.nextStartMovementHint,
         to: "/miscari",
         cta: t.nextStartMovementCta,
-      }];
+      });
     }
-    return [{ tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/generare?tab=total", cta: t.viewAll }];
+    // Memento-ul de energie vine ultimul: după tot ce e de făcut și, la un cont nou, după pașii de început (F1).
+    return (
+      withEnergyAction(list, start, energy) ?? [
+        { tone: "ok", title: t.nextNothing, hint: t.nextNothingHint, to: "/generare?tab=total", cta: t.viewAll },
+      ]
+    );
   }, [
     overdue,
     nearDeadline,

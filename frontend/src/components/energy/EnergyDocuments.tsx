@@ -146,7 +146,9 @@ function ReceiptDialog({ year, open, onClose }: { year: number; open: boolean; o
     >
       <FileDropzone
         files={files}
-        hint={t.receiptHint}
+        hint={t.receiptDrop}
+        accept="application/pdf,.pdf"
+        limitHint={t.receiptHint}
         disabled={upload.isPending}
         onReject={setError}
         onChange={(next) => {

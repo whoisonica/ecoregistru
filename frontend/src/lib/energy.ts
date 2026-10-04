@@ -69,13 +69,31 @@ export function energyAction(sheet: EnergySheet | undefined, today: Date): Energ
   };
 }
 
-/** Starea unui an în tabul „Energie” al dosarului: depusă, incompletă, nedepusă — în ordinea asta. */
+/**
+ * Starea unui an în tabul „Energie” al dosarului, în ordinea asta: depusă (termenul bifat), depusă cu recipisă
+ * (fără termen bifat: cel din 30.06.2026 e doar calculat și nu se poate bifa — recipisa e dovada), incompletă,
+ * nedepusă.
+ */
 export function energyYearStatus(s: EnergyYearSummary): { tone: "success" | "warning" | "muted"; label: string } {
   if (s.filedOn) {
     return { tone: "success", label: strings.energy.filedOn.replace("{date}", formatDate(s.filedOn)) };
+  }
+  if (s.receiptOn) {
+    return { tone: "success", label: strings.energy.filedByReceipt.replace("{date}", formatDate(s.receiptOn)) };
   }
   if (s.monthsComplete < 12) {
     return { tone: "warning", label: strings.energy.incomplete.replace("{n}", String(s.monthsComplete)) };
   }
   return { tone: "muted", label: strings.energy.notFiled };
+}
+
+/**
+ * Unde intră memento-ul de energie pe Acasă (decizia F1, 05.10.2026): după tot ce e de făcut și, la un cont
+ * nou, după pașii de început („Adaugă un punct de lucru”, „prima mișcare”), care rămân primii. `null` = nimic
+ * de spus; „Ești la zi” îl pune apelantul.
+ */
+export function withEnergyAction<T>(open: T[], start: T[], energy: T | null): T[] | null {
+  const head = open.length > 0 ? open : start;
+  const list = energy ? [...head, energy] : head;
+  return list.length > 0 ? list : null;
 }

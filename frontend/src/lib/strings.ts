@@ -4867,6 +4867,7 @@ export const strings = {
     tabWaste: "Deșeuri",
     tabEnergy: "Energie",
     filedOn: "Depusă pe {date}",
+    filedByReceipt: "Depusă (recipisă din {date})",
     incomplete: "Incompletă: {n} din 12 luni",
     notFiled: "Nedepusă",
     nextActionNoCarriersTitle: "Spuneți ce energie folosește firma",
@@ -4923,6 +4924,7 @@ export const strings = {
     receiptOpenError: "Recipisa nu s-a putut deschide.",
     receiptDialogTitle: "Recipisa de pe EfEnClima",
     receiptDialogDescription: "PDF-ul primit după depunere. Una nouă o înlocuiește pe cea veche.",
+    receiptDrop: "Trage PDF-ul aici sau apasă pentru a-l alege",
     receiptHint: "Doar PDF, cel mult 10 MB.",
     receiptNotPdf: "Recipisa se încarcă doar ca PDF.",
     receiptSubmit: "Încarcă",
@@ -4942,6 +4944,7 @@ export const strings = {
     contactError: "Datele nu s-au salvat.",
     // Tabul „Energie” al dosarului de control (Task 11).
     dossierTabsLabel: "Secțiunile dosarului",
+    dossierDescription: "Pe fiecare an: Anexa 1, Declarația și recipisa EfEnClima.",
     dossierZip: "Dosar energie {year}.zip",
     dossierError: "Dosarul de energie nu s-a putut descărca.",
     dossierEmptyTitle: "Nicio dată de energie încă",

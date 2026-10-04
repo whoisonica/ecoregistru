@@ -29,6 +29,10 @@ interface FileDropzoneProps {
   files: File[];
   onChange: (files: File[]) => void;
   hint?: string;
+  /** Ce arată selectorul de fișiere. Lipsă = tot ce se poate atașa la o mișcare. */
+  accept?: string;
+  /** Rândul mic de sub îndemn (ce tipuri, cât de mare). Lipsă = cel al atașamentelor de mișcare. */
+  limitHint?: string;
   disabled?: boolean;
   /** Ce se spune despre un fișier respins. Lipsă = se aruncă tăcut, ceea ce nu se face. */
   onReject?: (message: string) => void;
@@ -42,6 +46,8 @@ export function FileDropzone({
   files,
   onChange,
   hint,
+  accept = ACCEPTED_TYPES,
+  limitHint,
   disabled = false,
   onReject,
 }: FileDropzoneProps) {
@@ -106,7 +112,7 @@ export function FileDropzone({
         <UploadCloud className="h-5 w-5 text-content-subtle" aria-hidden />
         <span className="text-content-muted">{hint ?? strings.fileDropzone.hint}</span>
         <span className="text-xs text-content-subtle">
-          {strings.fileDropzone.limit.replace("{mb}", String(MAX_FILE_MB))}
+          {limitHint ?? strings.fileDropzone.limit.replace("{mb}", String(MAX_FILE_MB))}
         </span>
       </button>
       {/* `sr-only`, nu `hidden`: rămâne în afara ecranului, dar accesibil programatic. */}
@@ -114,7 +120,7 @@ export function FileDropzone({
         ref={inputRef}
         type="file"
         multiple
-        accept={ACCEPTED_TYPES}
+        accept={accept}
         className="sr-only"
         tabIndex={-1}
         disabled={disabled}

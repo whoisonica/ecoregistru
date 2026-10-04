@@ -277,9 +277,9 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
       </Table>
       <p className="mt-3 text-right font-semibold">
         {t.totalLine.replace("{tep}", totalKnown ? formatDecimal(sheet.totalTep, 3) : "?")}
-        {/* Peste prag cu luni lipsă: suma rubricilor complete e deja o margine de jos. */}
+        {/* Peste prag cu luni lipsă: tot ce s-a trecut (`knownTep`) e marginea de jos, iar pragul se citește pe ea. */}
         {!totalKnown && sheet.overThreshold && (
-          <> {t.totalLowerBound.replace("{tep}", formatDecimal(sheet.totalTep, 3))}</>
+          <> {t.totalLowerBound.replace("{tep}", formatDecimal(sheet.knownTep, 3))}</>
         )}
       </p>
     </section>

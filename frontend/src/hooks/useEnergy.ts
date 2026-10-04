@@ -34,11 +34,15 @@ export function useEnergyYears(enabled = true) {
   });
 }
 
+/**
+ * Rubricile **unui an**: celelalte fișe nu se schimbă. Un an fără set propriu îl arată pe al celui mai recent
+ * an anterior; o listă goală șterge setul anului, care moștenește din nou.
+ */
 export function useSaveEnergyCarriers() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (carriers: EnergyCarrier[]) =>
-      (await api.put<EnergySheet>(`${base}/carriers`, { carriers })).data,
+    mutationFn: async (input: { year: number; carriers: EnergyCarrier[] }) =>
+      (await api.put<EnergySheet>(`${base}/carriers`, input)).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: energyRoot }),
   });
 }

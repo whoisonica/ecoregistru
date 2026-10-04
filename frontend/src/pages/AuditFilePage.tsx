@@ -394,7 +394,7 @@ export function AuditFilePage() {
           }}
         />
       )}
-      <PageHeader title={t.title} description={t.subtitle} />
+      <PageHeader title={t.title} description={tab === "energie" ? strings.energy.dossierDescription : t.subtitle} />
 
       <PageTabs tabs={AUDIT_FILE_TABS} selected={tab} onSelect={setTab} label={strings.energy.dossierTabsLabel} />
 

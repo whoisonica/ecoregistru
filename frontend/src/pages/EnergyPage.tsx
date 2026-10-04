@@ -67,7 +67,7 @@ export function EnergyPage() {
       )}
       {sheetQ.isLoading && <Skeleton className="mt-6 h-64 w-full" />}
 
-      {sheet && sheet.carriers.length === 0 && <EnergyCarriersCard key={year} canWrite={canWrite} />}
+      {sheet && sheet.carriers.length === 0 && <EnergyCarriersCard key={year} year={year} canWrite={canWrite} />}
 
       {sheet && sheet.carriers.length > 0 && (
         <>
@@ -102,7 +102,7 @@ export function EnergyPage() {
           )}
 
           {canWrite && carriersOpen && (
-            <EnergyCarriersDialog open onClose={() => setCarriersOpen(false)} current={sheet.carriers} />
+            <EnergyCarriersDialog year={year} open onClose={() => setCarriersOpen(false)} current={sheet.carriers} />
           )}
         </>
       )}

@@ -108,8 +108,9 @@ export function EnergyEfEnClimaView({ sheet, canWrite }: { sheet: EnergySheet; c
   const off = !canWrite;
 
   function submit() {
-    // Auditul și măsurile sunt ale non-IMM-ului: ce nu se vede pe ecran nu pleacă pe Anexa 1.
-    const audit = form.sme === false;
+    // Auditul și măsurile sunt ale non-IMM-ului: numai „IMM = Da” le golește. „Nu se știe” le păstrează pe cele
+    // salvate (ascunse pe ecran), ca o bifă scoasă din greșeală să nu șteargă auditul trecut.
+    const audit = form.sme !== true;
     const share = audit ? num(form.share) : null;
     const parsed = (audit ? measures : [])
       .map((m) => ({
