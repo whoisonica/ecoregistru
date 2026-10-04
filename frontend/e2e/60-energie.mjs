@@ -5,10 +5,12 @@
 // rândul de pe Termene nu spune „din 12 luni completate” / nu duce la fișa anului; (4) Anexa 1 / Declarația nu
 // descarcă .xlsx / .docx; (5) peste 1000 tep Anexa 1 rămâne activă sau avertismentul lipsește; (6) dosarul de control
 // n-are tabul „Energie” cu anul, sau tabul implicit pierde un rând din „Ce intră în arhivă”; (7) Acasă nu amintește
-// luna netrecută; (8) fișa derulează pe pagină la 1440×900 sau lateral la 375px.
+// luna netrecută; (8) fișa derulează pe pagină la 1440×900 sau lateral la 375px; (1b) o rubrică bifată pe anul AN
+// schimbă și fișa din AN-1 (rubricile sunt ale anului, decizia F3 din 05.10.2026).
 // Date-robustă: AN vine din ceas; documentele se completează pe AN-1; Termene se verifică pe termenul viitor (anul AN).
 // ⚠️ Lasă în urmă: pe firma demo, rubricile „Energie electrică” și „Cărbune” și cele douăsprezece luni ale lor pe anul
-// AN-1 (curent 10, cărbune 1 cu tep 0,5). Se curăță singură la rulare următoare.
+// AN-1 (curent 10, cărbune 1 cu tep 0,5), iar pe anul AN rubricile „Energie electrică”, „Cărbune” și „Gaze naturale”,
+// fără luni. Se curăță singură la rulare următoare.
 import { launch, newPage, login, shot, BASE } from "./lib.mjs";
 
 const browser = await launch();
@@ -23,6 +25,10 @@ const Y = AN - 1;
 const MONTHS = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
 const ELEC = "Energie electrică";
 const COAL = "Cărbune";
+const GAS = "Gaze naturale";
+// Singurul 4xx iertat: un 401 la intrare (POST /auth/login). Consola îl repetă fără adresă, deci și linia ei se iartă;
+// orice alt 4xx sau 5xx rămâne prins de linia „[HTTP …]”, care poartă adresa.
+const KNOWN_LOGIN_401 = /^\[HTTP 401\] POST \S*\/api\/v1\/auth\/login(\?|$)|^\[consolă error\] Failed to load resource: the server responded with a status of 401/;
 const isWrite = (r) => r.request().method() !== "GET" && r.url().includes("/api/") && /energ/i.test(r.url());
 
 /** Scrie o cifră în celulă și așteaptă răspunsul serverului; celula neschimbată nu trimite nimic. */
@@ -41,31 +47,48 @@ const lastCell = async (p, carrier, fromEnd) => {
 };
 const dialog = () => page.locator('[role="dialog"]');
 
+/** Bifează pe fișa anului `year` exact rubricile din `names` (prin card sau prin „Schimbă rubricile”) și salvează. */
+async function pickCarriers(year, names) {
+  await page.goto(BASE + `/termene/energie?an=${year}`, { waitUntil: "networkidle" });
+  await page.waitForTimeout(600);
+  const hasSheet = (await page.getByRole("button", { name: "Schimbă rubricile" }).count()) > 0;
+  if (hasSheet) {
+    await page.getByRole("button", { name: "Schimbă rubricile" }).click();
+    await dialog().waitFor();
+  }
+  const group = hasSheet ? dialog() : page;
+  const boxes = group.locator('input[name="rubrici-energie"]');
+  for (let i = 0; i < (await boxes.count()); i++) {
+    const label = (await boxes.nth(i).locator("xpath=..").innerText()).trim();
+    // „Energie electrică” nu e „Energie electrică din surse regenerabile”.
+    const want = names.some((n) => label.startsWith(n) && !(n === ELEC && label.startsWith("Energie electrică din")));
+    if ((await boxes.nth(i).isChecked()) !== want) await boxes.nth(i).locator("xpath=..").click();
+  }
+  const saved = page.waitForResponse(isWrite, { timeout: 8000 }).catch(() => null);
+  await group.getByRole("button", { name: "Salvează", exact: true }).click();
+  await saved;
+  if (hasSheet) await dialog().waitFor({ state: "detached" });
+  await page.waitForTimeout(800);
+}
+
 await login(page, "admin");
 
 // (1) Rubricile: exact „Energie electrică” și „Cărbune”.
 await page.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 check("fișa se deschide cu titlul anului", (await page.locator("h1").innerText()).includes(`Fișa de energie · ${Y}`));
-const hasSheet = (await page.getByRole("button", { name: "Schimbă rubricile" }).count()) > 0;
-if (hasSheet) {
-  await page.getByRole("button", { name: "Schimbă rubricile" }).click();
-  await dialog().waitFor();
-}
-const group = hasSheet ? dialog() : page;
-const boxes = group.locator('input[name="rubrici-energie"]');
-for (let i = 0; i < (await boxes.count()); i++) {
-  const label = (await boxes.nth(i).locator("xpath=..").innerText()).trim();
-  const want = label.startsWith(ELEC) && !label.startsWith("Energie electrică din") || label.startsWith(COAL);
-  if ((await boxes.nth(i).isChecked()) !== want) await boxes.nth(i).locator("xpath=..").click();
-}
-const savedCarriers = page.waitForResponse(isWrite, { timeout: 8000 }).catch(() => null);
-await (hasSheet ? dialog() : page).getByRole("button", { name: "Salvează", exact: true }).click();
-await savedCarriers;
-if (hasSheet) await dialog().waitFor({ state: "detached" });
-await page.waitForTimeout(800);
+await pickCarriers(Y, [ELEC, COAL]);
 check("tabelul are 2 rânduri", (await page.locator("tbody tr").count()) === 2, String(await page.locator("tbody tr").count()));
 check("rândurile sunt curentul și cărbunele", (await rowOf(page, ELEC).count()) === 1 && (await rowOf(page, COAL).count()) === 1);
+
+// (1b) Rubricile sunt ale anului: gazele bifate pe AN nu apar pe fișa din Y.
+await pickCarriers(AN, [ELEC, COAL, GAS]);
+check(`pe ${AN}: 3 rânduri, cu gazele`, (await page.locator("tbody tr").count()) === 3 && (await rowOf(page, GAS).count()) === 1,
+  String(await page.locator("tbody tr").count()));
+await page.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
+await page.waitForTimeout(600);
+check(`pe ${Y}: tot 2 rânduri, fără gaze`, (await page.locator("tbody tr").count()) === 2 && (await rowOf(page, GAS).count()) === 0,
+  String(await page.locator("tbody tr").count()));
 
 // Curățenie: o rulare anterioară a lăsat cifre (golită, cantitatea șterge celula întreagă).
 for (const c of [ELEC, COAL]) for (let m = 1; m <= 12; m++) await put(page, c, m, "");
@@ -176,7 +199,7 @@ check("375px fără derulare laterală", lat <= 0, `${lat}px`);
 await shot(tel, "60-energie-telefon");
 
 for (const p of [page, tel]) {
-  const real = p.problems.filter((x) => !/HTTP 4\d\d/.test(x) || /5\d\d/.test(x));
+  const real = p.problems.filter((x) => !KNOWN_LOGIN_401.test(x));
   check("fără erori de consolă sau HTTP", real.length === 0, [...new Set(real)].join(" | "));
 }
 

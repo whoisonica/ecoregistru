@@ -19,10 +19,10 @@ rulează local și are testele verzi.
 > Cererea Andreei (04.10.2026): generatorul să facă Anexa 1 „consum sub 1000 tep” și Declarația care o însoțește. Spec și plan în `ecoregistru-docs/docs/specs/2026-10-04-energie-declaratie-anuala-*`;
 > legea în `docs/surse-oficiale.md` §19. 15 commituri peste `837d9a5` (`40d954e` … `1eb5fc2`), fiecare task trecut prin review.
 >
-> - **Date (`V82`).** `energy_carriers_used` (rubricile bifate), `energy_consumptions` (firmă × an × rubrică × lună, `quantity` și, doar la cărbune și alți combustibili, `tep`),
+> - **Date (`V82`).** `energy_carriers_used` (rubricile bifate, **pe an** — de la runda de reparații din 05.10), `energy_consumptions` (firmă × an × rubrică × lună, `quantity` și, doar la cărbune și alți combustibili, `tep`),
 >   `energy_declarations` (IMM da/nu, auditul, recipisa), `energy_saving_measures` (cel mult 20), plus opt câmpuri pe `Company` (fax, site, sector, contactul de energie, data atestatului).
 >   `EnergyCarrier` poartă unitatea și coeficientul tipărit pe Anexă; un singur set. Scrierile trec prin `audit_log`.
-> - **Socoteala (`EnergyYear`).** tep = cantitate × coeficient; luna e completă când toate rubricile bifate au cantitate; totalul anului, „N din 12 luni”; **peste prag = `totalTep >= 1000`** (exact 1000,000 e peste).
+> - **Socoteala (`EnergyYear`).** tep = cantitate × coeficient; luna e completă când toate rubricile bifate au cantitate; totalul anului, „N din 12 luni”; **peste prag = `knownTep >= 1000`** (exact 1000,000 e peste; `knownTep` = toate lunile trecute, deci și cu luni lipsă).
 > - **API `/api/v1/energy`.** `GET` fișa anului, `/years`, `/anexa1`, `/declaratie`, `/dosar` (zip); `PUT` `/carriers`, `/consumption`, `/declaration`, `/contact`; `POST /recipisa` (PDF) și `GET /recipisa/continut`.
 >   Scrie cine poate scrie mișcări pe firmă (`CAN_WRITE`); citește cine citește evidențele. Izolarea pe tenant e în `TenantIsolationMatrixIT`.
 > - **Termen.** `ReportType.ENERGY_ANNUAL`, 30 iunie, datorat la aceleași firme ca `SIM_ANNUAL`; „N din 12 luni completate” pe rând; documentul: „Fișa de energie”.
@@ -45,7 +45,17 @@ rulează local și are testele verzi.
 > 4. **Recipisa cere `CLOUDINARY_URL`**; dev n-o are, deci calea reușită a urcării n-a fost probată local.
 > 5. Peste 1000 tep nu se generează nimic (doar avertismentul). Un client care s-a pus bine cu Termenele vede rândul trecut al lui 30.06.2026.
 >
-> Ramura nu are încă recenzia întregii ramuri și plimbarea manuală prin browser; deploy și merge, numai la cererea proprietarului.
+> **Runda de reparații după recenzia întregii ramuri (05.10.2026; decizii F1–F4, de confirmat de proprietar — spec §12, `decizii-model.md` 94/96/97).**
+> - **F3, rubricile pe an:** `energy_carriers_used` = firmă × an × rubrică (`V82` editat pe loc, nelivrat). O bifă pe 2027 nu mai schimbă fișa, Anexa 1 sau dosarul din 2025/2026; un an fără set
+>   propriu îl citește pe al celui mai recent an anterior, iar prima cifră scrisă pe el îl face al anului. `PUT /carriers` primește `{year, carriers}`.
+> - **F4, pragul pe ce s-a trecut:** `knownTep` în răspuns; `overThreshold` se citește pe el (unsprezece luni peste 1000 sunt peste 1000); „(cel puțin …)” arată `knownTep`.
+> - **F2, recipisa ca dovadă:** `/years` dă și `receiptOn`; fără termen bifat, tabul „Energie” scrie „Depusă (recipisă din <data>)”.
+> - **F1, Acasă:** la un cont nou pașii de început rămân primii, memento-ul de energie vine după ei.
+> - Mărunte: descrierea tabului „Energie” din dosar, recipisa doar PDF în selector (`FileDropzone` cu `accept`/`limitHint`), „IMM = nu se știe” nu mai golește auditul, proba 60 iartă numai 401-ul de la login.
+> - **Probe după rundă:** backend `./gradlew cleanTest test` **1434 teste, 0 eșecuri, 0 erori, 4 sărite**; web `npm test` **132/132**, `tsc`, lint (0 erori), mobil `tsc` curate; e2e pe o bază aruncabilă:
+>   proba 60 **28/28**, `npm run e2e` **47 de probe trec**.
+>
+> Ramura nu are încă plimbarea manuală prin browser; deploy și merge, numai la cererea proprietarului.
 
 > **30.09.2026, 12:57 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v148** (`76a89b4`), din `main` `ff5a330`; api neatins (v143), fără migrare — TERMENII ȘI POLITICA v2.3.**
 > `frontend/src/lib/legal.ts` adus la setul juridic v2.3 din `ecoregistru-docs/docs/juridic/`, validat de jurist pe 30.09.2026: termenii (cap. 4 — registrul formularelor
