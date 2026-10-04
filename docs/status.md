@@ -15,6 +15,11 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **04.10.2026 — „Registrul Anexa 3 (transport)” numai în Dosarul de control (proprietarul), ramura `fix/registru-anexa3-dosar`, nedeployat.**
+> Butonul cu meniu din antetul „Generare” și „Ieșiri” (`MovementsPage.tsx`) și textele lui (`movements.anexa3Register*`) au fost scoase; dosarul
+> (rândul din „Ce intră în arhivă”, `rapoarte/registru-anexa3-{an}.pdf`) și endpointul `GET /api/v1/evidences/registru-anexa3` rămân. Niciun document tipărit
+> atins. Probe: web `tsc`, lint 0 erori, 123/123; e2e 23 adusă la zi (butonul lipsește), 34 neschimbată.
+
 > **30.09.2026, 12:57 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v148** (`76a89b4`), din `main` `ff5a330`; api neatins (v143), fără migrare — TERMENII ȘI POLITICA v2.3.**
 > `frontend/src/lib/legal.ts` adus la setul juridic v2.3 din `ecoregistru-docs/docs/juridic/`, validat de jurist pe 30.09.2026: termenii (cap. 4 — registrul formularelor
 > de transport emise, ambalajele colectate numai la colector, termenele proprii; 8.3 — persoanele fizice de la care se cumpără deșeuri) și politica (persoanele fizice,

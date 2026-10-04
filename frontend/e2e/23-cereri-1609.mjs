@@ -164,9 +164,10 @@ await ctx2.waitForTimeout(1200);
 // tasta „Preluat de la alții". (Între 18.09 și 29.09 avea butonul, cu ieșirile.)
 const a3 = await ctx2.getByRole("button", { name: "Anexa 3 Ambalaje" }).count();
 check("generatorul n-are documentul Anexa 3 Ambalaje", a3 === 0);
-// În locul ei, pe antetul ecranului „Generare”: registrul formularelor de transport emise.
+// Registrul formularelor de transport emise stă numai în Dosarul de control (proprietarul, 04.10.2026);
+// între 29.09 și 04.10 era și pe antetul „Generare” / „Ieșiri”.
 const registru = await ctx2.getByRole("button", { name: "Registrul Anexa 3 (transport)" }).count();
-check("generatorul are „Registrul Anexa 3 (transport)” pe Generare", registru === 1);
+check("„Registrul Anexa 3 (transport)” nu mai e pe Generare", registru === 0);
 const taste23 = await ctx2.evaluate(() =>
   [...document.querySelectorAll('input[name="tabel-ambalaje"]')].map((i) => i.closest("label").innerText.trim())
 );

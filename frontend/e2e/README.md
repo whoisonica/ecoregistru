@@ -1,3 +1,7 @@
+🗂️ **04.10.2026 — proba 23, „Registrul Anexa 3 (transport)” numai în dosar (proprietarul: „să fie doar în dosarul de control”)**:
+proba cere acum ca antetul „Generare” al generatorului „Proba Automata SRL” să **n-aibă** butonul registrului (între 29.09 și 04.10
+îl avea, și pe „Ieșiri”). Proba **34** rămâne neschimbată: registrul e tot al șaptelea rând din „Ce intră în arhivă”.
+
 ⚖️ **30.09.2026 — proba 59 (`59-cantitate-kg.mjs`), cantitatea fără „,000” la kilograme (proprietarul)**: pe formularul „Adaugă deșeuri”
 (butonul „Deșeuri proprii” al firmei demo) 12,5 kg e oprit sub rubrică („În kilograme, fără zecimale.”), 12 kg trece, 0,25 t trece,
 0,0005 t e oprit (sub un kilogram). La fel în „Adaugă cantitatea” (`RecordWeightDialog`, aceeași regulă; nu e în probă). Un rând vechi cu zecimale în kg se salvează la editare cât cantitatea nu se atinge (probat de mână pe 1,456 kg: trece; schimbat

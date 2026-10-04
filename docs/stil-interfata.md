@@ -228,9 +228,8 @@ Formularul e același (`MovementFormDialog`); ecranul îi dă registrul și dire
 Intrări și pe valorificare la Ieșiri. **Ordinea rubricilor o stabilește specialista și nu se schimbă din alt motiv** —
 singura mutare e a ei, pe „Generare” (29.09.2026, decizia 89, mai sus); „Ieșiri” păstrează ordinea veche.
 
-**„Registrul Anexa 3 (transport)”** (29.09.2026, decizia 88) e un buton cu meniu în antetul ecranelor „Generare” și
-„Ieșiri” (nu pe „Intrări”): PDF-ul formularelor de transport emise în anul și pe punctul din filtru, cu explicația în
-`MenuItem.hint`, nu sub buton.
+**„Registrul Anexa 3 (transport)”** (29.09.2026, decizia 88) stă **numai în Dosarul de control** (proprietarul, 04.10.2026):
+butonul din antetul ecranelor „Generare” și „Ieșiri” a fost scos.
 
 **Generare are trei taburi** (`GENERATION_TABS` din `lib/screenTabs.ts`; 18.09.2026, proprietarul: „și Generare și Evidența e la fel?"): **Mișcări** (lista de mai
 sus, tabul implicit), **Totalul anului** și **Ambalaje** (mai jos). Totalul anului are un rând pe cod de deșeu, cu generat, valorificat, eliminat și starea lui
