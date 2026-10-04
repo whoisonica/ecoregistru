@@ -1,6 +1,8 @@
 package ro.ecoregistru.service.energy;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 import ro.ecoregistru.exception.ServiceUnavailableException;
@@ -193,16 +195,31 @@ public class EnergyService {
         declaration.setReceiptSizeBytes(file.getSize());
         declaration.setReceiptUploadedAt(now);
         declaration.setUpdatedAt(now);
-        declarationRepository.saveAndFlush(declaration);
+        try {
+            declarationRepository.saveAndFlush(declaration);
+        } catch (RuntimeException e) {
+            dropQuietly(stored.publicId(), stored.resourceType(), stored.deliveryType());
+            throw e;
+        }
 
+        // The old file goes only once the new row is committed; a rollback must leave it in place.
         if (oldId != null) {
-            try {
-                storageService.delete(oldId, oldResource, oldDelivery);
-            } catch (RuntimeException e) {
-                log.warn("Old energy receipt {} could not be deleted", oldId, e);
-            }
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    dropQuietly(oldId, oldResource, oldDelivery);
+                }
+            });
         }
         return build(company, year);
+    }
+
+    private void dropQuietly(String publicId, String resourceType, String deliveryType) {
+        try {
+            storageService.delete(publicId, resourceType, deliveryType);
+        } catch (RuntimeException e) {
+            log.warn("Energy receipt file {} could not be deleted", publicId, e);
+        }
     }
 
     private static boolean startsWithPdfMagic(MultipartFile file) {

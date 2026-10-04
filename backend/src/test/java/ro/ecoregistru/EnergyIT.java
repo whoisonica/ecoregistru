@@ -57,6 +57,10 @@ class EnergyIT {
     private static final int YEAR = 2025;
 
     @MockitoBean CloudinaryStorageService storage;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    ro.ecoregistru.repository.EnergyDeclarationRepository declarations;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    ro.ecoregistru.repository.EnergySavingMeasureRepository measures;
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired AppUserRepository appUserRepository;
@@ -297,6 +301,39 @@ class EnergyIT {
         order.verify(storage, org.mockito.Mockito.times(2)).upload(any(), anyString());
         order.verify(storage).delete("old", "image", "authenticated");
         sheet(YEAR).andExpect(jsonPath("$.receipt.fileName", is("b.pdf")));
+    }
+
+    @Test
+    void aFailureAfterTheSaveRollsBackAndKeepsTheOldFile() throws Exception {
+        stub("old");
+        postReceipt(YEAR, "a.pdf", "application/pdf", PDF).andExpect(status().isOk());
+        stub("new");
+        // build() runs after the save and reads the measures: failing there rolls the transaction back
+        org.mockito.Mockito.doThrow(new IllegalStateException("boom")).when(measures)
+                .findAllByDeclaration_IdOrderByPositionAsc(any());
+        try {
+            postReceipt(YEAR, "b.pdf", "application/pdf", PDF);
+        } catch (Exception expected) {
+            // the failure surfaces as a 500 or a nested exception; either way the transaction rolled back
+        }
+        org.mockito.Mockito.reset(measures);
+        verify(storage, org.mockito.Mockito.times(2)).upload(any(), anyString());
+        verify(storage, never()).delete(eq("old"), any(), any());
+        sheet(YEAR).andExpect(jsonPath("$.receipt.fileName", is("a.pdf")));
+    }
+
+    @Test
+    void aFailedSaveDropsTheNewFile() throws Exception {
+        stub("fresh");
+        org.mockito.Mockito.doThrow(new IllegalStateException("boom")).when(declarations)
+                .saveAndFlush(any());
+        try {
+            postReceipt(YEAR, "a.pdf", "application/pdf", PDF);
+        } catch (Exception expected) {
+            // see above
+        }
+        org.mockito.Mockito.reset(declarations);
+        verify(storage).delete("fresh", "image", "authenticated");
     }
 
     @Test
