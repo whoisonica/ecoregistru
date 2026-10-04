@@ -1904,7 +1904,9 @@ export type ReportType =
   | "APM_ANNUAL_MAY"
   | "OTHER"
   // V81 (Andreea, 29.09.2026): un termen pe care firma și-l pune singură — zgomot, apă, emisii.
-  | "CUSTOM";
+  | "CUSTOM"
+  // 30 iunie, pe EfEnClima.ro — declarația de consum de energie a anului anterior (V82).
+  | "ENERGY_ANNUAL";
 
 /** Cât de des revine un termen propriu; următoarea apariție se creează la bifare. */
 export type DeadlineRecurrence = "ONCE" | "MONTHLY" | "QUARTERLY" | "SEMIANNUAL" | "ANNUAL";
@@ -2113,4 +2115,93 @@ export interface InventoryDuringOperation {
   number: number;
   date: string;
   counterparty: string | null;
+}
+
+/** Oglindește `EnergyCarrier` din backend: rubricile Anexei 1 (consum sub 1000 tep), în ordinea ei. */
+export type EnergyCarrier =
+  | "ELECTRICITY"
+  | "HEAT"
+  | "NATURAL_GAS"
+  | "FUEL_OIL"
+  | "LIGHT_FUEL_OIL"
+  | "PETROL"
+  | "DIESEL"
+  | "COAL"
+  | "OTHER_FUEL"
+  | "RENEWABLE_ELECTRICITY"
+  | "RENEWABLE_HEAT";
+
+/** `tep` e calculat de server la rubricile cu coeficient; îl scrie omul doar la COAL și OTHER_FUEL. */
+export interface EnergyCell {
+  carrier: EnergyCarrier;
+  month: number;
+  quantity: number | null;
+  tep: number | null;
+}
+
+/** Totalul anului al unei rubrici; `null` cât timp vreo lună din 12 nu e completă. */
+export interface EnergyCarrierTotal {
+  carrier: EnergyCarrier;
+  quantity: number | null;
+  tep: number | null;
+}
+
+export interface EnergyMeasure {
+  position: number;
+  name: string | null;
+  costEstimated: number | null;
+  costActual: number | null;
+  savingsTepEstimated: number | null;
+  savingsTepActual: number | null;
+  savingsCostEstimated: number | null;
+  savingsCostActual: number | null;
+}
+
+export interface EnergyDeclaration {
+  sme: boolean | null;
+  auditDate: string | null;
+  auditor: string | null;
+  auditScope: string | null;
+  auditSharePct: number | null;
+  poimInterest: boolean | null;
+  poimProject: boolean | null;
+  measures: EnergyMeasure[];
+}
+
+export interface EnergyContact {
+  fax: string | null;
+  website: string | null;
+  activitySector: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  mobile: string | null;
+  attestedOn: string | null;
+}
+
+export interface EnergyReceipt {
+  fileName: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
+
+export interface EnergySheet {
+  year: number;
+  carriers: EnergyCarrier[];
+  cells: EnergyCell[];
+  totals: EnergyCarrierTotal[];
+  totalTep: number;
+  monthsComplete: number;
+  overThreshold: boolean;
+  declaration: EnergyDeclaration;
+  contact: EnergyContact;
+  receipt: EnergyReceipt | null;
+}
+
+export interface EnergyYearSummary {
+  year: number;
+  monthsComplete: number;
+  overThreshold: boolean;
+  filedOn: string | null;
+  hasReceipt: boolean;
 }

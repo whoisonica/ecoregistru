@@ -88,6 +88,9 @@ export function documentFor(d: Deadline): { to: string; label: string } | null {
       label: strings.deadlines.documentPackaging.replace("{year}", String(reported)),
     };
   }
+  if (d.reportType === "ENERGY_ANNUAL") {
+    return { to: `/termene/energie?an=${reported}`, label: strings.deadlines.documentEnergy };
+  }
   return null;
 }
 

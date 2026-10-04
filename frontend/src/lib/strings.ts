@@ -81,6 +81,8 @@ export const strings = {
       "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D evidența gestiunii deșeurilor generate centralizată fișa de evidență anexa 1 HG 856/2002 totalul anului SIM 15 martie",
     kwPackaging:
       "anexa 1 ambalaje anexa 3 ambalaje Ordinul 794/2012 tabelul 1 tabelul 2 xls pus pe piață",
+    energy: "Fișa de energie",
+    kwEnergy: "energie curent gaze tep efenclima declarație consum",
     kwDeadlines: "scadențe termene 15 martie 25 februarie 25 ianuarie AFM SIM alerte",
     kwAuditFile: "arhivă inspector Garda de Mediu control dosar zip",
     kwPartners: "clienți furnizori colector valorificator transportator șoferi autorizație CUI",
@@ -770,6 +772,7 @@ export const strings = {
     // Numele scurt al termenului, pe coloana lunii. Cel întreg rămâne în `enums.reportType`.
     reportShort: {
       SIM_ANNUAL: "Evidența anuală",
+      ENERGY_ANNUAL: "Energie",
       AFM_MONTHLY: "AFM lunar",
       AFM_QUARTERLY: "AFM trimestrial",
       AFM_ANNUAL: "AFM anual",
@@ -2606,11 +2609,13 @@ export const strings = {
     // link către un document inexistent ar promite mai mult decât ținem.
     documentEvidence: "Deschide evidența pe {year}",
     documentPackaging: "Deschide ambalajele pe {year}",
+    documentEnergy: "Fișa de energie",
     // Ce trebuie să știe omul lângă un termen, fără să deschidă legea — numai unde termenul poate să
     // nu fie al lui. Anexa 1 Ambalaje o depune doar cine își îndeplinește singur obiectivele
     // (Ordinul 794/2012 art. 1 alin. (1)–(2)); cu un OIREP raportează OIREP-ul, iar profilul nu
     // întreabă încă asta (scanarea de conformitate din 17.09.2026, pct. 1; proprietarul: se spune aici).
     typeNote: {
+      ENERGY_ANNUAL: "Se depune pe EfEnClima.ro, la Ministerul Energiei.",
       PACKAGING_ANNUAL:
         "Se depune doar dacă firma își îndeplinește singură obiectivele de valorificare a ambalajelor. Dacă le-ai transferat unei organizații (OIREP), raportează ea în locul tău și nu depui Anexa 1. Dacă ai transferat doar o parte, raportezi cantitățile netransferate (Ordinul 794/2012, art. 1).",
     },
@@ -3663,6 +3668,7 @@ export const strings = {
       // în sistemul pus la dispoziție de APM (OUG 92/2021 art. 48 alin. (1)). „Raportarea SIM"
       // numea canalul și lăsa clientul să ghicească ce are de pregătit.
       SIM_ANNUAL: "Evidența gestiunii deșeurilor generate (anual, 15 martie)",
+      ENERGY_ANNUAL: "Declarația de consum de energie",
       // Trei termene, nu unul: OUG 196/2005 art. 11 are trei cadențe, iar până pe 24.08.2026
       // dădeam termenul lunar oricui avea bifa — 11 alerte greșite pe an la o firmă cu
       // contribuție doar anuală.
@@ -4838,5 +4844,47 @@ export const strings = {
     actionNewOutboundKeywords: "ieșire plecat predat valorificat eliminat nouă",
     actionNewPartner: "Adaugă partener",
     actionNewPartnerKeywords: "client furnizor colector transportator firmă nouă",
+  },
+  // Fișa de energie (Legea 121/2014; Anexa 1 sub 1000 tep) — ecranul /termene/energie și tabul „Energie”.
+  energy: {
+    title: "Fișa de energie",
+    viewMonths: "Luni",
+    viewEfenclima: "Pentru EfEnClima",
+    annex1: "Anexa 1",
+    declaration: "Declarația",
+    uploadReceipt: "Încarcă recipisa",
+    receipt: "Recipisa",
+    changeCarriers: "Schimbă rubricile",
+    contactTitle: "Datele firmei pentru Anexa 1",
+    pickCarriersTitle: "Ce energie folosește firma?",
+    annexOnly: "Doar pe Anexa 1",
+    tooltipElectricity: "Din factură: kWh ÷ 1000.",
+    tooltipFuel: "Tone; din litri — de stabilit cu specialista.",
+    overThresholdWarning:
+      "Peste 1000 tep: obligații în plus — manager energetic, audit, program. Vorbiți cu noi.",
+    annex1Disabled: "Anexa 1 e pentru firmele sub 1000 tep.",
+    readiness: "{n} din 12 luni completate",
+    tabWaste: "Deșeuri",
+    tabEnergy: "Energie",
+    filedOn: "Depusă pe {date}",
+    incomplete: "Incompletă: {n} din 12 luni",
+    notFiled: "Nedepusă",
+    nextActionNoCarriersTitle: "Spuneți ce energie folosește firma",
+    nextActionNoCarriersHint: "O dată: bifați ce apare pe facturi.",
+    nextActionMonthTitle: "Energia pe {month} nu e trecută",
+    nextActionMonthHint: "De pe factura lunii, pentru declarația din 30 iunie.",
+    carrier: {
+      ELECTRICITY: "Energie electrică",
+      HEAT: "Energie termică cumpărată",
+      NATURAL_GAS: "Gaze naturale",
+      FUEL_OIL: "Păcură",
+      LIGHT_FUEL_OIL: "CLU",
+      PETROL: "Benzină",
+      DIESEL: "Motorină",
+      COAL: "Cărbune",
+      OTHER_FUEL: "Alți combustibili",
+      RENEWABLE_ELECTRICITY: "Energie electrică din surse regenerabile",
+      RENEWABLE_HEAT: "Energie termică din surse regenerabile",
+    },
   },
 } as const;

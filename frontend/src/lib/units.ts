@@ -84,3 +84,11 @@ export function formatQuantityInput(raw: string, unit: Unit): string | null {
   const value = Number(raw);
   return raw.trim() !== "" && Number.isFinite(value) ? formatQuantity(value, unit) : null;
 }
+
+/** Număr cu exact `digits` zecimale, în format românesc („1.234,500”). */
+export function formatDecimal(n: number, digits: number): string {
+  return new Intl.NumberFormat("ro-RO", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(n);
+}
