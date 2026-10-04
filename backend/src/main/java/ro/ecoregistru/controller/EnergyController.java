@@ -48,6 +48,20 @@ public class EnergyController {
                 .body(body);
     }
 
+    /** The Declarație accompanying Anexa 1, as a Word file. */
+    @GetMapping("/declaratie")
+    public ResponseEntity<byte[]> declarationDocx(@RequestParam int year) {
+        byte[] body = energyService.declarationDocx(year);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("declaratie-energie-" + year + ".docx")
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
     @PutMapping("/carriers")
     @PreAuthorize(CAN_WRITE)
     public EnergySheetResponse carriers(@Valid @RequestBody EnergyCarriersRequest request) {

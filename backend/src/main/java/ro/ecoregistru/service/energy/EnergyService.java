@@ -28,6 +28,7 @@ import ro.ecoregistru.service.energy.EnergyYear.CarrierTotal;
 import ro.ecoregistru.service.energy.EnergyYear.Cell;
 import ro.ecoregistru.service.export.EnergyAnnex1;
 import ro.ecoregistru.service.export.EnergyAnnex1XlsxGenerator;
+import ro.ecoregistru.service.export.EnergyDeclarationDocxGenerator;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -52,6 +53,7 @@ public class EnergyService {
     private final EnergySavingMeasureRepository measureRepository;
     private final CloudinaryStorageService storageService;
     private final EnergyAnnex1XlsxGenerator annex1Generator;
+    private final EnergyDeclarationDocxGenerator declarationGenerator;
 
     @Transactional(readOnly = true)
     public EnergySheetResponse sheet(int year) {
@@ -83,6 +85,13 @@ public class EnergyService {
         }
         return annex1Generator.render(new EnergyAnnex1(year, company, quantities,
                 teps.get(EnergyCarrier.COAL), teps.get(EnergyCarrier.OTHER_FUEL), sheet.declaration()));
+    }
+
+    /** The Declarație (.docx) of the year, with the company's details as stored. */
+    @Transactional(readOnly = true)
+    public byte[] declarationDocx(int year) {
+        checkYear(year);
+        return declarationGenerator.render(company(), year);
     }
 
     @Transactional

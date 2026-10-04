@@ -1,0 +1,145 @@
+package ro.ecoregistru;
+
+import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
+import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import ro.ecoregistru.config.JwtService;
+import ro.ecoregistru.entity.AppUser;
+import ro.ecoregistru.entity.Company;
+import ro.ecoregistru.enums.CompanyType;
+import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.repository.AppUserRepository;
+import ro.ecoregistru.repository.CompanyRepository;
+
+import java.io.ByteArrayInputStream;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/** The Declarație (.docx) accompanying Anexa 1, read back off the downloaded file. Invented company only. */
+@SpringBootTest
+@ActiveProfiles("dev")
+@AutoConfigureMockMvc
+@AutoConfigureEmbeddedDatabase(provider = ZONKY)
+class EnergyDeclarationIT {
+
+    private static final int YEAR = 2025;
+
+    private final String suffix = UUID.randomUUID().toString().substring(0, 8);
+
+    @Autowired MockMvc mockMvc;
+    @Autowired JwtService jwtService;
+    @Autowired AppUserRepository appUserRepository;
+    @Autowired CompanyRepository companyRepository;
+
+    @Test
+    void headerCarriesTheCompanyDetails() throws Exception {
+        try (XWPFDocument doc = declaration("Ștefănescu Țesături SRL", "0264 111 222", "0264 333 444")) {
+            List<XWPFParagraph> p = doc.getParagraphs();
+            assertThat(p.subList(0, 7).stream().map(XWPFParagraph::getText)).containsExactly(
+                    "Ștefănescu Țesături SRL",
+                    "Sediul social: Cluj-Napoca, str. Exemplu nr. 1",
+                    "C.U.I.: RO" + suffix,
+                    "J12/345/2001",
+                    "Telefon 0264 111 222, fax 0264 333 444",
+                    "Mail: office@tesaturi.example",
+                    "Nr. ........../...............");
+            for (XWPFParagraph header : p.subList(0, 7)) {
+                assertThat(header.getRuns()).allMatch(XWPFRun::isBold);
+            }
+            assertThat(((Number) doc.getDocument().getBody().getSectPr().getPgSz().getW()).intValue()).isEqualTo(11906);
+            assertThat(((Number) doc.getDocument().getBody().getSectPr().getPgSz().getH()).intValue()).isEqualTo(16838);
+            assertThat(((Number) doc.getDocument().getBody().getSectPr().getPgMar().getLeft()).intValue()).isEqualTo(1440);
+        }
+    }
+
+    @Test
+    void faxIsOmittedWhenMissing() throws Exception {
+        try (XWPFDocument doc = declaration("Ștefănescu Țesături SRL", "0264 111 222", null)) {
+            assertThat(doc.getParagraphs().get(4).getText()).isEqualTo("Telefon 0264 111 222");
+        }
+    }
+
+    @Test
+    void theSentenceNamesTheCompany() throws Exception {
+        try (XWPFDocument doc = declaration("Ștefănescu Țesături SRL", null, null)) {
+            List<XWPFParagraph> p = doc.getParagraphs();
+            assertThat(p.get(7).getText()).isEmpty();
+            assertThat(p.get(8).getText()).isEqualTo("Declarație");
+            assertThat(p.get(8).getRuns().get(0).isBold()).isTrue();
+            assertThat(p.get(9).getText()).isEmpty();
+            XWPFParagraph sentence = p.get(10);
+            assertThat(sentence.getText()).isEqualTo("Subscrisa Ștefănescu Țesături SRL prin prezenta declarăm "
+                    + "faptul că informațiile prezentate în Anexa de raportare sunt corecte și conforme cu realitatea.");
+            assertThat(sentence.getRuns().stream().filter(XWPFRun::isBold).map(XWPFRun::text))
+                    .containsExactly("Ștefănescu Țesături SRL");
+            assertThat(sentence.getRuns()).allMatch(r -> "Trebuchet MS".equals(r.getFontFamily()));
+        }
+    }
+
+    @Test
+    void signatureTableHasThreeColumnsAndNoDate() throws Exception {
+        try (XWPFDocument doc = declaration("Ștefănescu Țesături SRL", null, null)) {
+            assertThat(doc.getTables()).hasSize(1);
+            XWPFTable t = doc.getTables().get(0);
+            assertThat(t.getRows()).hasSize(3);
+            assertThat(row(t, 0)).containsExactly("NUMELE ÎN CLAR ŞI SEMNĂTURA CONDUCĂTORULUI UNITĂŢII",
+                    "NUMELE ÎN CLAR ŞI SEMNĂTURA PERSOANEI DE CONTACT", "DATA TRANSMITERII");
+            assertThat(row(t, 1)).containsExactly("ŞTAMPILA UNITĂŢII",
+                    "MANAGER ENERGETIC SAU A CONDUCĂTORULUI COMPARTIMENTULUI TEHNIC", "");
+            assertThat(row(t, 2)).containsExactly("………………………….", "Maria Exemplu", "");
+            assertThat(t.getTopBorderType()).isEqualTo(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.NONE);
+            assertThat(t.getInsideHBorderType()).isEqualTo(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.NONE);
+        }
+    }
+
+    @Test
+    void diacriticsSurviveInTheCompanyName() throws Exception {
+        byte[] bytes = download("Ștefănescu Țesături SRL", null, null);
+        try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(bytes));
+             XWPFWordExtractor ex = new XWPFWordExtractor(doc)) {
+            assertThat(ex.getText()).contains("Ștefănescu Țesături");
+        }
+    }
+
+    private static List<String> row(XWPFTable t, int i) {
+        return t.getRow(i).getTableCells().stream().map(c -> c.getText()).toList();
+    }
+
+    private XWPFDocument declaration(String name, String phone, String fax) throws Exception {
+        return new XWPFDocument(new ByteArrayInputStream(download(name, phone, fax)));
+    }
+
+    private byte[] download(String name, String phone, String fax) throws Exception {
+        Company company = companyRepository.save(Company.builder()
+                .name(name).cui("RO" + suffix).tradeRegisterNumber("J12/345/2001")
+                .type(CompanyType.GENERATOR).address("Cluj-Napoca, str. Exemplu nr. 1")
+                .contactPhone(phone).fax(fax).contactEmail("office@tesaturi.example")
+                .energyContactName("Maria Exemplu")
+                .active(true).createdAt(Instant.now()).build());
+        String admin = jwtService.generateToken(appUserRepository.save(AppUser.builder()
+                .email("adm+" + suffix + "@demo.ro").password("x")
+                .role(Role.ADMIN).company(company).enabled(true)
+                .createdAt(Instant.now()).build()));
+        return mockMvc.perform(get("/api/v1/energy/declaratie").param("year", String.valueOf(YEAR))
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("declaratie-energie-2025.docx")))
+                .andReturn().getResponse().getContentAsByteArray();
+    }
+}
