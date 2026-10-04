@@ -108,7 +108,7 @@ public class MovementAttachmentService {
      * <p>Trunchiere, nu refuz: numele e metadată de afişare, iar un om care a scanat un aviz n-are
      * ce învăţa dintr-o eroare despre lungimea unei coloane.
      */
-    static String safeFileName(String original) {
+    public static String safeFileName(String original) {
         if (original == null || original.isBlank()) {
             return null;
         }

@@ -401,7 +401,8 @@ public enum ErrorMessageEnum {
 
     ENERGY_TEP_NOT_ALLOWED("energy.tep.not.allowed", "Tep-ul se calculează singur la rubrica asta."),
     ENERGY_CARRIER_NOT_USED("energy.carrier.not.used", "Bifați întâi rubrica."),
-    ENERGY_YEAR_INVALID("energy.year.invalid", "Anul trebuie să fie între 2020 și anul curent.");
+    ENERGY_YEAR_INVALID("energy.year.invalid", "Anul trebuie să fie între 2020 și anul curent."),
+    ENERGY_RECEIPT_PDF_ONLY("energy.receipt.pdf.only", "Recipisa se încarcă în PDF.");
 
     private final String code;
     private final String message;

@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ro.ecoregistru.controller.request.EnergyCarriersRequest;
@@ -54,5 +56,22 @@ public class EnergyController {
     @PreAuthorize(CAN_WRITE)
     public EnergySheetResponse contact(@Valid @RequestBody EnergyContactRequest request) {
         return energyService.saveContact(request);
+    }
+
+    @PostMapping(value = "/recipisa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(CAN_WRITE)
+    public EnergySheetResponse receipt(@RequestParam int year, @RequestParam("file") MultipartFile file) {
+        return energyService.attachReceipt(year, file);
+    }
+
+    @GetMapping("/recipisa/continut")
+    public ResponseEntity<byte[]> receiptContent(@RequestParam int year) {
+        var content = energyService.receiptContent(year);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename(content.fileName() == null ? "recipisa.pdf" : content.fileName(),
+                                java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .body(content.bytes());
     }
 }

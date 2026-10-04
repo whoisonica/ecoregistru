@@ -1,6 +1,11 @@
 package ro.ecoregistru.service.energy;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
+import ro.ecoregistru.exception.ServiceUnavailableException;
+import ro.ecoregistru.service.CloudinaryStorageService;
+import ro.ecoregistru.service.MovementAttachmentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ro.ecoregistru.controller.request.EnergyCarriersRequest;
@@ -28,6 +33,7 @@ import java.util.*;
 import static ro.ecoregistru.exception.ErrorMessageEnum.*;
 
 /** Reads and writes the energy sheet (Anexa 1) of the current tenant; the figures come from {@link EnergyYear}. */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EnergyService {
@@ -39,6 +45,7 @@ public class EnergyService {
     private final EnergyConsumptionRepository consumptionRepository;
     private final EnergyDeclarationRepository declarationRepository;
     private final EnergySavingMeasureRepository measureRepository;
+    private final CloudinaryStorageService storageService;
 
     @Transactional(readOnly = true)
     public EnergySheetResponse sheet(int year) {
@@ -156,6 +163,83 @@ public class EnergyService {
         return build(company, LocalDate.now(DeadlineService.ZONE).getYear());
     }
 
+    /** The filing receipt of EfEnClima for the year: new file up first, row saved, the old file dropped last. */
+    @Transactional
+    public EnergySheetResponse attachReceipt(int year, MultipartFile file) {
+        checkYear(year);
+        Company company = company();
+        if (file == null || file.isEmpty()) {
+            throw new BadRequestException(ENERGY_RECEIPT_PDF_ONLY);
+        }
+        if (file.getSize() > MovementAttachmentService.MAX_ATTACHMENT_BYTES) {
+            throw new BadRequestException(ATTACHMENT_TOO_LARGE);
+        }
+        if (!"application/pdf".equalsIgnoreCase(file.getContentType()) || !startsWithPdfMagic(file)) {
+            throw new BadRequestException(ENERGY_RECEIPT_PDF_ONLY);
+        }
+        EnergyDeclaration declaration = declarationRepository.findByCompany_IdAndYear(company.getId(), year)
+                .orElseGet(() -> EnergyDeclaration.builder().company(company).year(year).build());
+        String oldId = declaration.getReceiptPublicId();
+        String oldResource = declaration.getReceiptResourceType();
+        String oldDelivery = declaration.getReceiptDeliveryType();
+
+        var stored = storageService.upload(file, "energy/" + company.getId() + "/" + year);
+        Instant now = Instant.now();
+        declaration.setReceiptPublicId(stored.publicId());
+        declaration.setReceiptResourceType(stored.resourceType());
+        declaration.setReceiptDeliveryType(stored.deliveryType());
+        declaration.setReceiptFormat(stored.format());
+        declaration.setReceiptFileName(MovementAttachmentService.safeFileName(file.getOriginalFilename()));
+        declaration.setReceiptSizeBytes(file.getSize());
+        declaration.setReceiptUploadedAt(now);
+        declaration.setUpdatedAt(now);
+        declarationRepository.saveAndFlush(declaration);
+
+        if (oldId != null) {
+            try {
+                storageService.delete(oldId, oldResource, oldDelivery);
+            } catch (RuntimeException e) {
+                log.warn("Old energy receipt {} could not be deleted", oldId, e);
+            }
+        }
+        return build(company, year);
+    }
+
+    private static boolean startsWithPdfMagic(MultipartFile file) {
+        try (var in = file.getInputStream()) {
+            byte[] head = in.readNBytes(4);
+            return head.length == 4 && head[0] == '%' && head[1] == 'P' && head[2] == 'D' && head[3] == 'F';
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
+
+    public record ReceiptContent(byte[] bytes, String fileName) {}
+
+    @Transactional(readOnly = true)
+    public ReceiptContent receiptContent(int year) {
+        checkYear(year);
+        EnergyDeclaration d = declarationRepository.findByCompany_IdAndYear(TenantContext.require(), year)
+                .filter(x -> x.getReceiptPublicId() != null)
+                .orElseThrow(() -> new NotFoundException(ATTACHMENT_NOT_FOUND));
+        try {
+            String url = storageService.signedUrl(d.getReceiptPublicId(), d.getReceiptResourceType(),
+                    d.getReceiptDeliveryType(), d.getReceiptFormat());
+            return new ReceiptContent(storageService.fetch(url), d.getReceiptFileName());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ServiceUnavailableException(ATTACHMENT_FETCH_FAILED);
+        } catch (Exception e) {
+            log.warn("Energy receipt fetch failed for year={}", year, e);
+            throw new ServiceUnavailableException(ATTACHMENT_FETCH_FAILED);
+        }
+    }
+
+    /** The receipt bytes, for the filing package. */
+    public byte[] receiptBytes(int year) {
+        return receiptContent(year).bytes();
+    }
+
     private Company company() {
         return companyRepository.findById(TenantContext.require())
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
@@ -200,6 +284,11 @@ public class EnergyService {
                                 .toList()))
                 .orElseGet(() -> new EnergySheetResponse.Declaration(
                         null, null, null, null, null, null, null, List.of()));
+        EnergySheetResponse.Receipt receipt = declarationRepository.findByCompany_IdAndYear(companyId, year)
+                .filter(d -> d.getReceiptPublicId() != null)
+                .map(d -> new EnergySheetResponse.Receipt(
+                        d.getReceiptFileName(), d.getReceiptSizeBytes(), d.getReceiptUploadedAt()))
+                .orElse(null);
 
         EnergySheetResponse.Contact contact = new EnergySheetResponse.Contact(
                 company.getFax(), company.getWebsite(), company.getActivitySector(),
@@ -210,6 +299,6 @@ public class EnergyService {
         return new EnergySheetResponse(year,
                 Arrays.stream(EnergyCarrier.values()).filter(used::contains).toList(),
                 shown, energyYear.totals(), energyYear.totalTep(), energyYear.monthsComplete(),
-                energyYear.overThreshold(), declaration, contact, null);
+                energyYear.overThreshold(), declaration, contact, receipt);
     }
 }

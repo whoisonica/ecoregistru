@@ -23,6 +23,20 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import org.mockito.InOrder;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import ro.ecoregistru.service.CloudinaryStorageService;
+import ro.ecoregistru.service.CloudinaryStorageService.StoredFile;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -42,6 +56,7 @@ class EnergyIT {
 
     private static final int YEAR = 2025;
 
+    @MockitoBean CloudinaryStorageService storage;
     @Autowired MockMvc mockMvc;
     @Autowired JwtService jwtService;
     @Autowired AppUserRepository appUserRepository;
@@ -221,11 +236,86 @@ class EnergyIT {
         putTo("/contact", admin, "{\"email\":\"nu-e-email\"}").andExpect(status().isUnprocessableEntity());
     }
 
+    private static final byte[] PDF = "%PDF-1.4 test".getBytes();
+
+    private ResultActions postReceipt(int year, String name, String type, byte[] bytes) throws Exception {
+        return mockMvc.perform(multipart("/api/v1/energy/recipisa?year=" + year)
+                .file(new MockMultipartFile("file", name, type, bytes))
+                .header("Authorization", "Bearer " + admin));
+    }
+
+    private void stub(String publicId) {
+        when(storage.upload(any(), anyString())).thenReturn(
+                new StoredFile("u", publicId, "image", "authenticated", "pdf"));
+    }
+
+    @Test
+    void aNullCarrierIs422() throws Exception {
+        putTo("/carriers", admin, "{\"carriers\":[null]}").andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void aPdfReceiptIsStoredAndServed() throws Exception {
+        stub("p1");
+        when(storage.signedUrl("p1", "image", "authenticated", "pdf")).thenReturn("http://signed");
+        when(storage.fetch("http://signed")).thenReturn(PDF);
+        postReceipt(YEAR, "recipisa.pdf", "application/pdf", PDF).andExpect(status().isOk())
+                .andExpect(jsonPath("$.receipt.fileName", is("recipisa.pdf")))
+                .andExpect(jsonPath("$.receipt.sizeBytes", is(PDF.length)));
+        verify(storage).upload(any(), eq("energy/" + tenantId + "/" + YEAR));
+        sheet(YEAR).andExpect(jsonPath("$.receipt.fileName", is("recipisa.pdf")));
+        mockMvc.perform(get("/api/v1/energy/recipisa/continut?year=" + YEAR)
+                        .header("Authorization", "Bearer " + viewer))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .content().contentType("application/pdf"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .content().bytes(PDF));
+        mockMvc.perform(get("/api/v1/energy/recipisa/continut?year=" + (YEAR - 1))
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void aNonPdfIs400AndKeepsTheOldReceipt() throws Exception {
+        stub("p1");
+        postReceipt(YEAR, "a.pdf", "application/pdf", PDF).andExpect(status().isOk());
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 1, 2};
+        postReceipt(YEAR, "fals.pdf", "application/pdf", png).andExpect(status().isBadRequest());
+        postReceipt(YEAR, "b.png", "image/png", PDF).andExpect(status().isBadRequest());
+        verify(storage, never()).delete(any(), any(), any());
+        sheet(YEAR).andExpect(jsonPath("$.receipt.fileName", is("a.pdf")));
+    }
+
+    @Test
+    void replacingDeletesTheOldFileAfterTheUpload() throws Exception {
+        stub("old");
+        postReceipt(YEAR, "a.pdf", "application/pdf", PDF).andExpect(status().isOk());
+        stub("new");
+        postReceipt(YEAR, "b.pdf", "application/pdf", PDF).andExpect(status().isOk());
+        InOrder order = inOrder(storage);
+        order.verify(storage, org.mockito.Mockito.times(2)).upload(any(), anyString());
+        order.verify(storage).delete("old", "image", "authenticated");
+        sheet(YEAR).andExpect(jsonPath("$.receipt.fileName", is("b.pdf")));
+    }
+
+    @Test
+    void elevenMegabytesIsRefused() throws Exception {
+        byte[] big = new byte[11 * 1024 * 1024];
+        System.arraycopy(PDF, 0, big, 0, 4);
+        postReceipt(YEAR, "mare.pdf", "application/pdf", big).andExpect(status().isBadRequest());
+        verify(storage, never()).upload(any(), anyString());
+    }
+
     @Test
     void aClientViewerReadsButCannotWrite() throws Exception {
         mockMvc.perform(get("/api/v1/energy?year=" + YEAR).header("Authorization", "Bearer " + viewer))
                 .andExpect(status().isOk());
         putTo("/carriers", viewer, "{\"carriers\":[]}").andExpect(status().isForbidden());
+        mockMvc.perform(multipart("/api/v1/energy/recipisa?year=" + YEAR)
+                        .file(new MockMultipartFile("file", "a.pdf", "application/pdf", PDF))
+                        .header("Authorization", "Bearer " + viewer))
+                .andExpect(status().isForbidden());
         putTo("/consumption", viewer, "{\"year\":2025,\"carrier\":\"HEAT\",\"month\":1,\"quantity\":1}")
                 .andExpect(status().isForbidden());
         putTo("/declaration", viewer, "{\"year\":2025}").andExpect(status().isForbidden());
