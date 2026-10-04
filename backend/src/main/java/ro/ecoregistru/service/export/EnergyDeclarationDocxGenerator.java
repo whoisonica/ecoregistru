@@ -32,6 +32,7 @@ public class EnergyDeclarationDocxGenerator {
     private static final int MARGIN = 1440;
     private static final int COLUMN = (A4_WIDTH - 2 * MARGIN) / 3;
 
+    /** {@code year} is unused by design: the Declarație carries no year, but the signature matches the other renderers. */
     public byte[] render(Company company, int year) {
         try (XWPFDocument doc = new XWPFDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             page(doc);
@@ -41,7 +42,8 @@ public class EnergyDeclarationDocxGenerator {
             header(doc, "C.U.I.: " + nz(company.getCui()));
             header(doc, nz(company.getTradeRegisterNumber()));
             String fax = nz(company.getFax());
-            header(doc, "Telefon " + nz(company.getContactPhone()) + (fax.isBlank() ? "" : ", fax " + fax));
+            String phone = nz(company.getContactPhone());
+            header(doc, "Telefon" + (phone.isBlank() ? "" : " " + phone) + (fax.isBlank() ? "" : ", fax " + fax));
             header(doc, "Mail: " + nz(company.getContactEmail()));
             header(doc, "Nr. ........../...............");
 
