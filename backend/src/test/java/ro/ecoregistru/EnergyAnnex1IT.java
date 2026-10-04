@@ -64,7 +64,7 @@ class EnergyAnnex1IT {
                 .name("Exemplu Energie " + suffix).cui("RO" + suffix)
                 .type(CompanyType.GENERATOR)
                 .address("Cluj-Napoca, str. Exemplu nr. 1")
-                .caenCode("4677")
+                .caenCode("3811")
                 .contactPhone("0264 000 000").contactEmail("office@exemplu.ro")
                 .contactName("Ion Popescu").contactRole("Manager Mediu")
                 .active(true).createdAt(Instant.now()).build());
@@ -142,6 +142,29 @@ class EnergyAnnex1IT {
             assertThat(cell(wb, "Date statistice", "G6").getCellType()).isEqualTo(CellType.BLANK);
             assertThat(Golden.cells(wb.getSheet("Date statistice"), 15, 0, 6))
                     .containsExactly(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            // Coal and other fuels (tep), heat, the two renewables: unused, so 0 — never blank.
+            for (String ref : List.of("F18", "G18", "G9", "G20", "G23")) {
+                Cell c = cell(wb, "Date statistice", ref);
+                assertThat(c.getCellType()).as(ref).isEqualTo(CellType.NUMERIC);
+                assertThat(c.getNumericCellValue()).as(ref).isEqualTo(0.0);
+            }
+        }
+    }
+
+    @Test
+    void coalWithAMonthWithoutTepLeavesF18Blank() throws Exception {
+        tick("COAL");
+        for (int m = 1; m <= 12; m++) {
+            cell("COAL", m, "2", m == 6 ? null : "1.5");
+        }
+        try (XSSFWorkbook wb = annex()) {
+            // June has a quantity but no tep: the year's coal is unknown, so neither 0 nor a partial sum.
+            assertThat(cell(wb, "Date statistice", "F18").getCellType()).isEqualTo(CellType.BLANK);
+            assertThat(cell(wb, "Date statistice", "F16").getCellType()).isEqualTo(CellType.BLANK);
+        }
+        cell("COAL", 6, "2", "1.5");
+        try (XSSFWorkbook wb = annex()) {
+            assertThat(cell(wb, "Date statistice", "F18").getNumericCellValue()).isEqualTo(18.0);
         }
     }
 
@@ -281,7 +304,7 @@ class EnergyAnnex1IT {
             assertThat(Golden.cells(sh, 5, 0, 4)).containsExactly("Fax", "0264 000 001", "", "E-mail",
                     "office@exemplu.ro");
             assertThat(Golden.cells(sh, 6, 0, 2)).containsExactly("Profil de activitate", "Cod CAEN             ",
-                    "4677");
+                    "3811");
             assertThat(text(wb, "Date generale", "D8")).isEqualTo("Comerț cu ridicata");
             assertThat(sh.getMergedRegions().stream().map(r -> r.formatAsString()))
                     .contains("A9:F9", "B10:E10", "G10:H10", "B11:E11", "G11:H11")
@@ -307,6 +330,23 @@ class EnergyAnnex1IT {
         try (XSSFWorkbook wb = annex()) {
             assertThat(cell(wb, "Date statistice", "F18").getNumericCellValue()).isCloseTo(999.999, within(1e-9));
         }
+    }
+
+    @Test
+    void overThresholdWithMonthsMissingIs422() throws Exception {
+        // Eleven months of other fuels at 100 tep, December not entered: already 1100 known, so over the line.
+        tick("OTHER_FUEL");
+        for (int m = 1; m <= 11; m++) {
+            cell("OTHER_FUEL", m, "1", "100");
+        }
+        mockMvc.perform(get("/api/v1/energy?year=" + YEAR).header("Authorization", "Bearer " + admin))
+                .andExpect(jsonPath("$.monthsComplete", is(11)))
+                .andExpect(jsonPath("$.totalTep", is(0)))
+                .andExpect(jsonPath("$.knownTep", is(1100.0)))
+                .andExpect(jsonPath("$.overThreshold", is(true)));
+        mockMvc.perform(get("/api/v1/energy/anexa1?year=" + YEAR).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("energy.over.threshold")));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -346,7 +386,7 @@ class EnergyAnnex1IT {
     }
 
     private void tick(String... carriers) throws Exception {
-        putTo("/carriers", "{\"carriers\":[\"" + String.join("\",\"", carriers) + "\"]}")
+        putTo("/carriers", "{\"year\":%d,\"carriers\":[\"%s\"]}".formatted(YEAR, String.join("\",\"", carriers)))
                 .andExpect(status().isOk());
     }
 

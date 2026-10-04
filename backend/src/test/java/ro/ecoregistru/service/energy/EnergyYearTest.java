@@ -113,12 +113,56 @@ class EnergyYearTest {
     }
 
     @Test
+    void elevenMonthsAlreadyOver1000IsOverTheThreshold() {
+        // December not entered yet: the year's total is unknown, but it can only end higher than 1100.
+        EnergyYear y = EnergyYear.of(2025, Set.of(OTHER_FUEL), months(OTHER_FUEL, 1, 11, "1", "100"));
+
+        assertThat(y.monthsComplete()).isEqualTo(11);
+        assertThat(y.totals().get(0).tep()).isNull();
+        assertThat(y.totalTep()).isEqualByComparingTo("0");
+        assertThat(y.knownTep()).isEqualByComparingTo("1100");
+        assertThat(y.overThreshold()).isTrue();
+    }
+
+    @Test
+    void elevenMonthsOfElectricityOverTheLineAreOverTheThreshold() {
+        // 11 × 1100 MWh × 0,086 = 1040,6 tep, with December missing.
+        EnergyYear y = EnergyYear.of(2025, Set.of(ELECTRICITY), months(ELECTRICITY, 1, 11, "1100", null));
+
+        assertThat(y.totalTep()).isEqualByComparingTo("0");
+        assertThat(y.knownTep()).isEqualByComparingTo("1040.6");
+        assertThat(y.overThreshold()).isTrue();
+    }
+
+    @Test
+    void knownTepCountsEveryEnteredMonthOfTheTickedCarriersOnly() {
+        List<Cell> cells = new ArrayList<>(months(ELECTRICITY, 1, 3, "10", null)); // 3 × 0,86
+        cells.add(new Cell(COAL, 1, bd("2"), bd("1.5")));
+        cells.add(new Cell(COAL, 2, bd("2"), null)); // no tep yet: adds nothing
+        cells.addAll(months(DIESEL, 1, 12, "100", null)); // unticked
+        EnergyYear y = EnergyYear.of(2025, Set.of(ELECTRICITY, COAL), cells);
+
+        assertThat(y.knownTep()).isEqualByComparingTo("4.08");
+        assertThat(y.knownTep().scale()).isEqualTo(4);
+        assertThat(y.totalTep()).isEqualByComparingTo("0");
+        assertThat(y.overThreshold()).isFalse();
+    }
+
+    @Test
+    void aCompleteYearKnowsItsWholeTotal() {
+        EnergyYear y = EnergyYear.of(2025, Set.of(ELECTRICITY), months(ELECTRICITY, 1, 12, "10", null));
+
+        assertThat(y.knownTep()).isEqualByComparingTo(y.totalTep());
+    }
+
+    @Test
     void noCarriersMeansZeroCompleteMonths() {
         EnergyYear y = EnergyYear.of(2025, Set.of(), List.of());
 
         assertThat(y.totals()).isEmpty();
         assertThat(y.monthsComplete()).isZero();
         assertThat(y.totalTep()).isEqualByComparingTo("0");
+        assertThat(y.knownTep()).isEqualByComparingTo("0");
         assertThat(y.overThreshold()).isFalse();
     }
 }

@@ -9,13 +9,18 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-/** The energy sheet of one year: ticked carriers, monthly cells, the computed totals, the answers and the contact. */
+/**
+ * The energy sheet of one year: ticked carriers, monthly cells, the computed totals, the answers and the contact.
+ * {@code totalTep} adds the complete carriers; {@code knownTep} every entered month (the lower bound of the year),
+ * and {@code overThreshold} is read on {@code knownTep}.
+ */
 public record EnergySheetResponse(
         int year,
         List<EnergyCarrier> carriers,
         List<Cell> cells,
         List<CarrierTotal> totals,
         BigDecimal totalTep,
+        BigDecimal knownTep,
         int monthsComplete,
         boolean overThreshold,
         Declaration declaration,

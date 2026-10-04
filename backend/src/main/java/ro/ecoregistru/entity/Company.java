@@ -193,7 +193,7 @@ public class Company {
     @Column(name = "energy_contact_mobile", length = 50)
     String energyContactMobile;
 
-    /** The date the energy contact details were last confirmed by the company. */
+    /** The date of the energy manager's ANRE attestation (printed on Anexa 1, row 9); empty when there is none. */
     @Column(name = "energy_contact_attested_on")
     LocalDate energyContactAttestedOn;
 

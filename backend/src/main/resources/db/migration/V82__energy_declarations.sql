@@ -1,8 +1,10 @@
 -- Declaratia anuala de energie, sub 1000 tep (art. 9 alin. (7) din Legea 121/2014): Anexa 1 (consumul lunar pe
 -- purtator) si declaratia pe proprie raspundere, cu auditul, masurile de economisire si interesul POIM.
 --
---   * `energy_carriers_used`: rubricile Anexei bifate ca folosite de firma. O rubrica debifata isi pastreaza lunile
---     in `energy_consumptions` (o rebifare le readuce), dar iese din totaluri si se tipareste 0.
+--   * `energy_carriers_used`: rubricile Anexei bifate ca folosite de firma, pe fiecare an: o bifa din 2027 nu schimba
+--     fisa, Anexa 1 sau dosarul din 2025. Un an fara randuri proprii mosteneste (doar la citire) setul celui mai
+--     recent an anterior care are unul. O rubrica debifata isi pastreaza lunile in `energy_consumptions` (o rebifare
+--     le readuce), dar iese din totaluri si se tipareste 0.
 --   * `energy_consumptions`: o cantitate pe firma, an, purtator si luna. `tep` se scrie de mana numai la carbune si
 --     la alti combustibili (fara coeficient pe Anexa); la restul se calculeaza si nu se stocheaza.
 --   * `energy_declarations`: raspunsurile anului (IMM, audit, POIM) si recipisa depunerii. Un raspuns lipsa = NULL,
@@ -13,9 +15,10 @@
 CREATE TABLE energy_carriers_used (
     id          UUID         PRIMARY KEY,
     company_id  UUID         NOT NULL REFERENCES companies (id),
+    year        INT          NOT NULL,
     carrier     VARCHAR(30)  NOT NULL,
     updated_at  TIMESTAMP    NOT NULL,
-    CONSTRAINT uq_energy_carrier_used UNIQUE (company_id, carrier),
+    CONSTRAINT uq_energy_carrier_used UNIQUE (company_id, year, carrier),
     CONSTRAINT ck_energy_carrier_used CHECK (carrier IN ('ELECTRICITY', 'HEAT', 'NATURAL_GAS', 'FUEL_OIL',
         'LIGHT_FUEL_OIL', 'PETROL', 'DIESEL', 'COAL', 'OTHER_FUEL', 'RENEWABLE_ELECTRICITY', 'RENEWABLE_HEAT'))
 );

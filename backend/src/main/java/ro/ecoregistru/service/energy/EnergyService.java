@@ -98,13 +98,25 @@ public class EnergyService {
         return declarationGenerator.render(company(), year);
     }
 
+    /**
+     * The carriers of one year. Only that year's rows change: the sheets, Anexa 1 and dossiers of the other years keep
+     * theirs. An empty list removes the year's own set, so it reads the latest earlier one again.
+     */
     @Transactional
     public EnergySheetResponse saveCarriers(EnergyCarriersRequest request) {
+        int year = request.year();
+        checkYear(year);
         Company company = company();
         Set<EnergyCarrier> wanted = EnumSet.noneOf(EnergyCarrier.class);
         wanted.addAll(request.carriers());
+        storeCarriers(company, year, wanted);
+        return build(company, year);
+    }
+
+    private void storeCarriers(Company company, int year, Set<EnergyCarrier> wanted) {
         Map<EnergyCarrier, EnergyCarrierUsed> existing = new EnumMap<>(EnergyCarrier.class);
-        carrierRepository.findAllByCompany_Id(company.getId()).forEach(c -> existing.put(c.getCarrier(), c));
+        carrierRepository.findAllByCompany_IdAndYear(company.getId(), year)
+                .forEach(c -> existing.put(c.getCarrier(), c));
 
         // Unticking removes only this row: the months stay, so ticking again brings them back.
         existing.forEach((carrier, row) -> {
@@ -115,25 +127,43 @@ public class EnergyService {
         for (EnergyCarrier carrier : wanted) {
             if (!existing.containsKey(carrier)) {
                 carrierRepository.save(EnergyCarrierUsed.builder()
-                        .company(company).carrier(carrier).updatedAt(Instant.now()).build());
+                        .company(company).year(year).carrier(carrier).updatedAt(Instant.now()).build());
             }
         }
         carrierRepository.flush();
-        return build(company, LocalDate.now(DeadlineService.ZONE).getYear());
     }
+
+    /** The year in force: its own set when it has rows, otherwise the set of the latest earlier year that has one. */
+    private CarrierSet carriersOf(UUID companyId, int year) {
+        List<EnergyCarrierUsed> rows =
+                carrierRepository.findAllByCompany_IdAndYearLessThanEqualOrderByYearDesc(companyId, year);
+        Set<EnergyCarrier> set = EnumSet.noneOf(EnergyCarrier.class);
+        if (rows.isEmpty()) {
+            return new CarrierSet(set, false);
+        }
+        int from = rows.get(0).getYear();
+        rows.stream().filter(r -> r.getYear() == from).forEach(r -> set.add(r.getCarrier()));
+        return new CarrierSet(set, from != year);
+    }
+
+    private record CarrierSet(Set<EnergyCarrier> carriers, boolean inherited) {}
 
     @Transactional
     public EnergySheetResponse saveCell(EnergyConsumptionRequest request) {
         checkYear(request.year());
         Company company = company();
         EnergyCarrier carrier = request.carrier();
-        boolean ticked = carrierRepository.findAllByCompany_Id(company.getId()).stream()
-                .anyMatch(c -> c.getCarrier() == carrier);
-        if (!ticked) {
+        CarrierSet used = carriersOf(company.getId(), request.year());
+        if (!used.carriers().contains(carrier)) {
             throw new BadRequestException(ENERGY_CARRIER_NOT_USED);
         }
         if (request.tep() != null && carrier.coefficient().isPresent()) {
             throw new BadRequestException(ENERGY_TEP_NOT_ALLOWED);
+        }
+        // The first figure on an inherited set makes the set the year's own: from now on, changing an earlier
+        // year's carriers no longer changes a sheet that already has figures.
+        if (used.inherited() && request.quantity() != null) {
+            storeCarriers(company, request.year(), used.carriers());
         }
 
         EnergyConsumption existing = consumptionRepository
@@ -328,7 +358,7 @@ public class EnergyService {
         zip.closeEntry();
     }
 
-    /** The years with data, newest first, each with whether the deadline was ticked and a receipt is on file. */
+    /** The years with data, newest first, each with the day the deadline was ticked and the day of the receipt. */
     @Transactional(readOnly = true)
     public List<EnergyYearSummary> years() {
         Company company = company();
@@ -339,7 +369,11 @@ public class EnergyService {
                     .filter(d -> d.getStatus() == DeadlineStatus.DONE && d.getCompletedAt() != null)
                     .map(d -> d.getCompletedAt().atZone(DeadlineService.ZONE).toLocalDate())
                     .orElse(null);
-            return new EnergyYearSummary(year, sheet.monthsComplete(), sheet.overThreshold(), filedOn,
+            // Without a ticked deadline row (the 30.06.2026 one exists only computed, it can't be ticked), the
+            // receipt is the proof of filing: the frontend shows its day instead.
+            LocalDate receiptOn = sheet.receipt() == null ? null
+                    : sheet.receipt().uploadedAt().atZone(DeadlineService.ZONE).toLocalDate();
+            return new EnergyYearSummary(year, sheet.monthsComplete(), sheet.overThreshold(), filedOn, receiptOn,
                     sheet.receipt() != null);
         }).toList();
     }
@@ -357,8 +391,7 @@ public class EnergyService {
 
     private EnergySheetResponse build(Company company, int year) {
         UUID companyId = company.getId();
-        Set<EnergyCarrier> used = EnumSet.noneOf(EnergyCarrier.class);
-        carrierRepository.findAllByCompany_Id(companyId).forEach(c -> used.add(c.getCarrier()));
+        Set<EnergyCarrier> used = carriersOf(companyId, year).carriers();
 
         // Rows of an unticked carrier stay in the database but are not part of the sheet.
         List<Cell> cells = consumptionRepository.findAllByCompany_IdAndYear(companyId, year).stream()
@@ -402,7 +435,7 @@ public class EnergyService {
 
         return new EnergySheetResponse(year,
                 Arrays.stream(EnergyCarrier.values()).filter(used::contains).toList(),
-                shown, energyYear.totals(), energyYear.totalTep(), energyYear.monthsComplete(),
-                energyYear.overThreshold(), declaration, contact, receipt);
+                shown, energyYear.totals(), energyYear.totalTep(), energyYear.knownTep(),
+                energyYear.monthsComplete(), energyYear.overThreshold(), declaration, contact, receipt);
     }
 }

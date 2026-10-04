@@ -67,6 +67,7 @@ class EnergyIT {
     @Autowired CompanyRepository companyRepository;
     @Autowired AuditLogRepository auditLogRepository;
     @Autowired ro.ecoregistru.repository.ReportingDeadlineRepository deadlineRepository;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private String admin;
     private String viewer;
@@ -105,13 +106,23 @@ class EnergyIT {
     }
 
     private void tick(String... carriers) throws Exception {
-        putTo("/carriers", admin, "{\"carriers\":[\"" + String.join("\",\"", carriers) + "\"]}")
+        tickIn(YEAR, carriers);
+    }
+
+    /** The carriers of one year; no carrier at all sends an empty list. */
+    private void tickIn(int year, String... carriers) throws Exception {
+        String list = carriers.length == 0 ? "" : "\"" + String.join("\",\"", carriers) + "\"";
+        putTo("/carriers", admin, "{\"year\":%d,\"carriers\":[%s]}".formatted(year, list))
                 .andExpect(status().isOk());
     }
 
     private ResultActions cell(String carrier, int month, String quantity, String tep) throws Exception {
+        return cellIn(YEAR, carrier, month, quantity, tep);
+    }
+
+    private ResultActions cellIn(int year, String carrier, int month, String quantity, String tep) throws Exception {
         return putTo("/consumption", admin, "{\"year\":%d,\"carrier\":\"%s\",\"month\":%d,\"quantity\":%s,\"tep\":%s}"
-                .formatted(YEAR, carrier, month, quantity, tep));
+                .formatted(year, carrier, month, quantity, tep));
     }
 
     @Test
@@ -135,6 +146,12 @@ class EnergyIT {
         sheet(LocalDate.now().getYear() + 1).andExpect(status().isUnprocessableEntity());
         putTo("/consumption", admin, "{\"year\":2019,\"carrier\":\"ELECTRICITY\",\"month\":1,\"quantity\":1}")
                 .andExpect(status().isUnprocessableEntity());
+        putTo("/carriers", admin, "{\"year\":2019,\"carriers\":[\"ELECTRICITY\"]}")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$['error-code']", is("energy.year.invalid")));
+        putTo("/carriers", admin, "{\"year\":%d,\"carriers\":[\"ELECTRICITY\"]}"
+                .formatted(LocalDate.now().getYear() + 1)).andExpect(status().isUnprocessableEntity());
+        putTo("/carriers", admin, "{\"carriers\":[\"ELECTRICITY\"]}").andExpect(status().isUnprocessableEntity());
     }
 
     @Test
@@ -189,6 +206,142 @@ class EnergyIT {
         tick("ELECTRICITY", "HEAT");
         sheet(YEAR).andExpect(jsonPath("$.cells", hasSize(1)))
                 .andExpect(jsonPath("$.cells[0].quantity", is(5.0)));
+    }
+
+    // ---- rubricile pe an (F3) -------------------------------------------------------------------
+
+    /** The rows stored for the year itself, not the inherited ones. */
+    private int ownRows(int year) {
+        return jdbc.queryForObject("SELECT count(*) FROM energy_carriers_used WHERE company_id = ? AND year = ?",
+                Integer.class, tenantId, year);
+    }
+
+    @Test
+    void tickingANewCarrierLaterDoesNotChangeAPastYear() throws Exception {
+        tickIn(2024, "ELECTRICITY");
+        for (int m = 1; m <= 12; m++) {
+            cellIn(2024, "ELECTRICITY", m, "10", "null").andExpect(status().isOk());
+        }
+        tickIn(2025, "ELECTRICITY", "HEAT");
+
+        sheet(2024).andExpect(jsonPath("$.carriers", hasSize(1)))
+                .andExpect(jsonPath("$.carriers[0]", is("ELECTRICITY")))
+                .andExpect(jsonPath("$.totals", hasSize(1)))
+                .andExpect(jsonPath("$.monthsComplete", is(12)))
+                .andExpect(jsonPath("$.totalTep", is(10.32)));
+        sheet(2025).andExpect(jsonPath("$.carriers", hasSize(2)))
+                .andExpect(jsonPath("$.monthsComplete", is(0)));
+        // On the 2024 Anexa 1 heat is still unused (0), not a ticked row with months missing (blank).
+        try (var wb = annex(2024)) {
+            var g9 = annexCell(wb, "G9");
+            assertThat(g9.getCellType()).isEqualTo(org.apache.poi.ss.usermodel.CellType.NUMERIC);
+            assertThat(g9.getNumericCellValue()).isEqualTo(0.0);
+        }
+    }
+
+    @Test
+    void untickingInAYearOnlyAffectsThatYear() throws Exception {
+        tickIn(2024, "ELECTRICITY", "DIESEL");
+        tickIn(2025, "ELECTRICITY", "DIESEL");
+        cellIn(2024, "DIESEL", 1, "1", "null").andExpect(status().isOk());
+        cellIn(2025, "DIESEL", 1, "1", "null").andExpect(status().isOk());
+
+        tickIn(2025, "ELECTRICITY");
+
+        sheet(2025).andExpect(jsonPath("$.carriers", hasSize(1)))
+                .andExpect(jsonPath("$.cells", hasSize(0)));
+        sheet(2024).andExpect(jsonPath("$.carriers", hasSize(2)))
+                .andExpect(jsonPath("$.carriers[1]", is("DIESEL")))
+                .andExpect(jsonPath("$.cells", hasSize(1)))
+                .andExpect(jsonPath("$.cells[0].carrier", is("DIESEL")));
+        try (var wb = annex(2024)) {
+            // diesel stays ticked in 2024, with months missing: blank, not 0
+            assertThat(annexCell(wb, "E16").getCellType()).isEqualTo(org.apache.poi.ss.usermodel.CellType.BLANK);
+        }
+    }
+
+    @Test
+    void aYearWithoutItsOwnSetInheritsTheLatestEarlierSet() throws Exception {
+        tickIn(2022, "HEAT");
+        tickIn(2024, "ELECTRICITY");
+
+        sheet(2025).andExpect(jsonPath("$.carriers", hasSize(1)))
+                .andExpect(jsonPath("$.carriers[0]", is("ELECTRICITY")));
+        sheet(2023).andExpect(jsonPath("$.carriers", hasSize(1)))
+                .andExpect(jsonPath("$.carriers[0]", is("HEAT")));
+        sheet(2021).andExpect(jsonPath("$.carriers", hasSize(0)));
+        // Reading an inherited set writes nothing.
+        assertThat(ownRows(2025)).isZero();
+        assertThat(ownRows(2023)).isZero();
+
+        // The years inherit until they get their own set.
+        tickIn(2024, "NATURAL_GAS");
+        sheet(2025).andExpect(jsonPath("$.carriers[0]", is("NATURAL_GAS")));
+        // An empty set is no set: the year inherits again.
+        tickIn(2024);
+        sheet(2024).andExpect(jsonPath("$.carriers[0]", is("HEAT")));
+    }
+
+    @Test
+    void theFirstMonthOnAnInheritedSetKeepsTheSetForThatYear() throws Exception {
+        tickIn(2024, "ELECTRICITY");
+        cellIn(2025, "ELECTRICITY", 1, "5", "null").andExpect(status().isOk());
+        assertThat(ownRows(2025)).isEqualTo(1);
+
+        // Changing 2024 afterwards no longer reaches the 2025 sheet, which already has figures.
+        tickIn(2024, "HEAT");
+        sheet(2025).andExpect(jsonPath("$.carriers", hasSize(1)))
+                .andExpect(jsonPath("$.carriers[0]", is("ELECTRICITY")))
+                .andExpect(jsonPath("$.cells", hasSize(1)));
+    }
+
+    @Test
+    void untickingACarrierWithRowsDropsItFromTheYearAndTheAnnexAndReTickingBringsItBack() throws Exception {
+        tick("ELECTRICITY", "DIESEL");
+        for (int m = 1; m <= 12; m++) {
+            cell("ELECTRICITY", m, "10", "null").andExpect(status().isOk());
+        }
+        for (int m = 1; m <= 3; m++) {
+            cell("DIESEL", m, "1", "null").andExpect(status().isOk());
+        }
+        sheet(YEAR).andExpect(jsonPath("$.monthsComplete", is(3)))
+                .andExpect(jsonPath("$.totals", hasSize(2)))
+                .andExpect(jsonPath("$.totals[1].tep", nullValue()))
+                .andExpect(jsonPath("$.knownTep", is(13.365)));
+
+        tick("ELECTRICITY");
+        sheet(YEAR).andExpect(jsonPath("$.carriers", hasSize(1)))
+                .andExpect(jsonPath("$.cells", hasSize(12)))
+                .andExpect(jsonPath("$.totals", hasSize(1)))
+                .andExpect(jsonPath("$.monthsComplete", is(12)))
+                .andExpect(jsonPath("$.totalTep", is(10.32)))
+                .andExpect(jsonPath("$.knownTep", is(10.32)));
+        try (var wb = annex(YEAR)) {
+            var e16 = annexCell(wb, "E16");
+            assertThat(e16.getCellType()).isEqualTo(org.apache.poi.ss.usermodel.CellType.NUMERIC);
+            assertThat(e16.getNumericCellValue()).isEqualTo(0.0);
+        }
+
+        tick("ELECTRICITY", "DIESEL");
+        sheet(YEAR).andExpect(jsonPath("$.cells", hasSize(15)))
+                .andExpect(jsonPath("$.monthsComplete", is(3)));
+        try (var wb = annex(YEAR)) {
+            assertThat(annexCell(wb, "E16").getCellType()).isEqualTo(org.apache.poi.ss.usermodel.CellType.BLANK);
+        }
+    }
+
+    private org.apache.poi.xssf.usermodel.XSSFWorkbook annex(int year) throws Exception {
+        byte[] body = mockMvc.perform(get("/api/v1/energy/anexa1?year=" + year)
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        return new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(body));
+    }
+
+    /** A cell of the „Date statistice” sheet. */
+    private static org.apache.poi.ss.usermodel.Cell annexCell(org.apache.poi.xssf.usermodel.XSSFWorkbook wb, String ref) {
+        var r = new org.apache.poi.ss.util.CellReference(ref);
+        return wb.getSheet("Date statistice").getRow(r.getRow()).getCell(r.getCol());
     }
 
     @Test
@@ -256,7 +409,7 @@ class EnergyIT {
 
     @Test
     void aNullCarrierIs422() throws Exception {
-        putTo("/carriers", admin, "{\"carriers\":[null]}").andExpect(status().isUnprocessableEntity());
+        putTo("/carriers", admin, "{\"year\":2025,\"carriers\":[null]}").andExpect(status().isUnprocessableEntity());
     }
 
     @Test
@@ -349,7 +502,7 @@ class EnergyIT {
     void aClientViewerReadsButCannotWrite() throws Exception {
         mockMvc.perform(get("/api/v1/energy?year=" + YEAR).header("Authorization", "Bearer " + viewer))
                 .andExpect(status().isOk());
-        putTo("/carriers", viewer, "{\"carriers\":[]}").andExpect(status().isForbidden());
+        putTo("/carriers", viewer, "{\"year\":2025,\"carriers\":[]}").andExpect(status().isForbidden());
         mockMvc.perform(multipart("/api/v1/energy/recipisa?year=" + YEAR)
                         .file(new MockMultipartFile("file", "a.pdf", "application/pdf", PDF))
                         .header("Authorization", "Bearer " + viewer))
@@ -441,9 +594,14 @@ class EnergyIT {
                 .andExpect(jsonPath("$[0].monthsComplete", is(3)))
                 .andExpect(jsonPath("$[0].overThreshold", is(false)))
                 .andExpect(jsonPath("$[0].filedOn", nullValue()))
+                .andExpect(jsonPath("$[0].receiptOn", nullValue()))
                 .andExpect(jsonPath("$[0].hasReceipt", is(false)))
                 .andExpect(jsonPath("$[1].year", is(2024)))
-                .andExpect(jsonPath("$[1].hasReceipt", is(true)));
+                .andExpect(jsonPath("$[1].hasReceipt", is(true)))
+                // No ticked deadline for 2024, but the receipt proves the filing: the day it was uploaded.
+                .andExpect(jsonPath("$[1].filedOn", nullValue()))
+                .andExpect(jsonPath("$[1].receiptOn",
+                        is(LocalDate.now(java.time.ZoneId.of("Europe/Bucharest")).toString())));
 
         // 2025 is due 30.06.2026; 23:30 UTC on 1 July is already 2 July in Bucharest.
         Instant done = Instant.parse("2026-07-01T22:30:00Z");
@@ -455,5 +613,11 @@ class EnergyIT {
                 .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
         years(admin).andExpect(jsonPath("$[0].filedOn", is("2026-07-02")))
                 .andExpect(jsonPath("$[1].filedOn", nullValue()));
+
+        // The receipt day is the Bucharest day too: 21:30 UTC on 29 June is 30 June there.
+        var d2024 = declarations.findByCompany_IdAndYear(tenantId, 2024).orElseThrow();
+        d2024.setReceiptUploadedAt(Instant.parse("2025-06-29T21:30:00Z"));
+        declarations.saveAndFlush(d2024);
+        years(admin).andExpect(jsonPath("$[1].receiptOn", is("2025-06-30")));
     }
 }

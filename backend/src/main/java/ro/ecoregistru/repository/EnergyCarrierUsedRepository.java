@@ -1,20 +1,16 @@
 package ro.ecoregistru.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import ro.ecoregistru.entity.*;
-import ro.ecoregistru.enums.EnergyCarrier;
+import ro.ecoregistru.entity.EnergyCarrierUsed;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface EnergyCarrierUsedRepository extends JpaRepository<EnergyCarrierUsed, UUID> {
 
-    List<EnergyCarrierUsed> findAllByCompany_Id(UUID companyId);
+    /** The year's own rows. */
+    List<EnergyCarrierUsed> findAllByCompany_IdAndYear(UUID companyId, int year);
 
-    @Modifying
-    void deleteByCompany_IdAndCarrier(UUID companyId, EnergyCarrier carrier);
+    /** The rows of the year and of every earlier year, newest year first: the first year listed is the one in force. */
+    List<EnergyCarrierUsed> findAllByCompany_IdAndYearLessThanEqualOrderByYearDesc(UUID companyId, int year);
 }

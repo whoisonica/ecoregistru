@@ -9,7 +9,10 @@ import ro.ecoregistru.enums.EnergyCarrier;
 import java.time.Instant;
 import java.util.UUID;
 
-/** A row of Anexa 1 (energie) ticked as used by the company; unticking keeps its months in {@link EnergyConsumption}. */
+/**
+ * A row of Anexa 1 (energie) ticked as used by the company in one year; unticking keeps its months in
+ * {@link EnergyConsumption}. A year without rows of its own reads the set of the latest earlier year that has one.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,6 +30,9 @@ public class EnergyCarrierUsed {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "company_id", nullable = false)
     Company company;
+
+    @Column(nullable = false)
+    int year;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

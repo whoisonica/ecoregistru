@@ -14,9 +14,14 @@ import ro.ecoregistru.enums.EnergyCarrier;
 /**
  * The year of an energy declaration, computed from the monthly cells of the ticked carriers: per-carrier annual
  * totals, total tep, how many months are complete and whether the 1000 tep threshold is reached. Pure calculation.
+ *
+ * <p>{@code totalTep} adds only the complete carriers. {@code knownTep} adds every entered month of every ticked
+ * carrier (quantity × coefficient, or the hand-written tep of coal and other fuels when there is one): the year can
+ * only end higher, so the threshold is read on it (ruling F4, 05.10.2026) — eleven months over 1000 are over 1000.
  */
 public record EnergyYear(
-        int year, List<CarrierTotal> totals, BigDecimal totalTep, int monthsComplete, boolean overThreshold) {
+        int year, List<CarrierTotal> totals, BigDecimal totalTep,         BigDecimal knownTep, int monthsComplete,
+        boolean overThreshold) {
 
     public record Cell(EnergyCarrier carrier, int month, BigDecimal quantity, BigDecimal tep) {}
 
@@ -50,7 +55,15 @@ public record EnergyYear(
                 .map(CarrierTotal::tep)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return new EnergyYear(year, totals, totalTep, monthsComplete, totalTep.compareTo(THRESHOLD_TEP) >= 0);
+        BigDecimal knownTep = carriers.stream()
+                .flatMap(c -> byCarrier.getOrDefault(c, Map.of()).values().stream())
+                .filter(c -> c.month() >= 1 && c.month() <= 12 && c.quantity() != null)
+                .map(c -> c.carrier().coefficient().map(k -> c.quantity().multiply(k)).orElse(c.tep()))
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(4, RoundingMode.HALF_UP);
+        return new EnergyYear(year, totals, totalTep, knownTep, monthsComplete,
+                knownTep.compareTo(THRESHOLD_TEP) >= 0);
     }
 
     private static boolean isComplete(EnergyCarrier carrier, Map<Integer, Cell> months, int month) {

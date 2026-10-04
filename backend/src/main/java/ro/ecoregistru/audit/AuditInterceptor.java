@@ -106,7 +106,7 @@ public class AuditInterceptor implements Interceptor {
             Map.entry(WasteArticle.class, List.of("name")),
             Map.entry(NaturalPerson.class, List.of("name")),
             Map.entry(PackagingMarketEntry.class, List.of("year", "material")),
-            Map.entry(EnergyCarrierUsed.class, List.of("carrier")),
+            Map.entry(EnergyCarrierUsed.class, List.of("year", "carrier")),
             Map.entry(EnergyConsumption.class, List.of("year", "carrier", "month")),
             Map.entry(EnergyDeclaration.class, List.of("year")),
             Map.entry(EnergySavingMeasure.class, List.of("position")));

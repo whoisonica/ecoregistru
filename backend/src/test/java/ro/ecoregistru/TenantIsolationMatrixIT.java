@@ -91,6 +91,7 @@ class TenantIsolationMatrixIT {
     @Autowired AuditLogRepository auditLogRepository;
     @Autowired EnergyCarrierUsedRepository energyCarrierRepository;
     @Autowired EnergyConsumptionRepository energyConsumptionRepository;
+    @Autowired EnergyDeclarationRepository energyDeclarationRepository;
 
     @MockitoBean CloudinaryStorageService storageService;
 
@@ -622,77 +623,119 @@ class TenantIsolationMatrixIT {
 
     /**
      * Energia. Citirile iau tenantul din {@code TenantContext}; scrierea de consum se depune la autoritate.
-     * Cifra lui B ({@code 4321.987}) are zecimale ca să nu poată apărea din întâmplare. Antetul
+     * Cifra lui B ({@code 4321.987}) are zecimale ca să nu poată apărea din întâmplare. B stă pe alt an decât A
+     * (anul trecut), ca lista anilor lui A să poată arăta un an străin dacă izolarea cade. Antetul
      * {@code X-Tenant-Id} nu poate muta un rol legat de o singură firmă pe datele lui B.
      */
     @Test
     void theEnergyOfAnotherTenantIsNeverReadAndNeverRewritten() throws Exception {
         int yearValue = LocalDate.now().getYear();
         String year = String.valueOf(yearValue);
-        energyCarrierRepository.save(EnergyCarrierUsed.builder().company(b.company())
+        int theirYear = yearValue - 1;
+        energyCarrierRepository.save(EnergyCarrierUsed.builder().company(b.company()).year(theirYear)
                 .carrier(EnergyCarrier.ELECTRICITY).updatedAt(Instant.now()).build());
         EnergyConsumption theirs = energyConsumptionRepository.save(EnergyConsumption.builder()
-                .company(b.company()).year(yearValue).carrier(EnergyCarrier.ELECTRICITY).month(1)
+                .company(b.company()).year(theirYear).carrier(EnergyCarrier.ELECTRICITY).month(1)
                 .quantity(new BigDecimal("4321.987")).updatedAt(Instant.now()).build());
+        // Recipisa lui B, pe anul lui; fișierul ar veni din „Cloudinary” (mock), dacă cererea ar ajunge la el.
+        energyDeclarationRepository.save(EnergyDeclaration.builder().company(b.company()).year(theirYear)
+                .receiptPublicId("beta-recipisa").receiptResourceType("image").receiptDeliveryType("authenticated")
+                .receiptFormat("pdf").receiptFileName("recipisa-beta.pdf").receiptSizeBytes(10L)
+                .receiptUploadedAt(Instant.now()).updatedAt(Instant.now()).build());
+        org.mockito.Mockito.when(storageService.signedUrl(any(), any(), any(), any())).thenReturn("http://signed");
+        org.mockito.Mockito.when(storageService.fetch(anyString())).thenReturn("%PDF-1.4 Beta".getBytes());
 
-        // Controlul: B îşi vede cifra, deci detectorul de mai jos chiar ar prinde-o.
-        mockMvc.perform(as(get("/api/v1/energy").param("year", year), b))
+        // Controlul: B îşi vede cifra şi anul, deci detectoarele de mai jos chiar ar prinde-o.
+        mockMvc.perform(as(get("/api/v1/energy").param("year", String.valueOf(theirYear)), b))
                 .andExpect(content().string(containsString("4321.987")));
+        mockMvc.perform(as(get("/api/v1/energy/years"), b))
+                .andExpect(jsonPath("$[0].year").value(theirYear));
 
-        // A are propriile date, pe aceeaşi lună şi acelaşi combustibil.
+        // A are propriile date, pe aceeaşi lună şi acelaşi combustibil, în anul lui.
         mockMvc.perform(as(put("/api/v1/energy/carriers"), a).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"carriers\":[\"ELECTRICITY\"]}"))
+                        .content("{\"year\":%d,\"carriers\":[\"ELECTRICITY\"]}".formatted(yearValue)))
                 .andExpect(status().isOk());
         mockMvc.perform(as(put("/api/v1/energy/consumption"), a).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"year\":%d,\"carrier\":\"ELECTRICITY\",\"month\":1,\"quantity\":5}"
                                 .formatted(yearValue)))
                 .andExpect(status().isOk());
 
-        // (1) Toate GET-urile JSON ale lui A; a doua trecere, cu antetul X-Tenant-Id al lui B pus de adminul lui A.
+        // (1) Toate GET-urile JSON ale lui A, pe ambii ani; a doua trecere, cu antetul X-Tenant-Id al lui B pus de
+        //     adminul lui A.
         for (boolean spoof : new boolean[]{false, true}) {
             for (String path : new String[]{"", "/years"}) {
-                var req = as(get("/api/v1/energy" + path).param("year", year), a);
-                if (spoof) {
-                    req.header("X-Tenant-Id", b.company().getId().toString());
+                for (int y : new int[]{yearValue, theirYear}) {
+                    var req = as(get("/api/v1/energy" + path).param("year", String.valueOf(y)), a);
+                    if (spoof) {
+                        req.header("X-Tenant-Id", b.company().getId().toString());
+                    }
+                    mockMvc.perform(req)
+                            .andExpect(status().isOk())
+                            .andExpect(content().string(not(containsString("4321.987"))))
+                            .andExpect(content().string(not(containsString("Beta"))));
                 }
-                mockMvc.perform(req)
-                        .andExpect(status().isOk())
-                        .andExpect(content().string(not(containsString("4321.987"))))
-                        .andExpect(content().string(not(containsString("Beta"))));
             }
+            var years = as(get("/api/v1/energy/years"), a);
+            if (spoof) {
+                years.header("X-Tenant-Id", b.company().getId().toString());
+            }
+            // Numai anul lui A: anul lui B (cu consum şi recipisă) nu apare.
+            mockMvc.perform(years)
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].year").value(yearValue))
+                    .andExpect(jsonPath("$[0].hasReceipt").value(false));
         }
         mockMvc.perform(as(get("/api/v1/energy").param("year", year), a)
                         .header("X-Tenant-Id", b.company().getId().toString()))
                 .andExpect(jsonPath("$.cells[0].quantity").value(5));
+        // Anul lui B, citit de A: nicio rubrică moştenită de la B, nicio celulă.
+        mockMvc.perform(as(get("/api/v1/energy").param("year", String.valueOf(theirYear)), a))
+                .andExpect(jsonPath("$.carriers.length()").value(0))
+                .andExpect(jsonPath("$.cells.length()").value(0))
+                .andExpect(jsonPath("$.receipt").value(org.hamcrest.Matchers.nullValue()));
 
-        // (2) Documentele: nicio urmă din B în celulele foii, în textul docx, în intrările zip-ului.
-        byte[] anexa = mockMvc.perform(as(get("/api/v1/energy/anexa1").param("year", year), a)
-                        .header("X-Tenant-Id", b.company().getId().toString()))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-        StringBuilder cells = new StringBuilder();
-        try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(anexa))) {
-            var fmt = new org.apache.poi.ss.usermodel.DataFormatter();
-            wb.forEach(sheet -> sheet.forEach(row -> row.forEach(c -> cells.append(fmt.formatCellValue(c)).append(' '))));
-        }
-        assertThat(cells.toString()).contains("Alfa").doesNotContain("Beta").doesNotContain("4321");
+        // (2) Documentele: nicio urmă din B în celulele foii, în textul docx, în fiecare fişier din zip.
+        for (int y : new int[]{yearValue, theirYear}) {
+            byte[] anexa = mockMvc.perform(as(get("/api/v1/energy/anexa1").param("year", String.valueOf(y)), a)
+                            .header("X-Tenant-Id", b.company().getId().toString()))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+            assertThat(xlsxText(anexa)).contains("Alfa").doesNotContain("Beta").doesNotContain("4321");
 
-        byte[] declaratie = mockMvc.perform(as(get("/api/v1/energy/declaratie").param("year", year), a))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-        try (var doc = new org.apache.poi.xwpf.usermodel.XWPFDocument(new java.io.ByteArrayInputStream(declaratie));
-             var ex = new org.apache.poi.xwpf.extractor.XWPFWordExtractor(doc)) {
-            assertThat(ex.getText()).contains("Alfa").doesNotContain("Beta").doesNotContain("4321");
-        }
+            byte[] declaratie = mockMvc.perform(as(get("/api/v1/energy/declaratie").param("year", String.valueOf(y)), a))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+            assertThat(docxText(declaratie)).contains("Alfa").doesNotContain("Beta").doesNotContain("4321");
 
-        byte[] dosar = mockMvc.perform(as(get("/api/v1/energy/dosar").param("year", year), a))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-        try (var zip = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(dosar))) {
-            for (var e = zip.getNextEntry(); e != null; e = zip.getNextEntry()) {
-                assertThat(e.getName()).doesNotContain("Beta");
-                zip.readAllBytes();
+            byte[] dosar = mockMvc.perform(as(get("/api/v1/energy/dosar").param("year", String.valueOf(y)), a)
+                            .header("X-Tenant-Id", b.company().getId().toString()))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+            List<String> names = new java.util.ArrayList<>();
+            try (var zip = new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(dosar))) {
+                for (var e = zip.getNextEntry(); e != null; e = zip.getNextEntry()) {
+                    names.add(e.getName());
+                    byte[] bytes = zip.readAllBytes();
+                    String text = e.getName().endsWith(".xlsx") ? xlsxText(bytes)
+                            : e.getName().endsWith(".docx") ? docxText(bytes)
+                            : new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1);
+                    assertThat(text).as(e.getName()).contains("Alfa").doesNotContain("Beta").doesNotContain("4321");
+                }
             }
+            // Fără recipisă la A: Anexa şi Declaraţia, nicio recipisă (nici a lui B).
+            assertThat(names).as("dosar %d", y).hasSize(2).noneMatch(n -> n.startsWith("Recipisa"));
         }
 
-        // (3) Scrierea lui A pe aceeaşi celulă (şi ştergerea ei) nu atinge rândul lui B.
+        // (3) Recipisa lui B nu se deschide de la A, nici cu antetul lui B: 404, iar „Cloudinary” nu e întrebat.
+        for (boolean spoof : new boolean[]{false, true}) {
+            var req = as(get("/api/v1/energy/recipisa/continut").param("year", String.valueOf(theirYear)), a);
+            if (spoof) {
+                req.header("X-Tenant-Id", b.company().getId().toString());
+            }
+            mockMvc.perform(req)
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().string(not(containsString("Beta"))));
+        }
+        verify(storageService, never()).signedUrl(any(), any(), any(), any());
+
+        // (4) Scrierea lui A pe aceeaşi celulă (şi ştergerea ei) nu atinge rândul lui B.
         mockMvc.perform(as(put("/api/v1/energy/consumption"), a).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"year\":%d,\"carrier\":\"ELECTRICITY\",\"month\":1}"
                                 .formatted(yearValue)))
@@ -701,6 +744,23 @@ class TenantIsolationMatrixIT {
         assertThat(after.getQuantity()).isEqualByComparingTo("4321.987");
         assertThat(energyConsumptionRepository.findAllByCompany_IdAndYear(a.company().getId(), yearValue))
                 .as("A şi-a şters propria celulă").isEmpty();
+    }
+
+    /** Textul tuturor celulelor unui .xlsx, aşa cum l-ar vedea omul. */
+    private static String xlsxText(byte[] xlsx) throws Exception {
+        StringBuilder cells = new StringBuilder();
+        try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(xlsx))) {
+            var fmt = new org.apache.poi.ss.usermodel.DataFormatter();
+            wb.forEach(sheet -> sheet.forEach(row -> row.forEach(c -> cells.append(fmt.formatCellValue(c)).append(' '))));
+        }
+        return cells.toString();
+    }
+
+    private static String docxText(byte[] docx) throws Exception {
+        try (var doc = new org.apache.poi.xwpf.usermodel.XWPFDocument(new java.io.ByteArrayInputStream(docx));
+             var ex = new org.apache.poi.xwpf.extractor.XWPFWordExtractor(doc)) {
+            return ex.getText();
+        }
     }
 
     /**
