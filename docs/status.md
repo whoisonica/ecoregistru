@@ -15,6 +15,38 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **05.10.2026 — ✅ DECLARAȚIA ANUALĂ DE CONSUM DE ENERGIE (Legea 121/2014, sub 1000 tep) — ramura `feat/energie-0410`, nemergeuită, nedeployată; migrarea `V82` (F6b trece pe `V83`).**
+> Cererea Andreei (04.10.2026): generatorul să facă Anexa 1 „consum sub 1000 tep” și Declarația care o însoțește. Spec și plan în `ecoregistru-docs/docs/specs/2026-10-04-energie-declaratie-anuala-*`;
+> legea în `docs/surse-oficiale.md` §19. 15 commituri peste `837d9a5` (`40d954e` … `1eb5fc2`), fiecare task trecut prin review.
+>
+> - **Date (`V82`).** `energy_carriers_used` (rubricile bifate), `energy_consumptions` (firmă × an × rubrică × lună, `quantity` și, doar la cărbune și alți combustibili, `tep`),
+>   `energy_declarations` (IMM da/nu, auditul, recipisa), `energy_saving_measures` (cel mult 20), plus opt câmpuri pe `Company` (fax, site, sector, contactul de energie, data atestatului).
+>   `EnergyCarrier` poartă unitatea și coeficientul tipărit pe Anexă; un singur set. Scrierile trec prin `audit_log`.
+> - **Socoteala (`EnergyYear`).** tep = cantitate × coeficient; luna e completă când toate rubricile bifate au cantitate; totalul anului, „N din 12 luni”; **peste prag = `totalTep >= 1000`** (exact 1000,000 e peste).
+> - **API `/api/v1/energy`.** `GET` fișa anului, `/years`, `/anexa1`, `/declaratie`, `/dosar` (zip); `PUT` `/carriers`, `/consumption`, `/declaration`, `/contact`; `POST /recipisa` (PDF) și `GET /recipisa/continut`.
+>   Scrie cine poate scrie mișcări pe firmă (`CAN_WRITE`); citește cine citește evidențele. Izolarea pe tenant e în `TenantIsolationMatrixIT`.
+> - **Termen.** `ReportType.ENERGY_ANNUAL`, 30 iunie, datorat la aceleași firme ca `SIM_ANNUAL`; „N din 12 luni completate” pe rând; documentul: „Fișa de energie”.
+> - **Documentele, după exemplarul Andreei (spec §11).** *Anexa 1* `.xlsx` (`EnergyAnnex1XlsxGenerator`): trei foi, formule vii, coeficienții ca text, motorina reparată (`=E16*1.015`, față de `=0*1.015` din macheta 2023),
+>   rubrica nefolosită = 0, rubrica cu luni lipsă = celulă goală, întrebările POIM 6.4 (goale până răspunde clientul); refuzată cu 422 peste prag. *Declarația* `.docx` (`EnergyDeclarationDocxGenerator`): Trebuchet MS, antetul aldin, tabelul de semnături pe trei coloane, data transmiterii liberă.
+> - **Web.** Fișa de energie `/termene/energie?an=` (subpagină, fără intrare de meniu, găsită și din Ctrl K): rubricile se aleg cu `PillGroup multiple`, tabelul pe 12 luni cu editare în celulă (fiecare celulă își salvează valoarea, cu coadă pe celulă),
+>   comutatorul „Luni” / „Pentru EfEnClima”, „Anexa 1” și „Declarația”, „Încarcă recipisa”, avertismentul peste 1000 tep. Rândul din Termene, tabul „Energie” în Dosarul de control (`AUDIT_FILE_TABS`; tabul „Deșeuri” și zip-ul lui neschimbate),
+>   memento pe Acasă („Energia pe <luna trecută> nu e trecută”; în ianuarie, decembrie).
+> - **Probe.** Backend, suita întreagă la Task 8: **1423 teste, 0 eșecuri, 4 sărite** (de la 1370 pe `main`); după el s-a atins doar frontendul. Web `npm test` **130/130**, `tsc`, lint, mobil `tsc` curate.
+>   e2e: **47 de probe trec**, cu **60** nouă (26/26; `60-energie.mjs`, intră în `run.mjs`), rulate pe o bază aruncabilă prin `SPRING_DATASOURCE_URL` (`application-dev.yml` scrie adresa direct, deci `JDBC_DATABASE_URL` nu o schimbă); negativă făcută.
+>
+> **Deciziile care contează proprietarului** (`ecoregistru-docs/docs/decizii-model.md`, 94–97): lipsa rândului înseamnă „necompletat”, nu 0; tep-ul de mână doar la cărbune și alți combustibili; recipisa stă pe declarație, nu în `attachments`;
+> pragul e `>= 1000` și documentele urmează exemplarul Andreei. Alte hotărâri de parcurs: data depunerii se ia din bifarea termenului, în ora României; un client existent are rând „Declarația de consum de energie 30.06.2026” întârziat în
+> *Termene → Trecute* (termenul legal a existat; nu apare pe Acasă, în mail sau push).
+>
+> ⚠️ **De știut înainte de deploy.**
+> 1. **Anexa 1 și Declarația sunt documente noi: validarea Andreei e deschisă.** Rămân și întrebările pentru ea (ordinea câmpurilor din formularul EfEnClima, densitățile litri → tone), în `intrebari-specialist.md`.
+> 2. **Luna incompletă pe Anexa 1:** formulele vii arată 0 și totalul e parțial (așa e macheta); cărbunele fără tep lasă F18 gol.
+> 3. **Backendul și frontendul se deployează împreună:** frontendul vechi nu are etichetele `ENERGY_ANNUAL` și ar arăta rândul nou fără nume.
+> 4. **Recipisa cere `CLOUDINARY_URL`**; dev n-o are, deci calea reușită a urcării n-a fost probată local.
+> 5. Peste 1000 tep nu se generează nimic (doar avertismentul). Un client care s-a pus bine cu Termenele vede rândul trecut al lui 30.06.2026.
+>
+> Ramura nu are încă recenzia întregii ramuri și plimbarea manuală prin browser; deploy și merge, numai la cererea proprietarului.
+
 > **30.09.2026, 12:57 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v148** (`76a89b4`), din `main` `ff5a330`; api neatins (v143), fără migrare — TERMENII ȘI POLITICA v2.3.**
 > `frontend/src/lib/legal.ts` adus la setul juridic v2.3 din `ecoregistru-docs/docs/juridic/`, validat de jurist pe 30.09.2026: termenii (cap. 4 — registrul formularelor
 > de transport emise, ambalajele colectate numai la colector, termenele proprii; 8.3 — persoanele fizice de la care se cumpără deșeuri) și politica (persoanele fizice,

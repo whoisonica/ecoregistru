@@ -10,7 +10,7 @@
 > textul de lege, cu link la sursa primară și data accesării. Documentul de față rămâne harta și
 > analiza de gap; când cele două se contrazic, `surse-oficiale.md` are dreptate.
 >
-> Ultima actualizare: 2026-09-30 (aliniat la cod, fără cercetare nouă: termenele proprii — `ReportType.CUSTOM`, `V81`,
+> Ultima actualizare: 2026-10-05 (pilonul F și rândul din tabelul „Ce s-a implementat”: declarația de energie, Legea 121/2014). Înainte: 2026-09-30 (aliniat la cod, fără cercetare nouă: termenele proprii — `ReportType.CUSTOM`, `V81`,
 > decizia 91 —, periculosul la generator fără rubricile Anexei 3, rândurile depozitului din 27–28.09 trecute pe producție).
 > Înainte: 2026-09-28 (tabelul „Ce s-a implementat” are rândurile depozitului din 27–28.09: inventarul, NIR-ul,
 > balotarea R12, rapoartele fixe, termenele SIATD; fără cercetare nouă). Înainte: 2026-09-18 (frazele care descriau „codul de azi” din 22–24.08, recitite față de cod și marcate acolo
@@ -95,6 +95,11 @@
 - 🆕 *(28.09.2026)* Reg. (UE) 2026/1703 (exportul de municipale mixte), Reg. (UE) 2026/1738 (vehiculele scoase din uz),
   Directiva (UE) 2025/1892 (textile, transpunere până la 17.06.2027), proiectul de completare a HG 1074/2021 (SGR) —
   niciunul nu cere nimic azi de la un generator. `surse-oficiale.md` §3.6.
+
+### F. Energie — declarația de consum sub 1.000 tep (Legea 121/2014) ✅ construit 05.10.2026
+- Art. 9 alin. (7): operatorii economici care folosesc **mai puțin de 1.000 tep/an** transmit **până la 30 iunie** declarația de consum total anual de energie, pentru anul anterior. Fără excepție pentru IMM. Amenda: 2.000–5.000 lei (art. 18 alin. (1) lit. i), alin. (2) lit. b)). `surse-oficiale.md` §19.
+- Canalul din 2026 e **EfEnClima.ro**, nu fișiere: aplicația ține cifrele lunar, adună anul, arată totalurile în ordinea formularului și generează Anexa 1 și Declarația ca arhivă. **Peste 1.000 tep** e altă obligație (audit, manager energetic, program, chestionar): aplicația doar avertizează.
+- 🟠 Deschis la specialistă: ordinea câmpurilor din formularul EfEnClima, densitățile litri → tone, validarea documentelor generate (`ecoregistru-docs/docs/intrebari-specialist.md`).
 
 ---
 
@@ -285,6 +290,7 @@ Aceeași capcană la „Anexa 3": HG 1061/2008 (dovada predării, generată azi)
 | Anexa 3 la HG 1061/2008 — formularul de transport | `Anexa3FormGenerator` | ✅ |
 | **„Registrul Anexa 3 (transport)”** — centralizatorul formularelor de transport emise (cerut de specialistă pe 29.09.2026: nr., data, seria și nr., cantitate, cod, denumire, cui s-a predat, cod R/D); actul n-are model pentru expeditor (art. 20 alin. (5) cere registru numai destinatarului) | `Anexa3RegisterBuilder` + `Anexa3RegisterGenerator` (PDF), `GET /evidences/registru-anexa3`, meniul „Registrul Anexa 3 (transport)” pe „Generare” și „Ieșiri”, și în dosarul de control; un rând = un formular cu număr alocat | ✅ *(29.09.2026)* |
 | Termenele proprii ale firmei — măsurători de zgomot, apă, emisii, reautorizări (cerute de specialistă pe 29.09.2026) | **fără temei legal propriu**: obligația, când există, vine din autorizația sau din contractele firmei, nu dintr-un act pe care aplicația să-l citească. `ReportType.CUSTOM` (`V81`), `DeadlineService.createCustom`, repetarea la bifare; ecranul „Adaugă termen” pe Termene. Nimic tipărit nu le citește | ✅ *(29.09.2026, decizia 91)* |
+| **Legea 121/2014 art. 9 alin. (7)** — declarația de consum total anual de energie, **sub 1.000 tep**, până la 30 iunie; art. 18 alin. (1) lit. i) și alin. (2) lit. b): **2.000–5.000 lei** | `ReportType.ENERGY_ANNUAL` (`DeadlineService`, 30 iunie, aceleași firme ca `SIM_ANNUAL`); `EnergyCarrier` (unitatea și coeficientul Anexei 1), `EnergyYear` (tep, luna completă, pragul `>= 1000`); fișa anului `/api/v1/energy` (`V82`). Documentele: **Anexa 1** `.xlsx` (`EnergyAnnex1XlsxGenerator`, refuzată peste prag) și **Declarația** `.docx` (`EnergyDeclarationDocxGenerator`), după exemplarul specialistei; recipisa EfEnClima urcată pe declarație. Depunerea rămâne pe EfEnClima.ro (fără API). `surse-oficiale.md` §19 | ✅ *(05.10.2026, nedeployat)*; 🟠 validarea documentelor de către specialistă |
 | Anexa 2 la HG 1061/2008 — expediţie/transport deşeuri **periculoase** | `Anexa2FormGenerator` + `Anexa2ThresholdCalculator` (pragul de 1 t/an); din 14.09.2026 **numai pe conturile de colector** — specialista: periculoasele și Anexa 2 sunt „doar pentru colectori"; un cont `GENERATOR` primește `anexa2.collectors.only`. Generatorul de periculoase tipărește doar avizul, iar Anexa 3 (nepericuloase) nu se tipărește pe un cod periculos (`canPrintAnexa3`, `anexa3.hazardous`); din 30.09.2026 nici formularul de mișcare nu-i mai cere rubricile Anexei 3 (unitatea, încărcarea/descărcarea, „Destinat:”) — rămân transportatorul, șoferul și mașina, pentru aviz (`transportForm` în `movementRules.ts`). Anexa 2 nu e o lipsă a generatorului: o întocmește colectorul | ✅ *(10.09.2026, `V35`; restrâns 14.09.2026; formularul, 30.09.2026)* |
 | Aprobarea transportului periculos — anexa 1 la HG 1061/2008, art. 7 peste 1 t/an | numărul ei se tastează pe Anexa 2; formularul îl **completează expeditorul** (art. 4 alin. (2)), dar pct. VIII cere compoziţia chimică — un buletin de analiză | ⬜ nu-l generăm; vezi `surse-oficiale.md` §4.2 |
 | Deşeurile periculoase din activitatea medicală (art. 24) | refuz explicit pe Anexa 2, cu explicaţia | ⛔ alt flux, al transportatorului |

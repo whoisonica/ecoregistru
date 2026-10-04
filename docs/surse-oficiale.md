@@ -3324,6 +3324,33 @@ declarate (presă, R12), nu pentru lipsuri sau furt. **La Andreea, restrâns:** 
 COLECTARE/TRATARE, APM acceptă rândul 99 99 99 sau doar stocul mai mic, cu verificarea în roșu și o notă? Un colector cu presă
 depune și TRAT?
 
+## 19. Legea 121/2014 — declarația de consum de energie sub 1.000 tep (citit 04.10.2026)
+
+*Sursa:* [Legea 121/2014 privind eficiența energetică, forma consolidată din **08.08.2026**, id **160331**](https://legislatie.just.ro/Public/DetaliiDocument/160331),
+Portalul Legislativ, accesat 04.10.2026. Ultimul act modificator, Legea 168/2026 (MO 647 din 5.08.2026), **nu a modificat** nici art. 9, nici art. 18. Citatele de mai jos sunt copiate din
+`reports/Eficiență energetică obligații Legea 121.md` și din notele lui (`research_notes/Eficiență energetică obligații Legea 121/`, în repo-ul `ecoregistru-docs`).
+
+> **Art. 9 alin. (7):** „Operatorii economici care folosesc o cantitate de energie mai mică de 1.000 tep pe an completează și transmit Direcției eficiență energetică, până la data de 30 iunie a fiecărui an, declarația de consum total anual de energie.”
+
+> **Art. 18 alin. (1):** „Constituie contravenții următoarele fapte: … i) nerespectarea de către operatorii economici a prevederilor art. 9 alin. (7) ; …”
+>
+> **Art. 18 alin. (2):** „Contravențiile prevăzute la alin. (1) se sancționează după cum urmează: … b) contravențiile prevăzute la alin. (1) lit. b) și i), cu amendă de la 2.000 lei la 5.000 lei; …”
+
+**Ce rezultă:**
+
+- Termenul e **30 iunie**, pentru anul anterior, și nu are excepție pentru IMM: alin. (7) nu conține nicio excepție, spre deosebire de alin. (5) (auditul la 4 ani).
+- Amenda pentru lipsa declarației sub prag: **2.000–5.000 lei**. Declarația de peste 1.000 tep (alin. (4), lit. g)) are altă amendă și alt chestionar; aplicația nu o acoperă.
+- Constatarea e a personalului Ministerului Energiei (art. 18 alin. (3¹), din 01.01.2022). Destinatarul e Direcția eficiență energetică din cadrul ministerului, nu ANRE.
+- **Canalul:** pentru datele anului 2025, ministerul cere raportarea „exclusiv Platforma Informatică EfEnClima.ro” (pagina campaniei, modificată ultima dată la 24.06.2026). Anexa 1 și Declarația nu se mai încarcă
+  ca fișiere. Aplicația le face ca **dovadă și arhivă** și pentru că le cere specialista; platforma nu are API public, deci depunerea rămâne a omului.
+- Pragul: „mai mică de 1.000 tep”, deci **exact 1.000 tep nu e sub prag** (`totalTep >= 1000` în cod).
+- Modelele oficiale nu conțin întrebările POIM 6.4 (ANRE 2019, minister 2021, 2023); intră pe Anexa 1 pentru că exemplarul specialistei le are (decizia proprietarului din 04.10.2026).
+
+**Unde e în cod:** `ReportType.ENERGY_ANNUAL` și `DeadlineService` (termenul), `EnergyCarrier` și `EnergyYear` (coeficienții și pragul), `EnergyAnnex1XlsxGenerator`, `EnergyDeclarationDocxGenerator`,
+`EnergyController` (`/api/v1/energy`). Migrarea `V82`.
+
+---
+
 ## Anexă — de ce „sursă primară" nu e pedanterie
 
 PDF-ul HG 856/2002 primit de la specialistă provine de pe **lege6.ro**. Comparat cu textul de pe

@@ -517,6 +517,9 @@ npm run e2e -- formular      # rulează doar 4-formular.mjs
 E2E_BASE=http://localhost:4173 npm run e2e
 ```
 
+Pe o bază aruncabilă (nu cea de dezvoltare), backendul pornește cu `SPRING_DATASOURCE_URL`: `application-dev.yml` scrie adresa bazei
+direct, deci `JDBC_DATABASE_URL` nu o suprascrie. Pașii sunt la „O stivă proprie, alături de alta”, mai jos (proba 60 s-a rulat așa, pe 04.10.2026).
+
 ### ⚠️ `E2E_BASE` fără `E2E_DB` murdărește altă bază
 
 Șase probe (29, 30, 33, 36, 37, 38) nu-și pot face datele prin API — facturi emise, abonamente restante,

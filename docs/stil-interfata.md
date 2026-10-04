@@ -122,6 +122,13 @@ panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de t
 | `useConfirm` | Întrebarea de dinaintea unei fapte care nu se ia înapoi (`confirm-dialog.tsx`) |
 | `FormStepRail` | Pașii unui formular lung (partenerul în patru pași, clientul nou), `form-steps.tsx` |
 
+**Alegeri multe, nu doar una (05.10.2026).** `ChoiceCards` e radio: nu poate purta o alegere multiplă. Când omul bifează mai multe dintre multe (rubricile de energie ale
+Anexei 1, unsprezece), se folosește `PillGroup multiple` — aceleași taste, pastilele sunt checkbox-uri și cea bifată poartă o bifă. Unitatea stă mică lângă nume. E o abatere
+din spec (§4.2 spunea `ChoiceCards`), în aceeași familie de primitive.
+
+**Subpagină fără intrare de meniu.** O pagină la care se ajunge dintr-un rând (nu din panou) nu primește loc în meniu: fișa de energie, `/termene/energie?an=`, se deschide din rândul
+din Termene, e găsită cu Ctrl K (intrarea `hidden` din `navItems.ts`) și are în adresă anul și vederea.
+
 Select-ul nativ rămâne pentru liste lungi (parteneri, puncte de lucru, coduri R/D din profil). **Sub șapte opțiuni,
 într-un formular nou, se folosesc `ChoiceCards` sau `PillGroup`.**
 
