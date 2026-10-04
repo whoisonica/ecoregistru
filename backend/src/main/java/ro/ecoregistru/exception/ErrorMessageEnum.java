@@ -402,7 +402,9 @@ public enum ErrorMessageEnum {
     ENERGY_TEP_NOT_ALLOWED("energy.tep.not.allowed", "Tep-ul se calculează singur la rubrica asta."),
     ENERGY_CARRIER_NOT_USED("energy.carrier.not.used", "Bifați întâi rubrica."),
     ENERGY_YEAR_INVALID("energy.year.invalid", "Anul trebuie să fie între 2020 și anul curent."),
-    ENERGY_RECEIPT_PDF_ONLY("energy.receipt.pdf.only", "Recipisa se încarcă în PDF.");
+    ENERGY_RECEIPT_PDF_ONLY("energy.receipt.pdf.only", "Recipisa se încarcă în PDF."),
+    ENERGY_OVER_THRESHOLD("energy.over.threshold",
+            "Peste 1000 tep, Anexa 1 nu se aplică. Vorbiți cu noi despre obligațiile în plus.");
 
     private final String code;
     private final String message;

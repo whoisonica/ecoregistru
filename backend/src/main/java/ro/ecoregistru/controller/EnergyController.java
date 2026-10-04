@@ -14,6 +14,7 @@ import ro.ecoregistru.controller.request.EnergyContactRequest;
 import ro.ecoregistru.controller.request.EnergyDeclarationRequest;
 import ro.ecoregistru.controller.response.EnergySheetResponse;
 import ro.ecoregistru.service.energy.EnergyService;
+import ro.ecoregistru.service.export.ExportFormat;
 
 /**
  * The annual energy declaration (Anexa 1, consum sub 1000 tep). Reading is open to every tenant member;
@@ -32,6 +33,19 @@ public class EnergyController {
     @GetMapping
     public EnergySheetResponse sheet(@RequestParam int year) {
         return energyService.sheet(year);
+    }
+
+    /** Anexa 1 (consum sub 1000 tep) of the year, as {@code .xlsx}. 422 at 1000 tep and above. */
+    @GetMapping("/anexa1")
+    public ResponseEntity<byte[]> annex1(@RequestParam int year) {
+        byte[] body = energyService.annex1(year);
+        ContentDisposition disposition = ContentDisposition.attachment()
+                .filename("anexa1-energie-" + year + "." + ExportFormat.XLSX.getExtension())
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(ExportFormat.XLSX.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
     }
 
     @PutMapping("/carriers")

@@ -24,7 +24,10 @@ import ro.ecoregistru.exception.UnprocessableEntityException;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.security.TenantContext;
 import ro.ecoregistru.service.DeadlineService;
+import ro.ecoregistru.service.energy.EnergyYear.CarrierTotal;
 import ro.ecoregistru.service.energy.EnergyYear.Cell;
+import ro.ecoregistru.service.export.EnergyAnnex1;
+import ro.ecoregistru.service.export.EnergyAnnex1XlsxGenerator;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -48,6 +51,7 @@ public class EnergyService {
     private final EnergyDeclarationRepository declarationRepository;
     private final EnergySavingMeasureRepository measureRepository;
     private final CloudinaryStorageService storageService;
+    private final EnergyAnnex1XlsxGenerator annex1Generator;
 
     @Transactional(readOnly = true)
     public EnergySheetResponse sheet(int year) {
@@ -56,6 +60,29 @@ public class EnergyService {
         Company company = companyRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(COMPANY_NOT_FOUND));
         return build(company, year);
+    }
+
+    /**
+     * Anexa 1 of the year as {@code .xlsx}. Refused at 1000 tep and above: the annex is the form for consumers
+     * under 1000 tep, and above it the law asks for more than a form.
+     */
+    @Transactional(readOnly = true)
+    public byte[] annex1(int year) {
+        checkYear(year);
+        Company company = company();
+        EnergySheetResponse sheet = build(company, year);
+        if (sheet.overThreshold()) {
+            throw new UnprocessableEntityException(ENERGY_OVER_THRESHOLD);
+        }
+        // A ticked carrier is in the map, with null while months are missing; an unticked one is absent.
+        Map<EnergyCarrier, BigDecimal> quantities = new EnumMap<>(EnergyCarrier.class);
+        Map<EnergyCarrier, BigDecimal> teps = new EnumMap<>(EnergyCarrier.class);
+        for (CarrierTotal total : sheet.totals()) {
+            quantities.put(total.carrier(), total.quantity());
+            teps.put(total.carrier(), total.tep());
+        }
+        return annex1Generator.render(new EnergyAnnex1(year, company, quantities,
+                teps.get(EnergyCarrier.COAL), teps.get(EnergyCarrier.OTHER_FUEL), sheet.declaration()));
     }
 
     @Transactional
