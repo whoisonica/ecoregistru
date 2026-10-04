@@ -185,6 +185,8 @@ public class DeadlineService {
         List<Rule> rules = new java.util.ArrayList<>();
         // SIM annual: 15 March, covering the previous year.
         rules.add(new Rule(ReportType.SIM_ANNUAL, List.of(EVIDENCE_DUE), due -> true));
+        // Energy declaration: 30 June, previous year, every company (Legea 121/2014 art. 9 alin. (7)).
+        rules.add(new Rule(ReportType.ENERGY_ANNUAL, List.of(ENERGY_DUE), due -> true));
         rules.addAll(afmDeadlines(company));
         packagingDeadline(company).ifPresent(rules::add);
         packagingWasteDeadline(company).ifPresent(rules::add);
@@ -199,6 +201,9 @@ public class DeadlineService {
 
     /** Termenul evidenţei anuale (Anexa 1 la HG 856/2002): 15 martie, pentru anul precedent. */
     public static final MonthDay EVIDENCE_DUE = MonthDay.of(Month.MARCH, 15);
+
+    /** Termenul declaraţiei de consum de energie (Legea 121/2014 art. 9 alin. (7)): 30 iunie, pentru anul precedent. */
+    public static final MonthDay ENERGY_DUE = MonthDay.of(Month.JUNE, 30);
 
     /**
      * Anul a cărui evidenţă e de pregătit azi — anul raportat, regula din decizia 59 („pe anul

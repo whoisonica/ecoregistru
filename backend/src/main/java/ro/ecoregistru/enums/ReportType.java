@@ -151,6 +151,20 @@ public enum ReportType {
      */
     PACKAGING_ANNEX3,
 
+    /**
+     * The yearly energy-consumption declaration, due <b>30 June</b> for the previous calendar year —
+     * Legea 121/2014 art. 9 alin. (7) (consolidated form of 08.08.2026): operators using less than
+     * 1,000 tep a year send the declaration of total annual energy consumption to the Energy
+     * Efficiency Directorate of the Ministry of Energy; alin. (4) puts the above-1,000-tep operators
+     * on the same date. The text has no minimum threshold and no SME exception, so the deadline is
+     * generated for every company, like {@link #SIM_ANNUAL}.
+     *
+     * <p>Recipient: Ministerul Energiei, Direcția eficiență energetică. Channel: the EfEnClima.ro
+     * platform, for the data of 2025 onwards. Sanctioned by art. 18 alin. (1) lit. i) and alin. (2):
+     * 2.000-5.000 lei for the under-1,000-tep declaration.
+     */
+    ENERGY_ANNUAL,
+
     OTHER,
 
     /**

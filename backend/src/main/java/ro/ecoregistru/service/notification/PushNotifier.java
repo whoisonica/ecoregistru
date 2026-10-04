@@ -163,6 +163,7 @@ public class PushNotifier {
             case PACKAGING_ANNEX3 -> "Anexa 3 Ambalaje";
             case APM_ANNUAL_APRIL -> "Raportarea anuală la APM (30 aprilie)";
             case APM_ANNUAL_MAY -> "Programul de prevenire a deșeurilor";
+            case ENERGY_ANNUAL -> "Energie";
             case OTHER -> "Raportare";
             case CUSTOM -> "Termen propriu";
         };

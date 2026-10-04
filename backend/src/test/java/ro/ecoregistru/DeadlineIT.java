@@ -167,6 +167,30 @@ class DeadlineIT {
                 .containsExactly(monthly.getDueDate(), monthly.getDueDate().plusMonths(1));
     }
 
+    /** Art. 9 alin. (7) Legea 121/2014: 30 iunie, pentru anul anterior, la toate firmele. */
+    @Test
+    void energyDeclarationIsDueOnJune30ForThePreviousYear() throws Exception {
+        TenantFixture t = newTenant(false);
+        UUID id = t.company.getId();
+
+        deadlineService.ensureUpcoming(id, LocalDate.of(2026, 9, 16));
+        assertThat(dates(t, ReportType.ENERGY_ANNUAL)).containsExactly(LocalDate.of(2027, 6, 30));
+
+        TenantFixture early = newTenant(false);
+        deadlineService.ensureUpcoming(early.company.getId(), LocalDate.of(2026, 6, 1));
+        assertThat(dates(early, ReportType.ENERGY_ANNUAL)).containsExactly(LocalDate.of(2026, 6, 30));
+
+        ReportingDeadline energy = rows(t).stream()
+                .filter(d -> d.getReportType() == ReportType.ENERGY_ANNUAL).findFirst().orElseThrow();
+        mockMvc.perform(post("/api/v1/deadlines/" + energy.getId() + "/complete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")
+                        .header("Authorization", "Bearer " + t.token))
+                .andExpect(status().isOk());
+        assertThat(dates(t, ReportType.ENERGY_ANNUAL))
+                .containsExactly(LocalDate.of(2027, 6, 30), LocalDate.of(2028, 6, 30));
+    }
+
     /** Crearea firmei aduce calendarul, fără buton și fără să aștepte dimineața. */
     @Test
     void creatingACompanyBringsItsUpcomingDeadlines() throws Exception {
@@ -185,7 +209,7 @@ class DeadlineIT {
         assertThat(deadlineRepository.findAll().stream()
                 .filter(d -> d.getCompany().getId().equals(created.getId()))
                 .map(ReportingDeadline::getReportType))
-                .containsExactly(ReportType.SIM_ANNUAL);
+                .containsExactlyInAnyOrder(ReportType.SIM_ANNUAL, ReportType.ENERGY_ANNUAL);
     }
 
     /**
@@ -202,21 +226,21 @@ class DeadlineIT {
         int afterFirst = rows(t).size();
         calendarScheduler.run(today);
 
-        assertThat(afterFirst).isEqualTo(2); // SIM 15.03.1991 + AFM 25.09.1990
-        assertThat(rows(t)).hasSize(2);
+        assertThat(afterFirst).isEqualTo(3); // SIM 15.03.1991 + ENERGY 30.06.1991 + AFM 25.09.1990
+        assertThat(rows(t)).hasSize(3);
     }
 
     @Test
     void generatesSimAndTheNextMonthlyAfmForAnObligatedCompany() {
         TenantFixture t = newTenant(true);
-        assertThat(deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16))).isEqualTo(2);
+        assertThat(deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16))).isEqualTo(3);
     }
 
     @Test
     void generatesOnlySimForANonObligatedCompany() {
         TenantFixture t = newTenant(false);
         deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
-        assertThat(rows(t)).extracting(ReportingDeadline::getReportType).containsExactly(ReportType.SIM_ANNUAL);
+        assertThat(rows(t)).extracting(ReportingDeadline::getReportType).containsExactlyInAnyOrder(ReportType.SIM_ANNUAL, ReportType.ENERGY_ANNUAL);
     }
 
     // ---------- The three cadences of OUG 196/2005 art. 11 ----------
@@ -253,7 +277,7 @@ class DeadlineIT {
         TenantFixture t = newTenant(true, AfmContribution.CIRCULAR_ECONOMY);
         deadlineService.ensureUpcoming(t.company.getId(), LocalDate.of(2026, 9, 16));
 
-        assertThat(rows(t)).extracting(ReportingDeadline::getReportType).containsExactly(ReportType.SIM_ANNUAL);
+        assertThat(rows(t)).extracting(ReportingDeadline::getReportType).containsExactlyInAnyOrder(ReportType.SIM_ANNUAL, ReportType.ENERGY_ANNUAL);
     }
 
     /**
@@ -339,9 +363,10 @@ class DeadlineIT {
         var past = deadlineService.listPast(t.company.getId(), today);
 
         assertThat(past).extracting(r -> r.dueDate()).containsExactly(
-                LocalDate.of(2026, 1, 25), LocalDate.of(2026, 3, 15), LocalDate.of(2026, 9, 16));
+                LocalDate.of(2026, 1, 25), LocalDate.of(2026, 3, 15), LocalDate.of(2026, 6, 30),
+                LocalDate.of(2026, 9, 16));
         assertThat(past).extracting(r -> r.status()).containsExactly(
-                DeadlineStatus.OVERDUE, DeadlineStatus.DONE, DeadlineStatus.OVERDUE);
+                DeadlineStatus.OVERDUE, DeadlineStatus.DONE, DeadlineStatus.OVERDUE, DeadlineStatus.OVERDUE);
         assertThat(deadlineService.listPast(t.company.getId(), LocalDate.of(2026, 1, 1))).isEmpty();
     }
 

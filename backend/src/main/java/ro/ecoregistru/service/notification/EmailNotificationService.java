@@ -388,6 +388,7 @@ public class EmailNotificationService implements NotificationService {
             // seamănă cu nimic altceva din calendar.
             case APM_ANNUAL_MAY -> "Programul de prevenire și reducere a cantităților de deșeuri "
                     + "(anual, 31 mai) — la agenția județeană de mediu, cu progresul înregistrat";
+            case ENERGY_ANNUAL -> "Declarația de consum de energie";
             case OTHER -> "Raportare";
             case CUSTOM -> "Termen propriu";
         };
