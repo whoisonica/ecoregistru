@@ -20,7 +20,7 @@ import ro.ecoregistru.enums.EnergyCarrier;
  * only end higher, so the threshold is read on it (ruling F4, 05.10.2026) — eleven months over 1000 are over 1000.
  */
 public record EnergyYear(
-        int year, List<CarrierTotal> totals, BigDecimal totalTep,         BigDecimal knownTep, int monthsComplete,
+        int year, List<CarrierTotal> totals, BigDecimal totalTep, BigDecimal knownTep, int monthsComplete,
         boolean overThreshold) {
 
     public record Cell(EnergyCarrier carrier, int month, BigDecimal quantity, BigDecimal tep) {}
