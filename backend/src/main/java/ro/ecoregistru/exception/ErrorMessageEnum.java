@@ -397,7 +397,11 @@ public enum ErrorMessageEnum {
     PACKAGING_OPERATOR_ROLE_REQUIRED("packaging.operator.role.required",
             "Alege întâi calitatea firmei pentru deșeurile de ambalaje — colector, comerciant, "
                     + "reciclator sau valorificator. Ea decide care tabel al Anexei 3 se depune "
-                    + "(Ordinul 794/2012, art. 4 alin. (1)). Se completează în profilul firmei.");
+                    + "(Ordinul 794/2012, art. 4 alin. (1)). Se completează în profilul firmei."),
+
+    ENERGY_TEP_NOT_ALLOWED("energy.tep.not.allowed", "Tep-ul se calculează singur la rubrica asta."),
+    ENERGY_CARRIER_NOT_USED("energy.carrier.not.used", "Bifați întâi rubrica."),
+    ENERGY_YEAR_INVALID("energy.year.invalid", "Anul trebuie să fie între 2020 și anul curent.");
 
     private final String code;
     private final String message;

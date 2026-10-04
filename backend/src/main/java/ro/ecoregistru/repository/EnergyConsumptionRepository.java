@@ -18,9 +18,6 @@ public interface EnergyConsumptionRepository extends JpaRepository<EnergyConsump
     Optional<EnergyConsumption> findByCompany_IdAndYearAndCarrierAndMonth(
             UUID companyId, int year, EnergyCarrier carrier, int month);
 
-    @Modifying
-    void deleteByCompany_IdAndCarrier(UUID companyId, EnergyCarrier carrier);
-
     /** Years with a consumption row or a declaration row, newest first. */
     @Query(value = """
             SELECT year FROM energy_consumptions WHERE company_id = :companyId
