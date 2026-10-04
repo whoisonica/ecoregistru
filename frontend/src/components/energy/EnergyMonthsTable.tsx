@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { useSaveEnergyCell } from "@/hooks/useEnergy";
 import { apiErrorMessage } from "@/lib/api";
@@ -36,6 +36,7 @@ function parse(text: string): number | null {
 }
 
 type Field = "q" | "t";
+type Base = { quantity: number | null; tep: number | null };
 const keyOf = (carrier: EnergyCarrier, month: number, field: Field) => `${carrier}-${month}-${field}`;
 
 /**
@@ -45,19 +46,61 @@ const keyOf = (carrier: EnergyCarrier, month: number, field: Field) => `${carrie
  */
 export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; canWrite: boolean }) {
   const save = useSaveEnergyCell();
-  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [draft, setDraftState] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  /**
+   * Ce a răspuns serverul despre o celulă la ultima ei salvare, pe cheia `${carrier}-${month}`.
+   *
+   * <p>Fișa din cache nu ajunge: fiecare salvare o reîncarcă, iar o reîncărcare pornită de salvarea
+   * altei celule poate răspunde **după** salvarea asta, cu celula încă goală. Ciorna ștearsă după
+   * succes lăsa atunci câmpul gol, iar salvarea următoare din aceeași celulă trimitea `quantity: null`
+   * — adică ștergea cifra (prins în browser, 04.10.2026). Pentru celula proprie, ultimul ei răspuns
+   * e adevărul; fișa rămâne sursa pentru celulele neatinse.
+   */
+  const [known, setKnownState] = useState<Record<string, Base>>({});
+  /** Ce citește o salvare pusă la coadă când îi vine rândul: ciorna de atunci, nu cea de la ieșire. */
+  const draftRef = useRef(draft);
+  const knownRef = useRef(known);
+  /**
+   * O coadă pe celulă (rubrică × lună). Cantitatea și tep-ul cărbunelui pleacă în același PUT, deci
+   * două ieșiri la rând din aceeași celulă ar trimite două cereri care pot ajunge invers și ar pune
+   * tep-ul vechi la loc. Celulele diferite nu se așteaptă între ele.
+   */
+  const queues = useRef(new Map<string, Promise<void>>());
+
+  const setDraft = (update: (prev: Record<string, string>) => Record<string, string>) => {
+    draftRef.current = update(draftRef.current);
+    setDraftState(draftRef.current);
+  };
+  const dropDrafts = (keys: string[], unlessChangedFrom?: Record<string, string | undefined>) =>
+    setDraft((prev) => {
+      const next = { ...prev };
+      for (const k of keys) {
+        if (unlessChangedFrom && prev[k] !== unlessChangedFrom[k]) continue;
+        delete next[k];
+      }
+      return next;
+    });
 
   const now = new Date();
   const future = (month: number) =>
     sheet.year > now.getFullYear() || (sheet.year === now.getFullYear() && month > now.getMonth() + 1);
-  const cellOf = (carrier: EnergyCarrier, month: number) =>
-    sheet.cells.find((c) => c.carrier === carrier && c.month === month);
-  const valueOf = (carrier: EnergyCarrier, month: number, field: Field) => {
-    const pending = draft[keyOf(carrier, month, field)];
+  const baseOf = (carrier: EnergyCarrier, month: number, knownNow: Record<string, Base> = known): Base => {
+    const mine = knownNow[`${carrier}-${month}`];
+    if (mine) return mine;
+    const cell = sheet.cells.find((c) => c.carrier === carrier && c.month === month);
+    return { quantity: cell?.quantity ?? null, tep: cell?.tep ?? null };
+  };
+  const valueOf = (
+    carrier: EnergyCarrier,
+    month: number,
+    field: Field,
+    from: { draft: Record<string, string>; known: Record<string, Base> } = { draft, known }
+  ) => {
+    const pending = from.draft[keyOf(carrier, month, field)];
     if (pending !== undefined) return pending;
-    const cell = cellOf(carrier, month);
-    return raw(field === "q" ? cell?.quantity : cell?.tep);
+    const base = baseOf(carrier, month, from.known);
+    return raw(field === "q" ? base.quantity : base.tep);
   };
   const setError = (key: string, message: string | null) =>
     setErrors((prev) => {
@@ -67,42 +110,72 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
       return next;
     });
 
-  function commit(carrier: EnergyCarrier, month: number, field: Field, byHand: boolean) {
+  /** Ce ar pleca acum din celulă: cifrele din ciornă peste cele salvate, sau `NaN` la ce nu e număr. */
+  function readCell(carrier: EnergyCarrier, month: number, byHand: boolean) {
+    const from = { draft: draftRef.current, known: knownRef.current };
+    return {
+      quantity: parse(valueOf(carrier, month, "q", from)),
+      tep: byHand ? parse(valueOf(carrier, month, "t", from)) : null,
+      base: baseOf(carrier, month, from.known),
+    };
+  }
+
+  /** O salvare, rulată când îi vine rândul în coada celulei. */
+  async function send(carrier: EnergyCarrier, month: number, field: Field, byHand: boolean) {
+    const qKey = keyOf(carrier, month, "q");
+    const tKey = keyOf(carrier, month, "t");
     const key = keyOf(carrier, month, field);
-    const sent = draft[key];
-    if (sent === undefined) return;
-    const cell = cellOf(carrier, month);
-    const quantity = parse(valueOf(carrier, month, "q"));
-    const tep = byHand ? parse(valueOf(carrier, month, "t")) : null;
+    const { quantity, tep, base } = readCell(carrier, month, byHand);
+    // Între timp s-a tastat ceva greșit: eroarea e deja pe câmp, nu se trimite nimic.
+    if (Number.isNaN(quantity) || Number.isNaN(tep)) return;
+    // Neschimbat față de ce e pe server → nicio cerere.
+    if (quantity === base.quantity && (!byHand || tep === base.tep)) {
+      dropDrafts([qKey, tKey]);
+      setError(qKey, null);
+      setError(tKey, null);
+      return;
+    }
+    const sent = { [qKey]: draftRef.current[qKey], [tKey]: draftRef.current[tKey] };
+    try {
+      // `mutateAsync`, nu `mutate` cu callback-uri: la `mutate`, a doua celulă salvată înainte să
+      // răspundă prima înlocuiește callback-urile primeia, iar eroarea ei nu mai ajunge nicăieri.
+      const next = await save.mutateAsync(
+        // tep-ul pleacă numai la cărbune și la alți combustibili: la celelalte îl socotește serverul.
+        byHand
+          ? { year: sheet.year, carrier, month, quantity, tep: quantity == null ? null : tep }
+          : { year: sheet.year, carrier, month, quantity }
+      );
+      const saved = next.cells.find((c) => c.carrier === carrier && c.month === month);
+      knownRef.current = {
+        ...knownRef.current,
+        [`${carrier}-${month}`]: { quantity: saved?.quantity ?? null, tep: saved?.tep ?? null },
+      };
+      setKnownState(knownRef.current);
+      // Numai ce s-a trimis și n-a fost retastat între timp.
+      dropDrafts([qKey, tKey], sent);
+      setError(qKey, null);
+      setError(tKey, null);
+    } catch (err) {
+      setError(key, apiErrorMessage(err, t.cellError));
+    }
+  }
+
+  function commit(carrier: EnergyCarrier, month: number, field: Field, byHand: boolean) {
+    if (draftRef.current[keyOf(carrier, month, field)] === undefined) return;
+    const { quantity, tep } = readCell(carrier, month, byHand);
     if (Number.isNaN(quantity) || Number.isNaN(tep)) {
       // Pe câmpul greșit, nu pe cel din care s-a ieșit.
       setError(keyOf(carrier, month, Number.isNaN(quantity) ? "q" : "t"), t.cellInvalid);
       return;
     }
-    // Neschimbat → nicio cerere.
-    if (quantity === (cell?.quantity ?? null) && (!byHand || tep === (cell?.tep ?? null))) {
-      setDraft(({ [key]: _, ...rest }) => rest);
-      setError(key, null);
-      return;
-    }
-    save.mutate(
-      // tep-ul pleacă numai la cărbune și la alți combustibili: la celelalte îl socotește serverul.
-      byHand
-        ? { year: sheet.year, carrier, month, quantity, tep: quantity == null ? null : tep }
-        : { year: sheet.year, carrier, month, quantity },
-      {
-        onSuccess: () => {
-          // Numai dacă între timp nu s-a tastat altceva în aceeași celulă.
-          setDraft((prev) => {
-            if (prev[key] !== sent) return prev;
-            const { [key]: _, ...rest } = prev;
-            return rest;
-          });
-          setError(key, null);
-        },
-        onError: (err) => setError(key, apiErrorMessage(err, t.cellError)),
-      }
+    const cellKey = `${carrier}-${month}`;
+    const queued = (queues.current.get(cellKey) ?? Promise.resolve()).then(() =>
+      send(carrier, month, field, byHand)
     );
+    queues.current.set(cellKey, queued);
+    void queued.finally(() => {
+      if (queues.current.get(cellKey) === queued) queues.current.delete(cellKey);
+    });
   }
 
   function cellInput(carrier: EnergyCarrier, month: number, field: Field, byHand: boolean) {
@@ -127,7 +200,15 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
           placeholder={field === "t" ? t.tepPlaceholder : undefined}
           disabled={future(month) || tepWithoutQuantity}
           value={valueOf(carrier, month, field)}
-          onChange={(e) => setDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+          onChange={(e) => {
+            const value = e.target.value;
+            setDraft((prev) => {
+              const next = { ...prev, [key]: value };
+              // Cantitatea golită șterge celula întreagă: tep-ul tastat lângă ea pleacă și el.
+              if (field === "q" && value.trim() === "") delete next[keyOf(carrier, month, "t")];
+              return next;
+            });
+          }}
           onBlur={() => commit(carrier, month, field, byHand)}
           className={cn("h-8 w-[3.5rem] px-1.5 text-right", error && "border-state-bad")}
         />
@@ -196,6 +277,10 @@ export function EnergyMonthsTable({ sheet, canWrite }: { sheet: EnergySheet; can
       </Table>
       <p className="mt-3 text-right font-semibold">
         {t.totalLine.replace("{tep}", totalKnown ? formatDecimal(sheet.totalTep, 3) : "?")}
+        {/* Peste prag cu luni lipsă: suma rubricilor complete e deja o margine de jos. */}
+        {!totalKnown && sheet.overThreshold && (
+          <> {t.totalLowerBound.replace("{tep}", formatDecimal(sheet.totalTep, 3))}</>
+        )}
       </p>
     </section>
   );

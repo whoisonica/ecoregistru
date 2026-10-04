@@ -4887,6 +4887,7 @@ export const strings = {
     colTep: "tep",
     tepPlaceholder: "tep",
     totalLine: "Total: {tep} tep",
+    totalLowerBound: "(cel puțin {tep})",
     cellLabel: "{carrier}, {month}",
     cellTepLabel: "{carrier}, {month}, tep",
     cellInvalid: "Un număr, cel puțin 0.",

@@ -111,11 +111,14 @@ export function EnergyEfEnClimaView({ sheet, canWrite }: { sheet: EnergySheet; c
     // Auditul și măsurile sunt ale non-IMM-ului: ce nu se vede pe ecran nu pleacă pe Anexa 1.
     const audit = form.sme === false;
     const share = audit ? num(form.share) : null;
-    const parsed = (audit ? measures : []).map((m, i) => ({
-      position: i + 1,
-      name: m.name.trim() || null,
-      ...(Object.fromEntries(MEASURE_FIELDS.map((f) => [f, num(m[f])])) as Record<MeasureField, number | null>),
-    }));
+    const parsed = (audit ? measures : [])
+      .map((m) => ({
+        name: m.name.trim() || null,
+        ...(Object.fromEntries(MEASURE_FIELDS.map((f) => [f, num(m[f])])) as Record<MeasureField, number | null>),
+      }))
+      // Un rând gol s-ar tipări pe Anexa 1 ca rând numerotat fără nimic în el.
+      .filter((m) => m.name != null || MEASURE_FIELDS.some((f) => m[f] != null))
+      .map((m, i) => ({ position: i + 1, ...m }));
     const bad =
       Number.isNaN(share) ||
       (share != null && share > 100) ||
