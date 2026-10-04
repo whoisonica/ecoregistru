@@ -66,6 +66,7 @@ class EnergyIT {
     @Autowired AppUserRepository appUserRepository;
     @Autowired CompanyRepository companyRepository;
     @Autowired AuditLogRepository auditLogRepository;
+    @Autowired ro.ecoregistru.repository.ReportingDeadlineRepository deadlineRepository;
 
     private String admin;
     private String viewer;
@@ -357,5 +358,102 @@ class EnergyIT {
                 .andExpect(status().isForbidden());
         putTo("/declaration", viewer, "{\"year\":2025}").andExpect(status().isForbidden());
         putTo("/contact", viewer, "{}").andExpect(status().isForbidden());
+    }
+
+    // ---- dosar + ani -------------------------------------------------------------------------------
+
+    private java.util.Map<String, byte[]> dossier(int year) throws Exception {
+        var result = mockMvc.perform(get("/api/v1/energy/dosar?year=" + year)
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .content().contentType("application/zip"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .header().string("Content-Disposition", org.hamcrest.Matchers.containsString(
+                                "dosar-energie-" + year + ".zip")))
+                .andReturn();
+        java.util.Map<String, byte[]> entries = new java.util.LinkedHashMap<>();
+        try (var zip = new java.util.zip.ZipInputStream(
+                new java.io.ByteArrayInputStream(result.getResponse().getContentAsByteArray()),
+                java.nio.charset.StandardCharsets.UTF_8)) {
+            for (var e = zip.getNextEntry(); e != null; e = zip.getNextEntry()) {
+                entries.put(e.getName(), zip.readAllBytes());
+            }
+        }
+        return entries;
+    }
+
+    @Test
+    void theDossierHoldsTheThreeFiles() throws Exception {
+        tick("ELECTRICITY");
+        cell("ELECTRICITY", 1, "10", "null").andExpect(status().isOk());
+        stub("p1");
+        when(storage.signedUrl("p1", "image", "authenticated", "pdf")).thenReturn("http://signed");
+        when(storage.fetch("http://signed")).thenReturn(PDF);
+        postReceipt(YEAR, "recipisa.pdf", "application/pdf", PDF).andExpect(status().isOk());
+
+        var entries = dossier(YEAR);
+        assertThat(entries.keySet()).containsExactly(
+                "Anexa 1 consum energie " + YEAR + ".xlsx",
+                "Declaratie energie " + YEAR + ".docx",
+                "Recipisa EfEnClima " + YEAR + ".pdf");
+        assertThat(entries.get("Recipisa EfEnClima " + YEAR + ".pdf")).isEqualTo(PDF);
+        assertThat(entries.get("Anexa 1 consum energie " + YEAR + ".xlsx")).startsWith((byte) 'P', (byte) 'K');
+        assertThat(entries.get("Declaratie energie " + YEAR + ".docx")).startsWith((byte) 'P', (byte) 'K');
+    }
+
+    @Test
+    void withoutAReceiptTheDossierHasTwoFiles() throws Exception {
+        tick("ELECTRICITY");
+        cell("ELECTRICITY", 1, "10", "null").andExpect(status().isOk());
+        assertThat(dossier(YEAR).keySet()).containsExactly(
+                "Anexa 1 consum energie " + YEAR + ".xlsx", "Declaratie energie " + YEAR + ".docx");
+    }
+
+    @Test
+    void overTheThresholdTheDossierHasNoAnnex1() throws Exception {
+        tick("COAL");
+        for (int m = 1; m <= 12; m++) {
+            cell("COAL", m, "1", m == 12 ? "120" : "80").andExpect(status().isOk());
+        }
+        assertThat(dossier(YEAR).keySet()).containsExactly("Declaratie energie " + YEAR + ".docx");
+    }
+
+    private ResultActions years(String token) throws Exception {
+        return mockMvc.perform(get("/api/v1/energy/years").header("Authorization", "Bearer " + token));
+    }
+
+    @Test
+    void yearsListTicksFiledFromTheDeadline() throws Exception {
+        years(admin).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(0)));
+
+        tick("ELECTRICITY");
+        for (int m = 1; m <= 3; m++) {
+            cell("ELECTRICITY", m, "10", "null").andExpect(status().isOk());
+        }
+        // 2024 has only a receipt: the receipt lives on the declaration row, so the year still counts.
+        stub("p1");
+        postReceipt(2024, "recipisa.pdf", "application/pdf", PDF).andExpect(status().isOk());
+
+        years(viewer).andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].year", is(YEAR)))
+                .andExpect(jsonPath("$[0].monthsComplete", is(3)))
+                .andExpect(jsonPath("$[0].overThreshold", is(false)))
+                .andExpect(jsonPath("$[0].filedOn", nullValue()))
+                .andExpect(jsonPath("$[0].hasReceipt", is(false)))
+                .andExpect(jsonPath("$[1].year", is(2024)))
+                .andExpect(jsonPath("$[1].hasReceipt", is(true)));
+
+        // 2025 is due 30.06.2026; 23:30 UTC on 1 July is already 2 July in Bucharest.
+        Instant done = Instant.parse("2026-07-01T22:30:00Z");
+        deadlineRepository.save(ro.ecoregistru.entity.ReportingDeadline.builder()
+                .company(companyRepository.findById(tenantId).orElseThrow())
+                .reportType(ro.ecoregistru.enums.ReportType.ENERGY_ANNUAL)
+                .dueDate(LocalDate.of(YEAR + 1, 6, 30))
+                .status(ro.ecoregistru.enums.DeadlineStatus.DONE).completedAt(done)
+                .warned7Days(false).warned1Day(false).createdAt(Instant.now()).build());
+        years(admin).andExpect(jsonPath("$[0].filedOn", is("2026-07-02")))
+                .andExpect(jsonPath("$[1].filedOn", nullValue()));
     }
 }

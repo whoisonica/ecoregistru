@@ -13,6 +13,7 @@ import ro.ecoregistru.controller.request.EnergyConsumptionRequest;
 import ro.ecoregistru.controller.request.EnergyContactRequest;
 import ro.ecoregistru.controller.request.EnergyDeclarationRequest;
 import ro.ecoregistru.controller.response.EnergySheetResponse;
+import ro.ecoregistru.controller.response.EnergyYearSummary;
 import ro.ecoregistru.service.energy.EnergyService;
 import ro.ecoregistru.service.export.ExportFormat;
 
@@ -60,6 +61,23 @@ public class EnergyController {
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .body(body);
+    }
+
+    /** The year's filing package (Anexa 1, Declarație, receipt) in one zip. */
+    @GetMapping("/dosar")
+    public ResponseEntity<byte[]> dossier(@RequestParam int year) {
+        byte[] body = energyService.dossier(year);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("dosar-energie-" + year + ".zip").build().toString())
+                .body(body);
+    }
+
+    /** The years with data, newest first, for the audit-file tab. */
+    @GetMapping("/years")
+    public java.util.List<EnergyYearSummary> years() {
+        return energyService.years();
     }
 
     @PutMapping("/carriers")

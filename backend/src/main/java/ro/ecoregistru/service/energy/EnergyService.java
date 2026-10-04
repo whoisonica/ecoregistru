@@ -16,8 +16,11 @@ import ro.ecoregistru.controller.request.EnergyContactRequest;
 import ro.ecoregistru.controller.request.EnergyDeclarationRequest;
 import ro.ecoregistru.controller.request.EnergyMeasureRequest;
 import ro.ecoregistru.controller.response.EnergySheetResponse;
+import ro.ecoregistru.controller.response.EnergyYearSummary;
 import ro.ecoregistru.entity.*;
+import ro.ecoregistru.enums.DeadlineStatus;
 import ro.ecoregistru.enums.EnergyCarrier;
+import ro.ecoregistru.enums.ReportType;
 import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.exception.UnprocessableEntityException;
@@ -54,6 +57,7 @@ public class EnergyService {
     private final CloudinaryStorageService storageService;
     private final EnergyAnnex1XlsxGenerator annex1Generator;
     private final EnergyDeclarationDocxGenerator declarationGenerator;
+    private final ReportingDeadlineRepository deadlineRepository;
 
     @Transactional(readOnly = true)
     public EnergySheetResponse sheet(int year) {
@@ -291,6 +295,53 @@ public class EnergyService {
     /** The receipt bytes, for the filing package. */
     public byte[] receiptBytes(int year) {
         return receiptContent(year).bytes();
+    }
+
+    /**
+     * The year's filing package as a zip: Anexa 1 (missing at 1000 tep and above, where the form does not apply),
+     * the Declarație, and the EfEnClima receipt when there is one.
+     */
+    @Transactional(readOnly = true)
+    public byte[] dossier(int year) {
+        checkYear(year);
+        Company company = company();
+        EnergySheetResponse sheet = build(company, year);
+        var out = new java.io.ByteArrayOutputStream();
+        try (var zip = new java.util.zip.ZipOutputStream(out, java.nio.charset.StandardCharsets.UTF_8)) {
+            if (!sheet.overThreshold()) {
+                addEntry(zip, "Anexa 1 consum energie " + year + ".xlsx", annex1(year));
+            }
+            addEntry(zip, "Declaratie energie " + year + ".docx", declarationDocx(year));
+            if (sheet.receipt() != null) {
+                addEntry(zip, "Recipisa EfEnClima " + year + ".pdf", receiptBytes(year));
+            }
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+        return out.toByteArray();
+    }
+
+    private static void addEntry(java.util.zip.ZipOutputStream zip, String name, byte[] bytes)
+            throws java.io.IOException {
+        zip.putNextEntry(new java.util.zip.ZipEntry(name));
+        zip.write(bytes);
+        zip.closeEntry();
+    }
+
+    /** The years with data, newest first, each with whether the deadline was ticked and a receipt is on file. */
+    @Transactional(readOnly = true)
+    public List<EnergyYearSummary> years() {
+        Company company = company();
+        return consumptionRepository.yearsWithData(company.getId()).stream().map(year -> {
+            EnergySheetResponse sheet = build(company, year);
+            LocalDate filedOn = deadlineRepository.findByCompany_IdAndReportTypeAndDueDate(
+                            company.getId(), ReportType.ENERGY_ANNUAL, LocalDate.of(year + 1, 6, 30))
+                    .filter(d -> d.getStatus() == DeadlineStatus.DONE && d.getCompletedAt() != null)
+                    .map(d -> d.getCompletedAt().atZone(DeadlineService.ZONE).toLocalDate())
+                    .orElse(null);
+            return new EnergyYearSummary(year, sheet.monthsComplete(), sheet.overThreshold(), filedOn,
+                    sheet.receipt() != null);
+        }).toList();
     }
 
     private Company company() {
