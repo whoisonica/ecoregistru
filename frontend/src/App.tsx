@@ -14,6 +14,7 @@ import { EvidencesRedirect, MovementsPage, MovementsRedirect } from "@/pages/Mov
 import { WeighingOperationsPage } from "@/pages/WeighingOperationsPage";
 import { PartnersPage } from "@/pages/PartnersPage";
 import { DeadlinesPage } from "@/pages/DeadlinesPage";
+import { EnergyPage } from "@/pages/EnergyPage";
 import { AuditFilePage } from "@/pages/AuditFilePage";
 import { PackagingPage } from "@/pages/PackagingPage";
 import { ClientsPage } from "@/pages/ClientsPage";
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="/evidente" element={<AppShell><EvidencesRedirect /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
+          <Route path="/termene/energie" element={<AppShell><EnergyPage /></AppShell>} />
           <Route path="/ambalaje" element={<AppShell><PackagingPage /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
           {/* Singurul ecran de sub `AppShell` care **nu** e al unei firme: e chiar cel din care

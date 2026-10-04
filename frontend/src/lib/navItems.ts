@@ -14,6 +14,7 @@ import {
   Scale,
   Settings,
   Users,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/auth/AuthContext";
@@ -190,6 +191,8 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
       keywords: strings.nav.kwPackaging,
     });
   }
+  // Fișa de energie: subpagină a Termenelor, fără intrare de meniu (Legea 121/2014, 30 iunie).
+  hidden.push({ to: "/termene/energie", label: strings.nav.energy, icon: Zap, keywords: strings.nav.kwEnergy });
   if (canImport(role)) {
     hidden.push({ to: "/import", label: strings.nav.importExcel, icon: FileUp, keywords: strings.nav.kwImport });
   }
