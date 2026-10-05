@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import ro.ecoregistru.enums.AccountRequestStatus;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.MarketRole;
+import ro.ecoregistru.enums.SizeTier;
 import ro.ecoregistru.enums.WasteOperationCode;
 
 import java.time.Instant;
@@ -144,6 +145,11 @@ public class AccountRequest {
 
     @Column(length = 2000)
     String notes;
+
+    /** Treapta de angajați aleasă la cerere (V83); doar intervalul, nu numărul de angajați. */
+    @Convert(converter = SizeTierConverter.class)
+    @Column(name = "size_tier")
+    SizeTier sizeTier;
 
     // --- Lifecycle ---
 

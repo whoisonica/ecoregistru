@@ -3,6 +3,7 @@ package ro.ecoregistru.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import ro.ecoregistru.enums.SizeTier;
 import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
@@ -80,6 +81,16 @@ public class Subscription {
      */
     @Column(nullable = false)
     boolean twelveMonthCommitment;
+
+    /** Treapta de angajați (V83). Null: abonament dinainte de 05.10.2026, serviciu complet sau consultant. */
+    @Convert(converter = SizeTierConverter.class)
+    @Column(name = "size_tier")
+    SizeTier sizeTier;
+
+    /** Prețul a fost negociat, nu e cel al treptei (V83). */
+    @Column(nullable = false)
+    @Builder.Default
+    boolean customPrice = false;
 
     /** The first billed day. A first month that starts after the 1st is billed by the day. */
     @Column(nullable = false)
