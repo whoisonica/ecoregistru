@@ -3,12 +3,14 @@
 // Ce se poate strica: (1) /energie nu se deschide sau rubricile bifate nu apar ca rânduri; (2) „Total an” la
 // curent nu e suma lunilor sau cărbunele fără tep nu arată „?”; (3) cu tep pe toate lunile, totalul păstrează „?”, sau
 // rândul de pe Termene nu spune „din 12 luni completate” / nu duce la fișa anului; (4) Anexa 1 / Declarația nu
-// descarcă .xlsx / .docx; (5) peste 1000 tep Anexa 1 rămâne activă sau avertismentul lipsește; (6) dosarul de control
+// se deschid ca PDF în tab sau nu mai descarcă .xlsx / .docx; (5) peste 1000 tep Anexa 1 rămâne activă sau avertismentul lipsește; (6) dosarul de control
 // n-are tabul „Energie” cu anul, sau tabul implicit pierde un rând din „Ce intră în arhivă”; (7) Acasă nu amintește
 // luna netrecută; (8) fișa derulează pe pagină la 1440×900 sau lateral la 375px; (1b) o rubrică bifată pe anul AN
 // schimbă și fișa din AN-1 (rubricile sunt ale anului, decizia F3 din 05.10.2026).
 // (0) din 05.10.2026: meniul n-are intrarea „Energie” imediat după „Termene”, sau vechea adresă /termene/energie?an=
 // nu mai duce la fișă cu anul păstrat.
+// (4) din 05.10.2026: „Anexa 1” și „Declarația” sunt meniuri — „Deschide PDF” deschide un tab nou cu adresa `blob:` și
+// nu descarcă nimic, „Descarcă Excel” / „Descarcă Word” descarcă tot .xlsx / .docx; peste 1000 tep meniul Anexei 1 e stins.
 // Date-robustă: AN vine din ceas; documentele se completează pe AN-1; Termene se verifică pe termenul viitor (anul AN).
 // ⚠️ Lasă în urmă: pe firma demo, rubricile „Energie electrică” și „Cărbune” și cele douăsprezece luni ale lor pe anul
 // AN-1 (curent 10, cărbune 1 cu tep 0,5), iar pe anul AN rubricile „Energie electrică”, „Cărbune” și „Gaze naturale”,
@@ -142,23 +144,54 @@ if (found) {
 }
 await shot(page, "60-energie-termene");
 
-// (4) Documentele.
+// (4) Documentele: fiecare e un meniu cu „Deschide PDF” (tab nou, `blob:`, fără descărcare) și fișierul editabil.
 await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 const annex = page.getByRole("button", { name: "Anexa 1", exact: true });
+const declaratia = page.getByRole("button", { name: "Declarația", exact: true });
+const item = (name) => page.getByRole("menuitem", { name: new RegExp("^" + name) });
 check("Anexa 1 e activă sub prag", await annex.isEnabled());
-const [dlX] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), annex.click()]);
-check("Anexa 1 descarcă .xlsx", dlX.suggestedFilename().endsWith(".xlsx"), dlX.suggestedFilename());
-const [dlD] = await Promise.all([
-  page.waitForEvent("download", { timeout: 15000 }),
-  page.getByRole("button", { name: "Declarația", exact: true }).click(),
-]);
-check("Declarația descarcă .docx", dlD.suggestedFilename().endsWith(".docx"), dlD.suggestedFilename());
+check("Anexa 1 și Declarația sunt meniuri",
+  (await annex.getAttribute("aria-haspopup")) === "menu" && (await declaratia.getAttribute("aria-haspopup")) === "menu");
+
+/** Deschide meniul, alege „Deschide PDF”: un tab nou cu adresa `blob:` și nicio descărcare. */
+async function opensPdf(trigger, label) {
+  let downloaded = false;
+  const onDownload = () => { downloaded = true; };
+  page.on("download", onDownload);
+  await trigger.click();
+  const [tab] = await Promise.all([
+    page.context().waitForEvent("page", { timeout: 15000 }).catch(() => null),
+    item("Deschide PDF").click({ timeout: 5000 }).catch(() => null),
+  ]);
+  let url = "";
+  if (tab) {
+    await tab.waitForURL(/^blob:/, { timeout: 15000 }).catch(() => null);
+    url = tab.url();
+    await tab.close();
+  }
+  await page.waitForTimeout(500);
+  page.off("download", onDownload);
+  check(`${label}: „Deschide PDF” deschide un tab blob:`, url.startsWith("blob:"), url.slice(0, 40) || "fără tab");
+  check(`${label}: „Deschide PDF” nu descarcă nimic`, !downloaded);
+}
+
+/** Deschide meniul, alege descărcarea: fișierul are extensia `ext`. */
+async function downloads(trigger, name, ext, label) {
+  await trigger.click();
+  const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }).catch(() => null), item(name).click({ timeout: 5000 }).catch(() => null)]);
+  check(`${label}: „${name}” descarcă ${ext}`, dl !== null && dl.suggestedFilename().endsWith(ext), dl ? dl.suggestedFilename() : "nimic");
+}
+
+await opensPdf(annex, "Anexa 1");
+await downloads(annex, "Descarcă Excel", ".xlsx", "Anexa 1");
+await opensPdf(declaratia, "Declarația");
+await downloads(declaratia, "Descarcă Word", ".docx", "Declarația");
 
 // (5) Peste 1000 tep: Anexa 1 stinsă, avertisment; apoi înapoi sub prag.
 await put(page, COAL, 1, "1500", true);
 await page.waitForTimeout(800);
-check("peste 1000 tep, Anexa 1 e dezactivată", await annex.isDisabled());
+check("peste 1000 tep, meniul Anexei 1 e dezactivat", await annex.isDisabled());
 check("avertismentul „Peste 1000 tep” e vizibil", await page.getByText("Peste 1000 tep", { exact: false }).first().isVisible());
 await shot(page, "60-energie-peste-prag");
 await put(page, COAL, 1, "0,5", true);

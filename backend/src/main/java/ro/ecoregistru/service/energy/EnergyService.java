@@ -31,7 +31,9 @@ import ro.ecoregistru.service.energy.EnergyYear.CarrierTotal;
 import ro.ecoregistru.service.energy.EnergyYear.Cell;
 import ro.ecoregistru.service.export.EnergyAnnex1;
 import ro.ecoregistru.service.export.EnergyAnnex1XlsxGenerator;
+import ro.ecoregistru.service.export.EnergyAnnex1PdfGenerator;
 import ro.ecoregistru.service.export.EnergyDeclarationDocxGenerator;
+import ro.ecoregistru.service.export.EnergyDeclarationPdfGenerator;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -57,6 +59,8 @@ public class EnergyService {
     private final CloudinaryStorageService storageService;
     private final EnergyAnnex1XlsxGenerator annex1Generator;
     private final EnergyDeclarationDocxGenerator declarationGenerator;
+    private final EnergyAnnex1PdfGenerator annex1PdfGenerator;
+    private final EnergyDeclarationPdfGenerator declarationPdfGenerator;
     private final ReportingDeadlineRepository deadlineRepository;
 
     @Transactional(readOnly = true)
@@ -74,6 +78,20 @@ public class EnergyService {
      */
     @Transactional(readOnly = true)
     public byte[] annex1(int year) {
+        return annex1Generator.render(annex1Data(year));
+    }
+
+    /**
+     * Aceeași Anexa 1, ca PDF de deschis în tab (din 05.10.2026): aceleași date și același refuz de la 1000 tep în
+     * sus, pentru că vin din același {@link #annex1Data}.
+     */
+    @Transactional(readOnly = true)
+    public byte[] annex1Pdf(int year) {
+        return annex1PdfGenerator.render(annex1Data(year));
+    }
+
+    /** What both renderings of Anexa 1 print, built once; 422 at 1000 tep and above. */
+    private EnergyAnnex1 annex1Data(int year) {
         checkYear(year);
         Company company = company();
         EnergySheetResponse sheet = build(company, year);
@@ -87,8 +105,8 @@ public class EnergyService {
             quantities.put(total.carrier(), total.quantity());
             teps.put(total.carrier(), total.tep());
         }
-        return annex1Generator.render(new EnergyAnnex1(year, company, quantities,
-                teps.get(EnergyCarrier.COAL), teps.get(EnergyCarrier.OTHER_FUEL), sheet.declaration()));
+        return new EnergyAnnex1(year, company, quantities,
+                teps.get(EnergyCarrier.COAL), teps.get(EnergyCarrier.OTHER_FUEL), sheet.declaration());
     }
 
     /** The Declarație (.docx) of the year, with the company's details as stored. */
@@ -96,6 +114,13 @@ public class EnergyService {
     public byte[] declarationDocx(int year) {
         checkYear(year);
         return declarationGenerator.render(company(), year);
+    }
+
+    /** Aceeași Declarație, ca PDF de deschis în tab (din 05.10.2026). */
+    @Transactional(readOnly = true)
+    public byte[] declarationPdf(int year) {
+        checkYear(year);
+        return declarationPdfGenerator.render(company(), year);
     }
 
     /**

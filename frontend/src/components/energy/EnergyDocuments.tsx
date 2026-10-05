@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { FileSpreadsheet, FileText, Info, Paperclip, Upload } from "lucide-react";
+import { FilePen, FileSpreadsheet, FileText, Info, Paperclip, Upload } from "lucide-react";
 import {
   downloadEnergyAnnex1,
   downloadEnergyDeclaration,
+  openEnergyAnnex1Pdf,
+  openEnergyDeclarationPdf,
   openEnergyReceipt,
   useUploadEnergyReceipt,
 } from "@/hooks/useEnergy";
@@ -11,6 +13,7 @@ import { strings } from "@/lib/strings";
 import type { EnergySheet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Menu, MenuItem } from "@/components/ui/menu";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
@@ -26,6 +29,10 @@ const isPdf = (f: File) => f.type === "application/pdf" || f.name.toLowerCase().
  * Rândul de documente: butoane lipite, cu numele documentului și fără text dedesubt (ca pe tabul
  * „Ambalaje”). Peste prag, „Anexa 1” e stinsă, iar de ce stă în `Tooltip` lângă ea, nu în jurul ei.
  * „Încarcă confirmarea” schimbă date, deci e `muted` și ultima dintre ele.
+ *
+ * <p>Din 05.10.2026, „Anexa 1” și „Declarația” sunt meniuri, ca Anexa 1 de la ambalaje: întâi „Deschide
+ * PDF” (în tab — Chrome nu arată un .xlsx sau un .docx), apoi fișierul editabil, care se descarcă
+ * ca până acum.
  */
 export function EnergyDocuments({ sheet, canWrite }: { sheet: EnergySheet; canWrite: boolean }) {
   const [busy, setBusy] = useState<Doc | null>(null);
@@ -47,29 +54,43 @@ export function EnergyDocuments({ sheet, canWrite }: { sheet: EnergySheet; canWr
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button
-        variant="outline"
-        disabled={sheet.overThreshold || busy !== null}
-        loading={busy === "annex1"}
-        onClick={() => run("annex1", () => downloadEnergyAnnex1(year), t.annex1Error)}
-      >
-        {busy !== "annex1" && <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden />}
-        {t.annex1}
-      </Button>
+      <Menu label={t.annex1} align="left" disabled={sheet.overThreshold || busy !== null}>
+        <MenuItem
+          icon={FileText}
+          hint={t.openPdfHint}
+          onClick={() => void run("annex1", () => openEnergyAnnex1Pdf(year), t.annex1OpenError)}
+        >
+          {t.openPdf}
+        </MenuItem>
+        <MenuItem
+          icon={FileSpreadsheet}
+          hint={t.downloadExcelHint}
+          onClick={() => void run("annex1", () => downloadEnergyAnnex1(year), t.annex1Error)}
+        >
+          {t.downloadExcel}
+        </MenuItem>
+      </Menu>
       {sheet.overThreshold && (
         <Tooltip content={t.annex1Disabled}>
           <Info className="h-4 w-4 text-content-subtle" aria-label={t.annex1Disabled} />
         </Tooltip>
       )}
-      <Button
-        variant="outline"
-        disabled={busy !== null}
-        loading={busy === "declaration"}
-        onClick={() => run("declaration", () => downloadEnergyDeclaration(year), t.declarationDocError)}
-      >
-        {busy !== "declaration" && <FileText className="mr-2 h-4 w-4" aria-hidden />}
-        {t.declaration}
-      </Button>
+      <Menu label={t.declaration} align="left" disabled={busy !== null}>
+        <MenuItem
+          icon={FileText}
+          hint={t.openPdfHint}
+          onClick={() => void run("declaration", () => openEnergyDeclarationPdf(year), t.declarationOpenError)}
+        >
+          {t.openPdf}
+        </MenuItem>
+        <MenuItem
+          icon={FilePen}
+          hint={t.downloadWordHint}
+          onClick={() => void run("declaration", () => downloadEnergyDeclaration(year), t.declarationDocError)}
+        >
+          {t.downloadWord}
+        </MenuItem>
+      </Menu>
       {sheet.receipt && (
         <Button
           variant="outline"
