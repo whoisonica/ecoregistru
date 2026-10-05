@@ -15,7 +15,25 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
-> **05.10.2026 — ✅ PREȚURILE GENERATORILOR PE TREPTE (după numărul mediu de salariați) — ramura `feat/preturi-0510`, nemergeuită, NEDEPLOYATĂ; migrarea `V83`.**
+> **05.10.2026 — ✅ PE PRODUCȚIE: ENERGIA (`V82`), PREȚURILE PE TREPTE (`V83`), PLATA ANUALĂ (`V84`) ȘI REGISTRUL ANEXA 3 NUMAI ÎN DOSAR — api v144 (`b16e1c0`), app v149 (`d0b644a`), din `main` `c13b7d8`.**
+> La cererea proprietarului („tot, juristul, tatăl meu și Andreea au validat”), cele trei ramuri de mai jos au intrat în `main` prin `feat/preturi-0510`
+> (`feat/energie-0410` și `fix/registru-anexa3-dosar` mergeuite în ea, `main` fast-forward), iar backendul și frontendul s-au deployat împreună (`scripts/deploy-split.sh both --push`, backup `b035` înainte).
+>
+> - **Plata anuală** (spec și plan: `ecoregistru-docs/docs/specs/2026-10-05-plata-anuala-{design,plan}.md`). `subscriptions.billing_months` (1 | 12), `period_anchor`, `anchor_period` (`V84`);
+>   la anual adminul scrie prețul pe an (`subscription.price.required`, 422), se emite **o factură pe an**, cu un singur rând („Generator, abonament anual”), fără rânduri pe puncte de lucru sau firme.
+>   Comutarea lunar ↔ anual se aplică de la următoarea perioadă (ancora mută perioadele, indicele rămâne absolut); oprirea în timpul anului merge până la capătul anului facturat.
+>   Abonamentele existente rămân `billing_months = 1`, cu facturile de azi. Web: „Facturare” Lunar / Anual (`PillGroup`) în dialogul de abonament și la „Client nou”, „Preț pe an (lei)” obligatoriu,
+>   „Preț personalizat” și „Angajament 12 luni” ascunse la anual; listele, fișa firmei și „Pachetul tău” arată „Generator · anual · 600 lei / an”. Commituri `75d19e1`, `fe5293c`, `5086d7a`, `91eea7a`, `d9022ba`.
+> - **Energia** primește înainte de merge: intrare proprie „Energie” în meniu, după Termene (`/energie?an=`; vechea adresă `/termene/energie` redirecționează), „recipisa” devine „confirmarea” în tot ce vede omul,
+>   iar Anexa 1 și Declarația se deschid și ca PDF în tab (`format=pdf`, `EnergyPdfIT`). **Deciziile F1–F4 sunt confirmate de proprietar (05.10.2026).**
+> - **Juridic:** termenii v2.4 (11.2, 12.1, 12.2) validați de jurist; `LEGAL_DATE` = **5 octombrie 2026** (și în cele două `.md` din `ecoregistru-docs/docs/juridic/`, PDF-urile regenerate).
+> - **Probe:** backend `./gradlew cleanTest test` **1491 teste, 0 eșecuri, 4 sărite**; web `npm test` **138/138**, `tsc`, lint 0 erori, mobil `tsc`; e2e pe stivă proprie: 31 și 30 (cu anual), 29, 33, 36, 6, 60 trec;
+>   CI pe `63ca6d1` a căzut numai pe proba **12** (cererea de cont cere acum treapta pe pasul 1; reparată în `88a82a3`), iar pe `88a82a3` numai pe proba **30**, instabilă
+>   (cifra utilizatorilor citită la 1,5 s fixe după invitație; acum se așteaptă cifra, `c13b7d8`); amândouă verzi local, CI verde pe `c13b7d8`.
+> - **După deploy, de știut:** clienții existenți văd în *Termene → Trecute* rândul „30.06.2026 — Declarația de consum de energie”; Anexa 1 și Declarația de energie sunt documente noi, cu validarea Andreei deschisă;
+>   textele „Prețul vine din treaptă…” și „Fiecare lună se plătește întreagă…” din dialog sunt aceleași și la anual (de recitit).
+>
+> **05.10.2026 — ✅ PREȚURILE GENERATORILOR PE TREPTE (după numărul mediu de salariați) — ramura `feat/preturi-0510`, nemergeuită, NEDEPLOYATĂ; migrarea `V83`.** *(Pe producție din 05.10.2026: intrarea de mai sus.)*
 > Decizia proprietarului (04–05.10.2026), spec în `ecoregistru-docs/docs/specs/2026-10-05-preturi-generatori-design.md`. **Depinde de ramura `feat/energie-0410`** (are `V82`; ramura aceasta pornește din ea și se mergeuiește după ea).
 >
 > - **Grila.** Treapta (`SizeTier`, `subscriptions.size_tier`, `V83`): 0–2 / 3–9 / 10–19 / 20–39 / 40+ salariați = **35 / 50 / 75 / 100 / 149 lei** pe lună; cu ambalaje **+15 / +20 / +25 / +30 / +50** (50 / 70 / 100 / 130 / 199).
@@ -28,7 +46,7 @@ rulează local și are testele verzi.
 > - **Juridic.** Contractul v2.4 (Anexa 1 pe trepte, fondatorul scos) și termenii §12 (`frontend/src/lib/legal.ts`) sunt **de validat la jurist**. **Poarta de deploy:** ramura NU se deployează până nu validează juristul termenii v2.4 (`legal.ts` §12 publică un text nevalidat); după validare se mută `LEGAL_DATE` pe ziua deployului. PDF-urile contractului și ale termenilor sunt regenerate în `ecoregistru-docs`.
 > - **Nedeployat, nemergeuit.** Landingul (`wastehouse-landing`, commit local `0ca398a`) are grila nouă și așteaptă același deploy.
 >
-> **05.10.2026 — ✅ DECLARAȚIA ANUALĂ DE CONSUM DE ENERGIE (Legea 121/2014, sub 1000 tep) — ramura `feat/energie-0410`, nemergeuită, nedeployată; migrarea `V82` (F6b trece pe `V83`).**
+> **05.10.2026 — ✅ DECLARAȚIA ANUALĂ DE CONSUM DE ENERGIE (Legea 121/2014, sub 1000 tep) — ramura `feat/energie-0410`, nemergeuită, nedeployată; migrarea `V82` (F6b trece pe `V83`).** *(Pe producție din 05.10.2026: intrarea de sus; F6b ia acum `V85`.)*
 > Cererea Andreei (04.10.2026): generatorul să facă Anexa 1 „consum sub 1000 tep” și Declarația care o însoțește. Spec și plan în `ecoregistru-docs/docs/specs/2026-10-04-energie-declaratie-anuala-*`;
 > legea în `docs/surse-oficiale.md` §19. 15 commituri peste `837d9a5` (`40d954e` … `1eb5fc2`), fiecare task trecut prin review.
 >
@@ -70,7 +88,7 @@ rulează local și are testele verzi.
 >
 > Ramura nu are încă plimbarea manuală prin browser; deploy și merge, numai la cererea proprietarului.
 >
-> **04.10.2026 — „Registrul Anexa 3 (transport)” numai în Dosarul de control (proprietarul), ramura `fix/registru-anexa3-dosar`, nedeployat.**
+> **04.10.2026 — „Registrul Anexa 3 (transport)” numai în Dosarul de control (proprietarul), ramura `fix/registru-anexa3-dosar`, nedeployat.** *(Pe producție din 05.10.2026.)*
 > Butonul cu meniu din antetul „Generare” și „Ieșiri” (`MovementsPage.tsx`) și textele lui (`movements.anexa3Register*`) au fost scoase; dosarul
 > (rândul din „Ce intră în arhivă”, `rapoarte/registru-anexa3-{an}.pdf`) și endpointul `GET /api/v1/evidences/registru-anexa3` rămân. Niciun document tipărit
 > atins. Probe: web `tsc`, lint 0 erori, 123/123; e2e 23 adusă la zi (butonul lipsește), 34 neschimbată.
