@@ -15,6 +15,19 @@ rulează local și are testele verzi.
 > nu descriu starea de azi — starea de azi e intrarea cea mai de sus. Pe 19.09.2026 antetele intrărilor au fost comparate, una câte una,
 > cu `heroku releases`; unde scriau altceva decât Heroku (patru intrări din 17–18.09), au fost corectate pe loc, cu mențiunea a ce scria înainte.
 
+> **05.10.2026 — ✅ PREȚURILE GENERATORILOR PE TREPTE (după numărul mediu de salariați) — ramura `feat/preturi-0510`, nemergeuită, NEDEPLOYATĂ; migrarea `V83`.**
+> Decizia proprietarului (04–05.10.2026), spec în `ecoregistru-docs/docs/specs/2026-10-05-preturi-generatori-design.md`. **Depinde de ramura `feat/energie-0410`** (are `V82`; ramura aceasta pornește din ea și se mergeuiește după ea).
+>
+> - **Grila.** Treapta (`SizeTier`, `subscriptions.size_tier`, `V83`): 0–2 / 3–9 / 10–19 / 20–39 / 40+ salariați = **35 / 50 / 75 / 100 / 149 lei** pe lună; cu ambalaje **+15 / +20 / +25 / +30 / +50** (50 / 70 / 100 / 130 / 199).
+>   Punctele de lucru și sediile în plus nu se mai taxează; implementarea e gratuită; fără fondator și fără angajament de 12 luni la generator (rămâne la consultant). Serviciul complet și prețul personalizat (`custom_price`) au preț scris de admin.
+>   Abonamentele vechi (99 / 149 / 249, cu implementare, angajament sau fondator) își păstrează prețul salvat; consultantul (199 + pe tranșe) neschimbat.
+> - **Facturare.** `BillingCalculator` calculează după treaptă / prețul personalizat; fără linie de implementare la abonamentele noi; previzualizarea primei facturi (`/subscriptions/preview`) primește treapta și prețul.
+> - **Onboarding și cerere de cont.** Pagina „Client nou” alege treapta (PillGroup) și afișează grila; `/cerere-cont` păstrează o singură întrebare, numărul de salariați (clientul nu alege pachet și nu vede prețuri); `AccountRequest` poartă `requestedTier`.
+> - **Dialogul de abonament** (admin): treapta, prețul personalizat (o treaptă e obligatorie la un preț personalizat pe un abonament vechi, care trece astfel pe condițiile noi) și prețul scris la Serviciul complet; **listele** (Abonamente, Cereri, Cont) arată pachetul cu treapta.
+> - **Probe.** Backend **1462 / 0 eșecuri / 0 sărite** înainte de ultimele corecturi (cifra finală e în așteptare, se trece aici după valul de corecturi); web `npm test` **136/136**; e2e **6, 29, 30, 31, 33, 36 trec**, rulate pe stivă proprie (:8081 / :5174, baza `eco_demo_preturi`).
+> - **Juridic.** Contractul v2.4 (Anexa 1 pe trepte, fondatorul scos) și termenii §12 (`frontend/src/lib/legal.ts`) sunt **de validat la jurist**. **Poarta de deploy:** ramura NU se deployează până nu validează juristul termenii v2.4 (`legal.ts` §12 publică un text nevalidat); după validare se mută `LEGAL_DATE` pe ziua deployului. PDF-urile contractului și ale termenilor sunt regenerate în `ecoregistru-docs`.
+> - **Nedeployat, nemergeuit.** Landingul (`wastehouse-landing`, commit local `0ca398a`) are grila nouă și așteaptă același deploy.
+>
 > **05.10.2026 — ✅ DECLARAȚIA ANUALĂ DE CONSUM DE ENERGIE (Legea 121/2014, sub 1000 tep) — ramura `feat/energie-0410`, nemergeuită, nedeployată; migrarea `V82` (F6b trece pe `V83`).**
 > Cererea Andreei (04.10.2026): generatorul să facă Anexa 1 „consum sub 1000 tep” și Declarația care o însoțește. Spec și plan în `ecoregistru-docs/docs/specs/2026-10-04-energie-declaratie-anuala-*`;
 > legea în `docs/surse-oficiale.md` §19. 15 commituri peste `837d9a5` (`40d954e` … `1eb5fc2`), fiecare task trecut prin review.

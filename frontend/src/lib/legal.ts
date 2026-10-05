@@ -362,7 +362,8 @@ export const TERMS: LegalDoc = {
             "consultant: taxa de pornire nu se plătește la început; dacă ultima perioadă facturată se încheie " +
             "înainte de a 12-a lună, ea se facturează odată cu ultima perioadă. Lunile rămase până la 12 nu se " +
             "datorează. Un abonament cu angajament încheiat pe o versiune anterioară a contractului urmează " +
-            "aceeași regulă, cu taxa de implementare din contractul semnat.",
+            "aceeași regulă, cu taxa de implementare sau de pornire " +
+            "din contractul semnat.",
         },
         {
           kind: "p",
