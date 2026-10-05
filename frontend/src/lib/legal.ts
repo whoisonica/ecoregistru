@@ -28,8 +28,8 @@
  * <p>v2.4, 05.10.2026 (prețurile generatorilor pe trepte, contractul v2.4): în termeni, 12.1 (angajamentul de
  * 12 luni numai la contul de consultant; abonamentele cu angajament de pe o versiune anterioară, după contractul
  * semnat) și 12.2 (taxa de implementare sau de pornire, numai la abonamentele care o au); completare, facturarea anuală: 11.2, 12.1,
- * 12.2 (anul facturat nu se restituie, contul rămâne activ până la capătul lui). De validat la jurist;
- * nu se publică până atunci, iar `LEGAL_DATE` se mută pe ziua deployului. Tot 17 capitole.
+ * 12.2 (anul facturat nu se restituie, contul rămâne activ până la capătul lui). Validat de jurist (proprietarul,
+ * 05.10.2026); publicat pe 05.10.2026, cu `LEGAL_DATE` pe ziua deployului. Tot 17 capitole.
  */
 
 /** Ce poate să conțină un capitol. Cât ne trebuie ca să scriem exact documentele astea, nimic mai mult. */
@@ -63,7 +63,7 @@ export interface LegalDoc {
  * ajunge în altă zi, se schimbă aici — într-un singur loc, pentru amândouă documentele — și în cele
  * două rânduri de dată din `juridic/`.
  */
-export const LEGAL_DATE = "30 septembrie 2026";
+export const LEGAL_DATE = "5 octombrie 2026";
 
 const COMPANY =
   "**ONSIA S.R.L.**, societate română cu sediul în sat Sântandrei, comuna Sântandrei, " +
