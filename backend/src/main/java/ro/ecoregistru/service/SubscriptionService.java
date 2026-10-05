@@ -545,9 +545,13 @@ public class SubscriptionService {
                     && request.monthlyPrice().compareTo(s.getMonthlyPrice()) != 0);
         if (regrid) {
             applyGrid(s, request);
-        } else {
+        } else if (request.plan().forConsultancy()) {
             s.setFounder(request.founder());
             s.setTwelveMonthCommitment(request.twelveMonthCommitment());
+        } else {
+            // Flags of the grid before 05.10.2026: an old company subscription keeps or drops them, none gets them.
+            s.setFounder(s.isFounder() && request.founder());
+            s.setTwelveMonthCommitment(s.isTwelveMonthCommitment() && request.twelveMonthCommitment());
         }
         s.setStartedAt(request.startedAt());
         s.setBillingEmail(trimToNull(request.billingEmail()));

@@ -201,6 +201,13 @@ class SubscriptionIT {
                 .andExpect(jsonPath("$.monthlyPrice").value(42))
                 .andExpect(jsonPath("$.billingAddress", is("Str. Alta nr. 2")));
 
+        // Fără preț în cerere, cel scris de mână rămâne: nu se recalculează.
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", true, "startedAt", "2026-10-01",
+                "billingCity", "Oradea"))
+                .andExpect(jsonPath("$.monthlyPrice").value(42))
+                .andExpect(jsonPath("$.customPrice", is(true)))
+                .andExpect(jsonPath("$.billingCity", is("Oradea")));
+
         save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", false, "startedAt", "2026-10-01"))
                 .andExpect(jsonPath("$.monthlyPrice").value(50))
                 .andExpect(jsonPath("$.customPrice", is(false)));
@@ -220,6 +227,55 @@ class SubscriptionIT {
                 .andExpect(jsonPath("$.sizeTier", nullValue()))
                 .andExpect(jsonPath("$.implementationFee").value(0))
                 .andExpect(jsonPath("$.firstInvoice.total").value(300));
+    }
+
+    /** Prețul la cerere se schimbă doar când platforma scrie altul; aceeași sumă (300 = 300.00) nu schimbă nimic. */
+    @Test
+    void fullServiceChangesOnlyWithADifferentPrice() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "FULL_SERVICE", "monthlyPrice", 300, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(300));
+
+        save(company, Map.of("plan", "FULL_SERVICE", "monthlyPrice", new BigDecimal("300.00"), "founder", true,
+                "startedAt", "2026-10-01", "billingCity", "Oradea"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(300))
+                .andExpect(jsonPath("$.founder", is(false)))
+                .andExpect(jsonPath("$.billingCity", is("Oradea")));
+
+        save(company, Map.of("plan", "FULL_SERVICE", "monthlyPrice", 350, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(350));
+    }
+
+    /** Serviciul complet n-are treaptă: una trimisă din greșeală nu se salvează și nu schimbă prețul. */
+    @Test
+    void aTierSentWithFullServiceIsDropped() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "FULL_SERVICE", "monthlyPrice", 300, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(300));
+
+        save(company, Map.of("plan", "FULL_SERVICE", "sizeTier", 3, "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(300))
+                .andExpect(jsonPath("$.sizeTier", nullValue()));
+        assertThat(subscriptionRepository.findByCompany_Id(company.getId()).orElseThrow().getSizeTier()).isNull();
+    }
+
+    /**
+     * Fondatorul și angajamentul de 12 luni țin de grila veche: pe un abonament de firmă o salvare le poate păstra
+     * sau scoate, dar nu le mai poate pune.
+     */
+    @Test
+    void founderAndCommitmentCannotBeSetOnACompanyPlan() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.founder", is(false)));
+
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "founder", true, "twelveMonthCommitment", true,
+                "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.founder", is(false)))
+                .andExpect(jsonPath("$.twelveMonthCommitment", is(false)));
     }
 
     /** Un client fondator pe 99 rămâne pe 99, cu implementarea și bifa lui, când i se schimbă doar adresa. */
