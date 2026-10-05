@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { strings } from "@/lib/strings";
-import { CornerLink, PosterTile, PublicError, PublicShell, publicButtonClass } from "@/components/PublicShell";
+import { PosterTile, PublicError, PublicShell, publicButtonClass } from "@/components/PublicShell";
 import { apiErrorMessage, LOGIN_EXPIRED_PARAM, REDIRECT_PARAM } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +62,6 @@ export function LoginPage() {
           <PosterTile kicker={t.tile3Kicker} title={t.tile3Title} note={t.tile3Note} />
         </div>
       }
-      corner={<CornerLink prompt={t.noAccount} label={t.requestAccount} to="/cerere-cont" />}
     >
       <div className="mx-auto flex w-full max-w-[400px] flex-col gap-8">
         <div className="flex flex-col gap-2">
@@ -117,12 +116,6 @@ export function LoginPage() {
             {loading ? t.loading : t.submit}
           </Button>
         </form>
-        {/* The register is closed: there is no sign-up, only a request support acts on. */}
-        <p className="text-sm text-content-muted lg:hidden">
-          <Link to="/cerere-cont" className="font-medium text-mark hover:underline">
-            {strings.accountRequest.linkFromLogin}
-          </Link>
-        </p>
       </div>
     </PublicShell>
   );

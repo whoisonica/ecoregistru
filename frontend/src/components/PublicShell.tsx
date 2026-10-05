@@ -36,7 +36,7 @@ export function PublicShell({
   lede: string;
   /** Ce stă sub titlu (tile-uri, pași). Cine vrea să-l ascundă pe telefon o face singur. */
   aside?: ReactNode;
-  /** Colțul din dreapta sus: „Nu ai cont? Cere un cont”. */
+  /** Colțul din dreapta sus: link-ul spre altă pagină publică (ex. „Ai deja cont? Autentifică-te”). */
   corner?: ReactNode;
   /** `half` = două coloane egale (login); `narrow` = stânga de 480px, restul formular (cerere). */
   split?: "half" | "narrow";
@@ -106,7 +106,7 @@ export function PublicShell({
 /** Butonul principal al paginilor publice: verdele landingului, nu al aplicației. */
 export const publicButtonClass = "border-mark bg-mark hover:border-mark-hover hover:bg-mark-hover";
 
-/** Linkul din colț: „Nu ai cont? · Cere un cont”. */
+/** Linkul din colț: „Ai deja cont? · Autentifică-te”. */
 export function CornerLink({ prompt, label, to }: { prompt: string; label: string; to: string }) {
   return (
     <span>

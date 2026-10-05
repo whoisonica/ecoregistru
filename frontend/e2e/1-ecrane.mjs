@@ -80,6 +80,7 @@ console.log("=== Pagini publice ===");
     await page.waitForTimeout(400);
     if (!(await page.$("h1"))) page.problems.push("lipsește h1");
     await anpm(page);
+    if (path === "/login" && (await page.$('a[href="/cerere-cont"]'))) page.problems.push("login trimite spre /cerere-cont (fără „Cere un cont”)");
     await shot(page, "public" + path.replace(/\//g, "_"));
     failures += report(`${name} (${path})`, page.problems);
   }

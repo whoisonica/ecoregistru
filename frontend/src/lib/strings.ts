@@ -563,8 +563,6 @@ export const strings = {
     tile3Kicker: "Dosar de control",
     tile3Title: "Un singur PDF",
     tile3Note: "tot ce cere Garda de Mediu",
-    noAccount: "Nu ai cont?",
-    requestAccount: "Cere un cont",
     email: "Email",
     password: "Parolă",
     submit: "Intră în cont",
@@ -4020,7 +4018,6 @@ export const strings = {
     successSpam: "Dacă nu vezi mesajul, uită-te și în „Spam” — vine de la o adresă nouă pentru tine.",
     submitError: "Trimiterea a eșuat. Verifică datele și încearcă din nou.",
     backToLogin: "Înapoi la autentificare",
-    linkFromLogin: "Nu ai cont? Trimite o cerere",
     // Admin list
     adminTitle: "Cereri de cont",
     adminSubtitle: "Formularele trimise de clienți. Din ele se creează firmele.",
