@@ -30,7 +30,7 @@ import { formatQuantity } from "@/lib/units";
 import { canManage as roleCanManage } from "@/lib/roles";
 import { useWorkPoints } from "@/hooks/useWorkPoints";
 import { useCurrentCompany } from "@/hooks/useCompanies";
-import { downloadAnexa3Register, downloadArt48Register } from "@/hooks/useEvidences";
+import { downloadArt48Register } from "@/hooks/useEvidences";
 import {
   useMovement,
   useMovements,
@@ -408,22 +408,6 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
    * Evidența art. 48 pe **anul** din filtru, nu pe lună: evidența se depune pe an, iar stocul de
    * început vine din anii dinainte. Punctul de lucru ales se păstrează.
    */
-  /**
-   * Registrul Anexa 3 (transport) (Andreea, 29.09.2026), pe anul și punctul din filtru: pe „Generare”
-   * și pe „Ieșiri” — oriunde se tipăresc formulare de transport; „Intrări” n-are ce centraliza.
-   */
-  const [anexa3RegisterBusy, setAnexa3RegisterBusy] = useState(false);
-  async function downloadAnexa3RegisterPdf() {
-    setAnexa3RegisterBusy(true);
-    try {
-      await downloadAnexa3Register(filters.year!, workPointFilter || undefined);
-    } catch (err) {
-      notify(apiErrorMessage(err, t.anexa3RegisterError), "error");
-    } finally {
-      setAnexa3RegisterBusy(false);
-    }
-  }
-
   const [art48Busy, setArt48Busy] = useState<"xlsx" | "pdf" | null>(null);
   async function downloadArt48(format: "xlsx" | "pdf") {
     setArt48Busy(format);
@@ -541,17 +525,6 @@ export function MovementsPage({ screen }: { screen: MovementScreen }) {
         description={heading.subtitle}
         actions={
           <>
-            {screen !== "IN" && (
-              <Menu label={t.anexa3RegisterMenu} align="right" disabled={anexa3RegisterBusy}>
-                <MenuItem
-                  icon={FileText}
-                  onClick={() => void downloadAnexa3RegisterPdf()}
-                  hint={t.anexa3RegisterHint.replace("{year}", String(filters.year))}
-                >
-                  {t.anexa3RegisterPdf}
-                </MenuItem>
-              </Menu>
-            )}
             {/* Evidența cronologică art. 48 e un singur document, pe amândouă ecranele art. 48. */}
             {!isGeneration && (
               <>

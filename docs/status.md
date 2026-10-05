@@ -69,6 +69,11 @@ rulează local și are testele verzi.
 >   proba 60 **28/28**, `npm run e2e` **47 de probe trec**.
 >
 > Ramura nu are încă plimbarea manuală prin browser; deploy și merge, numai la cererea proprietarului.
+>
+> **04.10.2026 — „Registrul Anexa 3 (transport)” numai în Dosarul de control (proprietarul), ramura `fix/registru-anexa3-dosar`, nedeployat.**
+> Butonul cu meniu din antetul „Generare” și „Ieșiri” (`MovementsPage.tsx`) și textele lui (`movements.anexa3Register*`) au fost scoase; dosarul
+> (rândul din „Ce intră în arhivă”, `rapoarte/registru-anexa3-{an}.pdf`) și endpointul `GET /api/v1/evidences/registru-anexa3` rămân. Niciun document tipărit
+> atins. Probe: web `tsc`, lint 0 erori, 123/123; e2e 23 adusă la zi (butonul lipsește), 34 neschimbată.
 
 > **30.09.2026, 12:57 — ✅ PE PRODUCȚIE: `ecoregistru-app` **v148** (`76a89b4`), din `main` `ff5a330`; api neatins (v143), fără migrare — TERMENII ȘI POLITICA v2.3.**
 > `frontend/src/lib/legal.ts` adus la setul juridic v2.3 din `ecoregistru-docs/docs/juridic/`, validat de jurist pe 30.09.2026: termenii (cap. 4 — registrul formularelor
