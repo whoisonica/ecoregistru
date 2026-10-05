@@ -116,6 +116,8 @@ await page.fill("#ar-cui", validCui());
 await page.fill("#ar-name", "Proba Legală SRL");
 await page.fill("#ar-address", "Str. Sediului nr. 1");
 await page.fill("#ar-caen", "1071");
+// Din 05.10.2026 pasul 1 cere și treapta de angajați (ca în proba 6).
+await page.locator('label:has(input[name="ar-size-tier"])').filter({ hasText: /^\s*3–9\s*$/ }).click();
 await page.click('button:has-text("Continuă")');
 await page.waitForTimeout(300);
 await page.fill("#ar-wp-name", "Punct de probă");
