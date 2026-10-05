@@ -71,6 +71,7 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.CONSULTANCY_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.INVOICE_NOT_DISCARDABLE;
 import static ro.ecoregistru.exception.ErrorMessageEnum.INVOICE_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_ALREADY_CANCELLED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_COMMITMENT_ANNUAL;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_COMPANY_IN_CONSULTANCY;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_HAS_INVOICES;
@@ -86,6 +87,10 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_SIZE_TIER_R
  * <p><b>The grid is copied, not referenced.</b> Creating a subscription, or changing its plan, tier
  * or custom price, writes today's prices on it; saving it again without such a change keeps the
  * prices it had, so a subscription signed before the tiers (05.10.2026) stays as signed.
+ *
+ * <p><b>Annual billing (05.10.2026).</b> {@code billingMonths = 12} is one invoice a year at the price per
+ * year written in the request. Switching the length takes effect from the first period not yet invoiced:
+ * the periods already invoiced stay as they were.
  */
 @Slf4j
 @Service
@@ -415,7 +420,8 @@ public class SubscriptionService {
                         i.getPaymentCheckedAt()))
                 .toList();
         return new BillingResponse(BillingRunService.clientName(s), s.getPlan(),
-                s.getSizeTier() == null ? null : s.getSizeTier().number(), s.isCustomPrice(), s.getStatus(), s.getStartedAt(),
+                s.getSizeTier() == null ? null : s.getSizeTier().number(), s.isCustomPrice(), s.getBillingMonths(),
+                s.getStatus(), s.getStartedAt(),
                 s.isFounder(), s.isTwelveMonthCommitment(), invoiceFor(s, next), BillingRunService.recipient(s),
                 s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices,
                 s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), netopia.isConfigured(),
@@ -492,7 +498,8 @@ public class SubscriptionService {
         if (request.plan().forConsultancy()) {
             throw new UnprocessableEntityException(SUBSCRIPTION_PLAN_MISMATCH);
         }
-        Subscription s = pending().startedAt(request.startedAt()).build();
+        requireCommitmentFits(request);
+        Subscription s = pending().startedAt(request.startedAt()).billingMonths(request.months()).build();
         applyGrid(s, request);
         return new SubscriptionPreviewResponse(BillingCalculator.invoice(s, 1, 0, 0, 0),
                 BillingCalculator.invoice(s, 1, 0, 0, 1));
@@ -539,7 +546,9 @@ public class SubscriptionService {
         if (trimToNull(request.billingCounty()) != null) {
             requireFgoCounty(request.billingCounty());
         }
-        boolean regrid = s.getId() == null || s.getPlan() != request.plan()
+        requireCommitmentFits(request);
+        boolean switching = request.months() != s.getBillingMonths();
+        boolean regrid = s.getId() == null || switching || s.getPlan() != request.plan()
                 || requestedTier(request) != s.getSizeTier() || request.customPrice() != s.isCustomPrice()
                 || (priceFromRequest(request) && request.monthlyPrice() != null
                     && request.monthlyPrice().compareTo(s.getMonthlyPrice()) != 0);
@@ -553,12 +562,42 @@ public class SubscriptionService {
             s.setFounder(s.isFounder() && request.founder());
             s.setTwelveMonthCommitment(s.isTwelveMonthCommitment() && request.twelveMonthCommitment());
         }
+        if (switching) {
+            anchorAtFirstUninvoicedPeriod(s);
+            s.setBillingMonths(request.months());
+        }
         s.setStartedAt(request.startedAt());
         s.setBillingEmail(trimToNull(request.billingEmail()));
         s.setBillingCounty(trimToNull(request.billingCounty()));
         s.setBillingCity(trimToNull(request.billingCity()));
         s.setBillingAddress(trimToNull(request.billingAddress()));
         return subscriptionRepository.save(s);
+    }
+
+    /**
+     * A new length starts with the first period not yet invoiced: the day after the latest invoice ends,
+     * counted under the old length. Read again from the latest invoice on every switch, so switching back
+     * and forth before that day leaves the same anchor. Without any invoice the periods simply start on
+     * the start date. Must run before {@code billingMonths} changes.
+     */
+    private void anchorAtFirstUninvoicedPeriod(Subscription s) {
+        Optional<SubscriptionInvoice> latest = s.getId() == null ? Optional.empty()
+                : invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()).stream().findFirst();
+        if (latest.isEmpty()) {
+            s.setPeriodAnchor(null);
+            s.setAnchorPeriod(0);
+            return;
+        }
+        int invoiced = BillingCalculator.periodOn(s, latest.get().getPeriodStart());
+        s.setPeriodAnchor(latest.get().getPeriodEnd().plusDays(1));
+        s.setAnchorPeriod(invoiced + 1);
+    }
+
+    /** Ruling A3: the 12-month commitment is a rule of monthly billing. */
+    private static void requireCommitmentFits(SubscriptionRequest request) {
+        if (request.twelveMonthCommitment() && request.months() == BillingCalculator.ANNUAL) {
+            throw new UnprocessableEntityException(SUBSCRIPTION_COMMITMENT_ANNUAL);
+        }
     }
 
     private static void requireFgoCounty(String county) {
@@ -610,12 +649,21 @@ public class SubscriptionService {
         return request.plan().forTiers() && request.sizeTier() != null ? SizeTier.of(request.sizeTier()) : null;
     }
 
-    /** The full service has no grid price at all; any plan takes the price written by hand. */
+    /**
+     * The full service has no grid price at all; any plan takes the price written by hand; an annual
+     * subscription always does, since the grid has no price per year. The tier is still kept on it.
+     */
     private static boolean priceFromRequest(SubscriptionRequest request) {
-        return request.customPrice() || request.plan() == SubscriptionPlan.FULL_SERVICE;
+        return request.customPrice() || request.plan() == SubscriptionPlan.FULL_SERVICE
+                || request.months() == BillingCalculator.ANNUAL;
     }
 
+    /**
+     * Shows the first two periods: 0 and 1 until the length is switched, then the first two not yet
+     * invoiced, so a period billed before the switch is never shown with the new length.
+     */
     private SubscriptionResponse toResponse(Subscription s) {
+        int first = s.getAnchorPeriod();
         List<SubscriptionInvoiceResponse> invoices = s.getId() == null ? List.of()
                 : invoiceRepository.findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()).stream()
                 .map(i -> new SubscriptionInvoiceResponse(i.getId(), i.getPeriodStart(), i.getPeriodEnd(),
@@ -624,11 +672,11 @@ public class SubscriptionService {
                         i.getPaidBy(), i.getFgoCollectedAt(), lastCardError(i.getId()), i.getPaymentCheckedAt()))
                 .toList();
         return new SubscriptionResponse(s.getId(), s.getPlan(),
-                s.getSizeTier() == null ? null : s.getSizeTier().number(), s.isCustomPrice(), s.getStatus(),
-                s.getMonthlyPrice(), s.getImplementationFee(), s.getExtraWorkPointPrice(),
+                s.getSizeTier() == null ? null : s.getSizeTier().number(), s.isCustomPrice(), s.getBillingMonths(),
+                s.getStatus(), s.getMonthlyPrice(), s.getImplementationFee(), s.getExtraWorkPointPrice(),
                 s.getCompanyPriceTier1(), s.getCompanyPriceTier2(), s.getCompanyPriceTier3(),
                 s.getPackagingCompanyPrice(), s.isFounder(), s.isTwelveMonthCommitment(), s.getStartedAt(),
-                invoiceFor(s, 0), invoiceFor(s, 1),
+                invoiceFor(s, first), invoiceFor(s, first + 1),
                 s.getBillingEmail(), s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(),
                 invoices, s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), s.getEndsOn());
     }

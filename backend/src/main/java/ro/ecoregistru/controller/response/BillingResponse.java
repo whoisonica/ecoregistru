@@ -27,6 +27,8 @@ public record BillingResponse(
         SubscriptionPlan plan,
         Integer sizeTier,
         boolean customPrice,
+        /* 05.10.2026 — 1 (monthly) or 12 (annual). */
+        int billingMonths,
         SubscriptionStatus status,
         LocalDate startedAt,
         boolean founder,

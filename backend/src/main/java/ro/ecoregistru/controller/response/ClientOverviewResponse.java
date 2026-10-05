@@ -21,6 +21,8 @@ public record ClientOverviewResponse(
         SubscriptionPlan plan,
         Integer sizeTier,
         boolean customPrice,
+        /* 05.10.2026 — 1 (monthly) or 12 (annual, monthlyPrice is then per year); 1 without a subscription. */
+        int billingMonths,
         BigDecimal monthlyPrice,
         LastInvoice lastInvoice,
         long userCount

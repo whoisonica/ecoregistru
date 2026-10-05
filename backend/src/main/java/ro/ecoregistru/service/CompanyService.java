@@ -133,6 +133,7 @@ public class CompanyService {
                     s == null ? null : s.getPlan(),
                     s == null || s.getSizeTier() == null ? null : s.getSizeTier().number(),
                     s != null && s.isCustomPrice(),
+                    s == null ? 1 : s.getBillingMonths(),
                     s == null ? null : s.getMonthlyPrice(),
                     i == null ? null : new ClientOverviewResponse.LastInvoice(
                             i.getFgoNumar() == null ? null : i.getFgoSerie() + " " + i.getFgoNumar(),

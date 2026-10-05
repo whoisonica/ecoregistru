@@ -12,7 +12,8 @@ import java.util.UUID;
 
 /**
  * F1 — a subscription with the two invoices it produces, computed on today's counts: the first
- * period (with the implementation) and the one after it.
+ * period (with the implementation) and the one after it; after a switch of the billing length, the
+ * first two periods not yet invoiced.
  *
  * <p>F2 — plus its billing data and the invoices already reserved or issued, newest first.
  */
@@ -22,6 +23,8 @@ public record SubscriptionResponse(
         /* 05.10.2026 — the employee-count tier (1–5), null before the tiers and off the generator plans. */
         Integer sizeTier,
         boolean customPrice,
+        /* 05.10.2026 — 1 (monthly) or 12 (annual); on annual, monthlyPrice is the price per year. */
+        int billingMonths,
         SubscriptionStatus status,
         BigDecimal monthlyPrice,
         BigDecimal implementationFee,

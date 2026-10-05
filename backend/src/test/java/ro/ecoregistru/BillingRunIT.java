@@ -1,5 +1,6 @@
 package ro.ecoregistru;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.zonky.test.db.AutoConfigureEmbeddedDatabase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import ro.ecoregistru.config.JwtService;
@@ -33,12 +36,15 @@ import ro.ecoregistru.repository.SubscriptionInvoiceRepository;
 import ro.ecoregistru.repository.SubscriptionRepository;
 import ro.ecoregistru.service.BillingRunService;
 import ro.ecoregistru.service.EmailService;
+import ro.ecoregistru.service.SubscriptionService;
 import ro.ecoregistru.service.FgoClient;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
@@ -56,6 +62,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -88,6 +95,8 @@ class BillingRunIT {
     @Autowired SubscriptionRepository subscriptionRepository;
     @Autowired SubscriptionInvoiceRepository invoiceRepository;
     @Autowired BillingRunService billing;
+    @Autowired SubscriptionService subscriptionService;
+    @Autowired ObjectMapper objectMapper;
     @Autowired TemplateEngine templateEngine;
 
     @MockitoBean EmailService emailService;
@@ -604,6 +613,187 @@ class BillingRunIT {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$['error-code']", is("invoice.not.discardable")));
         assertThat(invoices(s)).hasSize(1);
+    }
+
+    // ─── Plata anuală: comutarea și oprirea ──────────────────────────────────
+
+    static final LocalDate FIFTH = LocalDate.of(2026, 11, 5);
+
+    /**
+     * Review Focus 2: lunar început pe 5, facturat; comutat pe anual pe 20. Luna în curs rămâne cum a fost
+     * facturată; pe 5 luna viitoare vine o factură anuală, 5 → 4 peste un an.
+     */
+    @Test
+    void switchingToAnnualWaitsForTheNextPeriod() throws Exception {
+        Company company = company();
+        Subscription s = monthlyFromTheFifth(company);
+        billing.run(FIFTH);
+        assertThat(invoices(s)).hasSize(1);
+
+        save(company, annualRequest(900)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.billingMonths").value(12));
+        assertThat(subscriptionRepository.findById(s.getId()).orElseThrow()).satisfies(switched -> {
+            assertThat(switched.getPeriodAnchor()).isEqualTo(LocalDate.of(2026, 12, 5));
+            assertThat(switched.getAnchorPeriod()).isEqualTo(1);
+        });
+
+        billing.run(LocalDate.of(2026, 11, 21));
+        assertThat(invoices(s)).hasSize(1);
+
+        billing.run(LocalDate.of(2026, 12, 5));
+        assertThat(invoices(s)).hasSize(2).first().satisfies(i -> {
+            assertThat(i.getPeriodStart()).isEqualTo(LocalDate.of(2026, 12, 5));
+            assertThat(i.getPeriodEnd()).isEqualTo(LocalDate.of(2027, 12, 4));
+            assertThat(i.getTotal()).isEqualByComparingTo("900");
+            assertThat(i.getLinesJson()).contains("Generator, abonament anual");
+        });
+
+        billing.run(LocalDate.of(2027, 1, 5));
+        assertThat(invoices(s)).hasSize(2);
+    }
+
+    /** After a switch the response shows the first two periods not yet invoiced, at the new length. */
+    @Test
+    void afterASwitchTheResponseShowsTheNextUninvoicedPeriods() throws Exception {
+        Company company = company();
+        monthlyFromTheFifth(company);
+        billing.run(FIFTH);
+
+        save(company, annualRequest(900))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstInvoice.from", is("2026-12-05")))
+                .andExpect(jsonPath("$.firstInvoice.to", is("2027-12-04")))
+                .andExpect(jsonPath("$.firstInvoice.total").value(900))
+                .andExpect(jsonPath("$.monthlyInvoice.from", is("2027-12-05")))
+                .andExpect(jsonPath("$.monthlyInvoice.to", is("2028-12-04")));
+    }
+
+    /** Review Focus 3: anul plătit merge până la capăt; prima factură lunară vine după el. */
+    @Test
+    void switchingBackToMonthlyAfterTheYear() throws Exception {
+        Company company = company();
+        Subscription s = annualFromTheFifth(company, 600);
+        billing.run(FIFTH);
+        assertThat(invoices(s)).singleElement().satisfies(i -> {
+            assertThat(i.getPeriodEnd()).isEqualTo(LocalDate.of(2027, 11, 4));
+            assertThat(i.getTotal()).isEqualByComparingTo("600");
+        });
+
+        save(company, monthlyRequest()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.billingMonths").value(1))
+                .andExpect(jsonPath("$.monthlyPrice").value(50));
+
+        billing.run(LocalDate.of(2026, 12, 5));
+        billing.run(LocalDate.of(2027, 10, 5));
+        assertThat(invoices(s)).hasSize(1);
+
+        billing.run(LocalDate.of(2027, 11, 5));
+        assertThat(invoices(s)).hasSize(2).first().satisfies(i -> {
+            assertThat(i.getPeriodStart()).isEqualTo(LocalDate.of(2027, 11, 5));
+            assertThat(i.getPeriodEnd()).isEqualTo(LocalDate.of(2027, 12, 4));
+            assertThat(i.getTotal()).isEqualByComparingTo("50");
+        });
+
+        billing.run(LocalDate.of(2027, 12, 5));
+        assertThat(invoices(s)).hasSize(3).first().satisfies(i ->
+                assertThat(i.getPeriodEnd()).isEqualTo(LocalDate.of(2028, 1, 4)));
+    }
+
+    /** Two switches before the next period: the anchor is read again from the last invoice, so nothing moves. */
+    @Test
+    void switchingTwiceBeforeTheNextPeriodKeepsItMonthly() throws Exception {
+        Company company = company();
+        Subscription s = monthlyFromTheFifth(company);
+        billing.run(FIFTH);
+
+        save(company, annualRequest(900)).andExpect(status().isOk());
+        save(company, monthlyRequest()).andExpect(status().isOk());
+        assertThat(subscriptionRepository.findById(s.getId()).orElseThrow()).satisfies(back -> {
+            assertThat(back.getBillingMonths()).isEqualTo(1);
+            assertThat(back.getPeriodAnchor()).isEqualTo(LocalDate.of(2026, 12, 5));
+            assertThat(back.getAnchorPeriod()).isEqualTo(1);
+        });
+
+        billing.run(LocalDate.of(2026, 12, 5));
+        assertThat(invoices(s)).hasSize(2).first().satisfies(i -> {
+            assertThat(i.getPeriodStart()).isEqualTo(LocalDate.of(2026, 12, 5));
+            assertThat(i.getPeriodEnd()).isEqualTo(LocalDate.of(2027, 1, 4));
+            assertThat(i.getTotal()).isEqualByComparingTo("50");
+        });
+    }
+
+    /** Ruling A4: the run never reserves a day before the anchor, whatever the periods before it look like. */
+    @Test
+    void nothingIsReservedBeforeTheAnchor() {
+        Subscription s = monthlyFromTheFifth(company());
+        s.setBillingMonths(12);
+        s.setPeriodAnchor(LocalDate.of(2027, 1, 5));
+        s.setAnchorPeriod(2);
+        subscriptionRepository.save(s);
+
+        billing.run(LocalDate.of(2026, 12, 10));
+        assertThat(invoices(s)).isEmpty();
+
+        billing.run(LocalDate.of(2027, 1, 5));
+        assertThat(invoices(s)).singleElement().satisfies(i -> {
+            assertThat(i.getPeriodStart()).isEqualTo(LocalDate.of(2027, 1, 5));
+            assertThat(i.getPeriodEnd()).isEqualTo(LocalDate.of(2028, 1, 4));
+        });
+    }
+
+    /** Review Focus 4: oprit în luna a 3-a a anului, merge până la capătul anului plătit și nu se mai emite nimic. */
+    @Test
+    void stoppingInTheThirdMonthEndsAtTheYearEnd() throws Exception {
+        Company company = company();
+        Subscription s = annualFromTheFifth(company, 600);
+        billing.run(FIFTH);
+
+        mockMvc.perform(get("/api/v1/billing").header("Authorization", "Bearer " + token(admin(company))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.billingMonths").value(12));
+
+        assertThat(subscriptionService.cancelForCompany(company.getId(), LocalDate.of(2027, 1, 20)).endsOn())
+                .isEqualTo(LocalDate.of(2027, 11, 4));
+
+        billing.run(LocalDate.of(2027, 11, 5));
+        assertThat(invoices(s)).hasSize(1);
+        assertThat(subscriptionStatus(s)).isEqualTo(SubscriptionStatus.CANCELLED);
+    }
+
+    private Subscription monthlyFromTheFifth(Company company) {
+        Subscription s = subscription(company, true);
+        s.setStartedAt(FIFTH);
+        return subscriptionRepository.save(s);
+    }
+
+    private Subscription annualFromTheFifth(Company company, int pricePerYear) {
+        Subscription s = subscription(company, true);
+        s.setStartedAt(FIFTH);
+        s.setBillingMonths(12);
+        s.setMonthlyPrice(BigDecimal.valueOf(pricePerYear));
+        s.setImplementationFee(BigDecimal.ZERO);
+        s.setExtraWorkPointPrice(BigDecimal.ZERO);
+        return subscriptionRepository.save(s);
+    }
+
+    private static Map<String, Object> monthlyRequest() {
+        return new HashMap<>(Map.of("plan", "GENERATOR", "sizeTier", 2,
+                "startedAt", FIFTH.toString(), "billingCounty", "Cluj", "billingCity", "Cluj-Napoca",
+                "billingAddress", "Str. Memorandumului nr. 1"));
+    }
+
+    private static Map<String, Object> annualRequest(int pricePerYear) {
+        Map<String, Object> body = monthlyRequest();
+        body.put("billingMonths", 12);
+        body.put("monthlyPrice", pricePerYear);
+        return body;
+    }
+
+    private ResultActions save(Company company, Map<String, Object> body) throws Exception {
+        body.put("billingEmail", billingEmail(company));
+        return mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId())
+                .header("Authorization", "Bearer " + platformToken())
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

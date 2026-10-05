@@ -87,6 +87,8 @@ public enum ErrorMessageEnum {
     // Prețurile din 05.10.2026: generatorul are preț pe treaptă, serviciul complet preț la cerere.
     SUBSCRIPTION_SIZE_TIER_REQUIRED("subscription.size.tier.required", "Alegeți treapta după numărul de angajați."),
     SUBSCRIPTION_PRICE_REQUIRED("subscription.price.required", "Scrieți prețul lunar."),
+    // Annual billing (05.10.2026, ruling A3): the 12-month commitment belongs to monthly billing only.
+    SUBSCRIPTION_COMMITMENT_ANNUAL("subscription.commitment.annual", "Angajamentul de 12 luni nu se combină cu facturarea anuală."),
 
     // --- Utilizatorii firmei (P1.12) ---
     CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),

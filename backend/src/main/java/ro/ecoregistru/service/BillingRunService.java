@@ -293,6 +293,11 @@ public class BillingRunService {
         int reserved = 0;
         for (Subscription s : subscriptionRepository
                 .findAllByStatusNotAndStartedAtLessThanEqual(SubscriptionStatus.CANCELLED, today)) {
+            // A switch of the billing length: the periods before the anchor were invoiced under the old
+            // length, which is not stored, so nothing is reserved until the new length starts.
+            if (s.getPeriodAnchor() != null && today.isBefore(s.getPeriodAnchor())) {
+                continue;
+            }
             int period = BillingCalculator.periodOn(s, today);
             LocalDate periodStart = BillingCalculator.periodStart(s, period);
             // §9.3: a stopped subscription is billed up to its last day, never a period that starts after it.

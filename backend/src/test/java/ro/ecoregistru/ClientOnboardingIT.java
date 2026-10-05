@@ -192,6 +192,21 @@ class ClientOnboardingIT {
                 .andExpect(jsonPath("$.monthlyInvoice.lines[0].label", is("Generator")));
     }
 
+    /** Annual: the price written is per year, one line, and the next invoice a year later. */
+    @Test
+    void thePreviewOfAnAnnualPlanBillsTheYear() throws Exception {
+        preview(Map.of("plan", "GENERATOR", "sizeTier", 2, "billingMonths", 12, "monthlyPrice", 600,
+                "startedAt", "2026-10-05"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstInvoice.total").value(600))
+                .andExpect(jsonPath("$.firstInvoice.to", is("2027-10-04")))
+                .andExpect(jsonPath("$.firstInvoice.lines[0].label", is("Generator, abonament anual")))
+                .andExpect(jsonPath("$.monthlyInvoice.from", is("2027-10-05")));
+        preview(Map.of("plan", "GENERATOR", "sizeTier", 2, "billingMonths", 12, "startedAt", "2026-10-05"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("subscription.price.required")));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     private ResultActions onboard(String token, Map<String, Object> company, UUID requestId,

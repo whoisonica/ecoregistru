@@ -101,6 +101,23 @@ class ClientOverviewIT {
         assertThat(row.get("sizeTier")).isEqualTo(3);
         assertThat(((Number) row.get("monthlyPrice")).intValue()).isEqualTo(75);
         assertThat(row.get("customPrice")).isEqualTo(false);
+        assertThat(row.get("billingMonths")).isEqualTo(1);
+    }
+
+    /** Annual billing: the price shown is the price per year. */
+    @Test
+    void anAnnualSubscriptionShowsItsPricePerYear() throws Exception {
+        Company c = company(null);
+        mockMvc.perform(put("/api/v1/subscriptions/company/" + c.getId())
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"plan\":\"GENERATOR\",\"sizeTier\":2,\"billingMonths\":12,\"monthlyPrice\":600,"
+                                + "\"startedAt\":\"2026-10-01\"}"))
+                .andExpect(status().isOk());
+
+        Map<String, Object> row = rowOf(platformToken, c);
+        assertThat(row.get("billingMonths")).isEqualTo(12);
+        assertThat(((Number) row.get("monthlyPrice")).intValue()).isEqualTo(600);
     }
 
     @Test

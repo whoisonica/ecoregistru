@@ -328,6 +328,108 @@ class SubscriptionIT {
         assertThat(subscriptionRepository.existsByCompany_Id(company.getId())).isFalse();
     }
 
+    // ─── Plata anuală (05.10.2026) ───────────────────────────────────────────
+
+    /** Anual: prețul scris e pe an; o singură factură pe an, iar treapta rămâne salvată fără să dea prețul. */
+    @Test
+    void aNewAnnualSubscriptionBillsTheYear() throws Exception {
+        Company company = company(null);
+        workPoint(company, true);
+        workPoint(company, true);
+
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "billingMonths", 12, "monthlyPrice", 600,
+                "startedAt", "2026-10-05"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.billingMonths").value(12))
+                .andExpect(jsonPath("$.monthlyPrice").value(600))
+                .andExpect(jsonPath("$.sizeTier").value(2))
+                .andExpect(jsonPath("$.firstInvoice.from", is("2026-10-05")))
+                .andExpect(jsonPath("$.firstInvoice.to", is("2027-10-04")))
+                .andExpect(jsonPath("$.firstInvoice.total").value(600))
+                .andExpect(jsonPath("$.firstInvoice.lines.length()").value(1))
+                .andExpect(jsonPath("$.firstInvoice.lines[0].label", is("Generator, abonament anual")))
+                .andExpect(jsonPath("$.monthlyInvoice.from", is("2027-10-05")))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(600));
+    }
+
+    @Test
+    void annualWithoutAPriceIsRefused() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "billingMonths", 12, "startedAt", "2026-10-05"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("subscription.price.required")));
+        assertThat(subscriptionRepository.existsByCompany_Id(company.getId())).isFalse();
+    }
+
+    @Test
+    void billingMonthsOtherThanOneOrTwelveIsInvalid() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "billingMonths", 6, "monthlyPrice", 300,
+                "startedAt", "2026-10-05"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("bad-request")))
+                .andExpect(jsonPath("$.params[0].key", is("billingMonths")))
+                .andExpect(jsonPath("$['error-message']", containsString("Facturare:")));
+        assertThat(subscriptionRepository.existsByCompany_Id(company.getId())).isFalse();
+    }
+
+    /** Consultantul anual: un singur rând pe an, fără firmele gestionate; pornirea contului rămâne în prima factură. */
+    @Test
+    void annualWorksOnAConsultancy() throws Exception {
+        Consultancy consultancy = consultancy();
+        for (int i = 0; i < 12; i++) {
+            company(consultancy);
+        }
+
+        mockMvc.perform(put("/api/v1/subscriptions/consultancy/" + consultancy.getId()).with(platform())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(Map.of("plan", "CONSULTANCY", "billingMonths", 12, "monthlyPrice", 5000,
+                                "startedAt", "2026-10-05"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.billingMonths").value(12))
+                .andExpect(jsonPath("$.monthlyPrice").value(5000))
+                // A5: the account start fee stays on the first invoice.
+                .andExpect(jsonPath("$.firstInvoice.lines.length()").value(2))
+                .andExpect(jsonPath("$.firstInvoice.lines[1].label", is("Pornirea contului de consultant")))
+                .andExpect(jsonPath("$.monthlyInvoice.from", is("2027-10-05")))
+                .andExpect(jsonPath("$.monthlyInvoice.lines.length()").value(1))
+                .andExpect(jsonPath("$.monthlyInvoice.lines[0].label", is("Abonament de consultant, abonament anual")))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(5000));
+    }
+
+    /** Hotărârea A3: angajamentul de 12 luni nu se pune pe un abonament anual. */
+    @Test
+    void theCommitmentDoesNotCombineWithAnnualBilling() throws Exception {
+        Consultancy consultancy = consultancy();
+        mockMvc.perform(put("/api/v1/subscriptions/consultancy/" + consultancy.getId()).with(platform())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(Map.of("plan", "CONSULTANCY", "billingMonths", 12, "monthlyPrice", 5000,
+                                "twelveMonthCommitment", true, "startedAt", "2026-10-05"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("subscription.commitment.annual")));
+        assertThat(subscriptionRepository.findByConsultancy_Id(consultancy.getId())).isEmpty();
+    }
+
+    /** Un client vechi salvat dintr-un ecran care nu trimite câmpul: rămâne lunar și nu se recalculează nimic. */
+    @Test
+    void aMonthlySaveWithoutBillingMonthsStaysMonthly() throws Exception {
+        Company company = company(null);
+        oldGenerator(company, "2026-10-01");
+
+        save(company, Map.of("plan", "GENERATOR", "startedAt", "2026-10-01", "billingCity", "Oradea"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.billingMonths").value(1))
+                .andExpect(jsonPath("$.monthlyPrice").value(99))
+                .andExpect(jsonPath("$.implementationFee").value(290))
+                .andExpect(jsonPath("$.sizeTier", nullValue()))
+                .andExpect(jsonPath("$.monthlyInvoice.from", is("2026-11-01")))
+                .andExpect(jsonPath("$.monthlyInvoice.to", is("2026-11-30")));
+        Subscription s = subscriptionRepository.findByCompany_Id(company.getId()).orElseThrow();
+        assertThat(s.getBillingMonths()).isEqualTo(1);
+        assertThat(s.getPeriodAnchor()).isNull();
+        assertThat(s.getAnchorPeriod()).isZero();
+    }
+
     @Test
     void aClientWithoutASubscriptionAnswersNoContent() throws Exception {
         mockMvc.perform(get("/api/v1/subscriptions/company/" + company(null).getId()).with(platform()))
