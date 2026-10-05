@@ -22,11 +22,14 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate, todayIso } from "@/lib/utils";
 import { COUNTIES } from "@/lib/counties";
+import { SIZE_TIERS, type SizeTier } from "@/lib/sizeTier";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { PillGroup } from "@/components/ui/pill-group";
+import { Switch } from "@/components/ui/switch";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +90,9 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const isConsultancy = owner.kind === "consultancy";
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
   const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [sizeTier, setSizeTier] = useState<SizeTier | null>(null);
+  const [customPrice, setCustomPrice] = useState<boolean | null>(null);
+  const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
   const [founder, setFounder] = useState<boolean | null>(null);
   const [commitment, setCommitment] = useState<boolean | null>(null);
   const [billingEmail, setBillingEmail] = useState<string | null>(null);
@@ -94,8 +100,16 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const [billingCity, setBillingCity] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string | null>(null);
 
+  const currentPlan: SubscriptionPlan = plan ?? subscription?.plan ?? (isConsultancy ? "CONSULTANCY" : "GENERATOR");
+  // Trecerea unui abonament existent la Serviciu complet nu păstrează prețul vechi de generator: câmpul pornește gol.
+  const priceCarriesOver = subscription != null && (currentPlan !== "FULL_SERVICE" || subscription.plan === "FULL_SERVICE");
   const values = {
-    plan: plan ?? subscription?.plan ?? (isConsultancy ? "CONSULTANCY" : "GENERATOR"),
+    plan: currentPlan,
+    sizeTier: isConsultancy || currentPlan === "FULL_SERVICE" ? null : sizeTier ?? subscription?.sizeTier ?? null,
+    customPrice: isConsultancy ? false : customPrice ?? subscription?.customPrice ?? false,
+    monthlyPrice: monthlyPrice ?? (priceCarriesOver ? String(subscription.monthlyPrice) : ""),
+    // Abonament vechi: plan de firmă cu preț din grila veche, fără treaptă (R6).
+    legacy: subscription != null && subscription.plan !== "CONSULTANCY" && subscription.sizeTier == null && !subscription.customPrice,
     startedAt: startedAt ?? subscription?.startedAt ?? todayIso(),
     founder: founder ?? subscription?.founder ?? false,
     twelveMonthCommitment: commitment ?? subscription?.twelveMonthCommitment ?? false,
@@ -104,7 +118,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     billingCity: billingCity ?? subscription?.billingCity ?? "",
     billingAddress: billingAddress ?? subscription?.billingAddress ?? "",
   };
-  const setters = { setPlan, setStartedAt, setFounder, setCommitment, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
+  const setters = { setPlan, setSizeTier, setCustomPrice, setMonthlyPrice, setStartedAt, setFounder, setCommitment, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
   const busy = saveMut.isPending || deleteMut.isPending || cancelMut.isPending;
 
   async function save(e: FormEvent) {
@@ -112,11 +126,13 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     try {
       await saveMut.mutateAsync({
         plan: values.plan,
-        // Task 7 aduce treapta în dialog; până atunci o salvare păstrează ce are abonamentul.
-        sizeTier: subscription?.sizeTier ?? null,
-        customPrice: subscription?.customPrice ?? false,
+        sizeTier: values.sizeTier,
+        customPrice: values.customPrice,
+        // Prețul se trimite doar când e scris de mână sau la Serviciu complet; altfel îl calculează serverul din grilă.
         monthlyPrice:
-          subscription && (subscription.customPrice || values.plan === "FULL_SERVICE") ? subscription.monthlyPrice : null,
+          (values.customPrice || values.plan === "FULL_SERVICE") && Number.isFinite(parseFloat(values.monthlyPrice))
+            ? parseFloat(values.monthlyPrice)
+            : null,
         startedAt: values.startedAt,
         founder: values.founder,
         twelveMonthCommitment: values.twelveMonthCommitment,
@@ -135,6 +151,9 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     try {
       await deleteMut.mutateAsync();
       setPlan(null);
+      setSizeTier(null);
+      setCustomPrice(null);
+      setMonthlyPrice(null);
       setStartedAt(null);
       setFounder(null);
       setCommitment(null);
@@ -201,6 +220,7 @@ type Editor = ReturnType<typeof useSubscriptionEditor>;
 function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string }) {
   const { data: founderCount } = useFounderCount();
   const { isConsultancy, values, setters } = editor;
+  const isCompanyPlan = COMPANY_PLANS.includes(values.plan);
   return (
     <form id={formId} onSubmit={editor.save} className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -232,6 +252,44 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
         </div>
       </div>
 
+      {isCompanyPlan && (
+        <div className="space-y-3">
+          {values.plan !== "FULL_SERVICE" && (
+            <div>
+              <Label id="sub-tier-label">{t.sizeTier}</Label>
+              <PillGroup
+                name="sub-tier"
+                aria-labelledby="sub-tier-label"
+                options={SIZE_TIERS.map((x) => ({ value: String(x.tier), label: x.range }))}
+                selected={values.sizeTier == null ? [] : [String(values.sizeTier)]}
+                onToggle={(v) => setters.setSizeTier(Number(v) as SizeTier)}
+              />
+            </div>
+          )}
+          <Switch
+            id="sub-custom-price"
+            checked={values.customPrice}
+            onChange={setters.setCustomPrice}
+            label={t.customPrice}
+            description={values.legacy && values.customPrice ? t.customPriceLegacyHint : t.customPriceHint}
+          />
+          {(values.customPrice || values.plan === "FULL_SERVICE") && (
+            <div className="sm:max-w-xs">
+              <Label htmlFor="sub-price">{t.monthlyPrice}</Label>
+              <Input
+                id="sub-price"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={values.monthlyPrice}
+                onChange={(e) => setters.setMonthlyPrice(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {!isCompanyPlan && (
       <label className="flex items-start gap-2 text-sm text-content-strong">
         <input
           type="checkbox"
@@ -248,8 +306,9 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
           )}
         </span>
       </label>
+      )}
 
-      {values.plan !== "FULL_SERVICE" && (
+      {!isCompanyPlan && (
         <label className="flex items-start gap-2 text-sm text-content-strong">
           <input
             type="checkbox"
