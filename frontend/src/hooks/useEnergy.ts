@@ -119,5 +119,5 @@ export async function downloadEnergyDossier(year: number): Promise<void> {
 }
 
 export async function openEnergyReceipt(year: number): Promise<void> {
-  await openPdfInTab(() => fetchBlob("recipisa/continut", year), `recipisa-energie-${year}.pdf`);
+  await openPdfInTab(() => fetchBlob("recipisa/continut", year), `confirmare-energie-${year}.pdf`);
 }

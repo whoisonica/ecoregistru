@@ -25,7 +25,7 @@ const isPdf = (f: File) => f.type === "application/pdf" || f.name.toLowerCase().
 /**
  * Rândul de documente: butoane lipite, cu numele documentului și fără text dedesubt (ca pe tabul
  * „Ambalaje”). Peste prag, „Anexa 1” e stinsă, iar de ce stă în `Tooltip` lângă ea, nu în jurul ei.
- * „Încarcă recipisa” schimbă date, deci e `muted` și ultima dintre ele.
+ * „Încarcă confirmarea” schimbă date, deci e `muted` și ultima dintre ele.
  */
 export function EnergyDocuments({ sheet, canWrite }: { sheet: EnergySheet; canWrite: boolean }) {
   const [busy, setBusy] = useState<Doc | null>(null);
@@ -98,7 +98,7 @@ export function EnergyDocuments({ sheet, canWrite }: { sheet: EnergySheet; canWr
   );
 }
 
-/** „Încarcă recipisa”: un singur PDF, prin `FileDropzone`. */
+/** „Încarcă confirmarea”: un singur PDF, prin `FileDropzone`. */
 function ReceiptDialog({ year, open, onClose }: { year: number; open: boolean; onClose: () => void }) {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);

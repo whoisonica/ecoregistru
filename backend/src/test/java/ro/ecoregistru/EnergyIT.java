@@ -549,8 +549,8 @@ class EnergyIT {
         assertThat(entries.keySet()).containsExactly(
                 "Anexa 1 consum energie " + YEAR + ".xlsx",
                 "Declaratie energie " + YEAR + ".docx",
-                "Recipisa EfEnClima " + YEAR + ".pdf");
-        assertThat(entries.get("Recipisa EfEnClima " + YEAR + ".pdf")).isEqualTo(PDF);
+                "Confirmare depunere EfEnClima " + YEAR + ".pdf");
+        assertThat(entries.get("Confirmare depunere EfEnClima " + YEAR + ".pdf")).isEqualTo(PDF);
         assertThat(entries.get("Anexa 1 consum energie " + YEAR + ".xlsx")).startsWith((byte) 'P', (byte) 'K');
         assertThat(entries.get("Declaratie energie " + YEAR + ".docx")).startsWith((byte) 'P', (byte) 'K');
     }

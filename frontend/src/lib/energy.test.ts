@@ -59,7 +59,7 @@ test("starea anului: depusă, depusă cu recipisă, incompletă, nedepusă", () 
   // Fără termen bifat (30.06.2026 e doar calculat), recipisa e dovada — chiar și cu luni lipsă.
   assert.deepEqual(energyYearStatus(y({ receiptOn: "2026-06-20", hasReceipt: true, monthsComplete: 7 })), {
     tone: "success",
-    label: "Depusă (recipisă din 20.06.2026)",
+    label: "Depusă (confirmare din 20.06.2026)",
   });
   assert.deepEqual(energyYearStatus(y({ monthsComplete: 7 })), { tone: "warning", label: "Incompletă: 7 din 12 luni" });
   assert.deepEqual(energyYearStatus(y({})), { tone: "muted", label: "Nedepusă" });

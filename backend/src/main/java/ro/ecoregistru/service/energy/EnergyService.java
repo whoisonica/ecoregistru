@@ -343,7 +343,7 @@ public class EnergyService {
             }
             addEntry(zip, "Declaratie energie " + year + ".docx", declarationDocx(year));
             if (sheet.receipt() != null) {
-                addEntry(zip, "Recipisa EfEnClima " + year + ".pdf", receiptBytes(year));
+                addEntry(zip, "Confirmare depunere EfEnClima " + year + ".pdf", receiptBytes(year));
             }
         } catch (java.io.IOException e) {
             throw new java.io.UncheckedIOException(e);

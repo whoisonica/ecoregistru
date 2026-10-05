@@ -116,7 +116,7 @@ public class EnergyController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
-                        .filename(content.fileName() == null ? "recipisa.pdf" : content.fileName(),
+                        .filename(content.fileName() == null ? "confirmare.pdf" : content.fileName(),
                                 java.nio.charset.StandardCharsets.UTF_8).build().toString())
                 .body(content.bytes());
     }

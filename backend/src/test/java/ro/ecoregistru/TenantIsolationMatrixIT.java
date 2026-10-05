@@ -720,7 +720,7 @@ class TenantIsolationMatrixIT {
                 }
             }
             // Fără recipisă la A: Anexa şi Declaraţia, nicio recipisă (nici a lui B).
-            assertThat(names).as("dosar %d", y).hasSize(2).noneMatch(n -> n.startsWith("Recipisa"));
+            assertThat(names).as("dosar %d", y).hasSize(2).noneMatch(n -> n.startsWith("Confirmare"));
         }
 
         // (3) Recipisa lui B nu se deschide de la A, nici cu antetul lui B: 404, iar „Cloudinary” nu e întrebat.
