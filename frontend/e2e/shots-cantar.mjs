@@ -14,7 +14,7 @@ const SCREENS = [
   ["/termene", "termene"],
   ["/parteneri", "parteneri"],
   ["/setari", "setari"],
-  [`/termene/energie?an=${AN - 1}`, "energie"],
+  [`/energie?an=${AN - 1}`, "energie"],
   ["/dosar-control?tab=energie", "dosar-energie"],
 ];
 

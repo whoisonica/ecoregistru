@@ -47,8 +47,8 @@ check("din panou nu se adaugă nimic: niciun „+”, nicio tastă de adăugare"
 check("rândurile n-au iconiță cât panoul e lat", panel.icons === 0, String(panel.icons));
 check("meniul începe sus, sub firmă", panel.navTop < 140, panel.navTop + "px");
 // Cifrele merg în ordine, câte intrări are firma — 1…9, apoi 0 pentru a zecea. Firma asta are
-// nouă de pe 18.09.2026, de când „Ambalaje" e tab în „Generare" și a ieșit din meniu; a zecea
-// cifră se probează unde chiar există a zecea intrare, nu cerută pe de rost aici.
+// nouă de pe 18.09.2026, de când „Ambalaje" e tab în „Generare" și a ieșit din meniu, și zece de pe
+// 05.10.2026, de când „Energie" are intrare proprie; cifrele nu se cer pe de rost aici.
 check("meniul are cifrele în ordine, câte intrări are",
   panel.keys.slice(0, 10).join("") === "1234567890".slice(0, panel.items.length),
   `${panel.keys.join("")} pe ${panel.items.length} intrări`);

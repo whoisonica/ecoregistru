@@ -138,6 +138,9 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
   }
   main.push(
     { to: "/termene", label: strings.nav.deadlines, icon: CalendarClock, keywords: strings.nav.kwDeadlines, tabs: DEADLINE_TABS },
+    // Fișa de energie (Legea 121/2014, 30 iunie): intrare proprie din 05.10.2026, după Termene, unde
+    // stă și rândul declarației. Orice tip de firmă consumă energie, deci apare la toate.
+    { to: "/energie", label: strings.nav.energy, icon: Zap, keywords: strings.nav.kwEnergy },
     { to: "/dosar-control", label: strings.nav.auditFile, icon: FolderArchive, keywords: strings.nav.kwAuditFile, tabs: AUDIT_FILE_TABS },
     {
       to: "/parteneri",
@@ -191,8 +194,6 @@ export function buildNav(role: Role | undefined, companyType: CompanyType | unde
       keywords: strings.nav.kwPackaging,
     });
   }
-  // Fișa de energie: subpagină a Termenelor, fără intrare de meniu (Legea 121/2014, 30 iunie).
-  hidden.push({ to: "/termene/energie", label: strings.nav.energy, icon: Zap, keywords: strings.nav.kwEnergy });
   if (canImport(role)) {
     hidden.push({ to: "/import", label: strings.nav.importExcel, icon: FileUp, keywords: strings.nav.kwImport });
   }

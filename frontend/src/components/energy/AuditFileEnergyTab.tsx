@@ -54,7 +54,7 @@ export function AuditFileEnergyTab() {
         icon={Zap}
         title={t.dossierEmptyTitle}
         description={t.dossierEmptyDescription}
-        action={<LinkButton to="/termene/energie">{t.dossierEmptyAction}</LinkButton>}
+        action={<LinkButton to="/energie">{t.dossierEmptyAction}</LinkButton>}
       />
     );
   }
@@ -65,7 +65,7 @@ export function AuditFileEnergyTab() {
         return (
           <li key={y.year} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
             <Link
-              to={`/termene/energie?an=${y.year}`}
+              to={`/energie?an=${y.year}`}
               className="w-16 font-mono text-sm font-medium text-content-strong underline-offset-2 hover:underline"
             >
               {y.year}

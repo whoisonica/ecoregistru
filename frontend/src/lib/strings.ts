@@ -81,7 +81,7 @@ export const strings = {
       "adaugă mișcare predare generare intrare ieșire transport aviz cântar anexa 3 dovada predării cod R/D evidența gestiunii deșeurilor generate centralizată fișa de evidență anexa 1 HG 856/2002 totalul anului SIM 15 martie",
     kwPackaging:
       "anexa 1 ambalaje anexa 3 ambalaje Ordinul 794/2012 tabelul 1 tabelul 2 xls pus pe piață",
-    energy: "Fișa de energie",
+    energy: "Energie",
     kwEnergy: "energie curent gaze tep efenclima declarație consum",
     kwDeadlines: "scadențe termene 15 martie 25 februarie 25 ianuarie AFM SIM alerte",
     kwAuditFile: "arhivă inspector Garda de Mediu control dosar zip",
@@ -4845,7 +4845,7 @@ export const strings = {
     actionNewPartner: "Adaugă partener",
     actionNewPartnerKeywords: "client furnizor colector transportator firmă nouă",
   },
-  // Fișa de energie (Legea 121/2014; Anexa 1 sub 1000 tep) — ecranul /termene/energie și tabul „Energie”.
+  // Fișa de energie (Legea 121/2014; Anexa 1 sub 1000 tep) — ecranul /energie și tabul „Energie”.
   energy: {
     title: "Fișa de energie",
     viewMonths: "Luni",
@@ -4874,7 +4874,7 @@ export const strings = {
     nextActionNoCarriersHint: "O dată: bifați ce apare pe facturi.",
     nextActionMonthTitle: "Energia pe {month} nu e trecută",
     nextActionMonthHint: "De pe factura lunii, pentru declarația din 30 iunie.",
-    // Ecranul /termene/energie (Task 10).
+    // Ecranul /energie (Task 10).
     description: "De pe facturi, lună cu lună. Declarația anului se depune până pe 30 iunie.",
     yearLabel: "Anul declarat",
     viewLabel: "Ce arată fișa",

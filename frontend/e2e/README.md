@@ -1,15 +1,17 @@
-⚡ **04.10.2026 — proba 60 (`60-energie.mjs`), declarația anuală de energie (Legea 121/2014, Anexa 1 sub 1000 tep)**: pe `/termene/energie?an=<AN-1>`
+⚡ **04.10.2026 — proba 60 (`60-energie.mjs`), declarația anuală de energie (Legea 121/2014, Anexa 1 sub 1000 tep)**: pe `/energie?an=<AN-1>`
 se bifează „Energie electrică” și „Cărbune” (tabelul are 2 rânduri), curentul 12 × 10 dă „Total an” 120,000, cărbunele fără tep în ianuarie arată „?”
 (și linia de total la fel), cu tep pe toate lunile „?” dispare; pe Termene rândul „Declarația de consum de energie” al anului declarat spune
-„din 12 luni completate” și duce la `/termene/energie?an=<AN>`; „Anexa 1” descarcă `.xlsx`, „Declarația” `.docx`; peste 1000 tep „Anexa 1” e stinsă și
+„din 12 luni completate” și duce la `/energie?an=<AN>`; „Anexa 1” descarcă `.xlsx`, „Declarația” `.docx`; peste 1000 tep „Anexa 1” e stinsă și
 avertismentul se vede; `/dosar-control?tab=energie` arată anul, iar tabul implicit are tot 7 rânduri; Acasă, după „+ încă N”, are „Energia pe …” ca ultimă
 acțiune (în ianuarie se sare, fiindcă luna trecută e decembrie, completă); 1440×900 fără derulare în `main#continut`, 375px fără derulare laterală.
 Din 05.10.2026 (rubricile sunt ale anului, decizia F3): pe `<AN>` se bifează și „Gaze naturale” (3 rânduri), iar fișa din `<AN-1>` rămâne cu 2;
 consola iartă numai un 401 la `POST /auth/login`, nu orice 4xx.
+Din 05.10.2026 (energia are intrare proprie în meniu): meniul are `/energie` imediat după `/termene`, clicul pe ea deschide fișa, iar vechea
+adresă `/termene/energie?an=<AN-1>` ajunge la `/energie?an=<AN-1>`.
 AN vine din ceas. Intră în `run.mjs`. Se curăță singură la rulare următoare (golește cifrele înainte să le scrie). ⚠️ Lasă în urmă: rubricile
 „Energie electrică” și „Cărbune” și cele 12 luni ale lor (curent 10, cărbune 1 cu tep 0,5), anul <AN-1>, iar pe anul <AN> rubricile „Energie
 electrică”, „Cărbune” și „Gaze naturale”, fără luni, pe firma demo.
-**Negativă:** cu ruta `/termene/energie` scoasă din `App.tsx` cade prima verificare („fișa se deschide cu titlul anului”), iar proba se oprește la
+**Negativă:** cu ruta fișei scoasă din `App.tsx` cade prima verificare („fișa se deschide cu titlul anului”), iar proba se oprește la
 următorul pas cu `TimeoutError` (cod 1) — rulat pe 04.10.2026.
 
 ⚖️ **30.09.2026 — proba 59 (`59-cantitate-kg.mjs`), cantitatea fără „,000” la kilograme (proprietarul)**: pe formularul „Adaugă deșeuri”

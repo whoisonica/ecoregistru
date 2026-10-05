@@ -53,6 +53,11 @@ function AppShell({
   );
 }
 
+function RedirectKeepingQuery({ to }: { to: string }) {
+  const { search } = useLocation();
+  return <Navigate to={to + search} replace />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -87,7 +92,9 @@ export default function App() {
           <Route path="/evidente" element={<AppShell><EvidencesRedirect /></AppShell>} />
           <Route path="/parteneri" element={<AppShell><PartnersPage /></AppShell>} />
           <Route path="/termene" element={<AppShell><DeadlinesPage /></AppShell>} />
-          <Route path="/termene/energie" element={<AppShell><EnergyPage /></AppShell>} />
+          <Route path="/energie" element={<AppShell><EnergyPage /></AppShell>} />
+          {/* Adresa de până pe 05.10.2026, când fișa era subpagina Termenelor; `?an=` merge mai departe. */}
+          <Route path="/termene/energie" element={<RedirectKeepingQuery to="/energie" />} />
           <Route path="/ambalaje" element={<AppShell><PackagingPage /></AppShell>} />
           <Route path="/dosar-control" element={<AppShell><AuditFilePage /></AppShell>} />
           {/* Singurul ecran de sub `AppShell` care **nu** e al unei firme: e chiar cel din care

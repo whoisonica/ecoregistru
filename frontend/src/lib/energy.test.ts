@@ -29,7 +29,7 @@ test("fără rubrici, acțiunea cere rubricile", () => {
   const a = energyAction(sheet({}), new Date(2026, 9, 4));
   assert.equal(a?.title, "Spuneți ce energie folosește firma");
   assert.equal(a?.hint, "O dată: bifați ce apare pe facturi.");
-  assert.equal(a?.to, "/termene/energie?an=2026");
+  assert.equal(a?.to, "/energie?an=2026");
   assert.equal(a?.cta, "Fișa de energie");
   assert.equal(a?.tone, "warning");
 });
@@ -69,7 +69,7 @@ test("în ianuarie, pe fișa anului trecut, lipsește decembrie", () => {
   const s = sheet({ year: 2026, carriers: ["ELECTRICITY"], cells: [cell("ELECTRICITY", 11, 5)] });
   const a = energyAction(s, new Date(2027, 0, 12));
   assert.equal(a?.title, "Energia pe decembrie nu e trecută");
-  assert.equal(a?.to, "/termene/energie?an=2026");
+  assert.equal(a?.to, "/energie?an=2026");
   const full = sheet({ year: 2026, carriers: ["ELECTRICITY"], cells: [cell("ELECTRICITY", 12, 5)] });
   assert.equal(energyAction(full, new Date(2027, 0, 12)), null);
 });

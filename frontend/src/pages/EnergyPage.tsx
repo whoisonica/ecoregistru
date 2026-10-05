@@ -22,9 +22,9 @@ const FIRST_YEAR = 2020;
 type View = "" | "efenclima";
 
 /**
- * Fișa de energie — `/termene/energie?an=YYYY` (Legea 121/2014, Anexa 1 sub 1000 tep). Subpagină
- * fără intrare de meniu, găsită din Ctrl K și din rândul de pe Termene. Anul implicit e cel trecut:
- * în iunie se declară anul de dinainte.
+ * Fișa de energie — `/energie?an=YYYY` (Legea 121/2014, Anexa 1 sub 1000 tep). Intrare proprie în
+ * meniu, după Termene (05.10.2026); se ajunge și din rândul de pe Termene și din Ctrl K. Anul
+ * implicit e cel trecut: în iunie se declară anul de dinainte.
  */
 export function EnergyPage() {
   const thisYear = new Date().getFullYear();

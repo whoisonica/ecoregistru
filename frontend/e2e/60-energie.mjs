@@ -1,12 +1,14 @@
 // Proba 60: declarația anuală de energie (Legea 121/2014, Anexa 1 sub 1000 tep) — fișa, Termene, dosarul, Acasă.
 //
-// Ce se poate strica: (1) /termene/energie nu se deschide sau rubricile bifate nu apar ca rânduri; (2) „Total an” la
+// Ce se poate strica: (1) /energie nu se deschide sau rubricile bifate nu apar ca rânduri; (2) „Total an” la
 // curent nu e suma lunilor sau cărbunele fără tep nu arată „?”; (3) cu tep pe toate lunile, totalul păstrează „?”, sau
 // rândul de pe Termene nu spune „din 12 luni completate” / nu duce la fișa anului; (4) Anexa 1 / Declarația nu
 // descarcă .xlsx / .docx; (5) peste 1000 tep Anexa 1 rămâne activă sau avertismentul lipsește; (6) dosarul de control
 // n-are tabul „Energie” cu anul, sau tabul implicit pierde un rând din „Ce intră în arhivă”; (7) Acasă nu amintește
 // luna netrecută; (8) fișa derulează pe pagină la 1440×900 sau lateral la 375px; (1b) o rubrică bifată pe anul AN
 // schimbă și fișa din AN-1 (rubricile sunt ale anului, decizia F3 din 05.10.2026).
+// (0) din 05.10.2026: meniul n-are intrarea „Energie” imediat după „Termene”, sau vechea adresă /termene/energie?an=
+// nu mai duce la fișă cu anul păstrat.
 // Date-robustă: AN vine din ceas; documentele se completează pe AN-1; Termene se verifică pe termenul viitor (anul AN).
 // ⚠️ Lasă în urmă: pe firma demo, rubricile „Energie electrică” și „Cărbune” și cele douăsprezece luni ale lor pe anul
 // AN-1 (curent 10, cărbune 1 cu tep 0,5), iar pe anul AN rubricile „Energie electrică”, „Cărbune” și „Gaze naturale”,
@@ -49,7 +51,7 @@ const dialog = () => page.locator('[role="dialog"]');
 
 /** Bifează pe fișa anului `year` exact rubricile din `names` (prin card sau prin „Schimbă rubricile”) și salvează. */
 async function pickCarriers(year, names) {
-  await page.goto(BASE + `/termene/energie?an=${year}`, { waitUntil: "networkidle" });
+  await page.goto(BASE + `/energie?an=${year}`, { waitUntil: "networkidle" });
   await page.waitForTimeout(600);
   const hasSheet = (await page.getByRole("button", { name: "Schimbă rubricile" }).count()) > 0;
   if (hasSheet) {
@@ -73,8 +75,21 @@ async function pickCarriers(year, names) {
 
 await login(page, "admin");
 
-// (1) Rubricile: exact „Energie electrică” și „Cărbune”.
+// (0) Intrarea din meniu și vechea adresă.
+const meniu = await page.evaluate(() =>
+  [...document.querySelectorAll('#navigatie-principala nav a[data-nav="row"]')].map((a) => a.getAttribute("href"))
+);
+check("meniul are „Energie” imediat după „Termene”", meniu.indexOf("/energie") === meniu.indexOf("/termene") + 1 && meniu.includes("/termene"),
+  meniu.join(" "));
+await page.click('#navigatie-principala nav a[data-nav="row"][href="/energie"]');
+await page.waitForURL((u) => u.pathname === "/energie", { timeout: 5000 }).catch(() => {});
+check("intrarea din meniu deschide fișa", new URL(page.url()).pathname === "/energie", page.url());
 await page.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
+check("vechea adresă duce la /energie cu anul păstrat", new URL(page.url()).pathname === "/energie" && new URL(page.url()).searchParams.get("an") === String(Y),
+  page.url());
+
+// (1) Rubricile: exact „Energie electrică” și „Cărbune”.
+await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 check("fișa se deschide cu titlul anului", (await page.locator("h1").innerText()).includes(`Fișa de energie · ${Y}`));
 await pickCarriers(Y, [ELEC, COAL]);
@@ -85,7 +100,7 @@ check("rândurile sunt curentul și cărbunele", (await rowOf(page, ELEC).count(
 await pickCarriers(AN, [ELEC, COAL, GAS]);
 check(`pe ${AN}: 3 rânduri, cu gazele`, (await page.locator("tbody tr").count()) === 3 && (await rowOf(page, GAS).count()) === 1,
   String(await page.locator("tbody tr").count()));
-await page.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
+await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 check(`pe ${Y}: tot 2 rânduri, fără gaze`, (await page.locator("tbody tr").count()) === 2 && (await rowOf(page, GAS).count()) === 0,
   String(await page.locator("tbody tr").count()));
@@ -116,19 +131,19 @@ const energyRows = page.locator('[data-testid="deadlines-todo"] tbody tr', { has
 let found = null;
 for (let i = 0; i < (await energyRows.count()); i++) {
   const r = energyRows.nth(i);
-  if ((await r.locator(`a[href="/termene/energie?an=${AN}"]`).count()) > 0) found = r;
+  if ((await r.locator(`a[href="/energie?an=${AN}"]`).count()) > 0) found = r;
 }
 check(`rândul de energie al anului ${AN} are linkul „Fișa de energie”`, found !== null);
 if (found) {
   const text = (await found.innerText()).replace(/\s+/g, " ");
   check("rândul spune „din 12 luni completate”", /\d+ din 12 luni completate/.test(text), text);
   check("linkul se cheamă „Fișa de energie”",
-    (await found.locator(`a[href="/termene/energie?an=${AN}"]`).first().innerText()).includes("Fișa de energie"));
+    (await found.locator(`a[href="/energie?an=${AN}"]`).first().innerText()).includes("Fișa de energie"));
 }
 await shot(page, "60-energie-termene");
 
 // (4) Documentele.
-await page.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
+await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(600);
 const annex = page.getByRole("button", { name: "Anexa 1", exact: true });
 check("Anexa 1 e activă sub prag", await annex.isEnabled());
@@ -183,7 +198,7 @@ if (new Date().getMonth() === 0) {
 await shot(page, "60-energie-acasa");
 
 // (8) Derularea.
-await page.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
+await page.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 const over = await page.evaluate(() => {
   const m = document.querySelector("main#continut");
@@ -192,7 +207,7 @@ const over = await page.evaluate(() => {
 check("1440×900: main#continut fără derulare", over <= 1, `${over}px`);
 const tel = await newPage(browser, { width: 375, height: 800 });
 await login(tel, "admin");
-await tel.goto(BASE + `/termene/energie?an=${Y}`, { waitUntil: "networkidle" });
+await tel.goto(BASE + `/energie?an=${Y}`, { waitUntil: "networkidle" });
 await tel.waitForTimeout(800);
 const lat = await tel.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 check("375px fără derulare laterală", lat <= 0, `${lat}px`);

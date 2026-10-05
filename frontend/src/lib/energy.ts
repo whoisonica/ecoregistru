@@ -47,7 +47,7 @@ export type EnergyAction = { tone: "warning"; title: string; hint: string; to: s
  */
 export function energyAction(sheet: EnergySheet | undefined, today: Date): EnergyAction | null {
   if (!sheet) return null;
-  const to = `/termene/energie?an=${sheet.year}`;
+  const to = `/energie?an=${sheet.year}`;
   const cta = strings.energy.title;
   if (sheet.carriers.length === 0) {
     return {

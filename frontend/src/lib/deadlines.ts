@@ -89,7 +89,7 @@ export function documentFor(d: Deadline): { to: string; label: string } | null {
     };
   }
   if (d.reportType === "ENERGY_ANNUAL") {
-    return { to: `/termene/energie?an=${reported}`, label: strings.deadlines.documentEnergy };
+    return { to: `/energie?an=${reported}`, label: strings.deadlines.documentEnergy };
   }
   return null;
 }

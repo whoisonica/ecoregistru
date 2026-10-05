@@ -108,7 +108,7 @@ test("sub un termen propriu: repetarea și detaliile; „o dată” nu se scrie"
 
 test("energia: documentul e fișa anului raportat, iar nota spune unde se depune", () => {
   const d = deadline({ reportType: "ENERGY_ANNUAL", dueDate: "2027-06-30" });
-  assert.equal(documentFor(d)?.to, "/termene/energie?an=2026");
+  assert.equal(documentFor(d)?.to, "/energie?an=2026");
   assert.equal(documentFor(d)?.label, "Fișa de energie");
   assert.equal(noteFor(d), "Se depune pe EfEnClima.ro, la Ministerul Energiei.");
 });
