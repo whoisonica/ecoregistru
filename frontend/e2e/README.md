@@ -1,3 +1,18 @@
+💰 **05.10.2026 — grila pe trepte de angajați (V83): probele 6, 29, 30, 31, 33, 36 aduse la zi**. Generatorul costă după treaptă
+(„0–2” 35, „3–9” 50, „10–19” 75, „20–39” 100, „40+” 149; cu ambalaje +15/+20/+25/+30/+50), fără implementare, iar serverul cere treapta
+(422 fără ea). Ce verifică fiecare acum: **31** — cererea din API vine cu `sizeTier: 2`; pe pasul 3 treapta „3–9” e aleasă din cerere,
+cardurile arată 50 și 70 și „Preț la cerere” la serviciul complet, prima factură „Total 50 lei” fără „Implementare”; „Preț personalizat”
+cu 42 dă „Total 42 lei”, stins revine la 50; rezumatul spune „Abonament Generator, treapta 2, prima factură 50 lei”, iar abonamentul creat
+e pe treapta 2, 50 lei, nepersonalizat. **29** — abonamentul se pune cu `sizeTier: 2`, facturile scrise cu `psql` au rândul
+„Generator, treapta 2 (3–9 angajați)” cu `unitPrice` 50. **30** — rândul clientului spune „Generator · treapta 2 · 50 lei”. **33** — capul
+paginii spune „Așteaptă prima plată · Generator · treapta 2 · 50 lei”, iar salvarea panoului (doar orașul schimbat) păstrează treapta 2 și
+50 lei. **36** — abonamentul se pune cu `sizeTier: 2` (restul neschimbat). **6** — pe `/cerere-cont` pasul 1 gol marchează 5 (treapta
+„Câți angajați aveți?” e obligatorie, marcată o singură dată) și are 5 erori; proba apasă „3–9” înainte de „Continuă”.
+Rulate pe o stivă proprie (backend :8081 pe `eco_demo_preturi`, copie a `eco_demo_energie`; Vite :5174; `E2E_DB=eco_demo_preturi`).
+**Negativă:** fără `sizeTier` în cererea din proba 31 vine 422 chiar la „cererea publică e primită”, iar proba se oprește la „Creează contul”
+(`TimeoutError`); cu `sizeTier` scos din previzualizarea paginii „Client nou” (`NewClientPage.tsx`, schimbare de probă, pusă la loc) vine
+422 la `/subscriptions/preview` și cad „Total 50 lei”, „Total 42 lei” și revenirea la 50 (3 căderi).
+
 ⚡ **04.10.2026 — proba 60 (`60-energie.mjs`), declarația anuală de energie (Legea 121/2014, Anexa 1 sub 1000 tep)**: pe `/energie?an=<AN-1>`
 se bifează „Energie electrică” și „Cărbune” (tabelul are 2 rânduri), curentul 12 × 10 dă „Total an” 120,000, cărbunele fără tep în ianuarie arată „?”
 (și linia de total la fel), cu tep pe toate lunile „?” dispare; pe Termene rândul „Declarația de consum de energie” al anului declarat spune

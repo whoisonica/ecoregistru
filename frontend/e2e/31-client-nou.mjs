@@ -2,7 +2,8 @@
 //
 // Ce se poate strica: (1) „Creează contul” pe o cerere încă face firma pe loc, fără pași; (2) răspunsurile cererii nu
 // ajung în pași; (3) pasul 1 trece fără CUI valid; (4) abonamentul pleacă fără adresa pe care FGO o cere; (5) prima
-// factură nu se arată sau nu e cea din grilă; (6) la final lipsește abonamentul sau invitația, sau cererea rămâne nouă;
+// factură nu se arată sau nu e cea din grilă (din 05.10.2026 pe trepte: treapta 2 din cerere, 50 lei, fără implementare;
+// prețul personalizat o înlocuiește); (6) la final lipsește abonamentul sau invitația, sau cererea rămâne nouă;
 // (7) o invitație refuzată lasă totuși firma în urmă; (8) tasta N nu duce la pagina nouă; (9) la 375px pagina iese din
 // ecran; (10) administratorul unei firme poate crea clienți.
 //
@@ -51,7 +52,7 @@ await login(page, "platform");
 const submitted = await api(page, "POST", "/api/v1/account-requests", {
   companyName: NAME, cui: CUI, companyType: "GENERATOR", companyAddress: "Str. Probei nr. 31",
   workPointName: "Sediu", workPointAddress: "Str. Probei nr. 31", contactName: "Ana Proba", contactEmail: CONTACT,
-  marketRoles: [], operationCodes: [],
+  marketRoles: [], operationCodes: [], sizeTier: 2,
 });
 check("cererea publică e primită", submitted.status === 202, String(submitted.status));
 
@@ -93,12 +94,25 @@ await page.waitForTimeout(1200);
 
 // ---------------------------------------------------------------- (4)(5) abonamentul
 const step3 = await text();
-check("pachetele au prețul din grilă", step3.includes("99") && step3.includes("149"), "");
-check("prima factură: 99 + 290 = 389 lei", /Total\s*389 lei/.test(step3), step3.match(/Total[^N]*/)?.[0]);
+check("treapta 2 („3–9”) vine aleasă din cerere", await page.locator('input[name="nc-tier"][value="2"]').isChecked());
+const cardPrice = async (value) => ((await card("nc-plan", value).locator(".font-mono").first().textContent().catch(() => "")) ?? "").trim();
+check("cardurile au prețul treptei: 50 și 70", /^50\b/.test(await cardPrice("GENERATOR")) && /^70\b/.test(await cardPrice("GENERATOR_PACKAGING")),
+  `${await cardPrice("GENERATOR")} / ${await cardPrice("GENERATOR_PACKAGING")}`);
+check("serviciul complet: „Preț la cerere”", ((await card("nc-plan", "FULL_SERVICE").textContent()) ?? "").includes("Preț la cerere"));
+check("prima factură: 50 lei, fără implementare", /Total\s*50 lei/.test(step3) && !step3.includes("Implementare"), step3.match(/Total[^N]*/)?.[0]);
 check("adresa firmei vine de la pasul 1", step3.includes("Str. Probei nr. 31, Sântandrei, Bihor"));
 check("email pentru facturi din cerere", (await page.inputValue("#nc-billing-email")) === CONTACT);
 check("toate verificările bifate", (await page.locator('[data-testid="new-client-checks"] li[data-ok="true"]').count()) === 3);
 await shot(page, "31_pas3");
+
+// Prețul personalizat: 42 scris de mână înlocuiește grila; stins, revine prețul treptei.
+await page.locator('label[for="nc-custom-price"]').click();
+await page.fill("#nc-price", "42");
+await page.waitForTimeout(1200);
+check("„Preț personalizat” 42: prima factură 42 lei", /Total\s*42 lei/.test(await text()), (await text()).match(/Total[^N]*/)?.[0]);
+await page.locator('label[for="nc-custom-price"]').click();
+await page.waitForTimeout(1200);
+check("comutatorul stins: înapoi la 50 lei", /Total\s*50 lei/.test(await text()), (await text()).match(/Total[^N]*/)?.[0]);
 
 // Adresa ștearsă de la pasul 1 → abonamentul nu mai trece.
 await page.locator("nav ol li button").first().click();
@@ -121,7 +135,7 @@ await button("Creează clientul").click();
 await page.waitForSelector('[data-testid="new-client-done"]', { timeout: 10000 }).catch(() => {});
 const done = await text();
 check("rezumat: firma e gata", done.includes(`${NAME} e gata`));
-check("rezumat: abonament și prima factură", done.includes("Abonament Generator, prima factură 389 lei"));
+check("rezumat: abonament și prima factură", done.includes("Abonament Generator, treapta 2, prima factură 50 lei"));
 // Fără SMTP (CI), contul se creează dar mailul nu pleacă: rezumatul spune atunci „n-a putut fi trimis”.
 // Oricare din cele două, dar cu emailul în el — „Nimeni invitat încă.” tot cade.
 check(
@@ -136,6 +150,8 @@ check("firma există", !!created);
 if (created) {
   const sub = await api(page, "GET", `/api/v1/subscriptions/company/${created.id}`);
   check("abonamentul are adresa aleasă", sub.json?.billingCounty === "Bihor" && sub.json?.billingCity === "Oradea", JSON.stringify(sub.json?.billingCity));
+  check("abonamentul e pe treapta 2, 50 lei, din grilă", sub.json?.sizeTier === 2 && Number(sub.json?.monthlyPrice) === 50 && sub.json?.customPrice === false,
+    `${sub.json?.sizeTier} / ${sub.json?.monthlyPrice} / ${sub.json?.customPrice}`);
   const overview = await api(page, "GET", "/api/v1/companies/overview");
   const mine = (overview.json ?? []).find((o) => o.companyId === created.id);
   check("un utilizator invitat", mine?.userCount === 1, String(mine?.userCount));

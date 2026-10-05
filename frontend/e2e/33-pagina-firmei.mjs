@@ -54,7 +54,7 @@ const created = await api("POST", "/api/v1/companies", { name: NAME, cui: validC
 check("firma creată", created.status === 200, String(created.status));
 const id = created.json?.id;
 const sub = await api("PUT", `/api/v1/subscriptions/company/${id}`, {
-  plan: "GENERATOR", startedAt: "2026-08-17", founder: false, billingEmail: `facturi+${RUN}@proba.ro`,
+  plan: "GENERATOR", sizeTier: 2, startedAt: "2026-08-17", founder: false, billingEmail: `facturi+${RUN}@proba.ro`,
   billingCounty: "Cluj", billingCity: "Cluj-Napoca", billingAddress: "Str. Probei nr. 33",
 });
 check("abonamentul", sub.status === 200, String(sub.status));
@@ -83,7 +83,7 @@ check("„Deschide” duce la /clienti/:id", new URL(page.url()).pathname === `/
 check("titlul e numele firmei", (await page.textContent("h1"))?.trim() === NAME);
 await page.waitForTimeout(800);
 const status = (await page.textContent('[data-testid="company-status"]')) ?? "";
-check("starea: abonamentul și 1 utilizator", /Așteaptă prima plată · Generator · 99 lei/.test(status) && /1 utilizator/.test(status), status);
+check("starea: abonamentul și 1 utilizator", /Așteaptă prima plată · Generator · treapta 2 · 50 lei/.test(status) && /1 utilizator/.test(status), status);
 
 // ---------------------------------------------------------------- (2) taburile
 const tabNames = await page.$$eval('[role="tab"]', (ts) => ts.map((x) => x.textContent.replace(/\d+$/, "").trim()));
@@ -160,6 +160,9 @@ await page.locator('button[form="subscription-form"]').click();
 await page.waitForTimeout(1200);
 const subAfter = await api("GET", `/api/v1/subscriptions/company/${id}`);
 check("salvarea abonamentului de pe pagină", subAfter.json?.billingCity === "Florești", subAfter.json?.billingCity);
+// Salvarea fără schimbare de pachet, treaptă sau preț nu mută prețul (grila pe trepte, 05.10.2026).
+check("salvarea păstrează treapta 2 și 50 lei", subAfter.json?.sizeTier === 2 && Number(subAfter.json?.monthlyPrice) === 50 && subAfter.json?.customPrice === false,
+  `${subAfter.json?.sizeTier} / ${subAfter.json?.monthlyPrice} / ${subAfter.json?.customPrice}`);
 await shot(page, "33-firma-abonament-1440");
 
 // ---------------------------------------------------------------- (6) invitația din cap și tasta N

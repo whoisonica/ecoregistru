@@ -59,7 +59,7 @@ const created = await api("POST", "/api/v1/companies", { name: NAME, cui: validC
 check("firma creată", created.status === 200, String(created.status));
 const id = created.json?.id;
 const sub = await api("PUT", `/api/v1/subscriptions/company/${id}`, {
-  plan: "GENERATOR", startedAt: "2026-08-17", founder: false, billingEmail: `facturi+${RUN}@proba.ro`,
+  plan: "GENERATOR", sizeTier: 2, startedAt: "2026-08-17", founder: false, billingEmail: `facturi+${RUN}@proba.ro`,
   billingCounty: "Cluj", billingCity: "Cluj-Napoca", billingAddress: "Str. Probei nr. 36",
 });
 check("abonamentul", sub.status === 200, String(sub.status));

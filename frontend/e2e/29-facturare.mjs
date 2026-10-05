@@ -52,26 +52,27 @@ for (const [key, name, withAddress] of [["a", A, true], ["b", B, false]]) {
   check(`firma ${key.toUpperCase()} creată`, created.status === 200, String(created.status));
   ids[key] = created.json?.id;
   const sub = await api("PUT", `/api/v1/subscriptions/company/${ids[key]}`, {
-    plan: "GENERATOR", startedAt: "2026-07-17", founder: false, billingEmail: `facturi+${RUN}${key}@proba.ro`,
+    plan: "GENERATOR", sizeTier: 2, startedAt: "2026-07-17", founder: false, billingEmail: `facturi+${RUN}${key}@proba.ro`,
     ...(withAddress ? { billingCounty: "Cluj", billingCity: "Cluj-Napoca", billingAddress: "Str. Probei nr. 29" } : {}),
   });
   check(`abonamentul lui ${key.toUpperCase()}`, sub.status === 200, String(sub.status));
   ids[key + "Sub"] = sub.json?.id;
 }
 const now = "now()";
-const lines = `'[{"label":"Abonament Generator","quantity":1,"unitPrice":99,"amount":99}]'`;
+// Din 05.10.2026 (grila pe trepte) factura are rândul treptei, fără implementare: prima e tot 50.
+const lines = `'[{"label":"Generator, treapta 2 (3–9 angajați)","quantity":1,"unitPrice":50,"amount":50}]'`;
 const paidId = sql(`insert into subscription_invoices (id, subscription_id, period_start, period_end, total, lines_json, status, due_date, fgo_serie, fgo_numar, amount_paid, issued_at, paid_at, paid_by, created_at, payment_checked_at)
-  values (gen_random_uuid(), '${ids.aSub}', '2026-07-17', '2026-08-16', 389, ${lines}, 'PAID', '2026-07-27', 'WH', '9${RUN.slice(-3)}1', 389, ${now}, ${now}, 'TRANSFER', ${now} - interval '2 day', ${now}) returning id`);
+  values (gen_random_uuid(), '${ids.aSub}', '2026-07-17', '2026-08-16', 50, ${lines}, 'PAID', '2026-07-27', 'WH', '9${RUN.slice(-3)}1', 50, ${now}, ${now}, 'TRANSFER', ${now} - interval '2 day', ${now}) returning id`);
 const overdueId = sql(`insert into subscription_invoices (id, subscription_id, period_start, period_end, total, lines_json, status, due_date, fgo_serie, fgo_numar, issued_at, created_at)
-  values (gen_random_uuid(), '${ids.aSub}', '2026-08-17', '2026-09-16', 99, ${lines}, 'ISSUED', '2026-08-27', 'WH', '9${RUN.slice(-3)}2', ${now}, ${now} - interval '1 day') returning id`);
+  values (gen_random_uuid(), '${ids.aSub}', '2026-08-17', '2026-09-16', 50, ${lines}, 'ISSUED', '2026-08-27', 'WH', '9${RUN.slice(-3)}2', ${now}, ${now} - interval '1 day') returning id`);
 const reason = "CUI-ul „RO0” nu e valid: FGO nu-l acceptă. Corectează CUI-ul în fișa firmei.";
 const failedId = sql(`insert into subscription_invoices (id, subscription_id, period_start, period_end, total, lines_json, status, last_error, created_at)
-  values (gen_random_uuid(), '${ids.bSub}', '2026-07-17', '2026-08-16', 389, ${lines}, 'DRAFT', '${reason}', ${now}) returning id`);
+  values (gen_random_uuid(), '${ids.bSub}', '2026-07-17', '2026-08-16', 50, ${lines}, 'DRAFT', '${reason}', ${now}) returning id`);
 const result = {
   configured: true, reserved: 0, issued: 0, failed: 1, paid: 1,
   failures: [{ invoiceId: failedId, owner: { kind: "company", id: ids.b }, client: B, reason }],
   notStarted: [], issuedInvoices: [],
-  paidInvoices: [{ invoiceId: paidId, client: A, number: `WH 9${RUN.slice(-3)}1`, total: 389 }],
+  paidInvoices: [{ invoiceId: paidId, client: A, number: `WH 9${RUN.slice(-3)}1`, total: 50 }],
 };
 sql(`insert into billing_runs (id, started_at, finished_at, kind, result_json) values (gen_random_uuid(), now() + interval '1 hour', now() + interval '1 hour', 'MANUAL', '${JSON.stringify(result)}')`);
 check("facturile și rularea scrise în bază", [paidId, overdueId, failedId].every((id) => /^[0-9a-f-]{36}$/.test(id)));
@@ -137,8 +138,8 @@ check("luna stă în adresă", /luna=2026-08/.test(page.url()), page.url());
 await page.selectOption('select[aria-label="Luna perioadei"]', "");
 // 55 de plătite în plus pe A: pagina are 50, a doua restul.
 sql(`insert into subscription_invoices (id, subscription_id, period_start, period_end, total, lines_json, status, due_date, fgo_serie, fgo_numar, amount_paid, issued_at, paid_at, paid_by, created_at)
-  select gen_random_uuid(), '${ids.aSub}', date '2020-01-01' + (n || ' month')::interval, date '2020-01-28' + (n || ' month')::interval, 99, ${lines}, 'PAID',
-         date '2020-01-10' + (n || ' month')::interval, 'WH', '7${RUN.slice(-3)}' || n, 99, now(), now() - interval '100 day', 'TRANSFER', now() - interval '3 day'
+  select gen_random_uuid(), '${ids.aSub}', date '2020-01-01' + (n || ' month')::interval, date '2020-01-28' + (n || ' month')::interval, 50, ${lines}, 'PAID',
+         date '2020-01-10' + (n || ' month')::interval, 'WH', '7${RUN.slice(-3)}' || n, 50, now(), now() - interval '100 day', 'TRANSFER', now() - interval '3 day'
   from generate_series(0, 54) n`);
 await pick("Plătite");
 await page.waitForTimeout(700);

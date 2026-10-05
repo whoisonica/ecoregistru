@@ -49,9 +49,10 @@ check(
 );
 await page.click(CONTINUE);
 await page.waitForTimeout(500);
-check("„Continuă” pe pasul gol marchează rubricile", (await invalidCount()) === 4, (await invalidCount()) + " marcate");
+// Din 05.10.2026 treapta de angajați („Câți angajați aveți?”) e obligatorie: patru rubrici și treapta, marcată o dată.
+check("„Continuă” pe pasul gol marchează rubricile și treapta", (await invalidCount()) === 5, (await invalidCount()) + " marcate");
 const errorTexts1 = await page.$$eval("p[data-field-error]", (p) => p.map((x) => x.textContent.trim()));
-check("fiecare rubrică își spune motivul", errorTexts1.length === 4, errorTexts1.join(" | "));
+check("fiecare rubrică își spune motivul", errorTexts1.length === 5, errorTexts1.join(" | "));
 const focusedId = await page.evaluate(() => document.activeElement?.id ?? "");
 check("focusul sare la prima rubrică greșită", focusedId === "ar-cui", focusedId || "(niciunul)");
 check("și nu trece mai departe", await onStep(1));
@@ -61,6 +62,7 @@ await page.fill("#ar-name", "Proba Automata SRL");
 await page.fill("#ar-cui", "nu-e-cui");
 await page.fill("#ar-address", "Str. Sediului nr. 1, Cluj-Napoca");
 await page.fill("#ar-caen", "1071");
+await page.locator('label:has(input[name="ar-size-tier"])').filter({ hasText: /^\s*3–9\s*$/ }).click();
 await page.click(CONTINUE);
 await page.waitForTimeout(400);
 check("CUI-ul stricat se respinge cu forma cerută", /cifra de control/.test(await page.textContent("form")), "");

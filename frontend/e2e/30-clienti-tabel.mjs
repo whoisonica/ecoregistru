@@ -58,7 +58,7 @@ for (const [key, name, full] of [["late", LATE, false], ["failed", FAILED, true]
 }
 for (const key of ["late", "failed"]) {
   const sub = await api("PUT", `/api/v1/subscriptions/company/${ids[key]}`, {
-    plan: "GENERATOR", startedAt: "2026-07-17", founder: false, billingEmail: `facturi+${RUN}${key}@proba.ro`,
+    plan: "GENERATOR", sizeTier: 2, startedAt: "2026-07-17", founder: false, billingEmail: `facturi+${RUN}${key}@proba.ro`,
     billingCounty: "Cluj", billingCity: "Cluj-Napoca", billingAddress: "Str. Probei nr. 30",
   });
   check(`abonamentul „${key}”`, sub.status === 200, String(sub.status));
@@ -127,7 +127,7 @@ check("Fără abonament: firma fără abonament, nu cele cu abonament",
 rows = await pick("Toți");
 const lateRow = rows.find((r) => r.includes(LATE)) ?? "";
 check("fișa goală: „3 lipsuri”; fișa plină: „Completă”", lateRow.includes("3 lipsuri") && (rows.find((r) => r.includes(BARE)) ?? "").includes("Completă"));
-check("abonamentul: „Așteaptă prima plată” · Generator · 99 lei", /Generator · 99 lei/.test(lateRow), lateRow.slice(0, 200));
+check("abonamentul: „Așteaptă prima plată” · Generator · treapta 2 · 50 lei", /Generator · treapta 2 · 50 lei/.test(lateRow), lateRow.slice(0, 200));
 
 // ---------------------------------------------------------------- (5) rândul: Deschide și ⋯
 const bareRow = page.locator("table").first().locator("tbody tr", { hasText: BARE }).first();
