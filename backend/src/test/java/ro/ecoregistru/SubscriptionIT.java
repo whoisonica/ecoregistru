@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -321,7 +322,8 @@ class SubscriptionIT {
                     "startedAt", "2026-10-01"))
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.error-code", is("bad-request")))
-                    .andExpect(jsonPath("$.params[0].key", is("monthlyPrice")));
+                    .andExpect(jsonPath("$.params[0].key", is("monthlyPrice")))
+                    .andExpect(jsonPath("$['error-message']", containsString("Prețul lunar:")));
         }
         assertThat(subscriptionRepository.existsByCompany_Id(company.getId())).isFalse();
     }

@@ -175,6 +175,23 @@ class ClientOnboardingIT {
                 .andExpect(status().isUnprocessableEntity());
     }
 
+    /** The full service is priced by hand; a custom price drops the tier from the line label. */
+    @Test
+    void thePreviewBillsThePriceWrittenByHand() throws Exception {
+        preview(Map.of("plan", "FULL_SERVICE", "monthlyPrice", 300, "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstInvoice.total").value(300))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(300));
+        preview(Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", true, "monthlyPrice", 42,
+                "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstInvoice.total").value(42))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(42))
+                .andExpect(jsonPath("$.firstInvoice.lines.length()").value(1))
+                .andExpect(jsonPath("$.firstInvoice.lines[0].label", is("Generator")))
+                .andExpect(jsonPath("$.monthlyInvoice.lines[0].label", is("Generator")));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     private ResultActions onboard(String token, Map<String, Object> company, UUID requestId,

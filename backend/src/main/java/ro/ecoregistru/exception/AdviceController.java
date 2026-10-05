@@ -168,7 +168,9 @@ public class AdviceController {
             Map.entry("tradeRegisterNumber", "Nr. Registrului Comerțului"),
             Map.entry("password", "Parola"),
             Map.entry("contactName", "Persoana de contact"),
-            Map.entry("message", "Mesajul"));
+            Map.entry("message", "Mesajul"),
+            Map.entry("sizeTier", "Angajați"),
+            Map.entry("monthlyPrice", "Prețul lunar"));
 
     /**
      * Malformed request body: bad JSON, or an unknown enum constant (e.g. the frontend
