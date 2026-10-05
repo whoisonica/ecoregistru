@@ -24,6 +24,7 @@ import {
 } from "@/lib/billing";
 import { COUNTIES } from "@/lib/counties";
 import { strings } from "@/lib/strings";
+import { planLabel } from "@/lib/sizeTier";
 import { cn, formatDate, withCount, todayIso } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -377,7 +378,7 @@ function PackageCard({ account }: { account: BillingAccount }) {
         action={<Badge variant={STATUS_BADGE[account.status]}>{s.status[account.status]}</Badge>}
       />
       <p className="mt-2 text-base font-semibold text-content">
-        {s.plans[account.plan]}
+        {planLabel(account.plan, account.sizeTier, account.customPrice)}
         {account.founder && <span className="text-sm font-normal text-content-muted"> · {t.founder}</span>}
       </p>
       <dl className="mt-2 space-y-1 text-sm">

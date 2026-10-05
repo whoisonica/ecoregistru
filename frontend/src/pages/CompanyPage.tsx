@@ -10,6 +10,7 @@ import { useHotkey } from "@/hooks/useHotkey";
 import { clientRow } from "@/lib/clients";
 import { countOf } from "@/lib/count";
 import { strings } from "@/lib/strings";
+import { subscriptionSummary } from "@/lib/sizeTier";
 import { AssignConsultancyDialog } from "@/components/ConsultanciesSection";
 import { AuditLogSection } from "@/components/AuditLogSection";
 import { CompanyForm } from "@/components/CompanyForm";
@@ -140,7 +141,7 @@ export function CompanyPage() {
         ) : isPlatformAdmin && o ? (
           o.subscriptionStatus && o.plan ? (
             <Badge variant={STATUS_BADGE[o.subscriptionStatus]}>
-              {`${strings.subscriptions.status[o.subscriptionStatus]} · ${strings.subscriptions.plans[o.plan]}${o.monthlyPrice != null ? ` · ${lei(o.monthlyPrice)}` : ""}`}
+              {`${strings.subscriptions.status[o.subscriptionStatus]} · ${subscriptionSummary(o.plan, o.sizeTier, o.customPrice, o.monthlyPrice != null ? lei(o.monthlyPrice) : null)}`}
             </Badge>
           ) : (
             <Badge variant="muted">{t.noSubscription}</Badge>

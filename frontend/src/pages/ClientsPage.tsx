@@ -32,6 +32,7 @@ import { PageTabs, type PageTab } from "@/components/ui/page-tabs";
 import { PillGroup } from "@/components/ui/pill-group";
 import { Tooltip } from "@/components/ui/tooltip";
 import { strings } from "@/lib/strings";
+import { subscriptionSummary } from "@/lib/sizeTier";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -387,8 +388,7 @@ function SubscriptionCell({ row }: { row: ClientRow }) {
         {strings.subscriptions.status[o.subscriptionStatus]}
       </Badge>
       <span className="block text-xs text-content-muted">
-        {strings.subscriptions.plans[o.plan]}
-        {o.monthlyPrice != null && ` · ${lei(o.monthlyPrice)}`}
+        {subscriptionSummary(o.plan, o.sizeTier, o.customPrice, o.monthlyPrice != null ? lei(o.monthlyPrice) : null)}
       </span>
     </>
   );
