@@ -13,23 +13,42 @@ export const SIZE_TIERS: readonly { tier: SizeTier; range: string }[] = [
   { tier: 5, range: "40+" },
 ];
 
-/** „Generator, treapta 2”; fără treaptă sau la preț personalizat doar numele pachetului. */
-export function planLabel(plan: SubscriptionPlan, sizeTier: SizeTier | null, customPrice: boolean): string {
+/** Lungimea perioadei de facturare: 1 = lunar, 12 = anual (05.10.2026). */
+export type BillingMonths = 1 | 12;
+
+/**
+ * „Generator, treapta 2”; fără treaptă sau la preț personalizat doar numele pachetului. Anual: „Generator, anual”
+ * (prețul pe an e scris de mână, deci treapta nu-l dă).
+ */
+export function planLabel(
+  plan: SubscriptionPlan,
+  sizeTier: SizeTier | null,
+  customPrice: boolean,
+  billingMonths: BillingMonths = 1
+): string {
   const name = strings.subscriptions.plans[plan];
+  if (billingMonths === 12) return `${name}, ${strings.subscriptions.annual.toLowerCase()}`;
   if (sizeTier == null || customPrice) return name;
   return `${name}, ${strings.subscriptions.tierLabel.replace("{n}", String(sizeTier))}`;
 }
 
-/** „Generator · treapta 2 · 50 lei”; personalizat: „Generator · 42 lei · preț personalizat”; vechi: „Generator · 99 lei”. */
+/**
+ * „Generator · treapta 2 · 50 lei”; personalizat: „Generator · 42 lei · preț personalizat”; vechi: „Generator · 99 lei”;
+ * anual: „Generator · anual · 600 lei / an”. `price` vine formatat, cu „lei” la capăt.
+ */
 export function subscriptionSummary(
   plan: SubscriptionPlan,
   sizeTier: SizeTier | null,
   customPrice: boolean,
-  price: string | null
+  price: string | null,
+  billingMonths: BillingMonths = 1
 ): string {
   const name = strings.subscriptions.plans[plan];
   const parts: string[] = [name];
-  if (customPrice) {
+  if (billingMonths === 12) {
+    parts.push(strings.subscriptions.annual.toLowerCase());
+    if (price) parts.push(price.replace(/lei$/, strings.subscriptions.perYear));
+  } else if (customPrice) {
     if (price) parts.push(price);
     parts.push(strings.subscriptions.customPrice.toLowerCase());
   } else {

@@ -54,13 +54,13 @@ export function useSubscription(owner: SubscriptionOwner) {
  */
 export type SubscriptionPreviewInput = Pick<
   SubscriptionInput,
-  "plan" | "sizeTier" | "customPrice" | "monthlyPrice" | "startedAt"
+  "plan" | "sizeTier" | "customPrice" | "monthlyPrice" | "startedAt" | "billingMonths"
 >;
 
 export function useSubscriptionPreview(input: SubscriptionPreviewInput, enabled: boolean) {
-  const { plan, sizeTier, customPrice, monthlyPrice, startedAt } = input;
+  const { plan, sizeTier, customPrice, monthlyPrice, startedAt, billingMonths } = input;
   return useQuery({
-    queryKey: ["subscriptions", "preview", plan, sizeTier, customPrice, monthlyPrice, startedAt],
+    queryKey: ["subscriptions", "preview", plan, sizeTier, customPrice, monthlyPrice, startedAt, billingMonths],
     queryFn: async () =>
       (
         await api.post<SubscriptionPreview>("/api/v1/subscriptions/preview", {
@@ -68,6 +68,7 @@ export function useSubscriptionPreview(input: SubscriptionPreviewInput, enabled:
           sizeTier,
           customPrice,
           monthlyPrice,
+          billingMonths,
           founder: false,
           twelveMonthCommitment: false,
           startedAt,

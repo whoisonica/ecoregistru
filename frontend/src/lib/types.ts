@@ -3,7 +3,7 @@
  * (constants are English; Romanian labels live in strings.ts `enums`).
  */
 
-import type { SizeTier } from "@/lib/sizeTier";
+import type { BillingMonths, SizeTier } from "@/lib/sizeTier";
 
 /**
  * There is no "handed over": HG 856/2002 anexa nr. 1 cap. 1 has no such column, and cap. 3 / cap. 4
@@ -312,6 +312,8 @@ export interface Subscription {
   sizeTier: SizeTier | null;
   /** Preț scris de mână, nerecalculat din grilă. */
   customPrice: boolean;
+  /** 1 = lunar, 12 = anual; la anual `monthlyPrice` e prețul pe an. */
+  billingMonths: BillingMonths;
   status: SubscriptionStatus;
   monthlyPrice: number;
   implementationFee: number;
@@ -370,8 +372,10 @@ export interface SubscriptionInput {
   plan: SubscriptionPlan;
   sizeTier: SizeTier | null;
   customPrice: boolean;
-  /** Citit doar la preț personalizat sau la Serviciu complet. */
+  /** Citit doar la preț personalizat, la Serviciu complet și la anual (atunci e prețul pe an, obligatoriu). */
   monthlyPrice: number | null;
+  /** 1 = lunar, 12 = anual; lipsă înseamnă lunar la server. */
+  billingMonths: BillingMonths;
   founder: boolean;
   /** Contract art. 4.3: implementarea nu se plătește la început, ci doar la o oprire înainte de 12 luni. */
   twelveMonthCommitment: boolean;
@@ -471,6 +475,8 @@ export interface ClientOverview {
   plan: SubscriptionPlan | null;
   sizeTier: SizeTier | null;
   customPrice: boolean;
+  /** 1 = lunar, 12 = anual (`monthlyPrice` e atunci pe an); 1 fără abonament. */
+  billingMonths: BillingMonths;
   monthlyPrice: number | null;
   lastInvoice: {
     /** „WH 12”; null cât timp FGO n-a emis-o. */
@@ -517,6 +523,8 @@ export interface BillingAccount {
   plan: SubscriptionPlan;
   sizeTier: SizeTier | null;
   customPrice: boolean;
+  /** 1 = lunar, 12 = anual. */
+  billingMonths: BillingMonths;
   status: SubscriptionStatus;
   startedAt: string; // yyyy-MM-dd
   founder: boolean;

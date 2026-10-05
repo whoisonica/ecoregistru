@@ -22,7 +22,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate, todayIso } from "@/lib/utils";
 import { COUNTIES } from "@/lib/counties";
-import { SIZE_TIERS, parseMonthlyPrice, type SizeTier } from "@/lib/sizeTier";
+import { SIZE_TIERS, parseMonthlyPrice, type BillingMonths, type SizeTier } from "@/lib/sizeTier";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -99,6 +99,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const [sizeTier, setSizeTier] = useState<SizeTier | null>(null);
   const [customPrice, setCustomPrice] = useState<boolean | null>(null);
   const [monthlyPrice, setMonthlyPrice] = useState<string | null>(null);
+  const [billingMonths, setBillingMonths] = useState<BillingMonths | null>(null);
   const [founder, setFounder] = useState<boolean | null>(null);
   const [commitment, setCommitment] = useState<boolean | null>(null);
   const [billingEmail, setBillingEmail] = useState<string | null>(null);
@@ -109,42 +110,65 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const [triedSave, setTriedSave] = useState(false);
 
   const currentPlan: SubscriptionPlan = plan ?? subscription?.plan ?? (isConsultancy ? "CONSULTANCY" : "GENERATOR");
-  // Trecerea unui abonament existent la Serviciu complet nu păstrează prețul vechi de generator: câmpul pornește gol.
-  const priceCarriesOver = subscription != null && (currentPlan !== "FULL_SERVICE" || subscription.plan === "FULL_SERVICE");
+  const currentMonths: BillingMonths = billingMonths ?? subscription?.billingMonths ?? 1;
+  const annual = currentMonths === 12;
+  // Trecerea unui abonament existent la Serviciu complet nu păstrează prețul vechi de generator: câmpul pornește gol. La fel
+  // la trecerea lunar ↔ anual: prețul pe lună nu e un preț pe an.
+  const priceCarriesOver =
+    subscription != null &&
+    currentMonths === subscription.billingMonths &&
+    (currentPlan !== "FULL_SERVICE" || subscription.plan === "FULL_SERVICE");
   const values = {
     plan: currentPlan,
+    billingMonths: currentMonths,
     sizeTier: isConsultancy || currentPlan === "FULL_SERVICE" ? null : sizeTier ?? subscription?.sizeTier ?? null,
-    // Serviciul complet are oricum prețul scris de mână: comutatorul nu se arată și nu se trimite (ca la „Client nou”).
-    customPrice: isConsultancy || currentPlan === "FULL_SERVICE" ? false : customPrice ?? subscription?.customPrice ?? false,
+    // Serviciul complet și anualul au oricum prețul scris de mână: comutatorul nu se arată și nu se trimite (ca la „Client
+    // nou”). Alegerea lui rămâne în stare, deci revine la întoarcerea pe lunar.
+    customPrice:
+      isConsultancy || currentPlan === "FULL_SERVICE" || annual ? false : customPrice ?? subscription?.customPrice ?? false,
     monthlyPrice: monthlyPrice ?? (priceCarriesOver ? String(subscription.monthlyPrice) : ""),
     // Abonament vechi: plan de firmă cu preț din grila veche, fără treaptă (R6).
     legacy: subscription != null && subscription.plan !== "CONSULTANCY" && subscription.sizeTier == null && !subscription.customPrice,
     startedAt: startedAt ?? subscription?.startedAt ?? todayIso(),
     founder: founder ?? subscription?.founder ?? false,
-    twelveMonthCommitment: commitment ?? subscription?.twelveMonthCommitment ?? false,
+    // Angajamentul de 12 luni e o regulă a facturării lunare: la anual serverul îl refuză, deci nici nu se arată.
+    twelveMonthCommitment: annual ? false : commitment ?? subscription?.twelveMonthCommitment ?? false,
     billingEmail: billingEmail ?? subscription?.billingEmail ?? "",
     billingCounty: billingCounty ?? subscription?.billingCounty ?? "",
     billingCity: billingCity ?? subscription?.billingCity ?? "",
     billingAddress: billingAddress ?? subscription?.billingAddress ?? "",
   };
-  const priceRequired = values.customPrice || values.plan === "FULL_SERVICE";
+  const priceRequired = values.customPrice || values.plan === "FULL_SERVICE" || annual;
   const typedPrice = parseMonthlyPrice(values.monthlyPrice);
-  const priceError = priceRequired && typedPrice == null ? strings.newClient.errPrice : undefined;
-  const setters = { setPlan, setSizeTier, setCustomPrice, setMonthlyPrice, setStartedAt, setFounder, setCommitment, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
+  const priceError =
+    priceRequired && typedPrice == null ? (annual ? t.errAnnualPrice : strings.newClient.errPrice) : undefined;
+  // Lunar, un abonament vechi poate rămâne fără treaptă (grila veche); anual, serverul o cere pe planurile cu treaptă.
+  const tierError =
+    annual && COMPANY_PLANS.includes(values.plan) && values.plan !== "FULL_SERVICE" && values.sizeTier == null
+      ? strings.newClient.errSizeTier
+      : undefined;
+  /** Lunar ↔ anual: prețul scris pentru cealaltă lungime nu se păstrează. */
+  function chooseBillingMonths(months: BillingMonths) {
+    setBillingMonths(months);
+    setMonthlyPrice(null);
+  }
+  const setters = { setPlan, setSizeTier, setCustomPrice, setMonthlyPrice, chooseBillingMonths, setStartedAt, setFounder, setCommitment, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
   const busy = saveMut.isPending || deleteMut.isPending || cancelMut.isPending;
 
   async function save(e: FormEvent) {
     e.preventDefault();
     setTriedSave(true);
     // Prețul cerut și lipsă sau greșit: nu pleacă nimic la server, eroarea stă lângă rubrică.
-    if (priceError) return;
+    if (priceError || tierError) return;
     try {
       await saveMut.mutateAsync({
         plan: values.plan,
         sizeTier: values.sizeTier,
         customPrice: values.customPrice,
-        // Prețul se trimite doar când e scris de mână sau la Serviciu complet; altfel îl calculează serverul din grilă.
+        // Prețul se trimite doar când e scris de mână, la Serviciu complet sau la anual (pe an); altfel îl calculează
+        // serverul din grilă.
         monthlyPrice: priceRequired ? typedPrice : null,
+        billingMonths: values.billingMonths,
         startedAt: values.startedAt,
         founder: values.founder,
         twelveMonthCommitment: values.twelveMonthCommitment,
@@ -166,6 +190,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
       setSizeTier(null);
       setCustomPrice(null);
       setMonthlyPrice(null);
+      setBillingMonths(null);
       setStartedAt(null);
       setFounder(null);
       setCommitment(null);
@@ -217,6 +242,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     values,
     setters,
     priceError: triedSave ? priceError : undefined,
+    tierError: triedSave ? tierError : undefined,
     busy,
     saving: saveMut.isPending,
     save,
@@ -239,9 +265,36 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
   const { isConsultancy, values, setters } = editor;
   const isCompanyPlan = COMPANY_PLANS.includes(values.plan);
   const loaded = editor.subscription;
+  const annual = values.billingMonths === 12;
   const legacyGrid =
-    loaded != null && values.legacy && values.sizeTier == null && values.plan === loaded.plan && values.plan !== "FULL_SERVICE";
-  const legacyToTier = values.legacy && values.sizeTier != null && !values.customPrice;
+    loaded != null &&
+    !annual &&
+    values.legacy &&
+    values.sizeTier == null &&
+    values.plan === loaded.plan &&
+    values.plan !== "FULL_SERVICE";
+  // La anual prețul e scris de mână, deci avertismentul „prețul treptei” nu se aplică.
+  const legacyToTier = values.legacy && values.sizeTier != null && !values.customPrice && !annual;
+  const priceShown = values.customPrice || values.plan === "FULL_SERVICE" || annual;
+  const priceField = priceShown && (
+    <div className="sm:max-w-xs">
+      <Label htmlFor="sub-price" required>
+        {annual ? t.annualPrice : t.monthlyPrice}
+      </Label>
+      {/* Fără `min` și pas fix: altfel browserul oprește salvarea cu bula lui, înaintea mesajului nostru. */}
+      <Input
+        id="sub-price"
+        type="number"
+        inputMode="decimal"
+        step="any"
+        value={values.monthlyPrice}
+        onChange={(e) => setters.setMonthlyPrice(e.target.value)}
+        {...invalidProps("sub-price-error", editor.priceError)}
+      />
+      <FieldError id="sub-price-error" message={editor.priceError} />
+      {annual && <p className="mt-1 text-xs text-content-muted">{t.annualHint}</p>}
+    </div>
+  );
   return (
     <form id={formId} onSubmit={editor.save} className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -273,6 +326,24 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
         </div>
       </div>
 
+      <div>
+        <Label id="sub-billing-label">{t.billingPeriod}</Label>
+        <PillGroup
+          name="sub-billing"
+          aria-labelledby="sub-billing-label"
+          options={[
+            { value: "1", label: t.monthly },
+            { value: "12", label: t.annual },
+          ]}
+          selected={[String(values.billingMonths)]}
+          onToggle={(v) => setters.chooseBillingMonths(Number(v) as BillingMonths)}
+        />
+        {/* Perioada în curs rămâne cum a fost facturată; noua lungime pornește cu următoarea. */}
+        {loaded != null && values.billingMonths !== loaded.billingMonths && (
+          <p className="mt-1 text-xs text-content-muted">{t.switchHint}</p>
+        )}
+      </div>
+
       {isCompanyPlan && (
         <div className="space-y-3">
           {values.plan !== "FULL_SERVICE" && (
@@ -285,6 +356,7 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
                 selected={values.sizeTier == null ? [] : [String(values.sizeTier)]}
                 onToggle={(v) => setters.setSizeTier(Number(v) as SizeTier)}
               />
+              <FieldError id="sub-tier-error" message={editor.tierError} />
               {/* Abonament vechi: pastilele stau goale, deci spunem pe ce condiții e acum. */}
               {legacyGrid && (
                 <p className="mt-1 text-xs text-content-muted">
@@ -308,7 +380,7 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
               )}
             </div>
           )}
-          {values.plan !== "FULL_SERVICE" && (
+          {values.plan !== "FULL_SERVICE" && !annual && (
             <Switch
               id="sub-custom-price"
               checked={values.customPrice}
@@ -317,24 +389,7 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
               description={values.legacy && values.customPrice ? t.customPriceLegacyHint : t.customPriceHint}
             />
           )}
-          {(values.customPrice || values.plan === "FULL_SERVICE") && (
-            <div className="sm:max-w-xs">
-              <Label htmlFor="sub-price" required>
-                {t.monthlyPrice}
-              </Label>
-              {/* Fără `min` și pas fix: altfel browserul oprește salvarea cu bula lui, înaintea mesajului nostru. */}
-              <Input
-                id="sub-price"
-                type="number"
-                inputMode="decimal"
-                step="any"
-                value={values.monthlyPrice}
-                onChange={(e) => setters.setMonthlyPrice(e.target.value)}
-                {...invalidProps("sub-price-error", editor.priceError)}
-              />
-              <FieldError id="sub-price-error" message={editor.priceError} />
-            </div>
-          )}
+          {priceField}
         </div>
       )}
 
@@ -357,7 +412,9 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
         </label>
       )}
 
-      {!isCompanyPlan && (
+      {!isCompanyPlan && priceField}
+
+      {!isCompanyPlan && !annual && (
         <label className="flex items-start gap-2 text-sm text-content-strong">
           <input
             type="checkbox"
@@ -496,7 +553,10 @@ export function SubscriptionDialog({ owner, onClose }: { owner: SubscriptionOwne
                 invoice={subscription.firstInvoice}
               />
               <InvoicePreviewBlock
-                title={t.monthlyInvoice.replace("{period}", periodLabel(subscription.monthlyInvoice))}
+                title={(subscription.billingMonths === 12 ? t.yearlyInvoice : t.monthlyInvoice).replace(
+                  "{period}",
+                  periodLabel(subscription.monthlyInvoice)
+                )}
                 invoice={subscription.monthlyInvoice}
               />
               <p className="text-xs text-content-muted">{t.previewHint}</p>
@@ -563,7 +623,10 @@ export function SubscriptionPanel({ owner }: { owner: SubscriptionOwner }) {
                 invoice={subscription.firstInvoice}
               />
               <InvoicePreviewBlock
-                title={t.monthlyInvoice.replace("{period}", periodLabel(subscription.monthlyInvoice))}
+                title={(subscription.billingMonths === 12 ? t.yearlyInvoice : t.monthlyInvoice).replace(
+                  "{period}",
+                  periodLabel(subscription.monthlyInvoice)
+                )}
                 invoice={subscription.monthlyInvoice}
               />
               <p className="text-xs text-content-muted">{t.previewHint}</p>

@@ -9,7 +9,7 @@ import { useSubscriptionPreview } from "@/hooks/useSubscriptions";
 import type { AccountRequest, CompanyType, InvoicePreview, OnboardClientResult } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { SIZE_TIERS, parseMonthlyPrice, planLabel, type SizeTier } from "@/lib/sizeTier";
+import { SIZE_TIERS, parseMonthlyPrice, planLabel, type BillingMonths, type SizeTier } from "@/lib/sizeTier";
 import { isValidCui } from "@/lib/cui";
 import { COUNTIES, fgoCounty } from "@/lib/counties";
 import { fold, formatDate, todayIso } from "@/lib/utils";
@@ -139,6 +139,8 @@ function NewClientForm({
   const [sizeTier, setSizeTier] = useState<SizeTier | null>(request?.sizeTier ?? null);
   const [customPrice, setCustomPrice] = useState(false);
   const [monthlyPrice, setMonthlyPrice] = useState("");
+  // Plata anuală (05.10.2026): o factură pe an, la prețul pe an scris de admin.
+  const [billingMonths, setBillingMonths] = useState<BillingMonths>(1);
   const [startedAt, setStartedAt] = useState(todayIso());
   const [billingEmail, setBillingEmail] = useState(request?.contactEmail ?? "");
   const [otherAddress, setOtherAddress] = useState<"same" | "other">("same");
@@ -159,11 +161,13 @@ function NewClientForm({
   const [adminFirstName, setAdminFirstName] = useState("");
   const [adminLastName, setAdminLastName] = useState("");
 
-  // Serviciul complet n-are treaptă și n-are preț în grilă: prețul îl scrie adminul. Pe celelalte, comutatorul.
+  // Serviciul complet n-are treaptă și n-are preț în grilă: prețul îl scrie adminul. Pe celelalte, comutatorul. Anual,
+  // prețul pe an îl scrie mereu adminul, deci comutatorul nu mai e nevoie (treapta rămâne).
   const fullService = plan === "FULL_SERVICE";
+  const annual = billingMonths === 12;
   const planTier = fullService ? null : sizeTier;
-  const planCustom = !fullService && customPrice;
-  const priceRequired = fullService || customPrice;
+  const planCustom = !fullService && !annual && customPrice;
+  const priceRequired = fullService || planCustom || annual;
   // Aceeași regulă ca la server (cel mult 8 cifre și 2 zecimale), ca să nu ajungă la el un preț pe care îl respinge.
   const typedPrice = parseMonthlyPrice(monthlyPrice);
   const priceOk = typedPrice != null;
@@ -171,7 +175,7 @@ function NewClientForm({
 
   // Prețul din grilă pe cardurile cu treaptă; fără treaptă aleasă nu e ce întreba.
   const gridOf = (p: "GENERATOR" | "GENERATOR_PACKAGING") => ({
-    plan: p, sizeTier, customPrice: false, monthlyPrice: null, startedAt,
+    plan: p, sizeTier, customPrice: false, monthlyPrice: null, startedAt, billingMonths: 1 as const,
   });
   const prices = {
     GENERATOR: useSubscriptionPreview(gridOf("GENERATOR"), withSubscription && sizeTier != null),
@@ -194,11 +198,11 @@ function NewClientForm({
     adminEmail: adminNow === "now" && !EMAIL.test(adminEmail.trim()) ? t.emailInvalid : undefined,
     wasteManagerName: !wasteManagerName.trim() ? strings.common.requiredField : undefined,
     sizeTier: !fullService && sizeTier == null ? t.errSizeTier : undefined,
-    monthlyPrice: priceRequired && !priceOk ? t.errPrice : undefined,
+    monthlyPrice: priceRequired && !priceOk ? (annual ? strings.subscriptions.errAnnualPrice : t.errPrice) : undefined,
   };
   // Prima factură a pachetului ales, cu prețul scris când el e cel facturat.
   const preview = useSubscriptionPreview(
-    { plan, sizeTier: planTier, customPrice: planCustom, monthlyPrice: sentPrice, startedAt },
+    { plan, sizeTier: planTier, customPrice: planCustom, monthlyPrice: sentPrice, startedAt, billingMonths },
     withSubscription && subscriptionOn && !errors.sizeTier && !errors.monthlyPrice
   );
   const stepInvalid = [
@@ -278,6 +282,7 @@ function NewClientForm({
                 sizeTier: planTier,
                 customPrice: planCustom,
                 monthlyPrice: sentPrice,
+                billingMonths,
                 // Fondatorul și angajamentul de 12 luni nu mai există pe planurile de firmă (grila din 05.10.2026).
                 founder: false,
                 twelveMonthCommitment: false,
@@ -315,7 +320,7 @@ function NewClientForm({
           <p className="text-content">
             {done.plan && done.firstInvoice
               ? t.doneSubscription
-                  .replace("{plan}", planLabel(done.plan, planTier, planCustom))
+                  .replace("{plan}", planLabel(done.plan, planTier, planCustom, billingMonths))
                   .replace("{total}", lei(done.firstInvoice.total))
                   .replace("{date}", formatDate(done.firstInvoice.from))
               : t.doneNoSubscription}
@@ -348,7 +353,7 @@ function NewClientForm({
   const summaries = [
     [name.trim(), cui.trim()].filter(Boolean).join(" · "),
     strings.enums.companyType[type],
-    ...(withSubscription ? [subscriptionOn ? planLabel(plan, planTier, planCustom) : t.stepSummaryNoSubscription] : []),
+    ...(withSubscription ? [subscriptionOn ? planLabel(plan, planTier, planCustom, billingMonths) : t.stepSummaryNoSubscription] : []),
     adminNow === "now" ? adminEmail.trim() : t.stepSummaryLater,
   ];
 
@@ -639,7 +644,27 @@ function NewClientForm({
                     />
                   </div>
 
-                  {!fullService && (
+                  <div>
+                    <span id="nc-billing-label" className="mb-2 block text-xs font-medium text-content-muted">
+                      {strings.subscriptions.billingPeriod}
+                    </span>
+                    <PillGroup
+                      name="nc-billing"
+                      aria-labelledby="nc-billing-label"
+                      options={[
+                        { value: "1", label: strings.subscriptions.monthly },
+                        { value: "12", label: strings.subscriptions.annual },
+                      ]}
+                      selected={[String(billingMonths)]}
+                      onToggle={(value) => {
+                        setBillingMonths(Number(value) as BillingMonths);
+                        // Prețul pe lună nu e un preț pe an: câmpul pornește gol la fiecare schimbare.
+                        setMonthlyPrice("");
+                      }}
+                    />
+                  </div>
+
+                  {!fullService && !annual && (
                     <Switch
                       id="nc-custom-price"
                       checked={customPrice}
@@ -653,7 +678,7 @@ function NewClientForm({
                     {priceRequired && (
                       <div>
                         <Label htmlFor="nc-price" required>
-                          {strings.subscriptions.monthlyPrice}
+                          {annual ? strings.subscriptions.annualPrice : strings.subscriptions.monthlyPrice}
                         </Label>
                         <Input
                           id="nc-price"
@@ -666,6 +691,9 @@ function NewClientForm({
                           {...invalidProps("nc-price-error", show(step) ? errors.monthlyPrice : undefined)}
                         />
                         {show(step) && <FieldError id="nc-price-error" message={errors.monthlyPrice} />}
+                        {annual && (
+                          <p className="mt-1 text-xs text-content-muted">{strings.subscriptions.annualHint}</p>
+                        )}
                       </div>
                     )}
                     <div>
@@ -688,7 +716,9 @@ function NewClientForm({
                         value={billingEmail}
                         onChange={(e) => setBillingEmail(e.target.value)}
                       />
-                      <p className="mt-1 text-xs text-content-muted">{t.billingEmailHint}</p>
+                      <p className="mt-1 text-xs text-content-muted">
+                        {annual ? t.billingEmailHintAnnual : t.billingEmailHint}
+                      </p>
                     </div>
                     <ChoiceCards
                       name="nc-billing-address"
@@ -748,7 +778,7 @@ function NewClientForm({
                     )}
                   </fieldset>
 
-                  <FirstInvoice invoice={preview.data?.firstInvoice} failed={preview.isError} />
+                  <FirstInvoice invoice={preview.data?.firstInvoice} failed={preview.isError} annual={annual} />
 
                   <ul className="space-y-1 text-sm" data-testid="new-client-checks">
                     {(
@@ -842,14 +872,22 @@ function NewClientForm({
   );
 }
 
-function FirstInvoice({ invoice, failed }: { invoice: InvoicePreview | undefined; failed: boolean }) {
+function FirstInvoice({
+  invoice,
+  failed,
+  annual,
+}: {
+  invoice: InvoicePreview | undefined;
+  failed: boolean;
+  annual: boolean;
+}) {
   if (failed) return <p className="text-xs text-content-muted">{t.previewError}</p>;
   if (!invoice) return null;
+  // Lunar ajung ziua și luna; anul se scrie la anual, unde „05.10 – 04.10” s-ar citi ca o singură zi.
+  const day = (iso: string) => (annual ? formatDate(iso) : formatDate(iso).slice(0, 5));
   return (
     <div className="rounded-md border border-line p-4" data-testid="new-client-first-invoice">
-      <span className="eyebrow">
-        {t.firstInvoice.replace("{period}", `${formatDate(invoice.from).slice(0, 5)} – ${formatDate(invoice.to).slice(0, 5)}`)}
-      </span>
+      <span className="eyebrow">{t.firstInvoice.replace("{period}", `${day(invoice.from)} – ${day(invoice.to)}`)}</span>
       <ul className="mt-2 space-y-1 text-sm">
         {invoice.lines.map((line, i) => (
           <li key={i} className="flex justify-between gap-3">

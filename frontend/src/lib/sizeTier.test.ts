@@ -24,6 +24,18 @@ test("subscriptionSummary: pe treaptă, personalizat, vechi, fără preț", () =
   assert.equal(subscriptionSummary("GENERATOR", 2, false, null), "Generator · treapta 2");
 });
 
+test("facturarea anuală: „anual” în locul treptei, prețul pe an", () => {
+  assert.equal(subscriptionSummary("GENERATOR", 2, false, "600 lei", 12), "Generator · anual · 600 lei / an");
+  assert.equal(subscriptionSummary("GENERATOR", 2, true, "600 lei", 12), "Generator · anual · 600 lei / an");
+  assert.equal(subscriptionSummary("CONSULTANCY", null, false, "3.000 lei", 12), "Abonament de consultant · anual · 3.000 lei / an");
+  assert.equal(subscriptionSummary("GENERATOR", 2, false, null, 12), "Generator · anual");
+  assert.equal(planLabel("GENERATOR", 2, false, 12), "Generator, anual");
+  assert.equal(planLabel("FULL_SERVICE", null, false, 12), "Serviciu complet, anual");
+  // Lunar, explicit: exact ca înainte.
+  assert.equal(subscriptionSummary("GENERATOR", 2, false, "50 lei", 1), "Generator · treapta 2 · 50 lei");
+  assert.equal(planLabel("GENERATOR", 2, false, 1), "Generator, treapta 2");
+});
+
 test("parseMonthlyPrice: cel mult 8 cifre și 2 zecimale, peste zero", () => {
   assert.equal(parseMonthlyPrice("42"), 42);
   assert.equal(parseMonthlyPrice(" 300.5 "), 300.5);

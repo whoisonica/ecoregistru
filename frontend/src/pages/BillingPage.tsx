@@ -378,11 +378,17 @@ function PackageCard({ account }: { account: BillingAccount }) {
         action={<Badge variant={STATUS_BADGE[account.status]}>{s.status[account.status]}</Badge>}
       />
       <p className="mt-2 text-base font-semibold text-content">
-        {planLabel(account.plan, account.sizeTier, account.customPrice)}
+        {planLabel(account.plan, account.sizeTier, account.customPrice, account.billingMonths)}
         {account.founder && <span className="text-sm font-normal text-content-muted"> · {t.founder}</span>}
       </p>
       <dl className="mt-2 space-y-1 text-sm">
         <Row label={t.startedAt}>{formatDate(account.startedAt)}</Row>
+        {/* Anual, factura are un singur rând, primul: prețul pe an (BillingCalculator). */}
+        {account.billingMonths === 12 && account.nextInvoice.lines[0] && (
+          <Row label={s.billingPeriod}>
+            {`${s.annual} · ${lei(account.nextInvoice.lines[0].amount).replace(/lei$/, s.perYear)}`}
+          </Row>
+        )}
         {account.twelveMonthCommitment && (
           <Row label={t.commitment}>{t.commitmentValue.replace("{date}", formatDate(account.startedAt))}</Row>
         )}

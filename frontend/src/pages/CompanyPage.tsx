@@ -141,7 +141,7 @@ export function CompanyPage() {
         ) : isPlatformAdmin && o ? (
           o.subscriptionStatus && o.plan ? (
             <Badge variant={STATUS_BADGE[o.subscriptionStatus]}>
-              {`${strings.subscriptions.status[o.subscriptionStatus]} · ${subscriptionSummary(o.plan, o.sizeTier, o.customPrice, o.monthlyPrice != null ? lei(o.monthlyPrice) : null)}`}
+              {`${strings.subscriptions.status[o.subscriptionStatus]} · ${subscriptionSummary(o.plan, o.sizeTier, o.customPrice, o.monthlyPrice != null ? lei(o.monthlyPrice) : null, o.billingMonths)}`}
             </Badge>
           ) : (
             <Badge variant="muted">{t.noSubscription}</Badge>

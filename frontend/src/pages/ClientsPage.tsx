@@ -388,7 +388,7 @@ function SubscriptionCell({ row }: { row: ClientRow }) {
         {strings.subscriptions.status[o.subscriptionStatus]}
       </Badge>
       <span className="block text-xs text-content-muted">
-        {subscriptionSummary(o.plan, o.sizeTier, o.customPrice, o.monthlyPrice != null ? lei(o.monthlyPrice) : null)}
+        {subscriptionSummary(o.plan, o.sizeTier, o.customPrice, o.monthlyPrice != null ? lei(o.monthlyPrice) : null, o.billingMonths)}
       </span>
     </>
   );
