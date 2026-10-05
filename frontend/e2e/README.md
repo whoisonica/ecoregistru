@@ -1,3 +1,17 @@
+📅 **05.10.2026 — plata anuală (V84): probele 30 și 31 cu facturare anuală**. Adminul alege „Facturare: Lunar / Anual” în dialogul
+abonamentului, pe pagina firmei și la „Client nou”; la „Anual” scrie prețul pe an („Preț pe an (lei)”, obligatoriu), „Preț personalizat” nu
+se mai arată, iar factura are un singur rând („Generator, abonament anual”). **31** — o a doua firmă, „Proba 31 Anual <număr>”, făcută din
+`/clienti/nou`: „Lunar” e ales de la început; „Anual” arată „Preț pe an (lei)” fără comutator și explicația „O factură la începutul fiecărui
+an de abonament…”; fără preț, „Continuă” rămâne pe pas cu „Scrieți prețul pe an.”; cu 600, prima factură „Total 600 lei”, rândul
+„Generator, abonament anual” și perioada cu anii scriși (`05.10.2026 – 04.10.2027`); rezumatul spune „Abonament Generator, anual, prima
+factură 600 lei”, iar abonamentul salvat are `billingMonths` 12, `monthlyPrice` 600, `sizeTier` 2. **30** — o firmă „Proba 30 Anual <număr>”
+cu abonament anual pus prin API (`billingMonths: 12, monthlyPrice: 600, sizeTier: 2`) apare în listă ca „Generator · anual · 600 lei / an”,
+fără treaptă. Rulate pe o stivă proprie (backend :8082 pe `eco_demo_anual`, bază nouă cu migrările până la V84 și datele demo; Vite :5175;
+`E2E_DB=eco_demo_anual`): 31 (43 de verificări) și 30 (32) trec; ca regresie 29, 33, 36, 6 și 60 trec neschimbate.
+**Negativă:** cu `billingMonths` scos din eticheta tabelului (`ClientsPage.tsx`) cade exact „Generator · anual · 600 lei / an” (rândul arată
+„Generator · treapta 2 · 600 lei”); cu `billingMonths` scos din cererea „Client nou” (`NewClientPage.tsx`) cad rezumatul („prima factură 50
+lei”) și abonamentul salvat („1 / 50 / 2”) — 2 căderi. Ambele schimbări de probă, puse la loc. ⚠️ Lasă în urmă cele două firme anuale.
+
 💰 **05.10.2026 — grila pe trepte de angajați (V83): probele 6, 29, 30, 31, 33, 36 aduse la zi**. Generatorul costă după treaptă
 („0–2” 35, „3–9” 50, „10–19” 75, „20–39” 100, „40+” 149; cu ambalaje +15/+20/+25/+30/+50), fără implementare, iar serverul cere treapta
 (422 fără ea). Ce verifică fiecare acum: **31** — cererea din API vine cu `sizeTier: 2`; pe pasul 3 treapta „3–9” e aleasă din cerere,

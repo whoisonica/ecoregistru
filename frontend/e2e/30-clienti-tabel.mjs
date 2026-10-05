@@ -7,7 +7,8 @@
 // pagina iese din ecran.
 //
 // Facturile se scriu cu `psql`, ca la proba 29 (`E2E_DB`, implicit `ecoregistru`). Lasă în urmă firmele
-// „Proba 30 … <număr>”, două cu abonament și factură, și un utilizator invitat pe firma fără abonament.
+// „Proba 30 … <număr>”, două cu abonament și factură, una cu abonament anual fără factură (05.10.2026) și un utilizator
+// invitat pe firma fără abonament.
 import { execFileSync } from "node:child_process";
 import { launch, newPage, login, shot, validCui, BASE } from "./lib.mjs";
 
@@ -22,6 +23,7 @@ const RUN = Date.now().toString().slice(-8);
 const LATE = `Proba 30 Restant ${RUN}`;
 const FAILED = `Proba 30 Căzută ${RUN}`;
 const BARE = `Proba 30 Fără abonament ${RUN}`;
+const ANNUAL = `Proba 30 Anual ${RUN}`;
 
 function sql(statement) {
   return execFileSync("psql", ["-h", "localhost", "-U", "eco", "-d", process.env.E2E_DB ?? "ecoregistru", "-tAc", statement], {
@@ -48,7 +50,7 @@ async function api(method, path, body) {
 // ---------------------------------------------------------------- datele
 await login(page, "platform");
 const ids = {};
-for (const [key, name, full] of [["late", LATE, false], ["failed", FAILED, true], ["bare", BARE, true]]) {
+for (const [key, name, full] of [["late", LATE, false], ["failed", FAILED, true], ["bare", BARE, true], ["annual", ANNUAL, true]]) {
   const created = await api("POST", "/api/v1/companies", {
     name, cui: validCui(), type: "GENERATOR", afmObligation: false,
     ...(full ? { address: "Str. Probei 30", caenCode: "1071", wasteManagerName: "Popescu Proba" } : {}),
@@ -64,6 +66,13 @@ for (const key of ["late", "failed"]) {
   check(`abonamentul „${key}”`, sub.status === 200, String(sub.status));
   ids[key + "Sub"] = sub.json?.id;
 }
+// Plata anuală (05.10.2026): prețul pe an scris de admin, treapta păstrată.
+const annualSub = await api("PUT", `/api/v1/subscriptions/company/${ids.annual}`, {
+  plan: "GENERATOR", sizeTier: 2, billingMonths: 12, monthlyPrice: 600, startedAt: "2026-07-17", founder: false,
+  billingEmail: `facturi+${RUN}annual@proba.ro`, billingCounty: "Cluj", billingCity: "Cluj-Napoca", billingAddress: "Str. Probei nr. 30",
+});
+check("abonamentul anual: 600 lei pe an", annualSub.status === 200 && annualSub.json?.billingMonths === 12 && Number(annualSub.json?.monthlyPrice) === 600,
+  `${annualSub.status} / ${annualSub.json?.billingMonths} / ${annualSub.json?.monthlyPrice}`);
 const lines = `'[{"label":"Abonament Generator","quantity":1,"unitPrice":99,"amount":99}]'`;
 const lateNumber = `8${RUN.slice(-4)}`;
 sql(`insert into subscription_invoices (id, subscription_id, period_start, period_end, total, lines_json, status, due_date, fgo_serie, fgo_numar, issued_at, created_at)
@@ -128,6 +137,9 @@ rows = await pick("Toți");
 const lateRow = rows.find((r) => r.includes(LATE)) ?? "";
 check("fișa goală: „3 lipsuri”; fișa plină: „Completă”", lateRow.includes("3 lipsuri") && (rows.find((r) => r.includes(BARE)) ?? "").includes("Completă"));
 check("abonamentul: „Așteaptă prima plată” · Generator · treapta 2 · 50 lei", /Generator · treapta 2 · 50 lei/.test(lateRow), lateRow.slice(0, 200));
+const annualRow = rows.find((r) => r.includes(ANNUAL)) ?? "";
+check("abonamentul anual: „Generator · anual · 600 lei / an”, fără treaptă", annualRow.includes("Generator · anual · 600 lei / an") && !annualRow.includes("treapta"),
+  annualRow.slice(0, 200));
 
 // ---------------------------------------------------------------- (5) rândul: Deschide și ⋯
 const bareRow = page.locator("table").first().locator("tbody tr", { hasText: BARE }).first();

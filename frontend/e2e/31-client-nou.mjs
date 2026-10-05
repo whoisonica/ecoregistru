@@ -5,9 +5,11 @@
 // factură nu se arată sau nu e cea din grilă (din 05.10.2026 pe trepte: treapta 2 din cerere, 50 lei, fără implementare;
 // prețul personalizat o înlocuiește); (6) la final lipsește abonamentul sau invitația, sau cererea rămâne nouă;
 // (7) o invitație refuzată lasă totuși firma în urmă; (8) tasta N nu duce la pagina nouă; (9) la 375px pagina iese din
-// ecran; (10) administratorul unei firme poate crea clienți.
+// ecran; (10) administratorul unei firme poate crea clienți; (11) facturarea anuală (05.10.2026): „Anual” cere prețul pe
+// an, ascunde „Preț personalizat”, iar abonamentul pleacă cu `billingMonths` 12 și prețul scris.
 //
-// Lasă în urmă firma „Proba 31 <număr>” cu abonament și un administrator invitat.
+// Lasă în urmă firma „Proba 31 <număr>” cu abonament și un administrator invitat, și „Proba 31 Anual <număr>” cu abonament
+// anual, fără administrator.
 import { launch, newPage, login, shot, validCui, BASE } from "./lib.mjs";
 
 const browser = await launch();
@@ -158,6 +160,53 @@ if (created) {
 }
 const requests = await api(page, "GET", "/api/v1/account-requests");
 check("cererea e aprobată", (requests.json ?? []).find((r) => r.companyName === NAME)?.status === "APPROVED");
+
+// ---------------------------------------------------------------- (11) a doua firmă, pe facturare anuală
+const ANNUAL = `Proba 31 Anual ${RUN}`;
+await page.goto(BASE + "/clienti/nou", { waitUntil: "networkidle" });
+await page.fill("#nc-cui", validCui());
+await page.fill("#nc-name", ANNUAL);
+await page.fill("#nc-address", "Str. Anului nr. 12");
+await page.selectOption("#nc-county", "Bihor");
+await page.fill("#nc-city", "Oradea");
+await button("Continuă: ce face").click();
+await page.fill("#nc-wm-name", "Popescu Andrei");
+await button("Continuă: abonamentul").click();
+await page.waitForTimeout(500);
+await card("nc-tier", "2").click();
+check("„Facturare”: „Lunar” e ales de la început", await page.locator('input[name="nc-billing"][value="1"]').isChecked());
+await card("nc-billing", "12").click();
+await page.waitForTimeout(300);
+check("„Anual”: câmpul „Preț pe an (lei)”, fără „Preț personalizat”",
+  ((await page.textContent('label[for="nc-price"]')) ?? "").includes("Preț pe an (lei)") && (await page.locator("#nc-custom-price").count()) === 0);
+check("„Anual”: explicația facturii pe an", (await text()).includes("O factură la începutul fiecărui an de abonament"));
+await page.fill("#nc-billing-email", `facturi+${RUN}@proba31.ro`);
+await button("Continuă: administratorul").click();
+await page.waitForTimeout(300);
+check("„Anual” fără preț: rămâne pe abonament, cu „Scrieți prețul pe an.”",
+  ((await page.textContent("#nc-price-error").catch(() => "")) ?? "").includes("Scrieți prețul pe an."));
+await page.fill("#nc-price", "600");
+await page.waitForTimeout(1200);
+const annualStep = await text();
+check("„Anual” 600: prima factură 600 lei, un singur rând anual",
+  /Total\s*600 lei/.test(annualStep) && annualStep.includes("Generator, abonament anual"), annualStep.match(/Prima factură[^N]*/)?.[0]);
+const annualPeriod = ((await page.textContent('[data-testid="new-client-first-invoice"] .eyebrow').catch(() => "")) ?? "").trim();
+check("„Anual”: perioada primei facturi are anii scriși", /\d{2}\.\d{2}\.\d{4} – \d{2}\.\d{2}\.\d{4}/.test(annualPeriod), annualPeriod);
+await shot(page, "31_anual");
+await button("Continuă: administratorul").click();
+await page.waitForTimeout(300);
+await card("nc-admin-when", "later").click();
+await button("Creează clientul").click();
+await page.waitForSelector('[data-testid="new-client-done"]', { timeout: 10000 }).catch(() => {});
+check("rezumat: „Abonament Generator, anual, prima factură 600 lei”",
+  (await text()).includes("Abonament Generator, anual, prima factură 600 lei"), (await text()).slice(0, 300));
+const annualCompany = ((await api(page, "GET", "/api/v1/companies")).json ?? []).find((c) => c.name === ANNUAL);
+check("firma anuală există", !!annualCompany);
+if (annualCompany) {
+  const sub = await api(page, "GET", `/api/v1/subscriptions/company/${annualCompany.id}`);
+  check("abonamentul e anual, 600 lei pe an, treapta 2", sub.json?.billingMonths === 12 && Number(sub.json?.monthlyPrice) === 600 && sub.json?.sizeTier === 2,
+    `${sub.json?.billingMonths} / ${sub.json?.monthlyPrice} / ${sub.json?.sizeTier}`);
+}
 
 // ---------------------------------------------------------------- (7) invitația refuzată nu lasă firma
 const OTHER = `Proba 31 Refuz ${RUN}`;
