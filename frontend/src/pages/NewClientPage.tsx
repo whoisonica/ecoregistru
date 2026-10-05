@@ -1,14 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Building2, Factory, Recycle } from "lucide-react";
+import { Building2, Factory, Info, Recycle } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { isMultiCompany } from "@/lib/roles";
 import { useAccountRequests } from "@/hooks/useAccountRequests";
 import { useOnboardClient } from "@/hooks/useCompanies";
-import { useFounderCount, useSubscriptionPreview } from "@/hooks/useSubscriptions";
-import type { AccountRequest, CompanyType, InvoicePreview, OnboardClientResult, SubscriptionPlan } from "@/lib/types";
+import { useSubscriptionPreview } from "@/hooks/useSubscriptions";
+import type { AccountRequest, CompanyType, InvoicePreview, OnboardClientResult } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { SIZE_TIERS, planLabel, type SizeTier } from "@/lib/sizeTier";
 import { isValidCui } from "@/lib/cui";
 import { COUNTIES, fgoCounty } from "@/lib/counties";
 import { fold, formatDate, todayIso } from "@/lib/utils";
@@ -23,8 +24,11 @@ import { FormStepRail } from "@/components/ui/form-steps";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
+import { PillGroup } from "@/components/ui/pill-group";
 import { Select } from "@/components/ui/select";
 import { Stepper } from "@/components/ui/stepper";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip } from "@/components/ui/tooltip";
 
 const t = strings.newClient;
 const ct = strings.clients;
@@ -92,7 +96,6 @@ function NewClientForm({
 }) {
   const navigate = useNavigate();
   const onboard = useOnboardClient();
-  const { data: founderCount } = useFounderCount(withSubscription);
 
   const steps = withSubscription ? [t.step1, t.step2, t.step3, t.step4] : [t.step1, t.step2, t.step4];
   const subscriptionStep = withSubscription ? 2 : -1;
@@ -132,9 +135,11 @@ function NewClientForm({
   const [plan, setPlan] = useState<(typeof PLANS)[number]>(
     (request?.marketRoles ?? []).length > 0 ? "GENERATOR_PACKAGING" : "GENERATOR"
   );
+  // Treapta o alege clientul la cerere; adminul o confirmă sau o schimbă. Cererile vechi n-o au: nimic ales.
+  const [sizeTier, setSizeTier] = useState<SizeTier | null>(request?.sizeTier ?? null);
+  const [customPrice, setCustomPrice] = useState(false);
+  const [monthlyPrice, setMonthlyPrice] = useState("");
   const [startedAt, setStartedAt] = useState(todayIso());
-  const [founder, setFounder] = useState<"no" | "yes">("no");
-  const [commitment, setCommitment] = useState<"no" | "yes">("no");
   const [billingEmail, setBillingEmail] = useState(request?.contactEmail ?? "");
   const [otherAddress, setOtherAddress] = useState<"same" | "other">("same");
   const [billingCounty, setBillingCounty] = useState("");
@@ -154,17 +159,23 @@ function NewClientForm({
   const [adminFirstName, setAdminFirstName] = useState("");
   const [adminLastName, setAdminLastName] = useState("");
 
-  // Task 6 înlocuiește asta cu treapta aleasă; până atunci previzualizarea cere doar pachetul.
-  const previewOf = (p: SubscriptionPlan) => ({
-    plan: p, sizeTier: null, customPrice: false, monthlyPrice: null, startedAt,
+  // Serviciul complet n-are treaptă și n-are preț în grilă: prețul îl scrie adminul. Pe celelalte, comutatorul.
+  const fullService = plan === "FULL_SERVICE";
+  const planTier = fullService ? null : sizeTier;
+  const planCustom = !fullService && customPrice;
+  const priceRequired = fullService || customPrice;
+  const typedPrice = Number(monthlyPrice);
+  const priceOk = monthlyPrice.trim() !== "" && Number.isFinite(typedPrice) && typedPrice > 0;
+  const sentPrice = priceRequired && priceOk ? typedPrice : null;
+
+  // Prețul din grilă pe cardurile cu treaptă; fără treaptă aleasă nu e ce întreba.
+  const gridOf = (p: "GENERATOR" | "GENERATOR_PACKAGING") => ({
+    plan: p, sizeTier, customPrice: false, monthlyPrice: null, startedAt,
   });
   const prices = {
-    GENERATOR: useSubscriptionPreview(previewOf("GENERATOR"), withSubscription),
-    GENERATOR_PACKAGING: useSubscriptionPreview(previewOf("GENERATOR_PACKAGING"), withSubscription),
-    FULL_SERVICE: useSubscriptionPreview(previewOf("FULL_SERVICE"), withSubscription),
+    GENERATOR: useSubscriptionPreview(gridOf("GENERATOR"), withSubscription && sizeTier != null),
+    GENERATOR_PACKAGING: useSubscriptionPreview(gridOf("GENERATOR_PACKAGING"), withSubscription && sizeTier != null),
   };
-  const committed = commitment === "yes" && plan !== "FULL_SERVICE";
-  const preview = useSubscriptionPreview(previewOf(plan), withSubscription && subscriptionOn);
 
   const invoiceCounty = otherAddress === "same" ? county : billingCounty;
   const invoiceCity = otherAddress === "same" ? city : billingCity;
@@ -181,11 +192,23 @@ function NewClientForm({
     cui: !cui.trim() ? strings.common.requiredField : !isValidCui(cui) ? strings.common.cuiInvalid : undefined,
     adminEmail: adminNow === "now" && !EMAIL.test(adminEmail.trim()) ? t.emailInvalid : undefined,
     wasteManagerName: !wasteManagerName.trim() ? strings.common.requiredField : undefined,
+    sizeTier: !fullService && sizeTier == null ? t.errSizeTier : undefined,
+    monthlyPrice: priceRequired && !priceOk ? t.errPrice : undefined,
   };
+  // Prima factură a pachetului ales, cu prețul scris când el e cel facturat.
+  const preview = useSubscriptionPreview(
+    { plan, sizeTier: planTier, customPrice: planCustom, monthlyPrice: sentPrice, startedAt },
+    withSubscription && subscriptionOn && !errors.sizeTier && !errors.monthlyPrice
+  );
   const stepInvalid = [
     !!(errors.name || errors.cui),
     !!errors.wasteManagerName,
-    ...(withSubscription ? [subscriptionOn && !(checks.cui && checks.address && checks.email)] : []),
+    ...(withSubscription
+      ? [
+          subscriptionOn &&
+            (!(checks.cui && checks.address && checks.email) || !!errors.sizeTier || !!errors.monthlyPrice),
+        ]
+      : []),
     !!errors.adminEmail,
   ];
 
@@ -251,11 +274,12 @@ function NewClientForm({
           withSubscription && subscriptionOn
             ? {
                 plan,
-                sizeTier: null,
-                customPrice: false,
-                monthlyPrice: null,
-                founder: founder === "yes",
-                twelveMonthCommitment: committed,
+                sizeTier: planTier,
+                customPrice: planCustom,
+                monthlyPrice: sentPrice,
+                // Fondatorul și angajamentul de 12 luni nu mai există pe planurile de firmă (grila din 05.10.2026).
+                founder: false,
+                twelveMonthCommitment: false,
                 startedAt,
                 billingEmail: billingEmail.trim() || null,
                 billingCounty: invoiceCounty || null,
@@ -290,7 +314,7 @@ function NewClientForm({
           <p className="text-content">
             {done.plan && done.firstInvoice
               ? t.doneSubscription
-                  .replace("{plan}", strings.subscriptions.plans[done.plan])
+                  .replace("{plan}", planLabel(done.plan, planTier, planCustom))
                   .replace("{total}", lei(done.firstInvoice.total))
                   .replace("{date}", formatDate(done.firstInvoice.from))
               : t.doneNoSubscription}
@@ -323,7 +347,7 @@ function NewClientForm({
   const summaries = [
     [name.trim(), cui.trim()].filter(Boolean).join(" · "),
     strings.enums.companyType[type],
-    ...(withSubscription ? [subscriptionOn ? strings.subscriptions.plans[plan] : t.stepSummaryNoSubscription] : []),
+    ...(withSubscription ? [subscriptionOn ? planLabel(plan, planTier, planCustom) : t.stepSummaryNoSubscription] : []),
     adminNow === "now" ? adminEmail.trim() : t.stepSummaryLater,
   ];
 
@@ -551,6 +575,27 @@ function NewClientForm({
                 </div>
               ) : (
                 <>
+                  {!fullService && (
+                    <div>
+                      <div className="mb-2 flex items-center gap-1">
+                        <span id="nc-tier-label" className="block text-xs font-medium text-content-muted">
+                          {t.sizeTierLabel}
+                        </span>
+                        <Tooltip content={strings.accountRequest.sizeTierHint}>
+                          <Info className="h-3.5 w-3.5 text-content-subtle" aria-label={strings.accountRequest.sizeTierHint} />
+                        </Tooltip>
+                      </div>
+                      <PillGroup
+                        name="nc-tier"
+                        aria-labelledby="nc-tier-label"
+                        options={SIZE_TIERS.map(({ tier, range }) => ({ value: String(tier), label: range }))}
+                        selected={sizeTier == null ? [] : [String(sizeTier)]}
+                        onToggle={(value) => setSizeTier(Number(value) as SizeTier)}
+                      />
+                      {show(step) && <FieldError id="nc-tier-error" message={errors.sizeTier} />}
+                    </div>
+                  )}
+
                   <div>
                     <span id="nc-plan-label" className="mb-2 block text-xs font-medium text-content-muted">
                       {t.planLabel}
@@ -562,25 +607,29 @@ function NewClientForm({
                       value={plan}
                       onChange={setPlan}
                       options={PLANS.map((value) => {
-                        const p = prices[value].data;
-                        const monthly = p?.monthlyInvoice.total;
-                        const fee = p ? p.firstInvoice.total - p.monthlyInvoice.total : null;
+                        const monthly = value === "FULL_SERVICE" ? undefined : prices[value].data?.monthlyInvoice.total;
                         return {
                           value,
                           label: (
                             <span className="block">
                               <span className="block">{strings.subscriptions.plans[value]}</span>
-                              <span className="mt-1 block font-mono text-lg text-content">
-                                {monthly != null ? monthly.toLocaleString("ro-RO") : "?"}{" "}
-                                <span className="text-xs font-normal text-content-muted">{t.perMonth}</span>
-                              </span>
+                              {value === "FULL_SERVICE" || sizeTier == null ? (
+                                <span className="mt-1 block text-sm text-content">
+                                  {value === "FULL_SERVICE" ? strings.subscriptions.onRequest : t.pickTier}
+                                </span>
+                              ) : (
+                                <span className="mt-1 block font-mono text-lg text-content">
+                                  {monthly != null ? monthly.toLocaleString("ro-RO") : "?"}{" "}
+                                  <span className="text-xs font-normal text-content-muted">{t.perMonth}</span>
+                                </span>
+                              )}
                             </span>
                           ),
                           description: (
                             <>
                               {t.planDescription[value]}
                               <span className="mt-1 block text-content-subtle">
-                                {fee == null ? "" : fee > 0 ? t.plusImplementation.replace("{fee}", lei(fee)) : t.noImplementation}
+                                {value === "FULL_SERVICE" ? t.fullServiceHint : t.noImplementation}
                               </span>
                             </>
                           ),
@@ -589,54 +638,41 @@ function NewClientForm({
                     />
                   </div>
 
+                  {!fullService && (
+                    <Switch
+                      id="nc-custom-price"
+                      checked={customPrice}
+                      onChange={setCustomPrice}
+                      label={strings.subscriptions.customPrice}
+                      description={strings.subscriptions.customPriceHint}
+                    />
+                  )}
+
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {priceRequired && (
+                      <div>
+                        <Label htmlFor="nc-price" required>
+                          {strings.subscriptions.monthlyPrice}
+                        </Label>
+                        <Input
+                          id="nc-price"
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min="0.01"
+                          value={monthlyPrice}
+                          onChange={(e) => setMonthlyPrice(e.target.value)}
+                          {...invalidProps("nc-price-error", show(step) ? errors.monthlyPrice : undefined)}
+                        />
+                        {show(step) && <FieldError id="nc-price-error" message={errors.monthlyPrice} />}
+                      </div>
+                    )}
                     <div>
                       <Label htmlFor="nc-start">{t.startedAt}</Label>
                       <DateInput id="nc-start" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
                       <p className="mt-1 text-xs text-content-muted">{t.startedAtHint}</p>
                     </div>
-                    <div>
-                      <span id="nc-founder-label" className="mb-1 block text-xs font-medium text-content-muted">
-                        {t.founderLabel}
-                      </span>
-                      <ChoiceCards
-                        name="nc-founder"
-                        aria-labelledby="nc-founder-label"
-                        columns={2}
-                        value={founder}
-                        onChange={setFounder}
-                        options={[
-                          { value: "no", label: t.founderNo },
-                          { value: "yes", label: t.founderYes },
-                        ]}
-                      />
-                      {founderCount != null && (
-                        <p className="mt-1 text-xs text-content-muted">
-                          {t.founderCount.replace("{n}", String(founderCount))}
-                        </p>
-                      )}
-                    </div>
                   </div>
-
-                  {plan !== "FULL_SERVICE" && (
-                    <div>
-                      <span id="nc-commitment-label" className="mb-1 block text-xs font-medium text-content-muted">
-                        {t.commitmentLabel}
-                      </span>
-                      <ChoiceCards
-                        name="nc-commitment"
-                        aria-labelledby="nc-commitment-label"
-                        columns={2}
-                        value={commitment}
-                        onChange={setCommitment}
-                        options={[
-                          { value: "no", label: t.commitmentNo },
-                          { value: "yes", label: t.commitmentYes },
-                        ]}
-                      />
-                      <p className="mt-1 text-xs text-content-muted">{t.commitmentHint}</p>
-                    </div>
-                  )}
 
                   <fieldset className="space-y-3 rounded-md border border-line p-4">
                     <legend className="px-1 text-sm font-semibold text-content">{t.billingTo}</legend>
