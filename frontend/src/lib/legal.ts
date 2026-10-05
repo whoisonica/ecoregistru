@@ -27,7 +27,8 @@
  *
  * <p>v2.4, 05.10.2026 (prețurile generatorilor pe trepte, contractul v2.4): în termeni, 12.1 (angajamentul de
  * 12 luni numai la contul de consultant; abonamentele cu angajament de pe o versiune anterioară, după contractul
- * semnat) și 12.2 (taxa de implementare sau de pornire, numai la abonamentele care o au). De validat la jurist;
+ * semnat) și 12.2 (taxa de implementare sau de pornire, numai la abonamentele care o au); completare, facturarea anuală: 11.2, 12.1,
+ * 12.2 (anul facturat nu se restituie, contul rămâne activ până la capătul lui). De validat la jurist;
  * nu se publică până atunci, iar `LEGAL_DATE` se mută pe ziua deployului. Tot 17 capitole.
  */
 
@@ -315,7 +316,9 @@ export const TERMS: LegalDoc = {
             "**11.2.** Abonamentul se plătește pe **perioade de o lună**, care încep în ziua de start a " +
             "abonamentului. Factura se emite **în prima zi a fiecărei perioade, în avans**, se transmite prin " +
             "**RO e-Factura** și vine și pe e-mail, la adresa de facturare. O puteți descărca oricând din " +
-            "ecranul „Abonament”.",
+            "ecranul „Abonament”. Dacă ați convenit cu noi, în contract, **facturarea anuală**, perioada este de " +
+            "**un an**, la un preț pe an stabilit de comun acord, iar factura se emite o dată pe an, la începutul " +
+            "fiecărui an de abonament. Trecerea de la lunar la anual, sau invers, are efect de la perioada următoare.",
         },
         { kind: "p", text: "**11.3.** Termenul de plată este de **10 zile de la emiterea facturii**." },
         {
@@ -356,8 +359,8 @@ export const TERMS: LegalDoc = {
           kind: "p",
           text:
             "**12.1.** Puteți opri abonamentul oricând, cu **preaviz de o lună**, din contract sau printr-un " +
-            "e-mail la contact@wastehouse.ro trimis de la adresa de facturare. Ultima perioadă facturată e cea " +
-            "în care cade ziua de peste o lună de la cerere. Fără angajament, nu există termen minim și nici " +
+            "e-mail la contact@wastehouse.ro trimis de la adresa de facturare. Ultima perioadă facturată (o lună sau, la " +
+            "facturarea anuală, un an) e cea în care cade ziua de peste o lună de la cerere. Fără angajament, nu există termen minim și nici " +
             "penalitate de oprire. Angajamentul de 12 luni (contract art. 4.3) se poate alege numai la contul de " +
             "consultant: taxa de pornire nu se plătește la început; dacă ultima perioadă facturată se încheie " +
             "înainte de a 12-a lună, ea se facturează odată cu ultima perioadă. Lunile rămase până la 12 nu se " +
@@ -368,7 +371,8 @@ export const TERMS: LegalDoc = {
         {
           kind: "p",
           text:
-            "**12.2.** Sumele facturate pentru o perioadă începută **nu se restituie**. Taxa de implementare " +
+            "**12.2.** Sumele facturate pentru o perioadă începută **nu se restituie**, inclusiv anul " +
+            "facturat la abonamentul anual: contul rămâne activ până la capătul lui. Taxa de implementare " +
             "sau de pornire plătită, la abonamentele care o au, nu se restituie. Excepție: dacă opriți abonamentul pentru că nu acceptați un furnizor nou " +
             "care ar prelucra datele din aplicație (contractul de împuternicire, art. 6.3), vă restituim partea " +
             "plătită în avans pentru zilele rămase.",
