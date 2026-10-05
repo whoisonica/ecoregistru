@@ -5,6 +5,7 @@
  * proba fără browser — vezi `accountRequestRules.test.ts`.
  */
 import type { CompanyType, MarketRole } from "@/lib/types";
+import type { SizeTier } from "@/lib/sizeTier";
 import { isValidCui } from "@/lib/cui";
 import { strings } from "@/lib/strings";
 
@@ -21,6 +22,7 @@ export type FieldErrors = Partial<
     | "cui"
     | "companyAddress"
     | "caenCode"
+    | "sizeTier"
     | "workPointName"
     | "workPointAddress"
     | "authNumber"
@@ -57,6 +59,8 @@ export interface AccountRequestValues {
   contactPhone: string;
   contactRole: string;
   marketRoles: MarketRole[];
+  /** Treapta după numărul de angajați; clientul nu alege pachet, doar răspunde la întrebare. */
+  sizeTier: SizeTier | null;
 }
 
 /** Numai cine ia deșeuri de la terți are transport de declarat. */
@@ -88,6 +92,7 @@ export function validate(v: AccountRequestValues, only?: Step): FieldErrors {
     else if (!isValidCui(normalizedCui)) errs.cui = t.errCuiFormat;
     need(v.companyAddress, "companyAddress");
     need(v.caenCode, "caenCode");
+    if (v.sizeTier == null) errs.sizeTier = t.errSizeTier;
   }
   if (only === undefined || only === 2) {
     need(v.workPointName, "workPointName");
@@ -117,7 +122,7 @@ export function validate(v: AccountRequestValues, only?: Step): FieldErrors {
 
 /** Pe ce pas stă o rubrică greșită — ca trimiterea să ducă omul înapoi la ea, nu doar s-o marcheze. */
 export function stepOf(errs: FieldErrors): Step {
-  if (errs.companyName || errs.cui || errs.companyAddress || errs.caenCode) return 1;
+  if (errs.companyName || errs.cui || errs.companyAddress || errs.caenCode || errs.sizeTier) return 1;
   if (
     errs.workPointName ||
     errs.workPointAddress ||

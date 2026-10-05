@@ -28,6 +28,8 @@ import { FieldError, invalidProps } from "@/components/ui/field-error";
 import { ChoiceCards } from "@/components/ui/choice-cards";
 import { MarketRolePicker } from "@/components/CompanyProfileFields";
 import { PillGroup } from "@/components/ui/pill-group";
+import { Tooltip } from "@/components/ui/tooltip";
+import { SIZE_TIERS, type SizeTier } from "@/lib/sizeTier";
 import { LegalNotice } from "@/components/LegalFooter";
 import { CornerLink, PosterFact, PosterStep, PublicShell, publicButtonClass } from "@/components/PublicShell";
 
@@ -91,6 +93,8 @@ export function AccountRequestPage() {
   // Cele două rubrici de antet ale declarației anuale. Se cer aici o dată, nu se retastează.
   const [contactRole, setContactRole] = useState("");
   const [caenCode, setCaenCode] = useState("");
+  // Doar treapta după numărul de angajați; clientul nu alege pachet și nu vede prețuri.
+  const [sizeTier, setSizeTier] = useState<SizeTier | null>(null);
   const [authNumber, setAuthNumber] = useState("");
   const [authExpiry, setAuthExpiry] = useState("");
   /** Generatorul care spune explicit că activitatea lui nu cere autorizație de mediu. */
@@ -130,7 +134,7 @@ export function AccountRequestPage() {
     () => ({
       companyName, cui, companyType, companyAddress,
       workPointName, workPointAddress,
-      contactName, contactEmail, contactPhone, contactRole, caenCode,
+      contactName, contactEmail, contactPhone, contactRole, caenCode, sizeTier,
       authNumber, authExpiry, noEnvAuth,
       transportMeans, transportLicenseNumber, transportLicenseExpiry,
       marketRoles, operationCodes, wasteCodesText, wasteNames, notes,
@@ -138,7 +142,7 @@ export function AccountRequestPage() {
     [
       companyName, cui, companyType, companyAddress,
       workPointName, workPointAddress,
-      contactName, contactEmail, contactPhone, contactRole, caenCode,
+      contactName, contactEmail, contactPhone, contactRole, caenCode, sizeTier,
       authNumber, authExpiry, noEnvAuth,
       transportMeans, transportLicenseNumber, transportLicenseExpiry,
       marketRoles, operationCodes, wasteCodesText, wasteNames, notes,
@@ -160,6 +164,8 @@ export function AccountRequestPage() {
       setContactPhone(v.contactPhone);
       setContactRole(v.contactRole);
       setCaenCode(v.caenCode);
+      // O ciornă de dinaintea treptei n-o are.
+      setSizeTier(v.sizeTier ?? null);
       setAuthNumber(v.authNumber);
       setAuthExpiry(v.authExpiry);
       // O ciornă de dinaintea bifei n-o are.
@@ -180,6 +186,7 @@ export function AccountRequestPage() {
     // preselected type, so it does not count as an answer on its own.
     (v) =>
       v.companyType === "GENERATOR" &&
+      v.sizeTier == null &&
       v.marketRoles.length === 0 &&
       !v.noEnvAuth &&
       v.operationCodes.length === 0 &&
@@ -207,6 +214,7 @@ export function AccountRequestPage() {
     setContactPhone("");
     setContactRole("");
     setCaenCode("");
+    setSizeTier(null);
     setAuthNumber("");
     setAuthExpiry("");
     setNoEnvAuth(false);
@@ -294,8 +302,7 @@ export function AccountRequestPage() {
     setErrors({});
     setError(null);
     const input: AccountRequestInput = {
-      // Task 8 adaugă alegerea treptei în formular.
-      sizeTier: null,
+      sizeTier,
       companyName: companyName.trim(),
       cui: cui.trim(),
       companyType,
@@ -508,6 +515,24 @@ export function AccountRequestPage() {
                     description: t.companyTypeChoice[ct].hint,
                   }))}
                 />
+              </div>
+              <div data-invalid={errors.sizeTier ? "true" : undefined} tabIndex={-1}>
+                <span id="ar-size-label" className={cn("mb-1 block text-xs font-medium", labelClass)}>
+                  {t.sizeTierLabel} *
+                  <Tooltip content={t.sizeTierHint}>
+                    <span className="ml-1 cursor-help text-content-subtle">?</span>
+                  </Tooltip>
+                </span>
+                <div {...invalidProps("ar-size-err", errors.sizeTier)}>
+                  <PillGroup
+                    name="ar-size-tier"
+                    aria-labelledby="ar-size-label"
+                    options={SIZE_TIERS.map((s) => ({ value: String(s.tier), label: s.range }))}
+                    selected={sizeTier == null ? [] : [String(sizeTier)]}
+                    onToggle={(v) => setSizeTier(Number(v) as SizeTier)}
+                  />
+                </div>
+                <FieldError id="ar-size-err" message={errors.sizeTier} />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_180px]">
                 <div>

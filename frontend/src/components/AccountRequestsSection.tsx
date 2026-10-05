@@ -8,6 +8,7 @@ import {
 import type { AccountRequest } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { SIZE_TIERS } from "@/lib/sizeTier";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -331,6 +332,10 @@ export function AccountRequestsSection({
                 { label: t.cui, value: viewing.cui },
                 { label: t.companyType, value: typeLabels[viewing.companyType] },
                 { label: t.caenCode, value: viewing.caenCode },
+                // Cererile vechi n-au treapta: rândul lipsește, nu arată o liniuță.
+                ...(viewing.sizeTier == null
+                  ? []
+                  : [{ label: t.sizeTier, value: SIZE_TIERS.find((s) => s.tier === viewing.sizeTier)?.range }]),
                 { label: t.companyAddress, value: viewing.companyAddress },
               ]}
             />

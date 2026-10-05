@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { strings } from "@/lib/strings";
 import {
   asksMarketRoles,
   asksTransport,
@@ -32,6 +33,7 @@ function complete(): AccountRequestValues {
     contactPhone: "0740000000",
     contactRole: "Administrator",
     marketRoles: ["PRODUCER"],
+    sizeTier: 2,
   };
 }
 
@@ -94,4 +96,11 @@ test("greșeala trimite omul înapoi la pasul ei", () => {
   assert.equal(stepOf({ marketRoles: "x" }), 4);
   // Cea mai din față are prioritate: omul e dus la prima rubrică greșită, nu la ultima.
   assert.equal(stepOf({ companyName: "x", contactEmail: "y" }), 1);
+});
+
+test("pasul 1 cere treapta de angajați", () => {
+  const errs = validate({ ...complete(), sizeTier: null }, 1);
+  assert.equal(errs.sizeTier, strings.accountRequest.errSizeTier);
+  assert.equal(validate(complete(), 1).sizeTier, undefined);
+  assert.equal(stepOf({ sizeTier: strings.accountRequest.errSizeTier }), 1);
 });
