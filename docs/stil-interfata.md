@@ -126,8 +126,9 @@ panoul; Ctrl K deschide paleta (`CommandPalette`). Tastele tac în câmpuri de t
 Anexei 1, unsprezece), se folosește `PillGroup multiple` — aceleași taste, pastilele sunt checkbox-uri și cea bifată poartă o bifă. Unitatea stă mică lângă nume. E o abatere
 din spec (§4.2 spunea `ChoiceCards`), în aceeași familie de primitive.
 
-**Subpagină fără intrare de meniu.** O pagină la care se ajunge dintr-un rând (nu din panou) nu primește loc în meniu: fișa de energie, `/termene/energie?an=`, se deschide din rândul
-din Termene, e găsită cu Ctrl K (intrarea `hidden` din `navItems.ts`) și are în adresă anul și vederea.
+**Subpagină fără intrare de meniu.** O pagină la care se ajunge dintr-un rând (nu din panou) nu primește loc în meniu, se găsește cu Ctrl K (intrarea `hidden` din
+`navItems.ts`) și are în adresă ce arată. Fișa de energie a pornit așa (`/termene/energie?an=`), dar din 05.10.2026 are intrare proprie, „Energie”, imediat după Termene
+(`/energie?an=`; vechea adresă redirecționează), la cererea proprietarului.
 
 Select-ul nativ rămâne pentru liste lungi (parteneri, puncte de lucru, coduri R/D din profil). **Sub șapte opțiuni,
 într-un formular nou, se folosesc `ChoiceCards` sau `PillGroup`.**
