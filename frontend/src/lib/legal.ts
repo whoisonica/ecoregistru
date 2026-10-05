@@ -318,7 +318,7 @@ export const TERMS: LegalDoc = {
             "**RO e-Factura** și vine și pe e-mail, la adresa de facturare. O puteți descărca oricând din " +
             "ecranul „Abonament”. Dacă ați convenit cu noi, în contract, **facturarea anuală**, perioada este de " +
             "**un an**, la un preț pe an stabilit de comun acord, iar factura se emite o dată pe an, la începutul " +
-            "fiecărui an de abonament. Trecerea de la lunar la anual, sau invers, are efect de la perioada următoare.",
+            "fiecărui an de abonament. Trecerea de la lunar la anual, sau invers, se face cu acordul nostru și are efect de la perioada următoare.",
         },
         { kind: "p", text: "**11.3.** Termenul de plată este de **10 zile de la emiterea facturii**." },
         {
@@ -364,7 +364,7 @@ export const TERMS: LegalDoc = {
             "penalitate de oprire. Angajamentul de 12 luni (contract art. 4.3) se poate alege numai la contul de " +
             "consultant: taxa de pornire nu se plătește la început; dacă ultima perioadă facturată se încheie " +
             "înainte de a 12-a lună, ea se facturează odată cu ultima perioadă. Lunile rămase până la 12 nu se " +
-            "datorează. Un abonament cu angajament încheiat pe o versiune anterioară a contractului urmează " +
+            "datorează. Angajamentul nu se combină cu facturarea anuală. Un abonament cu angajament încheiat pe o versiune anterioară a contractului urmează " +
             "aceeași regulă, cu taxa de implementare sau de pornire " +
             "din contractul semnat.",
         },
@@ -373,7 +373,9 @@ export const TERMS: LegalDoc = {
           text:
             "**12.2.** Sumele facturate pentru o perioadă începută **nu se restituie**, inclusiv anul " +
             "facturat la abonamentul anual: contul rămâne activ până la capătul lui. Taxa de implementare " +
-            "sau de pornire plătită, la abonamentele care o au, nu se restituie. Excepție: dacă opriți abonamentul pentru că nu acceptați un furnizor nou " +
+            "sau de pornire plătită, la abonamentele care o au, nu se restituie. Dacă abonamentul încetează prin " +
+            "denunțarea noastră sau prin reziliere pentru neexecutarea obligațiilor noastre, vă restituim lunile " +
+            "întregi rămase neconsumate din perioada plătită în avans. Excepție: dacă opriți abonamentul pentru că nu acceptați un furnizor nou " +
             "care ar prelucra datele din aplicație (contractul de împuternicire, art. 6.3), vă restituim partea " +
             "plătită în avans pentru zilele rămase.",
         },
