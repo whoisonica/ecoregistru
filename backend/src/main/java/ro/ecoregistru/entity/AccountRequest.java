@@ -146,7 +146,7 @@ public class AccountRequest {
     @Column(length = 2000)
     String notes;
 
-    /** Treapta de angajați aleasă la cerere (V83); doar intervalul, nu numărul de angajați. */
+    /** The employee interval chosen on the request (V83): the interval only, not an employee count. */
     @Convert(converter = SizeTierConverter.class)
     @Column(name = "size_tier")
     SizeTier sizeTier;

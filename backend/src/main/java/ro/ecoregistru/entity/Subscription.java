@@ -82,12 +82,12 @@ public class Subscription {
     @Column(nullable = false)
     boolean twelveMonthCommitment;
 
-    /** Treapta de angajați (V83). Null: abonament dinainte de 05.10.2026, serviciu complet sau consultant. */
+    /** The chosen employee interval, not a count (V83). Null: subscription from before 05.10.2026, full service or consultancy. */
     @Convert(converter = SizeTierConverter.class)
     @Column(name = "size_tier")
     SizeTier sizeTier;
 
-    /** Prețul a fost negociat, nu e cel al treptei (V83). */
+    /** The price was written by the admin and is not recalculated from the grid until unticked (V83). */
     @Column(nullable = false)
     @Builder.Default
     boolean customPrice = false;

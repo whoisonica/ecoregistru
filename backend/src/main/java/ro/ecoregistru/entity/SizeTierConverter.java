@@ -4,7 +4,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import ro.ecoregistru.enums.SizeTier;
 
-/** Treapta se salvează ca număr 1–5 ({@code size_tier SMALLINT}); {@code null} rămâne {@code null}. */
+/** The tier is stored as a number 1–5 ({@code size_tier SMALLINT}); {@code null} stays {@code null}. */
 @Converter
 public class SizeTierConverter implements AttributeConverter<SizeTier, Integer> {
 

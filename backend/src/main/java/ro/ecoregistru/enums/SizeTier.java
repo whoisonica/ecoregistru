@@ -3,11 +3,11 @@ package ro.ecoregistru.enums;
 import java.math.BigDecimal;
 
 /**
- * Treapta de angajați a unui abonament de generator (grila din 05.10.2026). Clientul alege un
- * interval, nu declară un număr de angajați: doar treapta se păstrează. Lei, fără TVA.
+ * The employee-count tier of a generator subscription (grid of 05.10.2026). The client picks an
+ * interval instead of stating an employee count: only the tier is stored. Lei, without VAT.
  *
- * <p>Prețul de bază e al planului {@link SubscriptionPlan#GENERATOR}; cu ambalaje se adaugă
- * suplimentul treptei.
+ * <p>The base price is that of {@link SubscriptionPlan#GENERATOR}; with packaging the tier's
+ * supplement is added.
  */
 public enum SizeTier {
 
@@ -27,12 +27,12 @@ public enum SizeTier {
         this.packagingSupplement = BigDecimal.valueOf(packagingSupplement);
     }
 
-    /** 1–5, cum se salvează în coloana {@code size_tier}. */
+    /** 1–5, as stored in the {@code size_tier} column. */
     public int number() {
         return ordinal() + 1;
     }
 
-    /** Intervalul de angajați, cum îl vede clientul (cu linioară de interval). */
+    /** The employee interval as the client sees it (with an en dash). */
     public String range() {
         return range;
     }
@@ -44,7 +44,7 @@ public enum SizeTier {
         return values()[number - 1];
     }
 
-    /** Doar generatorul și generatorul cu ambalaje au preț pe treaptă. */
+    /** Only the generator plans have a tier price; any other plan is refused. */
     public BigDecimal monthlyPrice(SubscriptionPlan plan) {
         return switch (plan) {
             case GENERATOR -> basePrice;
