@@ -135,7 +135,8 @@ check("fără tipul de generator nu se trimite", /Bifează cel puțin una/.test(
 await page.click('label:has-text("Producător") input[type="checkbox"]');
 await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 await page.click('button[type="submit"]');
-await page.waitForTimeout(1200);
+// Pe CI mulțumirea poate veni după 1,2 s (05.10.2026): se așteaptă textul, cel mult 10 s.
+await page.waitForFunction(() => /Cererea a fost trimisă/.test(document.body.textContent), null, { timeout: 10000 }).catch(() => {});
 
 const thanks = await page.textContent("body");
 check("cererea se trimite", /Cererea a fost trimisă/.test(thanks), "");
