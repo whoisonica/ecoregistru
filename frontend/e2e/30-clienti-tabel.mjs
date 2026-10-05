@@ -163,7 +163,11 @@ await page.locator('[role="menuitem"]', { hasText: "Invită" }).click();
 await page.waitForTimeout(400);
 await page.fill("#i-email", `invitat+${RUN}@proba.ro`);
 await page.click('div[role="dialog"] button[type="submit"]');
-await page.waitForTimeout(1500);
+// Lista se reîncarcă după invitație; pe CI poate întârzia peste 1,5 s (05.10.2026), deci se așteaptă cifra, cel mult 10 s.
+await page.waitForFunction(
+  ([name]) => [...document.querySelectorAll("table tbody tr")].find((r) => r.textContent.includes(name))?.querySelectorAll("td")[3]?.textContent.trim() === "1",
+  [BARE], { timeout: 10000 },
+).catch(() => {});
 const usersCell = (await bareRow.locator("td").nth(3).textContent())?.trim();
 check("după invitație, utilizatorii firmei sunt 1", usersCell === "1", usersCell);
 
