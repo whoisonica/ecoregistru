@@ -96,6 +96,21 @@ public class Subscription {
     @Column(nullable = false)
     LocalDate startedAt;
 
+    /** The length of a billing period in months, 1 or 12 (V84). Annual: {@link #monthlyPrice} is the price per year. */
+    @Column(nullable = false)
+    @Builder.Default
+    int billingMonths = 1;
+
+    /**
+     * The day period {@link #anchorPeriod} starts; null means {@link #startedAt} (V84). Moved when the
+     * period length changes, so the period index stays absolute (0 is always the first period).
+     */
+    LocalDate periodAnchor;
+
+    @Column(nullable = false)
+    @Builder.Default
+    int anchorPeriod = 0;
+
     // --- F2: who the invoice is addressed to (V44). Name and CUI come from the company or consultancy. ---
 
     /** Falls back to the company's contact email; a consultancy has none of its own. */

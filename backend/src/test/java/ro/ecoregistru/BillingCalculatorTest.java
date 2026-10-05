@@ -250,6 +250,93 @@ class BillingCalculatorTest {
                 .containsExactly("Generator");
     }
 
+    /** Plata anuală: pornit pe 17.10.2026, perioada 0 ține un an întreg, 17.10.2026–16.10.2027. */
+    @Test
+    void annualPeriodsLastTwelveMonths() {
+        Subscription s = annual(direct(SubscriptionPlan.GENERATOR, false, START), 600);
+        Invoice first = BillingCalculator.invoice(s, 1, 0, 0, 0);
+        assertThat(first.from()).isEqualTo("2026-10-17");
+        assertThat(first.to()).isEqualTo("2027-10-16");
+        assertThat(BillingCalculator.periodEnd(s, 0)).isEqualTo("2027-10-16");
+        assertThat(BillingCalculator.periodOn(s, LocalDate.of(2027, 10, 16))).isZero();
+        assertThat(BillingCalculator.periodOn(s, LocalDate.of(2027, 10, 17))).isEqualTo(1);
+        assertThat(BillingCalculator.periodStart(s, 1)).isEqualTo("2027-10-17");
+    }
+
+    /** Un singur rând, prețul pe an: punctele de lucru în plus nu se mai adaugă. */
+    @Test
+    void anAnnualInvoiceHasOneLine() {
+        Subscription s = annual(direct(SubscriptionPlan.GENERATOR, false, START), 600);
+        s.setImplementationFee(BigDecimal.ZERO);
+        Invoice invoice = BillingCalculator.invoice(s, 3, 0, 0, 0);
+        assertThat(invoice.lines())
+                .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
+                .containsExactly(tuple("Generator, abonament anual", 1, 600));
+        assertThat(invoice.total()).isEqualByComparingTo("600");
+    }
+
+    /** Consultantul anual: fără „Firmă gestionată…” și fără „Ambalaje, pe firmă”. */
+    @Test
+    void anAnnualConsultancyHasOneLine() {
+        Invoice invoice = BillingCalculator.invoice(annual(consultancy(), 3000), 0, 12, 4, NEXT);
+        assertThat(invoice.lines())
+                .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
+                .containsExactly(tuple("Abonament de consultant, abonament anual", 1, 3000));
+        assertThat(invoice.total()).isEqualByComparingTo("3000");
+    }
+
+    /**
+     * Lunar din 05.01, anual din 05.03 (perioada 2): indicele rămâne cel absolut, iar o zi dinaintea
+     * ancorei ține de perioada deja facturată.
+     */
+    @Test
+    void anAnchorKeepsTheAbsoluteIndex() {
+        Subscription s = direct(SubscriptionPlan.GENERATOR, false, LocalDate.of(2027, 1, 5));
+        annual(s, 600);
+        s.setPeriodAnchor(LocalDate.of(2027, 3, 5));
+        s.setAnchorPeriod(2);
+        assertThat(BillingCalculator.periodStart(s, 2)).isEqualTo("2027-03-05");
+        assertThat(BillingCalculator.periodStart(s, 3)).isEqualTo("2028-03-05");
+        assertThat(BillingCalculator.periodEnd(s, 2)).isEqualTo("2028-03-04");
+        assertThat(BillingCalculator.periodOn(s, LocalDate.of(2027, 2, 20))).isEqualTo(1);
+        assertThat(BillingCalculator.periodOn(s, LocalDate.of(2027, 3, 5))).isEqualTo(2);
+        assertThat(BillingCalculator.periodOn(s, LocalDate.of(2028, 3, 4))).isEqualTo(2);
+        assertThat(BillingCalculator.periodOn(s, LocalDate.of(2028, 3, 5))).isEqualTo(3);
+        Invoice year = BillingCalculator.invoice(s, 1, 0, 0, 2);
+        assertThat(year.from()).isEqualTo("2027-03-05");
+        assertThat(year.to()).isEqualTo("2028-03-04");
+        assertThat(year.total()).isEqualByComparingTo("600");
+    }
+
+    /**
+     * Abonamentul lunar dinainte de plata anuală: lunar, fără ancoră, perioadele lunare de la data de
+     * start, iar implementarea de la oprirea înainte de 12 luni rămâne pe ultima factură.
+     */
+    @Test
+    void aLegacyMonthlySubscriptionIsUnchanged() {
+        Subscription s = committed(SubscriptionPlan.GENERATOR, null);
+        assertThat(s.getBillingMonths()).isEqualTo(1);
+        assertThat(s.getPeriodAnchor()).isNull();
+        assertThat(s.getAnchorPeriod()).isZero();
+        for (int k = 0; k < 24; k++) {
+            assertThat(BillingCalculator.periodStart(s, k)).isEqualTo(START.plusMonths(k));
+            assertThat(BillingCalculator.periodOn(s, START.plusMonths(k))).isEqualTo(k);
+            assertThat(BillingCalculator.periodOn(s, START.plusMonths(k + 1).minusDays(1))).isEqualTo(k);
+        }
+        s.setEndsOn(BillingCalculator.periodEnd(s, 4));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 4).lines())
+                .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
+                .containsExactly(
+                        tuple("Generator", 1, 99),
+                        tuple("Implementare (oprire înainte de 12 luni)", 1, 290));
+    }
+
+    private static Subscription annual(Subscription s, int pricePerYear) {
+        s.setBillingMonths(12);
+        s.setMonthlyPrice(BigDecimal.valueOf(pricePerYear));
+        return s;
+    }
+
     /** A subscription saved on the tier grid: no implementation fee, extra work points free. */
     private static Subscription tiered(SubscriptionPlan plan, SizeTier tier) {
         return Subscription.builder().plan(plan).sizeTier(tier)

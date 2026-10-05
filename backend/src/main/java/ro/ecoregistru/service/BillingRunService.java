@@ -293,7 +293,7 @@ public class BillingRunService {
         int reserved = 0;
         for (Subscription s : subscriptionRepository
                 .findAllByStatusNotAndStartedAtLessThanEqual(SubscriptionStatus.CANCELLED, today)) {
-            int period = BillingCalculator.periodOn(s.getStartedAt(), today);
+            int period = BillingCalculator.periodOn(s, today);
             LocalDate periodStart = BillingCalculator.periodStart(s, period);
             // §9.3: a stopped subscription is billed up to its last day, never a period that starts after it.
             if ((s.getEndsOn() != null && periodStart.isAfter(s.getEndsOn()))

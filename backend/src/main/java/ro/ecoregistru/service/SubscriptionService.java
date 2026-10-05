@@ -365,8 +365,7 @@ public class SubscriptionService {
     static LocalDate endsOnAfterNotice(Subscription s, LocalDate today) {
         LocalDate noticeEnds = today.plusMonths(1);
         LocalDate day = noticeEnds.isBefore(s.getStartedAt()) ? s.getStartedAt() : noticeEnds;
-        int period = BillingCalculator.periodOn(s.getStartedAt(), day);
-        return BillingCalculator.periodStart(s, period + 1).minusDays(1);
+        return BillingCalculator.periodEnd(s, BillingCalculator.periodOn(s, day));
     }
 
     /** Reads the status again from the invoices ({@link SubscriptionStatusRules}). Needs a transaction. */
@@ -406,7 +405,7 @@ public class SubscriptionService {
 
     /** The next invoice is the first one until the start date, then the one after the current period. */
     private BillingResponse toBillingResponse(Subscription s, LocalDate today) {
-        int next = today.isBefore(s.getStartedAt()) ? 0 : BillingCalculator.periodOn(s.getStartedAt(), today) + 1;
+        int next = today.isBefore(s.getStartedAt()) ? 0 : BillingCalculator.periodOn(s, today) + 1;
         List<BillingResponse.IssuedInvoice> invoices = invoiceRepository
                 .findAllBySubscription_IdOrderByPeriodStartDesc(s.getId()).stream()
                 .filter(i -> i.getStatus() != InvoiceStatus.DRAFT)

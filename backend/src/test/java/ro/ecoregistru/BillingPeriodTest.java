@@ -1,6 +1,7 @@
 package ro.ecoregistru;
 
 import org.junit.jupiter.api.Test;
+import ro.ecoregistru.entity.Subscription;
 import ro.ecoregistru.service.BillingCalculator;
 
 import java.time.LocalDate;
@@ -12,7 +13,7 @@ class BillingPeriodTest {
 
     @Test
     void aPeriodTurnsOnTheSameDateOfTheNextMonth() {
-        LocalDate start = LocalDate.of(2026, 10, 17);
+        Subscription start = startedOn(2026, 10, 17);
         assertThat(BillingCalculator.periodOn(start, LocalDate.of(2026, 10, 17))).isZero();
         assertThat(BillingCalculator.periodOn(start, LocalDate.of(2026, 11, 16))).isZero();
         assertThat(BillingCalculator.periodOn(start, LocalDate.of(2026, 11, 17))).isEqualTo(1);
@@ -22,7 +23,7 @@ class BillingPeriodTest {
     /** Aceleași perioade ca în BillingCalculatorTest: 31.01–27.02, 28.02–30.03, apoi 31.03. */
     @Test
     void theEndOfAMonthFollowsTheStartDate() {
-        LocalDate start = LocalDate.of(2027, 1, 31);
+        Subscription start = startedOn(2027, 1, 31);
         assertThat(BillingCalculator.periodOn(start, LocalDate.of(2027, 2, 27))).isZero();
         assertThat(BillingCalculator.periodOn(start, LocalDate.of(2027, 2, 28))).isEqualTo(1);
         assertThat(BillingCalculator.periodOn(start, LocalDate.of(2027, 3, 30))).isEqualTo(1);
@@ -31,6 +32,11 @@ class BillingPeriodTest {
 
     @Test
     void beforeTheStartThereIsOnlyTheFirstPeriod() {
-        assertThat(BillingCalculator.periodOn(LocalDate.of(2026, 10, 17), LocalDate.of(2026, 9, 1))).isZero();
+        assertThat(BillingCalculator.periodOn(startedOn(2026, 10, 17), LocalDate.of(2026, 9, 1))).isZero();
+    }
+
+    /** A monthly subscription with no anchor: the periods as they were before annual billing. */
+    private static Subscription startedOn(int year, int month, int day) {
+        return Subscription.builder().startedAt(LocalDate.of(year, month, day)).build();
     }
 }

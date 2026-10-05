@@ -25,12 +25,20 @@ import java.util.List;
  * <p>With the 12-month commitment (contract art. 4.3, 24.09.2026) the fee moves: the first period
  * shows it as free, and it is billed only on the last period of a subscription stopped before the
  * 12th. Only the remaining months are forgiven, never the fee itself. A founder pays it in no case.
+ *
+ * <p>Annual billing (05.10.2026): a period lasts {@code billingMonths} months, 1 or 12, and an annual
+ * invoice has a single line, the price per year, with nothing added per work point or company. The
+ * period index stays absolute: after a switch, period {@code anchorPeriod} starts on
+ * {@code periodAnchor} and the next ones are counted from there, so the rules keyed on the index
+ * (the fee in period 0, the 12-month commitment) read the same as before.
  */
 public final class BillingCalculator {
 
     static final int TIER1_UP_TO = 10;
     static final int TIER2_UP_TO = 30;
     public static final int COMMITMENT_PERIODS = 12;
+    /** {@code billingMonths} of an annual subscription: one invoice a year, at the price per year. */
+    public static final int ANNUAL = 12;
 
     public record Line(String label, int quantity, BigDecimal unitPrice, BigDecimal amount) {}
 
@@ -39,27 +47,47 @@ public final class BillingCalculator {
 
     private BillingCalculator() {}
 
-    /** The first day of the given period; period 0 starts on the subscription's start date. */
+    /**
+     * The first day of the given period. From the anchor on, periods are counted from the anchor
+     * itself; period 0 starts on the start date when there is no anchor. A period before the anchor
+     * was billed under the other length, counted from the start date.
+     */
     public static LocalDate periodStart(Subscription s, int period) {
-        return s.getStartedAt().plusMonths(period);
+        if (period >= s.getAnchorPeriod()) {
+            return anchor(s).plusMonths((long) (period - s.getAnchorPeriod()) * s.getBillingMonths());
+        }
+        int before = s.getBillingMonths() == ANNUAL ? 1 : ANNUAL;
+        return s.getStartedAt().plusMonths((long) period * before);
+    }
+
+    /** The last billed day of the given period. */
+    public static LocalDate periodEnd(Subscription s, int period) {
+        return periodStart(s, period + 1).minusDays(1);
     }
 
     /**
-     * The period {@code day} falls in, or 0 before the start. A month is not a fixed length, so the
-     * estimate from whole months is corrected both ways: started on 31.01, 28.02 is already period 1.
+     * The period {@code day} falls in, or 0 before the start. A day before the anchor belongs to the
+     * period just before it, already billed. A month is not a fixed length, so the estimate from whole
+     * months is corrected both ways: started on 31.01, 28.02 is already period 1.
      */
-    public static int periodOn(LocalDate startedAt, LocalDate day) {
-        if (day.isBefore(startedAt)) {
-            return 0;
+    public static int periodOn(Subscription s, LocalDate day) {
+        LocalDate anchor = anchor(s);
+        if (day.isBefore(anchor)) {
+            return day.isBefore(s.getStartedAt()) ? 0 : Math.max(s.getAnchorPeriod() - 1, 0);
         }
-        int period = (int) ChronoUnit.MONTHS.between(startedAt, day);
-        while (!startedAt.plusMonths(period + 1).isAfter(day)) {
-            period++;
+        long months = s.getBillingMonths();
+        int n = (int) (ChronoUnit.MONTHS.between(anchor, day) / months);
+        while (!anchor.plusMonths((n + 1) * months).isAfter(day)) {
+            n++;
         }
-        while (period > 0 && startedAt.plusMonths(period).isAfter(day)) {
-            period--;
+        while (n > 0 && anchor.plusMonths(n * months).isAfter(day)) {
+            n--;
         }
-        return period;
+        return s.getAnchorPeriod() + n;
+    }
+
+    private static LocalDate anchor(Subscription s) {
+        return s.getPeriodAnchor() != null ? s.getPeriodAnchor() : s.getStartedAt();
     }
 
     /**
@@ -74,16 +102,12 @@ public final class BillingCalculator {
             throw new IllegalArgumentException("There is no period before the subscription starts");
         }
         List<Line> lines = new ArrayList<>();
-        recurring(lines, baseLabel(s), 1, s.getMonthlyPrice());
-        if (s.getPlan().forConsultancy()) {
-            int n = managedCompanies;
-            recurring(lines, "Firmă gestionată, 1–10", Math.min(n, TIER1_UP_TO), s.getCompanyPriceTier1());
-            recurring(lines, "Firmă gestionată, 11–30",
-                    Math.clamp(n - TIER1_UP_TO, 0, TIER2_UP_TO - TIER1_UP_TO), s.getCompanyPriceTier2());
-            recurring(lines, "Firmă gestionată, 31 și peste", Math.max(n - TIER2_UP_TO, 0), s.getCompanyPriceTier3());
-            recurring(lines, "Ambalaje, pe firmă", packagingCompanies, s.getPackagingCompanyPrice());
+        if (s.getBillingMonths() == ANNUAL) {
+            // One line, the price per year: nothing is added per work point or managed company.
+            recurring(lines, s.getPlan().label() + ", abonament anual", 1, s.getMonthlyPrice());
         } else {
-            recurring(lines, "Punct de lucru în plus", Math.max(activeWorkPoints - 1, 0), s.getExtraWorkPointPrice());
+            recurring(lines, baseLabel(s), 1, s.getMonthlyPrice());
+            perUnit(lines, s, activeWorkPoints, managedCompanies, packagingCompanies);
         }
 
         String label = s.getPlan().forConsultancy() ? "Pornirea contului de consultant" : "Implementare";
@@ -104,8 +128,7 @@ public final class BillingCalculator {
         }
 
         BigDecimal total = lines.stream().map(Line::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        return new Invoice(periodStart(s, period), periodStart(s, period + 1).minusDays(1),
-                List.copyOf(lines), total);
+        return new Invoice(periodStart(s, period), periodEnd(s, period), List.copyOf(lines), total);
     }
 
     /**
@@ -114,7 +137,7 @@ public final class BillingCalculator {
      */
     static boolean stoppedEarlyIn(Subscription s, int period) {
         return s.getEndsOn() != null && period < COMMITMENT_PERIODS - 1
-                && !periodStart(s, period + 1).minusDays(1).isBefore(s.getEndsOn());
+                && !periodEnd(s, period).isBefore(s.getEndsOn());
     }
 
     /** The plan label, with the employee tier when the subscription is on the grid and not custom-priced. */
@@ -124,6 +147,20 @@ public final class BillingCalculator {
         }
         return s.getPlan().label() + ", treapta " + s.getSizeTier().number()
                 + " (" + s.getSizeTier().range() + " angajați)";
+    }
+
+    private static void perUnit(List<Line> lines, Subscription s, int activeWorkPoints, int managedCompanies,
+                                int packagingCompanies) {
+        if (s.getPlan().forConsultancy()) {
+            int n = managedCompanies;
+            recurring(lines, "Firmă gestionată, 1–10", Math.min(n, TIER1_UP_TO), s.getCompanyPriceTier1());
+            recurring(lines, "Firmă gestionată, 11–30",
+                    Math.clamp(n - TIER1_UP_TO, 0, TIER2_UP_TO - TIER1_UP_TO), s.getCompanyPriceTier2());
+            recurring(lines, "Firmă gestionată, 31 și peste", Math.max(n - TIER2_UP_TO, 0), s.getCompanyPriceTier3());
+            recurring(lines, "Ambalaje, pe firmă", packagingCompanies, s.getPackagingCompanyPrice());
+        } else {
+            recurring(lines, "Punct de lucru în plus", Math.max(activeWorkPoints - 1, 0), s.getExtraWorkPointPrice());
+        }
     }
 
     private static void recurring(List<Line> lines, String label, int quantity, BigDecimal unitPrice) {
