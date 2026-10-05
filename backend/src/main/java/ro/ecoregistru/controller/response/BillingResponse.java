@@ -25,6 +25,8 @@ import java.util.UUID;
 public record BillingResponse(
         String clientName,
         SubscriptionPlan plan,
+        Integer sizeTier,
+        boolean customPrice,
         SubscriptionStatus status,
         LocalDate startedAt,
         boolean founder,

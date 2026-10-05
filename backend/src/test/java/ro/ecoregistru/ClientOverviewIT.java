@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import ro.ecoregistru.config.JwtService;
@@ -27,6 +28,7 @@ import java.util.UUID;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -83,6 +85,22 @@ class ClientOverviewIT {
         assertThat(empty.get("subscriptionStatus")).isNull();
         assertThat(empty.get("lastInvoice")).isNull();
         assertThat(empty.get("userCount")).isEqualTo(0);
+    }
+
+    /** A new subscription on tier 3 shows the tier and the 75 of the grid, not a custom price. */
+    @Test
+    void aNewSubscriptionShowsItsTierAndPrice() throws Exception {
+        Company c = company(null);
+        mockMvc.perform(put("/api/v1/subscriptions/company/" + c.getId())
+                        .header("Authorization", "Bearer " + platformToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"plan\":\"GENERATOR\",\"sizeTier\":3,\"startedAt\":\"2026-10-01\"}"))
+                .andExpect(status().isOk());
+
+        Map<String, Object> row = rowOf(platformToken, c);
+        assertThat(row.get("sizeTier")).isEqualTo(3);
+        assertThat(((Number) row.get("monthlyPrice")).intValue()).isEqualTo(75);
+        assertThat(row.get("customPrice")).isEqualTo(false);
     }
 
     @Test

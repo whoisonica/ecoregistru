@@ -88,7 +88,7 @@ class AccountRequestNoticeIT {
 
     private MockHttpServletRequestBuilder submission(String name, String cui, String website) {
         String body = """
-                {"companyName": "%s", "cui": "%s", "companyType": "GENERATOR",
+                {"companyName": "%s", "cui": "%s", "companyType": "GENERATOR", "sizeTier": 2,
                  "contactName": "Ion Popescu", "contactEmail": "ion.popescu@example.ro",
                  "contactPhone": "0740111222"%s}
                 """.formatted(name, cui, website == null ? "" : ", \"website\": \"" + website + "\"");

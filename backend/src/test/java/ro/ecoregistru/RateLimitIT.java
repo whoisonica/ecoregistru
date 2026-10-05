@@ -198,7 +198,7 @@ class RateLimitIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"companyName":"Proba Limitare SRL","cui":"RO%s",\
-                        "companyType":"GENERATOR","contactEmail":"%s"}"""
+                        "companyType":"GENERATOR","sizeTier":2,"contactEmail":"%s"}"""
                         .formatted(suffix, freshEmail()));
     }
 

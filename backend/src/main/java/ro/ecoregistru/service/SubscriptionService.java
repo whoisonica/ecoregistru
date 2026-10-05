@@ -415,7 +415,8 @@ public class SubscriptionService {
                         i.getFgoLink(), i.getFgoLinkPlata(), i.getPaidAt(), i.getPaidBy(), lastCardError(i.getId()),
                         i.getPaymentCheckedAt()))
                 .toList();
-        return new BillingResponse(BillingRunService.clientName(s), s.getPlan(), s.getStatus(), s.getStartedAt(),
+        return new BillingResponse(BillingRunService.clientName(s), s.getPlan(),
+                s.getSizeTier() == null ? null : s.getSizeTier().number(), s.isCustomPrice(), s.getStatus(), s.getStartedAt(),
                 s.isFounder(), s.isTwelveMonthCommitment(), invoiceFor(s, next), BillingRunService.recipient(s),
                 s.getBillingCounty(), s.getBillingCity(), s.getBillingAddress(), invoices,
                 s.getPaymentMethod(), s.getCardPanMasked(), s.getCardExpiry(), netopia.isConfigured(),

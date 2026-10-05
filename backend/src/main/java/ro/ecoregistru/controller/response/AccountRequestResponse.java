@@ -16,6 +16,7 @@ public record AccountRequestResponse(
         String companyName,
         String cui,
         CompanyType companyType,
+        Integer sizeTier,
         String companyAddress,
         String workPointName,
         String workPointAddress,

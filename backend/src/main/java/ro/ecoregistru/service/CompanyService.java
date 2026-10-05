@@ -131,6 +131,8 @@ public class CompanyService {
                     c.getId(),
                     s == null ? null : s.getStatus(),
                     s == null ? null : s.getPlan(),
+                    s == null || s.getSizeTier() == null ? null : s.getSizeTier().number(),
+                    s != null && s.isCustomPrice(),
                     s == null ? null : s.getMonthlyPrice(),
                     i == null ? null : new ClientOverviewResponse.LastInvoice(
                             i.getFgoNumar() == null ? null : i.getFgoSerie() + " " + i.getFgoNumar(),

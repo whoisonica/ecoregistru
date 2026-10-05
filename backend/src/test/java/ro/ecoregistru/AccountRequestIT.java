@@ -175,10 +175,11 @@ class AccountRequestIT {
                   "companyName": "Fara Antet SRL",
                   "cui": "%s",
                   "companyType": "GENERATOR",
+                  "sizeTier": 1,
                   "contactEmail": "fara.antet@example.ro"
                 }
                 """.formatted(cui);
-        mockMvc.perform(post("/api/v1/account-requests")
+        mockMvc.perform(intake()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isAccepted());
@@ -223,6 +224,44 @@ class AccountRequestIT {
         return submission(name, cui, type, null);
     }
 
+    /** The employee tier chosen on the form is stored and comes back to the platform admin as 1..5. */
+    @Test
+    void theTierIsSavedAndReturned() throws Exception {
+        String cui = "RO" + digits();
+        mockMvc.perform(submission("Treapta Salvata SRL", cui, "GENERATOR")).andExpect(status().isAccepted());
+
+        mockMvc.perform(get("/api/v1/account-requests").header("Authorization", "Bearer " + platformToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.cui == '" + cui + "')].sizeTier", hasItem(2)));
+    }
+
+    @Test
+    void aRequestWithoutATierIsRefused() throws Exception {
+        String cui = "RO" + digits();
+        mockMvc.perform(intake().contentType(MediaType.APPLICATION_JSON).content(
+                        "{\"companyName\":\"Fara Treapta SRL\",\"cui\":\"" + cui + "\","
+                                + "\"companyType\":\"GENERATOR\",\"contactEmail\":\"ion@example.ro\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.params[0].key", is("sizeTier")));
+        assertThat(accountRequestRepository.findAllByOrderByCreatedAtDesc())
+                .noneMatch(r -> cui.equals(r.getCui()));
+    }
+
+    @Test
+    void aTierOutsideOneToFiveIsRefused() throws Exception {
+        for (int tier : new int[]{0, 6}) {
+            String cui = "RO" + digits();
+            mockMvc.perform(intake().contentType(MediaType.APPLICATION_JSON).content(
+                            "{\"companyName\":\"Treapta Gresita SRL\",\"cui\":\"" + cui + "\","
+                                    + "\"companyType\":\"GENERATOR\",\"sizeTier\":" + tier
+                                    + ",\"contactEmail\":\"ion@example.ro\"}"))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.params[0].key", is("sizeTier")));
+            assertThat(accountRequestRepository.findAllByOrderByCreatedAtDesc())
+                    .noneMatch(r -> cui.equals(r.getCui()));
+        }
+    }
+
     /** F-A: a CUI wrong by one digit is refused at the door, not at approval or at the first FGO invoice. */
     @Test
     void aCuiWithAWrongControlDigitIsRefused() throws Exception {
@@ -235,6 +274,14 @@ class AccountRequestIT {
                 .noneMatch(r -> r.getCui().equals("RO" + wrong));
     }
 
+    /**
+     * The public intake is limited per IP, and this class now sends more requests than the limit
+     * allows from one address; each one comes from a fresh IP so they do not count each other.
+     */
+    private MockHttpServletRequestBuilder intake() {
+        return post("/api/v1/account-requests").header("X-Forwarded-For", "198.51.100.9-" + UUID.randomUUID());
+    }
+
     /** {@code website} is the honeypot; {@code null} omits it, which is what a real form sends. */
     private MockHttpServletRequestBuilder submission(String name, String cui, String type,
                                                      String website) {
@@ -243,6 +290,7 @@ class AccountRequestIT {
                   "companyName": "%s",
                   "cui": "%s",
                   "companyType": "%s",
+                  "sizeTier": 2,
                   "companyAddress": "Str. Principala nr. 1, Cluj-Napoca",
                   "workPointName": "Hala Florești",
                   "workPointAddress": "Str. Depozitelor nr. 4, Florești",
@@ -261,7 +309,7 @@ class AccountRequestIT {
                 }
                 """.formatted(name, cui, type,
                 website == null ? "" : ",\n  \"website\": \"" + website + "\"");
-        return post("/api/v1/account-requests")
+        return intake()
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body);
     }

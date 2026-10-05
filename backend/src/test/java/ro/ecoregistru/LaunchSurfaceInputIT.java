@@ -158,7 +158,7 @@ class LaunchSurfaceInputIT {
     void accountRequestTextFields() throws Exception {
         assertNoServerErrors(HttpMethod.POST, "/api/v1/account-requests", null,
                 () -> new LinkedHashMap<>(Map.of("companyName", "Cerere SRL", "cui", TestCui.random(),
-                        "companyType", "GENERATOR",
+                        "companyType", "GENERATOR", "sizeTier", 2,
                         "contactEmail", "cerere+" + UUID.randomUUID().toString().substring(0, 8) + "@client.ro")),
                 stringFields(AccountRequestSubmission.class));
     }
@@ -256,7 +256,7 @@ class LaunchSurfaceInputIT {
     @Test
     void aLongButValidContactEmailOnTheAccountRequestIsNotAServerError() throws Exception {
         int status = send(HttpMethod.POST, "/api/v1/account-requests", null, new LinkedHashMap<>(Map.of(
-                "companyName", "Cerere SRL", "cui", TestCui.random(), "companyType", "GENERATOR",
+                "companyName", "Cerere SRL", "cui", TestCui.random(), "companyType", "GENERATOR", "sizeTier", 2,
                 "contactEmail", longValidEmail())));
         assertThat(status).as("email valid de 260 de semne pe ruta publică").isBetween(400, 499);
     }
@@ -266,7 +266,7 @@ class LaunchSurfaceInputIT {
     void aRejectionReasonOnTopOfLongNotesIsNotAServerError() throws Exception {
         String cui = TestCui.random();
         assertThat(send(HttpMethod.POST, "/api/v1/account-requests", null, new LinkedHashMap<>(Map.of(
-                "companyName", "Respinsă SRL", "cui", cui, "companyType", "GENERATOR",
+                "companyName", "Respinsă SRL", "cui", cui, "companyType", "GENERATOR", "sizeTier", 2,
                 "contactEmail", "resp+" + UUID.randomUUID().toString().substring(0, 8) + "@client.ro",
                 "notes", "n".repeat(1990))))).isBetween(200, 299);
         UUID id = accountRequestRepository.findAllByOrderByCreatedAtDesc().stream()

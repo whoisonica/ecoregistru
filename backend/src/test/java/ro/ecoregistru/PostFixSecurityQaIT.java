@@ -136,7 +136,7 @@ class PostFixSecurityQaIT {
                             .with(r -> { r.setRemoteAddr(ip); return r; })
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(Map.of(
-                                    "companyName", "Spam " + i, "cui", TestCui.random(), "companyType", "GENERATOR",
+                                    "companyName", "Spam " + i, "cui", TestCui.random(), "companyType", "GENERATOR", "sizeTier", 2,
                                     "contactEmail", "spam" + i + "@example.ro"))))
                     .andReturn().getResponse().getStatus();
             if (i == 0) {

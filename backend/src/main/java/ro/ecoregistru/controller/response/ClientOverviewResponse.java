@@ -19,6 +19,8 @@ public record ClientOverviewResponse(
         UUID companyId,
         SubscriptionStatus subscriptionStatus,
         SubscriptionPlan plan,
+        Integer sizeTier,
+        boolean customPrice,
         BigDecimal monthlyPrice,
         LastInvoice lastInvoice,
         long userCount

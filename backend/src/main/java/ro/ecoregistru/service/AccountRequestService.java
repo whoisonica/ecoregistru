@@ -15,6 +15,7 @@ import ro.ecoregistru.entity.AccountRequest;
 import ro.ecoregistru.entity.Company;
 import ro.ecoregistru.entity.WorkPoint;
 import ro.ecoregistru.enums.AccountRequestStatus;
+import ro.ecoregistru.enums.SizeTier;
 import ro.ecoregistru.exception.BusinessException;
 import ro.ecoregistru.exception.NotFoundException;
 import ro.ecoregistru.repository.AccountRequestRepository;
@@ -72,6 +73,7 @@ public class AccountRequestService {
                 .companyName(submission.companyName().trim())
                 .cui(normalizeCui(submission.cui()))
                 .companyType(submission.companyType())
+                .sizeTier(SizeTier.of(submission.sizeTier()))
                 .companyAddress(blankToNull(submission.companyAddress()))
                 .workPointName(blankToNull(submission.workPointName()))
                 .workPointAddress(blankToNull(submission.workPointAddress()))
@@ -247,6 +249,7 @@ public class AccountRequestService {
     private AccountRequestResponse toResponse(AccountRequest r) {
         return new AccountRequestResponse(
                 r.getId(), r.getCompanyName(), r.getCui(), r.getCompanyType(),
+                r.getSizeTier() == null ? null : r.getSizeTier().number(),
                 r.getCompanyAddress(), r.getWorkPointName(), r.getWorkPointAddress(),
                 r.getContactName(), r.getContactEmail(), r.getContactPhone(),
                 r.getContactRole(), r.getCaenCode(),
