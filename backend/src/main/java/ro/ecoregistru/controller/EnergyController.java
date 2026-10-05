@@ -15,7 +15,10 @@ import ro.ecoregistru.controller.request.EnergyDeclarationRequest;
 import ro.ecoregistru.controller.response.EnergySheetResponse;
 import ro.ecoregistru.controller.response.EnergyYearSummary;
 import ro.ecoregistru.service.energy.EnergyService;
+import ro.ecoregistru.exception.BadRequestException;
 import ro.ecoregistru.service.export.ExportFormat;
+
+import static ro.ecoregistru.exception.ErrorMessageEnum.EXPORT_FORMAT_UNSUPPORTED;
 
 /**
  * The annual energy declaration (Anexa 1, consum sub 1000 tep). Reading is open to every tenant member;
@@ -36,9 +39,17 @@ public class EnergyController {
         return energyService.sheet(year);
     }
 
-    /** Anexa 1 (consum sub 1000 tep) of the year, as {@code .xlsx}. 422 at 1000 tep and above. */
+    /**
+     * Anexa 1 (consum sub 1000 tep) of the year, as {@code .xlsx}. 422 at 1000 tep and above.
+     *
+     * <p>Din 05.10.2026, {@code format=pdf} dă aceeași anexă ca PDF, {@code inline}, de deschis în tab (Chrome nu arată
+     * un .xlsx). Fără {@code format} sau cu {@code xlsx} răspunsul e exact cel de dinainte; orice alt format e 400.
+     */
     @GetMapping("/anexa1")
-    public ResponseEntity<byte[]> annex1(@RequestParam int year) {
+    public ResponseEntity<byte[]> annex1(@RequestParam int year, @RequestParam(required = false) String format) {
+        if (wantsPdf(format, ExportFormat.XLSX.getExtension())) {
+            return inlinePdf(energyService.annex1Pdf(year), "Anexa 1 energie " + year + ".pdf");
+        }
         byte[] body = energyService.annex1(year);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("anexa1-energie-" + year + "." + ExportFormat.XLSX.getExtension())
@@ -49,9 +60,16 @@ public class EnergyController {
                 .body(body);
     }
 
-    /** The Declarație accompanying Anexa 1, as a Word file. */
+    /**
+     * The Declarație accompanying Anexa 1, as a Word file — or, din 05.10.2026, cu {@code format=pdf}, ca PDF
+     * {@code inline}, de deschis în tab. Fără {@code format} sau cu {@code docx}: exact răspunsul de dinainte.
+     */
     @GetMapping("/declaratie")
-    public ResponseEntity<byte[]> declarationDocx(@RequestParam int year) {
+    public ResponseEntity<byte[]> declarationDocx(@RequestParam int year,
+                                                  @RequestParam(required = false) String format) {
+        if (wantsPdf(format, "docx")) {
+            return inlinePdf(energyService.declarationPdf(year), "Declaratie energie " + year + ".pdf");
+        }
         byte[] body = energyService.declarationDocx(year);
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename("declaratie-energie-" + year + ".docx")
@@ -60,6 +78,30 @@ public class EnergyController {
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .body(body);
+    }
+
+    /**
+     * {@code true} pentru {@code pdf}; {@code false} fără format sau cu formatul editabil al documentului. Nu trece
+     * prin {@link ExportFormat#fromParam}: acolo {@code xls} e valid, iar anexa de energie nu are .xls — un format
+     * pe care documentul nu-l are e 400, nu fișierul celălalt pus sub alt nume.
+     */
+    private static boolean wantsPdf(String format, String editable) {
+        if (format == null || format.equalsIgnoreCase(editable)) {
+            return false;
+        }
+        if (format.equalsIgnoreCase(ExportFormat.PDF.getExtension())) {
+            return true;
+        }
+        throw new BadRequestException(EXPORT_FORMAT_UNSUPPORTED);
+    }
+
+    /** Un PDF de deschis în tab: {@code inline}, cu numele în UTF-8, ca la confirmarea EfEnClima. */
+    private static ResponseEntity<byte[]> inlinePdf(byte[] body, String fileName) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename(fileName, java.nio.charset.StandardCharsets.UTF_8).build().toString())
                 .body(body);
     }
 

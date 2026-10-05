@@ -102,8 +102,8 @@ export function useUploadEnergyReceipt() {
   });
 }
 
-async function fetchBlob(path: string, year: number): Promise<Blob> {
-  return (await api.get(`${base}/${path}`, { params: { year }, responseType: "blob" })).data as Blob;
+async function fetchBlob(path: string, year: number, format?: "pdf"): Promise<Blob> {
+  return (await api.get(`${base}/${path}`, { params: { year, format }, responseType: "blob" })).data as Blob;
 }
 
 export async function downloadEnergyAnnex1(year: number): Promise<void> {
@@ -112,6 +112,19 @@ export async function downloadEnergyAnnex1(year: number): Promise<void> {
 
 export async function downloadEnergyDeclaration(year: number): Promise<void> {
   saveBlob(await fetchBlob("declaratie", year), `Declaratie energie ${year}.docx`);
+}
+
+/**
+ * Din 05.10.2026: Anexa 1 și Declarația se deschid și ca PDF, în tab — Chrome nu arată un .xlsx sau un .docx, iar
+ * omul vrea să-și vadă documentul ca pe celelalte din aplicație. Descărcările de mai sus rămân: fișierul editabil e
+ * tot cel de lucru.
+ */
+export async function openEnergyAnnex1Pdf(year: number): Promise<void> {
+  await openPdfInTab(() => fetchBlob("anexa1", year, "pdf"), `Anexa 1 energie ${year}.pdf`);
+}
+
+export async function openEnergyDeclarationPdf(year: number): Promise<void> {
+  await openPdfInTab(() => fetchBlob("declaratie", year, "pdf"), `Declaratie energie ${year}.pdf`);
 }
 
 export async function downloadEnergyDossier(year: number): Promise<void> {
