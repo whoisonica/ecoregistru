@@ -56,6 +56,8 @@ public final class BillingCalculator {
         if (period >= s.getAnchorPeriod()) {
             return anchor(s).plusMonths((long) (period - s.getAnchorPeriod()) * s.getBillingMonths());
         }
+        // Exact only for the most recent switch: earlier segments are not stored. Callers never
+        // reserve or bill a period before periodAnchor (Task 2 enforces this).
         int before = s.getBillingMonths() == ANNUAL ? 1 : ANNUAL;
         return s.getStartedAt().plusMonths((long) period * before);
     }
@@ -132,11 +134,14 @@ public final class BillingCalculator {
     }
 
     /**
-     * The last billed period of a stopped subscription, before the 12th: periods count from 0, so a
-     * last period of 11 is the twelfth month and the commitment is kept.
+     * The last billed period of a stopped subscription, ending before the 12th month does. The
+     * commitment counts months, not periods, so an annual period is a year of it. For a monthly
+     * subscription without an anchor this is exactly {@code period < 11}: a last period of 11 is the
+     * twelfth month and the commitment is kept.
      */
     static boolean stoppedEarlyIn(Subscription s, int period) {
-        return s.getEndsOn() != null && period < COMMITMENT_PERIODS - 1
+        LocalDate commitmentEnds = s.getStartedAt().plusMonths(COMMITMENT_PERIODS).minusDays(1);
+        return s.getEndsOn() != null && periodEnd(s, period).isBefore(commitmentEnds)
                 && !periodEnd(s, period).isBefore(s.getEndsOn());
     }
 

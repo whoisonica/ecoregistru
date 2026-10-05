@@ -331,6 +331,38 @@ class BillingCalculatorTest {
                         tuple("Implementare (oprire înainte de 12 luni)", 1, 290));
     }
 
+    /** Angajamentul de 12 luni se socotește în luni: oprit după al doilea an, nicio implementare. */
+    @Test
+    void anAnnualCommittedSubscriptionStoppedAfterTwoYearsPaysNoImplementation() {
+        Subscription s = annual(committed(SubscriptionPlan.GENERATOR, null), 600);
+        s.setEndsOn(BillingCalculator.periodEnd(s, 1));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 1).lines()).extracting(Line::label)
+                .containsExactly("Generator, abonament anual");
+    }
+
+    /** Lunar 3 luni, apoi anual: oprit la capătul primului an anual (luna 15), angajamentul e ținut. */
+    @Test
+    void aSwitchedCommittedSubscriptionStoppedAfterTwelveMonthsPaysNoImplementation() {
+        Subscription s = annual(committed(SubscriptionPlan.GENERATOR, null), 600);
+        s.setPeriodAnchor(START.plusMonths(3));
+        s.setAnchorPeriod(3);
+        s.setEndsOn(BillingCalculator.periodEnd(s, 3));
+        assertThat(s.getEndsOn()).isEqualTo("2028-01-16");
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 3).lines()).extracting(Line::label)
+                .containsExactly("Generator, abonament anual");
+    }
+
+    /** Pornit pe 31.01: a 11-a perioadă lunară ca ultimă tot e înainte de termen, a 12-a nu (ca înainte). */
+    @Test
+    void theCommitmentOnAStartOnThe31stStillEndsWithTheTwelfthPeriod() {
+        Subscription s = direct(SubscriptionPlan.GENERATOR, false, LocalDate.of(2027, 1, 31));
+        s.setTwelveMonthCommitment(true);
+        s.setEndsOn(BillingCalculator.periodEnd(s, 10));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 10).total()).isEqualByComparingTo("389");
+        s.setEndsOn(BillingCalculator.periodEnd(s, 11));
+        assertThat(BillingCalculator.invoice(s, 1, 0, 0, 11).total()).isEqualByComparingTo("99");
+    }
+
     private static Subscription annual(Subscription s, int pricePerYear) {
         s.setBillingMonths(12);
         s.setMonthlyPrice(BigDecimal.valueOf(pricePerYear));
