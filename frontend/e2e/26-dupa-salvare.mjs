@@ -75,7 +75,7 @@ check("după salvare apare ecranul „Ce urmează”", Boolean(saved), saved?.ti
 check("titlul spune că predarea e în evidență", saved?.titlu === "Predarea e în evidență", saved?.titlu);
 check("formularul s-a închis", saved?.formular === false);
 check("bonul arată codul, cantitatea și destinatarul",
-  /15 01 01/.test(saved?.text ?? "") && /33,000 kg/.test(saved?.text ?? "") && (saved?.text ?? "").includes(authorized.name));
+  /15 01 01/.test(saved?.text ?? "") && /33 kg/.test(saved?.text ?? "") && (saved?.text ?? "").includes(authorized.name));
 check("oferă Anexa 3 și avizul", /Tipărește Anexa 3/.test(saved?.text ?? "") && /avizul de însoțire/.test(saved?.text ?? ""));
 check("nu oferă Anexa 2 pe un deșeu nepericulos", !/Anexa 2/.test(saved?.text ?? ""));
 await shot(page, "26_dupa_salvare");

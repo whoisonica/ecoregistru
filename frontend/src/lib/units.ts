@@ -14,25 +14,27 @@ import type { Unit } from "@/lib/types";
  */
 
 /**
- * Kilograme: punct la mii, virgulă la zecimale, **întotdeauna trei zecimale** — „1.060,000”.
+ * Kilograme: punct la mii, virgulă la zecimale — „1.060”, iar un rând vechi cu grame „35,125”.
  *
- * <p>Zecimalele sunt forțate dinadins (G06, 20.09.2026). Până acum aceeași cantitate se scria în
- * patru feluri: „35.125" în listă, „35,125" pe total, „35.125" pe fișă, „120,500" pe aviz — iar
- * „35.125" și „35,125" sunt, în românește, două numere care diferă de o mie de ori. Un cititor
- * n-avea din ce să deducă ce convenție s-a folosit pe hârtia din mână.
+ * <p>G06 (20.09.2026) a pus aici **întotdeauna trei zecimale**, ca „35.125" și „35,125" să nu mai
+ * poată fi confundate. Din 30.09.2026 cantitatea în kg se tastează numai întreagă („te lasa sa pui
+ * cu ,000”), deci „150,000 kg” pe Generare era zgomot (proprietarul, 05.10.2026: „in generare a
+ * ramas 150,000 kg”). Acum un kg întreg se scrie fără virgulă, iar un rând vechi care chiar are
+ * zecimale le păstrează pe toate trei.
  *
- * <p>Regula care omoară ambiguitatea nu e „alegem punctul" sau „alegem virgula", ci **grupul de
- * după virgulă are mereu exact trei cifre**: atunci virgula e mereu ultima și punctul e mereu la
- * mii, indiferent de cifră. Răspunde și obiecției de la 17.09 („1,060” arată ca tone): „1.060,000”
- * nu poate fi citit ca tone.
+ * <p>Invariantul lui G06 rămâne: formatul e mereu cel românesc, deci punctul e mereu la mii, iar o
+ * virgulă, când apare, e urmată de exact trei cifre. „35.125” e treizeci și cinci de mii, „35,125”
+ * e treizeci și cinci de kilograme — tot nu se pot citi unul drept celălalt.
  */
+const kgWholeFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 const kgFormat = new Intl.NumberFormat("ro-RO", {
   minimumFractionDigits: 3,
   maximumFractionDigits: 3,
 });
 
 export function formatKg(kilograms: number): string {
-  return kgFormat.format(kilograms);
+  // Pe grame, nu `Number.isInteger`: o sumă de zecimale („0,1 + 0,2”) nu iese întreagă la bit.
+  return Math.round(kilograms * 1000) % 1000 === 0 ? kgWholeFormat.format(kilograms) : kgFormat.format(kilograms);
 }
 
 /**
@@ -67,9 +69,9 @@ export function formatTonnesValue(tonnes: number): string {
  * una sub alta şi **nu se puteau deosebi**: acelaşi semn, două înţelesuri care diferă de o mie de ori.
  * Chiar invariantul pe care fişierul ăsta îl declară rezolvat (G06).
  *
- * <p>Acum orice cifră de transcris trece pe aici, deci are mereu virgulă şi exact trei zecimale, în
- * unitatea rândului. Banda şi panoul rămân rotunjite la kilogram întreg, tot dinadins — sunt
- * rezumate, nu cifre de transcris —, iar lipsa virgulei e chiar semnul că e un rezumat.
+ * <p>Acum orice cifră de transcris trece pe aici, în unitatea rândului: kilogramele ca la `formatKg`
+ * (întregi, din 05.10.2026), tonele cu exact trei zecimale. Banda şi panoul rămân rotunjite la
+ * kilogram întreg, tot dinadins — sunt rezumate, nu cifre de transcris.
  */
 export function formatQuantity(value: number, unit: Unit): string {
   return unit === "TONS" ? formatTonnesValue(value) : formatKg(value);

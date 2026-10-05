@@ -344,9 +344,11 @@ aplică anului scrie „—", niciodată „în arhivă".
 - Textele stau în `frontend/src/lib/strings.ts`, în română, și numesc **ce face omul**: „Adaugă deșeuri”, „Intrare”, „Ieșire”, „Poate vinde metal”.
 - Temeiul legal (actul, articolul) se păstrează, dar în explicație, nu în etichetă.
 - Numeralul are trei forme (`1 linie · 2 linii · 20 de linii`) — trece prin `countOf` / `withCount`.
-- **Cifrele de transcris au virgulă și exact trei zecimale** (`formatQuantity` / `formatKg` din `lib/units.ts`, G06):
-  liste, bonul formularului, totalurile de tab. **Rezumatele sunt în kilograme întregi** (`formatKgSummary`, „2.576 kg”):
-  Acasă — anul pe luni și deșeurile anului — din 29.09.2026, și banda de totaluri. Lipsa virgulei spune că e un rezumat.
+- **Cifrele de transcris trec prin `formatQuantity` / `formatKg`** (`lib/units.ts`, G06): liste, bonul formularului,
+  totalurile de tab. Punctul e la mii, iar după o virgulă vin exact trei cifre. **Kilogramele întregi se scriu fără
+  virgulă** din 05.10.2026 („150 kg”, nu „150,000 kg” — kg se tastează întregi din 30.09); un rând vechi cu grame
+  păstrează „35,125”. Tonele au mereu trei zecimale. **Rezumatele sunt rotunjite la kilogram** (`formatKgSummary`):
+  Acasă — anul pe luni și deșeurile anului — din 29.09.2026, și banda de totaluri.
 - ⚠️ **Explicația de sub un lucru e de un rând** (proprietarul, 18.09.2026: *„textele de sub chestii care explică
   sunt foarte lungi, prost aranjate și par neîngrijite"*). Măsura e lățimea în care cade textul, nu numărul de
   semne: sub un buton dintr-un rând de patru (≈270px) înseamnă **sub 40 de semne**; sub un titlu de secțiune

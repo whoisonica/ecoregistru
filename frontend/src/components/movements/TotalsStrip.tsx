@@ -9,9 +9,9 @@ const t = strings.movements;
  * Rotunjit la kilogram întreg, **dinadins** (G06, 20.09.2026): banda e un rezumat, nu o cifră de
  * transcris pe un formular. De aceea nu foloseşte `formatKg` şi nu se „aliniază" la el.
  *
- * <p>Lipsa virgulei e chiar semnul că e un rezumat: orice cifră de transcris trece prin
- * `formatQuantity` şi are mereu virgulă cu trei zecimale, deci „12.640" de aici nu se poate
- * confunda cu „35,125" din listă.
+ * <p>Din 05.10.2026 și cifrele de transcris în kg sunt întregi („150 kg”, nu „150,000 kg”), deci
+ * diferența e doar la rândurile vechi cu grame: lista scrie „35,125”, banda rotunjește. Punctul e
+ * mereu la mii în amândouă, deci „12.640" de aici tot nu se poate citi ca „12,640".
  */
 const kgFormat = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 
