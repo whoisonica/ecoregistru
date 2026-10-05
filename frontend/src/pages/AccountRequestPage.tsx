@@ -516,22 +516,21 @@ export function AccountRequestPage() {
                   }))}
                 />
               </div>
-              <div data-invalid={errors.sizeTier ? "true" : undefined} tabIndex={-1}>
-                <span id="ar-size-label" className={cn("mb-1 block text-xs font-medium", labelClass)}>
-                  {t.sizeTierLabel} *
+              {/* PillGroup nu primește marcajele de eroare: le poartă învelișul, o singură dată. */}
+              <div {...invalidProps("ar-size-err", errors.sizeTier)} tabIndex={-1}>
+                <Label id="ar-size-label" className={labelClass} required>
+                  {t.sizeTierLabel}
                   <Tooltip content={t.sizeTierHint}>
                     <span className="ml-1 cursor-help text-content-subtle">?</span>
                   </Tooltip>
-                </span>
-                <div {...invalidProps("ar-size-err", errors.sizeTier)}>
-                  <PillGroup
-                    name="ar-size-tier"
-                    aria-labelledby="ar-size-label"
-                    options={SIZE_TIERS.map((s) => ({ value: String(s.tier), label: s.range }))}
-                    selected={sizeTier == null ? [] : [String(sizeTier)]}
-                    onToggle={(v) => setSizeTier(Number(v) as SizeTier)}
-                  />
-                </div>
+                </Label>
+                <PillGroup
+                  name="ar-size-tier"
+                  aria-labelledby="ar-size-label"
+                  options={SIZE_TIERS.map((s) => ({ value: String(s.tier), label: s.range }))}
+                  selected={sizeTier == null ? [] : [String(sizeTier)]}
+                  onToggle={(v) => setSizeTier(Number(v) as SizeTier)}
+                />
                 <FieldError id="ar-size-err" message={errors.sizeTier} />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_180px]">
