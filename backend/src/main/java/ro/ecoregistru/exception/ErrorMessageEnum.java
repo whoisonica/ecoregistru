@@ -84,6 +84,9 @@ public enum ErrorMessageEnum {
     CARD_PAYMENT_UNAVAILABLE("card.payment.unavailable", "Plata cu cardul nu e disponibilă acum. Poți plăti prin transfer, în contul de pe factură, sau încearcă mai târziu."),
     // F4, §9.3 — oprirea.
     SUBSCRIPTION_ALREADY_CANCELLED("subscription.already.cancelled", "Abonamentul e deja oprit."),
+    // Prețurile din 05.10.2026: generatorul are preț pe treaptă, serviciul complet preț la cerere.
+    SUBSCRIPTION_SIZE_TIER_REQUIRED("subscription.size.tier.required", "Alegeți treapta după numărul de angajați."),
+    SUBSCRIPTION_PRICE_REQUIRED("subscription.price.required", "Scrieți prețul lunar."),
 
     // --- Utilizatorii firmei (P1.12) ---
     CANNOT_MANAGE_SELF("user.cannot.manage.self", "Nu îți poți schimba sau dezactiva propriul cont de aici."),

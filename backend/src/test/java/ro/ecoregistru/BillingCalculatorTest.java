@@ -7,6 +7,7 @@ import ro.ecoregistru.service.BillingCalculator;
 import ro.ecoregistru.service.BillingCalculator.Invoice;
 import ro.ecoregistru.service.BillingCalculator.Line;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -209,10 +210,16 @@ class BillingCalculatorTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    /** Un abonament semnat pe grila din 14.09.2026, dinainte de trepte: prețurile lui rămân pe rând. */
     private static Subscription direct(SubscriptionPlan plan, boolean founder, LocalDate start) {
+        int[] prices = switch (plan) {
+            case GENERATOR -> new int[]{99, 290};
+            case GENERATOR_PACKAGING -> new int[]{149, 390};
+            default -> new int[]{249, 0};
+        };
         return Subscription.builder().plan(plan)
-                .monthlyPrice(plan.monthlyPrice()).implementationFee(plan.implementationFee())
-                .extraWorkPointPrice(SubscriptionPlan.EXTRA_WORK_POINT_PRICE)
+                .monthlyPrice(BigDecimal.valueOf(prices[0])).implementationFee(BigDecimal.valueOf(prices[1]))
+                .extraWorkPointPrice(BigDecimal.valueOf(29))
                 .founder(founder).startedAt(start).build();
     }
 
@@ -224,9 +231,9 @@ class BillingCalculatorTest {
     }
 
     private static Subscription consultancy() {
-        SubscriptionPlan plan = SubscriptionPlan.CONSULTANCY;
-        return Subscription.builder().plan(plan)
-                .monthlyPrice(plan.monthlyPrice()).implementationFee(plan.implementationFee())
+        return Subscription.builder().plan(SubscriptionPlan.CONSULTANCY)
+                .monthlyPrice(SubscriptionPlan.CONSULTANCY_MONTHLY_PRICE)
+                .implementationFee(SubscriptionPlan.CONSULTANCY_IMPLEMENTATION_FEE)
                 .companyPriceTier1(SubscriptionPlan.COMPANY_PRICE_TIER1)
                 .companyPriceTier2(SubscriptionPlan.COMPANY_PRICE_TIER2)
                 .companyPriceTier3(SubscriptionPlan.COMPANY_PRICE_TIER3)

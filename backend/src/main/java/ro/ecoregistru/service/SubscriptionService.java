@@ -47,6 +47,7 @@ import ro.ecoregistru.enums.InvoiceStatus;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.SubscriptionPaymentMethod;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.enums.SizeTier;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.exception.NotFoundException;
@@ -74,14 +75,17 @@ import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_NOT_FOUND;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_COMPANY_IN_CONSULTANCY;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_HAS_INVOICES;
 import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_PLAN_MISMATCH;
+import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_PRICE_REQUIRED;
+import static ro.ecoregistru.exception.ErrorMessageEnum.SUBSCRIPTION_SIZE_TIER_REQUIRED;
 
 /**
  * F1 of plata-abonamente.md — the platform sets the package of a direct company or of a
  * consultancy, and sees what it will invoice. F2 adds the billing data and the invoices issued by
  * {@link BillingRunService}.
  *
- * <p><b>The grid is copied, not referenced.</b> Creating a subscription, or moving it to another
- * plan, writes today's prices on it; saving it again on the same plan keeps the prices it had.
+ * <p><b>The grid is copied, not referenced.</b> Creating a subscription, or changing its plan, tier
+ * or custom price, writes today's prices on it; saving it again without such a change keeps the
+ * prices it had, so a subscription signed before the tiers (05.10.2026) stays as signed.
  */
 @Slf4j
 @Service
@@ -488,9 +492,8 @@ public class SubscriptionService {
         if (request.plan().forConsultancy()) {
             throw new UnprocessableEntityException(SUBSCRIPTION_PLAN_MISMATCH);
         }
-        Subscription s = pending().founder(request.founder())
-                .twelveMonthCommitment(request.twelveMonthCommitment()).startedAt(request.startedAt()).build();
-        applyGrid(s, request.plan());
+        Subscription s = pending().startedAt(request.startedAt()).build();
+        applyGrid(s, request);
         return new SubscriptionPreviewResponse(BillingCalculator.invoice(s, 1, 0, 0, 0),
                 BillingCalculator.invoice(s, 1, 0, 0, 1));
     }
@@ -536,11 +539,16 @@ public class SubscriptionService {
         if (trimToNull(request.billingCounty()) != null) {
             requireFgoCounty(request.billingCounty());
         }
-        if (s.getPlan() != request.plan()) {
-            applyGrid(s, request.plan());
+        boolean regrid = s.getId() == null || s.getPlan() != request.plan()
+                || requestedTier(request) != s.getSizeTier() || request.customPrice() != s.isCustomPrice()
+                || (priceFromRequest(request) && request.monthlyPrice() != null
+                    && request.monthlyPrice().compareTo(s.getMonthlyPrice()) != 0);
+        if (regrid) {
+            applyGrid(s, request);
+        } else {
+            s.setFounder(request.founder());
+            s.setTwelveMonthCommitment(request.twelveMonthCommitment());
         }
-        s.setFounder(request.founder());
-        s.setTwelveMonthCommitment(request.twelveMonthCommitment());
         s.setStartedAt(request.startedAt());
         s.setBillingEmail(trimToNull(request.billingEmail()));
         s.setBillingCounty(trimToNull(request.billingCounty()));
@@ -559,16 +567,48 @@ public class SubscriptionService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
-    private static void applyGrid(Subscription s, SubscriptionPlan plan) {
+    /**
+     * Writes today's prices on the subscription. A company plan has no implementation and no price per
+     * work point (0, not null: the V43 check wants one), nor the founder flag or the 12-month commitment
+     * of the grid before 05.10.2026; the consultant is priced as before, with its flags from the request.
+     */
+    private static void applyGrid(Subscription s, SubscriptionRequest request) {
+        SubscriptionPlan plan = request.plan();
+        SizeTier tier = requestedTier(request);
+        if (plan.forTiers() && tier == null) {
+            throw new UnprocessableEntityException(SUBSCRIPTION_SIZE_TIER_REQUIRED);
+        }
+        boolean priceFromRequest = priceFromRequest(request);
+        if (priceFromRequest && request.monthlyPrice() == null) {
+            throw new UnprocessableEntityException(SUBSCRIPTION_PRICE_REQUIRED);
+        }
         s.setPlan(plan);
-        s.setMonthlyPrice(plan.monthlyPrice());
-        s.setImplementationFee(plan.implementationFee());
+        s.setSizeTier(tier);
+        s.setCustomPrice(request.customPrice());
         boolean consultancy = plan.forConsultancy();
-        s.setExtraWorkPointPrice(consultancy ? null : SubscriptionPlan.EXTRA_WORK_POINT_PRICE);
+        if (priceFromRequest) {
+            s.setMonthlyPrice(request.monthlyPrice());
+        } else {
+            s.setMonthlyPrice(consultancy ? SubscriptionPlan.CONSULTANCY_MONTHLY_PRICE : tier.monthlyPrice(plan));
+        }
+        s.setImplementationFee(consultancy ? SubscriptionPlan.CONSULTANCY_IMPLEMENTATION_FEE : BigDecimal.ZERO);
+        s.setExtraWorkPointPrice(consultancy ? null : BigDecimal.ZERO);
         s.setCompanyPriceTier1(consultancy ? SubscriptionPlan.COMPANY_PRICE_TIER1 : null);
         s.setCompanyPriceTier2(consultancy ? SubscriptionPlan.COMPANY_PRICE_TIER2 : null);
         s.setCompanyPriceTier3(consultancy ? SubscriptionPlan.COMPANY_PRICE_TIER3 : null);
         s.setPackagingCompanyPrice(consultancy ? SubscriptionPlan.PACKAGING_COMPANY_PRICE : null);
+        s.setFounder(consultancy && request.founder());
+        s.setTwelveMonthCommitment(consultancy && request.twelveMonthCommitment());
+    }
+
+    /** The tier only counts on a plan priced by it; elsewhere it is dropped. */
+    private static SizeTier requestedTier(SubscriptionRequest request) {
+        return request.plan().forTiers() && request.sizeTier() != null ? SizeTier.of(request.sizeTier()) : null;
+    }
+
+    /** The full service has no grid price at all; any plan takes the price written by hand. */
+    private static boolean priceFromRequest(SubscriptionRequest request) {
+        return request.customPrice() || request.plan() == SubscriptionPlan.FULL_SERVICE;
     }
 
     private SubscriptionResponse toResponse(Subscription s) {
@@ -579,7 +619,8 @@ public class SubscriptionService {
                         i.getFgoLink(), i.getFgoLinkPlata(), i.getAmountPaid(), i.getLastError(), i.getPaidAt(),
                         i.getPaidBy(), i.getFgoCollectedAt(), lastCardError(i.getId()), i.getPaymentCheckedAt()))
                 .toList();
-        return new SubscriptionResponse(s.getId(), s.getPlan(), s.getStatus(),
+        return new SubscriptionResponse(s.getId(), s.getPlan(),
+                s.getSizeTier() == null ? null : s.getSizeTier().number(), s.isCustomPrice(), s.getStatus(),
                 s.getMonthlyPrice(), s.getImplementationFee(), s.getExtraWorkPointPrice(),
                 s.getCompanyPriceTier1(), s.getCompanyPriceTier2(), s.getCompanyPriceTier3(),
                 s.getPackagingCompanyPrice(), s.isFounder(), s.isTwelveMonthCommitment(), s.getStartedAt(),

@@ -91,7 +91,7 @@ class ClientOnboardingIT {
                 .andExpect(jsonPath("$.company.cui", is(corrected)))
                 .andExpect(jsonPath("$.company.name", is("Firma Corectata SRL")))
                 .andExpect(jsonPath("$.plan", is("GENERATOR")))
-                .andExpect(jsonPath("$.firstInvoice.total").value(389))
+                .andExpect(jsonPath("$.firstInvoice.total").value(50))
                 .andExpect(jsonPath("$.invitedEmail", is(email)));
 
         AccountRequest handled = accountRequestRepository.findById(request.getId()).orElseThrow();
@@ -158,22 +158,19 @@ class ClientOnboardingIT {
                 .anyMatch(c -> cui.equals(c.getCui()));
     }
 
-    /** Prima factură are implementarea, fondatorul n-o plătește; firma de consultanță nu se face din pașii ăștia. */
+    /** Grila pe trepte, fără implementare; firma de consultanță nu se face din pașii ăștia. */
     @Test
     void thePreviewPricesAPlanNotSavedYet() throws Exception {
-        preview(subscription("GENERATOR_PACKAGING", false))
+        preview(subscription("GENERATOR", false))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.firstInvoice.total").value(539))
-                .andExpect(jsonPath("$.monthlyInvoice.total").value(149))
+                .andExpect(jsonPath("$.firstInvoice.total").value(50))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(50))
+                .andExpect(jsonPath("$.firstInvoice.lines.length()").value(1))
                 .andExpect(jsonPath("$.firstInvoice.from", is("2026-10-01")))
                 .andExpect(jsonPath("$.firstInvoice.to", is("2026-10-31")));
-        preview(subscription("GENERATOR", true))
-                .andExpect(jsonPath("$.firstInvoice.total").value(99));
-        Map<String, Object> committed = new HashMap<>(subscription("GENERATOR", false));
-        committed.put("twelveMonthCommitment", true);
-        preview(committed)
-                .andExpect(jsonPath("$.firstInvoice.total").value(99))
-                .andExpect(jsonPath("$.firstInvoice.lines[1].label", is("Implementare (angajament 12 luni, gratuită)")));
+        preview(subscription("GENERATOR_PACKAGING", false))
+                .andExpect(jsonPath("$.firstInvoice.total").value(70))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(70));
         preview(subscription("CONSULTANCY", false))
                 .andExpect(status().isUnprocessableEntity());
     }
@@ -211,7 +208,7 @@ class ClientOnboardingIT {
     }
 
     private static Map<String, Object> subscription(String plan, boolean founder) {
-        return Map.of("plan", plan, "founder", founder, "startedAt", "2026-10-01",
+        return Map.of("plan", plan, "founder", founder, "sizeTier", 2, "startedAt", "2026-10-01",
                 "billingEmail", "facturi@client.ro", "billingCounty", "Bihor", "billingCity", "Santandrei",
                 "billingAddress", "Str. Facliei nr. 79");
     }

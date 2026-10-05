@@ -12,16 +12,21 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import ro.ecoregistru.config.JwtService;
 import ro.ecoregistru.entity.*;
 import ro.ecoregistru.enums.CompanyType;
 import ro.ecoregistru.enums.MarketRole;
 import ro.ecoregistru.enums.Role;
+import ro.ecoregistru.enums.SubscriptionPlan;
+import ro.ecoregistru.enums.SubscriptionStatus;
 import ro.ecoregistru.repository.*;
 import ro.ecoregistru.service.EmailService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -30,6 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static io.zonky.test.db.AutoConfigureEmbeddedDatabase.DatabaseProvider.ZONKY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,7 +74,10 @@ class SubscriptionIT {
                 appUserRepository.findByEmail("platform@ecoregistru.ro").orElseThrow());
     }
 
-    /** Trei puncte active și unul inactiv: se plătesc două în plus, nu trei. */
+    /**
+     * Un abonament dinainte de trepte (99 + 29 pe punct de lucru, 290 implementarea): trei puncte active și unul
+     * inactiv, se plătesc două în plus, nu trei.
+     */
     @Test
     void aDirectCompanyIsBilledOnItsActiveWorkPoints() throws Exception {
         Company company = company(null);
@@ -76,10 +85,9 @@ class SubscriptionIT {
         workPoint(company, true);
         workPoint(company, true);
         workPoint(company, false);
+        oldGenerator(company, "2026-10-17");
 
-        mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId()).with(platform())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body("GENERATOR", false, "2026-10-17")))
+        mockMvc.perform(get("/api/v1/subscriptions/company/" + company.getId()).with(platform()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("PENDING")))
                 .andExpect(jsonPath("$.firstInvoice.from", is("2026-10-17")))
@@ -114,24 +122,152 @@ class SubscriptionIT {
     @Test
     void theGridIsCopiedAndSavingAgainOnTheSamePlanKeepsThePrice() throws Exception {
         Company company = company(null);
-        mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId()).with(platform())
-                        .contentType(MediaType.APPLICATION_JSON).content(body("GENERATOR", false, "2026-10-01")))
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "startedAt", "2026-10-01"))
                 .andExpect(status().isOk());
 
-        // Prețul negociat altfel, scris direct în bază: o salvare pe același plan nu-l readuce la grilă.
+        // Prețul negociat altfel, scris direct în bază: o salvare fără schimbări nu-l readuce la grilă.
         Subscription s = subscriptionRepository.findByCompany_Id(company.getId()).orElseThrow();
-        s.setMonthlyPrice(java.math.BigDecimal.valueOf(79));
+        s.setMonthlyPrice(BigDecimal.valueOf(79));
         subscriptionRepository.save(s);
 
-        mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId()).with(platform())
-                        .contentType(MediaType.APPLICATION_JSON).content(body("GENERATOR", true, "2026-10-01")))
-                .andExpect(jsonPath("$.monthlyPrice").value(79))
-                .andExpect(jsonPath("$.founder", is(true)));
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(79));
 
-        mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId()).with(platform())
-                        .contentType(MediaType.APPLICATION_JSON).content(body("GENERATOR_PACKAGING", true, "2026-10-01")))
-                .andExpect(jsonPath("$.monthlyPrice").value(149))
-                .andExpect(jsonPath("$.implementationFee").value(390));
+        save(company, Map.of("plan", "GENERATOR_PACKAGING", "sizeTier", 1, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(50))
+                .andExpect(jsonPath("$.implementationFee").value(0))
+                .andExpect(jsonPath("$.sizeTier").value(1));
+    }
+
+    /** Grila din 05.10.2026: treapta 2 (3–9 angajați) costă 50, oricâte puncte de lucru, fără implementare. */
+    @Test
+    void aNewGeneratorOnTierTwoCosts50WithNoImplementation() throws Exception {
+        Company company = company(null);
+        workPoint(company, true);
+        workPoint(company, true);
+        workPoint(company, true);
+
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(50))
+                .andExpect(jsonPath("$.implementationFee").value(0))
+                .andExpect(jsonPath("$.sizeTier").value(2))
+                .andExpect(jsonPath("$.customPrice", is(false)))
+                .andExpect(jsonPath("$.founder", is(false)))
+                .andExpect(jsonPath("$.firstInvoice.total").value(50))
+                .andExpect(jsonPath("$.monthlyInvoice.total").value(50));
+    }
+
+    @Test
+    void packagingOnTierTwoCosts70() throws Exception {
+        save(company(null), Map.of("plan", "GENERATOR_PACKAGING", "sizeTier", 2, "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(70))
+                .andExpect(jsonPath("$.firstInvoice.total").value(70));
+    }
+
+    @Test
+    void aGeneratorWithoutATierIsRefused() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "GENERATOR", "startedAt", "2026-10-01"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("subscription.size.tier.required")));
+        assertThat(subscriptionRepository.existsByCompany_Id(company.getId())).isFalse();
+    }
+
+    @Test
+    void changingTheTierRecalculates() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(50));
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 4, "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(100))
+                .andExpect(jsonPath("$.sizeTier").value(4));
+    }
+
+    /** Prețul scris de mână rămâne până când e debifat; atunci prețul vine iar din treaptă. */
+    @Test
+    void aCustomPriceIsKeptOnALaterSave() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", true, "monthlyPrice", 42,
+                "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(42))
+                .andExpect(jsonPath("$.customPrice", is(true)));
+
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", true, "monthlyPrice", 42,
+                "startedAt", "2026-10-01", "billingAddress", "Str. Alta nr. 2"))
+                .andExpect(jsonPath("$.monthlyPrice").value(42))
+                .andExpect(jsonPath("$.billingAddress", is("Str. Alta nr. 2")));
+
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", false, "startedAt", "2026-10-01"))
+                .andExpect(jsonPath("$.monthlyPrice").value(50))
+                .andExpect(jsonPath("$.customPrice", is(false)));
+    }
+
+    /** Serviciul complet are „preț la cerere”: îl scrie platforma pe client. */
+    @Test
+    void fullServiceWithoutAPriceIsRefused() throws Exception {
+        Company company = company(null);
+        save(company, Map.of("plan", "FULL_SERVICE", "startedAt", "2026-10-01"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("subscription.price.required")));
+
+        save(company, Map.of("plan", "FULL_SERVICE", "monthlyPrice", 300, "startedAt", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(300))
+                .andExpect(jsonPath("$.sizeTier", nullValue()))
+                .andExpect(jsonPath("$.implementationFee").value(0))
+                .andExpect(jsonPath("$.firstInvoice.total").value(300));
+    }
+
+    /** Un client fondator pe 99 rămâne pe 99, cu implementarea și bifa lui, când i se schimbă doar adresa. */
+    @Test
+    void anOldSubscriptionIsUntouchedBySavingWithoutChanges() throws Exception {
+        Company company = company(null);
+        Subscription old = oldGenerator(company, "2026-10-01");
+        old.setFounder(true);
+        subscriptionRepository.save(old);
+
+        save(company, Map.of("plan", "GENERATOR", "founder", true, "startedAt", "2026-10-01",
+                "billingCity", "Oradea"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monthlyPrice").value(99))
+                .andExpect(jsonPath("$.implementationFee").value(290))
+                .andExpect(jsonPath("$.extraWorkPointPrice").value(29))
+                .andExpect(jsonPath("$.founder", is(true)))
+                .andExpect(jsonPath("$.sizeTier", nullValue()))
+                .andExpect(jsonPath("$.billingCity", is("Oradea")));
+    }
+
+    /** Fără prețul de mână, un abonament vechi trece pe grilă, iar grila cere treapta. */
+    @Test
+    void anOldSubscriptionWithoutATierMustPickOneToDropTheCustomPrice() throws Exception {
+        Company company = company(null);
+        Subscription old = oldGenerator(company, "2026-10-01");
+        old.setMonthlyPrice(BigDecimal.valueOf(79));
+        old.setCustomPrice(true);
+        subscriptionRepository.save(old);
+
+        save(company, Map.of("plan", "GENERATOR", "customPrice", false, "startedAt", "2026-10-01"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error-code", is("subscription.size.tier.required")));
+        assertThat(subscriptionRepository.findByCompany_Id(company.getId()).orElseThrow().getMonthlyPrice())
+                .isEqualByComparingTo("79");
+    }
+
+    @Test
+    void aZeroOrNegativePriceIsInvalid() throws Exception {
+        Company company = company(null);
+        for (BigDecimal price : new BigDecimal[]{BigDecimal.ZERO, BigDecimal.valueOf(-5), new BigDecimal("10.123")}) {
+            save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "customPrice", true, "monthlyPrice", price,
+                    "startedAt", "2026-10-01"))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.error-code", is("bad-request")))
+                    .andExpect(jsonPath("$.params[0].key", is("monthlyPrice")));
+        }
+        assertThat(subscriptionRepository.existsByCompany_Id(company.getId())).isFalse();
     }
 
     @Test
@@ -155,8 +291,7 @@ class SubscriptionIT {
     void aCompanyThatPaysForItselfCannotBeMovedIntoAConsultancy() throws Exception {
         Company company = company(null);
         Consultancy consultancy = consultancy();
-        mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId()).with(platform())
-                        .contentType(MediaType.APPLICATION_JSON).content(body("GENERATOR", false, "2026-10-01")))
+        save(company, Map.of("plan", "GENERATOR", "sizeTier", 2, "startedAt", "2026-10-01"))
                 .andExpect(status().isOk());
 
         String assign = objectMapper.writeValueAsString(Map.of("consultancyId", consultancy.getId()));
@@ -220,7 +355,25 @@ class SubscriptionIT {
     }
 
     private String body(String plan, boolean founder, String startedAt) throws Exception {
-        return objectMapper.writeValueAsString(Map.of("plan", plan, "founder", founder, "startedAt", startedAt));
+        return body(Map.of("plan", plan, "founder", founder, "startedAt", startedAt));
+    }
+
+    private String body(Map<String, Object> fields) throws Exception {
+        return objectMapper.writeValueAsString(fields);
+    }
+
+    private ResultActions save(Company company, Map<String, Object> fields) throws Exception {
+        return mockMvc.perform(put("/api/v1/subscriptions/company/" + company.getId()).with(platform())
+                .contentType(MediaType.APPLICATION_JSON).content(body(fields)));
+    }
+
+    /** Semnat pe grila din 14.09.2026, dinainte de trepte: 99 pe lună, 290 implementarea, 29 pe punct de lucru. */
+    private Subscription oldGenerator(Company company, String startedAt) {
+        return subscriptionRepository.save(Subscription.builder()
+                .company(company).plan(SubscriptionPlan.GENERATOR).status(SubscriptionStatus.PENDING)
+                .monthlyPrice(BigDecimal.valueOf(99)).implementationFee(BigDecimal.valueOf(290))
+                .extraWorkPointPrice(BigDecimal.valueOf(29))
+                .startedAt(LocalDate.parse(startedAt)).createdAt(Instant.now()).build());
     }
 
     private Consultancy consultancy() {

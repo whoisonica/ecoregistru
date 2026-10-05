@@ -19,6 +19,9 @@ import java.util.UUID;
 public record SubscriptionResponse(
         UUID id,
         SubscriptionPlan plan,
+        /* 05.10.2026 — the employee-count tier (1–5), null before the tiers and off the generator plans. */
+        Integer sizeTier,
+        boolean customPrice,
         SubscriptionStatus status,
         BigDecimal monthlyPrice,
         BigDecimal implementationFee,

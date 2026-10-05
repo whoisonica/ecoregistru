@@ -21,6 +21,7 @@ import ro.ecoregistru.repository.*;
 import ro.ecoregistru.service.CloudinaryStorageService;
 import ro.ecoregistru.service.EmailService;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -87,9 +88,9 @@ class PostFixReadOnlyQaIT {
 
         subscriptionRepository.save(Subscription.builder()
                 .company(c).plan(SubscriptionPlan.GENERATOR).status(SubscriptionStatus.READ_ONLY)
-                .monthlyPrice(SubscriptionPlan.GENERATOR.monthlyPrice())
-                .implementationFee(SubscriptionPlan.GENERATOR.implementationFee())
-                .extraWorkPointPrice(SubscriptionPlan.EXTRA_WORK_POINT_PRICE)
+                .monthlyPrice(BigDecimal.valueOf(99))
+                .implementationFee(BigDecimal.valueOf(290))
+                .extraWorkPointPrice(BigDecimal.valueOf(29))
                 .startedAt(LocalDate.of(2026, 1, 1)).createdAt(Instant.now())
                 .billingEmail("f@qa.ro").billingCounty("Cluj").billingCity("Cluj").billingAddress("Str. 1").build());
 
