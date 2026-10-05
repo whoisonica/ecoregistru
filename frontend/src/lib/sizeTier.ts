@@ -38,3 +38,11 @@ export function subscriptionSummary(
   }
   return parts.join(" · ");
 }
+
+/** Prețul scris de mână, ca la server: peste zero, cel mult 8 cifre și 2 zecimale; altfel null. */
+export function parseMonthlyPrice(text: string): number | null {
+  const v = text.trim();
+  if (!/^\d{1,8}(\.\d{1,2})?$/.test(v)) return null;
+  const n = Number(v);
+  return n > 0 ? n : null;
+}

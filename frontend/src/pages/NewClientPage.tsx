@@ -9,7 +9,7 @@ import { useSubscriptionPreview } from "@/hooks/useSubscriptions";
 import type { AccountRequest, CompanyType, InvoicePreview, OnboardClientResult } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
-import { SIZE_TIERS, planLabel, type SizeTier } from "@/lib/sizeTier";
+import { SIZE_TIERS, parseMonthlyPrice, planLabel, type SizeTier } from "@/lib/sizeTier";
 import { isValidCui } from "@/lib/cui";
 import { COUNTIES, fgoCounty } from "@/lib/counties";
 import { fold, formatDate, todayIso } from "@/lib/utils";
@@ -164,9 +164,10 @@ function NewClientForm({
   const planTier = fullService ? null : sizeTier;
   const planCustom = !fullService && customPrice;
   const priceRequired = fullService || customPrice;
-  const typedPrice = Number(monthlyPrice);
-  const priceOk = monthlyPrice.trim() !== "" && Number.isFinite(typedPrice) && typedPrice > 0;
-  const sentPrice = priceRequired && priceOk ? typedPrice : null;
+  // Aceeași regulă ca la server (cel mult 8 cifre și 2 zecimale), ca să nu ajungă la el un preț pe care îl respinge.
+  const typedPrice = parseMonthlyPrice(monthlyPrice);
+  const priceOk = typedPrice != null;
+  const sentPrice = priceRequired ? typedPrice : null;
 
   // Prețul din grilă pe cardurile cu treaptă; fără treaptă aleasă nu e ce întreba.
   const gridOf = (p: "GENERATOR" | "GENERATOR_PACKAGING") => ({

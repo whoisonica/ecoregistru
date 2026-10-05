@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { planLabel, SIZE_TIERS, subscriptionSummary } from "@/lib/sizeTier";
+import { parseMonthlyPrice, planLabel, SIZE_TIERS, subscriptionSummary } from "@/lib/sizeTier";
 
 test("cele cinci trepte au intervalele din grilă", () => {
   assert.deepEqual(
@@ -22,4 +22,13 @@ test("subscriptionSummary: pe treaptă, personalizat, vechi, fără preț", () =
   assert.equal(subscriptionSummary("GENERATOR", null, true, "42 lei"), "Generator · 42 lei · preț personalizat");
   assert.equal(subscriptionSummary("GENERATOR", null, false, "99 lei"), "Generator · 99 lei");
   assert.equal(subscriptionSummary("GENERATOR", 2, false, null), "Generator · treapta 2");
+});
+
+test("parseMonthlyPrice: cel mult 8 cifre și 2 zecimale, peste zero", () => {
+  assert.equal(parseMonthlyPrice("42"), 42);
+  assert.equal(parseMonthlyPrice(" 300.5 "), 300.5);
+  assert.equal(parseMonthlyPrice("99999999.99"), 99999999.99);
+  for (const bad of ["", "  ", "0", "0.00", "-5", "10.123", "123456789", "1e3", "abc", "12,5", ".5"]) {
+    assert.equal(parseMonthlyPrice(bad), null, bad);
+  }
 });

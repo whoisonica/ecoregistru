@@ -22,7 +22,7 @@ import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { formatDate, todayIso } from "@/lib/utils";
 import { COUNTIES } from "@/lib/counties";
-import { SIZE_TIERS, type SizeTier } from "@/lib/sizeTier";
+import { SIZE_TIERS, parseMonthlyPrice, type SizeTier } from "@/lib/sizeTier";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import { DateInput } from "@/components/ui/date-input";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { FieldError, FieldWarning, invalidProps } from "@/components/ui/field-error";
 import { useToast } from "@/components/ui/toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 
@@ -54,8 +55,13 @@ const INVOICE_BADGE: Record<InvoiceStatus, "muted" | "warning" | "success"> = {
   PAID: "success",
 };
 
+/** Suma fără „lei”, pentru textele care îl scriu ele („Grila veche: 99 lei pe lună.”). */
+function amount(n: number) {
+  return n.toLocaleString("ro-RO", { maximumFractionDigits: 2 });
+}
+
 export function lei(n: number) {
-  return `${n.toLocaleString("ro-RO", { maximumFractionDigits: 2 })} lei`;
+  return `${amount(n)} lei`;
 }
 
 function periodLabel(invoice: InvoicePreview) {
@@ -99,6 +105,8 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const [billingCounty, setBillingCounty] = useState<string | null>(null);
   const [billingCity, setBillingCity] = useState<string | null>(null);
   const [billingAddress, setBillingAddress] = useState<string | null>(null);
+  // Eroarea prețului apare abia după o încercare de salvare, nu cât încă se scrie.
+  const [triedSave, setTriedSave] = useState(false);
 
   const currentPlan: SubscriptionPlan = plan ?? subscription?.plan ?? (isConsultancy ? "CONSULTANCY" : "GENERATOR");
   // Trecerea unui abonament existent la Serviciu complet nu păstrează prețul vechi de generator: câmpul pornește gol.
@@ -106,7 +114,8 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
   const values = {
     plan: currentPlan,
     sizeTier: isConsultancy || currentPlan === "FULL_SERVICE" ? null : sizeTier ?? subscription?.sizeTier ?? null,
-    customPrice: isConsultancy ? false : customPrice ?? subscription?.customPrice ?? false,
+    // Serviciul complet are oricum prețul scris de mână: comutatorul nu se arată și nu se trimite (ca la „Client nou”).
+    customPrice: isConsultancy || currentPlan === "FULL_SERVICE" ? false : customPrice ?? subscription?.customPrice ?? false,
     monthlyPrice: monthlyPrice ?? (priceCarriesOver ? String(subscription.monthlyPrice) : ""),
     // Abonament vechi: plan de firmă cu preț din grila veche, fără treaptă (R6).
     legacy: subscription != null && subscription.plan !== "CONSULTANCY" && subscription.sizeTier == null && !subscription.customPrice,
@@ -118,21 +127,24 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     billingCity: billingCity ?? subscription?.billingCity ?? "",
     billingAddress: billingAddress ?? subscription?.billingAddress ?? "",
   };
+  const priceRequired = values.customPrice || values.plan === "FULL_SERVICE";
+  const typedPrice = parseMonthlyPrice(values.monthlyPrice);
+  const priceError = priceRequired && typedPrice == null ? strings.newClient.errPrice : undefined;
   const setters = { setPlan, setSizeTier, setCustomPrice, setMonthlyPrice, setStartedAt, setFounder, setCommitment, setBillingEmail, setBillingCounty, setBillingCity, setBillingAddress };
   const busy = saveMut.isPending || deleteMut.isPending || cancelMut.isPending;
 
   async function save(e: FormEvent) {
     e.preventDefault();
+    setTriedSave(true);
+    // Prețul cerut și lipsă sau greșit: nu pleacă nimic la server, eroarea stă lângă rubrică.
+    if (priceError) return;
     try {
       await saveMut.mutateAsync({
         plan: values.plan,
         sizeTier: values.sizeTier,
         customPrice: values.customPrice,
         // Prețul se trimite doar când e scris de mână sau la Serviciu complet; altfel îl calculează serverul din grilă.
-        monthlyPrice:
-          (values.customPrice || values.plan === "FULL_SERVICE") && Number.isFinite(parseFloat(values.monthlyPrice))
-            ? parseFloat(values.monthlyPrice)
-            : null,
+        monthlyPrice: priceRequired ? typedPrice : null,
         startedAt: values.startedAt,
         founder: values.founder,
         twelveMonthCommitment: values.twelveMonthCommitment,
@@ -161,6 +173,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
       setBillingCounty(null);
       setBillingCity(null);
       setBillingAddress(null);
+      setTriedSave(false);
       notify(t.removed, "success");
     } catch (err) {
       notify(apiErrorMessage(err, t.removeError), "error");
@@ -203,6 +216,7 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     isError: query.isError,
     values,
     setters,
+    priceError: triedSave ? priceError : undefined,
     busy,
     saving: saveMut.isPending,
     save,
@@ -216,11 +230,18 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
 
 type Editor = ReturnType<typeof useSubscriptionEditor>;
 
-/** Pachetul, data de start, fondatorul și datele de facturare — aceleași rubrici în dialog și pe pagină. */
+/**
+ * Pachetul, treapta de angajați, prețul (personalizat sau al Serviciului complet), data de start, fondatorul și
+ * angajamentul (doar la consultant) și datele de facturare — aceleași rubrici în dialog și pe pagină.
+ */
 function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string }) {
   const { data: founderCount } = useFounderCount();
   const { isConsultancy, values, setters } = editor;
   const isCompanyPlan = COMPANY_PLANS.includes(values.plan);
+  const loaded = editor.subscription;
+  const legacyGrid =
+    loaded != null && values.legacy && values.sizeTier == null && values.plan === loaded.plan && values.plan !== "FULL_SERVICE";
+  const legacyToTier = values.legacy && values.sizeTier != null && !values.customPrice;
   return (
     <form id={formId} onSubmit={editor.save} className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -264,48 +285,76 @@ function SubscriptionFields({ editor, formId }: { editor: Editor; formId: string
                 selected={values.sizeTier == null ? [] : [String(values.sizeTier)]}
                 onToggle={(v) => setters.setSizeTier(Number(v) as SizeTier)}
               />
+              {/* Abonament vechi: pastilele stau goale, deci spunem pe ce condiții e acum. */}
+              {legacyGrid && (
+                <p className="mt-1 text-xs text-content-muted">
+                  {t.legacyGrid.replace("{price}", amount(loaded.monthlyPrice))}
+                </p>
+              )}
+              {/* O treaptă aleasă pe un abonament vechi îl mută pe grila nouă la salvare; se poate lua înapoi. */}
+              {legacyToTier && (
+                <div className="flex flex-wrap items-center gap-x-3">
+                  <FieldWarning id="sub-tier-warning" message={t.legacyTierWarning} />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1 h-auto px-1 py-0.5 text-xs"
+                    onClick={() => setters.setSizeTier(null)}
+                  >
+                    {t.keepLegacyGrid}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
-          <Switch
-            id="sub-custom-price"
-            checked={values.customPrice}
-            onChange={setters.setCustomPrice}
-            label={t.customPrice}
-            description={values.legacy && values.customPrice ? t.customPriceLegacyHint : t.customPriceHint}
-          />
+          {values.plan !== "FULL_SERVICE" && (
+            <Switch
+              id="sub-custom-price"
+              checked={values.customPrice}
+              onChange={setters.setCustomPrice}
+              label={t.customPrice}
+              description={values.legacy && values.customPrice ? t.customPriceLegacyHint : t.customPriceHint}
+            />
+          )}
           {(values.customPrice || values.plan === "FULL_SERVICE") && (
             <div className="sm:max-w-xs">
-              <Label htmlFor="sub-price">{t.monthlyPrice}</Label>
+              <Label htmlFor="sub-price" required>
+                {t.monthlyPrice}
+              </Label>
+              {/* Fără `min` și pas fix: altfel browserul oprește salvarea cu bula lui, înaintea mesajului nostru. */}
               <Input
                 id="sub-price"
                 type="number"
-                step="0.01"
-                min="0.01"
+                inputMode="decimal"
+                step="any"
                 value={values.monthlyPrice}
                 onChange={(e) => setters.setMonthlyPrice(e.target.value)}
+                {...invalidProps("sub-price-error", editor.priceError)}
               />
+              <FieldError id="sub-price-error" message={editor.priceError} />
             </div>
           )}
         </div>
       )}
 
       {!isCompanyPlan && (
-      <label className="flex items-start gap-2 text-sm text-content-strong">
-        <input
-          type="checkbox"
-          className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
-          checked={values.founder}
-          onChange={(e) => setters.setFounder(e.target.checked)}
-        />
-        <span>
-          {t.founder}
-          {founderCount != null && (
-            <span className="block text-xs text-content-muted">
-              {t.founderCount.replace("{n}", String(founderCount))}
-            </span>
-          )}
-        </span>
-      </label>
+        <label className="flex items-start gap-2 text-sm text-content-strong">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-line-strong text-brand focus:ring-brand"
+            checked={values.founder}
+            onChange={(e) => setters.setFounder(e.target.checked)}
+          />
+          <span>
+            {t.founder}
+            {founderCount != null && (
+              <span className="block text-xs text-content-muted">
+                {t.founderCount.replace("{n}", String(founderCount))}
+              </span>
+            )}
+          </span>
+        </label>
       )}
 
       {!isCompanyPlan && (

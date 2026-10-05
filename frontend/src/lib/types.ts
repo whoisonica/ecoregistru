@@ -305,7 +305,10 @@ export interface InvoicePreview {
 export interface Subscription {
   id: string;
   plan: SubscriptionPlan;
-  /** Treapta de angajați; null pe abonamentele vechi, la preț personalizat și la consultant. */
+  /**
+   * Treapta de angajați; null la Serviciu complet, la consultant și pe abonamentele de dinainte de 05.10.2026.
+   * La preț personalizat treapta rămâne.
+   */
   sizeTier: SizeTier | null;
   /** Preț scris de mână, nerecalculat din grilă. */
   customPrice: boolean;

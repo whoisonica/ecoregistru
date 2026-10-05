@@ -3227,6 +3227,10 @@ export const strings = {
     customPriceHint: "Scris de mână, nu se mai recalculează din grilă până nu debifezi.",
     customPriceLegacyHint:
       "Pe un abonament de dinainte de 05.10.2026, prețul personalizat cere o treaptă: abonamentul trece pe condițiile noi (fără implementare, fără client fondator).",
+    legacyGrid: "Grila veche: {price} lei pe lună.",
+    legacyTierWarning:
+      "La salvare, abonamentul trece pe grila nouă: prețul treptei, fără implementare și fără client fondator.",
+    keepLegacyGrid: "Păstrează grila veche",
     monthlyPrice: "Preț lunar (lei)",
     onRequest: "Preț la cerere",
     billing: "Date de facturare",
@@ -3813,7 +3817,7 @@ export const strings = {
     firstInvoice: "Prima factură · {period}",
     total: "Total",
     invoiceNote: "Neplătitor de TVA. Scadență la 10 zile.",
-    previewError: "Suma n-a putut fi calculată acum. Abonamentul se salvează oricum cu prețurile din grilă.",
+    previewError: "Suma n-a putut fi calculată acum. Verifică treapta și prețul, apoi încearcă din nou.",
     checkCui: "CUI valid (cifra de control)",
     checkAddress: "Adresă completă pentru FGO (județ, localitate, adresă)",
     checkEmail: "Email valid pentru facturi",
