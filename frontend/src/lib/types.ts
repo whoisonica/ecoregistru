@@ -3,6 +3,8 @@
  * (constants are English; Romanian labels live in strings.ts `enums`).
  */
 
+import type { SizeTier } from "@/lib/sizeTier";
+
 /**
  * There is no "handed over": HG 856/2002 anexa nr. 1 cap. 1 has no such column, and cap. 3 / cap. 4
  * report a quantity together with its R/D operation AND the operator who performed it. Handing
@@ -235,6 +237,8 @@ export interface AccountRequestInput {
    * answers 202 — telling a bot it was caught is telling it what to change.
    */
   website?: string | null;
+  /** Treapta după numărul de angajați; obligatorie la trimitere, null doar pe cererile vechi. */
+  sizeTier: SizeTier | null;
 }
 
 /**
@@ -301,6 +305,10 @@ export interface InvoicePreview {
 export interface Subscription {
   id: string;
   plan: SubscriptionPlan;
+  /** Treapta de angajați; null pe abonamentele vechi, la preț personalizat și la consultant. */
+  sizeTier: SizeTier | null;
+  /** Preț scris de mână, nerecalculat din grilă. */
+  customPrice: boolean;
   status: SubscriptionStatus;
   monthlyPrice: number;
   implementationFee: number;
@@ -357,6 +365,10 @@ export interface SubscriptionInvoice {
 
 export interface SubscriptionInput {
   plan: SubscriptionPlan;
+  sizeTier: SizeTier | null;
+  customPrice: boolean;
+  /** Citit doar la preț personalizat sau la Serviciu complet. */
+  monthlyPrice: number | null;
   founder: boolean;
   /** Contract art. 4.3: implementarea nu se plătește la început, ci doar la o oprire înainte de 12 luni. */
   twelveMonthCommitment: boolean;
@@ -454,6 +466,8 @@ export interface ClientOverview {
   /** null = fără abonament propriu; mereu null la consultant. */
   subscriptionStatus: SubscriptionStatus | null;
   plan: SubscriptionPlan | null;
+  sizeTier: SizeTier | null;
+  customPrice: boolean;
   monthlyPrice: number | null;
   lastInvoice: {
     /** „WH 12”; null cât timp FGO n-a emis-o. */
@@ -498,6 +512,8 @@ export interface BillingInvoiceRow {
 export interface BillingAccount {
   clientName: string;
   plan: SubscriptionPlan;
+  sizeTier: SizeTier | null;
+  customPrice: boolean;
   status: SubscriptionStatus;
   startedAt: string; // yyyy-MM-dd
   founder: boolean;

@@ -10,7 +10,7 @@ const company: Company = {
   address: "Cluj", caenCode: "1071", wasteManagerName: "Popescu",
 };
 const overview: ClientOverview = {
-  companyId: "c1", subscriptionStatus: "ACTIVE", plan: "GENERATOR", monthlyPrice: 99, userCount: 2,
+  companyId: "c1", subscriptionStatus: "ACTIVE", plan: "GENERATOR", sizeTier: null, customPrice: false, monthlyPrice: 99, userCount: 2,
   lastInvoice: { number: "WH 12", total: 99, status: "PAID", dueDate: "2026-09-10", lastError: null },
 };
 const invoice = (patch: Partial<NonNullable<ClientOverview["lastInvoice"]>>) => ({

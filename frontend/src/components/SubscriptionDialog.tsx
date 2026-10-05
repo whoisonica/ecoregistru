@@ -112,6 +112,11 @@ function useSubscriptionEditor(owner: SubscriptionOwner) {
     try {
       await saveMut.mutateAsync({
         plan: values.plan,
+        // Task 7 aduce treapta în dialog; până atunci o salvare păstrează ce are abonamentul.
+        sizeTier: subscription?.sizeTier ?? null,
+        customPrice: subscription?.customPrice ?? false,
+        monthlyPrice:
+          subscription && (subscription.customPrice || values.plan === "FULL_SERVICE") ? subscription.monthlyPrice : null,
         startedAt: values.startedAt,
         founder: values.founder,
         twelveMonthCommitment: values.twelveMonthCommitment,

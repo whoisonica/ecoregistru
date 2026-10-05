@@ -13,7 +13,6 @@ import type {
   Subscription,
   SubscriptionInput,
   SubscriptionOwner,
-  SubscriptionPlan,
   SubscriptionPreview,
 } from "@/lib/types";
 
@@ -53,21 +52,24 @@ export function useSubscription(owner: SubscriptionOwner) {
  * F-C — facturile unui abonament încă nesalvat, pentru pasul „Abonamentul”. Datele de facturare nu schimbă suma, deci
  * nu intră în cheie.
  */
-export function useSubscriptionPreview(
-  plan: SubscriptionPlan,
-  founder: boolean,
-  startedAt: string,
-  enabled: boolean,
-  twelveMonthCommitment = false
-) {
+export type SubscriptionPreviewInput = Pick<
+  SubscriptionInput,
+  "plan" | "sizeTier" | "customPrice" | "monthlyPrice" | "startedAt"
+>;
+
+export function useSubscriptionPreview(input: SubscriptionPreviewInput, enabled: boolean) {
+  const { plan, sizeTier, customPrice, monthlyPrice, startedAt } = input;
   return useQuery({
-    queryKey: ["subscriptions", "preview", plan, founder, twelveMonthCommitment, startedAt],
+    queryKey: ["subscriptions", "preview", plan, sizeTier, customPrice, monthlyPrice, startedAt],
     queryFn: async () =>
       (
         await api.post<SubscriptionPreview>("/api/v1/subscriptions/preview", {
           plan,
-          founder,
-          twelveMonthCommitment,
+          sizeTier,
+          customPrice,
+          monthlyPrice,
+          founder: false,
+          twelveMonthCommitment: false,
           startedAt,
           billingEmail: null,
           billingCounty: null,

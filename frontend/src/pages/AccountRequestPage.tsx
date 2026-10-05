@@ -294,6 +294,8 @@ export function AccountRequestPage() {
     setErrors({});
     setError(null);
     const input: AccountRequestInput = {
+      // Task 8 adaugă alegerea treptei în formular.
+      sizeTier: null,
       companyName: companyName.trim(),
       cui: cui.trim(),
       companyType,

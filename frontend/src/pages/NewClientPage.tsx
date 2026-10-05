@@ -6,7 +6,7 @@ import { isMultiCompany } from "@/lib/roles";
 import { useAccountRequests } from "@/hooks/useAccountRequests";
 import { useOnboardClient } from "@/hooks/useCompanies";
 import { useFounderCount, useSubscriptionPreview } from "@/hooks/useSubscriptions";
-import type { AccountRequest, CompanyType, InvoicePreview, OnboardClientResult } from "@/lib/types";
+import type { AccountRequest, CompanyType, InvoicePreview, OnboardClientResult, SubscriptionPlan } from "@/lib/types";
 import { apiErrorMessage } from "@/lib/api";
 import { strings } from "@/lib/strings";
 import { isValidCui } from "@/lib/cui";
@@ -154,19 +154,17 @@ function NewClientForm({
   const [adminFirstName, setAdminFirstName] = useState("");
   const [adminLastName, setAdminLastName] = useState("");
 
+  // Task 6 înlocuiește asta cu treapta aleasă; până atunci previzualizarea cere doar pachetul.
+  const previewOf = (p: SubscriptionPlan) => ({
+    plan: p, sizeTier: null, customPrice: false, monthlyPrice: null, startedAt,
+  });
   const prices = {
-    GENERATOR: useSubscriptionPreview("GENERATOR", false, startedAt, withSubscription),
-    GENERATOR_PACKAGING: useSubscriptionPreview("GENERATOR_PACKAGING", false, startedAt, withSubscription),
-    FULL_SERVICE: useSubscriptionPreview("FULL_SERVICE", false, startedAt, withSubscription),
+    GENERATOR: useSubscriptionPreview(previewOf("GENERATOR"), withSubscription),
+    GENERATOR_PACKAGING: useSubscriptionPreview(previewOf("GENERATOR_PACKAGING"), withSubscription),
+    FULL_SERVICE: useSubscriptionPreview(previewOf("FULL_SERVICE"), withSubscription),
   };
   const committed = commitment === "yes" && plan !== "FULL_SERVICE";
-  const preview = useSubscriptionPreview(
-    plan,
-    founder === "yes",
-    startedAt,
-    withSubscription && subscriptionOn,
-    committed
-  );
+  const preview = useSubscriptionPreview(previewOf(plan), withSubscription && subscriptionOn);
 
   const invoiceCounty = otherAddress === "same" ? county : billingCounty;
   const invoiceCity = otherAddress === "same" ? city : billingCity;
@@ -253,6 +251,9 @@ function NewClientForm({
           withSubscription && subscriptionOn
             ? {
                 plan,
+                sizeTier: null,
+                customPrice: false,
+                monthlyPrice: null,
                 founder: founder === "yes",
                 twelveMonthCommitment: committed,
                 startedAt,
