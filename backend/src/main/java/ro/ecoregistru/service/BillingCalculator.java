@@ -74,7 +74,7 @@ public final class BillingCalculator {
             throw new IllegalArgumentException("There is no period before the subscription starts");
         }
         List<Line> lines = new ArrayList<>();
-        recurring(lines, s.getPlan().label(), 1, s.getMonthlyPrice());
+        recurring(lines, baseLabel(s), 1, s.getMonthlyPrice());
         if (s.getPlan().forConsultancy()) {
             int n = managedCompanies;
             recurring(lines, "Firmă gestionată, 1–10", Math.min(n, TIER1_UP_TO), s.getCompanyPriceTier1());
@@ -117,8 +117,17 @@ public final class BillingCalculator {
                 && !periodStart(s, period + 1).minusDays(1).isBefore(s.getEndsOn());
     }
 
+    /** The plan label, with the employee tier when the subscription is on the grid and not custom-priced. */
+    static String baseLabel(Subscription s) {
+        if (s.getSizeTier() == null || s.isCustomPrice()) {
+            return s.getPlan().label();
+        }
+        return s.getPlan().label() + ", treapta " + s.getSizeTier().number()
+                + " (" + s.getSizeTier().range() + " angajați)";
+    }
+
     private static void recurring(List<Line> lines, String label, int quantity, BigDecimal unitPrice) {
-        if (quantity > 0) {
+        if (quantity > 0 && unitPrice.signum() != 0) {
             lines.add(new Line(label, quantity, unitPrice, unitPrice.multiply(BigDecimal.valueOf(quantity))));
         }
     }

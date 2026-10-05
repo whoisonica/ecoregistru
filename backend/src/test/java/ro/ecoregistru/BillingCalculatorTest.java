@@ -2,6 +2,7 @@ package ro.ecoregistru;
 
 import org.junit.jupiter.api.Test;
 import ro.ecoregistru.entity.Subscription;
+import ro.ecoregistru.enums.SizeTier;
 import ro.ecoregistru.enums.SubscriptionPlan;
 import ro.ecoregistru.service.BillingCalculator;
 import ro.ecoregistru.service.BillingCalculator.Invoice;
@@ -208,6 +209,53 @@ class BillingCalculatorTest {
     void thereIsNoPeriodBeforeTheStart() {
         assertThatThrownBy(() -> BillingCalculator.invoice(direct(SubscriptionPlan.GENERATOR, false, START), 1, 0, 0, -1))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aTierTwoGeneratorWithThreeWorkPointsHasOneLine() {
+        Invoice invoice = BillingCalculator.invoice(tiered(SubscriptionPlan.GENERATOR, SizeTier.TIER_2), 3, 0, 0, 0);
+        assertThat(invoice.lines())
+                .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
+                .containsExactly(tuple("Generator, treapta 2 (3–9 angajați)", 1, 50));
+        assertThat(invoice.total()).isEqualByComparingTo("50");
+    }
+
+    @Test
+    void packagingOnTierFiveIsLabelled() {
+        Invoice invoice = BillingCalculator.invoice(
+                tiered(SubscriptionPlan.GENERATOR_PACKAGING, SizeTier.TIER_5), 1, 0, 0, 0);
+        assertThat(invoice.lines())
+                .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
+                .containsExactly(tuple("Generator + Ambalaje, treapta 5 (40+ angajați)", 1, 199));
+        assertThat(invoice.total()).isEqualByComparingTo("199");
+    }
+
+    @Test
+    void aCustomPriceHasNoTierInTheLabel() {
+        Subscription s = tiered(SubscriptionPlan.GENERATOR, SizeTier.TIER_2);
+        s.setCustomPrice(true);
+        s.setMonthlyPrice(BigDecimal.valueOf(42));
+        Invoice invoice = BillingCalculator.invoice(s, 1, 0, 0, 0);
+        assertThat(invoice.lines())
+                .extracting(Line::label, Line::quantity, l -> l.amount().intValueExact())
+                .containsExactly(tuple("Generator", 1, 42));
+    }
+
+    @Test
+    void aZeroPricedLineIsLeftOut() {
+        Subscription s = direct(SubscriptionPlan.GENERATOR, false, START);
+        s.setExtraWorkPointPrice(BigDecimal.ZERO);
+        assertThat(BillingCalculator.invoice(s, 3, 0, 0, NEXT).lines())
+                .extracting(Line::label)
+                .containsExactly("Generator");
+    }
+
+    /** A subscription saved on the tier grid: no implementation fee, extra work points free. */
+    private static Subscription tiered(SubscriptionPlan plan, SizeTier tier) {
+        return Subscription.builder().plan(plan).sizeTier(tier)
+                .monthlyPrice(tier.monthlyPrice(plan)).implementationFee(BigDecimal.ZERO)
+                .extraWorkPointPrice(BigDecimal.ZERO)
+                .founder(false).startedAt(START).build();
     }
 
     /** Un abonament semnat pe grila din 14.09.2026, dinainte de trepte: prețurile lui rămân pe rând. */
