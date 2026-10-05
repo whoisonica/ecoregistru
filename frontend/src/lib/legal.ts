@@ -24,6 +24,11 @@
  * raportarea ambalajelor colectate numai la cine preia deșeuri de la terți, termenele proprii) și 8.3 (persoanele
  * fizice de la care se cumpără deșeuri); în politică: persoanele fizice din aplicație și anonimizarea lor la
  * termenul documentelor contabile, revocarea sesiunilor și la deconectare. Tot 17 capitole.
+ *
+ * <p>v2.4, 05.10.2026 (prețurile generatorilor pe trepte, contractul v2.4): în termeni, 12.1 (angajamentul de
+ * 12 luni numai la contul de consultant; abonamentele cu angajament de pe o versiune anterioară, după contractul
+ * semnat) și 12.2 (taxa de implementare sau de pornire, numai la abonamentele care o au). De validat la jurist;
+ * nu se publică până atunci, iar `LEGAL_DATE` se mută pe ziua deployului. Tot 17 capitole.
  */
 
 /** Ce poate să conțină un capitol. Cât ne trebuie ca să scriem exact documentele astea, nimic mai mult. */
@@ -353,15 +358,17 @@ export const TERMS: LegalDoc = {
             "**12.1.** Puteți opri abonamentul oricând, cu **preaviz de o lună**, din contract sau printr-un " +
             "e-mail la contact@wastehouse.ro trimis de la adresa de facturare. Ultima perioadă facturată e cea " +
             "în care cade ziua de peste o lună de la cerere. Fără angajament, nu există termen minim și nici " +
-            "penalitate de oprire. Dacă ați ales angajamentul de 12 luni (contract art. 4.3), taxa de implementare " +
-            "nu s-a plătit la început; dacă ultima perioadă facturată se încheie înainte de a 12-a lună, ea se " +
-            "facturează odată cu ultima perioadă. Lunile rămase până la 12 nu se datorează.",
+            "penalitate de oprire. Angajamentul de 12 luni (contract art. 4.3) se poate alege numai la contul de " +
+            "consultant: taxa de pornire nu se plătește la început; dacă ultima perioadă facturată se încheie " +
+            "înainte de a 12-a lună, ea se facturează odată cu ultima perioadă. Lunile rămase până la 12 nu se " +
+            "datorează. Un abonament cu angajament încheiat pe o versiune anterioară a contractului urmează " +
+            "aceeași regulă, cu taxa de implementare din contractul semnat.",
         },
         {
           kind: "p",
           text:
             "**12.2.** Sumele facturate pentru o perioadă începută **nu se restituie**. Taxa de implementare " +
-            "plătită nu se restituie. Excepție: dacă opriți abonamentul pentru că nu acceptați un furnizor nou " +
+            "sau de pornire plătită, la abonamentele care o au, nu se restituie. Excepție: dacă opriți abonamentul pentru că nu acceptați un furnizor nou " +
             "care ar prelucra datele din aplicație (contractul de împuternicire, art. 6.3), vă restituim partea " +
             "plătită în avans pentru zilele rămase.",
         },
